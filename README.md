@@ -55,6 +55,19 @@ python3 -m mapformer.main --skip-baselines --device cuda
 
 Figures are saved to `mapformer/figures/`.
 
+### Running on a remote CUDA machine
+
+```bash
+git clone https://github.com/PrashRangarajan/mapformer.git
+cd mapformer && pip install -r requirements.txt
+
+python3 -m mapformer.main \
+  --d-model 128 --n-heads 8 --n-layers 4 \
+  --epochs 200 --n-batches 500 \
+  --grid-size 16 --n-obs-types 8 \
+  --device cuda
+```
+
 ## What the Pipeline Produces
 
 1. **Training curves** — cross-entropy loss for all models
