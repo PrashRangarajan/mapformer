@@ -6,7 +6,9 @@ dist/
 build/
 .eggs/
 figures/
+figures_*/
 *.pt
 *.pth
 *.ckpt
+*.log
 .DS_Store

@@ -20,21 +20,23 @@ from .environment import GridWorld
 def eval_accuracy(
     model: nn.Module,
     env: GridWorld,
-    seq_len: int,
+    n_steps: int,
     n_trials: int = 200,
     device: str = "cpu",
 ) -> float:
-    """Evaluate next-observation prediction accuracy.
+    """Evaluate next-observation prediction accuracy on interleaved tokens.
+
+    Only measures accuracy on observation predictions (after action tokens).
 
     Args:
         model: trained model
         env: GridWorld
-        seq_len: sequence length to evaluate on
+        n_steps: number of (action, observation) steps
         n_trials: number of test trajectories
         device: device
 
     Returns:
-        Accuracy (fraction correct)
+        Accuracy (fraction of observations correctly predicted)
     """
     model.eval()
     correct = 0
@@ -42,18 +44,22 @@ def eval_accuracy(
 
     with torch.no_grad():
         for _ in range(n_trials):
-            actions, obs = env.generate_trajectory(seq_len)
-            actions = actions.unsqueeze(0).to(device)
-            obs = obs.unsqueeze(0).to(device)
+            tokens, obs_mask, revisit_mask = env.generate_trajectory(n_steps)
+            tokens = tokens.unsqueeze(0).to(device)
+            revisit_mask = revisit_mask.unsqueeze(0).to(device)
 
-            logits = model(actions[:, :-1], obs[:, :-1])
-            preds = logits.argmax(-1).squeeze(0)
-            targets = obs[0, 1:]
+            logits = model(tokens[:, :-1])
+            preds = logits.argmax(-1)
+            targets = tokens[:, 1:]
+            # Paper: accuracy at revisited locations only
+            mask = revisit_mask[:, 1:]
 
-            correct += (preds == targets).sum().item()
-            total += seq_len - 1
+            if mask.sum() == 0:
+                continue
+            correct += (preds[mask] == targets[mask]).sum().item()
+            total += mask.sum().item()
 
-    return correct / total
+    return correct / total if total > 0 else 0.0
 
 
 def eval_length_generalisation(
@@ -84,9 +90,9 @@ def eval_length_generalisation(
                      8 * train_len, 16 * train_len]
 
     results = {}
-    for T in test_lens:
-        acc = eval_accuracy(model, env, T, n_trials, device)
-        results[T] = acc
+    for n_steps in test_lens:
+        acc = eval_accuracy(model, env, n_steps, n_trials, device)
+        results[n_steps] = acc
 
     return results
 
@@ -117,11 +123,13 @@ def extract_position_states(
 
     with torch.no_grad():
         for _ in range(n_samples):
-            actions, obs = env.generate_trajectory(traj_len)
-            actions_t = actions.unsqueeze(0).to(device)
+            tokens, obs_mask, revisit_mask = env.generate_trajectory(traj_len)
+            tokens_t = tokens.unsqueeze(0).to(device)
 
-            P = model.get_position_state(actions_t)  # (1, T, d, d)
-            state = P[0, -1].flatten().cpu().numpy()
+            cos_a, sin_a = model.get_position_state(tokens_t)
+            # Use last position's cos/sin as state (last token = last obs)
+            state = torch.cat([cos_a[0, :, -1, :].flatten(),
+                               sin_a[0, :, -1, :].flatten()]).cpu().numpy()
 
             positions.append((env.last_x, env.last_y))
             states.append(state)
@@ -159,11 +167,20 @@ def compute_rate_map(
 
     with torch.no_grad():
         for _ in range(n_trajectories):
-            actions, obs = env.generate_trajectory(traj_len)
-            actions_t = actions.unsqueeze(0).to(device)
+            tokens, obs_mask, revisit_mask = env.generate_trajectory(traj_len)
+            tokens_t = tokens.unsqueeze(0).to(device)
 
-            P = model.get_position_state(actions_t)  # (1, T, d, d)
-            P_flat = P[0].reshape(traj_len, -1).cpu().numpy()  # (T, d^2)
+            cos_a, sin_a = model.get_position_state(tokens_t)
+            # cos_a: (1, H, 2*traj_len, n_blocks) — interleaved tokens
+            # Extract state at observation positions (odd indices)
+            n_tokens = 2 * traj_len
+            obs_indices = torch.arange(1, n_tokens, 2)  # odd positions
+            cos_obs = cos_a[0, :, obs_indices, :]  # (H, traj_len, n_blocks)
+            sin_obs = sin_a[0, :, obs_indices, :]
+            P_flat = torch.cat([
+                cos_obs.permute(1, 0, 2).reshape(traj_len, -1),
+                sin_obs.permute(1, 0, 2).reshape(traj_len, -1),
+            ], dim=-1).cpu().numpy()
 
             for t, (x, y) in enumerate(env.visited_locations):
                 if cell_idx < P_flat.shape[1]:

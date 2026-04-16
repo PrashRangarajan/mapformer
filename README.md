@@ -1,37 +1,56 @@
 # MapFormer: Self-Supervised Cognitive Maps with Lie Group Path Integration
 
-Implementation of MapFormer ([Rambaud et al., 2025](https://arxiv.org/abs/2511.19279)) with an Invariant Extended Kalman Filter (InEKF) extension for uncertainty-aware path integration.
+Implementation of MapFormer ([Rambaud et al., 2025](https://arxiv.org/abs/2511.19279)),
+faithfully reproducing the paper's results on 2D torus navigation, plus a
+**parallel Invariant Extended Kalman Filter** extension for uncertainty-aware
+path integration.
 
 ## What is MapFormer?
 
-MapFormer is a Transformer that learns a **cognitive map** from sequences of (action, observation) pairs. The key idea: separate **structure** ("where" — updated by actions via SO(n) rotations) from **content** ("what" — updated by observations). Path integration uses a parallel prefix scan over rotation matrices in O(log T), enabling length generalisation that standard Transformers cannot achieve.
+MapFormer is a Transformer that learns a **cognitive map** from an interleaved
+sequence of (action, observation) tokens `s = (a₁, o₁, a₂, o₂, …)`. The model
+must *learn by itself* to disentangle actions (which update position) from
+observations (which update content). Key ideas:
 
-## Architecture
+- **Structure/content disentanglement**: actions drive a rotation in SO(2);
+  observations leave position untouched.
+- **Parallel path integration**: cumulative angles via `cumsum(ω·Δ)` + single
+  `exp` — O(log T) on a parallel scan, length-generalises far beyond training.
+- **Generalised RoPE**: rotations come from the learned action stream, not the
+  token index.
+
+## Models
 
 | Component | Description |
 |-----------|-------------|
-| `MapFormer-WM` | Working Memory variant. Generalises RoPE: rotation comes from actions, not token index. Relative positional encoding. |
-| `MapFormer-EM` | Episodic Memory variant. Absolute positional encoding with parallel content + structure attention streams. |
-| `InEKF` | Invariant Extended Kalman Filter layer. Tracks position uncertainty (covariance) alongside the mean, with landmark-based correction. |
-
-**Baselines** (for comparison):
-- `Transformer+RoPE` — fixed index-based rotation (fails OOD)
-- `LSTM` — fixed hidden state bottleneck (fails on long sequences)
+| `MapFormer-WM` | Working Memory — generalised RoPE. Q/K rotated by learned action-dependent angles. |
+| `MapFormer-EM` | Episodic Memory — absolute position embeddings from rotating learnable `p₀`. Attention combines content and structure via **Hadamard product** `softmax(A_X ⊙ A_P) V`. |
+| `InEKF-Parallel` | **Our extension.** Invariant EKF on SO(2) with constant Q (Lie-group invariance), steady-state gain via closed-form scalar DARE, and FFT-based parallel affine scan. Preserves MapFormer's parallelism. |
 
 ## Project Structure
 
 ```
 mapformer/
-  __init__.py          # Package exports
-  lie_groups.py        # SO(2)/SO(n) exp/log maps, block-diagonal rotations
-  prefix_scan.py       # O(log T) parallel prefix product
-  environment.py       # 2D GridWorld with non-unique observations
-  model.py             # MapFormer-WM and MapFormer-EM
-  baselines.py         # Transformer+RoPE and LSTM
-  inekf.py             # Invariant EKF layer
-  train.py             # Self-supervised training (next-obs prediction)
-  evaluate.py          # Evaluation + figure generation
-  main.py              # Full experiment pipeline
+  environment.py         # Torus GridWorld, interleaved token sequences, revisit mask
+  lie_groups.py          # SO(n) exp/log, block-diagonal rotations
+  prefix_scan.py         # O(log T) parallel prefix product (for lie_groups utils)
+  model.py               # MapFormer-WM and MapFormer-EM (paper-faithful)
+  model_kalman.py        # First-pass InEKF (uncertainty-modulated attention — ablation)
+  model_inekf_proper.py  # Proper sequential InEKF on SO(2) with wrapped innovations
+  model_inekf_parallel.py# Steady-state InEKF with FFT-based parallel scan
+  baselines.py           # Transformer+RoPE and LSTM baselines
+  inekf.py               # Earlier InEKF scaffolding (pre-refactor; kept for reference)
+  train.py               # Self-supervised training w/ revisit mask + optional action noise
+  evaluate.py            # Length-generalisation + figures
+  main.py                # Paper-faithful experiment pipeline
+  main_kalman.py         # Train the first-pass InEKF
+  main_inekf_proper.py   # Train the sequential proper InEKF
+  main_inekf_parallel.py # Train the parallel InEKF
+  main_vanilla_noise.py  # Train vanilla MapFormer with training-time action noise
+  noise_test.py          # Discrete action-noise robustness test
+  gaussian_noise_test.py # Gaussian Δ-noise robustness test (InEKF's home turf)
+  diagnose.py            # Disentanglement + prediction distribution + ω analysis
+  docs/                  # Original writeups
 ```
 
 ## Quick Start
@@ -39,55 +58,236 @@ mapformer/
 ```bash
 pip install -r requirements.txt
 
-# Run with defaults (small scale, ~12 min on MPS)
-python3 -m mapformer.main --device mps
+# Reproduce the paper's Table 2 (2D navigation, 200K sequences).
+python3 -m mapformer.main --device cuda --epochs 16 --n-batches 98
 
-# Scale up for paper-quality results (needs GPU)
-python3 -m mapformer.main \
-  --d-model 128 --n-heads 8 --n-layers 4 \
-  --epochs 200 --n-batches 500 \
-  --grid-size 16 --n-obs-types 8 \
-  --device cuda
-
-# MapFormer only (skip baselines)
-python3 -m mapformer.main --skip-baselines --device cuda
+# Scale up for cleaner near-perfect numbers (~1M sequences, ~30 min on a single GPU).
+python3 -m mapformer.main --device cuda --epochs 50 --n-batches 156
 ```
 
-Figures are saved to `mapformer/figures/`.
+Checkpoints are saved to `figures_<name>/*.pt`.
 
-### Running on a remote CUDA machine
+### Paper-matched defaults (from Rambaud et al. 2025, Appendix B)
 
-```bash
-git clone https://github.com/PrashRangarajan/mapformer.git
-cd mapformer && pip install -r requirements.txt
+- Grid: 64×64 **torus**, `p_empty=0.5`, 16 observation types + 1 blank
+- Sequence: 128 (action, observation) steps → 256 interleaved tokens
+- Model: d=128, 2 heads, head size h=64, **1 layer**
+- Optimiser: AdamW, lr=3e-4, weight-decay=0.05, linear LR decay
+- Batch size 128; 200K sequences total (16 epochs × 98 batches × 128)
+- Loss: cross-entropy on observation tokens **at revisited locations only**
 
-python3 -m mapformer.main \
-  --d-model 128 --n-heads 8 --n-layers 4 \
-  --epochs 200 --n-batches 500 \
-  --grid-size 16 --n-obs-types 8 \
-  --device cuda
-```
+## Reproduced Results
 
-## What the Pipeline Produces
+| Model | Train acc (T=128) | 16× OOD (T=2048) |
+|-------|-------------------|------------------|
+| MapFormer-WM | **0.955** | 0.570 |
+| MapFormer-EM | **0.999** | 0.544 |
+| Paper (Table 2) | 0.99–1.0 | — |
 
-1. **Training curves** — cross-entropy loss for all models
-2. **Length generalisation** — train on T=64, test on T=128, 256, 512, 1024
-3. **Position state PCA** — coloured by true (x, y) grid location
-4. **Grid cell autocorrelation** — rate maps + 2D autocorrelation (look for 6 peaks at 60 degrees)
+## Critical Implementation Details (Things The Paper Glosses Over)
+
+1. **Torus, not bounded grid.** Actions wrap via `(x+dx) % N`.
+2. **Unified token stream.** Actions and observations share a single embedding
+   table; the model must learn which tokens update position (‖Δ‖ large) vs
+   content (‖Δ‖ ≈ 0). This disentanglement IS the cognitive-map learning.
+3. **Revisit-only loss.** First-visit observations are informationally random
+   and training on them collapses the model to "always predict blank".
+   Loss must be masked to revisited locations only.
+4. **ω initialisation is monotonic DECREASING in i.**
+   The paper's eq. 17 reads `ω_i = ω_max · (1/Δ_max)^(-i/n_b)` which literally
+   gives an *increasing* schedule growing to ~200 rad per token — causes
+   catastrophic aliasing. The correct schedule (matching the paper's own
+   `ω_min = ω_max/Δ_max` and RoPE analogy) is:
+   ```python
+   ω_i = ω_max · (1/Δ_max)^(i/(n_b-1))     # ω_max=2π, Δ_max=grid_size
+   ```
+5. **EM attention is Hadamard**, not additive. `softmax(A_X ⊙ A_P) V`.
+6. **MapEM uses separate learnable `q_0^p` and `k_0^p`**, rotated by the
+   path-integrated angles — not a linear projection of flattened rotation
+   matrices.
+7. **Low-rank Δ projection** `W_Δ = W_Δ^out · W_Δ^in` with bottleneck `r=2`
+   (matching the 2D movement vector) and per-head, per-block outputs.
+
+## InEKF Extension
+
+We added an **Invariant Extended Kalman Filter** on SO(2) to stabilise path
+integration under action/sensor noise. Three implementations:
+
+1. `model_kalman.py` — first pass; modulates attention temperature by σ²
+   (turned out to be redundant with attention's natural behaviour).
+2. `model_inekf_proper.py` — proper Bayesian state correction with wrapped
+   innovations. Sequential loop, ~2.5× slower than vanilla.
+3. `model_inekf_parallel.py` — **steady-state parallel InEKF**. Key insights:
+   - On SO(2), the Lie-Group EKF is provably equivalent to the EKF with
+     `atan2`-wrapped innovation (Marković et al., 2017).
+   - Scalar DARE has a closed-form fixed point → K* precomputed, constant
+     across tokens.
+   - Correction recurrence `d_t = (1-K*)·d_{t-1} + K*·ν_t` is a scalar
+     affine recurrence, parallelisable via FFT convolution with kernel
+     `K*·(1-K*)^k`.
+   - Same speed as vanilla MapFormer (~10 s/epoch) despite adding state
+     correction.
+
+### What We Learned
+
+**InEKF vs vanilla noise-augmentation** (Gaussian Δ perturbation, 10% noise):
+
+| noise_std | Vanilla (noise aug) | Parallel InEKF | Best |
+|-----------|---------------------|----------------|------|
+| 0.00      | **0.97**            | 0.91           | Vanilla |
+| 0.05      | **0.79**            | 0.67           | Vanilla |
+| 0.10      | 0.59                | 0.51           | Vanilla |
+| 0.50      | 0.44                | **0.46**       | InEKF (+1.4pp) |
+| 1.00      | 0.47                | 0.44           | Tied |
+
+**Honest takeaway:** On the standard MapFormer task, vanilla self-attention
+already implements most of what the Kalman filter was supposed to add
+(associative memory + soft retrieval = implicit Bayesian filter). Explicit
+Kalman machinery earns its keep in regimes the paper doesn't test:
+
+- **Very high noise** where path integration has fully diverged
+- **Sparse explicit landmarks** (not tested — would require true unique IDs)
+- **Sensor fusion with known noise spec** (Q, R given, not learned)
+- **Downstream control loops** needing calibrated uncertainty
+- **Very long horizons** where attention windows are infeasible
+
+See `gaussian_noise_test.py` for the evaluation; `diagnose.py` for
+disentanglement and per-token Δ analysis.
 
 ## Key Math
 
 | Quantity | Formula |
 |----------|---------|
-| Lie algebra element (SO(2)) | A = theta * J, J = [[0,-1],[1,0]] |
-| Rotation matrix | R = exp(A) = [[cos, -sin], [sin, cos]] |
-| Position state | P_t = M_t * M_{t-1} * ... * M_1 (prefix scan) |
-| WM attention | Uses relative P_t * P_s^{-1} |
-| EM attention | Additive: content_score + structure_score |
-| InEKF predict | Sigma_t = F * Sigma_{t-1} * F^T + Q |
-| InEKF update | K = Sigma * H^T * (H * Sigma * H^T + R)^{-1} |
+| Path integration (algebra) | `θ_t = ω · cumsum(Δ)_t`  — parallel cumsum |
+| Rotation (group) | `R(θ) = [[cos θ, -sin θ], [sin θ, cos θ]]`  — elementwise |
+| RoPE (eq. 16) | `[x₁', x₂'] = [x₁ cos θ - x₂ sin θ,  x₁ sin θ + x₂ cos θ]` |
+| WM attention | `softmax(Q̃ K̃ᵀ / √d) V`, with Q̃, K̃ rotated by θ_t |
+| EM attention | `softmax(A_X ⊙ A_P) V`, with `A_P = Q_P K_Pᵀ / √d` |
+| ω init (SO(2), Δ_max=grid, ω_max=2π) | `ω_i = ω_max · (1/Δ_max)^(i/(n_b-1))` |
+| InEKF predict (SO(2)) | `θ̂ ← θ̂ + ω·Δ`,  `Σ ← Σ + Q` (state-independent) |
+| InEKF innovation (SO(2)) | `ν = atan2(sin(z - θ̂), cos(z - θ̂))`  — geodesic |
+| InEKF update | `θ̂ ← θ̂ + K·ν`,  `Σ ← (1-K)·Σ` |
+| Steady-state DARE (scalar) | `P* = (-Q + √(Q² + 4QR))/2`,  `K* = (P*+Q)/(P*+Q+R)` |
+| Parallel correction (FFT) | `d = ν * h`  where `h[k] = K*·(1-K*)^k` |
+
+## Handoff Notes (for picking up this work)
+
+### Current state (as of the last commit)
+
+- **Paper reproduction: done.** MapFormer-WM and MapFormer-EM hit paper-level
+  training accuracy (0.96 / 1.00) with all six paper-faithfulness fixes applied.
+  Checkpoints live in `figures_v6/MapFormer_{WM,EM}.pt`.
+- **Parallel InEKF: working.** `model_inekf_parallel.py` trains at vanilla
+  speed (~10 s/epoch) with constant-gain DARE + FFT-scan. Checkpoint in
+  `figures_inekf_parallel_v2/MapFormer_WM_ParallelInEKF.pt`.
+- **Sequential InEKF: working but ~2.5× slower.** Two variants in
+  `model_inekf_proper.py` (the current one wraps innovations; earlier git
+  history had an unwrapped version that was faster to train but broke length
+  generalisation).
+
+### Key invariants (DON'T regress these)
+
+1. **Environment returns `(tokens, obs_mask, revisit_mask)` per trajectory.**
+   Loss is computed only on revisit positions; unmasked training collapses the
+   model to "always predict blank."
+2. **Grid is a torus.** `(x+dx) % N`, not `clip(x+dx, 0, N-1)`.
+3. **Unified vocabulary.** Actions (0..3) and observations (4..4+K) share one
+   embedding table; disentanglement must be learned.
+4. **ω init is monotonically decreasing.** The paper's eq. 17 has a sign typo;
+   verify via `model.path_integrator.omega` spans roughly `[2π/N, 2π]`.
+5. **EM attention uses Hadamard product**, not additive.
+6. **Measurement head in InEKF is content-only.** Feeding (cos θ̂, sin θ̂)
+   creates a degenerate optimum (`z = θ̂` → trivial filter).
+
+### Reproducing what we have
+
+```bash
+# Sanity-check that paper reproduction still works (~5 min on a modern GPU).
+python3 -m mapformer.main --device cuda --epochs 16 --n-batches 98
+
+# Train the parallel InEKF under action-noise augmentation (~10 min).
+python3 -m mapformer.main_inekf_parallel --device cuda --epochs 50 --n-batches 156 \
+    --p-action-noise 0.10
+
+# Compare robustness to Gaussian Δ noise at T=128 and T=512.
+python3 -m mapformer.gaussian_noise_test \
+    --checkpoints \
+      figures_v6/MapFormer_WM.pt \
+      figures_vanilla_noise/MapFormer_WM_noise.pt \
+      figures_inekf_parallel_v2/MapFormer_WM_ParallelInEKF.pt \
+    --device cuda --n-steps 128
+
+# Diagnose a trained model: Δ per token, prediction distribution, ω, revisit
+# accuracy, action selectivity (N+S should ≈ 0).
+python3 -m mapformer.diagnose --checkpoint figures_v6/MapFormer_WM.pt --device cuda
+```
+
+### Open questions / next steps
+
+1. **Level 2 InEKF: time-varying K_t via heteroscedastic noise.** Still
+   parallelisable via associative scan of Möbius 2×2 matrices. Should help if
+   we add true landmarks (see §below). See my longer explanation in the chat
+   history.
+2. **Add true landmarks to the environment.** A small fraction (~5%) of cells
+   emit unique tokens found nowhere else on the map. This is the regime the
+   InEKF framework was actually designed for; current experiments test noise
+   without landmarks, which is why attention's implicit retrieval dominates.
+3. **Calibration metrics.** Currently we only measure accuracy. Adding NLL or
+   ECE would show whether InEKF-tracked σ² corresponds to actual
+   uncertainty — a useful property for downstream planning.
+4. **Scaling.** Paper itself notes "we did not scale to larger model/data."
+   Our 1-layer, 2-head, d=128 model is tiny. Try 4 layers, 4 heads, d=256 to
+   see if EM reaches 100% OOD at 16× length.
+5. **Implement MapEM-s and MapEM-o ablations.** The current `MapFormerEM`
+   implements only MapEM-os (observation AND structure). The paper also tests
+   MapEM-s (structure only) and MapEM-o (content only, as a control).
+6. **Fix broken `figures_inekf_proper` checkpoint.** We trained an unwrapped
+   InEKF there, then edited `model_inekf_proper.py` to add wrapping, which
+   makes the old checkpoint mismatched with current code. Either delete or
+   re-train.
+
+### Pitfalls we hit (so you don't repeat them)
+
+- **ω exploded to ~200.** Faithfully reproducing the paper's eq. 17 typo —
+  check `model.py::PathIntegrator.__init__` uses the decreasing schedule.
+- **Model collapsed to predicting blank (94% of tokens).** Root cause: loss on
+  first-visit observations = training on random noise. Always use
+  `revisit_mask`.
+- **"Uncertainty-modulated attention" did nothing.** First-pass InEKF in
+  `model_kalman.py` — redundant with what softmax attention already does.
+  Don't revive this approach unless you have a specific reason.
+- **Position-conditioned measurement head = degenerate optimum.** The head
+  learns `z ≈ θ̂`, innovation → 0, filter becomes identity. The
+  `model_inekf_parallel.py` header comment warns about this.
+- **Checkpoint filename collisions.** `figures_inekf_proper/` and
+  `figures_inekf_topology_fix/` both saved as `MapFormer_WM_ProperInEKF.pt`.
+  Rename or delete one.
+
+### File ownership map
+
+| File | Author | Status |
+|------|--------|--------|
+| `environment.py`, `model.py`, `train.py`, `evaluate.py`, `main.py`, `baselines.py`, `lie_groups.py`, `prefix_scan.py` | Paper reproduction | Stable |
+| `inekf.py` | Pre-refactor InEKF scaffolding | Kept for reference, unused by current pipeline |
+| `model_kalman.py`, `main_kalman.py` | Ablation (uncertainty-modulated attention) | Kept for comparison |
+| `model_inekf_proper.py`, `main_inekf_proper.py` | Sequential proper InEKF | Working |
+| `model_inekf_parallel.py`, `main_inekf_parallel.py` | **Parallel InEKF (main contribution)** | Working |
+| `main_vanilla_noise.py` | Vanilla + noise-aug baseline | For fair comparison |
+| `noise_test.py`, `gaussian_noise_test.py` | Robustness evaluation | Stable |
+| `diagnose.py` | Introspection (Δ disentanglement, ω, etc.) | Stable |
 
 ## References
 
-- Rambaud, V., Mascarenhas, S., & Lakretz, Y. (2025). *MapFormer: Self-Supervised Learning of Cognitive Maps with Input-Dependent Positional Embeddings.* [arXiv:2511.19279](https://arxiv.org/abs/2511.19279)
-- Barrau, A., & Bonnabel, S. (2017). *The Invariant Extended Kalman Filter as a Stable Observer.* IEEE TAC, 62(4).
+- Rambaud, Mascarenhas, Lakretz (2025). *MapFormer: Self-Supervised Learning of
+  Cognitive Maps with Input-Dependent Positional Embeddings.*
+  [arXiv:2511.19279](https://arxiv.org/abs/2511.19279)
+- Barrau, Bonnabel (2017). *The Invariant Extended Kalman Filter as a Stable
+  Observer.* IEEE TAC, 62(4). [arXiv:1410.1465](https://arxiv.org/abs/1410.1465)
+- Marković, Ćesić, Petrović (2017). *On wrapping the Kalman filter and
+  estimating with the SO(2) group.*
+  [arXiv:1708.05551](https://arxiv.org/abs/1708.05551)
+- Särkkä, García-Fernández (2021). *Temporal Parallelization of Bayesian
+  Filters and Smoothers.* IEEE TAC, 66(1).
+  [arXiv:1905.13002](https://arxiv.org/abs/1905.13002)
+- Su et al. (2021). *RoFormer: Enhanced Transformer with Rotary Position
+  Embedding.* [arXiv:2104.09864](https://arxiv.org/abs/2104.09864)

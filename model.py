@@ -1,11 +1,15 @@
 """
 MapFormer models: Working Memory (WM) and Episodic Memory (EM) variants.
 
-MapFormer-WM: Relative positional encoding (generalises RoPE).
-    Rotation comes from action stream, applied to Q/K in attention.
-
-MapFormer-EM: Absolute positional encoding with parallel attention streams.
-    Separate content (AX) and structure (AP) attention, combined additively.
+Faithful implementation of Rambaud et al. (2025):
+- SINGLE interleaved token stream s = (a1, o1, a2, o2, ..., aT, oT)
+- Unified vocabulary: model must LEARN to disentangle actions from observations
+- All tokens projected to BOTH Δ (position) AND Q/K/V (content)
+- Path integration via cumsum + learnable angular velocities ω
+- Low-rank Δ projection
+- Per-head rotations
+- EM: Hadamard product of A_X ⊙ A_P
+- EM: Rotating learnable p_0 vectors
 """
 
 import torch
@@ -13,168 +17,178 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 
-from .lie_groups import build_block_diagonal_rotations_fast, exp_map_2d
-from .prefix_scan import parallel_prefix_product
+from .lie_groups import build_block_diagonal_rotations_fast
+
+
+def _apply_rope(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tensor:
+    """Apply rotary position encoding using cos/sin angles (eq. 16).
+
+    Args:
+        x: (B, n_heads, T, d_head)
+        cos: (B, n_heads, T, n_blocks)
+        sin: (B, n_heads, T, n_blocks)
+
+    Returns:
+        (B, n_heads, T, d_head) rotated vectors
+    """
+    x1 = x[..., 0::2]  # even indices
+    x2 = x[..., 1::2]  # odd indices
+
+    out1 = x1 * cos - x2 * sin
+    out2 = x1 * sin + x2 * cos
+
+    out = torch.stack([out1, out2], dim=-1).reshape_as(x)
+    return out
 
 
 class ActionToLieAlgebra(nn.Module):
-    """Maps action token embeddings to Lie algebra elements.
+    """Low-rank projection from token embeddings to per-head Lie algebra deltas.
 
-    Simple linear projection -- no activation function.
-    The unconstrained output is then exponentiated to get valid rotation matrices.
+    Paper (A.7): W_Δ = W_Δ^out · W_Δ^in
+    The model must LEARN that Δ ≈ 0 for observation tokens.
     """
 
-    def __init__(self, action_dim: int, n_rot_dims: int):
+    def __init__(self, d_model: int, n_heads: int, n_blocks: int, bottleneck_r: int = 2):
         super().__init__()
-        self.proj = nn.Linear(action_dim, n_rot_dims)
-        self.n_rot = n_rot_dims
+        self.n_heads = n_heads
+        self.n_blocks = n_blocks
+        self.w_in = nn.Linear(d_model, bottleneck_r, bias=False)
+        self.w_out = nn.Linear(bottleneck_r, n_heads * n_blocks, bias=False)
 
-    def forward(self, action_tokens: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Args:
-            action_tokens: (batch, seq_len, action_dim)
+            x: (batch, seq_len, d_model) — ANY token embedding (action or obs)
         Returns:
-            (batch, seq_len, n_rot_dims) -- delta in Lie algebra
+            (batch, seq_len, n_heads, n_blocks) — per-head deltas
         """
-        return self.proj(action_tokens)
+        B, T, _ = x.shape
+        h = self.w_in(x)
+        delta = self.w_out(h)
+        return delta.view(B, T, self.n_heads, self.n_blocks)
 
 
-class RotaryPositionEncoding(nn.Module):
-    """Apply learned rotation matrices to queries and keys (generalised RoPE).
+class PathIntegrator(nn.Module):
+    """Compute cumulative rotation angles via cumsum (paper: θ^PI = ω · cumsum(Δ)).
 
-    Standard RoPE: rotation angle = t * theta_base (fixed, index-based)
-    MapFormer-WM: rotation = P_t (learned, action-based, from prefix scan)
+    Learnable angular velocities ω initialized geometrically (Section A.8).
+    Index range: i = 1..n_b (paper eq. 17).
     """
 
-    def __init__(self, d_head: int, n_rot_dims: int):
-        """
-        Args:
-            d_head: dimension of each attention head
-            n_rot_dims: number of 2x2 rotation blocks (must equal d_head // 2)
-        """
+    def __init__(self, n_heads: int, n_blocks: int, grid_size: int = 64):
         super().__init__()
-        self.d_head = d_head
-        self.n_rot = n_rot_dims
-        assert d_head == 2 * n_rot_dims, \
-            f"d_head ({d_head}) must equal 2 * n_rot_dims ({2*n_rot_dims})"
+        self.n_heads = n_heads
+        self.n_blocks = n_blocks
 
-    def forward(
-        self, x: torch.Tensor, positions: torch.Tensor
-    ) -> torch.Tensor:
-        """Apply position-dependent rotation to input vectors.
+        # Geometric initialization (Section A.8, eq. 17)
+        # Paper formula as literally written has a sign typo; the paper's own
+        # inequality ω_min = ω_max/Δ_max ≤ ω_i ≤ ω_max requires a DECREASING
+        # schedule (matching RoPE: θ_i = base^(-2i/d)).
+        # ω_i goes from ω_max (highest freq, fine scale) at i=0
+        # to ω_max/Δ_max (lowest freq, grid scale) at i=n_b-1.
+        omega_max = 2 * math.pi
+        delta_max = grid_size
+        omega_init = torch.zeros(n_heads, n_blocks)
+        for i in range(n_blocks):
+            frac = i / max(n_blocks - 1, 1)  # 0 at i=0, 1 at i=n_b-1
+            omega_init[:, i] = omega_max * (1.0 / delta_max) ** frac
+        self.omega = nn.Parameter(omega_init)
 
-        Args:
-            x: (batch, seq_len, d_head) queries or keys
-            positions: (batch, seq_len, d_head, d_head) cumulative rotation matrices
-
-        Returns:
-            (batch, seq_len, d_head) rotated vectors
+    def forward(self, delta: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
-        # x: (B, T, d) -> (B, T, d, 1)
-        x_col = x.unsqueeze(-1)
-        # positions @ x: (B, T, d, d) @ (B, T, d, 1) -> (B, T, d, 1)
-        rotated = torch.matmul(positions, x_col).squeeze(-1)
-        return rotated
+        Args:
+            delta: (B, T, n_heads, n_blocks)
+        Returns:
+            cos_angles, sin_angles: (B, n_heads, T, n_blocks)
+        """
+        cum_delta = torch.cumsum(delta, dim=1)
+        angles = cum_delta * self.omega.unsqueeze(0).unsqueeze(0)
+        angles = angles.transpose(1, 2)  # (B, H, T, n_blocks)
+        return torch.cos(angles), torch.sin(angles)
 
 
 class MapFormerWM(nn.Module):
     """MapFormer Working Memory variant.
 
-    Uses relative positional encoding: Q and K are rotated by the
-    cumulative position matrix P_t, so attention naturally computes
-    similarity based on relative displacement P_t @ P_s^{-1}.
-
-    This is a strict generalisation of RoPE where the rotation comes
-    from the learned action stream rather than the token index.
+    Single interleaved token stream → unified embedding → projected to BOTH
+    Δ (position path) and Q/K/V (content path). Model learns disentanglement.
     """
 
     def __init__(
         self,
-        d_model: int,
-        n_heads: int,
-        n_rot_dims: int,
-        action_vocab: int,
-        obs_vocab: int,
-        n_layers: int = 2,
+        vocab_size: int,
+        d_model: int = 128,
+        n_heads: int = 2,
+        n_layers: int = 1,
         dropout: float = 0.1,
+        grid_size: int = 64,
+        bottleneck_r: int = 2,
     ):
         super().__init__()
         self.d_model = d_model
         self.n_heads = n_heads
         self.d_head = d_model // n_heads
-        self.n_rot_dims = n_rot_dims
+        self.n_blocks = self.d_head // 2
+        self.vocab_size = vocab_size
 
-        # Embeddings
-        self.action_emb = nn.Embedding(action_vocab, d_model)
-        self.obs_emb = nn.Embedding(obs_vocab, d_model)
+        # Single unified embedding for all token types
+        self.token_emb = nn.Embedding(vocab_size, d_model)
 
-        # Action -> Lie algebra
-        self.action_to_lie = ActionToLieAlgebra(d_model, n_rot_dims)
+        # All tokens → Δ (model learns obs tokens → ~0)
+        self.action_to_lie = ActionToLieAlgebra(d_model, n_heads, self.n_blocks, bottleneck_r)
 
-        # Rotary encoding
-        self.rope = RotaryPositionEncoding(self.d_head, n_rot_dims)
+        # Path integrator with learnable ω
+        self.path_integrator = PathIntegrator(n_heads, self.n_blocks, grid_size)
 
-        # Transformer layers (custom attention with RoPE)
+        # Transformer layers
         self.layers = nn.ModuleList([
-            WMTransformerLayer(d_model, n_heads, n_rot_dims, dropout)
+            WMTransformerLayer(d_model, n_heads, dropout)
             for _ in range(n_layers)
         ])
 
-        # Output projection
+        # Output: predict next token in unified vocab
         self.out_norm = nn.LayerNorm(d_model)
-        self.out_proj = nn.Linear(d_model, obs_vocab)
+        self.out_proj = nn.Linear(d_model, vocab_size)
 
-    def get_position_state(self, actions: torch.Tensor) -> torch.Tensor:
-        """Compute cumulative position matrices from actions.
+    def get_position_state(self, tokens: torch.Tensor):
+        """Compute cos/sin of cumulative rotation angles from token sequence."""
+        x = self.token_emb(tokens)
+        delta = self.action_to_lie(x)
+        cos_a, sin_a = self.path_integrator(delta)
+        return cos_a, sin_a
 
-        Args:
-            actions: (batch, seq_len) action indices
-
-        Returns:
-            (batch, seq_len, d_head, d_head) cumulative rotation matrices
-        """
-        a_emb = self.action_emb(actions)
-        delta = self.action_to_lie(a_emb)  # (B, T, n_rot)
-        M = build_block_diagonal_rotations_fast(delta)  # (B, T, d_head, d_head)
-        P = parallel_prefix_product(M)  # (B, T, d_head, d_head)
-        return P
-
-    def forward(
-        self, actions: torch.Tensor, observations: torch.Tensor
-    ) -> torch.Tensor:
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
         """
         Args:
-            actions: (batch, seq_len) action indices
-            observations: (batch, seq_len) observation indices
-
+            tokens: (B, L) unified interleaved token sequence
         Returns:
-            (batch, seq_len, obs_vocab) logits for next observation prediction
+            (B, L, vocab_size) logits for next token prediction
         """
-        B, T = actions.shape
+        B, L = tokens.shape
 
-        # Compute position matrices
-        P = self.get_position_state(actions)  # (B, T, d_head, d_head)
+        x = self.token_emb(tokens)  # (B, L, d_model)
 
-        # Content embeddings
-        x = self.obs_emb(observations)  # (B, T, d_model)
+        # Position path: all tokens → Δ → cumsum → ω → cos/sin
+        delta = self.action_to_lie(x)
+        cos_a, sin_a = self.path_integrator(delta)
 
         # Causal mask
         causal_mask = torch.triu(
-            torch.ones(T, T, device=actions.device, dtype=torch.bool), diagonal=1
+            torch.ones(L, L, device=tokens.device, dtype=torch.bool), diagonal=1
         )
 
-        # Apply transformer layers
+        # Content path: transformer with RoPE
         for layer in self.layers:
-            x = layer(x, P, causal_mask)
+            x = layer(x, cos_a, sin_a, causal_mask)
 
         x = self.out_norm(x)
         return self.out_proj(x)
 
 
 class WMTransformerLayer(nn.Module):
-    """Single transformer layer with MapFormer-WM attention."""
+    """Transformer layer with MapFormer-WM RoPE-style attention."""
 
-    def __init__(self, d_model: int, n_heads: int, n_rot_dims: int, dropout: float):
+    def __init__(self, d_model: int, n_heads: int, dropout: float):
         super().__init__()
         self.d_model = d_model
         self.n_heads = n_heads
@@ -196,139 +210,116 @@ class WMTransformerLayer(nn.Module):
         )
         self.dropout = nn.Dropout(dropout)
 
-    def forward(
-        self,
-        x: torch.Tensor,
-        P: torch.Tensor,
-        causal_mask: torch.Tensor,
-    ) -> torch.Tensor:
+    def forward(self, x, cos_a, sin_a, causal_mask):
         B, T, _ = x.shape
 
-        # Pre-norm attention
         h = self.norm1(x)
 
-        Q = self.q_proj(h).view(B, T, self.n_heads, self.d_head)
-        K = self.k_proj(h).view(B, T, self.n_heads, self.d_head)
-        V = self.v_proj(h).view(B, T, self.n_heads, self.d_head)
+        Q = self.q_proj(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
+        K = self.k_proj(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
+        V = self.v_proj(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
 
-        # Apply position-dependent rotation to Q and K (per head)
-        # P: (B, T, d_head, d_head)
-        # Q[..., h, :]: (B, T, d_head) -> rotate by P
-        Q_rot = torch.zeros_like(Q)
-        K_rot = torch.zeros_like(K)
-        for head in range(self.n_heads):
-            q_h = Q[:, :, head, :]  # (B, T, d_head)
-            k_h = K[:, :, head, :]
-            Q_rot[:, :, head, :] = torch.matmul(
-                P, q_h.unsqueeze(-1)
-            ).squeeze(-1)
-            K_rot[:, :, head, :] = torch.matmul(
-                P, k_h.unsqueeze(-1)
-            ).squeeze(-1)
-
-        # Scaled dot-product attention
-        # (B, n_heads, T, d_head)
-        Q_rot = Q_rot.transpose(1, 2)
-        K_rot = K_rot.transpose(1, 2)
-        V = V.transpose(1, 2)
+        Q = _apply_rope(Q, cos_a, sin_a)
+        K = _apply_rope(K, cos_a, sin_a)
 
         scale = math.sqrt(self.d_head)
-        scores = torch.matmul(Q_rot, K_rot.transpose(-1, -2)) / scale
-
-        # Apply causal mask
+        scores = torch.matmul(Q, K.transpose(-1, -2)) / scale
         scores = scores.masked_fill(causal_mask.unsqueeze(0).unsqueeze(0), float('-inf'))
 
         attn = F.softmax(scores, dim=-1)
         attn = self.dropout(attn)
 
-        out = torch.matmul(attn, V)  # (B, n_heads, T, d_head)
+        out = torch.matmul(attn, V)
         out = out.transpose(1, 2).reshape(B, T, self.d_model)
         out = self.o_proj(out)
 
         x = x + self.dropout(out)
-
-        # FFN with pre-norm
         x = x + self.ffn(self.norm2(x))
-
         return x
 
 
 class MapFormerEM(nn.Module):
-    """MapFormer Episodic Memory variant.
+    """MapFormer Episodic Memory variant (MapEM-os).
 
-    Uses absolute positional encoding with two parallel attention streams:
-    - Content stream (AX): standard attention over observation embeddings
-    - Structure stream (AP): attention based on absolute position matrices
-
-    The two streams are combined additively in the attention scores.
+    Single interleaved token stream. Absolute positional encoding with:
+    - Separate q_0^p and k_0^p rotated by cumulative rotation
+    - Hadamard product: softmax(A_X ⊙ A_P) · V
     """
 
     def __init__(
         self,
-        d_model: int,
-        n_heads: int,
-        n_rot_dims: int,
-        action_vocab: int,
-        obs_vocab: int,
-        n_layers: int = 2,
+        vocab_size: int,
+        d_model: int = 128,
+        n_heads: int = 2,
+        n_layers: int = 1,
         dropout: float = 0.1,
+        grid_size: int = 64,
+        bottleneck_r: int = 2,
     ):
         super().__init__()
         self.d_model = d_model
         self.n_heads = n_heads
         self.d_head = d_model // n_heads
-        self.n_rot_dims = n_rot_dims
+        self.n_blocks = self.d_head // 2
+        self.vocab_size = vocab_size
 
-        self.action_emb = nn.Embedding(action_vocab, d_model)
-        self.obs_emb = nn.Embedding(obs_vocab, d_model)
-        self.action_to_lie = ActionToLieAlgebra(d_model, n_rot_dims)
+        # Single unified embedding
+        self.token_emb = nn.Embedding(vocab_size, d_model)
 
-        # Position embedding: flatten P matrix to vector, project to d_model
-        self.pos_proj = nn.Linear(self.d_head * self.d_head, d_model)
+        # All tokens → Δ
+        self.action_to_lie = ActionToLieAlgebra(d_model, n_heads, self.n_blocks, bottleneck_r)
 
+        # Path integrator
+        self.path_integrator = PathIntegrator(n_heads, self.n_blocks, grid_size)
+
+        # Learnable initial position vectors for Q and K (Section A.7)
+        self.q0_pos = nn.Parameter(torch.randn(n_heads, self.d_head) * 0.02)
+        self.k0_pos = nn.Parameter(torch.randn(n_heads, self.d_head) * 0.02)
+
+        # Transformer layers
         self.layers = nn.ModuleList([
             EMTransformerLayer(d_model, n_heads, dropout)
             for _ in range(n_layers)
         ])
 
         self.out_norm = nn.LayerNorm(d_model)
-        self.out_proj = nn.Linear(d_model, obs_vocab)
+        self.out_proj = nn.Linear(d_model, vocab_size)
 
-    def get_position_state(self, actions: torch.Tensor) -> torch.Tensor:
-        a_emb = self.action_emb(actions)
-        delta = self.action_to_lie(a_emb)
-        M = build_block_diagonal_rotations_fast(delta)
-        P = parallel_prefix_product(M)
-        return P
+    def get_position_state(self, tokens: torch.Tensor):
+        """Compute cos/sin of cumulative rotation angles."""
+        x = self.token_emb(tokens)
+        delta = self.action_to_lie(x)
+        cos_a, sin_a = self.path_integrator(delta)
+        return cos_a, sin_a
 
-    def forward(
-        self, actions: torch.Tensor, observations: torch.Tensor
-    ) -> torch.Tensor:
-        B, T = actions.shape
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        B, L = tokens.shape
 
-        P = self.get_position_state(actions)  # (B, T, d_head, d_head)
+        x = self.token_emb(tokens)
 
-        # Flatten position matrices and project
-        P_flat = P.reshape(B, T, -1)  # (B, T, d_head^2)
-        pos_emb = self.pos_proj(P_flat)  # (B, T, d_model)
+        # Position path
+        delta = self.action_to_lie(x)
+        cos_a, sin_a = self.path_integrator(delta)
 
-        # Content embeddings
-        content = self.obs_emb(observations)
+        # Compute position Q/K by rotating learnable p_0
+        q0 = self.q0_pos.unsqueeze(0).unsqueeze(2).expand(B, -1, L, -1)
+        k0 = self.k0_pos.unsqueeze(0).unsqueeze(2).expand(B, -1, L, -1)
+        q_pos = _apply_rope(q0, cos_a, sin_a)
+        k_pos = _apply_rope(k0, cos_a, sin_a)
 
         causal_mask = torch.triu(
-            torch.ones(T, T, device=actions.device, dtype=torch.bool), diagonal=1
+            torch.ones(L, L, device=tokens.device, dtype=torch.bool), diagonal=1
         )
 
-        x = content
         for layer in self.layers:
-            x = layer(x, pos_emb, causal_mask)
+            x = layer(x, q_pos, k_pos, causal_mask)
 
         x = self.out_norm(x)
         return self.out_proj(x)
 
 
 class EMTransformerLayer(nn.Module):
-    """Transformer layer with parallel content + structure attention (EM variant)."""
+    """Transformer layer with Hadamard product of content + structure attention."""
 
     def __init__(self, d_model: int, n_heads: int, dropout: float):
         super().__init__()
@@ -336,15 +327,8 @@ class EMTransformerLayer(nn.Module):
         self.n_heads = n_heads
         self.d_head = d_model // n_heads
 
-        # Content attention projections
         self.q_content = nn.Linear(d_model, d_model)
         self.k_content = nn.Linear(d_model, d_model)
-
-        # Structure attention projections
-        self.q_struct = nn.Linear(d_model, d_model)
-        self.k_struct = nn.Linear(d_model, d_model)
-
-        # Shared value and output
         self.v_proj = nn.Linear(d_model, d_model)
         self.o_proj = nn.Linear(d_model, d_model)
 
@@ -358,32 +342,22 @@ class EMTransformerLayer(nn.Module):
         )
         self.dropout = nn.Dropout(dropout)
 
-    def forward(
-        self,
-        x: torch.Tensor,
-        pos_emb: torch.Tensor,
-        causal_mask: torch.Tensor,
-    ) -> torch.Tensor:
+    def forward(self, x, q_pos, k_pos, causal_mask):
         B, T, _ = x.shape
 
         h = self.norm1(x)
 
-        # Content stream: Q_c, K_c from observation embeddings
         Q_c = self.q_content(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
         K_c = self.k_content(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
-
-        # Structure stream: Q_s, K_s from position embeddings
-        Q_s = self.q_struct(pos_emb).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
-        K_s = self.k_struct(pos_emb).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
-
         V = self.v_proj(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
 
         scale = math.sqrt(self.d_head)
 
-        # Combined attention: content similarity + structural affinity
-        scores_content = torch.matmul(Q_c, K_c.transpose(-1, -2)) / scale
-        scores_struct = torch.matmul(Q_s, K_s.transpose(-1, -2)) / scale
-        scores = scores_content + scores_struct
+        A_X = torch.matmul(Q_c, K_c.transpose(-1, -2)) / scale
+        A_P = torch.matmul(q_pos, k_pos.transpose(-1, -2)) / scale
+
+        # Hadamard product: A_P acts as attention mask on A_X (paper eq. 2)
+        scores = A_X * A_P
 
         scores = scores.masked_fill(causal_mask.unsqueeze(0).unsqueeze(0), float('-inf'))
         attn = F.softmax(scores, dim=-1)
@@ -395,5 +369,4 @@ class EMTransformerLayer(nn.Module):
 
         x = x + self.dropout(out)
         x = x + self.ffn(self.norm2(x))
-
         return x

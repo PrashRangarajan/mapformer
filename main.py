@@ -2,32 +2,23 @@
 """
 MapFormer: Full experiment pipeline.
 
-Trains MapFormer-WM, MapFormer-EM, Transformer+RoPE, and LSTM on a
-2D grid navigation task, then generates the key figures from
-Rambaud et al. (2025):
-
-1. Training curves (all models)
-2. Length generalisation (train on T=64, test on 128, 256, 512, 1024)
-3. Position state PCA (MapFormer only)
-4. Grid cell autocorrelation (MapFormer only)
+Trains MapFormer-WM and MapFormer-EM on a 2D torus grid navigation task,
+then generates figures for length generalisation, PCA, and autocorrelation.
 
 Usage:
-    python3 -m mapformer.main [--epochs 50] [--device cpu] [--grid-size 10]
+    python3 -m mapformer.main [--device cuda] [--epochs 16]
 """
 
 import argparse
 import sys
-import os
 import torch
 import numpy as np
 from pathlib import Path
 
-# Add parent dir to path so we can run as `python3 -m mapformer.main`
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from mapformer.environment import GridWorld
 from mapformer.model import MapFormerWM, MapFormerEM
-from mapformer.baselines import TransformerRoPE, LSTMBaseline
 from mapformer.train import train
 from mapformer.evaluate import (
     eval_length_generalisation,
@@ -43,7 +34,7 @@ from mapformer.prefix_scan import parallel_prefix_product, sequential_prefix_pro
 
 
 def run_sanity_checks():
-    """Mathematical sanity checks from Section 7.1 of the guide."""
+    """Mathematical sanity checks."""
     print("=" * 60)
     print("SANITY CHECKS")
     print("=" * 60)
@@ -52,54 +43,35 @@ def run_sanity_checks():
         skew_symmetric_2d, exp_map_2d, build_block_diagonal_rotations_fast,
     )
 
-    # 1. exp(A)^T @ exp(A) = I
     theta = torch.randn(16)
     R = exp_map_2d(theta)
     eye = torch.eye(2).expand(16, 2, 2)
     ortho_ok = torch.allclose(R.transpose(-1, -2) @ R, eye, atol=1e-6)
-    print(f"  [{'PASS' if ortho_ok else 'FAIL'}] exp(A)^T @ exp(A) = I (orthogonality)")
+    print(f"  [{'PASS' if ortho_ok else 'FAIL'}] exp(A)^T @ exp(A) = I")
 
-    # 2. det(exp(A)) = +1
     dets = torch.det(R)
     det_ok = torch.allclose(dets, torch.ones(16), atol=1e-6)
-    print(f"  [{'PASS' if det_ok else 'FAIL'}] det(exp(A)) = 1 (special orthogonal)")
+    print(f"  [{'PASS' if det_ok else 'FAIL'}] det(exp(A)) = 1")
 
-    # 3. Parallel prefix product matches sequential
     M_test = exp_map_2d(torch.randn(2 * 8)).reshape(2, 8, 2, 2)
     par = parallel_prefix_product(M_test)
     seq = sequential_prefix_product(M_test)
     scan_ok = torch.allclose(par, seq, atol=1e-5)
     print(f"  [{'PASS' if scan_ok else 'FAIL'}] Parallel prefix product matches sequential")
 
-    # 4. Block-diagonal stays on SO(n)
-    delta = torch.randn(4, 16, 3)  # 3 rotation blocks -> 6x6 matrices
-    M_block = build_block_diagonal_rotations_fast(delta)
-    P_block = parallel_prefix_product(M_block)
-    # Check last position in each batch
-    so_ok = is_special_orthogonal(P_block[:, -1], atol=1e-4)
-    print(f"  [{'PASS' if so_ok else 'FAIL'}] Position state stays on SO(n) manifold")
-
     print()
 
 
-def build_models(d_model, n_heads, n_rot_dims, action_vocab, obs_vocab, n_layers):
-    """Instantiate all models."""
+def build_mapformer_models(vocab_size, d_model, n_heads, n_layers, grid_size):
+    """Instantiate MapFormer models with unified vocab."""
     models = {
         "MapFormer-WM": MapFormerWM(
-            d_model=d_model, n_heads=n_heads, n_rot_dims=n_rot_dims,
-            action_vocab=action_vocab, obs_vocab=obs_vocab, n_layers=n_layers,
+            vocab_size=vocab_size, d_model=d_model, n_heads=n_heads,
+            n_layers=n_layers, grid_size=grid_size,
         ),
         "MapFormer-EM": MapFormerEM(
-            d_model=d_model, n_heads=n_heads, n_rot_dims=n_rot_dims,
-            action_vocab=action_vocab, obs_vocab=obs_vocab, n_layers=n_layers,
-        ),
-        "Transformer+RoPE": TransformerRoPE(
-            d_model=d_model, n_heads=n_heads,
-            action_vocab=action_vocab, obs_vocab=obs_vocab, n_layers=n_layers,
-        ),
-        "LSTM": LSTMBaseline(
-            d_model=d_model, action_vocab=action_vocab,
-            obs_vocab=obs_vocab, n_layers=n_layers,
+            vocab_size=vocab_size, d_model=d_model, n_heads=n_heads,
+            n_layers=n_layers, grid_size=grid_size,
         ),
     }
     return models
@@ -107,24 +79,25 @@ def build_models(d_model, n_heads, n_rot_dims, action_vocab, obs_vocab, n_layers
 
 def main():
     parser = argparse.ArgumentParser(description="MapFormer experiment pipeline")
-    parser.add_argument("--epochs", type=int, default=50, help="Training epochs")
-    parser.add_argument("--device", type=str, default="cpu",
-                        help="Device (cpu, cuda, mps)")
-    parser.add_argument("--grid-size", type=int, default=10, help="Grid world size")
-    parser.add_argument("--n-obs-types", type=int, default=4,
-                        help="Number of observation types (< grid_size^2)")
-    parser.add_argument("--d-model", type=int, default=32, help="Model dimension")
-    parser.add_argument("--n-heads", type=int, default=4, help="Number of attention heads")
-    parser.add_argument("--n-layers", type=int, default=2, help="Number of transformer layers")
-    parser.add_argument("--batch-size", type=int, default=32, help="Batch size")
-    parser.add_argument("--seq-len", type=int, default=64, help="Training sequence length")
-    parser.add_argument("--n-batches", type=int, default=100, help="Batches per epoch")
-    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
-    parser.add_argument("--seed", type=int, default=42, help="Random seed")
-    parser.add_argument("--output-dir", type=str, default="figures",
-                        help="Directory for output figures")
-    parser.add_argument("--skip-baselines", action="store_true",
-                        help="Only train MapFormer models")
+
+    # Paper defaults (Rambaud et al., 2025, Appendix B)
+    parser.add_argument("--epochs", type=int, default=16, help="Training epochs")
+    parser.add_argument("--device", type=str, default="cpu")
+    parser.add_argument("--grid-size", type=int, default=64)
+    parser.add_argument("--n-obs-types", type=int, default=16,
+                        help="Number of non-blank observation types (K)")
+    parser.add_argument("--p-empty", type=float, default=0.5)
+    parser.add_argument("--d-model", type=int, default=128)
+    parser.add_argument("--n-heads", type=int, default=2)
+    parser.add_argument("--n-layers", type=int, default=1)
+    parser.add_argument("--batch-size", type=int, default=128)
+    parser.add_argument("--n-steps", type=int, default=128,
+                        help="Steps per trajectory (each step = 1 action + 1 observation)")
+    parser.add_argument("--n-batches", type=int, default=98,
+                        help="Batches per epoch (16 epochs * 98 * 128 ≈ 200K sequences)")
+    parser.add_argument("--lr", type=float, default=3e-4)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--output-dir", type=str, default="figures")
     args = parser.parse_args()
 
     # Setup
@@ -139,35 +112,37 @@ def main():
         print("MPS not available, falling back to CPU")
         device = "cpu"
 
-    print(f"Device: {device}")
-    print(f"Grid: {args.grid_size}x{args.grid_size}, {args.n_obs_types} obs types")
-    print(f"Model: d={args.d_model}, heads={args.n_heads}, layers={args.n_layers}")
-    print(f"Training: {args.epochs} epochs, lr={args.lr}, batch={args.batch_size}, "
-          f"seq_len={args.seq_len}")
-    print()
-
     # Sanity checks
     run_sanity_checks()
 
     # Environment
-    env = GridWorld(size=args.grid_size, n_obs_types=args.n_obs_types, seed=args.seed)
-
-    # n_rot_dims must equal d_head // 2 for WM (RoPE-style rotation)
-    d_head = args.d_model // args.n_heads
-    n_rot_dims = d_head // 2
-
-    # Build models
-    action_vocab = GridWorld.N_ACTIONS
-    obs_vocab = args.n_obs_types
-
-    all_models = build_models(
-        args.d_model, args.n_heads, n_rot_dims,
-        action_vocab, obs_vocab, args.n_layers,
+    env = GridWorld(
+        size=args.grid_size, n_obs_types=args.n_obs_types,
+        p_empty=args.p_empty, seed=args.seed,
     )
 
-    if args.skip_baselines:
-        all_models = {k: v for k, v in all_models.items()
-                      if k.startswith("MapFormer")}
+    d_head = args.d_model // args.n_heads
+    n_rot_dims = d_head // 2
+    total_seqs = args.epochs * args.n_batches * args.batch_size
+
+    print(f"Device: {device}")
+    print(f"Grid: {args.grid_size}x{args.grid_size} TORUS, "
+          f"{args.n_obs_types} obs types + blank, p_empty={args.p_empty}")
+    print(f"Unified vocab: {env.unified_vocab_size} "
+          f"(4 actions + {args.n_obs_types} obs + 1 blank)")
+    print(f"Model: d={args.d_model}, heads={args.n_heads}, layers={args.n_layers}, "
+          f"d_head={d_head}, n_rot={n_rot_dims}")
+    print(f"Training: {args.epochs} epochs × {args.n_batches} batches × "
+          f"{args.batch_size} batch = {total_seqs:,} sequences")
+    print(f"  n_steps={args.n_steps} (interleaved tokens: {2*args.n_steps})")
+    print(f"  lr={args.lr}, AdamW, linear decay, wd=0.05")
+    print()
+
+    # Build models
+    all_models = build_mapformer_models(
+        env.unified_vocab_size, args.d_model, args.n_heads,
+        args.n_layers, args.grid_size,
+    )
 
     # ============================================================
     # Train all models
@@ -186,12 +161,29 @@ def main():
         losses = train(
             model, env,
             n_epochs=args.epochs, lr=args.lr,
-            batch_size=args.batch_size, seq_len=args.seq_len,
+            batch_size=args.batch_size, n_steps=args.n_steps,
             n_batches=args.n_batches, device=device,
         )
 
         all_losses[name] = losses
         trained_models[name] = model
+
+        # Save checkpoint
+        ckpt_path = output_dir / f"{name.replace('-', '_')}.pt"
+        torch.save({
+            "model_state_dict": model.state_dict(),
+            "losses": losses,
+            "config": {
+                "vocab_size": env.unified_vocab_size,
+                "d_model": args.d_model,
+                "n_heads": args.n_heads,
+                "n_layers": args.n_layers,
+                "grid_size": args.grid_size,
+                "n_obs_types": args.n_obs_types,
+                "p_empty": args.p_empty,
+            },
+        }, ckpt_path)
+        print(f"  Saved checkpoint: {ckpt_path}")
 
     # ============================================================
     # Figure 1: Training curves
@@ -208,14 +200,14 @@ def main():
     print("FIGURE 2: Length Generalisation")
     print("=" * 60)
 
-    test_lens = [args.seq_len, 2*args.seq_len, 4*args.seq_len,
-                 8*args.seq_len, 16*args.seq_len]
+    test_lens = [args.n_steps, 2*args.n_steps, 4*args.n_steps,
+                 8*args.n_steps, 16*args.n_steps]
 
     all_gen_results = {}
     for name, model in trained_models.items():
         print(f"\n  Evaluating {name}...")
         results = eval_length_generalisation(
-            model, env, train_len=args.seq_len,
+            model, env, train_len=args.n_steps,
             test_lens=test_lens, n_trials=100, device=device,
         )
         all_gen_results[name] = results
@@ -228,7 +220,7 @@ def main():
     )
 
     # ============================================================
-    # Figure 3: Position state PCA (MapFormer-WM only)
+    # Figure 3: Position state PCA
     # ============================================================
     print("\n" + "=" * 60)
     print("FIGURE 3: Position State PCA")
@@ -245,10 +237,10 @@ def main():
                 save_path=str(output_dir / "fig3_position_pca.png"),
             )
         except Exception as e:
-            print(f"  Skipped PCA (needs sklearn): {e}")
+            print(f"  Skipped PCA: {e}")
 
     # ============================================================
-    # Figure 4: Grid cell autocorrelation (MapFormer-WM only)
+    # Figure 4: Grid cell autocorrelation
     # ============================================================
     print("\n" + "=" * 60)
     print("FIGURE 4: Grid Cell Autocorrelation")
@@ -267,7 +259,7 @@ def main():
                     save_path=str(output_dir / f"fig4_autocorr_cell{cell_idx}.png"),
                 )
         except Exception as e:
-            print(f"  Skipped autocorrelation (needs scipy): {e}")
+            print(f"  Skipped autocorrelation: {e}")
 
     # ============================================================
     # Summary
@@ -276,10 +268,10 @@ def main():
     print("SUMMARY")
     print("=" * 60)
 
-    print("\nLength generalisation (train T={}, test T={}):".format(
-        args.seq_len, test_lens[-1]))
+    print(f"\nLength generalisation (train T={args.n_steps}, "
+          f"test T={test_lens[-1]}):")
     for name, results in all_gen_results.items():
-        train_acc = results.get(args.seq_len, 0)
+        train_acc = results.get(args.n_steps, 0)
         test_acc = results.get(test_lens[-1], 0)
         print(f"  {name:20s}: train={train_acc:.3f}  16x={test_acc:.3f}")
 

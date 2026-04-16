@@ -1,10 +1,12 @@
 """
 2D Grid environment for MapFormer training and evaluation.
 
-Generates (action, observation) trajectories on a grid world.
-Non-unique observations are critical: n_obs_types < grid_size^2
-ensures the model must do genuine path integration rather than
-simply memorising observation->location mappings.
+Matches the setup in Rambaud et al. (2025):
+- TORUS grid (wrapping boundaries, not clamped)
+- Directed walks: sample direction + k steps (1 <= k <= 10)
+- p_empty fraction of cells are empty (blank token B)
+- Returns INTERLEAVED token sequence s = (a1, o1, a2, o2, ..., aT, oT)
+  with a unified vocabulary: [actions 0..3] [obs 4..4+K-1] [blank 4+K]
 """
 
 import torch
@@ -13,93 +15,139 @@ from typing import Optional
 
 
 class GridWorld:
-    """Simple 2D grid world with non-unique observations.
+    """2D torus grid world matching the paper's forced-navigation task.
 
-    Actions: 0=North(-y), 1=South(+y), 2=West(-x), 3=East(+x)
-    Observations are integer types assigned randomly to cells.
+    Actions: 0=North, 1=South, 2=West, 3=East (in unified vocab: indices 0..3)
+    Observations: K object types + 1 blank (in unified vocab: indices 4..4+K)
+
+    The grid is a TORUS: movements wrap around edges.
     """
 
     N_ACTIONS = 4
     ACTION_DELTAS = {0: (-1, 0), 1: (1, 0), 2: (0, -1), 3: (0, 1)}
 
-    def __init__(self, size: int = 10, n_obs_types: int = 4, seed: Optional[int] = None):
-        """
-        Args:
-            size: Grid is size x size
-            n_obs_types: Number of distinct observation types.
-                Must be < size*size for non-unique observations.
-            seed: Random seed for reproducible observation maps
-        """
+    def __init__(
+        self,
+        size: int = 64,
+        n_obs_types: int = 16,
+        p_empty: float = 0.5,
+        seed: Optional[int] = None,
+    ):
         self.size = size
         self.n_obs_types = n_obs_types
+        self.p_empty = p_empty
+
+        # Unified vocabulary layout:
+        # [0..3] = actions (N, S, W, E)
+        # [4..4+K-1] = observation types
+        # [4+K] = blank token B
+        self.action_offset = 0
+        self.obs_offset = self.N_ACTIONS  # = 4
+        self.unified_blank = self.N_ACTIONS + n_obs_types  # = 4 + K
+        self.unified_vocab_size = self.N_ACTIONS + n_obs_types + 1  # 4 + K + 1
+
+        # For backward compat (obs-only vocab size including blank)
+        self.obs_vocab_size = n_obs_types + 1
+        self.blank_token = n_obs_types
 
         rng = np.random.RandomState(seed)
-        self.obs_map = torch.from_numpy(
-            rng.randint(0, n_obs_types, (size, size))
-        ).long()
 
-        # Track trajectory for interpretability
+        # Assign observations: each cell is empty with prob p_empty
+        obs_map = np.full((size, size), self.blank_token, dtype=np.int64)
+        is_occupied = rng.random((size, size)) >= p_empty
+        obs_map[is_occupied] = rng.randint(0, n_obs_types, is_occupied.sum())
+        self.obs_map = torch.from_numpy(obs_map).long()
+
         self.visited_locations: list[tuple[int, int]] = []
         self.last_x = size // 2
         self.last_y = size // 2
 
     def generate_trajectory(
-        self, T: int = 64, start: Optional[tuple[int, int]] = None
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Generate a random walk trajectory.
-
-        Args:
-            T: Trajectory length
-            start: Starting position (row, col). Defaults to center.
+        self, n_steps: int = 128, start: Optional[tuple[int, int]] = None
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Generate a directed-walk trajectory as an interleaved token sequence.
 
         Returns:
-            actions: (T,) long tensor of action indices
-            observations: (T,) long tensor of observation types
+            tokens: (2*n_steps,) interleaved [a1, o1, a2, o2, ...] in unified vocab
+            obs_mask: (2*n_steps,) bool, True at observation positions (odd indices)
+            revisit_mask: (2*n_steps,) bool, True at obs positions for REVISITED cells.
+                First visit: False. Revisit: True. Action positions: False.
+                This is the paper's prediction target — "predict observation each
+                time it comes back to a previously visited location."
         """
         if start is not None:
             x, y = start
         else:
-            x, y = self.size // 2, self.size // 2
+            x = np.random.randint(0, self.size)
+            y = np.random.randint(0, self.size)
 
-        actions = []
-        obs = []
+        tokens = []
         self.visited_locations = []
+        is_revisit = []  # per-step revisit flag
+        seen = set()
 
-        for _ in range(T):
-            a = torch.randint(0, self.N_ACTIONS, ()).item()
-            dx, dy = self.ACTION_DELTAS[a]
-            x = max(0, min(self.size - 1, x + dx))
-            y = max(0, min(self.size - 1, y + dy))
-            actions.append(a)
-            obs.append(self.obs_map[x, y].item())
-            self.visited_locations.append((x, y))
+        t = 0
+        while t < n_steps:
+            a = np.random.randint(0, self.N_ACTIONS)
+            k = np.random.randint(1, 11)
+
+            for _ in range(k):
+                if t >= n_steps:
+                    break
+                dx, dy = self.ACTION_DELTAS[a]
+                x = (x + dx) % self.size
+                y = (y + dy) % self.size
+
+                tokens.append(a + self.action_offset)
+                obs_idx = self.obs_map[x, y].item()
+                tokens.append(obs_idx + self.obs_offset)
+
+                self.visited_locations.append((x, y))
+                is_revisit.append((x, y) in seen)
+                seen.add((x, y))
+                t += 1
 
         self.last_x = x
         self.last_y = y
-        return torch.tensor(actions, dtype=torch.long), torch.tensor(obs, dtype=torch.long)
+
+        tokens = torch.tensor(tokens, dtype=torch.long)
+        obs_mask = torch.zeros(2 * n_steps, dtype=torch.bool)
+        obs_mask[1::2] = True
+
+        # revisit_mask aligned with obs positions
+        revisit_mask = torch.zeros(2 * n_steps, dtype=torch.bool)
+        for step_idx, rev in enumerate(is_revisit):
+            if rev:
+                revisit_mask[2 * step_idx + 1] = True  # obs position at step step_idx
+
+        return tokens, obs_mask, revisit_mask
 
     def generate_batch(
-        self, batch_size: int, T: int = 64
-    ) -> tuple[torch.Tensor, torch.Tensor, list[list[tuple[int, int]]]]:
-        """Generate a batch of trajectories.
+        self, batch_size: int, n_steps: int = 128
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, list[list[tuple[int, int]]]]:
+        """Generate a batch of interleaved trajectories.
 
         Returns:
-            actions: (batch_size, T)
-            observations: (batch_size, T)
+            tokens: (batch_size, 2*n_steps)
+            obs_mask: (batch_size, 2*n_steps)
+            revisit_mask: (batch_size, 2*n_steps)
             all_locations: list of location lists for each trajectory
         """
-        all_actions = []
-        all_obs = []
+        all_tokens = []
+        all_masks = []
+        all_revisit = []
         all_locations = []
 
         for _ in range(batch_size):
-            a, o = self.generate_trajectory(T)
-            all_actions.append(a)
-            all_obs.append(o)
+            tok, mask, rev = self.generate_trajectory(n_steps)
+            all_tokens.append(tok)
+            all_masks.append(mask)
+            all_revisit.append(rev)
             all_locations.append(list(self.visited_locations))
 
         return (
-            torch.stack(all_actions),
-            torch.stack(all_obs),
+            torch.stack(all_tokens),
+            torch.stack(all_masks),
+            torch.stack(all_revisit),
             all_locations,
         )
