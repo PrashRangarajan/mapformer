@@ -54,6 +54,7 @@ mapformer/
   gaussian_noise_test.py # Gaussian Δ-noise robustness test (InEKF's home turf)
   diagnose.py            # Disentanglement + prediction distribution + ω analysis
   clone_analysis.py      # CSCG-style clone-structure analysis (per-obs-type)
+  landmark_eval.py       # Landmark-aware evaluation (accuracy + NLL by cell type)
   docs/                  # Original writeups
 ```
 
@@ -131,6 +132,52 @@ integration under action/sensor noise. Three implementations:
      `K*·(1-K*)^k`.
    - Same speed as vanilla MapFormer (~10 s/epoch) despite adding state
      correction.
+
+### Landmark Experiment — Where Kalman Actually Wins
+
+After the above results, we ran a final experiment adding **200 unique-ID
+landmark cells** to the 64×64 grid (~5% density). Landmarks emit tokens
+found nowhere else, providing sharp unambiguous position measurements.
+This is the regime Kalman filtering was theoretically designed for.
+
+All three variants were retrained with landmarks enabled, same hyperparameters.
+
+Evaluated at T=128 and T=512 on revisit-only accuracy + negative log
+likelihood, broken down by cell type:
+
+**T=128 (training length):**
+
+| Metric | Vanilla+noise | Parallel InEKF | PC MapFormer |
+|--------|--------------|----------------|--------------|
+| Overall acc | 0.820 | 0.853 | **0.877** |
+| Overall NLL | 0.780 | 0.652 | **0.591** |
+| **Landmark acc** | 0.017 | **0.182** | 0.014 |
+| Regular acc | 0.740 | 0.800 | **0.855** |
+| Blank acc | 0.987 | 0.980 | 0.985 |
+
+**T=512 (4× OOD):**
+
+| Metric | Vanilla+noise | Parallel InEKF | PC MapFormer |
+|--------|--------------|----------------|--------------|
+| Overall acc | 0.637 | **0.785** | 0.616 |
+| Overall NLL | 1.94 | **0.98** | 2.05 |
+| **Landmark acc** | 0.012 | **0.181** | 0.008 |
+| Regular acc | 0.339 | **0.649** | 0.315 |
+
+**Three findings:**
+
+1. **Only InEKF can actually use landmarks** — 18% landmark accuracy vs ~1.5%
+   for the other two. PC's forward model cannot produce unique landmark
+   embeddings (each landmark is used once); InEKF's inverse measurement
+   model is tailored for exactly this use case.
+2. **InEKF has the best OOD length generalization** — degrades only −7 pp
+   from T=128 to T=512, vs −18 pp for vanilla and −26 pp for PC. This is
+   the bounded-error property of classical Kalman filtering, observed
+   empirically.
+3. **Complementarity.** Each variant is best in a specific regime: vanilla
+   attention for clean aliased tasks, PC for matched-noise drift correction,
+   InEKF for true landmarks + long horizons. A practical architecture
+   would combine them.
 
 ### Clone-Structure Analysis
 

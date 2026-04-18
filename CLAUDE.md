@@ -70,6 +70,34 @@ broken states we debugged through):
   Includes an auxiliary loss coefficient to force the forward model to
   actually model observations.
 
+## Landmark experiment (added in latest session)
+
+Added `n_landmarks` parameter to `environment.py`: sets N cells to emit
+unique single-use tokens instead of aliased obs. Retrained all three
+variants with 200 landmarks (~5% density).
+
+Ran `landmark_eval.py` at T=128 and T=512, accuracy + NLL per cell type
+(landmark / regular / blank):
+
+- **At T=128:** PC best overall (87.7% acc, 0.591 NLL). But only InEKF
+  predicts landmarks well (18% vs 1.5% for others).
+- **At T=512:** InEKF is decisively best (78.5% vs 64% vanilla, 62% PC).
+  Degrades only -7pp from T=128 to T=512 vs -18 to -26 for the others.
+
+**Key finding: the three architectures are complementary, not alternatives:**
+- Vanilla attention → clean aliased tasks
+- PC MapFormer → matched-noise drift correction on aliased obs (best at
+  training length)
+- Parallel InEKF → true landmarks + long OOD (bounded-error stability)
+
+This is the regime where Kalman filtering earns its theoretical guarantees
+empirically. A 15pp overall accuracy gap at T=512 with landmarks.
+
+Checkpoints:
+- `figures_vanilla_noise_lm200/MapFormer_WM_noise.pt`
+- `figures_inekf_parallel_lm200/MapFormer_WM_ParallelInEKF.pt`
+- `figures_pc_lm200/MapFormer_WM_PredictiveCoding.pt`
+
 ## Clone-structure analysis (added in latest session)
 
 `clone_analysis.py` runs 300 trajectories from a fixed start, records model

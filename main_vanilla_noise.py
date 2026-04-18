@@ -21,6 +21,8 @@ def main():
     parser.add_argument("--n-batches", type=int, default=156)
     parser.add_argument("--output-dir", type=str, default="figures_vanilla_noise")
     parser.add_argument("--p-action-noise", type=float, default=0.10)
+    parser.add_argument("--n-landmarks", type=int, default=0,
+                        help="Number of unique-ID landmark cells (0 = disabled)")
     args = parser.parse_args()
 
     torch.manual_seed(42)
@@ -29,7 +31,8 @@ def main():
     out = Path(__file__).parent / args.output_dir
     out.mkdir(exist_ok=True)
 
-    env = GridWorld(size=64, n_obs_types=16, p_empty=0.5, seed=42)
+    env = GridWorld(size=64, n_obs_types=16, p_empty=0.5,
+                    n_landmarks=args.n_landmarks, seed=42)
     model = MapFormerWM(vocab_size=env.unified_vocab_size,
                          d_model=128, n_heads=2, n_layers=1, grid_size=64)
 
@@ -53,6 +56,7 @@ def main():
             "vocab_size": env.unified_vocab_size,
             "d_model": 128, "n_heads": 2, "n_layers": 1,
             "grid_size": 64, "n_obs_types": 16, "p_empty": 0.5,
+            "n_landmarks": args.n_landmarks,
         },
     }, ckpt)
     print(f"\nSaved: {ckpt}")

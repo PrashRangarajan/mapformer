@@ -17,6 +17,8 @@ def main():
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--n-batches", type=int, default=156)
     parser.add_argument("--p-action-noise", type=float, default=0.10)
+    parser.add_argument("--n-landmarks", type=int, default=0,
+                        help="Number of unique-ID landmark cells (0 = disabled)")
     parser.add_argument("--output-dir", type=str, default="figures_inekf_parallel")
     args = parser.parse_args()
 
@@ -24,13 +26,14 @@ def main():
     out = Path(__file__).parent / args.output_dir
     out.mkdir(exist_ok=True)
 
-    env = GridWorld(size=64, n_obs_types=16, p_empty=0.5, seed=42)
+    env = GridWorld(size=64, n_obs_types=16, p_empty=0.5,
+                    n_landmarks=args.n_landmarks, seed=42)
     model = MapFormerWM_ParallelInEKF(
         vocab_size=env.unified_vocab_size,
         d_model=128, n_heads=2, n_layers=1, grid_size=64,
     )
     print(f"Parallel InEKF: {sum(p.numel() for p in model.parameters()):,} params")
-    print(f"Training with action noise p={args.p_action_noise}\n")
+    print(f"Training with action noise p={args.p_action_noise}, n_landmarks={args.n_landmarks}\n")
 
     losses = train(
         model, env,
@@ -46,7 +49,8 @@ def main():
         "losses": losses,
         "config": {"vocab_size": env.unified_vocab_size,
                    "d_model": 128, "n_heads": 2, "n_layers": 1,
-                   "grid_size": 64, "n_obs_types": 16, "p_empty": 0.5},
+                   "grid_size": 64, "n_obs_types": 16, "p_empty": 0.5,
+                   "n_landmarks": args.n_landmarks},
     }, ckpt)
     print(f"\nSaved: {ckpt}")
 
