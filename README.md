@@ -26,6 +26,7 @@ observations (which update content). Key ideas:
 | `MapFormer-WM` | Working Memory — generalised RoPE. Q/K rotated by learned action-dependent angles. |
 | `MapFormer-EM` | Episodic Memory — absolute position embeddings from rotating learnable `p₀`. Attention combines content and structure via **Hadamard product** `softmax(A_X ⊙ A_P) V`. |
 | `InEKF-Parallel` | **Our extension.** Invariant EKF on SO(2) with constant Q (Lie-group invariance), steady-state gain via closed-form scalar DARE, and FFT-based parallel affine scan. Preserves MapFormer's parallelism. |
+| `PredictiveCoding` | **Our other extension.** Predictive-coding formulation: learned forward model `g(θ)→ô` predicts observation from position, prediction error drives Lie-algebra correction via learnable gate. More biologically plausible and handles aliased observations better than the inverse-model InEKF. |
 
 ## Project Structure
 
@@ -38,6 +39,7 @@ mapformer/
   model_kalman.py        # First-pass InEKF (uncertainty-modulated attention — ablation)
   model_inekf_proper.py  # Proper sequential InEKF on SO(2) with wrapped innovations
   model_inekf_parallel.py# Steady-state InEKF with FFT-based parallel scan
+  model_predictive_coding.py# Predictive-coding MapFormer (forward model + error)
   baselines.py           # Transformer+RoPE and LSTM baselines
   inekf.py               # Earlier InEKF scaffolding (pre-refactor; kept for reference)
   train.py               # Self-supervised training w/ revisit mask + optional action noise
@@ -46,6 +48,7 @@ mapformer/
   main_kalman.py         # Train the first-pass InEKF
   main_inekf_proper.py   # Train the sequential proper InEKF
   main_inekf_parallel.py # Train the parallel InEKF
+  main_predictive_coding.py# Train the predictive-coding MapFormer (with aux loss)
   main_vanilla_noise.py  # Train vanilla MapFormer with training-time action noise
   noise_test.py          # Discrete action-noise robustness test
   gaussian_noise_test.py # Gaussian Δ-noise robustness test (InEKF's home turf)
@@ -184,6 +187,13 @@ disentanglement and per-token Δ analysis.
   `model_inekf_proper.py` (the current one wraps innovations; earlier git
   history had an unwrapped version that was faster to train but broke length
   generalisation).
+- **Predictive-Coding variant: implemented, being tested.**
+  `model_predictive_coding.py` — same parallel scan infrastructure as the
+  InEKF, but uses a *forward model* (position → predicted obs embedding) and
+  error-driven corrections instead of inverse-model Kalman. Handles aliased
+  observations more gracefully in principle. Training uses an auxiliary
+  prediction-error loss. Checkpoint in
+  `figures_predictive_coding/MapFormer_WM_PredictiveCoding.pt`.
 
 ### Key invariants (DON'T regress these)
 
@@ -208,6 +218,10 @@ python3 -m mapformer.main --device cuda --epochs 16 --n-batches 98
 # Train the parallel InEKF under action-noise augmentation (~10 min).
 python3 -m mapformer.main_inekf_parallel --device cuda --epochs 50 --n-batches 156 \
     --p-action-noise 0.10
+
+# Train the predictive-coding variant (~10 min).
+python3 -m mapformer.main_predictive_coding --device cuda --epochs 50 --n-batches 156 \
+    --p-action-noise 0.10 --aux-coef 0.1
 
 # Compare robustness to Gaussian Δ noise at T=128 and T=512.
 python3 -m mapformer.gaussian_noise_test \
@@ -272,6 +286,7 @@ python3 -m mapformer.diagnose --checkpoint figures_v6/MapFormer_WM.pt --device c
 | `model_kalman.py`, `main_kalman.py` | Ablation (uncertainty-modulated attention) | Kept for comparison |
 | `model_inekf_proper.py`, `main_inekf_proper.py` | Sequential proper InEKF | Working |
 | `model_inekf_parallel.py`, `main_inekf_parallel.py` | **Parallel InEKF (main contribution)** | Working |
+| `model_predictive_coding.py`, `main_predictive_coding.py` | **Predictive-coding MapFormer** (forward model + error-driven correction) | Working |
 | `main_vanilla_noise.py` | Vanilla + noise-aug baseline | For fair comparison |
 | `noise_test.py`, `gaussian_noise_test.py` | Robustness evaluation | Stable |
 | `diagnose.py` | Introspection (Δ disentanglement, ω, etc.) | Stable |
