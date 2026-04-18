@@ -70,6 +70,22 @@ broken states we debugged through):
   Includes an auxiliary loss coefficient to force the forward model to
   actually model observations.
 
+## Clone-structure analysis (added in latest session)
+
+`clone_analysis.py` runs 300 trajectories from a fixed start, records model
+state at observation positions, and measures per-obs-type separation of
+(x, y) cells in feature space (two metrics: linear-regression R² and
+cosine-distance separation score).
+
+Result:
+- **PC MapFormer has the best θ̂ separation score (0.619 vs 0.573 vs 0.395).**
+  Its prediction-error correction mechanism most cleanly clusters per-cell
+  representations — closest to the CSCG (Clone-Structured Cognitive Graph)
+  hypothesis from neuroscience.
+- InEKF has more continuous (higher R²) but less clustered θ̂.
+- Hidden features are similar across all models (attention blends position
+  and content uniformly).
+
 ## Main empirical finding
 
 On the paper's aliased-observation task, **vanilla attention + noise

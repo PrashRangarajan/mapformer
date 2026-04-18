@@ -53,6 +53,7 @@ mapformer/
   noise_test.py          # Discrete action-noise robustness test
   gaussian_noise_test.py # Gaussian Δ-noise robustness test (InEKF's home turf)
   diagnose.py            # Disentanglement + prediction distribution + ω analysis
+  clone_analysis.py      # CSCG-style clone-structure analysis (per-obs-type)
   docs/                  # Original writeups
 ```
 
@@ -130,6 +131,33 @@ integration under action/sensor noise. Three implementations:
      `K*·(1-K*)^k`.
    - Same speed as vanilla MapFormer (~10 s/epoch) despite adding state
      correction.
+
+### Clone-Structure Analysis
+
+Inspired by Dileep George et al.'s CSCG (Clone-Structured Cognitive Graph,
+Nature Comms 2021), we ask: **do these models learn per-cell "clone"
+representations when observations are aliased?** For each observation type,
+we measure whether the model's internal state at the observation token
+separates into distinct per-cell clusters.
+
+On 300 trajectories from a fixed start, evaluating at observation positions:
+
+| Model | θ̂ R² | hidden R² | θ̂ separation | hidden separation |
+|-------|------|-----------|---------------|--------------------|
+| Vanilla+noise | 0.184 | 0.366 | 0.573 | 0.1245 |
+| **PC MapFormer** | 0.210 | 0.369 | **0.619** | 0.1472 |
+| Parallel InEKF | **0.307** | 0.371 | 0.395 | **0.1706** |
+
+- **R²**: linear decoding of (x, y) from feature; higher = position linearly
+  recoverable
+- **Separation**: `(mean_between_cell_dist − mean_within_cell_dist) /
+  mean_between_cell_dist`, cosine distance; higher = more clone-like
+  clustering
+
+**PC has the cleanest clone structure in the Lie-algebra state (θ̂)** —
+tightest per-cell clusters, most consistent with CSCG's discrete clone
+interpretation. InEKF has a more continuous linear mapping but blurrier
+clusters. See `clone_analysis.py`.
 
 ### What We Learned
 

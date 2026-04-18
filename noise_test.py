@@ -23,6 +23,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from mapformer.environment import GridWorld
 from mapformer.model import MapFormerWM, MapFormerEM
 from mapformer.model_kalman import MapFormerWM_InEKF
+from mapformer.model_inekf_proper import MapFormerWM_ProperInEKF
+from mapformer.model_inekf_parallel import MapFormerWM_ParallelInEKF
+from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 
 
 def noisy_trajectory(env, n_steps, p_noise, rng):
@@ -93,7 +96,13 @@ def main():
     config = ckpt["config"]
 
     name = Path(args.checkpoint).stem
-    if "InEKF" in name:
+    if "PredictiveCoding" in name:
+        model_class = MapFormerWM_PredictiveCoding
+    elif "ParallelInEKF" in name:
+        model_class = MapFormerWM_ParallelInEKF
+    elif "ProperInEKF" in name:
+        model_class = MapFormerWM_ProperInEKF
+    elif "InEKF" in name:
         model_class = MapFormerWM_InEKF
     elif "WM" in name:
         model_class = MapFormerWM
