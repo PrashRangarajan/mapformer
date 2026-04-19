@@ -27,6 +27,7 @@ from mapformer.model_kalman import MapFormerWM_InEKF
 from mapformer.model_inekf_proper import MapFormerWM_ProperInEKF
 from mapformer.model_inekf_parallel import MapFormerWM_ParallelInEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
+from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 
 
 def build_model_from_config(config, cls):
@@ -40,6 +41,7 @@ def build_model_from_config(config, cls):
 
 
 def pick_model_class(name):
+    if "Level2InEKF" in name: return MapFormerWM_Level2InEKF
     if "PredictiveCoding" in name: return MapFormerWM_PredictiveCoding
     if "ParallelInEKF" in name: return MapFormerWM_ParallelInEKF
     if "ProperInEKF" in name: return MapFormerWM_ProperInEKF
