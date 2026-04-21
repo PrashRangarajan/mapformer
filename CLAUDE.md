@@ -232,3 +232,13 @@ distribution by token category).
 Checkpoints:
 - figures_inekf_level2_lm200/MapFormer_WM_Level2InEKF.pt (with landmarks)
 - figures_inekf_level2/MapFormer_WM_Level2InEKF.pt (no landmarks)
+
+## Level 1.5 InEKF (compromise between Level 1 and Level 2)
+
+Level 1.5 = constant Pi (learnable scalar, not DARE-derived) + per-token R_t.
+Key insight: Level 2 diagnostic showed Pi only varied ~4x across tokens;
+replacing Pi dynamics with a constant while keeping R_t/K_t dynamics
+should recover most of Level 2's benefit at Level 1's cost.
+
+Empirically: 60x faster training than Level 2, best landmark-training loss
+of any variant (0.8124 vs Level 2's 1.133). Result in RESULTS_LEVEL15.md.

@@ -27,6 +27,7 @@ from mapformer.model_inekf_proper import MapFormerWM_ProperInEKF
 from mapformer.model_inekf_parallel import MapFormerWM_ParallelInEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
+from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
 
 
 def noisy_trajectory(env, n_steps, p_noise, rng):
@@ -97,7 +98,9 @@ def main():
     config = ckpt["config"]
 
     name = Path(args.checkpoint).stem
-    if "Level2InEKF" in name:
+    if "Level15InEKF" in name:
+        model_class = MapFormerWM_Level15InEKF
+    elif "Level2InEKF" in name:
         model_class = MapFormerWM_Level2InEKF
     elif "PredictiveCoding" in name:
         model_class = MapFormerWM_PredictiveCoding

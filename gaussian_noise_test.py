@@ -31,6 +31,7 @@ from mapformer.model_inekf_proper import MapFormerWM_ProperInEKF
 from mapformer.model_inekf_parallel import MapFormerWM_ParallelInEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
+from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
 
 
 class GaussianDeltaWrapper(nn.Module):
@@ -100,7 +101,9 @@ def load_model(checkpoint_path, device):
     ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
     config = ckpt["config"]
     name = Path(checkpoint_path).stem
-    if "Level2InEKF" in name:
+    if "Level15InEKF" in name:
+        cls = MapFormerWM_Level15InEKF
+    elif "Level2InEKF" in name:
         cls = MapFormerWM_Level2InEKF
     elif "PredictiveCoding" in name:
         cls = MapFormerWM_PredictiveCoding
