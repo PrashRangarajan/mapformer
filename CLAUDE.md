@@ -222,3 +222,13 @@ python3 -m mapformer.diagnose --checkpoint figures_v6/MapFormer_WM.pt --device c
 - README is the primary documentation, this file is a memory-aid for Claude
 - Honest reporting: if an experiment didn't work, write that down with the
   reason, don't bury it
+
+## Level 2 InEKF results (autonomous addition)
+
+Level 2 (heteroscedastic R_t) training completed. See RESULTS_LEVEL2.md
+for full evaluation (per-cell-type accuracy, NLL, robustness, R_t / K_t
+distribution by token category).
+
+Checkpoints:
+- figures_inekf_level2_lm200/MapFormer_WM_Level2InEKF.pt (with landmarks)
+- figures_inekf_level2/MapFormer_WM_Level2InEKF.pt (no landmarks)
