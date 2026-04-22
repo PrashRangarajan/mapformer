@@ -243,71 +243,27 @@ should recover most of Level 2's benefit at Level 1's cost.
 Empirically: 60x faster training than Level 2, best landmark-training loss
 of any variant (0.8124 vs Level 2's 1.133). Result in RESULTS_LEVEL15.md.
 
-## Open for next session: matched-compute vanilla retest
 
-**What to verify when resuming:**
-- Whether Level 1.5's clean-task advantage over vanilla MapFormer is
-  architectural or just due to more training compute.
-- Vanilla paper-repro (`figures_v6/`) trained 200K sequences × 16 epochs.
-- Level 1.5 clean (`figures_inekf_level15_clean/`) trained 1M sequences
-  × 50 epochs (5× more compute).
+## Matched-compute verification: settled (L1.5 wins architecturally)
 
-**Running in the background (launched end of last session):**
-- `figures_vanilla_50ep/MapFormer_WM.pt` — vanilla MapFormer at 50 epochs
-  clean training (matched compute to Level 1.5 clean).
-- Training script: `main.py --epochs 50 --n-batches 156 --output-dir figures_vanilla_50ep`
-- PID was 3318458 when launched. Check process or checkpoint file to
-  confirm completion. Logs at `/home/prashr/mapformer/vanilla_50ep_run.log`.
+Verified on 2026-04-21: the L1.5 clean-task advantage is NOT from extra
+training compute. `figures_v6/MapFormer_WM.pt` was already a 50-epoch
+checkpoint with seed=42; a fresh 50-epoch vanilla run gave bit-identical
+weights. L1.5 clean, trained with the same recipe and seed, reaches
+training loss 0.1594 vs vanilla's 0.1935.
 
-**When it's done — compare:**
-```bash
-python3 -u << 'PYEOF'
-import torch, torch.nn.functional as F
-from mapformer.environment import GridWorld
-from mapformer.model import MapFormerWM
-from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
+At matched compute, L1.5 wins on:
+- Training loss (0.159 vs 0.194)
+- Accuracy at T=128 (+1.5pp)
+- Accuracy at T=1024 (+2.1pp)
+- NLL at every length (−2% to −48%)
 
-env = GridWorld(size=64, n_obs_types=16, p_empty=0.5, n_landmarks=0, seed=42)
-def build(path, cls):
-    m = cls(vocab_size=env.unified_vocab_size, d_model=128, n_heads=2, n_layers=1, grid_size=64)
-    m.load_state_dict(torch.load(path, map_location="cuda", weights_only=False)["model_state_dict"])
-    return m.cuda().eval()
+Vanilla wins only at T=512 accuracy (+1.1pp), paired with 20% worse NLL.
 
-vanilla_16ep = build("mapformer/figures_v6/MapFormer_WM.pt", MapFormerWM)
-vanilla_50ep = build("mapformer/figures_vanilla_50ep/MapFormer_WM.pt", MapFormerWM)
-l15_clean    = build("mapformer/figures_inekf_level15_clean/MapFormer_WM_Level15InEKF.pt", MapFormerWM_Level15InEKF)
+Hypothesis for why an architecturally-more-complex model wins on a clean
+task:
+- Path-integration weights are imperfect approximations even with clean
+  data; L1.5's correction compensates for model-level drift.
+- Structured extra capacity for per-token confidence reduces NLL directly.
 
-def eval_m(model, T, n_trials=300, seed=0):
-    import numpy as np; torch.manual_seed(seed); np.random.seed(seed)
-    c=tot=0; nll=0.0
-    with torch.no_grad():
-        for _ in range(n_trials):
-            tokens, om, rm = env.generate_trajectory(T)
-            tt = tokens.unsqueeze(0).cuda()
-            logits = model(tt[:,:-1])
-            lp = F.log_softmax(logits, dim=-1)
-            preds = lp.argmax(-1)[0]; tgts = tt[0,1:]; mask = rm[1:].cuda()
-            if mask.sum()==0: continue
-            c += (preds[mask]==tgts[mask]).sum().item(); tot += mask.sum().item()
-            nll += -lp[0, torch.arange(lp.shape[1], device="cuda")[mask], tgts[mask]].sum().item()
-    return c/tot, nll/tot
-
-for T in [128, 256, 512, 1024]:
-    print(f"T={T}")
-    for name, m in [("vanilla 16ep", vanilla_16ep), ("vanilla 50ep", vanilla_50ep), ("L1.5 clean", l15_clean)]:
-        a, nll = eval_m(m, T)
-        print(f"  {name:>14s}: acc={a:.4f}  nll={nll:.3f}")
-PYEOF
-```
-
-**Expected outcomes and interpretation:**
-- If vanilla 50ep matches L1.5 on accuracy: the clean-task accuracy gap
-  was training-compute, not architecture. Keep L1.5's NLL/calibration
-  win + its landmark + noise robustness as the real architectural
-  contribution.
-- If L1.5 still wins on accuracy even at matched compute: Level 1.5 is
-  architecturally strictly superior on the clean task too.
-- Either way, L1.5 is the recommended drop-in replacement for MapFormer
-  given its advantages on noise, landmarks, and NLL.
-
-After verifying, update REPORT.md accordingly and push.
+See RESULTS_LEVEL15_CLEAN.md for full numbers.
