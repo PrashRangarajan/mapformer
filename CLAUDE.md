@@ -267,3 +267,25 @@ task:
 - Structured extra capacity for per-token confidence reduces NLL directly.
 
 See RESULTS_LEVEL15_CLEAN.md for full numbers.
+
+## Parallel work while orchestrator runs (2026-04-22)
+
+Orchestrator (PID 3325883) is running 53 multi-seed training jobs. In parallel,
+the following scripts and docs were created for post-orchestrator processing:
+
+- `long_sequence_eval.py`: eval at T up to 10,000 (tests Kalman bounded-error
+  claim at extrapolation length)
+- `calibration_analysis.py`: ECE + reliability diagrams (visualizes NLL wins)
+- `make_paper_figures.py`: generates landmark bar chart, length-gen curves,
+  ablation bars for paper. Saves to `paper_figures/`.
+- `orchestrator_multilayer.py`: queues 2- and 4-layer training for Vanilla
+  and Level15 (sanity check: does L1.5 scale with depth?)
+- `followup.sh`: waits for main orchestrator to finish, runs long-seq eval,
+  calibration, paper figures, then launches multilayer orchestrator.
+
+- `paper/` directory: drafts of abstract, intro, related work, methods
+  sections. Paper-quality narrative ready for refinement.
+
+When main orchestrator finishes (~4 hours out), `followup.sh` should auto-run
+all downstream analysis if launched with: `nohup bash followup.sh &`. Or
+launch it now and it will wait for completion.

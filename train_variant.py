@@ -59,6 +59,7 @@ def main():
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--n-steps", type=int, default=128)
     parser.add_argument("--lr", type=float, default=3e-4)
+    parser.add_argument("--n-layers", type=int, default=1)
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--output-dir", type=str, required=True)
     args = parser.parse_args()
@@ -75,7 +76,7 @@ def main():
     cls = VARIANT_MAP[args.variant]
     model = cls(
         vocab_size=env.unified_vocab_size,
-        d_model=128, n_heads=2, n_layers=1, grid_size=64,
+        d_model=128, n_heads=2, n_layers=args.n_layers, grid_size=64,
     )
 
     print(f"{args.variant} seed={args.seed} n_landmarks={args.n_landmarks} "
@@ -98,7 +99,7 @@ def main():
         "seed": args.seed,
         "config": {
             "vocab_size": env.unified_vocab_size,
-            "d_model": 128, "n_heads": 2, "n_layers": 1,
+            "d_model": 128, "n_heads": 2, "n_layers": args.n_layers,
             "grid_size": 64, "n_obs_types": 16, "p_empty": 0.5,
             "n_landmarks": args.n_landmarks,
         },
