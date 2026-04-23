@@ -68,6 +68,19 @@ git push origin main 2>&1 | tail -3
 echo "[$(date)] Launching multi-layer experiments..."
 cd /home/prashr
 nohup python3 -u -m mapformer.orchestrator_multilayer > "$REPO/orchestrator_multilayer.log" 2>&1 &
-echo "  Multi-layer orchestrator PID: $!"
+ML_PID=$!
+echo "  Multi-layer orchestrator PID: $ML_PID"
 
-echo "[$(date)] Followup pipeline done."
+# 5. Wait for multi-layer to finish, then run extra baselines
+wait $ML_PID
+echo "[$(date)] Multi-layer done. Launching extra baselines..."
+nohup python3 -u -m mapformer.orchestrator_baselines > "$REPO/orchestrator_baselines.log" 2>&1 &
+BL_PID=$!
+echo "  Extra-baselines PID: $BL_PID"
+wait $BL_PID
+echo "[$(date)] Extra baselines done."
+
+# Final re-evaluation with all variants and commit
+cd /home/prashr/mapformer
+bash orchestrator_finalize.sh 2>&1 | tail -5
+echo "[$(date)] Followup pipeline fully done."

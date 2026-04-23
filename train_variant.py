@@ -34,6 +34,7 @@ from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
+from mapformer.model_baselines_extra import EXTRA_BASELINES
 
 
 VARIANT_MAP = {
@@ -45,6 +46,7 @@ VARIANT_MAP = {
     "PC":         MapFormerWM_PredictiveCoding,
     "RoPE":       MapFormerWM_RoPE,
     **ABLATIONS,
+    **EXTRA_BASELINES,
 }
 
 
