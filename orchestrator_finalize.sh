@@ -74,8 +74,13 @@ configs = [
 variants_main = ["Vanilla", "RoPE", "Level1", "Level15", "PC"]
 
 for cfg_tag, n_lm in configs:
-    env = GridWorld(size=64, n_obs_types=16, p_empty=0.5, n_landmarks=n_lm, seed=42)
     print(f"## Config: {cfg_tag} (n_landmarks={n_lm})\n")
+    print(f"Two evaluations per model:")
+    print(f"- **in-dist (trained env)**: obs_map matches training seed — tests memorization + path integration")
+    print(f"- **OOD (fresh env)**: obs_map from seed+1000 — tests path integration generalization only\n")
+
+    # In-distribution table
+    print(f"### In-distribution (obs_map seen during training)\n")
     print(f"| Variant | T=128 acc | T=128 NLL | T=512 acc | T=512 NLL |")
     print(f"|---------|-----------|-----------|-----------|-----------|")
     for variant in variants_main:
@@ -83,10 +88,36 @@ for cfg_tag, n_lm in configs:
         for seed in SEEDS:
             ckpt = RUNS / f"{variant}_{cfg_tag}" / f"seed{seed}" / f"{variant}.pt"
             if not ckpt.exists(): continue
+            env = GridWorld(size=64, n_obs_types=16, p_empty=0.5, n_landmarks=n_lm, seed=seed)
             try:
                 m, _ = build_model(variant, ckpt, env)
-                a128, n128 = eval_revisit(m, env, 128, 200, seed=seed)
-                a512, n512 = eval_revisit(m, env, 512, 100, seed=seed)
+                a128, n128 = eval_revisit(m, env, 128, 200, seed=seed + 1000)
+                a512, n512 = eval_revisit(m, env, 512, 100, seed=seed + 1000)
+                per_seed["acc128"][seed] = a128
+                per_seed["nll128"][seed] = n128
+                per_seed["acc512"][seed] = a512
+                per_seed["nll512"][seed] = n512
+            except Exception as e:
+                print(f"# error evaluating {variant} {cfg_tag} seed{seed}: {e}")
+        print(f"| {variant} | {summarize(per_seed['acc128'])} | {summarize(per_seed['nll128'])} | "
+              f"{summarize(per_seed['acc512'])} | {summarize(per_seed['nll512'])} |")
+    print("")
+
+    # OOD (fresh obs_map) table — the paper-relevant generalization test
+    print(f"### OOD (fresh obs_map, tests path-integration generalization)\n")
+    print(f"| Variant | T=128 acc | T=128 NLL | T=512 acc | T=512 NLL |")
+    print(f"|---------|-----------|-----------|-----------|-----------|")
+    for variant in variants_main:
+        per_seed = {"acc128": {}, "nll128": {}, "acc512": {}, "nll512": {}}
+        for seed in SEEDS:
+            ckpt = RUNS / f"{variant}_{cfg_tag}" / f"seed{seed}" / f"{variant}.pt"
+            if not ckpt.exists(): continue
+            # CRITICAL: env seed is seed+1000, NOT seed — fresh obs_map never seen in training
+            env = GridWorld(size=64, n_obs_types=16, p_empty=0.5, n_landmarks=n_lm, seed=seed + 1000)
+            try:
+                m, _ = build_model(variant, ckpt, env)
+                a128, n128 = eval_revisit(m, env, 128, 200, seed=seed + 2000)
+                a512, n512 = eval_revisit(m, env, 512, 100, seed=seed + 2000)
                 per_seed["acc128"][seed] = a128
                 per_seed["nll128"][seed] = n128
                 per_seed["acc512"][seed] = a512
@@ -100,7 +131,8 @@ for cfg_tag, n_lm in configs:
 # Ablations (seed 0 only)
 print("## Level 1.5 Ablations (single seed)\n")
 for cfg_tag, n_lm in [("clean", 0), ("lm200", 200)]:
-    env = GridWorld(size=64, n_obs_types=16, p_empty=0.5, n_landmarks=n_lm, seed=42)
+    # Ablations all use seed=0, so env seed=0 matches their training env
+    env = GridWorld(size=64, n_obs_types=16, p_empty=0.5, n_landmarks=n_lm, seed=0)
     print(f"### Config: {cfg_tag}\n")
     print(f"| Variant | T=128 acc | T=128 NLL | T=512 acc | T=512 NLL |")
     print(f"|---------|-----------|-----------|-----------|-----------|")
@@ -110,8 +142,8 @@ for cfg_tag, n_lm in [("clean", 0), ("lm200", 200)]:
         if not ckpt.exists(): continue
         try:
             m, _ = build_model(v, ckpt, env)
-            a128, n128 = eval_revisit(m, env, 128, 200, seed=0)
-            a512, n512 = eval_revisit(m, env, 512, 100, seed=0)
+            a128, n128 = eval_revisit(m, env, 128, 200, seed=1000)
+            a512, n512 = eval_revisit(m, env, 512, 100, seed=1000)
             print(f"| {v} | {a128:.3f} | {n128:.3f} | {a512:.3f} | {n512:.3f} |")
         except Exception as e:
             print(f"# error: {e}")
