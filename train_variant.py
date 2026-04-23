@@ -10,7 +10,8 @@ Supported variants:
   Vanilla              — plain MapFormer-WM (no correction)
   VanillaEM            — MapFormer-EM (Hadamard product attention)
   Level1               — parallel InEKF (constant K* from DARE)
-  Level15              — constant learnable Π, per-token R_t
+  Level15              — constant learnable Π, per-token R_t (on MapFormer-WM)
+  Level15EM            — Level 1.5 InEKF on MapFormer-EM backbone
   Level2               — full heteroscedastic (Möbius scan), slow
   PC                   — predictive coding
   L15_ConstR, L15_NoMeas, L15_NoCorr, L15_DARE — Level 1.5 ablations
@@ -30,6 +31,7 @@ from mapformer.train import train
 from mapformer.model import MapFormerWM, MapFormerEM
 from mapformer.model_inekf_parallel import MapFormerWM_ParallelInEKF
 from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
+from mapformer.model_inekf_level15_em import MapFormerEM_Level15InEKF
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
@@ -42,6 +44,7 @@ VARIANT_MAP = {
     "VanillaEM":  MapFormerEM,
     "Level1":     MapFormerWM_ParallelInEKF,
     "Level15":    MapFormerWM_Level15InEKF,
+    "Level15EM":  MapFormerEM_Level15InEKF,
     "Level2":     MapFormerWM_Level2InEKF,
     "PC":         MapFormerWM_PredictiveCoding,
     "RoPE":       MapFormerWM_RoPE,

@@ -289,3 +289,116 @@ the following scripts and docs were created for post-orchestrator processing:
 When main orchestrator finishes (~4 hours out), `followup.sh` should auto-run
 all downstream analysis if launched with: `nohup bash followup.sh &`. Or
 launch it now and it will wait for completion.
+
+## Session 2026-04-22 evening — honest framing + WM vs EM + Level15EM + paper Mamba data
+
+### Key framing shift
+
+The paper already solves the clean aliased task (MapFormer-WM 0.955,
+MapFormer-EM 0.999/1.000). Our Level 1.5 contribution is NOT beating
+the paper on the paper's task; it is **extending MapFormer into regimes
+the paper did not test**: action noise, true (non-aliased) landmarks,
+out-of-distribution length, and calibrated uncertainty.
+
+Real empirical wins vs MapFormer-WM (multi-seed, from RESULTS_PAPER.md):
+- Noise T=512 OOD: +11pp (0.851 vs 0.739)
+- LM200 T=512 OOD: +11pp (0.821 vs 0.715)
+- NLL across the board: roughly 2x lower in noise/landmark regimes;
+  0.000 vs 0.025 on clean (calibrated at landmark tokens)
+- Length generalization: Level 1.5 drops only ~0.5pp clean, 10pp noise,
+  9pp lm200 from T=128 to T=512 (Kalman bounded-error property)
+
+`paper/00_abstract.md` and `paper/01_introduction.md` rewritten with this
+honest framing. Clean task = "matches paper baseline"; contribution
+lives in the untested regimes.
+
+### WM vs EM — we built on WM; port to EM done
+
+Every correction variant (Level 1/1.5/2, PC, all ablations) inherits
+from `MapFormerWM`, not `MapFormerEM`. Reasons:
+1. WM's single input-dependent rotation couples cleanly to the corrected
+   θ̂ from the Kalman update.
+2. EM's Hadamard-product attention (A_X ⊙ A_P) would need the correction
+   threaded into both branches.
+3. WM at 0.99 has measurable headroom; EM at 0.999 would ceiling-effect
+   any result.
+
+**NEW: `model_inekf_level15_em.py`** = `MapFormerEM_Level15InEKF`.
+Same `InEKFLevel15` class, plugged into EM's `q0_pos`/`k0_pos` rotations.
+Registered as `"Level15EM"` in `train_variant.py::VARIANT_MAP`. Sanity-
+checked (forward pass works, 204K params, K≈0.5 and R≈1.0 at init).
+
+### Orchestrators added in this session
+
+- `orchestrator_em.py` — VanillaEM × 3 configs × 3 seeds (9 runs).
+  Baseline on the stronger MapFormer-EM backbone.
+- `orchestrator_level15_em.py` — Level15EM × 3 configs × 3 seeds (9 runs).
+  Our correction on the stronger backbone.
+- `master_finish.sh` — waits for em + multilayer + level15_em to finish,
+  then launches `orchestrator_baselines` (LSTM/CoPE/MambaLike), then
+  re-runs `orchestrator_finalize.sh` so RESULTS_PAPER.md includes all
+  new variants. (Use this instead of `followup.sh` — followup.sh exited
+  early at 20:11 without launching baselines or final finalize.)
+
+`orchestrator_finalize.sh` updated:
+- Imports `MapFormerEM_Level15InEKF`
+- `VARIANT_CLS` includes `VanillaEM`, `Level15EM`
+- `variants_main` list now:
+  `[Vanilla, VanillaEM, RoPE, LSTM, CoPE, MambaLike, Level1, Level15,
+    Level15EM, PC]`
+
+### MapFormer paper DOES benchmark against Mamba — Table 3
+
+Found during session. The paper has an Appendix A.3-A.5 titled "MAmPa:
+Learning Cognitive Maps with block-diagonal Mamba Models." Key claim:
+vanilla Mamba CANNOT learn cognitive maps because diagonal A matrices
+can't encode rotations (Lie-theoretic argument). Their fix (MAmPa =
+Mamba with 2x2 block-diagonal skew-symmetric A) does better but still
+loses to MapFormer and is slow.
+
+Table 3 (2D grid navigation, sequence length l=16):
+|        | IID  | OOD-d | OOD-s |
+| Mamba  | 0.42 | 0.77  | 0.40  |
+| MAmPa  | 0.74 | 0.93  | 0.60  |
+| MapWM  | 1.00 | 1.00  | 1.00  |
+| MapEM  | 1.00 | 1.00  | 1.00  |
+
+Verbatim caption: "As expected, MAmPa offers substantial improvements
+over Mamba, but fails to reach performances a par with MapFormers,
+while being slower."
+
+Implication for our framing: the question "doesn't Mamba subsume this?"
+is already answered NO by the paper itself, on structural grounds
+(Lie-group expressivity). Our contribution stacks on top of MapFormer's
+SO(2) machinery; it doesn't compete with generic SSM. Our `MambaLike`
+baseline in model_baselines_extra.py reproduces the paper's weaker
+(vanilla-Mamba) baseline. Plan: add a paragraph to
+`paper/02_related_work.md` citing Table 3 directly once our MambaLike
+multi-seed numbers land.
+
+### Where the running pipeline will land
+
+When master_finish.sh completes (~1h45m from ~20:37):
+- RESULTS_PAPER.md has 4 new row-types in every table:
+  VanillaEM, Level15EM, LSTM, CoPE, MambaLike
+- Commit + push happens automatically via orchestrator_finalize.sh
+- paper_figures/ will be stale-ish (length-gen + calibration figures
+  only cover Vanilla/RoPE/Level1/Level15/PC — not Level15EM or EM).
+  Re-run `long_sequence_eval.py` and `calibration_analysis.py` with
+  updated --variants list if we want those figures to include EM rows.
+
+### Three decision points when numbers land (for honest framing)
+
+1. If VanillaEM alone closes the noise/landmark gap → framing: backbone
+   choice matters more than correction; L1.5 earns its keep on NLL only
+2. If Level15EM > VanillaEM by similar +11pp → strongest framing:
+   correction helps on top of either backbone
+3. If MambaLike matches Level15 → reframe section 6.10 from future work
+   into a central finding (unlikely given paper's Table 3, but worth
+   confirming at our training scale)
+
+### Project memory-file note
+
+If `RESULTS_LEVEL2.md` / `RESULTS_LEVEL15.md` / `RESULTS_LEVEL15_CLEAN.md`
+are referenced above but not present, they predate the multi-seed
+orchestrator and were superseded by `RESULTS_PAPER.md`. Trust the latter.
