@@ -162,7 +162,7 @@ echo "[$(date)] Results saved to $RESULTS"
 echo "[$(date)] Committing to git..."
 
 cd /home/prashr/mapformer
-git add RESULTS_PAPER.md model_ablations.py model_baseline_rope.py train_variant.py orchestrator.py orchestrator_finalize.sh runs/
+git add RESULTS_PAPER.md ZERO_SHOT_TRANSFER_*.md model_ablations.py model_baseline_rope.py train_variant.py orchestrator.py orchestrator_finalize.sh runs/ 2>/dev/null || git add RESULTS_PAPER.md model_ablations.py model_baseline_rope.py train_variant.py orchestrator.py orchestrator_finalize.sh runs/
 git commit -m "Paper-ready multi-seed ablation + baseline experiment suite
 
 Includes:
