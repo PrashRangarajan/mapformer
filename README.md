@@ -395,6 +395,28 @@ Outputs: `ZERO_SHOT_TRANSFER_clean.md` (Axis 1+2), `ZERO_SHOT_TRANSFER_lm200.md`
 
 ## What's still open / next steps
 
+### Done in the latest session (2026-04-24)
+
+✅ **Per-visit-count curves** (TEM-style one-shot generalization metric).
+  See `PER_VISIT_*.md`, `fig5_per_visit_curves.png`, `fig6_one_shot_bar.png`.
+  Headline: Level 1.5-WM achieves 0.995 first-revisit accuracy on clean
+  (near-perfect one-shot), while MambaLike and RoPE show no jump
+  (k=2 ≈ chance). Reproduces TEM's signature result on our task.
+
+✅ **Test-time ω rescaling experiment.** See `OMEGA_RESCALE_*.md`.
+  Finding: InEKF variants are far more robust to ω rescaling than Vanilla
+  — the Kalman wrap absorbs scale mismatch that breaks Vanilla rotations.
+
+✅ **Hippocampal correspondence analysis (partially negative).** See
+  `HIPPOCAMPAL_ANALYSIS.md`, `HIPPOCAMPAL_HIDDEN.md`. Found that:
+  - Hexagonal grid cells do NOT emerge (max grid score 0.15, far below
+    the 0.3 threshold) — for structural reasons (1 block per ω).
+  - R_t at landmarks does NOT follow the predicted "landmark < aliased
+    < blank" ordering — the head learns task-driven, not theory-driven,
+    informativeness.
+  - The √2 module spacing IS approximately preserved but mostly
+    inherited from initialization.
+
 ### Near-term (would round out the paper)
 
 1. **WM safe-init experiment.** Does `log_R_init_bias=3.0` also help
@@ -404,50 +426,64 @@ Outputs: `ZERO_SHOT_TRANSFER_clean.md` (Axis 1+2), `ZERO_SHOT_TRANSFER_lm200.md`
    `paper_figures/fig2_length_gen.png` were generated before VanillaEM,
    Level15EM, MambaLike, and LSTM had checkpoints. Need to re-run
    `make_paper_figures.py` and `calibration_analysis.py` with the
-   updated `--variants` list.
+   updated `--variants` list. ~30 min.
 3. **Tighten Level15EM lm200 std.** Seed 2 reached final loss 1.40 vs
    the other two seeds at ~1.0, giving the lm200 row a wide ±0.12 std.
-   Bumping `log_R_init_bias` to 5.0 might catch the outlier.
-4. **CoPE lm200 last seed.** We have 2/3 lm200 CoPE seeds; the third
-   was killed mid-training to unblock Level15EM retraining. ~8 hours
-   on one GPU; nice-to-have for completeness.
+   Bumping `log_R_init_bias` to 5.0 might catch the outlier. ~10 min
+   for one seed.
+4. **CoPE lm200 last seed.** We have 2/3 lm200 CoPE seeds. ~8 hours
+   on one GPU; nice-to-have for completeness, low value.
 5. **MAmPa baseline.** Implement the paper's own
    block-diagonal-skew-symmetric Mamba variant for an apples-to-apples
-   comparison at our scale. Their result at l=16: 0.74 IID, 0.60
-   sparse OOD. Worth reproducing at l=128.
+   comparison at our scale. The MapFormer paper's Table 3 reports
+   MAmPa at 0.74 IID at l=16; we'd reproduce at l=128. Cost: ~3 days
+   for implementation + multi-seed training.
 
 ### Medium-term (extend the architecture)
 
-6. **Higher-dimensional Lie groups: SE(2), SE(3).** SE(2) (planar pose)
+6. **MapFormer-Grid: hexagonal-cell-capable architecture.** Replace
+   single block per ω with multi-block-per-ω modules at 60° orientation
+   offsets. Should unlock hexagonal grid-cell representations (currently
+   structurally inaccessible). ~1–2 weeks. See §6.11 in
+   `paper/06_future_work.md` for the proposal.
+7. **Higher-dimensional Lie groups: SE(2), SE(3).** SE(2) (planar pose)
    is a direct generalisation — adds 2 translation components.
-   Validates the framework on tasks like BabyAI / MiniGrid. SE(3) (full
-   6-DoF pose) would enable drone / 3D / VR navigation.
-7. **IMU-preintegration-style context compression.** Compress chunks of
+   Validates the framework on tasks like BabyAI / MiniGrid. SE(3)
+   (full 6-DoF pose) would enable drone / 3D / VR navigation.
+8. **Multi-environment training.** Currently each model trains on one
+   fixed obs_map. TEM-style multi-environment training samples a fresh
+   `obs_map` per batch. Our existing OOD eval already shows the model
+   generalizes well to fresh maps without this, so the question is
+   whether multi-env training closes the residual gap on harder
+   regimes (lm200 OOD especially). ~10h GPU.
+9. **IMU-preintegration-style context compression.** Compress chunks of
    past tokens into single "preintegrated" SE(3) measurements with
    covariance, à la Forster et al. 2017. Could extend MapFormer's
    effective context dramatically.
-8. **SE(n)-equivariant attention.** RoPE is SO(2)-equivariant; Level
-   1.5 is input-dependent SO(2)-equivariant. SE(n)-equivariant
-   attention (Finzi et al. 2021; Equiformer; Fuchs et al. 2020)
-   combined with input-dependent rotations is unexplored and natural.
+10. **SE(n)-equivariant attention.** RoPE is SO(2)-equivariant; Level
+    1.5 is input-dependent SO(2)-equivariant. SE(n)-equivariant
+    attention (Finzi et al. 2021; Equiformer; Fuchs et al. 2020)
+    combined with input-dependent rotations is unexplored and natural.
 
 ### Long-term (open scientific questions)
 
-9. **Multi-task / instruction-conditioned navigation.** BabyAI suite
-   has goal-directed navigation with language conditioning. Tests
-   whether cognitive-map representations transfer to action
-   prediction.
-10. **Calibration vs neural data.** Hypothesis: Level 1.5's learned
-    R_t distribution should match uncertainty encoding observed in
-    hippocampal pyramidal / grid cells. Sun et al. 2024 (Nature) and
-    Nieh et al. 2021 (Nature) provide suitable datasets.
-11. **Differentiable factor-graph SLAM.** Treat θ̂ as pose estimates,
+11. **Multi-task / instruction-conditioned navigation.** BabyAI suite
+    has goal-directed navigation with language conditioning. Tests
+    whether cognitive-map representations transfer to action
+    prediction.
+12. **Calibration vs neural data, take 2.** First attempt (this paper)
+    compared R_t to predicted neural firing patterns and got
+    falsified. A more careful comparison — perhaps with explicit
+    Bayesian-informativeness regularisation or attention-level
+    place-cell analysis — could recover the link. Datasets:
+    Sun et al. 2024 (Nature), Nieh et al. 2021 (Nature).
+13. **Differentiable factor-graph SLAM.** Treat θ̂ as pose estimates,
     refine via Theseus-AI (Pineda et al. 2022) bundle adjustment at
     each layer or eval time.
-12. **Real-world deployment.** SE(3) Level 1.5 → BabyAI validation
+14. **Real-world deployment.** SE(3) Level 1.5 → BabyAI validation
     → sim-to-real on small mobile robots (Clearpath Jackal) →
     integration with existing SLAM stacks.
-13. **Unification with SSMs.** Level 1.5's scan IS algorithmically
+15. **Unification with SSMs.** Level 1.5's scan IS algorithmically
     identical to a 1-D Mamba block with specialised parameterisation.
     "Mamba as a Linear Kalman Filter" (Wang et al. 2025) makes this
     explicit at a generic level. Extending to Lie-group SSMs with

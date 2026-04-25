@@ -65,19 +65,36 @@ transformer reasoning and classical geometric consistency.
 
 ## 6.5 Connection to Biological Neural Data
 
-We hypothesize Level 1.5's learned R_t distribution should match the
-uncertainty encoding observed in hippocampal pyramidal cells and grid
-cells during exploration. Specifically:
+We tested two predictions empirically (`hippocampal_analysis.py`,
+`hippocampal_hidden_eval.py`) and both came back **falsified**:
 
-- R_t should be small (high K_t) at distinctive landmarks — matching
-  "boundary cell" or "object cell" activations
-- R_t should be large (low K_t) in featureless space — matching the
-  broader place-cell widths observed in open environments
+- **Hexagonal grid cells.** Sargolini grid scores on hidden-state rate
+  maps top out at 0.05–0.15 across all variants — well below the
+  0.3 threshold considered grid-like.
+- **R_t at landmark tokens.** Predicted ordering was
+  landmark < aliased < blank (smaller R = more informative). Actual
+  ordering for Level 1.5-WM is aliased < landmark < blank; for
+  Level 1.5-EM it is blank < landmark < aliased. The basic
+  blank-vs-non-blank distinction holds, but the predicted fine-grained
+  ordering does not.
 
-Recently-published neural-recording datasets (Sun et al. 2024, Nature;
-Nieh et al. 2021, Nature) provide suitable data. A direct comparison
-would elevate this work from ML methodology to computational
-neuroscience contribution.
+The third test (Stensola √2-spaced ω modules) holds approximately,
+but mostly inherited from the geometric initialization rather than
+discovered by training.
+
+The diagnostic explanation for the absence of hexagonal cells is
+architectural — see §6.11. Open directions:
+
+- Compare R_t distributions to neural recordings from Sun et al. (2024,
+  *Nature*) or Nieh et al. (2021, *Nature*) directly. Even if Level 1.5
+  is not Bayesian-informativeness-optimal, the learned R_t may still
+  match neural firing patterns under the right transformation.
+- Train Level 1.5 with an explicit Bayesian-informativeness regulariser
+  on R_t to test whether the predicted ordering can be recovered.
+- Investigate place-cell-like single-peak patterns at the *attention*
+  level rather than at hidden-state level — attention rows project
+  position onto a sparse subset of cells, which may exhibit place-cell
+  selectivity even when hidden states do not show grid structure.
 
 ## 6.6 Multi-Task / Instruction-Conditioned Navigation
 
@@ -151,3 +168,57 @@ architectures combining the strengths of each. We note that "Mamba as a
 Linear Kalman Filter" (Wang et al. 2025) has made preliminary connections;
 extending this to the Lie-group setting with explicit invariance
 guarantees is an open direction.
+
+## 6.11 MapFormer-Grid: An Architecture That Can Produce Hexagonal Cells
+
+Our hippocampal-correspondence analysis (§6.5) found that current
+MapFormer variants do not produce hexagonal grid-cell-like
+representations. The reason is structural: MapFormer assigns one
+path-integrator block per ω frequency, but the geometric optimum for
+2D spatial tiling — three sinusoidal waves at the *same* frequency
+oriented at 60° — requires multiple blocks per scale. With one wave
+per ω, hexagonal interference patterns are mathematically inaccessible
+regardless of how the model is trained.
+
+**Proposed architectural change.** Replace the single block per ω
+with a *module* of `n_orientations` blocks at the same ω with
+orientations {0°, 60°, 120°} in 2D action space. Specifically:
+
+- `action_to_lie` outputs a 2D vector `(Δ_x, Δ_y)` per module instead
+  of a scalar per block
+- For each block in module m at orientation θ_o:
+  `Δ_{m,o} = cos(θ_o) · Δ_x + sin(θ_o) · Δ_y`
+- The cumulative angle is then
+  `θ_{m,o,t} = ω_m · cumsum(Δ_{m,o})`
+- At the hidden-state level, `cos(θ_{m,0}) + cos(θ_{m,60}) + cos(θ_{m,120})`
+  produces hexagonal interference at scale ω_m
+
+Trade-offs:
+
+- More parameters per module, fewer distinct ω values (e.g., 10 modules
+  × 3 orientations = 30 blocks at 10 frequencies, vs current 32 blocks
+  at 32 frequencies)
+- Path integration remains parallelisable via cumsum; O(log T) preserved
+- Level 1.5 InEKF correction extends naturally to the new state
+- Action embedding requires a 2D learnable projection (small change)
+
+**Predicted outcomes.**
+
+1. *Hexagonal patterns emerge* with grid scores > 0.3 at multiple scales,
+   matching the Sargolini et al. (2006) grid-cell signature
+2. *Multi-scale modular organisation* matching the Stensola et al. (2012)
+   √2-ratio spacing observed in entorhinal cortex
+3. *Cognitive-map task performance preserved or improved*, since
+   hexagonal codes are theoretically optimal for 2D position
+   representation under bandwidth constraints (Mathis et al. 2012)
+
+If validated, this would close the gap between MapFormer's mathematical
+structure and biological grid-cell organisation, providing the first
+transformer-based architecture that *necessarily* produces grid-cell
+representations from first principles. If falsified — i.e., hexagonal
+patterns don't emerge despite the structural enabling — that would be
+a significant negative result indicating the gradient landscape itself
+disfavours hexagonal solutions even when architecturally accessible.
+
+**Estimated cost:** ~1–2 weeks (new model class, multi-seed training
+on three configs, hippocampal-correspondence eval, paper writeup).
