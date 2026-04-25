@@ -27,27 +27,38 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from mapformer.environment import GridWorld
 from mapformer.model import MapFormerWM
 from mapformer.model_inekf_parallel import MapFormerWM_ParallelInEKF
+from mapformer.model import MapFormerEM
 from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
+from mapformer.model_inekf_level15_em import MapFormerEM_Level15InEKF
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_ablations import ABLATIONS
+from mapformer.model_baselines_extra import EXTRA_BASELINES
 
 VARIANT_CLS = {
-    "Vanilla": MapFormerWM, "Level1": MapFormerWM_ParallelInEKF,
-    "Level15": MapFormerWM_Level15InEKF, "Level2": MapFormerWM_Level2InEKF,
+    "Vanilla": MapFormerWM, "VanillaEM": MapFormerEM,
+    "Level1": MapFormerWM_ParallelInEKF,
+    "Level15": MapFormerWM_Level15InEKF,
+    "Level15EM": MapFormerEM_Level15InEKF,
+    "Level2": MapFormerWM_Level2InEKF,
     "PC": MapFormerWM_PredictiveCoding, "RoPE": MapFormerWM_RoPE,
     **ABLATIONS,
+    **EXTRA_BASELINES,
 }
 
-# Consistent colors across figures
+# Consistent colors across figures (aligned with make_per_visit_figure.py)
 VARIANT_COLORS = {
-    "Vanilla": "#808080",
-    "RoPE":    "#606060",
-    "Level1":  "#2196F3",
-    "Level2":  "#FFA000",
-    "Level15": "#43A047",
-    "PC":      "#9C27B0",
+    "Vanilla":   "#808080",
+    "VanillaEM": "#404040",
+    "RoPE":      "#606060",
+    "LSTM":      "#A0522D",
+    "MambaLike": "#FF7043",
+    "Level1":    "#2196F3",
+    "Level15":   "#43A047",
+    "Level15EM": "#2E7D32",
+    "Level2":    "#FFA000",
+    "PC":        "#9C27B0",
     "L15_ConstR": "#81C784",
     "L15_NoMeas": "#66BB6A",
     "L15_NoCorr": "#4CAF50",
@@ -114,7 +125,8 @@ def aggregate(runs_dir, variants, config, seeds, T, n_trials):
 
 def fig1_landmark_bar(runs_dir, output):
     """Bar chart: overall acc and landmark acc across variants at lm200 config."""
-    variants = ["Vanilla", "RoPE", "Level1", "PC", "Level15"]
+    variants = ["Vanilla", "VanillaEM", "RoPE", "Level1", "PC", "LSTM",
+                "MambaLike", "Level15", "Level15EM"]
     res = aggregate(runs_dir, variants, "lm200", [0, 1, 2], 128, 200)
 
     fig, ax = plt.subplots(1, 2, figsize=(11, 4.5))
@@ -140,7 +152,8 @@ def fig1_landmark_bar(runs_dir, output):
 
 def fig2_length_gen(runs_dir, output):
     """Length-generalization curves: accuracy vs T, for clean and lm200 configs."""
-    variants = ["Vanilla", "Level1", "Level15"]
+    variants = ["Vanilla", "VanillaEM", "Level1", "Level15", "Level15EM",
+                "LSTM", "MambaLike"]
     lengths = [128, 256, 512, 1024, 2048]
     seeds = [0, 1, 2]
 

@@ -26,16 +26,22 @@ from mapformer.environment import GridWorld
 from mapformer.model import MapFormerWM, MapFormerEM
 from mapformer.model_inekf_parallel import MapFormerWM_ParallelInEKF
 from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
+from mapformer.model_inekf_level15_em import MapFormerEM_Level15InEKF
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
+from mapformer.model_baselines_extra import EXTRA_BASELINES
 from mapformer.model_ablations import ABLATIONS
 
 VARIANT_CLS = {
-    "Vanilla": MapFormerWM, "Level1": MapFormerWM_ParallelInEKF,
-    "Level15": MapFormerWM_Level15InEKF, "Level2": MapFormerWM_Level2InEKF,
+    "Vanilla": MapFormerWM, "VanillaEM": MapFormerEM,
+    "Level1": MapFormerWM_ParallelInEKF,
+    "Level15": MapFormerWM_Level15InEKF,
+    "Level15EM": MapFormerEM_Level15InEKF,
+    "Level2": MapFormerWM_Level2InEKF,
     "PC": MapFormerWM_PredictiveCoding, "RoPE": MapFormerWM_RoPE,
     **ABLATIONS,
+    **EXTRA_BASELINES,
 }
 
 
@@ -75,7 +81,9 @@ def main():
     parser.add_argument("--config", default="clean", help="clean|noise|lm200")
     parser.add_argument("--lengths", type=int, nargs="+", default=[128, 256, 512, 1024, 2048])
     parser.add_argument("--variants", nargs="+",
-                        default=["Vanilla", "RoPE", "Level1", "Level15", "PC"])
+                        default=["Vanilla", "VanillaEM", "RoPE", "Level1",
+                                 "Level15", "Level15EM", "PC", "LSTM",
+                                 "MambaLike"])
     parser.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     parser.add_argument("--n-trials-128", type=int, default=200)
     parser.add_argument("--n-trials-long", type=int, default=50,

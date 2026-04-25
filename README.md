@@ -31,6 +31,20 @@ confirm the paper's Appendix A.5 finding (see §"Comparison to Mamba"
 below) that they cannot learn this task without architectural
 modification.
 
+## One-shot generalization (headline figure)
+
+![One-shot generalization: k=2 accuracy bar chart](paper_figures/fig6_one_shot_bar.png)
+
+The sharpest quantitative test of whether a model has learned a
+*cognitive map* vs. memorized one specific environment is the
+**first-revisit accuracy** (TEM-style one-shot test, Whittington et al.
+2020). All MapFormer-family variants jump from chance at the first
+visit to near-perfect accuracy on the *second* visit, while generic
+Mamba-style SSMs (MambaLike) and RoPE do not show this jump. **Level
+1.5-WM reaches 0.995 first-revisit accuracy on the clean task.**
+
+![Per-visit generalization curves](paper_figures/fig5_per_visit_curves.png)
+
 ## Headline results (multi-seed, 3 seeds each)
 
 OOD T=512 accuracy on **fresh** observation maps the model never saw
@@ -285,6 +299,9 @@ DON'T regress these — each one was a debugging session:
 
 ## Empirical findings (summary)
 
+![Landmark-regime results](paper_figures/fig1_landmark_bar.png)
+![Length generalization](paper_figures/fig2_length_gen.png)
+
 ### Level 1.5 InEKF wins in untested regimes
 
 OOD T=512 over Vanilla-WM:
@@ -375,6 +392,42 @@ implemented MAmPa.
 
 Outputs: `ZERO_SHOT_TRANSFER_clean.md` (Axis 1+2), `ZERO_SHOT_TRANSFER_lm200.md`
 (all 3 axes).
+
+## Level 1.5 ablations
+
+![Level 1.5 ablation bar chart](paper_figures/fig4_ablation_level15.png)
+
+Four ablations isolate the critical Level 1.5 components. The
+per-token R_t head (`L15_ConstR` drops ~20 pp when removed) is the
+single most important learnable component. Fixing Π from the closed-form
+scalar DARE (`L15_DARE`) rather than learning it is competitive or
+slightly better — the learned prior covariance is the least important
+learnable piece.
+
+## Hippocampal correspondence (partially falsified)
+
+![Hidden-state grid score distribution](paper_figures/fig11_grid_score_dist.png)
+
+We tested three predictions connecting Level 1.5 to hippocampal
+neuroscience. Two were falsified honestly:
+
+- **Hexagonal grid cells** (Sargolini et al. 2006): No variant reaches
+  grid scores > 0.3 at the hidden-state level. This is *architecturally
+  forced* — MapFormer has one path-integrator block per ω frequency,
+  but hexagonal interference requires three sinusoidal waves at the
+  same frequency with 60° orientation offsets.
+- **R_t at landmarks**: Predicted ordering was
+  `landmark < aliased < blank`. Observed ordering was
+  `aliased < landmark < blank` (WM) or `blank < landmark < aliased`
+  (EM). The basic blank vs non-blank distinction is learned; the
+  fine-grained ordering predicted by Bayesian informativeness theory
+  is not.
+
+The Stensola √2 module spacing holds but is mostly inherited from
+initialization. See `HIPPOCAMPAL_ANALYSIS.md` and `HIPPOCAMPAL_HIDDEN.md`
+for full analysis, and `paper/06_future_work.md §6.11` for the
+*MapFormer-Grid* architectural proposal that could in principle
+recover hexagonal grid-cell representations.
 
 ## Key math
 
