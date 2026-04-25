@@ -1,0 +1,35 @@
+\section{Related Work}
+\label{sec:related}
+
+% NOTE: Prose draft in paper/02_related_work.md. This stub ensures the paper
+% compiles; translate the markdown draft into LaTeX here for the final
+% submission.
+
+\paragraph{Cognitive maps in the Transformer and RNN literature.} The
+Tolman-Eichenbaum Machine (TEM)~\citep{whittington2020tem} and its transformer
+variant TEM-T~\citep{whittington2022tem-t} train on many random graph
+environments to learn abstract relational structure. MapFormer
+\citep{rambaud2025mapformer} inherits this setup but uses input-dependent
+positional rotations in place of TEM's recurrent weights.
+
+\paragraph{Positional encodings.} RoPE~\citep{su2021roformer} applies fixed
+token-index rotations; CoPE~\citep{golovneva2024cope} replaces token indices
+with content-based soft counts; TAPE~\citep{zhu2025tape} uses input-dependent
+MLPs after attention. The MapFormer paper's Table 2 shows all three fail on
+2D grid navigation at 1 layer (RoPE 0.16, CoPE 0.74, TAPE 0.32 IID).
+MapFormer-WM $\approx 1.00$.
+
+\paragraph{Parallel Bayesian filters.} \citet{sarkka2021parallel} show
+parallelizable Bayesian filters via associative scan. Mamba~\citep{gu2024mamba}
+brought such scans to deep learning. Our parallel InEKF is a specific instance,
+specialised to $\mathrm{SO}(2)$ with scalar affine scans.
+
+\paragraph{Invariant extended Kalman filtering.} \citet{barrau2017inekf} is
+the canonical reference. \citet{markovic2017wrapping} shows that on
+$\mathrm{SO}(2)$, the Lie-Group EKF equals an EKF with $\mathrm{atan2}$-wrapped
+innovation --- the identity we exploit to keep Level 1.5 simple.
+
+\paragraph{Grid-cell modeling.} Grid cells fire in hexagonal patterns
+\citep{hafting2005grid,sargolini2006conjunctive} organised in discrete
+modules with $\sqrt{2}$-ratio spacing \citep{stensola2012modules}. We
+compare in Section~\ref{sec:results}.

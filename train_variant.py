@@ -31,7 +31,7 @@ from mapformer.train import train
 from mapformer.model import MapFormerWM, MapFormerEM
 from mapformer.model_inekf_parallel import MapFormerWM_ParallelInEKF
 from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
-from mapformer.model_inekf_level15_em import MapFormerEM_Level15InEKF
+from mapformer.model_inekf_level15_em import MapFormerEM_Level15InEKF, MapFormerEM_Level15InEKF_b5
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
@@ -45,6 +45,7 @@ VARIANT_MAP = {
     "Level1":     MapFormerWM_ParallelInEKF,
     "Level15":    MapFormerWM_Level15InEKF,
     "Level15EM":  MapFormerEM_Level15InEKF,
+    "Level15EM_b5": MapFormerEM_Level15InEKF_b5,
     "Level2":     MapFormerWM_Level2InEKF,
     "PC":         MapFormerWM_PredictiveCoding,
     "RoPE":       MapFormerWM_RoPE,

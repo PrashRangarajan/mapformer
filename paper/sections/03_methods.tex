@@ -1,0 +1,73 @@
+\section{Methods}
+\label{sec:methods}
+
+% NOTE: Prose draft in paper/03_methods.md. This section gives the key
+% mathematical definitions needed to read the results; the full methods
+% write-up is in the markdown draft.
+
+\subsection{Notation and Task}
+
+Following~\citet{rambaud2025mapformer}, we work on a 2D torus grid of size
+$N{=}64$ with $K{=}16$ aliased observation types and $p_\mathrm{empty}=0.5$.
+The agent emits an interleaved trajectory
+$s = (a_1, o_1, a_2, o_2, \ldots, a_T, o_T)$ over random walks ($k$ steps per
+chosen direction, $k \in \{1,\ldots,10\}$). Loss is next-token cross-entropy
+applied only at \emph{revisited} observation positions.
+
+\subsection{MapFormer path integration}
+
+Path integration uses an input-dependent SO(2) rotation. For each block
+$b \in \{1,\ldots,n_b\}$ with learnable angular velocity $\omega_b$:
+\begin{equation}
+  \theta_{\mathrm{path},t}^{(b)} = \omega_b \cdot \sum_{s=1}^{t} \Delta_s^{(b)},
+  \qquad
+  \Delta_s = W_\Delta^{\mathrm{out}}\, W_\Delta^{\mathrm{in}}\, x_s
+  \label{eq:path-int}
+\end{equation}
+The cumulative sum~\eqref{eq:path-int} is $\mathcal{O}(\log T)$ via parallel
+scan. The geometric initialisation is $\omega_b = 2\pi \cdot (1/N)^{b/(n_b-1)}$.
+
+\subsection{Level 1.5 InEKF on SO(2)}
+
+Add three learnable components: a constant log-prior covariance
+$\log\Pi \in \mathbb{R}^{n_h \times n_b}$, a per-token log-measurement noise
+$\log R_t$ from an MLP, and a measurement model
+$z_t \in [-\pi,\pi]^{n_h \times n_b}$ from an MLP:
+\begin{equation}
+  z_t = \pi \cdot \tanh\!\big(f_z(x_t)\big), \qquad
+  \log R_t = f_R(x_t)
+\end{equation}
+Wrapped innovation and Kalman gain:
+\begin{equation}
+  \nu_t = \mathrm{atan2}\!\big(\sin(z_t - \theta_{\mathrm{path},t}), \,
+                                \cos(z_t - \theta_{\mathrm{path},t})\big),
+  \qquad
+  K_t = \frac{\Pi}{\Pi + R_t}
+\end{equation}
+Affine correction scan ($\mathcal{O}(\log T)$ Hillis-Steele):
+\begin{equation}
+  d_t = (1 - K_t)\, d_{t-1} + K_t \cdot \nu_t,
+  \qquad
+  \hat\theta_t = \theta_{\mathrm{path},t} + d_t
+\end{equation}
+The corrected $\hat\theta_t$ feeds MapFormer's input-dependent rotation in
+place of $\theta_{\mathrm{path},t}$.
+
+\subsection{Level 1.5-EM: safe init}
+
+For the MapFormer-EM backbone (Hadamard product attention
+$\mathrm{softmax}(A_X \odot A_P)\,V$), default initialisation of $\log R$ at
+zero gives $K{=}0.5$ at start. This corrupts $A_P$, which Hadamard-products
+with $A_X$ to destroy gradient signal; 3 of 9 seeds catastrophically diverge.
+We initialise $\log R_\mathrm{head}$ with bias $3.0$, giving $K{\approx}0.05$
+at start (InEKF behaves as a near-no-op at init, then learns $R$ downward
+where measurements are informative). This is the standard residual-addition
+safe-init trick.
+
+\subsection{Training}
+
+AdamW, lr $3{\times}10^{-4}$, weight decay 0.05, linear LR decay, batch size
+128, 50 epochs $\times$ 156 batches ($\sim$1M sequences), $T{=}128$ training
+length. Three configurations: \textbf{clean} (no action noise, no landmarks),
+\textbf{noise} (10\% action noise), \textbf{lm200} (10\% noise + 200 unique
+landmarks, $\approx$ 5\% density). Three training seeds each.

@@ -1,0 +1,74 @@
+\section{Results}
+\label{sec:results}
+
+% TODO: Full prose draft in paper/04_results.md. This stub has key tables
+% + figures set up; translate prose into sentences for final submission.
+
+\subsection{Main results}
+
+\begin{table}[h]
+\centering
+\caption{OOD accuracy at $T{=}512$ on fresh obs\_maps (4$\times$ training
+length), three configurations. Multi-seed means $\pm$ std over 3 training
+seeds. Full in-distribution and $T{=}128$ numbers are in the supplementary.}
+\label{tab:main}
+\small
+\begin{tabular}{lccc}
+\toprule
+Variant & Clean & Noise & LM200 \\
+\midrule
+MapFormer-WM & $0.913 \pm 0.037$ & $0.739 \pm 0.062$ & $0.715 \pm 0.059$ \\
+MapFormer-EM & $\mathbf{0.972 \pm 0.003}$ & $0.765 \pm 0.138$ & $0.605 \pm 0.108$ \\
+Level 1 InEKF & $0.880 \pm 0.070$ & $0.783 \pm 0.041$ & $0.721 \pm 0.040$ \\
+\textbf{Level 1.5-WM} & $\mathbf{0.993 \pm 0.003}$ & $0.851 \pm 0.026$ & $\mathbf{0.821 \pm 0.025}$ \\
+\textbf{Level 1.5-EM} & $0.977 \pm 0.008$ & $\mathbf{0.869 \pm 0.026}$ & $0.730 \pm 0.120$ \\
+Predictive Coding & $0.815$ & $0.752$ & $0.733$ \\
+LSTM & $0.800 \pm 0.004$ & $0.743 \pm 0.010$ & $0.641 \pm 0.003$ \\
+RoPE & $0.463 \pm 0.026$ & $0.469 \pm 0.027$ & $0.495 \pm 0.013$ \\
+MambaLike & $0.573 \pm 0.007$ & $0.568 \pm 0.004$ & $0.513 \pm 0.010$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{One-shot generalization (per-visit-count accuracy)}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\linewidth]{fig5_per_visit_curves.png}
+\caption{Per-visit-count accuracy on fresh-environment trajectories. All
+MapFormer-family variants jump from chance at $k{=}1$ to near-ceiling at
+$k{=}2$ (one-shot generalization); MambaLike and RoPE do not. Level 1.5-WM
+reaches 0.995 at $k{=}2$ on the clean task.}
+\label{fig:per-visit}
+\end{figure}
+
+\subsection{Level 1.5 ablations}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\linewidth]{fig4_ablation_level15.png}
+\caption{Four Level 1.5 ablations. Removing per-token $R_t$
+(L15\_ConstR) is the most damaging ablation. Fixing $\Pi$ by DARE rather
+than learning it (L15\_DARE) is competitive.}
+\label{fig:ablation}
+\end{figure}
+
+\subsection{Hippocampal correspondence}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\linewidth]{fig11_grid_score_dist.png}
+\caption{Distribution of Sargolini hexagonal grid scores per hidden-state
+dimension. No variant reaches the 0.3 threshold for ``grid-like''; this is
+architecturally forced because MapFormer has one block per frequency but
+hexagonal interference requires three waves at 60$^\circ$ at the same
+frequency.}
+\label{fig:grid-score}
+\end{figure}
+
+See \texttt{HIPPOCAMPAL\_ANALYSIS.md} and \texttt{HIPPOCAMPAL\_HIDDEN.md}
+for full analysis; \texttt{PER\_VISIT\_*.md}, \texttt{ZERO\_SHOT\_TRANSFER\_*.md},
+\texttt{OMEGA\_RESCALE\_*.md}, and \texttt{RESULTS\_PAPER.md} for raw
+tables. Full prose covering all 8 subsections (main results, per-visit,
+zero-shot, ablations, init-pathology, $\omega$-rescaling, hippocampal,
+calibration) is in \texttt{paper/04\_results.md}.

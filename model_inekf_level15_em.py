@@ -35,7 +35,8 @@ class MapFormerEM_Level15InEKF(MapFormerEM):
     """MapFormer-EM with Level 1.5 InEKF (constant Pi, per-token R_t, one scan)."""
 
     def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
-                 dropout=0.1, grid_size=64, bottleneck_r=2):
+                 dropout=0.1, grid_size=64, bottleneck_r=2,
+                 log_R_init_bias: float = 3.0):
         super().__init__(vocab_size, d_model, n_heads, n_layers, dropout,
                          grid_size, bottleneck_r)
         # Reuse the EM transformer layers from the parent (Hadamard attention).
@@ -44,8 +45,12 @@ class MapFormerEM_Level15InEKF(MapFormerEM):
         # a near-no-op. Necessary because EM's Hadamard product A_X ⊙ A_P
         # provides no fallback if the position branch is corrupted by random
         # θ̂ corrections at init — see InEKFLevel15 docstring for details.
+        #
+        # Default 3.0 (K≈0.05 at init) converges reliably across seeds.
+        # Slightly more aggressive 5.0 (K≈0.007) can help if a seed is still
+        # landing in a sticky basin (currently tested for lm200 seed 2).
         self.inekf = InEKFLevel15(d_model, n_heads, self.n_blocks,
-                                  log_R_init_bias=3.0)
+                                  log_R_init_bias=log_R_init_bias)
 
     def forward(self, tokens: torch.Tensor) -> torch.Tensor:
         """
@@ -94,3 +99,18 @@ class MapFormerEM_Level15InEKF(MapFormerEM):
 
         x = self.out_norm(x)
         return self.out_proj(x)
+
+
+class MapFormerEM_Level15InEKF_b5(MapFormerEM_Level15InEKF):
+    """Like MapFormerEM_Level15InEKF but with log_R_init_bias=5.0.
+
+    Experiment variant for tightening Level15EM lm200 std (seed 2 outlier).
+    Safer init (K≈0.007 at start) keeps the InEKF near-identity for more
+    epochs before the R_t head comes online. Registered as "Level15EM_b5"
+    in train_variant.VARIANT_MAP.
+    """
+
+    def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
+                 dropout=0.1, grid_size=64, bottleneck_r=2):
+        super().__init__(vocab_size, d_model, n_heads, n_layers, dropout,
+                         grid_size, bottleneck_r, log_R_init_bias=5.0)

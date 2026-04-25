@@ -1,0 +1,87 @@
+\section{Introduction}
+\label{sec:intro}
+
+MapFormer~\citep{rambaud2025mapformer} is the current state-of-the-art
+Transformer architecture for learning cognitive maps of structured
+environments. By replacing RoPE's~\citep{su2021roformer} fixed positional
+rotations with \emph{input-dependent} rotations driven by the action stream,
+MapFormer performs path integration in the Lie algebra of $\mathrm{SO}(n)$ via
+cumulative sum, preserving Transformers' $\mathcal{O}(\log T)$ parallelism
+while recovering TEM-style~\citep{whittington2022tem-t} structural
+disentanglement. On the authors' aliased-observation next-token prediction
+benchmark, MapFormer-EM reaches 0.999 in-distribution accuracy and
+MapFormer-WM reaches 0.955; neither leaves meaningful headroom on that
+specific task.
+
+\paragraph{The authors' task is therefore solved.} A paper that claimed ``we
+improve on MapFormer's own task by an additional fraction of a percentage
+point'' would be uninteresting, and we do not make that claim. Instead, this
+paper takes MapFormer's benchmark as a confirmed starting point and asks
+whether the surrounding architectural neighbourhood holds larger,
+currently-unrealised wins:
+
+\begin{enumerate}
+  \item \textbf{Action noise}, which the paper does not study. Real
+  navigation is noisy; if the path-integration estimate drifts, what does the
+  architecture do?
+  \item \textbf{True (non-aliased) landmarks}, also not studied in the paper.
+  The paper's observation vocabulary maps 16 symbols randomly to 4096 grid
+  cells, so every observation is ambiguous by construction. Environments
+  with a small fraction of uniquely-identifying landmarks should let the
+  model snap back to a precise position estimate --- but only if it has a
+  mechanism for doing so.
+  \item \textbf{Out-of-distribution sequence length}, tested only to $T{=}512$
+  in the paper. Classical Kalman filtering has provable bounded-error
+  guarantees under observability; do MapFormer-family architectures with
+  explicit state correction inherit these guarantees empirically?
+  \item \textbf{Calibration}, not measured in the paper. Point accuracy can
+  saturate without the model knowing \emph{when} to be confident. A model
+  that outputs per-token uncertainty should be able to sharpen its
+  distribution at informative tokens and broaden it elsewhere.
+\end{enumerate}
+
+\paragraph{Our contribution} is a family of parallel Invariant Extended
+Kalman Filter (InEKF, after \citealp{barrau2017inekf}) extensions to
+MapFormer that add explicit state-correction machinery without sacrificing
+$\mathcal{O}(\log T)$ scan depth. We build on MapFormer-WM (the weaker of the
+paper's two variants) because its single-branch input-dependent rotation
+admits a clean coupling between the filter's corrected state $\hat\theta$ and
+the attention stream; a port to MapFormer-EM is mechanically straightforward
+but not explored here. We report multi-seed MapFormer-EM numbers as an
+upper-bound reference throughout.
+
+\paragraph{Four findings.}
+
+\begin{enumerate}
+  \item \textbf{A fully-parallel InEKF on $\mathrm{SO}(2)$ is practical.} The
+  closed-form scalar DARE yields a steady-state gain implementable as an
+  FFT-based convolution (Level 1); adding a per-token learned measurement
+  noise $R_t$ yields time-varying gain implementable as a scalar
+  Hillis-Steele affine scan (Level 1.5); a full heteroscedastic prior
+  $\Pi_t$ requires a M\"obius-matrix scan (Level 2). All three match the
+  parallelism profile of Mamba-family selective SSMs~\citep{gu2024mamba}.
+  \item \textbf{Simpler filters win.} Level 2 is strictly more expressive
+  than Level 1.5 yet performs measurably worse in our experiments. We
+  diagnose this as optimisation difficulty from the M\"obius scan, since
+  replacing it with a learnable scalar while retaining the heteroscedastic
+  gain (Level 1.5) recovers all the benefits at a fraction of the compute.
+  \item \textbf{On the paper's clean task, Level 1.5 essentially matches
+  MapFormer-WM.} Accuracy 1.000 vs 0.990 at $T{=}128$, 0.995 vs 0.921 at
+  $T{=}512$ ($4\times$ OOD), with NLL 0.000 vs 0.031 --- the NLL gap reflects
+  calibrated confidence at landmark tokens rather than a raw accuracy gap.
+  \item \textbf{In the paper's untested regimes, Level 1.5 opens measurable
+  gaps.} Under 10\% action noise at $T{=}512$ (4$\times$ OOD), Level 1.5
+  beats MapFormer-WM by +11\,pp (0.851 vs 0.739). With 200 true landmarks
+  added to the grid at $T{=}512$ OOD, Level 1.5 again beats MapFormer-WM by
+  +11\,pp (0.821 vs 0.715). Both differences hold across three training
+  seeds and are accompanied by roughly $2\times$ lower NLL, matching the
+  classical filtering story: bounded error under observability, sharper
+  posteriors at informative tokens.
+\end{enumerate}
+
+\paragraph{What this work is not.} We are not introducing a new benchmark;
+we are not scaling to large models; and we are not claiming to have beaten
+a state-of-the-art that was at 0.99+ before we started. We are demonstrating
+that a classical robotics tool (the Invariant EKF), parallelised to match
+MapFormer's depth profile, extends MapFormer's reach into regimes the paper
+acknowledged it did not test.

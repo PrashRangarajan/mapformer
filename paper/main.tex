@@ -1,0 +1,65 @@
+% paper/main.tex — master LaTeX document for the Level 1.5 InEKF paper.
+%
+% Build:
+%   cd paper && pdflatex main && bibtex main && pdflatex main && pdflatex main
+%
+% Template notes:
+%   Currently uses a generic article class. To switch to a venue-specific
+%   template (NeurIPS 2026, ICLR 2026, ICML 2026), replace the preamble
+%   below with the venue's style file and adjust \title/\author accordingly.
+
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+% \usepackage{algorithm}      % uncomment when a pseudocode algorithm is added
+% \usepackage{algpseudocode}  % needs texlive-science package
+\usepackage{microtype}
+\usepackage{natbib}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  citecolor=blue!60!black,
+  urlcolor=blue!60!black,
+}
+
+% Figure placement directory
+\graphicspath{{../paper_figures/}}
+
+\title{
+  MapFormer + Parallel Invariant EKF: \\
+  Calibrated Cognitive Maps via Heteroscedastic Lie-Group Filtering
+}
+
+\author{
+  Author Name\\
+  Affiliation\\
+  \texttt{email@example.com}
+}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  \input{sections/00_abstract}
+\end{abstract}
+
+\input{sections/01_introduction}
+\input{sections/02_related_work}
+\input{sections/03_methods}
+\input{sections/04_results}
+\input{sections/05_discussion}
+\input{sections/06_future_work}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

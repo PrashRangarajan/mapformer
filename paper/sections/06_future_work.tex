@@ -1,0 +1,31 @@
+\section{Future Work}
+\label{sec:future}
+
+% NOTE: Full proposals in paper/06_future_work.md. Key directions listed
+% here; translate individual proposals into LaTeX for final submission.
+
+\paragraph{Higher-dimensional Lie groups.} SE(2), SE(3), Sim(3). Direct
+generalisation; requires Adjoint-weighted recurrences~\citep{sola2018micro}.
+
+\paragraph{MapFormer-Grid: architecture that can produce hexagonal cells.}
+Replace one block per $\omega$ with $n_\mathrm{orientations}$ blocks at the
+same $\omega$ oriented at 60$^\circ$ offsets in 2D action space. This enables
+the three-waves-at-60$^\circ$ hexagonal interference that entorhinal grid
+cells exhibit. Current MapFormer architecture is structurally incompatible
+with hexagonal representations; this modification closes that gap.
+
+\paragraph{Multi-environment training.} Sample a fresh obs\_map per batch
+(TEM-style) to test whether residual gaps in the landmark regime close.
+
+\paragraph{IMU-preintegration-style context compression.} Compress past
+tokens into preintegrated measurements with covariance, per
+\citet{forster2017preintegration}.
+
+\paragraph{SE(n)-equivariant attention.} Combining input-dependent rotations
+with equivariant attention~\citep{finzi2021practical}.
+
+\paragraph{Differentiable factor-graph SLAM.} Treat $\hat\theta$ as pose
+estimates, refine via \citet{pineda2022theseus} bundle adjustment.
+
+\paragraph{Calibration vs neural data.} Compare $R_t$ distributions to
+recordings from \citet{sun2024neural} and \citet{nieh2021geometry}.

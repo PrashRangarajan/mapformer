@@ -1,0 +1,32 @@
+MapFormer~\citep{rambaud2025mapformer} solves the clean aliased-observation
+cognitive-map task nearly to ceiling (0.99+ next-token accuracy) by replacing
+RoPE's fixed positional rotations with input-dependent rotations in
+$\mathrm{SO}(2)$. The paper's reported task is therefore not where additional
+mechanism is needed. This work asks instead: what happens when we push
+MapFormer into regimes the paper did not test --- action noise, true
+(non-aliased) landmarks, out-of-distribution sequence lengths, and calibrated
+uncertainty --- and can classical Lie-group filtering help?
+\par
+We contribute a family of parallel Invariant Extended Kalman Filter
+extensions to the MapFormer-WM backbone, implementable using either FFT
+convolution (constant gain) or scalar Hillis-Steele associative scan
+(time-varying gain), both matching MapFormer's $\mathcal{O}(\log T)$ scan
+depth. Our main variant --- \textbf{Level 1.5 InEKF} --- uses a constant
+learnable prior covariance $\Pi$ and a per-token measurement noise $R_t$
+output by a small MLP, yielding a heteroscedastic Kalman gain
+$K_t = \Pi / (\Pi + R_t)$ computable in a single affine scan.
+\par
+On the paper's clean aliased task, Level 1.5 matches MapFormer-WM within
+noise and closes the NLL gap (reflecting calibrated confidence at landmark
+tokens). The architectural wins appear outside the paper's tested regime:
+under 10\% action noise at $4\times$ training length, Level 1.5 beats
+MapFormer-WM by \textbf{+11\,pp} with half the NLL; with 200 true landmarks,
+Level 1.5 beats MapFormer-WM by \textbf{+11\,pp} at $T{=}512$ OOD with roughly
+half the NLL. We additionally confirm a negative result from the MapFormer
+paper's Appendix A.5 at our scale: generic diagonal-$A$ Mamba-style selective
+SSMs fail the cognitive-map task (accuracy $\approx 0.57$ across configs).
+Honest hippocampal correspondence analysis partially falsifies biological
+predictions: MapFormer does not produce hexagonal grid cells (architecturally
+forced), and the learned $R_t$ does not follow the predicted Bayesian
+informativeness ordering. All methods preserve MapFormer's parallel
+path-integration scan.

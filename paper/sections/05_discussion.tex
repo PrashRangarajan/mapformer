@@ -1,0 +1,34 @@
+\section{Discussion}
+\label{sec:discussion}
+
+% TODO: Full prose draft in paper/05_discussion.md. The key argument is
+% summarised here.
+
+Level 1.5 is a specialised Mamba-style selective-scan on $\mathrm{SO}(2)$.
+The \citet{wang2025mamba-kalman} view (Mamba $\equiv$ linear Kalman filter)
+tells us that selective SSMs \emph{can} implement Kalman filters. Level 1.5
+shows that they \emph{should}, at least on tasks with known geometric
+structure, because the specialisation (Kalman-ratio gain, Lie-group wrap,
+decoupled path-integration scan) yields a large improvement in what the
+model can discover from gradient descent at limited training scale.
+
+\paragraph{Honest limitations.} Single-environment training (each model
+trains on one fixed obs\_map); single-scale training (we follow MapFormer's
+1 layer, 2 heads, $d{=}128$); single Lie group ($\mathrm{SO}(2)$ only); and
+hippocampal correspondence is only partially supported (we do not produce
+hexagonal grid cells due to an architectural constraint described in
+Section~\ref{sec:future}).
+
+\paragraph{When to use Level 1.5.} (1) If the environment is clean and
+fully aliased, MapFormer is already at ceiling --- use Level 1.5 only for
+calibrated uncertainty. (2) If actions are noisy or the environment has
+landmarks, Level 1.5 adds +11\,pp at $T{=}512$ OOD. (3) If you need
+calibrated uncertainty for downstream planning, Level 1.5 is strictly
+preferable on any task.
+
+\paragraph{Broader direction.} Constrained Mamba architectures with explicit
+group-equivariance. SO(2) is the simplest case; SE(2) and SE(3) generalise
+to 2D/3D navigation; other compact Lie groups cover other periodic
+structures. In each case the specialised Mamba block would look like
+Level 1.5 but with Adjoint-weighted scans and higher-dimensional
+measurement models. We expect the discoverability advantage to persist.
