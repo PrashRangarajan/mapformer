@@ -22,8 +22,15 @@ from .prefix_scan import (
 )
 from .environment import GridWorld
 from .model import MapFormerWM, MapFormerEM, ActionToLieAlgebra
-from .baselines import TransformerRoPE, LSTMBaseline
-from .inekf import InEKFLayer
+# Note: TransformerRoPE / LSTMBaseline / InEKFLayer were removed in the
+# 2026-04-24 cleanup. They were pre-refactor scaffolding superseded by:
+#   - mapformer.model_baseline_rope.MapFormerWM_RoPE   (replaces TransformerRoPE)
+#   - mapformer.model_baselines_extra.LSTMBaseline    (replaces baselines.LSTMBaseline)
+#   - mapformer.model_inekf_parallel.MapFormerWM_ParallelInEKF (replaces InEKFLayer)
+#   - mapformer.model_inekf_level15.MapFormerWM_Level15InEKF   (main contribution)
+#   - mapformer.model_inekf_level15_em.MapFormerEM_Level15InEKF
+#   - mapformer.model_inekf_level2.MapFormerWM_Level2InEKF
+#   - mapformer.model_predictive_coding.MapFormerWM_PredictiveCoding
 from .train import train
 from .evaluate import (
     eval_length_generalisation,
