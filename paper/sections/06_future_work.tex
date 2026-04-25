@@ -1,31 +1,236 @@
 \section{Future Work}
 \label{sec:future}
 
-% NOTE: Full proposals in paper/06_future_work.md. Key directions listed
-% here; translate individual proposals into LaTeX for final submission.
+This paper focuses on a single correction mechanism (heteroscedastic
+InEKF) in a single Lie group ($\mathrm{SO}(2)$) on a single task
+(MapFormer's 2D torus navigation). Several natural extensions sit at
+the intersection of classical robotics and modern deep learning, and
+appear underexplored in the current literature.
 
-\paragraph{Higher-dimensional Lie groups.} SE(2), SE(3), Sim(3). Direct
-generalisation; requires Adjoint-weighted recurrences~\citep{sola2018micro}.
+\subsection{Higher-Dimensional Lie Groups}
 
-\paragraph{MapFormer-Grid: architecture that can produce hexagonal cells.}
-Replace one block per $\omega$ with $n_\mathrm{orientations}$ blocks at the
-same $\omega$ oriented at 60$^\circ$ offsets in 2D action space. This enables
-the three-waves-at-60$^\circ$ hexagonal interference that entorhinal grid
-cells exhibit. Current MapFormer architecture is structurally incompatible
-with hexagonal representations; this modification closes that gap.
+MapFormer's $\mathrm{SO}(2)$ state is a natural starting point but
+limits applications to planar navigation. Extensions:
+\begin{itemize}
+  \item \textbf{$\mathrm{SE}(2)$ (planar pose = position + heading):}
+  direct generalization with no conceptual overhead; adds 2 translation
+  components to the state. A natural fit for 2D robot navigation tasks
+  (e.g., BabyAI, MiniGrid, ViZDoom).
+  \item \textbf{$\mathrm{SO}(3)$ and $\mathrm{SE}(3)$ (3D orientation,
+  full 6-DoF pose):} requires the 3D version of Barrau-Bonnabel's
+  invariant EKF (well-understood in robotics). Would enable
+  cognitive-map learning for drones, 3D navigation, and first-person
+  VR/AR.
+  \item \textbf{$\mathrm{Sim}(3)$ (pose with scale):} for monocular
+  SLAM-style tasks where scale is uncertain. Used in ORB-SLAM,
+  DROID-SLAM.
+\end{itemize}
+Our parallel-scan machinery extends directly: M\"obius matrices for
+$\mathrm{SO}(2)$ generalize to Adjoint-weighted recurrences for
+higher-dimensional groups following standard InEKF
+derivations~\citep{sola2018micro}.
 
-\paragraph{Multi-environment training.} Sample a fresh obs\_map per batch
-(TEM-style) to test whether residual gaps in the landmark regime close.
+\subsection{IMU-Preintegration-Style Context Compression}
 
-\paragraph{IMU-preintegration-style context compression.} Compress past
-tokens into preintegrated measurements with covariance, per
-\citet{forster2017preintegration}.
+\citet{forster2017preintegration} compress 40 raw IMU samples into one
+preintegrated $\mathrm{SE}(3)$ measurement for SLAM. The analogous
+idea for long-context transformers: compress a chunk of
+action/observation tokens into a single ``preintegrated'' position
+update carrying a covariance.
 
-\paragraph{SE(n)-equivariant attention.} Combining input-dependent rotations
-with equivariant attention~\citep{finzi2021practical}.
+Practically: replace the $\mathrm{cumsum}(\omega \cdot \Delta)$ over all
+tokens with a multi-resolution representation that commits past chunks
+into a single summary and keeps only recent tokens at full resolution.
+Combined with Level~1.5's bounded-error property, this could extend
+MapFormer's effective context dramatically without per-token attention.
 
-\paragraph{Differentiable factor-graph SLAM.} Treat $\hat\theta$ as pose
-estimates, refine via \citet{pineda2022theseus} bundle adjustment.
+\subsection{Equivariant Attention on Lie Groups}
 
-\paragraph{Calibration vs neural data.} Compare $R_t$ distributions to
-recordings from \citet{sun2024neural} and \citet{nieh2021geometry}.
+RoPE is $\mathrm{SO}(2)$-equivariant by construction. Level~1.5
+generalises via input-dependent rotations. But neither is
+$\mathrm{SE}(n)$-equivariant --- they don't correctly handle the
+coupling of translation and rotation. A natural extension:
+$\mathrm{SE}(n)$-equivariant attention where Q/K rotate \emph{and}
+translate under the group action. Recent work on equivariant
+transformers~\citep{finzi2021practical} provides the machinery;
+combining it with input-dependent actions (MapFormer's core innovation)
+appears unexplored.
+
+\subsection{Differentiable Pose-Graph SLAM Inside Neural Networks}
+
+Theseus-AI~\citep{pineda2022theseus} provides a differentiable
+$\mathrm{SE}(3)$ bundle adjustment module for PyTorch. MapFormer's
+internal $\hat\theta$ state could be treated as pose estimates and
+refined via a Theseus-style optimisation step at each layer or at
+evaluation time. This would convert the ``cognitive map'' into a
+literal pose-graph SLAM backend with learned perception.
+
+\subsection{Connection to Biological Neural Data}
+\label{sec:future:bio}
+
+We tested two predictions empirically
+(Section~\ref{sec:results:hippo}) and both came back \textbf{falsified}:
+\begin{itemize}
+  \item Hexagonal grid cells: Sargolini grid scores on hidden-state
+  rate maps top out at 0.05--0.15 across all variants, well below the
+  0.3 threshold considered grid-like.
+  \item $R_t$ at landmark tokens: predicted ordering was
+  \texttt{landmark} < \texttt{aliased} < \texttt{blank}; actual
+  orderings deviate for both Level~1.5-WM and Level~1.5-EM.
+\end{itemize}
+The third test (Stensola $\sqrt{2}$-spaced $\omega$ modules) holds
+approximately, but mostly inherited from the geometric initialisation
+rather than discovered by training. The diagnostic explanation for the
+absence of hexagonal cells is architectural --- see
+Section~\ref{sec:future:grid}. Open directions:
+
+\begin{itemize}
+  \item Compare $R_t$ distributions to neural recordings from
+  \citet{sun2024neural} or \citet{nieh2021geometry} directly. Even if
+  Level~1.5 is not Bayesian-informativeness-optimal, the learned $R_t$
+  may still match neural firing patterns under the right transformation.
+  \item Train Level~1.5 with an explicit Bayesian-informativeness
+  regulariser on $R_t$ to test whether the predicted ordering can be
+  recovered.
+  \item Investigate place-cell-like single-peak patterns at the
+  \emph{attention} level rather than at hidden-state level --- attention
+  rows project position onto a sparse subset of cells, which may exhibit
+  place-cell selectivity even when hidden states do not show grid
+  structure.
+\end{itemize}
+
+\subsection{Multi-Task / Instruction-Conditioned Navigation}
+
+Current MapFormer evaluates ``predict the next observation at revisits.''
+Real cognitive-map tasks involve goal-directed behavior: ``navigate to
+the red door.'' This requires action prediction rather than observation
+prediction, instruction conditioning (language or goal-state input), and
+imitation learning or RL objectives. BabyAI is a natural next target.
+
+\subsection{Scaling Study}
+
+The MapFormer paper uses 1 layer, 2 heads, $d{=}128$ --- very small.
+We replicate this scale but suspect the Level~1.5 advantages scale
+favorably: more layers $\to$ more opportunities for $\hat\theta$
+correction; more heads $\to$ per-head uncertainty could capture
+multimodal hypotheses; larger $d$ $\to$ more expressive $R_t$ head. A
+systematic scaling study at 2/4/8 layers, 4/8 heads,
+$d{=}256/512/1024$ would establish whether the architectural advantage
+persists at scale or shrinks.
+
+\subsection{Multi-Environment Training and Richer Zero-Shot Transfer}
+
+Our current pipeline trains each model on one fixed \texttt{obs\_map}
+and evaluates zero-shot on held-out \texttt{obs\_map}s. TEM-style
+multi-environment training would sample a fresh \texttt{obs\_map} per
+batch during training; this tests whether residual gaps in the lm200
+OOD regime close when the model has explicitly learned to generalise
+across environments. Graph-topology generalisation (hexagonal grids,
+family trees) is the deeper TEM-style test but requires more
+substantial environment engineering.
+
+\subsection{Real-World Robotics Deployment}
+
+The Kalman regime of Level~1.5 --- bounded error, calibrated
+uncertainty, sharp landmark handling --- is precisely what real
+robotic navigation needs. We see a clear path from the current work to
+practical impact: (1)~$\mathrm{SE}(3)$ generalisation of Level~1.5,
+(2)~BabyAI or MiniGrid validation, (3)~sim-to-real on small mobile
+robots (e.g., Clearpath Jackal), (4)~integration with existing SLAM
+stacks via the Theseus-AI differentiable-optimisation bridge. This
+would close the loop on the ``robotics Lie theory $\to$ deep learning''
+transfer we advocate, with empirical validation on physical platforms.
+
+\subsection{Comparison to Other Learned-Filter Frameworks}
+
+KalmanNet (Revach et al.\ 2022) learns the Kalman gain while keeping the
+rest classical. Level~1.5 learns both the gain (via $R_t$) and the
+measurement model (via the $z$-head) but retains the Lie-group
+structure. Understanding empirically where each framework wins (and
+for which tasks) is a natural comparison study. Other frameworks for
+comparison: particle filters with learned proposals, variational
+Bayesian filters, Deep Kalman Filters.
+
+\subsection{Unification with SSMs}
+
+Level~1.5's scan machinery is algorithmically identical to Mamba's
+selective-scan. This suggests deep connections between state-space
+models (Mamba, S4), classical filtering (Kalman, EKF, UKF), and
+equivariant architectures (Lie-group symmetry). A unified theoretical
+framework covering all three would likely yield new architectures
+combining the strengths of each. \citet{wang2025mamba-kalman} make
+preliminary connections; extending this to the Lie-group setting with
+explicit invariance guarantees is an open direction.
+
+\subsection{MapFormer-Grid: An Architecture That Can Produce Hexagonal Cells}
+\label{sec:future:grid}
+
+Our hippocampal-correspondence analysis (Section~\ref{sec:future:bio})
+found that current MapFormer variants do not produce hexagonal
+grid-cell-like representations. The reason is structural: MapFormer
+assigns one path-integrator block per $\omega$ frequency, but the
+geometric optimum for 2D spatial tiling --- three sinusoidal waves at
+the \emph{same} frequency oriented at $60^\circ$ --- requires multiple
+blocks per scale. With one wave per $\omega$, hexagonal interference
+patterns are mathematically inaccessible regardless of how the model is
+trained.
+
+\paragraph{Proposed architectural change.} Replace the single block per
+$\omega$ with a \emph{module} of $n_\mathrm{orientations}$ blocks at
+the same $\omega$ with orientations $\{0^\circ, 60^\circ, 120^\circ\}$
+in 2D action space:
+\begin{itemize}
+  \item \texttt{action\_to\_lie} outputs a 2D vector
+  $(\Delta_x, \Delta_y)$ per module instead of a scalar per block;
+  \item for each block in module $m$ at orientation $\theta_o$:
+  $\Delta_{m,o} = \cos(\theta_o) \cdot \Delta_x + \sin(\theta_o) \cdot \Delta_y$;
+  \item the cumulative angle is
+  $\theta_{m,o,t} = \omega_m \cdot \mathrm{cumsum}(\Delta_{m,o})$;
+  \item at the hidden-state level,
+  $\cos\theta_{m,0} + \cos\theta_{m,60} + \cos\theta_{m,120}$
+  produces hexagonal interference at scale $\omega_m$.
+\end{itemize}
+
+\paragraph{Trade-offs.} More parameters per module, fewer distinct
+$\omega$ values. Path integration remains parallelisable via cumsum;
+$\mathcal{O}(\log T)$ preserved. Level~1.5 correction extends naturally
+to the new state. A scaffold class \texttt{MapFormerWM\_Grid} exists in
+the repository; multi-seed training and hippocampal-correspondence
+evaluation are the obvious next step.
+
+\paragraph{Predicted outcomes.}
+(1) Hexagonal patterns emerge with grid scores $> 0.3$ at multiple
+scales, matching \citet{sargolini2006conjunctive};
+(2) multi-scale modular organisation matching
+\citet{stensola2012modules} $\sqrt{2}$-ratio spacing;
+(3) cognitive-map task performance preserved or improved, since
+hexagonal codes are theoretically optimal for 2D position under
+bandwidth constraints.
+
+If validated, this would close the gap between MapFormer's mathematical
+structure and biological grid-cell organisation, providing the first
+transformer-based architecture that \emph{necessarily} produces
+grid-cell representations from first principles. Falsification would be
+a significant negative result indicating the gradient landscape itself
+disfavours hexagonal solutions even when architecturally accessible.
+
+\subsection{Robust Level 1.5-EM Initialization}
+\label{sec:future:em-init}
+
+Level~1.5-EM currently requires a safe initialisation
+($\log R_\mathrm{init\_bias} = 3.0$) because EM's Hadamard product
+attention provides no fallback gradient path when the position branch
+is corrupted by random $\hat\theta$ corrections at init. Our experiment
+with a more aggressive safe init (bias $= 5.0$) showed that no single
+bias is optimal for all seeds --- the lm200 variance is intrinsic to
+seed-specific landscape geometry.
+
+A more principled fix could address this. Possibilities: (i) a learnable
+gate that replaces the correction at init with the identity and unfreezes
+during training (adapter-style); (ii) explicit warmup scheduling of the
+Kalman gain $K_t$ (e.g., from 0 to its learned value over the first
+10\% of training); (iii) a different attention structure that does not
+have the $A_P$ destruction failure mode but retains EM's
+Hadamard-product expressivity. Closing this gap would make
+Level~1.5-EM as robust and reliable as Level~1.5-WM, which currently is
+the better-behaved of the two.

@@ -1,35 +1,83 @@
 \section{Related Work}
 \label{sec:related}
 
-% NOTE: Prose draft in paper/02_related_work.md. This stub ensures the paper
-% compiles; translate the markdown draft into LaTeX here for the final
-% submission.
+\paragraph{Cognitive maps in neural models.} The Tolman-Eichenbaum Machine
+(TEM)~\citep{whittington2020tem} introduced transformer-adjacent models of
+the hippocampal formation that factorize ``structure'' (position) from
+``content'' (sensory observations). Its transformer variant,
+TEM-T~\citep{whittington2022tem-t}, reformulated this as a transformer with
+action-dependent position updates. MapFormer~\citep{rambaud2025mapformer}
+is the most recent development in this line, replacing TEM-T's sequential
+rotation updates with a parallel cumulative-sum Lie-algebra path integration.
 
-\paragraph{Cognitive maps in the Transformer and RNN literature.} The
-Tolman-Eichenbaum Machine (TEM)~\citep{whittington2020tem} and its transformer
-variant TEM-T~\citep{whittington2022tem-t} train on many random graph
-environments to learn abstract relational structure. MapFormer
-\citep{rambaud2025mapformer} inherits this setup but uses input-dependent
-positional rotations in place of TEM's recurrent weights.
+\paragraph{Transformer position encodings.} RoPE~\citep{su2021roformer}
+rotates queries/keys by angles that are a fixed function of token index;
+CoPE~\citep{golovneva2024cope} gates rotations by content to compress
+relative distance; TAPE~\citep{zhu2025tape} updates positional embeddings
+after attention. None of these adapt rotations to an external action
+signal. MapFormer's core contribution is precisely this adaptation. Per
+the MapFormer paper's own Table 2, all three fail the 2D-navigation task
+at a single layer (RoPE 0.16, TAPE 0.32, CoPE 0.74 IID) while
+MapFormer-WM saturates at $\approx 1.00$.
 
-\paragraph{Positional encodings.} RoPE~\citep{su2021roformer} applies fixed
-token-index rotations; CoPE~\citep{golovneva2024cope} replaces token indices
-with content-based soft counts; TAPE~\citep{zhu2025tape} uses input-dependent
-MLPs after attention. The MapFormer paper's Table 2 shows all three fail on
-2D grid navigation at 1 layer (RoPE 0.16, CoPE 0.74, TAPE 0.32 IID).
-MapFormer-WM $\approx 1.00$.
+\paragraph{Cognitive-map filtering frameworks.} The Clone-Structured
+Cognitive Graph (CSCG;~\citealp{george2021cscg}) uses discrete latent
+states --- ``clones'' --- to disambiguate aliased observations,
+representing the Bayesian posterior over position as a categorical
+distribution. This is a forward-model strategy: given a position, predict
+the expected observation distribution. Classical navigation filters
+(EKF, UKF, Invariant EKF) use inverse models: given an observation,
+infer the implied position. Our analysis frames these as complementary
+inductive biases for the correction mechanism; our main Level~1.5
+variant is inverse-model-based, while our Predictive-Coding variant is
+forward-model-based.
 
-\paragraph{Parallel Bayesian filters.} \citet{sarkka2021parallel} show
-parallelizable Bayesian filters via associative scan. Mamba~\citep{gu2024mamba}
-brought such scans to deep learning. Our parallel InEKF is a specific instance,
-specialised to $\mathrm{SO}(2)$ with scalar affine scans.
+\paragraph{Invariant filtering on Lie groups.}
+\citet{barrau2017inekf} introduced the Invariant Extended Kalman Filter,
+showing that on matrix Lie groups with group-affine dynamics the error
+admits autonomous (state-independent) dynamics, enabling bounded-error
+guarantees under observability. \citet{markovic2017wrapping} showed that
+on $\mathrm{SO}(2)$ the wrapped-innovation EKF is mathematically
+equivalent to the full Lie-Group EKF, which we exploit for correctness
+at minimal implementation cost.
 
-\paragraph{Invariant extended Kalman filtering.} \citet{barrau2017inekf} is
-the canonical reference. \citet{markovic2017wrapping} shows that on
-$\mathrm{SO}(2)$, the Lie-Group EKF equals an EKF with $\mathrm{atan2}$-wrapped
-innovation --- the identity we exploit to keep Level 1.5 simple.
+\paragraph{Parallel Bayesian filtering.}
+\citet{sarkka2021parallel} introduced parallelizable Bayesian filters
+via associative scan, enabling $\mathcal{O}(\log T)$ depth for
+linear-Gaussian state-space models. Subsequent work extended this to
+nonlinear iterated filters. Mamba~\citep{gu2024mamba} brought such scans
+to deep learning as a replacement for attention; our Level~2 design uses
+the same associative-scan primitive on M\"obius $2\times 2$ matrices,
+and Level~1.5 uses a simpler scalar-affine variant.
 
-\paragraph{Grid-cell modeling.} Grid cells fire in hexagonal patterns
-\citep{hafting2005grid,sargolini2006conjunctive} organised in discrete
-modules with $\sqrt{2}$-ratio spacing \citep{stensola2012modules}. We
-compare in Section~\ref{sec:results}.
+\paragraph{Predictive coding.} Rao \& Ballard (1999) formalized the
+``prediction error as signal'' view: top-down predictions compared
+against bottom-up signals give error signals that drive state updates.
+Friston's Free-Energy Principle generalizes this. We implement a
+predictive-coding variant of MapFormer that uses an MLP forward model
+from $(\cos\theta, \sin\theta)$ to expected observation embedding, with
+prediction error driving an additive state correction. We find it
+complementary to InEKF's inverse-model approach --- stronger at aliased
+aggregation, weaker at sharp landmark measurement.
+
+\paragraph{State-space language models and the Mamba-Kalman connection.}
+Selective SSMs \citep{gu2024mamba} use associative scans for
+parallel-friendly recurrence. \citet{wang2025mamba-kalman} prove an
+isomorphism: Mamba's selective SSM is equivalent to a time-varying
+linear Kalman filter under an appropriate parameterization. Our Level~1.5
+is a specialisation of this: a 1-D Mamba block with three additional
+constraints --- (i) Kalman-ratio gain parameterization
+$K_t = \Pi/(\Pi + R_t)$, (ii) Lie-group-correct wrapping of innovations,
+(iii) decoupled path-integration + correction scans. We demonstrate
+empirically that this specialisation is \emph{discoverable} from
+gradient descent while generic selective SSMs are not, in the
+cognitive-map regime.
+
+\paragraph{Heteroscedastic Kalman filtering.} Learning per-observation
+measurement noise is a well-studied idea in classical filtering (the
+``innovation covariance estimation'' literature of the 1970s--80s) and
+in modern learned-filter work such as KalmanNet (Revach et al., 2022).
+Our Level~1.5 differs from these by coupling heteroscedastic $R_t$ with
+fixed covariance $\Pi$, implemented via a single scalar associative
+scan. This makes it architecturally lighter than KalmanNet while
+retaining the key per-token gain adaptation.

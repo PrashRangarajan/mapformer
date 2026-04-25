@@ -1,73 +1,191 @@
 \section{Methods}
 \label{sec:methods}
 
-% NOTE: Prose draft in paper/03_methods.md. This section gives the key
-% mathematical definitions needed to read the results; the full methods
-% write-up is in the markdown draft.
+\subsection{Notation and Setup}
 
-\subsection{Notation and Task}
+We work on the 2D torus GridWorld from~\citet{rambaud2025mapformer}. An
+environment of size $N \times N$ (typically $N{=}64$) assigns to each cell
+an observation type from $K + 1$ symbols: $K$ regular types plus a blank
+token $B$. A fraction $p_\mathrm{empty}$ of cells are blank. Optionally,
+$L$ additional cells carry unique single-use landmark tokens (disjoint
+from the $K$ regular types).
 
-Following~\citet{rambaud2025mapformer}, we work on a 2D torus grid of size
-$N{=}64$ with $K{=}16$ aliased observation types and $p_\mathrm{empty}=0.5$.
 The agent emits an interleaved trajectory
-$s = (a_1, o_1, a_2, o_2, \ldots, a_T, o_T)$ over random walks ($k$ steps per
-chosen direction, $k \in \{1,\ldots,10\}$). Loss is next-token cross-entropy
-applied only at \emph{revisited} observation positions.
-
-\subsection{MapFormer path integration}
-
-Path integration uses an input-dependent SO(2) rotation. For each block
-$b \in \{1,\ldots,n_b\}$ with learnable angular velocity $\omega_b$:
 \begin{equation}
-  \theta_{\mathrm{path},t}^{(b)} = \omega_b \cdot \sum_{s=1}^{t} \Delta_s^{(b)},
-  \qquad
-  \Delta_s = W_\Delta^{\mathrm{out}}\, W_\Delta^{\mathrm{in}}\, x_s
-  \label{eq:path-int}
+  s = (a_1, o_1, a_2, o_2, \ldots, a_T, o_T)
 \end{equation}
-The cumulative sum~\eqref{eq:path-int} is $\mathcal{O}(\log T)$ via parallel
-scan. The geometric initialisation is $\omega_b = 2\pi \cdot (1/N)^{b/(n_b-1)}$.
+with actions $a_t \in \{\uparrow,\downarrow,\leftarrow,\rightarrow\}$
+sampled over directed walks ($k$ steps per chosen direction,
+$k \in \{1,\ldots,10\}$) and observations $o_t$ determined by the
+obs-map at the agent's current cell after applying $a_t$. We train on
+$\sim$1M sequences ($T{=}128$ steps, batch size 128, AdamW
+$\mathrm{lr}{=}3\!\times\!10^{-4}$, weight decay 0.05, linear LR decay).
 
-\subsection{Level 1.5 InEKF on SO(2)}
+\paragraph{Task.} Self-supervised next-token prediction with loss applied
+only at \emph{revisited} observation positions, matching MapFormer's
+forced-navigation task: ``predict the upcoming observation each time the
+agent returns to a previously visited location.''
 
-Add three learnable components: a constant log-prior covariance
-$\log\Pi \in \mathbb{R}^{n_h \times n_b}$, a per-token log-measurement noise
-$\log R_t$ from an MLP, and a measurement model
-$z_t \in [-\pi,\pi]^{n_h \times n_b}$ from an MLP:
+\subsection{MapFormer Baseline (reproduction)}
+
+A 1-layer Transformer on the unified vocabulary (actions + observations).
+For each token $x_t$, a low-rank projection produces the Lie-algebra
+increment $\Delta_t \in \mathbb{R}^{H \times B}$, where $H$ is the number
+of attention heads and $B$ the number of $2{\times}2$ rotation blocks per
+head. Angular velocities $\omega \in \mathbb{R}^{H \times B}$ are
+learnable with geometric initialization
 \begin{equation}
-  z_t = \pi \cdot \tanh\!\big(f_z(x_t)\big), \qquad
-  \log R_t = f_R(x_t)
+  \omega_i = \omega_{\max} \cdot \left( \tfrac{1}{\Delta_{\max}} \right)^{(i-1)/(B-1)}, \quad i = 1, \ldots, B
 \end{equation}
-Wrapped innovation and Kalman gain:
+(The paper's Eq.~17 specifies
+$\omega_i = \omega_{\max} \cdot (1/\Delta_{\max})^{-i/B}$; the negated
+exponent is a sign typo, confirmed by the paper's own inequality
+$\omega_\mathrm{min} = \omega_{\max}/\Delta_{\max}$ and RoPE's analogous
+decreasing schedule.)
+
+Path integration proceeds in the Lie algebra via parallel cumulative sum:
 \begin{equation}
-  \nu_t = \mathrm{atan2}\!\big(\sin(z_t - \theta_{\mathrm{path},t}), \,
-                                \cos(z_t - \theta_{\mathrm{path},t})\big),
+  \theta_t = \omega \odot \mathrm{cumsum}_t(\Delta)
+\end{equation}
+where $\odot$ is elementwise product. The cumulative angles are applied to
+queries and keys via RoPE. Attention is standard causal self-attention.
+
+Correct reproduction requires seven specific fixes (torus boundary,
+unified action/observation vocabulary, revisit-only loss, $\omega$ sign,
+Hadamard EM attention, separate $q_0^p/k_0^p$, cumsum+exp not
+prefix-product). With all fixes, our reproduction matches the paper's
+reported 95.5\% accuracy for MapFormer-WM at $T{=}128$.
+
+\subsection{Level 1 InEKF: Parallel Invariant EKF on SO(2)}
+
+The Level~1 variant adds explicit state correction via a Kalman filter.
+Following~\citet{markovic2017wrapping}, on $\mathrm{SO}(2)$ the
+wrapped-innovation EKF is mathematically identical to the Lie-Group EKF,
+so we operate on an unbounded $\hat\theta \in \mathbb{R}$ with
+innovations wrapped to $[-\pi, \pi]$ via $\mathrm{atan2}(\sin, \cos)$.
+
+A learned measurement head produces $\hat z_t \in [-\pi, \pi]$ from the
+content embedding:
+\begin{equation}
+  \hat z_t = \pi \cdot \tanh\bigl( W_2 \cdot \mathrm{GELU}(W_1 \cdot x_t) \bigr)
+\end{equation}
+
+With constant process noise $Q$ and constant measurement noise $R$, the
+scalar discrete algebraic Riccati equation has the closed-form fixed
+point:
+\begin{equation}
+  P^* = \frac{-Q + \sqrt{Q^2 + 4QR}}{2}, \qquad K^* = \frac{P^* + Q}{P^* + Q + R}
+\end{equation}
+
+With $K^*$ frozen, the correction recurrence becomes a scalar affine
+recurrence with constant coefficient:
+\begin{equation}
+  d_t = (1 - K^*) \, d_{t-1} + K^* \cdot \nu_t,
   \qquad
+  \nu_t = \mathrm{atan2}\bigl( \sin(\hat z_t - \theta_{\mathrm{path},t}), \cos(\hat z_t - \theta_{\mathrm{path},t}) \bigr)
+\end{equation}
+which is equivalent to a causal 1-D convolution with kernel
+$K^* (1 - K^*)^k,\, k = 0, 1, 2, \ldots$ computable via FFT in
+$\mathcal{O}(T \log T)$ work / $\mathcal{O}(\log T)$ depth. The corrected
+angles $\hat\theta_t = \theta_{\mathrm{path},t} + d_t$ are fed to RoPE in
+place of $\theta_\mathrm{path}$.
+
+\subsection{Level 2 InEKF: Full Heteroscedastic}
+
+Level~2 learns a per-token measurement noise $R_t$ from the content
+embedding and tracks a time-varying covariance $\Pi_t$. The covariance
+recurrence under predict + update is
+\begin{equation}
+  \Pi_{t+1} = \frac{(\Pi_t + Q) \cdot R_t}{\Pi_t + Q + R_t}
+\end{equation}
+which is a M\"obius transformation $\Pi_{t+1} = M_t(\Pi_t)$ with matrix
+\begin{equation}
+  M_t = \begin{bmatrix} R_t + Q & Q \cdot R_t \\ 1 & R_t \end{bmatrix}
+\end{equation}
+M\"obius transforms compose under matrix multiplication, so a parallel
+associative scan of $2 \times 2$ matrices yields $\Pi_t$ for all $t$ in
+$\mathcal{O}(\log T)$ depth. The gain is then $K_t = \Pi_t / R_t$ (a
+scalar simplification derivable from the predict--update chain). The
+state correction uses a second affine scan with time-varying
+$\alpha_t = 1 - K_t$.
+
+Two parallel $2 \times 2$ matrix scans are $\sim 60\times$ slower in
+wall-clock than Level~1's FFT convolution at our sequence lengths,
+despite equivalent asymptotics. More importantly, Level~2 \emph{performs
+worse} than Level~1.5 despite being strictly more expressive
+(Section~\ref{sec:results}).
+
+\subsection{Level 1.5 InEKF: The Recommended Architecture}
+
+Level~1.5 is the compromise: constant learnable $\Pi$, per-token $R_t$.
+This retains the per-token Kalman gain adaptation
+\begin{equation}
   K_t = \frac{\Pi}{\Pi + R_t}
 \end{equation}
-Affine correction scan ($\mathcal{O}(\log T)$ Hillis-Steele):
+but eliminates the M\"obius covariance scan. The state correction
 \begin{equation}
-  d_t = (1 - K_t)\, d_{t-1} + K_t \cdot \nu_t,
-  \qquad
-  \hat\theta_t = \theta_{\mathrm{path},t} + d_t
+  d_t = (1 - K_t) \, d_{t-1} + K_t \cdot \nu_t
 \end{equation}
-The corrected $\hat\theta_t$ feeds MapFormer's input-dependent rotation in
-place of $\theta_{\mathrm{path},t}$.
+is a scalar affine recurrence with time-varying coefficient,
+parallelizable via a single scalar Hillis-Steele scan: associative
+combination
+\begin{equation}
+  (\alpha_1, v_1) \otimes (\alpha_2, v_2) = (\alpha_1 \alpha_2,\, \alpha_2 v_1 + v_2)
+\end{equation}
+yields cumulative affine transforms in $\mathcal{O}(\log T)$ depth,
+$\mathcal{O}(T \log T)$ work (or $\mathcal{O}(T)$ with Mamba's
+selective-scan kernel~\citep{gu2024mamba}).
 
-\subsection{Level 1.5-EM: safe init}
+Level~1.5 adds four learnable components to vanilla MapFormer:
+\begin{enumerate}
+  \item $\log \Pi \in \mathbb{R}^{H \times B}$: constant covariance
+  \item $f_R$: MLP ($d_\mathrm{model} \to 128 \to H \cdot B$) producing
+  per-token $\log R_t$
+  \item $f_z$: MLP producing the measurement $\hat z_t$ (same as Level~1)
+  \item No additional parameters in the scan itself
+\end{enumerate}
+Total: $\sim 50\mathrm{K}$ additional parameters, $\sim 10\%$ more than
+vanilla MapFormer's 200K.
+
+\subsection{Level 1.5-EM: Safe Initialization}
 
 For the MapFormer-EM backbone (Hadamard product attention
-$\mathrm{softmax}(A_X \odot A_P)\,V$), default initialisation of $\log R$ at
-zero gives $K{=}0.5$ at start. This corrupts $A_P$, which Hadamard-products
-with $A_X$ to destroy gradient signal; 3 of 9 seeds catastrophically diverge.
-We initialise $\log R_\mathrm{head}$ with bias $3.0$, giving $K{\approx}0.05$
-at start (InEKF behaves as a near-no-op at init, then learns $R$ downward
-where measurements are informative). This is the standard residual-addition
-safe-init trick.
+$\mathrm{softmax}(A_X \odot A_P) \cdot V$), default initialization of
+$\log R$ at zero gives $K{=}0.5$ at start. This corrupts $A_P$, which
+Hadamard-products with $A_X$ to destroy gradient signal; 3 of 9 seeds
+catastrophically diverge. We initialize $f_R$'s output bias at $3.0$,
+giving $K \approx 0.05$ at start --- the InEKF behaves as a near-no-op
+at init, then learns $R$ downward only where measurements are
+informative. This is the residual-addition safe-init trick familiar from
+ResNet's zero-init or adapter $\beta{=}0$.
 
-\subsection{Training}
+\subsection{Predictive-Coding (PC) MapFormer}
 
-AdamW, lr $3{\times}10^{-4}$, weight decay 0.05, linear LR decay, batch size
-128, 50 epochs $\times$ 156 batches ($\sim$1M sequences), $T{=}128$ training
-length. Three configurations: \textbf{clean} (no action noise, no landmarks),
-\textbf{noise} (10\% action noise), \textbf{lm200} (10\% noise + 200 unique
-landmarks, $\approx$ 5\% density). Three training seeds each.
+An alternative correction mechanism based on forward models rather than
+inverse. A forward model
+\begin{equation}
+  \hat o_t = g(\cos\theta_{\mathrm{path},t}, \sin\theta_{\mathrm{path},t})
+\end{equation}
+($2\pi$-invariant by construction) predicts the observation embedding
+from position. The prediction error $\epsilon_t = x_t - \hat o_t$ is
+mapped to a Lie-algebra correction $\delta\theta_t$ via an MLP, then
+accumulated through a scalar affine scan with a learned gate. An
+auxiliary loss $\|\epsilon\|^2$ at observation positions encourages the
+forward model to actually model observations rather than collapse.
+
+\subsection{Ablations}
+
+Four Level~1.5 ablations isolate components:
+\begin{description}
+  \item[\texttt{L15\_ConstR}] constant learnable $R$ (no
+  heteroscedasticity). Tests whether per-token $R_t$ matters.
+  \item[\texttt{L15\_NoMeas}] measurement head output fixed to 0, so
+  $\hat z = 0$ always. Tests whether the measurement signal contributes.
+  \item[\texttt{L15\_NoCorr}] correction scan output forced to 0
+  ($d_t = 0$). Recovers vanilla MapFormer with idle parameters. Sanity
+  check.
+  \item[\texttt{L15\_DARE}] $\Pi$ computed via scalar DARE from
+  learnable $Q$ and a separate learnable $R_\mathrm{avg}$ (not
+  learnable $\Pi$ directly). Tests whether the free learnable $\Pi$ adds
+  expressivity beyond the DARE-prescribed value.
+\end{description}

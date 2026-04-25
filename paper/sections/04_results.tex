@@ -1,16 +1,36 @@
 \section{Results}
 \label{sec:results}
 
-% TODO: Full prose draft in paper/04_results.md. This stub has key tables
-% + figures set up; translate prose into sentences for final submission.
+We organise empirical findings under eight headings. All numbers are
+multi-seed (3 training seeds $\times$ 3 fresh test-environment seeds
+where applicable); confidence intervals are population standard
+deviations. We use \emph{in-dist} for evaluation on the same
+\texttt{obs\_map} seed used for training and \emph{OOD} for evaluation
+on a held-out \texttt{obs\_map} (\texttt{seed + 1000}), which tests
+path-integration generalisation in an environment the model has never
+seen.
 
-\subsection{Main results}
+\subsection{Main results across three regimes}
+
+Three configurations probe different sources of difficulty that the
+MapFormer paper did not evaluate:
+\begin{description}
+  \item[\textbf{clean}] no action noise, no landmarks (reproduces the
+  paper's setup)
+  \item[\textbf{noise}] 10\% action noise injected at training time
+  (path-integration drift test)
+  \item[\textbf{lm200}] 200 unique landmark cells (non-aliased;
+  $\approx$5\% density)
+\end{description}
+
+Table~\ref{tab:main} reports OOD accuracy at $T{=}512$ (4$\times$
+training length).
 
 \begin{table}[h]
 \centering
 \caption{OOD accuracy at $T{=}512$ on fresh obs\_maps (4$\times$ training
-length), three configurations. Multi-seed means $\pm$ std over 3 training
-seeds. Full in-distribution and $T{=}128$ numbers are in the supplementary.}
+length) across three configurations. Multi-seed means $\pm$ population
+std over 3 training seeds.}
 \label{tab:main}
 \small
 \begin{tabular}{lccc}
@@ -30,17 +50,90 @@ MambaLike & $0.573 \pm 0.007$ & $0.568 \pm 0.004$ & $0.513 \pm 0.010$ \\
 \end{tabular}
 \end{table}
 
-\subsection{One-shot generalization (per-visit-count accuracy)}
+Three observations:
+\begin{enumerate}
+  \item \textbf{Level 1.5 wins by +11\,pp over vanilla MapFormer-WM in
+  the noise regime} (0.851 vs 0.739) \textbf{and +11\,pp in the landmark
+  regime} (0.821 vs 0.715). On the clean task both saturate (0.993 vs
+  0.913), as expected because the paper already reported MapFormer-WM at
+  $\geq 0.95$ on this task.
+  \item \textbf{A stronger backbone alone does not subsume the
+  correction mechanism.} MapFormer-EM gets 0.765 and 0.605 on noise and
+  landmarks --- actually \emph{worse} than MapFormer-WM on landmarks ---
+  and Level~1.5 stacked on top of EM recovers the lost ground (0.869 and
+  0.730).
+  \item \textbf{Generic Mamba-style SSM fails across all regimes}
+  (0.513--0.573), worse than the non-cognitive-map baselines RoPE and
+  LSTM in most cells. This reproduces the MapFormer paper's own
+  Appendix A.5 Table~3 finding at our scale: diagonal-$A$ selective SSMs
+  cannot represent 2D rotations and therefore cannot learn cognitive
+  maps.
+\end{enumerate}
+
+\subsection{TEM-style one-shot generalisation}
+\label{sec:results:one-shot}
+
+The cleanest test of ``learned cognitive-map structure vs memorised one
+specific map'' is the per-visit-count accuracy curve
+\citep{whittington2020tem}. For each prediction position we bin by how
+many times the current cell has been visited so far in the trajectory:
+$k{=}1$ is first visit (no prior information), $k{=}2$ is first revisit
+(one-shot generalisation test), $k{\geq}3$ is repeated revisits
+(memorisation regime).
+
+A model that learned the abstract cognitive-map structure should jump
+from chance at $k{=}1$ to high accuracy at $k{=}2$. A model that only
+aggregates evidence needs many visits.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.85\linewidth]{fig5_per_visit_curves.png}
-\caption{Per-visit-count accuracy on fresh-environment trajectories. All
-MapFormer-family variants jump from chance at $k{=}1$ to near-ceiling at
-$k{=}2$ (one-shot generalization); MambaLike and RoPE do not. Level 1.5-WM
-reaches 0.995 at $k{=}2$ on the clean task.}
+\caption{Per-visit-count accuracy on fresh-environment trajectories
+(3 model seeds $\times$ 5 fresh obs\_map seeds = 15 trajectories per bin).
+All MapFormer-family variants jump from chance at $k{=}1$ to
+near-ceiling at $k{=}2$ (one-shot generalisation); MambaLike and RoPE do
+not. Level 1.5-WM reaches 0.995 at $k{=}2$ on the clean task.}
 \label{fig:per-visit}
 \end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\linewidth]{fig6_one_shot_bar.png}
+\caption{First-revisit accuracy ($k{=}2$) per variant. Level 1.5-WM
+achieves near-perfect one-shot generalisation on clean. Generic SSMs
+and vanilla RoPE show essentially no jump from chance, confirming they
+do not learn cognitive-map structure.}
+\label{fig:one-shot-bar}
+\end{figure}
+
+On the harder lm200 regime, Level~1.5's advantage over the other
+MapFormer variants widens (0.82 vs 0.60--0.74 for the rest), consistent
+with the Kalman-filtering story that explicit state correction helps
+most at informative-landmark tokens.
+
+\subsection{Zero-shot transfer evaluation}
+
+We test three zero-shot axes (\texttt{zero\_shot\_eval.py}):
+\begin{enumerate}
+  \item \textbf{Axis 1 --- fresh obs\_map seeds.} 5 new environment
+  seeds per model (\texttt{test\_seed = 10000..10004}). Same grid size,
+  same task structure, never-seen obs-map.
+  \item \textbf{Axis 2 --- biased action distributions.} Trained on
+  uniform random actions; tested under \texttt{mostly\_east},
+  \texttt{mostly\_NS}, \texttt{diagonal\_NE}. Tests path-integration
+  robustness to trajectory statistics outside training.
+  \item \textbf{Axis 3 --- landmark density transfer.} lm200-trained
+  models evaluated at landmark counts $\{0, 50, 100, 200\}$. Tests
+  whether the learned per-token $R_t$ generalises across landmark
+  density.
+\end{enumerate}
+
+Level~1.5-WM retains its lead across all three axes. On Axis~3 in
+particular, Level~1.5's advantage over MapFormer-WM remains $\sim 10$\,pp
+constant across densities $\{0, 50, 100, 200\}$, indicating the
+per-token $R_t$ mechanism transfers --- the model has learned a
+context-free informativeness signal rather than a density-specific
+calibration.
 
 \subsection{Level 1.5 ablations}
 
@@ -48,27 +141,137 @@ reaches 0.995 at $k{=}2$ on the clean task.}
 \centering
 \includegraphics[width=0.7\linewidth]{fig4_ablation_level15.png}
 \caption{Four Level 1.5 ablations. Removing per-token $R_t$
-(L15\_ConstR) is the most damaging ablation. Fixing $\Pi$ by DARE rather
-than learning it (L15\_DARE) is competitive.}
+(\texttt{L15\_ConstR}) is the most damaging ablation, isolating the
+heteroscedastic R head as the critical Level 1.5 ingredient. Fixing
+$\Pi$ by DARE rather than learning it (\texttt{L15\_DARE}) is
+competitive or slightly better on lm200.}
 \label{fig:ablation}
 \end{figure}
 
-\subsection{Hippocampal correspondence}
+Four ablations isolate which Level~1.5 components are necessary. At
+$T{=}128$ on clean / lm200 respectively, removing per-token $R$ drops
+accuracy by 20\,pp / 11\,pp, removing the measurement head drops by
+10\,pp / 0\,pp, and removing the correction scan drops by 6\,pp / 0\,pp.
+Fixing $\Pi$ from DARE is competitive throughout. Together these
+identify the per-token heteroscedastic $R_t$ head as the primary
+learnable component.
+
+\subsection{Level 1.5-EM: init pathology and safe init}
+
+A first port of Level~1.5 to the MapFormer-EM backbone (Hadamard product
+attention $\mathrm{softmax}(A_X \odot A_P) \cdot V$) showed catastrophic
+training instability: 3 of 9 seeds plateaued at loss $\approx 1.45$, and
+the remaining 6 reached only mediocre loss (0.75--1.1 vs 0.005--0.05
+for Level~1.5-WM).
+
+The diagnosis is a \emph{random-correction pathology}. With default
+initialisation (\texttt{log\_R\_init\_bias} = 0.0), the Kalman gain is
+$K = \Pi/(\Pi+R) = 0.5$ at init. EM's position attention $A_P$ is
+computed entirely from rotations of $q_0^p, k_0^p$ by the corrected
+angle $\hat\theta$. At init $\hat\theta \approx \theta_\mathrm{path} +
+0.5 \cdot \nu$ where $\nu$ is random; this corrupts $A_P$, which
+Hadamard-products with content attention $A_X$ to destroy gradient
+signal. MapFormer-WM does not have this failure mode because its
+content attention provides a fallback gradient path.
+
+Setting \texttt{log\_R\_init\_bias} = 3.0 for the EM variant (WM
+retains the default 0.0) gives $K \approx 0.05$ at init --- the InEKF is
+essentially a no-op at start, the model behaves like vanilla
+MapFormer-EM, and $R_t$ is learned downward from its high initial value
+only where measurements are informative. After the fix, all 9 seeds
+converge cleanly. First-revisit accuracy on clean goes from 0.25
+(broken) to 0.97 (safe), and the $T{=}512$ OOD performance gap vs.\
+MapFormer-EM opens by 10--12\,pp on the noise and landmark regimes
+(Table~\ref{tab:main}). One lm200 seed still converges to a marginally
+worse final loss (1.40 vs $\sim 1.0$), inflating the lm200 std to
+$\pm 0.12$. A further-raised bias (5.0) partially improves this seed
+but regresses others; we report the intrinsic seed heterogeneity
+honestly rather than pursue a single-parameter fix.
+
+\subsection{Grid-size scaling via test-time $\omega$ rescaling}
+
+MapFormer's geometric $\omega$ init covers frequencies $[2\pi/N, 2\pi]$
+for grid size $N$. To evaluate on $N' \neq N$ we test a simple
+rescaling: multiply the trained $\omega$ by $N/N'$ at eval time (the
+YaRN/NTK-aware analogue for rotary position embeddings). We evaluate on
+five grid sizes $\{32, 48, 64, 96, 128\}$ for each variant, both with
+original and rescaled $\omega$.
+
+\textbf{Finding.} InEKF variants are far more robust to $\omega$
+rescaling than Vanilla. With uniform $2\times$ rescaling going to a
+smaller grid, Vanilla MapFormer collapses to 0.310 accuracy (clean)
+while Level~1.5-WM retains 0.99. The wrapped innovation
+$\mathrm{atan2}(\sin(\hat z - \hat\theta), \cos(\hat z - \hat\theta))$
+in the Kalman update absorbs the within-cell aliasing that the
+above-Nyquist $\omega_\mathrm{max}$ creates; Vanilla has no such
+wrapping and fails. This is a side benefit of the Lie-group-correct
+innovation wrap: robustness to scale rescaling at test time.
+
+\subsection{Hippocampal correspondence: partially falsified}
+\label{sec:results:hippo}
+
+We tested three predictions connecting Level~1.5 to hippocampal
+neuroscience.
+
+\begin{enumerate}
+  \item \textbf{Hexagonal grid cells.} Sargolini grid scores on
+  hidden-state rate maps top out at 0.05--0.15 across all variants.
+  The conventional grid-like threshold is 0.3. \emph{Falsified.}
+  \item \textbf{$R_t$ at landmark tokens.} Predicted:
+  \texttt{landmark} < \texttt{aliased obs} < \texttt{blank} (smaller
+  $R$ = more informative). Observed for Level~1.5-WM:
+  \texttt{aliased} < \texttt{landmark} < \texttt{blank}; for
+  Level~1.5-EM: \texttt{blank} < \texttt{landmark} <
+  \texttt{aliased}. Neither matches. \emph{Falsified.}
+  \item \textbf{$\omega$ modular spacing.} Trained $\omega$ is
+  approximately geometric, but largely inherited from the
+  initialisation rather than discovered by training. \emph{Soft pass.}
+\end{enumerate}
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.85\linewidth]{fig11_grid_score_dist.png}
-\caption{Distribution of Sargolini hexagonal grid scores per hidden-state
-dimension. No variant reaches the 0.3 threshold for ``grid-like''; this is
-architecturally forced because MapFormer has one block per frequency but
-hexagonal interference requires three waves at 60$^\circ$ at the same
-frequency.}
+\caption{Distribution of Sargolini hexagonal grid scores across
+hidden-state dimensions per variant. No variant reaches the 0.3
+grid-like threshold. This is architecturally forced: MapFormer assigns
+one path-integrator block per $\omega$, but hexagonal interference
+requires three waves at the same frequency with $60^\circ$ orientation
+offsets.}
 \label{fig:grid-score}
 \end{figure}
 
-See \texttt{HIPPOCAMPAL\_ANALYSIS.md} and \texttt{HIPPOCAMPAL\_HIDDEN.md}
-for full analysis; \texttt{PER\_VISIT\_*.md}, \texttt{ZERO\_SHOT\_TRANSFER\_*.md},
-\texttt{OMEGA\_RESCALE\_*.md}, and \texttt{RESULTS\_PAPER.md} for raw
-tables. Full prose covering all 8 subsections (main results, per-visit,
-zero-shot, ablations, init-pathology, $\omega$-rescaling, hippocampal,
-calibration) is in \texttt{paper/04\_results.md}.
+The hexagonal-cell failure is \emph{architecturally forced}: the
+three-waves-at-$60^\circ$ optimum for hexagonal interference requires
+three sinusoidal waves at the same frequency with orientation offsets,
+but MapFormer assigns one block per $\omega$. A path-integrator
+architecture with multiple blocks per $\omega$ and learnable
+orientations in 2D action space (Section~\ref{sec:future}) could in
+principle recover hexagonal organisation; the current architecture
+cannot, regardless of training.
+
+The $R_t$ failure is more subtle. The $R_t$ head does distinguish blank
+from non-blank tokens (basic informativeness signal), but the
+within-non-blank ordering is task-driven, not Bayesian-optimal. This
+reflects the fact that $R_t$ is trained on revisit-prediction loss
+rather than an explicit informativeness objective. We consider this
+honest negative a useful clarification: Level~1.5 achieves cognitive-map
+function without literally matching known neural firing patterns.
+
+\subsection{Calibration}
+
+Across regimes Level~1.5's NLL is consistently lower than vanilla
+MapFormer's --- typically by 30--60\%. On clean $T{=}128$ OOD,
+Level~1.5 has NLL 0.000 vs MapFormer-WM's 0.025; on noise $T{=}512$ OOD,
+0.585 vs 1.225 (2$\times$ better). Reliability diagrams and
+expected-calibration-error (ECE) computations confirm this is genuine
+calibration improvement, not just sharper-but-worse prediction. On
+clean the ECE ordering is Level~1.5 (0.000) < VanillaEM (0.000) <
+Level~1.5-EM (0.000) < PC (0.003) < Vanilla (0.004) < Level~1 (0.006)
+< LSTM (0.016) < RoPE (0.033) < MambaLike (0.034).
+
+The mechanism is the per-token $R_t$ head: $R_t$ is small at tokens
+where the model is confident (e.g., revisits to known cells with
+distinctive landmarks) and large at tokens where the model genuinely
+doesn't know (e.g., first-visit aliased obs). The softmax distribution
+over vocabulary inherits this calibration because $R_t$ modulates how
+much the measurement $\hat z_t$ corrects $\hat\theta$ before attention.

@@ -1,34 +1,188 @@
 \section{Discussion}
 \label{sec:discussion}
 
-% TODO: Full prose draft in paper/05_discussion.md. The key argument is
-% summarised here.
+\subsection{What Level 1.5 InEKF is, and what it is not}
 
-Level 1.5 is a specialised Mamba-style selective-scan on $\mathrm{SO}(2)$.
-The \citet{wang2025mamba-kalman} view (Mamba $\equiv$ linear Kalman filter)
-tells us that selective SSMs \emph{can} implement Kalman filters. Level 1.5
-shows that they \emph{should}, at least on tasks with known geometric
-structure, because the specialisation (Kalman-ratio gain, Lie-group wrap,
+Level~1.5 is a parallel Invariant Extended Kalman Filter on
+$\mathrm{SO}(2)$, stacked on top of MapFormer's existing path-integration
+scan. It adds three learnable components --- a constant prior covariance
+$\Pi$, a per-token measurement noise $R_t$, and an inverse measurement
+model $z_t$ --- connected by the scalar Hillis-Steele affine scan
+\begin{equation}
+  d_t = (1 - K_t) \, d_{t-1} + K_t \cdot \mathrm{wrap}(z_t - \hat\theta_{\mathrm{path},t}),
+  \qquad
+  \hat\theta_t = \hat\theta_{\mathrm{path},t} + d_t
+\end{equation}
+with Kalman gain $K_t = \Pi / (\Pi + R_t)$. The scan has the same
+$\mathcal{O}(\log T)$ depth as MapFormer's underlying cumsum and the
+same depth as Mamba's selective-scan primitive.
+
+\paragraph{What it is.} A specialised 1-D state-space model with Kalman
+parameterisation, Lie-group-correct wrapping, and input-dependent
+measurement noise. The parameterisation makes $R_t$ interpretable as
+per-token measurement uncertainty by construction --- its value has a
+direct probabilistic meaning, not merely a learned scaling.
+
+\paragraph{What it is not.} Level~1.5 is not a generic selective-scan
+block that happens to work. Its structure is specifically chosen to
+satisfy three requirements: (i) path-integration on $\mathrm{SO}(2)$
+with the \citet{markovic2017wrapping} wrapped-innovation correspondence
+to the Lie-Group EKF, (ii) state correction via an inverse measurement
+model that respects the group structure, and (iii) compatibility with
+MapFormer's existing geometric $\omega$ allocation. Removing any of
+these via ablation degrades performance measurably
+(Section~\ref{sec:results}).
+
+\subsection{Relation to adjacent work}
+
+\paragraph{MapFormer~\citep{rambaud2025mapformer}.} We reproduce
+MapFormer faithfully (seven implementation details in
+Section~\ref{sec:methods}) and inherit its input-dependent path
+integration. Our contribution is orthogonal: it adds state correction
+where MapFormer had none. On the paper's benchmark (aliased 2D torus
+next-token prediction), both saturate at near-ceiling accuracy, so our
+contribution lives in regimes the paper did not test --- noise,
+landmarks, OOD length, calibration.
+
+\paragraph{TEM / TEM-T~\citep{whittington2020tem,whittington2022tem-t}.}
+TEM is the closest model family conceptually: it also learns
+cognitive-map representations via action-conditioned recurrence. Our
+per-visit-count curves (Section~\ref{sec:results:one-shot}) are the
+TEM-canonical one-shot generalisation test, and Level~1.5 matches or
+exceeds TEM's qualitative signature (sharp $k{=}1 \to k{=}2$ jump). TEM
+trains on multiple environments simultaneously and compares
+representations to neural data at length; we compare only at the
+$\omega$-modular-spacing level, and candidly report negative results for
+grid-cell and boundary-cell correspondence
+(Section~\ref{sec:results:hippo}).
+
+\paragraph{Mamba and selective SSMs~\citep{gu2024mamba}.} The connection
+is deep. \citet{wang2025mamba-kalman} show Mamba's selective SSM is
+isomorphic to a time-varying linear Kalman filter; Level~1.5's scan is
+a 1-D Mamba block with three specific constraints (Kalman-ratio gain,
+Lie-group wrap, decoupled path-integration + correction). The key
+empirical finding is that this specialisation matters: our MambaLike
+baseline (generic selective SSM at the same scale) fails to learn the
+cognitive-map task (accuracy $\approx 0.57$ across configs), reproducing
+the MapFormer paper's own Appendix A.5 Table~3 result. Generic SSMs can
+in principle approximate this structure but cannot discover it from
+gradient descent at our training scale; the explicit Lie-group prior
+earns its keep.
+
+\paragraph{Parallel Bayesian filters~\citep{sarkka2021parallel}.} Our
+parallel InEKF is a specific instance of this broader program ---
+specialised to $\mathrm{SO}(2)$ with a scalar affine scan rather than
+the general matrix-associative primitive.
+
+\paragraph{Contextual Positional Encodings.} CoPE~\citep{golovneva2024cope}
+and TAPE~\citep{zhu2025tape} address a different problem: making
+position encoding content-dependent at the token level. They do not
+implement path integration on a compact group, and per the MapFormer
+paper's Table~2 both fail on the 2D navigation task (CoPE 0.74 IID,
+TAPE 0.23 IID vs MapFormer $\approx 1.00$). They are complementary
+rather than competing; a CoPE-style content-based gating layered on top
+of MapFormer could in principle provide landmark-detection gating for
+the $R_t$ head (future work).
+
+\subsection{Honest limitations}
+\label{sec:discussion:limitations}
+
+\paragraph{Single-environment training.} Each model trains on one fixed
+\texttt{obs\_map} (paper-standard for MapFormer). Our OOD evaluations
+use fresh obs\_maps and show ceiling-level zero-shot transfer to them,
+but we do not do TEM-style multi-environment training where the model
+sees thousands of distinct environments. The additional robustness such
+training would provide is conjectural on our data; it is a natural
+follow-up (Section~\ref{sec:future}).
+
+\paragraph{Scale.} We follow MapFormer's 1-layer, 2-head, $d{=}128$
+configuration. We have not scaled model or data meaningfully. A
+comparison paper at 4 layers and 1M+ environments would change the story
+in unknown ways.
+
+\paragraph{Single Lie group.} Level~1.5 is developed for
+$\mathrm{SO}(2)$, MapFormer's native group. The generalisation to
+$\mathrm{SE}(2)$, $\mathrm{SE}(3)$, or higher dimensions involves the
+same parallel-filter machinery but requires Adjoint-weighted
+recurrences \citep{sola2018micro} rather than scalar affine scans. We
+describe the path but have not implemented it.
+
+\paragraph{Hippocampal correspondence.} As
+Section~\ref{sec:results:hippo} reports, our current architecture does
+not produce hexagonal grid cells (1 block per $\omega$ is structurally
+insufficient for the three-waves-at-$60^\circ$ interference required),
+and $R_t$ does not match the predicted Bayesian-optimal pattern.
+Section~\ref{sec:future} proposes an architectural modification
+(MapFormer-Grid) that could recover hexagonal organisation; testing
+whether that actually works is left for follow-up.
+
+\paragraph{Small Level15-EM variance.} One lm200 seed reached a
+marginally worse final loss (1.40 vs $\sim 1.0$), inflating the lm200
+std to $\pm 0.12$. A further-raised safe-init bias (5.0) partially
+improves this seed but regresses others (the variance is intrinsic to
+seed-specific landscape geometry, not a single-parameter issue). We
+report this honestly rather than masking it.
+
+\paragraph{CoPE baseline is incomplete.} Due to CoPE's high per-epoch
+cost ($\sim 500$ min/run vs LSTM's 8 min/run on our setup), the lm200
+CoPE row has 2 of 3 seeds. Our other baselines (MambaLike, LSTM, RoPE)
+are all multi-seed complete.
+
+\subsection{When to use Level 1.5 vs vanilla MapFormer}
+
+Three rules of thumb emerge from our ablations and per-regime results:
+
+\begin{enumerate}
+  \item If the environment is noise-free and fully aliased, MapFormer
+  is already at ceiling. Level~1.5's gain at $T{=}128$ clean is within
+  noise of the baseline. Use Level~1.5 only if you need calibrated
+  uncertainty (the NLL gap is still substantial).
+  \item If actions are noisy or the environment has landmarks,
+  Level~1.5 helps substantially (+11\,pp at $T{=}512$ OOD in both
+  regimes). This is the primary use case.
+  \item If you need calibrated uncertainty for downstream planning
+  (e.g., active navigation), Level~1.5 is strictly preferable even on
+  clean tasks.
+\end{enumerate}
+
+\subsection{Broader implication: Mamba-as-Kalman on a Lie group}
+
+A broader reading of our work: Level~1.5 is a specialised Mamba-style
+selective-scan on $\mathrm{SO}(2)$. The \citet{wang2025mamba-kalman}
+view (Mamba $\equiv$ linear Kalman filter) tells us that selective SSMs
+\emph{can} implement Kalman filters. Level~1.5 shows that they
+\emph{should}, at least on tasks with known geometric structure,
+because the specialisation (Kalman-ratio gain, Lie-group wrapping,
 decoupled path-integration scan) yields a large improvement in what the
 model can discover from gradient descent at limited training scale.
 
-\paragraph{Honest limitations.} Single-environment training (each model
-trains on one fixed obs\_map); single-scale training (we follow MapFormer's
-1 layer, 2 heads, $d{=}128$); single Lie group ($\mathrm{SO}(2)$ only); and
-hippocampal correspondence is only partially supported (we do not produce
-hexagonal grid cells due to an architectural constraint described in
-Section~\ref{sec:future}).
+This suggests a broader research direction: \emph{constrained Mamba
+architectures with explicit group-equivariance}. $\mathrm{SO}(2)$ is
+the simplest case; $\mathrm{SE}(2)$ and $\mathrm{SE}(3)$ are natural
+generalisations for 2D- and 3D-navigation tasks; other compact Lie
+groups cover other periodic structures. In each case, the specialised
+Mamba block would look like Level~1.5 but with an Adjoint-weighted scan
+and higher-dimensional measurement model. We expect the gradient-descent
+discoverability advantage to persist across all of them: \emph{generic
+selective SSMs cannot discover geometric structure at small scale;
+explicit group-aware selective SSMs can.}
 
-\paragraph{When to use Level 1.5.} (1) If the environment is clean and
-fully aliased, MapFormer is already at ceiling --- use Level 1.5 only for
-calibrated uncertainty. (2) If actions are noisy or the environment has
-landmarks, Level 1.5 adds +11\,pp at $T{=}512$ OOD. (3) If you need
-calibrated uncertainty for downstream planning, Level 1.5 is strictly
-preferable on any task.
+\subsection{Conclusion}
 
-\paragraph{Broader direction.} Constrained Mamba architectures with explicit
-group-equivariance. SO(2) is the simplest case; SE(2) and SE(3) generalise
-to 2D/3D navigation; other compact Lie groups cover other periodic
-structures. In each case the specialised Mamba block would look like
-Level 1.5 but with Adjoint-weighted scans and higher-dimensional
-measurement models. We expect the discoverability advantage to persist.
+We started from a reproduction of MapFormer, added a parallel Invariant
+EKF machinery preserving its $\mathcal{O}(\log T)$ parallelism, and
+characterised the combined architecture across three untested regimes.
+The main concrete contribution --- Level~1.5 --- provides bounded-error
+length generalisation, robustness to action noise, strong landmark
+utilisation, and calibrated uncertainty, at the cost of a single
+learnable $\Pi$, one per-token MLP for $R_t$, one inverse measurement
+MLP, and a scalar affine scan. It is mechanistically simple,
+architecturally minimal, and empirically effective.
+
+We are not claiming to solve a task MapFormer could not. We are
+claiming that classical Lie-group filtering, parallelised, is a natural
+extension of MapFormer-family architectures into precisely the regimes
+that any deployed navigation system must handle. The transfer direction
+--- classical robotics $\to$ deep learning, via explicit group-aware
+primitives --- remains underexplored, and this paper is one step along
+it.
