@@ -81,9 +81,28 @@ def assoc_scan_affine_scalar(alpha: torch.Tensor, u: torch.Tensor) -> torch.Tens
 
 
 class InEKFLevel15(nn.Module):
-    """Level 1.5: constant Pi, per-token R_t -> per-token K_t; one scalar scan."""
+    """Level 1.5: constant Pi, per-token R_t -> per-token K_t; one scalar scan.
 
-    def __init__(self, d_model: int, n_heads: int, n_blocks: int):
+    Args:
+      log_R_init_bias: initial bias for the log_R_head output. Controls how
+        large the per-token measurement noise R_t is at initialisation, which
+        in turn controls the initial Kalman gain K_t = Pi / (Pi + R_t).
+        Default 0.0 (R≈1, K≈0.5) was the original WM-tuned value. For
+        backbones whose attention has *no fallback path* if the position
+        branch is corrupted by random θ̂ corrections at init (notably
+        MapFormer-EM, whose Hadamard product A_X ⊙ A_P multiplies position
+        attention into content attention), pass a larger value such as 3.0
+        (R≈20, K≈0.05). This makes the InEKF a near-no-op at init so the
+        model behaves like vanilla MapFormer first; the R_t head then
+        gradually lowers R where measurements are informative.
+
+        Empirically: with bias=0.0, 3 of 9 Level15-EM seeds diverged
+        catastrophically (loss plateau ≈ 1.45). Bias=3.0 fixed this
+        (see commit history).
+    """
+
+    def __init__(self, d_model: int, n_heads: int, n_blocks: int,
+                 log_R_init_bias: float = 0.0):
         super().__init__()
         self.d_model = d_model
         self.n_heads = n_heads
@@ -99,10 +118,10 @@ class InEKFLevel15(nn.Module):
             nn.GELU(),
             nn.Linear(128, self.n_state),
         )
-        # Bias toward moderate R_t at init
+        # Bias toward (caller-configurable) log-R at init.
         with torch.no_grad():
             self.log_R_head[-1].weight.mul_(0.01)
-            self.log_R_head[-1].bias.fill_(0.0)
+            self.log_R_head[-1].bias.fill_(log_R_init_bias)
 
         # Measurement head (same as Levels 1/2)
         self.measure_head = nn.Sequential(

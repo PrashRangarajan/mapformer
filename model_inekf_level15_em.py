@@ -39,8 +39,13 @@ class MapFormerEM_Level15InEKF(MapFormerEM):
         super().__init__(vocab_size, d_model, n_heads, n_layers, dropout,
                          grid_size, bottleneck_r)
         # Reuse the EM transformer layers from the parent (Hadamard attention).
-        # The InEKF correction module is the same class used in the WM variant.
-        self.inekf = InEKFLevel15(d_model, n_heads, self.n_blocks)
+        # The InEKF correction module is the same class used in the WM variant,
+        # but with a larger log_R_init_bias so the Kalman correction starts as
+        # a near-no-op. Necessary because EM's Hadamard product A_X ⊙ A_P
+        # provides no fallback if the position branch is corrupted by random
+        # θ̂ corrections at init — see InEKFLevel15 docstring for details.
+        self.inekf = InEKFLevel15(d_model, n_heads, self.n_blocks,
+                                  log_R_init_bias=3.0)
 
     def forward(self, tokens: torch.Tensor) -> torch.Tensor:
         """

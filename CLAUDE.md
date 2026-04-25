@@ -402,3 +402,95 @@ When master_finish.sh completes (~1h45m from ~20:37):
 If `RESULTS_LEVEL2.md` / `RESULTS_LEVEL15.md` / `RESULTS_LEVEL15_CLEAN.md`
 are referenced above but not present, they predate the multi-seed
 orchestrator and were superseded by `RESULTS_PAPER.md`. Trust the latter.
+
+## Session 2026-04-24 — final results, Level15EM init pathology + fix
+
+### Summary of where we ended up
+
+- All multi-seed training complete: VanillaEM, Level15EM (safe init),
+  LSTM, MambaLike, partial CoPE.
+- Three GitHub commits during the day:
+  - `8af4680` — first finalize (broken-init Level15EM, ZERO_SHOT_TRANSFER_*.md)
+  - `b330036` — second finalize (CoPE rows partially in)
+  - `5d091e7` — third finalize (safe-init Level15EM rows)
+
+### Final headline results (OOD T=512, fresh obs_map)
+
+| Config | Vanilla(WM) | VanillaEM | Level15(WM) | Level15EM | LSTM | MambaLike |
+| ------ | ----------- | --------- | ----------- | --------- | ---- | --------- |
+| Clean  | 0.913       | 0.972     | **0.993**   | 0.977     | 0.800| 0.573     |
+| Noise  | 0.739       | 0.765     | 0.851       | **0.869** | 0.743| 0.568     |
+| LM200  | 0.715       | 0.605     | **0.821**   | 0.730±0.12| 0.641| 0.513     |
+
+### Key findings (final framing)
+
+1. **Mamba cannot do this task at our scale** (~0.57 across configs).
+   Reproduces the paper's Table 3 (Mamba 0.42 there at l=16). Confirms
+   that diagonal-A SSMs lack the rotation expressivity needed for
+   cognitive-map learning.
+2. **Vanilla MapFormer-EM does NOT subsume correction.** VanillaEM
+   underperforms even Vanilla-WM on lm200 (0.605 vs 0.715). Stronger
+   backbone alone is not a substitute for explicit state correction.
+3. **Correction (Level 1.5) works on either backbone.** WM gets
+   +11pp on noise OOD and +11pp on lm200 OOD over Vanilla-WM. EM gets
+   +10pp on noise OOD and +12pp on lm200 OOD over VanillaEM.
+4. **Backbone choice matters less than correction.** WM-with-correction
+   slightly beats EM-with-correction on lm200; EM slightly beats WM
+   on noise. Both clearly beat their vanilla counterparts in
+   noise/landmark regimes.
+
+### The Level15EM init pathology + fix (this session's main fix)
+
+**Problem:** Original Level15EM training had `log_R_init_bias=0.0` which
+gives Kalman gain K = Pi/(Pi+R) = 1/(1+1) = **0.5 at init**. EM's
+attention is `softmax(A_X ⊙ A_P)`, where the position branch A_P is
+computed from rotations of `q0_pos, k0_pos` by the InEKF-corrected θ̂.
+At init, the corrections are random (random measure_head + K=0.5),
+which destroys A_P, which Hadamard-products with A_X to destroy
+gradient signal entirely. WM doesn't have this issue because content
+attention provides a fallback gradient path.
+
+Result: 3 of 9 Level15EM seeds catastrophically diverged (final loss
+≈1.45, plateauing from epoch 5). The other 6 were mediocre.
+
+**Fix:** `log_R_init_bias=3.0` for the EM-backbone variant, giving
+K ≈ 0.05 at init (10× smaller corrections). The InEKF behaves as a
+near-no-op at init; the model learns vanilla-MapFormer behaviour
+first, then the R_t head learns to lower R where measurements are
+informative. WM keeps the original `log_R_init_bias=0.0` for backward
+compat (its existing checkpoints still load).
+
+Code change is in `model_inekf_level15.py::InEKFLevel15.__init__`
+(new `log_R_init_bias` parameter, default 0.0) and
+`model_inekf_level15_em.py` (passes `log_R_init_bias=3.0`).
+
+Old broken-init Level15EM checkpoints preserved at
+`runs/Level15EM_broken_init/` for diagnostic comparison.
+
+### Remaining caveat
+
+Level15EM lm200 seed 2 reached final loss 1.40 (vs ~1.0 for the other
+two seeds), giving the lm200 row a wider std (±0.12) than other
+configs. Bumping `log_R_init_bias` further (e.g., 5.0) might catch
+this outlier; not pursued because the central tendency is clearly
+positive and reporting honest variance is more important.
+
+### Pipeline state at end of session
+
+- All orchestrators exited cleanly. No background processes running.
+- Latest commit on GitHub: `5d091e7`.
+- CoPE has 8/9 runs (lm200 seed 2 was killed mid-training to unblock
+  Level15EM retraining). Sufficient for multi-seed reporting on
+  clean (3/3) and noise (3/3); lm200 has only 2 seeds.
+- `master_finish_v3.sh` and `retrain_level15em.sh` both completed.
+
+### What's left for the paper
+
+- ZERO_SHOT_TRANSFER_*.md eval was run BEFORE Level15EM was retrained,
+  so it has the broken-init Level15EM rows. May want to re-run with
+  the safe-init checkpoints if including in the paper.
+- `paper_figures/` calibration + length-gen figures don't include
+  VanillaEM or Level15EM. Update before final paper submission if
+  these go in figures.
+- CoPE lm200 seed 2 retraining could be queued separately for
+  completeness (~8h on one GPU); not strictly needed.
