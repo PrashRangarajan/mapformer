@@ -494,3 +494,37 @@ positive and reporting honest variance is more important.
   these go in figures.
 - CoPE lm200 seed 2 retraining could be queued separately for
   completeness (~8h on one GPU); not strictly needed.
+
+## Session 2026-04-26 — Level15PC + Grid + GridL15PC findings
+
+### New model variants
+
+- `Level15PC` (`model_level15_pc.py`): MapFormer-WM + Level 1.5 InEKF + PC aux
+  loss on the standard backbone. Tests forward-model + inverse-model
+  complementarity.
+- `Grid` / `Grid_Free` (`model_grid.py`): multi-orientation path integrator
+  with fixed (hex) or learnable orientations.
+- `GridL15PC` / `GridL15PC_Free` (`model_grid_l15_pc.py`): Grid + Level 1.5
+  + PC aux. Kitchen-sink test for hex emergence.
+
+### Empirical findings
+
+Hex emergence is NOT solved by architecture or correction stacking:
+- `Grid_Free` clean s0: loss 0.021, hex orientations stayed but max
+  per-module grid score 0.036 (0/22 modules > 0.3).
+- `GridL15PC_Free` clean s0: loss 0.084, hidden-state max 0.052
+  (worse than Grid_Free's 0.095). Adding L15+PC ACTIVELY REDUCED hex.
+- §6.5/§6.10 falsification strengthens. Bottleneck is training
+  objective, not correction toolkit.
+
+`Level15PC` multi-seed sweep launched via `orchestrator_level15pc.py`,
+results in RESULTS_PAPER.md, LONG_SEQ_*.md, PER_VISIT_*.md,
+ZERO_SHOT_TRANSFER_*.md, HIPPOCAMPAL_LEVEL15PC.md, CLONE_ANALYSIS_LEVEL15PC.md.
+
+### Honest checkpoint logging
+
+- `runs/Grid_clean_200ep/seed0/Grid.pt`: stale, won't load with current
+  code (state-dict key mismatch from cos_orient/sin_orient → orientation_angles).
+- `runs/Level15EM_b5_lm200/seed2/`: diagnostic-only (alt safe-init
+  experiment, kept untracked).
+

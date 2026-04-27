@@ -46,6 +46,7 @@ from mapformer.model import MapFormerWM, MapFormerEM
 from mapformer.model_inekf_parallel import MapFormerWM_ParallelInEKF
 from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
 from mapformer.model_inekf_level15_em import MapFormerEM_Level15InEKF
+from mapformer.model_level15_pc import MapFormerWM_Level15PC
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
@@ -59,6 +60,7 @@ VARIANT_CLS = {
     "Level1":     MapFormerWM_ParallelInEKF,
     "Level15":    MapFormerWM_Level15InEKF,
     "Level15EM":  MapFormerEM_Level15InEKF,
+    "Level15PC":   MapFormerWM_Level15PC,
     "Level2":     MapFormerWM_Level2InEKF,
     "PC":         MapFormerWM_PredictiveCoding,
     "RoPE":       MapFormerWM_RoPE,
@@ -126,7 +128,7 @@ def main():
     p.add_argument("--config", default="lm200", help="clean|noise|lm200")
     p.add_argument("--variants", nargs="+",
                    default=["Vanilla", "VanillaEM", "Level15", "Level15EM",
-                            "MambaLike", "LSTM"])
+                            "MambaLike", "Level15PC", "LSTM"])
     p.add_argument("--model-seeds", type=int, nargs="+", default=[0, 1, 2])
     p.add_argument("--n-test-seeds", type=int, default=3,
                    help="fresh obs_map seeds per model")

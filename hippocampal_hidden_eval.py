@@ -43,15 +43,23 @@ from mapformer.model_inekf_level15_em import MapFormerEM_Level15InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_baselines_extra import EXTRA_BASELINES
+from mapformer.model_grid import MapFormerWM_Grid, MapFormerWM_Grid_Free
+from mapformer.model_grid_l15_pc import (
+    MapFormerWM_GridL15PC, MapFormerWM_GridL15PC_Free,
+)
 
 VARIANT_CLS = {
-    "Vanilla":   MapFormerWM,
-    "VanillaEM": MapFormerEM,
-    "Level1":    MapFormerWM_ParallelInEKF,
-    "Level15":   MapFormerWM_Level15InEKF,
-    "Level15EM": MapFormerEM_Level15InEKF,
-    "PC":        MapFormerWM_PredictiveCoding,
-    "RoPE":      MapFormerWM_RoPE,
+    "Vanilla":         MapFormerWM,
+    "VanillaEM":       MapFormerEM,
+    "Level1":          MapFormerWM_ParallelInEKF,
+    "Level15":         MapFormerWM_Level15InEKF,
+    "Level15EM":       MapFormerEM_Level15InEKF,
+    "PC":              MapFormerWM_PredictiveCoding,
+    "RoPE":            MapFormerWM_RoPE,
+    "Grid":            MapFormerWM_Grid,
+    "Grid_Free":       MapFormerWM_Grid_Free,
+    "GridL15PC":       MapFormerWM_GridL15PC,
+    "GridL15PC_Free":  MapFormerWM_GridL15PC_Free,
     **EXTRA_BASELINES,
 }
 

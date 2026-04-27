@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/prashr/mapformer/clone_analysis.py", line 43, in <module>
+    from mapformer.model_kalman import MapFormerWM_InEKF
+ModuleNotFoundError: No module named 'mapformer.model_kalman'

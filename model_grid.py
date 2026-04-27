@@ -130,18 +130,20 @@ class GridPathIntegrator(nn.Module):
         ω_m = ω_max · (1/Δ_max)^(m/(n_modules-1))
     with ω_max=2π, Δ_max=grid_size.
 
-    Orientations are FIXED (not learnable) — the three-waves-at-60° optimum
-    dictates {0°, 60°, 120°} for n_orientations=3; general k orientations
-    use {i·(180°/k) : i=0..k-1}. A learnable-orientation variant is a
-    natural follow-up.
+    Orientations may be FIXED (default; orientations at uniform spacing
+    over [0°, 180°), giving {0°, 60°, 120°} for n_orientations=3) or
+    LEARNABLE (learnable_orientations=True; init at the same hex spacing
+    but parameter is updated by gradient descent). Learnable orientations
+    test whether fixed-60° is the right structural constraint.
     """
 
     def __init__(self, n_heads: int, n_modules: int, n_orientations: int = 3,
-                 grid_size: int = 64):
+                 grid_size: int = 64, learnable_orientations: bool = False):
         super().__init__()
         self.n_heads = n_heads
         self.n_modules = n_modules
         self.n_orientations = n_orientations
+        self.learnable_orientations = learnable_orientations
 
         # Geometric ω init, one per module (shared across orientations)
         omega_max = 2 * math.pi
@@ -152,14 +154,20 @@ class GridPathIntegrator(nn.Module):
             omega_init[:, m] = omega_max * (1.0 / delta_max) ** frac
         self.omega = nn.Parameter(omega_init)                  # (H, M)
 
-        # Fixed orientations, uniformly spaced over [0°, 180°)
-        # For n_orientations=3: {0°, 60°, 120°} — the hexagonal-optimal set
+        # Orientations: uniform spacing over [0°, 180°), hex-optimal for
+        # n_orientations=3 (i.e., {0°, 60°, 120°}). The model can EITHER:
+        #   - Use these as fixed buffers (default; tests structural hypothesis)
+        #   - Or learn them as parameters (tests whether init is right)
         orientations = torch.tensor(
             [i * math.pi / n_orientations for i in range(n_orientations)]
         )
-        # Buffers, not parameters
-        self.register_buffer("cos_orient", torch.cos(orientations))  # (O,)
-        self.register_buffer("sin_orient", torch.sin(orientations))  # (O,)
+        if learnable_orientations:
+            # Single shared orientations vector (not per-head). Each module
+            # within a head uses the same orientations.
+            self.orientation_angles = nn.Parameter(orientations)
+        else:
+            self.register_buffer("orientation_angles", orientations)
+        # cos/sin computed in forward to support gradient through learnable angles
 
     def forward(self, delta_2d: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
@@ -176,8 +184,10 @@ class GridPathIntegrator(nn.Module):
         delta_x = delta_2d[..., 0]
         delta_y = delta_2d[..., 1]
         # per-block delta: (B, T, H, M, O)
-        d_block = (delta_x.unsqueeze(-1) * self.cos_orient
-                   + delta_y.unsqueeze(-1) * self.sin_orient)
+        cos_orient = torch.cos(self.orientation_angles)        # (O,)
+        sin_orient = torch.sin(self.orientation_angles)        # (O,)
+        d_block = (delta_x.unsqueeze(-1) * cos_orient
+                   + delta_y.unsqueeze(-1) * sin_orient)
 
         # Cumulative angle per (module, orientation)
         cum_delta = torch.cumsum(d_block, dim=1)              # (B, T, H, M, O)
@@ -205,7 +215,8 @@ class MapFormerWM_Grid(MapFormerWM):
     def __init__(self, vocab_size: int, d_model: int = 128, n_heads: int = 2,
                  n_layers: int = 1, dropout: float = 0.1,
                  grid_size: int = 64, bottleneck_r: int = 2,
-                 n_modules: int = 11, n_orientations: int = 3):
+                 n_modules: int = 11, n_orientations: int = 3,
+                 learnable_orientations: bool = False):
         # MapFormerWM expects n_blocks = d_head // 2. We override the path
         # integrator to use our grid structure but need to match the
         # rotation dimension downstream.
@@ -228,6 +239,7 @@ class MapFormerWM_Grid(MapFormerWM):
             n_modules=n_modules,
             n_orientations=n_orientations,
             grid_size=grid_size,
+            learnable_orientations=learnable_orientations,
         )
 
         # Replace the parent's ActionToLieAlgebra with the 2D version
@@ -257,3 +269,20 @@ class MapFormerWM_Grid(MapFormerWM):
 
         x = self.out_norm(x)
         return self.out_proj(x)
+
+
+class MapFormerWM_Grid_Free(MapFormerWM_Grid):
+    """MapFormer-Grid with LEARNABLE orientation angles.
+
+    Tests whether fixed {0°, 60°, 120°} orientations are over-constraining.
+    Initialised at the same hex angles, but the orientations are
+    nn.Parameters that gradient descent can adjust.
+    """
+
+    def __init__(self, vocab_size: int, d_model: int = 128, n_heads: int = 2,
+                 n_layers: int = 1, dropout: float = 0.1,
+                 grid_size: int = 64, bottleneck_r: int = 2,
+                 n_modules: int = 11, n_orientations: int = 3):
+        super().__init__(vocab_size, d_model, n_heads, n_layers, dropout,
+                         grid_size, bottleneck_r, n_modules, n_orientations,
+                         learnable_orientations=True)

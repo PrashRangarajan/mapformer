@@ -1,0 +1,9 @@
+  Vanilla: top-5 grid scores = +0.072, +0.053, +0.040, +0.040, +0.032
+  Level15: top-5 grid scores = +0.108, +0.090, +0.073, +0.068, +0.061
+  PC: top-5 grid scores = +0.065, +0.062, +0.054, +0.052, +0.044
+  [skip] Level15PC: 'Level15PC'
+  Grid_Free: top-5 grid scores = +0.091, +0.033, +0.032, +0.028, +0.027
+  wrote /home/prashr/mapformer/paper_figures/fig10_hidden_rate_maps.png
+  wrote /home/prashr/mapformer/paper_figures/fig11_grid_score_dist.png
+
+wrote /home/prashr/mapformer/HIPPOCAMPAL_LEVEL15PC.md

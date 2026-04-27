@@ -55,16 +55,24 @@ from mapformer.model_inekf_level15_em import MapFormerEM_Level15InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_baselines_extra import EXTRA_BASELINES
+from mapformer.model_grid import MapFormerWM_Grid, MapFormerWM_Grid_Free
+from mapformer.model_grid_l15_pc import (
+    MapFormerWM_GridL15PC, MapFormerWM_GridL15PC_Free,
+)
 
 
 VARIANT_CLS = {
-    "Vanilla":   MapFormerWM,
-    "VanillaEM": MapFormerEM,
-    "Level1":    MapFormerWM_ParallelInEKF,
-    "Level15":   MapFormerWM_Level15InEKF,
-    "Level15EM": MapFormerEM_Level15InEKF,
-    "PC":        MapFormerWM_PredictiveCoding,
-    "RoPE":      MapFormerWM_RoPE,
+    "Vanilla":         MapFormerWM,
+    "VanillaEM":       MapFormerEM,
+    "Level1":          MapFormerWM_ParallelInEKF,
+    "Level15":         MapFormerWM_Level15InEKF,
+    "Level15EM":       MapFormerEM_Level15InEKF,
+    "PC":              MapFormerWM_PredictiveCoding,
+    "RoPE":            MapFormerWM_RoPE,
+    "Grid":            MapFormerWM_Grid,
+    "Grid_Free":       MapFormerWM_Grid_Free,
+    "GridL15PC":       MapFormerWM_GridL15PC,
+    "GridL15PC_Free":  MapFormerWM_GridL15PC_Free,
     **EXTRA_BASELINES,
 }
 
@@ -103,7 +111,12 @@ def compute_rate_maps(model, env, T=512, n_trials=40, device="cuda"):
 
     n_heads = model.path_integrator.omega.shape[0]
     n_blocks = model.path_integrator.omega.shape[1]
-    n_state = n_heads * n_blocks
+    # For Grid models, the effective state dim is n_heads * n_modules * n_orientations
+    # (omega has shape (H, M); orientations multiply the feature count).
+    if hasattr(model, "n_modules") and hasattr(model, "n_orientations"):
+        n_state = n_heads * model.n_modules * model.n_orientations
+    else:
+        n_state = n_heads * n_blocks
 
     sums = np.zeros((n_state, grid_size, grid_size), dtype=np.float64)
     counts = np.zeros((grid_size, grid_size), dtype=np.int64)
@@ -116,9 +129,24 @@ def compute_rate_maps(model, env, T=512, n_trials=40, device="cuda"):
             _ = model(tt[:, :-1])
         except Exception:
             continue
-        # Use the corrected θ̂ if available, else compute θ_path on the fly
+        # Use the corrected θ̂ if available, else compute θ_path on the fly.
         if hasattr(model, "last_theta_hat") and model.last_theta_hat is not None:
             theta = model.last_theta_hat[0]   # (L, H, NB)
+        elif hasattr(model, "n_modules") and hasattr(model, "n_orientations"):
+            # Grid path integration: action_to_lie returns (B, L, H, M, 2);
+            # need to project onto orientations and apply ω before cumsum-cum-prod.
+            x = model.token_emb(tt[:, :-1])
+            delta_2d = model.action_to_lie(x)             # (B, L, H, M, 2)
+            dx = delta_2d[..., 0]
+            dy = delta_2d[..., 1]
+            cos_o = torch.cos(model.path_integrator.orientation_angles)
+            sin_o = torch.sin(model.path_integrator.orientation_angles)
+            d_block = dx.unsqueeze(-1) * cos_o + dy.unsqueeze(-1) * sin_o  # (B,L,H,M,O)
+            cum = torch.cumsum(d_block, dim=1)
+            omega = model.path_integrator.omega.unsqueeze(0).unsqueeze(0).unsqueeze(-1)
+            angles = cum * omega                          # (B, L, H, M, O)
+            theta = angles.reshape(angles.shape[0], angles.shape[1],
+                                   angles.shape[2], -1)[0]   # (L, H, M*O)
         else:
             x = model.token_emb(tt[:, :-1])
             delta = model.action_to_lie(x)

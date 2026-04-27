@@ -35,12 +35,19 @@ def train(
     verbose: bool = True,
     weight_decay: float = 0.05,
     p_action_noise: float = 0.0,
+    aux_coef: float = 0.0,
 ) -> list[float]:
     """Full training loop with observation-only loss.
 
+    If ``aux_coef > 0`` and the model exposes ``prediction_error_loss()``
+    (e.g. PC, GridL15PC), the auxiliary loss is added to the next-token
+    loss as ``total = next_token_loss + aux_coef * model.prediction_error_loss()``.
+
     Returns:
-        List of per-epoch average losses
+        List of per-epoch average losses (next-token loss only; aux is
+        included in the gradient step but logged separately when present).
     """
+    has_aux = aux_coef > 0.0 and hasattr(model, "prediction_error_loss")
     model = model.to(device)
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
 
@@ -91,9 +98,14 @@ def train(
             targets_masked = target_tokens[target_mask]
 
             loss = criterion(logits_masked, targets_masked)
+            if has_aux:
+                aux = model.prediction_error_loss()
+                total_loss = loss + aux_coef * aux
+            else:
+                total_loss = loss
 
             optimizer.zero_grad()
-            loss.backward()
+            total_loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
             scheduler.step()
