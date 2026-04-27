@@ -18,6 +18,7 @@ from mapformer.model import MapFormerWM, MapFormerEM
 from mapformer.model_inekf_parallel import MapFormerWM_ParallelInEKF
 from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
 from mapformer.model_inekf_level15_em import MapFormerEM_Level15InEKF
+from mapformer.model_level15_pc import MapFormerWM_Level15PC
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
@@ -29,6 +30,7 @@ VARIANT_CLS = {
     "Level1": MapFormerWM_ParallelInEKF,
     "Level15": MapFormerWM_Level15InEKF,
     "Level15EM": MapFormerEM_Level15InEKF,
+    "Level15PC": MapFormerWM_Level15PC,
     "Level2": MapFormerWM_Level2InEKF,
     "PC": MapFormerWM_PredictiveCoding, "RoPE": MapFormerWM_RoPE,
     **ABLATIONS,
@@ -77,7 +79,7 @@ configs = [
     ("noise",  0),
     ("lm200",  200),
 ]
-variants_main = ["Vanilla", "VanillaEM", "RoPE", "LSTM", "CoPE", "MambaLike", "Level1", "Level15", "Level15EM", "PC"]
+variants_main = ["Vanilla", "VanillaEM", "RoPE", "LSTM", "CoPE", "MambaLike", "Level1", "Level15", "Level15EM", "PC", "Level15PC"]
 
 for cfg_tag, n_lm in configs:
     print(f"## Config: {cfg_tag} (n_landmarks={n_lm})\n")
