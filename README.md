@@ -90,8 +90,92 @@ The repository implements one paper-faithful family + one extension family + sev
 | `MapFormerWM_Level2InEKF` | `model_inekf_level2.py` | **Level 2**: full heteroscedastic with time-varying Π_t. Two associative scans (Möbius covariance + scalar correction). Strictly more expressive than 1.5 but optimises worse. |
 | `MapFormerWM_PredictiveCoding` | `model_predictive_coding.py` | Forward-model variant: `g(θ)→ô`, prediction error drives correction. Complementary to InEKF (forward vs inverse model). |
 | `MapFormerWM_RoPE` | `model_baseline_rope.py` | Standard RoPE baseline (fixed token-index rotations). Counterfactual to MapFormer's input-dependent rotations. |
+| `MapFormerWM_Level15PC` | `model_level15_pc.py` | Level 1.5 InEKF + PC auxiliary loss combined on standard MapFormer-WM. Tested whether forward+inverse model corrections are complementary. *Result: failed on lm200; aux loss creates an autoencoder bypass via R-saturation. See* §"Level15PC interference and the NoBypass fix". |
+| `MapFormerWM_Level15PC_NoBypass` | `model_level15_pc_v2.py` | Level15PC with two architectural fixes: stop-gradient on the InEKF correction inside the PC aux loss + landmark-token mask on the aux loss. Targets the diagnosed R-saturation mechanism. |
+| `MapFormerWM_Grid` / `_Grid_Free` | `model_grid.py` | Multi-orientation path integrator (n_modules × n_orientations blocks at the same ω). `_Free` makes the orientation angles learnable. Architectural attempt to enable hexagonal grid-cell representations. *Result: hex still doesn't emerge; bottleneck is training objective, not architecture.* |
+| `MapFormerWM_GridL15PC` / `_GridL15PC_Free` | `model_grid_l15_pc.py` | Grid + Level 1.5 + PC aux. Kitchen-sink combination tested for hex emergence. Same falsification as Grid_Free. |
 | `EXTRA_BASELINES` | `model_baselines_extra.py` | LSTM, CoPE (Golovneva et al. 2024), MambaLike (Mamba-style selective SSM). Non-MapFormer comparisons. |
 | `ABLATIONS` | `model_ablations.py` | Four Level 1.5 ablations: `L15_ConstR` (no per-token R), `L15_NoMeas` (no measurement head), `L15_NoCorr` (no correction), `L15_DARE` (Π fixed from DARE rather than learned). |
+
+## Why Level 1.5 wins: stabilisation, not inference
+
+A late-session finding (2026-04-27): the **Kalman framing oversells what's
+actually happening**. Three lines of evidence point to Level 1.5's win
+across all regimes being primarily a *stabilisation* effect rather than a
+Bayesian-inference effect.
+
+1. **The wrap is load-bearing.** `atan2(sin(z − θ̂), cos(z − θ̂))` keeps
+   innovations bounded in [−π, π] regardless of how far θ_path drifts.
+   This is what keeps θ̂ in the trained range at OOD length while
+   Vanilla's θ_path goes out-of-distribution. An older unwrapped variant
+   trained faster but broke at T=512 OOD — the wrap, not the Kalman
+   algebra, is what the model actually needs.
+2. **The R_t head learns to be high on uninformative observations.**
+   On clean (purely aliased), R_t is large at all token types, making
+   K_t small, making the actual measurement contribution tiny. Yet
+   Level 1.5 still beats Vanilla by 8pp on clean OOD T=512. The
+   inference is no-op'd; the stabilisation does the work.
+3. **Per-token R_t also does token-type gating.** L15_ConstR (constant
+   R) drops 20pp on clean at T=128 — in-distribution length where
+   stabilisation alone shouldn't matter. The drop is because constant R
+   can't differentiate action tokens (which don't carry measurement
+   info) from obs tokens. Action tokens' nonsense "measurements" leak
+   into θ̂ and corrupt path integration.
+
+So the architecture has two structural pieces that do almost all the
+work — **wrap (stabilisation) + per-token R (token-type gating)** —
+and the inference algebra is mostly dressing. At runtime, Level 1.5 is
+a *wrapped EMA over learned-but-uninformative measurements*, with
+content-dependent gain shape inherited from the Kalman parameterisation.
+Same gain bound (K ∈ (0,1)) but the Kalman parameterisation isn't doing
+inference work.
+
+This is a sharper and more honest claim than "Kalman filtering helps."
+
+## Level15PC interference and the NoBypass fix
+
+Combining Level 1.5 InEKF with PC auxiliary loss on the standard backbone
+(`Level15PC`) was hypothesised to be complementary — Level 1.5's inverse
+model + PC's forward model = full position estimation pipeline. **It
+fails on lm200 with a 23pp regression** (OOD T=512: 0.591 vs Level 15's
+0.821).
+
+The mechanism is **R-saturation creating an autoencoder bypass**:
+
+- PC's auxiliary loss is `‖x − g(cos θ̂, sin θ̂)‖²`, computed at obs positions.
+- The model has two ways to minimise it: (a) the legit way — improve
+  path integration so g(θ̂) memorises observation-by-position; (b) the
+  shortcut — drive R_t → 0 (K → 1), making θ̂ ≈ z_t = h(x_t). Then
+  g(z_t) is essentially an autoencoder of the input, and the aux loss
+  is trivially small.
+- Gradient descent picks the shortcut. R_t saturates at the lower clamp
+  (log_R ≈ −3, against a clamp of −5 → R ≈ 0.05, K ≈ 0.95). The
+  InEKF stops being a Kalman filter and becomes a content-encoder.
+- θ̂ no longer encodes cumulative position; it encodes the current
+  input embedding. Attention can't retrieve past tokens at the same
+  cell across revisits because θ̂ values differ. lm200 OOD collapses.
+
+We confirmed this empirically with `r_t_distribution_test.py` (Test 1
+in `R_T_DISTRIBUTION.md`): Level15 has log_R spread 0.45 with values
+in (+0.4, +0.8); Level15PC has log_R values clustered around −3 (near
+the clamp), spread 0.72 — saturated, not flattened.
+
+**The fix** (`model_level15_pc_v2.py::MapFormerWM_Level15PC_NoBypass`):
+
+- **Fix 5 (stop-gradient):** in PC's pos_feat, use
+  `theta_path + (theta_hat - theta_path).detach()`. PC can only push
+  path integration through `action_to_lie`; it can't push the InEKF
+  parameters because the d_t correction is detached. Mechanically
+  verified: PC aux loss has zero gradient on R-head, z-head, log_Pi.
+- **Fix 6 (mask landmark tokens):** `obs_mask & (tokens <
+  LANDMARK_START_ID)`. Landmarks are one-shot and unpredictable from
+  position; the aux loss at those positions is pure noise gradient
+  that motivates the saturation. Removing it cleans the signal.
+
+If the diagnosis is right, NoBypass should match Level 15-alone's
+lm200 OOD T=512 (~0.82) while still inheriting PC's clone-separation
+benefit on aliased tokens. (Pipeline running at the time of this update;
+results in `NOBYPASS_RESULTS.md` and `R_T_DISTRIBUTION_3WAY.md`.)
 
 ## The Level 1.5 InEKF in math
 
@@ -425,9 +509,34 @@ neuroscience. Two were falsified honestly:
 
 The Stensola √2 module spacing holds but is mostly inherited from
 initialization. See `HIPPOCAMPAL_ANALYSIS.md` and `HIPPOCAMPAL_HIDDEN.md`
-for full analysis, and `paper/06_future_work.md §6.11` for the
-*MapFormer-Grid* architectural proposal that could in principle
-recover hexagonal grid-cell representations.
+for full analysis.
+
+### Update: the architectural fix didn't unlock hex either
+
+`paper/06_future_work.md §6.11` proposed a `MapFormer-Grid`
+architecture with multiple blocks per ω at 60° orientation offsets,
+predicting that *enabling* the three-waves-at-60° interference
+structure would let hex emerge. We then implemented it
+(`model_grid.py::MapFormerWM_Grid_Free` with learnable orientations,
+d_model=132 to make n_blocks divisible by 3) and trained it on clean.
+
+Result:
+- Loss converged to 0.021 (close to baselines)
+- Orientations stayed at hex {2.5°, 57.4°, 110.0°} — drift < 10° from init
+- **Per-module hex test: max grid score 0.036, 0/22 modules above the
+  0.3 Sargolini threshold**
+- Hidden-state hex test: max grid score 0.124 (vs Level15: 0.155, vs
+  Vanilla: 0.062 — Grid_Free is between)
+
+Adding Level 1.5 + PC corrections (`GridL15PC_Free`) made hex *worse*,
+not better, dropping max grid score to 0.052.
+
+**Conclusion: the original §6.5 falsification strengthens.** The
+architecture necessary for hex isn't sufficient; the *training
+objective* doesn't reward hex tiling. Multi-environment training
+(TEM-style; sample fresh `obs_map` per batch) is the obvious next
+experiment to test whether the bottleneck is per-environment
+memorisation vs cognitive-map structure learning.
 
 ## Key math
 
@@ -448,7 +557,26 @@ recover hexagonal grid-cell representations.
 
 ## What's still open / next steps
 
-### Done in the latest session (2026-04-24)
+### Done in the 2026-04-26/27 session
+
+✅ **`Level15PC` and `Level15PC_NoBypass` variants implemented.** Tests
+  whether forward (PC) + inverse (Kalman) corrections combine. Result:
+  failed on lm200 (R-saturation autoencoder bypass diagnosed); fix
+  `Level15PC_NoBypass` running.
+
+✅ **`Grid_Free` architectural test for hexagonal grid cells.** Built
+  multi-orientation path integrator with hex-init learnable orientations.
+  Hex still doesn't emerge — strengthens §6.5 falsification.
+
+✅ **Three interference tests** (R_t distribution, aux_coef sweep, clone
+  transfer) to mechanistically test why Level15PC fails. Test 1
+  diagnosed R-saturation; Tests 2 and 3 still running at session end.
+
+✅ **"Stabilisation not inference" reframing of Kalman.** Level 1.5's
+  win is primarily wrap-driven stabilisation + per-token-type gating,
+  not Bayesian inference. See README's "Why Level 1.5 wins" section.
+
+### Done in the 2026-04-24 session
 
 ✅ **Per-visit-count curves** (TEM-style one-shot generalization metric).
   See `PER_VISIT_*.md`, `fig5_per_visit_curves.png`, `fig6_one_shot_bar.png`.

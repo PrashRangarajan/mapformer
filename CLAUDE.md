@@ -528,3 +528,113 @@ ZERO_SHOT_TRANSFER_*.md, HIPPOCAMPAL_LEVEL15PC.md, CLONE_ANALYSIS_LEVEL15PC.md.
 - `runs/Level15EM_b5_lm200/seed2/`: diagnostic-only (alt safe-init
   experiment, kept untracked).
 
+
+## Session 2026-04-27 — Kalman = stabilisation, R-saturation diagnosis, NoBypass fix
+
+### Conceptual reframing (the big one)
+
+**Level 1.5's win across all regimes is primarily a STABILISATION effect, not
+an inference effect.** Three lines of evidence:
+
+1. The wrap (atan2 of innovation) is bounded in [-π, π] regardless of
+   how far θ_path drifts. This keeps θ̂ in the trained range at OOD
+   length while Vanilla's θ_path goes out-of-distribution. Without the
+   wrap (older unwrapped variant), training is faster but T=512 OOD
+   breaks — confirming the wrap is the load-bearing piece.
+2. R_t learns to be HIGH on aliased obs (no useful inference), so the
+   actual measurement contribution is tiny. Yet Level 1.5 still beats
+   Vanilla by 8pp on clean OOD T=512. The inference isn't doing the
+   work; the stabilisation is.
+3. Per-token R_t is also doing token-type GATING (action vs obs),
+   which explains why L15_ConstR drops 20pp at clean T=128 (where
+   stabilisation alone shouldn't matter at training length). With
+   constant R, action-token "measurements" leak into θ̂ and corrupt
+   path integration.
+
+So the architecture has two structural pieces (wrap + per-token-type
+gating) and inference is mostly absent. **At runtime Level 1.5 is a
+wrapped EMA over learned-but-uninformative measurements, with
+content-dependent gain shape inherited from the Kalman parameterisation.**
+
+### Three interference tests on Level15PC's lm200 regression
+
+After Level15PC's 23pp lm200 OOD regression, we tested three falsifiable
+hypotheses for the mechanism:
+
+**Test 1 (R_t distribution by token type)** — `R_T_DISTRIBUTION.md`:
+- Level15: log_R spread 0.45 across action/blank/aliased/landmark
+- Level15PC: log_R values all ≈ -3 (near the -5 lower clamp), spread 0.72
+- **Diagnosis: PC's aux loss drives R_t to saturate at the lower
+  clamp**, making K ≈ 1 everywhere. The InEKF stops being a Kalman
+  filter and becomes an autoencoder bypass: θ̂ ≈ z_t = h(x_t), so θ̂
+  encodes the current input embedding rather than the cumulative
+  position. Attention can't retrieve past tokens at the same cell
+  because θ̂ at revisits ≠ θ̂ at the original visit.
+- **The "PC flattens R-gating" hypothesis was FALSIFIED** — instead
+  it saturates R-gating at the floor.
+
+**Test 2 (aux_coef sweep)** — `AUX_COEF_SWEEP.md`:
+Trained Level15PC on lm200 with aux_coef ∈ {0, 0.01, 0.03, 0.1, 0.3}.
+Looking for a monotone dose-response curve to confirm the gradient
+mechanism. (Pipeline running at session end.)
+
+**Test 3 (clone-separation transfer)** — `CLONE_TRANSFER_TEST.md`:
+Recomputes PC's clone-separation score on a fresh obs_map (seed=10000)
+to test whether PC's clean clustering transfers or is memorisation.
+(Pipeline running at session end.)
+
+### The fix: `Level15PC_NoBypass` (Fix 5 + Fix 6)
+
+`model_level15_pc_v2.py::MapFormerWM_Level15PC_NoBypass` adds two
+architectural fixes:
+
+- **Fix 5 (stop-gradient on InEKF correction inside PC aux loss):**
+  `theta_for_pc = theta_path + (theta_hat - theta_path).detach()`. PC
+  can ONLY improve aux loss by improving path integration, not by
+  driving R → 0 to bypass. Sanity check verified: PC aux loss has zero
+  gradient on R-head, z-head, log_Pi parameters.
+- **Fix 6 (mask aux loss at landmark tokens):** vocab id ≥
+  LANDMARK_START_ID (=21 for default config) is excluded from the aux
+  loss. Removes the noise gradient at one-shot tokens that motivated
+  the saturation in the first place.
+
+If the diagnosis is right, NoBypass should match Level15-alone's lm200
+OOD T=512 (~0.82). If it stays at Level15PC's level (~0.59), the
+diagnosis is wrong and we need to keep digging.
+
+### Honest framing update for the paper
+
+The cleaner narrative for §5 / §6 is now:
+
+- **Kalman's win is stabilisation + token-type gating, not Bayesian
+  inference.** This is a narrower claim than "Kalman filtering helps"
+  but more accurate.
+- **PC alone underperforms Vanilla on raw next-token accuracy** (PC
+  OOD T=512 clean: 0.815 vs Vanilla: 0.913). PC's only clean win is
+  clone-separation score (a representation-quality metric), and we
+  haven't yet verified that win transfers to held-out environments.
+- **Combining PC + L15 fails on lm200 not because they "compete" but
+  because PC's aux loss creates an autoencoder bypass via R-saturation.**
+  The diagnosis is mechanistic.
+- **Hex emergence is not solved by architecture (`Grid_Free`) or by
+  correction stacking (`GridL15PC_Free`).** The bottleneck is the
+  training objective. Multi-environment training is the obvious next
+  experiment.
+
+### Files added/modified (this session)
+
+- `model_level15_pc_v2.py` (new): NoBypass variant with Fix 5+6.
+- `r_t_distribution_test.py`, `clone_transfer_test.py`,
+  `aux_coef_sweep.py` (new): three interference tests as standalone
+  scripts.
+- `run_interference_tests.sh`, `run_nobypass_test.sh` (new):
+  autonomous pipelines.
+- `train_variant.py`: registered `Level15PC_NoBypass`.
+- All 5 eval scripts (long_seq, per_visit, zero_shot, calibration,
+  hippocampal_hidden_eval): added Level15PC_NoBypass import +
+  VARIANT_CLS entry.
+- `R_T_DISTRIBUTION.md`, `CLONE_TRANSFER_TEST.md`, `AUX_COEF_SWEEP.md`,
+  `R_T_DISTRIBUTION_3WAY.md`, `NOBYPASS_RESULTS.md`,
+  `CLONE_TRANSFER_NOBYPASS.md` (some still being generated by the
+  in-flight pipelines).
+
