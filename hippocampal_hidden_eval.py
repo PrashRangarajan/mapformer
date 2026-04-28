@@ -45,6 +45,7 @@ from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_baselines_extra import EXTRA_BASELINES
 from mapformer.model_grid import MapFormerWM_Grid, MapFormerWM_Grid_Free
 from mapformer.model_level15_pc import MapFormerWM_Level15PC
+from mapformer.model_level15_pc_v2 import MapFormerWM_Level15PC_NoBypass
 from mapformer.model_grid_l15_pc import (
     MapFormerWM_GridL15PC, MapFormerWM_GridL15PC_Free,
 )
@@ -56,6 +57,7 @@ VARIANT_CLS = {
     "Level15":         MapFormerWM_Level15InEKF,
     "Level15EM":       MapFormerEM_Level15InEKF,
     "Level15PC":       MapFormerWM_Level15PC,
+    "Level15PC_NoBypass": MapFormerWM_Level15PC_NoBypass,
     "PC":              MapFormerWM_PredictiveCoding,
     "RoPE":            MapFormerWM_RoPE,
     "Grid":            MapFormerWM_Grid,
