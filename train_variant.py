@@ -43,6 +43,7 @@ from mapformer.model_grid_l15_pc import (
 )
 from mapformer.model_level15_pc import MapFormerWM_Level15PC
 from mapformer.model_level15_pc_v2 import MapFormerWM_Level15PC_NoBypass
+from mapformer.model_level15_pc_v3 import MapFormerWM_Level15PC_v3
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
@@ -63,6 +64,7 @@ VARIANT_MAP = {
     "GridL15PC_Free": MapFormerWM_GridL15PC_Free,
     "Level15PC":  MapFormerWM_Level15PC,
     "Level15PC_NoBypass": MapFormerWM_Level15PC_NoBypass,
+    "Level15PC_v3": MapFormerWM_Level15PC_v3,
     "Level2":     MapFormerWM_Level2InEKF,
     "PC":         MapFormerWM_PredictiveCoding,
     "RoPE":       MapFormerWM_RoPE,
