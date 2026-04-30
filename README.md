@@ -91,7 +91,10 @@ The repository implements one paper-faithful family + one extension family + sev
 | `MapFormerWM_PredictiveCoding` | `model_predictive_coding.py` | Forward-model variant: `g(θ)→ô`, prediction error drives correction. Complementary to InEKF (forward vs inverse model). |
 | `MapFormerWM_RoPE` | `model_baseline_rope.py` | Standard RoPE baseline (fixed token-index rotations). Counterfactual to MapFormer's input-dependent rotations. |
 | `MapFormerWM_Level15PC` | `model_level15_pc.py` | Level 1.5 InEKF + PC auxiliary loss combined on standard MapFormer-WM. Tested whether forward+inverse model corrections are complementary. *Result: failed on lm200; aux loss creates an autoencoder bypass via R-saturation. See* §"Level15PC interference and the NoBypass fix". |
-| `MapFormerWM_Level15PC_NoBypass` | `model_level15_pc_v2.py` | Level15PC with two architectural fixes: stop-gradient on the InEKF correction inside the PC aux loss + landmark-token mask on the aux loss. Targets the diagnosed R-saturation mechanism. |
+| `MapFormerWM_Level15PC_NoBypass` | `model_level15_pc_v2.py` | Level15PC with two architectural fixes: stop-gradient on the InEKF correction inside the PC aux loss + landmark-token mask on the aux loss. Targets the diagnosed R-saturation mechanism. *Result: closes direct route but PC still leaks via shared `action_to_lie`; |θ̂| explodes to ~3840 at T=512 (vs Level15's 83). T=512 OOD breaks.* |
+| `MapFormerWM_Level15PC_v3` | `model_level15_pc_v3.py` | NoBypass + tighter R clamp [-1, 5]. Partial recovery on clean (0.948) but lm200 OOD T=512 still 0.626 (Level15: 0.790). |
+| `MapFormerWM_Level15PC_v4` | `model_level15_pc_v4.py` | NoBypass + full PC isolation: detaches both `theta_hat` AND target embedding inside the PC aux loss. PC's gradient touches *only* `forward_model` parameters. *Result: matches Level15 on clean, modestly beats Level15 on lm200 OOD T=512 (0.859±0.009 vs 0.825±0.026, n=3). Win not attributable to PC mechanism (zero gradient flow into main model); likely RNG drift / optimizer-state side effect.* |
+| `MapFormerWM_Level15_DoG` | `model_level15_dog.py` | **Sorscher Option A**: Level 1.5 + auxiliary DoG-of-position place-cell head with ReLU bottleneck. Tests whether hex emerges in the bottleneck under non-negativity + DoG-target supervision (Sorscher/Ganguli 2019 conditions). Probed by `probe_hex.py`; result in `DOG_RESULTS.md`. |
 | `MapFormerWM_Grid` / `_Grid_Free` | `model_grid.py` | Multi-orientation path integrator (n_modules × n_orientations blocks at the same ω). `_Free` makes the orientation angles learnable. Architectural attempt to enable hexagonal grid-cell representations. *Result: hex still doesn't emerge; bottleneck is training objective, not architecture.* |
 | `MapFormerWM_GridL15PC` / `_GridL15PC_Free` | `model_grid_l15_pc.py` | Grid + Level 1.5 + PC aux. Kitchen-sink combination tested for hex emergence. Same falsification as Grid_Free. |
 | `EXTRA_BASELINES` | `model_baselines_extra.py` | LSTM, CoPE (Golovneva et al. 2024), MambaLike (Mamba-style selective SSM). Non-MapFormer comparisons. |
@@ -427,13 +430,35 @@ benefits at a third of the compute. Diagnostic: per-token Π in Level 2
 only varies ~4× across tokens, so most of the heteroscedasticity is
 already captured by R_t alone.
 
-### Predictive Coding (forward model) and InEKF (inverse model) are complementary
+### Predictive Coding and InEKF are duals, not complements (revised)
 
-PC's forward model `g(θ)→ô` excels at *aliased* observation aggregation
-(soft Bayesian retrieval). InEKF's inverse model `h(o)→θ` excels at
-*sharp* landmark measurements (a unique token uniquely identifies a
-cell). Neither is universal; both can coexist with attention's implicit
-retrieval.
+Earlier framing claimed PC (forward model `g(θ)→ô`) and InEKF (inverse
+model `h(o)→θ`) were complementary. **The 2026-04-27/29 sessions showed
+this framing is wrong.** PC and the InEKF measurement model are
+mathematical duals — same Bayesian posterior over θ written from
+opposite sides. When both operate on the same θ̂ with the same inputs,
+they target the same fixed point. Gradient descent finds the trivial
+joint minimum: `g ∘ h ≈ identity`, achieved by `R → 0` so
+`θ̂ ≈ h(x_t)` (the autoencoder bypass observed in `Level15PC`).
+
+The aux_coef sweep makes this dose-response (more PC → worse lm200
+OOD T=512: 0.0→0.79, 0.1→0.72, 0.3→0.55). Stop-gradient fixes (v2,
+v3) close the direct route but PC still leaks through shared
+`action_to_lie`, blowing |θ̂| up to ~3840 at T=512. Only **full PC
+isolation (v4 — detach both θ̂ and the target embedding from the aux
+loss)** lets the two coexist, and at that point PC has zero gradient
+flow into the main model.
+
+Multi-seed v4 (n=3) shows lm200 OOD T=512 0.859 ± 0.009 vs Level15's
+0.825 ± 0.026 — a **modest +3pp win that cannot mechanistically come
+from PC** (its gradient is fully detached). Likely RNG drift via
+`forward_model` consuming init draws, or optimizer-state side effects.
+
+**Honest claim now: PC and Kalman are alternative parameterizations
+of the same posterior. Architectures that include both with non-zero
+gradient coupling create a degenerate optimum gradient descent will
+find. Full isolation (v4) avoids the collapse but turns PC into a
+passive readout.**
 
 ## Comparison to Mamba — the paper's own benchmark
 
@@ -556,6 +581,33 @@ memorisation vs cognitive-map structure learning.
 | Affine scan recurrence | `d_t = (1−K_t)·d_{t−1} + K_t·ν_t` — Hillis-Steele O(log T) |
 
 ## What's still open / next steps
+
+### Done in the 2026-04-28/29 sessions
+
+✅ **`Level15PC_v3` and `Level15PC_v4` variants implemented.** v3 adds
+  a tighter R clamp [-1, 5]; v4 adds full PC isolation (detach both
+  θ̂ and the target embedding inside the aux loss). Result: v3 partial
+  recovery only; v4 matches Level15 on clean and modestly beats it on
+  lm200 (+3pp OOD T=512 across n=3 seeds; see `V4_MULTISEED.md`). The
+  v4 win cannot mechanistically come from PC (zero gradient flow into
+  main model); leading hypothesis is RNG drift from `forward_model`
+  consuming init draws.
+
+✅ **`length_diagnostic.py`.** Diagnosed why NoBypass fails at T=512:
+  PC's gradient leaks via shared `action_to_lie`, blowing |θ̂| to
+  ~3840 (vs Level15: 83). See `LENGTH_DIAGNOSTIC.md`.
+
+✅ **PC ⇄ Kalman duality recognized.** PC's forward model and InEKF's
+  measurement model are mathematical duals, not complements. Section
+  "Predictive Coding and InEKF are duals" rewrites the previous
+  framing.
+
+✅ **`Level15_DoG` variant + `probe_hex.py` (Sorscher Option A).**
+  Adds a non-negative ReLU bottleneck supervised by DoG-of-position
+  place-cell targets, alongside the standard categorical CE loss.
+  This is the first variant in the project that satisfies all three
+  Sorscher/Ganguli (2019) conditions for hex emergence.
+  Result in `DOG_RESULTS.md` (in flight at session end).
 
 ### Done in the 2026-04-26/27 session
 
