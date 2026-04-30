@@ -1,0 +1,141 @@
+#!/bin/bash
+# Train Level15PC_v4 on seeds 1 and 2 for clean + lm200, then re-evaluate.
+set -u
+cd /home/prashr
+REPO=/home/prashr/mapformer
+LOGS=$REPO/logs
+mkdir -p "$LOGS"
+
+train() {
+    local seed=$1 cfg=$2 lm=$3 noise=$4 gpu=$5
+    mkdir -p "$REPO/runs/Level15PC_v4_${cfg}/seed${seed}"
+    CUDA_VISIBLE_DEVICES=$gpu python3 -u -m mapformer.train_variant \
+        --variant Level15PC_v4 --seed $seed \
+        --n-landmarks $lm --p-action-noise $noise \
+        --epochs 50 --n-batches 156 --aux-coef 0.1 \
+        --device cuda \
+        --output-dir mapformer/runs/Level15PC_v4_${cfg}/seed${seed} \
+        > "$LOGS/Level15PC_v4_${cfg}_s${seed}.log" 2>&1
+}
+
+echo "[$(date)] Pair 1: v4 clean s1 (gpu0) + v4 lm200 s1 (gpu1)..."
+train 1 clean  0   0.0  0 &
+P1=$!
+train 1 lm200  200 0.10 1 &
+P2=$!
+wait $P1 $P2
+echo "[$(date)] Pair 1 done."
+
+echo "[$(date)] Pair 2: v4 clean s2 (gpu0) + v4 lm200 s2 (gpu1)..."
+train 2 clean  0   0.0  0 &
+P3=$!
+train 2 lm200  200 0.10 1 &
+P4=$!
+wait $P3 $P4
+echo "[$(date)] Pair 2 done."
+
+echo "[$(date)] Evaluating multi-seed Level15 vs Level15PC_v4..."
+python3 -u <<'PYEOF' > "$REPO/V4_MULTISEED.md" 2>"$LOGS/v4_multiseed_eval.err"
+import torch, torch.nn.functional as F, numpy as np
+from pathlib import Path
+from mapformer.environment import GridWorld
+from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
+from mapformer.model_level15_pc_v4 import MapFormerWM_Level15PC_v4
+
+VARIANT_CLS = {
+    "Level15": MapFormerWM_Level15InEKF,
+    "Level15PC_v4": MapFormerWM_Level15PC_v4,
+}
+
+def build(variant, ckpt_path):
+    c = torch.load(ckpt_path, map_location="cuda", weights_only=False)
+    cfg = c.get("config", {})
+    cls = VARIANT_CLS[variant]
+    m = cls(vocab_size=cfg["vocab_size"], d_model=cfg.get("d_model", 128),
+            n_heads=cfg.get("n_heads", 2), n_layers=cfg.get("n_layers", 1),
+            grid_size=cfg.get("grid_size", 64))
+    m.load_state_dict(c["model_state_dict"])
+    return m.cuda().eval()
+
+def eval_revisit(model, env, T, n_trials, seed):
+    torch.manual_seed(seed); np.random.seed(seed)
+    c = tot = 0; nll_sum = 0.0
+    with torch.no_grad():
+        for _ in range(n_trials):
+            tokens, _, rm = env.generate_trajectory(T)
+            tt = tokens.unsqueeze(0).cuda()
+            try:
+                logits = model(tt[:, :-1])
+            except Exception:
+                return None, None
+            lp = F.log_softmax(logits, dim=-1)
+            preds = lp.argmax(-1)[0]; tgts = tt[0, 1:]; mask = rm[1:].cuda()
+            if mask.sum() == 0: continue
+            c += (preds[mask] == tgts[mask]).sum().item()
+            tot += mask.sum().item()
+            idx = torch.arange(lp.shape[1], device="cuda")[mask]
+            nll_sum += -lp[0, idx, tgts[mask]].sum().item()
+    return (c / tot if tot else None, nll_sum / tot if tot else None)
+
+print("# Level15 vs Level15PC_v4 — multi-seed comparison\n")
+print("Three seeds (0, 1, 2) per variant per config. Reports mean ± std on revisit accuracy.\n")
+
+variants = ["Level15", "Level15PC_v4"]
+seeds = [0, 1, 2]
+
+for cfg_tag, n_lm in [("clean", 0), ("lm200", 200)]:
+    print(f"## Config: {cfg_tag}\n")
+    print("| Variant | T=128 OOD | T=512 OOD | T=128 NLL | T=512 NLL |")
+    print("|---|---|---|---|---|")
+    rows = {}
+    for v in variants:
+        a128s, a512s, n128s, n512s = [], [], [], []
+        for s in seeds:
+            ckpt = Path(f"mapformer/runs/{v}_{cfg_tag}/seed{s}/{v}.pt")
+            if not ckpt.exists():
+                print(f"# missing: {ckpt}", flush=True)
+                continue
+            m = build(v, ckpt)
+            env_ood = GridWorld(size=64, n_obs_types=16, p_empty=0.5, n_landmarks=n_lm, seed=1000)
+            a128, n128 = eval_revisit(m, env_ood, 128, 200, seed=2000)
+            a512, n512 = eval_revisit(m, env_ood, 512, 100, seed=2000)
+            if a128 is not None: a128s.append(a128); n128s.append(n128)
+            if a512 is not None: a512s.append(a512); n512s.append(n512)
+            del m; torch.cuda.empty_cache()
+        rows[v] = (a128s, a512s, n128s, n512s)
+        if a128s:
+            print(f"| **{v}** (n={len(a128s)}) | "
+                  f"{np.mean(a128s):.3f} ± {np.std(a128s):.3f} | "
+                  f"{np.mean(a512s):.3f} ± {np.std(a512s):.3f} | "
+                  f"{np.mean(n128s):.3f} | "
+                  f"{np.mean(n512s):.3f} |")
+    # Per-seed breakdown for transparency
+    print("\n### Per-seed breakdown\n")
+    print("| Variant | seed | T=128 OOD | T=512 OOD |")
+    print("|---|---|---|---|")
+    for v in variants:
+        for i, s in enumerate(seeds):
+            ckpt = Path(f"mapformer/runs/{v}_{cfg_tag}/seed{s}/{v}.pt")
+            if not ckpt.exists(): continue
+            a128s, a512s, _, _ = rows.get(v, ([],[],[],[]))
+            if i < len(a128s):
+                print(f"| {v} | {s} | {a128s[i]:.3f} | {a512s[i]:.3f} |")
+    print()
+
+print("\n*Auto-generated by run_v4_multiseed.sh*")
+PYEOF
+
+echo "[$(date)] Eval done."
+cd "$REPO"
+git add V4_MULTISEED.md run_v4_multiseed.sh
+git add runs/Level15PC_v4_clean/seed1/*.pt runs/Level15PC_v4_clean/seed2/*.pt \
+        runs/Level15PC_v4_lm200/seed1/*.pt runs/Level15PC_v4_lm200/seed2/*.pt 2>/dev/null || true
+git commit -m "Level15PC_v4 multi-seed: test if single-seed lm200 win is robust
+
+Adds seeds 1 and 2 for Level15PC_v4 on clean + lm200, and an evaluation
+that compares the (now n=3) Level15PC_v4 distribution to the existing
+n=3 Level15 distribution. Tests whether v4's apparent +8pp lm200 OOD
+T=512 win at seed 0 holds across seeds, or was init-RNG drift.
+" 2>&1 | tail -3
+git push origin main 2>&1 | tail -3
+echo "[$(date)] Done."
