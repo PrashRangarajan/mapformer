@@ -65,13 +65,30 @@ def train(
         model.train()
         epoch_loss = 0.0
 
+        wants_positions = hasattr(model, "_batch_positions")
+
         for _ in range(n_batches):
             # tokens: (B, 2*n_steps) interleaved [a1, o1, a2, o2, ...]
             # obs_mask: True at observation positions
             # revisit_mask: True at observation positions AT REVISITED cells
-            tokens, obs_mask, revisit_mask, _ = env.generate_batch(batch_size, n_steps)
+            tokens, obs_mask, revisit_mask, all_locations = env.generate_batch(batch_size, n_steps)
             tokens = tokens.to(device)
             revisit_mask = revisit_mask.to(device)
+
+            # Stash ground-truth positions on the model for variants whose
+            # auxiliary loss needs them (e.g., DoG aux on Level15_DoG).
+            # Position at input index 2t+1 (obs token at step t) = location[t].
+            # Action positions (even indices) are placeholders; aux losses
+            # mask them out. Vectorised: build on CPU as numpy, transfer once.
+            if wants_positions:
+                import numpy as _np
+                B = len(all_locations)
+                L_in = 2 * n_steps - 1
+                loc_arr = _np.asarray(all_locations, dtype=_np.float32)  # (B, n_steps, 2)
+                positions = torch.zeros(B, L_in, 2, dtype=torch.float32)
+                n_odd = L_in // 2  # = n_steps - 1 for odd L_in
+                positions[:, 1::2] = torch.from_numpy(loc_arr[:, :n_odd, :])
+                model._batch_positions = positions.to(device, non_blocking=True)
 
             # Optional action noise: corrupt random action tokens at even positions
             if p_action_noise > 0:
