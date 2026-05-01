@@ -128,8 +128,39 @@ class MiniGridWorld:
         cell = obs["image"][3, 5]
         return self._encode_cell(cell)
 
-    def generate_trajectory(self, n_steps: int = 128, p_action_noise: float = 0.0):
+    # Forward-biased action distribution: mimics torus "directed walk".
+    # Most steps go forward; turn occasionally; pickup/drop/toggle/done rare.
+    # MiniGrid actions: 0=left turn, 1=right turn, 2=forward, 3=pickup,
+    # 4=drop, 5=toggle, 6=done.
+    FORWARD_BIASED_PROBS = np.array(
+        [0.15, 0.15, 0.65, 0.02, 0.01, 0.01, 0.01]
+    )
+    UNIFORM_PROBS = np.ones(7) / 7
+
+    def _sample_action(self, policy: str) -> int:
+        if policy == "uniform":
+            return int(np.random.choice(7))
+        if policy == "forward_biased":
+            return int(np.random.choice(7, p=self.FORWARD_BIASED_PROBS))
+        raise ValueError(f"Unknown policy {policy!r}")
+
+    def generate_trajectory(
+        self,
+        n_steps: int = 128,
+        p_action_noise: float = 0.0,
+        policy: str = "forward_biased",
+    ):
         """Generate an interleaved trajectory of (action, obs) tokens.
+
+        Args:
+            n_steps: number of (action, obs) pairs.
+            p_action_noise: probability of replacing the chosen action with
+                a UNIFORM-random one. Meaningful only when ``policy`` has
+                structure (i.e., not "uniform").
+            policy: base policy. "forward_biased" gives structured directed
+                walks (most steps forward, occasional turns); "uniform"
+                samples uniformly over all 7 actions (action noise becomes
+                a no-op at p_action_noise > 0).
 
         Returns:
             tokens:        (2*n_steps,) long tensor in unified vocab
@@ -137,28 +168,21 @@ class MiniGridWorld:
             revisit_mask:  (2*n_steps,) bool, True at obs positions whose
                            (x, y, direction) tuple was seen before.
         """
-        # Reset to a deterministic episode each call so the trajectory has
-        # a consistent start state (matches the random-walk paradigm).
         obs, info = self.env.reset(seed=self.seed + np.random.randint(1_000_000))
         tokens = []
         is_revisit = []
         seen = set()
 
-        # Capture the initial state's "front cell" obs as the bootstrap
-        # observation, then alternate action/obs.
         for t in range(n_steps):
-            # Random policy (matches our random-walk paradigm); inject
-            # action noise via the same mechanism as torus GridWorld.
-            action = int(self.env.action_space.sample())
+            action = self._sample_action(policy)
             if p_action_noise > 0 and np.random.random() < p_action_noise:
-                # Replace with a fresh random action (uniformly over 0..6)
-                action = int(self.env.action_space.sample())
+                # Action noise replaces with a UNIFORM-random action (so
+                # the perturbation is independent of the base policy).
+                action = int(np.random.choice(7))
             tokens.append(action + self.action_offset)
 
-            # Step the environment
             obs, reward, terminated, truncated, info = self.env.step(action)
 
-            # Get current state for revisit detection
             agent_pos = tuple(self.env.unwrapped.agent_pos)
             agent_dir = int(self.env.unwrapped.agent_dir)
             state_key = agent_pos + (agent_dir,)
@@ -167,7 +191,6 @@ class MiniGridWorld:
             is_revisit.append(state_key in seen)
             seen.add(state_key)
 
-            # Auto-reset on terminal step so the trajectory continues
             if terminated or truncated:
                 obs, info = self.env.reset(
                     seed=self.seed + np.random.randint(1_000_000)
