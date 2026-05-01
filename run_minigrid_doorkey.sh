@@ -32,7 +32,10 @@ while is_running "run_v4_control|tma_standalone\b|train_variant.*Level15PC_v4_co
 done
 echo "[$(date)] GPUs free. Launching MiniGrid DoorKey experiments."
 
-# Helper to launch one training
+# Launch one training in the background. Note: must be run inline (not via
+# $(...) command substitution) so the python process stays a child of THIS
+# shell — otherwise `wait $PID` returns immediately for orphaned children.
+# Usage: launch <gpu> <variant> <noise> <outdir> <logname>; sets PID_OUT.
 launch() {
     local gpu=$1 variant=$2 noise=$3 outdir=$4 logname=$5
     CUDA_VISIBLE_DEVICES=$gpu python3 -u -m mapformer.train_variant \
@@ -43,17 +46,19 @@ launch() {
         --device cuda \
         --output-dir "$outdir" \
         > "$LOGS/$logname" 2>&1 &
-    echo $!
+    PID_OUT=$!
 }
 
 # ---- PRIMARY: clean (no noise) ----
 echo "[$(date)] Primary: Vanilla + Level15 on DoorKey, no noise..."
 mkdir -p "$REPO/runs/minigrid_doorkey_clean/Vanilla/seed0" \
          "$REPO/runs/minigrid_doorkey_clean/Level15/seed0"
-P1=$(launch 0 Vanilla 0.0 mapformer/runs/minigrid_doorkey_clean/Vanilla/seed0 \
-            mg_doorkey_clean_Vanilla_s0.log)
-P2=$(launch 1 Level15 0.0 mapformer/runs/minigrid_doorkey_clean/Level15/seed0 \
-            mg_doorkey_clean_Level15_s0.log)
+launch 0 Vanilla 0.0 mapformer/runs/minigrid_doorkey_clean/Vanilla/seed0 \
+            mg_doorkey_clean_Vanilla_s0.log
+P1=$PID_OUT
+launch 1 Level15 0.0 mapformer/runs/minigrid_doorkey_clean/Level15/seed0 \
+            mg_doorkey_clean_Level15_s0.log
+P2=$PID_OUT
 wait $P1 $P2
 echo "[$(date)] Primary done."
 echo "  Vanilla: $(grep 'Epoch  50/50' $LOGS/mg_doorkey_clean_Vanilla_s0.log | tail -1)"
@@ -63,10 +68,12 @@ echo "  Level15: $(grep 'Epoch  50/50' $LOGS/mg_doorkey_clean_Level15_s0.log | t
 echo "[$(date)] Ablation: Vanilla + Level15 on DoorKey, 10% action noise..."
 mkdir -p "$REPO/runs/minigrid_doorkey_noise/Vanilla/seed0" \
          "$REPO/runs/minigrid_doorkey_noise/Level15/seed0"
-P3=$(launch 0 Vanilla 0.10 mapformer/runs/minigrid_doorkey_noise/Vanilla/seed0 \
-            mg_doorkey_noise_Vanilla_s0.log)
-P4=$(launch 1 Level15 0.10 mapformer/runs/minigrid_doorkey_noise/Level15/seed0 \
-            mg_doorkey_noise_Level15_s0.log)
+launch 0 Vanilla 0.10 mapformer/runs/minigrid_doorkey_noise/Vanilla/seed0 \
+            mg_doorkey_noise_Vanilla_s0.log
+P3=$PID_OUT
+launch 1 Level15 0.10 mapformer/runs/minigrid_doorkey_noise/Level15/seed0 \
+            mg_doorkey_noise_Level15_s0.log
+P4=$PID_OUT
 wait $P3 $P4
 echo "[$(date)] Ablation done."
 echo "  Vanilla (noise): $(grep 'Epoch  50/50' $LOGS/mg_doorkey_noise_Vanilla_s0.log | tail -1)"
