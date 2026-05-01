@@ -96,6 +96,15 @@ def main():
                         help="Override d_model. For Grid hexagonal config "
                              "(11 modules x 3 orientations) need d_model=132.")
     parser.add_argument("--n-heads", type=int, default=2)
+    parser.add_argument("--env", type=str, default="torus",
+                        choices=["torus", "minigrid_empty", "minigrid_doorkey",
+                                 "minigrid_keycorridor", "minigrid_obstructedmaze"],
+                        help="Which environment to train on. 'torus' is the "
+                             "paper-default 64x64 random-walk grid; "
+                             "'minigrid_*' use real MiniGrid envs via "
+                             "MiniGridWorld adapter.")
+    parser.add_argument("--minigrid-tokenization", type=str, default="obj_color",
+                        choices=["obj_only", "obj_color", "full"])
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--output-dir", type=str, required=True)
     args = parser.parse_args()
@@ -105,15 +114,32 @@ def main():
     out = Path(args.output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    env = GridWorld(
-        size=64, n_obs_types=16, p_empty=0.5,
-        n_landmarks=args.n_landmarks, seed=args.seed,
-    )
+    if args.env == "torus":
+        env = GridWorld(
+            size=64, n_obs_types=16, p_empty=0.5,
+            n_landmarks=args.n_landmarks, seed=args.seed,
+        )
+        grid_size = 64
+    else:
+        from mapformer.minigrid_env import MiniGridWorld
+        env_name = {
+            "minigrid_empty":           "MiniGrid-Empty-8x8-v0",
+            "minigrid_doorkey":         "MiniGrid-DoorKey-8x8-v0",
+            "minigrid_keycorridor":     "MiniGrid-KeyCorridorS3R3-v0",
+            "minigrid_obstructedmaze":  "MiniGrid-ObstructedMaze-1Dl-v0",
+        }[args.env]
+        env = MiniGridWorld(
+            env_name=env_name,
+            tokenization=args.minigrid_tokenization,
+            seed=args.seed,
+        )
+        grid_size = env.size  # MiniGrid envs vary in grid size
+
     cls = VARIANT_MAP[args.variant]
     model = cls(
         vocab_size=env.unified_vocab_size,
         d_model=args.d_model, n_heads=args.n_heads,
-        n_layers=args.n_layers, grid_size=64,
+        n_layers=args.n_layers, grid_size=grid_size,
     )
 
     print(f"{args.variant} seed={args.seed} n_landmarks={args.n_landmarks} "

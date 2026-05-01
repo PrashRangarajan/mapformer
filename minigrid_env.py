@@ -173,6 +173,7 @@ class MiniGridWorld:
         is_revisit = []
         seen = set()
 
+        visited_xy = []  # (x, y) per step — for compatibility with train.py
         for t in range(n_steps):
             action = self._sample_action(policy)
             if p_action_noise > 0 and np.random.random() < p_action_noise:
@@ -190,11 +191,15 @@ class MiniGridWorld:
             tokens.append(front_token + self.obs_offset)
             is_revisit.append(state_key in seen)
             seen.add(state_key)
+            visited_xy.append(agent_pos)
 
             if terminated or truncated:
                 obs, info = self.env.reset(
                     seed=self.seed + np.random.randint(1_000_000)
                 )
+
+        # Stash for compatibility with train.py's generate_batch consumer.
+        self.visited_locations = visited_xy
 
         tokens = torch.tensor(tokens, dtype=torch.long)
         obs_mask = torch.zeros(2 * n_steps, dtype=torch.bool)
@@ -204,3 +209,33 @@ class MiniGridWorld:
             if rev:
                 revisit_mask[2 * step_idx + 1] = True
         return tokens, obs_mask, revisit_mask
+
+    def generate_batch(
+        self,
+        batch_size: int,
+        n_steps: int = 128,
+        p_action_noise: float = 0.0,
+        policy: str = "forward_biased",
+    ):
+        """Batch wrapper matching GridWorld.generate_batch signature.
+
+        Returns (tokens, obs_mask, revisit_mask, all_locations) where
+        all_locations is a list[list[tuple[int, int]]] of agent (x, y) per
+        step per trajectory. train.py uses this for aux-loss variants that
+        need ground-truth positions (e.g. Level15_DoG).
+        """
+        all_tokens, all_obs, all_rev, all_locs = [], [], [], []
+        for _ in range(batch_size):
+            tok, om, rm = self.generate_trajectory(
+                n_steps, p_action_noise=p_action_noise, policy=policy,
+            )
+            all_tokens.append(tok)
+            all_obs.append(om)
+            all_rev.append(rm)
+            all_locs.append(list(self.visited_locations))
+        return (
+            torch.stack(all_tokens),
+            torch.stack(all_obs),
+            torch.stack(all_rev),
+            all_locs,
+        )
