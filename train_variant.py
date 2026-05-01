@@ -110,6 +110,7 @@ def main():
     parser.add_argument("--env", type=str, default="torus",
                         choices=["torus", "minigrid_empty", "minigrid_doorkey",
                                  "minigrid_doorkey16", "minigrid_multiroom",
+                                 "minigrid_memory",
                                  "minigrid_keycorridor", "minigrid_obstructedmaze"],
                         help="Which environment to train on. 'torus' is the "
                              "paper-default 64x64 random-walk grid; "
@@ -145,6 +146,7 @@ def main():
             "minigrid_doorkey":         "MiniGrid-DoorKey-8x8-v0",
             "minigrid_doorkey16":       "MiniGrid-DoorKey-16x16-v0",
             "minigrid_multiroom":       "MiniGrid-MultiRoom-N4-S5-v0",
+            "minigrid_memory":          "MiniGrid-MemoryS13-v0",
             "minigrid_keycorridor":     "MiniGrid-KeyCorridorS3R3-v0",
             "minigrid_obstructedmaze":  "MiniGrid-ObstructedMaze-1Dl-v0",
         }[args.env]
