@@ -82,7 +82,18 @@ def main():
     parser.add_argument("--variant", required=True, choices=list(VARIANT_MAP.keys()))
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--n-landmarks", type=int, default=0)
-    parser.add_argument("--p-action-noise", type=float, default=0.0)
+    parser.add_argument("--p-action-noise", type=float, default=0.0,
+                        help="Post-hoc corruption of action TOKENS (records). "
+                             "Trajectory rolls forward with the original "
+                             "actions; only the model's view is corrupted.")
+    parser.add_argument("--p-transition-noise", type=float, default=0.0,
+                        help="Stochastic-transition MDP: at each step the "
+                             "executed action differs from the commanded one "
+                             "with this probability. Token sequence records "
+                             "the commanded action; position update uses "
+                             "the executed one. Mathematically equivalent to "
+                             "p_action_noise for uniform policies but maps "
+                             "to a different real-world failure mode.")
     parser.add_argument("--aux-coef", type=float, default=0.0,
                         help="Coefficient for auxiliary prediction-error loss "
                              "(used by PC and GridL15PC variants).")
@@ -169,6 +180,7 @@ def main():
         batch_size=args.batch_size, n_steps=args.n_steps,
         n_batches=args.n_batches, device=args.device,
         p_action_noise=args.p_action_noise,
+        p_transition_noise=args.p_transition_noise,
         aux_coef=args.aux_coef,
     )
 

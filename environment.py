@@ -100,9 +100,18 @@ class GridWorld:
         self.last_y = size // 2
 
     def generate_trajectory(
-        self, n_steps: int = 128, start: Optional[tuple[int, int]] = None
+        self, n_steps: int = 128, start: Optional[tuple[int, int]] = None,
+        p_transition_noise: float = 0.0,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Generate a directed-walk trajectory as an interleaved token sequence.
+
+        Args:
+            p_transition_noise: per-step probability that the *executed* action
+                differs from the commanded action. The token sequence records
+                the COMMANDED action; the position update uses a random
+                replacement action with this probability. This models a
+                stochastic-transition MDP — distinct from train.py's
+                ``p_action_noise`` (which corrupts action *records* post-hoc).
 
         Returns:
             tokens: (2*n_steps,) interleaved [a1, o1, a2, o2, ...] in unified vocab
@@ -131,11 +140,22 @@ class GridWorld:
             for _ in range(k):
                 if t >= n_steps:
                     break
-                dx, dy = self.ACTION_DELTAS[a]
+
+                # Stochastic-transition MDP: commanded action is `a`, executed
+                # may differ. We RECORD the commanded action but APPLY the
+                # (possibly different) executed one. This is mathematically
+                # equivalent to action-record corruption for a uniform policy
+                # but corresponds to a different real-world failure mode (env
+                # stochasticity vs sensor/log corruption).
+                a_exec = a
+                if p_transition_noise > 0.0 and np.random.random() < p_transition_noise:
+                    a_exec = np.random.randint(0, self.N_ACTIONS)
+
+                dx, dy = self.ACTION_DELTAS[a_exec]
                 x = (x + dx) % self.size
                 y = (y + dy) % self.size
 
-                tokens.append(a + self.action_offset)
+                tokens.append(a + self.action_offset)        # COMMANDED action recorded
                 obs_idx = self.obs_map[x, y].item()
                 tokens.append(obs_idx + self.obs_offset)
 
@@ -160,9 +180,13 @@ class GridWorld:
         return tokens, obs_mask, revisit_mask
 
     def generate_batch(
-        self, batch_size: int, n_steps: int = 128
+        self, batch_size: int, n_steps: int = 128,
+        p_transition_noise: float = 0.0,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, list[list[tuple[int, int]]]]:
         """Generate a batch of interleaved trajectories.
+
+        Args:
+            p_transition_noise: forwarded to generate_trajectory; see there.
 
         Returns:
             tokens: (batch_size, 2*n_steps)
@@ -176,7 +200,9 @@ class GridWorld:
         all_locations = []
 
         for _ in range(batch_size):
-            tok, mask, rev = self.generate_trajectory(n_steps)
+            tok, mask, rev = self.generate_trajectory(
+                n_steps, p_transition_noise=p_transition_noise,
+            )
             all_tokens.append(tok)
             all_masks.append(mask)
             all_revisit.append(rev)

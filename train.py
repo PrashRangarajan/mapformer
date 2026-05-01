@@ -35,6 +35,7 @@ def train(
     verbose: bool = True,
     weight_decay: float = 0.05,
     p_action_noise: float = 0.0,
+    p_transition_noise: float = 0.0,
     aux_coef: float = 0.0,
 ) -> list[float]:
     """Full training loop with observation-only loss.
@@ -71,7 +72,9 @@ def train(
             # tokens: (B, 2*n_steps) interleaved [a1, o1, a2, o2, ...]
             # obs_mask: True at observation positions
             # revisit_mask: True at observation positions AT REVISITED cells
-            tokens, obs_mask, revisit_mask, all_locations = env.generate_batch(batch_size, n_steps)
+            tokens, obs_mask, revisit_mask, all_locations = env.generate_batch(
+                batch_size, n_steps, p_transition_noise=p_transition_noise,
+            )
             tokens = tokens.to(device)
             revisit_mask = revisit_mask.to(device)
 
