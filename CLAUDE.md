@@ -767,3 +767,86 @@ probe → commit + push. Result lands in `DOG_RESULTS.md`.
   pointing at the *learned* SO(2) path integrator (vs Sorscher's
   fixed velocity-driven recurrence) as the remaining bottleneck.
 
+
+## Session 2026-04-30 — Fix 8 audit, RNG-control, MiniGrid wrapper, SE(n) gap analysis
+
+### Fix 8 audit confirmed v4 has airtight gradient isolation
+
+Ran a per-parameter gradient trace on Level15PC_v4:
+- Aux loss gradient hits ONLY `forward_model.*` params (norm sum 0.062)
+- ALL other params (token_emb, action_to_lie, omega, transformer layers,
+  out_norm, out_proj, log_Pi, log_R_head, measure_head) get gradient
+  ONLY from CE (norm sum 8.86)
+
+So v4's surprise +3.4pp lm200 OOD T=512 win over Level15 is NOT from
+gradient leakage. Three remaining candidates: (a) RNG state shift from
+forward_model's ~50K extra init params, (b) clip_grad_norm coupling
+through joint norm including forward_model's small but nonzero grad,
+(c) statistical noise across 3 seeds.
+
+### Control experiment queued (run_v4_control.sh)
+
+Trains Level15PC_v4 architecture with `--aux-coef 0.0`. forward_model
+exists (controls for RNG shift) but never gets gradient (forward_model
+contributes 0 to grad-clip joint norm). 3 seeds × 2 configs queued —
+waiting for the user's `tma_standalone` jobs to free GPUs, then runs
+autonomously and pushes V4_CONTROL_RESULTS.md.
+
+Decision rule: if Control ≈ v4 → win is RNG-shift only (a).
+If Control ≈ Level15 → win is from aux loss / clip-coupling (b).
+
+### What the MapFormer paper actually does for higher dimensions
+
+Searched the original paper for SE(2) / continuous-task / SE(3) mentions:
+NONE. They handle 3D/5D grids by stacking SO(2) blocks ("translations
+in n dimensions are just n independent 1D-translations"). They briefly
+explore non-commutative groups (4D rotations, MapEM-NC) but stay within
+rotation groups. They never use translation×rotation Lie groups.
+
+§7 Limitations admits causal-only, didn't scale, WM-vs-EM on reasoning.
+Does NOT mention continuous-state navigation, action noise, or SE(n).
+
+So our SE(n) extension is genuinely unexplored relative to the paper.
+The paper-narrative is honest: "MapFormer establishes input-dependent
+SO(2) for 2D grids; we push into noise/landmarks/calibration regimes
+the paper didn't test, and propose SE(n) generalisation as the natural
+next step."
+
+### MiniGrid wrapper added (`minigrid_env.py`)
+
+Goal: extend our toy torus benchmark to a real published navigation
+benchmark for the deployment story.
+
+`MiniGridWorld` adapter exposes the same `generate_trajectory()`
+interface as `GridWorld`, returning `(tokens, obs_mask, revisit_mask)`
+in our token format. Plug-and-play with `train.py` / `train_variant.py`.
+
+Current design:
+- 7 discrete actions (left, right, forward, pickup, drop, toggle, done)
+- Obs tokenization: just the cell directly in front of the agent
+  (image[3, 5] in MiniGrid's 7x7 egocentric view)
+- Three tokenization modes: `obj_only` (11 types), `obj_color` (66),
+  `full` (~200)
+- Random policy by default (matches random-walk paradigm)
+- Action noise via `p_action_noise` (matches torus convention)
+- Revisit defined by `(x, y, direction)` tuple
+
+Smoke-tested on `MiniGrid-Empty-8x8-v0` (vocab 19) and
+`MiniGrid-DoorKey-8x8-v0` with obj_color tokenization (vocab 74).
+
+Natural progression: Empty-8x8 → DoorKey-8x8 (has key+door = natural
+landmarks) → KeyCorridor → ObstructedMaze. Lift to harder envs as
+results validate the wrapper.
+
+Next experiments (not yet run):
+1. Train Vanilla MapFormer + Level 1.5 on MiniGrid-Empty-8x8 with
+   action noise. Compare revisit accuracy at OOD length.
+2. DoorKey is the natural lm200 analogue — door+key are unique
+   landmarks. Test landmark exploitation in a real-task setting.
+
+### Files added/modified this session
+
+- `minigrid_env.py` (new): MiniGridWorld adapter
+- `run_v4_control.sh` (new): aux_coef=0 control pipeline
+- This CLAUDE.md update
+

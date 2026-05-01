@@ -609,6 +609,44 @@ memorisation vs cognitive-map structure learning.
   Sorscher/Ganguli (2019) conditions for hex emergence.
   Result in `DOG_RESULTS.md` (in flight at session end).
 
+### Done in the 2026-04-30 session
+
+✅ **Fix 8 audit confirmed Level15PC_v4 has airtight gradient isolation.**
+  Per-parameter gradient trace shows aux loss touches ONLY forward_model
+  (norm sum 0.06); all other params receive gradient ONLY from CE
+  (norm sum 8.86). v4's surprise +3.4pp lm200 OOD T=512 win over Level15
+  is not from gradient leakage. Remaining candidates: RNG state shift
+  from forward_model's extra init params, or grad-clip-norm coupling
+  through joint norm.
+
+✅ **Control experiment queued** (`run_v4_control.sh`): Level15PC_v4
+  with `--aux-coef 0.0`. forward_model exists (controls for RNG shift)
+  but never gets gradient (no contribution to grad-clip joint norm).
+  3 seeds × 2 configs. Decision rule: control ≈ v4 → win is RNG only;
+  control ≈ Level15 → win is from aux/clip-coupling.
+
+✅ **Confirmed: original MapFormer paper does NOT propose SE(2) or
+  continuous tasks.** They handle 3D/5D grids by stacking SO(2) blocks
+  ("translations in n dimensions are just n independent 1D-translations"
+  — Appendix B.1). Briefly explore non-commutative groups (4D rotations,
+  Appendix B.2) but stay within rotation groups. §7 Limitations admits
+  causal-only / no scaling / WM-vs-EM-on-reasoning, NOT continuous-state
+  / SE(n) / action-noise. So our SE(n) extension is genuinely
+  unexplored relative to the paper.
+
+✅ **MiniGrid environment wrapper** (`minigrid_env.py`): adapter
+  exposing the same `generate_trajectory()` interface as `GridWorld`
+  on real MiniGrid environments (Empty, DoorKey, KeyCorridor, etc.).
+  Plug-and-play with `train.py`. Three obs tokenization modes
+  (`obj_only` ≈ 11 types, `obj_color` ≈ 66, `full` ≈ 200). Random-policy
+  trajectory generation with action-noise injection compatible with
+  our existing pipeline. Smoke-tested on Empty-8x8 and DoorKey-8x8.
+
+  This is the foundation for the *deployment* paper-narrative:
+  Vanilla MapFormer + Level 1.5 InEKF on real published navigation
+  benchmarks under action noise. Natural progression Empty-8x8 →
+  DoorKey-8x8 (key+door = real landmarks) → KeyCorridor → ObstructedMaze.
+
 ### Done in the 2026-04-26/27 session
 
 ✅ **`Level15PC` and `Level15PC_NoBypass` variants implemented.** Tests
