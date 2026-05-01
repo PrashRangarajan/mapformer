@@ -127,8 +127,14 @@ class MapFormerWM_Level15_DoG(MapFormerWM_Level15InEKF):
         # Wrap to torus in [-gs/2, gs/2]
         d = (d + self.gs / 2.0) % self.gs - self.gs / 2.0
         d2 = (d * d).sum(-1)                               # (B, L, n_place)
-        gE = torch.exp(-d2 / (2.0 * self.sigma_E * self.sigma_E))
-        gI = torch.exp(-d2 / (2.0 * self.sigma_I * self.sigma_I))
+        # Normalized 2D Gaussians (1/σ² prefactor) — without this prefactor the
+        # narrow and wide Gaussians are equal at d=0, the difference is 0, and
+        # the ReLU produces a silently all-zero target. Earlier DOG_RESULTS.md
+        # (hex score 0.036) was on broken targets and is uninformative.
+        sE2 = self.sigma_E * self.sigma_E
+        sI2 = self.sigma_I * self.sigma_I
+        gE = (1.0 / sE2) * torch.exp(-d2 / (2.0 * sE2))
+        gI = (1.0 / sI2) * torch.exp(-d2 / (2.0 * sI2))
         return torch.relu(gE - gI)
 
     def prediction_error_loss(self) -> torch.Tensor:
