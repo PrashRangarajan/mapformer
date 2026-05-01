@@ -105,6 +105,12 @@ def main():
                              "MiniGridWorld adapter.")
     parser.add_argument("--minigrid-tokenization", type=str, default="obj_color",
                         choices=["obj_only", "obj_color", "full"])
+    parser.add_argument("--minigrid-cached-buffer", type=int, default=0,
+                        help="If > 0, use MiniGridWorld_Cached with this "
+                             "buffer size instead of live gym.step on every "
+                             "batch. ~30x speedup; one-time build cost ~7 min "
+                             "for 25K buffer; cached to disk for reuse across "
+                             "seeds. 25000 is a sensible default.")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--output-dir", type=str, required=True)
     args = parser.parse_args()
@@ -121,18 +127,26 @@ def main():
         )
         grid_size = 64
     else:
-        from mapformer.minigrid_env import MiniGridWorld
+        from mapformer.minigrid_env import MiniGridWorld, MiniGridWorld_Cached
         env_name = {
             "minigrid_empty":           "MiniGrid-Empty-8x8-v0",
             "minigrid_doorkey":         "MiniGrid-DoorKey-8x8-v0",
             "minigrid_keycorridor":     "MiniGrid-KeyCorridorS3R3-v0",
             "minigrid_obstructedmaze":  "MiniGrid-ObstructedMaze-1Dl-v0",
         }[args.env]
-        env = MiniGridWorld(
-            env_name=env_name,
-            tokenization=args.minigrid_tokenization,
-            seed=args.seed,
-        )
+        if args.minigrid_cached_buffer > 0:
+            env = MiniGridWorld_Cached(
+                env_name=env_name,
+                tokenization=args.minigrid_tokenization,
+                seed=args.seed,
+                buffer_size=args.minigrid_cached_buffer,
+            )
+        else:
+            env = MiniGridWorld(
+                env_name=env_name,
+                tokenization=args.minigrid_tokenization,
+                seed=args.seed,
+            )
         grid_size = env.size  # MiniGrid envs vary in grid size
 
     cls = VARIANT_MAP[args.variant]

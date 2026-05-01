@@ -239,3 +239,116 @@ class MiniGridWorld:
             torch.stack(all_rev),
             all_locs,
         )
+
+
+# ---------------------------------------------------------------------------
+# Cached-buffer variant: pre-generate a fixed pool of trajectories at init time
+# and serve generate_batch() by sampling from the pool. ~30x speedup over the
+# live-stepping variant for typical training (~360s/epoch -> ~10s/epoch),
+# because gym.step is the dominant cost and is now amortised across epochs.
+#
+# Buffer is keyed by (env_name, tokenization, seed, n_steps, p_action_noise,
+# policy, buffer_size) and persisted to disk so multi-seed/multi-config runs
+# don't rebuild from scratch.
+# ---------------------------------------------------------------------------
+
+import os as _os
+import time as _time
+import hashlib as _hashlib
+import pickle as _pickle
+
+
+class MiniGridWorld_Cached(MiniGridWorld):
+    """MiniGrid wrapper that pre-generates a trajectory buffer once and serves
+    batches by sampling from it.
+
+    Lazy: the buffer is built on the first call to generate_batch(), keyed by
+    (n_steps, p_action_noise, policy). Buffer is cached to disk so subsequent
+    runs with the same params load it instantly.
+
+    `generate_trajectory()` (singular) is unchanged — eval scripts call it
+    directly with different T / seeds and continue to use the live env.
+    """
+
+    DEFAULT_CACHE_DIR = _os.path.expanduser("~/mapformer/runs/_minigrid_cache")
+
+    def __init__(self, env_name="MiniGrid-DoorKey-8x8-v0",
+                 tokenization="obj_color", seed=0, max_episode_steps=1000,
+                 buffer_size=25_000, cache_dir=None):
+        super().__init__(env_name=env_name, tokenization=tokenization,
+                         seed=seed, max_episode_steps=max_episode_steps)
+        self.buffer_size = buffer_size
+        self.cache_dir = cache_dir or self.DEFAULT_CACHE_DIR
+        self._built_key = None    # tuple identifying the currently-loaded buffer
+        self._buf_tokens = None   # np.ndarray (N, 2*T) int64
+        self._buf_revisit = None  # np.ndarray (N, 2*T) bool
+        self._buf_locs = None     # list[list[(x,y)]]
+        self._buf_obs_mask = None # np.ndarray (2*T,) bool, shared
+
+    def _cache_path(self, n_steps, p_action_noise, policy):
+        s = (f"{self.env_name}|{self.tokenization}|seed{self.seed}|"
+             f"N{self.buffer_size}|T{n_steps}|noise{p_action_noise}|policy{policy}")
+        h = _hashlib.sha1(s.encode()).hexdigest()[:12]
+        return _os.path.join(self.cache_dir, f"buf_{h}.pkl")
+
+    def _build_buffer(self, n_steps, p_action_noise, policy):
+        path = self._cache_path(n_steps, p_action_noise, policy)
+        _os.makedirs(self.cache_dir, exist_ok=True)
+
+        if _os.path.exists(path):
+            with open(path, "rb") as f:
+                d = _pickle.load(f)
+            self._buf_tokens   = d["tokens"]
+            self._buf_revisit  = d["revisit"]
+            self._buf_locs     = d["locs"]
+            self._buf_obs_mask = d["obs_mask"]
+            print(f"[MiniGridWorld_Cached] Loaded {len(self._buf_tokens)} "
+                  f"trajectories from {path}")
+            return
+
+        print(f"[MiniGridWorld_Cached] Building {self.buffer_size} trajectories "
+              f"of {n_steps} steps (one-time; cached at {path})...")
+        t0 = _time.time()
+        tok_buf = np.zeros((self.buffer_size, 2 * n_steps), dtype=np.int64)
+        rev_buf = np.zeros((self.buffer_size, 2 * n_steps), dtype=bool)
+        loc_buf = []
+        for i in range(self.buffer_size):
+            tok, _om, rm = self.generate_trajectory(
+                n_steps, p_action_noise=p_action_noise, policy=policy,
+            )
+            tok_buf[i] = tok.numpy()
+            rev_buf[i] = rm.numpy()
+            loc_buf.append(list(self.visited_locations))
+            if (i + 1) % 2500 == 0:
+                rate = (_time.time() - t0) / (i + 1) * 1000
+                eta = (self.buffer_size - i - 1) * rate / 1000
+                print(f"  {i+1:>6d}/{self.buffer_size} "
+                      f"({rate:.1f} ms/traj, ETA {eta:.0f}s)")
+
+        obs_mask = np.zeros(2 * n_steps, dtype=bool)
+        obs_mask[1::2] = True
+
+        self._buf_tokens   = tok_buf
+        self._buf_revisit  = rev_buf
+        self._buf_locs     = loc_buf
+        self._buf_obs_mask = obs_mask
+
+        with open(path, "wb") as f:
+            _pickle.dump({"tokens": tok_buf, "revisit": rev_buf,
+                          "locs": loc_buf, "obs_mask": obs_mask}, f)
+        print(f"[MiniGridWorld_Cached] Built in {_time.time()-t0:.1f}s; "
+              f"saved to {path}")
+
+    def generate_batch(self, batch_size, n_steps=128, p_action_noise=0.0,
+                       policy="forward_biased"):
+        key = (n_steps, p_action_noise, policy)
+        if self._built_key != key:
+            self._build_buffer(n_steps, p_action_noise, policy)
+            self._built_key = key
+
+        idx = np.random.randint(0, self.buffer_size, size=batch_size)
+        tokens   = torch.from_numpy(self._buf_tokens[idx])
+        revisit  = torch.from_numpy(self._buf_revisit[idx])
+        obs_mask = torch.from_numpy(self._buf_obs_mask).unsqueeze(0).expand(batch_size, -1).contiguous()
+        all_locs = [self._buf_locs[i] for i in idx]
+        return tokens, obs_mask, revisit, all_locs
