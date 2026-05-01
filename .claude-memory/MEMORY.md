@@ -1,0 +1,6 @@
+- [Project state snapshot](project_state.md) — where the MapFormer experiments stand, what's in flight, what's resolved.
+- [User authoring style](user_style.md) — terseness, no emojis, honest reporting preferences for this project.
+- [PC-Kalman duality finding](feedback_pc_kalman_duality.md) — corrected framing that supersedes earlier "complementary" claim.
+- [Memory is shared via git](reference_shared_memory.md) — this dir lives in the repo at `.claude-memory/`; `git pull` before reading, push after writing.
+- [Action-noise framing](feedback_action_noise_framing.md) — defend against "this is artificial" by using stochastic-transition-MDP vocabulary; lead with non-circular wins.
+- [DoG kernel bug](feedback_dog_kernel_bug.md) — earlier hex tests vacuous due to unnormalised Gaussians cancelling at d=0; supersedes `DOG_RESULTS.md`.

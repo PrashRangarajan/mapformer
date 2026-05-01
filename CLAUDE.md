@@ -850,3 +850,87 @@ Next experiments (not yet run):
 - `run_v4_control.sh` (new): aux_coef=0 control pipeline
 - This CLAUDE.md update
 
+
+## Session 2026-05-01 — DoG bug, continuous nav, stochastic-transition framing
+
+Heavy discussion + infra session, mostly waiting on shared GPUs. Full thread
+in `SESSION_2026-05-01.md`. Key landings:
+
+### Bug discovery (important)
+DoG kernel in `model_level15_dog.py` (and the new `continuous_nav.py`) used
+unnormalised Gaussians: `max(0, exp(-d²/2σE²) - exp(-d²/2σI²))`. At d=0 both
+Gaussians equal 1 → target = 0 → ReLU keeps it 0 → **target is silently all
+zeros**. The earlier `DOG_RESULTS.md` (max grid score 0.036) was on broken
+targets — vacuous, not a real Sorscher test. Fixed to use normalised
+Gaussians (1/σ² prefactor); targets now correctly show ~0.33 at centre.
+`DOG_RESULTS_FIXED.md` re-run pending GPU.
+
+### MiniGrid pipeline (cached + RoPE diagnostic)
+- `MiniGridWorld_Cached`: pre-built 25K-trajectory buffer, ~35× speedup
+  (1.7s/epoch vs 360s live). Trade-off: same trajectories reused across
+  epochs; cached/live numbers differ by ~2pp on clean.
+- DoorKey-8x8: Vanilla 0.916 / Level15 0.900 clean OOD T=512 (basically
+  tied — small env, drift sub-cell). Level15 +10pp on noise.
+- DoorKey-16x16 + MultiRoom-N4-S5: registered in train_variant.py.
+- Long-T eval to T=2048 (`MINIGRID_DOORKEY_LONGT.md`): NLL gap opens
+  meaningfully even when accuracy ties; noise-accuracy gap grows with T
+  (+16pp at T=2048).
+- RoPE diagnostic (`MINIGRID_DOORKEY_ROPE_DIAG.md`): RoPE collapses at
+  long T (0.834 → 0.699 from T=512 → T=2048 clean). Validates the env
+  exercises path integration.
+
+### Continuous 2D nav infrastructure (Cueva/Wei/Sorscher)
+- `continuous_nav.py`: SE(2) state on torus, velocity commands with
+  Gaussian process noise, DoG-of-position obs targets.
+- `model_continuous.py`: Vanilla + Level15 with optional ReLU bottleneck
+  (`n_grid_units > 0`) for hex probing.
+- `train_continuous.py` + `probe_hex_continuous.py` + `eval_continuous.py`:
+  full pipeline. In flight (waiting on GPU).
+
+### Stochastic-transition MDP framing (the action-noise reframe)
+Action-token corruption is **mathematically equivalent to a
+stochastic-transition MDP** for uniform policies. Both produce identical
+(action_record, observation) data distributions. Use the
+stochastic-transition framing in any writeup — standard control/RL
+vocabulary, much harder to dismiss as artificial.
+
+`environment.py` now exposes `--p-transition-noise` (genuine
+execution-time stochasticity, distinct from `--p-action-noise`'s
+post-hoc record corruption). Empirical equivalence will land in
+`STOCHASTIC_TRANSITION_RESULTS.md`.
+
+### NLL > accuracy as the more discriminating metric
+Two models can be tied on accuracy with NLL differing 2×. Level 1.5
+dominates NLL across all regimes — calibration matters even when point
+predictions are similar. Most cognitive-map papers don't report NLL;
+push it as a primary metric.
+
+### Defensible regime-by-regime claim
+- Empirically validated: long-horizon clean OOD (+8pp on torus T=512),
+  heteroscedastic landmarks (+11pp), stochastic-transition / proprioceptive
+  noise (+10pp), calibration (NLL 2× lower across the board), long-T
+  noise OOD on MiniGrid (+16pp at T=2048).
+- Theoretically motivated, untested: animal nav, cheap-IMU robotics,
+  multi-sensor fusion with known noise.
+- Honest negatives: small-env clean (sub-cell drift, no advantage),
+  categorical obs noise (attention's job), aliased multi-modal posteriors
+  (attention's job).
+
+### Files added/modified this session
+- `continuous_nav.py`, `model_continuous.py`, `train_continuous.py`,
+  `probe_hex_continuous.py`, `eval_continuous.py` (new)
+- `minigrid_env.py`: `MiniGridWorld_Cached` class (was already added,
+  refined this session)
+- `model_level15_dog.py`: DoG kernel bug fix (normalised Gaussians)
+- `environment.py`: `p_transition_noise` parameter for stochastic-transition
+- `train.py` / `train_variant.py`: thread `p_transition_noise` through
+- `run_dog_fix_and_continuous.sh`: unified auto-pipeline (P1 DoG fix +
+  P2 continuous nav + P3 stochastic transition)
+- `SESSION_2026-05-01.md`: full discussion thread for cross-chat sync
+
+### Pending at session end
+`run_dog_fix_and_continuous.sh` is polling for free GPUs (other user has
+both pegged at 100% on py-tbfm). When it fires it'll produce
+`DOG_RESULTS_FIXED.md`, `CNAV_*.md`, `STOCHASTIC_TRANSITION_RESULTS.md`,
+auto-commit + push.
+
