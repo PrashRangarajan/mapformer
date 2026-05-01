@@ -1,0 +1,150 @@
+#!/bin/bash
+# DoorKey-16x16: same task, 4x more cells (256 vs 64). Tests whether
+# Level15's bounded-error advantage emerges as path-integration drift
+# scales with map size.
+#
+# Strategy: build buffer once with a single bootstrap run, then train
+# the other 3 configs in parallel pairs (buffer is on disk).
+set -u
+cd /home/prashr
+REPO=/home/prashr/mapformer
+LOGS=$REPO/logs
+mkdir -p "$LOGS"
+
+train() {
+    local variant=$1 cfg=$2 noise=$3 gpu=$4
+    mkdir -p "$REPO/runs/minigrid_dk16_${cfg}_cached/${variant}/seed0"
+    CUDA_VISIBLE_DEVICES=$gpu python3 -u -m mapformer.train_variant \
+        --variant $variant --seed 0 \
+        --n-landmarks 0 --p-action-noise $noise \
+        --epochs 50 --n-batches 156 \
+        --env minigrid_doorkey16 --minigrid-tokenization obj_color \
+        --minigrid-cached-buffer 25000 \
+        --device cuda \
+        --output-dir mapformer/runs/minigrid_dk16_${cfg}_cached/${variant}/seed0 \
+        > "$LOGS/mg_dk16_${cfg}_${variant}_s0.log" 2>&1
+}
+
+echo "[$(date)] Bootstrap: Vanilla clean (builds buffer)..."
+train Vanilla clean 0.0 0
+echo "[$(date)] Bootstrap done."
+
+echo "[$(date)] Pair 1: Level15 clean (gpu0) + Vanilla noise (gpu1)"
+train Level15 clean 0.0  0 &
+P1=$!
+train Vanilla noise 0.10 1 &
+P2=$!
+wait $P1 $P2
+echo "[$(date)] Pair 1 done."
+
+echo "[$(date)] Pair 2: Level15 noise (gpu0) + RoPE clean (gpu1)"
+train Level15 noise 0.10 0 &
+P3=$!
+train RoPE    clean 0.0  1 &
+P4=$!
+wait $P3 $P4
+echo "[$(date)] Pair 2 done."
+
+echo "[$(date)] Pair 3: RoPE noise (gpu0)"
+train RoPE noise 0.10 0
+echo "[$(date)] Pair 3 done."
+
+echo "[$(date)] Evaluating all 6 cached checkpoints at multiple T..."
+python3 -u <<'PYEOF' > "$REPO/MINIGRID_DK16_RESULTS.md" 2>"$LOGS/mg_dk16_eval.err"
+import torch, torch.nn.functional as F, numpy as np
+from pathlib import Path
+from mapformer.minigrid_env import MiniGridWorld
+from mapformer.model import MapFormerWM
+from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
+from mapformer.model_baseline_rope import MapFormerWM_RoPE
+
+VARIANT_CLS = {"Vanilla": MapFormerWM, "Level15": MapFormerWM_Level15InEKF,
+               "RoPE": MapFormerWM_RoPE}
+
+def build(variant, ckpt_path):
+    c = torch.load(ckpt_path, map_location="cuda", weights_only=False)
+    cfg = c.get("config", {})
+    cls = VARIANT_CLS[variant]
+    m = cls(vocab_size=cfg["vocab_size"], d_model=cfg.get("d_model", 128),
+            n_heads=cfg.get("n_heads", 2), n_layers=cfg.get("n_layers", 1),
+            grid_size=cfg.get("grid_size", 16))
+    m.load_state_dict(c["model_state_dict"])
+    return m.cuda().eval()
+
+def eval_revisit(model, env, T, n_trials, seed, p_action_noise=0.0):
+    torch.manual_seed(seed); np.random.seed(seed)
+    c = tot = 0; nll_sum = 0.0
+    with torch.no_grad():
+        for _ in range(n_trials):
+            tokens, _, rm = env.generate_trajectory(T, p_action_noise=p_action_noise)
+            tt = tokens.unsqueeze(0).cuda()
+            try:
+                logits = model(tt[:, :-1])
+            except Exception:
+                return None, None
+            lp = F.log_softmax(logits, dim=-1)
+            preds = lp.argmax(-1)[0]; tgts = tt[0, 1:]; mask = rm[1:].cuda()
+            if mask.sum() == 0: continue
+            c += (preds[mask] == tgts[mask]).sum().item()
+            tot += mask.sum().item()
+            idx = torch.arange(lp.shape[1], device="cuda")[mask]
+            nll_sum += -lp[0, idx, tgts[mask]].sum().item()
+    return (c / tot if tot else None, nll_sum / tot if tot else None)
+
+print("# MiniGrid-DoorKey-16x16: scaling test for Level15\n")
+print("Same task as DoorKey-8x8, but 4x more cells (256 vs 64). Tests")
+print("whether Level15's bounded-error advantage emerges with map size.\n")
+
+variants = ["Vanilla", "Level15", "RoPE"]
+T_LIST = [128, 512, 1024]
+N_TRIALS = {128: 100, 512: 50, 1024: 25}
+
+def make_env(seed):
+    return MiniGridWorld(env_name="MiniGrid-DoorKey-16x16-v0",
+                          tokenization="obj_color", seed=seed)
+
+for noise_label, noise_dir, eval_noise in [
+    ("Primary (no noise)",   "minigrid_dk16_clean_cached", 0.0),
+    ("Ablation (10% noise)", "minigrid_dk16_noise_cached", 0.10),
+]:
+    print(f"## {noise_label}\n")
+    print("| Variant | T=128 | T=512 | T=1024 |")
+    print("|---|---|---|---|")
+    for v in variants:
+        ckpt = Path(f"mapformer/runs/{noise_dir}/{v}/seed0/{v}.pt")
+        if not ckpt.exists():
+            print(f"| {v} | (no ckpt) | — | — |")
+            continue
+        m = build(v, ckpt)
+        env_ood = make_env(seed=1000)
+        row = [f"**{v}**"]
+        for T in T_LIST:
+            a, n = eval_revisit(m, env_ood, T, N_TRIALS[T], seed=2000,
+                                p_action_noise=eval_noise)
+            row.append(f"{a:.3f} (NLL {n:.3f})" if a is not None else "(err)")
+        print("| " + " | ".join(row) + " |")
+        del m; torch.cuda.empty_cache()
+    print()
+
+print("\n*Auto-generated by run_minigrid_dk16.sh*\n")
+PYEOF
+echo "[$(date)] Eval done."
+tail -25 "$REPO/MINIGRID_DK16_RESULTS.md"
+
+cd "$REPO"
+git pull --rebase 2>&1 | tail -3
+git add MINIGRID_DK16_RESULTS.md run_minigrid_dk16.sh train_variant.py
+git add runs/minigrid_dk16_clean_cached/*/seed0/*.pt \
+        runs/minigrid_dk16_noise_cached/*/seed0/*.pt 2>/dev/null || true
+git commit -m "MiniGrid-DoorKey-16x16: scaling test (same task, 4x more cells)
+
+Adds DoorKey-16x16 (256 cells, 4x DoorKey-8x8) and trains Vanilla,
+Level15, RoPE on clean + noise with cached-buffer pipeline. Tests
+whether Level15's clean-OOD advantage (which was absent on 8x8)
+emerges as map size grows and path-integration drift accumulates.
+
+Also registered minigrid_doorkey16 and minigrid_multiroom env names
+in train_variant.py for future use.
+" 2>&1 | tail -3
+git push origin main 2>&1 | tail -3
+echo "[$(date)] Done."
