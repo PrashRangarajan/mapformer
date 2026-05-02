@@ -46,6 +46,7 @@ Repo: /home/prashr/mapformer (single-author project; pushes to GitHub PrashRanga
 - MAmPa baseline (paper's own block-diagonal Mamba variant).
 - Refresh `paper_figures/` to include VanillaEM, Level15EM, MambaLike, LSTM, RoPE rows.
 - Full SE(2) InEKF (currently only SO(2)/rotation correction; translation correction is a follow-up).
+- **TEMFaithful matched-capacity ablations** (after P5 lands): MapFormer's 250K params include only ~450 cog-map-specific (`action_to_lie + ω`); TEMFaithful's 19K is ~16K cog-map (`W_a`). To disambiguate "MapFormer wins from transformer scaffolding" vs "MapFormer wins from `f_Δ(x)` flexibility", run: (a) **TEM-Big** scaled to ~250K total params; (b) **MapFormer-Tiny** stripped to ~19K; (c) **TEM-LargeWa** with `d_g=256` so `W_a` alone is ~260K. ~1 day each.
 
 **Pipeline conventions:** Torus training ~10s/epoch on GPU. MiniGrid live ~360s/epoch (gym.step bottleneck); cached ~1.7s/epoch. Continuous nav: similar to torus once buffer is built. Multi-seed = 3 seeds. Shell scripts auto-train + eval + git commit + git push. Memory writes go to `.claude-memory/` (in repo, synced via git).
 

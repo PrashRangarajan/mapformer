@@ -98,7 +98,35 @@ The repository implements one paper-faithful family + one extension family + sev
 | `MapFormerWM_Grid` / `_Grid_Free` | `model_grid.py` | Multi-orientation path integrator (n_modules × n_orientations blocks at the same ω). `_Free` makes the orientation angles learnable. Architectural attempt to enable hexagonal grid-cell representations. *Result: hex still doesn't emerge; bottleneck is training objective, not architecture.* |
 | `MapFormerWM_GridL15PC` / `_GridL15PC_Free` | `model_grid_l15_pc.py` | Grid + Level 1.5 + PC aux. Kitchen-sink combination tested for hex emergence. Same falsification as Grid_Free. |
 | `EXTRA_BASELINES` | `model_baselines_extra.py` | LSTM, CoPE (Golovneva et al. 2024), MambaLike (Mamba-style selective SSM). Non-MapFormer comparisons. |
+| `TEMRecurrent` | `model_tem.py` | TEM-Lite: GRU + factorised g/x state + Hebbian outer-product memory. Captures TEM's representational ideas without per-action transition matrices. *NOT a faithful TEM deployment* — single-env, generic GRU instead of per-action W_a. |
+| `TEMFaithful` | `model_tem_faithful.py` | The EM-RNN method the MapFormer paper claims (in Related Work) is structurally subsumed by MapFormer-EM but never benchmarks. Per-action transition matrices `W_a` (the defining TEM mechanic), modern-Hopfield (= attention) memory readout, memory written only at observation tokens. Sequential by design — direct apples-to-apples test of the paper's central parallelism-vs-expressivity claim. |
 | `ABLATIONS` | `model_ablations.py` | Four Level 1.5 ablations: `L15_ConstR` (no per-token R), `L15_NoMeas` (no measurement head), `L15_NoCorr` (no correction), `L15_DARE` (Π fixed from DARE rather than learned). |
+
+## Parameter budgets (and why "MapFormer is bigger" is misleading)
+
+Naively MapFormer-WM (~250K params) is **13× larger** than TEMFaithful
+(~19K params), which would suggest TEM is the more parameter-efficient
+baseline. But almost all of MapFormer's parameter budget is spent on
+generic transformer scaffolding, not on cognitive-map machinery:
+
+| Model | Cog-map params | Generic transformer | Other |
+|---|---|---|---|
+| MapFormer-WM (250K total) | **~450** (`action_to_lie` + `ω`) | ~196K (FFN + Q/K/V/O projections) | ~3K (token emb, output) |
+| TEMFaithful (19K total) | **~16K** (`W_a` matrices) | 0 (no FFN, no separate K/V projections) | ~3K (content emb, output) |
+
+So *cognitive-map-specific* parameters: TEMFaithful has **~40× more** than
+MapFormer-WM. The 230K extra in MapFormer pay for nonlinear feature
+processing (the FFN) and content-based retrieval (multi-head attention
+projections), which are general-purpose transformer capabilities
+orthogonal to the cognitive-map question.
+
+**Reframing**: if MapFormer-WM beats TEMFaithful, the win cannot be
+attributed to "bigger map" — MapFormer's map machinery is *smaller*.
+The win, if any, comes from the *content-derived flexibility* of
+`f_Δ(x_t)` over the *per-action rigidity* of `W_a`, plus the parallelism
+advantage. A fair comparison would scale them to matched capacity: see
+**TEM-Big / MapFormer-Tiny / TEM-LargeWa** ablations queued in
+"What's still open / next steps".
 
 ## Why Level 1.5 wins: stabilisation, not inference
 
@@ -690,7 +718,28 @@ memorisation vs cognitive-map structure learning.
 
 ### Near-term (would round out the paper)
 
-1. **WM safe-init experiment.** Does `log_R_init_bias=3.0` also help
+1. **TEMFaithful matched-capacity ablations.** When the queued P5 lands
+   results in `TEM_RESULTS.md`, the comparison is naturally unbalanced —
+   MapFormer is 250K params but only ~450 of those are cognitive-map-
+   specific (`action_to_lie + ω`); TEMFaithful is 19K but ~16K of those
+   are cog-map (`W_a`). To disambiguate "MapFormer wins because of
+   transformer scaffolding" vs "MapFormer wins because of `f_Δ(x)`
+   flexibility":
+   - **TEM-Big**: scale TEMFaithful to ~250K total params (e.g.,
+     `d_g=128`, multi-layer GRU around the W_a update, optional FFN).
+     Tests whether parameter count was the bottleneck.
+   - **MapFormer-Tiny**: strip MapFormer's FFN and shrink Q/K/V/O
+     projections so total params match TEMFaithful's 19K. Tests
+     whether MapFormer's cog-map machinery alone (action_to_lie +
+     RoPE) beats TEM's per-action W_a at matched cog-map capacity.
+   - **TEM-LargeWa**: keep TEMFaithful's structure but scale `d_g=256`
+     so W_a alone has ~260K params. Tests whether per-action matrix
+     capacity is what's missing.
+
+   Each is ~1 day of work; results would let us cleanly attribute
+   whatever gap (or lack of gap) we find.
+
+2. **WM safe-init experiment.** Does `log_R_init_bias=3.0` also help
    Level 1.5-WM? Likely small effect on clean (already at ceiling) but
    could shave 1–2 pp off OOD noise/lm200. ~45 min on 2 GPUs.
 2. **Refresh paper figures.** `paper_figures/calibration_*.png` and
