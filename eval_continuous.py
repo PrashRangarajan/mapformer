@@ -25,11 +25,14 @@ import torch
 from .continuous_nav import ContinuousNav2D
 from .model_continuous import (
     MapFormerWM_Continuous, MapFormerWM_Continuous_Level15,
+    MapFormerEM_Continuous, MapFormerEM_Continuous_Level15,
 )
 
 VARIANT_CLS = {
-    "Vanilla": MapFormerWM_Continuous,
-    "Level15": MapFormerWM_Continuous_Level15,
+    "Vanilla":   MapFormerWM_Continuous,
+    "Level15":   MapFormerWM_Continuous_Level15,
+    "VanillaEM": MapFormerEM_Continuous,
+    "Level15EM": MapFormerEM_Continuous_Level15,
 }
 
 

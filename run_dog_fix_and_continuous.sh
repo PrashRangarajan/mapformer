@@ -45,29 +45,25 @@ CUDA_VISIBLE_DEVICES=0 python3 -u -m mapformer.train_variant \
     > "$LOGS/Level15_DoG_fixed_clean_s0.log" 2>&1 &
 P1=$!
 
-# --- Pipeline 2: continuous Vanilla + Level15 (gpu1, sequential) ---
-echo "[$(date)] [P2] Training continuous Vanilla on gpu1..."
-mkdir -p "$REPO/runs/cnav/Vanilla/seed0" "$REPO/runs/cnav/Level15/seed0"
+# --- Pipeline 2: continuous WM + EM, vanilla + Level15 (gpu1, sequential) ---
+# Four trainings to test whether EM's position-content decoupling actually
+# helps when content is rich (continuous DoG obs) — the regime where the
+# Hadamard A_X ⊙ A_P should shine, vs WM's RoPE entanglement.
+echo "[$(date)] [P2] Training continuous Vanilla / Level15 / VanillaEM / Level15EM on gpu1..."
+mkdir -p "$REPO/runs/cnav/Vanilla/seed0"   "$REPO/runs/cnav/Level15/seed0" \
+         "$REPO/runs/cnav/VanillaEM/seed0" "$REPO/runs/cnav/Level15EM/seed0"
 (
-    CUDA_VISIBLE_DEVICES=1 python3 -u -m mapformer.train_continuous \
-        --variant Vanilla --seed 0 \
-        --epochs 30 --n-batches 156 --batch-size 128 --n-steps 128 \
-        --buffer-size 25000 --n-grid-units 256 \
-        --v-noise-std 0.05 --omega-noise-std 0.05 \
-        --device cuda \
-        --output-dir mapformer/runs/cnav/Vanilla/seed0 \
-        > "$LOGS/cnav_Vanilla_s0.log" 2>&1
-    echo "[$(date)] [P2a] continuous Vanilla done."
-
-    CUDA_VISIBLE_DEVICES=1 python3 -u -m mapformer.train_continuous \
-        --variant Level15 --seed 0 \
-        --epochs 30 --n-batches 156 --batch-size 128 --n-steps 128 \
-        --buffer-size 25000 --n-grid-units 256 \
-        --v-noise-std 0.05 --omega-noise-std 0.05 \
-        --device cuda \
-        --output-dir mapformer/runs/cnav/Level15/seed0 \
-        > "$LOGS/cnav_Level15_s0.log" 2>&1
-    echo "[$(date)] [P2b] continuous Level15 done."
+    for v in Vanilla Level15 VanillaEM Level15EM; do
+        CUDA_VISIBLE_DEVICES=1 python3 -u -m mapformer.train_continuous \
+            --variant $v --seed 0 \
+            --epochs 30 --n-batches 156 --batch-size 128 --n-steps 128 \
+            --buffer-size 25000 --n-grid-units 256 \
+            --v-noise-std 0.05 --omega-noise-std 0.05 \
+            --device cuda \
+            --output-dir mapformer/runs/cnav/$v/seed0 \
+            > "$LOGS/cnav_${v}_s0.log" 2>&1
+        echo "[$(date)] [P2-${v}] done."
+    done
 ) &
 P2=$!
 
@@ -87,8 +83,8 @@ wait $P2
 echo "[$(date)] [P2] Continuous trainings done."
 tail -5 "$LOGS/cnav_Level15_s0.log"
 
-echo "[$(date)] [P2] Probing continuous for hex on both variants..."
-for v in Vanilla Level15; do
+echo "[$(date)] [P2] Probing continuous for hex on all four variants..."
+for v in Vanilla Level15 VanillaEM Level15EM; do
     python3 -u -m mapformer.probe_hex_continuous \
         --checkpoint mapformer/runs/cnav/$v/seed0/$v.pt \
         --device cuda --n-traj 200 --T 256 --n-bins 64 \
@@ -97,10 +93,12 @@ for v in Vanilla Level15; do
 done
 echo "[$(date)] [P2] Probes done."
 
-echo "[$(date)] [P2] Cross-T / cross-noise eval..."
+echo "[$(date)] [P2] Cross-T / cross-noise eval (all four variants)..."
 python3 -u -m mapformer.eval_continuous \
     --checkpoints mapformer/runs/cnav/Vanilla/seed0/Vanilla.pt \
                   mapformer/runs/cnav/Level15/seed0/Level15.pt \
+                  mapformer/runs/cnav/VanillaEM/seed0/VanillaEM.pt \
+                  mapformer/runs/cnav/Level15EM/seed0/Level15EM.pt \
     --T-list 128 256 512 1024 \
     --noise-levels 0.0 0.05 0.1 0.2 \
     --n-traj 30 --device cuda \

@@ -33,11 +33,15 @@ from mapformer.continuous_nav import ContinuousNav2D_Cached
 from mapformer.model_continuous import (
     MapFormerWM_Continuous,
     MapFormerWM_Continuous_Level15,
+    MapFormerEM_Continuous,
+    MapFormerEM_Continuous_Level15,
 )
 
 VARIANT_CLS = {
-    "Vanilla": MapFormerWM_Continuous,
-    "Level15": MapFormerWM_Continuous_Level15,
+    "Vanilla":   MapFormerWM_Continuous,
+    "Level15":   MapFormerWM_Continuous_Level15,
+    "VanillaEM": MapFormerEM_Continuous,
+    "Level15EM": MapFormerEM_Continuous_Level15,
 }
 
 
@@ -125,10 +129,10 @@ def main():
     )
     cls = VARIANT_CLS[args.variant]
     extra = {}
-    # Apply safe init bias for Level15 (mirrors discrete Level15EM convention
-    # where attention has no fallback if the position branch is corrupted at init)
     if args.variant == "Level15":
-        extra["log_R_init_bias"] = 0.0  # default; raise if instability is observed
+        extra["log_R_init_bias"] = 0.0  # WM has content fallback
+    elif args.variant == "Level15EM":
+        extra["log_R_init_bias"] = 3.0  # EM Hadamard has no fallback at init
 
     model = cls(
         action_dim=2, obs_dim=args.n_place_cells,

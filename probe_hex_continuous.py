@@ -22,11 +22,14 @@ import torch
 from .continuous_nav import ContinuousNav2D
 from .model_continuous import (
     MapFormerWM_Continuous, MapFormerWM_Continuous_Level15,
+    MapFormerEM_Continuous, MapFormerEM_Continuous_Level15,
 )
 
 VARIANT_CLS = {
-    "Vanilla": MapFormerWM_Continuous,
-    "Level15": MapFormerWM_Continuous_Level15,
+    "Vanilla":   MapFormerWM_Continuous,
+    "Level15":   MapFormerWM_Continuous_Level15,
+    "VanillaEM": MapFormerEM_Continuous,
+    "Level15EM": MapFormerEM_Continuous_Level15,
 }
 
 
@@ -38,6 +41,8 @@ def _build(ckpt_path: str, device: str = "cuda"):
     extra = {}
     if variant == "Level15":
         extra["log_R_init_bias"] = 0.0
+    elif variant == "Level15EM":
+        extra["log_R_init_bias"] = 3.0
     m = cls(
         action_dim=2,
         obs_dim=cfg.get("n_place_cells", 256),
