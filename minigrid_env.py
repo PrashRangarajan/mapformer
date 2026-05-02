@@ -215,6 +215,7 @@ class MiniGridWorld:
         batch_size: int,
         n_steps: int = 128,
         p_action_noise: float = 0.0,
+        p_transition_noise: float = 0.0,
         policy: str = "forward_biased",
     ):
         """Batch wrapper matching GridWorld.generate_batch signature.
@@ -223,6 +224,12 @@ class MiniGridWorld:
         all_locations is a list[list[tuple[int, int]]] of agent (x, y) per
         step per trajectory. train.py uses this for aux-loss variants that
         need ground-truth positions (e.g. Level15_DoG).
+
+        ``p_transition_noise`` is accepted for interface compatibility with
+        GridWorld but currently ignored — MiniGrid's discrete action space
+        and gym.step API don't support genuine stochastic-transition
+        injection through the same mechanism. Use ``p_action_noise`` if
+        you want noise corruption on MiniGrid trajectories.
         """
         all_tokens, all_obs, all_rev, all_locs = [], [], [], []
         for _ in range(batch_size):
@@ -340,7 +347,9 @@ class MiniGridWorld_Cached(MiniGridWorld):
               f"saved to {path}")
 
     def generate_batch(self, batch_size, n_steps=128, p_action_noise=0.0,
-                       policy="forward_biased"):
+                       p_transition_noise=0.0, policy="forward_biased"):
+        # p_transition_noise accepted for interface parity with GridWorld;
+        # currently ignored in the MiniGrid pipeline (see superclass note).
         key = (n_steps, p_action_noise, policy)
         if self._built_key != key:
             self._build_buffer(n_steps, p_action_noise, policy)

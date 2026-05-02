@@ -75,11 +75,17 @@ class TEMFaithful(nn.Module):
         # Initial structural code (learned)
         self.g_init = nn.Parameter(torch.randn(self.d_g) * 0.02)
 
-        # Per-action transition matrices, initialized as I + small noise so
-        # actions start as approximate identities and learn to specialize.
-        W = torch.eye(self.d_g).unsqueeze(0).repeat(n_actions, 1, 1)
-        W = W + identity_init_scale * torch.randn_like(W)
-        self.W_a = nn.Parameter(W)                                    # (n_actions, d_g, d_g)
+        # Per-action transition: parameterised as W_a = exp(skew(A_a)) so that
+        # W_a is ALWAYS orthogonal (no eigenvalue blow-up under repeated
+        # application). This matches Whittington 2019's TEM, which uses
+        # block-diagonal rotations (a special case of orthogonal matrices)
+        # for compact-group structure. Without this, plain unconstrained
+        # W_a parameters drift and produce NaN losses by epoch ~15.
+        # `A_a` is the raw param; `skew(A) = (A - A^T) / 2` is its skew-
+        # symmetric part; `exp(skew)` is the matrix exponential.
+        self.A_a = nn.Parameter(
+            identity_init_scale * torch.randn(n_actions, self.d_g, self.d_g)
+        )
 
         # Content embedding for observation tokens (and unused for action tokens
         # since g is action-driven, not embedding-driven). For simplicity we
@@ -93,6 +99,15 @@ class TEMFaithful(nn.Module):
         self.out_norm = nn.LayerNorm(self.d_x)
         self.out_proj = nn.Linear(self.d_x, vocab_size)
 
+    def _orthogonal_W(self) -> torch.Tensor:
+        """Compute orthogonal W_a per action via matrix-exp of skew-symmetric.
+
+        Returns: (n_actions, d_g, d_g) orthogonal matrices. Computed once
+        per forward (the same W_a applies for the whole sequence).
+        """
+        A_skew = 0.5 * (self.A_a - self.A_a.transpose(-1, -2))
+        return torch.matrix_exp(A_skew)
+
     def forward(self, tokens: torch.Tensor) -> torch.Tensor:
         """tokens: (B, L). Returns logits: (B, L, vocab_size).
 
@@ -103,6 +118,9 @@ class TEMFaithful(nn.Module):
         B, L = tokens.shape
         device = tokens.device
         dtype = self.g_init.dtype
+
+        # Build orthogonal W_a per action (once per forward)
+        W_a_all = self._orthogonal_W()                                # (n_actions, d_g, d_g)
 
         # State
         g = self.g_init.unsqueeze(0).expand(B, -1).contiguous().to(dtype)  # (B, d_g)
@@ -146,7 +164,7 @@ class TEMFaithful(nn.Module):
             # 1) Action branch — gather W per batch element. For obs tokens we
             #    use action 0 as a placeholder; the result is masked away.
             action_idx = torch.where(is_action, tok, torch.zeros_like(tok))
-            W_batch = self.W_a[action_idx]                    # (B, d_g, d_g)
+            W_batch = W_a_all[action_idx]                     # (B, d_g, d_g) — orthogonal
             g_updated = torch.bmm(W_batch, g.unsqueeze(-1)).squeeze(-1)  # (B, d_g)
 
             # Apply only where the token is an action; obs tokens leave g unchanged
