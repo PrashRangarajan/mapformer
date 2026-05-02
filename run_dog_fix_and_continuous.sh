@@ -328,10 +328,135 @@ PYEOF
 echo "[$(date)] [P4] Eval done."
 tail -20 "$REPO/MINIGRID_MEMORY_RESULTS.md"
 
+# --- Pipeline 5: TEM-style recurrent baseline on torus -----------------
+# RNN with factorised g/x and Hebbian outer-product memory (Whittington
+# 2020 simplified; single-env scope). Trained on the same torus task as
+# Vanilla and Level15 so we have direct numbers for the comparison the
+# user asked for. Single-seed.
+tem_train() {
+    local cfg=$1 lm=$2 noise=$3 gpu=$4
+    mkdir -p "$REPO/runs/TEM_${cfg}/seed0"
+    CUDA_VISIBLE_DEVICES=$gpu python3 -u -m mapformer.train_variant \
+        --variant TEM --seed 0 \
+        --n-landmarks $lm --p-action-noise $noise \
+        --epochs 50 --n-batches 156 \
+        --device cuda \
+        --output-dir mapformer/runs/TEM_${cfg}/seed0 \
+        > "$LOGS/TEM_${cfg}_s0.log" 2>&1
+}
+
+echo "[$(date)] [P5] TEM-recurrent on torus: clean + noise (parallel pair)"
+tem_train clean 0   0.0  0 &
+PT1=$!
+tem_train noise 0   0.10 1 &
+PT2=$!
+wait $PT1 $PT2
+echo "[$(date)] [P5] Pair 1 done. Running lm200 on gpu0..."
+tem_train lm200 200 0.0 0
+echo "[$(date)] [P5] All TEM trainings done."
+
+echo "[$(date)] [P5] Eval TEM vs Vanilla vs Level15 on torus..."
+python3 -u <<'PYEOF' > "$REPO/TEM_RESULTS.md" 2>"$LOGS/tem_eval.err"
+import torch, torch.nn.functional as F, numpy as np
+from pathlib import Path
+from mapformer.environment import GridWorld
+from mapformer.model import MapFormerWM
+from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
+from mapformer.model_tem import TEMRecurrent
+
+VARIANT_CLS = {"Vanilla": MapFormerWM, "Level15": MapFormerWM_Level15InEKF,
+               "TEM": TEMRecurrent}
+
+def build(variant, ckpt):
+    c = torch.load(ckpt, map_location="cuda", weights_only=False)
+    cfg = c.get("config", {})
+    cls = VARIANT_CLS[variant]
+    m = cls(vocab_size=cfg["vocab_size"], d_model=cfg.get("d_model", 128),
+            n_heads=cfg.get("n_heads", 2), n_layers=cfg.get("n_layers", 1),
+            grid_size=cfg.get("grid_size", 64))
+    m.load_state_dict(c["model_state_dict"])
+    return m.cuda().eval()
+
+def eval_revisit(model, env, T, n_trials, seed, p_action_noise=0.0):
+    torch.manual_seed(seed); np.random.seed(seed)
+    c = tot = 0; nll_sum = 0.0
+    with torch.no_grad():
+        for _ in range(n_trials):
+            tokens, _, rm = env.generate_trajectory(T)
+            tt = tokens.unsqueeze(0).cuda()
+            if p_action_noise > 0:
+                even = torch.zeros_like(tt, dtype=torch.bool); even[:, 0::2] = True
+                noise = (torch.rand_like(tt, dtype=torch.float) < p_action_noise) & even
+                rand = torch.randint(0, env.N_ACTIONS, tt.shape, device="cuda")
+                tt = torch.where(noise, rand, tt)
+            try:
+                logits = model(tt[:, :-1])
+            except Exception:
+                return None, None
+            lp = F.log_softmax(logits, dim=-1)
+            preds = lp.argmax(-1)[0]; tgts = tt[0, 1:]; mask = rm[1:].cuda()
+            if mask.sum() == 0: continue
+            c += (preds[mask] == tgts[mask]).sum().item()
+            tot += mask.sum().item()
+            idx = torch.arange(lp.shape[1], device="cuda")[mask]
+            nll_sum += -lp[0, idx, tgts[mask]].sum().item()
+    return (c / tot if tot else None, nll_sum / tot if tot else None)
+
+print("# TEM-style recurrent baseline vs MapFormer\n")
+print("Single-seed comparison on the torus task across three regimes")
+print("(clean, action-noise 10%, landmarks 200). TEM is a simplified")
+print("Whittington 2020-style RNN with factorised g/x state and Hebbian")
+print("outer-product memory — trained on a single environment, so it")
+print("loses TEM's primary lever (compositional generalisation).\n")
+
+ckpts = {
+    "clean": {
+        "Vanilla": "mapformer/runs/Vanilla_clean/seed0/Vanilla.pt",
+        "Level15": "mapformer/runs/Level15_clean/seed0/Level15.pt",
+        "TEM":     "mapformer/runs/TEM_clean/seed0/TEM.pt",
+    },
+    "noise": {
+        "Vanilla": "mapformer/runs/Vanilla_noise/seed0/Vanilla.pt",
+        "Level15": "mapformer/runs/Level15_noise/seed0/Level15.pt",
+        "TEM":     "mapformer/runs/TEM_noise/seed0/TEM.pt",
+    },
+    "lm200": {
+        "Vanilla": "mapformer/runs/Vanilla_lm200/seed0/Vanilla.pt",
+        "Level15": "mapformer/runs/Level15_lm200/seed0/Level15.pt",
+        "TEM":     "mapformer/runs/TEM_lm200/seed0/TEM.pt",
+    },
+}
+
+for cfg_tag in ["clean", "noise", "lm200"]:
+    n_lm = 200 if cfg_tag == "lm200" else 0
+    eval_noise = 0.10 if cfg_tag == "noise" else 0.0
+    print(f"## {cfg_tag}\n")
+    print("| Variant | T=128 OOD | T=512 OOD | T=128 NLL | T=512 NLL |")
+    print("|---|---|---|---|---|")
+    for v in ["Vanilla", "Level15", "TEM"]:
+        ckpt = Path(ckpts[cfg_tag][v])
+        if not ckpt.exists():
+            print(f"| {v} | (no ckpt at {ckpt}) | — | — | — |")
+            continue
+        m = build(v, ckpt)
+        env_ood = GridWorld(size=64, n_obs_types=16, p_empty=0.5,
+                            n_landmarks=n_lm, seed=1000)
+        a128, n128 = eval_revisit(m, env_ood, 128, 200, seed=2000, p_action_noise=eval_noise)
+        a512, n512 = eval_revisit(m, env_ood, 512, 100, seed=2000, p_action_noise=eval_noise)
+        print(f"| **{v}** | {a128:.3f} | {a512:.3f} | {n128:.3f} | {n512:.3f} |")
+        del m; torch.cuda.empty_cache()
+    print()
+
+print("\n*Auto-generated by run_dog_fix_and_continuous.sh (P5 TEM).*\n")
+PYEOF
+echo "[$(date)] [P5] Eval done."
+tail -25 "$REPO/TEM_RESULTS.md"
+
 cd "$REPO"
 git pull --rebase 2>&1 | tail -3
 git add DOG_RESULTS_FIXED.md CNAV_HEX_Vanilla.md CNAV_HEX_Level15.md CNAV_RESULTS.md \
         STOCHASTIC_TRANSITION_RESULTS.md MINIGRID_MEMORY_RESULTS.md \
+        TEM_RESULTS.md model_tem.py \
         run_dog_fix_and_continuous.sh \
         environment.py train.py train_variant.py \
         paper_figures/dog_rate_maps_fixed_s0.npz \
@@ -344,7 +469,10 @@ git add runs/Level15_DoG_fixed_clean/seed0/*.pt \
         runs/torus_transnoise/Level15/seed0/*.pt \
         runs/minigrid_memory_cached/Vanilla/seed0/*.pt \
         runs/minigrid_memory_cached/Level15/seed0/*.pt \
-        runs/minigrid_memory_cached/RoPE/seed0/*.pt 2>/dev/null || true
+        runs/minigrid_memory_cached/RoPE/seed0/*.pt \
+        runs/TEM_clean/seed0/*.pt \
+        runs/TEM_noise/seed0/*.pt \
+        runs/TEM_lm200/seed0/*.pt 2>/dev/null || true
 git commit -m "Fixed DoG kernel + continuous nav + stochastic-transition equivalence
 
 Three pipelines, all auto-launched after GPUs freed up:

@@ -51,6 +51,7 @@ from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_baselines_extra import EXTRA_BASELINES
+from mapformer.model_tem import TEMRecurrent
 
 
 VARIANT_MAP = {
@@ -72,6 +73,7 @@ VARIANT_MAP = {
     "Level2":     MapFormerWM_Level2InEKF,
     "PC":         MapFormerWM_PredictiveCoding,
     "RoPE":       MapFormerWM_RoPE,
+    "TEM":        TEMRecurrent,
     **ABLATIONS,
     **EXTRA_BASELINES,
 }
