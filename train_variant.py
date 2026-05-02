@@ -52,6 +52,7 @@ from mapformer.model_ablations import ABLATIONS
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_baselines_extra import EXTRA_BASELINES
 from mapformer.model_tem import TEMRecurrent
+from mapformer.model_tem_faithful import TEMFaithful
 
 
 VARIANT_MAP = {
@@ -74,6 +75,7 @@ VARIANT_MAP = {
     "PC":         MapFormerWM_PredictiveCoding,
     "RoPE":       MapFormerWM_RoPE,
     "TEM":        TEMRecurrent,
+    "TEMFaithful": TEMFaithful,
     **ABLATIONS,
     **EXTRA_BASELINES,
 }

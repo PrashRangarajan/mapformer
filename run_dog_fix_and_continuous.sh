@@ -334,25 +334,39 @@ tail -20 "$REPO/MINIGRID_MEMORY_RESULTS.md"
 # Vanilla and Level15 so we have direct numbers for the comparison the
 # user asked for. Single-seed.
 tem_train() {
-    local cfg=$1 lm=$2 noise=$3 gpu=$4
-    mkdir -p "$REPO/runs/TEM_${cfg}/seed0"
+    local variant=$1 cfg=$2 lm=$3 noise=$4 gpu=$5
+    mkdir -p "$REPO/runs/${variant}_${cfg}/seed0"
     CUDA_VISIBLE_DEVICES=$gpu python3 -u -m mapformer.train_variant \
-        --variant TEM --seed 0 \
+        --variant $variant --seed 0 \
         --n-landmarks $lm --p-action-noise $noise \
         --epochs 50 --n-batches 156 \
         --device cuda \
-        --output-dir mapformer/runs/TEM_${cfg}/seed0 \
-        > "$LOGS/TEM_${cfg}_s0.log" 2>&1
+        --output-dir mapformer/runs/${variant}_${cfg}/seed0 \
+        > "$LOGS/${variant}_${cfg}_s0.log" 2>&1
 }
 
-echo "[$(date)] [P5] TEM-recurrent on torus: clean + noise (parallel pair)"
-tem_train clean 0   0.0  0 &
+echo "[$(date)] [P5] TEM (Lite) + TEMFaithful on torus, all 3 configs"
+
+# TEM (Lite) clean (gpu0) + TEMFaithful clean (gpu1)
+tem_train TEM         clean 0   0.0  0 &
 PT1=$!
-tem_train noise 0   0.10 1 &
+tem_train TEMFaithful clean 0   0.0  1 &
 PT2=$!
 wait $PT1 $PT2
-echo "[$(date)] [P5] Pair 1 done. Running lm200 on gpu0..."
-tem_train lm200 200 0.0 0
+
+# TEM (Lite) noise (gpu0) + TEMFaithful noise (gpu1)
+tem_train TEM         noise 0   0.10 0 &
+PT3=$!
+tem_train TEMFaithful noise 0   0.10 1 &
+PT4=$!
+wait $PT3 $PT4
+
+# TEM (Lite) lm200 (gpu0) + TEMFaithful lm200 (gpu1)
+tem_train TEM         lm200 200 0.0 0 &
+PT5=$!
+tem_train TEMFaithful lm200 200 0.0 1 &
+PT6=$!
+wait $PT5 $PT6
 echo "[$(date)] [P5] All TEM trainings done."
 
 echo "[$(date)] [P5] Eval TEM vs Vanilla vs Level15 on torus..."
@@ -363,9 +377,10 @@ from mapformer.environment import GridWorld
 from mapformer.model import MapFormerWM
 from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
 from mapformer.model_tem import TEMRecurrent
+from mapformer.model_tem_faithful import TEMFaithful
 
 VARIANT_CLS = {"Vanilla": MapFormerWM, "Level15": MapFormerWM_Level15InEKF,
-               "TEM": TEMRecurrent}
+               "TEM": TEMRecurrent, "TEMFaithful": TEMFaithful}
 
 def build(variant, ckpt):
     c = torch.load(ckpt, map_location="cuda", weights_only=False)
@@ -402,28 +417,36 @@ def eval_revisit(model, env, T, n_trials, seed, p_action_noise=0.0):
             nll_sum += -lp[0, idx, tgts[mask]].sum().item()
     return (c / tot if tot else None, nll_sum / tot if tot else None)
 
-print("# TEM-style recurrent baseline vs MapFormer\n")
-print("Single-seed comparison on the torus task across three regimes")
-print("(clean, action-noise 10%, landmarks 200). TEM is a simplified")
-print("Whittington 2020-style RNN with factorised g/x state and Hebbian")
-print("outer-product memory — trained on a single environment, so it")
-print("loses TEM's primary lever (compositional generalisation).\n")
+print("# TEM-style recurrent baselines vs MapFormer\n")
+print("Two TEM variants compared against Vanilla and Level15 on torus,")
+print("3 regimes (clean / noise / landmarks), single-seed.\n")
+print("- **TEM** (TEMRecurrent): GRU + factorised g/x + outer-product")
+print("  Hebbian memory. Captures TEM's representational ideas without")
+print("  per-action transition matrices.")
+print("- **TEMFaithful**: explicit per-action W_a transition matrices")
+print("  (the defining TEM mechanic) + modern-Hopfield (= attention)")
+print("  memory readout, written ONLY at observation tokens. The")
+print("  RNN-baseline the MapFormer paper structurally argues against")
+print("  but never empirically benchmarks.\n")
 
 ckpts = {
     "clean": {
-        "Vanilla": "mapformer/runs/Vanilla_clean/seed0/Vanilla.pt",
-        "Level15": "mapformer/runs/Level15_clean/seed0/Level15.pt",
-        "TEM":     "mapformer/runs/TEM_clean/seed0/TEM.pt",
+        "Vanilla":     "mapformer/runs/Vanilla_clean/seed0/Vanilla.pt",
+        "Level15":     "mapformer/runs/Level15_clean/seed0/Level15.pt",
+        "TEM":         "mapformer/runs/TEM_clean/seed0/TEM.pt",
+        "TEMFaithful": "mapformer/runs/TEMFaithful_clean/seed0/TEMFaithful.pt",
     },
     "noise": {
-        "Vanilla": "mapformer/runs/Vanilla_noise/seed0/Vanilla.pt",
-        "Level15": "mapformer/runs/Level15_noise/seed0/Level15.pt",
-        "TEM":     "mapformer/runs/TEM_noise/seed0/TEM.pt",
+        "Vanilla":     "mapformer/runs/Vanilla_noise/seed0/Vanilla.pt",
+        "Level15":     "mapformer/runs/Level15_noise/seed0/Level15.pt",
+        "TEM":         "mapformer/runs/TEM_noise/seed0/TEM.pt",
+        "TEMFaithful": "mapformer/runs/TEMFaithful_noise/seed0/TEMFaithful.pt",
     },
     "lm200": {
-        "Vanilla": "mapformer/runs/Vanilla_lm200/seed0/Vanilla.pt",
-        "Level15": "mapformer/runs/Level15_lm200/seed0/Level15.pt",
-        "TEM":     "mapformer/runs/TEM_lm200/seed0/TEM.pt",
+        "Vanilla":     "mapformer/runs/Vanilla_lm200/seed0/Vanilla.pt",
+        "Level15":     "mapformer/runs/Level15_lm200/seed0/Level15.pt",
+        "TEM":         "mapformer/runs/TEM_lm200/seed0/TEM.pt",
+        "TEMFaithful": "mapformer/runs/TEMFaithful_lm200/seed0/TEMFaithful.pt",
     },
 }
 
@@ -433,7 +456,7 @@ for cfg_tag in ["clean", "noise", "lm200"]:
     print(f"## {cfg_tag}\n")
     print("| Variant | T=128 OOD | T=512 OOD | T=128 NLL | T=512 NLL |")
     print("|---|---|---|---|---|")
-    for v in ["Vanilla", "Level15", "TEM"]:
+    for v in ["Vanilla", "Level15", "TEM", "TEMFaithful"]:
         ckpt = Path(ckpts[cfg_tag][v])
         if not ckpt.exists():
             print(f"| {v} | (no ckpt at {ckpt}) | — | — | — |")
@@ -456,7 +479,7 @@ cd "$REPO"
 git pull --rebase 2>&1 | tail -3
 git add DOG_RESULTS_FIXED.md CNAV_HEX_Vanilla.md CNAV_HEX_Level15.md CNAV_RESULTS.md \
         STOCHASTIC_TRANSITION_RESULTS.md MINIGRID_MEMORY_RESULTS.md \
-        TEM_RESULTS.md model_tem.py \
+        TEM_RESULTS.md model_tem.py model_tem_faithful.py \
         run_dog_fix_and_continuous.sh \
         environment.py train.py train_variant.py \
         paper_figures/dog_rate_maps_fixed_s0.npz \
@@ -472,7 +495,10 @@ git add runs/Level15_DoG_fixed_clean/seed0/*.pt \
         runs/minigrid_memory_cached/RoPE/seed0/*.pt \
         runs/TEM_clean/seed0/*.pt \
         runs/TEM_noise/seed0/*.pt \
-        runs/TEM_lm200/seed0/*.pt 2>/dev/null || true
+        runs/TEM_lm200/seed0/*.pt \
+        runs/TEMFaithful_clean/seed0/*.pt \
+        runs/TEMFaithful_noise/seed0/*.pt \
+        runs/TEMFaithful_lm200/seed0/*.pt 2>/dev/null || true
 git commit -m "Fixed DoG kernel + continuous nav + stochastic-transition equivalence
 
 Three pipelines, all auto-launched after GPUs freed up:
