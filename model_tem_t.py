@@ -84,6 +84,30 @@ class TEM_T(nn.Module):
         W = W + identity_init_scale * torch.randn_like(W)
         self.W_a = nn.Parameter(W)                          # (n_actions, d_model, d_model)
 
+        # LayerNorm — TWO instances, with different roles:
+        #
+        # 1) `e_pre_attn`: the paper-faithful location. From the TEM-t
+        #    appendix: "We find that using layernorm on the positional
+        #    encodings (NOT in the RNN, but on the input to transformer)
+        #    to be beneficial. For simplicity, we use fixed weights on
+        #    the layer norm, i.e. it is just a z-score of g." We use
+        #    learnable LayerNorm rather than fixed-weight z-score —
+        #    minor difference; both standardise.
+        #
+        # 2) `e_in_rnn`: an additional in-RNN normalisation that the
+        #    paper explicitly does NOT use. They stabilise the RNN via
+        #    sensory-landmark-based memory retrieval ("what positional
+        #    encoding did I have the last time I saw this landmark") —
+        #    a soft reset mechanism. We don't have that, and at our
+        #    sequence length (L=255 input) ||e|| explodes to ~1e13 in
+        #    the unconstrained recurrence (smoke-tested), producing NaN
+        #    gradients by epoch 5. The in-RNN LN is our pragmatic
+        #    stabilisation; flagged here as a deviation from the paper.
+        #
+        # The honest characterisation: this is TEM-t with one extra LN.
+        self.e_pre_attn = nn.LayerNorm(d_model)
+        self.e_in_rnn   = nn.LayerNorm(d_model)
+
         # Position-encoding projection: Q = K = E · W_e
         # Stimulus projection:           V = X · W_x
         self.W_e = nn.Linear(d_model, d_model, bias=False)
@@ -129,7 +153,7 @@ class TEM_T(nn.Module):
             tok = tokens[:, t]                              # (B,)
             is_action = tok < self.n_actions                # (B,) bool
 
-            # Action branch: e <- ReLU(e · W_{a_t})
+            # Action branch: e <- LN(ReLU(e · W_{a_t}))
             # Obs branch: e unchanged.
             # Compute action update for the whole batch, mask afterwards.
             action_idx = torch.where(is_action, tok, torch.zeros_like(tok))
@@ -137,6 +161,7 @@ class TEM_T(nn.Module):
             # e: (B, d), W_batch: (B, d, d) — apply as e_t = e @ W
             e_act = torch.bmm(e.unsqueeze(1), W_batch).squeeze(1)
             e_act = F.relu(e_act)                           # σ = ReLU per paper
+            e_act = self.e_in_rnn(e_act)                    # stabilisation (deviation from paper)
 
             mask = is_action.to(dtype).unsqueeze(-1)
             e = mask * e_act + (1.0 - mask) * e
@@ -151,10 +176,15 @@ class TEM_T(nn.Module):
         # 1) Sequentially compute position encodings e_t
         E = self._compute_position_encodings(tokens)         # (B, L, d_model)
 
-        # 2) Stimulus embeddings
+        # 2) Paper-faithful: LayerNorm on E before the transformer
+        #    ("on the input to transformer"). Standardises the memory
+        #    retrieval process so no one memory is up-weighted.
+        E = self.e_pre_attn(E)
+
+        # 3) Stimulus embeddings
         X = self.stim_emb(tokens)                            # (B, L, d_model)
 
-        # 3) Q, K from positions; V from stimuli (per Eq. 2 of TEM-t paper)
+        # 4) Q, K from positions; V from stimuli (per Eq. 2 of TEM-t paper)
         Q = self.W_e(E)                                      # (B, L, d_model)
         K = self.W_e(E)                                      # same as Q
         V = self.W_x(X)                                      # (B, L, d_model)
