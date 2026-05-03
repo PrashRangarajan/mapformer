@@ -34,19 +34,26 @@ Repo: /home/prashr/mapformer (single-author project; pushes to GitHub PrashRanga
 
 **Variants registered in `train_variant.py`:** Vanilla, VanillaEM, RoPE, Level1, Level15, Level15EM, Level15EM_b5, Level2, PC, Level15PC, Level15PC_NoBypass, Level15PC_v3, Level15PC_v4, Level15_DoG, Grid, Grid_Free, GridL15PC, GridL15PC_Free, ablations (L15_ConstR/NoMeas/NoCorr/DARE), baselines (LSTM, CoPE, MambaLike).
 
-**Pending pipelines (in flight at 2026-05-01 session end):**
-`run_dog_fix_and_continuous.sh` polling for free GPUs (other user has both pegged at 100% util on py-tbfm job). When fired:
-- P1: re-train Level15_DoG with fixed kernel + hex probe → `DOG_RESULTS_FIXED.md`
-- P2: train continuous Vanilla + Level15 + hex probe + cross-T/cross-noise eval → `CNAV_*.md`
-- P3: train Vanilla + Level15 with `--p-transition-noise 0.10`, eval against existing action-record checkpoints → `STOCHASTIC_TRANSITION_RESULTS.md`
+**Pipelines that ran (2026-05-01 → 2026-05-02):**
+- P1 ✅ `DOG_RESULTS_FIXED.md`: hex still doesn't emerge on discrete torus even with the fixed DoG kernel. Max grid score 0.042; 0% units > 0.3. Likely needs continuous-state, not discrete-cell, navigation.
+- P2 ❌ `CNAV_RESULTS.md`: training collapsed because MSE loss has degenerate near-zero minimum on sparse DoG targets. All 4 variants got ~20-cell mean position error (chance). Fix: replaced with `hard_ce` loss in `train_continuous.py`; smoke-test goes from chance to ~2-cell error in 500 steps. Re-run pipeline `run_cnav_redo.sh` polling for free GPUs.
+- P3 ✅ `STOCHASTIC_TRANSITION_RESULTS.md`: action-record corruption ≡ stochastic-transition MDP for uniform policy, with small (~5pp) on/off-diagonal asymmetry. trans-noise training generalizes slightly better than action-noise training because trajectory diversity is higher.
+- P4 ✅ `MINIGRID_MEMORY_RESULTS.md` (after kwarg-bug fix): **Level15 wins decisively on MemoryS13** — +13pp over Vanilla at T=512 OOD, +13pp at T=1024, NLL 5× better. RoPE collapses faster than Vanilla. The rooms+hallway topology genuinely tests path integration. This is the cleanest "Level15 wins clean OOD on a real env" result we have.
+- P5 ✅ `TEM_RESULTS.md` (after orthogonal-W_a fix): **TEMFaithful is the worst baseline** — much worse than TEM-Lite (GRU) and ~50pp behind Vanilla MapFormer on clean OOD T=512 (0.423 vs 0.862). Likely too restrictive at d_g=64 + single-env training; matched-capacity ablations needed.
+
+**Important bug fixes during 2026-05-02:**
+- `minigrid_env.py`: MiniGridWorld_Cached now accepts (and ignores) `p_transition_noise` kwarg (was crashing).
+- `model_tem_faithful.py`: per-action W_a now parameterised as `exp(skew(A_a))` — orthogonal by construction, no NaN. Matches Whittington 2019's compact-group convention.
+- `train_continuous.py`: replaced MSE default with `hard_ce` for CNAV. MSE has degenerate zero-minimum on sparse DoG targets.
 
 **Not yet done / open:**
-- Re-run hex probe on continuous nav once P2 finishes — first valid Sorscher-conditions test.
+- Re-run CNAV with hard_ce: `run_cnav_redo.sh` polling for free GPUs as of 2026-05-02.
 - TEM-style multi-environment training as alternative hex route (untested).
 - MAmPa baseline (paper's own block-diagonal Mamba variant).
 - Refresh `paper_figures/` to include VanillaEM, Level15EM, MambaLike, LSTM, RoPE rows.
 - Full SE(2) InEKF (currently only SO(2)/rotation correction; translation correction is a follow-up).
-- **TEMFaithful matched-capacity ablations** (after P5 lands): MapFormer's 250K params include only ~450 cog-map-specific (`action_to_lie + ω`); TEMFaithful's 19K is ~16K cog-map (`W_a`). To disambiguate "MapFormer wins from transformer scaffolding" vs "MapFormer wins from `f_Δ(x)` flexibility", run: (a) **TEM-Big** scaled to ~250K total params; (b) **MapFormer-Tiny** stripped to ~19K; (c) **TEM-LargeWa** with `d_g=256` so `W_a` alone is ~260K. ~1 day each.
+- **TEM-t baseline** (transformer formulation of TEM): the *parameter-matched* comparison the paper claims to make. Sequential per-action W_a + transformer attention scaffolding — same total params as MapFormer-EM (~250K), only differs in sequential-W_a vs parallel-cumsum-f_Δ. The clean test of the parallelism-vs-expressivity claim. **Suggested by user 2026-05-02 because TEMFaithful's 19K vs MapFormer's 250K isn't an apples-to-apples comparison.**
+- **TEMFaithful matched-capacity ablations** (after the TEM-t comparison): TEM-Big scaled to ~250K total params, MapFormer-Tiny stripped to ~19K, TEM-LargeWa with d_g=256.
 
 **Pipeline conventions:** Torus training ~10s/epoch on GPU. MiniGrid live ~360s/epoch (gym.step bottleneck); cached ~1.7s/epoch. Continuous nav: similar to torus once buffer is built. Multi-seed = 3 seeds. Shell scripts auto-train + eval + git commit + git push. Memory writes go to `.claude-memory/` (in repo, synced via git).
 
