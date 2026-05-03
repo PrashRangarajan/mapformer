@@ -45,8 +45,51 @@ VARIANT_CLS = {
 }
 
 
+def _loss_fn(preds_at_actions: torch.Tensor, obs: torch.Tensor,
+             loss_type: str, temperature: float = 0.1) -> torch.Tensor:
+    """Continuous-nav loss.
+
+    'mse' (legacy, broken): mean((preds - DoG)^2). Has a degenerate
+        near-zero minimum because DoG targets are sparse (~0.6% nonzero
+        entries). First CNAV run hit this — model collapsed to
+        predicting zero, position decoding at chance.
+
+    'soft_ce' (smoothed classification, temperature-sensitive):
+            target_p = softmax(DoG / temperature)
+            loss     = - sum(target_p * log_softmax(preds), dim=-1).mean()
+        With temperature=1.0 the target is nearly uniform (DoG.max() ≈
+        0.33 → peak prob 0.54% vs uniform 0.39%; gradient too weak).
+        Default temperature=0.1 makes the target peaked at the closest
+        place cell while keeping graded info from neighbours.
+
+    'hard_ce' (recommended default): treat the closest place cell as
+        the target, plain cross-entropy:
+            target_idx = obs.argmax(dim=-1)
+            loss       = F.cross_entropy(preds, target_idx)
+        Robust, no temperature to tune, always informative gradient.
+        Loses graded firing-rate info but the spatial structure that
+        Sorscher-style theory cares about lives in the place_proj
+        mapping, not the loss.
+    """
+    import torch.nn.functional as F
+    if loss_type == "mse":
+        return (preds_at_actions - obs).pow(2).mean()
+    if loss_type == "soft_ce":
+        log_p = F.log_softmax(preds_at_actions, dim=-1)         # (B, T, n_pc)
+        target_p = F.softmax(obs / temperature, dim=-1)         # (B, T, n_pc)
+        return -(target_p * log_p).sum(dim=-1).mean()
+    if loss_type == "hard_ce":
+        target_idx = obs.argmax(dim=-1)                         # (B, T)
+        return F.cross_entropy(
+            preds_at_actions.reshape(-1, preds_at_actions.shape[-1]),
+            target_idx.reshape(-1),
+        )
+    raise ValueError(f"unknown loss_type: {loss_type}")
+
+
 def train(model, env, n_epochs, n_batches, batch_size, n_steps, lr,
-          weight_decay, device, log_every=5):
+          weight_decay, device, loss_type: str = "hard_ce",
+          loss_temperature: float = 0.1, log_every=5):
     model = model.to(device)
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = optim.lr_scheduler.LinearLR(
@@ -64,9 +107,10 @@ def train(model, env, n_epochs, n_batches, batch_size, n_steps, lr,
             actions = actions.to(device)
             obs     = obs.to(device)
 
-            preds = model(actions, obs)               # (B, 2T, obs_dim)
+            preds = model(actions, obs)               # (B, 2T, obs_dim) logits
             preds_at_actions = preds[:, 0::2]         # (B, T, obs_dim)
-            loss = (preds_at_actions - obs).pow(2).mean()
+            loss = _loss_fn(preds_at_actions, obs,
+                             loss_type=loss_type, temperature=loss_temperature)
 
             optimizer.zero_grad()
             loss.backward()
@@ -105,6 +149,17 @@ def main():
     p.add_argument("--omega-noise-std", type=float, default=0.0)
     p.add_argument("--lr", type=float, default=3e-4)
     p.add_argument("--weight-decay", type=float, default=0.05)
+    p.add_argument("--loss", type=str, default="hard_ce",
+                   choices=["mse", "soft_ce", "hard_ce"],
+                   help="Loss for DoG predictions. 'mse' is degenerate "
+                        "(broken default in earlier runs); 'soft_ce' "
+                        "needs careful temperature tuning; 'hard_ce' "
+                        "(default) treats the closest place cell as a "
+                        "classification target — robust, no temperature.")
+    p.add_argument("--loss-temperature", type=float, default=0.1,
+                   help="Softmax temperature for soft_ce target. Default 0.1 "
+                        "is reasonable for DoG values that peak near 0.33; "
+                        "temperature=1.0 gives near-uniform targets.")
     p.add_argument("--d-model", type=int, default=128)
     p.add_argument("--n-heads", type=int, default=2)
     p.add_argument("--n-layers", type=int, default=1)
@@ -148,6 +203,7 @@ def main():
         n_epochs=args.epochs, n_batches=args.n_batches,
         batch_size=args.batch_size, n_steps=args.n_steps,
         lr=args.lr, weight_decay=args.weight_decay, device=args.device,
+        loss_type=args.loss, loss_temperature=args.loss_temperature,
     )
 
     ckpt = out / f"{args.variant}.pt"
