@@ -138,52 +138,44 @@ class TEMFaithful(nn.Module):
             is_action = tok < self.n_actions                  # (B,) bool
             obs_mask = (~is_action).to(dtype)                 # (B,) 0/1
 
-            # ----- PREDICT at this position by querying memory -----
+            # ----- UPDATE g FIRST (action-driven) -----
+            # Bug fix (audited 2026-05-07): originally we predicted from the
+            # PRE-action g and then updated. That meant at an action position
+            # the query was the *previous* position — wrong direction. The
+            # model was systematically retrieving the previous cell's obs
+            # instead of the new cell's obs, which capped accuracy ~0.42
+            # (common-token bias level).
+            # Correct semantics: at action positions update g first so the
+            # query represents the post-action position; at obs positions g
+            # is unchanged (obs doesn't move the agent).
+            action_idx = torch.where(is_action, tok, torch.zeros_like(tok))
+            W_batch = W_a_all[action_idx]                     # (B, d_g, d_g)
+            g_updated = torch.bmm(W_batch, g.unsqueeze(-1)).squeeze(-1)  # (B, d_g)
+            action_mask = (~obs_mask.bool()).to(dtype).unsqueeze(-1)
+            g = action_mask * g_updated + (1.0 - action_mask) * g
+
+            # ----- PREDICT using updated g -----
             if len(mem_g_list) > 0:
                 Mg = torch.stack(mem_g_list, dim=1)          # (B, |M|, d_g)
                 Mx = torch.stack(mem_x_list, dim=1)          # (B, |M|, d_x)
-                scores = torch.bmm(g.unsqueeze(1), Mg.transpose(1, 2)).squeeze(1)  # (B, |M|)
+                scores = torch.bmm(g.unsqueeze(1), Mg.transpose(1, 2)).squeeze(1)
                 scores = scores * self.beta
-                attn = F.softmax(scores, dim=-1)             # (B, |M|)
-                x_hat = torch.bmm(attn.unsqueeze(1), Mx).squeeze(1)  # (B, d_x)
+                attn = F.softmax(scores, dim=-1)
+                x_hat = torch.bmm(attn.unsqueeze(1), Mx).squeeze(1)
             else:
-                # No memory yet — emit a learned default via zero-init x_hat.
                 x_hat = torch.zeros(B, self.d_x, device=device, dtype=dtype)
 
             logits_t = self.out_proj(self.out_norm(x_hat))    # (B, vocab)
             outputs.append(logits_t)
 
-            # ----- UPDATE state -----
-            # Action update: g <- W_a[action] @ g (only for action tokens).
-            # Observation update: bind (g, x) into memory (only for obs tokens).
-            #
-            # Both branches are computed for the whole batch, then a per-batch
-            # mask selects which side actually applies. This keeps everything
-            # vectorised across the batch.
-
-            # 1) Action branch — gather W per batch element. For obs tokens we
-            #    use action 0 as a placeholder; the result is masked away.
-            action_idx = torch.where(is_action, tok, torch.zeros_like(tok))
-            W_batch = W_a_all[action_idx]                     # (B, d_g, d_g) — orthogonal
-            g_updated = torch.bmm(W_batch, g.unsqueeze(-1)).squeeze(-1)  # (B, d_g)
-
-            # Apply only where the token is an action; obs tokens leave g unchanged
-            action_mask = (~obs_mask.bool()).to(dtype).unsqueeze(-1)
-            g = action_mask * g_updated + (1.0 - action_mask) * g
-
-            # 2) Observation branch — bind (g, x) for obs tokens. To keep batch
-            #    elements aligned in memory length even if the input alternates
-            #    cleanly across the batch (which it does in our env), we append
-            #    (g, x * obs_mask) for every step. Action steps contribute
-            #    zero-magnitude x and a g whose softmax weight will be small in
-            #    practice (the obs entries dominate retrieval). For our env the
-            #    alternation is identical across batch elements, so this is
-            #    actually a no-op simplification: every entry in memory at an
-            #    obs position is a real binding; entries at action positions
-            #    contribute g·zero = 0 to the retrieved x.
+            # ----- BIND (g, x) at obs tokens -----
+            # Observation tokens trigger a memory write of (current g, content
+            # embedding of obs token). Action tokens contribute zero-magnitude
+            # x, so they don't affect retrieval (their entries softmax to
+            # negligible weight against real obs entries that have non-zero V).
             x_full = self.content_emb(tok)                    # (B, d_x)
-            x_masked = x_full * obs_mask.unsqueeze(-1)        # zero out actions
-            mem_g_list.append(g.detach().clone() if False else g)
+            x_masked = x_full * obs_mask.unsqueeze(-1)
+            mem_g_list.append(g)
             mem_x_list.append(x_masked)
 
         return torch.stack(outputs, dim=1)                    # (B, L, vocab_size)
