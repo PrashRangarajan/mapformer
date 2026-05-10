@@ -4,3 +4,5 @@
 - [Memory is shared via git](reference_shared_memory.md) — this dir lives in the repo at `.claude-memory/`; `git pull` before reading, push after writing.
 - [Action-noise framing](feedback_action_noise_framing.md) — defend against "this is artificial" by using stochastic-transition-MDP vocabulary; lead with non-circular wins.
 - [DoG kernel bug](feedback_dog_kernel_bug.md) — earlier hex tests vacuous due to unnormalised Gaussians cancelling at d=0; supersedes `DOG_RESULTS.md`.
+- [Post-attention dropout is harmful](feedback_post_attn_dropout.md) — Vaswani's default block dropout destroys rare-token retrieval; removing it gives most of the TEM lm200 gap. β/sharper-softmax was a red herring in our experiments.
+- [EM vs WM mechanism](feedback_em_vs_wm_mechanism.md) — EM multiplicative AND-gate wins when content channel is noisy; WM additive OR-gate wins when content is signal. Paper's "EM scales better" is along noisy-content axes; our regimes flip that.

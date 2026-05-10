@@ -46,7 +46,34 @@ Repo: /home/prashr/mapformer (single-author project; pushes to GitHub PrashRanga
 - `model_tem_faithful.py`: per-action W_a now parameterised as `exp(skew(A_a))` — orthogonal by construction, no NaN. Matches Whittington 2019's compact-group convention.
 - `train_continuous.py`: replaced MSE default with `hard_ce` for CNAV. MSE has degenerate zero-minimum on sparse DoG targets.
 
-**Not yet done / open:**
+**Session 2026-05-10 — TEMFaithful fix, Level15Beta + dropout discovery, EM/WM mechanism, goal-directed task:**
+
+- **TEMFaithful predict-then-update bug fix.** Old TEMFaithful queried memory with PRE-action g (wrong cell's content). Fix: update g via W_a BEFORE prediction. Took lm200 OOD T=512 from 0.42 (chance) to **0.969**. The "TEMFaithful is the worst baseline" finding in the prior session was driven by this bug; reverse the framing — TEMFaithful is now the lm200 leader.
+- **TEM-t NaN fix.** Unconstrained ReLU(e·W_a) recurrence → ||e|| explodes ~10× per 8 steps → 1e13 by L=255 → NaN. Fixed with two LayerNorms: `e_pre_attn` (paper-faithful) and `e_in_rnn` (deviation; replaces paper's sensory-landmark reset which we lack).
+- **Level15Beta (learnable softmax temperature β) + dropout discovery.** Beta closed +12pp lm200 gap (0.819 → 0.935). Learned β barely moved (0.148–0.182 vs init 0.125), so β cannot explain it. Level15NoDrop (fixed β, only post-attn residual dropout removed) gives **0.948** — confirms the win was dropout removal. β was a red herring. See `feedback_post_attn_dropout.md`. Regime-dependent Pareto trade-off: dropout removal helps lm200 +12pp, helps noise +2pp, mildly hurts clean (NLL doubles).
+- **EM-vs-WM mechanism (paper-citable).** EM's `A = softmax(A_X ⊙ A_P)` is a multiplicative AND-gate; WM's additive scoring is an OR-gate. EM wins when A_X is the noisy channel (paper's tasks: aliased obs, especially large vocab at l=16). WM wins when A_X is the signal channel (our tasks: landmarks, long OOD, noise). Backbone choice is regime-dependent. See `feedback_em_vs_wm_mechanism.md`.
+- **MapFormer paper scaling claims (verified via WebFetch).** Figure 4: EM > WM along (a) head size 16→128 at l=256, (b) sequence length 16→384 at h=48, (c) vocab 10→10000 at l=16. All compatible with the mechanism above. None test our extended regimes (long OOD with rare landmarks).
+- **New model files:** `model_inekf_level15_beta.py` (β layer), `model_inekf_level15_nodrop.py` (clean dropout ablation), `model_inekf_gsf.py` (Gaussian Sum Filter, K parallel Level 1.5 chains — registered as `Level15GSF`, smoke-tested, **not yet trained**).
+- **Goal-directed navigation task (new infra):** `environment_goal.py` (GoalDirectedGridWorld + BFS-on-torus oracle), `train_goal.py` (CE on next-action prediction at navigate-phase positions). Episode = `[goal_token, explore_phase_random_walk, navigate_phase_bfs]`. Goal token = the landmark's unified-vocab emit. Smoke test: 3 epochs → 0.708 held-out action accuracy (chance 0.25).
+
+**Vocab sweep results (2026-05-10):** `VOCAB_SWEEP_RESULTS.md` (single seed, clean task, T=128 train / T=512 OOD on fresh obs_map).
+- n_obs=16 (paper main): Vanilla 0.862, VanillaEM 0.968, Level15 0.991, Level15EM 0.986. EM-with-correction nearly tied with WM-with-correction.
+- n_obs=256: Vanilla 0.665, VanillaEM 0.562 (EM WORSE), Level15 0.980, Level15EM 0.970. Paper's "EM wins at large vocab" claim does NOT survive at our l=128/T=512. Vanilla EM collapses (vocab outpaces capacity); correction rescues both backbones.
+- n_obs=4096: ALL variants collapse to ~0.45 — degenerate regime (each cell emits a near-unique token, test-env obs_map is completely different). Uninformative.
+- Verdict: at long-l regime, vocab scaling does NOT invert the WM-EM ordering. Paper's Fig 4c result is l=16-specific. Backbone matters less than correction at long l.
+
+**Goal-directed navigation results (2026-05-10):** `GOAL_DIRECTED_RESULTS.md` (single seed, lm200, 50 epochs).
+- Vanilla: 0.628 / 0.950 / 0.766 (T_exp=32 / 64=train / 128=OOD). **Vanilla cognitive maps degrade with longer explore — drift accumulates → action selection breaks.**
+- Level15: 0.939 / 0.947 / 0.950. **Correction-stabilised maps stay navigable across all explore lengths** — this is the bounded-error Kalman promise made concrete on a goal-directed task.
+- Level15EM: 0.936 / 0.949 / 0.948. Tied with Level15 — the multiplicative AND-gate is benign when correction repairs A_P enough that the gate fires reliably.
+- Level15NoDrop: 0.939 / 0.946 / 0.949. Dropout removal has NO effect on goal-directed task (which is 4-class action prediction — retrieval is dense, not rare).
+- **Best finding for paper:** cognitive maps built with Level 1.5 correction are GOAL-NAVIGABLE and STAY navigable under OOD explore length. Vanilla maps degrade. This is the cleanest cognitive-map utility test we've done — connects path-integration correction to behaviour.
+
+**Pending decisions:**
+- GSF launch: depends on vocab sweep + goal-directed results. The dropout finding weakens the "multimodal Bayes is the missing piece" story — GSF would now mostly test compute-vs-K scaling rather than "does K=8 Kalmans match TEMFaithful." Worth running but reframe expectations.
+- Level15NoDrop multi-seed on clean + noise (currently only lm200 has multi-seed; needed to nail down the Pareto trade-off).
+
+**Older not-yet-done / open:**
 - Re-run CNAV with hard_ce: `run_cnav_redo.sh` polling for free GPUs as of 2026-05-02.
 - TEM-style multi-environment training as alternative hex route (untested).
 - MAmPa baseline (paper's own block-diagonal Mamba variant).

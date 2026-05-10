@@ -934,3 +934,133 @@ both pegged at 100% on py-tbfm). When it fires it'll produce
 `DOG_RESULTS_FIXED.md`, `CNAV_*.md`, `STOCHASTIC_TRANSITION_RESULTS.md`,
 auto-commit + push.
 
+## Session 2026-05-10 — TEM fixes, β / dropout discovery, EM/WM mechanism, goal-directed
+
+### Bug fixes (load-bearing)
+
+- **TEMFaithful predict-then-update bug.** Old order queried memory with
+  PRE-action g (the wrong cell's content). Fixed by updating g via W_a
+  BEFORE prediction. lm200 OOD T=512: 0.42 (chance) → **0.969**. Reverses
+  the prior session's "TEMFaithful is the worst baseline" claim — it's now
+  the lm200 leader.
+- **TEM-t NaN.** Unconstrained `ReLU(e · W_a)` recurrence → `||e||` grows
+  ~10× per 8 steps → 1e13 by L=255 → NaN. Fix: add `e_pre_attn` LayerNorm
+  (paper-faithful pre-attention) AND `e_in_rnn` LayerNorm inside the
+  recurrent loop (deviates from paper; replaces sensory-landmark reset
+  which our random-walk setup lacks).
+- **TEMFaithful unconstrained W_a NaN.** `exp(skew(A_a))` orthogonal
+  parameterisation. Same matrix-exp-of-skew used elsewhere.
+
+### Headline discovery: post-attn residual dropout, not β, was load-bearing
+
+Tested "learnable softmax temperature β" (`Level15Beta`) as the lightest
+way to close the gap to TEMFaithful on lm200. It worked: 0.819 → 0.935
+(+12pp). BUT learned β values barely moved from init (0.148–0.182 vs init
+0.125 = 1/√d_head). A 1.2–1.5× sharpening cannot explain +12pp.
+
+`WMTransformerLayer` (baseline) vs `WMTransformerLayer_Beta` had TWO
+differences:
+1. β: learnable temperature on Q·K^T (init at 1/√d_head).
+2. Post-attention residual: original wraps `o_proj(out)` in `self.dropout`;
+   Beta drops the wrapper.
+
+`Level15NoDrop` ablation (fixed β, only dropout removed): **0.948 ± 0.025**
+on lm200 OOD T=512 — matches Beta. Dropout removal was load-bearing; β
+was a red herring.
+
+Regime-dependent Pareto trade-off:
+- Clean: −0.7pp acc, NLL **doubles** (calibration loss).
+- Noise: +2pp acc, NLL −6%.
+- LM200: **+12pp acc, NLL −56%.**
+
+Mechanism: Vaswani's default block dropout regularises when retrievals
+are redundant (aliased obs has ~128 copies; feature-zeroing averages out)
+and destroys when they're rare (a landmark token appears once). For
+paper: frame as Pareto-shift, NOT strict improvement.
+
+### EM-vs-WM mechanistic story
+
+- **EM:** `A = softmax(A_X ⊙ A_P)` — multiplicative AND-gate.
+- **WM:** combined additively in the score — OR-gate.
+
+| Regime | A_X | A_P | Winner | Observed |
+|---|---|---|---|---|
+| Aliased + short (paper main) | Noisy | Sharp | EM | EM > WM ✓ |
+| Aliased + large vocab + short (paper Fig 4c) | Noisier | Sharp | EM | EM ≫ WM (per paper) |
+| Aliased + long OOD (ours) | Noisy | Drift-degraded | WM | WM > EM ✓ |
+| Landmarks (rare unique content) | Sharp | Drift-degraded | WM | WM 0.715 > EM 0.605 ✓ |
+| Landmarks + correction | Sharp | Repaired | Both helped | L15-WM 0.821 > L15-EM 0.730 ✓ |
+
+Backbone ordering is regime-dependent. "EM is the better model" is a
+paper-task claim, not universal.
+
+### Paper scaling claims (verified via WebFetch)
+
+Figure 4: EM > WM along (a) head size at l=256, (b) sequence length up
+to l=384, (c) vocab up to 10000 at l=16. **None test long-l + rare-content,
+where our results flip the ordering.**
+
+### New files / variants
+
+- `model_inekf_level15_beta.py` (`Level15Beta`): learnable β.
+- `model_inekf_level15_nodrop.py` (`Level15NoDrop`): only post-attn
+  residual dropout removed. The clean ablation.
+- `model_inekf_gsf.py` (`Level15GSF`): Gaussian Sum Filter with K parallel
+  Level 1.5 chains. K learnable `θ_init_k` offsets, cumulative-log-
+  likelihood mixture weights. Smoke-tested + registered. **Not yet trained.**
+- `environment_goal.py`: `GoalDirectedGridWorld` + `bfs_torus`. Episode =
+  `[goal_token, T_explore random walks, T_navigate BFS-optimal]`.
+- `train_goal.py`: CE on next-action prediction at navigate-phase positions.
+  Chance = 0.25; smoke test (3 epochs Vanilla) → 0.708 held-out accuracy.
+
+### Vocab sweep result (`VOCAB_SWEEP_RESULTS.md`, single seed, T=512 OOD)
+
+| Variant | n_obs=16 | n_obs=256 | n_obs=4096 |
+|---|---|---|---|
+| Vanilla | 0.862 | 0.665 | 0.470 |
+| VanillaEM | 0.968 | **0.562** | 0.495 |
+| Level15 | 0.991 | 0.980 | 0.456 |
+| Level15EM | 0.986 | 0.970 | 0.411 |
+
+At our l=128/T=512 OOD, paper's "EM wins at large vocab" claim does
+NOT invert the ordering — VanillaEM actively *crashes* at n_obs=256
+(0.562, worse than Vanilla 0.665). Correction rescues both backbones to
+near-parity (Level15 0.980 ≥ Level15EM 0.970). At n_obs=4096 all
+collapse to ~0.45 — degenerate regime (each cell ≈ unique token,
+test-env obs_map is totally different; uninformative).
+
+**Conclusion: at long l, vocab scaling does NOT flip the WM-EM ordering.
+Paper's Fig 4c is l=16-specific.**
+
+### Goal-directed result (`GOAL_DIRECTED_RESULTS.md`, single seed, lm200)
+
+| Variant | T_exp=32, T_nav=32 | T_exp=64 (train) | T_exp=128 OOD |
+|---|---|---|---|
+| Vanilla | 0.628 | 0.950 | **0.766** |
+| Level15 | 0.939 | 0.947 | **0.950** |
+| Level15EM | 0.936 | 0.949 | 0.948 |
+| Level15NoDrop | 0.939 | 0.946 | 0.949 |
+
+Headline: Vanilla cognitive maps degrade with longer explore (drift
+accumulates → action selection breaks at T_exp=128: -18pp). Correction-
+stabilised maps STAY navigable across all explore lengths — the bounded-
+error Kalman promise made concrete on a behavioural task.
+
+- Level15 vs Vanilla: +18pp at OOD explore length. Correction is
+  decisive for goal-directed use of the cognitive map.
+- Level15EM ≈ Level15: tied. The multiplicative AND-gate is benign when
+  correction repairs A_P enough that the gate fires reliably.
+- Level15NoDrop ≈ Level15: dropout removal has NO effect on
+  goal-directed task (action prediction is 4-class — retrieval is
+  dense, not rare-signal-dependent).
+
+This is the cleanest cognitive-map utility test we've done — connects
+path-integration correction to navigation behaviour.
+
+### Pending decisions
+
+- GSF launch: depends on vocab sweep + goal-directed results. The dropout
+  finding weakens the "multimodal Bayes is the missing piece" story.
+- Level15NoDrop multi-seed on clean + noise (currently only lm200 has
+  3 seeds; needed to nail down the Pareto trade-off cleanly).
+
