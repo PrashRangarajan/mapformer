@@ -94,6 +94,11 @@ def main():
     parser.add_argument("--variant", required=True, choices=list(VARIANT_MAP.keys()))
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--n-landmarks", type=int, default=0)
+    parser.add_argument("--n-obs-types", type=int, default=16,
+                        help="Number of distinct observation token types "
+                             "(K in paper). Default 16 matches paper config; "
+                             "increasing pushes toward paper's vocab-scaling "
+                             "axis where MapFormer-EM was claimed to dominate.")
     parser.add_argument("--p-action-noise", type=float, default=0.0,
                         help="Post-hoc corruption of action TOKENS (records). "
                              "Trajectory rolls forward with the original "
@@ -147,7 +152,7 @@ def main():
 
     if args.env == "torus":
         env = GridWorld(
-            size=64, n_obs_types=16, p_empty=0.5,
+            size=64, n_obs_types=args.n_obs_types, p_empty=0.5,
             n_landmarks=args.n_landmarks, seed=args.seed,
         )
         grid_size = 64
@@ -208,7 +213,7 @@ def main():
             "vocab_size": env.unified_vocab_size,
             "d_model": args.d_model, "n_heads": args.n_heads,
             "n_layers": args.n_layers,
-            "grid_size": 64, "n_obs_types": 16, "p_empty": 0.5,
+            "grid_size": 64, "n_obs_types": args.n_obs_types, "p_empty": 0.5,
             "n_landmarks": args.n_landmarks,
         },
     }, ckpt_path)
