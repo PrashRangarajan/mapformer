@@ -35,6 +35,7 @@ from mapformer.train import train
 from mapformer.model import MapFormerWM, MapFormerEM
 from mapformer.model_inekf_parallel import MapFormerWM_ParallelInEKF
 from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
+from mapformer.model_inekf_level15_beta import MapFormerWM_Level15Beta
 from mapformer.model_inekf_level15_em import MapFormerEM_Level15InEKF, MapFormerEM_Level15InEKF_b5
 from mapformer.model_grid import MapFormerWM_Grid, MapFormerWM_Grid_Free
 from mapformer.model_grid_l15_pc import (
@@ -61,6 +62,7 @@ VARIANT_MAP = {
     "VanillaEM":  MapFormerEM,
     "Level1":     MapFormerWM_ParallelInEKF,
     "Level15":    MapFormerWM_Level15InEKF,
+    "Level15Beta": MapFormerWM_Level15Beta,
     "Level15EM":  MapFormerEM_Level15InEKF,
     "Level15EM_b5": MapFormerEM_Level15InEKF_b5,
     "Grid":       MapFormerWM_Grid,
