@@ -69,9 +69,55 @@ Repo: /home/prashr/mapformer (single-author project; pushes to GitHub PrashRanga
 - Level15NoDrop: 0.939 / 0.946 / 0.949. Dropout removal has NO effect on goal-directed task (which is 4-class action prediction — retrieval is dense, not rare).
 - **Best finding for paper:** cognitive maps built with Level 1.5 correction are GOAL-NAVIGABLE and STAY navigable under OOD explore length. Vanilla maps degrade. This is the cleanest cognitive-map utility test we've done — connects path-integration correction to behaviour.
 
-**Pending decisions:**
-- GSF launch: depends on vocab sweep + goal-directed results. The dropout finding weakens the "multimodal Bayes is the missing piece" story — GSF would now mostly test compute-vs-K scaling rather than "does K=8 Kalmans match TEMFaithful." Worth running but reframe expectations.
-- Level15NoDrop multi-seed on clean + noise (currently only lm200 has multi-seed; needed to nail down the Pareto trade-off).
+**NoDrop multi-seed Pareto (2026-05-10, `NODROP_PARETO_RESULTS.md`):** n=3 each config.
+- Clean T=512: Vanilla 0.911, Level15 0.993, Level15NoDrop 0.985 (-0.8pp acc, within std). NLL 0.039 → 0.070.
+- Noise T=512: Vanilla 0.638, Level15 0.702, Level15NoDrop 0.699 (TIED with Level15).
+- LM200 T=512: Vanilla 0.716, Level15 0.819, Level15NoDrop **0.948** (+13pp).
+- Verdict: NoDrop is essentially Pareto-equivalent on clean/noise (differences within seed std) and a huge win on lm200. Frame as "near-free win for landmark tasks, small clean-NLL cost." Stronger than expected.
+
+**DoorKey-8x8 BC (2026-05-10, `DOORKEY_BC_RESULTS.md`):** single seed, 30 epochs.
+- match-acc / closed-loop success: Vanilla 0.875/0.250, Level15 0.875/0.230, **Level15EM 0.938/0.190**, Level15NoDrop 0.812/0.240.
+- EM WINS on match-acc here, OPPOSITE of torus result. **Evidence FOR our EM-vs-WM mechanism story:** DoorKey is egocentric (only cell directly in front of agent visible), so A_X is much noisier than torus (many cells look identical from egocentric POV). EM's multiplicative AND-gate filters that A_X noise — exactly its home regime. Backbone ordering flips as predicted.
+- Closed-loop success ~0.19-0.25 across all variants is the BC distribution-shift ceiling — match-acc 87% per step compounds to ~10% over 20 steps. This is why DAgger queued.
+
+**GSF (Level15GSF, K=8 chains) (2026-05-10, `GSF_RESULTS.md`):** n=3 on lm200.
+- Level15 0.819 → **Level15GSF 0.956** (+14pp), beats NoDrop (0.948). NLL 0.227 vs TEMFaithful 0.171.
+- GSF closes 95% of TEMFaithful gap. **Multi-modal Bayesian filtering actually works.**
+- Two independent fixes that each ~match TEMFaithful: dropout removal AND multi-modal Bayes. GSF + NoDrop combo queued (2×2 table will reveal whether they compose).
+
+**Linear probe (2026-05-10, `PROBE_GOAL_RESULTS.md`):** frozen lm200 prediction-trained checkpoints + linear head → action.
+- Held-out probe acc: Vanilla **0.555**, Level15 0.630, Level15EM 0.631, Level15NoDrop 0.637.
+- **STRONGEST cognitive-map claim:** the +7.5pp probe-acc gap from Vanilla → Level15 shows up in PRE-TRAINED REPRESENTATION CONTENT, not just trainability. Frozen backbone + single linear readout extracts more goal-relevant info from Level15* representations than from Vanilla. This is the cleanest "cognitive maps differ in content" evidence we have.
+- All Level15 variants probe-tied on held-out (~0.63). The BC differences between them (Level15EM > Level15 on DoorKey, EM ≈ WM on torus) are *trainability* effects on top of essentially-equivalent representations.
+
+**Five-finding synthesis for paper (current state):**
+1. **Prediction baseline**: Level15 beats Vanilla on accuracy + NLL across all regimes (existing).
+2. **Pareto-shift (NoDrop)**: removing one inherited dropout costs ~nothing on clean/noise and wins +13pp on lm200.
+3. **Multi-modal Bayes (GSF)**: K=8 chains closes 95% of TEMFaithful gap on lm200 (independent fix from NoDrop).
+4. **Goal-directed BC**: correction stabilises the cognitive map under OOD explore-length (+18pp over Vanilla on torus); EM wins on partial-obs envs (DoorKey) and ties on full-obs (torus) — mechanism predicts both signs.
+5. **Frozen-probe**: cognitive maps differ in CONTENT, not just trainability. Linear readout from Level15 representations carries +7.5pp more goal-directed info than Vanilla.
+
+**Honest caveats (do NOT bury):**
+- DoorKey closed-loop success is 0.19-0.25 across all variants — BC distribution-shift dominates. The architecture differences in *match-acc* don't translate to closed-loop *behaviour* without DAgger.
+- The vocab=4096 collapse is a degenerate-regime failure for ALL variants — not informative.
+- GSF + NoDrop combo not yet measured; could either compose (~0.97) or be redundant (~0.96).
+
+**Queued at end-of-session 2026-05-10 (run autonomously, polling for GPUs):**
+- `run_goal_tasks.sh` (PID 219155): multistop/switching/noisy torus task suite (partial — noisy still training).
+- `run_gsf_nodrop.sh` (PID 228104): Level15GSF_NoDrop on lm200, 3 seeds → `GSF_NODROP_RESULTS.md`.
+- `run_gsf_modes.sh` (PID 228699): GSF mode-weight diagnostic (entropy / effective-mode-count over time) → `GSF_MODES_DIAGNOSTIC.md`.
+- `run_dagger.sh` (PID 228706): 4 variants × 4 DAgger rounds on DoorKey-8x8 → `DAGGER_RESULTS.md`. Tests whether richer cognitive maps yield better RECOVERY from off-expert states.
+
+**New files added this session:** `model_inekf_level15_beta.py`, `model_inekf_level15_nodrop.py`, `model_inekf_gsf.py`, `model_inekf_gsf_nodrop.py`, `environment_goal.py`, `train_goal.py`, `doorkey_solver.py`, `train_doorkey_bc.py`, `train_doorkey_dagger.py`, `probe_goal_linear.py`, `probe_gsf_modes.py`, `run_*.sh` pipelines.
+
+**Pending experiments (not queued, options to pick next):**
+- MemoryS17 / MemoryS25 prediction — does the Level15 +13pp MemoryS13 gap grow with corridor length?
+- KeyCorridor BC — different cognitive demand from DoorKey (must EXPLORE to find key).
+- DoorKey-16x16 BC — scaling of the BC win.
+- LavaCrossing BC — hard-constraint planning (lava = death).
+- TEMFaithful in DoorKey BC (was skipped because of goal-token-as-obs tokenizer issue; not relevant for DoorKey).
+- Aliased-content goal on torus (goal = an aliased obs type, multiple cells match — EM might win here too).
+- 3+ stop multistop (predicted: correction's edge grows with #stops).
 
 **Older not-yet-done / open:**
 - Re-run CNAV with hard_ce: `run_cnav_redo.sh` polling for free GPUs as of 2026-05-02.

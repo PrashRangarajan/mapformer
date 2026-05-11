@@ -6,3 +6,5 @@
 - [DoG kernel bug](feedback_dog_kernel_bug.md) — earlier hex tests vacuous due to unnormalised Gaussians cancelling at d=0; supersedes `DOG_RESULTS.md`.
 - [Post-attention dropout is harmful](feedback_post_attn_dropout.md) — Vaswani's default block dropout destroys rare-token retrieval; removing it gives most of the TEM lm200 gap. β/sharper-softmax was a red herring in our experiments.
 - [EM vs WM mechanism](feedback_em_vs_wm_mechanism.md) — EM multiplicative AND-gate wins when content channel is noisy; WM additive OR-gate wins when content is signal. Paper's "EM scales better" is along noisy-content axes; our regimes flip that.
+- [BC metrics are distinct](feedback_bc_metrics_distinct.md) — match-acc / closed-loop success / frozen-probe each measure different things; report side by side, don't collapse into "goal-directed performance."
+- [Multiple fixes ~match TEMFaithful](feedback_multiple_fixes_match_tem.md) — dropout removal and GSF each independently close ~14pp of the Level15 → TEMFaithful gap on lm200; TEMFaithful's lead is recoverable via different paths inside MapFormer.

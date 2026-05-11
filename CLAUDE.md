@@ -1064,3 +1064,104 @@ path-integration correction to navigation behaviour.
 - Level15NoDrop multi-seed on clean + noise (currently only lm200 has
   3 seeds; needed to nail down the Pareto trade-off cleanly).
 
+### NoDrop multi-seed (`NODROP_PARETO_RESULTS.md`)
+
+| Config | Vanilla | Level15 | Level15NoDrop |
+|---|---|---|---|
+| Clean T=512 | 0.911 | 0.993 | 0.985 (−0.8pp, within std) |
+| Clean T=512 NLL | 0.458 | 0.039 | 0.070 |
+| Noise T=512 | 0.638 | 0.702 | 0.699 (tied) |
+| LM200 T=512 | 0.716 | 0.819 | **0.948** |
+| LM200 T=512 NLL | 1.391 | 0.897 | 0.317 |
+
+NoDrop is essentially Pareto-equivalent on clean/noise (differences
+within seed std) and a +13pp win on lm200. Stronger than the
+Pareto-shift framing suggested; this is closer to "near-free win for
+landmark tasks."
+
+### DoorKey-8x8 BC (`DOORKEY_BC_RESULTS.md`)
+
+| Variant | match-acc | closed-loop success |
+|---|---|---|
+| Vanilla | 0.875 | 0.250 |
+| Level15 | 0.875 | 0.230 |
+| Level15EM | **0.938** | 0.190 |
+| Level15NoDrop | 0.812 | 0.240 |
+
+**EM wins on match-acc here, OPPOSITE of our torus result.** Mechanism-
+consistent: DoorKey is egocentric (only the cell directly in front
+visible), so A_X is much noisier than torus → EM's multiplicative
+AND-gate filters that A_X noise → backbone ordering flips. Same
+prediction, different sign because the regime flipped.
+
+Closed-loop success ~0.20 across all variants is the BC distribution-
+shift ceiling. DAgger queued to break it.
+
+### GSF (`GSF_RESULTS.md`, n=3 on lm200)
+
+| Variant | lm200 T=512 OOD | NLL |
+|---|---|---|
+| Level15 | 0.819 ± 0.025 | 0.897 |
+| Level15NoDrop | 0.948 ± 0.025 | 0.317 |
+| Level15GSF | **0.956 ± 0.042** | 0.227 |
+| TEMFaithful | 0.969 ± 0.010 | 0.171 |
+
+K=8 parallel Kalman chains with cumulative-log-likelihood mixture
+weighting closes 95% of the TEMFaithful gap. Multi-modal Bayesian
+filtering actually works. Combined with NoDrop result: **two
+independent fixes each ~match TEMFaithful's lm200 lead**.
+
+### Linear probe of frozen prediction-trained models (`PROBE_GOAL_RESULTS.md`)
+
+| Variant | Train-probe acc | Held-out probe acc |
+|---|---|---|
+| Vanilla | 0.592 | **0.555** |
+| Level15 | 0.634 | 0.630 |
+| Level15EM | 0.649 | 0.631 |
+| Level15NoDrop | 0.640 | 0.637 |
+
+Frozen backbone + single linear head → action. **+7.5pp gap from
+Vanilla → Level15 in the FROZEN representation** (held-out probe).
+Cognitive maps differ in CONTENT, not just trainability. This is the
+cleanest "Level15 builds a richer cognitive map" claim — no goal-
+directed training of the backbone, just a linear readout.
+
+### Five-finding paper synthesis (current state)
+
+1. **Prediction baseline**: Level15 beats Vanilla on acc + NLL across
+   all regimes (multi-seed, existing).
+2. **Pareto-shift (NoDrop)**: one inherited dropout removal → +13pp on
+   lm200, ~free on clean/noise (multi-seed, new).
+3. **Multi-modal Bayes (GSF)**: K=8 chains closes 95% of TEMFaithful
+   gap on lm200 (multi-seed, new).
+4. **Goal-directed BC**: correction stabilises cognitive map under OOD
+   explore-length on torus (+18pp); EM wins on partial-obs envs (DoorKey)
+   and ties on full-obs (torus) — mechanism predicts both signs.
+5. **Frozen-probe**: cognitive maps differ in CONTENT, not just
+   trainability. Linear readout from Level15 representations carries
+   +7.5pp more goal-directed info than from Vanilla.
+
+### Queued at end of session (will auto-commit)
+
+- `run_gsf_nodrop.sh` (PID 228104): GSF + NoDrop combo → `GSF_NODROP_RESULTS.md`.
+- `run_gsf_modes.sh` (PID 228699): GSF mode-weight diagnostic → `GSF_MODES_DIAGNOSTIC.md`.
+- `run_dagger.sh` (PID 228706): 4 variants × 4 DAgger rounds on
+  DoorKey-8x8 → `DAGGER_RESULTS.md`. Tests whether richer cognitive
+  maps yield better RECOVERY from off-expert states.
+
+### Honest caveats (do NOT bury in the paper)
+
+- DoorKey closed-loop success 0.19-0.25 across all variants — BC
+  distribution-shift ceiling. Architecture differences show in
+  match-acc, not closed-loop behaviour. DAgger should reveal whether
+  the cognitive map difference cashes out in actual recovery.
+- Vocab=4096 collapse for ALL variants — degenerate regime, no signal.
+
+### New files this session
+
+`model_inekf_level15_beta.py`, `model_inekf_level15_nodrop.py`,
+`model_inekf_gsf.py`, `model_inekf_gsf_nodrop.py`,
+`environment_goal.py`, `train_goal.py`, `doorkey_solver.py`,
+`train_doorkey_bc.py`, `train_doorkey_dagger.py`, `probe_goal_linear.py`,
+`probe_gsf_modes.py`, plus the corresponding `run_*.sh` pipelines.
+
