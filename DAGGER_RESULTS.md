@@ -7,10 +7,10 @@ Warm-started from BC checkpoints (round 0 of `_dkbc`). Single seed.
 
 | Variant | BC (round 0) | After R1 | After R2 | After R3 | After R4 |
 |---|---|---|---|---|---|
-| **Vanilla** | 0.25 | 0.23 | 0.21 | 0.10 | 0.09 |
-| **Level15** | 0.23 | 0.27 | 0.24 | 0.28 | 0.34 |
-| **Level15EM** | 0.19 | 0.22 | 0.33 | 0.13 | 0.05 |
-| **Level15NoDrop** | 0.24 | 0.29 | 0.28 | 0.21 | 0.22 |
+| **Vanilla** | 0.25 | 0.19 | 0.17 | 0.08 | 0.10 |
+| **Level15** | 0.23 | 0.26 | 0.33 | 0.18 | 0.25 |
+| **Level15EM** | 0.19 | 0.19 | 0.25 | 0.25 | 0.08 |
+| **Level15NoDrop** | 0.24 | 0.30 | 0.39 | 0.33 | 0.42 |
 
 ## Interpretation
 
