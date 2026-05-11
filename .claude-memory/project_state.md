@@ -119,6 +119,25 @@ Repo: /home/prashr/mapformer (single-author project; pushes to GitHub PrashRanga
 - Aliased-content goal on torus (goal = an aliased obs type, multiple cells match — EM might win here too).
 - 3+ stop multistop (predicted: correction's edge grows with #stops).
 
+**DAgger on DoorKey fixed-and-rerun (2026-05-10):** `DAGGER_RESULTS.md` (single seed, 4 rounds × 12 inner epochs × 384 ep/round, fixed input/target separation bug).
+- Vanilla: 0.25 → 0.10 (DEGRADES; can't recover from off-expert states).
+- Level15: 0.23 → 0.25 (modest gain, volatile).
+- Level15EM: 0.19 → 0.08 (unstable).
+- **Level15NoDrop: 0.24 → 0.42 (+18pp; the only clear DAgger gain).**
+- Interpretation: NoDrop's preserved post-attention features matter MORE under DAgger because the model has to remember specific recovery patterns from off-distribution states. Dropout was hurting closed-loop fine-tuning even though it didn't show in BC match-acc.
+- Note: previous buggy DAgger numbers in commit 0dce909 (Vanilla 0.09, Level15 0.34, Level15EM 0.05, NoDrop 0.22) had model trained on inconsistent (expert action, model-resulting obs) pairs. Fixed version (commit aa45a78+37960a9) keeps model's actions in input prefix and overrides only targets.
+
+**Cognitive-tier orchestrator queued 2026-05-10 (PID 235781, `run_cognitive_tier.sh`):**
+After realising every within-family table compares MapFormer variants without
+a standard-transformer baseline, queued 3 experiments using a minimal
+5-model "necessity + improvement" set: RoPE, Vanilla, Level15, Level15GSF_NoDrop,
+TEMFaithful.
+- Step 1 (`run_longt.sh`): no training, eval existing lm200 ckpts at T ∈ {512, 1024, 2048}. → `LONGT_EVAL_RESULTS.md`. Tests "does RoPE → MapFormer gap grow with sequence length?"
+- Step 2 (`run_sparse_landmarks.sh`): train on lm10 + lm50 (sparser than lm200). → `SPARSE_LANDMARKS_RESULTS.md`. Tests "does multi-modal Bayes matter more when landmarks are rarer?"
+- Step 3 (`run_multienv.sh`): NEW infra — `environment_multienv.py` + `train_multienv.py`. 50 train envs / 50 held-out test envs. → `MULTIENV_RESULTS.md`. **THE TEM-style cognitive map test:** does the model learn a meta-strategy that generalizes across maps?
+- ETA from queue: ~2-2.5h.
+- Backfill of other baselines (LSTM, MambaLike, VanillaEM, NoDrop alone, GSF alone) on these tables is deferred to a subsequent compute session. See `feedback_baselines_backfill.md` for the list.
+
 **Older not-yet-done / open:**
 - Re-run CNAV with hard_ce: `run_cnav_redo.sh` polling for free GPUs as of 2026-05-02.
 - TEM-style multi-environment training as alternative hex route (untested).
