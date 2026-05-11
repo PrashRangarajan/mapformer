@@ -25,10 +25,38 @@ from mapformer.environment_goal import GoalDirectedGridWorld
 from mapformer.train_variant import VARIANT_MAP
 
 
+def _gen_batch(env, task, batch_size, T_explore, T_navigate, rng,
+               n_stops=2, T_per_segment=32,
+               T_pre_switch=32, T_post_switch=32,
+               p_transition_noise=0.1):
+    toks, oms, ams = [], [], []
+    for _ in range(batch_size):
+        if task == "single":
+            t, om, am, _ = env.generate_goal_episode(T_explore, T_navigate, rng=rng)
+        elif task == "multistop":
+            t, om, am, _ = env.generate_multistop_episode(
+                T_explore=T_explore, T_per_segment=T_per_segment, n_stops=n_stops, rng=rng)
+        elif task == "switching":
+            t, om, am, _ = env.generate_switching_episode(
+                T_explore=T_explore, T_pre_switch=T_pre_switch,
+                T_post_switch=T_post_switch, rng=rng)
+        elif task == "noisy":
+            t, om, am, _ = env.generate_noisy_episode(
+                T_explore=T_explore, T_navigate=T_navigate,
+                p_transition_noise=p_transition_noise, rng=rng)
+        else:
+            raise ValueError(f"unknown task: {task}")
+        toks.append(t); oms.append(om); ams.append(am)
+    return torch.stack(toks), torch.stack(oms), torch.stack(ams)
+
+
 def train_goal(
     model, env, n_epochs=20, lr=3e-4, batch_size=128,
     T_explore=64, T_navigate=64, n_batches=64, device="cuda",
     init_ckpt: str | None = None,
+    task: str = "single", n_stops: int = 2, T_per_segment: int = 32,
+    T_pre_switch: int = 32, T_post_switch: int = 32,
+    p_transition_noise: float = 0.1,
 ):
     if init_ckpt is not None:
         c = torch.load(init_ckpt, map_location=device, weights_only=False)
@@ -53,8 +81,11 @@ def train_goal(
     for ep in range(n_epochs):
         ep_loss = 0.0; ep_correct = 0; ep_total = 0
         for b in range(n_batches):
-            tokens, _, act_mask, _ = env.generate_goal_batch(
-                batch_size, T_explore=T_explore, T_navigate=T_navigate, rng=rng,
+            tokens, _, act_mask = _gen_batch(
+                env, task, batch_size, T_explore, T_navigate, rng,
+                n_stops=n_stops, T_per_segment=T_per_segment,
+                T_pre_switch=T_pre_switch, T_post_switch=T_post_switch,
+                p_transition_noise=p_transition_noise,
             )
             tokens = tokens.to(device); act_mask = act_mask.to(device)
 
@@ -88,17 +119,24 @@ def train_goal(
     return losses
 
 
-def evaluate_goal(model, env, T_explore, T_navigate, n_trials, device="cuda", seed=0):
+def evaluate_goal(model, env, T_explore, T_navigate, n_trials, device="cuda", seed=0,
+                  task: str = "single", n_stops: int = 2, T_per_segment: int = 32,
+                  T_pre_switch: int = 32, T_post_switch: int = 32,
+                  p_transition_noise: float = 0.1):
     rng = np.random.RandomState(seed)
     correct = total = 0
     nll_sum = 0.0
     with torch.no_grad():
         for _ in range(n_trials):
-            tokens, _, act_mask, _ = env.generate_goal_episode(
-                T_explore=T_explore, T_navigate=T_navigate, rng=rng,
+            toks, _, ams = _gen_batch(
+                env, task, 1, T_explore, T_navigate, rng,
+                n_stops=n_stops, T_per_segment=T_per_segment,
+                T_pre_switch=T_pre_switch, T_post_switch=T_post_switch,
+                p_transition_noise=p_transition_noise,
             )
-            tokens = tokens.unsqueeze(0).to(device)
-            act_mask = act_mask.unsqueeze(0).to(device)
+            tokens = toks; act_mask = ams
+            tokens = tokens.to(device)
+            act_mask = act_mask.to(device)
             inp = tokens[:, :-1]; tgt = tokens[:, 1:]
             mask = act_mask[:, :-1]
             try:
@@ -133,6 +171,13 @@ def main():
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--init-ckpt", type=str, default=None,
                         help="Optional: warm-start from a prediction-trained ckpt.")
+    parser.add_argument("--task", type=str, default="single",
+                        choices=["single", "multistop", "switching", "noisy"])
+    parser.add_argument("--n-stops", type=int, default=2)
+    parser.add_argument("--T-per-segment", type=int, default=32)
+    parser.add_argument("--T-pre-switch", type=int, default=32)
+    parser.add_argument("--T-post-switch", type=int, default=32)
+    parser.add_argument("--p-transition-noise", type=float, default=0.1)
     parser.add_argument("--output-dir", type=str, required=True)
     args = parser.parse_args()
 
@@ -160,6 +205,9 @@ def main():
         T_explore=args.T_explore, T_navigate=args.T_navigate,
         n_batches=args.n_batches, device=args.device,
         init_ckpt=args.init_ckpt,
+        task=args.task, n_stops=args.n_stops, T_per_segment=args.T_per_segment,
+        T_pre_switch=args.T_pre_switch, T_post_switch=args.T_post_switch,
+        p_transition_noise=args.p_transition_noise,
     )
 
     # Eval on a held-out env seed
@@ -170,6 +218,9 @@ def main():
     acc, nll = evaluate_goal(
         model, env_test, args.T_explore, args.T_navigate, n_trials=200,
         device=args.device, seed=2000,
+        task=args.task, n_stops=args.n_stops, T_per_segment=args.T_per_segment,
+        T_pre_switch=args.T_pre_switch, T_post_switch=args.T_post_switch,
+        p_transition_noise=args.p_transition_noise,
     )
     print(f"Held-out goal-directed acc: {acc:.3f} | nll: {nll:.3f}")
 
