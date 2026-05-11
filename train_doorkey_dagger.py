@@ -39,82 +39,74 @@ from mapformer.train_variant import VARIANT_MAP
 def rollout_and_relabel(model, world: MiniGridWorld, n_episodes: int, max_steps: int,
                         device: str = "cuda"):
     """Run model closed-loop; at each visited state, ask the expert for the
-    optimal action; emit (prefix_tokens, expert_action) training pairs.
+    optimal action; emit (input_tokens, target_tokens, mask) training triples.
 
-    Returns a list of (tokens_tensor, action_target_mask_tensor) where the
-    action_target_mask is True at positions whose NEXT TOKEN is the expert's
-    suggestion at the corresponding state."""
+    `input_tokens` = the prefix the model actually saw: its own actions
+    interleaved with the obs that resulted from executing them.
+    `target_tokens` = same as input, but at each action position, replaced
+    by the EXPERT's suggested action at that state. CE loss compares
+    predictions at obs positions (mask=True) against target_tokens at the
+    next position (the expert action at that state).
+    """
     pairs = []
     model.eval()
     for _ in range(n_episodes):
         obs, info = world.env.reset(seed=world.seed + np.random.randint(1_000_000))
-        prefix = []  # interleaved (a, o, a, o, ...) tokens so far
-        expert_targets = []  # parallel list: expert action at each step
+        prefix = []                  # model's actual trajectory tokens
+        expert_at_step: list[int] = []  # expert's action at each step
         for step in range(max_steps):
-            # Ask the expert what to do FROM the current env state
             plan = solve_doorkey(world.env)
-            if plan is None or len(plan) == 0:
-                break
+            if plan is None or len(plan) == 0: break
             expert_a = plan[0]
-
-            # Forward the model on the prefix (if any) to pick its own action
             if len(prefix) > 0:
                 with torch.no_grad():
                     inp = torch.tensor(prefix, device=device).unsqueeze(0)
                     logits = model(inp)
                     a_model = int(logits[0, -1].argmax().item()) % world.N_ACTIONS
             else:
-                # No prefix yet → just use the expert's first move
-                a_model = expert_a
-
-            # Record the supervision target: expert action at this state
-            expert_targets.append(expert_a)
-            # Execute the MODEL's action (so we collect states the model
-            # actually visits — the whole point of DAgger).
+                a_model = expert_a  # no context for very first action
+            expert_at_step.append(expert_a)
             prefix.append(a_model + world.action_offset)
             obs, r, term, trunc, info = world.env.step(a_model)
             prefix.append(world._front_cell_token(obs) + world.obs_offset)
-            if term:
-                break
+            if term: break
 
-        if len(expert_targets) == 0:
-            continue
+        if len(expert_at_step) == 0: continue
 
-        # Build a single (tokens, mask) example for this episode where the
-        # tokens are what the model SAW (its own actions + the resulting obs)
-        # and the targets at each obs position is the EXPERT'S action.
-        tokens = torch.tensor(prefix, dtype=torch.long)
-        L = tokens.shape[0]
+        L = len(prefix)
+        inp_tokens = torch.tensor(prefix, dtype=torch.long)
+        tgt_tokens = inp_tokens.clone()
+        for k, e_a in enumerate(expert_at_step):
+            if 2 * k < L:
+                tgt_tokens[2 * k] = e_a + world.action_offset  # ONLY tgt is overwritten
+        # Mask True at obs positions whose next token is an expert action.
         am = torch.zeros(L, dtype=torch.bool)
-        # action at flat index 2k, predicted from position 2k-1 (an obs).
-        # We have len(expert_targets) total navigate steps; the action at step
-        # k is at index 2k.
-        # For the supervision: we want CE between prediction at position 2k-1
-        # and expert_targets[k]. So we OVERWRITE tokens at position 2k with
-        # expert_targets[k] so that tgt = tokens[1:] gives expert at the right
-        # spot, then mask the corresponding pred positions.
-        n_steps = len(expert_targets)
-        for k in range(n_steps):
-            tokens[2 * k] = expert_targets[k] + world.action_offset
-            if 2 * k - 1 >= 0:
-                am[2 * k - 1] = True
-        pairs.append((tokens, am))
+        for k in range(len(expert_at_step)):
+            pos = 2 * k - 1
+            if 0 <= pos < L:
+                am[pos] = True
+        # If pos=0 supervision is desired (predict first action from nothing),
+        # we'd need a start token. We skip it (mask stays False at -1).
+        pairs.append((inp_tokens, tgt_tokens, am))
     return pairs
 
 
 def collate(pairs, pad_token=0):
     Lmax = max(p[0].shape[0] for p in pairs)
     B = len(pairs)
-    T = torch.full((B, Lmax), pad_token, dtype=torch.long)
+    Inp = torch.full((B, Lmax), pad_token, dtype=torch.long)
+    Tgt = torch.full((B, Lmax), pad_token, dtype=torch.long)
     M = torch.zeros(B, Lmax, dtype=torch.bool)
-    for i, (t, m) in enumerate(pairs):
-        T[i, :t.shape[0]] = t
+    for i, (inp, tgt, m) in enumerate(pairs):
+        Inp[i, :inp.shape[0]] = inp
+        Tgt[i, :tgt.shape[0]] = tgt
         M[i, :m.shape[0]] = m
-    return T, M
+    return Inp, Tgt, M
 
 
 def expert_episode(world: MiniGridWorld, max_steps: int):
-    """Pure expert trajectory: BFS solver dictates actions."""
+    """Pure expert trajectory: model_action == expert_action everywhere,
+    so input and target are identical."""
     obs, info = world.env.reset(seed=world.seed + np.random.randint(1_000_000))
     plan = solve_doorkey(world.env)
     if plan is None: return None
@@ -125,10 +117,11 @@ def expert_episode(world: MiniGridWorld, max_steps: int):
         obs, r, term, trunc, info = world.env.step(a)
         tokens.append(world._front_cell_token(obs) + world.obs_offset)
         if term: break
-    tokens = torch.tensor(tokens, dtype=torch.long)
-    L = tokens.shape[0]
+    inp = torch.tensor(tokens, dtype=torch.long)
+    tgt = inp.clone()
+    L = inp.shape[0]
     am = torch.zeros(L, dtype=torch.bool); am[1::2] = True
-    return tokens, am
+    return inp, tgt, am
 
 
 def closed_loop_success(model, world: MiniGridWorld, n_trials: int, max_steps: int,
@@ -169,9 +162,9 @@ def train_one_round(model, dataset, n_epochs, lr, batch_size, device):
         ep_loss = 0.0; ep_correct = 0; ep_total = 0
         for i in range(0, len(dataset), batch_size):
             batch = dataset[i:i+batch_size]
-            T, M = collate(batch)
-            T = T.to(device); M = M.to(device)
-            inp = T[:, :-1]; tgt = T[:, 1:]; mask = M[:, :-1]
+            Inp, Tgt, M = collate(batch)
+            Inp = Inp.to(device); Tgt = Tgt.to(device); M = M.to(device)
+            inp = Inp[:, :-1]; tgt = Tgt[:, 1:]; mask = M[:, :-1]
             logits = model(inp)
             lp = F.log_softmax(logits, dim=-1)
             if mask.sum() == 0: continue

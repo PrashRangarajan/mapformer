@@ -29,8 +29,8 @@ train() {
     CUDA_VISIBLE_DEVICES=$gpu python3 -u -m mapformer.train_doorkey_dagger \
         --variant $variant --seed 0 \
         --env MiniGrid-DoorKey-8x8-v0 --tokenization obj_color \
-        --max-steps 64 --n-rounds 4 --ep-per-round 256 --inner-epochs 6 \
-        --batch-size 32 --lr 2e-4 \
+        --max-steps 64 --n-rounds 4 --ep-per-round 384 --inner-epochs 12 \
+        --batch-size 32 --lr 1e-4 \
         --init-ckpt $bc_ckpt \
         --output-dir mapformer/runs/${variant}_dagger/seed0 \
         > "$LOGS/${variant}_dagger_s0.log" 2>&1
