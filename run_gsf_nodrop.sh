@@ -1,0 +1,123 @@
+#!/bin/bash
+# Level15GSF + NoDrop: do the two interventions compose?
+# Polls for free GPUs; trains 3 seeds on lm200; auto-commits.
+set -u
+cd /home/prashr
+REPO=/home/prashr/mapformer
+LOGS=$REPO/logs
+mkdir -p "$LOGS"
+
+is_gpu_free() {
+    local mem util
+    while IFS=', ' read -r mem util; do
+        mem=${mem//[^0-9]/}; util=${util//[^0-9]/}
+        [ -z "$mem" ] && mem=0; [ -z "$util" ] && util=0
+        if [ "$mem" -ge 5000 ] || [ "$util" -ge 50 ]; then return 1; fi
+    done < <(nvidia-smi --query-gpu=memory.used,utilization.gpu --format=csv,noheader,nounits)
+    return 0
+}
+
+echo "[$(date)] [GSF_NoDrop] Polling for free GPUs..."
+while ! is_gpu_free; do sleep 60; done
+echo "[$(date)] [GSF_NoDrop] GPUs free."
+
+train() {
+    local seed=$1 gpu=$2
+    mkdir -p "$REPO/runs/Level15GSF_NoDrop_lm200/seed${seed}"
+    CUDA_VISIBLE_DEVICES=$gpu python3 -u -m mapformer.train_variant \
+        --variant Level15GSF_NoDrop --seed $seed \
+        --n-landmarks 200 --p-action-noise 0.0 \
+        --epochs 50 --n-batches 156 \
+        --device cuda \
+        --output-dir mapformer/runs/Level15GSF_NoDrop_lm200/seed${seed} \
+        > "$LOGS/Level15GSF_NoDrop_lm200_s${seed}.log" 2>&1
+}
+run_pair() { train $1 0 & P1=$!; train $2 1 & P2=$!; wait $P1 $P2; }
+
+echo "[$(date)] [GSF_NoDrop] s0 + s1"; run_pair 0 1
+echo "[$(date)] [GSF_NoDrop] s2"; train 2 0
+echo "[$(date)] [GSF_NoDrop] All done."
+
+python3 -u <<'PYEOF' > "$REPO/GSF_NODROP_RESULTS.md" 2>"$LOGS/gsf_nodrop_eval.err"
+import torch, torch.nn.functional as F, numpy as np
+from pathlib import Path
+from mapformer.environment import GridWorld
+from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
+from mapformer.model_inekf_level15_nodrop import MapFormerWM_Level15NoDrop
+from mapformer.model_inekf_gsf import MapFormerWM_Level15GSF
+from mapformer.model_inekf_gsf_nodrop import MapFormerWM_Level15GSF_NoDrop
+from mapformer.model_tem_faithful import TEMFaithful
+
+VARIANT_CLS = {
+    "Level15": MapFormerWM_Level15InEKF,
+    "Level15NoDrop": MapFormerWM_Level15NoDrop,
+    "Level15GSF": MapFormerWM_Level15GSF,
+    "Level15GSF_NoDrop": MapFormerWM_Level15GSF_NoDrop,
+    "TEMFaithful": TEMFaithful,
+}
+
+def build(v, ckpt):
+    c = torch.load(ckpt, map_location="cuda", weights_only=False)
+    cfg = c["config"]; cls = VARIANT_CLS[v]
+    kw = dict(vocab_size=cfg["vocab_size"], d_model=cfg["d_model"],
+              n_heads=cfg["n_heads"], n_layers=cfg["n_layers"], grid_size=cfg["grid_size"])
+    if v in ("Level15GSF", "Level15GSF_NoDrop"): kw["n_modes"] = 8
+    m = cls(**kw); m.load_state_dict(c["model_state_dict"])
+    return m.cuda().eval()
+
+def eval_revisit(model, env, T, n_trials, seed):
+    torch.manual_seed(seed); np.random.seed(seed)
+    c = tot = 0; nll = 0.0
+    with torch.no_grad():
+        for _ in range(n_trials):
+            tokens, _, rm = env.generate_trajectory(T)
+            tt = tokens.unsqueeze(0).cuda()
+            try: logits = model(tt[:, :-1])
+            except Exception: return None, None
+            lp = F.log_softmax(logits, dim=-1)
+            preds = lp.argmax(-1)[0]; tgts = tt[0, 1:]; mask = rm[1:].cuda()
+            if mask.sum() == 0: continue
+            c += (preds[mask] == tgts[mask]).sum().item(); tot += mask.sum().item()
+            idx = torch.arange(lp.shape[1], device="cuda")[mask]
+            nll += -lp[0, idx, tgts[mask]].sum().item()
+    return (c / tot if tot else None, nll / tot if tot else None)
+
+print("# Level15GSF + NoDrop — do multi-modal Bayes and dropout removal compose?\n")
+print("Two independent interventions each ~match TEMFaithful's lm200 performance:")
+print("- Removing post-attn residual dropout: +13pp on lm200 (Pareto-shift)")
+print("- K=8 Gaussian Sum Filter: +14pp on lm200 (K× compute)\n")
+print("This row tests both stacked. If independent → ~0.97+. If redundant → ~0.96.")
+print("Either way clarifies how much of the TEMFaithful gap is *architectural*")
+print("(dropout, multimodal) vs *something else*.\n")
+env_ood = GridWorld(size=64, n_obs_types=16, p_empty=0.5, n_landmarks=200, seed=1000)
+print("## lm200 OOD\n| Variant | T=128 OOD | T=512 OOD | T=512 NLL | n |")
+print("|---|---|---|---|---|")
+for v in ["Level15", "Level15NoDrop", "Level15GSF", "Level15GSF_NoDrop", "TEMFaithful"]:
+    a128s, a512s, n512s = [], [], []
+    for s in [0,1,2]:
+        ckpt = Path(f"mapformer/runs/{v}_lm200/seed{s}/{v}.pt")
+        if not ckpt.exists(): continue
+        m = build(v, ckpt)
+        a128, _ = eval_revisit(m, env_ood, 128, 200, seed=2000+s)
+        a512, n512 = eval_revisit(m, env_ood, 512, 100, seed=2000+s)
+        if a128 is not None: a128s.append(a128); a512s.append(a512); n512s.append(n512)
+        del m; torch.cuda.empty_cache()
+    if not a128s: print(f"| {v} | — | — | — | 0 |"); continue
+    print(f"| **{v}** | {np.mean(a128s):.3f} ± {np.std(a128s):.3f} | "
+          f"{np.mean(a512s):.3f} ± {np.std(a512s):.3f} | "
+          f"{np.mean(n512s):.3f} | {len(a128s)} |")
+print("\n*Auto-generated by run_gsf_nodrop.sh*\n")
+PYEOF
+
+cd "$REPO"
+git pull --rebase 2>&1 | tail -3
+git add GSF_NODROP_RESULTS.md run_gsf_nodrop.sh model_inekf_gsf_nodrop.py train_variant.py
+git add runs/Level15GSF_NoDrop_lm200/seed*/Level15GSF_NoDrop.pt 2>/dev/null || true
+git commit -m "Level15GSF_NoDrop: do multi-modal Bayes + dropout removal compose?
+
+Stacks the two independent fixes that each ~match TEMFaithful's lm200
+performance. K=8 chains AND no post-attn dropout. Result in
+GSF_NODROP_RESULTS.md.
+" 2>&1 | tail -3
+git push origin main 2>&1 | tail -3
+echo "[$(date)] [GSF_NoDrop] Done."

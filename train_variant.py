@@ -37,6 +37,7 @@ from mapformer.model_inekf_parallel import MapFormerWM_ParallelInEKF
 from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
 from mapformer.model_inekf_level15_beta import MapFormerWM_Level15Beta
 from mapformer.model_inekf_gsf import MapFormerWM_Level15GSF
+from mapformer.model_inekf_gsf_nodrop import MapFormerWM_Level15GSF_NoDrop
 from mapformer.model_inekf_level15_nodrop import MapFormerWM_Level15NoDrop
 from mapformer.model_inekf_level15_em import MapFormerEM_Level15InEKF, MapFormerEM_Level15InEKF_b5
 from mapformer.model_grid import MapFormerWM_Grid, MapFormerWM_Grid_Free
@@ -66,6 +67,7 @@ VARIANT_MAP = {
     "Level15":    MapFormerWM_Level15InEKF,
     "Level15Beta": MapFormerWM_Level15Beta,
     "Level15GSF": MapFormerWM_Level15GSF,
+    "Level15GSF_NoDrop": MapFormerWM_Level15GSF_NoDrop,
     "Level15NoDrop": MapFormerWM_Level15NoDrop,
     "Level15EM":  MapFormerEM_Level15InEKF,
     "Level15EM_b5": MapFormerEM_Level15InEKF_b5,
