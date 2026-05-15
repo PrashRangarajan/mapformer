@@ -382,17 +382,26 @@ training env; eval on held-out envs the model never saw.
 - **Level15GSF_NoDrop and Level15 both beat TEMFaithful at OOD length** on
   held-out envs (+1.5-2pp at T=512).
 
-### The three-leg cognitive-map necessity result
+### The cognitive-map necessity result (six legs, multi-seed)
 
-| Cognitive demand                      | RoPE  | MapFormer (best)      | Gap   |
-| ------------------------------------- | ----- | --------------------- | ----- |
-| Long-T (T=2048)                       | 0.465 | 0.835                 | +37pp |
-| Sparse landmarks (lm10)               | 0.519 | 0.997                 | +48pp |
-| Multi-env held-out (T=512)            | 0.506 | 0.988                 | +48pp |
+| Cognitive demand                                        | RoPE              | MapFormer (best)              | Gap   |
+| ------------------------------------------------------- | ----------------- | ----------------------------- | ----- |
+| Long-T (T=2048, lm200)                                  | 0.465             | 0.835 (GSF_NoDrop)            | +37pp |
+| Sparse landmarks (lm10, T=512)                          | 0.519             | 0.997 (GSF_NoDrop)            | +48pp |
+| Multi-env held-out (T=512, n=3)                         | 0.503 ± 0.003     | 0.988 ± 0.003 (Level15)       | +48pp |
+| OOD-s (128×128, p_empty=0.8, T=512)                     | 0.741             | 0.984 (GSF_NoDrop)            | +24pp |
+| Multi-size held-out (size 32, T=512, n=3)               | 0.396 ± 0.040     | 0.838 ± 0.111 (GSF_NoDrop)    | +44pp |
+| Cross-topology torus (T=512, n=3)                       | 0.468 ± 0.027     | 0.955 ± 0.002 (K=16)          | +49pp |
+| **Cross-CLASS** (torus + DoorKey, n=1)                  | 0.490 (torus)     | 0.861 (Level15)               | +37pp |
 
 In every cognitive demand we tested, RoPE collapses to ~chance and
 MapFormer-with-correction reaches near-ceiling. The cognitive-map inductive
-bias isn't incremental — it's *necessary*.
+bias isn't incremental — it's *necessary*. The story holds with n=3 statistics
+on cross-topology, cross-scale, and multi-env (added in 2026-05-13 session).
+
+The cross-class result (torus + DoorKey simultaneously) is the **most
+ambitious generalization claim** — beyond what TEM tested. Currently single-
+seed; multi-seed in progress.
 
 ---
 
