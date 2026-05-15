@@ -14,6 +14,32 @@ from .model_inekf_gsf import MapFormerWM_Level15GSF
 from .model_inekf_level15_nodrop import WMTransformerLayer_NoDrop
 
 
+class _Level15GSF_NoDrop_K16_Wrapper:
+    """Tag class so we can register a K=16 variant in train_variant.py
+    without changing the base class's default n_modes."""
+    pass
+
+
+def _make_k16():
+    class M(MapFormerWM_Level15GSF):
+        def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
+                     dropout=0.1, grid_size=64, bottleneck_r=2, n_modes: int = 16):
+            super().__init__(vocab_size, d_model, n_heads, n_layers, dropout,
+                             grid_size, bottleneck_r, n_modes=n_modes)
+            import torch.nn as nn
+            from .model import _apply_rope
+            from .model_inekf_level15_nodrop import WMTransformerLayer_NoDrop
+            self.layers = nn.ModuleList([
+                WMTransformerLayer_NoDrop(d_model, n_heads, dropout)
+                for _ in range(n_layers)
+            ])
+    M.__name__ = "MapFormerWM_Level15GSF_NoDrop_K16"
+    return M
+
+
+MapFormerWM_Level15GSF_NoDrop_K16 = _make_k16()
+
+
 class MapFormerWM_Level15GSF_NoDrop(MapFormerWM_Level15GSF):
     """Identical to MapFormerWM_Level15GSF except the transformer layers are
     `WMTransformerLayer_NoDrop` (post-attention residual dropout removed)."""
