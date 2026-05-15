@@ -1,0 +1,10 @@
+{
+  "variant": "Level15",
+  "checkpoint": "/home/prashr/mapformer/runs/Level15_lm200/seed0/Level15.pt",
+  "state_dim": 128,
+  "N": 64,
+  "n_eval": 12800,
+  "mae_cells": 15.321094466387276,
+  "median_cells": 11.293790578842163,
+  "chance_baseline_mae_cells": 32.076875
+}

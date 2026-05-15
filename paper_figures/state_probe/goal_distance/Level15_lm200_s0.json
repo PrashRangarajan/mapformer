@@ -1,0 +1,20 @@
+{
+  "variant": "Level15",
+  "checkpoint": "/home/prashr/mapformer/runs/Level15_lm200/seed0/Level15.pt",
+  "state_dim": 128,
+  "goal_emb_dim": 128,
+  "results": {
+    "train_goals": {
+      "mae": 15.735237091882155,
+      "spearman": -0.08945960677860039,
+      "mae_const_baseline": 10.790516308593748,
+      "n": 6400
+    },
+    "heldout_goals": {
+      "mae": 24.132177467276342,
+      "spearman": -0.011213894953015606,
+      "mae_const_baseline": 10.713565087890624,
+      "n": 12800
+    }
+  }
+}

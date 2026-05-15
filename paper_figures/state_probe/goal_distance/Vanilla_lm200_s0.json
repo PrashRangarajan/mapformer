@@ -1,0 +1,20 @@
+{
+  "variant": "Vanilla",
+  "checkpoint": "/home/prashr/mapformer/runs/Vanilla_lm200/seed0/Vanilla.pt",
+  "state_dim": 128,
+  "goal_emb_dim": 128,
+  "results": {
+    "train_goals": {
+      "mae": 12.930614182930439,
+      "spearman": 0.19993650588583176,
+      "mae_const_baseline": 10.516196875,
+      "n": 6400
+    },
+    "heldout_goals": {
+      "mae": 26.11078009177465,
+      "spearman": 0.03775715209157385,
+      "mae_const_baseline": 11.09120869140625,
+      "n": 12800
+    }
+  }
+}

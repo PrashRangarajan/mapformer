@@ -1,0 +1,20 @@
+{
+  "variant": "TEMFaithful",
+  "checkpoint": "/home/prashr/mapformer/runs/TEMFaithful_lm200/seed0/TEMFaithful.pt",
+  "state_dim": 64,
+  "goal_emb_dim": 64,
+  "results": {
+    "train_goals": {
+      "mae": 14.914991052986588,
+      "spearman": -0.13469433110008533,
+      "mae_const_baseline": 10.44098125,
+      "n": 6400
+    },
+    "heldout_goals": {
+      "mae": 18.588951459566598,
+      "spearman": -0.00378010058042962,
+      "mae_const_baseline": 10.779425048828125,
+      "n": 12800
+    }
+  }
+}
