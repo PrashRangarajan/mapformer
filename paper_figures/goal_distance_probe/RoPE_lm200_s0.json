@@ -1,0 +1,28 @@
+{
+  "variant": "RoPE",
+  "checkpoint": "/home/prashr/mapformer/runs/RoPE_lm200/seed0/RoPE.pt",
+  "config": {
+    "n_train_envs": 1,
+    "n_test_envs": 0,
+    "n_trajectories_per_env": 200,
+    "T": 128,
+    "n_landmarks": 200,
+    "train_goal_frac": 0.75,
+    "epochs": 20,
+    "lr": 0.001
+  },
+  "results": {
+    "train_env_train_goals": {
+      "mae": 12.792624080943643,
+      "spearman": 0.07994950186063077,
+      "mae_const_baseline": 10.759278411865234,
+      "n": 5120
+    },
+    "train_env_heldout_goals": {
+      "mae": 14.920308786665554,
+      "spearman": -0.006876868963103384,
+      "mae_const_baseline": 10.997187499999999,
+      "n": 5120
+    }
+  }
+}

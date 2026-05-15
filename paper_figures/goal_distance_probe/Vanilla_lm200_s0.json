@@ -1,0 +1,28 @@
+{
+  "variant": "Vanilla",
+  "checkpoint": "/home/prashr/mapformer/runs/Vanilla_lm200/seed0/Vanilla.pt",
+  "config": {
+    "n_train_envs": 1,
+    "n_test_envs": 0,
+    "n_trajectories_per_env": 200,
+    "T": 128,
+    "n_landmarks": 200,
+    "train_goal_frac": 0.75,
+    "epochs": 20,
+    "lr": 0.001
+  },
+  "results": {
+    "train_env_train_goals": {
+      "mae": 12.318639275245369,
+      "spearman": 0.06820422782077433,
+      "mae_const_baseline": 10.709968566894531,
+      "n": 5120
+    },
+    "train_env_heldout_goals": {
+      "mae": 12.739025041692367,
+      "spearman": 0.019944883301457873,
+      "mae_const_baseline": 10.625537261962892,
+      "n": 5120
+    }
+  }
+}
