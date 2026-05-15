@@ -1,0 +1,28 @@
+{
+  "variant": "TEMFaithful",
+  "checkpoint": "/home/prashr/mapformer/runs/TEMFaithful_lm200/seed0/TEMFaithful.pt",
+  "config": {
+    "n_train_envs": 1,
+    "n_test_envs": 0,
+    "n_trajectories_per_env": 200,
+    "T": 128,
+    "n_landmarks": 200,
+    "train_goal_frac": 0.75,
+    "epochs": 20,
+    "lr": 0.001
+  },
+  "results": {
+    "train_env_train_goals": {
+      "mae": 12.297266844921978,
+      "spearman": 0.18031065022767062,
+      "mae_const_baseline": 11.045850677490233,
+      "n": 5120
+    },
+    "train_env_heldout_goals": {
+      "mae": 12.230958551005461,
+      "spearman": 0.2683963758095606,
+      "mae_const_baseline": 10.131038818359375,
+      "n": 5120
+    }
+  }
+}

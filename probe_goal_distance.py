@@ -317,9 +317,10 @@ def main():
 
     # ---- Train head ----
     print("Training distance head...")
-    head = DistanceHead(d_hidden=Htr.shape[-1], d_goal=d_model,
-                        hidden=args.head_hidden).to(args.device)
     model_emb = model.token_emb if hasattr(model, "token_emb") else model.content_emb
+    d_goal_actual = model_emb.embedding_dim
+    head = DistanceHead(d_hidden=Htr.shape[-1], d_goal=d_goal_actual,
+                        hidden=args.head_hidden).to(args.device)
     train_head(
         head, model_emb, Htr, Gtr, Dtr,
         n_epochs=args.epochs, batch_size=args.batch_size, lr=args.lr,
