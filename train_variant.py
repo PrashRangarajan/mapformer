@@ -105,6 +105,8 @@ def main():
     parser.add_argument("--variant", required=True, choices=list(VARIANT_MAP.keys()))
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--n-landmarks", type=int, default=0)
+    parser.add_argument("--grid-size", type=int, default=64,
+                        help="Torus grid size. Only used when --env torus.")
     parser.add_argument("--n-obs-types", type=int, default=16,
                         help="Number of distinct observation token types "
                              "(K in paper). Default 16 matches paper config; "
@@ -163,10 +165,10 @@ def main():
 
     if args.env == "torus":
         env = GridWorld(
-            size=64, n_obs_types=args.n_obs_types, p_empty=0.5,
+            size=args.grid_size, n_obs_types=args.n_obs_types, p_empty=0.5,
             n_landmarks=args.n_landmarks, seed=args.seed,
         )
-        grid_size = 64
+        grid_size = args.grid_size
     else:
         from mapformer.minigrid_env import MiniGridWorld, MiniGridWorld_Cached
         env_name = {
