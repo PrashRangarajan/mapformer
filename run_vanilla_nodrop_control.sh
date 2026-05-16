@@ -52,6 +52,7 @@ for seed in 0 1 2; do
 done
 
 # Aggregate: 4-row comparison table
+cd "$REPO"
 python3 -u <<'PYEOF' > "$REPO/VANILLANODROP_CONTROL.md" 2>"$LOGS/vanilla_nodrop_eval.err"
 import torch, numpy as np
 from pathlib import Path

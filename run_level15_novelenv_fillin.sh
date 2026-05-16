@@ -44,6 +44,7 @@ done
 echo "[$(date)] [fillin] all training done"
 
 # ---- Re-aggregate TEM_NOVEL_ENV_RESULTS.md with new Level15 rows ----
+cd "$REPO"
 python3 -u <<'PYEOF' > "$REPO/TEM_NOVEL_ENV_RESULTS.md" 2>"$LOGS/tem_novel_reagg.err"
 import torch, numpy as np
 from pathlib import Path

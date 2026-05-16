@@ -55,6 +55,7 @@ for seed in 0 1 2; do
 done
 
 # --- aggregate ---
+cd "$REPO"
 python3 -u <<'PYEOF' > "$REPO/TEM_BACKGROUND_BASELINES.md" 2>"$LOGS/tem_bg_eval.err"
 import torch, numpy as np
 from pathlib import Path

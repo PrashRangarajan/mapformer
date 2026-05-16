@@ -47,6 +47,7 @@ done
 
 echo "[$(date)] [multiclass-multiseed] All done."
 
+cd "$REPO"
 python3 -u <<'PYEOF' > "$REPO/MULTICLASS_MULTISEED_RESULTS.md" 2>"$LOGS/multiclass_multiseed_eval.err"
 import torch, numpy as np
 from pathlib import Path

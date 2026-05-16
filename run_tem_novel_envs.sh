@@ -91,6 +91,7 @@ wait $P1
 echo "[$(date)] Step 3 done."
 
 # Step 4: regenerate aggregated tables with TEMFaithful rows added.
+cd "$REPO"
 python3 -u <<'PYEOF' > "$REPO/TEM_NOVEL_ENV_RESULTS.md" 2>"$LOGS/tem_novel_eval.err"
 import torch, numpy as np
 from pathlib import Path

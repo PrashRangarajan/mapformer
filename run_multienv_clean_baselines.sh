@@ -39,6 +39,7 @@ for variant in "${VARIANTS[@]}"; do
 done
 
 # Aggregate into the same TEM_BACKGROUND_BASELINES.md so the 2x2 is in one place.
+cd "$REPO"
 python3 -u <<'PYEOF' > "$REPO/MULTIENV_CLEAN_2x2.md" 2>"$LOGS/me_clean_eval.err"
 import torch, numpy as np
 from pathlib import Path

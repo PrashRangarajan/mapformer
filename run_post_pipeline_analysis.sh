@@ -29,6 +29,7 @@ for seed in 0 1 2; do
 done
 
 # Regenerate TEM_BACKGROUND_BASELINES.md with the single-env row populated
+cd "$REPO"
 python3 -u <<'PYEOF' > "$REPO/TEM_BACKGROUND_BASELINES.md" 2>"$LOGS/tem_bg_regen.err"
 import json, torch, numpy as np
 from pathlib import Path
@@ -105,6 +106,7 @@ probe_one TEMFaithful "$REPO/runs/TEMFaithful_lm200/seed0/TEMFaithful.pt" 1 & P2
 wait $P1 $P2
 
 # Aggregate
+cd "$REPO"
 python3 -u <<'PYEOF' > "$REPO/PROBE_GOAL_DISTANCE.md" 2>"$LOGS/probe_aggregate.err"
 import json
 from pathlib import Path
