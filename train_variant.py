@@ -46,6 +46,8 @@ from mapformer.model_inekf_level15_nodrop import MapFormerWM_Level15NoDrop
 from mapformer.model_vanilla_nodrop import MapFormerWM_VanillaNoDrop
 from mapformer.model_inekf_level15_perscale import MapFormerWM_Level15_PerScaleOmega
 from mapformer.model_inekf_level15_sr import MapFormerWM_Level15_SR
+from mapformer.model_inekf_level15_em_perscale import MapFormerEM_Level15_PerScaleOmega
+from mapformer.model_inekf_level15_hopfield import MapFormerWM_Level15_Hopfield
 from mapformer.model_inekf_level15_em import MapFormerEM_Level15InEKF, MapFormerEM_Level15InEKF_b5
 from mapformer.model_grid import MapFormerWM_Grid, MapFormerWM_Grid_Free
 from mapformer.model_grid_l15_pc import (
@@ -82,6 +84,8 @@ VARIANT_MAP = {
     "Level15NoDrop": MapFormerWM_Level15NoDrop,
     "Level15_PerScaleOmega": MapFormerWM_Level15_PerScaleOmega,
     "Level15_SR": MapFormerWM_Level15_SR,
+    "Level15EM_PerScaleOmega": MapFormerEM_Level15_PerScaleOmega,
+    "Level15_Hopfield": MapFormerWM_Level15_Hopfield,
     "Level15EM":  MapFormerEM_Level15InEKF,
     "Level15EM_b5": MapFormerEM_Level15InEKF_b5,
     "Grid":       MapFormerWM_Grid,
