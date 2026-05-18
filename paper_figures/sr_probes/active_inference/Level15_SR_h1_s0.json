@@ -1,0 +1,763 @@
+{
+  "variant": "Level15_SR",
+  "ckpt": "/home/prashr/mapformer/runs/Level15_SR_lm200/seed0/Level15_SR.pt",
+  "n_episodes": 50,
+  "horizon": 1,
+  "success_rate": 0.0,
+  "mean_steps_to_goal": null,
+  "mean_ratio_to_optimal": null,
+  "T_explore": 64,
+  "T_navigate": 32,
+  "raw": [
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 37,
+      "ratio_to_optimal": null,
+      "start": [
+        51,
+        28
+      ],
+      "goal": [
+        36,
+        50,
+        102
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 29,
+      "ratio_to_optimal": null,
+      "start": [
+        59,
+        13
+      ],
+      "goal": [
+        50,
+        13,
+        88
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 21,
+      "ratio_to_optimal": null,
+      "start": [
+        44,
+        0
+      ],
+      "goal": [
+        24,
+        45,
+        14
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 43,
+      "ratio_to_optimal": null,
+      "start": [
+        38,
+        48
+      ],
+      "goal": [
+        53,
+        10,
+        95
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 36,
+      "ratio_to_optimal": null,
+      "start": [
+        53,
+        31
+      ],
+      "goal": [
+        20,
+        32,
+        58
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 25,
+      "ratio_to_optimal": null,
+      "start": [
+        2,
+        19
+      ],
+      "goal": [
+        3,
+        5,
+        92
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 33,
+      "ratio_to_optimal": null,
+      "start": [
+        7,
+        35
+      ],
+      "goal": [
+        50,
+        33,
+        112
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 32,
+      "ratio_to_optimal": null,
+      "start": [
+        47,
+        18
+      ],
+      "goal": [
+        19,
+        26,
+        60
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 38,
+      "ratio_to_optimal": null,
+      "start": [
+        28,
+        41
+      ],
+      "goal": [
+        42,
+        17,
+        38
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 52,
+      "ratio_to_optimal": null,
+      "start": [
+        34,
+        54
+      ],
+      "goal": [
+        63,
+        35,
+        46
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 22,
+      "ratio_to_optimal": null,
+      "start": [
+        45,
+        61
+      ],
+      "goal": [
+        57,
+        1,
+        93
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 43,
+      "ratio_to_optimal": null,
+      "start": [
+        11,
+        30
+      ],
+      "goal": [
+        42,
+        14,
+        140
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 34,
+      "ratio_to_optimal": null,
+      "start": [
+        47,
+        24
+      ],
+      "goal": [
+        37,
+        52,
+        83
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 42,
+      "ratio_to_optimal": null,
+      "start": [
+        8,
+        49
+      ],
+      "goal": [
+        18,
+        21,
+        169
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 34,
+      "ratio_to_optimal": null,
+      "start": [
+        43,
+        44
+      ],
+      "goal": [
+        13,
+        0,
+        57
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 39,
+      "ratio_to_optimal": null,
+      "start": [
+        12,
+        45
+      ],
+      "goal": [
+        20,
+        12,
+        156
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 38,
+      "ratio_to_optimal": null,
+      "start": [
+        0,
+        50
+      ],
+      "goal": [
+        50,
+        60,
+        109
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 15,
+      "ratio_to_optimal": null,
+      "start": [
+        54,
+        41
+      ],
+      "goal": [
+        40,
+        36,
+        29
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 35,
+      "ratio_to_optimal": null,
+      "start": [
+        45,
+        33
+      ],
+      "goal": [
+        17,
+        26,
+        89
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 24,
+      "ratio_to_optimal": null,
+      "start": [
+        9,
+        38
+      ],
+      "goal": [
+        19,
+        52,
+        27
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 13,
+      "ratio_to_optimal": null,
+      "start": [
+        39,
+        36
+      ],
+      "goal": [
+        54,
+        46,
+        30
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 25,
+      "ratio_to_optimal": null,
+      "start": [
+        19,
+        0
+      ],
+      "goal": [
+        9,
+        19,
+        129
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 30,
+      "ratio_to_optimal": null,
+      "start": [
+        37,
+        32
+      ],
+      "goal": [
+        36,
+        59,
+        124
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 13,
+      "ratio_to_optimal": null,
+      "start": [
+        7,
+        4
+      ],
+      "goal": [
+        20,
+        12,
+        156
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 55,
+      "ratio_to_optimal": null,
+      "start": [
+        22,
+        0
+      ],
+      "goal": [
+        59,
+        20,
+        10
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 30,
+      "ratio_to_optimal": null,
+      "start": [
+        6,
+        16
+      ],
+      "goal": [
+        8,
+        42,
+        48
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 16,
+      "ratio_to_optimal": null,
+      "start": [
+        49,
+        6
+      ],
+      "goal": [
+        55,
+        60,
+        31
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 12,
+      "ratio_to_optimal": null,
+      "start": [
+        2,
+        22
+      ],
+      "goal": [
+        9,
+        19,
+        129
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 19,
+      "ratio_to_optimal": null,
+      "start": [
+        11,
+        22
+      ],
+      "goal": [
+        22,
+        28,
+        121
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 15,
+      "ratio_to_optimal": null,
+      "start": [
+        61,
+        58
+      ],
+      "goal": [
+        49,
+        3,
+        80
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 20,
+      "ratio_to_optimal": null,
+      "start": [
+        40,
+        44
+      ],
+      "goal": [
+        35,
+        23,
+        153
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 45,
+      "ratio_to_optimal": null,
+      "start": [
+        43,
+        61
+      ],
+      "goal": [
+        18,
+        21,
+        169
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 29,
+      "ratio_to_optimal": null,
+      "start": [
+        57,
+        36
+      ],
+      "goal": [
+        5,
+        13,
+        186
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 34,
+      "ratio_to_optimal": null,
+      "start": [
+        60,
+        46
+      ],
+      "goal": [
+        16,
+        58,
+        119
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 25,
+      "ratio_to_optimal": null,
+      "start": [
+        15,
+        39
+      ],
+      "goal": [
+        29,
+        42,
+        146
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 50,
+      "ratio_to_optimal": null,
+      "start": [
+        27,
+        59
+      ],
+      "goal": [
+        2,
+        16,
+        62
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 33,
+      "ratio_to_optimal": null,
+      "start": [
+        51,
+        31
+      ],
+      "goal": [
+        15,
+        32,
+        74
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 24,
+      "ratio_to_optimal": null,
+      "start": [
+        57,
+        2
+      ],
+      "goal": [
+        14,
+        7,
+        59
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 20,
+      "ratio_to_optimal": null,
+      "start": [
+        9,
+        39
+      ],
+      "goal": [
+        10,
+        28,
+        160
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 29,
+      "ratio_to_optimal": null,
+      "start": [
+        62,
+        40
+      ],
+      "goal": [
+        33,
+        40,
+        2
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 41,
+      "ratio_to_optimal": null,
+      "start": [
+        23,
+        49
+      ],
+      "goal": [
+        46,
+        9,
+        187
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 36,
+      "ratio_to_optimal": null,
+      "start": [
+        1,
+        34
+      ],
+      "goal": [
+        19,
+        52,
+        27
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 29,
+      "ratio_to_optimal": null,
+      "start": [
+        0,
+        54
+      ],
+      "goal": [
+        18,
+        35,
+        28
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 4,
+      "ratio_to_optimal": null,
+      "start": [
+        49,
+        17
+      ],
+      "goal": [
+        48,
+        18,
+        157
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 31,
+      "ratio_to_optimal": null,
+      "start": [
+        20,
+        14
+      ],
+      "goal": [
+        50,
+        13,
+        88
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 50,
+      "ratio_to_optimal": null,
+      "start": [
+        59,
+        14
+      ],
+      "goal": [
+        38,
+        53,
+        116
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 49,
+      "ratio_to_optimal": null,
+      "start": [
+        12,
+        54
+      ],
+      "goal": [
+        55,
+        26,
+        122
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 47,
+      "ratio_to_optimal": null,
+      "start": [
+        1,
+        63
+      ],
+      "goal": [
+        49,
+        36,
+        152
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 29,
+      "ratio_to_optimal": null,
+      "start": [
+        37,
+        16
+      ],
+      "goal": [
+        24,
+        16,
+        1
+      ]
+    },
+    {
+      "success": false,
+      "steps_to_goal": null,
+      "optimal_steps": 30,
+      "ratio_to_optimal": null,
+      "start": [
+        32,
+        22
+      ],
+      "goal": [
+        3,
+        7,
+        35
+      ]
+    }
+  ]
+}

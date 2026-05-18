@@ -1,0 +1,28 @@
+{
+  "variant": "Level15_SR",
+  "checkpoint": "/home/prashr/mapformer/runs/Level15_SR_lm200/seed0/Level15_SR.pt",
+  "config": {
+    "n_train_envs": 1,
+    "n_test_envs": 0,
+    "n_trajectories_per_env": 200,
+    "T": 128,
+    "n_landmarks": 200,
+    "train_goal_frac": 0.75,
+    "epochs": 20,
+    "lr": 0.001
+  },
+  "results": {
+    "train_env_train_goals": {
+      "mae": 11.620292285829782,
+      "spearman": -0.0018394865352524036,
+      "mae_const_baseline": 10.455613403320312,
+      "n": 5120
+    },
+    "train_env_heldout_goals": {
+      "mae": 14.862004651036113,
+      "spearman": -0.26551218272038357,
+      "mae_const_baseline": 10.868715820312499,
+      "n": 5120
+    }
+  }
+}
