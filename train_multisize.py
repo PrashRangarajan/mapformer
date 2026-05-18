@@ -25,19 +25,34 @@ from mapformer.environment_multisize import MultiSizeMultiEnvGridWorld
 from mapformer.train_variant import VARIANT_MAP
 
 
+def _supports_env_sizes(model):
+    """Detect whether the model's forward accepts an `env_sizes` kwarg."""
+    import inspect
+    try:
+        sig = inspect.signature(model.forward)
+        return "env_sizes" in sig.parameters
+    except Exception:
+        return False
+
+
 def train(model, world, n_epochs, lr, batch_size, n_steps, n_batches, device):
     model = model.to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.05)
     sched = torch.optim.lr_scheduler.LinearLR(opt, 1.0, 0.0, total_iters=n_epochs * n_batches)
     losses = []
     rng = np.random.RandomState(0)
+    pass_sizes = _supports_env_sizes(model)
     for ep in range(n_epochs):
         ep_loss = 0.0
         for b in range(n_batches):
-            tokens, _, rm, _ = world.generate_batch(batch_size, n_steps, train=True, rng=rng)
+            tokens, _, rm, sizes_used = world.generate_batch(batch_size, n_steps, train=True, rng=rng)
             tokens = tokens.to(device); rm = rm.to(device)
             inp = tokens[:, :-1]; tgt = tokens[:, 1:]; mask = rm[:, 1:]
-            logits = model(inp)
+            if pass_sizes:
+                env_sizes_t = torch.tensor(sizes_used, dtype=torch.long, device=device)
+                logits = model(inp, env_sizes=env_sizes_t)
+            else:
+                logits = model(inp)
             lp = F.log_softmax(logits, dim=-1)
             tgt_flat = tgt[mask]; lp_flat = lp[mask]
             if tgt_flat.numel() == 0: continue
@@ -55,11 +70,17 @@ def evaluate_size(model, world, size, T, n_trials, device, seed=2000, train_envs
     rng = np.random.RandomState(seed)
     torch.manual_seed(seed); np.random.seed(seed)
     correct = total = 0; nll = 0.0
+    pass_sizes = _supports_env_sizes(model)
     with torch.no_grad():
         for _ in range(n_trials):
             tokens, _, rm, _ = world.generate_trajectory(T, train=train_envs, size=size, rng=rng)
             tt = tokens.unsqueeze(0).to(device)
-            try: logits = model(tt[:, :-1])
+            try:
+                if pass_sizes:
+                    env_sizes_t = torch.tensor([size], dtype=torch.long, device=device)
+                    logits = model(tt[:, :-1], env_sizes=env_sizes_t)
+                else:
+                    logits = model(tt[:, :-1])
             except Exception: return None, None
             lp = F.log_softmax(logits, dim=-1)
             preds = lp.argmax(-1)[0]; tgts = tt[0, 1:]; mask = rm[1:].to(device)
