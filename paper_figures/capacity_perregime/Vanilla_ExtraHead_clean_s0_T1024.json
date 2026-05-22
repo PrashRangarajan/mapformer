@@ -1,0 +1,10 @@
+{
+  "variant": "Vanilla_ExtraHead",
+  "ckpt": "/home/prashr/mapformer/runs/Vanilla_ExtraHead_clean/seed0/Vanilla_ExtraHead.pt",
+  "acc_train": 0.9817054263565892,
+  "nll_train": 0.05930475356042847,
+  "acc_T128": 0.9790062981105668,
+  "nll_T128": 0.06601852536047668,
+  "acc_T512": 0.5960522320072882,
+  "nll_T512": 2.754916701561551
+}

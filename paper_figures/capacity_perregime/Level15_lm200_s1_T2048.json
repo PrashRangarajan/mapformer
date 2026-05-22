@@ -1,0 +1,10 @@
+{
+  "variant": "Level15",
+  "ckpt": "/home/prashr/mapformer/runs/Level15_lm200/seed1/Level15.pt",
+  "acc_train": 0.9026356589147286,
+  "nll_train": 0.5515785088280375,
+  "acc_T128": 0.9128761371588523,
+  "nll_T128": 0.533684110465773,
+  "acc_T512": 0.6526239706755466,
+  "nll_T512": 1.5076185626383458
+}

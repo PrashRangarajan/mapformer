@@ -1,0 +1,10 @@
+{
+  "variant": "Level15",
+  "ckpt": "/home/prashr/mapformer/runs/Level15_noise/seed0/Level15.pt",
+  "acc_train": 0.7772998014559894,
+  "nll_train": 0.6659844308637926,
+  "acc_T128": 0.775638781939097,
+  "nll_T128": 0.6843091504407756,
+  "acc_T512": 0.6494228038767825,
+  "nll_T512": 1.2441148586615831
+}

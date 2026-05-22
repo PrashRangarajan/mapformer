@@ -1,0 +1,10 @@
+{
+  "variant": "Vanilla",
+  "ckpt": "/home/prashr/mapformer/runs/Vanilla_noise/seed1/Vanilla.pt",
+  "acc_train": 0.7892124420913302,
+  "nll_train": 0.6263234300636282,
+  "acc_T128": 0.7847392369618481,
+  "nll_T128": 0.6516724721843812,
+  "acc_T512": 0.5829372183468116,
+  "nll_T512": 2.4350167670156626
+}
