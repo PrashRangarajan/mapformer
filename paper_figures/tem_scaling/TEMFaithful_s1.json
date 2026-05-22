@@ -1,0 +1,10 @@
+{
+  "variant": "TEMFaithful",
+  "ckpt": "/home/prashr/mapformer/runs/TEMFaithful_lm200/seed1/TEMFaithful.pt",
+  "acc_train": 1.0,
+  "nll_train": 0.0004339087428886068,
+  "acc_T128": 1.0,
+  "nll_T128": 0.00045349532817350274,
+  "acc_T512": 0.976931476931477,
+  "nll_T512": 0.1250623238392209
+}
