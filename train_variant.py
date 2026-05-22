@@ -50,6 +50,9 @@ from mapformer.model_inekf_level15_em_perscale import MapFormerEM_Level15_PerSca
 from mapformer.model_inekf_level15_hopfield import MapFormerWM_Level15_Hopfield
 from mapformer.model_inekf_level15_hopfield_nomainap import MapFormerWM_Level15_Hopfield_NoMainAP
 from mapformer.model_inekf_level15_extrahead import MapFormerWM_Level15_ExtraHead
+from mapformer.model_vanilla_extrahead import MapFormerWM_Vanilla_ExtraHead
+from mapformer.model_tem_scaling import TEMFaithful_dg32, TEMFaithful_dg128, TEMFaithful_dg256
+from mapformer.model_tem_ffn import TEMFaithful_FFN
 from mapformer.model_inekf_level15_em import MapFormerEM_Level15InEKF, MapFormerEM_Level15InEKF_b5
 from mapformer.model_grid import MapFormerWM_Grid, MapFormerWM_Grid_Free
 from mapformer.model_grid_l15_pc import (
@@ -90,6 +93,7 @@ VARIANT_MAP = {
     "Level15_Hopfield": MapFormerWM_Level15_Hopfield,
     "Level15_Hopfield_NoMainAP": MapFormerWM_Level15_Hopfield_NoMainAP,
     "Level15_ExtraHead": MapFormerWM_Level15_ExtraHead,
+    "Vanilla_ExtraHead": MapFormerWM_Vanilla_ExtraHead,
     "Level15EM":  MapFormerEM_Level15InEKF,
     "Level15EM_b5": MapFormerEM_Level15InEKF_b5,
     "Grid":       MapFormerWM_Grid,
@@ -106,6 +110,10 @@ VARIANT_MAP = {
     "RoPE":       MapFormerWM_RoPE,
     "TEM":        TEMRecurrent,
     "TEMFaithful": TEMFaithful,
+    "TEMFaithful_dg32": TEMFaithful_dg32,
+    "TEMFaithful_dg128": TEMFaithful_dg128,
+    "TEMFaithful_dg256": TEMFaithful_dg256,
+    "TEMFaithful_FFN": TEMFaithful_FFN,
     "TEM_T":       TEM_T,
     **ABLATIONS,
     **EXTRA_BASELINES,
