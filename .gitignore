@@ -12,3 +12,8 @@ figures_*/
 *.ckpt
 *.log
 .DS_Store
+
+# large caches / binary artifacts (do not commit)
+runs/_minigrid_cache/
+runs/_continuous_nav_cache/
+paper_figures/*.npz

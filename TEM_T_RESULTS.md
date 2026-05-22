@@ -8,6 +8,12 @@ the MapFormer paper claims structurally but never benchmarks.
 
 Single-seed runs across clean / noise / lm200 regimes, evaluated at OOD T=128 and T=512.
 
+> **Note:** the original TEMFaithful rows in this file were PRE-bug-fix
+> (predict-then-update bug — queried memory with pre-action `g`). They have
+> been removed. Current TEMFaithful numbers: `TEM_BACKGROUND_BASELINES.md`
+> (clean), `GSF_NODROP_RESULTS.md` (lm200), `TEM_NOVEL_ENV_RESULTS.md`
+> (novel-env). TEM-T, TEM (GRU), Vanilla, Level15 rows here are unaffected.
+
 ## clean
 
 | Variant | T=128 OOD | T=512 OOD | T=128 NLL | T=512 NLL |
@@ -17,7 +23,6 @@ Single-seed runs across clean / noise / lm200 regimes, evaluated at OOD T=128 an
 | **VanillaEM** | 1.000 | 0.968 | 0.000 | 0.220 |
 | **Level15EM** | 1.000 | 0.986 | 0.000 | 0.122 |
 | **TEM** | 0.772 | 0.692 | 0.747 | 1.135 |
-| **TEMFaithful** | 0.440 | 0.423 | 1.486 | 1.545 |
 | **TEM_T** | 0.947 | 0.861 | 0.218 | 0.554 |
 
 ## noise
@@ -29,7 +34,6 @@ Single-seed runs across clean / noise / lm200 regimes, evaluated at OOD T=128 an
 | **VanillaEM** | 0.746 | 0.711 | 0.723 | 0.946 |
 | **Level15EM** | 0.768 | 0.717 | 0.690 | 0.953 |
 | **TEM** | 0.662 | 0.584 | 1.048 | 1.476 |
-| **TEMFaithful** | 0.470 | 0.471 | 1.621 | 1.713 |
 | **TEM_T** | 0.755 | 0.692 | 0.815 | 1.142 |
 
 ## lm200
@@ -41,7 +45,6 @@ Single-seed runs across clean / noise / lm200 regimes, evaluated at OOD T=128 an
 | **VanillaEM** | 0.786 | 0.730 | 1.207 | 1.443 |
 | **Level15EM** | 0.912 | 0.780 | 0.567 | 1.020 |
 | **TEM** | 0.711 | 0.612 | 1.140 | 1.622 |
-| **TEMFaithful** | 0.411 | 0.420 | 1.775 | 1.887 |
 | **TEM_T** | 0.942 | 0.853 | 0.261 | 0.643 |
 
 

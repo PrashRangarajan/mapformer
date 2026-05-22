@@ -1,5 +1,14 @@
 # Capacity control: is the Level15-over-Vanilla win architecture or parameters?
 
+> **⚠ INCONCLUSIVE — DO NOT CITE.** This run is unreliable: Vanilla_ExtraHead
+> is n=2 (seed 1 OOM-crashed on the contended GPU 1) with a huge std
+> (±0.134 acc, ±1.165 NLL — one of the two seeds is wildly off), and
+> L15_NoCorr is n=1 (2 seeds failed). The partial signal is also concerning
+> — Vanilla_ExtraHead's mean (0.814) sits between Vanilla (0.721) and
+> Level15 (0.828), which would *not* cleanly rule out a capacity effect.
+> **Needs a clean n=3 re-run on a free GPU before any conclusion.**
+> The headline Level15-vs-Vanilla capacity question remains OPEN.
+
 Level15 has ~305K params vs Vanilla's ~256K (+19%). `Vanilla_ExtraHead`
 = Vanilla + a generic extra attention head, 322K params — MORE than
 Level15. If Vanilla_ExtraHead stays at Vanilla's level, the Level15 win

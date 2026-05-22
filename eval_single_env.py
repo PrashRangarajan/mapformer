@@ -31,13 +31,20 @@ def build(variant, ckpt_path, device="cuda"):
 
 
 @torch.no_grad()
-def evaluate(model, env, T, n_trials, device, seed=2000):
+def evaluate(model, env, T, n_trials, device, seed=2000, p_action_noise=0.0):
     # GridWorld.generate_trajectory uses np.random directly (no rng arg),
     # so seed numpy once for reproducibility.
     torch.manual_seed(seed); np.random.seed(seed)
     correct = total = 0; nll = 0.0
     for _ in range(n_trials):
         tokens, _, rm = env.generate_trajectory(T)
+        # Optional action-noise: corrupt action tokens (even positions) the
+        # same post-hoc way train.py does, for evaluating the noise regime.
+        if p_action_noise > 0:
+            n_act = env.N_ACTIONS
+            for i in range(0, tokens.shape[0], 2):  # even = action positions
+                if np.random.rand() < p_action_noise:
+                    tokens[i] = int(np.random.randint(0, n_act)) + env.action_offset
         tt = tokens.unsqueeze(0).to(device)
         try:
             logits = model(tt[:, :-1])
@@ -70,6 +77,8 @@ def main():
                     help="env seed used during training (default 0)")
     ap.add_argument("--test-env-seed", type=int, default=2000,
                     help="env seed for held-out trajectories.")
+    ap.add_argument("--p-action-noise", type=float, default=0.0,
+                    help="If >0, corrupt action tokens at eval time (noise regime).")
     args = ap.parse_args()
 
     model, cfg = build(args.variant, Path(args.checkpoint), device=args.device)
@@ -84,15 +93,16 @@ def main():
     )
     # Note: single-env regime — we evaluate on the SAME env, same obs_map,
     # but different random trajectories (held-out via different rng seed).
+    pan = args.p_action_noise
     acc_train, nll_train = evaluate(model, env_train, args.train_T,
                                      args.n_trials_train, args.device,
-                                     seed=args.test_env_seed)
+                                     seed=args.test_env_seed, p_action_noise=pan)
     acc_t128, nll_t128 = evaluate(model, env_train, args.train_T,
                                    args.n_trials_test_T1, args.device,
-                                   seed=args.test_env_seed + 1)
+                                   seed=args.test_env_seed + 1, p_action_noise=pan)
     acc_t512, nll_t512 = evaluate(model, env_train, args.eval_T2,
                                    args.n_trials_test_T2, args.device,
-                                   seed=args.test_env_seed + 2)
+                                   seed=args.test_env_seed + 2, p_action_noise=pan)
 
     out = {
         "variant": args.variant, "ckpt": str(args.checkpoint),
