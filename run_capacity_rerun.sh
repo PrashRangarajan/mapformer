@@ -1,0 +1,136 @@
+#!/bin/bash
+# Targeted re-run of the capacity control's crashed seeds (GPU-1 OOM).
+# Missing: Vanilla_ExtraHead s1, L15_NoCorr s1, L15_NoCorr s2.
+# GPU 0 only, sequential. Re-aggregates CAPACITY_CONTROL.md at n=3.
+set -u
+cd /home/prashr
+REPO=/home/prashr/mapformer
+LOGS=$REPO/logs
+GPU=0
+ED=$REPO/paper_figures/capacity_control
+mkdir -p "$LOGS" "$ED"
+
+train_one() {
+    local variant=$1 seed=$2
+    mkdir -p "$REPO/runs/${variant}_lm200/seed${seed}"
+    CUDA_VISIBLE_DEVICES=$GPU python3 -u -m mapformer.train_variant \
+        --variant "$variant" --seed $seed \
+        --n-landmarks 200 --grid-size 64 \
+        --epochs 50 --n-batches 156 \
+        --device cuda \
+        --output-dir mapformer/runs/${variant}_lm200/seed${seed} \
+        > "$LOGS/${variant}_lm200_s${seed}_rerun.log" 2>&1
+}
+
+for spec in "Vanilla_ExtraHead 1" "L15_NoCorr 1" "L15_NoCorr 2"; do
+    set -- $spec
+    if [ -f "$REPO/runs/${1}_lm200/seed${2}/${1}.pt" ]; then
+        echo "[$(date)] skip $1 s$2 (exists)"; continue
+    fi
+    echo "[$(date)] training $1 seed $2"
+    train_one "$1" "$2"
+done
+echo "[$(date)] training done"
+
+# Eval all 4 variants x 3 seeds
+eval_one() {
+    local variant=$1 seed=$2
+    local ckpt="$REPO/runs/${variant}_lm200/seed${seed}/${variant}.pt"
+    [ -f "$ckpt" ] || { echo "  miss $variant s$seed"; return; }
+    CUDA_VISIBLE_DEVICES=$GPU python3 -m mapformer.eval_single_env \
+        --variant "$variant" --checkpoint "$ckpt" \
+        > "$ED/${variant}_s${seed}.json" 2>"$LOGS/caprr_eval_${variant}_s${seed}.err"
+}
+for s in 0 1 2; do
+    for v in Vanilla Vanilla_ExtraHead L15_NoCorr Level15; do
+        eval_one "$v" "$s"
+    done
+done
+
+cd "$REPO"
+python3 -u <<'PYEOF' > "$REPO/CAPACITY_CONTROL.md" 2>"$LOGS/caprr_agg.err"
+import json, numpy as np
+from pathlib import Path
+
+def fmt(arr):
+    if not arr: return "—"
+    return f"{np.mean(arr):.3f} ± {np.std(arr):.3f} (n={len(arr)})"
+
+rows = {}
+for v in ["Vanilla", "Vanilla_ExtraHead", "L15_NoCorr", "Level15"]:
+    a128, a512, n512 = [], [], []
+    for s in [0, 1, 2]:
+        p = Path(f"paper_figures/capacity_control/{v}_s{s}.json")
+        if not p.exists(): continue
+        j = json.loads(p.read_text())
+        if j.get("acc_T128") is not None: a128.append(j["acc_T128"])
+        if j.get("acc_T512") is not None: a512.append(j["acc_T512"])
+        if j.get("nll_T512") is not None: n512.append(j["nll_T512"])
+    rows[v] = (a128, a512, n512)
+
+n_all3 = all(len(rows[v][1]) == 3 for v in rows)
+
+print("# Capacity control: is the Level15-over-Vanilla win architecture or parameters?\n")
+if not n_all3:
+    print("> **⚠ STILL INCOMPLETE — some seeds missing. Do not cite.**\n")
+print("Level15 has ~305K params vs Vanilla's ~256K (+19%). `Vanilla_ExtraHead`")
+print("= Vanilla + a generic extra attention head (322K params, MORE than")
+print("Level15) — usable capacity. `L15_NoCorr` = Level15 architecture (305K)")
+print("with the InEKF correction zeroed (params present, unused).\n")
+print("Single-env lm200, n=3 seeds, eval_single_env.\n")
+params = {"Vanilla": "255,773", "Vanilla_ExtraHead": "322,077",
+          "L15_NoCorr": "305,373", "Level15": "305,373"}
+print("| Variant | params | T=128 acc | T=512 OOD acc | T=512 OOD NLL |")
+print("|---|---|---|---|---|")
+for v in ["Vanilla", "Vanilla_ExtraHead", "L15_NoCorr", "Level15"]:
+    a, b, c = rows[v]
+    print(f"| **{v}** | {params[v]} | {fmt(a)} | {fmt(b)} | {fmt(c)} |")
+print()
+print("## Per-seed T=512 OOD\n")
+print("| Variant | seed 0 | seed 1 | seed 2 |")
+print("|---|---|---|---|")
+for v in ["Vanilla", "Vanilla_ExtraHead", "L15_NoCorr", "Level15"]:
+    cells = []
+    for s in [0, 1, 2]:
+        p = Path(f"paper_figures/capacity_control/{v}_s{s}.json")
+        if not p.exists(): cells.append("—"); continue
+        j = json.loads(p.read_text())
+        a = j.get("acc_T512")
+        cells.append(f"{a:.3f}" if a is not None else "—")
+    print(f"| **{v}** | " + " | ".join(cells) + " |")
+print()
+print("## Decision\n")
+va = np.mean(rows["Vanilla"][1]) if rows["Vanilla"][1] else None
+xa = np.mean(rows["Vanilla_ExtraHead"][1]) if rows["Vanilla_ExtraHead"][1] else None
+la = np.mean(rows["Level15"][1]) if rows["Level15"][1] else None
+if n_all3 and va and xa and la:
+    if xa - va < 0.03:
+        print(f"**Verdict: ARCHITECTURAL.** Vanilla_ExtraHead ({xa:.3f}) ~ Vanilla ({va:.3f}); "
+              f"+66K usable params do not close the gap to Level15 ({la:.3f}). The "
+              f"Level15 win is the InEKF correction, not capacity.")
+    elif xa >= la - 0.03:
+        print(f"**Verdict: CAPACITY.** Vanilla_ExtraHead ({xa:.3f}) reaches Level15 ({la:.3f}) "
+              f"with generic params. The headline win is largely parameter count — report honestly.")
+    else:
+        print(f"**Verdict: PARTIAL.** Vanilla_ExtraHead ({xa:.3f}) sits between Vanilla "
+              f"({va:.3f}) and Level15 ({la:.3f}) — capacity contributes, correction contributes.")
+else:
+    print("Decision pending — incomplete seeds.")
+print()
+print("*Auto-generated by run_capacity_rerun.sh (n=3 after GPU-1-OOM crashed-seed rerun).*")
+PYEOF
+
+git pull --rebase 2>&1 | tail -2
+git add CAPACITY_CONTROL.md run_capacity_rerun.sh paper_figures/capacity_control/ 2>/dev/null
+for spec in "Vanilla_ExtraHead 1" "L15_NoCorr 1" "L15_NoCorr 2"; do
+    set -- $spec
+    git add runs/${1}_lm200/seed${2}/*.pt 2>/dev/null || true
+done
+git commit -m "Capacity control n=3: rerun GPU-1-OOM crashed seeds, final verdict
+
+Reruns Vanilla_ExtraHead s1 + L15_NoCorr s1/s2 (crashed on the contended
+GPU 1). Re-aggregates CAPACITY_CONTROL.md at full n=3 with a per-seed
+table and an automatic architecture-vs-capacity verdict.
+" 2>&1 | tail -3
+git push origin main 2>&1 | tail -2
+echo "[$(date)] capacity rerun done."

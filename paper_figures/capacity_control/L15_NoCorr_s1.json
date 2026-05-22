@@ -1,0 +1,10 @@
+{
+  "variant": "L15_NoCorr",
+  "ckpt": "/home/prashr/mapformer/runs/L15_NoCorr_lm200/seed1/L15_NoCorr.pt",
+  "acc_train": 0.7807751937984496,
+  "nll_train": 0.9031885811039644,
+  "acc_T128": 0.7967109867039888,
+  "nll_T128": 0.8087380347738239,
+  "acc_T512": 0.6758121758121758,
+  "nll_T512": 1.827304653674893
+}
