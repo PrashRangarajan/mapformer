@@ -1,0 +1,10 @@
+{
+  "variant": "TEMFaithful_FFN",
+  "ckpt": "/home/prashr/mapformer/runs/TEMFaithful_FFN_clean/seed2/TEMFaithful_FFN.pt",
+  "acc_train": 1.0,
+  "nll_train": 0.0001710289162439258,
+  "acc_T128": 1.0,
+  "nll_T128": 9.839741566574932e-05,
+  "acc_T512": 0.9671034671034671,
+  "nll_T512": 0.14095101678408856
+}
