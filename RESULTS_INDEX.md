@@ -33,7 +33,8 @@ reports.
 |---|---|
 | `VANILLANODROP_CONTROL.md` | n=3. Proves InEKF does real work, not just dropout removal. |
 | `EXTRAHEAD_CONTROL.md` | n=3. Cross-scale Hopfield win = extra-head capacity, not Hopfield structure. |
-| `CAPACITY_CONTROL.md` | **⚠ INCONCLUSIVE** (n=2/n=1, crashed seeds). Headline Level15-vs-Vanilla capacity question OPEN — needs clean re-run. |
+| `CAPACITY_CONTROL.md` | **⚠ SUPERSEDED** — lm200-only; "CAPACITY" verdict is an lm200 artifact. Read `CAPACITY_PERREGIME.md`. |
+| `CAPACITY_PERREGIME.md` | n=3. Per-regime + length sweep T∈{512,1024,2048}. **ARCHITECTURE** on clean / noise / length / arithmetic / calibration; lm200 is a content-channel effect. |
 | `SINGLE_SIZE_CONTROL.md` | n=3. Confirms coupled-ω is the cross-scale small-grid bottleneck. |
 
 ## Cross-scale architecture investigation
@@ -92,14 +93,12 @@ reports.
 
 ## In-flight (will auto-commit when done)
 
-- `run_tem_scaling.sh` → `TEM_SCALING_RESULTS.md` — TEM d_g ∈ {32,64,128,256}, is TEM parameter-saturated?
 - `run_tem_noise_and_ffn.sh` → `TEM_NOISE_FFN_RESULTS.md` — TEM on noise regime + TEMFaithful_FFN direct machinery test.
-- `run_numberline.sh` → `NUMBERLINE_RESULTS.md` — arithmetic-as-navigation first cut.
 
 ## Known open items
 
-1. `CAPACITY_CONTROL.md` inconclusive — re-run Vanilla_ExtraHead n=3 on a free GPU.
-2. GPU 1 is occupied by another user — run scripts pinned to GPU 0; some seeds OOM-crashed when paired onto GPU 1 (recurring footgun).
+1. ~~`CAPACITY_CONTROL.md` inconclusive~~ — RESOLVED by `CAPACITY_PERREGIME.md` (architectural on clean / noise / length / arithmetic / calibration; lm200 is a content-channel effect).
+2. GPU 1 occupancy is intermittent; per-regime sweep ran fine there sequentially. Pair-onto-GPU-1 OOMs remain a footgun if two processes share it.
 3. `archive_stale/` holds 35 dead-end / incorrect / superseded files (DoG/hex dead-ends, PC v3/v4 saga, broken-init, single-seed superseded versions). Recoverable; not deleted.
 
 *Generated 2026-05-21 during the dead-end cleanup.*
