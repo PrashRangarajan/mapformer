@@ -1,130 +1,175 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+"""Simplified length-generalization figure for the generals report.
+
+Single-panel curve plot showing overall revisit accuracy vs. sequence length T
+on lm200 (200-landmark) checkpoints. Reuses build_model / eval_per_cell /
+GridWorld from make_paper_figures.py so the numbers exactly match
+fig2_length_gen.png (same seed+1000 env-seed and seed+2000 eval-seed).
+
+Default subset: Vanilla, Level15, MambaLike.
+Edit SUBSET below to swap MambaLike for RoPE / LSTM, or pass --subset.
 """
-make_inekf_report_figure.py
----------------------------
-A simplified length-generalization figure for the generals report: only the
-uncorrected MapFormer and the InEKF-corrected MapFormer (plus one optional
-baseline), with report-friendly names instead of the internal "Level15" etc.
 
-Reuses the exact eval pipeline from make_paper_figures.py, so the numbers are
-identical to fig2_length_gen.png -- just fewer curves and clearer labels.
-
-Run from the mapformer repo root (same place fig2 is generated):
-
-    python make_inekf_report_figure.py --runs_dir <RUNS_DIR> --out inekf_results.png
-
-Then copy inekf_results.png into the report:
-    cp inekf_results.png ../Hierarchical_Transformers/UW-Generals-Document/figures/
-
-Edit SUBSET / LABELS below to change which models appear and how they are named.
-"""
 import argparse
 import statistics as st
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import torch
 
-# Reuse the faithful eval pipeline (same functions fig2 uses)
-from make_paper_figures import build_model, eval_per_cell, GridWorld
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-# --- choose which internal variants to show, and their report names ----------
-# Keep this small: the point is a clean 2-3 line comparison, not the full ablation.
-SUBSET = ["Vanilla", "Level15"]            # add "RoPE" or "MambaLike" for a non-map baseline
+from mapformer.environment import GridWorld
+from mapformer.make_paper_figures import build_model, eval_per_cell
+
+# ---- configuration --------------------------------------------------------
+
+SUBSET_DEFAULT = ["Vanilla", "Level15", "MambaLike"]
+LENGTHS = [128, 256, 512, 1024, 2048]
+SEEDS = [0, 1, 2]
+TRAIN_T = 128
+
+# Report-friendly labels.
 LABELS = {
     "Vanilla":   "MapFormer (open-loop)",
     "Level15":   "MapFormer + InEKF",
     "RoPE":      "RoPE Transformer",
     "MambaLike": "Mamba-like SSM",
-    "Level1":    "MapFormer + InEKF (basic)",
-    "Level2":    "MapFormer + InEKF (Level 2)",
+    "LSTM":      "LSTM",
 }
+
+# Colors picked for report (print-friendly, colorblind-aware).
 COLORS = {
-    "Vanilla":   "#808080",
-    "Level15":   "#1b7837",
-    "RoPE":      "#606060",
-    "MambaLike": "#FF7043",
-    "Level1":    "#2196F3",
-    "Level2":    "#FFA000",
+    "Vanilla":   "#888888",
+    "Level15":   "#1b7e3f",
+    "RoPE":      "#444444",
+    "MambaLike": "#e07b1c",
+    "LSTM":      "#a0522d",
 }
-CONFIG = "lm200"          # "lm200" (200 landmarks) or "clean"; lm200 is the cognitive-map setting
-LENGTHS = [128, 256, 512, 1024, 2048]
-SEEDS = [0, 1, 2]
-# -----------------------------------------------------------------------------
 
+MARKERS = {
+    "Vanilla":   "o",
+    "Level15":   "s",
+    "RoPE":      "^",
+    "MambaLike": "D",
+    "LSTM":      "v",
+}
 
-def _audit_checkpoints(runs_dir: Path):
-    """Print which (variant, seed) checkpoints exist before any eval runs."""
-    print(f"Checkpoint audit for runs_dir = {runs_dir}, config = {CONFIG}, seeds = {SEEDS}")
-    missing = []
-    for variant in SUBSET:
-        present = []
-        for seed in SEEDS:
-            ckpt = runs_dir / f"{variant}_{CONFIG}" / f"seed{seed}" / f"{variant}.pt"
+# ---- pipeline -------------------------------------------------------------
+
+def audit_checkpoints(runs_dir, variants, seeds):
+    """Print which seeds are present per variant; return (variant, seed)
+    pairs that exist."""
+    print("Checkpoint audit (lm200):")
+    available = []
+    for v in variants:
+        present, missing = [], []
+        for s in seeds:
+            ckpt = Path(runs_dir) / f"{v}_lm200" / f"seed{s}" / f"{v}.pt"
             if ckpt.exists():
-                present.append(seed)
+                present.append(s); available.append((v, s))
             else:
                 missing.append(str(ckpt))
-        status = ",".join(map(str, present)) if present else "(none)"
-        print(f"  {variant}_{CONFIG}: seeds present = {status}")
-    if missing:
-        print("Missing checkpoints (will be skipped in aggregation):")
-        for p in missing:
-            print(f"  {p}")
+        present_str = ",".join(str(x) for x in present) or "NONE"
+        print(f"  {v}_lm200: seeds present = {present_str}")
+        for m in missing:
+            print(f"    MISSING: {m}")
     print()
+    return available
+
+
+def run_one(runs_dir, variant, seed, T):
+    ckpt = Path(runs_dir) / f"{variant}_lm200" / f"seed{seed}" / f"{variant}.pt"
+    env = GridWorld(size=64, n_obs_types=16, p_empty=0.5,
+                    n_landmarks=200, seed=seed + 1000)
+    m = build_model(variant, ckpt, env.unified_vocab_size)
+    n_trials = 50 if T >= 2048 else 200
+    per = eval_per_cell(m, env, T, n_trials, seed=seed + 2000)
+    acc, _ = per["overall"]
+    del m
+    torch.cuda.empty_cache()
+    return acc
+
+
+def collect(runs_dir, variants, seeds, lengths):
+    """Returns {variant: {T: [acc per seed]}}."""
+    out = {v: {T: [] for T in lengths} for v in variants}
+    available = set((v, s) for v in variants for s in seeds
+                    if (Path(runs_dir) / f"{v}_lm200" / f"seed{s}" / f"{v}.pt").exists())
+    for variant in variants:
+        for T in lengths:
+            vals = []
+            for seed in seeds:
+                if (variant, seed) not in available:
+                    continue
+                acc = run_one(runs_dir, variant, seed, T)
+                if acc is not None:
+                    vals.append(acc)
+            out[variant][T] = vals
+            if vals:
+                m = st.mean(vals)
+                sd = st.pstdev(vals) if len(vals) > 1 else 0.0
+                print(f"  {variant} T={T}: mean={m:.3f} +/- {sd:.3f} (n={len(vals)})")
+            else:
+                print(f"  {variant} T={T}: NO DATA")
+    return out
+
+
+def plot(results, variants, lengths, output, train_T=TRAIN_T):
+    fig, ax = plt.subplots(figsize=(6.0, 4.2))
+    for variant in variants:
+        means, stds, ts = [], [], []
+        for T in lengths:
+            vals = results[variant][T]
+            if not vals: continue
+            means.append(st.mean(vals))
+            stds.append(st.pstdev(vals) if len(vals) > 1 else 0.0)
+            ts.append(T)
+        if not ts: continue
+        ax.errorbar(ts, means, yerr=stds,
+                    marker=MARKERS.get(variant, "o"),
+                    markersize=6, linewidth=1.8, capsize=3,
+                    color=COLORS.get(variant, None),
+                    label=LABELS.get(variant, variant))
+    ax.axvline(x=train_T, linestyle=":", color="#666666", alpha=0.8, linewidth=1)
+    ax.text(train_T * 1.06, 1.02, "train length", color="#666666",
+            fontsize=9, ha="left", va="bottom", alpha=0.9)
+    ax.set_xscale("log", base=2)
+    ax.set_xticks(lengths)
+    ax.set_xticklabels([str(T) for T in lengths])
+    ax.set_xlabel("Sequence length $T$")
+    ax.set_ylabel("Overall revisit accuracy")
+    ax.set_title("Length generalization with InEKF correction (200 landmarks)")
+    ax.set_ylim(0, 1.05)
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc="lower left", frameon=True, framealpha=0.95, fontsize=10)
+    plt.tight_layout()
+    plt.savefig(output, dpi=150, bbox_inches="tight")
+    print(f"\nSaved {output}")
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--runs_dir", required=True)
-    ap.add_argument("--out", default="inekf_results.png")
+    ap.add_argument("--runs_dir", "--runs-dir", default="runs",
+                    help="Path to runs/ (same as make_paper_figures.py).")
+    ap.add_argument("--out", default="inekf_results.png",
+                    help="Output PNG path.")
+    ap.add_argument("--subset", nargs="+", default=SUBSET_DEFAULT,
+                    help="Variants to plot. Default: Vanilla Level15 MambaLike.")
     args = ap.parse_args()
 
-    runs_dir = Path(args.runs_dir)
-    _audit_checkpoints(runs_dir)
+    print(f"runs_dir: {args.runs_dir}")
+    print(f"subset:   {args.subset}")
+    print(f"lengths:  {LENGTHS}")
+    print(f"seeds:    {SEEDS}\n")
 
-    n_lm = 200 if CONFIG == "lm200" else 0
-    fig, ax = plt.subplots(figsize=(6, 4.2))
+    audit_checkpoints(args.runs_dir, args.subset, SEEDS)
 
-    for variant in SUBSET:
-        means, stds, Ts = [], [], []
-        for T in LENGTHS:
-            vals = []
-            for seed in SEEDS:
-                ckpt = runs_dir / f"{variant}_{CONFIG}" / f"seed{seed}" / f"{variant}.pt"
-                if not ckpt.exists():
-                    continue
-                env = GridWorld(size=64, n_obs_types=16, p_empty=0.5,
-                                n_landmarks=n_lm, seed=seed + 1000)
-                m = build_model(variant, ckpt, env.unified_vocab_size)
-                n_trials = 50 if T >= 2048 else 200
-                per = eval_per_cell(m, env, T, n_trials, seed=seed + 2000)
-                if per["overall"][0] is not None:
-                    vals.append(per["overall"][0])
-                del m
-                torch.cuda.empty_cache()
-            if vals:
-                Ts.append(T)
-                means.append(st.mean(vals))
-                stds.append(st.pstdev(vals) if len(vals) > 1 else 0)
-                print(f"  {variant} T={T}: mean={means[-1]:.3f} ± {stds[-1]:.3f}  (n={len(vals)})")
-        if not Ts:
-            print(f"  (no checkpoints found for {variant}_{CONFIG}; skipping)")
-            continue
-        ax.errorbar(Ts, means, yerr=stds, marker="o", capsize=3,
-                    label=LABELS.get(variant, variant), color=COLORS.get(variant))
+    print("Running eval...")
+    results = collect(args.runs_dir, args.subset, SEEDS, LENGTHS)
 
-    ax.set_xscale("log", base=2)
-    ax.set_xlabel("Sequence length T")
-    ax.set_ylabel("Overall revisit accuracy")
-    ax.set_title(f"Length generalization ({'200 landmarks' if CONFIG == 'lm200' else 'no landmarks'})")
-    ax.axvline(x=128, linestyle=":", color="gray", alpha=0.5, label="train length")
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    ax.set_ylim(0, 1.05)
-    plt.tight_layout()
-    plt.savefig(args.out, dpi=150, bbox_inches="tight")
-    print(f"Saved {args.out}")
+    plot(results, args.subset, LENGTHS, args.out)
 
 
 if __name__ == "__main__":
