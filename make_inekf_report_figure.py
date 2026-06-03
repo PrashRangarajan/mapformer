@@ -133,8 +133,8 @@ def plot(results, variants, lengths, output, train_T=TRAIN_T):
                     color=COLORS.get(variant, None),
                     label=LABELS.get(variant, variant))
     ax.axvline(x=train_T, linestyle=":", color="#666666", alpha=0.8, linewidth=1)
-    ax.text(train_T * 1.06, 1.02, "train length", color="#666666",
-            fontsize=9, ha="left", va="bottom", alpha=0.9)
+    ax.text(train_T * 1.07, 0.99, "train length", color="#666666",
+            fontsize=9, ha="left", va="top", alpha=0.9)
     ax.set_xscale("log", base=2)
     ax.set_xticks(lengths)
     ax.set_xticklabels([str(T) for T in lengths])
