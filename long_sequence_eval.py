@@ -31,6 +31,7 @@ from mapformer.model_level15_pc import MapFormerWM_Level15PC
 from mapformer.model_level15_pc_v2 import MapFormerWM_Level15PC_NoBypass
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_inekf_cascade import MapFormerWM_Level15Cascade, MapFormerWM_Level15CascadeNoSlow
+from mapformer.model_hier_attn import MapFormerWM_HierAttn
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_baselines_extra import EXTRA_BASELINES
@@ -46,6 +47,7 @@ VARIANT_CLS = {
     "Level2": MapFormerWM_Level2InEKF,
     "Level15Cascade": MapFormerWM_Level15Cascade,
     "Level15CascadeNoSlow": MapFormerWM_Level15CascadeNoSlow,
+    "HierAttn": MapFormerWM_HierAttn,
     "PC": MapFormerWM_PredictiveCoding, "RoPE": MapFormerWM_RoPE,
     **ABLATIONS,
     **EXTRA_BASELINES,
