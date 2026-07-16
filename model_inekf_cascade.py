@@ -30,7 +30,10 @@ Design
        - Constant learnable Π_slow, per-chunk R_slow_c = exp(MLP_slow(content̄_c))
        - K_slow_c = Π_slow / (Π_slow + R_slow_c)
        - Second scalar Hillis-Steele scan over n_chunks endpoints → D_slow_c
-       - Broadcast: d_slow_t = D_slow_c for t in chunk c (piecewise constant)
+       - CAUSAL broadcast: d_slow_t = D_slow_{c-1} for t in chunk c (the last
+         *completed* chunk; chunk 0 → 0). D_slow_c pools the whole chunk c
+         (future-inclusive), so applying it within chunk c would leak future
+         observations into theta_hat and hence into next-token prediction.
 
   3. Combine: θ̂_t = θ_path_t + d_fast_t + d_slow_t
 
@@ -169,13 +172,25 @@ class InEKFCascade(nn.Module):
 
             D_slow = self._scalar_scan(K_slow, nu_slow)           # (B, n_chunks, H, NB)
 
-            # Piecewise-constant broadcast to per-token.
-            d_slow_main = D_slow.unsqueeze(2).expand(
+            # CAUSAL broadcast. D_slow[c] pools residuals over ALL tokens in
+            # chunk c (including future ones), so a token in chunk c must NOT
+            # receive D_slow[c] — that would leak future observations into its
+            # theta_hat and, via RoPE, into its next-token prediction. Instead
+            # tokens in chunk c receive D_slow[c-1] (the last *completed*
+            # chunk); chunk 0 receives zero. The chunk-level scan is itself
+            # causal, so this is a genuine slow-timescale correction with no
+            # future leakage.
+            D_slow_causal = torch.cat(
+                [torch.zeros_like(D_slow[:, :1]), D_slow[:, :-1]], dim=1
+            )
+            d_slow_main = D_slow_causal.unsqueeze(2).expand(
                 -1, -1, C, -1, -1
             ).contiguous().view(B, L_slow, H, NB)
 
             if remainder > 0:
-                # Use the last slow correction for trailing tokens.
+                # Trailing tokens form a partial chunk strictly after every
+                # full chunk, so they may causally use the last completed full
+                # chunk's correction, D_slow[:, -1].
                 tail = D_slow[:, -1:].unsqueeze(2).expand(
                     -1, -1, remainder, -1, -1
                 ).contiguous().view(B, remainder, H, NB)
@@ -230,6 +245,59 @@ class MapFormerWM_Level15Cascade(MapFormerWM):
         theta_hat, aux = self.inekf(theta_path, x)
 
         # Save for introspection
+        self.last_theta_path = theta_path.detach()
+        self.last_theta_hat = theta_hat.detach()
+        self.last_d_fast = aux["d_fast"].detach()
+        self.last_d_slow = aux["d_slow"].detach()
+        self.last_K_fast = aux["K_fast"].detach()
+        if aux["K_slow"] is not None:
+            self.last_K_slow = aux["K_slow"].detach()
+            self.last_R_slow = aux["R_slow"].detach()
+
+        theta_for_rope = theta_hat.transpose(1, 2)
+        cos_a = torch.cos(theta_for_rope)
+        sin_a = torch.sin(theta_for_rope)
+
+        causal_mask = torch.triu(
+            torch.ones(L, L, device=tokens.device, dtype=torch.bool), diagonal=1
+        )
+        for layer in self.layers:
+            x = layer(x, cos_a, sin_a, causal_mask)
+
+        x = self.out_norm(x)
+        return self.out_proj(x)
+
+
+class MapFormerWM_Level15CascadeNoSlow(MapFormerWM_Level15Cascade):
+    """Param-matched control for the cascade.
+
+    Constructs the FULL cascade (same slow-filter parameters, same init RNG)
+    but drops the slow correction from the corrected angle: theta_hat =
+    theta_path + d_fast only. The ~25K slow-filter params therefore exist and
+    consume identical initialisation draws, but receive no CE gradient and
+    make no inference contribution.
+
+    Disentangles two explanations for the cascade's training-side win:
+      - NoSlow ~ full Cascade  => the win is raw parameter count / RNG shift
+        (capacity), not the cascade structure.
+      - NoSlow ~ plain Level15 => raw params do nothing; the *active* slow
+        filter in the training gradient path is what reshapes the fast filter.
+    """
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        B, L = tokens.shape
+        x = self.token_emb(tokens)
+
+        delta = self.action_to_lie(x)
+        cum_delta = torch.cumsum(delta, dim=1)
+        theta_path = cum_delta * self.path_integrator.omega.unsqueeze(0).unsqueeze(0)
+
+        # Run the full cascade filter (slow params still get exercised in the
+        # module, keeping the graph identical up to this point) but use only
+        # the fast correction for the angle fed to attention.
+        _, aux = self.inekf(theta_path, x)
+        theta_hat = theta_path + aux["d_fast"]
+
         self.last_theta_path = theta_path.detach()
         self.last_theta_hat = theta_hat.detach()
         self.last_d_fast = aux["d_fast"].detach()
