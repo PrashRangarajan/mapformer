@@ -1,6 +1,6 @@
 ---
 name: feedback_lm200_stuck_baselines
-description: "The April lm200 baseline checkpoints are stuck (training-convergence artifact); the project's lm200 leaderboard ranked convergence, not architecture. Retrain baselines fresh before any lm200 claim."
+description: "LM200-ONLY training artifact — April lm200 baselines are stuck (loss ~1.0); clean/noise are FINE and reproduce exactly. The lm200 leaderboard ranked convergence, not architecture. Retrain lm200 baselines fresh before any landmark claim."
 metadata: 
   node_type: memory
   type: feedback
@@ -13,6 +13,15 @@ Level15EM, VanillaEM, RoPE, PC, Level1, CoPE, LSTM, MambaLike) are
 trained **May 8+** (TEMFaithful, Level15GSF, Level15_SR, NoDrop,
 Vanilla_ExtraHead) converged normally. The reported lm200 "leaderboard"
 is monotonic with *training convergence*, not with architecture.
+
+**Scope is lm200 ONLY.** Clean and noise checkpoints retrain bit-identical
+to the stored ones (verified 2026-07-15, NOISE_CLEAN_REVALIDATION.md), so
+those results are VALID. Root cause: the landmark-cell-selection RNG
+(`rng.permutation(n_cells)[:n_landmarks]`) shifted between April and now;
+it only runs when n_landmarks>0, so only lm200's data changed. lm200
+training is basin-sensitive to the landmark layout — April's layout →
+bad basin, current → good basin. The earlier "noise degraded" worry was
+WRONG (April-vs-May noise loss gaps were genuine variant differences).
 
 **How discovered (2026-07-15):** the "Level15Cascade wins lm200 +10-25pp"
 result turned out to be the fresh cascade compared against a *stuck*
