@@ -29,11 +29,26 @@ both are honest negatives:
    pooled retrieval; pooling loss > softmax-dilution cost. The "dilution at
    long T" hypothesis was falsified.
 
+3. **Attention hierarchy at MULTI-ENV TRANSFER** (`HIER_ATTN_MULTIENV.md`) —
+   the regime the neuroscience most endorses (reusable structural code should
+   pay off at transfer). HierAttn vs flat Level 1.5, 50 train / 50 held-out
+   envs. Still no benefit: held-out clean TIED (0.947/0.947 at T=512), held-out
+   lm200 flat WINS +5pp (0.993 vs 0.941). HierAttn fit training envs faster
+   (lazy shortcut) but transferred equal or worse. Reason: transfer rewards the
+   reusable STRUCTURAL code (omega-spectrum position), which MapFormer already
+   has and which is already near-ceiling at transfer (existing MULTIENV data:
+   even TEMFaithful can't beat Level 1.5). HierAttn pools env-specific CONTENT
+   and still destroys per-token retrieval, so it hurts on landmarks either way.
+
 **Takeaway:** MapFormer's single-scale, full-resolution mechanisms are
-already near-optimal for this task; adding hierarchy (on theta or on
-attention) does not help. The remaining value of the hierarchy line is
-interpretive (MapFormer as single-level Lie-group predictive coding;
-precision-weighting = attention) and the negative results themselves.
+already near-optimal, INCLUDING at multi-env transfer. Adding hierarchy (on
+theta, on single-env attention, or on multi-env attention) does not help. The
+brain's hierarchy is for constraints (finite capacity/energy/wiring) and
+cross-env transfer that this benchmark either lacks or already saturates; the
+one faithful hierarchy MapFormer needs (multi-scale position) is already the
+omega spectrum. Remaining value of the line is interpretive (MapFormer as
+single-level Lie-group predictive coding; precision-weighting = attention)
+and the negative results themselves.
 
 Untested variants (lower priority): omega-band-structured heads (structures
 attention range by frequency band, no token pooling — avoids the HierAttn
