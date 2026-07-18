@@ -40,15 +40,30 @@ both are honest negatives:
    even TEMFaithful can't beat Level 1.5). HierAttn pools env-specific CONTENT
    and still destroys per-token retrieval, so it hurts on landmarks either way.
 
-**Takeaway:** MapFormer's single-scale, full-resolution mechanisms are
-already near-optimal, INCLUDING at multi-env transfer. Adding hierarchy (on
-theta, on single-env attention, or on multi-env attention) does not help. The
-brain's hierarchy is for constraints (finite capacity/energy/wiring) and
-cross-env transfer that this benchmark either lacks or already saturates; the
-one faithful hierarchy MapFormer needs (multi-scale position) is already the
-omega spectrum. Remaining value of the line is interpretive (MapFormer as
-single-level Lie-group predictive coding; precision-weighting = attention)
-and the negative results themselves.
+**BUT hierarchy's value is TASK-DETERMINED, not architectural** (the key
+update, `AGGREGATE_TASK_RESULTS.md`). All three negatives above are RETRIEVAL
+(needle) tasks — predict the exact obs at a revisited cell — which structurally
+favor full-resolution flat attention. Swap the readout to an AGGREGATE
+(haystack) task — predict the windowed-majority obs-type — same env, same
+architectures, same params, and the winner FLIPS at extrapolation length:
+
+  aggregate acc (flat / HierAttn): T=256 0.878/0.823, T=512 0.715/0.741,
+  T=1024 0.542/0.628, T=2048 0.383/0.531 — HierAttn wins at T>=512 with a
+  GROWING margin (+15pp at T=2048).
+
+Mechanism: flat attention's learned aggregation does NOT extrapolate (softmax
+can't average over 8x more tokens than trained); HierAttn's mean-pool is
+length-invariant so its summaries hold. The same pooling that DESTROYS
+per-token retrieval is what makes aggregation length-generalize.
+
+**Takeaway:** hierarchy hurts needle/retrieval tasks (pooling loses detail),
+helps haystack/aggregation tasks at length (pooling = length-invariant
+summary). MapFormer's single-scale machinery is near-optimal for the
+retrieval benchmark (incl. multi-env transfer, which it already saturates),
+but a hierarchical model wins when the task rewards summaries. Next: nested-room
+hierarchical ENVIRONMENT (does hierarchical *space*, not just aggregate
+readout, also reward hierarchy?). Interpretive value also stands (MapFormer as
+single-level Lie-group predictive coding; precision-weighting = attention).
 
 Untested variants (lower priority): omega-band-structured heads (structures
 attention range by frequency band, no token pooling — avoids the HierAttn
