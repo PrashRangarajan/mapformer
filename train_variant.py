@@ -65,7 +65,8 @@ from mapformer.model_level15_pc_v3 import MapFormerWM_Level15PC_v3
 from mapformer.model_level15_pc_v4 import MapFormerWM_Level15PC_v4
 from mapformer.model_level15_dog import MapFormerWM_Level15_DoG
 from mapformer.model_inekf_cascade import MapFormerWM_Level15Cascade, MapFormerWM_Level15CascadeNoSlow
-from mapformer.model_hier_attn import MapFormerWM_HierAttn
+from mapformer.model_hier_attn import (MapFormerWM_HierAttn,
+    MapFormerWM_HierAttn_CoarseOnly, MapFormerWM_HierAttn_LocalOnly)
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
@@ -110,6 +111,8 @@ VARIANT_MAP = {
     "Level15Cascade": MapFormerWM_Level15Cascade,
     "Level15CascadeNoSlow": MapFormerWM_Level15CascadeNoSlow,
     "HierAttn": MapFormerWM_HierAttn,
+    "HierAttn_CoarseOnly": MapFormerWM_HierAttn_CoarseOnly,
+    "HierAttn_LocalOnly": MapFormerWM_HierAttn_LocalOnly,
     "Level2":     MapFormerWM_Level2InEKF,
     "PC":         MapFormerWM_PredictiveCoding,
     "RoPE":       MapFormerWM_RoPE,

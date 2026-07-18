@@ -43,10 +43,13 @@ class WMHierAttnLayer(WMTransformerLayer):
     """WM transformer layer with two-scale (local + coarse-chunk) attention."""
 
     def __init__(self, d_model: int, n_heads: int, dropout: float,
-                 chunk_size: int = 64, window: int = 128):
+                 chunk_size: int = 64, window: int = 128,
+                 use_local: bool = True, use_coarse: bool = True):
         super().__init__(d_model, n_heads, dropout)
         self.chunk_size = chunk_size
         self.window = window
+        self.use_local = use_local
+        self.use_coarse = use_coarse
 
     def forward(self, x, cos_a, sin_a, causal_mask):
         B, T, _ = x.shape
@@ -64,16 +67,19 @@ class WMHierAttnLayer(WMTransformerLayer):
         idx = torch.arange(T, device=x.device)
 
         # --- LOCAL (fine): causal window of size W ---
-        scores = torch.matmul(Q, K.transpose(-1, -2)) / scale       # (B,H,T,T)
-        local_mask = causal_mask | (idx[:, None] - idx[None, :] >= W)  # True = masked
-        scores_local = scores.masked_fill(local_mask[None, None], float('-inf'))
-        attn_local = F.softmax(scores_local, dim=-1)
-        attn_local = self.dropout(attn_local)
-        local_out = torch.matmul(attn_local, V)                     # (B,H,T,dh)
+        if self.use_local:
+            scores = torch.matmul(Q, K.transpose(-1, -2)) / scale       # (B,H,T,T)
+            local_mask = causal_mask | (idx[:, None] - idx[None, :] >= W)  # True = masked
+            scores_local = scores.masked_fill(local_mask[None, None], float('-inf'))
+            attn_local = F.softmax(scores_local, dim=-1)
+            attn_local = self.dropout(attn_local)
+            local_out = torch.matmul(attn_local, V)                     # (B,H,T,dh)
+        else:
+            local_out = torch.zeros(B, H, T, dh, device=x.device, dtype=Q.dtype)
 
         # --- COARSE (long-range): attend over chunk-pooled summaries ---
         nC = T // C
-        if nC > 0:
+        if nC > 0 and self.use_coarse:
             Tc = nC * C
             Kc = K[:, :, :Tc].view(B, H, nC, C, dh).mean(dim=3)     # (B,H,nC,dh)
             Vc = V[:, :, :Tc].view(B, H, nC, C, dh).mean(dim=3)
@@ -103,12 +109,34 @@ class MapFormerWM_HierAttn(MapFormerWM_Level15InEKF):
     head-to-head vs Level15 isolates the effect of the attention hierarchy.
     """
 
+    USE_LOCAL = True
+    USE_COARSE = True
+
     def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
                  dropout=0.1, grid_size=64, bottleneck_r=2,
                  chunk_size=64, window=128):
         super().__init__(vocab_size, d_model, n_heads, n_layers, dropout,
                          grid_size, bottleneck_r)
         self.layers = nn.ModuleList([
-            WMHierAttnLayer(d_model, n_heads, dropout, chunk_size, window)
+            WMHierAttnLayer(d_model, n_heads, dropout, chunk_size, window,
+                            use_local=self.USE_LOCAL, use_coarse=self.USE_COARSE)
             for _ in range(n_layers)
         ])
+
+
+class MapFormerWM_HierAttn_CoarseOnly(MapFormerWM_HierAttn):
+    """Ablation: coarse chunk-pooled attention only (no local window).
+
+    Isolates whether POOLING is what wins the aggregation task.
+    """
+    USE_LOCAL = False
+    USE_COARSE = True
+
+
+class MapFormerWM_HierAttn_LocalOnly(MapFormerWM_HierAttn):
+    """Ablation: local causal window only (no coarse pooling).
+
+    Control for CoarseOnly: a windowed-but-unpooled attention.
+    """
+    USE_LOCAL = True
+    USE_COARSE = False
