@@ -40,30 +40,40 @@ both are honest negatives:
    even TEMFaithful can't beat Level 1.5). HierAttn pools env-specific CONTENT
    and still destroys per-token retrieval, so it hurts on landmarks either way.
 
-**BUT hierarchy's value is TASK-DETERMINED, not architectural** (the key
-update, `AGGREGATE_TASK_RESULTS.md`). All three negatives above are RETRIEVAL
-(needle) tasks — predict the exact obs at a revisited cell — which structurally
-favor full-resolution flat attention. Swap the readout to an AGGREGATE
-(haystack) task — predict the windowed-majority obs-type — same env, same
-architectures, same params, and the winner FLIPS at extrapolation length:
+**An aggregate-task "win" appeared, then was RETRACTED as a training-length
+confound** (`AGGREGATE_EXTRAS.md`, commit 83e505d). Sequence worth remembering:
 
-  aggregate acc (flat / HierAttn): T=256 0.878/0.823, T=512 0.715/0.741,
-  T=1024 0.542/0.628, T=2048 0.383/0.531 — HierAttn wins at T>=512 with a
-  GROWING margin (+15pp at T=2048).
+- On an AGGREGATE readout (windowed-majority obs-type instead of exact-obs
+  retrieval), HierAttn beat flat at length, multi-seed n=3, tight bars
+  (T=2048: 0.537±0.004 vs 0.401±0.012). Looked like "hierarchy's value is
+  task-determined."
+- **Ablation killed the mechanism:** HierAttn_LocalOnly (windowed attention,
+  ZERO pooling) ALSO beats flat at length (0.453 vs 0.383 @T=2048). So the
+  advantage is a BOUNDED ATTENTION SPAN, not pooling-as-summary.
+- **Training-length control killed the claim:** flat trained at n_steps=512
+  matches/beats HierAttn trained at 256 at EVERY length (0.746/0.629/0.539 vs
+  0.741/0.628/0.531). Flat has NO aggregation deficit — it just needed to
+  train nearer the target length.
+- **Nested-room (hierarchical SPACE)** showed no real dissociation either:
+  flat wins revisit (0.916 vs 0.798 @T=2048); room_novel roughly tied (flat
+  better at short T, hier +3pp only at T=2048). Both infer room themes fine.
 
-Mechanism: flat attention's learned aggregation does NOT extrapolate (softmax
-can't average over 8x more tokens than trained); HierAttn's mean-pool is
-length-invariant so its summaries hold. The same pooling that DESTROYS
-per-token retrieval is what makes aggregation length-generalize.
+**Correct claim:** bounded-span attention (windowed OR pooled) extrapolates
+beyond its training length; unbounded flat attention does not. That is a
+length-EXTRAPOLATION property, NOT an aggregation CAPABILITY. Hierarchy is not
+needed for aggregation, does not benefit from hierarchical space, and costs
+retrieval accuracy.
 
-**Takeaway:** hierarchy hurts needle/retrieval tasks (pooling loses detail),
-helps haystack/aggregation tasks at length (pooling = length-invariant
-summary). MapFormer's single-scale machinery is near-optimal for the
-retrieval benchmark (incl. multi-env transfer, which it already saturates),
-but a hierarchical model wins when the task rewards summaries. Next: nested-room
-hierarchical ENVIRONMENT (does hierarchical *space*, not just aggregate
-readout, also reward hierarchy?). Interpretive value also stands (MapFormer as
-single-level Lie-group predictive coding; precision-weighting = attention).
+**Takeaway:** hierarchy still does not earn its keep in MapFormer on any task
+tested (retrieval, aggregation, multi-env transfer, hierarchical space). Its
+one real benefit is length-extrapolation from SHORT training — obtainable more
+cheaply by just training longer, or by any span-bounding trick. Interpretive
+value stands (MapFormer as single-level Lie-group predictive coding;
+precision-weighting = attention).
+
+**Method lesson:** always run the training-length control before claiming a
+length-generalization win, and ablate components before claiming a mechanism.
+Both confounds fired here. See [[feedback_seed_ordering]].
 
 Untested variants (lower priority): omega-band-structured heads (structures
 attention range by frequency band, no token pooling — avoids the HierAttn
