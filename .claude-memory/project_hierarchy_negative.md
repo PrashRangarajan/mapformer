@@ -5,6 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: d17148dd-e54f-48b7-8a88-096f71aadfc5
+  modified: 2026-07-21T04:16:43.472Z
 ---
 
 Two hierarchy extensions to MapFormer were built and tested (2026-07);
@@ -71,9 +72,36 @@ cheaply by just training longer, or by any span-bounding trick. Interpretive
 value stands (MapFormer as single-level Lie-group predictive coding;
 precision-weighting = attention).
 
+**Bounded-memory test (the brain's actual regime) — also negative.** Gave both
+models a hard 128-item READ BUDGET and varied only how it is spent
+(`BOUNDED_MEMORY_RESULTS.md`, `model_bounded_mem.py`). BoundedFlat = all budget
+on recency; BoundedHier = M/2 recent + M/2 summaries covering ALL history.
+n=3, sigma~0.000. Flat WINS at every length past T=256 (T=4096: 0.770 vs
+0.752) despite seeing only the last 3% of history. Measured revisit-lag
+distribution: median 8 steps at T=256 (95.5% inside flat's window), 40 steps
+at T=4096 (52.8% inside, 39.7% >256 back). So old-evidence demand is real at
+long T and BoundedHier covers it — but it trades half its high-resolution
+recent window for coverage mean-pooled over 32 cells, too lossy to identify a
+SPECIFIC old observation. It pays capacity for coverage it cannot exploit.
+
+**THE UNIFYING PRINCIPLE (use this framing):** hierarchy helps only when a
+lossy summary is a SUFFICIENT STATISTIC for the task.
+  - Exact recall / retrieval -> no summary suffices -> hierarchy is FORCED to
+    lose (explains all 5 retrieval negatives; they are not accidents).
+  - Aggregation -> summaries suffice -> hierarchy helps, but the same benefit
+    is obtainable more cheaply (train longer / any bounded span).
+This benchmark is exact-recall, i.e. precisely the one task family where
+hierarchical compression is provably useless. Reconciles with the brain: brains
+are hierarchical for gist-sufficient problems under inescapable capacity limits,
+and keep a separate high-resolution episodic store (hippocampus) exactly where
+precision is needed — which is the architecture these results keep implying
+(full-res recent store + hierarchy only for gist-sufficient queries).
+
 **Method lesson:** always run the training-length control before claiming a
 length-generalization win, and ablate components before claiming a mechanism.
-Both confounds fired here. See [[feedback_seed_ordering]].
+Both confounds fired here. Also: MEASURE the task's information-demand profile
+(e.g. revisit-lag distribution) before assuming a memory mechanism is needed.
+See [[feedback_seed_ordering]].
 
 Untested variants (lower priority): omega-band-structured heads (structures
 attention range by frequency band, no token pooling — avoids the HierAttn
