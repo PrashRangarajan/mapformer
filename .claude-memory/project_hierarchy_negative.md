@@ -97,6 +97,31 @@ and keep a separate high-resolution episodic store (hippocampus) exactly where
 precision is needed — which is the architecture these results keep implying
 (full-res recent store + hierarchy only for gist-sufficient queries).
 
+
+**Planning-task attempts (2026-07-16) — all invalid or uninformative.** Tried
+to find a regime where hierarchy wins, per the literature (options/HRL). Four
+task-validity failures in sequence:
+  1. open-plan rooms+goals — 100% of BFS-optimal actions are GREEDY, so no
+     planning problem exists. Flat==hier exactly. Vacuous.
+  2. fixed spanning-tree maze — greedy drops to 0.70, so planning is required,
+     but the maze is FIXED: models scored 0.94 on it and collapsed to 0.68
+     (below greedy) on a NOVEL maze. Pure memorisation. Flat==hier (0.939),
+     no distance trend. Ablations: LocalOnly 0.944 (best), CoarseOnly 0.770
+     (barely above greedy — the pooled pathway alone cannot select actions).
+  3. varying maze (fresh maze/landmarks per episode, memorisation impossible)
+     — ALL variants ~0.50, BELOW the greedy baseline 0.73. Both models failed,
+     so the comparison is UNINFORMATIVE, not a negative.
+     Diagnosis: 28.1% of maze moves are BLOCKED by walls; MapFormer's
+     cumsum(action) path integration assumes every action executes, so theta
+     desynchronises on >1/4 of steps with no bump/collision token to correct
+     from. MapFormer structurally cannot dead-reckon in a maze — a fact about
+     its ACTION MODEL, not about hierarchy.
+
+Stopped here by pre-commitment rather than iterating environments until
+hierarchy wins (that would be p-hacking with environments). A bump-token fix
+is principled but belongs to a different question: "can MapFormer navigate
+mazes at all?" See [[feedback_validate_task_first]].
+
 **Method lesson:** always run the training-length control before claiming a
 length-generalization win, and ablate components before claiming a mechanism.
 Both confounds fired here. Also: MEASURE the task's information-demand profile
