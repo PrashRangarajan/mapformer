@@ -22,7 +22,9 @@
 >
 > Corrected single-seed table: [CORRECTED_LM200_LEADERBOARD.md](CORRECTED_LM200_LEADERBOARD.md).
 > Scope + root cause: [NOISE_CLEAN_REVALIDATION.md](NOISE_CLEAN_REVALIDATION.md).
-> Multi-seed rerun in progress → `LM200_CORRECTED_MULTISEED.md`.
+> Multi-seed rerun complete ([LM200_CORRECTED_MULTISEED.md](LM200_CORRECTED_MULTISEED.md)):
+> Level15 **0.990 ± 0.005** > TEMFaithful 0.974 ± 0.008 > GSF 0.967 > NoDrop 0.956
+> (T=512 OOD, n=3) — Level 1.5 leads with non-overlapping error bars.
 
 This repository implements [MapFormer (Rambaud et al. 2025)](https://arxiv.org/abs/2511.19279)
 with high paper-faithfulness, then extends it with a family of **parallel
