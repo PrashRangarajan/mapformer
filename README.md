@@ -1,5 +1,29 @@
 # MapFormer + Parallel Invariant EKF: Cognitive Maps with Calibrated State Correction
 
+> ### ⚠ RETRACTION IN PROGRESS — lm200 results (2026-07-16)
+>
+> The stored **lm200** checkpoints trained 2026-04-22..24 (Vanilla, Level15,
+> Level15EM, VanillaEM, RoPE, PC, Level1, CoPE, LSTM, MambaLike) **never
+> converged** — final CE loss ~1.0 instead of ~0.005. Every lm200 table built
+> on them ranked *training convergence*, not architecture.
+>
+> Retraining Level15 on lm200 under current code gives **0.996** (T=512 OOD)
+> versus the **0.819** quoted below. That inverts the central comparison:
+> Level 1.5 **already beats TEMFaithful (0.982)** with no extra machinery, so
+> the "two architectural changes are needed to close the gap to TEMFaithful"
+> narrative in the section below is an artifact of a broken baseline.
+>
+> **Affected:** the "Match or beat the strongest cognitive-map baseline"
+> section, and all lm200 rows in `RESULTS_PAPER.md` / `CLAUDE.md`.
+> **Not affected (verified):** clean and noise results, which retrain
+> **bit-identically** — the bug is landmark-RNG-specific. The RoPE-collapse /
+> cognitive-map-necessity claims also survive (fresh RoPE lm200 = 0.513 vs
+> stored 0.523, i.e. genuinely weak, not an artifact).
+>
+> Corrected single-seed table: [CORRECTED_LM200_LEADERBOARD.md](CORRECTED_LM200_LEADERBOARD.md).
+> Scope + root cause: [NOISE_CLEAN_REVALIDATION.md](NOISE_CLEAN_REVALIDATION.md).
+> Multi-seed rerun in progress → `LM200_CORRECTED_MULTISEED.md`.
+
 This repository implements [MapFormer (Rambaud et al. 2025)](https://arxiv.org/abs/2511.19279)
 with high paper-faithfulness, then extends it with a family of **parallel
 Invariant Extended Kalman Filter** (InEKF) corrections and a
@@ -38,6 +62,13 @@ MapFormer family near ceiling. The cognitive-map inductive bias is *necessary*,
 not incremental.
 
 ### Match or beat the strongest cognitive-map baseline (TEMFaithful)
+
+> **⚠ RETRACTED — the lm200 column below is invalid.** The `Level15
+> (baseline)` row (0.819) is a non-converged April checkpoint. Retrained
+> under current code Level 1.5 reaches **0.996**, which *beats* TEMFaithful
+> (0.982) unaided. There was no gap to close: NoDrop and GSF appeared to help
+> only because they were compared against a broken baseline. The LongT and
+> sparse-lm10 columns are not yet re-verified. Kept below for the record only.
 
 After a critical bug fix (predict-then-update order), TEMFaithful jumps
 from 0.42 to 0.969 on lm200 OOD T=512 and becomes the strongest existing

@@ -82,6 +82,18 @@ Two evaluations per model:
 
 ## Config: lm200 (n_landmarks=200)
 
+> **⚠ RETRACTED (2026-07-16) — every table in this section is invalid.**
+> These rows come from checkpoints trained 2026-04-22..24 that never converged
+> (final CE loss ~1.0 vs ~0.005 when retrained under current code). The ranking
+> tracks *training convergence*, not architecture. Root cause is a
+> landmark-RNG shift that only affects `n_landmarks > 0`; the **clean and noise
+> sections above retrain bit-identically and remain valid.**
+>
+> Corrected: [CORRECTED_LM200_LEADERBOARD.md](CORRECTED_LM200_LEADERBOARD.md),
+> multi-seed rerun → `LM200_CORRECTED_MULTISEED.md`.
+> Headline reversal: fresh Level15 = 0.996 (T=512 OOD), beating TEMFaithful
+> (0.982) — so the NoDrop / GSF / cascade "wins over Level15" were artifacts.
+
 Two evaluations per model:
 - **in-dist (trained env)**: obs_map matches training seed — tests memorization + path integration
 - **OOD (fresh env)**: obs_map from seed+1000 — tests path integration generalization only

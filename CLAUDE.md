@@ -1097,7 +1097,13 @@ prediction, different sign because the regime flipped.
 Closed-loop success ~0.20 across all variants is the BC distribution-
 shift ceiling. DAgger queued to break it.
 
-### GSF (`GSF_RESULTS.md`, n=3 on lm200)
+### GSF (`GSF_RESULTS.md`, n=3 on lm200) — ⚠ RETRACTED
+
+> **The Level15 row (0.819) is a non-converged April checkpoint.** Retrained
+> under current code Level15 reaches **0.996**, beating TEMFaithful (0.982).
+> The "GSF closes 95% of the TEM gap" reading is an artifact: there was no gap.
+> All lm200 tables below share this defect — see the RETRACTION section at the
+> end of this file and `CORRECTED_LM200_LEADERBOARD.md`.
 
 | Variant | lm200 T=512 OOD | NLL |
 |---|---|---|
@@ -1165,3 +1171,56 @@ directed training of the backbone, just a linear readout.
 `train_doorkey_bc.py`, `train_doorkey_dagger.py`, `probe_goal_linear.py`,
 `probe_gsf_modes.py`, plus the corresponding `run_*.sh` pipelines.
 
+
+## RETRACTION: all lm200 results (2026-07-16)
+
+**Every lm200 table in this file, RESULTS_PAPER.md and README.md is invalid**
+and is being regenerated. Read this before citing any landmark result.
+
+### What happened
+
+Stored lm200 checkpoints trained **2026-04-22..24** (Vanilla, Level15,
+Level15EM, VanillaEM, RoPE, PC, Level1, CoPE, LSTM, MambaLike) **never
+converged**: final CE loss ~1.0 instead of ~0.005. Checkpoints trained
+**2026-05-08+** (TEMFaithful, Level15GSF, Level15_SR, NoDrop, Vanilla_ExtraHead)
+converged normally. The reported lm200 "leaderboard" is monotonic with
+training convergence, not with architecture:
+
+| Reported rank | reported acc | stored final loss |
+|---|---|---|
+| Vanilla | 0.716 | 1.22 (stuck) |
+| Level15 | 0.819 | 1.01 (stuck) |
+| NoDrop | 0.948 | 0.24 (partial) |
+| GSF | 0.956 | 0.0007 (converged) |
+| TEMFaithful | 0.969 | 0.0004 (converged) |
+
+### Scope — lm200 ONLY
+
+Clean and noise checkpoints retrain **bit-identically** to the stored ones
+(`NOISE_CLEAN_REVALIDATION.md`), so those results are VALID. Root cause is the
+landmark-cell-selection RNG (`rng.permutation(n_cells)[:n_landmarks]`), which
+only runs when `n_landmarks > 0`; lm200 training is basin-sensitive to the
+resulting layout. Level15-WM's own code is byte-identical April vs now.
+
+### Corrected ranking (fresh, current code, seed 0)
+
+Level15 **0.996** > TEMFaithful 0.982 > NoDrop 0.915 > Level15EM 0.860 >
+Vanilla 0.835 > VanillaEM 0.807 > PC 0.721 > MambaLike 0.567 > RoPE 0.513
+
+### Claims REVERSED
+
+- "TEMFaithful is the lm200 leader" — false; Level15 beats it.
+- "NoDrop +13pp over Level15 on lm200" — reversed.
+- "GSF / multiple fixes close the TEM gap" — no gap existed.
+- "Level15Cascade wins lm200" — artifact (see hierarchy work).
+
+### Claims that SURVIVE (strengthened)
+
+- Level15 >> Vanilla on lm200: 0.996 vs 0.835 (~+16pp, larger than reported).
+- RoPE / Mamba collapse is genuine: fresh RoPE 0.513 (stored 0.523), fresh
+  MambaLike 0.567 — they reproduce, so cognitive-map necessity holds.
+
+### Rule going forward
+
+Never compare a freshly-trained variant against a stored baseline checkpoint;
+retrain every arm in the same batch. Run `validate_task.py` before new tasks.
