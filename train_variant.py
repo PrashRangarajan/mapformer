@@ -68,6 +68,8 @@ from mapformer.model_inekf_cascade import MapFormerWM_Level15Cascade, MapFormerW
 from mapformer.model_hier_attn import (MapFormerWM_HierAttn,
     MapFormerWM_HierAttn_CoarseOnly, MapFormerWM_HierAttn_LocalOnly)
 from mapformer.model_bounded_mem import MapFormerWM_BoundedFlat, MapFormerWM_BoundedHier
+from mapformer.model_route_attn import (MapFormerWM_RouteAttn,
+    MapFormerWM_RouteAttn_K4, MapFormerWM_RouteAttn_NoBias)
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
@@ -114,6 +116,9 @@ VARIANT_MAP = {
     "HierAttn": MapFormerWM_HierAttn,
     "BoundedFlat": MapFormerWM_BoundedFlat,
     "BoundedHier": MapFormerWM_BoundedHier,
+    "RouteAttn": MapFormerWM_RouteAttn,
+    "RouteAttn_K4": MapFormerWM_RouteAttn_K4,
+    "RouteAttn_NoBias": MapFormerWM_RouteAttn_NoBias,
     "HierAttn_CoarseOnly": MapFormerWM_HierAttn_CoarseOnly,
     "HierAttn_LocalOnly": MapFormerWM_HierAttn_LocalOnly,
     "Level2":     MapFormerWM_Level2InEKF,
