@@ -40,7 +40,20 @@ class VaryingMazeWorld:
 
     def __init__(self, size: int = 16, rooms_per_side: int = 4,
                  n_obs_types: int = 8, n_landmarks: int = 16,
-                 seed: Optional[int] = None):
+                 bump_tokens: bool = False, seed: Optional[int] = None):
+        """bump_tokens: on a BLOCKED move, replace the (redundant, repeated)
+        observation with a DIRECTIONAL bump token BUMP_a.
+
+        Why directional. delta = action_to_lie(token_emb(tokens)) is a
+        CONTEXT-FREE per-token map, so one generic BUMP token could only ever
+        contribute a single fixed vector; the error to cancel is -delta(a),
+        which is direction-dependent, and blocked directions are ~uniform, so
+        the best single vector is ~zero (measured: (+0.006,-0.003)) and a
+        generic bump provably does nothing (5.77 vs 5.76 cells error).
+        With four tokens, action_to_lie can learn BUMP_a -> -delta(a), making
+        commanded_sum - blocked_sum = executed_sum EXACTLY (measured 0.00).
+        Costs no information: on a blocked step the agent did not move, so the
+        observation is a repeat of the previous cell."""
         assert size % rooms_per_side == 0
         self.size = size
         self.R = rooms_per_side
@@ -52,7 +65,10 @@ class VaryingMazeWorld:
         self.obs_offset = self.N_ACTIONS
         self.blank_token = n_obs_types
         self.first_landmark = self.obs_offset + n_obs_types + 1
-        self.unified_vocab_size = self.first_landmark + n_landmarks
+        self.bump_tokens = bump_tokens
+        self.first_bump = self.first_landmark + n_landmarks
+        self.unified_vocab_size = (self.first_bump + self.N_ACTIONS
+                                   if bump_tokens else self.first_bump)
         self._rng = np.random.RandomState(seed)
 
     # ---------------------------------------------------------------- maze
@@ -144,8 +160,12 @@ class VaryingMazeWorld:
         seen_lms: dict[int, tuple[int, int]] = {}
         for _ in range(T_explore):
             a = int(rng.randint(0, self.N_ACTIONS))
+            px, py = x, y
             x, y = self._step(dv, dh, x, y, a)
             tokens.append(a + self.action_offset)
+            if self.bump_tokens and (x, y) == (px, py):
+                tokens.append(self.first_bump + a)   # blocked: obs would be a repeat
+                continue
             if (x, y) in lm_cells:
                 li = lm_cells[(x, y)]
                 seen_lms[li] = (x, y)
@@ -172,9 +192,12 @@ class VaryingMazeWorld:
                 a = path[i]; is_bfs.append(True)
             else:
                 a = int(rng.randint(0, self.N_ACTIONS)); is_bfs.append(False)
+            px, py = x, y
             x, y = self._step(dv, dh, x, y, a)
             tokens.append(a + self.action_offset)
-            if (x, y) in lm_cells:
+            if self.bump_tokens and (x, y) == (px, py):
+                tokens.append(self.first_bump + a)
+            elif (x, y) in lm_cells:
                 tokens.append(self.first_landmark + lm_cells[(x, y)])
             else:
                 tokens.append(int(obs[x, y]) + self.obs_offset)

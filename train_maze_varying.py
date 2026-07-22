@@ -68,12 +68,15 @@ def main():
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--output-dir", required=True)
+    ap.add_argument("--bump-tokens", action="store_true",
+                    help="emit DIRECTIONAL bump token on blocked moves so\naction_to_lie can learn BUMP_a -> -delta(a) and restore exact dead reckoning")
     args = ap.parse_args()
 
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     env = VaryingMazeWorld(size=args.size, rooms_per_side=args.rooms_per_side,
                            n_obs_types=args.n_obs_types,
-                           n_landmarks=args.n_landmarks, seed=args.seed)
+                           n_landmarks=args.n_landmarks,
+                           bump_tokens=args.bump_tokens, seed=args.seed)
     model = VARIANT_MAP[args.variant](vocab_size=env.unified_vocab_size, d_model=128,
                                       n_heads=2, n_layers=1,
                                       grid_size=args.size).to(args.device)
