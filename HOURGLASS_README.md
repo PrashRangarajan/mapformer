@@ -1,7 +1,11 @@
 # Hourglass-MapFormer + compositional experiments — setup & run
 
 Self-contained instructions to reproduce the Hourglass line on any machine.
-These experiments need only **torch** and **numpy** (no minigrid/gym/etc.).
+The Hourglass/compositional code itself uses only torch + numpy, but importing
+the `mapformer` package runs its `__init__.py`, which pulls in the rest of
+`requirements.txt` (matplotlib/scipy/scikit-learn via `evaluate.py`). So any
+`python3 -m mapformer.X` invocation needs the full requirements installed — use
+`pip install -r requirements.txt` below, not a torch+numpy subset.
 
 ## What this is
 
@@ -22,8 +26,15 @@ These experiments need only **torch** and **numpy** (no minigrid/gym/etc.).
 git clone git@github.com:PrashRangarajan/mapformer.git
 cd mapformer
 
-# 2. Deps (match torch to the machine's CUDA)
-pip install torch numpy
+# 2. Deps. IMPORTANT: `pip install torch` may grab a wheel built for a newer
+#    CUDA than the driver supports (e.g. torch+cu130 on a CUDA-12.4 driver),
+#    which silently leaves torch.cuda.is_available()==False and runs on CPU.
+#    Check the driver's CUDA version with `nvidia-smi` (top-right) and install a
+#    matching wheel FIRST, then the rest of requirements.
+pip install torch --index-url https://download.pytorch.org/whl/cu124   # e.g. for CUDA 12.x
+pip install -r requirements.txt                                        # numpy, matplotlib, scipy, sklearn
+# verify CUDA is actually live before spending GPU time:
+python3 -c "import torch; print('cuda:', torch.cuda.is_available(), torch.cuda.device_count())"
 
 # 3. enwik8 data (only needed for the scaffold check; compositional is synthetic)
 mkdir -p data && cd data
