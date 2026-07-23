@@ -70,6 +70,10 @@ from mapformer.model_hier_attn import (MapFormerWM_HierAttn,
 from mapformer.model_bounded_mem import MapFormerWM_BoundedFlat, MapFormerWM_BoundedHier
 from mapformer.model_recursive import MapFormerWM_Recursive
 from mapformer.model_spacetime_hier import MapFormerWM_SpaceTimeHier
+from mapformer.model_hourglass import (
+    MapFormerWM_Hourglass_k2, MapFormerWM_Hourglass_k4,
+    MapFormerWM_Hourglass_k2_deep, MapFormerWM_HourglassFlat3,
+)
 from mapformer.model_route_attn import (MapFormerWM_RouteAttn,
     MapFormerWM_RouteAttn_K4, MapFormerWM_RouteAttn_NoBias)
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
@@ -120,6 +124,10 @@ VARIANT_MAP = {
     "BoundedHier": MapFormerWM_BoundedHier,
     "Recursive": MapFormerWM_Recursive,
     "SpaceTimeHier": MapFormerWM_SpaceTimeHier,
+    "Hourglass_k2": MapFormerWM_Hourglass_k2,
+    "Hourglass_k4": MapFormerWM_Hourglass_k4,
+    "Hourglass_k2_deep": MapFormerWM_Hourglass_k2_deep,
+    "HourglassFlat3": MapFormerWM_HourglassFlat3,
     "RouteAttn": MapFormerWM_RouteAttn,
     "RouteAttn_K4": MapFormerWM_RouteAttn_K4,
     "RouteAttn_NoBias": MapFormerWM_RouteAttn_NoBias,
