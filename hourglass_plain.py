@@ -144,3 +144,38 @@ class FlatPlainLM(nn.Module):
 
     def flops_proxy(self, L):
         return len(self.layers) * L * L
+
+
+# --------------------------------------------------------------------------
+# Non-MapFormer controls with the standard variant signature, so they plug
+# into train_compositional / eval_compositional. These are "regular" Hourglass
+# / flat transformers: ordinary attention with sequence-INDEX RoPE and NO
+# MapFormer path-integration position code. They isolate what the MapFormer
+# machinery buys on the cognitive-map task.
+# --------------------------------------------------------------------------
+class PlainHourglass(nn.Module):
+    """Regular Hourglass (ordinary transformer layers) — NO MapFormer.
+    Matches Hourglass_k2's arrangement (1 pre / 1 coarse / 1 post, shorten 2)."""
+
+    def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=3,
+                 grid_size=64, dropout=0.1):
+        super().__init__()
+        self.net = HourglassPlainLM(num_tokens=vocab_size, dim=d_model,
+                                    depth=(1, 1, 1), shorten_factor=2,
+                                    heads=n_heads, dropout=dropout)
+
+    def forward(self, tokens):
+        return self.net(tokens)
+
+
+class PlainFlat(nn.Module):
+    """Regular flat transformer (sequence-index RoPE) — NO MapFormer."""
+
+    def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=3,
+                 grid_size=64, dropout=0.1):
+        super().__init__()
+        self.net = FlatPlainLM(num_tokens=vocab_size, dim=d_model,
+                               n_layers=n_layers, heads=n_heads, dropout=dropout)
+
+    def forward(self, tokens):
+        return self.net(tokens)
