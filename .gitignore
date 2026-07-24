@@ -17,3 +17,7 @@ figures_*/
 runs/_minigrid_cache/
 runs/_continuous_nav_cache/
 paper_figures/*.npz
+
+# downloaded datasets (re-fetched per HOURGLASS_README) and run markers
+data/
+.hourglass_experiments_done

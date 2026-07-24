@@ -23,7 +23,7 @@ from mapformer.train_variant import VARIANT_MAP
 
 @torch.no_grad()
 def eval_ckpt(ckpt_path, lengths, n_traj, device, seed=10000,
-              room_size=8, n_templates=4, grid_size=64):
+              room_size=8, n_templates=4, grid_size=64, batch_size=64):
     ck = torch.load(ckpt_path, map_location=device, weights_only=False)
     variant = ck["variant"]
     model = VARIANT_MAP[variant](
@@ -40,7 +40,7 @@ def eval_ckpt(ckpt_path, lengths, n_traj, device, seed=10000,
         agg = {k: [0, 0, 0.0] for k in ["exact", "cross", "cross_nb"]}  # [correct,n,nll_sum]
         done = 0
         while done < n_traj:
-            b = min(64, n_traj - done)
+            b = min(batch_size, n_traj - done)
             batch = env.generate_batch(b, T)
             tokens = batch[0].to(device)
             exact_m = batch[2][:, 1:].to(device)
@@ -66,6 +66,9 @@ def eval_ckpt(ckpt_path, lengths, n_traj, device, seed=10000,
             row[f"{k}_nll"] = s / max(n, 1)
             row[f"{k}_n"] = n
         results[T] = row
+    del model
+    if str(device).startswith("cuda"):
+        torch.cuda.empty_cache()
     return variant, results
 
 
@@ -74,13 +77,16 @@ def main():
     ap.add_argument("--checkpoints", nargs="+", required=True)
     ap.add_argument("--lengths", nargs="+", type=int, default=[256, 512, 1024, 2048])
     ap.add_argument("--n-traj", type=int, default=200)
+    ap.add_argument("--batch", type=int, default=64,
+                    help="trajectories per forward pass (lower to fit long T in GPU memory; "
+                         "does not change results)")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--out", default=os.path.join(_REPO, "COMPOSITIONAL_RESULTS.md"))
     args = ap.parse_args()
 
     all_rows = {}
     for cp in args.checkpoints:
-        v, res = eval_ckpt(cp, args.lengths, args.n_traj, args.device)
+        v, res = eval_ckpt(cp, args.lengths, args.n_traj, args.device, batch_size=args.batch)
         all_rows[v] = res
         print(f"\n=== {v} ===")
         for T, r in res.items():
