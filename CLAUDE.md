@@ -1281,3 +1281,34 @@ A background run launched via the tool's run_in_background died when the parent
 session process exited (orphaned children killed). For multi-hour runs use
 `setsid`/`nohup` so they survive session teardown; they then won't send a
 harness completion notification (check the `.done` marker / log instead).
+
+### Phase 2 (H3) built + run — oracle motif-segmentation does NOT help
+
+`MapFormerWM_Hourglass_MotifSeg` (`Hourglass_MotifSeg` / alias `MapWM-MotifSeg`,
+commit a905c51): identical to `Hourglass_k2` (same 600,917 params) except it pools
+on ORACLE room boundaries (env `meta.new_room` -> per-token seg id, threaded via
+`model.wants_seg_id`/`_batch_seg_id`) instead of a fixed token stride. Causal
+(verified, max leak 4.8e-7), param-parity exact.
+
+Result (n=3, `run_motifseg.sh`): cross_nb_acc **0.254 ± 0.014** at T=256 — BELOW
+the flat control (MapWM-FlatHG 0.281) and far below MapWM-Hier; 2nd-worst
+hierarchy variant. Trains fine (exact_acc 0.943). **Not a bug** — failure is
+specific to compositional transfer.
+
+Why: v1 tests segmentation ALIGNMENT only; it omits the LOCAL-FRAME-RESET (H3
+ingredient 3). The coarse room-summary means MapFormer hidden states that still
+carry ABSOLUTE path angle, so identical motifs at different locations do NOT
+collapse to one code — the sufficient statistic is never formed, and ~8-token/
+256-step compression is pure loss. So this falsifies "room-aligned pooling helps"
+but NOT "collapse-by-structure helps". Decisive remaining test = v2 with the
+frame-reset. Prior on v2 lowered (even the oracle upper bound landed below flat).
+
+### The two-question summary (for the paper / "what does each addition buy")
+
+WM and hierarchy help ORTHOGONAL metrics:
+- **WM (path integration) -> exact positional recall, growing with length.** vs
+  plain RoPE, exact_acc gap widens with T (hier: +0.03/+0.10/+0.18/+0.17 over
+  T=256..2048). Barely helps compositional; MapEM-Flat is WORSE than plain.
+- **Hierarchy -> compositional transfer, backbone-independent.** vs flat, cross_nb
+  ~+0.11 (clean in plain, high-variance in MapFormer); ~0 on exact_acc. Generic
+  multi-scale compression, NOT task-structure alignment (MotifSeg didn't help).

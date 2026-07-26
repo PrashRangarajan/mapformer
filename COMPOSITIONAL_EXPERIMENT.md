@@ -143,6 +143,7 @@ Model naming (backbone × structure; old key in parens):
 | MapWM-Hier   | 0.423 ± 0.144 | 0.314 ± 0.144 | 0.166 ± 0.174 |
 | Plain-Hier   | 0.324 ± 0.034 | 0.208 ± 0.037 | 0.046 ± 0.012 |
 | MapWM-FlatHG | 0.281 ± 0.049 | 0.163 ± 0.040 | 0.037 ± 0.020 |
+| MapWM-MotifSeg | 0.254 ± 0.014 | 0.133 ± 0.009 | 0.026 ± 0.006 |
 | MapWM-Flat   | 0.270 ± 0.030 | 0.164 ± 0.021 | 0.048 ± 0.012 |
 | Plain-Flat   | 0.213 ± 0.001 | 0.100 ± 0.002 | 0.018 ± 0.001 |
 | MapEM-Flat   | 0.097 ± 0.013 | 0.047 ± 0.012 | 0.015 ± 0.010 |
@@ -182,11 +183,38 @@ unstable rather than a clean refutation.
 equal params, seq=2048, 8000 iters — Hourglass ≥ flat at lower compute,
 reproducing the Nawrot et al. efficiency property. Scaffold is sound.
 
-**Caveats / open:** n=3, and MapWM-Hier is the unstable arm (wants more seeds to
-characterise the bimodal basin). **Phase 2 (`Hourglass_MotifSeg`, H3) is NOT yet
-built** — the room-boundary-segmented, motif-collapsing variant the design
-predicts should be the *real* hierarchy win remains the key open experiment.
-Reproduce with `run_comp_multiseed.sh` → `agg_comp_multiseed.py`.
+**6. Phase 2 (H3) — oracle motif-segmentation does NOT help (built 2026-07-25).**
+`MapWM-MotifSeg`: identical to `MapWM-Hier` (same 600,917 params) except it pools
+on ORACLE room boundaries (one coarse token per room-visit) instead of a fixed
+stride. Result: **0.254 ± 0.014** at T=256 — *below* the flat control
+(`MapWM-FlatHG` 0.281) and far below `MapWM-Hier`; second-worst hierarchy variant
+(only EM is worse). It trains fine (`exact_acc` 0.943, healthy) and is causal
+(verified) — the failure is specific to compositional transfer. **Strong caveat:**
+this v1 tests segmentation ALIGNMENT only; it omits H3 ingredient 3, the
+LOCAL-FRAME-RESET. The coarse room-summary is a mean of MapFormer hidden states
+that still carry ABSOLUTE path-integrated position, so identical motifs at
+different locations do NOT collapse to the same code — the motif-level sufficient
+statistic is never formed, and the ~8-token/256-step compression is pure loss with
+no abstraction payoff. So this falsifies *"room-aligned pooling helps"* but NOT yet
+*"collapse-by-structure helps"* — the decisive test is a v2 with the frame-reset.
+
+**How WM helps vs how hierarchy helps (matched pairs) — the clean summary.** The
+two additions help ORTHOGONAL metrics:
+- **WM (path integration) → exact positional recall, growing with length.** vs
+  plain RoPE at matched structure, `exact_acc` gap: flat +0.02/+0.10/+0.14/+0.11
+  and hier +0.03/+0.10/+0.18/+0.17 across T=256..2048 (widens with T = the cumsum
+  extrapolation signature). On the content-driven `cross_nb` target WM barely
+  helps (+0.03–0.06 flat; seed-noise in hier), and MapEM-Flat is WORSE than plain.
+- **Hierarchy → compositional transfer, backbone-independent.** vs flat at matched
+  backbone, `cross_nb` gap ~+0.11 (clean/low-variance in the plain family; positive
+  but high-variance in MapFormer); it adds ~nothing on `exact_acc`. It does NOT
+  require MapFormer, and making the segmentation smart (MotifSeg) did NOT help — so
+  the benefit is GENERIC multi-scale compression, not task-structure alignment.
+
+**Caveats / open:** n=3; absolute compositional accuracies are small (0.2–0.4);
+`MapWM-Hier` is high-variance (one lucky seed). The decisive remaining H3 test is a
+v2 MotifSeg WITH the local-frame-reset (make identical motifs collapse). Reproduce
+with `run_comp_multiseed.sh` / `run_motifseg.sh` → `agg_comp_multiseed.py`.
 
 ## Honest priors
 

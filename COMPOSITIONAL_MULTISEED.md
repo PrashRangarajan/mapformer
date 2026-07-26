@@ -2,7 +2,7 @@
 
 Seeds requested: [0, 1, 2]. Fresh held-out env (seed=10000). cross_nb_acc = non-blank cross-instance cells (compositional target); exact_acc = exact-revisit recall.
 
-Seeds actually found per variant: MapWM-Flat=[0, 1, 2], MapEM-Flat=[0, 1, 2], MapWM-Hier=[0, 1, 2], MapWM-FlatHG=[0, 1, 2], Plain-Hier=[0, 1, 2], Plain-Flat=[0, 1, 2]
+Seeds actually found per variant: MapWM-Flat=[0, 1, 2], MapEM-Flat=[0, 1, 2], MapWM-Hier=[0, 1, 2], MapWM-FlatHG=[0, 1, 2], MapWM-MotifSeg=[0, 1, 2], Plain-Hier=[0, 1, 2], Plain-Flat=[0, 1, 2]
 
 
 ## cross_nb_acc (compositional target)
@@ -13,6 +13,7 @@ Seeds actually found per variant: MapWM-Flat=[0, 1, 2], MapEM-Flat=[0, 1, 2], Ma
 | MapEM-Flat | 0.097 ± 0.013 (n=3) | 0.047 ± 0.012 (n=3) | 0.026 ± 0.011 (n=3) | 0.015 ± 0.010 (n=3) |
 | MapWM-Hier | 0.423 ± 0.144 (n=3) | 0.314 ± 0.144 (n=3) | 0.209 ± 0.166 (n=3) | 0.166 ± 0.174 (n=3) |
 | MapWM-FlatHG | 0.281 ± 0.049 (n=3) | 0.163 ± 0.040 (n=3) | 0.071 ± 0.031 (n=3) | 0.037 ± 0.020 (n=3) |
+| MapWM-MotifSeg | 0.254 ± 0.014 (n=3) | 0.133 ± 0.009 (n=3) | 0.055 ± 0.011 (n=3) | 0.026 ± 0.006 (n=3) |
 | Plain-Hier | 0.324 ± 0.034 (n=3) | 0.208 ± 0.037 (n=3) | 0.095 ± 0.023 (n=3) | 0.046 ± 0.012 (n=3) |
 | Plain-Flat | 0.213 ± 0.001 (n=3) | 0.100 ± 0.002 (n=3) | 0.038 ± 0.001 (n=3) | 0.018 ± 0.001 (n=3) |
 
@@ -24,6 +25,7 @@ Seeds actually found per variant: MapWM-Flat=[0, 1, 2], MapEM-Flat=[0, 1, 2], Ma
 | MapEM-Flat | 0.788 ± 0.168 (n=3) | 0.696 ± 0.167 (n=3) | 0.588 ± 0.135 (n=3) | 0.519 ± 0.070 (n=3) |
 | MapWM-Hier | 0.952 ± 0.035 (n=3) | 0.935 ± 0.047 (n=3) | 0.864 ± 0.098 (n=3) | 0.756 ± 0.165 (n=3) |
 | MapWM-FlatHG | 0.924 ± 0.010 (n=3) | 0.872 ± 0.022 (n=3) | 0.723 ± 0.079 (n=3) | 0.626 ± 0.083 (n=3) |
+| MapWM-MotifSeg | 0.943 ± 0.037 (n=3) | 0.886 ± 0.067 (n=3) | 0.753 ± 0.119 (n=3) | 0.647 ± 0.105 (n=3) |
 | Plain-Hier | 0.919 ± 0.007 (n=3) | 0.833 ± 0.024 (n=3) | 0.683 ± 0.032 (n=3) | 0.585 ± 0.019 (n=3) |
 | Plain-Flat | 0.905 ± 0.000 (n=3) | 0.794 ± 0.002 (n=3) | 0.632 ± 0.007 (n=3) | 0.540 ± 0.016 (n=3) |
 
@@ -35,5 +37,6 @@ Seeds actually found per variant: MapWM-Flat=[0, 1, 2], MapEM-Flat=[0, 1, 2], Ma
 | MapEM-Flat | 1.716 ± 0.157 (n=3) | 1.908 ± 0.150 (n=3) | 2.046 ± 0.108 (n=3) | 2.087 ± 0.083 (n=3) |
 | MapWM-Hier | 1.097 ± 0.458 (n=3) | 1.276 ± 0.480 (n=3) | 1.804 ± 0.802 (n=3) | 2.402 ± 1.242 (n=3) |
 | MapWM-FlatHG | 1.397 ± 0.273 (n=3) | 1.954 ± 0.503 (n=3) | 3.365 ± 1.132 (n=3) | 3.941 ± 1.197 (n=3) |
+| MapWM-MotifSeg | 1.483 ± 0.079 (n=3) | 1.908 ± 0.276 (n=3) | 2.480 ± 0.630 (n=3) | 2.892 ± 0.845 (n=3) |
 | Plain-Hier | 1.402 ± 0.058 (n=3) | 1.640 ± 0.069 (n=3) | 1.876 ± 0.064 (n=3) | 1.989 ± 0.029 (n=3) |
 | Plain-Flat | 1.598 ± 0.005 (n=3) | 1.826 ± 0.010 (n=3) | 2.025 ± 0.035 (n=3) | 2.124 ± 0.012 (n=3) |
