@@ -131,6 +131,15 @@ VARIANT_MAP = {
     "HourglassFlat3": MapFormerWM_HourglassFlat3,
     "PlainHourglass": PlainHourglass,
     "PlainFlat": PlainFlat,
+    # Clear backbone-structure aliases (non-breaking: old keys above still work,
+    # so existing checkpoints and the other server's names keep resolving).
+    #   backbone: MapWM / MapEM / Plain    structure: Flat / Hier(=hourglass)
+    "MapWM-Flat":   MapFormerWM,               # == Vanilla
+    "MapEM-Flat":   MapFormerEM,               # == VanillaEM
+    "MapWM-Hier":   MapFormerWM_Hourglass_k2,  # == Hourglass_k2
+    "MapWM-FlatHG": MapFormerWM_HourglassFlat3,# == HourglassFlat3 (hourglass-matched flat control)
+    "Plain-Hier":   PlainHourglass,
+    "Plain-Flat":   PlainFlat,
     "RouteAttn": MapFormerWM_RouteAttn,
     "RouteAttn_K4": MapFormerWM_RouteAttn_K4,
     "RouteAttn_NoBias": MapFormerWM_RouteAttn_NoBias,

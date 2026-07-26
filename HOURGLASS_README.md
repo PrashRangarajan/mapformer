@@ -97,7 +97,38 @@ python3 -m mapformer.eval_compositional \
 `--target`: `motif` (compositional objective), `cross` (transfer-only),
 `exact` (paper-standard fine target). Registered variants that path-integrate
 work as `--variant` (Vanilla, VanillaEM, Hourglass_k2, Hourglass_k4,
-Hourglass_k2_deep, HourglassFlat3, ...).
+Hourglass_k2_deep, HourglassFlat3, ...), plus two **non-MapFormer controls**
+(ordinary index-RoPE transformers, no path integration): `PlainHourglass`,
+`PlainFlat`.
+
+Clear backbone-structure **aliases** (non-breaking — old keys still work):
+`MapWM-Flat`=Vanilla, `MapEM-Flat`=VanillaEM, `MapWM-Hier`=Hourglass_k2,
+`MapWM-FlatHG`=HourglassFlat3, `Plain-Hier`=PlainHourglass,
+`Plain-Flat`=PlainFlat.
+
+## Run: compositional multi-seed (the authoritative comparison)
+
+```bash
+# 6 variants x seeds {0,1,2}, split across both GPUs, then aggregate mean+-std.
+# Resumable (skips existing checkpoints); writes COMPOSITIONAL_MULTISEED.md/.json.
+nohup bash mapformer/run_comp_multiseed.sh >/dev/null 2>&1 &
+tail -f mapformer/compositional_multiseed.log
+```
+
+To (re-)aggregate on-disk checkpoints without retraining (renders clean names):
+
+```bash
+python3 -m mapformer.agg_comp_multiseed \
+    --runs-dir mapformer/runs/comp_multiseed --seeds 0 1 2 \
+    --variants Vanilla VanillaEM Hourglass_k2 HourglassFlat3 PlainHourglass PlainFlat \
+    --lengths 256 512 1024 2048 --n-traj 200 --batch 16 --device cuda:0
+```
+
+Headline (n=3): the **hierarchy** helps in BOTH the MapFormer and plain
+families, but **MapFormer barely beats a plain transformer**; MapWM-Hier's lead
+is high-variance (one lucky seed). Full reading in `COMPOSITIONAL_EXPERIMENT.md`.
+For a long eval `--n-steps`, add `--batch 16` to `eval_compositional` to fit
+T=2048 in one 24 GB GPU.
 
 ## Run: both, unattended (waits for idle GPUs)
 
@@ -121,6 +152,9 @@ Touches `mapformer/.hourglass_experiments_done` when finished. Does not commit.
 | `environment_compositional.py` | repeatable-motif grid env |
 | `validate_compositional.py` | task-validity gate (run before training) |
 | `train_compositional.py` | compositional-task trainer |
-| `eval_compositional.py` | exact vs cross-instance acc/NLL at length |
-| `run_hourglass_experiments.sh` | GPU-waiting launcher for both jobs |
-| `COMPOSITIONAL_EXPERIMENT.md` | full experiment design + hypotheses |
+| `eval_compositional.py` | exact vs cross-instance acc/NLL at length (`--batch` for long T) |
+| `run_hourglass_experiments.sh` | GPU-waiting launcher for the single-seed Phase 1 + enwik8 |
+| `run_comp_multiseed.sh` | multi-seed (6 variants x 3 seeds) 2-GPU launcher + aggregate |
+| `agg_comp_multiseed.py` | multi-seed aggregator (mean±std, clean display names) |
+| `COMPOSITIONAL_EXPERIMENT.md` | full experiment design + hypotheses + RESULTS |
+| `COMPOSITIONAL_MULTISEED.md` | authoritative multi-seed result table |

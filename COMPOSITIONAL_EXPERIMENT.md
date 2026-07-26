@@ -123,6 +123,71 @@ unbuilt "segment by REGION TRANSITION" fix.
   coarse-contribution diagnostic.
 - **Phase 3:** multi-seed the surviving contrast; length-gen curves; write up.
 
+## RESULTS — multi-seed, n=3 (updated 2026-07-25, koopman server)
+
+Phase 1 + Phase 3 (multi-seed) run together: 6 variants × seeds {0,1,2},
+trained at T=256, evaluated on a **fresh held-out env (seed=10000)** at
+T ∈ {256,512,1024,2048}. Added two non-MapFormer controls (`Plain-Hier`,
+`Plain-Flat`) to isolate what MapFormer's path-integration bias buys over
+ordinary index-RoPE. Raw table: `COMPOSITIONAL_MULTISEED.md`.
+
+Model naming (backbone × structure; old key in parens):
+`MapWM-Flat` (Vanilla), `MapEM-Flat` (VanillaEM), `MapWM-Hier` (Hourglass_k2),
+`MapWM-FlatHG` (HourglassFlat3), `Plain-Hier` (PlainHourglass),
+`Plain-Flat` (PlainFlat).
+
+`cross_nb_acc` (compositional target), mean±std over seeds:
+
+| variant | T=256 | T=512 | T=2048 |
+|---|---|---|---|
+| MapWM-Hier   | 0.423 ± 0.144 | 0.314 ± 0.144 | 0.166 ± 0.174 |
+| Plain-Hier   | 0.324 ± 0.034 | 0.208 ± 0.037 | 0.046 ± 0.012 |
+| MapWM-FlatHG | 0.281 ± 0.049 | 0.163 ± 0.040 | 0.037 ± 0.020 |
+| MapWM-Flat   | 0.270 ± 0.030 | 0.164 ± 0.021 | 0.048 ± 0.012 |
+| Plain-Flat   | 0.213 ± 0.001 | 0.100 ± 0.002 | 0.018 ± 0.001 |
+| MapEM-Flat   | 0.097 ± 0.013 | 0.047 ± 0.012 | 0.015 ± 0.010 |
+
+**1. Hierarchy helps — in BOTH backbones (robust).** Hourglass beats flat on
+all 3 seeds, paired, in the MapFormer family (MapWM-Hier > MapWM-FlatHG:
+Δ = +0.09 / +0.28 / +0.06 at T=256) AND the plain family (Plain-Hier >
+Plain-Flat: Δ = +0.15 / +0.12 / +0.07). This is the cleanest positive of the
+line — and, unexpectedly, it does NOT require MapFormer. **H2 is FALSIFIED:**
+the fixed-stride absolute-θ Hourglass was predicted to be ≈ flat or worse; it
+beats flat.
+
+**2. MapFormer barely helps over a plain transformer.** Matched pairs: in the
+flat setting MapFormer gives a small, consistent edge (MapWM-Flat 0.270 vs
+Plain-Flat 0.213, ~+0.05); in the hierarchy setting the edge is seed-dependent
+and vanishes on 2/3 seeds (MapWM-Hier vs Plain-Hier paired Δ = −0.01 / +0.29 /
++0.02 — carried entirely by seed1). And `MapEM-Flat` (0.097) is **worse** than
+a plain transformer (0.213): the EM AND-gate actively suppresses compositional
+transfer. The relayed prediction that plain models sit at the ~0.06 chance
+floor is **FALSIFIED** — because the action stream is in the input, a plain
+transformer learns to path-integrate via attention. MapFormer's SO(2) code is
+an inductive bias, not privileged information, and on this task it is close to
+free-riding on the hierarchy.
+
+**3. High variance in MapWM-Hier.** Its mean lead is inflated by one lucky seed
+(seed1: 0.625 at T=256 / 0.412 at T=2048 vs ~0.30 / 0.04 for seeds 0,2); std >
+gap. The plain family shows the SAME hierarchy effect with 5–30× lower variance,
+so the *clean* demonstration of "hierarchy helps" lives in the plain models.
+
+**4. H1 confirmed** (flat already transfers), **WM > EM on cross-instance**
+(0.270 vs 0.097). The predicted "EM ≥ WM on exact" did NOT hold here
+(MapEM-Flat exact 0.788 ± 0.168 < MapWM-Flat 0.924) — but EM's exact-recall
+variance is large (init instability documented in CLAUDE.md), so treat that as
+unstable rather than a clean refutation.
+
+**5. enwik8 scaffold (Gate B):** hourglass val_bpc ≈ 2.00 vs flat10 ≈ 2.07 at
+equal params, seq=2048, 8000 iters — Hourglass ≥ flat at lower compute,
+reproducing the Nawrot et al. efficiency property. Scaffold is sound.
+
+**Caveats / open:** n=3, and MapWM-Hier is the unstable arm (wants more seeds to
+characterise the bimodal basin). **Phase 2 (`Hourglass_MotifSeg`, H3) is NOT yet
+built** — the room-boundary-segmented, motif-collapsing variant the design
+predicts should be the *real* hierarchy win remains the key open experiment.
+Reproduce with `run_comp_multiseed.sh` → `agg_comp_multiseed.py`.
+
 ## Honest priors
 
 Every prior hierarchy attempt here was a clean negative, but all were on

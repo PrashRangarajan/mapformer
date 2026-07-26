@@ -1,5 +1,15 @@
 # Compositional-motif results
 
+> **SUPERSEDED (2026-07-25) — single seed (seed 0) only.** The multi-seed
+> run (n=3) in `COMPOSITIONAL_MULTISEED.md` is the authoritative result and
+> **changes the conclusion**: the single-seed `Hourglass_k2` lead below is
+> inflated by one lucky seed, and the non-MapFormer controls (`PlainHourglass`/
+> `PlainFlat`, added later) are NOT at chance — MapFormer barely beats a plain
+> transformer here; the hierarchy, not MapFormer, does the work. See
+> `COMPOSITIONAL_EXPERIMENT.md` (RESULTS section) for the honest reading.
+> Model name map: Vanilla=MapWM-Flat, VanillaEM=MapEM-Flat,
+> Hourglass_k2=MapWM-Hier, HourglassFlat3=MapWM-FlatHG.
+
 Cross-instance = compositional target (motif seen elsewhere). cross_nb = non-blank subset. Fresh env, OOD length.
 
 

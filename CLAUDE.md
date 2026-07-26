@@ -1224,3 +1224,60 @@ Vanilla 0.835 > VanillaEM 0.807 > PC 0.721 > MambaLike 0.567 > RoPE 0.513
 
 Never compare a freshly-trained variant against a stored baseline checkpoint;
 retrain every arm in the same batch. Run `validate_task.py` before new tasks.
+
+
+## Session 2026-07-25 — koopman clone, compositional multi-seed, model rename
+
+Ran on a second server (koopman, 2×RTX 4090). Cloned the repo, hit two env
+gotchas now documented in HOURGLASS_README: pip grabbed torch+cu130 on a
+CUDA-12.4 driver (silent CPU fallback) → installed torch 2.6.0+cu124; and the
+package `__init__.py` needs full `requirements.txt` (matplotlib/scipy/sklearn),
+not a torch+numpy subset.
+
+### Compositional Hourglass — multi-seed (n=3) OVERTURNS the single-seed read
+
+`run_comp_multiseed.sh` + `agg_comp_multiseed.py` (new): 6 variants × seeds
+{0,1,2}, train T=256, eval fresh env (seed=10000) at T∈{256..2048}. Added two
+non-MapFormer controls (`PlainHourglass`/`PlainFlat` = ordinary index-RoPE, no
+path integration). Table in `COMPOSITIONAL_MULTISEED.md`; findings in
+`COMPOSITIONAL_EXPERIMENT.md` (RESULTS). `COMPOSITIONAL_RESULTS.md` (single-seed)
+is marked SUPERSEDED.
+
+Headline (cross_nb_acc, the compositional target):
+- **Hierarchy helps in BOTH backbones** (Hourglass > flat on all 3 seeds, paired,
+  for MapFormer AND plain). H2 (fixed-stride absolute-θ Hourglass ≈ flat)
+  FALSIFIED — it beats flat.
+- **MapFormer barely helps over a plain transformer.** Flat: MapWM 0.270 vs
+  Plain 0.213 (~+0.05, consistent). Hierarchy: MapWM-Hier vs Plain-Hier is
+  seed-dependent (paired Δ −0.01/+0.29/+0.02 — all from seed1). `MapEM-Flat`
+  (0.097) is WORSE than plain (0.213): the EM AND-gate hurts compositional
+  transfer. The relayed "plain ≈ 0.06 chance floor" prediction is FALSIFIED —
+  the action stream is in the input, so a plain transformer path-integrates via
+  attention; MapFormer's SO(2) code is an inductive bias, not privileged info.
+- **MapWM-Hier is high-variance** (seed1 outlier 0.625 vs ~0.30 for seeds 0,2;
+  std > gap). The clean, low-variance version of "hierarchy helps" is the plain
+  family. More MapWM-Hier seeds is the key open follow-up.
+- enwik8 scaffold (Gate B): hourglass val_bpc ≈2.00 vs flat10 ≈2.07, equal
+  params, seq=2048 — efficiency property reproduces.
+- **Phase 2 (`Hourglass_MotifSeg`, H3) still NOT built** — the room-boundary-
+  segmented motif-collapsing variant is the predicted *real* hierarchy win.
+
+### Model rename (backbone × structure), non-breaking
+
+Added aliases in `train_variant.py::VARIANT_MAP` (old keys still resolve, so
+existing checkpoints and the other server's names keep working):
+`MapWM-Flat`=Vanilla, `MapEM-Flat`=VanillaEM, `MapWM-Hier`=Hourglass_k2,
+`MapWM-FlatHG`=HourglassFlat3, `Plain-Hier`=PlainHourglass, `Plain-Flat`=PlainFlat.
+`agg_comp_multiseed.py` renders these display names.
+
+Position-encoding note (the experimental variable): `MapWM-Hier` rotates q,k by
+the **path-integration** angle `θ=ω·cumsum(Δ(actions))` (RoPE *mechanism*, not
+index RoPE); `Plain-Hier` uses standard index RoPE `θ=t·freqs`. The two
+Hourglass models are identical scaffolds differing only in the rotation angle.
+
+### Infra lesson
+
+A background run launched via the tool's run_in_background died when the parent
+session process exited (orphaned children killed). For multi-hour runs use
+`setsid`/`nohup` so they survive session teardown; they then won't send a
+harness completion notification (check the `.done` marker / log instead).

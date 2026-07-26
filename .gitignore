@@ -21,3 +21,4 @@ paper_figures/*.npz
 # downloaded datasets (re-fetched per HOURGLASS_README) and run markers
 data/
 .hourglass_experiments_done
+.comp_multiseed_done
