@@ -118,6 +118,9 @@ class MapFormerWM_Hourglass(nn.Module):
     n_pre = 1
     n_coarse = 1
     n_post = 1
+    # -- local-frame-reset (H3 ingredient 3); off by default (backward compat) --
+    frame_reset = False
+    wants_seg_id = False
 
     def __init__(
         self,
@@ -172,6 +175,30 @@ class MapFormerWM_Hourglass(nn.Module):
     def _causal_mask(self, n: int, device):
         return torch.triu(torch.ones(n, n, device=device, dtype=torch.bool), diagonal=1)
 
+    def _resolve_seg_id(self, tokens, L, B):
+        """Per-token room-visit id (B, L). Uses the oracle signal stashed as
+        self._batch_seg_id; falls back to fixed-stride (k) grouping so smoke /
+        causality checks still run without an oracle signal."""
+        seg_id = getattr(self, "_batch_seg_id", None)
+        if seg_id is None or seg_id.shape[0] != B or seg_id.shape[1] < L:
+            seg_id = (torch.arange(L, device=tokens.device) // self.k).unsqueeze(0).expand(B, L)
+        return seg_id[:, :L].to(device=tokens.device, dtype=torch.long)
+
+    def _reset_cum_delta(self, cum_delta, seg_id):
+        """Local-frame reset: subtract, per token, the cumulative path angle at
+        the ENTRY token of its room-visit, so position is measured RELATIVE to
+        room entry. Two visits to the same motif-cell then get the SAME local
+        angle -> identical fine codes -> identical motifs collapse. Causal: the
+        subtracted baseline sits at an index <= t. cum_delta is (B, L, H, nb)."""
+        B, L, H, nb = cum_delta.shape
+        S_max = int(seg_id.max().item()) + 1
+        t_idx = torch.arange(L, device=cum_delta.device).unsqueeze(0).expand(B, L)
+        entry = torch.full((B, S_max), L, device=cum_delta.device, dtype=torch.long)
+        entry.scatter_reduce_(1, seg_id, t_idx, reduce="amin", include_self=True)
+        entry_per_tok = torch.gather(entry, 1, seg_id)                 # (B, L)
+        idx = entry_per_tok.view(B, L, 1, 1).expand(B, L, H, nb)
+        return cum_delta - torch.gather(cum_delta, 1, idx)
+
     def forward(self, tokens: torch.Tensor) -> torch.Tensor:
         B, L = tokens.shape
         k = self.k
@@ -179,6 +206,8 @@ class MapFormerWM_Hourglass(nn.Module):
         x = self.token_emb(tokens)                       # (B, L, D)
         delta = self.action_to_lie(x)                    # (B, L, H, nb)
         cum_delta = torch.cumsum(delta, dim=1)           # cumulative path angle
+        if self.frame_reset:                             # room-relative position angles
+            cum_delta = self._reset_cum_delta(cum_delta, self._resolve_seg_id(tokens, L, B))
 
         # Pad sequence length up to a multiple of k (pad at the END; loss never
         # touches padded positions and causality of earlier tokens is intact).
@@ -333,9 +362,12 @@ class MapFormerWM_Hourglass_MotifSeg(MapFormerWM_Hourglass):
 
     def forward(self, tokens):
         B, L = tokens.shape
+        seg_id = self._resolve_seg_id(tokens, L, B)            # oracle room segmentation
         x = self.token_emb(tokens)
         delta = self.action_to_lie(x)
         cum_delta = torch.cumsum(delta, dim=1)                 # (B, L, H, nb)
+        if self.frame_reset:                                  # room-relative angles (v2)
+            cum_delta = self._reset_cum_delta(cum_delta, seg_id)
         cos_f, sin_f = self._angles(cum_delta)
         mask_f = self._causal_mask(L, tokens.device)
 
@@ -343,11 +375,6 @@ class MapFormerWM_Hourglass_MotifSeg(MapFormerWM_Hourglass):
             x = layer(x, cos_f, sin_f, mask_f)
         skip = x
 
-        # -- oracle (or fallback) segmentation into room-visits --
-        seg_id = getattr(self, "_batch_seg_id", None)
-        if seg_id is None or seg_id.shape[0] != B or seg_id.shape[1] < L:
-            seg_id = (torch.arange(L, device=tokens.device) // self.k).unsqueeze(0).expand(B, L)
-        seg_id = seg_id[:, :L].to(device=tokens.device, dtype=torch.long)
         S_max = int(seg_id.max().item()) + 1
 
         xc = self._segment_pool(skip, seg_id, S_max)           # (B, S_max, D)
@@ -369,3 +396,27 @@ class MapFormerWM_Hourglass_MotifSeg(MapFormerWM_Hourglass):
             x = layer(x, cos_f, sin_f, mask_f)
         x = self.out_norm(x)
         return self.out_proj(x)
+
+
+# --------------------------------------------------------------------------
+# Phase 2 v2: local-frame-reset variants (H3 ingredient 3)
+# --------------------------------------------------------------------------
+class MapFormerWM_Hourglass_MotifSeg_FR(MapFormerWM_Hourglass_MotifSeg):
+    """v2 = MotifSeg + LOCAL-FRAME-RESET (the full H3). Oracle room segmentation
+    AND room-relative position angles: identical motifs at different locations
+    now produce identical fine codes, so they collapse to the same coarse token
+    -- the motif-level sufficient statistic v1 (segmentation alone) never formed.
+    Same params as Hourglass_k2 / MotifSeg (600,917); the ONLY change vs
+    MotifSeg is that position is measured relative to room entry."""
+    frame_reset = True
+
+
+class MapFormerWM_FrameResetFlat(MapFormerWM_Hourglass):
+    """Isolating control: FLAT MapFormer-WM (3 layers, shorten=1, matched to
+    MapWM-FlatHG) with the frame-reset ONLY -- no coarse hierarchy. Tells us
+    whether the reset alone drives any gain, or whether it needs the segmented
+    coarse stack. (Uses oracle room boundaries only to place the reset origin.)"""
+    shorten_factor = 1
+    n_pre, n_coarse, n_post = 1, 1, 1
+    frame_reset = True
+    wants_seg_id = True
