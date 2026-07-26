@@ -73,6 +73,7 @@ from mapformer.model_spacetime_hier import MapFormerWM_SpaceTimeHier
 from mapformer.model_hourglass import (
     MapFormerWM_Hourglass_k2, MapFormerWM_Hourglass_k4,
     MapFormerWM_Hourglass_k2_deep, MapFormerWM_HourglassFlat3,
+    MapFormerWM_Hourglass_MotifSeg,
 )
 from mapformer.hourglass_plain import PlainHourglass, PlainFlat
 from mapformer.model_route_attn import (MapFormerWM_RouteAttn,
@@ -129,6 +130,7 @@ VARIANT_MAP = {
     "Hourglass_k4": MapFormerWM_Hourglass_k4,
     "Hourglass_k2_deep": MapFormerWM_Hourglass_k2_deep,
     "HourglassFlat3": MapFormerWM_HourglassFlat3,
+    "Hourglass_MotifSeg": MapFormerWM_Hourglass_MotifSeg,   # Phase 2 (H3), oracle seg
     "PlainHourglass": PlainHourglass,
     "PlainFlat": PlainFlat,
     # Clear backbone-structure aliases (non-breaking: old keys above still work,
@@ -138,6 +140,7 @@ VARIANT_MAP = {
     "MapEM-Flat":   MapFormerEM,               # == VanillaEM
     "MapWM-Hier":   MapFormerWM_Hourglass_k2,  # == Hourglass_k2
     "MapWM-FlatHG": MapFormerWM_HourglassFlat3,# == HourglassFlat3 (hourglass-matched flat control)
+    "MapWM-MotifSeg": MapFormerWM_Hourglass_MotifSeg,  # == Hourglass_MotifSeg (oracle room seg)
     "Plain-Hier":   PlainHourglass,
     "Plain-Flat":   PlainFlat,
     "RouteAttn": MapFormerWM_RouteAttn,

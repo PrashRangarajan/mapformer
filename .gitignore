@@ -22,3 +22,4 @@ paper_figures/*.npz
 data/
 .hourglass_experiments_done
 .comp_multiseed_done
+.motifseg_done

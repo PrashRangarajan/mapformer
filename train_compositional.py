@@ -62,12 +62,19 @@ def main():
     crit = nn.CrossEntropyLoss()
 
     mask_idx = {"exact": 2, "motif": 3, "cross": 4}[args.target]
+    # Models that segment on oracle room boundaries (Hourglass_MotifSeg) read a
+    # per-token segment id off the model each batch; derived from meta.new_room.
+    wants_seg = getattr(model, "wants_seg_id", False)
     losses = []
     for ep in range(args.epochs):
         t0 = time.time(); model.train(); ep_loss = 0.0; nb = 0
         for _ in range(args.n_batches):
             batch = env.generate_batch(args.batch_size, args.n_steps)
             tokens = batch[0].to(args.device)
+            if wants_seg:
+                nr = torch.tensor(batch[5]["new_room"], dtype=torch.long, device=args.device)
+                seg = (torch.cumsum(nr, dim=1) - 1).repeat_interleave(2, dim=1)  # per-token
+                model._batch_seg_id = seg[:, :-1]        # align to inp = tokens[:, :-1]
             target_mask_full = batch[mask_idx].to(args.device)
             inp = tokens[:, :-1]; tgt = tokens[:, 1:]
             tmask = target_mask_full[:, 1:]

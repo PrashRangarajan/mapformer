@@ -31,6 +31,7 @@ def eval_ckpt(ckpt_path, lengths, n_traj, device, seed=10000,
         n_heads=ck["n_heads"], n_layers=ck["n_layers"], grid_size=grid_size,
     ).to(device)
     model.load_state_dict(ck["model_state"]); model.eval()
+    wants_seg = getattr(model, "wants_seg_id", False)  # oracle room segmentation
     blank = grid_size and None
     results = {}
     for T in lengths:
@@ -43,6 +44,10 @@ def eval_ckpt(ckpt_path, lengths, n_traj, device, seed=10000,
             b = min(batch_size, n_traj - done)
             batch = env.generate_batch(b, T)
             tokens = batch[0].to(device)
+            if wants_seg:
+                nr = torch.tensor(batch[5]["new_room"], dtype=torch.long, device=device)
+                seg = (torch.cumsum(nr, dim=1) - 1).repeat_interleave(2, dim=1)
+                model._batch_seg_id = seg[:, :-1]
             exact_m = batch[2][:, 1:].to(device)
             cross_m = batch[4][:, 1:].to(device)
             inp = tokens[:, :-1]; tgt = tokens[:, 1:]

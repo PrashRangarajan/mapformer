@@ -286,3 +286,86 @@ class MapFormerWM_HourglassFlat3(MapFormerWM_Hourglass):
     the middle layer at coarse resolution help?'."""
     shorten_factor = 1
     n_pre, n_coarse, n_post = 1, 1, 1
+
+
+# --------------------------------------------------------------------------
+# Phase 2 (H3): oracle motif-segmented Hourglass
+# --------------------------------------------------------------------------
+class MapFormerWM_Hourglass_MotifSeg(MapFormerWM_Hourglass):
+    """Room-boundary-segmented Hourglass (ORACLE segmentation).
+
+    Identical to Hourglass_k2 in every component EXCEPT the shortening: instead
+    of pooling on a FIXED token stride, it pools on ORACLE room boundaries --
+    one coarse token per room-visit. This isolates H3's first ingredient
+    (segmentation ALIGNED to motif structure) from generic fixed-stride pooling;
+    MotifSeg vs Hourglass_k2 differ ONLY in the segment boundaries.
+
+    Segmentation signal: a per-token segment id (B, L), stashed as
+    ``self._batch_seg_id`` by the trainer/evaluator (derived from the env's
+    ``meta['new_room']``). Falls back to fixed-stride (k) grouping when no
+    signal is supplied, so smoke / causality checks still run.
+
+    The coarse path is CAUSAL and content-summarising:
+      - coarse token s = MEAN of the (unrotated) pre-layer hidden states over
+        the tokens of room-visit s (content summary; motif-carrying);
+      - coarse angle s = MEAN of the cumulative path angle over room-visit s;
+      - coarse MapFormer layers attend causally over the room sequence;
+      - a fine token in room j receives the coarse output of room j-1 (its most
+        recent COMPLETED room), zero for the first room -> no within-room future
+        leak. The coarse path is thus a memory of PAST rooms' motifs, exactly
+        the sufficient statistic the cross-instance target rewards.
+
+    NOTE (v1): the local-coordinate-frame reset (H3 ingredient 3) is NOT here;
+    this build tests segmentation alignment alone.
+    """
+    wants_seg_id = True
+    shorten_factor = 2                 # only used by the no-oracle fallback
+    n_pre, n_coarse, n_post = 1, 1, 1
+
+    def _segment_pool(self, x, seg_id, S_max):
+        """Mean-pool x (B, L, D) into (B, S_max, D) by segment id (B, L)."""
+        B, L, D = x.shape
+        out = x.new_zeros(B, S_max, D)
+        out.scatter_add_(1, seg_id.unsqueeze(-1).expand(B, L, D), x)
+        cnt = x.new_zeros(B, S_max, 1)
+        cnt.scatter_add_(1, seg_id.unsqueeze(-1).expand(B, L, 1), x.new_ones(B, L, 1))
+        return out / cnt.clamp(min=1.0)
+
+    def forward(self, tokens):
+        B, L = tokens.shape
+        x = self.token_emb(tokens)
+        delta = self.action_to_lie(x)
+        cum_delta = torch.cumsum(delta, dim=1)                 # (B, L, H, nb)
+        cos_f, sin_f = self._angles(cum_delta)
+        mask_f = self._causal_mask(L, tokens.device)
+
+        for layer in self.pre_layers:
+            x = layer(x, cos_f, sin_f, mask_f)
+        skip = x
+
+        # -- oracle (or fallback) segmentation into room-visits --
+        seg_id = getattr(self, "_batch_seg_id", None)
+        if seg_id is None or seg_id.shape[0] != B or seg_id.shape[1] < L:
+            seg_id = (torch.arange(L, device=tokens.device) // self.k).unsqueeze(0).expand(B, L)
+        seg_id = seg_id[:, :L].to(device=tokens.device, dtype=torch.long)
+        S_max = int(seg_id.max().item()) + 1
+
+        xc = self._segment_pool(skip, seg_id, S_max)           # (B, S_max, D)
+        cd = cum_delta.reshape(B, L, self.n_heads * self.n_blocks)
+        cdc = self._segment_pool(cd, seg_id, S_max).view(
+            B, S_max, self.n_heads, self.n_blocks)
+        cos_c, sin_c = self._coarse_angles(cdc)
+        mask_c = self._causal_mask(S_max, tokens.device)
+        for layer in self.coarse_layers:
+            xc = layer(xc, cos_c, sin_c, mask_c)
+
+        # -- causal upsample: token in room j gets coarse output of room j-1 --
+        prev = (seg_id - 1).clamp(min=0)                       # (B, L)
+        up = torch.gather(xc, 1, prev.unsqueeze(-1).expand(B, L, self.d_model))
+        up = up * (seg_id > 0).unsqueeze(-1).to(up.dtype)      # zero for first room
+        x = skip + up if self._use_coarse else skip
+
+        for layer in self.post_layers:
+            x = layer(x, cos_f, sin_f, mask_f)
+        x = self.out_norm(x)
+        return self.out_proj(x)

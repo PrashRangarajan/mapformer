@@ -24,6 +24,7 @@ DISPLAY = {
     "VanillaEM": "MapEM-Flat",
     "Hourglass_k2": "MapWM-Hier",
     "HourglassFlat3": "MapWM-FlatHG",
+    "Hourglass_MotifSeg": "MapWM-MotifSeg",
     "PlainHourglass": "Plain-Hier",
     "PlainFlat": "Plain-Flat",
 }
