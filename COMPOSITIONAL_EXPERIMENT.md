@@ -198,6 +198,21 @@ statistic is never formed, and the ~8-token/256-step compression is pure loss wi
 no abstraction payoff. So this falsifies *"room-aligned pooling helps"* but NOT yet
 *"collapse-by-structure helps"* — the decisive test is a v2 with the frame-reset.
 
+**7. Phase 2 v2 (frame-reset) — H3 DECISIVELY FALSIFIED (built 2026-07-26).**
+Added the local-frame-reset (`MapWM-MotifSeg-FR` = segmentation + reset;
+`MapWM-Flat-FR` = reset only), verified it zeroes the path angle at each room
+entry so identical motifs DO collapse to one code. It made **both** metrics
+worse: `cross_nb_acc` fell to **0.157** (MotifSeg-FR) / 0.151 (Flat-FR) at
+T=256 — below every non-EM variant and below v1's 0.254 — while `exact_acc`
+dropped 0.94 → 0.77. The predicted trade-off (cross up / exact down) did NOT
+happen; **both dropped.** Reason: destroying absolute position breaks the
+cognitive map that cross-instance retrieval ALSO needs (you must retrieve the
+*right* past room and track your position); the reset over-aliases — the exact
+failure mode MapFormer's position code exists to prevent. `MotifSeg-FR ≈
+Flat-FR`, so the reset dominates and the hierarchy is irrelevant.
+Collapse-by-construction is not merely unhelpful, it is **harmful**. Full
+9-variant table: `COMPOSITIONAL_MULTISEED.md`.
+
 **How WM helps vs how hierarchy helps (matched pairs) — the clean summary.** The
 two additions help ORTHOGONAL metrics:
 - **WM (path integration) → exact positional recall, growing with length.** vs
@@ -212,9 +227,13 @@ two additions help ORTHOGONAL metrics:
   the benefit is GENERIC multi-scale compression, not task-structure alignment.
 
 **Caveats / open:** n=3; absolute compositional accuracies are small (0.2–0.4);
-`MapWM-Hier` is high-variance (one lucky seed). The decisive remaining H3 test is a
-v2 MotifSeg WITH the local-frame-reset (make identical motifs collapse). Reproduce
-with `run_comp_multiseed.sh` / `run_motifseg.sh` → `agg_comp_multiseed.py`.
+`MapWM-Hier` is high-variance (one lucky seed). **H3 is now closed (finding 7):**
+both the oracle-segmentation (v1) and the full collapse (v2 frame-reset) fail —
+the latter harmfully. The genuine MapFormer × hierarchy synergy shows up instead
+on a *different* task (see the follow-up section above / `HIERGOAL_RESULTS.md`),
+where the demand is multi-scale absolute position over an OOD horizon. Reproduce
+with `run_comp_multiseed.sh` / `run_motifseg.sh` / `run_fr.sh` →
+`agg_comp_multiseed.py`.
 
 ## Follow-up: the MapFormer × hierarchy synergy DOES exist — on a different task
 

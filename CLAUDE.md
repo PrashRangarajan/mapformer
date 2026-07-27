@@ -1303,6 +1303,17 @@ collapse to one code — the sufficient statistic is never formed, and ~8-token/
 but NOT "collapse-by-structure helps". Decisive remaining test = v2 with the
 frame-reset. Prior on v2 lowered (even the oracle upper bound landed below flat).
 
+Phase 2 v2 (frame-reset, `model_hourglass.py`: `MapWM-MotifSeg-FR`,
+`MapWM-Flat-FR`, commit 410e316): added the local-frame-reset (verified it
+zeroes the angle at room entry so identical motifs collapse). **H3 DECISIVELY
+FALSIFIED** — it made BOTH metrics worse: cross_nb_acc 0.157 (below v1's 0.254
+and below plain), exact_acc 0.94->0.77. The predicted trade-off didn't happen;
+both dropped. Destroying absolute position breaks the cognitive map cross-
+instance retrieval ALSO needs (over-aliases — the failure mode MapFormer's
+position code exists to prevent). MotifSeg-FR ~= Flat-FR (reset dominates,
+hierarchy irrelevant). Collapse-by-construction is HARMFUL, not just unhelpful.
+The real synergy lives on the hier-goal task instead (next section).
+
 ### The two-question summary (for the paper / "what does each addition buy")
 
 WM and hierarchy help ORTHOGONAL metrics:
