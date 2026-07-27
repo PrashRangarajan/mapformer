@@ -8,7 +8,8 @@ from pathlib import Path
 import torch
 
 DISPLAY = {"Vanilla": "MapWM-Flat", "Hourglass_k2": "MapWM-Hier",
-           "PlainFlat": "Plain-Flat", "PlainHourglass": "Plain-Hier"}
+           "PlainFlat": "Plain-Flat", "PlainHourglass": "Plain-Hier",
+           "Hourglass_CoarseIdx": "MapWM-Hier-CoarseIdx"}
 
 
 def ms(xs):

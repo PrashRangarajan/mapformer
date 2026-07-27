@@ -172,6 +172,12 @@ class MapFormerWM_Hourglass(nn.Module):
     def _coarse_angles(self, cum_delta_coarse: torch.Tensor):
         return self._angles(cum_delta_coarse)
 
+    def _make_coarse_angles(self, cum_delta_c, S, device):
+        """Coarse-level position source. Default: the POOLED fine path angle
+        (spatial) — so the coarse level is a cognitive map over regions.
+        Override to decouple the coarse position from the fine spatial map."""
+        return self._coarse_angles(cum_delta_c)
+
     def _causal_mask(self, n: int, device):
         return torch.triu(torch.ones(n, n, device=device, dtype=torch.bool), diagonal=1)
 
@@ -232,7 +238,7 @@ class MapFormerWM_Hourglass(nn.Module):
         xc = _causal_shorten(x, k)                       # (B, Lp/k, D)
         cum_delta_c = _causal_shorten(cum_delta.reshape(B, Lp, -1), k)
         cum_delta_c = cum_delta_c.view(B, Lp // k, self.n_heads, self.n_blocks)
-        cos_c, sin_c = self._coarse_angles(cum_delta_c)
+        cos_c, sin_c = self._make_coarse_angles(cum_delta_c, Lp // k, tokens.device)
         mask_c = self._causal_mask(Lp // k, tokens.device)
 
         for layer in self.coarse_layers:
@@ -278,7 +284,7 @@ class MapFormerWM_Hourglass(nn.Module):
         xc = _causal_shorten(x, k)
         cum_delta_c = _causal_shorten(cum_delta.reshape(B, Lp, -1), k).view(
             B, Lp // k, self.n_heads, self.n_blocks)
-        cos_c, sin_c = self._coarse_angles(cum_delta_c)
+        cos_c, sin_c = self._make_coarse_angles(cum_delta_c, Lp // k, tokens.device)
         mask_c = self._causal_mask(Lp // k, tokens.device)
         for layer in self.coarse_layers:
             xc = layer(xc, cos_c, sin_c, mask_c)
@@ -409,6 +415,23 @@ class MapFormerWM_Hourglass_MotifSeg_FR(MapFormerWM_Hourglass_MotifSeg):
     Same params as Hourglass_k2 / MotifSeg (600,917); the ONLY change vs
     MotifSeg is that position is measured relative to room entry."""
     frame_reset = True
+
+
+class MapFormerWM_Hourglass_CoarseIdx(MapFormerWM_Hourglass_k2):
+    """Coarse level uses INDEX position (re-indexed, like the plain Hourglass /
+    lucidrains original) instead of the pooled fine path angle — the fine
+    SPATIAL angle is NOT transmitted upward. Fine layers keep MapFormer path
+    integration; only the coarse position is decoupled. Param-identical to
+    MapWM-Hier (same omega, no new params). Tests whether the coarse level needs
+    SPATIAL position or merely ordinal position: predict ~= MapWM-Hier where the
+    hierarchy is generic (compositional), worse where the coarse spatial map is
+    load-bearing (hier-goal OOD — index positions go OOD, the pooled angle does
+    not)."""
+    def _make_coarse_angles(self, cum_delta_c, S, device):
+        B = cum_delta_c.shape[0]
+        idx = torch.arange(S, device=device, dtype=cum_delta_c.dtype)   # coarse token index
+        idx_cd = idx.view(1, S, 1, 1).expand(B, S, self.n_heads, self.n_blocks)
+        return self._angles(idx_cd)                                     # omega * coarse index
 
 
 class MapFormerWM_FrameResetFlat(MapFormerWM_Hourglass):
