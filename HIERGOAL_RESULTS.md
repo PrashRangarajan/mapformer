@@ -81,3 +81,26 @@ time-hierarchy are load-bearing **together**: `MapWM-Hier` is best by a wide,
 reliable margin with a consistent positive interaction. This is the "true
 combination" the compositional task could not exhibit — and it required the
 *task* to create the multi-scale-position demand, not a cleverer architecture.
+
+## Follow-up: coarse position need NOT be spatial (CoarseIdx) — a correction
+
+`MapWM-Hier-CoarseIdx` (commit a7a0c5e): identical to `MapWM-Hier` but the coarse
+layer's rotation uses the coarse token INDEX (`omega*index`) instead of the pooled
+fine path angle — the fine spatial angle is not transmitted upward. Param-identical,
+causal. Prediction was: ~= on compositional, worse on hier-goal. **Both wrong.**
+
+- **Hier-goal (n=3):** CoarseIdx ~= MapWM-Hier (T=128 0.846 vs 0.907; T=192 0.862 vs
+  0.849; T=256 0.845 vs 0.853), with LOWER variance, still far above plain. The
+  synergy does NOT require the coarse position to be spatial.
+- **Compositional (n=3):** CoarseIdx is DRAMATICALLY better — cross_nb 0.619 ± 0.016
+  at T=256 vs MapWM-Hier 0.423 ± 0.144. Best variant on the task, and it kills the
+  variance (the "one lucky seed" instability was the pooled-angle coarse position).
+
+**Correction to the mechanism:** the pooled spatial angle at the coarse level was a
+liability, not an asset — `cum_delta` is unbounded and its window-mean is noisy,
+which destabilised training and (on the content task) interfered with content-based
+motif matching. A clean ordinal coarse position is better on both tasks. The
+synergy's real ingredients are FINE-level path integration + a hierarchy (any clean
+coarse channel), NOT a spatial coarse map. This vindicates the original Hourglass
+choice (index/relative position at coarse), not our pooled-angle deviation.
+CoarseIdx is now the best variant on both tasks.
