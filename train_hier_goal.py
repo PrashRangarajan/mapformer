@@ -84,6 +84,9 @@ def main():
     ap.add_argument("--n-heads", type=int, default=2)
     ap.add_argument("--n-layers", type=int, default=3)
     ap.add_argument("--device", default="cuda:0")
+    ap.add_argument("--eval-explore", type=int, nargs="+", default=None,
+                    help="explore lengths to eval at (default: the training length). "
+                         "Use e.g. 64 128 192 to test OOD explore length.")
     ap.add_argument("--output-dir", required=True)
     args = ap.parse_args()
 
@@ -104,17 +107,22 @@ def main():
 
     env_test = HierGoalGridWorld(size=64, room_size=args.room_size,
                                  n_obs_types=args.n_obs_types, seed=10000)
-    acc, nll = evaluate(model, env_test, args.T_explore, args.T_navigate,
-                        n_trials=200, device=args.device, seed=2000)
-    print(f"HELD-OUT hier-goal acc={acc:.3f} nll={nll:.3f} (chance=0.25)")
+    eval_lengths = args.eval_explore or [args.T_explore]
+    results = {}
+    for te in eval_lengths:
+        acc, nll = evaluate(model, env_test, te, args.T_navigate,
+                            n_trials=200, device=args.device, seed=2000)
+        results[te] = {"acc": acc, "nll": nll}
+        tag = "train" if te == args.T_explore else "OOD"
+        print(f"HELD-OUT T_explore={te:4d} ({tag}): acc={acc:.3f} nll={nll:.3f} (chance=0.25)")
 
     ckpt = out / f"{args.variant}_hiergoal.pt"
     torch.save({"model_state": model.state_dict(), "variant": args.variant,
-                "seed": args.seed, "test_acc": acc, "test_nll": nll,
+                "seed": args.seed, "results": results, "train_T_explore": args.T_explore,
                 "losses": losses, "vocab_size": env.unified_vocab_size,
                 "d_model": args.d_model, "n_heads": args.n_heads,
                 "n_layers": args.n_layers}, ckpt)
-    print(f"DONE {args.variant} acc={acc:.3f} -> {ckpt}")
+    print(f"DONE {args.variant} -> {ckpt}")
 
 
 if __name__ == "__main__":
