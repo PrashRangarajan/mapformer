@@ -1312,3 +1312,26 @@ WM and hierarchy help ORTHOGONAL metrics:
 - **Hierarchy -> compositional transfer, backbone-independent.** vs flat, cross_nb
   ~+0.11 (clean in plain, high-variance in MapFormer); ~0 on exact_acc. Generic
   multi-scale compression, NOT task-structure alignment (MotifSeg didn't help).
+
+### Hierarchical goal-directed navigation — THE MapFormer x hierarchy synergy (positive)
+
+New task (`environment_hier_goal.py`, `train_hier_goal.py`, `validate_hier_goal.py`):
+`[room_goal, local_goal, explore, navigate(BFS)]`, fixed anchor -> absolute
+position, hierarchical goal (room+local) needs both scales, eval at OOD explore
+length. Motivated by the analysis that MapFormer (multi-scale position) and the
+time-hierarchy help ORTHOGONAL things unless a task demands absolute position at
+multiple scales AT ONCE over a long horizon.
+
+Result (n=3, `HIERGOAL_RESULTS.md` / `HIERGOAL_MULTISEED.md`): at OOD explore
+length **MapWM-Hier is best by a wide, reliable margin** (T=128 acc 0.907±0.026
+vs MapWM-Flat 0.656, Plain-Hier 0.700, Plain-Flat 0.548). The 2x2 **interaction
+is consistently +0.09-0.10** across OOD lengths -> genuine super-additivity (the
+compositional task had ZERO interaction). MapWM-Hier is also uniquely stable OOD
+(±0.03-0.07 vs ±0.08-0.21). In-distribution (T=64) all four tie ~0.96 -- the
+effect is entirely OOD-length.
+
+Honest correction: the single-seed scan showed Plain-Hier collapsing (0.48) and
+I called it "hierarchy hurts plain" -- that was seed noise; at n=3 hierarchy
+helps plain slightly too. Real story = super-additive interaction, not a sign
+flip. Caveats: n=3, one task, OOD-only. This is the "true combination" answer:
+it took the TASK creating the multi-scale-position demand, not a cleverer arch.

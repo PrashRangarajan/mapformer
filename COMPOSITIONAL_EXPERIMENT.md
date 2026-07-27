@@ -216,6 +216,15 @@ two additions help ORTHOGONAL metrics:
 v2 MotifSeg WITH the local-frame-reset (make identical motifs collapse). Reproduce
 with `run_comp_multiseed.sh` / `run_motifseg.sh` → `agg_comp_multiseed.py`.
 
+## Follow-up: the MapFormer × hierarchy synergy DOES exist — on a different task
+
+This task showed hierarchy helps *generically* (no MapFormer interaction). The
+follow-up **hierarchical goal-directed navigation** task (`HIERGOAL_RESULTS.md`)
+finally exhibits a genuine synergy: at OOD explore length, `MapWM-Hier` is best by
+a wide, reliable margin with a consistent **+0.09–0.10 2×2 interaction**. The
+demand that made it work — absolute position at multiple scales at once, over a
+horizon longer than training — is exactly what this compositional task lacked.
+
 ## Honest priors
 
 Every prior hierarchy attempt here was a clean negative, but all were on
