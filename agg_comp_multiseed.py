@@ -29,6 +29,7 @@ DISPLAY = {
     "FrameResetFlat": "MapWM-Flat-FR",
     "Hourglass_CoarseIdx": "MapWM-Hier-CoarseIdx",
     "Hourglass_CoarsePI": "MapWM-Hier-CoarsePI",
+    "PoPE": "PoPE-Flat", "MapPoPE": "MapPoPE-Flat", "MapPoPE_Hier": "MapPoPE-Hier",
     "PlainHourglass": "Plain-Hier",
     "PlainFlat": "Plain-Flat",
 }

@@ -77,6 +77,9 @@ from mapformer.model_hourglass import (
     MapFormerWM_Hourglass_MotifSeg_FR, MapFormerWM_FrameResetFlat,
     MapFormerWM_Hourglass_CoarseIdx, MapFormerWM_Hourglass_CoarsePI,
 )
+from mapformer.model_pope import (
+    MapFormerWM_PoPE, MapFormerWM_RoPEIndex_PoPE, MapFormerWM_Hourglass_PoPE,
+)
 from mapformer.hourglass_plain import PlainHourglass, PlainFlat
 from mapformer.model_route_attn import (MapFormerWM_RouteAttn,
     MapFormerWM_RouteAttn_K4, MapFormerWM_RouteAttn_NoBias)
@@ -137,6 +140,9 @@ VARIANT_MAP = {
     "FrameResetFlat": MapFormerWM_FrameResetFlat,          # flat + reset (isolating control)
     "Hourglass_CoarseIdx": MapFormerWM_Hourglass_CoarseIdx,  # coarse position re-indexed (not pooled)
     "Hourglass_CoarsePI": MapFormerWM_Hourglass_CoarsePI,   # coarse OWN path integration (disconnected)
+    "PoPE": MapFormerWM_RoPEIndex_PoPE,                     # index position + PoPE decoupling (paper)
+    "MapPoPE": MapFormerWM_PoPE,                            # path-integration + PoPE (the combo)
+    "MapPoPE_Hier": MapFormerWM_Hourglass_PoPE,            # combo + hourglass hierarchy
     "PlainHourglass": PlainHourglass,
     "PlainFlat": PlainFlat,
     # Clear backbone-structure aliases (non-breaking: old keys above still work,
@@ -151,6 +157,9 @@ VARIANT_MAP = {
     "MapWM-Flat-FR": MapFormerWM_FrameResetFlat,       # flat MapFormer + frame reset (control)
     "MapWM-Hier-CoarseIdx": MapFormerWM_Hourglass_CoarseIdx,  # coarse pos re-indexed (decoupled)
     "MapWM-Hier-CoarsePI": MapFormerWM_Hourglass_CoarsePI,   # coarse own path integration (decoupled)
+    "PoPE-Flat": MapFormerWM_RoPEIndex_PoPE,            # index + PoPE (decoupled), flat
+    "MapPoPE-Flat": MapFormerWM_PoPE,                   # path-integration + PoPE, flat (combo)
+    "MapPoPE-Hier": MapFormerWM_Hourglass_PoPE,        # path-integration + PoPE + hierarchy
     "Plain-Hier":   PlainHourglass,
     "Plain-Flat":   PlainFlat,
     "RouteAttn": MapFormerWM_RouteAttn,
