@@ -104,3 +104,35 @@ synergy's real ingredients are FINE-level path integration + a hierarchy (any cl
 coarse channel), NOT a spatial coarse map. This vindicates the original Hourglass
 choice (index/relative position at coarse), not our pooled-angle deviation.
 CoarseIdx is now the best variant on both tasks.
+
+## The coarse-position 2x2 completed: CoarsePI resolves it (spatial vs ordinal is task-dependent)
+
+`MapWM-Hier-CoarsePI` (commit 165784e): the coarse level runs its OWN path
+integration (dedicated coarse ActionToLie over the pooled tokens, +384 params),
+DISCONNECTED from the fine cum_delta -- an adaptive spatial coarse map without the
+pooling noise. This fills the last cell of the 2x2:
+
+| coarse position | connected (pooled) | disconnected (own) |
+|---|---|---|
+| path-angle (spatial) | MapWM-Hier | **CoarsePI** |
+| index (ordinal)      | --          | CoarseIdx |
+
+Results (n=3):
+- **Hier-goal (position task): CoarsePI is BEST at every OOD length** (T=128 0.915,
+  T=192 0.890, T=256 0.894), beating pooled MapWM-Hier (0.907/0.849/0.853) AND
+  index CoarseIdx (0.846/0.862/0.845), with the lowest variance (±0.009-0.019).
+- **Compositional (content task): CoarsePI ~= MapWM-Hier (0.451 vs 0.423), both
+  far below CoarseIdx (0.619).** A clean spatial coarse position still loses to
+  ordinal here.
+
+**Resolved mechanism -- the right coarse position is TASK-DEPENDENT:**
+- Position task -> SPATIAL wins (CoarsePI > CoarseIdx). Since CoarsePI > MapWM-Hier,
+  the pooled version failed ONLY from noise; a clean spatial coarse map is best.
+- Content task -> ORDINAL wins (CoarsePI << CoarseIdx). Spatial-ness itself
+  interferes with content matching; cleaning the noise doesn't help.
+So MapWM-Hier (pooled) was bad for TWO reasons: spatial (hurts content) AND noisy
+(hurts everything). CoarsePI removes the noise; CoarseIdx removes the spatial-ness.
+
+Bonus: CoarsePI is now the strongest synergy variant -- it raises the hier-goal
+headline (0.894 vs 0.853 at T=256) and is rock-stable. MapFormer x hierarchy gets
+stronger. (Idea due to the user: give the coarse level its own path integration.)
