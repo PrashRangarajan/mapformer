@@ -136,3 +136,43 @@ So MapWM-Hier (pooled) was bad for TWO reasons: spatial (hurts content) AND nois
 Bonus: CoarsePI is now the strongest synergy variant -- it raises the hier-goal
 headline (0.894 vs 0.853 at T=256) and is rock-stable. MapFormer x hierarchy gets
 stronger. (Idea due to the user: give the coarse level its own path integration.)
+
+## PoPE largely SUBSUMES the synergy on OOD length (the big reframe)
+
+Added PoPE (Gopalakrishnan et al. 2025) variants (commit 78b1a95): PoPE decouples
+content (magnitude=softplus) from position (phase only), so content can't shift
+the position tuning at long range. Three variants, param-identical to their RoPE
+counterparts: PoPE-Flat (index+PoPE), MapPoPE-Flat (path-int+PoPE), MapPoPE-Hier.
+
+**Hier-goal (n=3): PoPE gives FLAT length extrapolation and subsumes both path
+integration and the hierarchy.** All three PoPE variants hold ~0.95 at EVERY
+length (T=64..256) with near-zero variance (±0.000-0.001), vs the previous best
+CoarsePI dropping 0.961->0.894 and MapWM-Flat collapsing to 0.727.
+
+| variant | T=64 | T=128 | T=192 | T=256 |
+|---|---|---|---|---|
+| PoPE-Flat (index+PoPE) | 0.952 | 0.950 | 0.950 | 0.947 |
+| MapPoPE-Flat | 0.952 | 0.950 | 0.951 | 0.948 |
+| MapPoPE-Hier | 0.951 | 0.949 | 0.950 | 0.948 |
+| CoarsePI (prev best) | 0.961 | 0.915 | 0.890 | 0.894 |
+| MapWM-Hier | 0.963 | 0.907 | 0.849 | 0.853 |
+
+Crucially **PoPE-Flat uses plain INDEX position -- no path integration, no
+hierarchy -- and ties MapPoPE-Flat and MapPoPE-Hier.** So on OOD length, PoPE's
+decoupling subsumes the path-integration advantage AND the hierarchy advantage.
+The MapFormer x hierarchy synergy we found was fixing a SYMPTOM (RoPE's
+content-position entanglement degrading attention at long range); PoPE fixes the
+root cause and more completely. This reframes (and partly deflates) the synergy
+headline on the length axis.
+
+**Compositional (n=3): PoPE helps content but does NOT dominate.** Decoupling
+reduces content-position interference -- MapPoPE-Flat 0.363 > MapWM-Flat 0.270,
+MapPoPE-Hier 0.466 > MapWM-Hier 0.423 (T=256 cross_nb) -- exactly as predicted.
+But CoarseIdx (0.619) still wins by a wide margin: for pure content matching, the
+ordinal coarse position beats PoPE. MapPoPE-Hier (0.466) is the best PoPE variant
+here, so the hierarchy still earns its keep on content.
+
+**Synthesis:** OOD length -> PoPE wins outright (subsumes the synergy). Content
+transfer -> PoPE helps (validates the decoupling thesis) but the ordinal-coarse
+CoarseIdx is still best. No single mechanism dominates both axes; PoPE is the
+principled fix for the length/entanglement axis specifically.
