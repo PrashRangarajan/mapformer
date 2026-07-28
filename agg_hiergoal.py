@@ -9,7 +9,8 @@ import torch
 
 DISPLAY = {"Vanilla": "MapWM-Flat", "Hourglass_k2": "MapWM-Hier",
            "PlainFlat": "Plain-Flat", "PlainHourglass": "Plain-Hier",
-           "Hourglass_CoarseIdx": "MapWM-Hier-CoarseIdx"}
+           "Hourglass_CoarseIdx": "MapWM-Hier-CoarseIdx",
+           "Hourglass_CoarsePI": "MapWM-Hier-CoarsePI"}
 
 
 def ms(xs):

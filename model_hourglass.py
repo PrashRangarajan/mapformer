@@ -172,10 +172,12 @@ class MapFormerWM_Hourglass(nn.Module):
     def _coarse_angles(self, cum_delta_coarse: torch.Tensor):
         return self._angles(cum_delta_coarse)
 
-    def _make_coarse_angles(self, cum_delta_c, S, device):
+    def _make_coarse_angles(self, cum_delta_c, xc, S, device):
         """Coarse-level position source. Default: the POOLED fine path angle
         (spatial) — so the coarse level is a cognitive map over regions.
-        Override to decouple the coarse position from the fine spatial map."""
+        Override to decouple the coarse position from the fine spatial map.
+        `xc` is the coarse (pooled) hidden, available for variants that compute
+        their own coarse position from it."""
         return self._coarse_angles(cum_delta_c)
 
     def _causal_mask(self, n: int, device):
@@ -238,7 +240,7 @@ class MapFormerWM_Hourglass(nn.Module):
         xc = _causal_shorten(x, k)                       # (B, Lp/k, D)
         cum_delta_c = _causal_shorten(cum_delta.reshape(B, Lp, -1), k)
         cum_delta_c = cum_delta_c.view(B, Lp // k, self.n_heads, self.n_blocks)
-        cos_c, sin_c = self._make_coarse_angles(cum_delta_c, Lp // k, tokens.device)
+        cos_c, sin_c = self._make_coarse_angles(cum_delta_c, xc, Lp // k, tokens.device)
         mask_c = self._causal_mask(Lp // k, tokens.device)
 
         for layer in self.coarse_layers:
@@ -284,7 +286,7 @@ class MapFormerWM_Hourglass(nn.Module):
         xc = _causal_shorten(x, k)
         cum_delta_c = _causal_shorten(cum_delta.reshape(B, Lp, -1), k).view(
             B, Lp // k, self.n_heads, self.n_blocks)
-        cos_c, sin_c = self._make_coarse_angles(cum_delta_c, Lp // k, tokens.device)
+        cos_c, sin_c = self._make_coarse_angles(cum_delta_c, xc, Lp // k, tokens.device)
         mask_c = self._causal_mask(Lp // k, tokens.device)
         for layer in self.coarse_layers:
             xc = layer(xc, cos_c, sin_c, mask_c)
@@ -427,11 +429,30 @@ class MapFormerWM_Hourglass_CoarseIdx(MapFormerWM_Hourglass_k2):
     hierarchy is generic (compositional), worse where the coarse spatial map is
     load-bearing (hier-goal OOD — index positions go OOD, the pooled angle does
     not)."""
-    def _make_coarse_angles(self, cum_delta_c, S, device):
+    def _make_coarse_angles(self, cum_delta_c, xc, S, device):
         B = cum_delta_c.shape[0]
         idx = torch.arange(S, device=device, dtype=cum_delta_c.dtype)   # coarse token index
         idx_cd = idx.view(1, S, 1, 1).expand(B, S, self.n_heads, self.n_blocks)
         return self._angles(idx_cd)                                     # omega * coarse index
+
+
+class MapFormerWM_Hourglass_CoarsePI(MapFormerWM_Hourglass_k2):
+    """Coarse level runs its OWN path integration over the coarse (pooled) tokens
+    -- an adaptive coarse cognitive map that is DISCONNECTED from the fine
+    cum_delta (not pooled from below). Fills the untested quadrant: a coarse
+    position that is a *path angle* (adaptive, content-driven) yet *disconnected*
+    from the noisy pooled fine angle. Disentangles 'spatial coarse position' from
+    'noise of pooling an unbounded cumulative angle'. Adds one small dedicated
+    coarse ActionToLie head (~1K params); everything else identical."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.coarse_action_to_lie = ActionToLieAlgebra(
+            self.d_model, self.n_heads, self.n_blocks, 2)
+
+    def _make_coarse_angles(self, cum_delta_c, xc, S, device):
+        delta_c = self.coarse_action_to_lie(xc)          # coarse deltas from coarse tokens
+        cum_c = torch.cumsum(delta_c, dim=1)             # fresh coarse path integration
+        return self._angles(cum_c)                       # omega * coarse cumulative angle
 
 
 class MapFormerWM_FrameResetFlat(MapFormerWM_Hourglass):

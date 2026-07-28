@@ -75,7 +75,7 @@ from mapformer.model_hourglass import (
     MapFormerWM_Hourglass_k2_deep, MapFormerWM_HourglassFlat3,
     MapFormerWM_Hourglass_MotifSeg,
     MapFormerWM_Hourglass_MotifSeg_FR, MapFormerWM_FrameResetFlat,
-    MapFormerWM_Hourglass_CoarseIdx,
+    MapFormerWM_Hourglass_CoarseIdx, MapFormerWM_Hourglass_CoarsePI,
 )
 from mapformer.hourglass_plain import PlainHourglass, PlainFlat
 from mapformer.model_route_attn import (MapFormerWM_RouteAttn,
@@ -136,6 +136,7 @@ VARIANT_MAP = {
     "Hourglass_MotifSeg_FR": MapFormerWM_Hourglass_MotifSeg_FR,  # v2: + frame reset
     "FrameResetFlat": MapFormerWM_FrameResetFlat,          # flat + reset (isolating control)
     "Hourglass_CoarseIdx": MapFormerWM_Hourglass_CoarseIdx,  # coarse position re-indexed (not pooled)
+    "Hourglass_CoarsePI": MapFormerWM_Hourglass_CoarsePI,   # coarse OWN path integration (disconnected)
     "PlainHourglass": PlainHourglass,
     "PlainFlat": PlainFlat,
     # Clear backbone-structure aliases (non-breaking: old keys above still work,
@@ -149,6 +150,7 @@ VARIANT_MAP = {
     "MapWM-MotifSeg-FR": MapFormerWM_Hourglass_MotifSeg_FR,  # v2: MotifSeg + frame reset
     "MapWM-Flat-FR": MapFormerWM_FrameResetFlat,       # flat MapFormer + frame reset (control)
     "MapWM-Hier-CoarseIdx": MapFormerWM_Hourglass_CoarseIdx,  # coarse pos re-indexed (decoupled)
+    "MapWM-Hier-CoarsePI": MapFormerWM_Hourglass_CoarsePI,   # coarse own path integration (decoupled)
     "Plain-Hier":   PlainHourglass,
     "Plain-Flat":   PlainFlat,
     "RouteAttn": MapFormerWM_RouteAttn,
