@@ -37,7 +37,21 @@ def _pope(x, cos_a, sin_a):
 
 
 class WMTransformerLayer_PoPE(WMTransformerLayer):
-    """Same layer as WMTransformerLayer but with PoPE-decoupled attention."""
+    """PoPE-decoupled attention WITH the learnable per-frequency phase bias
+    delta_c (faithful PoPE, Eq. 6):
+        score = sum_c softplus(q_c) softplus(k_c) cos( (theta_q - theta_k) + delta_c )
+    delta_c is a content-INDEPENDENT learnable offset per (head, frequency),
+    applied to the keys (shifting the key angle by -delta gives +delta in the
+    score). It inits to 0 (so at init this equals the un-biased form) and is
+    learned -- adding per-band flexibility without re-entangling content.
+    Frequencies kept at d/2 (MapFormer's block structure) so the comparison
+    across position sources stays controlled; a full d-frequency PoPE would need
+    restructuring MapFormer's per-block path integration."""
+
+    def __init__(self, d_model, n_heads, dropout):
+        super().__init__(d_model, n_heads, dropout)
+        n_blocks = (d_model // n_heads) // 2
+        self.pope_delta = nn.Parameter(torch.zeros(n_heads, n_blocks))   # learnable delta_c
 
     def forward(self, x, cos_a, sin_a, causal_mask):
         B, T, _ = x.shape
@@ -45,8 +59,12 @@ class WMTransformerLayer_PoPE(WMTransformerLayer):
         Q = self.q_proj(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
         K = self.k_proj(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
         V = self.v_proj(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
+        cd = torch.cos(self.pope_delta).view(1, self.n_heads, 1, -1)
+        sd = torch.sin(self.pope_delta).view(1, self.n_heads, 1, -1)
+        cosK = cos_a * cd + sin_a * sd          # key angle shifted by -delta_c
+        sinK = sin_a * cd - cos_a * sd
         Qc, Qs = _pope(Q, cos_a, sin_a)
-        Kc, Ks = _pope(K, cos_a, sin_a)
+        Kc, Ks = _pope(K, cosK, sinK)
         scale = math.sqrt(self.d_head)
         scores = (torch.matmul(Qc, Kc.transpose(-1, -2))
                   + torch.matmul(Qs, Ks.transpose(-1, -2))) / scale
