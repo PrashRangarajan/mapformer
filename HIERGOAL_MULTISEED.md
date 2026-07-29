@@ -2,7 +2,7 @@
 
 Train T_explore=64; eval at listed T_explore (>64 = OOD). Held-out env (seed=10000). Chance=0.25, BFS ceiling=1.00.
 
-Seeds found: MapWM-Flat=[0, 1, 2], MapWM-Hier=[0, 1, 2], MapWM-Hier-CoarseIdx=[0, 1, 2], MapWM-Hier-CoarsePI=[0, 1, 2], PoPE-Flat=[0, 1, 2], MapPoPE-Flat=[0, 1, 2], MapPoPE-Hier=[0, 1, 2], Plain-Flat=[0, 1, 2], Plain-Hier=[0, 1, 2]
+Seeds found: MapWM-Flat=[0, 1, 2], MapWM-Hier=[0, 1, 2], MapWM-Hier-CoarseIdx=[0, 1, 2], MapWM-Hier-CoarsePI=[0, 1, 2], PoPE-Flat=[0, 1, 2], MapPoPE-Flat=[0, 1, 2], MapPoPE-Hier=[0, 1, 2], MapPoPE-Hier-CoarseIdx=[0, 1, 2], Plain-Flat=[0, 1, 2], Plain-Hier=[0, 1, 2]
 
 
 ## Held-out action accuracy
@@ -16,6 +16,7 @@ Seeds found: MapWM-Flat=[0, 1, 2], MapWM-Hier=[0, 1, 2], MapWM-Hier-CoarseIdx=[0
 | PoPE-Flat | 0.952 ± 0.001 | 0.950 ± 0.001 | 0.950 ± 0.000 | 0.947 ± 0.001 |
 | MapPoPE-Flat | 0.952 ± 0.000 | 0.950 ± 0.001 | 0.951 ± 0.000 | 0.948 ± 0.000 |
 | MapPoPE-Hier | 0.951 ± 0.001 | 0.949 ± 0.000 | 0.950 ± 0.000 | 0.948 ± 0.000 |
+| MapPoPE-Hier-CoarseIdx | 0.952 ± 0.001 | 0.950 ± 0.000 | 0.950 ± 0.000 | 0.948 ± 0.000 |
 | Plain-Flat | 0.966 ± 0.001 | 0.548 ± 0.084 | 0.669 ± 0.106 | 0.591 ± 0.117 |
 | Plain-Hier | 0.968 ± 0.001 | 0.700 ± 0.138 | 0.682 ± 0.122 | 0.624 ± 0.104 |
 
@@ -30,5 +31,6 @@ Seeds found: MapWM-Flat=[0, 1, 2], MapWM-Hier=[0, 1, 2], MapWM-Hier-CoarseIdx=[0
 | PoPE-Flat | 0.176 ± 0.001 | 0.181 ± 0.002 | 0.179 ± 0.001 | 0.188 ± 0.002 |
 | MapPoPE-Flat | 0.176 ± 0.000 | 0.180 ± 0.001 | 0.181 ± 0.002 | 0.191 ± 0.002 |
 | MapPoPE-Hier | 0.175 ± 0.000 | 0.180 ± 0.001 | 0.185 ± 0.006 | 0.194 ± 0.006 |
+| MapPoPE-Hier-CoarseIdx | 0.175 ± 0.000 | 0.198 ± 0.013 | 0.194 ± 0.011 | 0.203 ± 0.010 |
 | Plain-Flat | 0.106 ± 0.015 | 1.606 ± 0.590 | 1.131 ± 0.327 | 1.374 ± 0.459 |
 | Plain-Hier | 0.094 ± 0.001 | 0.857 ± 0.310 | 0.886 ± 0.285 | 0.975 ± 0.202 |

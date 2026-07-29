@@ -176,3 +176,32 @@ here, so the hierarchy still earns its keep on content.
 transfer -> PoPE helps (validates the decoupling thesis) but the ordinal-coarse
 CoarseIdx is still best. No single mechanism dominates both axes; PoPE is the
 principled fix for the length/entanglement axis specifically.
+
+## Best-of-both (PoPE + index coarse) + clock transfer: two honest qualifications
+
+`MapPoPE-Hier-CoarseIdx` (commit 322c27e) = PoPE decoupling everywhere + ordinal
+INDEX coarse position + path-integration fine + hierarchy. Aimed to win BOTH the
+length axis (PoPE) and the content axis (CoarseIdx). Plus a PoPE-on-clock scan.
+
+**1. No single variant wins both axes (the synthesis failed).**
+- Hier-goal: best-of-both keeps PoPE's flat extrapolation (0.948 at T=256, ties
+  the other PoPE variants).
+- Compositional: best-of-both = 0.452 +-0.115 (T=256), ~= MapPoPE-Hier (0.466) and
+  FAR below CoarseIdx (RoPE+index, 0.619). Swapping RoPE->PoPE in the CoarseIdx
+  architecture DROPPED content 0.619 -> 0.452. PoPE and the ordinal-coarse content
+  win do NOT stack: PoPE's softplus-magnitude, phase-only attention (which buys
+  length robustness) also CAPS the sharp content matching CoarseIdx exploits.
+- So it's a genuine Pareto trade-off: PoPE end = great length / mediocre content;
+  CoarseIdx end = great content / mediocre length. The best-of-both did not
+  collapse the frontier.
+
+**2. PoPE's flat length extrapolation is partly hier-goal-specific.** On the
+symbolic modular-clock task (seed 0), ALL variants degrade OOD -- nobody
+flat-extrapolates. PoPE/best-of-both lead at T=128 (0.77-0.83 vs MapWM 0.64-0.70)
+but the edge shrinks/reverses by T=256 (MapWM-Hier 0.681 > best-of-both 0.626).
+So the earlier "PoPE subsumes everything on length" was overstated -- it was
+strong on hier-goal, only moderate and non-flat on the clock. (Single seed; the
+non-flat pattern is clear but exact ranks are noisy.) See CLOCK_SCAN.md.
+
+Net: the two-axis picture stands, but there is no one-variant-to-rule-them-all;
+PoPE's length benefit is task-dependent, and it trades against content sharpness.
