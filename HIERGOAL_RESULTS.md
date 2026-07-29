@@ -205,3 +205,20 @@ non-flat pattern is clear but exact ranks are noisy.) See CLOCK_SCAN.md.
 
 Net: the two-axis picture stands, but there is no one-variant-to-rule-them-all;
 PoPE's length benefit is task-dependent, and it trades against content sharpness.
+
+## Clock transfer — de-noised (n=3): confirms PoPE's length win is task-dependent
+
+Re-ran the clock scan at n=3 (commit follows). The single-seed read holds and
+sharpens:
+- **PoPE does NOT flat-extrapolate on the clock** (all variants degrade ~0.98 -> ~0.6).
+  The hier-goal flat-0.95 result does not transfer to the symbolic domain.
+- **PoPE's advantage is real but TRANSIENT.** At T=128 the PoPE variants clearly
+  lead (0.77-0.83 vs 0.60-0.73, non-overlapping bars). By T=256 it's gone --
+  everyone clusters ~0.60-0.64 (PoPE-Flat 0.636 ~= MapWM-Hier 0.644).
+- **Mild reversal:** on the clock MapWM-Hier is the most STABLE far-OOD variant
+  (0.629->0.644, ±0.02) while PoPE variants decay (MapPoPE-Hier 0.831->0.596) --
+  almost the opposite of hier-goal.
+
+Net: the "PoPE wins length" headline is task-dependent at n=3 (not noise); its
+magnitude ranges from flat-and-dominant (hier-goal) to a transient bump that
+fades (clock). See CLOCK_SCAN.md.
