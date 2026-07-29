@@ -36,7 +36,7 @@ def main():
     found = {v: [] for v in args.variants}
     for v in args.variants:
         for s in args.seeds:
-            cp = Path(args.runs_dir) / f"seed{s}" / f"{v}_hiergoal.pt"
+            cp = Path(args.runs_dir) / f"seed{s}" / f"{v}_clock.pt"
             if not cp.exists():
                 print(f"MISSING {cp}"); continue
             c = torch.load(cp, map_location="cpu", weights_only=False)
@@ -48,7 +48,7 @@ def main():
 
     def disp(v): return DISPLAY.get(v, v)
 
-    lines = ["# Hierarchical goal-directed navigation — multi-seed (mean ± std)\n",
+    lines = ["# Modular-clock navigation — multi-seed (mean ± std)\n",
              f"Train T_explore=64; eval at listed T_explore (>64 = OOD). "
              f"Held-out env (seed=10000). Chance=0.25, BFS ceiling=1.00.\n",
              "Seeds found: " + ", ".join(f"{disp(v)}={found[v]}" for v in args.variants) + "\n"]

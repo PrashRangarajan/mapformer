@@ -79,6 +79,7 @@ from mapformer.model_hourglass import (
 )
 from mapformer.model_pope import (
     MapFormerWM_PoPE, MapFormerWM_RoPEIndex_PoPE, MapFormerWM_Hourglass_PoPE,
+    MapFormerWM_Hourglass_PoPE_CoarseIdx,
 )
 from mapformer.hourglass_plain import PlainHourglass, PlainFlat
 from mapformer.model_route_attn import (MapFormerWM_RouteAttn,
@@ -143,6 +144,7 @@ VARIANT_MAP = {
     "PoPE": MapFormerWM_RoPEIndex_PoPE,                     # index position + PoPE decoupling (paper)
     "MapPoPE": MapFormerWM_PoPE,                            # path-integration + PoPE (the combo)
     "MapPoPE_Hier": MapFormerWM_Hourglass_PoPE,            # combo + hourglass hierarchy
+    "MapPoPE_CoarseIdx": MapFormerWM_Hourglass_PoPE_CoarseIdx,  # PoPE + index coarse (best-of-both)
     "PlainHourglass": PlainHourglass,
     "PlainFlat": PlainFlat,
     # Clear backbone-structure aliases (non-breaking: old keys above still work,
@@ -160,6 +162,7 @@ VARIANT_MAP = {
     "PoPE-Flat": MapFormerWM_RoPEIndex_PoPE,            # index + PoPE (decoupled), flat
     "MapPoPE-Flat": MapFormerWM_PoPE,                   # path-integration + PoPE, flat (combo)
     "MapPoPE-Hier": MapFormerWM_Hourglass_PoPE,        # path-integration + PoPE + hierarchy
+    "MapPoPE-Hier-CoarseIdx": MapFormerWM_Hourglass_PoPE_CoarseIdx,  # best-of-both
     "Plain-Hier":   PlainHourglass,
     "Plain-Flat":   PlainFlat,
     "RouteAttn": MapFormerWM_RouteAttn,

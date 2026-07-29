@@ -30,6 +30,7 @@ DISPLAY = {
     "Hourglass_CoarseIdx": "MapWM-Hier-CoarseIdx",
     "Hourglass_CoarsePI": "MapWM-Hier-CoarsePI",
     "PoPE": "PoPE-Flat", "MapPoPE": "MapPoPE-Flat", "MapPoPE_Hier": "MapPoPE-Hier",
+    "MapPoPE_CoarseIdx": "MapPoPE-Hier-CoarseIdx",
     "PlainHourglass": "Plain-Hier",
     "PlainFlat": "Plain-Flat",
 }

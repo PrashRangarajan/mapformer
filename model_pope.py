@@ -24,7 +24,7 @@ import torch.nn.functional as F
 
 from .model import WMTransformerLayer, MapFormerWM
 from .model_baseline_rope import MapFormerWM_RoPE
-from .model_hourglass import MapFormerWM_Hourglass_k2
+from .model_hourglass import MapFormerWM_Hourglass_k2, MapFormerWM_Hourglass_CoarseIdx
 
 
 def _pope(x, cos_a, sin_a):
@@ -82,7 +82,21 @@ class MapFormerWM_RoPEIndex_PoPE(MapFormerWM_RoPE):
 
 
 class MapFormerWM_Hourglass_PoPE(MapFormerWM_Hourglass_k2):
-    """MapFormer path-integration + PoPE + single-level hourglass hierarchy."""
+    """MapFormer path-integration + PoPE + single-level hourglass hierarchy.
+    Coarse position = pooled path angle (inherited from Hourglass_k2)."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        d, h = self.d_model, self.n_heads
+        self.pre_layers = _swap_pope(self.pre_layers, d, h)
+        self.coarse_layers = _swap_pope(self.coarse_layers, d, h)
+        self.post_layers = _swap_pope(self.post_layers, d, h)
+
+
+class MapFormerWM_Hourglass_PoPE_CoarseIdx(MapFormerWM_Hourglass_CoarseIdx):
+    """BEST-OF-BOTH: PoPE decoupling everywhere (wins OOD length) + ORDINAL index
+    coarse position (wins content), on the path-integration fine backbone +
+    hierarchy. Combines the length-axis winner (PoPE) with the content-axis
+    winner (CoarseIdx's index coarse position). Param-identical to Hourglass_k2."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         d, h = self.d_model, self.n_heads
