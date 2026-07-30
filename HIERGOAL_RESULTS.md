@@ -222,3 +222,36 @@ sharpens:
 Net: the "PoPE wins length" headline is task-dependent at n=3 (not noise); its
 magnitude ranges from flat-and-dominant (hier-goal) to a transient bump that
 fades (clock). See CLOCK_SCAN.md.
+
+## Faithful PoPE (with delta_c) PARTIALLY OVERTURNS the Pareto claim
+
+The earlier PoPE runs used a PoPE-LITE layer that omitted the paper's learnable
+per-frequency phase bias delta_c (Eq. 6). Adding it (commit 4d990d4) and
+retraining the whole PoPE arm changes the content story:
+
+Compositional cross_nb (T=256), PoPE-lite -> faithful:
+- MapPoPE-Hier-CoarseIdx (best-of-both): 0.452 -> **0.549** (+0.097)
+- MapPoPE-Hier: 0.466 -> 0.455 ; PoPE-Flat: 0.291 -> 0.319 ; MapPoPE-Flat: 0.363 -> 0.366
+
+So delta_c specifically rescued the BEST-OF-BOTH variant, and the effect grows
+with length:
+
+| variant | T=256 | T=1024 | T=2048 |
+|---|---|---|---|
+| MapWM-Hier-CoarseIdx (RoPE, content king) | 0.619 ± 0.016 | 0.369 | 0.282 ± 0.108 |
+| MapPoPE-Hier-CoarseIdx (faithful) | 0.549 ± 0.112 | 0.334 | **0.287 ± 0.148** |
+
+Gap at T=256 narrowed 0.167 -> 0.070; by T=2048 they are TIED. And on hier-goal
+the same variant KEEPS the flat length win (0.948 at T=256, unchanged).
+
+**Correction:** the previous "PoPE's attention caps content sharpness, the
+length/content frontier cannot be collapsed" conclusion was partly an artifact of
+the incomplete (delta-less) implementation. With faithful PoPE the best-of-both is
+flat on length AND near-parity on content.
+
+**Honest caveats:** the best-of-both's content variance is large (±0.112 at T=256,
+±0.148 at T=2048) vs CoarseIdx's ±0.016, so the defensible claim is "gap
+substantially narrowed, plausibly closed at long T", NOT "solved". Our PoPE also
+still uses d/2 frequencies rather than the paper's d. Clock is essentially
+unchanged (MapPoPE-Hier 0.831 -> 0.847 at T=128); the transient-then-fade pattern
+holds.
