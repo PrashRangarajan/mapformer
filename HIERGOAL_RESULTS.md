@@ -255,3 +255,33 @@ substantially narrowed, plausibly closed at long T", NOT "solved". Our PoPE also
 still uses d/2 frequencies rather than the paper's d. Clock is essentially
 unchanged (MapPoPE-Hier 0.831 -> 0.847 at T=128); the transient-then-fade pattern
 holds.
+
+## n=8: the frontier IS collapsed -- and CoarseIdx's "stability" was a 3-seed artifact
+
+Ran seeds 3-7 for the two frontier-deciding variants on the content axis (n=8).
+Two findings, one of which corrects earlier claims in this file.
+
+**1. The length<->content frontier is effectively collapsed.**
+
+| variant | T=256 | T=1024 | T=2048 |
+|---|---|---|---|
+| MapWM-Hier-CoarseIdx (RoPE) | 0.556 ± 0.123 (n=8) | 0.308 | 0.232 |
+| MapPoPE-Hier-CoarseIdx (best-of-both) | 0.528 ± 0.117 (n=8) | 0.302 | 0.243 |
+
+Statistically tied: gap 0.028 vs ±0.12 spread, and PAIRED BY SEED the sign is a
+coin flip (4/8 each way, diffs from -0.129 to +0.247). Since the best-of-both
+also holds the flat hier-goal length win (0.948), it WEAKLY DOMINATES -- as good
+on content, far better on length. The earlier "Pareto trade-off" framing does not
+survive n=8.
+
+**2. CORRECTION: CoarseIdx's low variance was a 3-seed artifact.** Per-seed
+T=256: 0.638 / 0.621 / 0.599 (seeds 0-2, the original n=3) then 0.575 / 0.480 /
+0.634 / **0.258** / 0.640. Seeds 0-2 happened to land within 0.04 -- luck. At n=8
+it is ±0.123 with a catastrophic seed. So the repeated claims above that CoarseIdx
+"kills the variance" and scores 0.619 are WRONG: true mean 0.556 ± 0.123.
+
+**Scope of the correction.** The whole compositional/content axis is noisier than
+reported. Every n=3 ranking on that task (MapWM-Hier 0.423, CoarsePI 0.451,
+MapPoPE-Hier 0.455, ...) carries ±0.11-0.17 and should be treated as PROVISIONAL
+until re-run at higher n. The hier-goal/length axis is unaffected (±0.001-0.02
+there, and the PoPE flat-extrapolation result is robust).
