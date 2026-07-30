@@ -33,3 +33,4 @@ data/
 .clock_ms_done
 .pope_faithful_done
 .bob_seeds_done
+.bob_autocommit_done
