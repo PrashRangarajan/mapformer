@@ -285,3 +285,46 @@ reported. Every n=3 ranking on that task (MapWM-Hier 0.423, CoarsePI 0.451,
 MapPoPE-Hier 0.455, ...) carries ±0.11-0.17 and should be treated as PROVISIONAL
 until re-run at higher n. The hier-goal/length axis is unaffected (±0.001-0.02
 there, and the PoPE flat-extrapolation result is robust).
+
+## n=8 content axis: a third correction -- "ordinal beats spatial" does NOT survive
+
+Topped up 6 compositional variants + the clock to n=8 (commit 2eb2e42). Paired
+per-seed tests at T=256 (n=8, two-sided, normal approx -- indicative):
+
+| comparison | mean diff | wins | p | verdict |
+|---|---|---|---|---|
+| CoarseIdx - MapWM-Hier | +0.140 | 6/8 | 0.02 | SIGNIFICANT |
+| CoarsePI - MapWM-Hier | +0.083 | 6/8 | 0.12 | not sig |
+| **CoarseIdx - CoarsePI** | **+0.057** | **5/8** | **0.43** | **NOT SIG** |
+| MapPoPE-Hier - MapWM-Hier | +0.018 | 5/8 | 0.55 | tied |
+
+**OVERTURNED: the content half of "coarse position is task-dependent".** The
+claim that ORDINAL (CoarseIdx) beats SPATIAL (CoarsePI) for content rested on
+n=3 values 0.619 vs 0.451 (gap 0.168). At n=8: 0.556 vs 0.498, p~0.43, 5/8 seeds
+-- indistinguishable. The spatial-vs-ordinal distinction survives only on the
+POSITION task (hier-goal, tight bars); on content it dissolves.
+
+**The contested trio is unresolved.** CoarsePI (0.498 ± 0.109), MapPoPE-Hier
+(0.429 ± 0.117), MapWM-Hier (0.415 ± 0.096) are statistically tied. The only
+significant pairwise result among these is CoarseIdx > MapWM-Hier (the pooled
+baseline).
+
+**HOLDS at n=8: hierarchy helps content, in both families.**
+- MapFormer: MapWM-Hier 0.415 vs MapWM-FlatHG 0.285 -> +0.130
+- Plain: Plain-Hier 0.318 ± 0.029 vs Plain-Flat 0.216 ± 0.004 -> +0.102
+This is now the most robust finding on the content axis.
+
+**NEW: the variance is STRUCTURAL, split by family not by seed luck.** Plain
+variants ±0.004-0.029 (tight); MapFormer variants ±0.067-0.134 (wide). MapFormer
+is intrinsically unstable on the content task -- a finding in itself, not noise
+to be averaged away.
+
+**Clock at n=8:** MapWM-Flat rose to 0.790 at T=128 (from 0.733 at n=3), so
+PoPE's lead there is now overlapping (0.80-0.82 vs 0.790) rather than clean; by
+T=256 all variants tie ~0.62-0.65. PoPE's clock advantage is weaker than n=3
+suggested.
+
+**Pattern worth noting:** three separate n=3 content-axis claims have now
+dissolved under more seeds (CoarseIdx's stability, PoPE's content cap, and
+ordinal-beats-spatial). Only effects >= ~0.10 with tight-variance families have
+survived. Treat any content-axis gap < 0.10 in this project as unresolved.
