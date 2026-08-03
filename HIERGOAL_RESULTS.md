@@ -357,3 +357,46 @@ Two corrections to what this file said earlier:
    path integration wins the position task.
 
 Visual: coarse_angles.json + the published angle figure.
+
+## Dimensionality sweep: the SSP 3/sqrt(D) prediction FAILS
+
+Motivated by the SSP/VSA correspondence (Komer et al. 2019): the discriminability
+floor for random vectors is sigma=sqrt(1/D), 3-sigma = 3/sqrt(D). Our d_head=64
+gives 0.375 vs the 0.133 of the d=512 that literature converged on. Prediction:
+OOD degradation is partly under-dimensioning, and raising d should fix it.
+
+Held-out accuracy at T=256 (OOD), n=3, hier-goal:
+
+| variant | d=128 (floor .375) | d=256 (.265) | d=512 (.188) |
+|---|---|---|---|
+| MapWM-Flat | 0.727 | 0.743 | 0.768 |
+| MapWM-Hier | 0.853 | 0.774 | 0.848 |
+| Plain-Flat | 0.591 | 0.611 | 0.605 |
+| Plain-Hier | 0.624 | 0.901 | 0.751 |
+
+**PREDICTION NOT CONFIRMED.**
+1. The OOD collapse persists at d=512: MapWM-Flat still falls 0.969 (T=64) ->
+   0.768 (T=256); Plain-Flat 0.980 -> 0.605. Halving the crosstalk floor with 15x
+   the parameters (634K -> 9.6M) did not rescue length generalisation.
+2. What d buys is small and IN-DISTRIBUTION: ~+0.01-0.02 at T=64 for every
+   variant including the plain controls -> generic capacity, not a position-code
+   effect.
+3. **The hierarchy advantage is NOT a low-d artifact** (the reframe risk):
+   MapWM-Hier - MapWM-Flat at T=256 = +0.126 / +0.031 / +0.080 across
+   d=128/256/512. Noisy and non-monotone but present at every d. The synergy
+   headline survives.
+4. Variance does NOT shrink with d (±0.05-0.19 throughout), reinforcing that the
+   instability is structural rather than a dimensionality limit.
+
+**Limits of this negative:** at n=3 with ±0.15 bars we can only resolve effects
+> ~0.15. MapWM-Flat at T=128 shows 0.656 -> 0.832 (+0.176), the one trend large
+enough to possibly be real, and it is the variant the theory most directly
+targets. So: "no effect resolvable at n=3", not "no effect". Plain-Hier's d=256
+outlier (0.901, best in the sweep, then 0.751 at d=512) shows how noisy this
+surface remains.
+
+**Import for the VSA correspondence:** the one actionable number the SSP
+correspondence produced did not pay off. The correspondence stands as
+explanatory (it names PoPE's mechanism, and the unitarity condition explains our
+measured entanglement) but its single quantitative prediction is not supported
+here. Tables: DIMSWEEP_d{128,256,512}.md
