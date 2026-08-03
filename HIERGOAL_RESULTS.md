@@ -328,3 +328,32 @@ suggested.
 dissolved under more seeds (CoarseIdx's stability, PoPE's content cap, and
 ordinal-beats-spatial). Only effects >= ~0.10 with tight-variance families have
 survived. Treat any content-axis gap < 0.10 in this project as unresolved.
+
+## MECHANISM CORRECTED: pooling averages the spatial signal AWAY (it is not "noisy")
+
+`probe_coarse_angles.py` extracts the coarse rotation angle theta = omega*cum from
+the trained checkpoints (seed 0, hier-goal, held-out env). Measured:
+
+| coarse angle | \|theta\| final (T=64) | across-episode sigma | sigma/\|theta\| | OOD drift (T=256/T=64) |
+|---|---|---|---|---|
+| learned (CoarsePI) | 65.7 | 6.61 | **10.0%** | 2.25x |
+| pooled (MapWM-Hier) | 51.1 | 3.13 | 6.1% | 2.52x |
+| ordinal (CoarseIdx) | 195.1 | 0.00 | 0.0% | 2.50x |
+
+Two corrections to what this file said earlier:
+
+1. **"cum_delta is unbounded and its window-mean is noisy" was wrong on both counts.**
+   ALL THREE designs drift ~2.3-2.5x beyond their trained range at T=256 -- including
+   the deterministic ordinal one. Unbounded growth is therefore NOT what separates
+   them, and the pooled angle is not noisier: its across-episode sigma (3.13) is
+   LOWER than the learned one's (6.61).
+
+2. **The real difference is how much PATH-DEPENDENT signal the angle carries.**
+   across-episode sigma measures how much theta varies with where the agent actually
+   went. Ordinal = 0.00 by construction (pure ordering, no space). Pooled = 3.13.
+   Learned = 6.61, i.e. ~1.6x more signal per unit of drift (10.0% vs 6.1%).
+   Mean-pooling over k tokens AVERAGES THE SPATIAL VARIATION AWAY -- it produces a
+   washed-out, flatter spatial code, not a noisy one. That is why the learned coarse
+   path integration wins the position task.
+
+Visual: coarse_angles.json + the published angle figure.
