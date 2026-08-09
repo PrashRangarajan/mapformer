@@ -73,6 +73,9 @@ def main():
     ap.add_argument("--variant", required=True, choices=list(VARIANT_MAP.keys()))
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--room-size", type=int, default=8)
+    ap.add_argument("--interleave-path", action="store_true",
+                    help="deterministic balanced interleave of the BFS path -- kills the "
+                         "copy-previous-action shortcut (0.969 -> 0.327)")
     ap.add_argument("--n-obs-types", type=int, default=16)
     ap.add_argument("--T-explore", type=int, default=64)
     ap.add_argument("--T-navigate", type=int, default=64)
@@ -94,7 +97,8 @@ def main():
     out = Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
 
     env = HierGoalGridWorld(size=64, room_size=args.room_size,
-                            n_obs_types=args.n_obs_types, seed=args.seed)
+                            n_obs_types=args.n_obs_types, seed=args.seed,
+                            interleave_path=args.interleave_path)
     model = VARIANT_MAP[args.variant](
         vocab_size=env.unified_vocab_size, d_model=args.d_model,
         n_heads=args.n_heads, n_layers=args.n_layers, grid_size=64)
@@ -106,7 +110,8 @@ def main():
                              args.T_explore, args.T_navigate, args.n_batches, args.device)
 
     env_test = HierGoalGridWorld(size=64, room_size=args.room_size,
-                                 n_obs_types=args.n_obs_types, seed=10000)
+                                 n_obs_types=args.n_obs_types, seed=10000,
+                                 interleave_path=args.interleave_path)
     eval_lengths = args.eval_explore or [args.T_explore]
     results = {}
     for te in eval_lengths:

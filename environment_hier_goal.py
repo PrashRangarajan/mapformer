@@ -38,13 +38,44 @@ from .environment import GridWorld
 from .environment_goal import bfs_torus
 
 
+def _interleave(path):
+    """Reorder a BFS path into a DETERMINISTIC balanced interleave.
+
+    Torus moves commute, so any permutation of the required moves reaches the
+    same cell in the same number of steps -- it is still a shortest path. But
+    BFS returns RUNS ([N,N,N,E,E]), which makes "copy the previous action"
+    correct on 96.9% of steps: the task was ~94% solvable with no position, no
+    map and no memory (measured; see HIERGOAL_RESULTS.md).
+
+    Interleaving repeatedly emits whichever action has the most remaining
+    (ties -> lowest action id). That is DETERMINISTIC given (position, goal), so
+    the oracle ceiling stays 1.00, but consecutive repeats become rare, so the
+    copy heuristic collapses and the target genuinely requires knowing the
+    remaining displacement.
+    """
+    if len(path) < 2:
+        return path
+    remaining = {}
+    for a in path:
+        remaining[a] = remaining.get(a, 0) + 1
+    out = []
+    for _ in range(len(path)):
+        a = min((k for k in remaining if remaining[k] > 0),
+                key=lambda k: (-remaining[k], k))       # most-remaining, then lowest id
+        out.append(a)
+        remaining[a] -= 1
+    return out
+
+
 class HierGoalGridWorld(GridWorld):
     def __init__(self, size: int = 64, room_size: int = 8, n_obs_types: int = 16,
-                 p_empty: float = 0.5, seed: Optional[int] = None):
+                 p_empty: float = 0.5, seed: Optional[int] = None,
+                 interleave_path: bool = False):
         assert size % room_size == 0
         super().__init__(size=size, n_obs_types=n_obs_types, p_empty=p_empty,
                          n_landmarks=0, seed=seed)
         self.room_size = room_size
+        self.interleave_path = interleave_path
         self.rooms_per_side = size // room_size
         self.n_rooms = self.rooms_per_side ** 2
         self.n_local = room_size ** 2
@@ -90,6 +121,8 @@ class HierGoalGridWorld(GridWorld):
             tokens.append(int(obs_map[x, y]) + self.obs_offset)
 
         bfs_path = bfs_torus((x, y), (gx, gy), self.size)
+        if self.interleave_path:
+            bfs_path = _interleave(bfs_path)
         is_bfs: list[bool] = []
         for i in range(T_navigate):                      # navigate: BFS to target
             if i < len(bfs_path):
