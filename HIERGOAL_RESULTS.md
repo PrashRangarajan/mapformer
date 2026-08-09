@@ -434,3 +434,51 @@ discriminate above ~0.95, which confounds "hierarchy adds nothing to PoPE" with
    hierarchy variant far out. This corroborates the coarse-angle probe (pooling
    averages away ~40% of the path signal) and means the headline "MapWM-Hier is
    best" holds only within ~4x of training length.
+
+## EM eq.13 fix: helps modestly, does NOT rescue EM (partial retraction)
+
+Our EMTransformerLayer computed softmax(A_X_logits o A_P_logits); the paper's
+eq.13 is (Att(Q,K) o Att(Q_P,K_P))V with Att() INCLUDING the softmax, so both
+are attention matrices and A_P is a mask in [0,1]. Multiplying signed logits made
+the gate an XNOR: measured on a trained VanillaEM, 35.5% of causal pairs had
+A_X<0 AND A_P<0, and 69.9% of positive scores came from double-mismatches.
+Diagnostic: in the ORIGINAL, softmax(A_P) is 0.0% selective (perfectly uniform,
+||q0||=0.81); with the fix the position branch learns to be selective for the
+first time (13.9%, ||q0||=8.37, 11x peak-over-uniform).
+
+Compositional cross_nb (n=3):
+
+| variant | T=256 | T=512 | T=2048 |
+|---|---|---|---|
+| MapEM-Flat (buggy) | 0.097 ± 0.013 | 0.047 | 0.015 |
+| VanillaEM_Fixed | 0.158 ± 0.056 | 0.078 | 0.014 |
+| MapWM-Flat | 0.270 | 0.164 | 0.048 |
+| Plain-Flat | 0.213 | 0.100 | 0.018 |
+
+exact_acc: 0.789 ± 0.080 (fixed) vs 0.788 ± 0.168 (buggy) -- same mean, HALF the
+variance. hier-goal: 0.954/0.832/0.713/0.598 across T=64..256.
+
+**RETRACT the number, KEEP the direction.** "MapEM-Flat = 0.097" was measured on
+a buggy layer; the fair figure is ~0.158. But EM remains the WORST variant on the
+content task even when correctly implemented (0.158 < Plain-Flat 0.213 <
+MapWM-Flat 0.270), so the regime argument (a conjunctive AND-gate is structurally
+wrong for content-match-at-different-position) survives -- it now rests on the
+fixed variant. Note the +0.061 gain is NOT significant by this project's own rule
+(content gaps < 0.10 unresolved).
+
+Curiosity: the fixed version fits WORSE (train loss 1.18-1.38 vs 0.874) yet
+generalises BETTER on cross-instance -- the signature of the original overfitting
+through the sign channel.
+
+**OPEN / IMPORTANT:** we have NO validation that our EM reproduces the paper.
+CLAUDE.md claims MapFormer-WM/EM hit 0.955/0.999 on the paper's task with
+checkpoints in figures_v6/, but figures_*/ is gitignored so that evidence is not
+in this clone, and no results file records an EM number. Every EM measurement in
+this project is on OUR tasks. The missing keystone experiment is to run both EM
+versions on the paper's own aliased-revisit task (environment.py + train.py) and
+compare against 0.999.
+
+Other audit deviations found vs the paper: q0^p/k0^p are per-head here but
+described as shared in the paper; my fix ADDS a post-Hadamard renormalisation the
+paper does not mention (set renormalise=False to follow eq.13 literally);
+per-layer A_P sharing and causal-mask placement are unspecified in the paper.
