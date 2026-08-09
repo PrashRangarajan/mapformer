@@ -95,7 +95,8 @@ class MapQueryGridWorld(GridWorld):
         self.room_tok0 = base
         self.local_tok0 = base + self.n_rooms
         self.mask_tok = base + self.n_rooms + self.n_local
-        self.unified_vocab_size = self.mask_tok + 1
+        self.roomq_tok = self.mask_tok + 1        # "which room are you in?"
+        self.unified_vocab_size = self.roomq_tok + 1
 
     def room_local_to_cell(self, room: int, local: int):
         rri, rrj = divmod(room, self.rooms_per_side)
@@ -108,13 +109,24 @@ class MapQueryGridWorld(GridWorld):
         obs[occ] = rng.randint(0, self.n_obs_types, occ.sum())
         return obs
 
+    def cell_to_room(self, x, y):
+        return (x // self.room_size) * self.rooms_per_side + (y // self.room_size)
+
     def generate_query_episode(self, T_explore: int = 256, n_queries: int = 8,
-                               rng=None):
+                               n_room_queries: int = 4, rng=None):
+        """Explore, then n_queries direction queries + n_room_queries room queries.
+
+        Returns revisit_mask over the explore phase so the paper's
+        observation-prediction-at-revisits objective can be trained alongside the
+        queries -- the queries alone would not force a map to be built.
+        """
         if rng is None:
             rng = np.random
         obs_map = self._draw_obs(rng)
         x, y = self.start
         tokens: list[int] = []
+        revisit: list[bool] = []
+        seen = set()
 
         # ---- explore: directed random walk (paper's run-length 1..10) ----
         t = 0
@@ -128,32 +140,47 @@ class MapQueryGridWorld(GridWorld):
                 x = (x + dx) % self.size
                 y = (y + dy) % self.size
                 tokens.append(a + self.action_offset)
+                revisit.append(False)                       # action slot
                 tokens.append(int(obs_map[x, y]) + self.obs_offset)
+                revisit.append((x, y) in seen)              # obs slot
+                seen.add((x, y))
                 t += 1
 
-        # ---- queries: (room, local, MASK); answer never enters the context ----
-        score_pos: list[int] = []
-        answers: list[set] = []
-        for _ in range(n_queries):
-            room = int(rng.randint(0, self.n_rooms))
-            local = int(rng.randint(0, self.n_local))
-            gx, gy = self.room_local_to_cell(room, local)
-            tokens.append(self.room_tok0 + room)
-            # prediction made AT the local token scores the answer
-            score_pos.append(len(tokens))
-            tokens.append(self.local_tok0 + local)
-            tokens.append(self.mask_tok)
-            answers.append(optimal_first_actions((x, y), (gx, gy), self.size))
+        # ---- queries; the answer slot is fed back as MASK, never as the answer ----
+        dir_pos: list[int] = []
+        dir_ans: list[set] = []
+        room_pos: list[int] = []
+        room_ans: list[int] = []
+        blocks = ([("dir", None)] * n_queries) + ([("room", None)] * n_room_queries)
+        order = rng.permutation(len(blocks))
+        for bi in order:
+            kind = blocks[int(bi)][0]
+            if kind == "dir":
+                room = int(rng.randint(0, self.n_rooms))
+                local = int(rng.randint(0, self.n_local))
+                gx, gy = self.room_local_to_cell(room, local)
+                tokens.append(self.room_tok0 + room); revisit.append(False)
+                dir_pos.append(len(tokens))    # predict AT the local token
+                tokens.append(self.local_tok0 + local); revisit.append(False)
+                tokens.append(self.mask_tok); revisit.append(False)
+                dir_ans.append(optimal_first_actions((x, y), (gx, gy), self.size))
+            else:
+                room_pos.append(len(tokens))   # predict AT the roomq token
+                tokens.append(self.roomq_tok); revisit.append(False)
+                tokens.append(self.mask_tok); revisit.append(False)
+                room_ans.append(self.cell_to_room(x, y))
 
         full = torch.tensor(tokens, dtype=torch.long)
-        info = {"end_pos": (x, y), "T_explore": T_explore,
-                "score_pos": score_pos, "answers": answers}
-        return full, score_pos, answers, info
+        rev = torch.tensor(revisit, dtype=torch.bool)
+        info = {"end_pos": (x, y), "T_explore": T_explore}
+        return full, rev, (dir_pos, dir_ans), (room_pos, room_ans), info
 
     def generate_query_batch(self, batch_size: int, T_explore: int = 256,
-                             n_queries: int = 8, rng=None):
-        toks, sps, ans, infos = [], [], [], []
+                             n_queries: int = 8, n_room_queries: int = 4, rng=None):
+        toks, revs, dirs, rooms, infos = [], [], [], [], []
         for _ in range(batch_size):
-            t, sp, a, info = self.generate_query_episode(T_explore, n_queries, rng)
-            toks.append(t); sps.append(sp); ans.append(a); infos.append(info)
-        return torch.stack(toks), sps, ans, infos
+            t, rv, d, r, info = self.generate_query_episode(
+                T_explore, n_queries, n_room_queries, rng)
+            toks.append(t); revs.append(rv); dirs.append(d); rooms.append(r)
+            infos.append(info)
+        return torch.stack(toks), torch.stack(revs), dirs, rooms, infos
