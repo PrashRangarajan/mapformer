@@ -1,3 +1,7 @@
+> **SUSPECT (2026-08-09)** -- uses BFS-planner demonstrations, which are
+> order-1 self-predictable at 0.969 (see `HIERGOAL_ABLATION.md`). Not yet
+> re-validated with an action-only n-gram control.
+
 # Goal-directed navigation — does the cognitive map support BFS-optimal action prediction?
 
 Episode: 64 random-walk explore steps (build cognitive map) → BFS path

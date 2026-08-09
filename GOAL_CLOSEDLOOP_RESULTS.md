@@ -1,3 +1,7 @@
+> **SUSPECT (2026-08-09)** -- uses BFS-planner demonstrations, which are
+> order-1 self-predictable at 0.969 (see `HIERGOAL_ABLATION.md`). Not yet
+> re-validated with an action-only n-gram control.
+
 # Closed-loop goal-directed navigation — does the cognitive map enable behavior?
 
 Same models as Cluster D experiment 8 (goal-directed BC on lm200). NO new

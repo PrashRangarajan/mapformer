@@ -1,3 +1,9 @@
+> **INVALIDATED (2026-08-09)** -- see `HIERGOAL_ABLATION.md`. The task is
+> solvable from the navigate action prefix alone: randomising the goal AND
+> the entire explore phase leaves accuracy unchanged. An order-3 Markov model
+> on actions alone scores 0.971 (interleaved) / 0.969 (raw BFS). No number in
+> this file measures navigation.
+
 # Hierarchical goal-directed navigation — the MapFormer × hierarchy synergy
 
 **The positive result that closes the hierarchy arc.** Everything prior showed

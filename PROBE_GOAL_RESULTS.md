@@ -1,3 +1,7 @@
+> **SUSPECT (2026-08-09)** -- uses BFS-planner demonstrations, which are
+> order-1 self-predictable at 0.969 (see `HIERGOAL_ABLATION.md`). Not yet
+> re-validated with an action-only n-gram control.
+
 # Linear probe of frozen prediction-trained models for goal-directed info
 
 Setup: take each prediction-trained lm200 checkpoint (seed 0). Freeze it.
