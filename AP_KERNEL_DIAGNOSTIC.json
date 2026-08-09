@@ -1,0 +1,51 @@
+[
+  {
+    "n_pairs": 1159,
+    "same_cell_mean": -0.08841575570308102,
+    "frac_negative": 1.0,
+    "frac_rowmax": 0.0,
+    "label": "EM-sep vocab16 [EM WINS]"
+  },
+  {
+    "n_pairs": 1071,
+    "same_cell_mean": 0.5616846473332769,
+    "frac_negative": 0.0,
+    "frac_rowmax": 0.38468720821662,
+    "label": "EM-p0  vocab16 [EM WINS]"
+  },
+  {
+    "n_pairs": 1251,
+    "same_cell_mean": -0.0424401225889925,
+    "frac_negative": 0.4636290967226219,
+    "frac_rowmax": 0.01598721023181455,
+    "label": "EM-sep vocab256 [EM LOSES]"
+  },
+  {
+    "n_pairs": 1294,
+    "same_cell_mean": 0.654287062251402,
+    "frac_negative": 0.0,
+    "frac_rowmax": 0.013910355486862442,
+    "label": "EM-p0  vocab256 s0 [good 0.910]"
+  },
+  {
+    "n_pairs": 1162,
+    "same_cell_mean": 0.3443364448718752,
+    "frac_negative": 0.270223752151463,
+    "frac_rowmax": 0.06540447504302926,
+    "label": "EM-p0  vocab256 s1 [failed 0.502]"
+  },
+  {
+    "n_pairs": 1193,
+    "same_cell_mean": -0.16765171501899492,
+    "frac_negative": 0.7728415758591786,
+    "frac_rowmax": 0.015088013411567477,
+    "label": "EM-sep paper-task"
+  },
+  {
+    "n_pairs": 1218,
+    "same_cell_mean": 0.3974199585359672,
+    "frac_negative": 0.0,
+    "frac_rowmax": 0.4548440065681445,
+    "label": "EM-p0  paper-task"
+  }
+]
