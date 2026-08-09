@@ -5,14 +5,14 @@ set -u
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; cd "$REPO/.."
 LOG="$REPO/em_p0.log"; : > "$LOG"; echo "start $(date)" >> "$LOG"
 V=VanillaEM_P0
-pt(){ local g=$1 s=$2 o="$REPO/runs/paper_task/${V}_s${s}"
+pt(){ local g=$1 s=$2 o="$REPO/runs/paper_task/${V}_s$2"
   [ -f "$o/${V}.pt" ] && return
   echo "$(date +%H:%M) [gpu$g] paper s$s" >> "$LOG"
   python3 -u -m mapformer.train_variant --variant "$V" --seed "$s" \
     --epochs 16 --n-batches 98 --batch-size 128 --n-steps 128 \
     --n-layers 1 --n-heads 2 --d-model 128 --n-landmarks 0 \
     --device "cuda:$g" --output-dir "$o" >> "$LOG" 2>&1; }
-cp(){ local g=$1 s=$2 o="$REPO/runs/comp_multiseed/seed$s"
+cp(){ local g=$1 s=$2 o="$REPO/runs/comp_multiseed/seed$2"
   [ -f "$o/${V}.pt" ] && return
   echo "$(date +%H:%M) [gpu$g] comp s$s" >> "$LOG"
   python3 -u -m mapformer.train_compositional --variant "$V" --target motif --n-steps 256 \
