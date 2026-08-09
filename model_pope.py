@@ -1,20 +1,34 @@
-"""PoPE (Polar Coordinate Position Embeddings, Gopalakrishnan et al. 2025)
-plugged into the MapFormer family, plus the MapFormer x PoPE combo and its
-hierarchical version.
+"""PoPE (Polar Coordinate Positional Embeddings, arXiv:2509.10534) for MapFormer.
 
-RoPE (and MapFormer's rotary) entangle content and position: the score is
-  Sum_j |q_j||k_j| cos((theta_q,j - theta_k,j) + content_phase)
-where the pre-rotation content phase bleeds into the positional term. PoPE
-DECOUPLES them -- magnitude = content (softplus), phase = position ONLY:
-  Q_cos = softplus(Q) * cos(theta),  Q_sin = softplus(Q) * sin(theta)
-  score = Q_cos K_cos^T + Q_sin K_sin^T = Sum_j softplus(q_j)softplus(k_j) cos(theta_q,j - theta_k,j)
-so content (magnitude) and position (phase) cannot confound. This is the
-principled version of our CoarseIdx/CoarsePI lesson (spatial position interfering
-with content matching). Here 'theta' is whatever position the host supplies:
-INDEX (plain PoPE) or the MapFormer PATH-INTEGRATION angle (the combo).
+Faithful to the paper, verbatim references:
 
-All PoPE variants are PARAM-IDENTICAL to their RoPE counterparts (same q/k/v/o
-projections, norms, FFN); only the attention score computation differs.
+  eq.3  mu_k = sigma(k),  mu_q = sigma(q),  sigma(x) = ln(1+e^x)   [softplus]
+  eq.4  phi_k = s*theta_c,  phi_q = t*theta_c,
+        "theta_c is a component-specific frequency, i.e. theta_c = theta^{(c-1)/d}"
+  eq.6  a_ts = sum_{c=1}^{d} mu_q_tc mu_k_sc cos((s-t) theta_c + delta_c)
+  eq.8  x_k = mu_k cos(phi_k + delta_c),  y_k = mu_k sin(phi_k + delta_c)
+
+Key property (paper, sec.3): "c is an index over individual elements of the key
+and query and not over pairs of elements, thereby DOUBLING THE NUMBER OF
+FREQUENCIES FROM d/2 TO d". So PoPE has one frequency, one magnitude and one
+phase PER ELEMENT -- not per 2-D pair as in RoPE.
+
+delta_c: "a learnable bias that tunes the optimal relative offset for each
+frequency c". Init "either with delta_c = 0 or delta_c ~ Uniform(-2pi, 0)";
+"we bound delta_c so that it always lies in the interval [-2pi, 0] ... and found
+this improves stability"; "the zero initialization is important for length
+generalization". We use zero-init + the [-2pi, 0] clamp.
+
+DOCUMENTED INTERPRETATION (raised with the user, not silently resolved):
+the paper prints theta_c = theta^{(c-1)/d} with a POSITIVE exponent, which would
+make frequencies increase to ~1e4 rad/position and alias at every step. RoPE's,
+given in the same paper, is theta^{-2(c-1)/d} (negative). Since the stated intent
+is to double the frequency COUNT over the same range, we read this as a sign typo
+and use the decreasing schedule -- which is also what this repo's PathIntegrator
+already does (its docstring notes the identical typo in the MapFormer paper).
+
+Earlier versions of this file used d/2 frequencies (reusing MapFormer's block
+structure) and an unclamped delta. Both are corrected here.
 """
 import math
 
@@ -22,36 +36,19 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .model import WMTransformerLayer, MapFormerWM
-from .model_baseline_rope import MapFormerWM_RoPE
+from .model import WMTransformerLayer, MapFormerWM, ActionToLieAlgebra, PathIntegrator
 from .model_hourglass import MapFormerWM_Hourglass_k2, MapFormerWM_Hourglass_CoarseIdx
 
-
-def _pope(x, cos_a, sin_a):
-    """x (B,H,T,dh); cos_a/sin_a (B,H,T,nb). Returns (x_cos, x_sin): magnitude
-    = softplus(content), phase = the supplied position angle (per element)."""
-    mag = F.softplus(x)
-    cos = cos_a.repeat_interleave(2, dim=-1)     # (B,H,T,dh): each block's angle -> 2 elems
-    sin = sin_a.repeat_interleave(2, dim=-1)
-    return mag * cos, mag * sin
+DELTA_MIN, DELTA_MAX = -2.0 * math.pi, 0.0     # paper: bound delta_c to [-2pi, 0]
 
 
 class WMTransformerLayer_PoPE(WMTransformerLayer):
-    """PoPE-decoupled attention WITH the learnable per-frequency phase bias
-    delta_c (faithful PoPE, Eq. 6):
-        score = sum_c softplus(q_c) softplus(k_c) cos( (theta_q - theta_k) + delta_c )
-    delta_c is a content-INDEPENDENT learnable offset per (head, frequency),
-    applied to the keys (shifting the key angle by -delta gives +delta in the
-    score). It inits to 0 (so at init this equals the un-biased form) and is
-    learned -- adding per-band flexibility without re-entangling content.
-    Frequencies kept at d/2 (MapFormer's block structure) so the comparison
-    across position sources stays controlled; a full d-frequency PoPE would need
-    restructuring MapFormer's per-block path integration."""
+    """PoPE attention. cos_a/sin_a carry ONE angle PER ELEMENT: (B, H, T, d_head)."""
 
     def __init__(self, d_model, n_heads, dropout):
         super().__init__(d_model, n_heads, dropout)
-        n_blocks = (d_model // n_heads) // 2
-        self.pope_delta = nn.Parameter(torch.zeros(n_heads, n_blocks))   # learnable delta_c
+        # one learnable bias per (head, frequency); eq.6 delta_c, zero-init
+        self.pope_delta = nn.Parameter(torch.zeros(n_heads, self.d_head))
 
     def forward(self, x, cos_a, sin_a, causal_mask):
         B, T, _ = x.shape
@@ -59,15 +56,18 @@ class WMTransformerLayer_PoPE(WMTransformerLayer):
         Q = self.q_proj(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
         K = self.k_proj(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
         V = self.v_proj(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
-        cd = torch.cos(self.pope_delta).view(1, self.n_heads, 1, -1)
-        sd = torch.sin(self.pope_delta).view(1, self.n_heads, 1, -1)
-        cosK = cos_a * cd + sin_a * sd          # key angle shifted by -delta_c
-        sinK = sin_a * cd - cos_a * sd
-        Qc, Qs = _pope(Q, cos_a, sin_a)
-        Kc, Ks = _pope(K, cosK, sinK)
-        scale = math.sqrt(self.d_head)
-        scores = (torch.matmul(Qc, Kc.transpose(-1, -2))
-                  + torch.matmul(Qs, Ks.transpose(-1, -2))) / scale
+
+        # magnitude = softplus(content) (eq.3); phase = position only (eq.4)
+        mq, mk = F.softplus(Q), F.softplus(K)
+        d = self.pope_delta.clamp(DELTA_MIN, DELTA_MAX).view(1, self.n_heads, 1, -1)
+        cd, sd = torch.cos(d), torch.sin(d)
+        # key phase shifted by +delta_c (eq.8)
+        cosK = cos_a * cd - sin_a * sd
+        sinK = sin_a * cd + cos_a * sd
+
+        # a_ts = sum_c mu_q mu_k cos((s-t)theta_c + delta_c), via cos(A-B) expansion
+        scores = (torch.matmul(mq * cos_a, (mk * cosK).transpose(-1, -2))
+                  + torch.matmul(mq * sin_a, (mk * sinK).transpose(-1, -2))) / math.sqrt(self.d_head)
         scores = scores.masked_fill(causal_mask.unsqueeze(0).unsqueeze(0), float('-inf'))
         attn = self.dropout(F.softmax(scores, dim=-1))
         out = torch.matmul(attn, V).transpose(1, 2).reshape(B, T, self.d_model)
@@ -77,47 +77,73 @@ class WMTransformerLayer_PoPE(WMTransformerLayer):
         return x
 
 
-def _swap_pope(layers, d_model, n_heads):
+def _widen_to_d(model, grid_size=64, bottleneck_r=2):
+    """Rebuild the position machinery with n_blocks = d_head (paper: d, not d/2)."""
+    model.n_blocks = model.d_head
+    model.action_to_lie = ActionToLieAlgebra(model.d_model, model.n_heads,
+                                             model.n_blocks, bottleneck_r)
+    model.path_integrator = PathIntegrator(model.n_heads, model.n_blocks, grid_size)
+    return model
+
+
+def _swap(layers, d_model, n_heads):
     drop = layers[0].dropout.p if len(layers) else 0.1
     return nn.ModuleList([WMTransformerLayer_PoPE(d_model, n_heads, drop) for _ in layers])
 
 
 class MapFormerWM_PoPE(MapFormerWM):
-    """The COMBO: MapFormer path-integration position + PoPE decoupling. Flat."""
+    """COMBO: MapFormer path-integration position + PoPE decoupling. Flat."""
     def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
                  dropout=0.1, grid_size=64, bottleneck_r=2):
         super().__init__(vocab_size, d_model, n_heads, n_layers, dropout, grid_size, bottleneck_r)
-        self.layers = _swap_pope(self.layers, d_model, n_heads)
+        _widen_to_d(self, grid_size, bottleneck_r)
+        self.layers = _swap(self.layers, d_model, n_heads)
 
 
-class MapFormerWM_RoPEIndex_PoPE(MapFormerWM_RoPE):
-    """PoPE ALONE: standard index position + PoPE decoupling (the paper's method,
-    no path integration). Flat."""
+class MapFormerWM_RoPEIndex_PoPE(MapFormerWM):
+    """PoPE ALONE: index position + PoPE decoupling (the paper's own setting).
+
+    theta_c = base^{-(c-1)/d} for c = 1..d  (see the interpretation note above),
+    phases phi_t = t * theta_c -- no path integration.
+    """
     def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
                  dropout=0.1, grid_size=64, base=10000.0, **kw):
-        super().__init__(vocab_size, d_model, n_heads, n_layers, dropout, grid_size, base)
-        self.layers = _swap_pope(self.layers, d_model, n_heads)
+        super().__init__(vocab_size, d_model, n_heads, n_layers, dropout, grid_size)
+        self.n_blocks = self.d_head
+        del self.action_to_lie, self.path_integrator
+        c = torch.arange(self.n_blocks, dtype=torch.float32)         # c-1 = 0..d-1
+        self.register_buffer("theta_c", base ** (-c / self.n_blocks))
+        self.layers = _swap(self.layers, d_model, n_heads)
+
+    def forward(self, tokens):
+        B, L = tokens.shape
+        x = self.token_emb(tokens)
+        ang = torch.outer(torch.arange(L, device=tokens.device, dtype=x.dtype), self.theta_c)
+        cos_a = ang.cos()[None, None].expand(B, self.n_heads, L, -1)
+        sin_a = ang.sin()[None, None].expand(B, self.n_heads, L, -1)
+        m = torch.triu(torch.ones(L, L, device=tokens.device, dtype=torch.bool), 1)
+        for layer in self.layers:
+            x = layer(x, cos_a, sin_a, m)
+        return self.out_proj(self.out_norm(x))
 
 
 class MapFormerWM_Hourglass_PoPE(MapFormerWM_Hourglass_k2):
-    """MapFormer path-integration + PoPE + single-level hourglass hierarchy.
-    Coarse position = pooled path angle (inherited from Hourglass_k2)."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    """MapFormer path-integration + PoPE + single-level hourglass."""
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        _widen_to_d(self, kw.get("grid_size", 64))
         d, h = self.d_model, self.n_heads
-        self.pre_layers = _swap_pope(self.pre_layers, d, h)
-        self.coarse_layers = _swap_pope(self.coarse_layers, d, h)
-        self.post_layers = _swap_pope(self.post_layers, d, h)
+        self.pre_layers = _swap(self.pre_layers, d, h)
+        self.coarse_layers = _swap(self.coarse_layers, d, h)
+        self.post_layers = _swap(self.post_layers, d, h)
 
 
 class MapFormerWM_Hourglass_PoPE_CoarseIdx(MapFormerWM_Hourglass_CoarseIdx):
-    """BEST-OF-BOTH: PoPE decoupling everywhere (wins OOD length) + ORDINAL index
-    coarse position (wins content), on the path-integration fine backbone +
-    hierarchy. Combines the length-axis winner (PoPE) with the content-axis
-    winner (CoarseIdx's index coarse position). Param-identical to Hourglass_k2."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    """PoPE + ordinal index coarse position + hierarchy (best-of-both)."""
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        _widen_to_d(self, kw.get("grid_size", 64))
         d, h = self.d_model, self.n_heads
-        self.pre_layers = _swap_pope(self.pre_layers, d, h)
-        self.coarse_layers = _swap_pope(self.coarse_layers, d, h)
-        self.post_layers = _swap_pope(self.post_layers, d, h)
+        self.pre_layers = _swap(self.pre_layers, d, h)
+        self.coarse_layers = _swap(self.coarse_layers, d, h)
+        self.post_layers = _swap(self.post_layers, d, h)
