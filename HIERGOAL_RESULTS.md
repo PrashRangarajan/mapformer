@@ -400,3 +400,37 @@ correspondence produced did not pay off. The correspondence stands as
 explanatory (it names PoPE's mechanism, and the unitarity condition explains our
 measured entanglement) but its single quantitative prediction is not supported
 here. Tables: DIMSWEEP_d{128,256,512}.md
+
+## Long-T eval (up to 32x training horizon): PoPE is flat, MapWM-Hier COLLAPSES
+
+Existing checkpoints evaluated at T_explore up to 2048 (trained at 64), inference
+only, n=3, 100 trials. Motivated by the observation that hier-goal cannot
+discriminate above ~0.95, which confounds "hierarchy adds nothing to PoPE" with
+"no headroom exists".
+
+| variant | T=256 | T=512 | T=1024 | T=2048 |
+|---|---|---|---|---|
+| PoPE-Flat | 0.950 | 0.948 | 0.952 | 0.950 |
+| MapPoPE-Flat | 0.950 | 0.949 | 0.951 | 0.946 |
+| MapPoPE-Hier | 0.951 | 0.947 | 0.951 | 0.949 |
+| MapPoPE-Hier-CoarseIdx | 0.951 | 0.948 | 0.952 | 0.947 |
+| MapWM-Hier-CoarsePI | 0.899 | 0.833 | 0.774 | 0.735 |
+| MapWM-Hier | 0.856 | 0.704 | 0.567 | **0.542** |
+| MapWM-Flat | 0.726 | 0.684 | 0.659 | 0.600 |
+| Plain-Flat | 0.601 | 0.578 | 0.539 | 0.553 |
+
+1. **All PoPE variants are flat to 32x training length** (0.946-0.952, ±0.001-0.005).
+   They are mutually indistinguishable at EVERY length, so "hierarchy/path
+   integration adds nothing to PoPE" is a statement about the task's lack of
+   headroom above ~0.95, NOT a measurement of zero contribution. The earlier
+   phrasing ("contributes literally nothing") overclaimed.
+2. **But the task discriminates BETTER at long T.** PoPE minus best-non-PoPE grows
+   from +0.054 (T=256) to +0.213 (T=2048). The ~0.95 plateau is PoPE's ceiling,
+   not the task's -- other variants have room to fall, and do.
+3. **NEW: the hierarchy advantage REVERSES at extreme length.** At T=256
+   MapWM-Hier (0.856) ~= CoarsePI (0.899); by T=2048 MapWM-Hier collapses to
+   0.542 while CoarsePI holds 0.735. CoarsePI is the genuinely length-robust
+   non-PoPE design; the pooled-angle MapWM-Hier is the LEAST robust MapFormer
+   hierarchy variant far out. This corroborates the coarse-angle probe (pooling
+   averages away ~40% of the path signal) and means the headline "MapWM-Hier is
+   best" holds only within ~4x of training length.
