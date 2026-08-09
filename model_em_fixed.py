@@ -1,72 +1,74 @@
-"""MapFormer-EM with the Hadamard product applied to PROBABILITIES, per the
-paper's eq. 13 --- fixing a sign pathology in our original reimplementation.
+"""MapFormer-EM corrected to the paper's eq. 3 --- single origin vector p_0.
 
-    paper : (Att(Q,K) o Att(Q_P,K_P)) V  =  (A_X o A_P) V
-            where Att(.) INCLUDES the softmax, so A_X, A_P are attention
-            matrices: non-negative, rows summing to 1. A_P is a mask in [0,1].
+RETRACTION of this file's earlier contents
+------------------------------------------
+An earlier version of this module claimed our EMTransformerLayer had the
+Hadamard product in the wrong place, and "fixed" it by softmaxing each branch
+before the product. That was WRONG. Reading the paper directly, eq. 3 is
 
-    ours  : softmax(A_X_logits o A_P_logits)
-            i.e. the elementwise product of RAW SIGNED logits.
+    Att(Q_g, K_g, V) = softmax( A_X  o  A_P ) V ,
+    A_X = Q_X K_X^T / sqrt(d),      A_P = P . P^T / sqrt(d)
 
-Because logits are signed, the original computes an XNOR rather than an AND:
-measured on a trained VanillaEM (layer 0, causal pairs), 35.5% of pairs had
-A_X<0 AND A_P<0, and 69.9% of all POSITIVE scores came from such
-double-mismatches. Symmetrically, content-match-with-position-mismatch --- which
-is exactly cross-instance retrieval --- was driven negative. That is the likely
-cause of MapEM-Flat's 0.097 on the compositional task.
+i.e. RAW scaled scores, softmax applied AFTER the elementwise product. Our
+ORIGINAL EMTransformerLayer already does exactly this. The earlier "fix" was
+built on a summariser's paraphrase, trained consistently worse on the paper's
+own task (loss ~1.19 vs the original reaching 0.083), and is withdrawn.
 
-Note on renormalisation: the elementwise product of two probability rows does
-not sum to 1 (it is ~1/L smaller), so we renormalise. The paper's equation as
-written does not show this; without it the attention output is scaled down by
-orders of magnitude. Set `renormalise=False` to follow the equation literally.
+The REAL deviation
+------------------
+The paper defines a SINGLE learned origin p_0:
+
+    P := R_{theta_PI} P* ,   P* = [p_0, ..., p_0] ,   A_P = P . P^T
+
+so A_P[i,j] = p_0^T R(theta_j - theta_i) p_0 is an AUTOCORRELATION kernel:
+necessarily maximal and positive at zero displacement -- a proper "same place"
+detector.
+
+Our implementation used SEPARATE q0_pos and k0_pos. Then
+A_P[i,j] = sum_c |q0_c||k0_c| cos(dtheta_c + psi_c) with psi_c the phase offset
+between them, so the peak is displaced and A_P[i,i] can be NEGATIVE. Measured on
+a trained VanillaEM:
+
+    zero-displacement A_P   ours: mean -0.0091, 50% negative, row-max on 16% of rows
+                            paper (single p_0): mean +0.0442, 0% negative, row-max on 100%
+
+q0_pos and k0_pos had learned to be nearly anti-aligned (cos = -0.73 on head 0),
+inverting the position kernel. That is the defect worth fixing.
 """
-import math
-
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-from .model import MapFormerEM, EMTransformerLayer
-
-
-class EMTransformerLayer_Fixed(EMTransformerLayer):
-    """Hadamard product on softmaxed attention matrices (paper eq. 13)."""
-
-    renormalise = True
-
-    def forward(self, x, q_pos, k_pos, causal_mask):
-        B, T, _ = x.shape
-        h = self.norm1(x)
-        Q_c = self.q_content(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
-        K_c = self.k_content(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
-        V = self.v_proj(h).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
-        scale = math.sqrt(self.d_head)
-        m = causal_mask.unsqueeze(0).unsqueeze(0)
-
-        # softmax EACH branch first -> both are proper attention matrices
-        A_X = F.softmax(
-            (torch.matmul(Q_c, K_c.transpose(-1, -2)) / scale).masked_fill(m, float('-inf')), dim=-1)
-        A_P = F.softmax(
-            (torch.matmul(q_pos, k_pos.transpose(-1, -2)) / scale).masked_fill(m, float('-inf')), dim=-1)
-
-        attn = A_X * A_P                                   # non-negative AND-gate
-        if self.renormalise:
-            attn = attn / attn.sum(dim=-1, keepdim=True).clamp_min(1e-9)
-        attn = self.dropout(attn)
-
-        out = torch.matmul(attn, V).transpose(1, 2).reshape(B, T, self.d_model)
-        out = self.o_proj(out)
-        x = x + self.dropout(out)
-        x = x + self.ffn(self.norm2(x))
-        return x
+from .model import MapFormerEM, _apply_rope
 
 
-class MapFormerEM_Fixed(MapFormerEM):
-    """MapFormer-EM, Hadamard product on probabilities (paper-faithful)."""
+class MapFormerEM_SingleP0(MapFormerEM):
+    """MapFormer-EM with the paper's single origin vector: A_P = P . P^T.
+
+    Identical to MapFormerEM except q0_pos/k0_pos are replaced by one p0_pos
+    used on both sides, making A_P an autocorrelation kernel peaked at zero
+    displacement. The layer (softmax(A_X o A_P) V) is unchanged -- it was
+    already correct.
+    """
 
     def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
                  dropout=0.1, grid_size=64, bottleneck_r=2):
         super().__init__(vocab_size, d_model, n_heads, n_layers, dropout,
                          grid_size, bottleneck_r)
-        self.layers = nn.ModuleList(
-            [EMTransformerLayer_Fixed(d_model, n_heads, dropout) for _ in self.layers])
+        # one origin, used for BOTH query and key sides (paper eq. 3)
+        self.p0_pos = nn.Parameter(self.q0_pos.detach().clone())
+        del self.q0_pos, self.k0_pos
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        B, L = tokens.shape
+        x = self.token_emb(tokens)
+        cos_a, sin_a = self.path_integrator(self.action_to_lie(x))
+
+        p0 = self.p0_pos.unsqueeze(0).unsqueeze(2).expand(B, -1, L, -1)
+        p = _apply_rope(p0, cos_a, sin_a)          # P = R_theta P*
+        q_pos = k_pos = p                          # A_P = P . P^T
+
+        causal_mask = torch.triu(
+            torch.ones(L, L, device=tokens.device, dtype=torch.bool), diagonal=1)
+        for layer in self.layers:
+            x = layer(x, q_pos, k_pos, causal_mask)
+        return self.out_proj(self.out_norm(x))
