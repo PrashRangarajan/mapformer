@@ -482,3 +482,80 @@ Other audit deviations found vs the paper: q0^p/k0^p are per-head here but
 described as shared in the paper; my fix ADDS a post-Hadamard renormalisation the
 paper does not mention (set renormalise=False to follow eq.13 literally);
 per-layer A_P sharing and causal-mask placement are unspecified in the paper.
+
+# ============================================================================
+# CRITICAL: hier-goal is ~94% solvable by a TRIVIAL heuristic
+# ============================================================================
+
+Measured directly on the environment (300 episodes, 9611 supervised targets):
+
+  "copy the previous action" is correct on 9021/9312 = **0.969** of steps
+  (excluding each episode's first action), i.e. **~0.939 overall**.
+
+Every trained variant sits at 0.95-0.97 in-distribution. BFS shortest paths are
+RUNS ([N,N,N,E,E,E]), so the navigate phase is autocorrelated and predictable
+with no position, no map, and no memory.
+
+Corroborating: with a 24-token attention window (explore phase invisible),
+Plain-Flat still scores 0.969 -- it never needed the history.
+
+## What this invalidates
+
+- **The ~0.95 plateau is the COPY-HEURISTIC ceiling, not a model ceiling.**
+  PoPE's "flat 0.95 to 32x length" may mean "robustly executes a trivial
+  heuristic", not "maintains a cognitive map".
+- **In-distribution ties (~0.96) carry no information** -- everyone learned copy.
+- **The copy baseline is LENGTH-INDEPENDENT (~0.94).** So variants scoring BELOW
+  that at long T (MapWM-Flat 0.727, MapWM-Hier 0.542, Plain-Flat 0.591) are worse
+  than trivial: their position encodings degrade enough to break even local
+  copying.
+- **The headline +0.09 synergy interaction measures degradation BELOW a trivial
+  baseline, not cognitive-mapping ability.** The hier-goal conclusions in this
+  file must be read with that caveat until the task is fixed.
+
+## Proposed fix
+
+Shuffle the BFS action sequence (a random permutation of the required moves
+rather than runs). Copy-previous then scores ~0.50 (vs chance 0.25, ceiling
+1.00), restoring a wide discriminative band that genuinely requires knowing
+current position. Alternatively supervise only the first navigate action and
+direction-change points.
+
+# ============================================================================
+# Paper-task validation + bounded memory: two more negatives
+# ============================================================================
+
+**Paper task (aliased-obs revisit, paper config, 200K sequences), train loss:**
+
+| variant | s0 | s1 | s2 |
+|---|---|---|---|
+| Vanilla (WM) | 0.070 | 0.136 | 0.138 |
+| VanillaEM (original) | 0.391 | 1.023 | 0.083 |
+| VanillaEM_Fixed (eq.13 reading) | 1.196 | 1.202 | 1.184 |
+
+The ORIGINAL EM can reach 0.083 -- better than WM -- but is wildly seed-unstable
+(0.083 to 1.023). My "fixed" version is CONSISTENTLY bad. **RETRACT the confident
+"our EM has a real bug" framing:** the sign pathology I measured is real
+(A_X<0 AND A_P<0 on 35.5% of pairs; softmax(A_P) 0.0% selective), but my
+inference that the paper intends softmax-inside-Att came from a SUMMARISER'S
+PARAPHRASE, not a verbatim equation, and the fix is worse on the paper's own
+task. The correct reading of eq.13 remains unresolved. Note also no held-out
+accuracy was recorded (the checkpoint key lookup failed), so this compares
+training loss only.
+
+**Bounded memory (prefix-preserving sliding window, eval-only, T=64):**
+
+| variant | W=inf | 128 | 64 | 32 | 16 |
+|---|---|---|---|---|---|
+| PoPE-Flat | 0.951 | 0.951 | 0.951 | 0.857 | 0.731 |
+| MapPoPE-Hier | 0.951 | 0.951 | 0.951 | 0.927 | 0.821 |
+| MapWM-Flat | 0.958 | 0.902 | 0.698 | 0.794 | 0.832 |
+| MapWM-Hier | 0.964 | 0.939 | 0.758 | 0.756 | 0.742 |
+| Plain-Flat | 0.965 | 0.965 | 0.965 | 0.965 | 0.965 |
+
+**Route-A/B prediction REFUTED.** I predicted PoPE (retrieval-dependent) would
+break under windowing while MapFormer (carried cumsum) survived. The opposite:
+PoPE holds to W=64, MapFormer degrades from W=128 and non-monotonically with
+huge variance. And Plain-Flat is completely unaffected at every window -- the
+tell that led to the copy-baseline discovery above. Given that confound this
+test could not have shown what it was designed to show.
