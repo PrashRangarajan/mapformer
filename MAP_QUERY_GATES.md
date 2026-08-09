@@ -58,16 +58,21 @@ Training diagnostics (Vanilla, 3 layers, d=128) after the gates were run:
 | T_explore | assume-start gate | held-out room acc | room loss (chance 4.16) | direction loss (chance 0.69) |
 |---|---|---|---|---|
 | 16 | **FAILS** (walk unmixed) | 0.994 | 0.17 | 0.09 |
-| 256 | PASSES | pending | 2.42 @ep120, plateauing | **0.703 -- never moves** |
+| 256 | PASSES | **0.121** (7.6x chance) | 2.33 @ep200, plateaued | **0.705 -- never moves in 200 epochs** |
 
 At T_explore=16 the task is essentially solved (room 0.994, direction 0.969), so
 the task, scorer, gradient path and metrics are all correct. But T=16 fails the
 assume-start gate: the walk has not mixed (mean distance 23.3 of uniform 32), so
 the goal alone partly determines the answer.
 
-At T_explore=256 the gates pass, and the task becomes very hard: room loss
-plateaus near 2.4 (perplexity ~11 of 64 rooms) and the DIRECTION term never
-leaves chance in 120 epochs.
+At T_explore=256 the gates pass, and the task becomes very hard. Final 200-epoch
+numbers, held out: **room 0.1211** (chance 0.016, so 7.6x chance -- real signal,
+and usable as a discriminative metric) and **direction 0.4966** (chance 0.50 --
+completely dead, with its loss flat at 0.70 across all 200 epochs).
+
+So the two query types behave completely differently at length:
+- ROOM survives, weakly. 0.121 vs 0.994 at T=16, but well above chance.
+- DIRECTION does not survive at all and should be dropped.
 
 **This is a property of the query type, not the budget.** Answering "which room
 am I in" requires DECODING absolute position -- a modular sum of ~256 signed
