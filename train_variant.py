@@ -77,6 +77,7 @@ from mapformer.model_hourglass import (
     MapFormerWM_Hourglass_MotifSeg_FR, MapFormerWM_FrameResetFlat,
     MapFormerWM_Hourglass_CoarseIdx, MapFormerWM_Hourglass_CoarsePI,
 )
+from mapformer.model_em_fixed import MapFormerEM_Fixed
 from mapformer.model_pope import (
     MapFormerWM_PoPE, MapFormerWM_RoPEIndex_PoPE, MapFormerWM_Hourglass_PoPE,
     MapFormerWM_Hourglass_PoPE_CoarseIdx,
@@ -98,6 +99,7 @@ VARIANT_MAP = {
     "Vanilla":    MapFormerWM,
     "VanillaNoDrop": MapFormerWM_VanillaNoDrop,
     "VanillaEM":  MapFormerEM,
+    "VanillaEM_Fixed": MapFormerEM_Fixed,   # eq.13 Hadamard on probabilities
     "Level1":     MapFormerWM_ParallelInEKF,
     "Level15":    MapFormerWM_Level15InEKF,
     "Level15Beta": MapFormerWM_Level15Beta,
@@ -152,6 +154,7 @@ VARIANT_MAP = {
     #   backbone: MapWM / MapEM / Plain    structure: Flat / Hier(=hourglass)
     "MapWM-Flat":   MapFormerWM,               # == Vanilla
     "MapEM-Flat":   MapFormerEM,               # == VanillaEM
+    "MapEM-Flat-Fixed": MapFormerEM_Fixed,     # paper-faithful eq.13
     "MapWM-Hier":   MapFormerWM_Hourglass_k2,  # == Hourglass_k2
     "MapWM-FlatHG": MapFormerWM_HourglassFlat3,# == HourglassFlat3 (hourglass-matched flat control)
     "MapWM-MotifSeg": MapFormerWM_Hourglass_MotifSeg,  # == Hourglass_MotifSeg (oracle room seg)
