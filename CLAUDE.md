@@ -23,7 +23,11 @@ mechanisms to the path-integration circuit: a **parallel Invariant EKF**, a
    p_0) 0.987 +/- 0.012 (best seed 0.9995). Our EM = the paper's MapEM-os
    (both observation and structure; paper sec. C: "MapEM-os relying on both
    observation and structure to compute attention"). Checkpoints in
-   `runs/paper_task/`.
+   `runs/paper_task/`. NOTE: separate q0_pos/k0_pos is PAPER-FAITHFUL (App. A.4:
+   "our MapFormers use two separate initial vectors k0p and q0p ... we suspect
+   this separation to be beneficial"). Single-p_0 is an ABLATION of that stated
+   suspicion, and it refutes it (0.987 +/- 0.012 vs 0.898 +/- 0.108). Do NOT
+   delete the separate-q0/k0 EM results; both configurations are reportable.
 2. **Parallel InEKF** — `model_inekf_parallel.py`, `main_inekf_parallel.py`.
    Steady-state gain + FFT scan. Same speed as vanilla. Checkpoint in
    `figures_inekf_parallel_v2/`.

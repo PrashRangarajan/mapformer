@@ -41,8 +41,15 @@ Held-out revisit accuracy, measured (`eval_paper_task.py`, n=3 seeds, T=128):
 same-map == fresh-map to 3 decimals for every variant, so the models are
 building the cognitive map **in context**, not memorising obs_map into weights.
 
-Verdict: WM reproduces (0.989 vs paper 0.99). EM reproduces only after the
-single-p_0 correction (0.987, best seed 0.9995, vs paper 1.0); the separate
+CORRECTION (2026-08-09): "correction" is the wrong word for single-p_0. Appendix
+A.4 says the paper DOES use separate k0p/q0p and that collapsing them to a single
+p_0 is optional ("we could set k0p = q0p = p0 without loss of generality.
+However, we suspect this separation to be beneficial"). So separate q0/k0 is
+paper-faithful, and single-p_0 is an ABLATION of a conjecture the paper never
+tests. Our data refutes the conjecture. Keep BOTH rows in all tables.
+
+Verdict: WM reproduces (0.989 vs paper 0.99). EM reproduces only in the
+single-p_0 ablation (0.987, best seed 0.9995, vs paper 1.0); the separate
 q0/k0 version does not (0.898, and seed-unstable: 0.778 / 0.931 / 0.986).
 NOT yet tested: the paper's own OOD protocol (OOD-d = 64 steps/grid 32,
 OOD-s = 256/128), which is a different length+grid change from our T=512 OOD.

@@ -14,9 +14,33 @@ ORIGINAL EMTransformerLayer already does exactly this. The earlier "fix" was
 built on a summariser's paraphrase, trained consistently worse on the paper's
 own task (loss ~1.19 vs the original reaching 0.083), and is withdrawn.
 
-The REAL deviation
-------------------
-The paper defines a SINGLE learned origin p_0:
+CORRECTION (2026-08-09): this is an ABLATION, not a bug fix
+-----------------------------------------------------------
+An earlier version of this docstring called separate q0_pos/k0_pos "the REAL
+deviation" from the paper. That is ALSO wrong. Appendix A.4, verbatim:
+
+    "compared to TEM and TEM-t that use a single neural population p_t to
+     encode position, our MapFormers use two separate initial vectors k0p and
+     q0p. This distinction is optional and mimics the formalism of EM-SSMs
+     defined in eq. 12, meaning that we could set k0p = q0p = p0 without loss
+     of generality. However, we suspect this separation to be beneficial
+     because it would create sparser attention values."
+
+So separate q0/k0 IS the paper's implementation; our original code was faithful.
+The main text's P* = [p_0, ..., p_0] is the simplified presentation.
+
+What this module therefore is: an ABLATION of an optional design choice that the
+paper states as a SUSPICION and never measures. Our measurement contradicts it
+(paper-task held-out revisit accuracy, n=3 seeds, same training batch):
+
+    separate q0/k0  0.898 +/- 0.108   (seeds 0.778 / 0.931 / 0.986)
+    single p_0      0.987 +/- 0.012   (seeds 0.9995 / 0.975 / 0.986)
+
+The separation does not create useful sparsity at this scale; it destabilises
+training. Both configurations must stay in the results -- the separate version
+is the paper's architecture, the single-p_0 version is our ablation of it.
+
+The geometric reason the single-p_0 form is better behaved:
 
     P := R_{theta_PI} P* ,   P* = [p_0, ..., p_0] ,   A_P = P . P^T
 
@@ -24,7 +48,7 @@ so A_P[i,j] = p_0^T R(theta_j - theta_i) p_0 is an AUTOCORRELATION kernel:
 necessarily maximal and positive at zero displacement -- a proper "same place"
 detector.
 
-Our implementation used SEPARATE q0_pos and k0_pos. Then
+With separate q0_pos and k0_pos,
 A_P[i,j] = sum_c |q0_c||k0_c| cos(dtheta_c + psi_c) with psi_c the phase offset
 between them, so the peak is displaced and A_P[i,i] can be NEGATIVE. Measured on
 a trained VanillaEM:
