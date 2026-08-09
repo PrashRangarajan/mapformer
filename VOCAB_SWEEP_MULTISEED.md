@@ -40,3 +40,36 @@ Supersedes the single-seed table in VOCAB_SWEEP_RESULTS.md, whose EM row could n
 - VanillaEM per-seed @T=512: 0.498, 0.498, 0.496
 - VanillaEM_P0 per-seed @T=512: 0.499, 0.500, 0.498
 
+
+## Paired analysis (T=512, positive = EM variant beats Vanilla, same seed)
+
+| n_obs | VanillaEM | wins | VanillaEM_P0 | wins |
+|---|---|---|---|---|
+| 16 | +0.027 | **3/3** | +0.028 | **3/3** |
+| 256 | -0.086 | 1/3 | +0.097 | 2/3 |
+| 4096 | +0.014 | 3/3 | +0.016 | 3/3 |
+
+## Findings
+
+**1. n_obs=4096 is a degenerate regime -- do not interpret it.** Best accuracy
+across all 27 runs at n_obs=4096 is **0.500**, and p_empty=0.5, so every model has
+collapsed to always-predict-blank. The n_obs=4096 row of the old table measured
+nothing. (n_obs=16 tops out at 0.984, n_obs=256 at 0.910, so those are real.)
+
+**2. "VanillaEM crashes at n_obs=256" SURVIVES, and is not a collapsed seed.**
+VanillaEM is 0.590 ± 0.020 -- the *tightest* spread of the three variants
+(0.593 / 0.568 / 0.608). It reliably underperforms Vanilla (0.675 ± 0.103). This
+is a reproducible architectural effect, not training instability. The single-seed
+claim was right for the wrong reason.
+
+**3. But "long sequences favour WM" is FALSIFIED.** At n_obs=16, T=512 -- long OOD,
+aliased observations, exactly the regime the mechanism table assigns to WM -- EM
+beats Vanilla on **3/3 seeds** (+0.027), and so does EM-p_0 (+0.028). The deficit
+is specific to n_obs=256, not to sequence length.
+
+**4. The instability inverts with vocabulary.** On the paper task, separate q0/k0
+was the unstable one (0.898 ± 0.108) and single-p_0 the stable one (0.987 ± 0.012).
+At n_obs=256 it reverses: separate q0/k0 is stable-but-mediocre (±0.020), while
+single-p_0 is bimodal (0.910 / 0.502 / 0.906) -- two seeds far better than any
+other model, one seed at the 0.502 blank floor, i.e. it failed to learn at all.
+Neither configuration dominates; they fail in different ways.

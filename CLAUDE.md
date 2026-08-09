@@ -1005,6 +1005,21 @@ paper: frame as Pareto-shift, NOT strict improvement.
 Backbone ordering is regime-dependent. "EM is the better model" is a
 paper-task claim, not universal.
 
+**RETRACTED 2026-08-09 -- the table above does not survive its own data.**
+Two of its five rows are unsupported:
+- "Aliased + long OOD -> WM > EM" is contradicted by the repo's OWN clean row
+  (VanillaEM 0.972 > Vanilla 0.913 at OOD T=512) and now by the multi-seed vocab
+  sweep, where at n_obs=16 / T=512 EM beats WM on 3/3 seeds (VOCAB_SWEEP_MULTISEED.md).
+- "Landmarks -> WM 0.715 > EM 0.605" rests on lm200 checkpoints voided by the
+  RETRACTION section below.
+What the vocab sweep actually shows: EM's deficit is VOCABULARY-specific
+(n_obs=256, reproducible at +/-0.020), not length-specific. The AND-gate story
+may still be right, but the regime axis in this table is wrong, and the paper's
+Fig 4c direction (EM better at LARGE vocab) is not reproduced either -- EM's
+relative position gets worse from n_obs=16 (+0.027) to n_obs=256 (-0.086).
+n_obs=4096 is degenerate (all models at the 0.500 blank floor) and carries no
+signal in either direction.
+
 ### Paper scaling claims (verified via WebFetch)
 
 Figure 4: EM > WM along (a) head size at l=256, (b) sequence length up

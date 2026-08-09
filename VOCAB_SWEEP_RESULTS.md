@@ -1,3 +1,7 @@
+> **SUPERSEDED (2026-08-09)** by `VOCAB_SWEEP_MULTISEED.md`: single seed, and
+> its n_obs=4096 rows measured a degenerate always-predict-blank solution.
+> The n_obs=256 EM deficit reported here does reproduce at n=3.
+
 # Vocab × correction × backbone sweep — does Level15-WM > Level15-EM survive paper's vocab-scaling axis?
 
 Tests whether our small-vocab finding (Level15-WM beats Level15-EM on
