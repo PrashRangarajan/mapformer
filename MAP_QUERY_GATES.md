@@ -50,3 +50,35 @@ direction as the goal-directed one, closed-loop success as the behavioural one.
 2. `H(pos)` is capped at log2(n_episodes), so at 400 episodes it saturated at
    ~8.4 bits and measured sample size, not the walk. Replaced with mean torus
    distance from the start, which is sample-size independent.
+
+## Post-hoc: the shortcut-free regime and the learnable regime do not overlap
+
+Training diagnostics (Vanilla, 3 layers, d=128) after the gates were run:
+
+| T_explore | assume-start gate | held-out room acc | room loss (chance 4.16) | direction loss (chance 0.69) |
+|---|---|---|---|---|
+| 16 | **FAILS** (walk unmixed) | 0.994 | 0.17 | 0.09 |
+| 256 | PASSES | pending | 2.42 @ep120, plateauing | **0.703 -- never moves** |
+
+At T_explore=16 the task is essentially solved (room 0.994, direction 0.969), so
+the task, scorer, gradient path and metrics are all correct. But T=16 fails the
+assume-start gate: the walk has not mixed (mean distance 23.3 of uniform 32), so
+the goal alone partly determines the answer.
+
+At T_explore=256 the gates pass, and the task becomes very hard: room loss
+plateaus near 2.4 (perplexity ~11 of 64 rooms) and the DIRECTION term never
+leaves chance in 120 epochs.
+
+**This is a property of the query type, not the budget.** Answering "which room
+am I in" requires DECODING absolute position -- a modular sum of ~256 signed
+steps -- which is a known-hard regime for transformers. MapFormer's position code
+exists to make positions COMPARABLE (its revisit task only ever needs to MATCH
+two positions), never to make one readable. The task as designed asks for a
+capability the architecture is not built to provide, so it cannot discriminate
+between variants.
+
+**Proposed revision: matching-based queries.** Ask "what observation is at the
+cell you would reach by doing [a_1..a_k] from here?" -- the model integrates the
+hypothetical offset onto its current position and MATCHES against memory, exactly
+the operation the architecture supports, with no absolute decode. This should
+stay learnable at long T_explore, where the shortcut gates pass. Not yet built.

@@ -1,3 +1,12 @@
+> **UNDERTRAINED -- NOT A RESULT (2026-08-09).** These runs used 25 epochs,
+> a budget copied from the hier-goal config without checking it suited a harder
+> task. A 200-epoch diagnostic shows the room term sits at chance until ~epoch 30
+> at T_explore=256 and only then descends, so training stopped before anything
+> happened. Do not read the chance-level rows as a negative result.
+>
+> Pipeline validity is separately confirmed: at T_explore=16 the SAME code reaches
+> held-out direction 0.969 and room 0.994 (chance 0.50 / 0.016).
+
 # Map-Query results (n=3 seeds)
 
 Trained at T_explore=256 -- the minimum operating point the gates validate.

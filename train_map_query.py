@@ -132,7 +132,7 @@ def main():
     rng = np.random.RandomState(args.seed)
     losses = []
     for ep in range(args.epochs):
-        t0 = time.time(); acc = 0.0
+        t0 = time.time(); acc = 0.0; pa = [0.0, 0.0, 0.0]
         for _ in range(args.n_batches):
             toks, rev, dirs, rooms, _i = env.generate_query_batch(
                 args.batch_size, args.T_explore, args.n_queries,
@@ -143,9 +143,13 @@ def main():
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step(); sched.step()
             acc += loss.item()
+            pa[0] += L_dir.item(); pa[1] += L_room.item(); pa[2] += L_obs.item()
         losses.append(acc / args.n_batches)
+        nb = args.n_batches
+        # chance-level references: dir -log(0.5)=0.69, room -log(1/64)=4.16
         print(f"  epoch {ep+1}/{args.epochs} loss={losses[-1]:.4f} "
-              f"({time.time()-t0:.0f}s)", flush=True)
+              f"[dir={pa[0]/nb:.4f} (chance 0.69) room={pa[1]/nb:.4f} (chance 4.16) "
+              f"obs={pa[2]/nb:.4f}] ({time.time()-t0:.0f}s)", flush=True)
 
     results = {}
     for T in args.eval_explore:
