@@ -32,9 +32,16 @@ def main():
     ap.add_argument("--n-trials", type=int, default=100)
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--out", default=str(_REPO / "HIERGOAL_LONGT.md"))
+    ap.add_argument("--interleave-path", action="store_true",
+                    help="MUST match how the checkpoints were trained. The fixed "
+                         "hier-goal task interleaves the BFS path to kill the "
+                         "copy-previous-action shortcut (0.969 -> 0.327); scoring "
+                         "interleave-trained checkpoints on the un-interleaved env "
+                         "is a train/eval mismatch that inflates accuracy.")
     args = ap.parse_args()
 
-    env = HierGoalGridWorld(size=64, room_size=8, seed=10000)
+    env = HierGoalGridWorld(size=64, room_size=8, seed=10000,
+                            interleave_path=args.interleave_path)
     acc = {v: {T: [] for T in args.lengths} for v in args.variants}
     for v in args.variants:
         for s in args.seeds:

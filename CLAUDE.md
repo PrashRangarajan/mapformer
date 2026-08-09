@@ -14,9 +14,16 @@ mechanisms to the path-integration circuit: a **parallel Invariant EKF**, a
 ## Current state (what's implemented and working)
 
 1. **Paper reproduction** — `model.py`, `environment.py`, `main.py`.
-   MapFormer-WM / EM reach paper-level accuracy (0.955 / 0.999) on 200K
-   sequences at the paper's exact hyperparameters (Appendix B). Checkpoints
-   in `figures_v6/`.
+   Reproduces the paper's 2D grid-navigation accuracy. CORRECTED 2026-08-09:
+   this entry previously cited "paper-level accuracy (0.955 / 0.999)"; those
+   are NOT the paper's numbers. Paper Table 2 (1D-2D grid navigation), 2D
+   columns, verbatim: MapWM IID 0.99 / OOD-d 0.99 / OOD-s 0.96; MapEM-os IID
+   1.0 / OOD-d 0.99 / OOD-s 0.97. Our measured held-out revisit accuracy at
+   T=128 (PAPER_TASK_ACCURACY.md, n=3 seeds): WM 0.989 +/- 0.010, EM (single
+   p_0) 0.987 +/- 0.012 (best seed 0.9995). Our EM = the paper's MapEM-os
+   (both observation and structure; paper sec. C: "MapEM-os relying on both
+   observation and structure to compute attention"). Checkpoints in
+   `runs/paper_task/`.
 2. **Parallel InEKF** — `model_inekf_parallel.py`, `main_inekf_parallel.py`.
    Steady-state gain + FFT scan. Same speed as vanilla. Checkpoint in
    `figures_inekf_parallel_v2/`.
