@@ -1,0 +1,102 @@
+{
+  "64": {
+    "chance": 0.5009166666666667,
+    "oracle": 1.0,
+    "ngram": {
+      "1": 0.4959159859976663,
+      "2": 0.497999333111037,
+      "3": 0.49374687343671836,
+      "5": 0.4925771476230192
+    },
+    "goal_only": 0.5463333333333333,
+    "goal_only_assume_start": 0.623,
+    "room_chance": 0.015625,
+    "room_majority": 0.048666666666666664,
+    "explore_only": 0.5046666666666667,
+    "pos_entropy": 9.719778471374172,
+    "entropy_ceiling": 12.0,
+    "mean_dist": 23.292,
+    "uniform_dist": 32.0,
+    "distinct_end_cells": 960
+  },
+  "128": {
+    "chance": 0.50325,
+    "oracle": 1.0,
+    "ngram": {
+      "1": 0.5014169028171361,
+      "2": 0.5008336112037346,
+      "3": 0.5027513756878439,
+      "5": 0.4957464553794829
+    },
+    "goal_only": 0.49733333333333335,
+    "goal_only_assume_start": 0.5271666666666667,
+    "room_chance": 0.015625,
+    "room_majority": 0.026,
+    "explore_only": 0.49633333333333335,
+    "pos_entropy": 9.88491254402577,
+    "entropy_ceiling": 12.0,
+    "mean_dist": 28.892,
+    "uniform_dist": 32.0,
+    "distinct_end_cells": 1048
+  },
+  "256": {
+    "chance": 0.50575,
+    "oracle": 1.0,
+    "ngram": {
+      "1": 0.4849141523587265,
+      "2": 0.5010003334444815,
+      "3": 0.49841587460396863,
+      "5": 0.49608006672226856
+    },
+    "goal_only": 0.49733333333333335,
+    "goal_only_assume_start": 0.4995,
+    "room_chance": 0.015625,
+    "room_majority": 0.02266666666666667,
+    "explore_only": 0.49616666666666664,
+    "pos_entropy": 9.942162079346389,
+    "entropy_ceiling": 12.0,
+    "mean_dist": 31.956,
+    "uniform_dist": 32.0,
+    "distinct_end_cells": 1082
+  },
+  "512": {
+    "chance": 0.49033333333333334,
+    "oracle": 1.0,
+    "ngram": {
+      "1": 0.5065844307384564,
+      "2": 0.49666555518506167,
+      "3": 0.5055861263965316,
+      "5": 0.501417848206839
+    },
+    "goal_only": 0.5096666666666667,
+    "goal_only_assume_start": 0.48683333333333334,
+    "room_chance": 0.015625,
+    "room_majority": 0.025333333333333333,
+    "explore_only": 0.501,
+    "pos_entropy": 9.872122979329081,
+    "entropy_ceiling": 12.0,
+    "mean_dist": 32.67466666666667,
+    "uniform_dist": 32.0,
+    "distinct_end_cells": 1037
+  },
+  "1024": {
+    "chance": 0.5,
+    "oracle": 1.0,
+    "ngram": {
+      "1": 0.4917486247707951,
+      "2": 0.48982994331443813,
+      "3": 0.48741037185259295,
+      "5": 0.4925771476230192
+    },
+    "goal_only": 0.49133333333333334,
+    "goal_only_assume_start": 0.48966666666666664,
+    "room_chance": 0.015625,
+    "room_majority": 0.024,
+    "explore_only": 0.4915,
+    "pos_entropy": 9.940568506329345,
+    "entropy_ceiling": 12.0,
+    "mean_dist": 32.41733333333333,
+    "uniform_dist": 32.0,
+    "distinct_end_cells": 1077
+  }
+}
