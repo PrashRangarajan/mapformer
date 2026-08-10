@@ -1350,7 +1350,27 @@ WM and hierarchy help ORTHOGONAL metrics:
   ~+0.11 (clean in plain, high-variance in MapFormer); ~0 on exact_acc. Generic
   multi-scale compression, NOT task-structure alignment (MotifSeg didn't help).
 
-### Hierarchical goal-directed navigation — THE MapFormer x hierarchy synergy (positive)
+### Hierarchical goal-directed navigation — RETRACTED 2026-08-09
+
+> **This entire section is void, and with it the "MapFormer x hierarchy synergy"
+> claim.** The hier-goal task never measured navigation: randomising the goal AND
+> the whole explore phase leaves accuracy unchanged (0.912 -> 0.913), and
+> closed-loop success is 0.013-0.037 against a 0.010 random floor with the BFS
+> oracle at 1.000. An n-gram on the ACTION STREAM ALONE scores 0.969 (order 1,
+> raw BFS) and 0.971 (order 3, the interleaved "fix"). See HIERGOAL_ABLATION.md.
+>
+> **What the hierarchy evidence actually says**, all of it predating this result:
+> hierarchy buys COMPOSITIONAL TRANSFER and long-horizon AGGREGATION, and costs a
+> little on PRECISE RETRIEVAL.
+>   wins  — compositional motif 0.415 vs flat 0.270 (and Plain 0.318 vs 0.216);
+>           aggregate task T=2048 0.537 vs 0.401; enwik8 2.00 vs 2.07 bpc
+>   loses — HIER_ATTN_LONGT T=4096 0.769 vs flat 0.861; ROUTE_ATTN 0.764 vs 0.849;
+>           SPACETIME_HIER 0.833 vs 0.955; Match-Query 0.786 vs 0.888
+> Oracle room-aligned pooling did NOT help (0.254 vs flat 0.281), so it is not
+> about segmentation alignment. The super-additive-interaction claim is gone; the
+> two-question summary above it was right all along.
+
+#### (original text, retained for the record)
 
 New task (`environment_hier_goal.py`, `train_hier_goal.py`, `validate_hier_goal.py`):
 `[room_goal, local_goal, explore, navigate(BFS)]`, fixed anchor -> absolute
