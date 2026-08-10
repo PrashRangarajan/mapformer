@@ -105,6 +105,36 @@ test the regime where we work (long OOD with rare landmarks).
 
 ## Part IV — EM vs WM is a regime claim, not a universal ordering
 
+> **RETRACTED 2026-08-09.** The regime table below does not survive its own data,
+> and the WM-vs-EM narrative is withdrawn in full. What replaced it:
+>
+> - **The landmark rows are void.** All lm200 checkpoints are non-converged (see
+>   the RETRACTION section of CLAUDE.md), so "WM 0.715 > EM 0.605" measures
+>   training convergence, not architecture.
+> - **"Aliased + long OOD -> WM > EM" is false.** Contradicted by this repo's own
+>   clean row (VanillaEM 0.972 > Vanilla 0.913 at OOD T=512) and by the multi-seed
+>   vocab sweep, where at n_obs=16 / T=512 EM beats WM on **3/3 seeds** (+0.027).
+>   EM's deficit is **vocabulary-specific** (n_obs=256, 0.590 +/- 0.020,
+>   reproducible), not length-specific.
+> - **The paper's Fig 4c direction is not reproduced either.** EM's relative
+>   position gets WORSE as vocab grows: +0.027 at n_obs=16, -0.086 at n_obs=256.
+>   n_obs=4096 is degenerate -- every model sits at the 0.500 always-predict-blank
+>   floor -- and carries no signal in either direction.
+> - **A mechanistic replacement was proposed and FALSIFIED.** The hypothesis that
+>   EM's deficit follows from A_P kernel geometry fails on a pre-registered test:
+>   the configuration with the worst kernel (negative at zero displacement on
+>   100% of revisit pairs) is the one where EM beats WM on every seed.
+>   See `AP_KERNEL_DIAGNOSTIC.md`.
+>
+> **No mechanism is claimed.** The reportable facts are: (a) both backbones
+> replicate the paper under its own OOD protocol (`PAPER_OOD_PROTOCOL.md`);
+> (b) the paper's separate-k0p/q0p choice is an untested conjecture that our data
+> refutes (`PAPER_VALIDATION.md`); (c) one reproducible, unexplained EM deficit at
+> n_obs=256. Inventing a third mechanism after two have failed would be worse than
+> reporting the phenomenon.
+
+
+
 ### Mechanism
 
 - **MapFormer-EM:** `A = softmax(A_X ⊙ A_P)` — multiplicative AND-gate.
@@ -435,7 +465,9 @@ seed; multi-seed in progress.
 
 ### Mechanism summary (paper-citable)
 
-- **EM vs WM** is a regime claim. EM's multiplicative AND-gate `softmax(A_X ⊙ A_P)`
+- **EM vs WM** — RETRACTED, see Part IV. The regime framing below is
+  withdrawn; no mechanism is claimed.
+- ~~EM vs WM is a regime claim. EM's multiplicative AND-gate `softmax(A_X ⊙ A_P)`
   wins when A_X is the noisy channel (paper's aliased-obs tasks). WM's
   additive scoring wins when A_X is the signal channel (our landmarks,
   long-OOD tasks). DoorKey BC verifies the prediction in the opposite

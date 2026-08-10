@@ -215,7 +215,13 @@ Do not regress these (each was a debugging session):
    (Paper eq. 17 has a sign typo.)
 5. **EM attention is Hadamard `softmax(A_X ⊙ A_P)·V`**, not additive.
 6. **MapEM uses separate learnable `q₀ᵖ` and `k₀ᵖ`**, both rotated by the
-   path-integrated angle.
+   path-integrated angle. This is paper-faithful — App. A.4: *"our MapFormers
+   use two separate initial vectors k0p and q0p ... we suspect this separation
+   to be beneficial"*. That suspicion is stated but never measured in the paper.
+   We measured it: collapsing to a single `p₀` (`VanillaEM_P0`) gives held-out
+   revisit accuracy **0.987 ± 0.012** vs **0.898 ± 0.108** for the separate
+   form, whose worst seed collapses to 0.778. Keep BOTH — the separate version
+   is the paper's architecture, single-`p₀` is our ablation of it.
 7. **Low-rank Δ projection** `W_Δ = W_Δ^out · W_Δ^in` with bottleneck `r=2`.
 8. **InEKF measurement head is content-only.** Adding `(cos θ̂, sin θ̂)`
    creates a degenerate optimum.
