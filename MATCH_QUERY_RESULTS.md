@@ -61,8 +61,24 @@ phase from 256 to 512 leaves them flat (MapWM-Flat 0.888 -> 0.902), while the
 index models drift slightly down. The map holds over a query phase twice as long
 as trained, with observations withheld throughout.
 
-**4. Hierarchy does not help here.** MapWM-Hier loses to MapWM-Flat on 2 seeds
-and ties on the third (0/3 wins), 0.786 vs 0.888.
+**4. Hierarchy is a NULL result here -- not a harm.** Paired by seed
+(Hier - Flat): MapWM -0.183 / +0.000 / -0.125 (mean -0.103), Plain +0.012 /
+-0.002 / -0.003 (mean **+0.002**). In the plain backbone hierarchy does nothing
+at all; in MapWM it is negative on two seeds and an exact TIE on the third. At
+n=3 with a seed spread of 0.548-1.000 that is "no benefit, possibly a small
+cost", NOT established harm. An earlier phrasing here ("0/3 wins") overstated it.
+
+This is expected rather than surprising: Match-Query is a flat torus with i.i.d.
+observations and the task is per-cell retrieval, so there is no multi-scale
+structure to exploit and pooling can only blur the position precision the task
+needs. On a task that DOES have structure, hierarchy helps both backbones --
+compositional motifs, cross_nb @T=256: MapWM-Flat 0.270 -> MapWM-Hier 0.415
+(+0.145), Plain-Flat 0.216 -> Plain-Hier 0.318 (+0.102)
+(`COMPOSITIONAL_MULTISEED.md`, unaffected by the 2026-08-09 retractions).
+
+Consistent with the standing framing in CLAUDE.md: hierarchy buys compositional
+transfer, backbone-independently, and ~0 on exact recall. Match-Query is an
+exact-recall task.
 
 **5. This reverses PoPE-Flat's standing, and that is the point.** On the
 invalidated hier-goal task PoPE-Flat looked like the best model in the project
