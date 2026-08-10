@@ -1,3 +1,9 @@
+> **PARTIALLY INVALID — lm200 rows (2026-08-09).** Any `lm200` / landmark
+> section in this file is void: those checkpoints never converged, so the ranking
+> tracks convergence rather than architecture (see `CLAUDE.md` RETRACTION and
+> `CORRECTED_LM200_LEADERBOARD.md`). The `clean` and `noise` sections ARE valid —
+> they retrain bit-identically (`NOISE_CLEAN_REVALIDATION.md`).
+
 # Level15PC_v3 — Fix 5 + Fix 6 + tighter R clamp [-1, 5]
 
 Single seed (s0). Compares 4 variants on clean + lm200, T=128 / T=512, in-dist + OOD.

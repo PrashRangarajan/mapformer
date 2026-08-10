@@ -1,3 +1,12 @@
+> **INVALID — lm200 (2026-08-09).** Every result in this file was trained on
+> landmark (lm200) checkpoints that never converged (final CE ~1.0 instead of
+> ~0.005). The reported ranking tracks training convergence, not architecture.
+> See the RETRACTION section of `CLAUDE.md` and `CORRECTED_LM200_LEADERBOARD.md`.
+> Corrected ranking (fresh, current code): Level15 0.996 > TEMFaithful 0.982 >
+> NoDrop 0.915 > Level15EM 0.860 > Vanilla 0.835. Clean and noise results
+> elsewhere are unaffected — they retrain bit-identically
+> (`NOISE_CLEAN_REVALIDATION.md`).
+
 # Mode-conditioned cognitive maps — GSF (2)-variation results
 
 K=8 modes, each with mode-specific omega_k (per-block frequencies).

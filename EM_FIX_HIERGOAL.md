@@ -1,3 +1,11 @@
+> **INVALIDATED — hier-goal task (2026-08-09).** This file reports the
+> hierarchical goal-directed navigation task, which does not measure navigation.
+> Randomising the goal AND the entire explore phase leaves accuracy unchanged
+> (0.912 -> 0.913); closed-loop success is 0.013-0.037 against a random floor of
+> 0.010 with the BFS oracle at 1.000. An n-gram on the action stream alone scores
+> 0.969 (order 1, raw BFS) / 0.971 (order 3, interleaved). See
+> `HIERGOAL_ABLATION.md` and `HIERGOAL_CLOSEDLOOP.md`.
+
 # Hierarchical goal-directed navigation — multi-seed (mean ± std)
 
 Train T_explore=64; eval at listed T_explore (>64 = OOD). Held-out env (seed=10000). Chance=0.25, BFS ceiling=1.00.

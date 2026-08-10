@@ -1,3 +1,9 @@
+> **PARTIALLY INVALID — lm200 rows (2026-08-09).** Any `lm200` / landmark
+> section in this file is void: those checkpoints never converged, so the ranking
+> tracks convergence rather than architecture (see `CLAUDE.md` RETRACTION and
+> `CORRECTED_LM200_LEADERBOARD.md`). The `clean` and `noise` sections ARE valid —
+> they retrain bit-identically (`NOISE_CLEAN_REVALIDATION.md`).
+
 # Control experiment: v4 win mechanism
 
 Compares Level15, Level15PC_v4 (aux_coef=0.1, our 'win'), and 

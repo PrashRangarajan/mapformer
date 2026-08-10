@@ -1,3 +1,11 @@
+> **SUSPECT — planner-demonstration task (2026-08-09).** Scores next-action
+> prediction on optimal-planner demonstrations. That family of task is
+> self-predictable from the action stream alone: on hier-goal an n-gram scored
+> 0.969 at order 1 and 0.971 at order 3, and every model there collapsed to
+> ~0.02 closed-loop against a 0.010 random floor. This file has NOT been
+> re-validated with an action-only n-gram control at orders 1-5, which is the
+> check that would settle it.
+
 # Modular-clock navigation — multi-seed (mean ± std)
 
 Train T_explore=64; eval at listed T_explore (>64 = OOD). Held-out env (seed=10000). Chance=0.25, BFS ceiling=1.00.

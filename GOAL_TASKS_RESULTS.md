@@ -1,3 +1,20 @@
+> **SUSPECT — planner-demonstration task (2026-08-09).** Scores next-action
+> prediction on optimal-planner demonstrations. That family of task is
+> self-predictable from the action stream alone: on hier-goal an n-gram scored
+> 0.969 at order 1 and 0.971 at order 3, and every model there collapsed to
+> ~0.02 closed-loop against a 0.010 random floor. This file has NOT been
+> re-validated with an action-only n-gram control at orders 1-5, which is the
+> check that would settle it.
+
+> **INVALID — lm200 (2026-08-09).** Every result in this file was trained on
+> landmark (lm200) checkpoints that never converged (final CE ~1.0 instead of
+> ~0.005). The reported ranking tracks training convergence, not architecture.
+> See the RETRACTION section of `CLAUDE.md` and `CORRECTED_LM200_LEADERBOARD.md`.
+> Corrected ranking (fresh, current code): Level15 0.996 > TEMFaithful 0.982 >
+> NoDrop 0.915 > Level15EM 0.860 > Vanilla 0.835. Clean and noise results
+> elsewhere are unaffected — they retrain bit-identically
+> (`NOISE_CLEAN_REVALIDATION.md`).
+
 # Goal-directed task suite — sequential, switching, noisy
 
 Three behavioural tests of the cognitive map beyond single point-to-point navigation:

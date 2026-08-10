@@ -1,3 +1,9 @@
+> **PARTIALLY INVALID — lm200 rows (2026-08-09).** Any `lm200` / landmark
+> section in this file is void: those checkpoints never converged, so the ranking
+> tracks convergence rather than architecture (see `CLAUDE.md` RETRACTION and
+> `CORRECTED_LM200_LEADERBOARD.md`). The `clean` and `noise` sections ARE valid —
+> they retrain bit-identically (`NOISE_CLEAN_REVALIDATION.md`).
+
 # Level15NoDrop — multi-seed Pareto trade-off across regimes
 
 Removing the post-attn residual dropout was load-bearing for lm200

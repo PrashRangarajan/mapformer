@@ -1,3 +1,9 @@
+> **PARTIALLY INVALID — lm200 rows (2026-08-09).** Any `lm200` / landmark
+> section in this file is void: those checkpoints never converged, so the ranking
+> tracks convergence rather than architecture (see `CLAUDE.md` RETRACTION and
+> `CORRECTED_LM200_LEADERBOARD.md`). The `clean` and `noise` sections ARE valid —
+> they retrain bit-identically (`NOISE_CLEAN_REVALIDATION.md`).
+
 # GSF complete picture — does multi-modal Bayes help beyond landmarks?
 
 Multi-seed (n=3) on clean / noise / lm200. Question: is GSF's win a

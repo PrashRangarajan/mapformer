@@ -1,3 +1,12 @@
+> **INVALID — lm200 (2026-08-09).** Every result in this file was trained on
+> landmark (lm200) checkpoints that never converged (final CE ~1.0 instead of
+> ~0.005). The reported ranking tracks training convergence, not architecture.
+> See the RETRACTION section of `CLAUDE.md` and `CORRECTED_LM200_LEADERBOARD.md`.
+> Corrected ranking (fresh, current code): Level15 0.996 > TEMFaithful 0.982 >
+> NoDrop 0.915 > Level15EM 0.860 > Vanilla 0.835. Clean and noise results
+> elsewhere are unaffected — they retrain bit-identically
+> (`NOISE_CLEAN_REVALIDATION.md`).
+
 # Test 2: aux_coef dose-response sweep on lm200
 
 Train Level15PC at varying `aux_coef`. If PC's aux loss is interfering with Level 1.5's R_t learning, OOD accuracy on lm200 should monotonically decrease with `aux_coef`.

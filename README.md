@@ -44,6 +44,41 @@ The session-2026-05-10 walkthrough is in
 
 ## Headline results
 
+> **STATUS AUDIT 2026-08-09 — read before citing anything below.**
+>
+> | claim | status |
+> |---|---|
+> | Paper replication (WM + EM, paper's own OOD protocol) | **VERIFIED** — `PAPER_OOD_PROTOCOL.md` |
+> | Clean / noise regimes | **VALID** — retrain bit-identically (`NOISE_CLEAN_REVALIDATION.md`) |
+> | Anything on **lm200 / landmarks** | **VOID** — non-converged checkpoints (`CLAUDE.md` RETRACTION) |
+> | Anything on **hier-goal** navigation | **VOID** — task solvable from the action prefix (`HIERGOAL_ABLATION.md`) |
+> | **WM-vs-EM regime narrative** | **WITHDRAWN** — replacement mechanism falsified (`AP_KERNEL_DIAGNOSTIC.md`) |
+> | Goal-directed / planner-demonstration tasks | **SUSPECT** — no action-only n-gram control run |
+>
+> Rows 1, 2 and 5 of the necessity table below use landmark configs and are
+> therefore VOID. Rows 4 and 6 have not been re-verified in this audit — the
+> training regime of the checkpoints they cite is not established here.
+
+### Verified 2026-08-09: paper replication under the paper's own protocol
+
+Paper Table 2, 2D columns, vs ours (n=3 seeds, same training batch):
+
+| model | IID | OOD-d | OOD-s |
+|---|---|---|---|
+| paper MapWM | 0.99 | 0.99 | 0.96 |
+| **ours WM** | **0.989** | **0.981** | **0.962** |
+| paper MapEM-os | 1.0 | 0.99 | 0.97 |
+| **ours EM (single p₀)** | **0.986** | **0.986** | **0.976** |
+| ours EM (separate q0/k0, paper-faithful) | 0.900 | 0.860 | 0.936 |
+
+Every corrected cell within 0.014 of the paper. `same-map == fresh-map` to three
+decimals, so maps are built in-context, not memorised. The paper's EM ≥ WM
+*ordering* does **not** reproduce at n=3 (EM wins 1/3 seeds in every condition).
+
+Separate `q0`/`k0` is paper-faithful (App. A.4) and its benefit is a conjecture
+the paper states but never measures — our data refutes it: single `p₀` gives
+0.987 ± 0.012 vs 0.898 ± 0.108.
+
 ### Cognitive-map necessity (six independent cognitive demands)
 
 Standard transformer (RoPE) collapses across every cognitive demand we

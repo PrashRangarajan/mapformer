@@ -1,3 +1,9 @@
+> **PARTIALLY INVALID — lm200 rows (2026-08-09).** Any `lm200` / landmark
+> section in this file is void: those checkpoints never converged, so the ranking
+> tracks convergence rather than architecture (see `CLAUDE.md` RETRACTION and
+> `CORRECTED_LM200_LEADERBOARD.md`). The `clean` and `noise` sections ARE valid —
+> they retrain bit-identically (`NOISE_CLEAN_REVALIDATION.md`).
+
 # Per-regime capacity control + length sweep
 
 Is the Level15-over-Vanilla win architecture or parameters? The first

@@ -1,3 +1,11 @@
+> **CONTAINS RETRACTED CLAIMS (2026-08-09).** This is a broad report; parts of it
+> no longer hold. Specifically: (a) all **lm200 / landmark** numbers are void
+> (non-converged checkpoints — `CLAUDE.md` RETRACTION); (b) all **hier-goal**
+> numbers are void (task solvable from the action prefix — `HIERGOAL_ABLATION.md`);
+> (c) the **WM-vs-EM regime narrative** is withdrawn, and its proposed mechanistic
+> replacement was falsified (`AP_KERNEL_DIAGNOSTIC.md`). Clean/noise results and
+> the paper replication (`PAPER_OOD_PROTOCOL.md`) are unaffected.
+
 # MapFormer + Cognitive-Map Results — Session 2026-05-10
 
 A complete walk-through of the experiments and findings from this work session.

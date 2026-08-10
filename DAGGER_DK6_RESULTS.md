@@ -1,3 +1,11 @@
+> **SUSPECT — planner-demonstration task (2026-08-09).** Scores next-action
+> prediction on optimal-planner demonstrations. That family of task is
+> self-predictable from the action stream alone: on hier-goal an n-gram scored
+> 0.969 at order 1 and 0.971 at order 3, and every model there collapsed to
+> ~0.02 closed-loop against a 0.010 random floor. This file has NOT been
+> re-validated with an action-only n-gram control at orders 1-5, which is the
+> check that would settle it.
+
 # DAgger on MiniGrid-DoorKey-6x6 — medium-difficulty test
 
 3 subtasks (find key → open door → reach goal) like DK-8x8, but smaller env.
