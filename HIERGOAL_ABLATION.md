@@ -67,3 +67,30 @@ the ACTION SEQUENCE ALONE at order 1..5, not a single copy-previous baseline.
 Report that number next to every headline. Teacher-forced action-match accuracy
 on optimal-planner demonstrations is intrinsically vulnerable: the planner's
 output is structured, and structure is predictable without the state.
+
+## Addendum: why the two task versions gave opposite hierarchy verdicts
+
+They did not disagree about hierarchy. Per-seed re-evaluation of the ORIGINAL
+(raw-BFS) checkpoints at T_explore=128, measured 2026-08-09:
+
+| variant | seed 0 | seed 1 | seed 2 | mean |
+|---|---|---|---|---|
+| MapWM-Flat | 0.526 | 0.942 | 0.470 | 0.646 ± 0.258 |
+| MapWM-Hier | 0.869 | 0.891 | 0.934 | 0.898 ± 0.033 |
+
+MapWM-Flat is **bimodal**: one seed trains, two collapse at OOD explore length.
+The reported "hierarchy wins 0.907 vs 0.656" was therefore mostly two failed flat
+runs, not an architectural effect. On the interleaved task all three flat seeds
+train (0.911 ± 0.007), which is the entire reason its mean "improved" -- the
+model did not get better, the runs stopped failing.
+
+**The decisive point: the copy-previous-action baseline on the original task is
+0.969, and EVERY model is below it** -- best flat seed 0.942, all of hierarchy
+0.898. The original table ranked models by how far short of a one-line heuristic
+they fell.
+
+So the sequence is: original table = noise below a trivial baseline;
+interleaved table = order-3 pattern continuation; neither = navigation
+(closed-loop 0.013-0.037 vs a 0.010 random floor). Both are void for the same
+underlying reason, and neither supports a claim about hierarchy in either
+direction.
