@@ -28,3 +28,55 @@ Trained TE=512 TQ=256, 200 epochs. Held-out env (seed=10000).
 | Plain-Hier | 2.590 ± 0.057 | 2.636 ± 0.006 |
 | PoPE-Flat | 2.668 ± 0.041 | 2.692 ± 0.022 |
 | MapPoPE-Hier | 0.510 ± 0.443 | 0.576 ± 0.498 |
+
+## Per-seed (no bimodality; the separation is total)
+
+| variant | path integration? | s0 | s1 | s2 |
+|---|---|---|---|---|
+| MapWM-Flat | **yes** | 0.731 | 1.000 | 0.934 |
+| MapPoPE-Hier | **yes** | 0.775 | 1.000 | 0.768 |
+| MapWM-Hier | **yes** | 0.548 | 1.000 | 0.809 |
+| Plain-Flat | no (index RoPE) | 0.164 | 0.155 | 0.139 |
+| Plain-Hier | no (index RoPE) | 0.176 | 0.153 | 0.136 |
+| PoPE-Flat | no (index) | 0.128 | 0.119 | 0.106 |
+
+(T_query=256. Chance 0.0625.)
+
+## Findings
+
+**1. Path integration is necessary, and close to sufficient.** 9/9 runs with
+input-dependent path integration beat 9/9 runs with index position. The ranges do
+not overlap or even approach each other: worst path-integration seed **0.548**,
+best index seed **0.176** -- a 3.1x gap. Several path-integration seeds reach
+**1.000**. Index-position models sit at 0.11-0.18 against a chance of 0.0625, so
+they learn something, but not a usable map.
+
+**2. The axis is path integration, NOT the positional-encoding scheme.**
+MapPoPE-Hier (PoPE *with* MapFormer path integration) scores 0.847, while
+PoPE-Flat (PoPE with index position) scores 0.117. Same attention mechanism,
+opposite outcome, decided entirely by whether position is path-integrated.
+
+**3. No OOD degradation for path-integration models.** Doubling the blind query
+phase from 256 to 512 leaves them flat (MapWM-Flat 0.888 -> 0.902), while the
+index models drift slightly down. The map holds over a query phase twice as long
+as trained, with observations withheld throughout.
+
+**4. Hierarchy does not help here.** MapWM-Hier loses to MapWM-Flat on 2 seeds
+and ties on the third (0/3 wins), 0.786 vs 0.888.
+
+**5. This reverses PoPE-Flat's standing, and that is the point.** On the
+invalidated hier-goal task PoPE-Flat looked like the best model in the project
+(0.936 held flat to T=2048, +/-0.002). Here, on a task whose shortcuts are gated,
+it is **last** at 0.117. That is what a shortcut-driven result looks like once the
+shortcut is removed, and it is independent corroboration of the
+`HIERGOAL_ABLATION.md` finding.
+
+## Caveats
+
+- n=3, and seed variance among path-integration models is large (0.548-1.000).
+  The *separation* is unambiguous; the *ordering within* the path-integration
+  group is not resolved at this n.
+- One task. The gates pass (all baselines at chance, `MATCH_QUERY_GATES.md`), but
+  this is a single new task and has not been replicated elsewhere.
+- Chance is 0.0625 by construction (non-blank answers only); the marginal
+  baseline is 0.068, so the floor is honest.
