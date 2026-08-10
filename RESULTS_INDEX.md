@@ -30,51 +30,35 @@ from them. Re-run the audit rather than hand-editing this file.
 4. Check the **training budget suffices** before reading a chance-level table
    as a negative result (Map-Query needed 8x its initial budget).
 
-## VOID — lm200 (40)
-
+## VOID — lm200 (whole file) (26)
 - `AUX_COEF_SWEEP.md`
-- `CAPACITY_PERREGIME.md`
 - `CASCADE_NOSLOW_CONTROL.md`
 - `CLONE_TRANSFER_TEST.md`
 - `DROPOUT_ABLATION_RESULTS.md`
-- `GSF_FULL_RESULTS.md`
 - `GSF_MODES_DIAGNOSTIC.md`
 - `GSF_NODROP_RESULTS.md`
 - `GSF_RESULTS.md`
 - `HEX_EMERGENCE_RESULTS.md`
 - `HIER_ATTN_MULTIENV.md`
 - `LENGTH_DIAGNOSTIC.md`
-- `LEVEL15BETA_RESULTS.md`
 - `LONGT_EVAL_RESULTS.md`
 - `LONG_SEQ_lm200.md`
 - `MODEOMEGA_RESULTS.md`
 - `MULTIENV_CLEAN_2x2.md`
 - `MULTIENV_RESULTS.md`
 - `MULTISIZE_RESULTS.md`
-- `NOBYPASS_RESULTS.md`
-- `NODROP_PARETO_RESULTS.md`
 - `OMEGA_RESCALE_lm200.md`
 - `PER_VISIT_lm200.md`
-- `RESULTS_PAPER.md`
 - `R_T_DISTRIBUTION.md`
 - `SINGLE_SIZE_CONTROL.md`
 - `SPARSE_LANDMARKS_RESULTS.md`
-- `TEM_NOISE_FFN_RESULTS.md`
 - `TEM_NOVEL_ENV_RESULTS.md`
-- `TEM_RESULTS.md`
 - `TEM_SCALING_RESULTS.md`
-- `TEM_T_MULTISEED.md`
-- `TEM_T_RESULTS.md`
-- `V3_RESULTS.md`
-- `V4_CONTROL_RESULTS.md`
-- `V4_MULTISEED.md`
-- `V4_RESULTS.md`
 - `VANILLANODROP_CONTROL.md`
 - `ZERO_SHOT_TRANSFER_lm200.md`
 - `ZERO_SHOT_TRANSFER_lm200_brokeninit.md`
 
 ## VOID — hier-goal (8)
-
 - `DIMSWEEP_d128.md`
 - `DIMSWEEP_d256.md`
 - `DIMSWEEP_d512.md`
@@ -84,11 +68,23 @@ from them. Re-run the audit rather than hand-editing this file.
 - `HIERGOAL_MULTISEED.md`
 - `HIERGOAL_RESULTS.md`
 
-## PARTIAL — lm200 rows only (0)
-
+## PARTIAL — lm200 rows void, clean/noise VALID (14)
+- `CAPACITY_PERREGIME.md`
+- `GSF_FULL_RESULTS.md`
+- `LEVEL15BETA_RESULTS.md`
+- `NOBYPASS_RESULTS.md`
+- `NODROP_PARETO_RESULTS.md`
+- `RESULTS_PAPER.md`
+- `TEM_NOISE_FFN_RESULTS.md`
+- `TEM_RESULTS.md`
+- `TEM_T_MULTISEED.md`
+- `TEM_T_RESULTS.md`
+- `V3_RESULTS.md`
+- `V4_CONTROL_RESULTS.md`
+- `V4_MULTISEED.md`
+- `V4_RESULTS.md`
 
 ## SUSPECT — planner demos (18)
-
 - `ACTIVE_INFERENCE_RESULTS.md`
 - `CLOCK_SCAN.md`
 - `DAGGER_DK6_RESULTS.md`
@@ -109,20 +105,17 @@ from them. Re-run the audit rather than hand-editing this file.
 - `VECTOR_NAV_V2_RESULTS.md`
 
 ## CONTAINS RETRACTED CLAIMS (3)
-
 - `REPORT_ADDENDUM.md`
 - `REPORT_v2.md`
 - `RESULTS_SUMMARY_2026-05-10.md`
 
 ## SUPERSEDED / UNDERTRAINED (4)
-
 - `CAPACITY_CONTROL.md`
 - `COMPOSITIONAL_RESULTS.md`
 - `MAP_QUERY_RESULTS.md`
 - `VOCAB_SWEEP_RESULTS.md`
 
 ## CURRENT (82)
-
 - `AGGREGATE_EXTRAS.md`
 - `AGGREGATE_MULTISEED.md`
 - `AGGREGATE_TASK_RESULTS.md`
