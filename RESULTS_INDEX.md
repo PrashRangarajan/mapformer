@@ -1,104 +1,208 @@
-# Results index — current state (2026-05-21)
+# Results index — authoritative status (audited 2026-08-09)
 
-Master index of all live result files after the dead-end cleanup. Files
-that were incorrect, superseded, or dead-end were moved to
-`archive_stale/` (see bottom). Start here, then read the consolidated
-reports.
+Generated from the status banners in the files themselves, so it cannot drift
+from them. Re-run the audit rather than hand-editing this file.
 
-## Consolidated reports (read these first)
+## What is safe to cite
 
-| File | What it is |
-|---|---|
-| `REPORT.md` | Full consolidated report — all multi-seed results, controls, mechanisms, probes (8 sections). |
-| `REPORT_ADDENDUM.md` | Deltas since REPORT.md — active-inference null, per-scale ω, SR-aux null, cwd fix. |
-| `GENERALIZATION_REPORT.md` + `.pdf` | Generalization-only deep dive — 12 experiments, motivation→setup→results→interpretation. |
-| `RESULTS_PAPER.md` | Canonical multi-seed paper table. |
-| `RESULTS_SUMMARY_2026-05-10.md` | Cognitive-map necessity table (6 demands). |
-| `DETAILED_RESULTS.md` | Long-form experiment history. |
+| area | status | source |
+|---|---|---|
+| Paper replication, WM + EM, paper's own OOD protocol | **VERIFIED** | `PAPER_OOD_PROTOCOL.md`, `PAPER_TASK_ACCURACY.md` |
+| Separate-q0/k0 conjecture refuted (App. A.4) | **VERIFIED** | `PAPER_VALIDATION.md` |
+| Clean / noise regimes | **VALID** (retrain bit-identically) | `NOISE_CLEAN_REVALIDATION.md` |
+| Vocab sweep, multi-seed, same batch | **VALID** | `VOCAB_SWEEP_MULTISEED.md` |
+| Compositional, same training batch | **VALID** | `EM_COMP_SAMEBATCH.md` |
+| lm200 / landmarks | **VOID** | `CLAUDE.md` RETRACTION, `CORRECTED_LM200_LEADERBOARD.md` |
+| hier-goal navigation | **VOID** | `HIERGOAL_ABLATION.md`, `HIERGOAL_CLOSEDLOOP.md` |
+| WM-vs-EM regime narrative | **WITHDRAWN**, replacement falsified | `AP_KERNEL_DIAGNOSTIC.md` |
+| Goal-directed / planner-demo tasks | **SUSPECT**, control not run | see below |
 
-## Headline: TEM-setting novel-environment generalization
+## Standing rules learned the hard way
 
-| File | Status |
-|---|---|
-| `TEM_NOVEL_ENV_RESULTS.md` | **PRIMARY.** n=3, 4 axes: multi-env / cross-topology / cross-scale / cross-class. |
-| `MULTIENV_CLEAN_2x2.md` | n=3, multi-env clean×lm200 2×2 disambiguation. |
-| `MULTICLASS_MULTISEED_RESULTS.md` | n=3, cross-class (torus + DoorKey). |
-| `MULTISEED_FOLLOWUP_RESULTS.md` | n=3, cross-topology / cross-scale / multi-env tightened. |
-| `TEM_BACKGROUND_BASELINES.md` | TEMFaithful single-env + multi-env clean (n=3). |
-| `TOPOLOGY_RESULTS.md`, `MULTISIZE_RESULTS.md`, `MULTIENV_RESULTS.md` | Older single-seed precursors — kept for history. |
+1. Validate a demonstration task against an **n-gram on the action stream
+   alone at orders 1-5**, not a single copy-previous baseline. Hier-goal passed
+   the order-1 check (0.327) while carrying an order-3 shortcut at 0.971.
+2. Never compare a fresh variant against a **stored baseline checkpoint**;
+   retrain every arm in the same batch.
+3. Report the **measured chance rate** next to every headline; it is often not
+   what it looks like (0.50 not 0.25 for torus direction; 0.500 = the
+   always-predict-blank floor at n_obs=4096).
+4. Check the **training budget suffices** before reading a chance-level table
+   as a negative result (Map-Query needed 8x its initial budget).
 
-## Controls (essential for defending the headline)
+## VOID — lm200 (40)
 
-| File | Status |
-|---|---|
-| `VANILLANODROP_CONTROL.md` | n=3. Proves InEKF does real work, not just dropout removal. |
-| `EXTRAHEAD_CONTROL.md` | n=3. Cross-scale Hopfield win = extra-head capacity, not Hopfield structure. |
-| `CAPACITY_CONTROL.md` | **⚠ SUPERSEDED** — lm200-only; "CAPACITY" verdict is an lm200 artifact. Read `CAPACITY_PERREGIME.md`. |
-| `CAPACITY_PERREGIME.md` | n=3. Per-regime + length sweep T∈{512,1024,2048}. **ARCHITECTURE** on clean / noise / length / arithmetic / calibration; lm200 is a content-channel effect. |
-| `SINGLE_SIZE_CONTROL.md` | n=3. Confirms coupled-ω is the cross-scale small-grid bottleneck. |
+- `AUX_COEF_SWEEP.md`
+- `CAPACITY_PERREGIME.md`
+- `CASCADE_NOSLOW_CONTROL.md`
+- `CLONE_TRANSFER_TEST.md`
+- `DROPOUT_ABLATION_RESULTS.md`
+- `GSF_FULL_RESULTS.md`
+- `GSF_MODES_DIAGNOSTIC.md`
+- `GSF_NODROP_RESULTS.md`
+- `GSF_RESULTS.md`
+- `HEX_EMERGENCE_RESULTS.md`
+- `HIER_ATTN_MULTIENV.md`
+- `LENGTH_DIAGNOSTIC.md`
+- `LEVEL15BETA_RESULTS.md`
+- `LONGT_EVAL_RESULTS.md`
+- `LONG_SEQ_lm200.md`
+- `MODEOMEGA_RESULTS.md`
+- `MULTIENV_CLEAN_2x2.md`
+- `MULTIENV_RESULTS.md`
+- `MULTISIZE_RESULTS.md`
+- `NOBYPASS_RESULTS.md`
+- `NODROP_PARETO_RESULTS.md`
+- `OMEGA_RESCALE_lm200.md`
+- `PER_VISIT_lm200.md`
+- `RESULTS_PAPER.md`
+- `R_T_DISTRIBUTION.md`
+- `SINGLE_SIZE_CONTROL.md`
+- `SPARSE_LANDMARKS_RESULTS.md`
+- `TEM_NOISE_FFN_RESULTS.md`
+- `TEM_NOVEL_ENV_RESULTS.md`
+- `TEM_RESULTS.md`
+- `TEM_SCALING_RESULTS.md`
+- `TEM_T_MULTISEED.md`
+- `TEM_T_RESULTS.md`
+- `V3_RESULTS.md`
+- `V4_CONTROL_RESULTS.md`
+- `V4_MULTISEED.md`
+- `V4_RESULTS.md`
+- `VANILLANODROP_CONTROL.md`
+- `ZERO_SHOT_TRANSFER_lm200.md`
+- `ZERO_SHOT_TRANSFER_lm200_brokeninit.md`
 
-## Cross-scale architecture investigation
+## VOID — hier-goal (8)
 
-| File | Status |
-|---|---|
-| `TEM_CROSSSCALE_DIAGNOSTIC.md` | Analytical — why TEM dominates small grids. |
-| `PERSCALE_OMEGA_RESULTS.md` | n=3. Per-scale ω: +10pp at size 32 (partial fix). |
-| `EM_HOPFIELD_CROSSSCALE.md` | n=3. EM backbone + Hopfield head cross-scale. |
-| `HOPFIELD_NOMAINAP_RESULTS.md` | n=3. Position-modulated main attention IS load-bearing. |
-| `LEVEL15EM_CROSSSCALE.md` | n=3. EM backbone worse than WM at every scale. |
+- `DIMSWEEP_d128.md`
+- `DIMSWEEP_d256.md`
+- `DIMSWEEP_d512.md`
+- `EM_FIX_HIERGOAL.md`
+- `HIERGOAL_FIXED.md`
+- `HIERGOAL_FIXED_LONGT.md`
+- `HIERGOAL_MULTISEED.md`
+- `HIERGOAL_RESULTS.md`
 
-## NoDrop / GSF (the dropout + multi-modal-Bayes findings)
+## PARTIAL — lm200 rows only (0)
 
-| File | Status |
-|---|---|
-| `GSF_NODROP_RESULTS.md` | n=3. NoDrop & GSF are accuracy-substitutes, NLL-complements. |
-| `NODROP_PARETO_RESULTS.md` | n=3. NoDrop Pareto-shift verification. |
-| `DROPOUT_ABLATION_RESULTS.md` | Dropout-removal ablation. |
-| `LEVEL15BETA_RESULTS.md` | β was a red herring; dropout was load-bearing. |
 
-## Other regime tests
+## SUSPECT — planner demos (18)
 
-| File | Status |
-|---|---|
-| `LONGT_EVAL_RESULTS.md` | Length extrapolation T→2048. |
-| `VOCAB_SWEEP_RESULTS.md` | Vocab scaling; paper's EM-scaling claim is l=16-specific. |
-| `SPARSE_LANDMARKS_RESULTS.md` | Landmark-density sweep; TEM dominates sparse. |
-| `STOCHASTIC_TRANSITION_RESULTS.md` | Action-noise ≡ stochastic-transition MDP. |
-| `MINIGRID_DOORKEY_RESULTS.md`, `_LONGT.md`, `_ROPE_DIAG.md`, `_CACHED.md`, `MINIGRID_DK16_RESULTS.md` | MiniGrid-DoorKey. |
-| `MINIGRID_MEMORY_RESULTS.md` | MemoryS13 — cleanest "wins on a real env" result. |
+- `ACTIVE_INFERENCE_RESULTS.md`
+- `CLOCK_SCAN.md`
+- `DAGGER_DK6_RESULTS.md`
+- `DAGGER_EMPTY_RESULTS.md`
+- `DAGGER_RESULTS.md`
+- `DOORKEY_BC_RESULTS.md`
+- `GOAL_CLOSEDLOOP_RESULTS.md`
+- `GOAL_DIRECTED_RESULTS.md`
+- `GOAL_TASKS_RESULTS.md`
+- `PROBE_GOAL_DISTANCE.md`
+- `PROBE_GOAL_RESULTS.md`
+- `ROOMS_MAZE_RESULTS.md`
+- `ROOMS_TASK_RESULTS.md`
+- `SR_PRETRAIN_RESULTS.md`
+- `SR_PROBE_RESULTS.md`
+- `VARYING_MAZE_RESULTS.md`
+- `VECTOR_NAV_RESULTS.md`
+- `VECTOR_NAV_V2_RESULTS.md`
 
-## TEM-specific
+## CONTAINS RETRACTED CLAIMS (3)
 
-| File | Status |
-|---|---|
-| `TEM_T_MULTISEED.md` | n=3 TEM-T (transformer-formulation of TEM). |
-| `TEM_T_RESULTS.md` | Single-seed TEM-T. **Stale TEMFaithful rows removed.** |
-| `TEM_RESULTS.md` | **Stale TEMFaithful rows removed** (pre-bug-fix). TEM-GRU rows kept. |
+- `REPORT_ADDENDUM.md`
+- `REPORT_v2.md`
+- `RESULTS_SUMMARY_2026-05-10.md`
 
-## Behavioural / probes (mostly honest negatives)
+## SUPERSEDED / UNDERTRAINED (4)
 
-| File | Status |
-|---|---|
-| `GOAL_DIRECTED_RESULTS.md` | Goal-directed match-acc. |
-| `GOAL_CLOSEDLOOP_RESULTS.md` | Closed-loop 1-2% — honest negative (BC distribution shift). |
-| `ACTIVE_INFERENCE_RESULTS.md` | Active-inference planning — null. |
-| `SR_PRETRAIN_RESULTS.md`, `SR_PROBE_RESULTS.md` | Successor-rep aux pretraining — null. |
-| `PROBE_GOAL_RESULTS.md`, `PROBE_GOAL_DISTANCE.md`, `STATE_PROBES.md` | Goal / distance / state probes. |
-| `DAGGER_RESULTS.md`, `DAGGER_DK6_RESULTS.md`, `DAGGER_EMPTY_RESULTS.md` | DAgger on DoorKey. |
-| `DOORKEY_BC_RESULTS.md` | DoorKey behavioural cloning. |
-| `ZERO_SHOT_TRANSFER_clean.md`, `ZERO_SHOT_TRANSFER_lm200.md` | Zero-shot transfer (safe-init). |
-| `LONG_SEQ_*.md`, `PER_VISIT_*.md`, `OMEGA_RESCALE_*.md` | Older eval splits. |
-| `GOAL_TASKS_RESULTS.md`, `MODEOMEGA_FOLLOWUP_RESULTS.md`, `GSF_MODES_DIAGNOSTIC.md`, `GSF_FULL_RESULTS.md` | Misc. |
-| `VECTOR_NAV_V2_RESULTS.md` | Vector-nav probe v2. |
+- `CAPACITY_CONTROL.md`
+- `COMPOSITIONAL_RESULTS.md`
+- `MAP_QUERY_RESULTS.md`
+- `VOCAB_SWEEP_RESULTS.md`
 
-## In-flight (will auto-commit when done)
+## CURRENT (82)
 
-- `run_tem_noise_and_ffn.sh` → `TEM_NOISE_FFN_RESULTS.md` — TEM on noise regime + TEMFaithful_FFN direct machinery test.
+- `AGGREGATE_EXTRAS.md`
+- `AGGREGATE_MULTISEED.md`
+- `AGGREGATE_TASK_RESULTS.md`
+- `AP_KERNEL_DIAGNOSTIC.md`
+- `BOUNDED_MEMORY.md`
+- `BOUNDED_MEMORY_RESULTS.md`
+- `BUMP_TOKEN_RESULTS.md`
+- `CASCADE_MULTISEED_RESULTS.md`
+- `CASCADE_REPRO_TEST.md`
+- `CASCADE_ZEROSHOT_S0.md`
+- `CLAUDE.md`
+- `CLONE_ANALYSIS_LEVEL15PC.md`
+- `CLONE_TRANSFER_NOBYPASS.md`
+- `CNAV_HEX_Level15.md`
+- `CNAV_HEX_Level15EM.md`
+- `CNAV_HEX_Vanilla.md`
+- `CNAV_HEX_VanillaEM.md`
+- `CNAV_RESULTS.md`
+- `COMPOSITIONAL_EXPERIMENT.md`
+- `COMPOSITIONAL_MULTISEED.md`
+- `CORRECTED_LM200_LEADERBOARD.md`
+- `DETAILED_RESULTS.md`
+- `DOG_RESULTS.md`
+- `EM_COMP_SAMEBATCH.md`
+- `EM_FIX_COMP.md`
+- `EM_HOPFIELD_CROSSSCALE.md`
+- `EM_P0_COMP.md`
+- `EM_P0_PAPER.md`
+- `EXTRAHEAD_CONTROL.md`
+- `GENERALIZATION_REPORT.md`
+- `HIERGOAL_ABLATION.md`
+- `HIERGOAL_CLOSEDLOOP.md`
+- `HIERGOAL_LONGT.md`
+- `HIER_ATTN_LONGT.md`
+- `HIPPOCAMPAL_ANALYSIS.md`
+- `HIPPOCAMPAL_GRID.md`
+- `HIPPOCAMPAL_GRIDL15PC.md`
+- `HIPPOCAMPAL_GRID_FREE.md`
+- `HIPPOCAMPAL_HIDDEN.md`
+- `HIPPOCAMPAL_HIDDEN_GRIDFREE.md`
+- `HIPPOCAMPAL_LEVEL15PC.md`
+- `HOPFIELD_NOMAINAP_RESULTS.md`
+- `HOURGLASS_README.md`
+- `LEVEL15EM_CROSSSCALE.md`
+- `LM200_CORRECTED_MULTISEED.md`
+- `LONG_SEQ_clean.md`
+- `MAP_QUERY_GATES.md`
+- `MATCH_QUERY_GATES.md`
+- `MINIGRID_DK16_RESULTS.md`
+- `MINIGRID_DOORKEY_CACHED.md`
+- `MINIGRID_DOORKEY_LONGT.md`
+- `MINIGRID_DOORKEY_RESULTS.md`
+- `MINIGRID_DOORKEY_ROPE_DIAG.md`
+- `MINIGRID_MEMORY_RESULTS.md`
+- `MULTICLASS_MULTISEED_RESULTS.md`
+- `MULTICLASS_RESULTS.md`
+- `MULTISEED_FOLLOWUP.md`
+- `MULTISEED_FOLLOWUP_RESULTS.md`
+- `NOISE_CLEAN_REVALIDATION.md`
+- `NUMBERLINE_RESULTS.md`
+- `OMEGA_RESCALE_clean.md`
+- `OOD_GRID_RESULTS.md`
+- `PAPER_OOD_PROTOCOL.md`
+- `PAPER_TASK_ACCURACY.md`
+- `PAPER_VALIDATION.md`
+- `PERSCALE_OMEGA_RESULTS.md`
+- `PER_VISIT_clean.md`
+- `README.md`
+- `RECURSIVE_RESULTS.md`
+- `REPORT.md`
+- `ROUTE_ATTN_RESULTS.md`
+- `R_T_DISTRIBUTION_3WAY.md`
+- `SESSION_2026-05-01.md`
+- `SESSION_HIERARCHICAL_CASCADE.md`
+- `SPACETIME_HIER_RESULTS.md`
+- `STATE_PROBES.md`
+- `TEM_BACKGROUND_BASELINES.md`
+- `TEM_CROSSSCALE_DIAGNOSTIC.md`
+- `TOPOLOGY_RESULTS.md`
+- `VOCAB_SWEEP_MULTISEED.md`
+- `ZERO_SHOT_TRANSFER_clean.md`
+- `ZERO_SHOT_TRANSFER_clean_brokeninit.md`
 
-## Known open items
-
-1. ~~`CAPACITY_CONTROL.md` inconclusive~~ — RESOLVED by `CAPACITY_PERREGIME.md` (architectural on clean / noise / length / arithmetic / calibration; lm200 is a content-channel effect).
-2. GPU 1 occupancy is intermittent; per-regime sweep ran fine there sequentially. Pair-onto-GPU-1 OOMs remain a footgun if two processes share it.
-3. `archive_stale/` holds 35 dead-end / incorrect / superseded files (DoG/hex dead-ends, PC v3/v4 saga, broken-init, single-seed superseded versions). Recoverable; not deleted.
-
-*Generated 2026-05-21 during the dead-end cleanup.*
