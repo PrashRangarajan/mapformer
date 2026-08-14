@@ -1,0 +1,50 @@
+[
+  {
+    "fixed_loop": true,
+    "always_no": {
+      "hit": 0.0,
+      "false_alarm": 0.0,
+      "boundary_acc": 0.75,
+      "exact": 0.0
+    },
+    "always_yes": {
+      "hit": 1.0,
+      "false_alarm": 1.0,
+      "boundary_acc": 0.25,
+      "exact": 0.0
+    },
+    "random_boundary_exact": 0.25,
+    "ngram_boundary_acc": {
+      "1": 0.25,
+      "2": 0.3445,
+      "4": 0.746,
+      "8": 0.75
+    },
+    "positional_exact": 1.0,
+    "oracle_exact": 1.0
+  },
+  {
+    "fixed_loop": false,
+    "always_no": {
+      "hit": 0.0,
+      "false_alarm": 0.0,
+      "boundary_acc": 0.75,
+      "exact": 0.0
+    },
+    "always_yes": {
+      "hit": 1.0,
+      "false_alarm": 1.0,
+      "boundary_acc": 0.25,
+      "exact": 0.0
+    },
+    "random_boundary_exact": 0.25,
+    "ngram_boundary_acc": {
+      "1": 0.25,
+      "2": 0.6726546906187625,
+      "4": 0.7495009980039921,
+      "8": 0.75
+    },
+    "positional_exact": 0.163,
+    "oracle_exact": 1.0
+  }
+]

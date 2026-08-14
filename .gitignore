@@ -36,3 +36,17 @@ data/
 .bob_autocommit_done
 .topup_n8_done
 .dimsweep_done
+.em_fix_done
+.longt_done
+.longt_autocommit_done
+.paper_val_done
+.bounded_mem_done
+.hiergoal_fixed_done
+.em_p0_done
+.pope_redo_done
+.em_comp_samebatch_done
+.vocab_samebatch_done
+.map_query_done
+.match_query_done
+.match_query_em_done
+runs/lap_probe/
