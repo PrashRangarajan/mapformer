@@ -88,12 +88,19 @@ class LapWorld:
 
     def __init__(self, n_obs_types: int = 40, n_laps: int = 4, size: int = 64,
                  wh_range=(3, 8), fixed_loop: bool = False, seed: int = 0,
-                 reward_tok: int | None = None, vocab_size: int | None = None):
+                 reward_tok: int | None = None, vocab_size: int | None = None,
+                 no_reward: bool = False):
+        """no_reward=True emits the cell's normal observation at the end of the
+        final lap instead of REWARD. Same circuit, same token statistics, same
+        episode format -- ONLY the lap-counting demand removed. This is the
+        control that separates 'the lap-counting demand conflicts with the
+        cognitive map' from 'any 800 steps of a different distribution wipes it'."""
         self.n_obs_types = n_obs_types
         self.n_laps = n_laps
         self.size = size
         self.wh_range = wh_range
         self.fixed_loop = fixed_loop
+        self.no_reward = no_reward
         self.seed = seed
         self.action_offset = 0
         self.obs_offset = self.N_ACTIONS
@@ -138,8 +145,8 @@ class LapWorld:
                 if last_of_lap:
                     # the model predicts the lap-boundary token FROM here
                     dec_pos.append(len(tokens) - 1)
-                    dec_label.append(1 if lap == K else 0)
-                if last_of_lap and lap == K:
+                    dec_label.append(1 if (lap == K and not self.no_reward) else 0)
+                if last_of_lap and lap == K and not self.no_reward:
                     tokens.append(self.reward_tok)
                 else:
                     tokens.append(int(cell_obs[c]) + self.obs_offset)

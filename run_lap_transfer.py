@@ -14,10 +14,18 @@ a SHARED vocabulary (actions 0-3 | obs 4..43 | MASK 44 | REWARD 45):
   phase 2  continue training on LAP    -> measure lap exact
   phase 3  re-measure MQ accuracy and theta drift on the SAME model
 
-CONTROL (required, else phase-3 changes could just be more training on anything):
-an arm that continues phase 2 on MORE MATCH-QUERY instead of lap, for the same
-number of steps. If MQ drops only in the lap arm, the degradation is attributable
-to the lap task rather than to continued training or LR schedule effects.
+ARMS:
+  lap            phase 2 on the lap task
+  control        phase 2 on MORE MATCH-QUERY (rules out "more training" alone)
+  lap_noreward   phase 2 on the SAME lap circuit with the REWARD REMOVED
+
+lap_noreward is the decisive one. The same-task control cannot forget, so it left
+ordinary catastrophic forgetting fully consistent with the first result. This arm
+has an identical data distribution, token statistics and episode format to `lap`
+and differs ONLY in whether lap counting is demanded:
+  MQ dies on both   -> forgetting / distribution shift. The interesting claim dies.
+  MQ dies only on lap -> the lap-counting demand specifically conflicts with the
+                         cognitive map.
 
 Prediction: lap arm shows MQ accuracy DOWN and theta drift UP; control arm shows
 neither. Reported either way.
@@ -96,7 +104,9 @@ def run_arm(arm, seed, args, dev):
                              seed=seed)
     mq_t = MatchQueryGridWorld(n_obs_types=16, mask_tok=MASK_TOK, vocab_size=VOCAB,
                                seed=10000)
-    lp = LapWorld(n_obs_types=40, reward_tok=REWARD_TOK, vocab_size=VOCAB, seed=seed)
+    nr = (arm == "lap_noreward")
+    lp = LapWorld(n_obs_types=40, reward_tok=REWARD_TOK, vocab_size=VOCAB, seed=seed,
+                  no_reward=nr)
     lp_t = LapWorld(n_obs_types=40, reward_tok=REWARD_TOK, vocab_size=VOCAB, seed=10000)
 
     model = VARIANT_MAP["Vanilla"](vocab_size=VOCAB, d_model=128, n_heads=2,
@@ -113,7 +123,7 @@ def run_arm(arm, seed, args, dev):
     model.train()
 
     # phase 2: lap  (or MORE match-query, for the control arm)
-    if arm == "lap":
+    if arm in ("lap", "lap_noreward"):
         train_lap(model, lp, opt, rng, dev, args.phase2_steps, args.batch_size)
     else:
         train_mq(model, mq, opt, rng, dev, args.phase2_steps, args.T_explore,
@@ -137,6 +147,7 @@ def run_arm(arm, seed, args, dev):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])
+    ap.add_argument("--arms", nargs="+", default=["lap", "control", "lap_noreward"])
     ap.add_argument("--mq-steps", type=int, default=3000)
     ap.add_argument("--phase2-steps", type=int, default=800)
     ap.add_argument("--T-explore", type=int, default=512)
@@ -149,7 +160,7 @@ def main():
 
     rows = []
     for seed in args.seeds:
-        for arm in ("lap", "control"):
+        for arm in args.arms:
             r = run_arm(arm, seed, args, dev)
             rows.append(r)
             print(f"[{arm:7s} s{seed}] MQ {r['mq_before']:.3f} -> {r['mq_after']:.3f} "
@@ -170,7 +181,7 @@ def main():
              "so faithful path integration gives theta drift ~0.", "",
              "| arm | MQ before | MQ after | delta | theta drift before | after | obs/act Delta before | after |",
              "|---|---|---|---|---|---|---|---|"]
-    for arm in ("lap", "control"):
+    for arm in args.arms:
         f = lambda k: agg(arm, k)[0]
         lines.append(f"| **{arm}** | {f('mq_before'):.3f} | {f('mq_after'):.3f} | "
                      f"{f('mq_delta'):+.3f} | {f('drift_before'):.2f} | {f('drift_after'):.2f} | "

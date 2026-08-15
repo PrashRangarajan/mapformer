@@ -34,7 +34,26 @@ The task is learnable and solved perfectly at the trained lap count. The
 pre-registered prediction ("MapFormer cannot distinguish same-place-different-lap")
 is therefore REFUTED as stated.
 
-### But the mechanism is the finding
+### RETRACTED 2026-08-09 -- the mechanism below is NOT supported
+
+Two later measurements kill it:
+
+**1. The theta/Delta metrics are not diagnostic.** A Match-Query-trained model --
+one with a WORKING cognitive map -- scores obs/act |Delta| **0.252** and drift
+**4.37**. The lap-trained model scores **0.188** and **3.86**, i.e. MORE faithful
+on both. Reading 0.188 as "broke path integration" had no baseline behind it.
+
+**2. The degradation is distribution shift, not lap counting.** Training a
+Match-Query model on the lap circuit drops MQ by -0.293. Training it on the SAME
+circuit with the REWARD REMOVED -- deleting the entire lap-counting demand, a
+one-token change per episode -- drops it by **-0.291**. Identical. See
+`LAP_TRANSFER.md` / `LAP_TRANSFER_NOREWARD.md`.
+
+WHAT SURVIVES: the lap task is built and gated, and MapFormer solves it (exact
+1.000 at K=4, 0.000 at K=6 OOD). HOW it solves it is unknown. The original text
+follows for the record.
+
+### (retracted) But the mechanism is the finding
 
 `probe_lap_theta.py`, trained model:
 
