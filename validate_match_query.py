@@ -34,6 +34,9 @@ def main():
     ap.add_argument("--t-explore", nargs="+", type=int, default=[128, 256, 512])
     ap.add_argument("--t-query", nargs="+", type=int, default=[64, 128])
     ap.add_argument("--n-episodes", type=int, default=600)
+    ap.add_argument("--size", type=int, default=64)
+    ap.add_argument("--n-obs", type=int, default=16,
+                    help="chance is 1/n_obs -- changing this moves every floor")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default="MATCH_QUERY_GATES.md")
     args = ap.parse_args()
@@ -41,7 +44,8 @@ def main():
     rows = []
     for TE in args.t_explore:
         for TQ in args.t_query:
-            env = MatchQueryGridWorld(size=64, n_obs_types=16, seed=10000)
+            env = MatchQueryGridWorld(size=args.size, n_obs_types=args.n_obs,
+                                      seed=10000)
             rng = np.random.RandomState(args.seed)
             answers, never_moved, n_steps_tot, n_scored_tot = [], [], 0, 0
 
@@ -94,8 +98,9 @@ def main():
     lines = ["# Match-Query task -- pre-flight gates (CPU, no training)", "",
              "Blind-continuation task: explore with observations revealed, then "
              "continue with them withheld and predict the observation at each cell.",
-             "Scored only at cells visited during explore AND non-blank, so chance "
-             "is 1/16 = 0.0625.", "",
+             f"Scored only at cells visited during explore AND non-blank. "
+             f"size={args.size}, n_obs={args.n_obs}, so chance = "
+             f"1/{args.n_obs} = {1.0/args.n_obs:.4f}.", "",
              "| T_explore | T_query | chance | marginal | n-gram o1 | o3 | o5 | never-moved | answerable rate | n |",
              "|---|---|---|---|---|---|---|---|---|---|"]
     for r in rows:

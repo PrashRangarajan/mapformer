@@ -85,6 +85,8 @@ def main():
     ap.add_argument("--epochs", type=int, default=200)
     ap.add_argument("--n-batches", type=int, default=48)
     ap.add_argument("--batch-size", type=int, default=16)
+    ap.add_argument("--size", type=int, default=64)
+    ap.add_argument("--n-obs", type=int, default=16)
     ap.add_argument("--T-explore", type=int, default=512)
     ap.add_argument("--T-query", type=int, default=256)
     ap.add_argument("--eval-query", nargs="+", type=int, default=[256, 512])
@@ -99,12 +101,12 @@ def main():
 
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     dev = torch.device(args.device)
-    env = MatchQueryGridWorld(size=64, n_obs_types=16, seed=args.seed)
-    env_test = MatchQueryGridWorld(size=64, n_obs_types=16, seed=10000)
+    env = MatchQueryGridWorld(size=args.size, n_obs_types=args.n_obs, seed=args.seed)
+    env_test = MatchQueryGridWorld(size=args.size, n_obs_types=args.n_obs, seed=10000)
 
     model = VARIANT_MAP[args.variant](
         vocab_size=env.unified_vocab_size, d_model=args.d_model,
-        n_heads=args.n_heads, n_layers=args.n_layers, grid_size=64).to(dev)
+        n_heads=args.n_heads, n_layers=args.n_layers, grid_size=args.size).to(dev)
     print(f"{args.variant} seed={args.seed} "
           f"params={sum(p.numel() for p in model.parameters()):,} "
           f"vocab={env.unified_vocab_size} TE={args.T_explore} TQ={args.T_query} "
