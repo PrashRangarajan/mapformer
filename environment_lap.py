@@ -87,7 +87,8 @@ class LapWorld:
     ACTION_DELTAS = {0: (-1, 0), 1: (1, 0), 2: (0, -1), 3: (0, 1)}
 
     def __init__(self, n_obs_types: int = 40, n_laps: int = 4, size: int = 64,
-                 wh_range=(3, 8), fixed_loop: bool = False, seed: int = 0):
+                 wh_range=(3, 8), fixed_loop: bool = False, seed: int = 0,
+                 reward_tok: int | None = None, vocab_size: int | None = None):
         self.n_obs_types = n_obs_types
         self.n_laps = n_laps
         self.size = size
@@ -96,8 +97,10 @@ class LapWorld:
         self.seed = seed
         self.action_offset = 0
         self.obs_offset = self.N_ACTIONS
-        self.reward_tok = self.N_ACTIONS + n_obs_types
-        self.unified_vocab_size = self.reward_tok + 1
+        self.reward_tok = (self.N_ACTIONS + n_obs_types
+                           if reward_tok is None else reward_tok)
+        self.unified_vocab_size = (self.reward_tok + 1 if vocab_size is None
+                                   else vocab_size)
 
     def _circuit(self, rng):
         """Action sequence for one closed lap; net displacement is exactly zero."""

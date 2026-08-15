@@ -48,12 +48,18 @@ class MatchQueryGridWorld(GridWorld):
     """Explore with observations revealed, then continue blind and predict them."""
 
     def __init__(self, size: int = 64, n_obs_types: int = 16,
-                 p_empty: float = 0.5, seed: int = 0, start=(0, 0)):
+                 p_empty: float = 0.5, seed: int = 0, start=(0, 0),
+                 mask_tok: int | None = None, vocab_size: int | None = None):
+        """mask_tok / vocab_size override the token layout so this env can SHARE
+        a vocabulary with LapWorld -- required to train one model on both tasks
+        and ask whether learning one degrades the other."""
         super().__init__(size=size, n_obs_types=n_obs_types, p_empty=p_empty,
                          n_landmarks=0, seed=seed)
         self.start = start
-        self.mask_tok = self.N_ACTIONS + self.obs_vocab_size
-        self.unified_vocab_size = self.mask_tok + 1
+        self.mask_tok = (self.N_ACTIONS + self.obs_vocab_size
+                         if mask_tok is None else mask_tok)
+        self.unified_vocab_size = (self.mask_tok + 1 if vocab_size is None
+                                   else vocab_size)
 
     def _draw_obs(self, rng):
         obs = np.full((self.size, self.size), self.blank_token, dtype=np.int64)
