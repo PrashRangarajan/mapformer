@@ -1,6 +1,11 @@
-> **SUSPECT (2026-08-09)** -- uses BFS-planner demonstrations, which are
-> order-1 self-predictable at 0.969 (see `HIERGOAL_ABLATION.md`). Not yet
-> re-validated with an action-only n-gram control.
+> **VOID -- planner-demonstration shortcut (2026-08-09).** This file's task
+> (`GoalDirectedGridWorld`) scores next-action prediction on optimal-planner demonstrations.
+> An n-gram fitted on the ACTION STREAM ALONE -- no goal, no observations, no
+> position, no model -- scores **0.969** at order 1 against a chance of **0.250**
+> (`PLANNER_TASK_AUDIT.md`). The task is solvable without the capability it
+> claims to test, so no number here measures navigation. Same failure that
+> invalidated hier-goal, where closed-loop success was 0.013-0.037 against a
+> 0.010 random floor.
 
 # Goal-directed navigation — does the cognitive map support BFS-optimal action prediction?
 

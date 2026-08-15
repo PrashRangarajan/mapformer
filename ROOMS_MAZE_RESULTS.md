@@ -1,10 +1,11 @@
-> **SUSPECT — planner-demonstration task (2026-08-09).** Scores next-action
-> prediction on optimal-planner demonstrations. That family of task is
-> self-predictable from the action stream alone: on hier-goal an n-gram scored
-> 0.969 at order 1 and 0.971 at order 3, and every model there collapsed to
-> ~0.02 closed-loop against a 0.010 random floor. This file has NOT been
-> re-validated with an action-only n-gram control at orders 1-5, which is the
-> check that would settle it.
+> **VOID -- planner-demonstration shortcut (2026-08-09).** This file's task
+> (`RoomsMazeWorld`) scores next-action prediction on optimal-planner demonstrations.
+> An n-gram fitted on the ACTION STREAM ALONE -- no goal, no observations, no
+> position, no model -- scores **0.791** at order 1 against a chance of **0.250**
+> (`PLANNER_TASK_AUDIT.md`). The task is solvable without the capability it
+> claims to test, so no number here measures navigation. Same failure that
+> invalidated hier-goal, where closed-loop success was 0.013-0.037 against a
+> 0.010 random floor.
 
 # Hierarchical planning: rooms MAZE (spanning-tree doors)
 
