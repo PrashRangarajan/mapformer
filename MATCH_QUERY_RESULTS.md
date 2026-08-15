@@ -96,3 +96,30 @@ shortcut is removed, and it is independent corroboration of the
   this is a single new task and has not been replicated elsewhere.
 - Chance is 0.0625 by construction (non-blank answers only); the marginal
   baseline is 0.068, so the floor is honest.
+
+## Context-destruction ablation (2026-08-09) -- PASSES
+
+The check that invalidated hier-goal, finally applied here. Randomise the context
+and see whether accuracy survives (n=3, chance 0.0625):
+
+| variant | intact | explore observations shuffled | query-phase actions shuffled |
+|---|---|---|---|
+| **MapWM-Flat** | **0.918** | **0.074** | **0.076** |
+| Plain-Flat | 0.146 | 0.084 | 0.110 |
+
+- Shuffling the EXPLORE observations means the answer can no longer be retrieved:
+  accuracy falls 0.918 -> 0.074, i.e. to chance.
+- Shuffling the QUERY-phase actions means the model no longer knows which cell it
+  is standing on: 0.918 -> 0.076, again chance.
+
+So the model is genuinely using both the map it built and the path it walked.
+
+**Contrast with hier-goal on the identical manipulation: 0.912 -> 0.913,
+unchanged** (`HIERGOAL_ABLATION.md`). Match-Query is the first task in this
+repo to pass this check.
+
+Combined with the pre-flight gates (n-gram orders 1-5, never-moved, marginal,
+oracle -- all at chance after the per-cell dedup fix), Match-Query is the most
+thoroughly validated task here. Remaining weaknesses are honest ones: n=3 with
+real seed variance among path-integration models (0.548-1.000), and it is a
+single task carrying most of the project's positive claims.
