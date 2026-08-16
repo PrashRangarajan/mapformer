@@ -78,6 +78,7 @@ from mapformer.model_hourglass import (
     MapFormerWM_Hourglass_CoarseIdx, MapFormerWM_Hourglass_CoarsePI,
 )
 from mapformer.model_em_fixed import MapFormerEM_SingleP0
+from mapformer.model_mapformer_nc import MapFormerEM_NC_L, MapFormerEM_NC_NL
 from mapformer.model_pope import (
     MapFormerWM_PoPE, MapFormerWM_RoPEIndex_PoPE, MapFormerWM_Hourglass_PoPE,
     MapFormerWM_Hourglass_PoPE_CoarseIdx,
@@ -99,7 +100,9 @@ VARIANT_MAP = {
     "Vanilla":    MapFormerWM,
     "VanillaNoDrop": MapFormerWM_VanillaNoDrop,
     "VanillaEM":  MapFormerEM,
-    "VanillaEM_P0": MapFormerEM_SingleP0,   # paper eq.3: single origin, A_P = P.P^T
+    "VanillaEM_P0": MapFormerEM_SingleP0,
+    "MapEM_NC_L":  MapFormerEM_NC_L,     # paper B.2.2, linear Delta
+    "MapEM_NC_NL": MapFormerEM_NC_NL,    # paper B.2.2, MLP Delta   # paper eq.3: single origin, A_P = P.P^T
     "Level1":     MapFormerWM_ParallelInEKF,
     "Level15":    MapFormerWM_Level15InEKF,
     "Level15Beta": MapFormerWM_Level15Beta,
