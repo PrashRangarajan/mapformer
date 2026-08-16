@@ -37,7 +37,13 @@ python3 -u - "$REPO" >> "$LOG" 2>&1 <<'PY'
 import json, sys, statistics as st
 from pathlib import Path
 R = Path(sys.argv[1]); LS = ["256", "512", "1024"]
-def cell(xs): return "n/a" if not xs else f"{st.mean(xs):.3f}" + (f" ± {st.stdev(xs):.3f}" if len(xs) > 1 else "")
+def cell(xs):
+    # ALWAYS print n per cell: columns can have different seed counts when not
+    # every seed was evaluated at every length, and a table whose n varies by
+    # column without saying so is misleading (this happened, see the CORRECTION
+    # banner in MATCH_QUERY_SCALE.md).
+    if not xs: return "n/a"
+    return f"{st.mean(xs):.3f}" + (f" ± {st.stdev(xs):.3f}" if len(xs) > 1 else "") + f" (n={len(xs)})"
 ln = ["# Match-Query scale-up (n=3, n=5 on base)", "",
       "Vanilla = path integration; PlainFlat = index position. Gates re-run per config.",
       "**Chance is 0.0625 at n_obs=16 and 0.2500 at n_obs=4.**", ""]

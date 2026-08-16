@@ -1,3 +1,17 @@
+> **CORRECTION (2026-08-09): the base row's TQ=1024 cell is n=2, not n=5.**
+> Seeds 0-2 were evaluated only at TQ=256/512 in the original sweep; only seeds
+> 3 and 4 have a TQ=1024 entry. So `0.352 ± 0.077` at TQ=1024 averages seeds 3
+> and 4 **only** -- and those are the two WEAK seeds (0.398 and 0.589 at TQ=256).
+>
+> The apparent collapse at TQ=1024 in the base row is therefore a **seed-selection
+> artifact, not length degradation**. `MATCH_QUERY_LONGQ.md`, which evaluates
+> seeds 0-2 at every length, gives **0.831** at TQ=1024 on the same config.
+> Use the LONGQ file for length scaling; use this file's TQ=256/512 columns
+> (genuine n=5) for the base result.
+>
+> The 128^2 and n_obs=4 rows are unaffected -- all three of their seeds were
+> evaluated at all three lengths.
+
 # Match-Query scale-up (n=3, n=5 on base)
 
 Vanilla = path integration; PlainFlat = index position. Gates re-run per config.
