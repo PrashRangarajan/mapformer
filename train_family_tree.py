@@ -52,7 +52,7 @@ def main():
     model = VARIANT_MAP[a.variant](vocab_size=env.unified_vocab_size, d_model=a.d_model,
                                    n_heads=a.n_heads, n_layers=a.n_layers, grid_size=64).to(dev)
     print(f"{a.variant} seed={a.seed} params={sum(p.numel() for p in model.parameters()):,} "
-          f"chance={1/a.n_obs:.4f} hub_floor=0.163", flush=True)
+          f"chance={1/a.n_obs:.4f} (hub floor is depth-dependent -- see the gates file)", flush=True)
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=0.05)
     sch = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: max(0., 1 - s/(a.epochs*a.n_batches)))
     rng = np.random.RandomState(a.seed); losses = []

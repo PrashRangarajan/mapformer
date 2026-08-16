@@ -50,3 +50,6 @@ data/
 .match_query_done
 .match_query_em_done
 runs/lap_probe/
+.match_scale_done
+.family_tree_done
+.family_tree_d7_done

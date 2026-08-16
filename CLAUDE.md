@@ -1456,3 +1456,42 @@ manipulation went 0.912 -> 0.913.
 `environment_lap.py` + `validate_lap.py` + `train_lap.py` + `probe_lap_theta.py`
 (CSCG lap port, gated); `audit_planner_tasks.py` (the audit that voided four
 tasks); `run_lap_transfer.py` (sequential-transfer harness with shared vocab).
+
+### Late additions to 2026-08-09 (after the summary above)
+
+**Timing benchmark** (`TIMING_BENCHMARK.md`) — first wall-clock measurement of the
+parallel-scan claim here. Forward+backward, L=128 -> 2048:
+parallel 2.6-3.3x, MapEM-NC 14.5x, TEMFaithful 120.2x. At L=2048 Vanilla is 34x
+faster than MapEM-NC and 1632x faster than TEMFaithful (which has 20x FEWER
+params). Qualifications in the file: parallel models are overhead-dominated below
+L=1024; TEM's constant includes Python-loop overhead (the SHAPE is architectural).
+
+**Family tree** (`FAMILY_TREE_RESULTS.md`) — built `MapEM-NC` (paper B.2.2:
+K=n(n-1)/2 skew generators, sequential product) and the family-tree task the paper
+motivates it with but never runs. On a structure with non-commutativity 1.000:
+NC-NL 0.729, NC-L 0.720, COMMUTATIVE control 0.715, index 0.600. Non-commutativity
+buys +0.005 to +0.014 for 34x the cost; path integration buys +0.115.
+Floor is the hub baseline 0.146-0.163 (depth-dependent), NOT chance 0.125.
+
+**EM on Match-Query** (`MATCH_QUERY_EM.md`) — single-p_0 beats paper-faithful
+separate q0/k0 by **+0.358** (3/3 seeds; separate-form seed 0 collapses to 0.107).
+Effect grows with reliance on A_P: paper task +0.089, compositional +0.167,
+Match-Query +0.358. WM control reproduces the sweep's 0.888 to 3 d.p. EM still
+never beats WM (0.808 vs 0.888). Mechanism deliberately NOT proposed -- the A_P
+kernel-geometry account was falsified on a pre-registered test.
+
+### Repo hygiene
+
+47 void files moved to `archive/void/` with a README naming the three causes
+(lm200 non-convergence, hier-goal action-prefix shortcut, planner-demonstration
+shortcut). The DIAGNOSTICS that established each verdict are kept at top level --
+they are current results. `RESULTS_INDEX.md` regenerated; it leads with the four
+citable results and the seven standing rules.
+
+### Rule 7, added this session
+
+**A gate must CALL the task code, not reimplement it.** `validate_family_tree.py`
+originally duplicated the walk inline, so a dedup fix to the environment left
+every gate number unchanged -- the gate was certifying a different task from the
+one the trainer would run. This is nastier than the other failure modes because
+the gate keeps looking like it works.

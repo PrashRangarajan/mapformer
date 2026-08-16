@@ -1,110 +1,72 @@
-# Results index — authoritative status (regenerated 2026-08-09)
+# Results index (regenerated 2026-08-09, after archiving)
 
-Generated from the status banners in the files themselves. Re-run the
-generator rather than hand-editing.
+**47 void files moved to `archive/void/`.** Nothing there is citable;
+each carries a banner naming the evidence that invalidated it, and the
+diagnostics that established those verdicts are kept HERE as current results.
 
-## The one verified positive result
+## The four results worth citing
 
-**Path integration is necessary for in-context cognitive maps.** Match-Query,
-MapWM-Flat 0.730 ± 0.247 (n=5, 64²) and 0.823 ± 0.043 (n=3, 128²) vs
-PlainFlat 0.154 / 0.192, chance 0.0625, no seed overlap. Survives gates,
-a context-destruction ablation, a 4× larger map and 8× blind-query length.
-Boundary: breaks per-seed at n_obs=4. → `MATCH_QUERY_SCALE.md`
+1. **Path integration is necessary for in-context cognitive maps.**
+   Match-Query: 0.730 ± 0.247 (n=5, 64²) and 0.823 ± 0.043 (n=3, 128²) vs
+   index-position 0.154 / 0.192, chance 0.0625, no seed overlap. Survives
+   gates, a context-destruction ablation (0.918 → 0.074), a 4× larger map and
+   8× blind-query length. Boundary: breaks per-seed at n_obs=4.
+   Corroborated independently on the family tree (+0.115).
+2. **The parallel-scan claim holds.** 2.6–3.3× scaling vs 14.5× (MapEM-NC)
+   and 120× (TEMFaithful) over a 16× length increase. → `TIMING_BENCHMARK.md`
+3. **Paper replication** under the paper's own OOD protocol, WM and EM.
+   → `PAPER_OOD_PROTOCOL.md`
+4. **Two of the paper's stated-but-unmeasured conjectures refuted** —
+   separate q0/k0 (+0.358 against it on Match-Query, four tasks total) and
+   the value of non-commutativity (+0.005–0.014 for 34× the cost).
 
-## Also verified
+## Standing rules (each bought by a failure)
 
-- Paper replication under the paper's own OOD protocol → `PAPER_OOD_PROTOCOL.md`
-- The paper's separate-q0/k0 conjecture, refuted → `PAPER_VALIDATION.md`
-- Clean/noise regimes retrain bit-identically → `NOISE_CLEAN_REVALIDATION.md`
+1. n-gram on the **action stream alone, orders 1–5**, before any
+   demonstration task. A copy-previous baseline tests order 1 only and
+   certified a task whose order-3 shortcut was 0.971.
+2. **Context-destruction ablation** on trained models. hier-goal: 0.912 →
+   0.913. Match-Query: 0.918 → 0.074.
+3. **Never compare a fresh variant to a stored baseline.**
+4. **Report the measured chance rate** — it is often not what it looks like
+   (0.500 = the always-predict-blank floor; the family tree's floor is the
+   0.146 hub baseline, not 0.125 chance).
+5. **Verify the training budget** before reading a chance-level table as a
+   negative. Map-Query needed 8× its initial budget.
+6. **Three seeds is not a point estimate.** 0.888 ± 0.140 (n=3) became
+   0.730 ± 0.247 (n=5) on the same config.
+7. **A gate must call the task code, not reimplement it.** A validator that
+   duplicated the walk silently tested a different task from the trainer.
 
-## Standing rules (each bought by a failure today)
+## VERIFIED — safe to cite (14)
 
-1. Validate any demonstration task with an **n-gram on the action stream alone,
-   orders 1–5**. A copy-previous baseline tests order 1 only and passed a task
-   whose order-3 shortcut was 0.971.
-2. Run the **context-destruction ablation** on trained models: randomise the
-   context and confirm accuracy collapses. hier-goal went 0.912 → 0.913.
-3. **Never compare a fresh variant to a stored baseline**; retrain every arm
-   in the same batch.
-4. **Report the measured chance rate** next to every headline — it is often not
-   what it looks like (0.50 not 0.25; 0.500 = the always-predict-blank floor).
-5. **Verify the training budget suffices** before reading a chance-level table
-   as a negative (Map-Query needed 8× its initial budget).
-6. **Three seeds is not enough for a point estimate.** 0.888 ± 0.140 (n=3)
-   became 0.730 ± 0.247 (n=5) on the same config.
-
-## VERIFIED (safe to cite) (14)
-
-- `AP_KERNEL_DIAGNOSTIC.md`
 - `EM_COMP_SAMEBATCH.md`
-- `HIERGOAL_ABLATION.md`
-- `LAP_GATES.md`
-- `LAP_TRANSFER_NOREWARD.md`
+- `FAMILY_TREE_GATES.md`
+- `FAMILY_TREE_RESULTS.md`
+- `MATCH_QUERY_EM.md`
 - `MATCH_QUERY_GATES.md`
 - `MATCH_QUERY_LONGQ.md`
+- `MATCH_QUERY_RESULTS.md`
 - `MATCH_QUERY_SCALE.md`
 - `NOISE_CLEAN_REVALIDATION.md`
 - `PAPER_OOD_PROTOCOL.md`
 - `PAPER_TASK_ACCURACY.md`
 - `PAPER_VALIDATION.md`
-- `PLANNER_TASK_AUDIT.md`
+- `TIMING_BENCHMARK.md`
 - `VOCAB_SWEEP_MULTISEED.md`
 
-## VOID — planner/demonstration shortcut (13)
+## DIAGNOSTICS — what invalidated things (10)
 
-- `ACTIVE_INFERENCE_RESULTS.md`
-- `GOAL_CLOSEDLOOP_RESULTS.md`
-- `GOAL_DIRECTED_RESULTS.md`
-- `GOAL_TASKS_RESULTS.md`
-- `PROBE_GOAL_DISTANCE.md`
-- `PROBE_GOAL_RESULTS.md`
-- `ROOMS_MAZE_RESULTS.md`
-- `ROOMS_TASK_RESULTS.md`
-- `SR_PRETRAIN_RESULTS.md`
-- `SR_PROBE_RESULTS.md`
-- `STATE_PROBES.md`
-- `VARYING_MAZE_RESULTS.md`
-- `VECTOR_NAV_RESULTS.md`
-
-## VOID — lm200 (whole file) (26)
-
-- `AUX_COEF_SWEEP.md`
-- `CASCADE_NOSLOW_CONTROL.md`
-- `CLONE_TRANSFER_TEST.md`
-- `DROPOUT_ABLATION_RESULTS.md`
-- `GSF_MODES_DIAGNOSTIC.md`
-- `GSF_NODROP_RESULTS.md`
-- `GSF_RESULTS.md`
-- `HEX_EMERGENCE_RESULTS.md`
-- `HIER_ATTN_MULTIENV.md`
-- `LENGTH_DIAGNOSTIC.md`
-- `LONGT_EVAL_RESULTS.md`
-- `LONG_SEQ_lm200.md`
-- `MODEOMEGA_RESULTS.md`
-- `MULTIENV_CLEAN_2x2.md`
-- `MULTIENV_RESULTS.md`
-- `MULTISIZE_RESULTS.md`
-- `OMEGA_RESCALE_lm200.md`
-- `PER_VISIT_lm200.md`
-- `R_T_DISTRIBUTION.md`
-- `SINGLE_SIZE_CONTROL.md`
-- `SPARSE_LANDMARKS_RESULTS.md`
-- `TEM_NOVEL_ENV_RESULTS.md`
-- `TEM_SCALING_RESULTS.md`
-- `VANILLANODROP_CONTROL.md`
-- `ZERO_SHOT_TRANSFER_lm200.md`
-- `ZERO_SHOT_TRANSFER_lm200_brokeninit.md`
-
-## VOID — hier-goal (8)
-
-- `DIMSWEEP_d128.md`
-- `DIMSWEEP_d256.md`
-- `DIMSWEEP_d512.md`
-- `EM_FIX_HIERGOAL.md`
-- `HIERGOAL_FIXED.md`
-- `HIERGOAL_FIXED_LONGT.md`
-- `HIERGOAL_MULTISEED.md`
-- `HIERGOAL_RESULTS.md`
+- `AP_KERNEL_DIAGNOSTIC.md`
+- `CORRECTED_LM200_LEADERBOARD.md`
+- `HIERGOAL_ABLATION.md`
+- `HIERGOAL_CLOSEDLOOP.md`
+- `LAP_GATES.md`
+- `LAP_TRANSFER.md`
+- `LAP_TRANSFER_NOREWARD.md`
+- `LM200_CORRECTED_MULTISEED.md`
+- `MAP_QUERY_GATES.md`
+- `PLANNER_TASK_AUDIT.md`
 
 ## PARTIAL — lm200 rows void, clean/noise VALID (14)
 
@@ -129,15 +91,14 @@ Boundary: breaks per-seed at n_obs=4. → `MATCH_QUERY_SCALE.md`
 - `REPORT_v2.md`
 - `RESULTS_SUMMARY_2026-05-10.md`
 
-## SUPERSEDED / UNDERTRAINED / corrected (5)
+## SUPERSEDED / corrected (4)
 
 - `CAPACITY_CONTROL.md`
 - `COMPOSITIONAL_RESULTS.md`
 - `MAP_QUERY_RESULTS.md`
-- `MATCH_QUERY_RESULTS.md`
 - `VOCAB_SWEEP_RESULTS.md`
 
-## CURRENT (83)
+## other current (79)
 
 - `AGGREGATE_EXTRAS.md`
 - `AGGREGATE_MULTISEED.md`
@@ -159,7 +120,6 @@ Boundary: breaks per-seed at n_obs=4. → `MATCH_QUERY_SCALE.md`
 - `CNAV_RESULTS.md`
 - `COMPOSITIONAL_EXPERIMENT.md`
 - `COMPOSITIONAL_MULTISEED.md`
-- `CORRECTED_LM200_LEADERBOARD.md`
 - `DAGGER_DK6_RESULTS.md`
 - `DAGGER_EMPTY_RESULTS.md`
 - `DAGGER_RESULTS.md`
@@ -171,8 +131,8 @@ Boundary: breaks per-seed at n_obs=4. → `MATCH_QUERY_SCALE.md`
 - `EM_P0_COMP.md`
 - `EM_P0_PAPER.md`
 - `EXTRAHEAD_CONTROL.md`
+- `FAMILY_TREE_D7_GATES.md`
 - `GENERALIZATION_REPORT.md`
-- `HIERGOAL_CLOSEDLOOP.md`
 - `HIERGOAL_LONGT.md`
 - `HIER_ATTN_LONGT.md`
 - `HIPPOCAMPAL_ANALYSIS.md`
@@ -184,11 +144,8 @@ Boundary: breaks per-seed at n_obs=4. → `MATCH_QUERY_SCALE.md`
 - `HIPPOCAMPAL_LEVEL15PC.md`
 - `HOPFIELD_NOMAINAP_RESULTS.md`
 - `HOURGLASS_README.md`
-- `LAP_TRANSFER.md`
 - `LEVEL15EM_CROSSSCALE.md`
-- `LM200_CORRECTED_MULTISEED.md`
 - `LONG_SEQ_clean.md`
-- `MAP_QUERY_GATES.md`
 - `MATCH_GATES_128_16.md`
 - `MATCH_GATES_64_16.md`
 - `MATCH_GATES_64_4.md`

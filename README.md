@@ -96,6 +96,35 @@ That last row is the check hier-goal failed: it went 0.912 → **0.913** unchang
 one path-integration seed (0.321) falls inside the index range (0.321–0.345).
 Means still differ (0.510 vs 0.332) but the guarantee is gone.
 
+### Also verified 2026-08-09
+
+**The parallel-scan claim holds** (`TIMING_BENCHMARK.md`) — first wall-clock
+measurement in this repo. Forward+backward, L=128 → 2048 (16×):
+
+| | scaling | L=2048 |
+|---|---|---|
+| parallel (Vanilla / EM / PlainFlat) | **2.6–3.3×** | 11.4–16.7 ms |
+| MapEM-NC (sequential matrix product) | 14.5× | 415.6 ms |
+| TEMFaithful (sequential RNN) | 120.2× | 19,743 ms |
+
+At L=2048 Vanilla is 34× faster than MapEM-NC and 1632× faster than TEMFaithful —
+which has 20× *fewer* parameters, so it is not a capacity artefact.
+
+**Two of the paper's own stated-but-unmeasured conjectures are refuted:**
+
+- *Separate `k0p`/`q0p` "would create sparser attention values"* (App. A.4, flagged
+  as a suspicion). Refuted on four tasks; the effect grows with how much the task
+  leans on `A_P` — paper task +0.089, compositional +0.167, **Match-Query +0.358**
+  (`MATCH_QUERY_EM.md`, 3/3 seeds, WM control reproduces to 3 d.p.).
+- *Non-commutative structure requires a non-commutative model* (App. B.2.2,
+  motivated with the family tree). On a family tree with non-commutativity
+  measured at **1.000**, MapEM-NC buys **+0.005 to +0.014** over a commutative
+  control — for **34× the training cost**. Path integration on the same task is
+  worth **+0.115** (`FAMILY_TREE_RESULTS.md`).
+
+Note both are *negative* results about published extensions, established with
+gates and controls; neither contradicts the paper's main claims, which replicate.
+
 ### Cognitive-map necessity (six independent cognitive demands)
 
 Standard transformer (RoPE) collapses across every cognitive demand we
