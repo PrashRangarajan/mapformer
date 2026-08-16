@@ -32,10 +32,14 @@ Episode
               predict them
 
 Phase T starts either in the SHARED patch (so continuing onward leads into room
-B's cells) or in the CONFOUNDING patch (identical observations, but it sits
-elsewhere in room A, so continuing leads into room A's cells). The two cases are
-locally indistinguishable and have different correct answers. Scored at cells
-already seen in the relevant room, deduped per cell.
+B's cells) or in the CONFOUNDING patch (identical observations, but it sits in
+A's INTERIOR, so continuing stays inside A). Both patches have identical local
+geometry -- 4 valid actions at every cell -- so the two conditions cannot be
+separated from the action stream. `validate_cscg_tasks.py` measures this
+(condition-identifiability gate); an earlier version placed the confounder at a
+corner and was separable at 0.762 balanced accuracy without any map.
+
+Scored at cells already seen, deduped per cell.
 
 Rooms are BOUNDED (walls), not toroidal, matching "always avoiding to take
 actions that would make the random walk move outside of the room".
@@ -60,25 +64,43 @@ class StitchWorld:
         self.mask_tok = self.N_ACTIONS + n_obs_types
         self.unified_vocab_size = self.mask_tok + 1
 
-    def _draw_rooms(self, rng):
-        """Room A, room B, the shared patch corner, and a confounding patch in A."""
-        P = self.patch
-        A = rng.randint(0, self.n_obs_types, size=(self.h, self.w))
-        B = rng.randint(0, self.n_obs_types, size=(self.h, self.w))
+    def _build(self, rng):
+        """Stitched coordinate space: A at (0,0), B offset so B's top-left P x P
+        COINCIDES with A's bottom-right P x P. Walking out of that overlap really
+        does enter B's cells -- which is the whole point, and which an earlier
+        version of this file got wrong by keeping both phases inside room A."""
+        P, h, w = self.patch, self.h, self.w
+        H, W = 2 * h - P, 2 * w - P
+        grid = np.full((H, W), -1, dtype=np.int64)          # -1 = wall
+        A = rng.randint(0, self.n_obs_types, size=(h, w))
+        B = rng.randint(0, self.n_obs_types, size=(h, w))
         shared = rng.randint(0, self.n_obs_types, size=(P, P))
-        # shared patch sits in A's bottom-right corner and B's top-left corner
-        A[self.h - P:, self.w - P:] = shared
+        A[h - P:, w - P:] = shared
         B[:P, :P] = shared
-        # CONFOUNDER: an identical copy elsewhere in room A (top-left), which must
-        # NOT be treated as the join. This is the paper's negative control.
-        A[:P, :P] = shared
-        return A, B
+        # CONFOUNDER: identical patch in A's INTERIOR (rows 1..3, cols 1..3).
+        # It must have the SAME local geometry as the join, or the two conditions
+        # are separable without any map. Placing it at A's top-left corner (an
+        # earlier version) gave valid-action counts [2,3,3,3,4,4,3,4,4] against the
+        # join's [4,4,4,4,4,4,4,4,4], and the cue "did I move >2 cells up or left
+        # of where I started" -- computable from the TEST-PHASE ACTION STREAM
+        # ALONE -- fired on 52.5% of shared episodes and 0.0% of confound ones:
+        # balanced accuracy 0.762 against a 0.500 chance, via relative
+        # displacement, i.e. exactly the mechanism under test.
+        self._cf_origin = (1, 1)
+        A[1:1 + P, 1:1 + P] = shared
+        grid[:h, :w] = A
+        grid[h - P:, w - P:] = B
+        regA = {(i, j) for i in range(h) for j in range(w)}
+        regB = {(i + h - P, j + w - P) for i in range(h) for j in range(w)}
+        return grid, regA, regB, (h - P, w - P)
 
-    def _walk(self, rng, grid, x, y, n):
-        """Bounded random walk; invalid moves are resampled, never recorded."""
+    def _walk(self, rng, region, x, y, n):
+        """Random walk confined to `region`; invalid moves resampled, not recorded."""
         for _ in range(n):
             valid = [a for a, (dx, dy) in ACTION_DELTAS.items()
-                     if 0 <= x + dx < self.h and 0 <= y + dy < self.w]
+                     if (x + dx, y + dy) in region]
+            if not valid:
+                return
             a = int(valid[rng.randint(len(valid))])
             dx, dy = ACTION_DELTAS[a]
             x, y = x + dx, y + dy
@@ -88,42 +110,39 @@ class StitchWorld:
                          rng=None, force_confound=None):
         if rng is None:
             rng = np.random
-        P = self.h, self.w
-        A, B = self._draw_rooms(rng)
+        grid, regA, regB, (oy, ox) = self._build(rng)
         confound = bool(rng.randint(2)) if force_confound is None else force_confound
+        P = self.patch
+        tokens, revisit, seen = [], [], set()
 
-        tokens, revisit = [], []
-        seenA, seenB = set(), set()
+        def phase(region, n):
+            cells = sorted(region)
+            x, y = cells[rng.randint(len(cells))]
+            for a, x, y in self._walk(rng, region, x, y, n):
+                tokens.extend([a + self.action_offset, int(grid[x, y]) + self.obs_offset])
+                revisit.extend([False, (x, y) in seen]); seen.add((x, y))
 
-        x, y = int(rng.randint(self.h)), int(rng.randint(self.w))
-        for a, x, y in self._walk(rng, A, x, y, T_a):
-            tokens += [a + self.action_offset, int(A[x, y]) + self.obs_offset]
-            revisit += [False, False]; seenA.add((x, y))
-        x, y = int(rng.randint(self.h)), int(rng.randint(self.w))
-        for a, x, y in self._walk(rng, B, x, y, T_b):
-            tokens += [a + self.action_offset, int(B[x, y]) + self.obs_offset]
-            revisit += [False, False]; seenB.add((x, y))
+        phase(regA, T_a)          # room A alone
+        phase(regB, T_b)          # room B alone -- DISJOINT experiences
 
-        # phase T: start inside one of the two identical patches
-        pp = self.patch
-        if confound:                       # confounding patch, top-left of room A
-            x, y = int(rng.randint(pp)), int(rng.randint(pp))
-            grid, seen = A, seenA
-        else:                              # the true join: A's bottom-right corner
-            x, y = self.h - pp + int(rng.randint(pp)), self.w - pp + int(rng.randint(pp))
-            grid, seen = A, seenA
+        # phase T: start in one of the two identical patches, walk the FULL space
+        if confound:              # A's interior copy; walking out stays in A
+            cy, cx = self._cf_origin
+            x, y = cy + int(rng.randint(P)), cx + int(rng.randint(P))
+        else:                     # the true join; walking out enters B
+            x, y = oy + int(rng.randint(P)), ox + int(rng.randint(P))
+        both = regA | regB
         score_pos, answers, scored = [], [], set()
-        for a, x, y in self._walk(rng, grid, x, y, T_test):
+        for a, x, y in self._walk(rng, both, x, y, T_test):
             sp = len(tokens)
-            tokens += [a + self.action_offset, self.mask_tok]
-            revisit += [False, False]
+            tokens.extend([a + self.action_offset, self.mask_tok])
+            revisit.extend([False, False])
             if (x, y) in seen and (x, y) not in scored:
                 scored.add((x, y)); score_pos.append(sp)
                 answers.append(int(grid[x, y]) + self.obs_offset)
 
         return (torch.tensor(tokens, dtype=torch.long),
-                torch.tensor(revisit, dtype=torch.bool),
-                score_pos, answers,
+                torch.tensor(revisit, dtype=torch.bool), score_pos, answers,
                 {"confound": confound, "n_scored": len(score_pos)})
 
     def generate_batch(self, batch_size: int, T_a=96, T_b=96, T_test=24, rng=None):

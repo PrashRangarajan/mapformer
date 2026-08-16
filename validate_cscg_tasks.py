@@ -11,7 +11,20 @@ that, plus the task-specific risks:
   schema  interior leakage    scored events must land only on periphery cells the
                               agent actually saw; if interior cells leak in, the
                               answers are unknowable and the ceiling is not 1.0.
-  both    last-obs / marginal / n-gram 1..5 / oracle
+  both    last-obs / marginal / n-gram 1..5
+
+  stitch  CONDITION-IDENTIFIABILITY -- the gate this file was missing. Can the
+          shared-vs-confound condition be classified from the TEST-PHASE ACTION
+          STREAM ALONE, with no map? If yes the negative control is defeated by
+          exactly the mechanism under test (relative displacement), and the
+          comparison is void. An earlier confounder placement scored 0.762
+          balanced accuracy here. Must be ~0.500.
+
+  stitch  CROSS-ROOM FRACTION -- what share of scored events genuinely require
+          stitching, i.e. predicting one room's exclusive cell after having
+          entered the other room's exclusive region. The shared patch is covered
+          by BOTH phase walks, so events inside it need no stitching at all and
+          inflate the headline.
 """
 import argparse, json
 from collections import Counter, defaultdict
@@ -65,6 +78,28 @@ def main():
                      f"{r['ngram'][5]:.4f} |")
         print(f"stitch/{k:9s} chance={r['chance']:.4f} marg={r['marginal']:.4f} "
               f"last={r['last_obs']:.4f} ng1={r['ngram'][1]:.4f} scored/ep={r['scored_per_ep']:.1f}")
+
+    # ---- stitch: condition-identifiability from actions alone ----
+    from mapformer.environment_stitch import ACTION_DELTAS
+    def disp_cue(force, n=400):
+        hits = 0
+        for _ in range(n):
+            t, _r, _sp, _an, _i = env.generate_episode(rng=rng, force_confound=force)
+            acts = [int(t[i]) for i in range(len(t) - 2 * 24, len(t), 2)]
+            x = y = 0; mn = [0, 0]
+            for a in acts:
+                dx, dy = ACTION_DELTAS[a]; x += dx; y += dy
+                mn[0] = min(mn[0], x); mn[1] = min(mn[1], y)
+            hits += int(mn[0] < -2 or mn[1] < -2)
+        return hits / n
+    cs, cc = disp_cue(False), disp_cue(True)
+    bal = (cs + (1 - cc)) / 2
+    lines += ["", "### Condition-identifiability from the ACTION STREAM ALONE", "",
+              f"displacement cue fires: shared **{cs:.3f}**, confound **{cc:.3f}** "
+              f"-> balanced accuracy **{bal:.3f}** (chance 0.500).",
+              "Above ~0.55 means the negative control is defeatable without a map, "
+              "by relative displacement -- the mechanism under test. VOID if so.", ""]
+    print(f"stitch/identifiability  shared={cs:.3f} confound={cc:.3f} balanced={bal:.3f} (chance 0.500)")
 
     # ---- schema ----
     envs = SchemaWorld(seed=10000)
