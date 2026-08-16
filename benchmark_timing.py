@@ -35,7 +35,7 @@ from mapformer.train_variant import VARIANT_MAP
 _REPO = Path(__file__).resolve().parent
 
 
-def time_model(model, L, vocab, device, batch=4, warmup=3, reps=7, backward=False):
+def time_model(model, L, vocab, device, batch=4, warmup=3, reps=15, backward=False):
     """Forward-only timings run under no_grad.
 
     Without it, a 'forward only' measurement also builds the autograd graph, and
@@ -64,7 +64,7 @@ def time_model(model, L, vocab, device, batch=4, warmup=3, reps=7, backward=Fals
         ts.append(time.perf_counter() - t0)
         if backward:
             model.zero_grad(set_to_none=True)
-    return float(np.median(ts))
+    return [float(t) for t in ts]
 
 
 def main():
@@ -77,6 +77,10 @@ def main():
     ap.add_argument("--vocab", type=int, default=32)
     ap.add_argument("--d-model", type=int, default=128)
     ap.add_argument("--n-layers", type=int, default=2)
+    ap.add_argument("--reps", type=int, default=15,
+                    help="more reps than the original 7: the first run reported a "
+                         "median with no spread, so nothing could be said about "
+                         "measurement noise")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--out", default=str(_REPO / "TIMING_BENCHMARK.md"))
     args = ap.parse_args()
@@ -95,11 +99,19 @@ def main():
         res[v] = {}
         for L in args.lengths:
             try:
-                fwd = time_model(m, L, args.vocab, dev, args.batch, backward=False)
-                bwd = time_model(m, L, args.vocab, dev, args.batch, backward=True)
-                res[v][L] = {"fwd_ms": fwd * 1e3, "fwdbwd_ms": bwd * 1e3}
-                print(f"{v:14s} L={L:5d}  fwd {fwd*1e3:8.2f} ms   fwd+bwd {bwd*1e3:8.2f} ms",
-                      flush=True)
+                fw = time_model(m, L, args.vocab, dev, args.batch, reps=args.reps, backward=False)
+                bw = time_model(m, L, args.vocab, dev, args.batch, reps=args.reps, backward=True)
+                res[v][L] = {"fwd_ms": float(np.median(fw)) * 1e3,
+                             "fwdbwd_ms": float(np.median(bw)) * 1e3,
+                             # keep the full distribution: a median alone cannot
+                             # show spread, so figures had to omit error bars
+                             "fwd_reps_ms": [t * 1e3 for t in fw],
+                             "fwdbwd_reps_ms": [t * 1e3 for t in bw],
+                             "fwd_iqr_ms": float(np.subtract(*np.percentile(fw, [75, 25]))) * 1e3,
+                             "fwdbwd_iqr_ms": float(np.subtract(*np.percentile(bw, [75, 25]))) * 1e3}
+                r = res[v][L]
+                print(f"{v:14s} L={L:5d}  fwd {r['fwd_ms']:8.2f} ms (IQR {r['fwd_iqr_ms']:.2f})   "
+                      f"fwd+bwd {r['fwdbwd_ms']:8.2f} ms (IQR {r['fwdbwd_iqr_ms']:.2f})", flush=True)
             except RuntimeError as e:
                 res[v][L] = None
                 print(f"{v:14s} L={L:5d}  OOM/err: {type(e).__name__}", flush=True)
@@ -109,8 +121,11 @@ def main():
     LS = args.lengths
     lines = ["# Wall-clock scaling with sequence length", "",
              f"batch={args.batch}, d_model={args.d_model}, n_layers={args.n_layers}, "
-             f"median of 7 reps after 3 warmups, `torch.cuda.synchronize()` around "
-             f"every timed region.", "",
+             f"median of {args.reps} reps after 3 warmups, `torch.cuda.synchronize()` "
+             f"around every timed region; IQR over reps stored in the JSON. "
+             f"Forward-only runs under `torch.no_grad()` -- without it the "
+             f"measurement also times autograd graph construction, which scales "
+             f"with node count and penalises the Python-loop models.", "",
              "**These models are NOT parameter-matched, so absolute times are not an "
              "architecture comparison.** What is comparable is each model's SCALING "
              "with L — the O(log T) parallel-scan claim.", "",
