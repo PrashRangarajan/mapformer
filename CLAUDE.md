@@ -1392,3 +1392,67 @@ I called it "hierarchy hurts plain" -- that was seed noise; at n=3 hierarchy
 helps plain slightly too. Real story = super-additive interaction, not a sign
 flip. Caveats: n=3, one task, OOD-only. This is the "true combination" answer:
 it took the TASK creating the multi-scale-position demand, not a cleverer arch.
+
+## Session 2026-08-09 — Match-Query verified; three task lines voided
+
+### The one result that survived everything
+
+**Path integration is necessary for in-context cognitive maps** (`MATCH_QUERY_SCALE.md`).
+Match-Query: explore with observations revealed, then continue BLIND (observations
+withheld) and predict the observation at each cell.
+
+| variant | 64^2 (n=5) | 128^2 (n=3) | TQ=2048 |
+|---|---|---|---|
+| MapWM-Flat (path int.) | 0.730 +/- 0.247 | 0.823 +/- 0.043 | 0.693 |
+| PlainFlat (index) | 0.154 +/- 0.018 | 0.192 +/- 0.022 | 0.093 |
+
+Chance 0.0625. No seed overlap (worst PI 0.398 vs best index 0.178). The axis is
+path integration, NOT the encoding: MapPoPE-Hier (PoPE + path int.) 0.847 vs
+PoPE-Flat (PoPE + index) 0.117. Boundary: at n_obs=4 the per-seed separation
+BREAKS (one PI seed 0.321 inside the index range 0.321-0.345).
+
+Trustworthy because it passed the **context-destruction ablation**: 0.918 -> 0.074
+(explore obs shuffled) -> 0.076 (query path shuffled). hier-goal on the same
+manipulation went 0.912 -> 0.913.
+
+### What was voided today
+
+- **hier-goal, both versions.** Solvable from the action prefix. My interleave
+  "fix" moved the shortcut from order 1 (0.969) to order 3 (0.971) and I validated
+  only order 1. Closed-loop 0.013-0.037 vs a 0.010 random floor.
+- **ALL FOUR remaining planner tasks** (`PLANNER_TASK_AUDIT.md`): goal 0.969,
+  rooms_goal 0.969, rooms_maze 0.791, maze_varying 0.650 -- n-grams on the action
+  stream alone, chance 0.250. 13 result files upgraded SUSPECT -> VOID, including
+  the +7.5pp frozen-probe result that was a headline finding.
+- **The WM-vs-EM regime narrative**, and its proposed replacement mechanism
+  (A_P kernel geometry), falsified on a pre-registered test.
+- **The lap mechanism claim.** Lap training collapses Match-Query (-0.293), but
+  removing the reward -- the whole lap-counting demand, one token per episode --
+  gives -0.291. It is catastrophic forgetting under distribution shift. The
+  theta-drift metric is also NOT diagnostic: a model WITH a working map scores
+  0.252/4.37, the lap model 0.188/3.86 (more faithful).
+
+### Corrections to my own numbers
+
+- Match-Query base: 0.888 +/- 0.140 (n=3) -> **0.730 +/- 0.247 (n=5)**.
+- "No OOD degradation" was measured over 256->512 only. To 2048: 0.904 -> 0.693.
+  Correct claim is "degrades gracefully", not "flat".
+- Paper reproduction target: CLAUDE.md cited "0.955/0.999", which is in no table
+  of the paper. Real Table 2 2D: MapWM 0.99/0.99/0.96, MapEM-os 1.0/0.99/0.97.
+
+### Standing rules, each bought by a failure
+
+1. n-gram on the ACTION STREAM ALONE at orders 1-5 before any demonstration task.
+2. Context-destruction ablation on trained models.
+3. Never compare a fresh variant to a stored baseline.
+4. Report the measured chance rate beside every headline.
+5. Verify the budget before reading a chance-level table as a negative.
+6. **Three seeds is not a point estimate.**
+
+### New infrastructure
+
+`environment_match_query.py` + `validate_match_query.py` + `train_match_query.py`
++ `eval_match_longq.py` (the verified task, parameterised by size/n_obs);
+`environment_lap.py` + `validate_lap.py` + `train_lap.py` + `probe_lap_theta.py`
+(CSCG lap port, gated); `audit_planner_tasks.py` (the audit that voided four
+tasks); `run_lap_transfer.py` (sequential-transfer harness with shared vocab).

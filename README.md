@@ -48,36 +48,53 @@ The session-2026-05-10 walkthrough is in
 >
 > | claim | status |
 > |---|---|
+> | **Path integration necessary (Match-Query)** | **VERIFIED** — gates + ablation + scale-up |
 > | Paper replication (WM + EM, paper's own OOD protocol) | **VERIFIED** — `PAPER_OOD_PROTOCOL.md` |
-> | Clean / noise regimes | **VALID** — retrain bit-identically (`NOISE_CLEAN_REVALIDATION.md`) |
-> | Anything on **lm200 / landmarks** | **VOID** — non-converged checkpoints (`CLAUDE.md` RETRACTION) |
-> | Anything on **hier-goal** navigation | **VOID** — task solvable from the action prefix (`HIERGOAL_ABLATION.md`) |
-> | **WM-vs-EM regime narrative** | **WITHDRAWN** — replacement mechanism falsified (`AP_KERNEL_DIAGNOSTIC.md`) |
-> | Goal-directed / planner-demonstration tasks | **SUSPECT** — no action-only n-gram control run |
+> | Clean / noise regimes | **VALID** — retrain bit-identically |
+> | Vocab sweep (multi-seed, same batch) | **VALID** — `VOCAB_SWEEP_MULTISEED.md` |
+> | Anything on **lm200 / landmarks** | **VOID** — non-converged checkpoints |
+> | Anything on **hier-goal** | **VOID** — solvable from the action prefix |
+> | **All goal-directed / planner tasks** | **VOID** — `PLANNER_TASK_AUDIT.md` |
+> | **WM-vs-EM regime narrative** | **WITHDRAWN** — replacement mechanism falsified |
 >
-> Rows 1, 2 and 5 of the necessity table below use landmark configs and are
-> therefore VOID. Rows 4 and 6 have not been re-verified in this audit — the
-> training regime of the checkpoints they cite is not established here.
+> Rows 1, 2 and 5 of the necessity table below use landmark configs and are VOID.
+> Rows 4 and 6 have not been re-verified.
 
-### Verified 2026-08-09: paper replication under the paper's own protocol
+### Headline: path integration is necessary for in-context cognitive maps
 
-Paper Table 2, 2D columns, vs ours (n=3 seeds, same training batch):
+**Match-Query** — explore a torus with observations revealed, then continue
+walking *blind* (observations withheld) and predict the observation at each cell.
+Requires integrating actions to know where you are, then matching that position
+against memory. Chance 0.0625.
 
-| model | IID | OOD-d | OOD-s |
-|---|---|---|---|
-| paper MapWM | 0.99 | 0.99 | 0.96 |
-| **ours WM** | **0.989** | **0.981** | **0.962** |
-| paper MapEM-os | 1.0 | 0.99 | 0.97 |
-| **ours EM (single p₀)** | **0.986** | **0.986** | **0.976** |
-| ours EM (separate q0/k0, paper-faithful) | 0.900 | 0.860 | 0.936 |
+| variant | path integration? | 64² (n=5) | 128² (n=3) | T_query=2048 |
+|---|---|---|---|---|
+| **MapWM-Flat** | **yes** | **0.730 ± 0.247** | **0.823 ± 0.043** | **0.693** |
+| MapPoPE-Hier | **yes** | 0.847 (n=3) | — | — |
+| MapWM-Hier | **yes** | 0.786 (n=3) | — | — |
+| Plain-Flat | no (index) | 0.154 ± 0.018 | 0.192 ± 0.022 | 0.093 |
+| PoPE-Flat | no (index) | 0.117 (n=3) | — | — |
 
-Every corrected cell within 0.014 of the paper. `same-map == fresh-map` to three
-decimals, so maps are built in-context, not memorised. The paper's EM ≥ WM
-*ordering* does **not** reproduce at n=3 (EM wins 1/3 seeds in every condition).
+- **No overlap**: worst path-integration seed 0.398, best index seed 0.178.
+- **The axis is path integration, not the encoding scheme**: MapPoPE-Hier (PoPE
+  *with* path integration) 0.847 vs PoPE-Flat (PoPE with index) 0.117.
+- **Scales up**: on a 4× larger map it is higher *and* tighter.
+- **Degrades gracefully** to 8× the trained blind-query length (0.904 → 0.693),
+  while the ratio to index models *widens* (6.0× → 7.4×).
 
-Separate `q0`/`k0` is paper-faithful (App. A.4) and its benefit is a conjecture
-the paper states but never measures — our data refutes it: single `p₀` gives
-0.987 ± 0.012 vs 0.898 ± 0.108.
+**Validation this survived** — the reason to trust it over everything else here:
+
+| check | result |
+|---|---|
+| n-gram on answers, orders 1–5 | at chance (after a per-cell dedup fix the gates forced) |
+| never-moved / marginal / oracle | at chance / 1.000 |
+| **context-destruction ablation** | **0.918 → 0.074** (explore obs shuffled), **→ 0.076** (query path shuffled) |
+
+That last row is the check hier-goal failed: it went 0.912 → **0.913** unchanged.
+
+**Known boundary:** at n_obs=4 (chance 0.2500) the per-seed separation breaks —
+one path-integration seed (0.321) falls inside the index range (0.321–0.345).
+Means still differ (0.510 vs 0.332) but the guarantee is gone.
 
 ### Cognitive-map necessity (six independent cognitive demands)
 

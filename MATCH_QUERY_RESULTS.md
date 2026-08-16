@@ -1,3 +1,11 @@
+> **HEADLINE UPDATED (2026-08-09) -- use the n=5 figure.** The table below is
+> n=3. Seeds 3 and 4 later came in at 0.398 and 0.589, moving MapWM-Flat from
+> **0.888 ± 0.140 (n=3)** to **0.730 ± 0.247 (n=5)**, range 0.398-1.000. The
+> separation is untouched (10/10 runs; worst path-integration seed 0.398 vs best
+> index seed 0.178) but the point estimate here is too high and the spread too
+> narrow. See `MATCH_QUERY_SCALE.md` for n=5, the 128^2 and n_obs=4 configs, and
+> the blind-query extension to T=2048.
+
 # Match-Query results (n=3 seeds)
 
 Blind continuation: explore with observations revealed, then continue with
