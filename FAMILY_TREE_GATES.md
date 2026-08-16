@@ -1,3 +1,10 @@
+> **GATE CORRECTED (2026-08-09): last-obs is 0.1240, not 0.1580.**
+> The baseline was seeded with the TRUE answer at the first scored event of every
+> episode, inflating it by 1/(events per episode). Corrected it sits at 0.1240
+> against a chance of 0.1250 -- genuinely at chance. The earlier "0.158, ~chance"
+> reading reached the right conclusion for the wrong reason. The hub floor
+> (0.163 at depth 5, 0.144 at depth 7) is unaffected and remains the real floor.
+
 # Family-tree task -- pre-flight gates (CPU, no training)
 
 Ancestor tree depth 5 (63 nodes), 8 observation types, 8 relational actions.

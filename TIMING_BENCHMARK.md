@@ -1,3 +1,18 @@
+> **PENDING RE-MEASUREMENT (2026-08-09).** An audit found the "Forward only"
+> rows were NOT forward-only: `time_model` ran without `torch.no_grad()`, so each
+> measurement also built the autograd graph. That cost scales with NODE COUNT
+> rather than FLOPs, penalising the Python-loop models (MapEM-NC, TEMFaithful)
+> far more than the cumsum models -- biasing exactly the comparison this
+> benchmark exists to make, **in the direction that flatters the parallel-scan
+> claim**. Fixed in `benchmark_timing.py`; the forward-only table below is stale
+> and awaiting a re-run on a quiet GPU.
+>
+> The **forward+backward** table is unaffected (backward legitimately needs the
+> graph) and remains the headline. Two labelling fixes also applied: the growth
+> column now states the length span it actually covers (on an OOM-truncated row
+> it was not L=2048/L=128, which understated the sequential penalty), and a
+> broken f-string that printed a literal `{notes.get(v,'')}`.
+
 # Wall-clock scaling with sequence length
 
 batch=4, d_model=128, n_layers=2, median of 7 reps after 3 warmups, `torch.cuda.synchronize()` around every timed region.

@@ -68,7 +68,7 @@ def main():
     rng = np.random.RandomState(args.seed)
     chance = 1.0 / args.n_obs
 
-    answers, last_guess = [], []
+    answers, last_guess, last_pairs = [], [], []
     node_hits = Counter()
     n_steps_tot = n_scored = 0
     node_of_answer = []
@@ -79,7 +79,12 @@ def main():
         for i in rev.nonzero().flatten().tolist():
             o = int(toks[i]) - env.obs_offset
             answers.append(o); n_scored += 1
-            last_guess.append(prev if prev is not None else o)
+            # Seeding with the TRUE answer `o` at the first scored event of each
+            # episode hands the baseline a free correct guess, inflating it by
+            # 1/(events per episode). Measured 0.158 vs a true 0.125 at
+            # n_steps=128. Skip the first event instead.
+            if prev is not None:
+                last_pairs.append(o); last_guess.append(prev)
             prev = o
 
     n = len(answers)
@@ -118,7 +123,7 @@ def main():
             seen.add(s_)
     g3 = hub_ok / max(hub_tot, 1)
 
-    g5 = sum(int(a == b) for a, b in zip(answers, last_guess)) / max(n, 1)
+    g5 = sum(int(a == b) for a, b in zip(last_pairs, last_guess)) / max(len(last_guess), 1)
 
     ngram = {}
     half = n // 2

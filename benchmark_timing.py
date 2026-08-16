@@ -36,16 +36,28 @@ _REPO = Path(__file__).resolve().parent
 
 
 def time_model(model, L, vocab, device, batch=4, warmup=3, reps=7, backward=False):
+    """Forward-only timings run under no_grad.
+
+    Without it, a 'forward only' measurement also builds the autograd graph, and
+    that cost scales with NODE COUNT rather than FLOPs -- which penalises the
+    Python-loop models (MapEM-NC, TEMFaithful) far more than the cumsum ones,
+    biasing precisely the comparison this benchmark exists to make, in the
+    direction that flatters the parallel-scan claim.
+    """
+    import contextlib
     x = torch.randint(0, vocab, (batch, L), device=device)
+    ctx = (lambda: contextlib.nullcontext()) if backward else torch.no_grad
     for _ in range(warmup):
-        out = model(x)
+        with ctx():
+            out = model(x)
         if backward:
             out.float().pow(2).mean().backward(); model.zero_grad(set_to_none=True)
     torch.cuda.synchronize(device)
     ts = []
     for _ in range(reps):
         t0 = time.perf_counter()
-        out = model(x)
+        with ctx():
+            out = model(x)
         if backward:
             out.float().pow(2).mean().backward()
         torch.cuda.synchronize(device)
@@ -103,11 +115,11 @@ def main():
              "architecture comparison.** What is comparable is each model's SCALING "
              "with L — the O(log T) parallel-scan claim.", "",
              "## Forward + backward (training cost)", "",
-             "| variant | params | " + " | ".join(f"L={L}" for L in LS) + " | L=2048/L=128 |",
+             "| variant | params | " + " | ".join(f"L={L}" for L in LS) + " | growth (span shown) |",
              "|---" * (len(LS) + 3) + "|"]
     for v in args.variants:
         if v not in res:
-            lines.append(f"| {v} | — | " + " | ".join("—" for _ in LS) + " | {notes.get(v,'')} |")
+            lines.append(f"| {v} | — | " + " | ".join("—" for _ in LS) + f" | {notes.get(v,'')} |")
             continue
         cells, first, last = [], None, None
         for L in LS:
@@ -117,7 +129,12 @@ def main():
                 cells.append(f"{r['fwdbwd_ms']:.1f}")
                 if first is None: first = r["fwdbwd_ms"]
                 last = r["fwdbwd_ms"]
-            ratio = f"{last/first:.1f}x" if (first and last) else "—"
+        # label the ratio with the lengths it ACTUALLY spans -- on an OOM-truncated
+        # row this is not L=2048/L=128, and mislabelling it understates the
+        # sequential models' scaling penalty (i.e. flatters the parallel claim)
+        got = [L for L in LS if res[v].get(L) is not None]
+        ratio = (f"{last/first:.1f}x ({got[-1]}/{got[0]})" if (first and last and got)
+                 else "—")
         lines.append(f"| {v} | {params[v]:,} | " + " | ".join(cells) + f" | **{ratio}** |")
     lines += ["", "## Forward only", "",
               "| variant | " + " | ".join(f"L={L}" for L in LS) + " |",

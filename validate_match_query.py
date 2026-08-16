@@ -48,6 +48,7 @@ def main():
                                       seed=10000)
             rng = np.random.RandomState(args.seed)
             answers, never_moved, n_steps_tot, n_scored_tot = [], [], 0, 0
+            nm_pairs = []          # answers aligned with an EXPRESSIBLE guess
 
             for _ in range(args.n_episodes):
                 _t, _rv, sp, ans, info = env.generate_match_episode(TE, TQ, rng)
@@ -58,9 +59,16 @@ def main():
                 # would be. The endpoint is the first query cell's predecessor;
                 # recover it as the cell the walk started the query phase from.
                 om = info["obs_map"]
-                ex, ey = info["end_explore_pos"]     # the ACTUAL endpoint, not an
-                guess = int(om[ex, ey]) + env.obs_offset   # approximation
-                never_moved.extend([guess] * len(ans))
+                ex, ey = info["end_explore_pos"]
+                g = int(om[ex, ey])
+                # Answers are NON-BLANK by construction and the model's logit slice
+                # excludes blank, so a blank guess is not expressible. Scoring it as
+                # a miss made ~44% of trials auto-fail and the gate read 0.052
+                # ("PASS, below chance") while the real strategy sits at 0.089,
+                # 1.43x chance. Score only where the strategy is expressible.
+                if g != env.blank_token:
+                    never_moved.extend([g + env.obs_offset] * len(ans))
+                    nm_pairs.extend(ans)
 
             n = len(answers)
             if n == 0:
@@ -84,7 +92,7 @@ def main():
                     ok += int(pred.get(c, fb) == answers[i])
                 ngram[Kk] = ok / max(n - half - Kk, 1)
 
-            g4 = (sum(int(a == b) for a, b in zip(answers, never_moved))
+            g4 = (sum(int(a == b) for a, b in zip(nm_pairs, never_moved))
                   / max(len(never_moved), 1)) if never_moved else float("nan")
             g5 = n_scored_tot / max(n_steps_tot, 1)
 

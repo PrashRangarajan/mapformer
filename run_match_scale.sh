@@ -55,7 +55,9 @@ for tag, seeds, ch, desc in (("base", (0,1,2,3,4), 0.0625, "64^2, n_obs=16"),
     for v in ("Vanilla", "PlainFlat"):
         acc = {L: [] for L in LS}
         for s in seeds:
-            for d in (R/f"runs/match_scale_{tag}"/f"seed{s}", R/"runs/match_query"/f"seed{s}"):
+            _dirs = [R/f"runs/match_scale_{tag}"/f"seed{s}"]
+            if tag == "base": _dirs.append(R/"runs/match_query"/f"seed{s}")
+            for d in _dirs:
                 f = d/f"{v}_matchquery.json"
                 if f.exists():
                     j = json.load(open(f))
