@@ -145,6 +145,62 @@ class StitchWorld:
                 torch.tensor(revisit, dtype=torch.bool), score_pos, answers,
                 {"confound": confound, "n_scored": len(score_pos)})
 
+    # ------------------------------------------------------------------
+    # Training episodes for the ATTENTION-PROBE evaluation.
+    #
+    # These carry NO blind test phase and NO scored answers. The objective is
+    # just MapFormer's own -- predict the observation at revisited cells --
+    # which is the analogue of CSCG running EM over the two room walks. The
+    # evaluation then INSPECTS the trained model (probe_stitch_attention.py),
+    # exactly as CSCG inspects its learned transition matrix rather than
+    # scoring a held-out accuracy. CSCG reports this experiment qualitatively
+    # ("Predictive performance on the stitching of the two rooms is perfect"),
+    # with no accuracy table, no baseline and no chance rate, so there is no
+    # scored metric of theirs to port.
+    #
+    # Phase T (a walk over the UNION of both rooms) is what creates pressure to
+    # stitch: cells whose only earlier visit was in the other room's walk are
+    # only predictable if the two experiences have been joined.
+    # ------------------------------------------------------------------
+    def generate_train_episode(self, T_a: int = 256, T_b: int = 256,
+                               T_t: int = 128, rng=None):
+        if rng is None:
+            rng = np.random
+        grid, regA, regB, _join = self._build(rng)
+        tokens, revisit, seen = [], [], set()
+
+        def run(region, start, n):
+            x, y = start
+            for a, x, y in self._walk(rng, region, x, y, n):
+                tokens.extend([a + self.action_offset,
+                               int(grid[x, y]) + self.obs_offset])
+                revisit.extend([False, (x, y) in seen])
+                seen.add((x, y))
+            return x, y
+
+        cellsA = sorted(regA)
+        pos = cellsA[rng.randint(len(cellsA))]
+        pos = run(regA, pos, T_a)                 # room A alone
+        cellsB = sorted(regB)
+        pos = cellsB[rng.randint(len(cellsB))]
+        pos = run(regB, pos, T_b)                 # room B alone -- DISJOINT
+        run(regA | regB, pos, T_t)                # the union: needs the join
+
+        return (torch.tensor(tokens, dtype=torch.long),
+                torch.tensor(revisit, dtype=torch.bool))
+
+    def generate_train_batch(self, batch_size: int, T_a=256, T_b=256, T_t=128,
+                             rng=None):
+        eps = [self.generate_train_episode(T_a, T_b, T_t, rng)
+               for _ in range(batch_size)]
+        n = max(e[0].shape[0] for e in eps)
+        toks = torch.full((batch_size, n), self.mask_tok, dtype=torch.long)
+        rev = torch.zeros(batch_size, n, dtype=torch.bool)
+        for i, e in enumerate(eps):
+            toks[i, :e[0].shape[0]] = e[0]
+            rev[i, :e[1].shape[0]] = e[1]
+        return toks, rev
+
     def generate_batch(self, batch_size: int, T_a=96, T_b=96, T_test=24, rng=None):
         eps = [self.generate_episode(T_a, T_b, T_test, rng) for _ in range(batch_size)]
         n = max(e[0].shape[0] for e in eps)
