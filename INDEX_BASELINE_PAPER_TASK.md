@@ -1,77 +1,50 @@
 # Paper-task held-out revisit ACCURACY
 
 Paper config: 1 layer, 2 heads, d=128, T=128, 200K sequences (16 epochs x 98 batches x 128).
-Paper reports MapFormer-WM **0.955**, MapFormer-EM **0.999**.
+Paper Table 2 (2D columns), IID: MapWM **0.99**, MapEM-os **1.0**. (An earlier version of this file cited 0.955 / 0.999; those numbers appear in no table of the paper and were retracted in CLAUDE.md on 2026-08-09.)
 
 `same-map` = new trajectories on the trained obs_map; `fresh-map` = unseen obs_map (in-context map learning).
 
 | variant | same-map acc | fresh-map acc |
 |---|---|---|
-| Vanilla | 0.989 ± 0.010 | 0.989 ± 0.010 |
+| Vanilla | 0.989 ± 0.010 | 0.989 ± 0.011 |
 | VanillaEM_P0 | 0.987 ± 0.012 | 0.987 ± 0.012 |
-| RoPE | 0.510 ± 0.005 | 0.516 ± 0.004 |
-| PlainFlat | 0.509 ± 0.019 | 0.513 ± 0.012 |
+| MapPoPE-Flat | 1.000 ± 0.001 | 1.000 ± 0.001 |
+| RoPE | 0.513 ± 0.007 | 0.514 ± 0.004 |
+| PlainFlat | 0.514 ± 0.018 | 0.513 ± 0.014 |
+| PoPE-Flat | 0.505 ± 0.009 | 0.510 ± 0.002 |
 
-## What this was run to settle
+## The 2x2: the axis is path integration, not the encoding scheme
 
-`PAPER_TASK_ABLATION.md` showed the trained models USE the action stream, but an
-ablation cannot say whether a model COULD solve the task without path
-integration. That needs a model that never had it. Same recipe, same
-hyperparameters, same seeds as the rows above -- only the position code differs,
-with parameters matched to 0.2% (Vanilla 204,373 / RoPE 203,925 /
-PlainFlat 203,925).
+Every cell trained with the same recipe, hyperparameters and seeds as the rows
+above; parameters matched within 0.4% (204k). Fresh-map revisit accuracy, n=3,
+against a **measured** always-predict-blank floor of **0.506**.
 
-**`RoPE` is the tight control**: MapFormer-WM with `theta = t * freqs` instead of
-`omega * cumsum(Delta)`. Identical architecture, position code swapped.
-`PlainFlat` is an ordinary transformer with index RoPE -- the same control used
-in Match-Query, included so the two tasks are judged against the same baseline.
+| encoding | index position | path-integrated |
+|---|---|---|
+| **RoPE** | 0.514 +/- 0.004 | 0.989 +/- 0.011 (`Vanilla`) |
+| **PoPE** | 0.509 +/- 0.004 | **1.000 +/- 0.001** (`MapPoPE-Flat`) |
 
-### The floor, measured not assumed
+Both index cells sit at the floor. Both path-integrated cells solve the task.
+The encoding scheme moves the result by ~0.005 in the index row and ~0.011 in the
+path-integrated row; path integration moves it by ~0.48. **The axis is where the
+angle comes from, not how it is applied to Q and K.**
 
-The paper's task scores every revisited observation including blanks, and
-p_empty=0.5, so the operative floor is the always-predict-blank rate. Measured on
-these events: **0.506** (`PAPER_TASK_ABLATION.json`). It is NOT 1/16.
+This reproduces on the paper's own task what `MATCH_QUERY_RESULTS.md` found on a
+gated task (PoPE-Flat 0.117 vs MapPoPE-Hier 0.847, chance 0.0625), on the
+corrected PoPE implementation -- the d-band fix (3fb40a4) landed 2026-08-09
+00:44 and those checkpoints were trained 22:00 the same day.
 
-| variant | position code | fresh-map acc | vs 0.506 floor |
-|---|---|---|---|
-| Vanilla | path-integrated | 0.989 ± 0.010 | +0.483 |
-| VanillaEM_P0 | path-integrated | 0.987 ± 0.012 | +0.481 |
-| RoPE | index | 0.516 ± 0.004 | **+0.010** |
-| PlainFlat | index | 0.513 ± 0.012 | **+0.007** |
+### PoPE is not a weak encoding; it is an inert one without path integration
 
-**Index-position models do not solve the paper's task at all.** They sit at the
-always-predict-blank floor, within noise of it, on 3/3 seeds each.
+`MapPoPE-Flat` reaches **1.000 +/- 0.001** and a final training loss of
+0.012-0.044, the lowest of anything run on this task (Vanilla 0.070-0.138,
+VanillaEM_P0 0.101-0.151). It matches the paper's MapEM-os IID figure of 1.0
+using the WM backbone, which the paper's own MapWM does not (0.99).
 
-### Three consequences
-
-**1. It settles the question the ablation could not.** The content route --
-~4-5 revealed observations carry enough bits to pin a cell on a 4096-cell torus
--- exists information-theoretically but is not usable by these models. It is not
-that they *choose* path integration; without it they are at the floor.
-
-**2. My "Match-Query closes a route the paper's task leaves open" claim is not
-merely unsupported, it is false.** There was no open route to close. The
-withdrawal in `PAPER_TASK_ABLATION.md` stands, and the reason is now stronger
-than "unmeasured".
-
-**3. It strengthens the project's headline result by moving it onto the paper's
-own task.** "Path integration is necessary for in-context cognitive maps" was
-carried almost entirely by Match-Query, a task invented here. It now holds on the
-paper's task too, at the paper's own configuration and against the paper's own
-metric: 0.989 with path integration, 0.513 without. That directly answers the
-standing caveat that one new task was carrying the claim.
-
-### Loose thread, flagged not resolved
-
-Final training loss for the index models is 1.59-1.68 nats, below the marginal
-entropy of the observation distribution (2.079 nats for blank at 0.5 plus 16
-uniform types). So they beat the marginal in LIKELIHOOD while sitting exactly at
-it in ACCURACY.
-
-One untested hypothesis: the walk is directed with run lengths 1-10, so an
-out-and-back run retraces cells in reverse order, and that is detectable from the
-ACTION TOKENS AS CONTENT without any position code. That would give short-range
-retrace gains without a map. It is a guess and has not been measured; the way to
-check is per-revisit-distance accuracy (how many steps ago the cell was last
-seen), which would show index models winning only at very short recurrence
-intervals.
+State the limits of that: this is the IID same-map/fresh-map setting at T=128,
+n=3 seeds, one config. It is NOT the paper's OOD-d / OOD-s protocol
+(`PAPER_OOD_PROTOCOL.md`), where the ordering could differ, and PoPE has never
+been run there. A 1.000 on an in-distribution metric with a 0.506 floor is a
+ceiling effect as much as an achievement, and the honest reading is
+"indistinguishable from perfect on the IID metric", not "the best model".

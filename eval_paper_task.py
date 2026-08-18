@@ -2,7 +2,9 @@
 
 PAPER_VALIDATION.md recorded training loss only ("held-out revisit acc: n/a"),
 so our reproduction was never compared to the paper on its own metric. The paper
-reports MapFormer-WM 0.955 and MapFormer-EM 0.999 next-observation accuracy at
+reports, in Table 2 (1D-2D grid navigation), 2D columns, verbatim: MapWM IID
+0.99 / OOD-d 0.99 / OOD-s 0.96, and MapEM-os IID 1.0 / OOD-d 0.99 / OOD-s 0.97,
+for next-observation accuracy at
 revisited cells.
 
 Two held-out settings are reported because `GridWorld` fixes `obs_map` once from
@@ -114,7 +116,10 @@ def main():
         "",
         "Paper config: 1 layer, 2 heads, d=128, T=128, 200K sequences "
         "(16 epochs x 98 batches x 128).",
-        "Paper reports MapFormer-WM **0.955**, MapFormer-EM **0.999**.",
+        "Paper Table 2 (2D columns), IID: MapWM **0.99**, MapEM-os **1.0**. "
+        "(An earlier version of this file cited 0.955 / 0.999; those numbers "
+        "appear in no table of the paper and were retracted in CLAUDE.md on "
+        "2026-08-09.)",
         "",
         "`same-map` = new trajectories on the trained obs_map; `fresh-map` = "
         "unseen obs_map (in-context map learning).",
