@@ -58,16 +58,41 @@ from mapformer.train_variant import VARIANT_MAP
 _REPO = Path(__file__).resolve().parent
 
 
-def perturb(tokens, cond, rng):
-    """Apply the named ablation. Even indices are actions, odd are observations."""
+def perturb(tokens, donor, cond, rng):
+    """Apply the named ablation. Even indices are actions, odd are observations.
+
+    SHUFFLE vs RESAMPLE, and why both are here. Permuting the action slots
+    destroys the walk's own statistics as well as its meaning: the paper's walk
+    is directed with run lengths 1..10, so its action stream is strongly
+    autocorrelated, and a permutation produces a stream no valid trajectory could
+    emit. A collapse under `shuffle` therefore conflates "position information
+    destroyed" with "input off-manifold" -- and the first run of this file showed
+    the models fail CONFIDENTLY off-manifold (NLL 4.5 against ln(21)=3.04 for
+    uniform), which is exactly how accuracy ends up BELOW the floor.
+
+    `resample` fixes that. The action (or observation) stream is taken wholesale
+    from an INDEPENDENT episode of the same generator, so it is a perfectly valid
+    walk with the right run-length statistics -- it simply does not correspond to
+    the observations beside it. Any collapse under `resample` cannot be blamed on
+    the sequence looking impossible.
+    """
     t = tokens.clone()
     if cond == "intact":
         return t
     L = t.shape[1]
-    idx = (np.arange(0, L, 2) if cond == "shuffle_actions"
-           else np.arange(1, L, 2))
-    for b in range(t.shape[0]):
-        t[b, idx] = t[b, idx[rng.permutation(len(idx))]]
+    act, obs = np.arange(0, L, 2), np.arange(1, L, 2)
+    if cond == "shuffle_actions":
+        for b in range(t.shape[0]):
+            t[b, act] = t[b, act[rng.permutation(len(act))]]
+    elif cond == "shuffle_obs":
+        for b in range(t.shape[0]):
+            t[b, obs] = t[b, obs[rng.permutation(len(obs))]]
+    elif cond == "resample_actions":
+        t[:, act] = donor[:, act]          # a real walk, wrong walk
+    elif cond == "resample_obs":
+        t[:, obs] = donor[:, obs]          # a real observation stream, wrong one
+    else:
+        raise ValueError(cond)
     return t
 
 
@@ -83,7 +108,10 @@ def score(model, env, cond, n_batches, batch_size, n_steps, device, seed):
     tgt_counts = Counter()
     for _ in range(n_batches):
         tokens, _om, revisit, *_ = env.generate_batch(batch_size, n_steps)
-        tokens = perturb(tokens, cond, rng).to(device)
+        # An INDEPENDENT episode of the same generator, used as the donor stream
+        # for the resample conditions. Drawn every batch so it is never reused.
+        donor, _dm, _dr, *_ = env.generate_batch(batch_size, n_steps)
+        tokens = perturb(tokens, donor, cond, rng).to(device)
         mask = revisit[:, 1:].to(device)
         if not mask.any():
             continue
@@ -113,7 +141,8 @@ def main():
     ap.add_argument("--out", default=str(_REPO / "PAPER_TASK_ABLATION.md"))
     args = ap.parse_args()
     dev = torch.device(args.device)
-    CONDS = ["intact", "shuffle_actions", "shuffle_obs"]
+    CONDS = ["intact", "shuffle_actions", "resample_actions",
+             "shuffle_obs", "resample_obs"]
 
     res = {v: {c: [] for c in CONDS} for v in args.variants}
     meta = {}
@@ -157,8 +186,16 @@ def main():
              f"floor is that, not 1/16. Compare Match-Query, which restricts to "
              "non-blank answers and therefore has a 0.0625 chance and a 0.0893 "
              "never-moved floor.", "",
-             "| variant | intact | shuffle actions | shuffle obs |",
-             "|---|---|---|---|"]
+             "**shuffle vs resample.** `shuffle` permutes the slots, which "
+             "also destroys the walk's run-length autocorrelation and puts the "
+             "input off-manifold. `resample` substitutes the corresponding stream "
+             "from an INDEPENDENT episode -- a perfectly valid walk that simply "
+             "does not match the observations beside it. `resample` is the "
+             "trustworthy column; `shuffle` is kept because it is what was "
+             "reported first.", "",
+             "| variant | intact | shuffle actions | **resample actions** | "
+             "shuffle obs | resample obs |",
+             "|---|---|---|---|---|---|"]
     summ = {}
     for v in args.variants:
         if not res[v]["intact"]:
@@ -177,9 +214,12 @@ def main():
     for v in args.variants:
         if v not in summ:
             continue
-        i, d = summ[v]["intact"]["mean"], summ[v]["shuffle_actions"]["mean"]
-        lines.append(f"| paper task ({v}) | actions shuffled | {i:.3f} | {d:.3f} "
-                     f"| **{d-i:+.3f}** | {any_meta['blank_rate']:.3f} (blank) |")
+        i = summ[v]["intact"]["mean"]
+        for c, lab in (("shuffle_actions", "actions shuffled"),
+                       ("resample_actions", "actions resampled (on-manifold)")):
+            d = summ[v][c]["mean"]
+            lines.append(f"| paper task ({v}) | {lab} | {i:.3f} | {d:.3f} "
+                         f"| **{d-i:+.3f}** | {any_meta['blank_rate']:.3f} (blank) |")
     lines.append("| Match-Query (MapWM-Flat) | query actions shuffled | 0.918 | "
                  "0.076 | **-0.842** | 0.089 (never-moved) |")
     lines += ["", "Per-seed:", ""]
