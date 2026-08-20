@@ -45,6 +45,17 @@ CONDITIONS = [
     ("OOD-s l=512 g=128 pe=0.8", 512, 128, 0.8),   # Appendix B
 ]
 
+# EXTENSION beyond the paper's protocol. The published benchmark saturates at
+# 0.96-1.0, so "best" there is a 1-3pp claim on a ceiling and cannot separate
+# models. These push the OOD-s condition further in length only -- grid width and
+# p_empty stay at the paper's OOD-s values -- to find where the curves actually
+# diverge. Reported separately from the protocol rows above; they are OURS, not
+# the paper's, and no published number exists to compare them against.
+EXTENDED = [
+    ("ext-s l=1024 g=128 pe=0.8", 1024, 128, 0.8),
+    ("ext-s l=2048 g=128 pe=0.8", 2048, 128, 0.8),
+]
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -57,10 +68,13 @@ def main():
     ap.add_argument("--env-seed", type=int, default=10000)
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--out", default=str(_REPO / "PAPER_OOD_PROTOCOL.md"))
+    ap.add_argument("--extended", action="store_true",
+                    help="add length-only extensions past the paper's protocol")
     args = ap.parse_args()
 
     dev = torch.device(args.device)
-    res = {v: {c[0]: [] for c in CONDITIONS} for v in args.variants}
+    CONDS = CONDITIONS + (EXTENDED if args.extended else [])
+    res = {v: {c[0]: [] for c in CONDS} for v in args.variants}
 
     for v in args.variants:
         cls = VARIANT_MAP[v]
@@ -72,7 +86,7 @@ def main():
             blob = torch.load(ckpt, map_location="cpu", weights_only=False)
             sd, cfg = blob["model_state_dict"], blob["config"]
 
-            for label, L, g, pe in CONDITIONS:
+            for label, L, g, pe in CONDS:
                 env = GridWorld(size=g, n_obs_types=cfg["n_obs_types"],
                                 p_empty=pe, n_landmarks=0, seed=args.env_seed)
                 assert env.unified_vocab_size == cfg["vocab_size"], (
@@ -108,11 +122,11 @@ def main():
         "Paper's 2D results -- MapWM: IID 0.99, OOD-d 0.99, OOD-s 0.96. "
         "MapEM-os: IID 1.0, OOD-d 0.99, OOD-s 0.97.",
         "",
-        "| variant | " + " | ".join(c[0] for c in CONDITIONS) + " |",
-        "|---" * (len(CONDITIONS) + 1) + "|",
+        "| variant | " + " | ".join(c[0] for c in CONDS) + " |",
+        "|---" * (len(CONDS) + 1) + "|",
     ]
     for v in args.variants:
-        lines.append(f"| {v} | " + " | ".join(cell(res[v][c[0]]) for c in CONDITIONS) + " |")
+        lines.append(f"| {v} | " + " | ".join(cell(res[v][c[0]]) for c in CONDS) + " |")
     Path(args.out).write_text("\n".join(lines) + "\n")
     Path(args.out).with_suffix(".json").write_text(json.dumps(res, indent=2))
     print("\n".join(lines))
