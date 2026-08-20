@@ -1,0 +1,78 @@
+{
+  "2": {
+    "cross_nb": {
+      "Vanilla": 0.3647302440116409,
+      "Hourglass_k2": 0.5596597268860534,
+      "PlainFlat": 0.31581598388179993,
+      "PlainHourglass": 0.4461607342735617
+    },
+    "hier_effect": 0.1626371166330871,
+    "pint_effect": 0.08120662637116632,
+    "floor": 0.07169241101410342,
+    "exact": {
+      "Vanilla": 0.6097440506554602,
+      "Hourglass_k2": 0.7609088185520765,
+      "PlainFlat": 0.5813556165537122,
+      "PlainHourglass": 0.6695816228208678
+    },
+    "hier_effect_exact": 0.11969538708188593,
+    "pint_effect_exact": 0.0598578149164784
+  },
+  "4": {
+    "cross_nb": {
+      "Vanilla": 0.2597817407505989,
+      "Hourglass_k2": 0.41282938514772427,
+      "PlainFlat": 0.19971608552923434,
+      "PlainHourglass": 0.316475911631621
+    },
+    "hier_effect": 0.13490373524975602,
+    "pint_effect": 0.07820956436873393,
+    "floor": 0.07186585041256321,
+    "exact": {
+      "Vanilla": 0.76498696785404,
+      "Hourglass_k2": 0.8635888277504263,
+      "PlainFlat": 0.6293802490587894,
+      "PlainHourglass": 0.6824339543714001
+    },
+    "hier_effect_exact": 0.07582778260449852,
+    "pint_effect_exact": 0.1583807960871384
+  },
+  "8": {
+    "cross_nb": {
+      "Vanilla": 0.35998760266542695,
+      "Hourglass_k2": 0.3472803347280335,
+      "PlainFlat": 0.13869518053618474,
+      "PlainHourglass": 0.2198977219897722
+    },
+    "hier_effect": 0.034247636758097,
+    "pint_effect": 0.17433751743375175,
+    "floor": 0.07112970711297072,
+    "exact": {
+      "Vanilla": 0.8734809027777777,
+      "Hourglass_k2": 0.8560956790123457,
+      "PlainFlat": 0.5915718235596708,
+      "PlainHourglass": 0.6368312757201646
+    },
+    "hier_effect_exact": 0.013937114197530964,
+    "pint_effect_exact": 0.250586741255144
+  },
+  "16": {
+    "cross_nb": {
+      "Vanilla": 0.2911208151382824,
+      "Hourglass_k2": 0.21921397379912663,
+      "PlainFlat": 0.0992721979621543,
+      "PlainHourglass": 0.18311499272197962
+    },
+    "hier_effect": 0.00596797671033477,
+    "pint_effect": 0.11397379912663756,
+    "floor": 0.08122270742358079,
+    "exact": {
+      "Vanilla": 0.8034059789114641,
+      "Hourglass_k2": 0.7584165559764516,
+      "PlainFlat": 0.6194306423312179,
+      "PlainHourglass": 0.6350748593824306
+    },
+    "hier_effect_exact": -0.014672602941899926,
+    "pint_effect_exact": 0.15365851658713364
+  }
+}
