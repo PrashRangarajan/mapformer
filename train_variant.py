@@ -90,6 +90,7 @@ from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
+from mapformer.model_fixed_omega import MapFormerWM_FixedOmega
 from mapformer.model_baselines_extra import EXTRA_BASELINES
 from mapformer.model_tem import TEMRecurrent
 from mapformer.model_tem_faithful import TEMFaithful
@@ -179,6 +180,7 @@ VARIANT_MAP = {
     "Level2":     MapFormerWM_Level2InEKF,
     "PC":         MapFormerWM_PredictiveCoding,
     "RoPE":       MapFormerWM_RoPE,
+    "Vanilla_FixedOmega": MapFormerWM_FixedOmega,  # frequency control
     "TEM":        TEMRecurrent,
     "TEMFaithful": TEMFaithful,
     "TEMFaithful_dg32": TEMFaithful_dg32,

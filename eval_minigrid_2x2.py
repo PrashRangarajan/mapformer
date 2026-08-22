@@ -39,7 +39,8 @@ DISPLAY = {"Vanilla": "MapWM-Flat (RoPE + path int.)",
            "MapPoPE-Hier": "MapPoPE-Hier (PoPE + path int. + hier)",
            "RoPE": "RoPE-Flat (index)",
            "PlainHourglass": "RoPE-Hier (index + hier)",
-           "PoPE-Flat": "PoPE-Flat (PoPE + index)"}
+           "PoPE-Flat": "PoPE-Flat (PoPE + index)",
+           "Vanilla_FixedOmega": "MapWM-Flat, omega FROZEN"}
 
 
 @torch.no_grad()
@@ -133,7 +134,8 @@ def main():
                              "per_seed": a.tolist()}
             cells.append(f"{a.mean():.3f} ± {a.std(ddof=1) if len(a)>1 else 0:.3f}")
         pos = ("path-integrated" if v in ("Vanilla", "MapPoPE-Flat",
-               "Hourglass_k2", "MapPoPE-Hier") else "**index**")
+               "Hourglass_k2", "MapPoPE-Hier",
+               "Vanilla_FixedOmega") else "**index**")
         lines.append(f"| {DISPLAY[v]} | {pos} | " + " | ".join(cells) + " |")
     lines += ["", "| *measured floor* | | "
               + " | ".join(f"*{fl[T]:.3f}*" for T in args.lengths) + " |", "",
