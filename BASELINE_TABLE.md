@@ -200,26 +200,32 @@ n=3 · **one batch per grid** · measured floors 0.642 / 0.536 / 0.495
 Second environment family; egocentric observation, rotation actions, 256 cells.
 
 **Full factorial, `n_layers=3` so flat and hierarchical are parameter-matched
-(614K):**
+(614K). n=8 seeds, floors 0.635 / 0.536 / 0.490:**
 
 | model | position | T=128 | T=512 | T=1024 |
 |---|---|---|---|---|
-| **MapPoPE-Hier** | path-int + hier | 0.995 | **0.971 ± 0.005** | **0.948 ± 0.014** |
-| PoPE-Flat | **index** | 0.982 | 0.961 ± 0.001 | 0.951 ± 0.004 |
-| MapPoPE-Flat | path-int | 0.994 | 0.957 ± 0.012 | 0.919 ± 0.022 |
-| MapWM-Hier | path-int + hier | 0.997 | 0.956 ± 0.010 | 0.909 ± 0.006 |
-| RoPE-Hier | **index** + hier | 0.987 | 0.950 ± 0.005 | 0.921 ± 0.005 |
-| RoPE-Flat | **index** | 0.982 | 0.929 ± 0.004 | 0.860 ± 0.022 |
-| MapWM-Flat | path-int | 0.996 | 0.890 ± 0.043 | 0.792 ± 0.077 |
+| **PoPE-Flat** | **index** | 0.981 ± 0.003 | **0.963 ± 0.002** | **0.953 ± 0.003** |
+| MapPoPE-Hier | path-int + hier | 0.993 ± 0.004 | 0.966 ± 0.009 | 0.942 ± 0.017 |
+| RoPE-Hier | **index** + hier | 0.986 ± 0.003 | 0.950 ± 0.004 | 0.924 ± 0.006 |
+| MapPoPE-Flat | path-int | 0.994 ± 0.002 | 0.959 ± 0.012 | 0.919 ± 0.026 |
+| MapWM-Hier | path-int + hier | 0.995 ± 0.004 | 0.945 ± 0.014 | 0.893 ± 0.023 |
+| RoPE-Flat | **index** | 0.978 ± 0.005 | 0.914 ± 0.019 | 0.827 ± 0.044 |
+| MapWM-Flat | path-int | 0.995 ± 0.004 | 0.902 ± 0.058 | 0.823 ± 0.088 |
 
-- **Hierarchy helps 18/18 paired comparisons** — every cell, every seed, both
-  lengths. Most consistent effect on this benchmark, and unlike the torus (where
-  it is structure-dependent and goes negative on precise recall).
-- **The index model beats the paper's own MapFormer-WM** at long horizon
-  (0.860 vs 0.792), at 1 and 3 layers alike.
+- **The best model here has no path integration and no hierarchy.** `PoPE-Flat`
+  — index position, PoPE encoding — leads at T=1024 (0.953) ahead of the full
+  path-integration + hierarchy stack (0.942), with the tightest spread of any arm
+  (±0.003).
+- **Hierarchy helps, but not universally.** 43 of 48 paired comparisons positive
+  (21/24 at T=512, 22/24 at T=1024). *The n=3 report of "18/18, every cell every
+  seed" was small-sample luck and is corrected.* It helps most where the base is
+  weakest (RoPE+index +0.096 at T=1024) and least where it is strongest
+  (PoPE+path-int +0.023, 7/8).
+- The index model still beats the paper's own MapFormer-WM at long horizon
+  (0.827 vs 0.823 — now a tie rather than a win; at n=3 it read 0.860 vs 0.792).
 - **Seven of eight cells**: no PoPE+index+hierarchy variant exists.
-- **Far less discriminative than the torus** — the whole seven-model spread at
-  T=1024 is 0.792-0.951 against a 0.495 floor.
+- Far less discriminative than the torus — the whole spread at T=1024 is
+  0.823-0.953 against a 0.490 floor.
 
 ### Frequency control (`FREQ_CONTROL.md`)
 
@@ -243,15 +249,16 @@ velocities (App. A.8) buy nothing here — 614,474 trainable params match 614,53
 turned one at a time from the torus baseline, Vanilla and RoPE retrained together
 at every condition, n=3, floors measured per condition.
 
-| condition | position effect | reduction from baseline |
-|---|---|---|
-| baseline (torus paper task) | **+0.478** | — |
-| **rotate** (turn/turn/forward) | **+0.049** | **−0.429** |
-| wall (bounded, bumps are no-ops) | +0.251 | −0.227 |
-| ego (observe the cell ahead) | +0.265 | −0.213 |
-| richobs (64 obs types not 16) | +0.299 | −0.179 |
-| small (16² not 64²) | +0.324 | −0.154 |
-| **all five combined** | **−0.084** | −0.562 |
+| condition | position effect | reduction from baseline | n |
+|---|---|---|---|
+| baseline (torus paper task) | **+0.438** | — | 8 |
+| **rotate** (turn/turn/forward) | **+0.050** | **−0.388** | 8 |
+| wall (bounded, bumps are no-ops) | +0.251 | −0.187 | 3 |
+| ego (observe the cell ahead) | +0.265 | −0.173 | 3 |
+| richobs (64 obs types not 16) | +0.299 | −0.139 | 3 |
+| small (16² not 64²) | +0.324 | −0.114 | 3 |
+| **all five combined** | **−0.076** | −0.514 | 8 |
+| **rotate + allocentric recoding** | **+0.488** | **+0.050** | 8 |
 
 **Rotation actions dominate**, at twice the next knob and 90% of the available
 swing. Mechanism: MapFormer path-integrates by cumsumming a *fixed per-token*
@@ -261,8 +268,9 @@ heading — which that form cannot represent.
 **And the mechanism is confirmed with a fix** (`ALLOCENTRIC_RECODING.md`).
 Changing only what the token stream RECORDS — the absolute displacement instead
 of the commanded turn/forward, dynamics byte-identical — restores MapFormer from
-0.557 to **0.994** and the position effect from +0.049 to **+0.485**, against
-baseline's +0.478. A complete recovery on 3/3 seeds (±0.008). So rotate's
+0.558 to **0.996** and the position effect from +0.050 to **+0.488**, against
+baseline's +0.438. A complete recovery on **8/8 seeds (±0.005)** — it now
+*exceeds* the translate baseline. So rotate's
 collapse is a representation mismatch, not task difficulty, and the remedy is
 available wherever the agent's heading is known — i.e. every simulator.
 
@@ -284,9 +292,9 @@ gating after training instead of before.
 | ~~Level15 absent from compositional~~ | **CLOSED**: worse on 2/3 seeds, better on likelihood 3/3 |
 | ~~No plain-WM arm on the family tree~~ | **CLOSED** (F): it was the best of the published set |
 | ~~lm200 never gated~~ | **CLOSED** (G): passes, interpretation withdrawn |
-| ~~Single environment family~~ | **CLOSED** (H): MiniGrid at n=3, full factorial |
+| ~~Single environment family~~ | **CLOSED** (H): MiniGrid, full factorial, **n=8** |
 | ~~Position/frequency confound~~ | **CLOSED** (H): measured, empirically negligible |
-| **PoPE + index + hierarchy** | the 8th cell of H does not exist; each factor there rests on 3 pairs, not 4 |
+| **PoPE + index + hierarchy** | the 8th cell of H does not exist — and it matters more now, since PoPE+index is the best arm on that benchmark |
 | ~~allocentric action recoding~~ | **CLOSED** (I): complete recovery, +0.049 → +0.485 |
 | **capacity control at lm200 T=512** | the +24.8pp headline has no ExtraHead arm at that length |
 | **MapPoPE on C, F, G** | the best model on A/B/H is untested on three tasks |
