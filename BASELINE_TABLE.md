@@ -116,28 +116,35 @@ on this task. `n_templates` = distinct room motifs; low = more structure.
 ## F. Family tree — non-commutative relational structure
 
 n=3 · **floor 0.163** (hub-node baseline; the 0.125 chance is NOT the floor)
-**One batch** (`runs/family_tree`). No plain-WM arm exists — a known gap.
+**One batch of five** (`runs/correction_gaps/familytree`, 2026-08-19).
+Supersedes `FAMILY_TREE_RESULTS.md`, whose three arms this batch reproduces to
+three decimals — see `FAMILY_TREE_WM_GAP.md`.
 
 | model | T=64 (train) | T=128 (OOD) |
 |---|---|---|
-| MapEM-NC-NL (non-commutative, MLP) | **0.729 ± 0.010** | **0.672 ± 0.012** |
-| MapEM-NC-L (non-commutative, linear) | 0.720 ± 0.011 | 0.671 ± 0.006 |
-| MapEM-os (COMMUTATIVE control) | 0.715 ± 0.008 | 0.659 ± 0.014 |
-| Plain-Flat (index) | 0.600 ± 0.011 | 0.550 ± 0.031 |
+| **Level15** | **0.843 ± 0.015** | **0.789 ± 0.027** |
+| **MapWM-Flat** | 0.805 ± 0.072 | 0.746 ± 0.080 |
+| MapEM-NC-NL (non-commutative) | 0.729 ± 0.010 | 0.672 ± 0.012 |
+| MapEM-os (commutative control) | 0.715 ± 0.008 | 0.659 ± 0.015 |
+| Plain-Flat (index) | 0.601 ± 0.011 | 0.550 ± 0.031 |
 
-Non-commutativity buys **+0.014** over the commutative control for **34x** the
-compute (`TIMING_BENCHMARK.md`).
+Two corrections to the earlier version of this table:
+- **The plain-WM arm was missing and is the best of the published set** (+0.076
+  over MapEM-NC-NL, five times the margin the non-commutativity comparison turns
+  on). Non-commutativity still buys +0.014 for 34x the compute — but it does so
+  *below* plain MapWM-Flat.
+- **Level15's +0.038 is variance reduction, not a mean gain.** Paired per seed:
+  −0.005 / +0.001 / **+0.117**; two exact ties, the whole difference is one
+  Vanilla seed collapsing to 0.724. t≈0.89, not significant. The real effect is
+  the spread: ±0.015 vs ±0.072.
 
----
-
-## G. Landmark regime (lm200) — the correction line's home turf
+## G. Landmark regime (lm200) — gated 2026-08-19, interpretation withdrawn
 
 n=3 · fresh retrains under current code · **one batch**
-Supersedes every April lm200 table; those ranked training convergence.
 
 | model | T=128 | T=512 (OOD) |
 |---|---|---|
-| Level15 | **0.996 ± 0.003** | **0.990 ± 0.005** |
+| Level15 | 0.996 ± 0.003 | **0.990 ± 0.005** |
 | TEMFaithful | 1.000 ± 0.000 | 0.974 ± 0.008 |
 | Level15GSF | 0.982 ± 0.025 | 0.967 ± 0.034 |
 | Level15NoDrop | 0.981 ± 0.014 | 0.956 ± 0.029 |
@@ -148,18 +155,36 @@ Supersedes every April lm200 table; those ranked training convergence.
 | MambaLike | 0.562 ± 0.010 | 0.549 ± 0.013 |
 | RoPE | 0.636 ± 0.042 | 0.482 ± 0.023 |
 
-**Never gated**: lm200 has had no context-destruction ablation (rule 2), in the
-one regime where an entire leaderboard already turned out to be an artifact.
+**Gate: PASSES** (`LM200_ABLATION.md`). Resampling the action stream collapses
+Level15 0.985 → 0.155 (−0.830, comparable to Match-Query's −0.842). Not a
+shortcut artifact.
 
----
+**But read the ordering with three caveats, all measured 2026-08-19:**
+
+1. **A capacity control ties Level15 and is absent from this table.**
+   `Vanilla_ExtraHead` — generic extra head, no filter, more parameters — scores
+   **0.995 ± 0.007** at T=128 against Level15's 0.985 ± 0.021 (t=0.79). The gap
+   over plain MapWM-Flat is real; it is not evidence for the Kalman mechanism.
+2. **MapWM-Flat's non-convergence reproduces.** One of three fresh seeds finished
+   at training loss 0.988 — the failure that voided every April lm200 checkpoint
+   — with accuracy 0.722 vs 0.894/0.913. The regime is basin-sensitive under
+   current code, so "Level15 beats Vanilla here" is partly "Vanilla sometimes
+   fails to converge here".
+3. **This regime was built for the correction.** `environment.py`: landmarks are
+   "the regime where Kalman/PC corrections have sharp measurements". It is not
+   the paper's task, and a win here is close to circular.
 
 ## Coverage gaps — what is missing and why it matters
 
-| gap | consequence |
+| gap | status |
 |---|---|
-| Level15 & the correction family absent from A/B/D/E/F | the correction line meets the gated tasks only on Match-Query (table C), where it shows no advantage |
+| ~~Level15 absent from the paper task~~ | **CLOSED**: 1.000 ± 0.000 at 50 epochs vs Vanilla 0.993 (`LEVEL15_MEETS_GATED_paper50.md`); at the paper's own 16-epoch budget it is 0.938, a budget artifact |
+| ~~Level15 absent from the family tree~~ | **CLOSED**: table F — variance reduction, no significant mean gain |
+| ~~lm200 never gated~~ | **CLOSED**: passes, but its interpretation is withdrawn (table G) |
+| Level15 on compositional | **in flight** (`runs/correction_gaps/compositional`) |
+| capacity control absent from lm200 T=512 | the +24.8pp headline has no ExtraHead arm at that length |
 | MapPoPE absent from C (flat form), F, G | the best model on the paper task is untested on 3 of 7 tasks |
-| No plain-WM arm on the family tree | the WM/EM axis is untested there |
+| ~~No plain-WM arm on the family tree~~ | **CLOSED**: it was the best of the published set (table F) |
 | TEMFaithful / MambaLike / LSTM only in G | no baseline row on the paper's own task |
 | lm200 not gated | rule 2 unapplied to a headline result |
 
@@ -170,3 +195,25 @@ one regime where an entire leaderboard already turned out to be an artifact.
 - **Across tables**: no. Different floors, different seeds, different batches.
   Cross-task statements need a within-batch design, which is what E does for
   compositional and what tables A/B do for the paper task.
+
+---
+
+## The correction family across tasks — what four tests now say
+
+Level 1.5 has been run on four tasks in fresh within-batch comparisons against
+MapWM-Flat. The pattern is consistent and it is not the one the mechanism was
+designed to produce:
+
+| task | Level15 vs MapWM-Flat | reading |
+|---|---|---|
+| paper task, 50 ep | 1.000 vs 0.993 | wins, but +0.007 against a 0.506 floor — ceiling effect; the 16x likelihood gap is the real signal |
+| Match-Query | 0.876 vs 0.888 | **no advantage**; the blind phase leaves the filter no measurement to use |
+| family tree | 0.843 vs 0.805 | mean gain not significant (t≈0.89); **±0.015 vs ±0.072** — variance reduction |
+| lm200 | +0.142 (t=2.30) | real, but a filter-free capacity control ties it (t=0.79) |
+| compositional | — | in flight |
+
+Across all four, what the correction reliably does is **train more stably** —
+lower worst-seed loss, tighter spread — rather than exploit measurements. That is
+an optimisation property, and it is what the "stabilisation, not inference"
+reframing in CLAUDE.md predicts. It is a narrower claim than the project was
+built on and it is the one the measurements support.
