@@ -43,6 +43,7 @@ class GridWorld:
         action_mode: str = "translate",
         obs_mode: str = "allo",
         boundary: str = "torus",
+        score_moves_only: bool = False,
     ):
         """Three knobs isolate what differs between this torus and MiniGrid.
 
@@ -80,6 +81,14 @@ class GridWorld:
         self.action_mode = action_mode
         self.obs_mode = obs_mode
         self.boundary = boundary
+        # score_moves_only: skip steps where the OBSERVED CELL did not change.
+        # Default False leaves every existing configuration untouched (in
+        # translate+torus the agent moves on every step, so it is a no-op there
+        # anyway). Needed for rotate mode, where turns do not translate: a run of
+        # "turn left" emits the same observation repeatedly, and predicting "the
+        # same as last time" then solves 93% of scored events (KNOB_SWEEP.md).
+        # That is not a cognitive-map test, it is a copy test.
+        self.score_moves_only = score_moves_only
         self.size = size
         self.n_obs_types = n_obs_types
         self.p_empty = p_empty
@@ -208,6 +217,7 @@ class GridWorld:
                 return nx, ny, heading
             return nx % self.size, ny % self.size, heading
 
+        prev_obs_cell = None
         t = 0
         while t < n_steps:
             a = np.random.randint(0, self.n_actions)
@@ -243,14 +253,19 @@ class GridWorld:
                 obs_idx = self.obs_map[ox, oy].item()
                 tokens.append(obs_idx + self.obs_offset)
 
-                # revisit is defined on the AGENT'S CELL in allo mode and on the
-                # (cell, heading) pair in rotate mode -- in rotate mode the same
-                # cell facing a different way is a different state and yields a
-                # different observation, so scoring it as a revisit would make
-                # the target unpredictable in principle.
-                key = (x, y, heading) if self.action_mode == "rotate" else (x, y)
+                # Revisit is keyed on whatever DETERMINES the observation: the
+                # agent's cell in allo mode, the OBSERVED cell in ego mode. An
+                # earlier version keyed rotate mode on (x, y, heading), which was
+                # wrong -- in allo mode the observation is obs_map[x, y]
+                # regardless of heading, so heading in the key manufactured
+                # spurious first-visits and spurious revisits, and combined with
+                # spinning it produced the 0.932 order-1 shortcut that voided the
+                # rotate condition.
+                key = (ox, oy)
+                moved = (ox, oy) != prev_obs_cell
+                prev_obs_cell = (ox, oy)
                 self.visited_locations.append((x, y))
-                is_revisit.append(key in seen)
+                is_revisit.append((key in seen) and (moved or not self.score_moves_only))
                 seen.add(key)
                 t += 1
 

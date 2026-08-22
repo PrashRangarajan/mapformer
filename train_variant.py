@@ -247,6 +247,10 @@ def main():
                         choices=["allo", "ego"])
     parser.add_argument("--boundary", type=str, default="torus",
                         choices=["torus", "wall"])
+    parser.add_argument("--score-moves-only", action="store_true",
+                        help="skip steps where the observed cell did not change; "
+                             "required in rotate mode, where turns otherwise emit "
+                             "a repeated observation solvable by copying")
     parser.add_argument("--minigrid-tokenization", type=str, default="obj_color",
                         choices=["obj_only", "obj_color", "full"])
     parser.add_argument("--minigrid-cached-buffer", type=int, default=0,
@@ -269,7 +273,7 @@ def main():
             size=args.grid_size, n_obs_types=args.n_obs_types, p_empty=0.5,
             n_landmarks=args.n_landmarks, seed=args.seed,
             action_mode=args.action_mode, obs_mode=args.obs_mode,
-            boundary=args.boundary,
+            boundary=args.boundary, score_moves_only=args.score_moves_only,
         )
         grid_size = args.grid_size
     else:

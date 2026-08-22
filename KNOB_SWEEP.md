@@ -91,3 +91,81 @@ codebase, so nothing important about MiniGrid is missing from the list.
 - The decomposition is **not additive**: the individual reductions sum to −0.77
   while the combined effect is −0.56, so the knobs interact and single-knob
   deltas cannot be read as independent contributions.
+
+---
+
+# ROTATE, REDONE — and it overturns the section above
+
+The `rotate` row above is void. Redone with two fixes, gated BEFORE training this
+time (orders 1-5 at 0.501/0.472/0.440/0.462 against a 0.507 marginal, PASS):
+
+1. revisit keyed on the observation-determining state, not `(x, y, heading)`
+2. `--score-moves-only`: skip steps where the observed cell did not change
+
+**Fix 1 alone changed nothing** (order-1 stayed at 0.899). Spinning at an
+already-seen cell still emits the same observation. It took fix 2.
+
+## Two budgets, because the fix costs supervision
+
+The scored rate falls from 0.727 to **0.054** (baseline 0.225), so at equal
+epochs rotate gets ~4x fewer gradient-contributing events than every other
+condition. `matched` gives it 4x the batches; `standard` keeps the sweep recipe.
+
+| condition | floor | Vanilla | RoPE (index) | position effect | paired |
+|---|---|---|---|---|---|
+| rotate, standard budget | 0.508 | 0.512 ± 0.002 | 0.508 ± 0.007 | +0.004 | −0.000/+0.003/+0.009 |
+| **rotate, matched budget** | 0.508 | **0.557 ± 0.023** | **0.508 ± 0.007** | **+0.049** | +0.063/+0.053/+0.031 |
+
+At the standard budget **both arms sit exactly on the floor** — the condition is
+unlearnable there, and its +0.004 would have been a false negative. Rule 5 again.
+
+At the matched budget the index model is still *exactly* at the floor (0.508 vs
+0.508, it learns nothing at all) while the path-integrated model clears it by
++0.049 on 3/3 seeds.
+
+## This is comparable to baseline, and it makes rotate the dominant knob
+
+`score_moves_only` is a **no-op in translate mode** — the agent moves on every
+step, so no step is skipped. Baseline, ego, small and richobs are therefore
+unaffected by the rule change, and rotate's position effect can be read against
+them directly. (Only `wall` would be affected, since bumps do not move.)
+
+| knob | position effect | reduction from baseline |
+|---|---|---|
+| baseline | +0.478 | — |
+| **rotate** | **+0.049** | **−0.429** |
+| small | +0.324 | −0.154 |
+| richobs | +0.299 | −0.179 |
+| ego | +0.265 | −0.213 |
+| wall | +0.251 | −0.227 |
+| allcombined | −0.084 | −0.562 |
+
+**The "every knob contributes about equally" conclusion above is WRONG and is
+withdrawn.** Rotation actions cut the position effect by 0.429 — roughly twice
+the next largest knob and 90% of the total available. A single knob very nearly
+accounts for the whole flip; the other four together add the remaining ~0.13.
+
+## What this does and does not vindicate
+
+It **partly** supports the mechanism I proposed for MiniGrid: MapFormer's path
+integrator cumsums fixed per-token deltas, and under turn/turn/forward the
+displacement depends on accumulated heading, which that form cannot represent.
+Rotation actions are indeed the single most damaging property.
+
+It does **not** support the strong version. Path integration does not become
+harmful here — it stays positive on 3/3 seeds. What happens is that the task
+becomes nearly unlearnable for everyone: Vanilla falls from 0.989 to 0.557, and
+the index model, which reached 0.511 at baseline, learns literally nothing
+(0.508 against a 0.508 floor). Rotation does not invert the ordering; it
+collapses the ceiling.
+
+The remaining negative sign at `allcombined` (−0.084) must therefore come from
+rotate's collapse combined with the other four knobs, not from rotate alone.
+
+## Still open
+
+Whether MapFormer recovers under an allocentric action recoding — emitting
+absolute N/S/E/W displacements computed from the known heading instead of
+turn/forward. If it does, the mis-specification account is confirmed and the fix
+is stated. That experiment is now well motivated by a measured 0.429 effect
+rather than by a single-seed MiniGrid observation.
