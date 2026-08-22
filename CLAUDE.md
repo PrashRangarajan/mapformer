@@ -1488,6 +1488,28 @@ shortcut). The DIAGNOSTICS that established each verdict are kept at top level -
 they are current results. `RESULTS_INDEX.md` regenerated; it leads with the four
 citable results and the seven standing rules.
 
+### Harness traps that cost real time (2026-08-19)
+
+Three ways to lose work that have nothing to do with the science:
+
+1. **Anything over ~2 minutes must run under `setsid`, evaluators included.**
+   A foreground tool call is SIGTERM'd at the 2-minute timeout and the signal
+   propagates to every child it spawned. This happened THREE times in one
+   session -- the family-tree extra arms, the knob-sweep evaluation, and the
+   n=8 MiniGrid evaluation -- always because a job "looked short". Training
+   pipelines were safe only because they were written as scripts. Write the
+   evaluator as a script too, or it dies.
+2. **`local a=$1 b=$2 c="...$b"` expands every word before assigning**, under
+   `set -u`. Reference `$2` directly.
+3. **`pgrep -f` / `pkill -f` match their own shell.** Split the pattern
+   (`P="run_thing"".sh"`) and filter by `ps -o user=` before signalling --
+   killing another user's processes was attempted once by accident.
+
+Also: **do not edit a module while a batch is spawning processes from it.**
+Later runs pick up the new code and a within-batch comparison silently becomes a
+between-code one. If it is unavoidable, verify the affected configs are
+unchanged (md5 the token stream) rather than assuming.
+
 ### Rule 7, added this session
 
 **A gate must CALL the task code, not reimplement it.** `validate_family_tree.py`
