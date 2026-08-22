@@ -247,6 +247,11 @@ def main():
                         choices=["allo", "ego"])
     parser.add_argument("--boundary", type=str, default="torus",
                         choices=["torus", "wall"])
+    parser.add_argument("--action-record", type=str, default="commanded",
+                        choices=["commanded", "allocentric"],
+                        help="what the token stream records; 'allocentric' logs "
+                             "the absolute displacement (or STAY) instead of the "
+                             "commanded turn/forward")
     parser.add_argument("--score-moves-only", action="store_true",
                         help="skip steps where the observed cell did not change; "
                              "required in rotate mode, where turns otherwise emit "
@@ -274,6 +279,7 @@ def main():
             n_landmarks=args.n_landmarks, seed=args.seed,
             action_mode=args.action_mode, obs_mode=args.obs_mode,
             boundary=args.boundary, score_moves_only=args.score_moves_only,
+            action_record=args.action_record,
         )
         grid_size = args.grid_size
     else:

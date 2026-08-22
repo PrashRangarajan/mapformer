@@ -44,6 +44,7 @@ class GridWorld:
         obs_mode: str = "allo",
         boundary: str = "torus",
         score_moves_only: bool = False,
+        action_record: str = "commanded",
     ):
         """Three knobs isolate what differs between this torus and MiniGrid.
 
@@ -89,6 +90,25 @@ class GridWorld:
         # same as last time" then solves 93% of scored events (KNOB_SWEEP.md).
         # That is not a cognitive-map test, it is a copy test.
         self.score_moves_only = score_moves_only
+        # action_record: what the token stream RECORDS, independent of what the
+        # agent does. Dynamics are identical either way -- same trajectory, same
+        # observations -- only the action token changes.
+        #
+        #   "commanded"    the action as issued. In rotate mode that is
+        #                  turn-left / turn-right / forward (default).
+        #   "allocentric"  the ABSOLUTE displacement that resulted: one of the
+        #                  four compass directions, or STAY when the step
+        #                  produced no displacement (i.e. a turn, or a wall bump).
+        #
+        # This is the decisive test of why rotate collapses the position effect
+        # (+0.478 -> +0.049, KNOB_SWEEP.md). MapFormer path-integrates by
+        # cumsumming a fixed per-token delta, which cannot represent a
+        # displacement that depends on accumulated heading. Under allocentric
+        # recording the displacement IS the token, so the cumsum form is
+        # well-specified again. If the position effect recovers, the
+        # mis-specification account is confirmed and the remedy is stated.
+        assert action_record in ("commanded", "allocentric"), action_record
+        self.action_record = action_record
         self.size = size
         self.n_obs_types = n_obs_types
         self.p_empty = p_empty
@@ -112,6 +132,11 @@ class GridWorld:
 
         self.obs_vocab_size = n_obs_types + 1 + n_landmarks
         self.unified_vocab_size = self.N_ACTIONS + self.obs_vocab_size
+        # STAY is appended at the end so every existing token id is unchanged
+        # and checkpoints from other configurations still load.
+        self.stay_token = self.unified_vocab_size
+        if action_record == "allocentric":
+            self.unified_vocab_size += 1
 
         self.blank_token = n_obs_types
 
@@ -237,9 +262,20 @@ class GridWorld:
                 if p_transition_noise > 0.0 and np.random.random() < p_transition_noise:
                     a_exec = np.random.randint(0, self.n_actions)
 
+                px, py = x, y
                 x, y, heading = _step(x, y, heading, a_exec)
 
-                tokens.append(a + self.action_offset)        # COMMANDED action recorded
+                if self.action_record == "allocentric":
+                    # record the displacement that actually happened
+                    d = ((x - px) % self.size, (y - py) % self.size)
+                    d = (d[0] - self.size if d[0] > self.size // 2 else d[0],
+                         d[1] - self.size if d[1] > self.size // 2 else d[1])
+                    rec = next((k for k, v in self.ACTION_DELTAS.items() if v == d),
+                               None)
+                    tokens.append(self.stay_token if rec is None
+                                  else rec + self.action_offset)
+                else:
+                    tokens.append(a + self.action_offset)   # COMMANDED action recorded
                 if self.obs_mode == "ego":
                     # the cell one step AHEAD in the current heading
                     hx, hy = self.ACTION_DELTAS[heading]

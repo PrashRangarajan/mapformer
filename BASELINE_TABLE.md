@@ -258,6 +258,14 @@ swing. Mechanism: MapFormer path-integrates by cumsumming a *fixed per-token*
 delta, and under turn/turn/forward the displacement depends on accumulated
 heading — which that form cannot represent.
 
+**And the mechanism is confirmed with a fix** (`ALLOCENTRIC_RECODING.md`).
+Changing only what the token stream RECORDS — the absolute displacement instead
+of the commanded turn/forward, dynamics byte-identical — restores MapFormer from
+0.557 to **0.994** and the position effect from +0.049 to **+0.485**, against
+baseline's +0.478. A complete recovery on 3/3 seeds (±0.008). So rotate's
+collapse is a representation mismatch, not task difficulty, and the remedy is
+available wherever the agent's heading is known — i.e. every simulator.
+
 **The combination reproduces MiniGrid.** All five knobs on gives −0.084 against
 MiniGrid's independently measured −0.060, so the five are jointly sufficient and
 nothing important is missing from the list.
@@ -279,7 +287,7 @@ gating after training instead of before.
 | ~~Single environment family~~ | **CLOSED** (H): MiniGrid at n=3, full factorial |
 | ~~Position/frequency confound~~ | **CLOSED** (H): measured, empirically negligible |
 | **PoPE + index + hierarchy** | the 8th cell of H does not exist; each factor there rests on 3 pairs, not 4 |
-| **allocentric action recoding** | IN FLIGHT — the decisive test of I's mechanism |
+| ~~allocentric action recoding~~ | **CLOSED** (I): complete recovery, +0.049 → +0.485 |
 | **capacity control at lm200 T=512** | the +24.8pp headline has no ExtraHead arm at that length |
 | **MapPoPE on C, F, G** | the best model on A/B/H is untested on three tasks |
 | **TEM / Mamba / LSTM on A** | they exist only in the lm200 column |
