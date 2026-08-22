@@ -40,7 +40,46 @@ class GridWorld:
         p_empty: float = 0.5,
         n_landmarks: int = 0,
         seed: Optional[int] = None,
+        action_mode: str = "translate",
+        obs_mode: str = "allo",
+        boundary: str = "torus",
     ):
+        """Three knobs isolate what differs between this torus and MiniGrid.
+
+        `MINIGRID_2X2X2.md` and `FREQ_CONTROL.md` establish that path
+        integration is worth +0.461 on this torus and **-0.060** on
+        MiniGrid-DoorKey-16x16 -- the sign of a large effect flips between
+        environments. But the two differ in FIVE ways at once (observation
+        frame, action space, map size, aliasing, boundaries), so which one is
+        responsible is unknown. Size and aliasing are already parameters; these
+        add the other three, so they can be turned one at a time.
+
+        action_mode  "translate" 4 actions, fixed displacements N/S/W/E (default,
+                                 the paper's setting -- unchanged behaviour)
+                     "rotate"    3 actions, turn-left / turn-right / forward, as
+                                 in MiniGrid. Displacement depends on accumulated
+                                 heading, which is exactly the assumption
+                                 MapFormer's cumsum-of-fixed-deltas makes and
+                                 which MiniGrid violates.
+        obs_mode     "allo"      observation is the cell you occupy (default)
+                     "ego"       observation is the cell one step AHEAD in the
+                                 current heading, as in MiniGrid's egocentric
+                                 view. In translate mode heading is taken from
+                                 the last commanded action, so the two knobs stay
+                                 independent.
+        boundary     "torus"     wraps (default)
+                     "wall"      a move into the boundary is a NO-OP: the action
+                                 is still recorded but the position does not
+                                 change, matching MiniGrid's bump semantics.
+
+        Every default reproduces the previous behaviour exactly.
+        """
+        assert action_mode in ("translate", "rotate"), action_mode
+        assert obs_mode in ("allo", "ego"), obs_mode
+        assert boundary in ("torus", "wall"), boundary
+        self.action_mode = action_mode
+        self.obs_mode = obs_mode
+        self.boundary = boundary
         self.size = size
         self.n_obs_types = n_obs_types
         self.p_empty = p_empty
@@ -51,6 +90,11 @@ class GridWorld:
         # [4..4+K-1]           = K regular obs types
         # [4+K]                = blank token B
         # [4+K+1..4+K+L]       = L unique landmark tokens (one per landmark cell)
+        # rotate mode uses 3 actions (turn-left, turn-right, forward); the
+        # vocabulary keeps 4 action slots either way so a checkpoint trained in
+        # one mode still loads in the other and the comparison is not confounded
+        # by a vocabulary-size difference.
+        self.n_actions = 3 if action_mode == "rotate" else self.N_ACTIONS
         self.action_offset = 0
         self.obs_offset = self.N_ACTIONS  # = 4
         self.unified_blank = self.N_ACTIONS + n_obs_types  # = 4 + K
@@ -132,9 +176,41 @@ class GridWorld:
         is_revisit = []  # per-step revisit flag
         seen = set()
 
+        # Heading is only meaningful for the rotate/ego knobs. It MUST NOT be
+        # drawn in the default configuration: consuming one extra value from the
+        # global RNG shifts every subsequent draw, which silently changes the
+        # default trajectory stream and would invalidate any comparison against
+        # an existing checkpoint. Verified byte-identical to the pre-knob code.
+        heading = (int(np.random.randint(0, self.N_ACTIONS))
+                   if (self.action_mode == "rotate" or self.obs_mode == "ego")
+                   else 0)
+
+        def _step(x, y, heading, a_exec):
+            """Apply one executed action. Returns (x, y, heading)."""
+            if self.action_mode == "rotate":
+                # 0 = turn left, 1 = turn right, 2 = forward. Displacement
+                # depends on the ACCUMULATED heading, which is precisely what a
+                # cumsum of per-token fixed deltas cannot represent.
+                if a_exec == 0:
+                    return x, y, (heading - 1) % self.N_ACTIONS
+                if a_exec == 1:
+                    return x, y, (heading + 1) % self.N_ACTIONS
+                dx, dy = self.ACTION_DELTAS[heading]
+            else:
+                dx, dy = self.ACTION_DELTAS[a_exec]
+                heading = a_exec                    # for ego view in translate mode
+            nx, ny = x + dx, y + dy
+            if self.boundary == "wall":
+                # bumping a wall is a NO-OP, as in MiniGrid: the action is still
+                # recorded, the position does not change.
+                if not (0 <= nx < self.size and 0 <= ny < self.size):
+                    return x, y, heading
+                return nx, ny, heading
+            return nx % self.size, ny % self.size, heading
+
         t = 0
         while t < n_steps:
-            a = np.random.randint(0, self.N_ACTIONS)
+            a = np.random.randint(0, self.n_actions)
             k = np.random.randint(1, 11)
 
             for _ in range(k):
@@ -149,19 +225,33 @@ class GridWorld:
                 # stochasticity vs sensor/log corruption).
                 a_exec = a
                 if p_transition_noise > 0.0 and np.random.random() < p_transition_noise:
-                    a_exec = np.random.randint(0, self.N_ACTIONS)
+                    a_exec = np.random.randint(0, self.n_actions)
 
-                dx, dy = self.ACTION_DELTAS[a_exec]
-                x = (x + dx) % self.size
-                y = (y + dy) % self.size
+                x, y, heading = _step(x, y, heading, a_exec)
 
                 tokens.append(a + self.action_offset)        # COMMANDED action recorded
-                obs_idx = self.obs_map[x, y].item()
+                if self.obs_mode == "ego":
+                    # the cell one step AHEAD in the current heading
+                    hx, hy = self.ACTION_DELTAS[heading]
+                    ox, oy = x + hx, y + hy
+                    if self.boundary == "wall":
+                        ox, oy = min(max(ox, 0), self.size - 1), min(max(oy, 0), self.size - 1)
+                    else:
+                        ox, oy = ox % self.size, oy % self.size
+                else:
+                    ox, oy = x, y
+                obs_idx = self.obs_map[ox, oy].item()
                 tokens.append(obs_idx + self.obs_offset)
 
+                # revisit is defined on the AGENT'S CELL in allo mode and on the
+                # (cell, heading) pair in rotate mode -- in rotate mode the same
+                # cell facing a different way is a different state and yields a
+                # different observation, so scoring it as a revisit would make
+                # the target unpredictable in principle.
+                key = (x, y, heading) if self.action_mode == "rotate" else (x, y)
                 self.visited_locations.append((x, y))
-                is_revisit.append((x, y) in seen)
-                seen.add((x, y))
+                is_revisit.append(key in seen)
+                seen.add(key)
                 t += 1
 
         self.last_x = x

@@ -239,6 +239,14 @@ def main():
                              "paper-default 64x64 random-walk grid; "
                              "'minigrid_*' use real MiniGrid envs via "
                              "MiniGridWorld adapter.")
+    # Knobs isolating what differs between this torus and MiniGrid. Defaults
+    # reproduce the paper setting byte-for-byte; see environment.py.
+    parser.add_argument("--action-mode", type=str, default="translate",
+                        choices=["translate", "rotate"])
+    parser.add_argument("--obs-mode", type=str, default="allo",
+                        choices=["allo", "ego"])
+    parser.add_argument("--boundary", type=str, default="torus",
+                        choices=["torus", "wall"])
     parser.add_argument("--minigrid-tokenization", type=str, default="obj_color",
                         choices=["obj_only", "obj_color", "full"])
     parser.add_argument("--minigrid-cached-buffer", type=int, default=0,
@@ -260,6 +268,8 @@ def main():
         env = GridWorld(
             size=args.grid_size, n_obs_types=args.n_obs_types, p_empty=0.5,
             n_landmarks=args.n_landmarks, seed=args.seed,
+            action_mode=args.action_mode, obs_mode=args.obs_mode,
+            boundary=args.boundary,
         )
         grid_size = args.grid_size
     else:
