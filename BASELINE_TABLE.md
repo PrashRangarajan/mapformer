@@ -12,6 +12,26 @@ its column (standing rule 4).
 
 ---
 
+## THE RESULT THE TABLE NOW SHOWS
+
+**No architectural ingredient is best. Which one to spend on is decided by the
+environment, and one environment property decides most of it.**
+
+The same 2x2 — {RoPE, PoPE} encoding x {index, path-integrated} position — run on
+two environment families, each factor averaged over the other:
+
+| | encoding | hierarchy | position |
+|---|---|---|---|
+| **torus paper task** (n=8) | +0.011 | — | **+0.461** |
+| **MiniGrid DoorKey-16x16** T=1024 (n=3) | **+0.085** | +0.069 | **−0.037** |
+
+Position is worth 40x the encoding on the torus and is *negative* on MiniGrid.
+Section I isolates why: of the five properties that differ between them,
+**rotation-based actions account for 0.429 of the 0.478 swing** — more than the
+other four combined.
+
+---
+
 ## A. Paper task — held-out revisit accuracy, fresh obs_map
 
 n=8 seeds · 1 layer, d=128, T=128, 16 epochs · **floor 0.506** (always-predict-blank)
@@ -174,19 +194,97 @@ shortcut artifact.
    "the regime where Kalman/PC corrections have sharp measurements". It is not
    the paper's task, and a win here is close to circular.
 
+## H. MiniGrid DoorKey-16x16 — a published external benchmark
+
+n=3 · **one batch per grid** · measured floors 0.642 / 0.536 / 0.495
+Second environment family; egocentric observation, rotation actions, 256 cells.
+
+**Full factorial, `n_layers=3` so flat and hierarchical are parameter-matched
+(614K):**
+
+| model | position | T=128 | T=512 | T=1024 |
+|---|---|---|---|---|
+| **MapPoPE-Hier** | path-int + hier | 0.995 | **0.971 ± 0.005** | **0.948 ± 0.014** |
+| PoPE-Flat | **index** | 0.982 | 0.961 ± 0.001 | 0.951 ± 0.004 |
+| MapPoPE-Flat | path-int | 0.994 | 0.957 ± 0.012 | 0.919 ± 0.022 |
+| MapWM-Hier | path-int + hier | 0.997 | 0.956 ± 0.010 | 0.909 ± 0.006 |
+| RoPE-Hier | **index** + hier | 0.987 | 0.950 ± 0.005 | 0.921 ± 0.005 |
+| RoPE-Flat | **index** | 0.982 | 0.929 ± 0.004 | 0.860 ± 0.022 |
+| MapWM-Flat | path-int | 0.996 | 0.890 ± 0.043 | 0.792 ± 0.077 |
+
+- **Hierarchy helps 18/18 paired comparisons** — every cell, every seed, both
+  lengths. Most consistent effect on this benchmark, and unlike the torus (where
+  it is structure-dependent and goes negative on precise recall).
+- **The index model beats the paper's own MapFormer-WM** at long horizon
+  (0.860 vs 0.792), at 1 and 3 layers alike.
+- **Seven of eight cells**: no PoPE+index+hierarchy variant exists.
+- **Far less discriminative than the torus** — the whole seven-model spread at
+  T=1024 is 0.792-0.951 against a 0.495 floor.
+
+### Frequency control (`FREQ_CONTROL.md`)
+
+Path-integrated arms use learnable `omega` (`nn.Parameter`); index arms use fixed
+frequencies (`register_buffer`). Those properties are perfectly correlated across
+every cell of every grid, so "position effect" has always meant "position AND
+frequency learning". Freezing `omega` breaks the correlation:
+
+| effect | T=512 | T=1024 |
+|---|---|---|
+| frequency learning | +0.004 | −0.008 |
+| **pure position** | **−0.042** | **−0.060** |
+
+The confound is real in the code and **absent from the data**; the position
+effect survives and grows. Side finding: MapFormer's learnable angular
+velocities (App. A.8) buy nothing here — 614,474 trainable params match 614,538.
+
+## I. What makes path integration decisive or worthless
+
+`KNOB_SWEEP.md`. Five properties differ between the torus and MiniGrid; each
+turned one at a time from the torus baseline, Vanilla and RoPE retrained together
+at every condition, n=3, floors measured per condition.
+
+| condition | position effect | reduction from baseline |
+|---|---|---|
+| baseline (torus paper task) | **+0.478** | — |
+| **rotate** (turn/turn/forward) | **+0.049** | **−0.429** |
+| wall (bounded, bumps are no-ops) | +0.251 | −0.227 |
+| ego (observe the cell ahead) | +0.265 | −0.213 |
+| richobs (64 obs types not 16) | +0.299 | −0.179 |
+| small (16² not 64²) | +0.324 | −0.154 |
+| **all five combined** | **−0.084** | −0.562 |
+
+**Rotation actions dominate**, at twice the next knob and 90% of the available
+swing. Mechanism: MapFormer path-integrates by cumsumming a *fixed per-token*
+delta, and under turn/turn/forward the displacement depends on accumulated
+heading — which that form cannot represent.
+
+**The combination reproduces MiniGrid.** All five knobs on gives −0.084 against
+MiniGrid's independently measured −0.060, so the five are jointly sufficient and
+nothing important is missing from the list.
+
+Two caveats: the decomposition is **not additive** (single-knob reductions sum to
+−1.20 against a combined −0.56, so the knobs interact), and the `rotate` row is a
+**redo** — the first version was void with a 0.932 order-1 shortcut, caught by
+gating after training instead of before.
+
 ## Coverage gaps — what is missing and why it matters
 
 | gap | status |
 |---|---|
-| ~~Level15 absent from the paper task~~ | **CLOSED**: 1.000 ± 0.000 at 50 epochs vs Vanilla 0.993 (`LEVEL15_MEETS_GATED_paper50.md`); at the paper's own 16-epoch budget it is 0.938, a budget artifact |
-| ~~Level15 absent from the family tree~~ | **CLOSED**: table F — variance reduction, no significant mean gain |
-| ~~lm200 never gated~~ | **CLOSED**: passes, but its interpretation is withdrawn (table G) |
-| Level15 on compositional | **in flight** (`runs/correction_gaps/compositional`) |
-| capacity control absent from lm200 T=512 | the +24.8pp headline has no ExtraHead arm at that length |
-| MapPoPE absent from C (flat form), F, G | the best model on the paper task is untested on 3 of 7 tasks |
-| ~~No plain-WM arm on the family tree~~ | **CLOSED**: it was the best of the published set (table F) |
-| TEMFaithful / MambaLike / LSTM only in G | no baseline row on the paper's own task |
-| lm200 not gated | rule 2 unapplied to a headline result |
+| ~~Level15 absent from the paper task~~ | **CLOSED**: 1.000 ± 0.000 at 50 epochs vs Vanilla 0.993; at the paper's own 16-epoch budget it reads 0.938, a budget artifact |
+| ~~Level15 absent from the family tree~~ | **CLOSED** (F): variance reduction, no significant mean gain |
+| ~~Level15 absent from compositional~~ | **CLOSED**: worse on 2/3 seeds, better on likelihood 3/3 |
+| ~~No plain-WM arm on the family tree~~ | **CLOSED** (F): it was the best of the published set |
+| ~~lm200 never gated~~ | **CLOSED** (G): passes, interpretation withdrawn |
+| ~~Single environment family~~ | **CLOSED** (H): MiniGrid at n=3, full factorial |
+| ~~Position/frequency confound~~ | **CLOSED** (H): measured, empirically negligible |
+| **PoPE + index + hierarchy** | the 8th cell of H does not exist; each factor there rests on 3 pairs, not 4 |
+| **allocentric action recoding** | IN FLIGHT — the decisive test of I's mechanism |
+| **capacity control at lm200 T=512** | the +24.8pp headline has no ExtraHead arm at that length |
+| **MapPoPE on C, F, G** | the best model on A/B/H is untested on three tasks |
+| **TEM / Mamba / LSTM on A** | they exist only in the lm200 column |
+| **scale** | everything is 200K-3.2M params, d=128, 1-4 layers; the horizon grid showed capacity moves conclusions |
+| **3D / continuous embodiment** | MiniWorld, Memory Maze, Habitat — all have I's dominant knob (rotation actions) and none has been run |
 
 ## Which comparisons are safe
 
@@ -198,22 +296,29 @@ shortcut artifact.
 
 ---
 
-## The correction family across tasks — what four tests now say
+## The correction family across tasks — five within-batch tests
 
-Level 1.5 has been run on four tasks in fresh within-batch comparisons against
-MapWM-Flat. The pattern is consistent and it is not the one the mechanism was
-designed to produce:
-
-| task | Level15 vs MapWM-Flat | reading |
+| task | accuracy vs MapWM-Flat | likelihood / stability |
 |---|---|---|
-| paper task, 50 ep | 1.000 vs 0.993 | wins, but +0.007 against a 0.506 floor — ceiling effect; the 16x likelihood gap is the real signal |
-| Match-Query | 0.876 vs 0.888 | **no advantage**; the blind phase leaves the filter no measurement to use |
-| family tree | 0.843 vs 0.805 | mean gain not significant (t≈0.89); **±0.015 vs ±0.072** — variance reduction |
-| lm200 | +0.142 (t=2.30) | real, but a filter-free capacity control ties it (t=0.79) |
-| compositional | — | in flight |
+| paper task, 50 ep | 1.000 vs 0.993 — ceiling effect | **16x lower loss** |
+| Match-Query | 0.876 vs 0.888 — **no advantage** | — |
+| family tree | not significant (t≈0.89) | **±0.015 vs ±0.072** |
+| lm200 | +0.142, but a filter-free capacity control ties it (t=0.79) | worst-seed loss 0.188 vs 0.988 |
+| compositional | **worse on 2/3 seeds** | **better 3/3, both lengths** |
 
-Across all four, what the correction reliably does is **train more stably** —
-lower worst-seed loss, tighter spread — rather than exploit measurements. That is
-an optimisation property, and it is what the "stabilisation, not inference"
-reframing in CLAUDE.md predicts. It is a narrower claim than the project was
-built on and it is the one the measurements support.
+Across five within-batch comparisons Level 1.5 improves **likelihood and
+stability** reliably and **accuracy** almost never. That is the "stabilisation,
+not inference" reading in CLAUDE.md, measured on five tasks rather than asserted,
+and much narrower than the Kalman framing the project was built on.
+
+## Reading this table
+
+- **Within a section**: valid where the provenance line says one batch
+  (A, B, E, F, G, H, I).
+- **Section D**: accumulated across batches — prefer E.
+- **Across sections**: no. Floors range from 0.0625 to 0.80 and batches differ.
+  Cross-task statements need a within-batch design, which is what E does for
+  compositional, A/B for the paper task, H for MiniGrid and I for the knobs.
+- **Every floor here is measured**, not assumed. An index model reading 0.80 on
+  OOD-s is sitting *on* its floor; the same model reading 0.27 on OOD-d is doing
+  the same thing. The number means nothing without its column.
