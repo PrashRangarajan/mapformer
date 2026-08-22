@@ -92,7 +92,13 @@ def main():
     all_rows = {}
     for cp in args.checkpoints:
         v, res = eval_ckpt(cp, args.lengths, args.n_traj, args.device, batch_size=args.batch)
-        all_rows[v] = res
+        # Key by (variant, checkpoint) not variant alone. Keying by variant
+        # silently DISCARDED every seed but the last: a 6-checkpoint run over
+        # 3 seeds x 2 variants printed 2 rows and labelled seed 2's numbers as
+        # the result. On the Level15-vs-Vanilla comparison that inverted the
+        # conclusion -- seed 2 alone says Level15 is worse on cross_nb, while
+        # n=3 says its mean is higher (driven by one outlier seed).
+        all_rows.setdefault(v, []).append(res)
         print(f"\n=== {v} ===")
         for T, r in res.items():
             print(f" T={T:5d} exact_acc={r['exact_acc']:.3f} "
@@ -106,10 +112,15 @@ def main():
         lines.append(f"\n## T={T}\n")
         lines.append("| variant | exact_acc | cross_acc | cross_nb_acc | cross_nll |")
         lines.append("|---|---|---|---|---|")
-        for v, res in all_rows.items():
-            r = res[T]
-            lines.append(f"| {v} | {r['exact_acc']:.3f} | {r['cross_acc']:.3f} "
-                         f"| {r['cross_nb_acc']:.3f} | {r['cross_nll']:.3f} |")
+        for v, runs in all_rows.items():
+            import numpy as _np
+            def agg(key):
+                a = _np.array([r[T][key] for r in runs])
+                return (f"{a.mean():.3f} ± {a.std(ddof=1):.3f}" if len(a) > 1
+                        else f"{a.mean():.3f}")
+            lines.append(f"| {v} (n={len(runs)}) | {agg('exact_acc')} | "
+                         f"{agg('cross_acc')} | {agg('cross_nb_acc')} | "
+                         f"{agg('cross_nll')} |")
     Path(args.out).write_text("\n".join(lines) + "\n")
     print(f"\nwrote {args.out}")
 
