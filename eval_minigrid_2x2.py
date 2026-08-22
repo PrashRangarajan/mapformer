@@ -34,8 +34,12 @@ from mapformer.train_variant import VARIANT_MAP
 
 _REPO = Path(__file__).resolve().parent
 DISPLAY = {"Vanilla": "MapWM-Flat (RoPE + path int.)",
+           "Hourglass_k2": "MapWM-Hier (RoPE + path int. + hier)",
            "MapPoPE-Flat": "MapPoPE-Flat (PoPE + path int.)",
-           "RoPE": "RoPE (index)", "PoPE-Flat": "PoPE-Flat (PoPE + index)"}
+           "MapPoPE-Hier": "MapPoPE-Hier (PoPE + path int. + hier)",
+           "RoPE": "RoPE-Flat (index)",
+           "PlainHourglass": "RoPE-Hier (index + hier)",
+           "PoPE-Flat": "PoPE-Flat (PoPE + index)"}
 
 
 @torch.no_grad()
@@ -128,7 +132,8 @@ def main():
                              "sd": float(a.std(ddof=1)) if len(a) > 1 else 0.0,
                              "per_seed": a.tolist()}
             cells.append(f"{a.mean():.3f} ± {a.std(ddof=1) if len(a)>1 else 0:.3f}")
-        pos = "path-integrated" if v in ("Vanilla", "MapPoPE-Flat") else "**index**"
+        pos = ("path-integrated" if v in ("Vanilla", "MapPoPE-Flat",
+               "Hourglass_k2", "MapPoPE-Hier") else "**index**")
         lines.append(f"| {DISPLAY[v]} | {pos} | " + " | ".join(cells) + " |")
     lines += ["", "| *measured floor* | | "
               + " | ".join(f"*{fl[T]:.3f}*" for T in args.lengths) + " |", "",
