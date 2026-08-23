@@ -23,12 +23,22 @@ two environment families, each factor averaged over the other:
 | | encoding | hierarchy | position |
 |---|---|---|---|
 | **torus paper task** (n=8) | +0.011 | — | **+0.461** |
-| **MiniGrid DoorKey-16x16** T=1024 (n=3) | **+0.085** | +0.069 | **−0.037** |
+| **MiniGrid DoorKey-16x16** T=512 (n=8) | **+0.035** | +0.022 | −0.005 |
+| **MiniGrid DoorKey-16x16** T=1024 (n=8) | **+0.076** | +0.048 | **−0.021** |
 
-Position is worth 40x the encoding on the torus and is *negative* on MiniGrid.
-Section I isolates why: of the five properties that differ between them,
-**rotation-based actions account for 0.429 of the 0.478 swing** — more than the
-other four combined.
+*(MiniGrid figures average all four pairs of the complete 8-cell factorial.)*
+
+Position is worth **40x** the encoding on the torus and is *negative* on
+MiniGrid. Section I isolates why: of the five properties that differ between
+them, **rotation-based actions account for −0.388 of the −0.438 swing** (n=8) —
+more than the other four combined. Section I also gives the remedy: recording
+the action stream as absolute displacement rather than turn/forward restores the
+effect completely at four headings (+0.050 → +0.488), and partially at
+Habitat's twelve (+0.110 → +0.263).
+
+**And the ordering it produces is pointed**: on MiniGrid the two best models of
+eight are *index-position* models with no path integration at all, and the
+paper's own MapFormer-WM is last.
 
 ---
 
