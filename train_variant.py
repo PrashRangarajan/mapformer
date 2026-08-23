@@ -91,6 +91,7 @@ from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_fixed_omega import MapFormerWM_FixedOmega
+from mapformer.model_pope_index_hier import MapFormerWM_Hourglass_PoPE_Index
 from mapformer.model_baselines_extra import EXTRA_BASELINES
 from mapformer.model_tem import TEMRecurrent
 from mapformer.model_tem_faithful import TEMFaithful
@@ -168,7 +169,8 @@ VARIANT_MAP = {
     "MapWM-Hier-CoarsePI": MapFormerWM_Hourglass_CoarsePI,   # coarse own path integration (decoupled)
     "PoPE-Flat": MapFormerWM_RoPEIndex_PoPE,            # index + PoPE (decoupled), flat
     "MapPoPE-Flat": MapFormerWM_PoPE,                   # path-integration + PoPE, flat (combo)
-    "MapPoPE-Hier": MapFormerWM_Hourglass_PoPE,        # path-integration + PoPE + hierarchy
+    "MapPoPE-Hier": MapFormerWM_Hourglass_PoPE,
+    "PoPE-Hier": MapFormerWM_Hourglass_PoPE_Index,   # the 8th cell: PoPE + index + hierarchy        # path-integration + PoPE + hierarchy
     "MapPoPE-Hier-CoarseIdx": MapFormerWM_Hourglass_PoPE_CoarseIdx,  # best-of-both
     "Plain-Hier":   PlainHourglass,
     "Plain-Flat":   PlainFlat,
@@ -252,6 +254,14 @@ def main():
                         help="what the token stream records; 'allocentric' logs "
                              "the absolute displacement (or STAY) instead of the "
                              "commanded turn/forward")
+    parser.add_argument("--n-headings", type=int, default=4,
+                        help="rotate mode: how many headings a turn steps "
+                             "through. 4 = original; 12 = Habitat's 30-degree "
+                             "turns, which makes position real-valued.")
+    parser.add_argument("--heading-noise", type=float, default=0.0,
+                        help="radians of Gaussian noise on each executed turn, "
+                             "so the true heading drifts off the quantised "
+                             "allocentric record (Habitat actuation noise)")
     parser.add_argument("--score-moves-only", action="store_true",
                         help="skip steps where the observed cell did not change; "
                              "required in rotate mode, where turns otherwise emit "
@@ -280,6 +290,7 @@ def main():
             action_mode=args.action_mode, obs_mode=args.obs_mode,
             boundary=args.boundary, score_moves_only=args.score_moves_only,
             action_record=args.action_record,
+            n_headings=args.n_headings, heading_noise=args.heading_noise,
         )
         grid_size = args.grid_size
     else:

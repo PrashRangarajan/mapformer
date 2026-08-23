@@ -40,6 +40,7 @@ DISPLAY = {"Vanilla": "MapWM-Flat (RoPE + path int.)",
            "RoPE": "RoPE-Flat (index)",
            "PlainHourglass": "RoPE-Hier (index + hier)",
            "PoPE-Flat": "PoPE-Flat (PoPE + index)",
+           "PoPE-Hier": "PoPE-Hier (PoPE + index + hier)",
            "Vanilla_FixedOmega": "MapWM-Flat, omega FROZEN"}
 
 
@@ -133,10 +134,11 @@ def main():
                              "sd": float(a.std(ddof=1)) if len(a) > 1 else 0.0,
                              "per_seed": a.tolist()}
             cells.append(f"{a.mean():.3f} ± {a.std(ddof=1) if len(a)>1 else 0:.3f}")
+        name = DISPLAY.get(v, v)
         pos = ("path-integrated" if v in ("Vanilla", "MapPoPE-Flat",
                "Hourglass_k2", "MapPoPE-Hier",
                "Vanilla_FixedOmega") else "**index**")
-        lines.append(f"| {DISPLAY[v]} | {pos} | " + " | ".join(cells) + " |")
+        lines.append(f"| {name} | {pos} | " + " | ".join(cells) + " |")
     lines += ["", "| *measured floor* | | "
               + " | ".join(f"*{fl[T]:.3f}*" for T in args.lengths) + " |", "",
               "## The torus comparison", "", "For reference, the identical 2x2 on "

@@ -45,6 +45,8 @@ class GridWorld:
         boundary: str = "torus",
         score_moves_only: bool = False,
         action_record: str = "commanded",
+        n_headings: int = 4,
+        heading_noise: float = 0.0,
     ):
         """Three knobs isolate what differs between this torus and MiniGrid.
 
@@ -109,6 +111,30 @@ class GridWorld:
         # mis-specification account is confirmed and the remedy is stated.
         assert action_record in ("commanded", "allocentric"), action_record
         self.action_record = action_record
+        # n_headings / heading_noise generalise rotate mode toward Habitat.
+        #
+        # ALLOCENTRIC_RECODING.md showed that recording the absolute displacement
+        # instead of turn/forward fully restores MapFormer (+0.049 -> +0.485).
+        # But there the displacement was one of FOUR compass symbols. Habitat
+        # turns 30 degrees, giving TWELVE headings, moves a real-valued 0.25 m,
+        # and under the realistic setting has actuation noise, so the executed
+        # rotation differs from the commanded one. The stated open limit was
+        # whether the recovery survives when displacement is not drawn from a
+        # small exact set.
+        #
+        #   n_headings     how many headings a turn steps through (4 = the
+        #                  original; 12 = Habitat's 30-degree turns).
+        #                  Position becomes REAL-VALUED for n_headings > 4, and
+        #                  the observation is read at the containing cell.
+        #   heading_noise  radians of Gaussian noise added to each executed turn,
+        #                  so the true heading drifts continuously off the
+        #                  quantised record. This is what makes the allocentric
+        #                  token an APPROXIMATION rather than the exact
+        #                  displacement -- the Habitat actuation-noise case.
+        assert n_headings >= 4 and n_headings % 4 == 0, n_headings
+        self.n_headings = n_headings
+        self.heading_noise = heading_noise
+        self.continuous = (n_headings != 4) or (heading_noise > 0.0)
         self.size = size
         self.n_obs_types = n_obs_types
         self.p_empty = p_empty
@@ -136,7 +162,10 @@ class GridWorld:
         # and checkpoints from other configurations still load.
         self.stay_token = self.unified_vocab_size
         if action_record == "allocentric":
-            self.unified_vocab_size += 1
+            # one token per displacement direction beyond the 4 already in the
+            # action block, plus STAY
+            self.unified_vocab_size += 1 + max(0, n_headings - self.N_ACTIONS)
+            self.dir_token_base = self.stay_token + 1
 
         self.blank_token = n_obs_types
 
@@ -215,9 +244,11 @@ class GridWorld:
         # global RNG shifts every subsequent draw, which silently changes the
         # default trajectory stream and would invalidate any comparison against
         # an existing checkpoint. Verified byte-identical to the pre-knob code.
-        heading = (int(np.random.randint(0, self.N_ACTIONS))
-                   if (self.action_mode == "rotate" or self.obs_mode == "ego")
-                   else 0)
+        if self.action_mode == "rotate" or self.obs_mode == "ego":
+            heading = (float(np.random.random() * 2.0 * np.pi) if self.continuous
+                       else int(np.random.randint(0, self.N_ACTIONS)))
+        else:
+            heading = 0
 
         def _step(x, y, heading, a_exec):
             """Apply one executed action. Returns (x, y, heading)."""
@@ -225,6 +256,22 @@ class GridWorld:
                 # 0 = turn left, 1 = turn right, 2 = forward. Displacement
                 # depends on the ACCUMULATED heading, which is precisely what a
                 # cumsum of per-token fixed deltas cannot represent.
+                if self.continuous:
+                    # heading is a real angle in radians; a turn steps by
+                    # 2*pi/n_headings plus optional actuation noise
+                    step = 2.0 * np.pi / self.n_headings
+                    if a_exec in (0, 1):
+                        d = -step if a_exec == 0 else step
+                        if self.heading_noise > 0.0:
+                            d += np.random.normal(0.0, self.heading_noise)
+                        return x, y, (heading + d) % (2.0 * np.pi)
+                    dx, dy = np.cos(heading), np.sin(heading)
+                    nx, ny = x + dx, y + dy
+                    if self.boundary == "wall":
+                        if not (0 <= nx < self.size and 0 <= ny < self.size):
+                            return x, y, heading
+                        return nx, ny, heading
+                    return nx % self.size, ny % self.size, heading
                 if a_exec == 0:
                     return x, y, (heading - 1) % self.N_ACTIONS
                 if a_exec == 1:
@@ -268,12 +315,35 @@ class GridWorld:
                 if self.action_record == "allocentric":
                     # record the displacement that actually happened
                     d = ((x - px) % self.size, (y - py) % self.size)
-                    d = (d[0] - self.size if d[0] > self.size // 2 else d[0],
-                         d[1] - self.size if d[1] > self.size // 2 else d[1])
-                    rec = next((k for k, v in self.ACTION_DELTAS.items() if v == d),
-                               None)
-                    tokens.append(self.stay_token if rec is None
-                                  else rec + self.action_offset)
+                    d = (d[0] - self.size if d[0] > self.size / 2 else d[0],
+                         d[1] - self.size if d[1] > self.size / 2 else d[1])
+                    if self.continuous:
+                        # QUANTISE the real-valued displacement into n_headings
+                        # direction bins. This is the approximation Habitat would
+                        # force: the true displacement is continuous, the token
+                        # is not, and the residual is what the path integrator
+                        # must tolerate.
+                        if abs(d[0]) < 1e-9 and abs(d[1]) < 1e-9:
+                            tokens.append(self.stay_token)
+                        else:
+                            ang = np.arctan2(d[1], d[0]) % (2.0 * np.pi)
+                            b = int(round(ang / (2.0 * np.pi / self.n_headings))) \
+                                % self.n_headings
+                            # direction bins 0..N_ACTIONS-1 reuse the existing
+                            # compass action slots; the rest are appended after
+                            # STAY. The offset must SUBTRACT N_ACTIONS or bin 11
+                            # lands at id 33 in a 30-token vocabulary -- an
+                            # out-of-range embedding lookup, which surfaces as
+                            # CUBLAS_STATUS_ALLOC_FAILED rather than an
+                            # IndexError and reads exactly like CUDA OOM.
+                            tokens.append((b - self.N_ACTIONS) + self.dir_token_base
+                                          if b >= self.N_ACTIONS
+                                          else b + self.action_offset)
+                    else:
+                        rec = next((k for k, v in self.ACTION_DELTAS.items()
+                                    if v == d), None)
+                        tokens.append(self.stay_token if rec is None
+                                      else rec + self.action_offset)
                 else:
                     tokens.append(a + self.action_offset)   # COMMANDED action recorded
                 if self.obs_mode == "ego":
@@ -286,7 +356,8 @@ class GridWorld:
                         ox, oy = ox % self.size, oy % self.size
                 else:
                     ox, oy = x, y
-                obs_idx = self.obs_map[ox, oy].item()
+                obs_idx = self.obs_map[int(ox) % self.size,
+                                       int(oy) % self.size].item()
                 tokens.append(obs_idx + self.obs_offset)
 
                 # Revisit is keyed on whatever DETERMINES the observation: the
@@ -297,9 +368,9 @@ class GridWorld:
                 # spurious first-visits and spurious revisits, and combined with
                 # spinning it produced the 0.932 order-1 shortcut that voided the
                 # rotate condition.
-                key = (ox, oy)
-                moved = (ox, oy) != prev_obs_cell
-                prev_obs_cell = (ox, oy)
+                key = (int(ox) % self.size, int(oy) % self.size)
+                moved = key != prev_obs_cell
+                prev_obs_cell = key
                 self.visited_locations.append((x, y))
                 is_revisit.append((key in seen) and (moved or not self.score_moves_only))
                 seen.add(key)

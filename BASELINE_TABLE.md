@@ -199,33 +199,42 @@ shortcut artifact.
 n=3 · **one batch per grid** · measured floors 0.642 / 0.536 / 0.495
 Second environment family; egocentric observation, rotation actions, 256 cells.
 
-**Full factorial, `n_layers=3` so flat and hierarchical are parameter-matched
-(614K). n=8 seeds, floors 0.635 / 0.536 / 0.490:**
+**Full factorial — all 8 cells, `n_layers=3` (parameter-matched), n=8 seeds,
+floors 0.536 / 0.490:**
 
-| model | position | T=128 | T=512 | T=1024 |
-|---|---|---|---|---|
-| **PoPE-Flat** | **index** | 0.981 ± 0.003 | **0.963 ± 0.002** | **0.953 ± 0.003** |
-| MapPoPE-Hier | path-int + hier | 0.993 ± 0.004 | 0.966 ± 0.009 | 0.942 ± 0.017 |
-| RoPE-Hier | **index** + hier | 0.986 ± 0.003 | 0.950 ± 0.004 | 0.924 ± 0.006 |
-| MapPoPE-Flat | path-int | 0.994 ± 0.002 | 0.959 ± 0.012 | 0.919 ± 0.026 |
-| MapWM-Hier | path-int + hier | 0.995 ± 0.004 | 0.945 ± 0.014 | 0.893 ± 0.023 |
-| RoPE-Flat | **index** | 0.978 ± 0.005 | 0.914 ± 0.019 | 0.827 ± 0.044 |
-| MapWM-Flat | path-int | 0.995 ± 0.004 | 0.902 ± 0.058 | 0.823 ± 0.088 |
+| model | position | T=512 | T=1024 |
+|---|---|---|---|
+| **PoPE-Hier** | **index** + hier | 0.964 ± 0.002 | **0.955 ± 0.003** |
+| PoPE-Flat | **index** | 0.963 ± 0.002 | 0.953 ± 0.003 |
+| MapPoPE-Hier | path-int + hier | 0.966 ± 0.009 | 0.942 ± 0.017 |
+| RoPE-Hier | **index** + hier | 0.950 ± 0.004 | 0.924 ± 0.006 |
+| MapPoPE-Flat | path-int | 0.959 ± 0.012 | 0.919 ± 0.026 |
+| MapWM-Hier | path-int + hier | 0.945 ± 0.014 | 0.893 ± 0.023 |
+| RoPE-Flat | **index** | 0.914 ± 0.019 | 0.827 ± 0.044 |
+| MapWM-Flat | path-int | 0.902 ± 0.058 | 0.823 ± 0.088 |
 
-- **The best model here has no path integration and no hierarchy.** `PoPE-Flat`
-  — index position, PoPE encoding — leads at T=1024 (0.953) ahead of the full
-  path-integration + hierarchy stack (0.942), with the tightest spread of any arm
-  (±0.003).
-- **Hierarchy helps, but not universally.** 43 of 48 paired comparisons positive
-  (21/24 at T=512, 22/24 at T=1024). *The n=3 report of "18/18, every cell every
-  seed" was small-sample luck and is corrected.* It helps most where the base is
-  weakest (RoPE+index +0.096 at T=1024) and least where it is strongest
-  (PoPE+path-int +0.023, 7/8).
-- The index model still beats the paper's own MapFormer-WM at long horizon
-  (0.827 vs 0.823 — now a tie rather than a win; at n=3 it read 0.860 vs 0.792).
-- **Seven of eight cells**: no PoPE+index+hierarchy variant exists.
-- Far less discriminative than the torus — the whole spread at T=1024 is
-  0.823-0.953 against a 0.490 floor.
+**The two best models on this benchmark have no path integration.** `PoPE-Hier`
+and `PoPE-Flat` lead at T=1024 (0.955, 0.953) with the tightest spreads of any
+arm (±0.003), ahead of the full path-integration + hierarchy stack (0.942). The
+paper's own MapFormer-WM is last (0.823).
+
+**Hierarchy helps in inverse proportion to the strength of its base** — the
+cleanest reading of the factorial, now that all four pairs exist:
+
+| pair | base score @T=1024 | hierarchy gain |
+|---|---|---|
+| RoPE + index | 0.827 | **+0.096** (8/8) |
+| RoPE + path-int | 0.823 | +0.070 (7/8) |
+| PoPE + path-int | 0.919 | +0.023 (7/8) |
+| PoPE + index | **0.953** | **+0.002** (5/8) |
+
+It is compensation, not addition: 27/32 paired comparisons positive overall, but
+essentially zero for the strongest arm. *The earlier n=3 report of "18/18, every
+cell every seed" was small-sample luck.*
+
+`PoPE-Flat` was retrained alongside the new cell as a reproducibility control and
+matched its previous n=8 figures exactly (0.963 / 0.953), which licenses reading
+the 8th cell against the rest of the grid.
 
 ### Frequency control (`FREQ_CONTROL.md`)
 
@@ -294,8 +303,8 @@ gating after training instead of before.
 | ~~lm200 never gated~~ | **CLOSED** (G): passes, interpretation withdrawn |
 | ~~Single environment family~~ | **CLOSED** (H): MiniGrid, full factorial, **n=8** |
 | ~~Position/frequency confound~~ | **CLOSED** (H): measured, empirically negligible |
-| **PoPE + index + hierarchy** | the 8th cell of H does not exist — and it matters more now, since PoPE+index is the best arm on that benchmark |
-| ~~allocentric action recoding~~ | **CLOSED** (I): complete recovery, +0.049 → +0.485 |
+| ~~PoPE + index + hierarchy~~ | **CLOSED**: built, verified index-based, and it is the best arm on the benchmark |
+| ~~allocentric action recoding~~ | **CLOSED** (I): complete recovery at 4 headings (+0.050 → +0.488); only PARTIAL at Habitat's 12 (+0.110 → +0.263), and undertraining is not ruled out |
 | **capacity control at lm200 T=512** | the +24.8pp headline has no ExtraHead arm at that length |
 | **MapPoPE on C, F, G** | the best model on A/B/H is untested on three tasks |
 | **TEM / Mamba / LSTM on A** | they exist only in the lm200 column |
