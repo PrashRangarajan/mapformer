@@ -1549,10 +1549,23 @@ form cannot represent.
 **The fix: allocentric action recoding.** Record the absolute displacement
 instead of the commanded turn/forward -- dynamics byte-identical, gates
 identical. Position effect +0.050 -> **+0.488** at 4 headings (8/8 seeds,
-+/-0.005), exceeding the translate baseline. At Habitat's 12 headings it also
-recovers once the budget is adequate (+0.264 at 980 batches -> +0.383 at 2000,
-seed spread collapsing +/-0.101 -> +/-0.005). Needs no architecture change and
-works wherever the agent's heading is known -- i.e. every simulator.
++/-0.005), exceeding the translate baseline. It also holds at Habitat's 12
+headings (+0.26 to +0.38, present at every budget: the weakest path-integrated
+seed 0.661 vs the strongest index seed 0.555 and a 0.508 floor). Needs no
+architecture change and works wherever the agent's heading is known -- i.e.
+every simulator.
+
+CORRECTED 2026-08-23: this entry previously read "recovers once the budget is
+adequate (+0.264 at 980 -> +0.383 at 2000, spread collapsing)". The nb=4000
+point falsifies the trend -- it goes back DOWN to +0.286, with two of three
+seeds converging worse (loss 0.834/0.815) than every seed at nb=2000
+(0.507-0.552) and the third better than any run in the table (0.422). Bimodal
+basin selection, not a dose-response curve. Accuracy correlates with final
+training loss at r = -0.996 across all 18 runs, so the arm-to-arm variation is
+convergence, not evaluation. nb=2000 is the best point measured. Separately, the
+INDEX arm leaves the floor at nb=4000 (0.542-0.555, loss falling monotonically
+1.73 -> 1.69 -> 1.59), which shrinks the measured effect on its own. Full
+per-seed table in `H12_BUDGET_CURVE.md`.
 
 ### Other results that landed
 
@@ -1608,6 +1621,11 @@ installed and verified headless already.
   Level15 on the paper task (0.938 at 16 epochs -> 1.000 at 50), and H=12
   allocentric (+0.264 -> +0.383). A weak number at one fixed budget is not a
   result. High seed variance is the tell.
+  **But rule 5 cuts both ways, learned 2026-08-23:** two budget points make a
+  line and a line is not a trend. Extending H=12 to nb=4000 sent the effect back
+  DOWN (+0.383 -> +0.286). The correct move on seeing a budget-sensitive number
+  is to report the per-seed spread against final training loss, not to fit a
+  direction through two points.
 - **Gate BEFORE training, not after.** The knob sweep trained 42 models and
   gated afterwards; the rotate condition was void (0.932 order-1 shortcut).
 - **Gates must also check token ids are in vocabulary.** All three continuous
@@ -1621,7 +1639,14 @@ installed and verified headless already.
   --n-layers and are always the 3-block scaffold, so at n_layers=1 it is 614K vs
   218K -- a 2.8x capacity confound.
 
-### In flight at session end
+### In flight at session end -- RESOLVED 2026-08-23
 
-`run_h12_budget.sh` nb=4000 -- the confirmatory third point on the budget curve.
-Not needed for the direction, which is unambiguous from 980 and 2000.
+`run_h12_budget.sh` nb=4000 finished; `eval_h12_budget.py` +
+`eval_h12_perseed.py` read it. It did NOT confirm: see the CORRECTED note under
+"The fix: allocentric action recoding" above and `H12_BUDGET_CURVE.md`. The
+DIRECTION (allocentric recoding works at 12 headings) survives at every budget;
+the monotone budget curve does not. Open: where the nb=4000 bimodality comes
+from -- same LR schedule shape and 2x fresh data, more steps at high LR is the
+untested suspect. n=3 cannot separate "two unlucky seeds" from "the 4000-batch
+recipe is worse"; more seeds at nb=4000 is the honest next step if the number
+goes in a paper.

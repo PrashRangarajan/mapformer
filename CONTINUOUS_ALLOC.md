@@ -13,9 +13,12 @@ recorded direction drifts off the true displacement -- Habitat actuation noise.
 Reference, H=4 discrete (n=8): commanded **+0.050**, allocentric **+0.488**,
 translate baseline **+0.438**.
 
-> **SUPERSEDED 2026-08-20 — the partial recovery was UNDERTRAINING.** The budget
-> sweep below settles the ambiguity this section left open, in favour of the
-> alternative explanation. Read the correction at the end before this section.
+> **SUPERSEDED 2026-08-20, and the correction itself PARTLY CORRECTED
+> 2026-08-23.** The budget sweep below shows the 980-batch number was too low,
+> so the "partial recovery" reading of this section is withdrawn. But the sweep's
+> own conclusion — that the effect climbs with budget — did NOT survive its third
+> point: nb=4000 sends it back down to +0.286. Read the correction at the end,
+> then `H12_BUDGET_CURVE.md`, before this section.
 
 ## Result at a fixed 980-batch budget (superseded): partial recovery
 
@@ -91,20 +94,39 @@ undertraining.
 Doubling the budget moves the effect **+0.264 → +0.383** and collapses the seed
 spread from **±0.101 to ±0.005**. That variance collapse is the diagnostic: at
 980 batches the three seeds sat at different points on the learning curve, which
-is what undertraining looks like; at 2000 they agree to half a percent. The
-effect is now within 0.055 of the translate baseline and still climbing.
+is what undertraining looks like; at 2000 they agree to half a percent.
 
 **So the claim "allocentric recoding generalises only partially to Habitat's 12
-headings" is withdrawn.** It generalises; the H=12 task simply needs more
-supervision, because its scored rate is 0.022 against the torus baseline's 0.225.
+headings" is withdrawn.** It generalises: at every budget tested the weakest
+path-integrated seed (0.661) beats the strongest index seed (0.555) against a
+0.508 floor.
 
 This is the third false negative from a fixed budget in one day — `rotate`
 (+0.004 → +0.050 once both arms cleared the floor) and Level 1.5 on the paper
 task (0.938 at 16 epochs → 1.000 at 50) were the others. A weak number at one
 budget is not a result.
 
-A `nb=4000` point is running for confirmation; it is not needed for the
-direction, which is unambiguous across the first two.
+### The nb=4000 point (2026-08-23): the trend does not hold
+
+This section originally closed with "within 0.055 of the translate baseline and
+still climbing", and a `nb=4000` run described as confirmation. It ran, and it
+disconfirms:
+
+| batches | Vanilla | RoPE | effect |
+|---|---|---|---|
+| 980 | 0.772 ± 0.101 | 0.508 ± 0.006 | +0.264 |
+| 2000 | 0.891 ± 0.005 | 0.508 ± 0.006 | **+0.383** |
+| 4000 | 0.837 ± 0.060 | 0.551 ± 0.007 | +0.286 |
+
+Two of three seeds converged WORSE at 4000 (final loss 0.834 / 0.815) than every
+seed at 2000 (0.507–0.552), while the third converged better than any run in the
+sweep (0.422) — on 2× fresh data and the same LR-schedule shape. Accuracy tracks
+final training loss at r = −0.996 across all 18 runs, so this is bimodal basin
+selection, not a dose-response curve. Separately the index arm leaves the floor
+at 4000 (0.542–0.555), shrinking the measured effect on its own.
+
+"Still climbing" is withdrawn. nb=2000 is the best point measured. Per-seed table
+and open questions in `H12_BUDGET_CURVE.md`.
 
 ## What still stands
 

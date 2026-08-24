@@ -33,9 +33,12 @@ MiniGrid. Section I isolates why: of the five properties that differ between
 them, **rotation-based actions account for −0.388 of the −0.438 swing** (n=8) —
 more than the other four combined. Section I also gives the remedy: recording
 the action stream as absolute displacement rather than turn/forward restores the
-effect completely at four headings (+0.050 → +0.488), and at Habitat's twelve as
-well once the budget is adequate (+0.264 → +0.383 and climbing; the earlier
-"partial" reading was undertraining).
+effect completely at four headings (+0.050 → +0.488), and it holds at Habitat's
+twelve as well (+0.26 to +0.38, present at every budget tested — the weakest
+path-integrated seed anywhere is 0.661 against the strongest index seed 0.555
+and a 0.508 floor). The twelve-heading effect is budget-sensitive but NOT
+monotone in budget, so read it as a range rather than a trend
+(`H12_BUDGET_CURVE.md`).
 
 **And the ordering it produces is pointed**: on MiniGrid the two best models of
 eight are *index-position* models with no path integration at all, and the
@@ -315,7 +318,8 @@ gating after training instead of before.
 | ~~Single environment family~~ | **CLOSED** (H): MiniGrid, full factorial, **n=8** |
 | ~~Position/frequency confound~~ | **CLOSED** (H): measured, empirically negligible |
 | ~~PoPE + index + hierarchy~~ | **CLOSED**: built, verified index-based, and it is the best arm on the benchmark |
-| ~~allocentric action recoding~~ | **CLOSED** (I): complete recovery at 4 headings (+0.050 → +0.488). At Habitat's 12 headings the apparent partial recovery was UNDERTRAINING — a budget sweep takes it +0.264 → +0.383 with the seed spread collapsing ±0.101 → ±0.005 (`CONTINUOUS_ALLOC.md`) |
+| ~~allocentric action recoding~~ | **CLOSED** (I) at 4 headings: complete recovery (+0.050 → +0.488, 8/8 seeds). At 12 headings the DIRECTION is closed (+0.26 to +0.38 at every budget) but the budget story is OPEN — nb=980/2000/4000 gives +0.264/+0.383/+0.286, non-monotone, with accuracy tracking final training loss at r = −0.996. Bimodal convergence, n=3 (`H12_BUDGET_CURVE.md`) |
+| **H=12 bimodality at nb=4000** | 2 of 3 seeds converge worse at 4000 batches than every seed at 2000, on 2× fresh data and the same LR-schedule shape. Needs more seeds before the number is paper-ready |
 | **capacity control at lm200 T=512** | the +24.8pp headline has no ExtraHead arm at that length |
 | **MapPoPE on C, F, G** | the best model on A/B/H is untested on three tasks |
 | **TEM / Mamba / LSTM on A** | they exist only in the lm200 column |

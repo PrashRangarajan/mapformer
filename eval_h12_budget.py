@@ -104,8 +104,11 @@ def main():
                      f"| **{V.mean()-R.mean():+.3f}** | {len(V)} |")
     lines += ["", "Reference (n=8): H=4 allocentric **+0.488**, H=4 commanded "
               "**+0.050**, translate baseline **+0.438**.", "",
-              "A rising curve with collapsing seed spread means undertraining, "
-              "not degradation — the diagnostic is the variance, not the mean."]
+              "Read the SPREAD, not the mean, and read it against the final "
+              "training loss: across all 18 runs here accuracy and final loss "
+              "correlate at r = -0.996, so a low arm is an arm that did not "
+              "converge. See `eval_h12_perseed.py` for the per-seed numbers, "
+              "which is what this aggregate hides."]
     Path(args.out).write_text("\n".join(lines) + "\n")
     print("\n".join(lines))
 
