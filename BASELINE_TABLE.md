@@ -33,8 +33,9 @@ MiniGrid. Section I isolates why: of the five properties that differ between
 them, **rotation-based actions account for −0.388 of the −0.438 swing** (n=8) —
 more than the other four combined. Section I also gives the remedy: recording
 the action stream as absolute displacement rather than turn/forward restores the
-effect completely at four headings (+0.050 → +0.488), and partially at
-Habitat's twelve (+0.110 → +0.263).
+effect completely at four headings (+0.050 → +0.488), and at Habitat's twelve as
+well once the budget is adequate (+0.264 → +0.383 and climbing; the earlier
+"partial" reading was undertraining).
 
 **And the ordering it produces is pointed**: on MiniGrid the two best models of
 eight are *index-position* models with no path integration at all, and the
@@ -314,7 +315,7 @@ gating after training instead of before.
 | ~~Single environment family~~ | **CLOSED** (H): MiniGrid, full factorial, **n=8** |
 | ~~Position/frequency confound~~ | **CLOSED** (H): measured, empirically negligible |
 | ~~PoPE + index + hierarchy~~ | **CLOSED**: built, verified index-based, and it is the best arm on the benchmark |
-| ~~allocentric action recoding~~ | **CLOSED** (I): complete recovery at 4 headings (+0.050 → +0.488); only PARTIAL at Habitat's 12 (+0.110 → +0.263), and undertraining is not ruled out |
+| ~~allocentric action recoding~~ | **CLOSED** (I): complete recovery at 4 headings (+0.050 → +0.488). At Habitat's 12 headings the apparent partial recovery was UNDERTRAINING — a budget sweep takes it +0.264 → +0.383 with the seed spread collapsing ±0.101 → ±0.005 (`CONTINUOUS_ALLOC.md`) |
 | **capacity control at lm200 T=512** | the +24.8pp headline has no ExtraHead arm at that length |
 | **MapPoPE on C, F, G** | the best model on A/B/H is untested on three tasks |
 | **TEM / Mamba / LSTM on A** | they exist only in the lm200 column |

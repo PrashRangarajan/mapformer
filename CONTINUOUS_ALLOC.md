@@ -13,7 +13,11 @@ recorded direction drifts off the true displacement -- Habitat actuation noise.
 Reference, H=4 discrete (n=8): commanded **+0.050**, allocentric **+0.488**,
 translate baseline **+0.438**.
 
-## Result: the fix generalises PARTIALLY, and noise is not the barrier
+> **SUPERSEDED 2026-08-20 — the partial recovery was UNDERTRAINING.** The budget
+> sweep below settles the ambiguity this section left open, in favour of the
+> alternative explanation. Read the correction at the end before this section.
+
+## Result at a fixed 980-batch budget (superseded): partial recovery
 
 | condition | position effect | vs H=4 reference |
 |---|---|---|
@@ -67,3 +71,47 @@ exactly. On this evidence:
 
 That is a weaker headline prediction than the H=4 result suggested, and it should
 be stated that way rather than extrapolated from the discrete case.
+
+
+---
+
+# CORRECTION: it was the budget, not the quantisation
+
+This file flagged two live explanations for the partial recovery at H=12 and said
+a budget sweep would separate them. It does, decisively, in favour of
+undertraining.
+
+| budget | Vanilla | RoPE | position effect |
+|---|---|---|---|
+| 980 (this file's runs) | 0.772 ± **0.101** | 0.508 ± 0.006 | +0.264 |
+| **2000** | **0.891 ± 0.005** | 0.508 ± 0.006 | **+0.383** |
+| *H=4 reference (n=8)* | — | — | *+0.488* |
+| *translate baseline (n=8)* | — | — | *+0.438* |
+
+Doubling the budget moves the effect **+0.264 → +0.383** and collapses the seed
+spread from **±0.101 to ±0.005**. That variance collapse is the diagnostic: at
+980 batches the three seeds sat at different points on the learning curve, which
+is what undertraining looks like; at 2000 they agree to half a percent. The
+effect is now within 0.055 of the translate baseline and still climbing.
+
+**So the claim "allocentric recoding generalises only partially to Habitat's 12
+headings" is withdrawn.** It generalises; the H=12 task simply needs more
+supervision, because its scored rate is 0.022 against the torus baseline's 0.225.
+
+This is the third false negative from a fixed budget in one day — `rotate`
+(+0.004 → +0.050 once both arms cleared the floor) and Level 1.5 on the paper
+task (0.938 at 16 epochs → 1.000 at 50) were the others. A weak number at one
+budget is not a result.
+
+A `nb=4000` point is running for confirmation; it is not needed for the
+direction, which is unambiguous across the first two.
+
+## What still stands
+
+- **Actuation noise is not the barrier**: 0.15 rad of Gaussian error on every
+  executed turn costs only −0.033 at the 980 budget.
+- **`HABITAT_BUILD.md` remains a genuine complication and is untouched by this.**
+  Habitat's navmesh slides the agent on 69–91% of forward moves, so real
+  displacement is continuous in MAGNITUDE as well as direction. The experiments
+  here quantise direction only with a fixed magnitude, so they still do not model
+  that case.
