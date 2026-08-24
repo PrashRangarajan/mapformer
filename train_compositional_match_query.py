@@ -109,6 +109,10 @@ def main():
     ap.add_argument("--n-heads", type=int, default=2)
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--obs-coef", type=float, default=1.0)
+    ap.add_argument("--warmup-frac", type=float, default=0.0,
+                    help="fraction of total steps for linear LR warmup 0->1 "
+                         "before linear decay. Stabilises the bimodal training "
+                         "basin on this multi-hop task.")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--output-dir", required=True)
     args = ap.parse_args()
@@ -130,7 +134,13 @@ def main():
 
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.05)
     total = args.epochs * args.n_batches
-    sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: max(0.0, 1 - s / total))
+    warmup = int(args.warmup_frac * total)
+
+    def _lr(s):
+        if warmup > 0 and s < warmup:
+            return s / warmup                        # linear 0 -> 1
+        return max(0.0, (total - s) / max(total - warmup, 1))  # linear -> 0
+    sched = torch.optim.lr_scheduler.LambdaLR(opt, _lr)
     rng = np.random.RandomState(args.seed)
     losses = []
     for ep in range(args.epochs):
