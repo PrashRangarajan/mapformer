@@ -29,24 +29,33 @@ from mapformer.environment_compositional_match_query import CompositionalMatchQu
 from mapformer.train_variant import VARIANT_MAP
 
 
-def _match_logits(logits, env, b, p):
-    lo = env.obs_offset
-    return logits[b, p, lo:lo + env.n_obs_types]
+def _gather_scored(sps, ans, cats, Lp, obs_offset, device):
+    """Flatten ragged (per-batch) scored positions into index tensors for a
+    single batched cross_entropy. Returns (b_idx, p_idx, t_idx, cats_list) or
+    (None, ..) if empty. t_idx is the target index within the non-blank block."""
+    b_idx, p_idx, t_idx, cs = [], [], [], []
+    for b in range(len(sps)):
+        clist = cats[b] if cats is not None else [None] * len(sps[b])
+        for p, a, c in zip(sps[b], ans[b], clist):
+            if p < Lp:
+                b_idx.append(b); p_idx.append(p); t_idx.append(a - obs_offset); cs.append(c)
+    if not b_idx:
+        return None, None, None, cs
+    return (torch.tensor(b_idx, device=device), torch.tensor(p_idx, device=device),
+            torch.tensor(t_idx, device=device), cs)
 
 
 def _losses(model, env, toks, rev, sps, ans, device):
     toks = toks.to(device); rev = rev.to(device)
     inp, tgt = toks[:, :-1], toks[:, 1:]
     logits = model(inp)
-    ml = []
-    for b in range(toks.shape[0]):
-        for p, a in zip(sps[b], ans[b]):
-            if p >= logits.shape[1]:
-                continue
-            t = a - env.obs_offset
-            ml.append(F.cross_entropy(_match_logits(logits, env, b, p).unsqueeze(0),
-                                      torch.tensor([t], device=device)))
-    L_match = torch.stack(ml).mean() if ml else logits.sum() * 0.0
+    lo, K = env.obs_offset, env.n_obs_types
+    b_t, p_t, t_t, _ = _gather_scored(sps, ans, None, logits.shape[1], lo, device)
+    if b_t is not None:
+        sl = logits[b_t, p_t][:, lo:lo + K]        # (M, K) -- one batched CE
+        L_match = F.cross_entropy(sl, t_t)
+    else:
+        L_match = logits.sum() * 0.0
     m = rev[:, 1:]
     L_obs = F.cross_entropy(logits[m], tgt[m]) if m.any() else logits.sum() * 0.0
     return L_match, L_obs
@@ -57,20 +66,25 @@ def evaluate(model, env, T_explore, T_query, n_batches, batch_size, device, seed
     model.eval()
     rng = np.random.RandomState(seed)
     ok = defaultdict(int); tot = defaultdict(int); nll = defaultdict(float)
+    lo, K = env.obs_offset, env.n_obs_types
     for _ in range(n_batches):
         toks, rev, sps, ans, cats, _i = env.generate_cmq_batch(
             batch_size, T_explore, T_query, rng)
         logits = model(toks[:, :-1].to(device))
-        for b in range(toks.shape[0]):
-            for p, a, c in zip(sps[b], ans[b], cats[b]):
-                if p >= logits.shape[1]:
-                    continue
-                sl = _match_logits(logits, env, b, p)
-                t = a - env.obs_offset
-                hit = int(sl.argmax().item() == t)
-                ll = -F.log_softmax(sl, dim=-1)[t].item()
-                for key in (c, "all"):
-                    ok[key] += hit; nll[key] += ll; tot[key] += 1
+        b_t, p_t, t_t, cs = _gather_scored(sps, ans, cats, logits.shape[1], lo, device)
+        if b_t is None:
+            continue
+        sl = logits[b_t, p_t][:, lo:lo + K]                  # (M, K)
+        hit = (sl.argmax(-1) == t_t)
+        ll = -F.log_softmax(sl, dim=-1).gather(1, t_t.unsqueeze(1)).squeeze(1)
+        cs = np.array(cs)
+        for key in ("exact", "cross", "all"):
+            sel = np.ones(len(cs), bool) if key == "all" else (cs == key)
+            if not sel.any():
+                continue
+            idx = torch.tensor(np.nonzero(sel)[0], device=device)
+            ok[key] += int(hit[idx].sum().item()); tot[key] += int(sel.sum())
+            nll[key] += float(ll[idx].sum().item())
     model.train()
     return {k: {"acc": ok[k] / max(tot[k], 1), "nll": nll[k] / max(tot[k], 1),
                 "n": tot[k]} for k in ("exact", "cross", "all")}
