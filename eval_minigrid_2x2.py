@@ -77,6 +77,9 @@ def main():
     ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])
     ap.add_argument("--lengths", nargs="+", type=int, default=[128, 512, 1024])
     ap.add_argument("--env-seed", type=int, default=10000)
+    ap.add_argument("--allocentric", action="store_true",
+                    help="Evaluate with allocentric action recoding (must match "
+                         "how the checkpoints were trained).")
     ap.add_argument("--device", default="cuda:1")
     ap.add_argument("--out", default=str(_REPO / "MINIGRID_2X2.md"))
     args = ap.parse_args()
@@ -102,7 +105,8 @@ def main():
             m.eval()
             for T in args.lengths:
                 env = MiniGridWorld(env_name="MiniGrid-DoorKey-16x16-v0",
-                                    tokenization="obj_color", seed=args.env_seed)
+                                    tokenization="obj_color", seed=args.env_seed,
+                                    allocentric=args.allocentric)
                 a, nl, fl, n = evaluate(m, env, T, N.get(T, 25), dev, 2000 + s)
                 acc.setdefault((v, T), []).append(a)
                 floors.setdefault(T, []).append(fl)

@@ -62,10 +62,20 @@ class MiniGridWorld:
         tokenization: str = "obj_only",
         seed: int = 0,
         max_episode_steps: int = 1000,
+        allocentric: bool = False,
     ):
         self.env_name = env_name
         self.tokenization = tokenization
         self.seed = seed
+        # ALLOCENTRIC action recoding: record the REALIZED per-step grid
+        # displacement (a world-fixed vector) instead of the commanded
+        # turn/forward. This makes the action stream integrable by MapFormer's
+        # commutative cumsum — the fair, input-matched comparison for path
+        # integration on a rotation-action env. 5 displacement classes replace
+        # the 7 MiniGrid commands; the env is still DRIVEN by the 7 commands.
+        self.allocentric = allocentric
+        if allocentric:
+            self.N_ACTIONS = 5   # {stay, -x, +x, -y, +y}
 
         # Gymnasium env construction
         self.env = gym.make(env_name, max_episode_steps=max_episode_steps,
@@ -144,6 +154,17 @@ class MiniGridWorld:
             return int(np.random.choice(7, p=self.FORWARD_BIASED_PROBS))
         raise ValueError(f"Unknown policy {policy!r}")
 
+    # Realized displacement -> class token (allocentric mode). MiniGrid moves
+    # one cell per forward, so |dx|+|dy| <= 1 except across an episode reset,
+    # which is clamped to `stay`.
+    _DISP = {(0, 0): 0, (-1, 0): 1, (1, 0): 2, (0, -1): 3, (0, 1): 4}
+
+    def _disp_class(self, prev, cur) -> int:
+        dx, dy = cur[0] - prev[0], cur[1] - prev[1]
+        if abs(dx) > 1 or abs(dy) > 1:      # episode reset teleport
+            return 0
+        return self._DISP.get((dx, dy), 0)
+
     def generate_trajectory(
         self,
         n_steps: int = 128,
@@ -180,11 +201,16 @@ class MiniGridWorld:
                 # Action noise replaces with a UNIFORM-random action (so
                 # the perturbation is independent of the base policy).
                 action = int(np.random.choice(7))
+            prev_pos = tuple(self.env.unwrapped.agent_pos)   # before the step
             tokens.append(action + self.action_offset)
 
             obs, reward, terminated, truncated, info = self.env.step(action)
 
             agent_pos = tuple(self.env.unwrapped.agent_pos)
+            if self.allocentric:
+                # overwrite the commanded-action token with the realized
+                # world-fixed displacement class (byte-identical path when off)
+                tokens[-1] = self._disp_class(prev_pos, agent_pos) + self.action_offset
             agent_dir = int(self.env.unwrapped.agent_dir)
             state_key = agent_pos + (agent_dir,)
             front_token = self._front_cell_token(obs)
@@ -281,9 +307,10 @@ class MiniGridWorld_Cached(MiniGridWorld):
 
     def __init__(self, env_name="MiniGrid-DoorKey-8x8-v0",
                  tokenization="obj_color", seed=0, max_episode_steps=1000,
-                 buffer_size=25_000, cache_dir=None):
+                 buffer_size=25_000, cache_dir=None, allocentric=False):
         super().__init__(env_name=env_name, tokenization=tokenization,
-                         seed=seed, max_episode_steps=max_episode_steps)
+                         seed=seed, max_episode_steps=max_episode_steps,
+                         allocentric=allocentric)
         self.buffer_size = buffer_size
         self.cache_dir = cache_dir or self.DEFAULT_CACHE_DIR
         self._built_key = None    # tuple identifying the currently-loaded buffer
@@ -294,7 +321,8 @@ class MiniGridWorld_Cached(MiniGridWorld):
 
     def _cache_path(self, n_steps, p_action_noise, policy):
         s = (f"{self.env_name}|{self.tokenization}|seed{self.seed}|"
-             f"N{self.buffer_size}|T{n_steps}|noise{p_action_noise}|policy{policy}")
+             f"N{self.buffer_size}|T{n_steps}|noise{p_action_noise}|policy{policy}"
+             f"|allo{int(self.allocentric)}")
         h = _hashlib.sha1(s.encode()).hexdigest()[:12]
         return _os.path.join(self.cache_dir, f"buf_{h}.pkl")
 

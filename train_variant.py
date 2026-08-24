@@ -268,6 +268,12 @@ def main():
                              "a repeated observation solvable by copying")
     parser.add_argument("--minigrid-tokenization", type=str, default="obj_color",
                         choices=["obj_only", "obj_color", "full"])
+    parser.add_argument("--minigrid-allocentric", action="store_true",
+                        help="Record the REALIZED per-step grid displacement "
+                             "(world-fixed vector) instead of the commanded "
+                             "turn/forward action. The fair, input-matched "
+                             "comparison for path integration on rotation "
+                             "actions. Uses a distinct cached buffer.")
     parser.add_argument("--minigrid-cached-buffer", type=int, default=0,
                         help="If > 0, use MiniGridWorld_Cached with this "
                              "buffer size instead of live gym.step on every "
@@ -310,12 +316,14 @@ def main():
                 tokenization=args.minigrid_tokenization,
                 seed=args.seed,
                 buffer_size=args.minigrid_cached_buffer,
+                allocentric=args.minigrid_allocentric,
             )
         else:
             env = MiniGridWorld(
                 env_name=env_name,
                 tokenization=args.minigrid_tokenization,
                 seed=args.seed,
+                allocentric=args.minigrid_allocentric,
             )
         grid_size = env.size  # MiniGrid envs vary in grid size
 
