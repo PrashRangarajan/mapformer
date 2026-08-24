@@ -113,6 +113,14 @@ def main():
                     help="fraction of total steps for linear LR warmup 0->1 "
                          "before linear decay. Stabilises the bimodal training "
                          "basin on this multi-hop task.")
+    ap.add_argument("--curriculum-frac", type=float, default=0.0,
+                    help="if >0, ramp the BLIND horizon T_query linearly from "
+                         "--tq-start to --T-query over this fraction of epochs, "
+                         "then hold. Short blind horizons are easy (matching a "
+                         "just-seen cell); the ramp shapes the flat match-loss "
+                         "landscape so more seeds find the good basin.")
+    ap.add_argument("--tq-start", type=int, default=16,
+                    help="starting T_query for the curriculum ramp.")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--output-dir", required=True)
     args = ap.parse_args()
@@ -144,10 +152,16 @@ def main():
     rng = np.random.RandomState(args.seed)
     losses = []
     for ep in range(args.epochs):
+        # curriculum: ramp the blind horizon T_query short -> target
+        if args.curriculum_frac > 0:
+            frac = min(1.0, ep / max(args.curriculum_frac * args.epochs, 1))
+            cur_tq = int(round(args.tq_start + frac * (args.T_query - args.tq_start)))
+        else:
+            cur_tq = args.T_query
         t0 = time.time(); acc = 0.0; pm = 0.0; po = 0.0
         for _ in range(args.n_batches):
             toks, rev, sps, ans, cats, _i = env.generate_cmq_batch(
-                args.batch_size, args.T_explore, args.T_query, rng)
+                args.batch_size, args.T_explore, cur_tq, rng)
             L_match, L_obs = _losses(model, env, toks, rev, sps, ans, dev)
             loss = L_match + args.obs_coef * L_obs
             opt.zero_grad(); loss.backward()
@@ -157,7 +171,7 @@ def main():
         losses.append(acc / args.n_batches)
         nb = args.n_batches
         if (ep + 1) % 5 == 0 or ep == 0:
-            print(f"  epoch {ep+1}/{args.epochs} loss={losses[-1]:.4f} "
+            print(f"  epoch {ep+1}/{args.epochs} TQ={cur_tq} loss={losses[-1]:.4f} "
                   f"[match={pm/nb:.4f} (chance 2.77) obs={po/nb:.4f}] "
                   f"({time.time()-t0:.0f}s)", flush=True)
 
