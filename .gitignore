@@ -20,6 +20,10 @@ paper_figures/*.npz
 
 # downloaded datasets (re-fetched per HOURGLASS_README) and run markers
 data/
+# Habitat scene meshes: 106 MB, re-fetchable with
+#   python -m habitat_sim.utils.datasets_download --uids habitat_test_scenes \
+#     --data-path <repo>/habitat_data
+habitat_data/
 .hourglass_experiments_done
 .comp_multiseed_done
 .motifseg_done
