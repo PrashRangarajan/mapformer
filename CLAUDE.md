@@ -1517,3 +1517,111 @@ originally duplicated the walk inline, so a dedup fix to the environment left
 every gate number unchanged -- the gate was certifying a different task from the
 one the trainer would run. This is nastier than the other failure modes because
 the gate keeps looking like it works.
+
+
+## Session 2026-08-19/20 — the headline changed: the ENVIRONMENT decides
+
+**Read `BASELINE_TABLE.md` first.** It is the deliverable: every model x every
+task, nine sections, each stating its own measured floor, seed count, and whether
+its arms were trained in one batch. 37 commits this session, all pushed.
+
+### The result the project now has
+
+**No architectural ingredient is best. Which one to spend on is decided by the
+environment, and one environment property decides most of it.**
+
+The same 2x2 ({RoPE, PoPE} encoding x {index, path-integrated} position), two
+environment families, each factor averaged over the other:
+
+|                          | encoding | hierarchy | position |
+|--------------------------|----------|-----------|----------|
+| torus paper task (n=8)   | +0.011   | --        | **+0.461** |
+| MiniGrid DK-16x16 (n=8)  | **+0.076** | +0.048  | **-0.021** |
+
+Position is worth 40x the encoding on the torus and is NEGATIVE on MiniGrid.
+
+**Why: rotation-based actions.** Of the five properties differing between the
+environments, rotate accounts for **-0.388 of the -0.438** swing (n=8), more than
+the other four combined. MapFormer cumsums a FIXED per-token delta; under
+turn/turn/forward the displacement depends on accumulated heading, which that
+form cannot represent.
+
+**The fix: allocentric action recoding.** Record the absolute displacement
+instead of the commanded turn/forward -- dynamics byte-identical, gates
+identical. Position effect +0.050 -> **+0.488** at 4 headings (8/8 seeds,
++/-0.005), exceeding the translate baseline. At Habitat's 12 headings it also
+recovers once the budget is adequate (+0.264 at 980 batches -> +0.383 at 2000,
+seed spread collapsing +/-0.101 -> +/-0.005). Needs no architecture change and
+works wherever the agent's heading is known -- i.e. every simulator.
+
+### Other results that landed
+
+- **MiniGrid 8-cell factorial, n=8** (`MINIGRID_FULL_2X2X2.md`): the two best
+  arms are INDEX models (PoPE-Hier 0.955, PoPE-Flat 0.953); the paper's own
+  MapFormer-WM is LAST (0.823). Hierarchy helps in inverse proportion to base
+  strength (+0.096 for the weakest arm, +0.002 for the strongest) -- compensation,
+  not addition. 27/32 paired positive; an earlier n=3 "18/18" was luck.
+- **Level 1.5 across five within-batch tests**: improves LIKELIHOOD and
+  STABILITY reliably, ACCURACY almost never. On lm200 a filter-free capacity
+  control (Vanilla_ExtraHead) TIES it (t=0.79), so the +24.8pp is not evidence
+  for the Kalman mechanism. lm200 passes its context-destruction gate but its
+  interpretation is withdrawn.
+- **Family tree**: the missing plain-WM arm beats every published variant
+  (0.805 vs MapEM-NC-NL 0.729). Non-commutativity still buys +0.014 for 34x the
+  cost -- but below plain MapWM-Flat.
+- **Frequency control**: path-integrated arms learn omega, index arms do not, so
+  every "position effect" was confounded. Measured: the confound is real in the
+  code and ABSENT in the data (+0.004/-0.008).
+- **Attention horizon is CAPACITY, not architecture** (`HORIZON_RESULTS.md`):
+  ~2 steps at 1 layer, ~32 at 4 layers x d256 -- but a 15x larger index model
+  still fails past ~32 where a 1-layer path-integrated model works at 65+.
+- **Audit** (`AUDIT_HEADLINE.md`): all 23 headline numbers re-derived from
+  per-seed JSON, 0 mismatches. Note what it does NOT establish -- every file in
+  archive/void/ would have passed it.
+
+### Habitat: BUILT AND VERIFIED, but NOT worth porting in this framing
+
+`HABITAT_BUILD.md` has the full build log. habitat-sim 0.3.3 headless is
+installed in a separate `habitat` conda env (py3.9 only -- it CANNOT share the
+py3.12 + torch main env). Scenes in `habitat_data/` (gitignored, one command to
+re-fetch). Eight unit tests pass: turns are exactly 30 deg, forward exactly
+0.25 m, displacement depends on accumulated heading, 12x30 closes the circle.
+
+**Three reasons not to port**, all found by building it and reading the field:
+1. Habitat's navmesh SLIDES the agent on **69-91% of forward moves**, so real
+   displacement is continuous in MAGNITUDE, not just direction. No experiment
+   here models that.
+2. Published Habitat numbers come from **RL-trained recurrent policies**
+   (habitat-lab: ResNet18+GRU+DD-PPO; OVRL-V2 SOTA is ViT+**LSTM**). We do
+   supervised next-token prediction. Not comparable without adopting DD-PPO.
+3. ENTL (arXiv:2304.02639), the closest precedent, uses VQ-GAN at **256 image
+   tokens per frame** -- a 500-step episode is ~130k tokens against this repo's
+   4096 maximum.
+Transformers ARE used on Habitat (ENTL, Scene Memory Transformer, Memo); the
+reason recurrence dominates is PPO compatibility and sequence length, not
+quality. **MiniWorld is the cheap 3D rung** if a third environment is wanted --
+installed and verified headless already.
+
+### Rules bought this session
+
+- **Rule 5 caught THREE false negatives in one day**: rotate (+0.004 -> +0.050),
+  Level15 on the paper task (0.938 at 16 epochs -> 1.000 at 50), and H=12
+  allocentric (+0.264 -> +0.383). A weak number at one fixed budget is not a
+  result. High seed variance is the tell.
+- **Gate BEFORE training, not after.** The knob sweep trained 42 models and
+  gated afterwards; the rotate condition was void (0.932 order-1 shortcut).
+- **Gates must also check token ids are in vocabulary.** All three continuous
+  conditions passed the answer-stream gates while one could never train -- an
+  out-of-range embedding lookup surfaces as CUBLAS_STATUS_ALLOC_FAILED and reads
+  exactly like CUDA OOM.
+- **`wait` returns regardless of child success.** A script touched its .done
+  marker after every arm died. Verify the artifact exists; do not infer it from
+  the absence of a crash.
+- **Flat-vs-hierarchical needs n_layers=3.** Hourglass variants IGNORE
+  --n-layers and are always the 3-block scaffold, so at n_layers=1 it is 614K vs
+  218K -- a 2.8x capacity confound.
+
+### In flight at session end
+
+`run_h12_budget.sh` nb=4000 -- the confirmatory third point on the budget curve.
+Not needed for the direction, which is unambiguous from 980 and 2000.
