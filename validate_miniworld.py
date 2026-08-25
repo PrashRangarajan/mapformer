@@ -62,9 +62,11 @@ def ngram_eval(contexts_answers, orders, fallback):
     return out
 
 
-def run_config(grid_size, T, n_episodes, n_obs, seed, env_name):
+def run_config(grid_size, T, n_episodes, n_obs, seed, env_name, fixed_map=False,
+               allocentric=False):
     w = MiniWorldWorld(env_name=env_name, grid_size=grid_size,
-                       n_obs_types=n_obs, seed=seed, allocentric=False)
+                       n_obs_types=n_obs, seed=seed, allocentric=allocentric,
+                       fixed_map=fixed_map)
     rng = np.random.RandomState(seed)
     obs_map = w.obs_map
     blank = w.blank_token
@@ -209,15 +211,23 @@ def main():
     ap.add_argument("--n-obs", type=int, default=16)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--env-name", default="MiniWorld-OneRoom-v0")
+    ap.add_argument("--fixed-map", action="store_true")
+    ap.add_argument("--allocentric", action="store_true",
+                    help="validate the ALLOCENTRIC (displacement-direction) action "
+                         "stream -- the load-bearing G4 n-gram gate must PASS on "
+                         "this stream too, since the last few allo tokens form a "
+                         "truncated path that a shallow n-gram could localise from")
     ap.add_argument("--out", default="MINIWORLD_GATES.md")
     args = ap.parse_args()
 
     results = []
     for gs in args.grids:
-        print(f"\n=== grid_size={gs} T={args.T} n_episodes={args.n_episodes} ===",
+        print(f"\n=== grid_size={gs} T={args.T} n_episodes={args.n_episodes} "
+              f"fixed_map={args.fixed_map} allocentric={args.allocentric} ===",
               flush=True)
         r = run_config(gs, args.T, args.n_episodes, args.n_obs, args.seed,
-                       args.env_name)
+                       args.env_name, fixed_map=args.fixed_map,
+                       allocentric=args.allocentric)
         results.append(r)
         for name, v, detail in verdict_lines(r):
             print(f"  [{v:4s}] {name:18s} {detail}", flush=True)

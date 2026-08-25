@@ -34,7 +34,8 @@ _CACHE = os.path.join(_REPO, "runs", "_miniworld_cache")
 def build_or_load_buffer(env, n_steps, buffer_size, seed):
     os.makedirs(_CACHE, exist_ok=True)
     key = (f"{env.env_name}|G{env.grid_size}|T{n_steps}|obs{env.n_obs_types}|"
-           f"dir{env.n_dir}|allo{int(env.allocentric)}|seed{seed}|N{buffer_size}")
+           f"dir{env.n_dir}|allo{int(env.allocentric)}|fix{int(env.fixed_map)}|"
+           f"seed{seed}|N{buffer_size}")
     path = os.path.join(_CACHE, "mw_" + hashlib.sha1(key.encode()).hexdigest()[:12] + ".pkl")
     if os.path.exists(path):
         with open(path, "rb") as f:
@@ -88,6 +89,10 @@ def main():
     ap.add_argument("--variant", required=True, choices=list(VARIANT_MAP.keys()))
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--allocentric", action="store_true")
+    ap.add_argument("--fixed-map", action="store_true",
+                    help="reuse one obs_map per seed (path integration on a known "
+                         "map, data-efficient) instead of fresh-per-episode "
+                         "(in-context map building, data-hungry / memorises)")
     ap.add_argument("--env-name", default="MiniWorld-OneRoom-v0")
     ap.add_argument("--grid-size", type=int, default=8)
     ap.add_argument("--n-obs", type=int, default=16)
@@ -109,9 +114,11 @@ def main():
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     dev = torch.device(args.device)
     kw = dict(env_name=args.env_name, grid_size=args.grid_size, n_obs_types=args.n_obs,
-              n_dir=args.n_dir, allocentric=args.allocentric)
+              n_dir=args.n_dir, allocentric=args.allocentric, fixed_map=args.fixed_map)
     env = MiniWorldWorld(seed=args.seed, **kw)
-    env_test = MiniWorldWorld(seed=10000, **kw)
+    # fixed_map: eval on the SAME map (novel walks, known layout); fresh_map:
+    # eval on a held-out map (tests in-context generalisation).
+    env_test = MiniWorldWorld(seed=args.seed if args.fixed_map else 10000, **kw)
 
     tok, rev = build_or_load_buffer(env, args.n_steps, args.buffer_size, args.seed)
     tok_t = torch.from_numpy(tok); rev_t = torch.from_numpy(rev)

@@ -36,7 +36,7 @@ class MiniWorldWorld:
 
     def __init__(self, env_name="MiniWorld-OneRoom-v0", grid_size=12,
                  n_obs_types=16, p_empty=0.5, n_dir=24, seed=0,
-                 allocentric=False, max_episode_steps=2000):
+                 allocentric=False, max_episode_steps=2000, fixed_map=False):
         self.env_name = env_name
         self.grid_size = grid_size
         self.n_obs_types = n_obs_types
@@ -44,6 +44,13 @@ class MiniWorldWorld:
         self.n_dir = n_dir
         self.seed = seed
         self.allocentric = allocentric
+        # fixed_map: the obs_map is drawn ONCE (per seed) and every trajectory
+        # reuses it, so the task is pure PATH INTEGRATION on a known map (novel
+        # walk each episode) rather than IN-CONTEXT map building. The latter
+        # needs ~infinite fresh maps to generalise (a 3k-traj buffer memorises
+        # it); the fixed-map task is the data-efficient, well-posed test of the
+        # raw-vs-allocentric axis -- identical in spirit to the MiniGrid design.
+        self.fixed_map = fixed_map
 
         self.env = gym.make(env_name, render_mode=None,
                             max_episode_steps=max_episode_steps)
@@ -137,15 +144,17 @@ class MiniWorldWorld:
     def generate_trajectory(self, n_steps=128, rng=None):
         if rng is None:
             rng = np.random
-        # FRESH location-obs map per episode -> forces IN-CONTEXT map building
-        # (the model cannot memorise a single fixed map; the held-out-map eval
-        # then cleanly tests path-integration retrieval). Matches the
-        # compositional task's fresh_per_episode. Stored on self so external
-        # oracle checks can recompute obs for the most recent trajectory.
-        obs_map = np.full((self.grid_size, self.grid_size), self.blank_token, dtype=np.int64)
-        occ = rng.random((self.grid_size, self.grid_size)) >= self.p_empty
-        obs_map[occ] = rng.randint(0, self.n_obs_types, occ.sum())
-        self.obs_map = obs_map
+        # obs_map: FRESH per episode (in-context map building, data-hungry) OR
+        # FIXED per seed (path integration on a known map, data-efficient).
+        # Fixed reuses the __init__ map so novel walks share one spatial layout;
+        # to know the token at step t the model must integrate actions to the
+        # current cell -> the clean raw-vs-allocentric test. Stored on self so
+        # external oracle checks can recompute obs for the most recent trajectory.
+        if not self.fixed_map:
+            obs_map = np.full((self.grid_size, self.grid_size), self.blank_token, dtype=np.int64)
+            occ = rng.random((self.grid_size, self.grid_size)) >= self.p_empty
+            obs_map[occ] = rng.randint(0, self.n_obs_types, occ.sum())
+            self.obs_map = obs_map
         u = self.u
         u.reset(seed=self.seed + int(rng.randint(1_000_000)))
         u.max_episode_steps = 10 ** 9         # one continuous episode, no reset

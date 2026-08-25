@@ -1,7 +1,16 @@
-"""Aggregate MiniWorld factorial: non-blank accuracy per (variant, encoding),
+"""Aggregate the MiniWorld factorial: non-blank accuracy per (variant, encoding),
 and the POSITION EFFECT (path-integrated - index) under raw vs allocentric.
+
 The headline question: does the position effect flip from <=0 (raw rotation
-actions) to positive (allocentric displacement), as on MiniGrid?"""
+actions) to positive (allocentric displacement), as on MiniGrid?
+
+Convergence-aware (project rule: accuracy tracks final training loss at
+r=-0.996; a stuck arm silently drags the pooled mean). Final train loss is read
+from each arm's .pt (the trainer saves `losses`); arms above --loss-thresh are
+FLAGGED and the pooled verdict is suppressed if any contributing arm is stuck or
+missing. The position effect is reported PER SEED, paired within seed
+(path-int - index at the same seed/encoding), with a std -- never a bare pooled
+point estimate (Standing Rule 6: three seeds is not a point estimate)."""
 import argparse
 import glob
 import json
@@ -11,60 +20,130 @@ from collections import defaultdict
 import numpy as np
 
 _REPO = os.path.dirname(os.path.abspath(__file__))
-PATHINT = {"Vanilla", "MapPoPE-Flat"}          # path-integrated arms
-INDEX = {"RoPE", "PoPE-Flat"}                   # sequence-index arms
+PATHINT = ["Vanilla", "MapPoPE-Flat"]          # path-integrated arms
+INDEX = ["RoPE", "PoPE-Flat"]                   # sequence-index arms
+ENCS = ["raw", "allo"]
+
+
+def _final_loss(runs_dir, seed, variant, enc):
+    """Final training loss from the arm's .pt (torch saves `losses`); None if
+    absent. Imported lazily so aggregation works even without torch present."""
+    pt = os.path.join(runs_dir, f"s{seed}", f"{variant}_{enc}.pt")
+    if not os.path.exists(pt):
+        return None
+    try:
+        import torch
+        d = torch.load(pt, map_location="cpu")
+        ls = d.get("losses")
+        return float(ls[-1]) if ls else None
+    except Exception:
+        return None
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--runs-dir", default=os.path.join(_REPO, "runs", "miniworld"))
-    ap.add_argument("--variants", nargs="+",
-                    default=["Vanilla", "MapPoPE-Flat", "RoPE", "PoPE-Flat"])
+    ap.add_argument("--runs-dir", default=os.path.join(_REPO, "runs", "miniworld_fixed"))
+    ap.add_argument("--variants", nargs="+", default=PATHINT + INDEX)
+    ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])
     ap.add_argument("--length", type=int, default=512)
-    ap.add_argument("--out", default=os.path.join(_REPO, "MINIWORLD_RESULTS.md"))
+    ap.add_argument("--loss-thresh", type=float, default=0.6,
+                    help="flag arms whose final train loss exceeds this as "
+                         "possibly non-converged (the fixed-map seed-0 arms "
+                         "converged to 0.01-0.16; >0.6 is suspicious)")
+    ap.add_argument("--out", default=os.path.join(_REPO, "MINIWORLD_FIXED_RESULTS.md"))
     args = ap.parse_args()
 
-    # data[variant][enc] = list of nb_acc over seeds
-    data = defaultdict(lambda: defaultdict(list))
-    for f in glob.glob(os.path.join(args.runs_dir, "s*", "*_*.json")):
-        base = os.path.basename(f)[:-5]           # strip .json
-        variant, enc = base.rsplit("_", 1)         # <variant>_<raw|allo>
-        if variant not in args.variants or enc not in ("raw", "allo"):
-            continue
-        r = json.load(open(f))
-        key = str(args.length)
-        if key in r:
-            data[variant][enc].append(r[key]["nb_acc"])
+    key = str(args.length)
+    # acc[variant][enc][seed] = nb_acc ; loss[...] = final train loss
+    acc = defaultdict(lambda: defaultdict(dict))
+    loss = defaultdict(lambda: defaultdict(dict))
+    missing, stuck = [], []
+    for v in args.variants:
+        for e in ENCS:
+            for s in args.seeds:
+                f = os.path.join(args.runs_dir, f"s{s}", f"{v}_{e}.json")
+                if not os.path.exists(f):
+                    missing.append(f"{v}_{e}_s{s}")
+                    continue
+                r = json.load(open(f))
+                if key not in r:
+                    missing.append(f"{v}_{e}_s{s}(no T={key})")
+                    continue
+                acc[v][e][s] = r[key]["nb_acc"]
+                fl = _final_loss(args.runs_dir, s, v, e)
+                loss[v][e][s] = fl
+                if fl is not None and fl > args.loss_thresh:
+                    stuck.append(f"{v}_{e}_s{s}(loss={fl:.2f})")
 
     def cell(v, e):
-        a = np.array(data[v][e])
-        return f"{a.mean():.3f} ± {a.std(ddof=1):.3f}" if len(a) > 1 else (f"{a.mean():.3f}" if len(a) else "—")
+        vals = [acc[v][e][s] for s in args.seeds if s in acc[v][e]]
+        a = np.array(vals)
+        if len(a) == 0:
+            return "—"
+        fl = [loss[v][e].get(s) for s in args.seeds if s in acc[v][e]]
+        flag = " ⚠" if any(x is not None and x > args.loss_thresh for x in fl) else ""
+        return (f"{a.mean():.3f} ± {a.std(ddof=1):.3f}{flag}" if len(a) > 1
+                else f"{a.mean():.3f}{flag}")
 
-    def grp(names, e):
-        vals = [x for v in names for x in data[v][e]]
-        return np.array(vals)
+    # ---- per-seed paired position effect: mean over the 2 path-int and 2 index
+    #      arms present at that seed, path-int minus index, one value per seed ----
+    def paired_effect(enc):
+        per_seed = {}
+        for s in args.seeds:
+            pi = [acc[v][enc][s] for v in PATHINT if s in acc[v][enc]]
+            ix = [acc[v][enc][s] for v in INDEX if s in acc[v][enc]]
+            if len(pi) == len(PATHINT) and len(ix) == len(INDEX):   # complete cell
+                per_seed[s] = float(np.mean(pi) - np.mean(ix))
+        return per_seed
 
-    lines = [f"# MiniWorld continuous-3D — non-blank accuracy at T={args.length}", "",
-             "Held-out fresh obs_map. chance (non-blank) = 1/16 = 0.0625. Path-integrated "
-             "= {Vanilla, MapPoPE-Flat}; index = {RoPE, PoPE-Flat}.", "",
+    eff_raw, eff_allo = paired_effect("raw"), paired_effect("allo")
+    complete = (len(eff_raw) == len(args.seeds) == len(eff_allo)) and not stuck
+
+    def eff_line(enc, per_seed):
+        if not per_seed:
+            return f"| {enc} | — | no complete seed |"
+        vals = np.array([per_seed[s] for s in sorted(per_seed)])
+        detail = ", ".join(f"s{s}={per_seed[s]:+.3f}" for s in sorted(per_seed))
+        m = vals.mean()
+        sd = vals.std(ddof=1) if len(vals) > 1 else float("nan")
+        return f"| {enc} | **{m:+.3f} ± {sd:.3f}** (n={len(vals)}) | {detail} |"
+
+    lines = [f"# MiniWorld fixed-map — non-blank accuracy at T={args.length}", "",
+             "Path integration on a KNOWN map (novel walk/episode). chance "
+             "(non-blank) = 1/16 = 0.0625, oracle = 1.0. Path-integrated = "
+             f"{{{', '.join(PATHINT)}}}; index = {{{', '.join(INDEX)}}}. ⚠ marks an "
+             f"arm with final train loss > {args.loss_thresh} (possibly "
+             "non-converged; project rule: acc tracks final loss).", "",
              "| variant | position | raw | allocentric |",
              "|---|---|---|---|"]
     for v in args.variants:
         pos = "path-int" if v in PATHINT else "index"
         lines.append(f"| {v} | {pos} | {cell(v,'raw')} | {cell(v,'allo')} |")
 
-    praw, pallo = grp(PATHINT, "raw"), grp(PATHINT, "allo")
-    iraw, iallo = grp(INDEX, "raw"), grp(INDEX, "allo")
-    eff_raw = praw.mean() - iraw.mean() if len(praw) and len(iraw) else float("nan")
-    eff_allo = pallo.mean() - iallo.mean() if len(pallo) and len(iallo) else float("nan")
-    lines += ["", "## Position effect (path-integrated − index)", "",
-              "| encoding | path-int mean | index mean | position effect |",
-              "|---|---|---|---|",
-              f"| raw (turn/forward) | {praw.mean():.3f} | {iraw.mean():.3f} | **{eff_raw:+.3f}** |",
-              f"| allocentric (displacement) | {pallo.mean():.3f} | {iallo.mean():.3f} | **{eff_allo:+.3f}** |",
-              "",
-              f"**Flip:** raw {eff_raw:+.3f} → allocentric {eff_allo:+.3f} "
-              f"({'CONFIRMS the MiniGrid result — allocentric restores path integration in continuous 3D' if eff_allo > eff_raw + 0.02 else 'no clear flip'})."]
+    lines += ["", "## Position effect (path-integrated − index), paired within seed", "",
+              "| encoding | effect (mean ± std over seeds) | per-seed |",
+              "|---|---|---|",
+              eff_line("raw (turn/forward)", eff_raw),
+              eff_line("allocentric (displacement)", eff_allo), ""]
+
+    if not complete:
+        lines += ["> **INCOMPLETE / SUSPECT — verdict withheld.**",
+                  f"> missing: {missing or 'none'}",
+                  f"> possibly-non-converged (loss>{args.loss_thresh}): {stuck or 'none'}",
+                  "> Re-run the flagged arms in the same batch before reading the flip."]
+    else:
+        mr = np.mean(list(eff_raw.values()))
+        ma = np.mean(list(eff_allo.values()))
+        # paired flip test: is allo effect > raw effect at every seed?
+        flips = [eff_allo[s] - eff_raw[s] for s in args.seeds]
+        all_pos = all(x > 0 for x in flips)
+        verdict = ("CONFIRMS the MiniGrid flip — allocentric raises the position "
+                   "effect at every seed" if (ma > mr + 0.02 and all_pos) else
+                   "no clear flip — allocentric does not reliably raise the "
+                   "path-int−index gap")
+        lines += [f"**Flip:** raw {mr:+.3f} → allocentric {ma:+.3f} "
+                  f"(per-seed Δ = {', '.join(f'{x:+.3f}' for x in flips)}). {verdict}."]
+
     open(args.out, "w").write("\n".join(lines) + "\n")
     print("\n".join(lines))
     print(f"\nwrote {args.out}")
