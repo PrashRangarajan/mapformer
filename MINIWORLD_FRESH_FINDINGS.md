@@ -127,6 +127,53 @@ mechanistic result WITH A FIX. If it does NOT flip -> fidelity is not the whole
 story and the residual is genuine in-context interference. Report the multi-cell-
 jump clamp rate as a caveat.
 
+## ORACLE EXPERIMENT RESULT (2026-08-26) — H1 REFUTED, mechanism corrected
+
+The decisive test ran. Exact-cell recode (R²→1, clamp rate 0) vs 24-bin allo
+(R²=0.55), same env/demand/budget, one batch, n=3, gated + ablated:
+
+| model | position | allo (24-bin) | oracle (exact cell Δ) |
+|---|---|---|---|
+| RoPE | index | 0.501 | **0.977** |
+| PoPE-Flat | index | 0.364 | **0.938** |
+| Vanilla | path-int | 0.284 | 0.448 |
+| MapPoPE-Flat | path-int | 0.232 | 0.324 |
+
+Position effect (path-int − index): allo −0.174 → **oracle −0.571** (T=512),
+−0.184 → −0.409 (T=1024), all seeds. Ablation PASS all arms (RoPE-oracle 0.977 →
+shuffled 0.07 = genuine map).
+
+**H1 (reconstruction fidelity) is REFUTED.** The prediction was "exact recode →
+path-int flips positive". Instead the exact displacement let the INDEX arm's
+ATTENTION reconstruct position near-perfectly (0.94–0.98), while the rigid cumsum
+lagged — the effect went MORE negative. So the forensics R²-correlation
+(1.0/+0.46, 0.999/+0.02, 0.55/−0.17, 0.00/−0.09) was CONFOUNDED: fixing R²→1 does
+not flip the sign. Higher fidelity helps whoever can USE it; on MiniWorld's small
+grid that is attention, not the fixed cumsum.
+
+**Corrected mechanism — attention substitutability (the driver of the SIGN):**
+whether attention can integrate position from the action tokens within its horizon,
+set by grid size / revisit distance vs the ~2–32-step attention horizon.
+- Torus 64×64, long revisits: attention CANNOT span them (index arms at chance
+  floor) → the hardwired cumsum is the ONLY integrator → path-int +0.46.
+- MiniWorld 8×8, short revisits: attention CAN integrate → and given good tokens
+  beats the rigid cumsum → path-int loses; better tokens (oracle) widen the index
+  lead (index near-solves 0.94–0.98).
+Token fidelity MODULATES magnitude (helps whoever can use it); it does not set the
+sign. This is the mechanism agent's "second factor" (attention substitutability),
+promoted from magnitude-only to the sign-setting driver by the oracle result.
+
+**Falsifiable follow-up prediction:** on a LARGER MiniWorld grid (revisit distances
+exceeding the attention horizon), path-int should start winning again even with the
+oracle recode — because attention can no longer substitute. Untested; the clean
+next experiment if this line continues.
+
+**Honest correction:** the "reconstruction fidelity explains the flip" conclusion
+(reported confidently after the two-agent forensic) was REFUTED by the very
+experiment designed to confirm it. The forensics measurement (R² values) is real;
+the causal story built on it was wrong. This is why the decisive experiment was
+worth running.
+
 ## Implication for Habitat
 
 The premise of the MiniWorld→Habitat path — that allocentric recoding rescues path
