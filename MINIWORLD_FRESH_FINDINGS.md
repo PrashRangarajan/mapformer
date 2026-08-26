@@ -184,3 +184,26 @@ continuous geometry; Habitat would need a continuous-magnitude displacement reco
 (full vector), and even then attention may match or beat it. This is the honest
 place to STOP the "allocentric flip in 3D" line, or pivot to the continuous-vector
 recode as a distinct, separately-motivated experiment — not a foregone win.
+
+## GRID SWEEP (2026-08-26) — mechanism CONFIRMED, crossover measured
+
+Fresh-map oracle recode, {Vanilla=path-int, RoPE=index}, grids 8/16/24/32, n=3.
+Position effect (path-int − index):
+
+| grid | T=512 | T=1024 |
+|---|---|---|
+| 8  | −0.529 | −0.253 |
+| 16 | +0.148 | +0.333 |
+| 24 | +0.076 | +0.208 |
+| 32 | +0.087 | +0.172 |
+
+The sign FLIPS between grid 8 and 16 (all 3 seeds) and stays positive. Confirms
+attention substitutability as THE mechanism: RoPE(index) near-solves at grid 8
+(0.977) — attention integrates the exact tokens on a small grid — then collapses
+to ~0.62 at grids ≥16 as revisit distances exceed its ~2-32-step horizon, while
+Vanilla(path-int) holds (0.89→0.69→0.70) via the bounded cumsum. So the fresh-map
+"path-int is a liability" negative was a SMALL-GRID artifact; path integration WINS
+once the map outgrows attention's horizon (grid ≥16). T=1024 effect > T=512 at
+every grid (longer seq → more revisits past the horizon → bigger path-int win).
+Nuance: effect peaks at grid 16, dips slightly at 24/32 (both arms degrade as the
+grid grows) but stays clearly positive. Source: MINIWORLD_GRID_SWEEP.md.
