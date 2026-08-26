@@ -73,6 +73,60 @@ EXACTLY integrable (±x/±y). In continuous 3D the recode is a quantized directi
 does not. **The allocentric-recoding result is scoped to environments where
 displacement is exactly discrete; it does not extend to continuous geometry.**
 
+## WHY the flip fails — reconstruction fidelity (two-agent forensic, 2026-08-26)
+
+MapFormer position = COMMUTATIVE cumsum of a FIXED per-token-id displacement
+(ActionToLieAlgebra rank-2 bottleneck -> per-id Δ; PathIntegrator cumsum + RoPE).
+So the best position it can represent is a fixed 2D vector per action id summed
+along the path. The metric that sets the sign: R² = fraction of each step's true
+displacement determined by the action token id (1.0 = exactly integrable). It
+tracks the position effect MONOTONICALLY (200 trajs, oracle least-squares fit =
+upper bound the trained model cannot exceed):
+
+| env × encoding | R² | drift@512 (cells) | position effect |
+|---|---|---|---|
+| torus (±1 translate) | 1.0000 | 0.00 | +0.461 |
+| MiniGrid allo (±x/±y) | 0.9994 | 0.13 | +0.02 |
+| MiniWorld allo (24-bin dir) | 0.5506 | 2.62 | −0.174 |
+| MiniWorld raw (turn/fwd) | 0.0000 | 4.30 | −0.086 |
+
+The cumsum wins when it is an EXACT position estimator, loses when noisy/biased.
+MiniWorld allo leaves 45% of each step un-integrable -> 2.6-cell drift -> worse
+than attention-learned position.
+
+Why allo (−0.174) is WORSE than raw (−0.086): raw `forward` is isotropic so its
+best fixed delta ≈ 0 -> cumsum barely moves -> position code degenerates to near-
+static -> falls back to index-like -> only mildly worse. allo gives every bin a
+definite non-zero vector -> cumsum integrates a CONFIDENTLY-DRIFTING wrong position
+-> misleads attention MORE. A wrong-but-confident code beats a degenerate one at
+being harmful.
+
+Root cause within allo: NOT the 24-bin angle quantization (3.46°) but MAGNITUDE
+VARIANCE — forward-step CV = 0.49 (the macro runs a variable # of 0.15m substeps
+until the cell changes, so displacement magnitude swings ±50%), unrepresentable by
+a fixed direction vector.
+
+One-axis synthesis: sign = reconstruction fidelity; magnitude = fidelity −
+attention's own localization ability (torus index arms at chance floor -> exact
+code supplies everything -> +0.461; small MiniGrid attention localizes -> exact
+code worth only +0.02). Refuted: ω-scale (fixed-map same geometry, no disadvantage),
+drift-with-length (effect shrinks with T), in-context-demand-alone (torus is also
+fresh-map yet +0.461).
+
+## Decisive confirmatory experiment (designed, not yet run)
+
+Oracle exact-cell-displacement recode on fresh-map MiniWorld: emit the exact
+integer cell transition (Δgx, Δgz) ∈ {−1,0,+1} (a ≤10-class token) instead of the
+24-bin direction. This makes cumsum reconstruct the obs-map cell EXACTLY (R²→1,
+like MiniGrid) while holding env/in-context-demand/models/budget fixed — only
+fidelity changes. Within-batch: {Vanilla,MapPoPE}×{RoPE,PoPE}×{24-bin control,
+oracle-exact}×3 seeds, fresh-map, 100ep, + n-gram gate + context-destruction.
+Predicted: path-int FLIPS positive with the oracle recode (24-bin control stays
+negative in the same batch) -> H1 confirmed causally, and the negative becomes a
+mechanistic result WITH A FIX. If it does NOT flip -> fidelity is not the whole
+story and the residual is genuine in-context interference. Report the multi-cell-
+jump clamp rate as a caveat.
+
 ## Implication for Habitat
 
 The premise of the MiniWorld→Habitat path — that allocentric recoding rescues path
