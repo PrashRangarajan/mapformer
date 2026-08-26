@@ -1,6 +1,15 @@
 # MiniGrid DoorKey-16 factorial — ALLOCENTRIC action recoding (n=3)
 
-> **INCOMPLETE — 7 of 8 cells (flagged 2026-08-26).** `PoPE-Hier` (PoPE + index +
+> **RESOLVED 2026-08-26 — the 8th cell was run; see `MINIGRID_ALLOCENTRIC_8CELL.md`.**
+> PoPE-Hier = 0.873 / 0.831 / 0.817 (T=128/512/1024). Reproducibility control
+> (PoPE-Flat retrained alongside) reproduced its stored values EXACTLY (0.871 /
+> 0.828 / 0.807, drift ~0.000), so the cross-batch comparison is licensed.
+> **Corrected 8-cell effects:** raw −0.005 / −0.021 vs allocentric **+0.013 /
+> +0.020** (T=512 / T=1024) — the FLIP SURVIVES on complete factorials both sides.
+> **The ordering claim is FALSIFIED:** at T=1024 PoPE-Hier (0.817) beats the
+> weakest path-integrated arm MapWM-Flat (0.809). Use the effect, not the ordering.
+>
+> (original flag, retained) **INCOMPLETE — 7 of 8 cells (flagged 2026-08-26).** `PoPE-Hier` (PoPE + index +
 > hierarchy) was never run in this allocentric rerun, despite the "2X2X2" title.
 > This is NOT a random gap: PoPE-Hier is the **best arm in the raw factorial**
 > (0.964 / 0.955, `MINIGRID_FULL_2X2X2.md`), so omitting it removes the strongest
