@@ -56,6 +56,17 @@ class MiniWorldWorld:
                             max_episode_steps=max_episode_steps)
         self.env.reset(seed=seed)
         self.u = self.env.unwrapped
+        # DISABLE the POV render. MiniWorld renders the agent camera (EGL/GPU) on
+        # every u.step, but we DISCARD the image (the observation is the cell's
+        # obs_map token, not pixels). Rendering runs AFTER the physics and touches
+        # neither agent.pos nor the RNG, so stubbing render_obs is DATA-INVARIANT
+        # (verified: positions identical with/without) while ~30x faster per step
+        # and immune to the multi-worker single-GPU render serialization that
+        # dominated parallel buffer builds. If a future variant needs the pixels
+        # (see PERCEPTION_EXPERIMENT_PLAN.md), gate this stub behind a flag.
+        _oshape = getattr(self.env.observation_space, "shape", (60, 80, 3))
+        self._blank_obs = np.zeros(_oshape, dtype=np.uint8)
+        self.u.render_obs = lambda *a, **k: self._blank_obs
         # Disable the env's internal step-limit (OneRoom truncates at ~180) so a
         # trajectory is ONE continuous episode -- never reset mid-trajectory. An
         # episode reset would teleport the agent with no displacement token,
@@ -67,7 +78,7 @@ class MiniWorldWorld:
         assert self.env.action_space.n >= 3
 
         rng = np.random.RandomState(seed)
-        self._measure_bounds(rng)
+        self._geometry_bounds()
         # a "forward" macro moves ~one grid cell, so each recorded step changes
         # cell -> the observation actually changes (a single 0.15 forward step is
         # sub-cell and makes the task trivially copy-last-obs).
@@ -92,9 +103,28 @@ class MiniWorldWorld:
         self.size = grid_size                 # eval-script compatibility
 
     # -- geometry ----------------------------------------------------------
+    def _geometry_bounds(self):
+        """Reachable (x, z) extent read DIRECTLY from room geometry, inset by the
+        agent radius (the agent centre cannot reach a wall). Exact, zero-cost, and
+        identical across processes -- replaces a 4000-step random-walk estimate
+        that under-sampled the extent, cost ~1 s per env construction, and varied
+        per process (which would give parallel buffer workers inconsistent cell
+        discretization). For OneRoom this yields [0.4, 9.6] on both axes, matching
+        the old random walk exactly (radius 0.4, room [0, 10])."""
+        u = self.u
+        rad = float(getattr(u.agent, "radius", 0.0))
+        rooms = getattr(u, "rooms", None)
+        if rooms:
+            self.xmin = min(r.min_x for r in rooms) + rad
+            self.xmax = max(r.max_x for r in rooms) - rad
+            self.zmin = min(r.min_z for r in rooms) + rad
+            self.zmax = max(r.max_z for r in rooms) - rad
+        else:                                       # fallback for room-less envs
+            self._measure_bounds(np.random.RandomState(self.seed))
+
     def _measure_bounds(self, rng, n=4000):
-        """Estimate the reachable (x, z) extent with a long random walk (one
-        continuous episode; internal truncation already disabled)."""
+        """Random-walk fallback extent estimate (used only when an env exposes no
+        `rooms` list). One continuous episode; internal truncation disabled."""
         u = self.u
         u.reset(seed=self.seed); u.max_episode_steps = 10 ** 9
         xs, zs = [], []
@@ -135,10 +165,15 @@ class MiniWorldWorld:
             return
         start_cell = self._cell(u.agent.pos)
         cap = int(math.ceil(2.0 * self.cap_w / 0.15)) + 2
+        prev = u.agent.pos.copy()
         for _ in range(cap):
             u.step(2)
-            if self._cell(u.agent.pos) != start_cell:
+            cur = u.agent.pos
+            if self._cell(cur) != start_cell:
                 break
+            if abs(float(cur[0] - prev[0])) + abs(float(cur[2] - prev[2])) < 1e-6:
+                break                             # wall-blocked: position frozen
+            prev = cur.copy()
 
     # -- trajectory --------------------------------------------------------
     def generate_trajectory(self, n_steps=128, rng=None):

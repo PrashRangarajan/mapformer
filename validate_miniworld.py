@@ -68,7 +68,6 @@ def run_config(grid_size, T, n_episodes, n_obs, seed, env_name, fixed_map=False,
                        n_obs_types=n_obs, seed=seed, allocentric=allocentric,
                        fixed_map=fixed_map)
     rng = np.random.RandomState(seed)
-    obs_map = w.obs_map
     blank = w.blank_token
     obs_off = w.obs_offset
 
@@ -81,6 +80,10 @@ def run_config(grid_size, T, n_episodes, n_obs, seed, env_name, fixed_map=False,
 
     for _ in range(n_episodes):
         tok, om_mask, rev = w.generate_trajectory(T, rng=rng)
+        # read the map for THIS episode AFTER generation: fresh_map redraws
+        # self.obs_map every episode, so a map cached before the loop would be
+        # stale and the oracle would (wrongly) fail on fresh-map.
+        obs_map = w.obs_map
         tok = tok.numpy()
         rev = rev.numpy()
         cells = w.visited_locations            # T cells, one per step
