@@ -1,12 +1,30 @@
 # MiniGrid DoorKey-16 factorial — ALLOCENTRIC action recoding (n=3)
 
+> **INCOMPLETE — 7 of 8 cells (flagged 2026-08-26).** `PoPE-Hier` (PoPE + index +
+> hierarchy) was never run in this allocentric rerun, despite the "2X2X2" title.
+> This is NOT a random gap: PoPE-Hier is the **best arm in the raw factorial**
+> (0.964 / 0.955, `MINIGRID_FULL_2X2X2.md`), so omitting it removes the strongest
+> INDEX arm and biases the path-int − index effect upward.
+> Impact (T=1024): reported effect +0.026 with n=3 index arms; estimating
+> PoPE-Hier as PoPE-Flat + the measured hier bump (0.8069 + 0.0064 = 0.8133) gives
+> index mean 0.7972 and effect **~+0.021** — the flip vs raw (−0.021) SURVIVES but
+> is inflated ~20%. The stronger claim "all four path-integrated arms outrank all
+> index arms" does NOT survive: its margin is +0.0026 (Vanilla 0.8095 vs PoPE-Flat
+> 0.8069) and the estimated PoPE-Hier (0.8133) would exceed the lowest path-int arm.
+> Fix: retrain all 8 cells in ONE batch (standing rule: never compare a fresh arm
+> against stored ones) before citing any ranking claim from this table.
+
+
+
 Actions recoded as the realized per-step grid displacement (5 world-fixed classes)
 instead of turn/forward. Identical to run_minigrid_2x2x2.sh otherwise.
 
 **Headline:** the position effect (path-integrated - index) FLIPS sign vs the raw
 factorial: T=512 -0.005 -> +0.016, T=1024 -0.021 -> +0.024. Under allocentric
-recoding all four path-integrated arms outrank all index arms (min path-int 0.809
-> max index 0.807 at T=1024) -- the opposite of the raw ordering. Absolute scores
+recoding all four path-integrated arms outrank the three index arms PRESENT
+(min path-int 0.809 > max present index 0.807 at T=1024) -- but that margin is
+only +0.003 and the strongest index cell (PoPE-Hier) is MISSING, so this
+ordering claim is NOT established (see the incompleteness note above). Absolute scores
 are lower than raw (best 0.825 vs 0.953): DoorKey is content-solvable, so recoding
 levels the comparison rather than making the task easier (matches the prediction
 of parity-to-slight-win, not the +0.488 dominance on the map-requiring rotation env).
