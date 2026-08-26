@@ -36,7 +36,8 @@ class MiniWorldWorld:
 
     def __init__(self, env_name="MiniWorld-OneRoom-v0", grid_size=12,
                  n_obs_types=16, p_empty=0.5, n_dir=24, seed=0,
-                 allocentric=False, max_episode_steps=2000, fixed_map=False):
+                 allocentric=False, max_episode_steps=2000, fixed_map=False,
+                 oracle=False):
         self.env_name = env_name
         self.grid_size = grid_size
         self.n_obs_types = n_obs_types
@@ -44,6 +45,16 @@ class MiniWorldWorld:
         self.n_dir = n_dir
         self.seed = seed
         self.allocentric = allocentric
+        # oracle: emit the EXACT integer cell transition (Δgx, Δgz) each clamped to
+        # {-1,0,+1} as a 9-class token, instead of allocentric's 24-bin continuous
+        # DIRECTION. This makes the commutative cumsum reconstruct the obs-map cell
+        # EXACTLY (R²->1, like the torus / MiniGrid ±x/±y), holding the env and the
+        # in-context demand fixed -- the decisive test of whether the fresh-map flip
+        # is a reconstruction-FIDELITY problem (forensics: 24-bin allo R²=0.55 due
+        # to forward-step magnitude variance CV=0.49). Overrides allocentric.
+        self.oracle = oracle
+        self._oracle_clamped = 0          # count of multi-cell jumps clamped to sign
+        self._oracle_steps = 0
         # fixed_map: the obs_map is drawn ONCE (per seed) and every trajectory
         # reuses it, so the task is pure PATH INTEGRATION on a known map (novel
         # walk each episode) rather than IN-CONTEXT map building. The latter
@@ -95,7 +106,8 @@ class MiniWorldWorld:
         self.obs_map = obs
 
         # unified vocab: [actions][obs types][blank]
-        self.N_ACTIONS = (1 + n_dir) if allocentric else 3
+        # oracle 9 = (Δgx,Δgz) each in {-1,0,+1}; allo 1+n_dir; raw 3.
+        self.N_ACTIONS = 9 if oracle else ((1 + n_dir) if allocentric else 3)
         self.action_offset = 0
         self.obs_offset = self.N_ACTIONS
         self.unified_blank = self.obs_offset + self.blank_token
@@ -216,7 +228,16 @@ class MiniWorldWorld:
             cell = self._cell(cur)
             if a == 2 and cell == prev_cell and turn_budget == 0:   # blocked -> bounce
                 turn_dir = int(rng.randint(0, 2)); turn_budget = int(rng.randint(4, 13))
-            if self.allocentric:
+            if self.oracle:
+                # EXACT cell transition, each axis clamped to {-1,0,+1} -> 9 classes.
+                # A fixed per-id 2D vector then cumsums to the exact cell index.
+                rdx, rdz = cell[0] - prev_cell[0], cell[1] - prev_cell[1]
+                dgx = max(-1, min(1, rdx)); dgz = max(-1, min(1, rdz))
+                self._oracle_steps += 1
+                if abs(rdx) > 1 or abs(rdz) > 1:
+                    self._oracle_clamped += 1
+                tokens.append((dgx + 1) * 3 + (dgz + 1) + self.action_offset)
+            elif self.allocentric:
                 tokens.append(self._disp_dir(prev, cur) + self.action_offset)
             else:
                 tokens.append(a + self.action_offset)

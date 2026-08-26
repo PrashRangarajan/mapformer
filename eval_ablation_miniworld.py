@@ -94,9 +94,9 @@ def main():
     obs_idx = np.arange(1, 2 * args.length, 2)
     act_idx = np.arange(0, 2 * args.length, 2)
     for enc in args.encodings:
-        allo = (enc == "allo")
         env_test = MiniWorldWorld(grid_size=args.grid_size, seed=10000,
-                                  allocentric=allo, fixed_map=False)
+                                  allocentric=(enc == "allo"),
+                                  oracle=(enc == "oracle"), fixed_map=False)
         blank = env_test.obs_offset + env_test.blank_token
         et, er = build_or_load_eval_buffer(env_test, args.length, args.eval_trials,
                                            n_workers=args.n_workers)

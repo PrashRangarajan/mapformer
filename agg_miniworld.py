@@ -22,7 +22,7 @@ import numpy as np
 _REPO = os.path.dirname(os.path.abspath(__file__))
 PATHINT = ["Vanilla", "MapPoPE-Flat"]          # path-integrated arms
 INDEX = ["RoPE", "PoPE-Flat"]                   # sequence-index arms
-ENCS = ["raw", "allo"]
+ENCS = ["raw", "allo", "oracle"]
 
 
 def _final_loss(runs_dir, seed, variant, enc):
@@ -96,35 +96,34 @@ def main():
                 per_seed[s] = float(np.mean(pi) - np.mean(ix))
         return per_seed
 
-    eff_raw, eff_allo = paired_effect("raw"), paired_effect("allo")
-    complete = (len(eff_raw) == len(args.seeds) == len(eff_allo)) and not stuck
+    LABEL = {"raw": "raw (turn/forward)", "allo": "allocentric (24-bin dir)",
+             "oracle": "oracle (exact cell Δ)"}
+    effects = {e: paired_effect(e) for e in ENCS}
+    present = [e for e in ENCS if effects[e]]
+    complete = all(len(effects[e]) == len(args.seeds) for e in present) and not stuck and present
 
     def eff_line(enc, per_seed):
         if not per_seed:
-            return f"| {enc} | — | no complete seed |"
+            return f"| {LABEL.get(enc,enc)} | — | no complete seed |"
         vals = np.array([per_seed[s] for s in sorted(per_seed)])
         detail = ", ".join(f"s{s}={per_seed[s]:+.3f}" for s in sorted(per_seed))
         m = vals.mean()
         sd = vals.std(ddof=1) if len(vals) > 1 else float("nan")
-        return f"| {enc} | **{m:+.3f} ± {sd:.3f}** (n={len(vals)}) | {detail} |"
+        return f"| {LABEL.get(enc,enc)} | **{m:+.3f} ± {sd:.3f}** (n={len(vals)}) | {detail} |"
 
-    lines = [f"# MiniWorld fixed-map — non-blank accuracy at T={args.length}", "",
-             "Path integration on a KNOWN map (novel walk/episode). chance "
-             "(non-blank) = 1/16 = 0.0625, oracle = 1.0. Path-integrated = "
+    lines = [f"# MiniWorld — non-blank accuracy at T={args.length}", "",
+             "chance (non-blank) = 1/16 = 0.0625, oracle-acc = 1.0. Path-integrated = "
              f"{{{', '.join(PATHINT)}}}; index = {{{', '.join(INDEX)}}}. ⚠ marks an "
-             f"arm with final train loss > {args.loss_thresh} (possibly "
-             "non-converged; project rule: acc tracks final loss).", "",
-             "| variant | position | raw | allocentric |",
-             "|---|---|---|---|"]
+             f"arm with final train loss > {args.loss_thresh}.", "",
+             "| variant | position | " + " | ".join(LABEL.get(e,e) for e in present) + " |",
+             "|---|---|" + "---|" * len(present)]
     for v in args.variants:
         pos = "path-int" if v in PATHINT else "index"
-        lines.append(f"| {v} | {pos} | {cell(v,'raw')} | {cell(v,'allo')} |")
+        lines.append(f"| {v} | {pos} | " + " | ".join(cell(v, e) for e in present) + " |")
 
     lines += ["", "## Position effect (path-integrated − index), paired within seed", "",
               "| encoding | effect (mean ± std over seeds) | per-seed |",
-              "|---|---|---|",
-              eff_line("raw (turn/forward)", eff_raw),
-              eff_line("allocentric (displacement)", eff_allo), ""]
+              "|---|---|---|"] + [eff_line(e, effects[e]) for e in present] + [""]
 
     if not complete:
         lines += ["> **INCOMPLETE / SUSPECT — verdict withheld.**",
@@ -132,17 +131,20 @@ def main():
                   f"> possibly-non-converged (loss>{args.loss_thresh}): {stuck or 'none'}",
                   "> Re-run the flagged arms in the same batch before reading the flip."]
     else:
-        mr = np.mean(list(eff_raw.values()))
-        ma = np.mean(list(eff_allo.values()))
-        # paired flip test: is allo effect > raw effect at every seed?
-        flips = [eff_allo[s] - eff_raw[s] for s in args.seeds]
-        all_pos = all(x > 0 for x in flips)
-        verdict = ("CONFIRMS the MiniGrid flip — allocentric raises the position "
-                   "effect at every seed" if (ma > mr + 0.02 and all_pos) else
-                   "no clear flip — allocentric does not reliably raise the "
-                   "path-int−index gap")
-        lines += [f"**Flip:** raw {mr:+.3f} → allocentric {ma:+.3f} "
-                  f"(per-seed Δ = {', '.join(f'{x:+.3f}' for x in flips)}). {verdict}."]
+        # flip test: compare the two richest encodings present (oracle vs allo for
+        # the oracle experiment; else allo vs raw). Does the second RAISE the effect?
+        pair = ("allo", "oracle") if {"allo", "oracle"} <= set(present) else (
+                ("raw", "allo") if {"raw", "allo"} <= set(present) else None)
+        if pair:
+            lo, hi = pair
+            ml, mh = np.mean(list(effects[lo].values())), np.mean(list(effects[hi].values()))
+            deltas = [effects[hi][s] - effects[lo][s] for s in args.seeds]
+            all_pos = all(x > 0 for x in deltas)
+            verdict = (f"CONFIRMS — {LABEL[hi]} raises the position effect at every seed"
+                       if (mh > ml + 0.02 and all_pos) else
+                       f"no clear flip — {LABEL[hi]} does not reliably raise the gap")
+            lines += [f"**Flip ({LABEL[lo]} → {LABEL[hi]}):** {ml:+.3f} → {mh:+.3f} "
+                      f"(per-seed Δ = {', '.join(f'{x:+.3f}' for x in deltas)}). {verdict}."]
 
     open(args.out, "w").write("\n".join(lines) + "\n")
     print("\n".join(lines))

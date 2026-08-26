@@ -42,7 +42,7 @@ def _env_kwargs(env, seed):
     return dict(env_name=env.env_name, grid_size=env.grid_size,
                 n_obs_types=env.n_obs_types, p_empty=env.p_empty,
                 n_dir=env.n_dir, seed=seed, allocentric=env.allocentric,
-                fixed_map=env.fixed_map)
+                fixed_map=env.fixed_map, oracle=getattr(env, "oracle", False))
 
 
 def _build_chunk(payload):
@@ -66,8 +66,8 @@ def build_or_load_buffer(env, n_steps, buffer_size, seed, n_workers=1, tag=""):
     os.makedirs(_CACHE, exist_ok=True)
     key = (f"{CODE_VERSION}|{tag}|{env.env_name}|G{env.grid_size}|T{n_steps}|"
            f"obs{env.n_obs_types}|pe{env.p_empty}|dir{env.n_dir}|"
-           f"allo{int(env.allocentric)}|fix{int(env.fixed_map)}|"
-           f"seed{seed}|N{buffer_size}|w{n_workers}")
+           f"allo{int(env.allocentric)}|orc{int(getattr(env,'oracle',False))}|"
+           f"fix{int(env.fixed_map)}|seed{seed}|N{buffer_size}|w{n_workers}")
     path = os.path.join(_CACHE, "mw_" + hashlib.sha1(key.encode()).hexdigest()[:12] + ".pkl")
     if os.path.exists(path):
         with open(path, "rb") as f:
@@ -147,6 +147,9 @@ def main():
     ap.add_argument("--variant", required=True, choices=list(VARIANT_MAP.keys()))
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--allocentric", action="store_true")
+    ap.add_argument("--oracle", action="store_true",
+                    help="exact-cell-transition action encoding (9 classes); makes "
+                         "cumsum reconstruct position exactly. Overrides allocentric.")
     ap.add_argument("--fixed-map", action="store_true",
                     help="reuse one obs_map per seed (path integration on a known "
                          "map, data-efficient) instead of fresh-per-episode "
@@ -178,7 +181,8 @@ def main():
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     dev = torch.device(args.device)
     kw = dict(env_name=args.env_name, grid_size=args.grid_size, n_obs_types=args.n_obs,
-              n_dir=args.n_dir, allocentric=args.allocentric, fixed_map=args.fixed_map)
+              n_dir=args.n_dir, allocentric=args.allocentric, fixed_map=args.fixed_map,
+              oracle=args.oracle)
     env = MiniWorldWorld(seed=args.seed, **kw)
     # fixed_map: eval on the SAME map (novel walks, known layout); fresh_map:
     # eval on a held-out map (tests in-context generalisation).
@@ -227,14 +231,19 @@ def main():
         print(f"  [held-out] T={T}: acc={r['acc']:.4f} nb_acc={r['nb_acc']:.4f} "
               f"nb_nll={r['nb_nll']:.3f} (n_nb={r['n_nb']})", flush=True)
 
+    enc = "oracle" if args.oracle else ("allo" if args.allocentric else "raw")
+    if args.oracle and env._oracle_steps:
+        print(f"  oracle multi-cell-jump clamp rate: "
+              f"{env._oracle_clamped/max(env._oracle_steps,1):.4f}", flush=True)
     out = Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
     torch.save({"model_state": model.state_dict(), "variant": args.variant,
-                "allocentric": args.allocentric, "results": results, "losses": losses,
+                "allocentric": args.allocentric, "oracle": args.oracle,
+                "results": results, "losses": losses,
                 "vocab_size": env.unified_vocab_size, "d_model": args.d_model,
                 "n_heads": args.n_heads, "n_layers": args.n_layers},
-               out / f"{args.variant}_{'allo' if args.allocentric else 'raw'}.pt")
-    json.dump(results, open(out / f"{args.variant}_{'allo' if args.allocentric else 'raw'}.json", "w"), indent=2)
-    print(f"DONE {args.variant} allo={args.allocentric}", flush=True)
+               out / f"{args.variant}_{enc}.pt")
+    json.dump(results, open(out / f"{args.variant}_{enc}.json", "w"), indent=2)
+    print(f"DONE {args.variant} enc={enc}", flush=True)
 
 
 if __name__ == "__main__":

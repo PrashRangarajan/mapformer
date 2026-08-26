@@ -63,10 +63,10 @@ def ngram_eval(contexts_answers, orders, fallback):
 
 
 def run_config(grid_size, T, n_episodes, n_obs, seed, env_name, fixed_map=False,
-               allocentric=False):
+               allocentric=False, oracle=False):
     w = MiniWorldWorld(env_name=env_name, grid_size=grid_size,
                        n_obs_types=n_obs, seed=seed, allocentric=allocentric,
-                       fixed_map=fixed_map)
+                       fixed_map=fixed_map, oracle=oracle)
     rng = np.random.RandomState(seed)
     blank = w.blank_token
     obs_off = w.obs_offset
@@ -220,6 +220,11 @@ def main():
                          "stream -- the load-bearing G4 n-gram gate must PASS on "
                          "this stream too, since the last few allo tokens form a "
                          "truncated path that a shallow n-gram could localise from")
+    ap.add_argument("--oracle", action="store_true",
+                    help="validate the ORACLE exact-cell-transition stream (9 "
+                         "classes) -- n-gram must stay at chance: exact relative "
+                         "displacement gives only RELATIVE position, and the fresh "
+                         "obs_map is uncorrelated with the action prefix")
     ap.add_argument("--out", default="MINIWORLD_GATES.md")
     args = ap.parse_args()
 
@@ -230,7 +235,7 @@ def main():
               flush=True)
         r = run_config(gs, args.T, args.n_episodes, args.n_obs, args.seed,
                        args.env_name, fixed_map=args.fixed_map,
-                       allocentric=args.allocentric)
+                       allocentric=args.allocentric, oracle=args.oracle)
         results.append(r)
         for name, v, detail in verdict_lines(r):
             print(f"  [{v:4s}] {name:18s} {detail}", flush=True)
