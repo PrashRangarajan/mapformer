@@ -11,6 +11,25 @@ plus three experimental extensions that add explicit state-correction
 mechanisms to the path-integration circuit: a **parallel Invariant EKF**, a
 **sequential InEKF** (for reference), and a **predictive-coding** variant.
 
+
+## IMPORTANT (2026-08-27): the MapFormer paper is now at v4 and DID language
+
+This file was written against **v1 (Nov 2025)**. The paper is at **v4 (10 May 2026)**;
+**Sec 5.5 "Scalability to Natural Language" + App B.5 are NEW**:
+- 12-layer MapWM on OpenWebText, ~10^11 tokens, 4xH100, 5 seeds:
+  **RoPE 19.14+/-0.14 vs MapWM 18.79+/-0.15** (consistent ppl win, p<0.005)
+- **BLiMP: NO gain** (0.78 vs 0.79) -- "gains do not come from better syntactic
+  modeling, which might require another mechanism than (commutative) path-integration"
+- **Length extrapolation LOSES to CoPE and PathAtt** on NarrativeQA
+- The paper itself frames MapFormer-on-language as the SAME FAMILY as CoPE/PaTH
+- It nominates **code modeling** as the natural next test
+
+Consequence: do NOT run MapWM-vs-RoPE on language. Also note **Selective RoPE
+(ICLR 2026, arXiv:2511.17388) is essentially our exact mechanism on language**
+(theta = temp*cumsum(omega) -> rope), and **PoPE's rotation angle is NOT
+content-dependent** (only its magnitude is) -- PoPE is not in this family.
+Full landscape, numbers and open slots: **LANGUAGE_LANDSCAPE.md**.
+
 ## Current state (what's implemented and working)
 
 1. **Paper reproduction** — `model.py`, `environment.py`, `main.py`.
