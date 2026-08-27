@@ -84,6 +84,7 @@ from mapformer.model_pope import (
     MapFormerWM_Hourglass_PoPE_CoarseIdx,
 )
 from mapformer.hourglass_plain import PlainHourglass, PlainFlat
+from mapformer.model_baseline_nope import MapFormerWM_NoPE
 from mapformer.model_route_attn import (MapFormerWM_RouteAttn,
     MapFormerWM_RouteAttn_K4, MapFormerWM_RouteAttn_NoBias)
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
@@ -154,6 +155,7 @@ VARIANT_MAP = {
     "MapPoPE_CoarseIdx": MapFormerWM_Hourglass_PoPE_CoarseIdx,  # PoPE + index coarse (best-of-both)
     "PlainHourglass": PlainHourglass,
     "PlainFlat": PlainFlat,
+    "NoPE": MapFormerWM_NoPE,          # null hypothesis: no position rotation at all
     # Clear backbone-structure aliases (non-breaking: old keys above still work,
     # so existing checkpoints and the other server's names keep resolving).
     #   backbone: MapWM / MapEM / Plain    structure: Flat / Hier(=hourglass)
