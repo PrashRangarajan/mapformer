@@ -29,6 +29,7 @@ import torch
 import torch.nn.functional as F
 
 from .hourglass_plain import HourglassPlainLM, FlatPlainLM
+from .train_variant import VARIANT_MAP
 
 LN2 = 0.6931471805599453
 # Repo root = the package dir this file lives in. Makes default paths portable
@@ -57,7 +58,7 @@ def evaluate(model, data, batch_size, seq_len, device, n_batches=40):
     return (tot / n_batches) / LN2  # bpc
 
 
-def build(model_name, shorten=2):
+def build(model_name, shorten=2, dim=512, heads=8, n_layers=9, grid_size=512):
     if model_name == "hourglass":
         return HourglassPlainLM(num_tokens=256, dim=512, depth=(4, 2, 4),
                                 shorten_factor=shorten, heads=8)
@@ -65,12 +66,22 @@ def build(model_name, shorten=2):
         return FlatPlainLM(num_tokens=256, dim=512, n_layers=10, heads=8)
     if model_name == "flat9":
         return FlatPlainLM(num_tokens=256, dim=512, n_layers=9, heads=8)
+    # Any registered MapFormer variant, on byte-level enwik8 (vocab 256).
+    # grid_size: MapFormer initialises omega geometrically so the LOWEST frequency
+    # completes one cycle over the largest traversable distance (omega_min =
+    # 2*pi/grid_size). Language has no grid, so we set grid_size = seq_len, the
+    # direct analogue: the slowest rotation spans exactly one context window.
+    # (Selective RoPE instead DERIVES its ladder from random-Fourier-feature theory
+    # -- the untested alternative; see LANGUAGE_LANDSCAPE.md.)
+    if model_name in VARIANT_MAP:
+        return VARIANT_MAP[model_name](vocab_size=256, d_model=dim, n_heads=heads,
+                                       n_layers=n_layers, grid_size=grid_size)
     raise ValueError(model_name)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", required=True, choices=["hourglass", "flat10", "flat9"])
+    ap.add_argument("--model", required=True)   # plain names or any VARIANT_MAP key
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--seq-len", type=int, default=512)
     ap.add_argument("--batch-size", type=int, default=16)
@@ -81,6 +92,10 @@ def main():
     ap.add_argument("--out", default=os.path.join(_REPO, "hourglass_enwik8"))
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--shorten", type=int, default=2)
+    ap.add_argument("--dim", type=int, default=512)
+    ap.add_argument("--heads", type=int, default=8)
+    ap.add_argument("--n-layers", type=int, default=9)
+    ap.add_argument("--tag", default="")   # output filename suffix
     args = ap.parse_args()
 
     torch.manual_seed(args.seed)
@@ -92,9 +107,12 @@ def main():
     val_data = data[90_000_000:95_000_000]
 
     device = args.device
-    model = build(args.model, shorten=args.shorten).to(device)
+    model = build(args.model, shorten=args.shorten, dim=args.dim,
+                  heads=args.heads, n_layers=args.n_layers,
+                  grid_size=args.seq_len).to(device)
     n_params = sum(p.numel() for p in model.parameters())
-    flop = model.flops_proxy(args.seq_len) / (args.seq_len ** 2)
+    flop = (model.flops_proxy(args.seq_len) / (args.seq_len ** 2)
+            if hasattr(model, 'flops_proxy') else float('nan'))
     print(f"model={args.model} params={n_params:,} attn_flop_proxy={flop:.2f}*L^2 "
           f"seq={args.seq_len} bs={args.batch_size} iters={args.iters}")
 
@@ -125,11 +143,11 @@ def main():
                                  "train_bpc": train_bpc, "wall_s": wall})
             print(f"  it={it:6d} train_bpc={train_bpc:.4f} val_bpc={val_bpc:.4f} "
                   f"wall={wall:.0f}s ({it/wall:.1f} it/s)")
-            with open(outdir / f"{args.model}.json", "w") as f:
+            with open(outdir / f"{args.model}{args.tag}.json", "w") as f:
                 json.dump(log, f, indent=2)
 
     log["wall_total_s"] = time.time() - t0
-    with open(outdir / f"{args.model}.json", "w") as f:
+    with open(outdir / f"{args.model}{args.tag}.json", "w") as f:
         json.dump(log, f, indent=2)
     print(f"DONE {args.model} val_bpc={log['curve'][-1]['val_bpc']:.4f} "
           f"wall={log['wall_total_s']:.0f}s")
