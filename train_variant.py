@@ -85,7 +85,8 @@ from mapformer.model_pope import (
 )
 from mapformer.hourglass_plain import PlainHourglass, PlainFlat
 from mapformer.model_baseline_nope import MapFormerWM_NoPE
-from mapformer.model_srope_components import MapFormerWM_ConvDelta, MapFormerWM_GateDelta
+from mapformer.model_srope_components import (MapFormerWM_ConvDelta, MapFormerWM_GateDelta,
+    MapFormerWM_GateDeltaControl)
 from mapformer.model_route_attn import (MapFormerWM_RouteAttn,
     MapFormerWM_RouteAttn_K4, MapFormerWM_RouteAttn_NoBias)
 from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
@@ -158,7 +159,8 @@ VARIANT_MAP = {
     "PlainFlat": PlainFlat,
     "NoPE": MapFormerWM_NoPE,
     "ConvDelta": MapFormerWM_ConvDelta,   # SRoPE conv1d before the cumsum
-    "GateDelta": MapFormerWM_GateDelta,   # SRoPE sigmoid gate on Delta          # null hypothesis: no position rotation at all
+    "GateDelta": MapFormerWM_GateDelta,
+    "GateDeltaCtl": MapFormerWM_GateDeltaControl,  # capacity control: same params, gate disabled   # SRoPE sigmoid gate on Delta          # null hypothesis: no position rotation at all
     # Clear backbone-structure aliases (non-breaking: old keys above still work,
     # so existing checkpoints and the other server's names keep resolving).
     #   backbone: MapWM / MapEM / Plain    structure: Flat / Hier(=hourglass)

@@ -121,3 +121,37 @@ class MapFormerWM_GateDelta(MapFormerWM):
         pi = self.path_integrator
         self.action_to_lie = GatedActionToLie(
             self.action_to_lie, self.d_model, pi.n_heads, pi.n_blocks)
+
+
+class DeadGateActionToLie(GatedActionToLie):
+    """CAPACITY CONTROL for GateDelta: identical parameters, no gating effect.
+
+    Same nn.Linear(d_model, n_heads*n_blocks) is created in the same order (so it
+    consumes the same init RNG draws and shifts every subsequent parameter
+    identically), lives in the optimizer, and is evaluated in the forward pass --
+    but its output does NOT gate Delta. Delta passes through unchanged.
+
+    This is the control that decides whether GateDelta's advantage is the GATE or
+    merely +32,896 parameters (+1.0%) plus an RNG shift. Same pattern that killed
+    the Level-1.5 accuracy claim (Vanilla_ExtraHead tied it at t=0.79) and that
+    v4's aux_coef=0.0 arm used.
+
+    Note: the gate params receive ZERO gradient here (multiplied out), so they also
+    contribute nothing to the grad-clip norm -- matching run_v4_control.sh's design.
+    """
+
+    def forward(self, x):
+        delta = self.inner(x)
+        B, T = x.shape[0], x.shape[1]
+        g = torch.sigmoid(self.gate_proj(x)).reshape(B, T, self.n_heads, self.n_blocks)
+        return delta + 0.0 * g          # params used, effect removed
+
+
+class MapFormerWM_GateDeltaControl(MapFormerWM):
+    """MapFormer-WM + GateDelta's parameters, with the gate disabled."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        pi = self.path_integrator
+        self.action_to_lie = DeadGateActionToLie(
+            self.action_to_lie, self.d_model, pi.n_heads, pi.n_blocks)
