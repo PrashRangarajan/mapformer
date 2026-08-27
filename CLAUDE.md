@@ -14,6 +14,49 @@ mechanisms to the path-integration circuit: a **parallel Invariant EKF**, a
 
 ## IMPORTANT (2026-08-27): the MapFormer paper is now at v4 and DID language
 
+### v4 CHANGED THE REPRODUCTION TARGET -- our cited numbers are v1
+
+CLAUDE.md's "paper Table 2 verbatim" (MapWM 0.99/0.99/0.96, MapEM-os 1.0/0.99/0.97)
+is the **v1** table. **v4 Table 2, 2D columns:**
+
+| model | IID | OOD-d | OOD-s |
+|---|---|---|---|
+| MapWM-r2 | 1.00+/-0.00 | 1.00+/-0.00 | 0.99+/-0.01 |
+| MapEM-os | 1.00+/-0.00 | 1.00+/-0.00 | 1.00+/-0.00 |
+| MapEM-s  | 1.00+/-0.00 | 1.00+/-0.00 | 1.00+/-0.00 |
+
+Our measured 0.989 (WM) / 0.987 (EM) MATCHED v1 but is marginally BELOW v4.
+Do not claim "matches the paper" without saying which version.
+Other v4 changes: error bars throughout; MapWM split into **r1/r2** (our default IS
+r2); **TAPE and PathAtt added as baselines**; RoPE(4L) 2D IID 0.33 -> 0.82;
+Mamba 0.42/0.77/0.40 -> 0.38/0.66/0.30 and MAmPa 0.74/0.93/0.60 -> 0.84/0.96/0.71
+(our Table 3 quotes are v1). **The omega sign typo SURVIVES into v4** (now eq. 18,
+printed with a negative exponent and n_b rather than n_b-1, contradicting its own
+stated boundary condition) -- our fix remains correct and necessary.
+
+### A paper-reported negative we did not have
+**MapWM COLLAPSES in 5D**: 0.75/0.50/0.35, *worse than CoPE* (0.94/0.80/0.69).
+MapEM-s holds (1.00/1.00/0.87). v4 Table 6.
+
+### Selective RoPE (ICLR 2026) is the same primitive, discovered independently
+arXiv:2511.17388 (Movahedi et al., ELLIS/EPFL/Freiburg) posted **21 Nov 2025**;
+MapFormer posted **24 Nov 2025**. **Neither cites the other in ANY version**
+(verified across all bibliographies). Both cite PaTH. Selective RoPE is **published
+at ICLR 2026**; MapFormer v4 is still marked "Preprint".
+Mechanism: `omega = temp*cumsum(conv1d(W_omega@q)); rope(q,k,...)` vs MapFormer's
+`theta = cumsum(omega * W_out W_in x_t)`. Real differences: angle from **query** vs
+**token**; **no rank bottleneck** vs rank-r (load-bearing: r=1 -> 0.66 in 2D);
+**conv1d** vs none; **sigmoid gate + bias + weight norm** vs none; commutativity is
+MapFormer's central axis and the word appears **0 times** in Selective RoPE;
+SSM/state-transition framing vs deliberately-not-SSM; linear attention + softmax vs
+softmax only. No MapEM analogue exists on their side.
+
+### NoPE: the navigation side of this literature has none
+Selective RoPE runs NoPE everywhere and **NoPE sometimes WINS** (GLA 1.3B avg acc:
+NoPE 55.2 > SRoPE 54.6 > RoPE 54.4). **MapFormer has zero NoPE baselines.** Ours is
+built and registered (`NoPE`, model_baseline_nope.py, param-identical to RoPE).
+
+
 This file was written against **v1 (Nov 2025)**. The paper is at **v4 (10 May 2026)**;
 **Sec 5.5 "Scalability to Natural Language" + App B.5 are NEW**:
 - 12-layer MapWM on OpenWebText, ~10^11 tokens, 4xH100, 5 seeds:
