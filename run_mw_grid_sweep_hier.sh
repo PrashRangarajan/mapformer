@@ -37,8 +37,10 @@ E(W(grid_size=$G, seed=10000, oracle=True, fixed_map=False), $L, $ETRIALS, n_wor
 done
 echo "$(date +%H:%M) buffers ready; training 24 arms (<=2/GPU)" >> "$LOG"
 
-# ---- Phase 2: 24 arms, strict <=MAXPG per GPU ----
-declare -a PIDG0=() PIDG1=()
+# ---- Phase 2: 24 arms, SINGLE GPU (cuda:0), <=MAXPG concurrent ----
+# Pinned to one GPU to leave cuda:1 free for others (doubles wall-clock, ~8h).
+GPU=0
+declare -a PIDG0=()
 alive(){ local o=(); for p in "$@"; do kill -0 "$p" 2>/dev/null && o+=("$p"); done; echo "${o[@]:-}"; }
 for G in $GRIDS; do
   for SEED in 0 1 2; do
@@ -46,9 +48,8 @@ for G in $GRIDS; do
       OUT="$R/g${G}/s${SEED}"
       [ -f "$OUT/${V}_oracle.pt" ] && { echo "skip g${G}_${V}_s${SEED}" >> "$LOG"; continue; }
       while :; do
-        PIDG0=($(alive "${PIDG0[@]:-}")); PIDG1=($(alive "${PIDG1[@]:-}"))
-        if [ "${#PIDG0[@]}" -lt "$MAXPG" ]; then GPU=0; break; fi
-        if [ "${#PIDG1[@]}" -lt "$MAXPG" ]; then GPU=1; break; fi
+        PIDG0=($(alive "${PIDG0[@]:-}"))
+        [ "${#PIDG0[@]}" -lt "$MAXPG" ] && break
         sleep 15
       done
       echo "$(date +%H:%M) g${G}_${V}_s${SEED} -> cuda:$GPU" >> "$LOG"
@@ -57,7 +58,7 @@ for G in $GRIDS; do
         --batch-size $BS --d-model $DM --n-layers $NL --n-heads $NH --n-workers $NW \
         --eval-trials $ETRIALS --eval-lengths 512 1024 --device "cuda:$GPU" \
         --output-dir "$OUT" > "$R/g${G}_${V}_s${SEED}.log" 2>&1 &
-      PID=$!; [ "$GPU" -eq 0 ] && PIDG0+=("$PID") || PIDG1+=("$PID"); sleep 3
+      PIDG0+=("$!"); sleep 3
     done
   done
 done
