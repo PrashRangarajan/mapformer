@@ -29,7 +29,10 @@ MAXPG=2
 declare -a PIDG0=() PIDG1=()
 alive(){ local o=(); for p in "$@"; do kill -0 "$p" 2>/dev/null && o+=("$p"); done; echo "${o[@]:-}"; }
 run(){ local NAME="$1" R="$2" TAG="$3"
-  [ -f "$OUT/${NAME}${TAG}.json" ] && { echo "skip $NAME$TAG" >> "$LOG"; return; }
+  # guard on COMPLETION: the trainer used to write the final filename at every
+  # eval, so a 1k-iter partial looked like a finished 36k run to a plain -f test.
+  if [ -f "$OUT/${NAME}${TAG}.json" ] && python3 -c "import json,sys; sys.exit(0 if 'wall_total_s' in json.load(open(sys.argv[1])) else 1)" "$OUT/${NAME}${TAG}.json" 2>/dev/null; then
+    echo "skip $NAME$TAG (complete)" >> "$LOG"; return; fi
   while :; do
     PIDG0=($(alive "${PIDG0[@]:-}")); PIDG1=($(alive "${PIDG1[@]:-}"))
     if [ "${#PIDG0[@]}" -lt "$MAXPG" ]; then GPU=0; break; fi

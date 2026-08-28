@@ -37,9 +37,9 @@ LN2 = 0.6931471805599453
 _REPO = os.path.dirname(os.path.abspath(__file__))
 
 
-def get_batch(data, batch_size, seq_len, device):
+def get_batch(data, batch_size, seq_len, device, generator=None):
     n = data.size(0)
-    idx = torch.randint(0, n - seq_len - 1, (batch_size,))
+    idx = torch.randint(0, n - seq_len - 1, (batch_size,), generator=generator)
     x = torch.stack([data[i:i + seq_len] for i in idx]).long().to(device)
     y = torch.stack([data[i + 1:i + 1 + seq_len] for i in idx]).long().to(device)
     return x, y
@@ -47,10 +47,24 @@ def get_batch(data, batch_size, seq_len, device):
 
 @torch.no_grad()
 def evaluate(model, data, batch_size, seq_len, device, n_batches=40):
+    """Deterministic validation.
+
+    The val batches were previously drawn from the GLOBAL torch RNG, so they were
+    re-sampled every checkpoint AND differed between models (each model's __init__
+    consumes a different number of draws). Measured consequence: within-model
+    checkpoint-to-checkpoint val swings of 0.02-0.07 bpc against a between-model
+    spread of 0.011 -- and taking min-over-last-6 instead of the final point
+    REORDERED the arms. The comparison could not resolve its own effect.
+
+    Fixed here with a dedicated generator seeded identically for every model and
+    every checkpoint, so all arms are scored on the SAME val batches. This also
+    stops evaluation from perturbing the training data stream.
+    """
     model.eval()
+    gen = torch.Generator().manual_seed(1234)      # same val set for every arm
     tot = 0.0
     for _ in range(n_batches):
-        x, y = get_batch(data, batch_size, seq_len, device)
+        x, y = get_batch(data, batch_size, seq_len, device, generator=gen)
         logits = model(x)
         loss = F.cross_entropy(logits.reshape(-1, logits.size(-1)), y.reshape(-1))
         tot += loss.item()
@@ -122,8 +136,8 @@ def main():
                   grid_size=args.seq_len, bottleneck_r=args.bottleneck_r).to(device)
     n_params = sum(p.numel() for p in model.parameters())
     flop = (model.flops_proxy(args.seq_len) / (args.seq_len ** 2)
-            if hasattr(model, 'flops_proxy') else float('nan'))
-    print(f"model={args.model} params={n_params:,} attn_flop_proxy={flop:.2f}*L^2 "
+            if hasattr(model, 'flops_proxy') else None)
+    print(f"model={args.model} params={n_params:,} attn_flop_proxy={flop} "
           f"seq={args.seq_len} bs={args.batch_size} iters={args.iters}")
 
     opt = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -153,7 +167,7 @@ def main():
                                  "train_bpc": train_bpc, "wall_s": wall})
             print(f"  it={it:6d} train_bpc={train_bpc:.4f} val_bpc={val_bpc:.4f} "
                   f"wall={wall:.0f}s ({it/wall:.1f} it/s)")
-            with open(outdir / f"{args.model}{args.tag}.json", "w") as f:
+            with open(outdir / f"{args.model}{args.tag}.partial.json", "w") as f:
                 json.dump(log, f, indent=2)
 
     log["wall_total_s"] = time.time() - t0
