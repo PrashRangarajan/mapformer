@@ -12,6 +12,7 @@ chance 1/n_obs).
 --allocentric selects the world-fixed displacement action encoding.
 """
 import argparse
+import math
 import hashlib
 import json
 import os
@@ -171,6 +172,8 @@ def main():
     ap.add_argument("--d-model", type=int, default=128)
     ap.add_argument("--n-heads", type=int, default=2)
     ap.add_argument("--eval-lengths", nargs="+", type=int, default=[512, 1024])
+    ap.add_argument("--schedule", default="linear", choices=["linear", "cosine"],
+                    help="cosine = 5%% warmup then cosine decay to 10%% of peak")
     ap.add_argument("--eval-trials", type=int, default=128,
                     help="held-out eval trajectories per length (pre-built + shared "
                          "across arms; was 8 batches x 16 = 128 live)")
@@ -201,7 +204,22 @@ def main():
 
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.05)
     total = args.epochs * args.n_batches
-    sched = torch.optim.lr_scheduler.LinearLR(opt, 1.0, 0.0, total)
+    # LinearLR(1.0 -> 0.0) decays from step ONE with no warmup. On a task with a
+    # plateau-then-cliff loss transition that is actively harmful: by the time a run
+    # could escape the plateau its LR is already near zero, so the budget measures
+    # "did the transition fire early" rather than "can this model solve the task".
+    # --schedule cosine adds a warmup then a cosine decay to 10% (not 0), leaving
+    # usable LR late in training. Default stays linear for backward compatibility.
+    if args.schedule == "cosine":
+        warm = max(1, int(0.05 * total))
+        def lr_fn(step):
+            if step < warm:
+                return (step + 1) / warm
+            prog = (step - warm) / max(1, total - warm)
+            return 0.1 + 0.9 * 0.5 * (1.0 + math.cos(math.pi * prog))
+        sched = torch.optim.lr_scheduler.LambdaLR(opt, lr_fn)
+    else:
+        sched = torch.optim.lr_scheduler.LinearLR(opt, 1.0, 0.0, total)
     crit = nn.CrossEntropyLoss()
     N = tok_t.shape[0]; losses = []
     for ep in range(args.epochs):
