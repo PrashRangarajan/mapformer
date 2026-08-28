@@ -58,7 +58,8 @@ def evaluate(model, data, batch_size, seq_len, device, n_batches=40):
     return (tot / n_batches) / LN2  # bpc
 
 
-def build(model_name, shorten=2, dim=512, heads=8, n_layers=9, grid_size=512):
+def build(model_name, shorten=2, dim=512, heads=8, n_layers=9, grid_size=512,
+          bottleneck_r=2):
     if model_name == "hourglass":
         return HourglassPlainLM(num_tokens=256, dim=512, depth=(4, 2, 4),
                                 shorten_factor=shorten, heads=8)
@@ -74,8 +75,16 @@ def build(model_name, shorten=2, dim=512, heads=8, n_layers=9, grid_size=512):
     # (Selective RoPE instead DERIVES its ladder from random-Fourier-feature theory
     # -- the untested alternative; see LANGUAGE_LANDSCAPE.md.)
     if model_name in VARIANT_MAP:
-        return VARIANT_MAP[model_name](vocab_size=256, d_model=dim, n_heads=heads,
-                                       n_layers=n_layers, grid_size=grid_size)
+        kw = dict(vocab_size=256, d_model=dim, n_heads=heads,
+                  n_layers=n_layers, grid_size=grid_size)
+        # bottleneck_r = dimensionality of the learned "action" subspace. MapFormer
+        # uses r=2 for 2D navigation and r=4 for its OpenWebText run; rank is
+        # decisive in their own data (2D: r=1 -> 0.66, r=2 -> 1.00). Only the
+        # path-integrating variants accept it.
+        import inspect
+        if 'bottleneck_r' in inspect.signature(VARIANT_MAP[model_name].__init__).parameters:
+            kw['bottleneck_r'] = bottleneck_r
+        return VARIANT_MAP[model_name](**kw)
     raise ValueError(model_name)
 
 
@@ -96,6 +105,7 @@ def main():
     ap.add_argument("--heads", type=int, default=8)
     ap.add_argument("--n-layers", type=int, default=9)
     ap.add_argument("--tag", default="")   # output filename suffix
+    ap.add_argument("--bottleneck-r", type=int, default=2)
     args = ap.parse_args()
 
     torch.manual_seed(args.seed)
@@ -109,7 +119,7 @@ def main():
     device = args.device
     model = build(args.model, shorten=args.shorten, dim=args.dim,
                   heads=args.heads, n_layers=args.n_layers,
-                  grid_size=args.seq_len).to(device)
+                  grid_size=args.seq_len, bottleneck_r=args.bottleneck_r).to(device)
     n_params = sum(p.numel() for p in model.parameters())
     flop = (model.flops_proxy(args.seq_len) / (args.seq_len ** 2)
             if hasattr(model, 'flops_proxy') else float('nan'))
