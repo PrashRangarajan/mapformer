@@ -127,7 +127,8 @@ mechanistic result WITH A FIX. If it does NOT flip -> fidelity is not the whole
 story and the residual is genuine in-context interference. Report the multi-cell-
 jump clamp rate as a caveat.
 
-## ORACLE EXPERIMENT RESULT (2026-08-26) — H1 REFUTED, mechanism corrected
+## ORACLE EXPERIMENT RESULT (2026-08-26) — ordering prediction failed
+## [CORRECTED 2026-08-27: 'H1 REFUTED' OVERSHOT — see below]
 
 The decisive test ran. Exact-cell recode (R²→1, clamp rate 0) vs 24-bin allo
 (R²=0.55), same env/demand/budget, one batch, n=3, gated + ablated:
@@ -185,25 +186,89 @@ continuous geometry; Habitat would need a continuous-magnitude displacement reco
 place to STOP the "allocentric flip in 3D" line, or pivot to the continuous-vector
 recode as a distinct, separately-motivated experiment — not a foregone win.
 
-## GRID SWEEP (2026-08-26) — mechanism CONFIRMED, crossover measured
+## GRID SWEEP — MECHANISM RETRACTED (2026-08-27)
 
-Fresh-map oracle recode, {Vanilla=path-int, RoPE=index}, grids 8/16/24/32, n=3.
-Position effect (path-int − index):
+**The "attention substitutability" mechanism is FALSIFIED by our own pre-training
+gate data.** The claim required revisit distance to GROW with grid size and exceed
+attention's ~32-step horizon. Gate G6, measured before any training:
 
-| grid | T=512 | T=1024 |
+| grid | median revisit lag | frac within 32 steps |
 |---|---|---|
-| 8  | −0.529 | −0.253 |
-| 16 | +0.148 | +0.333 |
-| 24 | +0.076 | +0.208 |
-| 32 | +0.087 | +0.172 |
+| 8  | 47 | 0.43 |
+| 16 | 43 | 0.44 |
+| 24 | 38 | 0.47 |
+| 32 | **33** | **0.50** |
 
-The sign FLIPS between grid 8 and 16 (all 3 seeds) and stays positive. Confirms
-attention substitutability as THE mechanism: RoPE(index) near-solves at grid 8
-(0.977) — attention integrates the exact tokens on a small grid — then collapses
-to ~0.62 at grids ≥16 as revisit distances exceed its ~2-32-step horizon, while
-Vanilla(path-int) holds (0.89→0.69→0.70) via the bounded cumsum. So the fresh-map
-"path-int is a liability" negative was a SMALL-GRID artifact; path integration WINS
-once the map outgrows attention's horizon (grid ≥16). T=1024 effect > T=512 at
-every grid (longer seq → more revisits past the horizon → bigger path-int win).
-Nuance: effect peaks at grid 16, dips slightly at 24/32 (both arms degrade as the
-grid grows) but stays clearly positive. Source: MINIWORLD_GRID_SWEEP.md.
+Revisits get CLOSER as the grid grows and MORE of them fall INSIDE the horizon. The
+stated mechanism predicts the index arm should do BETTER at grid 32; it does worse.
+Retracted: "confirms attention substitutability as THE mechanism", "as revisit
+distances exceed its ~2-32-step horizon", "path integration WINS once the map
+outgrows attention's horizon", and "(all 3 seeds)" at g16 (paired deltas are +0.344,
++0.134, **-0.034**).
+
+**The monotone covariate that does track the effect is ALIASING.** With n_obs=16 and
+p_empty=0.5 fixed, non-blank cells per observation token goes 2 -> 8 -> 18 -> 32 from
+g8 to g32 (16x), and distinct cell->token bindings to hold in a fixed 1024-token
+context goes 32 -> 512. Content-based retrieval should degrade exactly as the
+observation stops identifying the cell. Untested.
+
+**What the numbers actually are** (retained, they are correct):
+
+| grid | Vanilla | RoPE | effect T=512 | effect T=1024 |
+|---|---|---|---|---|
+| 8  | 0.448 | 0.977 | -0.529 | -0.253 |
+| 16 | 0.886 | 0.738 | +0.148 | +0.333 |
+| 24 | 0.694 | 0.618 | +0.076 | +0.208 |
+| 32 | 0.703 | 0.615 | +0.087 | +0.172 |
+
+**Four reasons only the grid-8 point is safe:**
+1. MEASURED NOISE FLOOR 0.150 (mean |delta| between two provably function-identical
+   models, GateDeltaCtl vs Vanilla, n=9; sd 0.198, range -0.228..+0.410). Only
+   -0.529 clears it; +0.148/+0.076/+0.087 are at or inside it.
+2. HELD-OUT ACCURACY IS AN AFFINE READOUT OF TRAINING LOSS: r = -0.996 over 57 runs,
+   acc = 1.039 - 0.555*loss, residual sd 0.021. Loss-matched, the position effect is
+   -0.042/-0.028/+0.002/-0.012 -- NO CROSSOVER in loss-matched space.
+3. T=1024 IS STRUCTURALLY CONFOUNDED. Training is 512 steps = 1024 tokens; eval at
+   T=1024 = 2048 tokens. Index RoPE sees relative distances never trained (OOD by
+   construction); the path-integrated angle is bounded by the grid and stays
+   in-distribution. "T=1024 effect > T=512" is explained by RoPE length
+   extrapolation with no horizon story. Only T=512 is in-distribution.
+4. RoPE NEVER CONVERGES at any grid >=16 (0/9, loss 0.47-0.84) yet is the subtrahend
+   in every effect. Applying this session's own convergence-conditioning rule to the
+   position claim leaves ZERO valid pairs in the flat sweep.
+
+**Honest surviving claim:** index decisively beats path integration at grid 8; at
+grids >=16 the two are not distinguishable given this setup's variance, and the
+apparent reversal is not separable from a training-loss difference.
+
+**TWO EXPERIMENTS WOULD SETTLE THIS. Neither exists:**
+(a) Train RoPE at grid 32 to a genuinely flat loss (400-1000 epochs, or warmup +
+    cosine). If it reaches ~1.0, the crossover was optimisation. Nothing else in
+    this environment is interpretable until this runs.
+(b) Aliasing-controlled sweep: scale n_obs with area (16/64/144/256 at G=8/16/24/32)
+    so cells-per-token is pinned at 2.0. If the crossover survives it is distance or
+    capacity; if it vanishes it was vocabulary ambiguity.
+
+
+
+## CORRECTION (2026-08-27): the fidelity retraction went TOO FAR
+
+"H1 REFUTED" overstates it. The oracle recode CONFIRMED fidelity's core prediction
+for path integration, consistently:
+
+| arm | 24-bin allo -> oracle (T=512) | per-seed delta |
+|---|---|---|
+| Vanilla (path-int) | 0.284 -> 0.448 | +0.260, +0.132, +0.099 (3/3) |
+| MapPoPE-Flat (path-int) | 0.232 -> 0.324 | +0.176, +0.071, +0.030 (3/3) |
+| RoPE (index) | 0.501 -> 0.977 | +0.471, +0.496, +0.463 |
+| PoPE-Flat (index) | 0.364 -> 0.938 | +0.585, +0.596, +0.542 |
+
+Making the integrand exact improved path integration by **+0.164 within batch, 3/3
+seeds**. What failed was the ORDERING prediction -- and it failed because the INDEX
+arms improved even more (+0.48/+0.57) and hit a ceiling (0.977/0.938), which also
+makes the reported -0.571 uninterpretable as a mechanism size.
+
+**Correct claim:** reconstruction fidelity IS a real causal driver of
+path-integration performance, but it does not determine the SIGN of the between-arm
+difference, because exact tokens help attention-based retrieval more than they help
+the fixed integrator. That is a narrower and more interesting result than "refuted".

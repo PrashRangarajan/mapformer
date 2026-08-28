@@ -24,3 +24,22 @@
 > (is the ordinal rotation a handicap?), ConvDelta vs Vanilla (does
 > learning how-much-to-accumulate help when full accumulation is already
 > correct?), GateDelta vs Vanilla (does an explicit action/obs gate help?).
+
+
+## CORRECTION (2026-08-27)
+
+'NoPE collapses to chance' overstates n=1 data. NoPE is **seed 0 only**, and at
+g32 its loss is still descending monotonically at epoch 100 (1.693@80 ->
+1.680@90 -> 1.662@100). That is indistinguishable in kind from Vanilla's 0/3
+non-convergence at grid 8, which this session treats as an optimisation artifact.
+Say: *NoPE did not leave the plateau within 100 epochs, n=1, still descending.*
+
+The floor is also misquoted: the gates report a non-blank MARGINAL of
+0.070-0.079, not 1/16 = 0.0625 -- which is why NoPE reads 0.045, *below* the
+stated 'chance'.
+
+And the inference does not follow. 'NoPE < RoPE, therefore index-RoPE is not a
+straw man' is a non-sequitur: the straw-man objection asks for a STRONG index
+baseline (learned absolute embeddings, ALiBi, T5 relative bias, or RoPE with a
+tuned base -- ours uses base=10000.0, never tuned). Removing position entirely
+says nothing about any of those.

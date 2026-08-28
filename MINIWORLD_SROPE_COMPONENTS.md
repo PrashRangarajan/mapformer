@@ -77,3 +77,20 @@ ConvDelta (SRoPE's conv1d before the cumsum) and GateDelta (SRoPE's sigmoid gate
 > If the both-converged effect is ~0, this is trainability (as hierarchy was).
 > If it survives, a component from the LANGUAGE paper improves the NAVIGATION
 > model — the cross-domain transfer neither paper tested.
+
+
+## CORRECTION (adversarial review, 2026-08-27): 'null' is UNSUPPORTED
+
+Paired-delta SD across the 9 (grid,seed) pairs is 0.176 (ConvDelta) / 0.203
+(GateDelta). Minimum detectable effect at 80% power, n=9: **0.165 / 0.190**.
+The ConvDelta data are consistent with anything from -0.09 to +0.16 -- and a
++0.16 effect would be among the LARGEST architectural effects in this repo.
+Detecting 0.05 at this noise level needs n ~ 100 pairs.
+
+So: **ConvDelta and GateDelta are UNMEASURED, not null.** The 'both-converged'
+subsets (n=2, n=3) and the gate control's n=1 have MDE 0.29 to >0.5 and should
+not be reported as point estimates at all.
+
+Independently: the measured run-to-run noise floor for this setup is 0.150
+(two provably function-identical models, GateDeltaCtl vs Vanilla, n=9). Every
+component effect chased here (+0.035, +0.053, +0.081) is inside it.
