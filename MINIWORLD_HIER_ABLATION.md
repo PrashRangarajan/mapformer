@@ -28,7 +28,12 @@ MapWM-Hier vs MapWM-FlatHG: the SAME Hourglass 3-block scaffold at IDENTICAL par
 
 Per-seed values disagree in sign at every grid >=16, and accuracy tracks final
 training loss (the r=-0.996 pattern from H12_BUDGET_CURVE reproduces here).
-Conditioning on BOTH arms converging (final loss < 0.4):
+Conditioning on BOTH arms converging. **CORRECTED 2026-08-27 (audit):** the four
+rows below are threshold **0.2**, not 0.4 as originally written. At the stated 0.4
+there are FIVE pairs, mean **-0.022** (the extra pair is g16 s1, delta -0.112, the
+largest-magnitude converged pair). The failure counts below DO use 0.4. Both
+thresholds give an effect ~0 against the claimed +0.283, so the conclusion stands;
+the specific numbers were computed at an unstated threshold. Rows at 0.2:
 
 | grid | seed | Hier loss->acc | FlatHG loss->acc | delta |
 |---|---|---|---|---|
@@ -37,7 +42,7 @@ Conditioning on BOTH arms converging (final loss < 0.4):
 | 24 | 2 | 0.001 -> 1.000 | 0.000 -> 1.000 | +0.000 |
 | 32 | 1 | 0.177 -> 0.963 | 0.176 -> 0.954 | +0.009 |
 
-**Mean effect among converged pairs ~= 0.000.** Every apparent "pooling win" is a
+**Mean effect among converged pairs: +0.001 at threshold 0.2, -0.022 at 0.4.** Every apparent "pooling win" is a
 run where ONE arm failed to train -- and it goes BOTH ways (g16 s1 is the POOLED
 arm failing). The means in the tables above are outlier-driven; do not cite them.
 

@@ -15,3 +15,14 @@ byte-level enwik8, seq 512, batch 16, 12k iters, lr 2e-4 (matching the existing 
 > 0.967, both 0.994. The question here is whether that holds on text, where
 > each is worth only ~1-2% alone. Also watch NoPE: it collapsed to chance on
 > navigation but is competitive on language in Selective RoPE's own tables.
+
+
+## CORRECTION (audit, 2026-08-27)
+
+The claim that *every* arm was still improving at 12k is **wrong**. Three of six
+(Vanilla, PoPE-Flat, MapPoPE-Hier) got WORSE on the final 500-iter step and peak
+at 11500. Val oscillates +/-0.02 between checkpoints, so MapPoPE-Flat's headline
+-0.061 last-2k gain includes a -0.037 single-step swing off a local bump and is
+NOT cleanly separable from checkpoint noise. The 2k-window gains are all negative,
+so 'budget-limited' remains plausible and the 36k rerun is still justified -- but
+the specific evidence offered for it was overstated.
