@@ -36,8 +36,12 @@ def _final_loss(runs_dir, seed, variant, enc):
         d = torch.load(pt, map_location="cpu")
         ls = d.get("losses")
         return float(ls[-1]) if ls else None
-    except Exception:
-        return None
+    except Exception as e:
+        # BUGFIX 2026-08-28: this used to return None indistinguishably from
+        # "no checkpoint", so the arm was never added to `stuck` and `complete`
+        # passed with ZERO convergence conditioning while the header still
+        # advertised it. A load failure is now its own signal.
+        return ("unreadable", f"{type(e).__name__}")
 
 
 def main():
@@ -57,7 +61,7 @@ def main():
     # acc[variant][enc][seed] = nb_acc ; loss[...] = final train loss
     acc = defaultdict(lambda: defaultdict(dict))
     loss = defaultdict(lambda: defaultdict(dict))
-    missing, stuck = [], []
+    missing, stuck, unreadable = [], [], []
     for v in args.variants:
         for e in ENCS:
             for s in args.seeds:
@@ -71,6 +75,9 @@ def main():
                     continue
                 acc[v][e][s] = r[key]["nb_acc"]
                 fl = _final_loss(args.runs_dir, s, v, e)
+                if isinstance(fl, tuple):        # checkpoint present but unreadable
+                    unreadable.append(f"{v}_{e}_s{s}({fl[1]})")
+                    fl = None
                 loss[v][e][s] = fl
                 if fl is not None and fl > args.loss_thresh:
                     stuck.append(f"{v}_{e}_s{s}(loss={fl:.2f})")
@@ -100,7 +107,11 @@ def main():
              "oracle": "oracle (exact cell Δ)"}
     effects = {e: paired_effect(e) for e in ENCS}
     present = [e for e in ENCS if effects[e]]
-    complete = all(len(effects[e]) == len(args.seeds) for e in present) and not stuck and present
+    # unreadable checkpoints count against completeness: an arm whose loss could
+    # not be read has NOT been convergence-checked, and claiming otherwise is the
+    # exact silent failure this gate exists to prevent.
+    complete = (all(len(effects[e]) == len(args.seeds) for e in present)
+                and not stuck and not unreadable and present)
 
     def eff_line(enc, per_seed):
         if not per_seed:
@@ -129,6 +140,7 @@ def main():
         lines += ["> **INCOMPLETE / SUSPECT — verdict withheld.**",
                   f"> missing: {missing or 'none'}",
                   f"> possibly-non-converged (loss>{args.loss_thresh}): {stuck or 'none'}",
+                  f"> checkpoint present but UNREADABLE (never convergence-checked): {unreadable or 'none'}",
                   "> Re-run the flagged arms in the same batch before reading the flip."]
     else:
         # flip test: compare the two richest encodings present (oracle vs allo for

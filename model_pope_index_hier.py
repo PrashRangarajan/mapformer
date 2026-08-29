@@ -53,7 +53,14 @@ class _IndexDelta(nn.Module):
 
 
 class MapFormerWM_Hourglass_PoPE_Index(MapFormerWM_Hourglass_PoPE):
-    """PoPE + sequence-index position + single-level hourglass."""
+    """PoPE + sequence-index position + single-level hourglass.
+
+    NOTE (2026-08-28): this arm is CORRECTLY invariant to bottleneck_r. It
+    replaces action_to_lie with _IndexDelta, which has no learned action
+    subspace, so there is no rank to set -- unlike the sibling PoPE hourglass
+    classes, where r was being silently swallowed (fixed in model_pope.py).
+    Do not "fix" the invariance here; it is what the index arm means.
+    """
 
     def __init__(self, *a, base: float = 10000.0, **kw):
         super().__init__(*a, **kw)

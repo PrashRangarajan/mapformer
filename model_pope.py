@@ -129,9 +129,16 @@ class MapFormerWM_RoPEIndex_PoPE(MapFormerWM):
 
 class MapFormerWM_Hourglass_PoPE(MapFormerWM_Hourglass_k2):
     """MapFormer path-integration + PoPE + single-level hourglass."""
-    def __init__(self, *a, **kw):
-        super().__init__(*a, **kw)
-        _widen_to_d(self, kw.get("grid_size", 64))
+    # BUGFIX 2026-08-28: this took (*a, **kw) and called _widen_to_d WITHOUT
+    # bottleneck_r, so the rebuild there silently reset action_to_lie to the
+    # default rank 2 -- r=2 and r=4 gave identical param counts. Every
+    # hier-vs-flat comparison spanning the PoPE and MapWM families was
+    # rank-confounded, unlogged. `kw.get("grid_size", 64)` was a second latent
+    # bug in the same line: passed positionally, grid_size silently became 64.
+    # Both are now named parameters, which also makes inspect.signature work.
+    def __init__(self, *a, grid_size=64, bottleneck_r=2, **kw):
+        super().__init__(*a, grid_size=grid_size, bottleneck_r=bottleneck_r, **kw)
+        _widen_to_d(self, grid_size, bottleneck_r)
         d, h = self.d_model, self.n_heads
         self.pre_layers = _swap(self.pre_layers, d, h)
         self.coarse_layers = _swap(self.coarse_layers, d, h)
@@ -140,9 +147,9 @@ class MapFormerWM_Hourglass_PoPE(MapFormerWM_Hourglass_k2):
 
 class MapFormerWM_Hourglass_PoPE_CoarseIdx(MapFormerWM_Hourglass_CoarseIdx):
     """PoPE + ordinal index coarse position + hierarchy (best-of-both)."""
-    def __init__(self, *a, **kw):
-        super().__init__(*a, **kw)
-        _widen_to_d(self, kw.get("grid_size", 64))
+    def __init__(self, *a, grid_size=64, bottleneck_r=2, **kw):   # see BUGFIX above
+        super().__init__(*a, grid_size=grid_size, bottleneck_r=bottleneck_r, **kw)
+        _widen_to_d(self, grid_size, bottleneck_r)
         d, h = self.d_model, self.n_heads
         self.pre_layers = _swap(self.pre_layers, d, h)
         self.coarse_layers = _swap(self.coarse_layers, d, h)

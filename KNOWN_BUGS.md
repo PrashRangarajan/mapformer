@@ -5,36 +5,9 @@ reading code, not by anything failing loudly — which is the point.
 
 ## SILENT — will corrupt a comparison without any error
 
-**1. `MapPoPE-Hier` / `PoPE-Hier` / `Plain-Hier` silently ignore `bottleneck_r`.**
-Verified: r=2 and r=4 give IDENTICAL param counts (9,724,672), so `**kwargs` swallows
-it. `MapWM-Hier` and `MapWM-FlatHG` DO accept it (28,368,376 -> 28,371,016). Any
-hier-vs-flat comparison in the PoPE family therefore confounds RANK, unlogged.
-*Fix:* give every wrapper an explicit `bottleneck_r=2`, or try/except the kwarg
-instead of `inspect.signature` (which cannot see through `*args/**kwargs`).
+**(5 of the original 5 are now FIXED — see below. Nothing is open in this section.)**
 
-**2. `train_hourglass_enwik8.build()` hardcodes dim/heads/n_layers for the three
-plain baselines.** `HourglassPlainLM(dim=512, heads=8)` / `FlatPlainLM(n_layers=10)`
-ignore the arguments passed in. Put `flat9` in a sweep with `--dim 256` and it
-silently trains at 512 against 256-dim MapFormer arms.
-*Fix:* pass the arguments through.
-
-**3. Misaligned seed pairing in `run_mw_hier_ablation.sh`'s aggregator.** `h` and `f`
-are each filtered for `None` independently, then zipped. If Hier is missing seed 1 and
-FlatHG is missing seed 2, both lists are length 2, the length check passes, and it
-pairs Hier-s0 with FlatHG-s0 and **Hier-s2 with FlatHG-s1**.
-*Fix:* build pairs keyed by seed before zipping.
-
-**4. `agg_miniworld.py`'s bare `except` can disable the convergence gate entirely.**
-Any `torch.load` failure returns `None`, the arm is never added to `stuck`, and
-`complete` passes with zero conditioning while the header still advertises it.
-*Fix:* track load failures in a third list and include it in the predicate.
-
-**5. Probes recompute `cumsum(delta) * omega` inline** instead of calling
-`path_integrator(delta)` — `probe_position_decode.py:61`, `probe_goal_distance_state.py:99`,
-`model_inekf_*`. Run against a **ConvDelta** checkpoint they silently report the
-UNFILTERED path integral. (`ap_kernel_diagnostic.py` calls the module and is fine.)
-
-## FIXED this session
+## FIXED (2026-08-27/28)
 
 - **Non-deterministic val in `train_hourglass_enwik8`** — val batches were drawn from
   the global RNG, resampled per checkpoint AND differing per model. Swings 0.02-0.07
@@ -49,6 +22,35 @@ UNFILTERED path integral. (`ap_kernel_diagnostic.py` calls the module and is fin
 - **`flops_proxy` wrote a bare `NaN`** into JSON, which strict parsers reject. Now `None`.
 - **`experiment_audit.py` control matching** used equality where variant keys carry an
   `_oracle` suffix — silently reported "no pairs found" and never measured the floor.
+
+### Fixed 2026-08-28 (the five silent ones), each with a verification
+
+- **PoPE hourglass family swallowed `bottleneck_r`.** Root cause was NOT the call
+  site's `inspect.signature` as first diagnosed — those classes accept the kwarg
+  without error, then `_widen_to_d(self, kw.get("grid_size", 64))` REBUILDS
+  `action_to_lie` at the default rank, discarding it. Now named parameters on
+  `MapFormerWM_Hourglass_PoPE` / `_CoarseIdx`. *Verified:* r=2 vs r=4 param counts
+  now differ (2,503,168 / 2,504,192) where they were identical.
+  Same line also silently reset `grid_size` to 64 if passed positionally — also fixed;
+  *verified* omega_min = 2π/grid_size at grid 64 and 512.
+  `PoPE-Hier` remains correctly r-invariant (it has no action subspace); documented
+  in-class so nobody "fixes" it.
+- **`build()` hardcoded dim/heads/n_layers for the plain baselines.** Passed through.
+  *Verified:* flat9 is 7.2M at dim 256 and 28.6M at dim 512 where it was 28.6M for both.
+- **`build()` now FAILS LOUDLY** if a non-default rank was requested and the class
+  cannot honour it, instead of training the wrong model quietly.
+- **Misaligned seed pairing in `run_mw_hier_ablation.sh`.** Pairs are built keyed by
+  seed before filtering, so a seed counts only when both arms have it.
+- **`agg_miniworld.py`'s bare `except` disabled the convergence gate.** An unreadable
+  checkpoint now returns its own signal, is listed separately, and counts against
+  `complete`. *Verified* with a deliberately corrupted `.pt`: reports
+  `UNREADABLE ... (UnpicklingError)` and withholds the verdict, where it previously
+  passed the gate silently.
+
+**Still open: #5, probes recompute `cumsum(delta) * omega` inline**
+(`probe_position_decode.py:61`, `probe_goal_distance_state.py:99`, `model_inekf_*`)
+instead of calling `path_integrator(delta)`. Against a **ConvDelta** checkpoint they
+silently report the UNFILTERED path integral. (`ap_kernel_diagnostic.py` is fine.)
 
 ## TRAPS (not bugs, but they have cost time)
 
@@ -72,3 +74,9 @@ UNFILTERED path integral. (`ap_kernel_diagnostic.py` calls the module and is fin
   8 rows; and an enwik8 hierarchy figure (2.00 vs 2.07, hierarchy better) that NO saved
   data supports — the real numbers are 1.4844 vs 1.4727, hierarchy WORSE. Generate
   headline numbers from the JSONs rather than typing them.
+- **Aggregator `--out` defaults to a TRACKED results file.** `agg_miniworld.py`
+  defaults to `MINIWORLD_FIXED_RESULTS.md`, so pointing it at any other `--runs-dir`
+  — including a throwaway smoke test — overwrites the canonical result in place with
+  no warning. Hit while testing the fix above; caught only by `git status`. Pass an
+  explicit `--out` for anything that is not the real run, and check `git status`
+  after running an aggregator.

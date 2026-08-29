@@ -72,11 +72,16 @@ for L in (512, 1024):
     out += [f"## T={L}", "", "| grid | MapWM-Hier (pooled) | MapWM-FlatHG (no pooling) | effect of POOLING |",
             "|---|---|---|---|"]
     for G in (8, 16, 24, 32):
-        h = [acc(G, s, "MapWM-Hier", L) for s in (0, 1, 2)]
-        f = [acc(G, s, "MapWM-FlatHG", L) for s in (0, 1, 2)]
-        h = [x for x in h if x is not None]; f = [x for x in f if x is not None]
+        # BUGFIX 2026-08-28: h and f used to be filtered for None INDEPENDENTLY and
+        # then zipped. With Hier missing seed 1 and FlatHG missing seed 2, both
+        # lists are length 2, the length check passes, and Hier-s2 gets paired
+        # with FlatHG-s1 -- a mispaired comparison reported as if paired. Pair by
+        # seed first, so a seed only counts when BOTH arms have it.
+        pairs = [(acc(G, s, "MapWM-Hier", L), acc(G, s, "MapWM-FlatHG", L)) for s in (0, 1, 2)]
+        pairs = [(a, b) for a, b in pairs if a is not None and b is not None]
+        h = [a for a, _ in pairs]; f = [b for _, b in pairs]
         if h and f:
-            per = ", ".join(f"{a-b:+.3f}" for a, b in zip(h, f)) if len(h) == len(f) else ""
+            per = ", ".join(f"{a-b:+.3f}" for a, b in pairs)
             out.append(f"| {G} | {np.mean(h):.3f} | {np.mean(f):.3f} | "
                        f"**{np.mean(h)-np.mean(f):+.3f}** (n={min(len(h),len(f))}; {per}) |")
         else:

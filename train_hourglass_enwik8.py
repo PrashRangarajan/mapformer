@@ -74,13 +74,17 @@ def evaluate(model, data, batch_size, seq_len, device, n_batches=40):
 
 def build(model_name, shorten=2, dim=512, heads=8, n_layers=9, grid_size=512,
           bottleneck_r=2):
+    # BUGFIX 2026-08-28: these three used to hardcode dim=512/heads=8/n_layers,
+    # silently IGNORING the arguments. A sweep run with --dim 256 trained the
+    # plain baselines at 512 against 256-dim MapFormer arms, with nothing in the
+    # log to show it. Everything is passed through now.
     if model_name == "hourglass":
-        return HourglassPlainLM(num_tokens=256, dim=512, depth=(4, 2, 4),
-                                shorten_factor=shorten, heads=8)
+        return HourglassPlainLM(num_tokens=256, dim=dim, depth=(4, 2, 4),
+                                shorten_factor=shorten, heads=heads)
     if model_name == "flat10":
-        return FlatPlainLM(num_tokens=256, dim=512, n_layers=10, heads=8)
+        return FlatPlainLM(num_tokens=256, dim=dim, n_layers=10, heads=heads)
     if model_name == "flat9":
-        return FlatPlainLM(num_tokens=256, dim=512, n_layers=9, heads=8)
+        return FlatPlainLM(num_tokens=256, dim=dim, n_layers=n_layers, heads=heads)
     # Any registered MapFormer variant, on byte-level enwik8 (vocab 256).
     # grid_size: MapFormer initialises omega geometrically so the LOWEST frequency
     # completes one cycle over the largest traversable distance (omega_min =
@@ -95,10 +99,28 @@ def build(model_name, shorten=2, dim=512, heads=8, n_layers=9, grid_size=512,
         # uses r=2 for 2D navigation and r=4 for its OpenWebText run; rank is
         # decisive in their own data (2D: r=1 -> 0.66, r=2 -> 1.00). Only the
         # path-integrating variants accept it.
-        import inspect
-        if 'bottleneck_r' in inspect.signature(VARIANT_MAP[model_name].__init__).parameters:
-            kw['bottleneck_r'] = bottleneck_r
-        return VARIANT_MAP[model_name](**kw)
+        #
+        # BUGFIX 2026-08-28: this used inspect.signature, which CANNOT see through
+        # a `def __init__(self, *a, **kw)` wrapper. Every PoPE/Plain hourglass
+        # variant is written that way, so the rank was silently dropped for them
+        # while the MapWM arms received it -- verified by r=2 and r=4 producing
+        # identical param counts (9,724,672). Any hier-vs-flat comparison across
+        # those families was therefore rank-confounded with nothing in the log.
+        # Ask by construction instead, and FAIL LOUDLY if a non-default rank was
+        # requested and could not be honoured: silently training the wrong model
+        # is the failure mode this whole file keeps hitting.
+        cls = VARIANT_MAP[model_name]
+        try:
+            return cls(**kw, bottleneck_r=bottleneck_r)
+        except TypeError as e:
+            if 'bottleneck_r' not in str(e):
+                raise
+            if bottleneck_r != 2:
+                raise TypeError(
+                    f"{model_name} does not accept bottleneck_r, but --bottleneck-r "
+                    f"{bottleneck_r} was requested. It would have trained at the "
+                    f"default rank and the comparison would be rank-confounded.") from e
+            return cls(**kw)
     raise ValueError(model_name)
 
 
