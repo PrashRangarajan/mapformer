@@ -132,3 +132,16 @@ Untested variants (lower priority): omega-band-structured heads (structures
 attention range by frequency band, no token pooling — avoids the HierAttn
 failure mode but has its own uncertainties); depth hierarchy / per-layer
 correction (Axis 4, needs multi-layer stability work first).
+
+**TEXT, added 2026-08-28 — same verdict, cleanest version of it.** enwik8 byte-level,
+MapWM-Hier 1.4537 vs MapWM-FlatHG 1.4506 bpc at EXACT param parity (28,371,016 both;
+identical 3-block scaffold, only the middle block's k=2 pooling differs). Hierarchy is
++0.0032 WORSE, inside the 0.003–0.007 checkpoint sd → a null on quality. The one
+measurable effect is **−8.6% wall time**. Reproduces the plain-family direction
+(1.4844 vs 1.4727 at −18.75% FLOPs) with parity and deterministic val added.
+
+**Two families now agree: on text, hierarchy is an EFFICIENCY property, not a quality
+win.** Exactly what the sufficient-statistic principle predicts — next-byte prediction
+is exact-recall, so a lossy summary can only lose. n=1 per arm, so this is consistent
+with a null rather than proof of one.
+
