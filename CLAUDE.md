@@ -73,6 +73,51 @@ Consequence: do NOT run MapWM-vs-RoPE on language. Also note **Selective RoPE
 content-dependent** (only its magnitude is) -- PoPE is not in this family.
 Full landscape, numbers and open slots: **LANGUAGE_LANDSCAPE.md**.
 
+
+## STANDING RULES 8-12, all bought by the 2026-08-26..28 retractions
+
+Run `python3 -m mapformer.experiment_audit --runs-dir <dir> --control <inert-twin>
+--control-of <real-arm>` BEFORE interpreting any run directory. It checks 8-11
+automatically in ~30s. Four claims were retracted that week; every one is caught by
+that script.
+
+**Rule 8 -- MEASURE the noise floor; never assume it.** Train an arm that is PROVABLY
+function-identical to a real one (same params, effect multiplied out, zero gradient)
+and report the gap. Measured here: **mean |delta| 0.150, range -0.23..+0.41** on
+MiniWorld. Most effects chased that week were smaller than that. No effect below the
+measured floor is reportable.
+
+**Rule 9 -- check whether accuracy is just the training loss.** Measured r = **-0.996**
+over 57 runs (acc = 1.039 - 0.555*loss). When |r| > 0.98 the held-out eval carries no
+information the loss does not, every "effect" is a loss gap in disguise, and the only
+honest analysis is the loss-matched residual.
+
+**Rule 10 -- verify CONVERGENCE (loss slope over the final 10%), and check the LR
+SCHEDULE.** `LinearLR(1.0->0.0)` decays from step one with no warmup: on a
+plateau-then-cliff landscape a run can never escape the plateau late, so the budget
+measures "did the transition fire early", not "can this model solve the task".
+Switching to 5% warmup + cosine-to-10% moved one arm from **0.448 to 0.990 on the
+same task** and INVERTED the sign of the headline effect. Never compare unconverged arms.
+
+**Rule 11 -- "null" requires power.** Compute the minimum detectable effect
+(2.8*sd/sqrt(n)). At n=9 with sd 0.18 the MDE is **0.165** -- larger than any component
+effect in the study. Say **"unmeasured"**, not "null", unless MDE < the effect you are
+dismissing. Also: conditioning on convergence can SELECT INTO A CEILING (every
+surviving pair already >0.95), which shows ~0 by construction -- report the threshold
+sensitivity, never a single cutoff.
+
+**Rule 12 -- put the seeds on the comparison you are CLAIMING.** Seeds were run on
+"MapPoPE vs RoPE" and the claim made was "MapPoPE composes, i.e. beats its
+COMPONENTS" -- a different comparison, at n=1, with a margin under half the noise.
+Before writing a sentence, ask which two columns it compares and whether THOSE have
+seeds.
+
+**Corollary to rule 5, learned the hard way:** check your own GATE data against your
+proposed mechanism. The "attention horizon" story was falsified by gate G6 -- revisit
+lags SHORTEN with grid size (47/43/38/33) and the fraction inside the horizon RISES
+(0.43->0.50) -- data collected before training and never cross-checked.
+
+
 ## Current state (what's implemented and working)
 
 1. **Paper reproduction** — `model.py`, `environment.py`, `main.py`.
