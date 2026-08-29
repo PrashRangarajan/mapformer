@@ -1396,7 +1396,13 @@ Headline (cross_nb_acc, the compositional target):
 parameter parity (28,371,016 both -- same 3-block scaffold, differing only in whether
 the middle block pools k=2), 36k iters, dim 880, deterministic val. Hierarchy is
 **+0.0032 WORSE**, inside the 0.003-0.007 checkpoint sd -> a null on bpc. The only
-measurable effect is **-8.6% wall time** (70 vs 76 min).
+measurable effect is compute: **1.23x throughput (20.10 vs 16.36 it/s measured alone
+on an idle GPU), -14.1% peak memory**, matching a -17.4% analytic FLOP count. An
+earlier "-8.6% wall time" figure from the training run was contaminated by GPU
+co-tenancy -- do not quote it. Note the saving is a LINEAR win (half the tokens
+through one block's FFN), not the quadratic-attention win the hourglass is sold on:
+attention is only 8.8% of a block at d=880/L=512, so the saving grows only to -21.7%
+at L=8192, against a -25% ceiling for this 1-of-3-blocks scaffold.
 
 Same DIRECTION as the plain-family run (1.4844 vs 1.4727, +0.0117 worse at -18.75%
 FLOPs), now with param parity and deterministic val. Two families agree: on text,

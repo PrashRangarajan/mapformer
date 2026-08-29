@@ -28,9 +28,38 @@ Checkpoint-to-checkpoint sd after the determinism fix is 0.003-0.007, so an effe
 of 0.0032 is INSIDE the noise. 
 **Hierarchy is a null on next-byte prediction quality.**
 
-**Pooling effect on cost: +8.6% wall time** (70 vs 76 min). The flop proxy is
-null in these JSONs, so wall time is the measurement.
-This is the only measurable effect, and it is an EFFICIENCY effect.
+**Pooling effect on cost: 1.23x throughput, -14.1% peak memory.** This is the only
+measurable effect, and it is an EFFICIENCY effect.
+
+| | MapWM-Hier | MapWM-FlatHG | effect |
+|---|---|---|---|
+| throughput, isolated on an idle GPU | 20.10 it/s | 16.36 it/s | **1.23x (-18.6% step time)** |
+| peak memory | 2.62 GiB | 3.05 GiB | **-14.1%** |
+| analytic block FLOPs | | | **-17.4%** |
+
+**CORRECTION.** The first version of this file reported -8.6% wall time, taken from
+the training run. That measurement was contaminated: both arms shared cuda:0 and
+Hier finished 6 minutes earlier, leaving FlatHG a quieter GPU for its tail. Measured
+alone on an idle GPU the saving is 1.23x, which matches the -17.4% analytic FLOP
+count. Do not quote the 8.6%.
+
+### Where the saving actually comes from -- NOT the quadratic term
+
+The scaffold is 1 pre / 1 coarse / 1 post, so only ONE of three blocks pools. Per
+block, the attention matmuls (2*L*d) sit against 12*d^2 of projections and FFN, and
+at d=880, L=512 attention is only **8.8%** of a block. So the saving is overwhelmingly
+"half as many tokens through one block's FFN" -- a LINEAR win -- not the quadratic
+attention win the hourglass is usually sold on. It therefore barely scales:
+
+| seq len | attention share of a block | hier/flat FLOPs |
+|---|---|---|
+| 512 | 8.8% | -17.4% |
+| 2048 | 27.9% | -19.0% |
+| 8192 | 60.8% | -21.7% |
+
+The ceiling for this scaffold is **-25%**, reached only if attention dominated
+entirely. Buying substantially more compute back needs a different scaffold -- more
+or deeper coarse blocks, or a larger shorten factor -- not a longer sequence.
 
 ## This reproduces the earlier plain-family result, and fixes its sign in CLAUDE.md
 
