@@ -70,6 +70,11 @@ def run_config(grid_size, T, n_episodes, n_obs, seed, env_name, fixed_map=False,
     rng = np.random.RandomState(seed)
     blank = w.blank_token
     obs_off = w.obs_offset
+    # G8 support: the widest token id the env ever emits, checked against the
+    # vocab the trainer will size the embedding to. An out-of-range id surfaces
+    # as CUBLAS_STATUS_ALLOC_FAILED, which reads exactly like CUDA OOM -- three
+    # conditions once passed every answer-stream gate while being untrainable.
+    tok_min, tok_max = 10**9, -10**9
 
     answers = []               # obs class at scored positions (may be blank)
     prev_obs = []              # obs class at step i-1 (copy-last prediction)
@@ -85,6 +90,7 @@ def run_config(grid_size, T, n_episodes, n_obs, seed, env_name, fixed_map=False,
         # stale and the oracle would (wrongly) fail on fresh-map.
         obs_map = w.obs_map
         tok = tok.numpy()
+        tok_min = min(tok_min, int(tok.min())); tok_max = max(tok_max, int(tok.max()))
         rev = rev.numpy()
         cells = w.visited_locations            # T cells, one per step
         actions = tok[0::2]                    # T action tokens
@@ -148,6 +154,8 @@ def run_config(grid_size, T, n_episodes, n_obs, seed, env_name, fixed_map=False,
 
     return dict(
         grid_size=grid_size, T=T, n_episodes=n_episodes, n_scored=int(n),
+        n_obs=n_obs, vocab_size=int(w.unified_vocab_size),
+        tok_min=int(tok_min), tok_max=int(tok_max),
         chance=g1, marginal_all=g2_all, marginal_nonblank=g2_nb,
         blank_frac=blank_frac, copy_last=g3, ngram=g4, ngram_nonblank=g4_nb,
         label_mass=g5, scored_per_traj_mean=float(scored_counts.mean()),
@@ -164,7 +172,7 @@ def verdict_lines(r):
     g = []
     ch = r["chance"]
     # G1: reference, always PASS
-    g.append(("G1 chance (ref)", "PASS", f"{ch:.4f} = 1/16"))
+    g.append(("G1 chance (ref)", "PASS", f"{ch:.4f} = 1/{r['n_obs']}"))
     # G2: marginal is expected to be elevated by blank; report, not a fail on its
     # own, but flag if non-blank marginal is far above chance (skew).
     g2nb = r["marginal_nonblank"]
@@ -203,7 +211,22 @@ def verdict_lines(r):
     g7 = r["oracle"]
     g7v = "PASS" if g7 >= 0.999 else "FAIL"
     g.append(("G7 oracle", g7v, f"{g7:.4f} over {r['oracle_tot']} scored"))
+    g.append(_g8(r))
     return g
+
+
+def _g8(r):
+    """Token ids must lie inside the vocab the trainer sizes the embedding to.
+
+    Added 2026-08-28. Three continuous conditions once passed EVERY answer-stream
+    gate while being untrainable: an out-of-range embedding lookup raises
+    CUBLAS_STATUS_ALLOC_FAILED, which is indistinguishable from CUDA OOM at the
+    console. Cheap to check, and it fails loudly instead of at 3am on a GPU.
+    """
+    ok = 0 <= r["tok_min"] and r["tok_max"] < r["vocab_size"]
+    return ("G8 vocab range", "PASS" if ok else "FAIL",
+            f"tokens [{r['tok_min']}, {r['tok_max']}] vs vocab {r['vocab_size']}"
+            + ("" if ok else "  <-- OUT OF RANGE: would crash as a fake CUDA OOM"))
 
 
 def main():
