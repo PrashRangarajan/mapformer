@@ -64,3 +64,39 @@ Scored target = obs token at CROSS-CELL revisits (cell seen before and != previo
 | G8 vocab range | PASS | tokens [0, 265] vs vocab 266 |
 
 
+
+---
+
+## Interim note (2026-08-29 05:40, 6 of 25 runs) -- NOT a result
+
+Recorded while the sweep runs so the decision trail is not reconstructed later.
+
+n_obs=256 seeds 0-2 finished. Raw paired effect **+0.389** (+0.394/+0.364/+0.408),
+i.e. more than DOUBLE the +0.173 anchor at n_obs=16 -- the opposite direction from
+pre-registered outcome A, which predicted a collapse toward 0 at low aliasing.
+
+**It is not interpretable yet.** The index arm is NOT converged in 2 of 3 seeds
+(slope -0.00074 / -0.00060 against a 5e-4 flat threshold, still dropping ~0.02-0.03
+over the final 40 epochs) while the path-integrated arm is flat at loss 0.007-0.029.
+An unconverged index arm inflates the effect by exactly the time-to-solve confound
+that inverted the grid-8 sign.
+
+Outcome C (floor collapse) IS ruled out: RoPE sits at 0.60, far above the 0.013
+non-blank marginal. Both arms are learning.
+
+**The design tension this exposes.** The same 400-epoch budget converges the index
+arm at n_obs=16 (flat 3/3, loss 0.41-0.50) but not at n_obs=256. Harder conditions
+need longer budgets, so "matched budget across conditions" and "converged within
+each condition" cannot both hold. Options, none chosen yet:
+  1. All conditions to 800 ep -- fully matched AND converged, ~55 h.
+  2. Each condition to its own convergence -- defensible, but then cross-condition
+     effect comparison is budget-confounded, which is the weak link.
+  3. Report at matched 400 ep with the non-convergence flagged, and add an
+     extended-budget arm at n_obs=256 to BOUND how much of the effect is budget.
+
+Deciding on 3 of 25 runs would be the same mistake as fitting a trend through two
+budget points (rule 5 corollary). Revisit when the sweep completes.
+
+Power note: the n_obs=256 effect has sd 0.022 at n=3 (MDE 0.036), far tighter than
+the n_obs=16 anchor's sd 0.125. The basin-selection variance that forced n=5 is
+specific to the anchor, not general.
