@@ -67,11 +67,26 @@ REPO="$(cd "$(dirname "$0")" && pwd)"; cd "$REPO/.."
 R="$REPO/runs/alias_sweep"; mkdir -p "$R"
 LOG="$REPO/alias_sweep.log"; echo "alias sweep start $(date)" > "$LOG"
 
+G=32; T=512; NBUF=24000; EP=400; NB=180; BS=24; DM=256; NL=4; NH=4; NW=24; ETRIALS=128
+MAXPG=3        # 5.7 GiB/job measured; 3x = 17 GiB of 24 GiB
+
 # refuse to run if the gates were not cleared
 [ -f "$REPO/.alias_gates_clean" ] || { echo "GATES NOT CLEAN -- refusing" >> "$LOG"; exit 1; }
 
-G=32; T=512; NBUF=24000; EP=400; NB=180; BS=24; DM=256; NL=4; NH=4; NW=24; ETRIALS=128
-MAXPG=3        # 5.7 GiB/job measured; 3x = 17 GiB of 24 GiB
+# PREBUILD THE BUFFERS SERIALLY FIRST. MiniWorld creates an EGL context per
+# worker (~150 MiB of GPU) even with rendering disabled, so launching 6 jobs at
+# once means 144 worker processes: it pinned a 24 GiB 4090 at 23,955 MiB (97.5%)
+# before any model reached the device, and oversubscribed 32 cores by 4.5x.
+# Built one job at a time it peaks at 4.5 GiB and takes ~42 s per buffer.
+# Cheap and idempotent -- cached buffers return instantly.
+echo "$(date +%H:%M) prebuilding buffers serially" >> "$LOG"
+python3 -u -m mapformer.prebuild_buffers --grid-size $G --n-obs 256 64 \
+    --seeds 0 1 2 3 4 --n-steps $T --buffer-size $NBUF --eval-trials $ETRIALS \
+    --n-workers $NW --oracle >> "$LOG" 2>&1
+python3 -u -m mapformer.prebuild_buffers --grid-size $G --n-obs 16 \
+    --seeds 3 4 --n-steps $T --buffer-size $NBUF --eval-trials $ETRIALS \
+    --n-workers $NW --oracle >> "$LOG" 2>&1
+
 declare -a PIDG0=() PIDG1=()
 alive(){ local o=(); for p in "$@"; do kill -0 "$p" 2>/dev/null && o+=("$p"); done; echo "${o[@]:-}"; }
 launch(){
