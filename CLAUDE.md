@@ -1345,7 +1345,13 @@ Headline (cross_nb_acc, the compositional target):
 - **MapWM-Hier is high-variance** (seed1 outlier 0.625 vs ~0.30 for seeds 0,2;
   std > gap). The clean, low-variance version of "hierarchy helps" is the plain
   family. More MapWM-Hier seeds is the key open follow-up.
-- enwik8 scaffold (Gate B): hourglass val_bpc ≈2.00 vs flat10 ≈2.07, equal
+- enwik8 scaffold (Gate B): **CORRECTED 2026-08-28** -- the '≈2.00 vs ≈2.07,
+  hourglass better' figure is WRONG and no saved data supports it. Actual, at
+  identical params (31,787,264) and seq 2048: **hourglass 1.4844 vs flat10
+  1.4727 -- hourglass is WORSE by +0.0117**, with -18.75% FLOPs and -17.6%
+  wall-time. The earlier partial run agrees (1.5099 vs 1.4973, worse by
+  +0.0126). This is an EFFICIENCY result (equal-ish quality at less compute),
+  NOT a quality win, and must not be listed among hierarchy's wins. Equal
   params, seq=2048 — efficiency property reproduces.
 - **Phase 2 (`Hourglass_MotifSeg`, H3) still NOT built** — the room-boundary-
   segmented motif-collapsing variant is the predicted *real* hierarchy win.
@@ -1425,7 +1431,8 @@ WM and hierarchy help ORTHOGONAL metrics:
 > hierarchy buys COMPOSITIONAL TRANSFER and long-horizon AGGREGATION, and costs a
 > little on PRECISE RETRIEVAL.
 >   wins  — compositional motif 0.415 vs flat 0.270 (and Plain 0.318 vs 0.216);
->           aggregate task T=2048 0.537 vs 0.401; enwik8 2.00 vs 2.07 bpc
+>           aggregate task T=2048 0.537 vs 0.401; enwik8 -18.75% FLOPs at
+>           SLIGHTLY WORSE bpc (1.4844 vs 1.4727) -- efficiency, not quality
 >   loses — HIER_ATTN_LONGT T=4096 0.769 vs flat 0.861; ROUTE_ATTN 0.764 vs 0.849;
 >           SPACETIME_HIER 0.833 vs 0.955; Match-Query 0.786 vs 0.888
 > Oracle room-aligned pooling did NOT help (0.254 vs flat 0.281), so it is not
