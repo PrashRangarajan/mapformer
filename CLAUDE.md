@@ -1390,6 +1390,29 @@ Headline (cross_nb_acc, the compositional target):
 - **MapWM-Hier is high-variance** (seed1 outlier 0.625 vs ~0.30 for seeds 0,2;
   std > gap). The clean, low-variance version of "hierarchy helps" is the plain
   family. More MapWM-Hier seeds is the key open follow-up.
+### Hierarchy on text, MapFormer family (2026-08-28) -- NULL on quality, real on cost
+
+`ENWIK8_HIERARCHY.md`. **MapWM-Hier 1.4537 vs MapWM-FlatHG 1.4506 bpc** at EXACT
+parameter parity (28,371,016 both -- same 3-block scaffold, differing only in whether
+the middle block pools k=2), 36k iters, dim 880, deterministic val. Hierarchy is
+**+0.0032 WORSE**, inside the 0.003-0.007 checkpoint sd -> a null on bpc. The only
+measurable effect is **-8.6% wall time** (70 vs 76 min).
+
+Same DIRECTION as the plain-family run (1.4844 vs 1.4727, +0.0117 worse at -18.75%
+FLOPs), now with param parity and deterministic val. Two families agree: on text,
+hierarchy is an EFFICIENCY property, not a quality win.
+
+n=1 per arm, so only an effect much larger than 0.007 was detectable -- consistent
+with a null, not proof of one (rule 11). Says nothing about compositional transfer
+or long-horizon aggregation, where hierarchy's actual wins live; next-byte
+prediction is exact-recall, the regime where a lossy summary is not a sufficient
+statistic and hierarchy is EXPECTED to lose.
+
+The two PoPE arms in that run (MapPoPE-Hier 1.4591, PoPE-Hier 1.4553) are
+EXPLORATORY: MapPoPE-Hier silently trained at r=2 while the MapWM arms trained at
+r=4 (the `_widen_to_d` rank bug, fixed in e8f8f50 -- not retroactive), and neither
+has a flat control. The primary pair is unaffected: both MapWM, both r=4.
+
 - enwik8 scaffold (Gate B): **CORRECTED 2026-08-28** -- the '≈2.00 vs ≈2.07,
   hourglass better' figure is WRONG and no saved data supports it. Actual, at
   identical params (31,787,264) and seq 2048: **hourglass 1.4844 vs flat10
