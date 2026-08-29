@@ -16,6 +16,13 @@ figures_*/
 # large caches / binary artifacts (do not commit)
 runs/_minigrid_cache/
 runs/_continuous_nav_cache/
+runs/_miniworld_cache/
+*.pkl
+# run-completion markers, ephemeral
+.*_done
+.*_clean
+.*_FAILED
+.*_persisted
 paper_figures/*.npz
 
 # downloaded datasets (re-fetched per HOURGLASS_README) and run markers
