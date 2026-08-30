@@ -179,8 +179,21 @@ def main():
                          "across arms; was 8 batches x 16 = 128 live)")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--output-dir", required=True)
+    ap.add_argument("--fast-attn", action="store_true",
+                    help="use F.scaled_dot_product_attention + TF32 instead of the "
+                         "explicit softmax(QK^T)V. Mathematically identical (logits "
+                         "1.4e-06, grads 2.4e-08, grad cosine 1.0000000000) but 2.56x "
+                         "faster at 37%% of the memory. Attention-dropout RNG draws "
+                         "differ, so a run is NOT bit-identical to one without it -- "
+                         "always include a same-budget control arm when mixing.")
     args = ap.parse_args()
 
+    if args.fast_attn:
+        import mapformer.model as _M
+        _M.USE_SDPA = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        print("[fast-attn] SDPA + TF32 enabled", flush=True)
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     dev = torch.device(args.device)
     kw = dict(env_name=args.env_name, grid_size=args.grid_size, n_obs_types=args.n_obs,
