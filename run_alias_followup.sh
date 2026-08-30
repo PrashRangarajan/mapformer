@@ -72,6 +72,19 @@ echo "$(date +%H:%M) waiting for the n16 wave to finish" >> "$LOG"
 while [ "$(pgrep -u "$USER" -f "$A" | wc -l)" -gt 0 ]; do sleep 120; done
 echo "$(date +%H:%M) GPUs clear" >> "$LOG"
 
+# ---- disk guard -------------------------------------------------------------
+# The filesystem was at 100% (2.4 GB free of 1.8 TB) when this was queued; /, /home
+# and /tmp are one volume. This run needs ~825 MB (3 grid-16 buffers at ~196 MB
+# plus 18 checkpoints at 13 MB). Fail loudly now rather than half way through a
+# 9-hour run with a truncated checkpoint that still looks like a finished arm.
+FREE_MB=$(df -Pm "$REPO" | awk 'NR==2{print $4}')
+echo "$(date +%H:%M) free disk: ${FREE_MB} MB" >> "$LOG"
+if [ "$FREE_MB" -lt 1500 ]; then
+  echo "REFUSING TO START: need ~825 MB plus margin, only ${FREE_MB} MB free." >> "$LOG"
+  echo "Reclaim space first (see the disk note in the session log)." >> "$LOG"
+  touch "$REPO/.alias_followup_done"; exit 1
+fi
+
 # ---- buffers (serial; EGL contexts saturate a GPU otherwise) ---------------
 python3 -u -m mapformer.prebuild_buffers --grid-size 16 --n-obs 64 --seeds 0 1 2 \
     --n-steps $T --buffer-size $NBUF --eval-trials $ETRIALS --n-workers $NW \
