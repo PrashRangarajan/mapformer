@@ -128,7 +128,10 @@ def main():
             o.append(f"| {nobs} | {CELLS_PER_TOKEN[nobs]} | — | — | — | missing | — |")
             continue
         e = np.array(eff); curve[nobs] = e.mean()
-        table[nobs] = dict(v=np.mean(vs), r=np.mean(rs), e=e, l=np.array(leff),
+        both = np.array([v["acc"] - r["acc"] for _, v, r in rows
+                         if v and r and "unreadable" not in v and "unreadable" not in r
+                         and abs(v["slope"]) < FLAT_SLOPE and abs(r["slope"]) < FLAT_SLOPE])
+        table[nobs] = dict(v=np.mean(vs), r=np.mean(rs), e=e, l=np.array(leff), both=both,
                            vl=[x["loss"] for _, x, _ in rows if x and "unreadable" not in x],
                            rl=[x["loss"] for _, _, x in rows if x and "unreadable" not in x])
         o.append(f"| {nobs} | {CELLS_PER_TOKEN[nobs]} | {np.mean(vs):.3f} | {np.mean(rs):.3f} | "
@@ -167,6 +170,27 @@ def main():
           "optimises better' from 'path integration represents better at equal fit'. It",
           "measures the former. That limit is inherent to these runs, not a choice of",
           "analysis.", ""]
+
+    # ---- convergence sensitivity -------------------------------------------
+    # Rule 11 forbids reporting a single cutoff. The direction of the bias matters
+    # more than its size here: if under-convergence in the index arm were INFLATING
+    # the effect, restricting to converged pairs would SHRINK it.
+    o += ["## Convergence sensitivity", "",
+          "| n_obs | all seeds | both arms flat only | direction of the bias |",
+          "|---|---|---|---|"]
+    for nobs, t in table.items():
+        b = t["both"]
+        if not len(b):
+            o.append(f"| {nobs} | {t['e'].mean():+.3f} (n={len(t['e'])}) | none converged | — |")
+            continue
+        delta = b.mean() - t["e"].mean()
+        note = ("conditioning RAISES it -> non-convergence is not inflating the effect"
+                if delta > 0.005 else
+                "conditioning LOWERS it -> **part of the effect is time-to-solve**"
+                if delta < -0.005 else "unchanged")
+        o.append(f"| {nobs} | {t['e'].mean():+.3f} (n={len(t['e'])}) | "
+                 f"{b.mean():+.3f} (n={len(b)}) | {note} |")
+    o.append("")
 
     # ---- power -------------------------------------------------------------
     o += ["## Power (rule 11)", "",
