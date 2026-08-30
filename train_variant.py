@@ -93,6 +93,7 @@ from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
+from mapformer.model_looped import MapFormerWM_Looped, MapFormerWM_RoPE_Looped
 from mapformer.model_fixed_omega import MapFormerWM_FixedOmega
 from mapformer.model_pope_index_hier import MapFormerWM_Hourglass_PoPE_Index
 from mapformer.model_baselines_extra import EXTRA_BASELINES
@@ -189,6 +190,8 @@ VARIANT_MAP = {
     "Level2":     MapFormerWM_Level2InEKF,
     "PC":         MapFormerWM_PredictiveCoding,
     "RoPE":       MapFormerWM_RoPE,
+    "Looped":     MapFormerWM_Looped,        # 1 shared block x4, path-integrated
+    "RoPELooped": MapFormerWM_RoPE_Looped,   # 1 shared block x4, index
     "Vanilla_FixedOmega": MapFormerWM_FixedOmega,  # frequency control
     "TEM":        TEMRecurrent,
     "TEMFaithful": TEMFaithful,
@@ -230,6 +233,10 @@ def main():
                         help="Coefficient for auxiliary prediction-error loss "
                              "(used by PC and GridL15PC variants).")
     parser.add_argument("--epochs", type=int, default=50)
+    parser.add_argument("--schedule", default="linear", choices=["linear", "cosine"],
+                        help="cosine = 5%% warmup + cosine to 10%%. The linear "
+                             "default decays from step one and can trap a run on a "
+                             "plateau (standing rule 10). Use cosine for new work.")
     parser.add_argument("--n-batches", type=int, default=156)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--n-steps", type=int, default=128)
@@ -353,6 +360,7 @@ def main():
         p_action_noise=args.p_action_noise,
         p_transition_noise=args.p_transition_noise,
         aux_coef=args.aux_coef,
+        schedule=args.schedule,
     )
 
     ckpt_path = out / f"{args.variant}.pt"

@@ -37,6 +37,7 @@ def train(
     p_action_noise: float = 0.0,
     p_transition_noise: float = 0.0,
     aux_coef: float = 0.0,
+    schedule: str = "linear",
 ) -> list[float]:
     """Full training loop with observation-only loss.
 
@@ -52,11 +53,28 @@ def train(
     model = model.to(device)
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
 
-    # Linear learning rate decay over training
     total_steps = n_epochs * n_batches
-    scheduler = optim.lr_scheduler.LinearLR(
-        optimizer, start_factor=1.0, end_factor=0.0, total_iters=total_steps
-    )
+    if schedule == "cosine":
+        # 5% warmup then cosine to 10% of peak. The "linear" default is
+        # LinearLR(1.0 -> 0.0), which decays from STEP ONE with no warmup: on a
+        # plateau-then-cliff landscape a run can never escape the plateau late, so
+        # the budget measures "did the transition fire early", not "can this model
+        # solve the task". Switching to this schedule moved one MiniWorld arm from
+        # 0.448 to 0.990 on the SAME task and INVERTED the sign of the headline
+        # effect (standing rule 10). Default kept as linear so every previously
+        # trained checkpoint reproduces.
+        import math as _math
+        warm = max(1, int(0.05 * total_steps))
+        def _lr(step):
+            if step < warm:
+                return (step + 1) / warm
+            p = (step - warm) / max(1, total_steps - warm)
+            return 0.1 + 0.9 * 0.5 * (1.0 + _math.cos(_math.pi * min(p, 1.0)))
+        scheduler = optim.lr_scheduler.LambdaLR(optimizer, _lr)
+    else:
+        scheduler = optim.lr_scheduler.LinearLR(
+            optimizer, start_factor=1.0, end_factor=0.0, total_iters=total_steps
+        )
 
     criterion = nn.CrossEntropyLoss()
 
