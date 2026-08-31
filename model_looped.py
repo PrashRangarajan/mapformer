@@ -31,7 +31,7 @@ matching the base models. Recomputing it per iteration is a different experiment
 import torch
 import torch.nn as nn
 
-from mapformer.model import MapFormerWM
+from mapformer.model import MapFormerWM, ActionToLieAlgebra
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 
 
@@ -87,4 +87,62 @@ class MapFormerWM_RoPE_Looped(MapFormerWM_RoPE):
         block = self.layers[0]
         for _ in range(self.n_loops):
             x = block(x, cos_a, sin_a, m)
+        return self.out_proj(self.out_norm(x))
+
+
+class MapFormerWM_LoopedRefine(MapFormerWM_Looped):
+    """Loop that REFINES the position estimate each pass, instead of re-reading a
+    fixed one. The follow-on the Match-Query result pointed at.
+
+    `MapFormerWM_Looped` computes theta once from the token embeddings and reuses
+    it for every pass. Here the loop carries a position estimate that is corrected
+    from the CURRENT hidden state -- structurally the InEKF work of this project
+    moved from the sequence axis to the depth axis:
+
+        theta_0 = omega * cumsum(action_to_lie(emb))          (the path integral)
+        x       = block(x, cos theta, sin theta)
+        theta   = theta_0 + gate * tanh(refine(x))            (bounded correction)
+
+    THREE DESIGN CHOICES, each bought by a prior failure in this repo:
+
+    1. `gate` is initialised to ZERO, so at step 0 this model is EXACTLY
+       MapFormerWM_Looped and the correction has to be learned. Level15EM started
+       with K=0.5 corrections, which destroyed the attention pattern before any
+       gradient signal existed and diverged 3 of 9 seeds; the fix there was the
+       same -- make the correction a near-no-op at init.
+    2. The correction is bounded by `tanh`. The InEKF finding was that the WRAP
+       (bounded innovation) was the load-bearing piece, not the inference: an
+       unbounded correction lets theta leave the range the rotations were trained
+       on, which is exactly how NoBypass blew up to |theta| ~ 3840 at T=512.
+    3. The correction is applied to THETA (a position), not to delta (odometry),
+       and is NOT cumsummed. A delta correction would compound along the sequence;
+       a position correction stays bounded, which is the InEKF analogue.
+
+    Parameter cost is negligible -- one more low-rank ActionToLieAlgebra (~400
+    params on 204,630) plus a scalar gate.
+    """
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self.refine = ActionToLieAlgebra(self.d_model, self.n_heads,
+                                         self.n_blocks, 2)
+        self.gate = nn.Parameter(torch.zeros(1))
+
+    def _theta(self, delta):
+        """omega * cumsum(delta) -> (B, H, T, n_blocks); the angle PathIntegrator
+        builds internally before taking cos/sin."""
+        return (torch.cumsum(delta, dim=1) *
+                self.path_integrator.omega.unsqueeze(0).unsqueeze(0)).transpose(1, 2)
+
+    def forward(self, tokens):
+        B, L = tokens.shape
+        x = self.token_emb(tokens)
+        theta0 = self._theta(self.action_to_lie(x))
+        theta = theta0
+        m = _causal(L, tokens.device)
+        block = self.layers[0]
+        for i in range(self.n_loops):
+            x = block(x, torch.cos(theta), torch.sin(theta), m)
+            if i < self.n_loops - 1:
+                theta = theta0 + self.gate * torch.tanh(
+                    self.refine(x).transpose(1, 2))
         return self.out_proj(self.out_norm(x))
