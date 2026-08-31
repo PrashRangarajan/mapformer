@@ -21,12 +21,12 @@ def gates(R):
     import torch
     o = {}
     for s in range(8):
-        f = f"{R}/LoopedRefine/s{s}/LoopedRefine.pt"
+        f = f"{R}/LoopedRefine/s{s}/LoopedRefine_matchquery.pt"
         if not os.path.exists(f):
             continue
         try:
             b = torch.load(f, map_location="cpu", weights_only=False)
-            sd = b.get("model") or b.get("state_dict") or b
+            sd = b.get("model_state") or b.get("model") or b.get("state_dict") or b
             for k in sd:
                 if k.endswith("gate"):
                     o[s] = float(np.ravel(sd[k].numpy())[0]); break
