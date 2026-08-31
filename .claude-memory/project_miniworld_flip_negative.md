@@ -83,6 +83,15 @@ grid 32 @ T=128 (48 distinct, 1.95 prior, 512 occupied) gives +0.275 where grid 
 T=512 (46 distinct, 8.64 prior, 32 occupied) gives -0.010 -- matched on distinct
 cells, opposite results.
 
+**RESOLVED: MAP EXTENT drives it; visits-per-cell does NOT.** With two episode
+lengths at each of two map sizes, prior visits can be varied AT FIXED map extent:
+within grid 16 prior moves 1.34x -> effect moves 0.005; within grid 32 prior moves
+1.56x -> effect moves 0.030. Both far under the 0.150 floor. ACROSS map sizes the
+effect moves 0.285 (<=128 occupied: +0.005; 512 occupied: +0.290). Decisive: grid 16
+@ prior 4.61 = +0.015 vs grid 32 @ prior 3.05 = +0.305. Condition B was a CEILING
+cell -- the index arm SOLVES grid 16 / T=1024 at 0.988 -- not an informative null.
+Pooling is post-hoc; the pre-registered pairwise test said "unseparated".
+
 **STRUCTURAL LIMIT, check before designing anything in MiniWorld:** prior-visit
 counts per grid size DO NOT OVERLAP (grid 8 spans 5.67-18.35 over T=128..2048; grid
 32 spans 1.95-4.13). Small maps FORCE frequent revisits, so map extent and visit
@@ -90,7 +99,8 @@ statistics are near-inseparable here at any episode length. Measured counts are
 8.64/4.61/3.05 for grid 8/16/32 at T=512 -- NOT the T/n_occupied arithmetic
 (16/4/1), because the walk is directed. Only grid 32 @ T=2048 separates them; not run.
 
-**SURVIVING CLAIM (narrowed):** the position effect is driven by some environment
-statistic that is threshold-like in map size and is NOT observation aliasing and NOT
-distinct-cells-visited. Which of visits-per-cell vs map extent remains unresolved and
-may be unresolvable in this environment. See [[feedback_convergence_first]].
+**SURVIVING CLAIM:** the position effect is driven by MAP EXTENT (occupied cells),
+threshold-like between 128 and 512. It is NOT observation aliasing (falsified, sign
+inverted), NOT distinct-cells-visited (falsified twice), and NOT visits-per-cell
+(no effect at fixed map extent). Caveat: prior visits were only varied 1.3-1.6x at
+fixed extent, and the two factors cannot be crossed in MiniWorld. See [[feedback_convergence_first]].

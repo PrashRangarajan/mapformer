@@ -1894,6 +1894,31 @@ Condition A (grid 32, T=128: 48 distinct, 1.95 prior, 512 occupied) gives
 -0.010. Matched on distinct cells, opposite results -> distinct-cells-visited is
 dead. Visits-per-cell and map extent both survive.
 
+**RESOLVED 2026-08-30 by pooling: MAP EXTENT drives it, visits-per-cell does NOT.**
+Condition B (grid 16, T=1024) landed at +0.010 -- but it is a CEILING condition, not
+an informative null: the index arm SOLVES it (0.988 vs path integration's 0.995), so
+153 distinct cells and 6.20 prior visits are no obstacle when the map holds 128
+occupied cells. With two episode lengths now at each of two map sizes, prior visits
+can be varied AT FIXED map extent:
+
+| grid | occupied | T | prior | effect |
+|---|---|---|---|---|
+| 8 | 32 | 512 | 8.64 | -0.010 |
+| 16 | 128 | 512 | 4.61 | +0.015 |
+| 16 | 128 | 1024 | 6.20 | +0.010 |
+| 32 | 512 | 128 | 1.95 | **+0.275** |
+| 32 | 512 | 512 | 3.05 | **+0.305** |
+
+Within a map size, prior visits move 1.34x / 1.56x and the effect moves 0.005 /
+0.030 -- both far under the 0.150 floor. Across map sizes it moves **0.285**. The
+decisive contrast: grid 16 at prior 4.61 gives +0.015 while grid 32 at prior 3.05
+gives +0.305. A 1.5x change in prior ACROSS a map boundary flips everything; a 1.6x
+change WITHIN a map does nothing. (Pooling is post-hoc; the pre-registered pairwise
+test was more conservative and called it unseparated. Both are in VISITS_TEST.md.)
+
+Limit: prior visits were varied only 1.3-1.6x at fixed map extent against a 4.4x
+total range, and the two cannot be crossed here --
+
 **Structural obstacle, worth knowing before designing anything here:** prior-visit
 ranges by grid size DO NOT OVERLAP (grid 8 spans 5.67-18.35 over T=128..2048;
 grid 32 spans 1.95-4.13). Small maps FORCE frequent revisits. Map extent and
