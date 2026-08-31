@@ -1683,6 +1683,17 @@ environment families, each factor averaged over the other:
 
 Position is worth 40x the encoding on the torus and is NEGATIVE on MiniGrid.
 
+> **CORRECTED 2026-08-30 -- the ALIASING explanation of this table is FALSIFIED,
+> with the sign INVERTED.** The reading that survived the 2026-08-26 convergence
+> work was "the position effect scales with observation ALIASING" (grid 8, 2
+> cells/token, -0.010; grid 32, 32/token, +0.173; torus, 128/token, +0.461).
+> That was correlational -- aliasing co-varied with map size across those
+> environments. Holding grid size FIXED at 32 and varying n_obs alone gives the
+> OPPOSITE ordering: **+0.178 (32 cells/token) -> +0.310 (8) -> +0.374 (2)** at
+> 400 ep, and at full convergence the endpoints are **+0.178 vs +0.305**
+> (t=2.52, both arms flat 10/10 and 6/6). LESS aliasing gives a LARGER position
+> effect. Details in ALIASING_CONTROLLED.md; do not cite the aliasing story.
+
 **Why: rotation-based actions.** Of the five properties differing between the
 environments, rotate accounts for **-0.388 of the -0.438** swing (n=8), more than
 the other four combined. MapFormer cumsums a FIXED per-token delta; under
@@ -1793,3 +1804,132 @@ from -- same LR schedule shape and 2x fresh data, more steps at high LR is the
 untested suspect. n=3 cannot separate "two unlucky seeds" from "the 4000-batch
 recipe is worse"; more seeds at nb=4000 is the honest next step if the number
 goes in a paper.
+
+
+## Session 2026-08-29/30 -- the aliasing story dies; recursion; two retractions
+
+Five things landed. Read ALIASING_CONTROLLED.md and LOOPED_PILOT.md for the data.
+
+### 1. The aliasing claim is FALSIFIED and the sign is INVERTED
+
+Grid size pinned at 32, only n_obs varied. The gates confirm this changes NOTHING
+but the labelling: G5 label mass (50.4 scored/traj) and G6 revisit lag (median 33)
+are byte-identical across all three conditions -- same walks, same scored
+positions.
+
+| n_obs | cells/token | effect | n | converged |
+|---|---|---|---|---|
+| 16 | 32 | +0.178 | 5 | 10/10 flat, 400 ep |
+| 64 | 8 | +0.310 | 4 | 6/8 flat, 400 ep |
+| 256 | 2 | **+0.305** | 3 | **6/6 flat, 800 ep** |
+
+Monotone the WRONG WAY for the aliasing hypothesis, which pre-registered a
+collapse below the 0.150 noise floor at n_obs=256. Endpoints differ by +0.127
+(t=2.52) with every arm converged.
+
+**The budget mattered and my convergence-sensitivity check pointed the wrong way.**
+At 400 ep the n_obs=256 index arm was flat in only 1/5 seeds and the effect read
++0.374; the both-flat-only sensitivity said non-convergence was SUPPRESSING the
+effect. Doubling to 800 ep converged it 3/3 and the effect fell to +0.305. The
+sensitivity check was wrong; only the extension settled it. Trust budget
+extensions over convergence-conditioning arguments.
+
+**Repro control was exact**: RoPE n_obs=16 s0 retrained 0.725 vs stored 0.725,
+drift +0.000. The pipeline is bit-reproducible across batches.
+
+### 2. Map size, at MATCHED aliasing, is a THRESHOLD not a gradient
+
+grid 8 @ n_obs=16 and grid 32 @ n_obs=256 both have 2.0 cells/token. Adding grid
+16 @ n_obs=64 gives a three-point axis at constant aliasing:
+
+| grid | occupied cells | effect |
+|---|---|---|
+| 8 | 32 | -0.010 |
+| 16 | 128 | +0.015 |
+| 32 | 512 | **+0.305** |
+
+Flat, flat, JUMP -- somewhere between 128 and 512 occupied cells. NOT graded.
+(My pre-registered "between" band was written too wide and mechanically fired
+"graded"; +0.015 vs -0.010 is 0.025 against a 0.150 floor, i.e. identical.)
+
+### 3. Recursion SUBSTITUTES for depth -- in the arm that needs depth
+
+`model_looped.py`: one shared block applied 4x, param-parity exact with 1 layer
+(207,457 vs L4's 802,273). Torus, 300 ep warmup+cosine, n=3.
+
+- **INDEX arm: +0.363 at interval 17-32 (sd 0.018, MDE 0.029, 3/3 seeds)**,
+  horizon 9-16 -> 17-32, statistically indistinguishable from 4 REAL layers
+  (delta -0.023) at a quarter of the parameters. What depth bought was effective
+  ITERATION, not layer specialisation.
+- **PATH-INTEGRATED arm: no established gain.** +0.046 but sd 0.074, MDE 0.120,
+  one seed NEGATIVE, and the mean driven by one seed where the BASELINE dipped.
+  Uninterpretable: MapFormer already scores 0.948 with 0.052 of headroom. A
+  ceiling cannot separate "adds nothing" from "nothing to add".
+- **The wall does not move.** Every index config still collapses past ~32
+  (0.498/0.515/0.497) while path integration holds 0.945 at 65+ from ONE 204K
+  layer. Recursion substitutes for depth and remains no substitute for path
+  integration.
+- Recursion buys PARAMETERS, not compute: four passes cost four passes.
+
+### 4. RETRACTED: "scale HURTS the path-integrated model at long range"
+
+HORIZON_RESULTS.md reported Vanilla non-monotone in capacity (L2 d256 0.976 ->
+L4 d256 0.782 at interval 65+). Under warmup+cosine at 300 ep it does not
+reproduce: L1 0.948, L4 0.998, Looped 0.994. It was an artifact of the 16-epoch
+LinearLR budget, as its own caveat allowed. The whole published horizon TABLE is
+budget-limited the same way -- RoPE L1's horizon is 9-16 under a fair budget, not
+the ~2 originally reported or the ~8 of the 50-epoch point.
+
+### 5. FALSIFIED: "distinct cells visited" (a hypothesis of mine, killed in 6 runs)
+
+After the grid-16 threshold I proposed that what matters is how many distinct
+cells the agent actually visits. Measured prior-visit counts first
+(probe_visits_per_cell.py) -- my arithmetic said 16/4/1 for grid 8/16/32, the
+truth is 8.64/4.61/3.05, because the walk is directed. That measurement also
+showed the three original conditions are FULLY CONFOUNDED (distinct cells, prior
+visits and map extent all move together), so none of them could test anything.
+
+Condition A (grid 32, T=128: 48 distinct, 1.95 prior, 512 occupied) gives
+**+0.275** where grid 8, T=512 (46 distinct, 8.64 prior, 32 occupied) gives
+-0.010. Matched on distinct cells, opposite results -> distinct-cells-visited is
+dead. Visits-per-cell and map extent both survive.
+
+**Structural obstacle, worth knowing before designing anything here:** prior-visit
+ranges by grid size DO NOT OVERLAP (grid 8 spans 5.67-18.35 over T=128..2048;
+grid 32 spans 1.95-4.13). Small maps FORCE frequent revisits. Map extent and
+visit statistics are near-inseparable in MiniWorld at any episode length. The one
+condition that separates them is grid 32 @ T=2048 (prior 4.13, matched to grid 16
+@ T=512's 4.61 which gave +0.015, on a 4x larger map). Not run -- seq 4096.
+
+### Tooling that came out of this
+
+- **`--fast-attn`** (model.py `USE_SDPA`, opt-in, default off): SDPA + TF32,
+  **2.56x faster at 37% of the memory**, verified equivalent (logits 1.4e-06,
+  gradients 2.4e-08, grad cosine 1.0000000000). Licensed empirically too: the
+  control arm reproduced +0.392 against a +0.374 reference. NOT valid for MapEM
+  (Hadamard A_X (*) A_P cannot be expressed as SDPA).
+- **`--schedule cosine`** added to `train.py` and `train_match_query.py`; BOTH
+  used LinearLR-from-step-one, like `train_miniworld` did. Default unchanged.
+- **`prebuild_buffers.py`**: MiniWorld makes an EGL context per worker (~150 MiB
+  of GPU) even with rendering disabled, so 6 jobs x 24 workers pinned a 4090 at
+  97.5% before any model loaded, and oversubscribed 32 cores 4.5x. Prebuilt
+  serially it peaks at 4.5 GiB, and runs went 5.5 h -> 68 min because the old
+  batches were mostly building buffers, not training.
+
+### Rules bought this session
+
+13. **A fill-first GPU picker silently becomes a single-GPU scheduler** whenever
+    the job count is <= MAXPG. Raising MAXPG 3 -> 6 idled a whole 4090 for 3 h.
+    Balance to the LESS LOADED device. And do not then interleave job types --
+    alternating types against an alternating picker phase-locks and puts every
+    long job on one device (I did exactly this and reproduced the bug I was fixing).
+14. **Do not infer held-out accuracy from training loss.** I predicted condition A
+    would be null from RoPE's 0.03 training loss; it scored 0.674 held-out against
+    Vanilla's 0.949. The r=-0.996 affine relation does NOT hold in every regime.
+15. **A wide pre-registered band is not a pre-registration.** My grid-16 branch
+    fired "graded" on +0.015 because the "between -0.010 and +0.374" band swallowed
+    the competing "near zero" case. Set branch boundaries against the NOISE FLOOR.
+16. **Editing a running bash script is unsafe** -- bash reads by byte offset and an
+    insert can make it resume mid-token. Kill and relaunch instead (cheap when the
+    script is parked in a wait loop).
+

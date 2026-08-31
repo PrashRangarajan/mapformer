@@ -54,14 +54,43 @@ SHORTEN with grid size (47/43/38/33) and the fraction inside the ~32-step horizo
 RISES (0.43→0.50). Collected before training, never cross-checked until an
 adversarial review found it.
 
-**SURVIVING CLAIM:** the position code matters in proportion to how ALIASED the
-observations are. Content that nearly identifies location makes integrated position
-worthless; ambiguous content makes it necessary. Monotone, no reversal.
+**THE ALIASING CLAIM IS FALSIFIED, SIGN INVERTED (2026-08-30).** It was
+correlational -- aliasing co-varied with map size across those environments. Holding
+grid FIXED at 32 and varying n_obs alone (which relabels the obs_map and changes
+nothing else: label mass 50.4/traj and revisit lag median 33 are byte-identical
+across conditions) gives the OPPOSITE ordering:
 
-**SCOPE:** aliasing co-varies with grid size here rather than being manipulated
-independently. The clean test — fix grid 32, vary n_obs 16/8/4 — is NOT yet run.
+| n_obs | cells/token | effect | converged |
+|---|---|---|---|
+| 16 | 32 | +0.178 (n=5) | 10/10 flat, 400 ep |
+| 64 | 8 | +0.310 (n=4) | 6/8 flat, 400 ep |
+| 256 | 2 | **+0.305** (n=3) | **6/6 flat, 800 ep** |
 
-**Also still open:** the original "allocentric flip doesn't extend to 3D" negative was
-measured at 100 epochs with the bad schedule, i.e. the same confound that inverted the
-grid-8 sign. It should be re-run at 400ep/cosine before being cited.
-See [[feedback_convergence_first]].
+LESS aliasing gives a LARGER effect. Endpoints differ +0.127, t=2.52, all converged.
+Pre-registered outcome B fired. See ALIASING_CONTROLLED.md.
+
+**Budget mattered, and convergence-conditioning LIED about which way.** At 400 ep
+the n_obs=256 index arm was flat 1/5 and read +0.374; the both-flat-only sensitivity
+said non-convergence was SUPPRESSING the effect. Doubling to 800 ep converged it 3/3
+and the effect FELL to +0.305. Trust budget extensions over conditioning arguments.
+
+**WHAT REPLACES IT: a THRESHOLD in map size, at matched aliasing (2.0 cells/token).**
+grid 8 (32 occupied) -0.010, grid 16 (128) +0.015, grid 32 (512) **+0.305**. Flat,
+flat, jump between 128 and 512 occupied cells. Not graded.
+
+**"Distinct cells visited" was my replacement hypothesis and it is ALSO DEAD.**
+grid 32 @ T=128 (48 distinct, 1.95 prior, 512 occupied) gives +0.275 where grid 8 @
+T=512 (46 distinct, 8.64 prior, 32 occupied) gives -0.010 -- matched on distinct
+cells, opposite results.
+
+**STRUCTURAL LIMIT, check before designing anything in MiniWorld:** prior-visit
+counts per grid size DO NOT OVERLAP (grid 8 spans 5.67-18.35 over T=128..2048; grid
+32 spans 1.95-4.13). Small maps FORCE frequent revisits, so map extent and visit
+statistics are near-inseparable here at any episode length. Measured counts are
+8.64/4.61/3.05 for grid 8/16/32 at T=512 -- NOT the T/n_occupied arithmetic
+(16/4/1), because the walk is directed. Only grid 32 @ T=2048 separates them; not run.
+
+**SURVIVING CLAIM (narrowed):** the position effect is driven by some environment
+statistic that is threshold-like in map size and is NOT observation aliasing and NOT
+distinct-cells-visited. Which of visits-per-cell vs map extent remains unresolved and
+may be unresolvable in this environment. See [[feedback_convergence_first]].

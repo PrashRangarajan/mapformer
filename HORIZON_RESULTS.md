@@ -42,7 +42,27 @@ past ~32 steps where a 1-layer path-integrated model succeeds at 65+.** That is
 the quantitative form of what explicit path integration buys, and it survives the
 capacity explanation rather than being dissolved by it.
 
-## An unexpected finding: scale HURTS the path-integrated model at long range
+## RETRACTED 2026-08-30: "scale HURTS the path-integrated model at long range"
+
+> The section below does NOT reproduce under a fair schedule. Retrained at 300
+> epochs with 5% warmup + cosine (n=3), the long-range means are **L1 0.948,
+> L4 0.998, Looped x4 0.994** -- monotone, with the largest model best. The
+> non-monotonicity was an artifact of the 16-epoch LinearLR budget, exactly as
+> this section's own caveat allowed. See LOOPED_PILOT.md.
+>
+> **The rest of this file is budget-limited the same way.** Every number here was
+> trained with LinearLR(1.0->0.0), which decays from step one and can trap a run
+> on a plateau (standing rule 10). Retrained at 300 ep warmup+cosine, RoPE L1's
+> horizon is **9-16**, not the ~2 reported at 16 epochs or the ~8 at 50. Treat the
+> horizon values below as LOWER BOUNDS.
+>
+> **What survives, and is strengthened:** the wall. Under the fair budget every
+> index configuration still collapses past interval ~32 (long-range means
+> 0.498 / 0.515 / 0.497 for L1 / L4 / Looped x4) while a 204K one-layer
+> path-integrated model holds 0.945 at 65+. Giving attention a proper budget
+> raises its reach and still does not close the gap.
+
+## (retracted) An unexpected finding: scale HURTS the path-integrated model at long range
 
 Vanilla's long-interval accuracy is not monotone in capacity:
 
@@ -69,3 +89,25 @@ was one config's number reported as a property of attention, and it is withdrawn
 here. Three depths and two widths do not establish saturation; they establish
 that the horizon grows sublinearly in parameters (204K → 3.17M, a 15x increase,
 moves it ~2 → ~32) while path integration clears it at the smallest size tested.
+
+## Follow-up 2026-08-30: recursion buys the horizon that depth bought
+
+`LOOPED_PILOT.md`. A weight-shared block applied 4x (param-parity exact with 1
+layer: 207,457 vs L4's 802,273), torus, 300 ep warmup+cosine, n=3.
+
+| index arm | params | 9-16 | 17-32 | 33-64 | 65+ | horizon |
+|---|---|---|---|---|---|---|
+| RoPE L1 | 204K | 0.615 | 0.492 | 0.496 | 0.499 | 9-16 |
+| RoPE L4 | 802K | 0.995 | 0.878 | 0.523 | 0.508 | 17-32 |
+| RoPE Looped x4 | 204K | 0.992 | 0.855 | 0.512 | 0.481 | 17-32 |
+
+At interval 17-32 the loop is worth **+0.363 over L1 (sd 0.018, MDE 0.029, 3/3
+seeds)** and is indistinguishable from four REAL layers (delta -0.023) at a
+quarter of the parameters. So what depth was providing is effective ITERATION,
+not per-layer specialisation.
+
+On the path-integrated arm the loop shows no established gain (+0.046, sd 0.074,
+MDE 0.120, one seed negative) -- but that arm is at 0.948 with 0.052 of headroom,
+so the null is uninterpretable rather than informative. A headroom test on
+Match-Query is the follow-up.
+
