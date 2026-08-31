@@ -145,3 +145,18 @@ win.** Exactly what the sufficient-statistic principle predicts — next-byte pr
 is exact-recall, so a lossy summary can only lose. n=1 per arm, so this is consistent
 with a null rather than proof of one.
 
+**AN EXCEPTION, 2026-08-31 -- looping x path integration DOES compose.** Every other
+mechanism stacked onto MapFormer here was null or environment-contingent. On
+Match-Query 128^2 at n=8: loop on path integration +0.414 (MDE 0.277, 7/8), loop on
+index +0.099 (MDE 0.045, 8/8), **2x2 interaction +0.315 (MDE 0.281) -- super-additive**.
+Best arm 0.870 vs 0.456 (path-int alone) and 0.207 (index+loop).
+
+**Why it showed here and not on the torus: HEADROOM.** 1-layer path integration
+already scores 0.948 on the torus, so the +0.046 null there was uninterpretable, not
+informative. Always check the baseline is off its ceiling before reading a null.
+
+The loop MATCHES three real layers (Q4 +0.099, underpowered) at a third of the
+parameters -- an earlier "beats depth by +0.273" was an n=3 artifact. Its most robust
+contribution is STABILITY: 8/8 seeds >= 0.77 (sd 0.099) against 1-layer 0.11-0.80 and
+3-layer 0.14-1.00. It raises the floor, not the ceiling.
+

@@ -1861,10 +1861,11 @@ Flat, flat, JUMP -- somewhere between 128 and 512 occupied cells. NOT graded.
   horizon 9-16 -> 17-32, statistically indistinguishable from 4 REAL layers
   (delta -0.023) at a quarter of the parameters. What depth bought was effective
   ITERATION, not layer specialisation.
-- **PATH-INTEGRATED arm: no established gain.** +0.046 but sd 0.074, MDE 0.120,
-  one seed NEGATIVE, and the mean driven by one seed where the BASELINE dipped.
-  Uninterpretable: MapFormer already scores 0.948 with 0.052 of headroom. A
-  ceiling cannot separate "adds nothing" from "nothing to add".
+- **PATH-INTEGRATED arm on the TORUS: no established gain**, and uninterpretable.
+  +0.046, sd 0.074, MDE 0.120, one seed NEGATIVE. MapFormer already scores 0.948
+  there with 0.052 of headroom; a ceiling cannot separate "adds nothing" from
+  "nothing to add". **RESOLVED on Match-Query, where there IS headroom -- see the
+  section below.**
 - **The wall does not move.** Every index config still collapses past ~32
   (0.498/0.515/0.497) while path integration holds 0.945 at 65+ from ONE 204K
   layer. Recursion substitutes for depth and remains no substitute for path
@@ -1957,4 +1958,49 @@ condition that separates them is grid 32 @ T=2048 (prior 4.13, matched to grid 1
 16. **Editing a running bash script is unsafe** -- bash reads by byte offset and an
     insert can make it resume mid-token. Kill and relaunch instead (cheap when the
     script is parked in a wait loop).
+
+
+## Loop x path integration on Match-Query (2026-08-31) -- they DO compose
+
+`LOOP_HEADROOM.md`. The torus null above was a ceiling artifact. Match-Query 128^2
+leaves real headroom, and all five arms were run to n=8 in one batch (300 ep,
+warmup+cosine, fast-attn, chance 0.0625).
+
+| arm | params | mean | sd | min |
+|---|---|---|---|---|
+| index, no loop | 204,182 | 0.108 | 0.025 | 0.06 |
+| index + loop x4 | 204,182 | 0.207 | 0.032 | 0.15 |
+| path-int, 1 layer | 204,630 | 0.456 | 0.220 | 0.11 |
+| **path-int + loop x4** | **204,630** | **0.870** | **0.099** | **0.77** |
+| path-int, 3 REAL layers | 601,174 | 0.771 | 0.263 | 0.14 |
+
+- **Q2 loop on path integration: +0.414** (sd 0.279, MDE 0.277, 7/8) DETECTABLE
+- **Q3 loop on index: +0.099** (sd 0.045, MDE 0.045, 8/8) DETECTABLE
+- **2x2 interaction: +0.315** (MDE 0.281) DETECTABLE -- SUPER-ADDITIVE
+- Q4 loop vs 3 real layers: +0.099, MDE 0.252, 5/8 -- UNDERPOWERED
+
+**Both ingredients help and they compose super-additively.** This is the one place
+in the project where stacking a mechanism onto MapFormer measurably pays. What was
+missing on the torus was HEADROOM, not a different mechanism.
+
+**RETRACTED from the n=3 read: "the loop BEATS three real layers by +0.273".** At
+n=3 PI_L3 was 0.836/0.812/0.143; at n=8 the failure rate is 1/8, its mean is 0.771,
+and Q4 is underpowered. **The loop MATCHES real depth at a third of the parameters,
+it does not beat it.** (At n=2 I had read L3's 0.824 as "reproduces the published
+0.823" -- three successive claims off n<=3 in one session, each dissolved by more
+seeds. Rule 6 is about MY fresh numbers, not just other people's.)
+
+**The most robust part is STABILITY.** The loop arm never fails: 8/8 seeds >= 0.77,
+sd 0.099, against 1-layer's 0.11-0.80 (sd 0.220) and three real layers' 0.14-1.00
+(sd 0.263). The loop's contribution is mostly to the FLOOR -- it makes an unreliable
+model reliable at constant parameters rather than raising the best case. The one
+seed where the 1-layer baseline trained well (0.800) is the one seed where the loop
+did not help (-0.029). That is also why Q2 clears its MDE only narrowly despite a
+large mean: the variance being removed is the baseline's, so paired differences
+inherit it.
+
+Scope: one task, one loop count (4), plain ALBERT-style sharing -- no per-iteration
+depth embedding, theta computed once. The refine-theta-per-iteration variant
+(iterative position refinement, structurally the InEKF work on the depth axis) is
+untested and is now the natural follow-on.
 
