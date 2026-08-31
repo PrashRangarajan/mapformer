@@ -24,7 +24,7 @@ REF = 0.823          # published 128^2 path-integrated, LinearLR -- reference on
 
 def load(runs, lbl, variant, TQ="256"):
     out = []
-    for s in (0, 1, 2):
+    for s in range(8):
         f = f"{runs}/{lbl}/s{s}/{variant}_matchquery.json"
         if not os.path.exists(f):
             continue
