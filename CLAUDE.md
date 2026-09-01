@@ -2074,7 +2074,33 @@ then gives (`LOOP_SAMPLED.md`, n=5):
 - **Does not transfer to noise**: +0.017 / +0.015 at OOD, -0.014 at train length.
 - Even repaired, the loop does NOT beat Vanilla at T=1024 clean (0.736 vs 0.767).
 
-### 4. What Level 1.5 is made of (single seed -- the ablation above tests this)
+### 4. What Level 1.5 is made of -- RESOLVED at n=5: it is made of NOTHING NAMEABLE
+
+`L15_ABLATION.md` (6 arms x 5 seeds, clean torus, 300 ep warmup+cosine). The
+single-seed decomposition below does NOT replicate.
+
+- **RETRACTED: "removing the token-type gate is worse than doing nothing."** At
+  n=1 ConstR 0.672 < NoCorr 0.833. At n=5 ConstR is one of the two BEST arms and
+  beats NoCorr on 5/5 seeds. Sign inverted.
+- **WITHDRAWN: "Level15 does not reduce to clamping theta."** Level15 - NoMeas is
+  +0.015/+0.074/+0.073 at T=128/512/1024 against MDEs of 0.033/0.137/0.105 --
+  unmeasured raw AND loss-matched (+0.036, t 1.23). Not established in either
+  direction; the n=1 gap (0.831 vs 0.993) does not reproduce.
+- **L15_DARE == Level15** at every length: the principled Kalman gain buys nothing
+  a learned scalar does not. (Consistent with n=1, still underpowered.)
+- **Rule 9 flips two readings.** r(final loss, acc) = -0.930/-0.897/-0.812 over the
+  30 runs. Raw, the ONLY detectable contrast is ConstR > NoCorr -- and NoCorr is
+  the worst-converging arm in the set (2/5 flat, mean loss 0.195). Loss-matched it
+  vanishes (t 0.51), while **Level15 - Vanilla APPEARS**: +0.062 (t 3.08) at T=512
+  and +0.124 (t 3.83) at T=1024, unmeasured at T=128. Raw, even the headline is
+  inside its MDE.
+
+So the filter's effect is real and is confined to OOD LENGTH -- the stabilisation
+signature this project already reported -- but **no individual component can be
+shown to be load-bearing**: measurement head, per-token gate and learned Pi can
+each be removed alone at no measurable cost. Do not cite the named decomposition.
+
+### 4b. The original single-seed table (superseded by the above; kept for the record)
 
 | arm | T=128 / T=512 | keeps |
 |---|---|---|

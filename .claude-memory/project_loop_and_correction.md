@@ -39,3 +39,18 @@ DARE≈Level15 means the principled Kalman gain is irrelevant. Clean config only
 the lm200 column is under the July retraction.
 
 See [[feedback_premise_before_test]], [[project_hierarchy_negative]].
+
+**Level 1.5's decomposition RESOLVED at n=5 (2026-09-01, L15_ABLATION.md): there
+isn't one.** The named parts each come out at no measurable cost when removed
+alone -- measurement head (Level15-NoMeas +0.036 loss-matched, t 1.23), per-token
+gate (Level15-ConstR +0.000), learned Pi vs DARE (+0.008). RETRACT "removing the
+gate is worse than nothing": at n=1 ConstR 0.672 < NoCorr 0.833; at n=5 ConstR
+beats NoCorr on 5/5 seeds, sign inverted. WITHDRAW "it does not reduce to clamping
+theta" -- unmeasured in both directions.
+
+Rule 9 flipped two readings here, in opposite directions at once. r(loss, acc) =
+-0.93/-0.90/-0.81 over 30 runs. RAW, the only detectable contrast was ConstR >
+NoCorr -- against the worst-converging arm in the set. LOSS-MATCHED it vanishes
+(t 0.51) and Level15 - Vanilla appears instead (+0.062 t 3.08 at T=512, +0.124
+t 3.83 at T=1024), where raw it was inside its MDE. The filter's effect is real
+and OOD-length-only; the story about which piece does it is not supported.
