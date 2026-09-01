@@ -2004,3 +2004,143 @@ depth embedding, theta computed once. The refine-theta-per-iteration variant
 (iterative position refinement, structurally the InEKF work on the depth axis) is
 untested and is now the natural follow-on.
 
+
+## Session 2026-08-31/09-01 -- refinement is dead; the loop is the surprise
+
+### IN FLIGHT at the time of writing
+
+`run_l15_ablation.sh` -- 6 arms x 5 seeds on the clean torus paper task, 300 ep
+warmup+cosine, results to `L15_ABLATION.md` via `eval_noise_refine`. It replicates
+the single-seed Level 1.5 decomposition (below) at n=5. Started 12:19, ~3.5 h.
+Marker `.l15_ablation_done`. Nothing is queued behind it.
+
+### 1. REFINING THETA DOES NOTHING -- tested in the regime built for it
+
+`NOISE_REFINE.md`. `LoopedRefine` carries and corrects the position estimate each
+pass (`theta = theta_0 + gate * tanh(refine(x))`), i.e. the InEKF idea moved to the
+DEPTH axis. Torus paper task under action noise, 4 arms x 3 noise x 3 seeds.
+
+refine minus fixed-theta: **-0.001 / -0.011 / +0.005** at T=128 and
+**+0.006 / +0.003 / -0.005** at T=512 for p_action_noise 0 / 0.10 / 0.25. Every
+|t| < 2, and NO SLOPE in noise -- the pre-registered prediction was a positive
+slope. The learned gate settles at mean|g| **0.083** with INCONSISTENT SIGN across
+seeds, capping the correction at 0.14 rad against a theta spanning ~2*pi*T. The
+gate was verified escapable before launch (gradient 1.9e-03 at zero), so the
+optimiser DECLINED to refine. That is a mechanism answer, not a failure to express.
+
+**A DESIGN ERROR THIS CORRECTED.** The first refine test was on Match-Query, where
+actions are CLEAN and the query phase is BLIND -- neither half of the InEKF premise
+holds. This repo had ALREADY measured that for the sequence axis ("Match-Query
+(blind) 0.876 vs 0.888, nothing to correct with"), so that null replicated a known
+negative. Check a mechanism's PREMISE applies before testing it.
+
+### 2. THE CONTROL ARM WON: looping beats the Kalman correction under noise
+
+Same batch, at TRAINING length, vs Vanilla:
+
+| p_action_noise | loop (no filter) | Level15 (the InEKF) |
+|---|---|---|
+| 0.10 | **+0.138** (t=12.1) | +0.023 (t=1.9) |
+| 0.25 | **+0.205** (t=8.8) | +0.004 (t=0.2) |
+
+A shared block applied four times is ~9x more effective under action noise than
+the purpose-built correction, at FEWER parameters (204K vs 254K). n=3, and it came
+from reading the control column rather than from a prediction -- needs its own
+pre-registered replication before it is a claim.
+
+**Level15's only detectable effect is at OOD LENGTH** (+0.025, t=3.82 at T=512
+p=0.25; +0.004 at T=128). That is the signature of stabilisation, not inference.
+
+### 3. THE LOOP'S COST IS LENGTH -- and it is mostly trainable away
+
+Degradation T=128 -> T=512, averaged over noise: Level15 -0.055, Vanilla -0.065,
+**Looped -0.243, LoopedRefine -0.240**. Looping degrades ~4x worse with length.
+
+I first attributed this to residual-scale growth by analogy to the wrap finding,
+WITHOUT measuring. The residual norm is flat across length (18.15 -> 18.71), so
+that mechanism is wrong. An EVAL-ONLY loop-count sweep -- free, since n_loops is a
+runtime argument, where I had proposed 12 training runs -- shows the damage IS the
+iteration count: same weights, T=512 peaks at **2** passes (0.794) and falls to
+0.766 at 6, while T=128 rises to 1.000 at 4.
+
+`LoopedSampled` (count drawn from {2..6} per training batch, param-identical)
+then gives (`LOOP_SAMPLED.md`, n=5):
+- **The count-vs-accuracy curve FLATTENS from 0.178 spread to 0.001.** The sampled
+  model scores **0.998 at ONE pass** where the fixed-count model collapses to
+  0.821 -- 4x cheaper inference for free. This is the tightest result of the set
+  and was NOT the pre-registered question.
+- OOD gain +0.092 (T=512) / +0.085 (T=1024) at its best count, but **t=1.67/1.80
+  at n=5 -- directionally right, NOT established**. Needs ~n=12.
+- **Does not transfer to noise**: +0.017 / +0.015 at OOD, -0.014 at train length.
+- Even repaired, the loop does NOT beat Vanilla at T=1024 clean (0.736 vs 0.767).
+
+### 4. What Level 1.5 is made of (single seed -- the ablation above tests this)
+
+| arm | T=128 / T=512 | keeps |
+|---|---|---|
+| Level15 | 1.000 / 0.993 | wrap + measurement + per-token R |
+| L15_DARE | 1.000 / 0.992 | same, Pi fixed by DARE -> the principled gain is irrelevant |
+| L15_NoMeas | 0.904 / 0.831 | **the wrap alone -- a pure bounded clamp** |
+| L15_NoCorr | 0.940 / 0.833 | nothing (== vanilla) |
+| L15_ConstR | 0.795 / 0.672 | wrap + measurement, NO gate -- WORSE THAN NOTHING |
+
+So Level15 does NOT reduce to clamping theta (NoMeas 0.831 vs 0.993), and the
+per-token gate is load-bearing. Neither piece is inference: the decomposition is
+**bounded state + token-type gating**, wearing Kalman clothing. Clean config only
+-- the lm200 column is under the 2026-07-16 retraction.
+
+### 5. Language facts, for the record
+
+enwik8 flat 9-layer, ~28.6M params, 36k iters, seq 512 (`enwik8_long/*.json`):
+
+| arm | encoding | position | bpc | n |
+|---|---|---|---|---|
+| MapPoPE-Flat | PoPE | path-int | 1.3740 | 3 |
+| PoPE-Flat | PoPE | index | 1.3746 | 1 |
+| Vanilla (MapWM) | RoPE | path-int | 1.3758 | 1 |
+| RoPE | RoPE | index | 1.3799 | 3 |
+
+Only MapPoPE-RoPE has seeds on both sides: **-0.0058, t=3.49**. The two
+single-axis arms are n=1.
+
+**Our position effect (-0.0041) does NOT contradict the paper.** v4 sec 5.5 gives
+RoPE 19.14 vs MapWM 18.79 ppl = 0.0266 bits/BPE-token ~= **0.0067 bits per BYTE**
+at 4 bytes/token. Our seed sd is 0.0018, so MDE at n=3 is 0.0041 -- the size of
+the effect. This setup is UNDERPOWERED, not null. I called it "inside the noise
+floor" and that was a rule-11 violation on my own data.
+
+Hint worth testing: PoPE alone -0.0053, path-int alone -0.0041, sum -0.0093, but
+both together only -0.0058 -- on text the two axes OVERLAP (sub-additive), the
+opposite of loop x path-integration on navigation. Both singles are n=1.
+
+### 6. Two mechanism clarifications worth not re-deriving
+
+- **theta on language.** `ActionToLieAlgebra` reads EVERY token identically and the
+  model LEARNS Delta ~= 0 for observations (verified on a trained torus model:
+  actions move position 5x more than observations). Standard RoPE is the
+  **Delta == 1 special case** -- `angle = t * inv_freq` vs `angle = cumsum(Delta) * omega`.
+  So on text theta is a learned content-dependent CLOCK RATE, and can be zero or
+  negative. That is Selective RoPE's primitive.
+- **PoPE's angle is NOT learned or content-dependent.** `magnitude = softplus(Q)`
+  comes from content; the phase is `t * theta_c` with theta_c a FIXED buffer. The
+  only learnable angle term is `pope_delta`, a per-(head,frequency) constant bias.
+  MapFormer and PoPE modify ORTHOGONAL halves of the same polar decomposition,
+  which is why MapPoPE is just "use both". PoPE is not in the CoPE/Selective-RoPE
+  family despite the name.
+
+### Rules bought this session
+
+17. **Check a mechanism's PREMISE applies to the task before testing it.** The
+    first refine-theta test had neither drift to correct nor observations to
+    correct with, and the repo already said so.
+18. **Before proposing a training sweep, check whether the knob is a RUNTIME
+    argument.** Loop count is. The eval-only sweep cost 90 seconds where I had
+    specified 12 training runs, and it is what actually found the mechanism.
+19. **Split a hypothesis before testing it.** I asserted "iteration compounds the
+    damage VIA residual growth" as one claim; the residual half was wrong and I
+    retracted the whole thing, then the iteration half turned out to be right.
+    State the parts separately so a failed test kills only what it hits.
+20. **`train_hourglass_enwik8` saves metrics but NO checkpoints**, so no post-hoc
+    diagnostic on a trained language model is possible without retraining. Worth
+    fixing before the next language run.
+
