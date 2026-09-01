@@ -213,7 +213,14 @@ def main():
           "rejected as a condition here: at p=0.25 every arm sits within 0.11 of the",
           "0.500 blank floor at T=512, so an OOD interaction would be floor-compressed",
           "exactly where it needs measuring. The loss-matched analysis is a regression",
-          "control, not a randomised one."]
+          "control, not a randomised one.", "",
+          "One caveat on the reference arm: every looped model here is evaluated at 4",
+          "passes, which is the consistent choice for the 2x2 but is NOT LoopedSampled's",
+          "best count. Its own sweep peaks at 2 passes out of distribution (0.915 vs",
+          "0.898 at T=512, 0.736 vs 0.719 at T=1024), so the free fix is understated by",
+          "roughly 0.017 in the `Level15Looped - LoopedSampled` row. Small against the",
+          "MDEs above, but it runs AGAINST sampling, so read that row as a lower bound",
+          "on the free fix rather than a fair point estimate."]
 
     open(a.out, "w").write("\n".join(o) + "\n")
     print("\n".join(o)); print(f"\nwrote {a.out}")
