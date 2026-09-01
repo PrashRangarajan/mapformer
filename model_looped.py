@@ -33,6 +33,7 @@ import torch.nn as nn
 
 from mapformer.model import MapFormerWM, ActionToLieAlgebra
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
+from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
 
 
 def _causal(L, device):
@@ -181,5 +182,78 @@ class MapFormerWM_LoopedSampled(MapFormerWM_Looped):
         m = _causal(L, tokens.device)
         block = self.layers[0]
         for _ in range(k):
+            x = block(x, cos_a, sin_a, m)
+        return self.out_proj(self.out_norm(x))
+
+
+class MapFormerWM_Level15Looped(MapFormerWM_Level15InEKF):
+    """The missing cell of the 2x2: Level 1.5 InEKF AND the shared-block loop.
+
+    WHY. The two mechanisms have exactly anti-correlated profiles on the clean
+    torus task. The loop's entire benefit is at TRAINING length (1.000 vs Vanilla's
+    0.966 at T=128, and +0.205 over Vanilla under p=0.25 action noise) and its
+    entire cost is at OOD length (0.816 / 0.642 at T=512 / 1024 against Vanilla's
+    0.891 / 0.768). The filter is the mirror image: nothing measurable at training
+    length, and its ONLY established effect is at OOD length (+0.062 at T=512,
+    +0.124 at T=1024, loss-matched, L15_ABLATION.md). Each one's win is the other's
+    loss, on the same axis. That is suggestive, and it has never been tested --
+    there was no arm with both until this one.
+
+    IT IS ONLY SUGGESTIVE, and two things argue the other way, so this is a real
+    test rather than a confirmation:
+
+      1. THE FILTER DOES NOT OBVIOUSLY TARGET THE LOOP'S FAILURE MODE. The loop's
+         OOD damage was measured to be ITERATION COUNT -- same weights, T=512 peaks
+         at 2 passes and falls monotonically to 6 -- and explicitly NOT residual
+         growth (the residual norm is flat across length, 18.15 -> 18.71). The
+         filter's mechanism is the wrap, which bounds theta. Bounding theta has no
+         evident purchase on an iteration-count problem.
+      2. A CHEAPER FIX ALREADY EXISTS. LoopedSampled repairs most of the collapse
+         for free (0.816 -> 0.915 at T=512) with no filter and no parameters. It
+         still falls short of the filter at T=1024 (0.736 vs 0.888), so a gap
+         remains, but the filter has to beat sampling, not merely beat nothing.
+
+    DESIGN. theta_hat is computed ONCE, before the loop, from the token embeddings
+    -- which is what BOTH parents do (Looped computes theta once; Level15 computes
+    theta once). Recomputing the correction per iteration is a different model:
+    that is LoopedRefine, already tested in the regime built for it and null
+    (-0.001/-0.011/+0.005 at T=128, no slope in noise, gate |g| 0.083 with
+    inconsistent sign). Keeping theta fixed across passes is what makes this a
+    clean 2x2 cell rather than a three-way confound.
+
+    PARAMETER NOTE. The 2x2 has two parameter levels -- {Vanilla, Looped} share
+    one count and {Level15, Level15Looped} share a larger one -- because the filter
+    adds heads. The loop adds nothing on either row. So the LOOP main effect and
+    the interaction are both parameter-matched; only the FILTER main effect carries
+    the capacity difference, exactly as it already did in every prior comparison.
+    """
+    n_loops = 4
+
+    def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
+                 dropout=0.1, grid_size=64, bottleneck_r=2, n_loops=None, **kw):
+        # n_layers ignored on purpose: one shared block is the whole point.
+        super().__init__(vocab_size, d_model, n_heads, 1, dropout, grid_size,
+                         bottleneck_r)
+        if n_loops is not None:
+            self.n_loops = n_loops
+
+    def forward(self, tokens):
+        B, L = tokens.shape
+        x = self.token_emb(tokens)
+
+        delta = self.action_to_lie(x)
+        theta_path = (torch.cumsum(delta, dim=1) *
+                      self.path_integrator.omega.unsqueeze(0).unsqueeze(0))
+        theta_hat, Pi, K, R = self.inekf(theta_path, x)
+
+        self.last_theta_path = theta_path.detach()
+        self.last_theta_hat = theta_hat.detach()
+        self.last_Pi = Pi.detach(); self.last_K = K.detach(); self.last_R = R.detach()
+
+        t = theta_hat.transpose(1, 2)
+        cos_a, sin_a = torch.cos(t), torch.sin(t)
+        m = _causal(L, tokens.device)
+        block = self.layers[0]
+        for _ in range(self.n_loops):
             x = block(x, cos_a, sin_a, m)
         return self.out_proj(self.out_norm(x))

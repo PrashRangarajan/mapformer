@@ -94,7 +94,8 @@ from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_looped import (MapFormerWM_Looped, MapFormerWM_RoPE_Looped,
-                                    MapFormerWM_LoopedRefine, MapFormerWM_LoopedSampled)
+                                    MapFormerWM_LoopedRefine, MapFormerWM_LoopedSampled,
+                                    MapFormerWM_Level15Looped)
 from mapformer.model_fixed_omega import MapFormerWM_FixedOmega
 from mapformer.model_pope_index_hier import MapFormerWM_Hourglass_PoPE_Index
 from mapformer.model_baselines_extra import EXTRA_BASELINES
@@ -112,6 +113,7 @@ VARIANT_MAP = {
     "MapEM_NC_NL": MapFormerEM_NC_NL,    # paper B.2.2, MLP Delta   # paper eq.3: single origin, A_P = P.P^T
     "Level1":     MapFormerWM_ParallelInEKF,
     "Level15":    MapFormerWM_Level15InEKF,
+    "Level15Looped": MapFormerWM_Level15Looped,
     "Level15Beta": MapFormerWM_Level15Beta,
     "Level15GSF": MapFormerWM_Level15GSF,
     "Level15GSF_NoDrop": MapFormerWM_Level15GSF_NoDrop,
