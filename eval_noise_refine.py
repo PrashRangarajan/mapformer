@@ -39,10 +39,13 @@ def corrupt(tokens, p, n_actions, gen):
 @torch.no_grad()
 def evaluate(model, env, T, n_trials, p_noise, dev, seed):
     gen = torch.Generator().manual_seed(seed)
-    rng = np.random.RandomState(seed)
+    # GridWorld.generate_trajectory takes no rng argument -- it draws from the
+    # global numpy RNG, so seed that instead. (Checked against the signature
+    # rather than assumed; assuming it is what crashed the first run.)
+    np.random.seed(seed)
     ok = tot = 0; nll = 0.0
     for _ in range(n_trials):
-        tok, _om, rev = env.generate_trajectory(T, rng=rng)
+        tok, _om, rev = env.generate_trajectory(T)
         tok = corrupt(tok.unsqueeze(0), p_noise, env.N_ACTIONS, gen).to(dev)
         logits = model(tok[:, :-1])
         lp = F.log_softmax(logits.float(), dim=-1)

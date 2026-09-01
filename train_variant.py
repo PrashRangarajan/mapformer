@@ -94,7 +94,7 @@ from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_looped import (MapFormerWM_Looped, MapFormerWM_RoPE_Looped,
-                                    MapFormerWM_LoopedRefine)
+                                    MapFormerWM_LoopedRefine, MapFormerWM_LoopedSampled)
 from mapformer.model_fixed_omega import MapFormerWM_FixedOmega
 from mapformer.model_pope_index_hier import MapFormerWM_Hourglass_PoPE_Index
 from mapformer.model_baselines_extra import EXTRA_BASELINES
@@ -193,6 +193,7 @@ VARIANT_MAP = {
     "RoPE":       MapFormerWM_RoPE,
     "Looped":     MapFormerWM_Looped,        # 1 shared block x4, path-integrated
     "LoopedRefine": MapFormerWM_LoopedRefine,  # ...+ theta refined each pass
+    "LoopedSampled": MapFormerWM_LoopedSampled,  # ...loop count sampled in training
     "RoPELooped": MapFormerWM_RoPE_Looped,   # 1 shared block x4, index
     "Vanilla_FixedOmega": MapFormerWM_FixedOmega,  # frequency control
     "TEM":        TEMRecurrent,

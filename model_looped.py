@@ -146,3 +146,40 @@ class MapFormerWM_LoopedRefine(MapFormerWM_Looped):
                 theta = theta0 + self.gate * torch.tanh(
                     self.refine(x).transpose(1, 2))
         return self.out_proj(self.out_norm(x))
+
+
+class MapFormerWM_LoopedSampled(MapFormerWM_Looped):
+    """Loop count SAMPLED during training, so the model is not tuned to one depth.
+
+    WHY. A model trained at a fixed 4 passes is best at 4 passes on the length it
+    trained at, and best at 2 on a 4x longer one (0.794 vs 0.776, same weights,
+    eval-only change). Every pass past the second actively hurts out of
+    distribution. That says the fixed count is a length-specific choice baked in at
+    training time -- not that iteration and extrapolation are fundamentally opposed.
+
+    So: draw the count per forward pass from `loop_choices` during training. At
+    evaluation `n_loops` is used as normal, which makes the count a runtime knob
+    the model has been trained to tolerate across its whole range.
+
+    Range is {2..6}: 1 pass is degenerate (0.818 vs 1.000 at training length) and
+    forcing the model to serve it would cost peak performance for a setting nobody
+    would deploy. Sampling is per-batch, drawn from torch's seeded RNG so runs stay
+    reproducible.
+    """
+    loop_choices = (2, 3, 4, 5, 6)
+
+    def forward(self, tokens):
+        if self.training:
+            i = int(torch.randint(len(self.loop_choices), (1,)).item())
+            k = self.loop_choices[i]
+        else:
+            k = self.n_loops
+        B, L = tokens.shape
+        x = self.token_emb(tokens)
+        delta = self.action_to_lie(x)
+        cos_a, sin_a = self.path_integrator(delta)
+        m = _causal(L, tokens.device)
+        block = self.layers[0]
+        for _ in range(k):
+            x = block(x, cos_a, sin_a, m)
+        return self.out_proj(self.out_norm(x))
