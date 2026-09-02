@@ -38,6 +38,7 @@ def train(
     p_transition_noise: float = 0.0,
     aux_coef: float = 0.0,
     schedule: str = "linear",
+    data_workers: int = 0,
 ) -> list[float]:
     """Full training loop with observation-only loss.
 
@@ -78,21 +79,38 @@ def train(
 
     criterion = nn.CrossEntropyLoss()
 
+    # Optional parallel trajectory generation. Generation is 79-95% of an
+    # epoch at the standard config and is single-threaded, so this is where
+    # the wall time is. OFF by default: the parallel path seeds each batch by
+    # its INDEX and so draws a DIFFERENT sample from the same generator than
+    # the serial path does. Same distribution, not the same stream -- a
+    # parallel run therefore will not reproduce a stored serial checkpoint.
+    wants_positions = hasattr(model, "_batch_positions")
+    gen = None
+    if data_workers > 0:
+        from .data_parallel import ParallelBatchGenerator
+        gen = ParallelBatchGenerator(
+            env, batch_size, n_steps, n_workers=data_workers,
+            base_seed=torch.initial_seed() % (2 ** 31),
+            p_transition_noise=p_transition_noise,
+            want_locations=wants_positions)
+
     losses = []
     for epoch in range(n_epochs):
         t0 = time.time()
         model.train()
         epoch_loss = 0.0
 
-        wants_positions = hasattr(model, "_batch_positions")
-
         for _ in range(n_batches):
             # tokens: (B, 2*n_steps) interleaved [a1, o1, a2, o2, ...]
             # obs_mask: True at observation positions
             # revisit_mask: True at observation positions AT REVISITED cells
-            tokens, obs_mask, revisit_mask, all_locations = env.generate_batch(
-                batch_size, n_steps, p_transition_noise=p_transition_noise,
-            )
+            if gen is not None:
+                tokens, obs_mask, revisit_mask, all_locations = gen.next_batch()
+            else:
+                tokens, obs_mask, revisit_mask, all_locations = env.generate_batch(
+                    batch_size, n_steps, p_transition_noise=p_transition_noise,
+                )
             tokens = tokens.to(device)
             revisit_mask = revisit_mask.to(device)
 
@@ -158,5 +176,8 @@ def train(
             current_lr = scheduler.get_last_lr()[0]
             print(f"  Epoch {epoch+1:3d}/{n_epochs} | Loss: {avg_loss:.4f} | "
                   f"LR: {current_lr:.2e} | {dt:.1f}s")
+
+    if gen is not None:
+        gen.close()
 
     return losses

@@ -238,6 +238,14 @@ def main():
                         help="Coefficient for auxiliary prediction-error loss "
                              "(used by PC and GridL15PC variants).")
     parser.add_argument("--epochs", type=int, default=50)
+    parser.add_argument("--data-workers", type=int, default=0,
+                        help="Parallel trajectory-generation workers. 0 "
+                             "(default) uses the serial path and is "
+                             "byte-identical to every existing checkpoint. "
+                             ">0 is ~3.4x faster at 6 workers but draws a "
+                             "DIFFERENT sample from the same generator, so "
+                             "runs are reproducible among themselves and NOT "
+                             "against stored serial checkpoints (rule 3).")
     parser.add_argument("--schedule", default="linear", choices=["linear", "cosine"],
                         help="cosine = 5%% warmup + cosine to 10%%. The linear "
                              "default decays from step one and can trap a run on a "
@@ -366,6 +374,7 @@ def main():
         p_transition_noise=args.p_transition_noise,
         aux_coef=args.aux_coef,
         schedule=args.schedule,
+        data_workers=args.data_workers,
     )
 
     ckpt_path = out / f"{args.variant}.pt"
