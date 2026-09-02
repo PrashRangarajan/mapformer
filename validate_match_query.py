@@ -38,6 +38,12 @@ def main():
     ap.add_argument("--n-obs", type=int, default=16,
                     help="chance is 1/n_obs -- changing this moves every floor")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--p-transition-noise", type=float, default=0.0,
+                    help="stochastic transitions during EXPLORE: the walk records "
+                         "the commanded action but executes a resampled one with "
+                         "this probability, so the recorded action stream drifts "
+                         "from true position. Every gate below is re-run on the "
+                         "noisy task rather than assumed to carry over.")
     ap.add_argument("--out", default="MATCH_QUERY_GATES.md")
     args = ap.parse_args()
 
@@ -48,10 +54,25 @@ def main():
                                       seed=10000)
             rng = np.random.RandomState(args.seed)
             answers, never_moved, n_steps_tot, n_scored_tot = [], [], 0, 0
+            drifts = []
             nm_pairs = []          # answers aligned with an EXPRESSIBLE guess
 
             for _ in range(args.n_episodes):
-                _t, _rv, sp, ans, info = env.generate_match_episode(TE, TQ, rng)
+                _t, _rv, sp, ans, info = env.generate_match_episode(
+                    TE, TQ, rng, args.p_transition_noise)
+                # G6: does the recorded action stream still locate the
+                # agent? Integrate the COMMANDED explore actions from the
+                # start and compare with where the agent actually ended.
+                # At p=0 this must be exactly 0; it is the drift an InEKF
+                # exists to correct, and it is what the clean task lacks.
+                ix = iy = 0
+                for j in range(0, 2 * TE, 2):
+                    dx, dy = env.ACTION_DELTAS[int(_t[j]) - env.action_offset]
+                    ix, iy = (ix + dx) % env.size, (iy + dy) % env.size
+                ex_, ey_ = info["end_explore_pos"]
+                ddx = min((ix - ex_) % env.size, (ex_ - ix) % env.size)
+                ddy = min((iy - ey_) % env.size, (ey_ - iy) % env.size)
+                drifts.append(ddx + ddy)
                 n_steps_tot += TQ
                 n_scored_tot += len(ans)
                 answers.extend(ans)
@@ -98,10 +119,12 @@ def main():
 
             rows.append(dict(TE=TE, TQ=TQ, chance=g1, marginal=g2, ngram=ngram,
                              never_moved=g4, answerable=g5, oracle=1.0,
-                             n_answers=n))
+                             n_answers=n,
+                             drift=float(np.mean(drifts)) if drifts else 0.0))
             print(f"TE={TE:4d} TQ={TQ:4d} chance={g1:.4f} marginal={g2:.4f} "
                   f"ngram1={ngram[1]:.4f} ngram3={ngram[3]:.4f} "
-                  f"never_moved={g4:.4f} answerable={g5:.3f} n={n}", flush=True)
+                  f"never_moved={g4:.4f} answerable={g5:.3f} "
+                  f"drift={np.mean(drifts) if drifts else 0.0:.2f} n={n}", flush=True)
 
     lines = ["# Match-Query task -- pre-flight gates (CPU, no training)", "",
              "Blind-continuation task: explore with observations revealed, then "

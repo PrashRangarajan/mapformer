@@ -67,23 +67,48 @@ class MatchQueryGridWorld(GridWorld):
         obs[occ] = rng.randint(0, self.n_obs_types, occ.sum())
         return obs
 
-    def _walk(self, rng, x, y, n_steps):
-        """Directed random walk, paper's run-length 1..10. Yields (action, x, y)."""
+    def _walk(self, rng, x, y, n_steps, p_transition_noise: float = 0.0):
+        """Directed random walk, paper's run-length 1..10. Yields (action, x, y).
+
+        `p_transition_noise` makes this a STOCHASTIC-TRANSITION MDP: the walk
+        RECORDS the commanded action but EXECUTES a resampled one with this
+        probability, so the position that generates observations diverges from the
+        position implied by the recorded action stream. That divergence is the
+        drift an InEKF exists to correct, and it is absent from the clean task --
+        which is why testing a correction mechanism here was a design error the
+        first time (rule 17: check the premise applies).
+
+        The rng draw is SHORT-CIRCUITED at p=0 so the default consumes exactly the
+        stream it consumed before; verified byte-identical.
+        """
         t = 0
         while t < n_steps:
             a = int(rng.randint(0, self.N_ACTIONS))
             k = int(rng.randint(1, 11))
-            dx, dy = self.ACTION_DELTAS[a]
             for _ in range(k):
                 if t >= n_steps:
                     break
+                a_exec = a
+                if p_transition_noise > 0.0 and rng.random() < p_transition_noise:
+                    a_exec = int(rng.randint(0, self.N_ACTIONS))
+                dx, dy = self.ACTION_DELTAS[a_exec]
                 x = (x + dx) % self.size
                 y = (y + dy) % self.size
                 yield a, x, y
                 t += 1
 
     def generate_match_episode(self, T_explore: int = 256, T_query: int = 64,
-                               rng=None):
+                               rng=None, p_transition_noise: float = 0.0):
+        """`p_transition_noise` is applied to the EXPLORE phase ONLY.
+
+        Not a convenience -- applying it to the query phase makes the task
+        UNANSWERABLE rather than harder. Scoring is keyed on the agent's TRUE
+        cell, so if query transitions are stochastic the model cannot know which
+        cell it is being asked about and no amount of memory helps; the ceiling
+        falls to chance. Explore-only is also the honest setting: odometry is
+        unreliable while the map is being built, and the map is then queried.
+        Gated in validate_match_query_noise.py, which measures both.
+        """
         if rng is None:
             rng = np.random
         obs_map = self._draw_obs(rng)
@@ -93,7 +118,8 @@ class MatchQueryGridWorld(GridWorld):
         seen = set()
 
         # ---- explore: observations REVEALED, map is built here ----
-        for a, x, y in self._walk(rng, x, y, T_explore):
+        for a, x, y in self._walk(rng, x, y, T_explore,
+                                  p_transition_noise):
             tokens.append(a + self.action_offset); revisit.append(False)
             tokens.append(int(obs_map[x, y]) + self.obs_offset)
             revisit.append((x, y) in seen)
@@ -130,10 +156,12 @@ class MatchQueryGridWorld(GridWorld):
         return full, rev, score_pos, answers, info
 
     def generate_match_batch(self, batch_size: int, T_explore: int = 256,
-                             T_query: int = 64, rng=None):
+                             T_query: int = 64, rng=None,
+                             p_transition_noise: float = 0.0):
         toks, revs, sps, ans, infos = [], [], [], [], []
         for _ in range(batch_size):
-            t, rv, sp, a, info = self.generate_match_episode(T_explore, T_query, rng)
+            t, rv, sp, a, info = self.generate_match_episode(
+                T_explore, T_query, rng, p_transition_noise)
             toks.append(t); revs.append(rv); sps.append(sp); ans.append(a)
             infos.append(info)
         return torch.stack(toks), torch.stack(revs), sps, ans, infos

@@ -56,14 +56,20 @@ def _losses(model, env, toks, rev, sps, ans, device):
 
 
 @torch.no_grad()
-def evaluate(model, env, T_explore, T_query, n_batches, batch_size, device, seed):
+def evaluate(model, env, T_explore, T_query, n_batches, batch_size, device,
+             seed, p_transition_noise=0.0):
+    """Evaluated under the SAME transition noise it trained on. Noisy odometry
+    is a property of the deployment, not of the training set; evaluating a
+    noise-trained model on clean transitions would measure transfer to a
+    different world. Defaults to 0.0 so eval_match_longq's positional call is
+    unchanged."""
     model.eval()
     rng = np.random.RandomState(seed)
     ok = tot = 0
     nll = 0.0
     for _ in range(n_batches):
         toks, rev, sps, ans, _i = env.generate_match_batch(
-            batch_size, T_explore, T_query, rng)
+            batch_size, T_explore, T_query, rng, p_transition_noise)
         logits = model(toks[:, :-1].to(device))
         for b in range(toks.shape[0]):
             for p, a in zip(sps[b], ans[b]):
@@ -100,6 +106,14 @@ def main():
                     help="SDPA + TF32; mathematically identical (logits 1.4e-06, "
                          "grad cosine 1.0000000000), 2.56x faster. Every arm in a "
                          "batch must share the setting.")
+    ap.add_argument("--p-transition-noise", type=float, default=0.0,
+                    help="stochastic transitions during the EXPLORE phase "
+                         "only. Records the commanded action, executes a "
+                         "resampled one with this probability, so the "
+                         "recorded action stream drifts from true position "
+                         "-- the premise an InEKF needs and the clean task "
+                         "lacks. Query stays clean: noisy query transitions "
+                         "make the scored cell unknowable, not harder.")
     ap.add_argument("--schedule", default="linear", choices=["linear", "cosine"],
                     help="cosine = 5%% warmup + cosine to 10%%. The linear default "
                          "decays from step one and can trap a run on a plateau "
@@ -145,7 +159,8 @@ def main():
         t0 = time.time(); acc = 0.0; pm = 0.0; po = 0.0
         for _ in range(args.n_batches):
             toks, rev, sps, ans, _i = env.generate_match_batch(
-                args.batch_size, args.T_explore, args.T_query, rng)
+                args.batch_size, args.T_explore, args.T_query, rng,
+                args.p_transition_noise)
             L_match, L_obs = _losses(model, env, toks, rev, sps, ans, dev)
             loss = L_match + args.obs_coef * L_obs
             opt.zero_grad(); loss.backward()
@@ -163,7 +178,8 @@ def main():
     results = {}
     for TQ in args.eval_query:
         a, nll, n = evaluate(model, env_test, args.T_explore, TQ, 8, 8, dev,
-                             seed=5000 + args.seed)
+                             seed=5000 + args.seed,
+                             p_transition_noise=args.p_transition_noise)
         results[TQ] = {"match_acc": a, "match_nll": nll, "n": n}
         print(f"  [held-out] T_query={TQ}: acc={a:.4f} nll={nll:.4f} (n={n})",
               flush=True)
