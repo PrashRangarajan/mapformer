@@ -71,3 +71,23 @@ and still vary hugely OOD. So the loop's OOD failure is not a convergence failur
 and a loss-matched residual is well justified at training length but weak at OOD.
 Check r per length before leaning on it.
 
+**The filter does not pay even where its premise holds (2026-09-02,
+MQ_NOISE_2X2.md).** Built stochastic explore transitions into Match-Query so the
+recorded action stream drifts from true position (0 -> 13 cells at p=0.10, gated
+before training, every shortcut gate held). Level15 - Vanilla is +0.035 at p=0 and
++0.038 at p=0.10 -- **FLAT in drift**, change +0.003. A correction whose benefit
+does not scale with the amount to be corrected is not doing correction.
+CAVEAT: take 1's arms were far from converged at p=0.10 (final match loss 2.37-2.53
+against chance 2.77 and 0.46 for the best arm at p=0), which is a rule-10
+violation; take 2 reruns it at lr 1e-3 / 600 ep.
+
+**The LOOP is the real mechanism on this task**: Looped - Vanilla +0.373 (t 4.17)
+at p=0 and +0.121 (t 5.22, 8/8) at p=0.10 -- detectable at BOTH noise levels, the
+only detectable contrast in the study. And the filter INSIDE the loop is NEGATIVE
+(-0.141 at p=0, -0.025 at p=0.10), interaction -0.176 / -0.063. Same direction as
+the clean-torus 2x2: they do not compose, and now that holds on a task with a
+premise as well as one without.
+
+Clean replication worth noting: Looped at p=0 scored 0.878 +/- 0.092 against
+LOOP_HEADROOM's 0.870 +/- 0.099 in a different batch.
+
