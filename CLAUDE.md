@@ -2005,6 +2005,67 @@ depth embedding, theta computed once. The refine-theta-per-iteration variant
 untested and is now the natural follow-on.
 
 
+## Filter x loop: NOT complementary (2026-09-01, n=12)
+
+`L15_LOOP_2X2.md`. The 2x2 that had never been run -- there was no arm with both
+until `Level15Looped` (verified bit-identical to Level15 at n_loops=1, causal leak
+0, loop free on both rows, filter exactly 49,600 on both, so the INTERACTION is
+parameter-matched). Clean torus, 5 arms x 12 seeds, one batch, 300 ep cosine.
+
+| arm | T=128 | T=512 | T=1024 |
+|---|---|---|---|
+| Vanilla | 0.947 | 0.876 | 0.749 |
+| Level15 | 0.990 | **0.953** | **0.878** |
+| Looped | 0.999 | 0.872 | 0.730 |
+| Level15Looped | 0.994 | 0.929 | 0.830 |
+| LoopedSampled | 0.997 | 0.905 | 0.745 |
+
+**Interaction UNMEASURED at every length** (T=512 +0.026 loss-matched vs MDE 0.099;
+T=1024 +0.022 vs MDE 0.147; raw NEGATIVE at both). And the levels settle it without
+needing the interaction: **the combination is WORSE than the filter alone at OOD**
+(0.830 vs 0.878 at T=1024, 0.929 vs 0.953 at T=512). The best arm at OOD length is
+Level15 by itself. The anti-correlated-profiles argument was suggestive and wrong;
+the mechanism objection written before the run was right -- the loop's OOD damage
+is iteration count, and bounding theta has no purchase on it.
+
+**The loop's training-length win is CONVERGENCE, not representation.** Raw
+Looped - Vanilla at T=128 is +0.052 (t 3.03, 12/12) but **loss-matched +0.006**,
+and r(loss, acc) = -0.956 there. Mean final loss: Looped 0.0076, Level15Looped
+0.0189, LoopedSampled 0.0180, Level15 0.0420, **Vanilla 0.1549**. The loop's real
+contribution is that it converges reliably -- consistent with LOOP_HEADROOM's
+"the loop's contribution is mostly to the FLOOR".
+
+**Second instance of rule 14, and a sharp one.** r(final loss, accuracy) here is
+**-0.956 / -0.471 / -0.326** at T=128/512/1024, where the L15 ablation had
+-0.930/-0.897/-0.812. The coupling COLLAPSES with length in this arm set because
+the loop arms all converge to ~0.01 loss but vary hugely OOD (Looped sd 0.166 at
+T=1024). So the loop's OOD failure is NOT a convergence failure, and loss-matching
+is well justified at training length and much less so at OOD. Check r per length
+before leaning on a loss-matched residual.
+
+The filter main effect REPLICATES the ablation: raw +0.129 (t 3.51) at T=1024,
+loss-matched +0.083 (t 2.79) -- just under the t>2.8 bar at n=12, so still not
+formally detectable, but the same size and sign as the ablation's +0.124 (t 3.83).
+
+### Infra note bought the same day
+
+A supplementary scheduler was added mid-batch to raise concurrency (data
+generation is 79-95% of an epoch and single-threaded, so 24 of 32 cores sat idle).
+It duplicated 6 of 66 launches. **A two-sided guard needs BOTH sides**: the new
+script checked "checkpoint exists" AND "this variant+seed is already in flight",
+but the ALREADY-RUNNING script could only check the first, so it relaunched
+whatever was in flight without a checkpoint yet. Harmless here (same seed, same
+code, and the two independent evals agreed byte-for-byte) but it cost ~10% of the
+compute, and the second launch TRUNCATES the first's log, which is where final
+training loss for the rule-9 analysis comes from.
+
+Fix for next time, built and gated: `data_parallel.py` + `verify_data_parallel.py`,
+opt-in `--data-workers` (2.15x at 3 workers, 3.43x at 6). Batch i is seeded by its
+INDEX so the stream is invariant to worker count, but it DIFFERS from the serial
+path's stream -- reproducible among themselves, never against a stored serial
+checkpoint. Note the ceiling: for a saturated multi-job batch the GPUs are already
+at 97-100%, so the win there is ~1.6x, not 3.4x. 3.4x is the single-run number.
+
 ## Session 2026-08-31/09-01 -- refinement is dead; the loop is the surprise
 
 ### IN FLIGHT at the time of writing

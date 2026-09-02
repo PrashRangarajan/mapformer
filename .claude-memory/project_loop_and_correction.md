@@ -54,3 +54,20 @@ NoCorr -- against the worst-converging arm in the set. LOSS-MATCHED it vanishes
 (t 0.51) and Level15 - Vanilla appears instead (+0.062 t 3.08 at T=512, +0.124
 t 3.83 at T=1024), where raw it was inside its MDE. The filter's effect is real
 and OOD-length-only; the story about which piece does it is not supported.
+
+**Filter x loop are NOT complementary (2026-09-01, n=12, L15_LOOP_2X2.md).** The
+2x2 was finally built (Level15Looped, param-matched interaction). Interaction
+UNMEASURED at every length, and the levels settle it anyway: the combination is
+WORSE than the filter alone at OOD (0.830 vs 0.878 at T=1024). Best OOD arm is
+Level15 by itself. The anti-correlated-profiles argument for complementarity was
+suggestive and wrong; the pre-registered mechanism objection was right.
+
+Two things worth carrying: (a) **the loop's training-length win is convergence,
+not representation** -- raw +0.052 (t 3.03, 12/12) but loss-matched +0.006, with
+r(loss,acc) = -0.956 at T=128, and Vanilla's mean final loss 0.1549 vs Looped's
+0.0076; (b) **r(loss, accuracy) is LENGTH-DEPENDENT** -- -0.956/-0.471/-0.326 here
+vs -0.930/-0.897/-0.812 in the L15 ablation, because the loop arms converge well
+and still vary hugely OOD. So the loop's OOD failure is not a convergence failure,
+and a loss-matched residual is well justified at training length but weak at OOD.
+Check r per length before leaning on it.
+
