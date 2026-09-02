@@ -101,8 +101,15 @@ def main():
             if all(conv.get((c, v)) and sum(conv[(c, v)]) == len(conv[(c, v)])
                    for v in ARMS)]
     base = {v: sum(conv.get(("C0", v), [])) for v in ARMS}
+    # PARETO, not strict-improvement-everywhere. The first version of this rule
+    # required a strictly higher converged count on EVERY arm, which is impossible
+    # whenever one arm is already at 8/8 -- Looped is, in all three conditions -- so
+    # nothing could ever qualify and the verdict read "no condition beats the
+    # current recipe" while C1 was cutting Vanilla's sd by 3.5x. Require no
+    # regression anywhere and a strict gain somewhere.
     better = [c for c, _d in CONDS if c != "C0"
-              and all(sum(conv.get((c, v), [0])) > base.get(v, 0) for v in ARMS)]
+              and all(sum(conv.get((c, v), [0])) >= base.get(v, 0) for v in ARMS)
+              and any(sum(conv.get((c, v), [0])) > base.get(v, 0) for v in ARMS)]
     if full:
         o += [f"**{full[0]} converges on every seed of both arms.** Adopt it for "
               f"step 2 (Match-Query with stochastic transitions) and re-check the "

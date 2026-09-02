@@ -1,0 +1,14 @@
+{
+  "condition": "C1",
+  "epochs": 300,
+  "lr": "1e-3",
+  "converged": {
+    "C0|Vanilla": 3,
+    "C0|Looped": 8,
+    "C1|Vanilla": 4,
+    "C1|Looped": 8,
+    "C2|Vanilla": 6,
+    "C2|Looped": 8
+  },
+  "note": "corrected after the Pareto-rule fix"
+}
