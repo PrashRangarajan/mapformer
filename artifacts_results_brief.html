@@ -1,0 +1,910 @@
+<title>MapFormer Results Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ============ TOKENS ============ */
+:root{
+  /* cool-neutral paper ground, faint teal bias */
+  --ground:#eef1f1; --surface:#ffffff; --surface-2:#f6f8f8; --line:#d7dee0;
+  --ink:#182028; --muted:#5c6873; --faint:#8b98a1;
+  --accent:#0d7d8a;            /* phosphor teal = path integration through-line */
+  --accent-soft:#d3eaec;
+  --win:#1f7a49; --win-soft:#dcefe2;
+  --frontier:#a86617; --frontier-soft:#f4e7d2;
+  --neg:#a8394a; --neg-soft:#f3dde1;
+  --floor:#7a8790; --floor-soft:#e6eaec;
+  --shadow:0 1px 2px rgba(20,32,40,.05), 0 6px 24px rgba(20,32,40,.06);
+  --maxw:1080px;
+}
+:root:not([data-theme="light"]){ @media (prefers-color-scheme: dark){
+  :root, & {
+    --ground:#0e151b; --surface:#161f27; --surface-2:#131b22; --line:#28343d;
+    --ink:#e7edf1; --muted:#9fb0bb; --faint:#6c7d88;
+    --accent:#34c3d0; --accent-soft:#16323a;
+    --win:#4bbd7e; --win-soft:#12291d;
+    --frontier:#d59a4a; --frontier-soft:#2c2415;
+    --neg:#e2697c; --neg-soft:#2c161b;
+    --floor:#8595a0; --floor-soft:#1b242c;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 30px rgba(0,0,0,.35);
+  }
+}}
+:root[data-theme="dark"]{
+  --ground:#0e151b; --surface:#161f27; --surface-2:#131b22; --line:#28343d;
+  --ink:#e7edf1; --muted:#9fb0bb; --faint:#6c7d88;
+  --accent:#34c3d0; --accent-soft:#16323a;
+  --win:#4bbd7e; --win-soft:#12291d;
+  --frontier:#d59a4a; --frontier-soft:#2c2415;
+  --neg:#e2697c; --neg-soft:#2c161b;
+  --floor:#8595a0; --floor-soft:#1b242c;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 30px rgba(0,0,0,.35);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 24px}
+
+/* ============ TYPE ============ */
+h1,h2,h3{font-family:"Newsreader",Georgia,serif; font-weight:600; text-wrap:balance; line-height:1.15; margin:0}
+h2{font-size:1.72rem; letter-spacing:-.01em}
+h3{font-size:1.24rem; font-weight:500}
+.eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); font-weight:500}
+.lede{font-size:1.12rem; color:var(--muted); max-width:64ch}
+p{max-width:68ch}
+a{color:var(--accent)}
+code,.mono{font-family:"IBM Plex Mono",monospace}
+
+/* ============ HEADER / NAV ============ */
+.topbar{position:sticky; top:0; z-index:20; background:color-mix(in srgb,var(--ground) 88%, transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+.topbar .wrap{display:flex; align-items:center; gap:18px; height:52px}
+.brand{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:.82rem; letter-spacing:.04em; white-space:nowrap}
+.brand .dot{color:var(--accent)}
+.navlinks{display:flex; gap:2px; margin-left:auto; overflow-x:auto; scrollbar-width:none}
+.navlinks::-webkit-scrollbar{display:none}
+.navlinks a{font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.03em; color:var(--muted); text-decoration:none; padding:6px 9px; border-radius:6px; white-space:nowrap}
+.navlinks a:hover{color:var(--ink); background:var(--surface-2)}
+
+/* ============ HERO ============ */
+.hero{padding:64px 0 40px; border-bottom:1px solid var(--line)}
+.hero h1{font-size:clamp(2.2rem,5vw,3.5rem); letter-spacing:-.02em; margin:14px 0 18px}
+.hero h1 em{font-style:italic; color:var(--accent)}
+.metarow{display:flex; flex-wrap:wrap; gap:8px; margin-top:22px}
+
+/* ============ SECTIONS ============ */
+section{padding:52px 0; border-bottom:1px solid var(--line)}
+.sec-head{display:flex; align-items:baseline; gap:14px; margin-bottom:8px}
+.sec-head .num{font-family:"IBM Plex Mono",monospace; font-size:.8rem; color:var(--faint)}
+.sec-intro{margin:14px 0 26px}
+
+/* ============ CHIPS / BADGES ============ */
+.chip{display:inline-flex; align-items:center; gap:6px; font-family:"IBM Plex Mono",monospace; font-size:.7rem; font-weight:500; letter-spacing:.02em; padding:4px 9px; border-radius:999px; border:1px solid var(--line); background:var(--surface-2); color:var(--muted); white-space:nowrap}
+.chip b{color:var(--ink); font-weight:600}
+.badge{display:inline-flex; align-items:center; gap:6px; font-family:"IBM Plex Mono",monospace; font-size:.68rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; padding:3px 8px; border-radius:5px}
+.b-win{background:var(--win-soft); color:var(--win)}
+.b-frontier{background:var(--frontier-soft); color:var(--frontier)}
+.b-neg{background:var(--neg-soft); color:var(--neg)}
+.b-floor{background:var(--floor-soft); color:var(--floor)}
+.b-accent{background:var(--accent-soft); color:var(--accent)}
+
+/* ============ TABLES ============ */
+.tbl-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); overflow:hidden; margin:18px 0}
+.tbl-head{display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--line); background:var(--surface-2)}
+.tbl-head .t{font-family:"Newsreader",serif; font-size:1.05rem; font-weight:600; margin-right:auto}
+.prov{font-size:.8rem; color:var(--muted); padding:10px 18px; border-top:1px solid var(--line); background:var(--surface-2)}
+.prov b{color:var(--ink); font-weight:600}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:.9rem}
+th,td{padding:9px 14px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-family:"IBM Plex Mono",monospace; font-size:.72rem; font-weight:500; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); background:var(--surface)}
+tbody td{font-variant-numeric:tabular-nums; font-family:"IBM Plex Mono",monospace; color:var(--ink)}
+tbody td:first-child{font-family:"IBM Plex Sans",sans-serif; color:var(--ink)}
+tbody tr:last-child td{border-bottom:none}
+tr.win td{background:var(--win-soft)}
+tr.win td:first-child{box-shadow:inset 3px 0 var(--win)}
+tr.floor-row td{color:var(--floor)}
+tr.floor-row td:first-child{box-shadow:inset 3px 0 var(--floor)}
+tr.hl td{background:var(--accent-soft)}
+td .u{color:var(--faint); font-size:.82em}
+.best{color:var(--win); font-weight:600}
+
+/* ============ CALLOUT / GRID ============ */
+.callout{border-left:3px solid var(--accent); background:var(--surface-2); padding:14px 18px; border-radius:0 10px 10px 0; margin:18px 0; font-size:.96rem}
+.callout.warn{border-left-color:var(--neg)}
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin:18px 0}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 20px; box-shadow:var(--shadow)}
+.card h3{margin-bottom:6px}
+.stat{font-family:"IBM Plex Mono",monospace; font-size:1.9rem; font-weight:600; color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+.stat.win{color:var(--win)} .stat.neg{color:var(--neg)}
+.kv{font-size:.9rem; color:var(--muted)}
+.foot{padding:44px 0 70px; color:var(--muted); font-size:.86rem}
+.pending{border:1px dashed var(--line); border-radius:12px; padding:20px; color:var(--faint); font-family:"IBM Plex Mono",monospace; font-size:.8rem; margin:16px 0}
+</style>
+
+<div class="topbar"><div class="wrap">
+  <span class="brand">MapFormer<span class="dot">·</span>results</span>
+  <nav class="navlinks">
+    <a href="#summary">Summary</a>
+    <a href="#corrections">Corrections</a>
+    <a href="#thesis">Thesis</a>
+    <a href="#position">Position</a>
+    <a href="#encoding">Encoding</a>
+    <a href="#extent">Map extent</a>
+    <a href="#recursion">Recursion</a>
+    <a href="#algorithmic">Algorithmic</a>
+    <a href="#hierarchy">Hierarchy</a>
+    <a href="#backbone">Backbone</a>
+    <a href="#correction">Correction</a>
+    <a href="#baselines">Baselines</a>
+    <a href="#efficiency">Efficiency</a>
+    <a href="#language">Language</a>
+    <a href="#miniworld">MiniWorld</a>
+    <a href="#tasks">Tasks</a>
+    <a href="#setup">Setup</a>
+    <a href="#caveats">Notes</a>
+  </nav>
+</div></div>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">Cognitive-map sequence models · results brief</div>
+  <h1>What makes an in-context cognitive map work — and <em>where</em> each ingredient earns its keep</h1>
+  <p class="lede">A faithful reproduction of MapFormer (Rambaud et al., 2025) plus a factorial study across four axes — position code, positional encoding, time-hierarchy, and backbone — on two grid environments, extended into continuous 3D (§08) and now onto the looped-transformer literature’s own benchmarks (§1c). The through-line: no single ingredient wins everywhere; the environment decides which one to spend on — and as of this revision we know <em>which property</em> of the environment does the deciding. Two ingredients survive everything: <b>path integration costs 448 parameters and buys +0.078 on parity; recursion costs none and buys +0.056</b>. Ten earlier claims were overturned in the process; they are listed first, not buried.</p>
+  <div class="metarow">
+    <span class="chip">torus 64×64 · <b>paper task</b></span>
+    <span class="chip">MiniGrid <b>DoorKey-16</b></span>
+    <span class="chip">MiniWorld <b>continuous 3D</b></span>
+    <span class="chip">enwik8 <b>language</b></span>
+    <span class="chip">seeds up to <b>n=16</b></span>
+    <span class="chip">every table states its <b>measured floor</b></span>
+    <span class="chip">one-batch comparisons only</span>
+  </div>
+</div></header>
+
+<main class="wrap">
+
+<!-- ================= SUMMARY ================= -->
+<section id="summary">
+  <div class="sec-head"><div class="eyebrow">Start here · the ledger</div></div>
+  <h2>Four ingredients. What each costs, what each buys, and where.</h2>
+  <p class="sec-intro">Every number below is from a one-batch, seed-matched, parameter-matched comparison against a measured floor. Sections 00–11 carry the full evidence and the ten claims that did not survive it.</p>
+
+  <div class="grid2">
+    <div class="card"><div class="stat win">+0.148</div><div class="kv">accuracy on parity from <b>both</b> mechanisms together, for <b>+448 parameters</b> — a 0.23% increase. Three real layers cost 397,000 more and buy less.</div></div>
+    <div class="card"><div class="stat">8/8</div><div class="kv">seeds, at <b>every one</b> of five lengths, for path integration on parity (t = 5.4 to 12.9). The largest, most consistent effect in the study outside navigation.</div></div>
+    <div class="card"><div class="stat">16/16</div><div class="kv">seeds where a <b>199K looped model beats a 596K three-layer model</b>. The best arm in the study is also the smallest.</div></div>
+    <div class="card"><div class="stat neg">10</div><div class="kv">headline claims withdrawn — including three of our own from the last week. Listed first, with what replaced them, not filed separately.</div></div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">The ingredient ledger</span><span class="badge b-win">the deliverable</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>ingredient</th><th>parameter cost</th><th>compute cost</th><th>what it buys</th><th>status</th></tr></thead>
+      <tbody>
+        <tr class="win"><td><b>Path integration</b><br><span class="u">θ = ω·cumsum(Δ)</span></td><td class="best">+448 <span class="u">(+0.23%)</span></td><td class="best">none</td><td><b>+0.461</b> torus · <b>+0.078</b> parity · <b>0.823 vs 0.192</b> on blind map recall</td><td>robust — has never reversed in any batch</td></tr>
+        <tr class="win"><td><b>Recursion</b><br><span class="u">one block, applied 4×</span></td><td class="best">none</td><td>4× <span class="u">(passes cost passes)</span></td><td><b>+0.056</b> parity · matches or beats <b>3× its parameters</b> in both position codes</td><td>confirmed at n=16 — but not our idea (ALBERT, MoR)</td></tr>
+        <tr><td><b>Hierarchy</b><br><span class="u">pooled middle block</span></td><td>none <span class="u">if weight-shared</span></td><td class="best">−22.8% time<br>−19.9% memory</td><td>no accuracy at short lengths; <b>+0.060 at L=512</b> (23/24 seeds). An <b>efficiency</b> property, not a quality one</td><td>conditional — needs a long sequence to mean anything</td></tr>
+        <tr class="floor-row"><td><b>Kalman correction</b><br><span class="u">Level 1.5 InEKF</span></td><td>+49,600 <span class="u">(+24%)</span></td><td>one extra scan</td><td>nothing measurable. No component is load-bearing, and it does not pay <b>even where its premise holds</b></td><td class="u">withdrawn</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Parity figures are at L=128, trained at L=16, n=8–16. Torus figure is the position-axis factor average, n=8. Compute is <b>measured</b> at L=2048 on an idle device, not inferred from block counts. Sources: <span class="mono">FRONTIER_ALGORITHMIC.md</span>, <span class="mono">LOOP_HIER_COMPUTE.md</span>, <span class="mono">L15_ABLATION.md</span>, <span class="mono">MQ_NOISE_2X2_C2.md</span>.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h3>The one-line result</h3><p class="kv"><b>Two ingredients survive everything, they are nearly free, and they add.</b> Path integration is what makes an in-context cognitive map work at all — an index model sits on the floor where a path-integrated one solves the task. Weight-shared recursion buys the depth those tasks need at a third of the parameters. Stacked, they cost 448 parameters and beat a model three times the size.</p></div>
+    <div class="card"><h3>The one-line caveat</h3><p class="kv"><b>Which ingredient to spend on is decided by the environment, not by the architecture.</b> Path integration is worth 40× the encoding choice on a torus and is <em>negative</em> on rotation-action MiniGrid — a mismatch that is removable by recording absolute displacement, but only if you know to. There is no default that wins everywhere.</p></div>
+  </div>
+
+  <div class="callout"><b>What makes these numbers worth showing.</b> Every table states its own measured floor, which ranges from 0.06 to 0.80 across tasks. Every cross-model comparison is trained in one batch, seed-matched and parameter-matched. Every new task is gated for trivial shortcuts — n-gram baselines on the answer stream, and a context-destruction ablation — <em>before</em> any GPU time is spent; four earlier tasks in this project were voided by exactly those checks after the fact. Effects are reported against a minimum detectable effect, so “unmeasured” and “null” stay distinct.</div>
+</section>
+
+<!-- ================= CORRECTIONS ================= -->
+<section id="corrections">
+  <div class="sec-head"><div class="eyebrow">Corrections · what this revision overturns</div></div>
+  <h2>Ten claims did not survive more seeds, a fixed schedule, or a control</h2>
+  <p class="sec-intro">Every one of these was reported here or in the project log before being withdrawn. None died because a model failed — each died because the measurement was not measuring what it appeared to. They are listed before the results because several were headline numbers.</p>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Withdrawn, and what replaced it</span><span class="badge b-neg">retracted</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>claim</th><th>why it fell</th><th>what stands now</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>The position effect scales with observation <b>aliasing</b></td><td>Aliasing co-varied with map size. Held map size fixed and varied aliasing alone — the ordering <b>inverted</b></td><td>+0.178 → +0.305 as aliasing <em>falls</em> (§1a)</td></tr>
+        <tr><td>Effect tracks <b>distinct cells visited</b></td><td>Matched pair, opposite results</td><td>falsified twice</td></tr>
+        <tr><td>Effect tracks <b>visits per cell</b></td><td>No movement at fixed map extent</td><td>falsified by pooling (§1a)</td></tr>
+        <tr><td><b>Scale hurts</b> path integration at long range</td><td>Artifact of a linear-decay-from-step-one schedule</td><td>monotone under warmup+cosine: 0.948 / 0.994 / 0.998</td></tr>
+        <tr><td>A loop <b>beats</b> three real layers (+0.273)</td><td>n=3; the depth arm had one failed seed</td><td>it <b>matches</b> depth at ⅓ the params (t=0.30)</td></tr>
+        <tr><td>The looped arm <b>never fails</b> (8/8 ≥ 0.77)</td><td>One lucky batch</td><td>0.803 ± 0.200, 1/16 failures</td></tr>
+        <tr><td>Attention has a fixed <b>~2-step horizon</b></td><td>One config's number read as a property of attention</td><td>9–16 under a fair budget; the wall past ~32 stands</td></tr>
+        <tr class="hl"><td>Level 1.5 decomposes into <b>bounded state + a token-type gate</b></td><td>Both halves rested on one seed. At n=5 the gate result <b>inverts sign</b>; the clamp result does not reproduce</td><td>no named component is load-bearing (§05)</td></tr>
+        <tr class="hl"><td>Loop × path integration is <b>super-additive</b></td><td>Match-Query's +0.315 had no depth baseline on the index row. With one, the interaction is <b>+0.014</b></td><td>additive — and free, which is better (§1c)</td></tr>
+        <tr><td>The <b>sufficient-statistic principle</b> is not predictive</td><td>Tested at L=16, where pooling k=2 leaves 8 coarse tokens — the mechanism cannot operate</td><td>at L=512 hierarchy helps on <b>23/24 seeds</b> (§03)</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Eight of the ten were generated during the same working session that overturned them. Three of the last four were produced by <b>analysis code that returned a verdict the numbers did not support</b> — a decision rule that could never fire, a branch on an argmax wandering across a flat curve, and a threshold cleared by three points. The corrections are attached to the claims they replace throughout, rather than filed separately.</div>
+  </div>
+
+  <div class="callout warn"><b>The common cause.</b> Training outcomes in this regime are <b>bimodal</b> — grid 8 lands at 0.448 or 0.990; a three-layer arm at 0.14 or 0.81; a looped arm at 0.12 or 0.77. Every method that assumes a point estimate breaks on that. Worse, retraining with identical seeds and settings does <em>not</em> reproduce (mean per-seed drift 0.185), so the seed does not index the basin. <b>What has to be measured is the failure rate, not the mean</b> — and n must be large enough to estimate a distribution.</div>
+</section>
+
+<!-- ================= THESIS ================= -->
+<section id="thesis">
+  <div class="sec-head"><span class="num">00</span><div class="eyebrow">The headline</div></div>
+  <h2>No architectural ingredient is best. The environment decides — and one property decides most of it.</h2>
+  <p class="sec-intro">The same 2×2 — {RoPE, PoPE} encoding × {index, path-integrated} position — run on two environment families, each factor averaged over the other. Read every cell against its column's measured floor, never in the abstract.</p>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Factor averages — accuracy swing per axis</span><span class="badge b-accent">n=8</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>environment</th><th>encoding (RoPE→PoPE)</th><th>hierarchy (flat→hier)</th><th>position (index→path-int)</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>torus paper task</td><td>+0.011</td><td><span class="u">—</span></td><td class="best">+0.461</td></tr>
+        <tr><td>MiniGrid DoorKey-16 · T=512</td><td class="best">+0.035</td><td>+0.022</td><td>−0.005</td></tr>
+        <tr><td>MiniGrid DoorKey-16 · T=1024</td><td class="best">+0.076</td><td>+0.048</td><td>−0.021</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">MiniGrid figures average all four pairs of the complete 8-cell factorial. Position is worth ~40× the encoding on the torus; the MiniGrid negative is <b>not intrinsic</b> — it is a removable input-representation mismatch (see §01). Source: <span class="mono">BASELINE_TABLE.md</span>.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h3>Why the sign flips</h3><p class="kv">Of five properties differing between the environments, <b>rotation-based actions account for −0.388 of the −0.438 swing</b> (n=8) — more than the other four combined. MiniGrid's turn/forward actions break MapFormer's fixed-per-token delta; the torus uses pure translations.</p></div>
+    <div class="card"><h3>The remedy</h3><p class="kv">Recording the action stream as <b>absolute displacement</b> instead of turn/forward restores the effect completely at 4 headings (<span class="mono">+0.050 → +0.488</span>) and at 12 (+0.26 to +0.38). Measured in a synthetic rotation env at Habitat's 30° turn granularity — not real Habitat. No architecture change.</p></div>
+  </div>
+  <div class="callout">With a <b>world-fixed action encoding</b>, path integration is the dominant ingredient in both environments (§01). The MiniGrid reversal is driven by <em>raw rotation actions</em>, not the environment itself — on MiniGrid the two best of eight arms are index-position models, but that ranking is a property of the action encoding, which is a free choice.</div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Champion per environment — the per-task winner changes</span><span class="badge b-win">best measured</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>task · environment</th><th>winning config</th><th>score</th><th>why it wins</th></tr></thead>
+      <tbody>
+        <tr><td>Paper task · torus (IID+OOD)</td><td class="best">MapPoPE-Flat</td><td>0.994</td><td>PoPE + path-int, flat</td></tr>
+        <tr><td>Compositional · torus</td><td class="best">MapWM-Hier-CoarseIdx</td><td>0.556</td><td>hierarchy + re-indexed coarse</td></tr>
+        <tr><td>Match-Query · torus (blind)</td><td class="best">MapWM-Flat</td><td>0.888</td><td>path-int, no PoPE/hier needed</td></tr>
+        <tr><td>MiniGrid DoorKey · rotation actions</td><td class="best">PoPE-Hier / PoPE-Flat</td><td>0.955</td><td><b>index</b> — path-int is dead weight</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov"><b>MapPoPE-Hier (PoPE + path-int + hier) is a strong all-rounder but #1 on none of these</b> — the best robust default for translation-action worlds. On rotation-action MiniGrid the raw-input winners are index-position models (§01). "No ingredient is best everywhere" is a statement about the axes, not any single combination.</div>
+  </div>
+</section>
+
+<!-- ================= POSITION ================= -->
+<section id="position">
+  <div class="sec-head"><span class="num">01</span><div class="eyebrow">Axis · position code</div></div>
+  <h2>Path integration vs. sequence index</h2>
+  <p class="sec-intro">Path-integrated position — <span class="mono">θ = ω·cumsum(Δactions)</span> — is the single load-bearing ingredient on the torus, and it is <em>not</em> the encoding scheme. Its sign is environment-dependent.</p>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Paper task, held-out fresh map — the 2×2</span><span class="badge b-accent">n=8</span><span class="badge b-floor">floor 0.506</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>model</th><th>encoding</th><th>position</th><th>fresh-map acc</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>MapPoPE-Flat</td><td>PoPE</td><td>path-int</td><td>0.994 <span class="u">± .017</span></td></tr>
+        <tr><td>MapWM-Flat (Vanilla)</td><td>RoPE</td><td>path-int</td><td>0.967 <span class="u">± .039</span></td></tr>
+        <tr class="floor-row"><td>PlainFlat</td><td>RoPE</td><td>index</td><td>0.534 <span class="u">± .040</span></td></tr>
+        <tr class="floor-row"><td>RoPE (MapFormer arch)</td><td>RoPE</td><td>index</td><td>0.530 <span class="u">± .043</span></td></tr>
+        <tr class="floor-row"><td>PoPE-Flat</td><td>PoPE</td><td>index</td><td>0.509 <span class="u">± .001</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">1 layer, d=128, T=128, 16 epochs, one batch. <b>Both index cells sit on the floor; both path-integrated cells solve it.</b> Position moves accuracy ~0.46; encoding ~0.01. Source: <span class="mono">INDEX_BASELINE_PAPER_TASK_n8.md</span>.</div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Where the index model's likelihood actually goes</span><span class="badge b-floor">per-bucket floor ≈ 0.48–0.53</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>accuracy by revisit interval →</th><th>1–2</th><th>3–4</th><th>5–8</th><th>9–16</th><th>17–32</th><th>33–64</th><th>65+</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>Vanilla (path-int)</td><td>0.995</td><td>0.996</td><td>0.996</td><td>0.993</td><td>0.980</td><td>0.937</td><td>0.881</td></tr>
+        <tr class="floor-row"><td>RoPE (index)</td><td>0.557</td><td>0.516</td><td>0.505</td><td>0.503</td><td>0.500</td><td>0.495</td><td>0.507</td></tr>
+        <tr class="floor-row"><td>blank floor</td><td>0.504</td><td>0.514</td><td>0.514</td><td>0.509</td><td>0.484</td><td>0.504</td><td>0.533</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Index models exceed the floor <b>only at interval 1–2</b> (+0.05–0.07) — an out-and-back retrace readable from action tokens with no position code. Path integration holds ~0.99 to interval 16 and degrades gracefully — an actual map. Source: <span class="mono">REVISIT_DISTANCE.md</span>.</div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">MiniGrid DoorKey-16 — the sign flips</span><span class="badge b-accent">n=3</span><span class="badge b-floor">floor 0.490 (T=1024)</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>model</th><th>position</th><th>T=128</th><th>T=512</th><th>T=1024</th></tr></thead>
+      <tbody>
+        <tr><td>MapPoPE-Flat</td><td>PoPE·path-int</td><td>0.994</td><td class="best">0.959</td><td class="best">0.919</td></tr>
+        <tr class="win"><td>PoPE-Flat</td><td>PoPE·index</td><td>0.981</td><td>0.963</td><td>0.953</td></tr>
+        <tr><td>MapWM-Flat</td><td>RoPE·path-int</td><td>0.995</td><td>0.902</td><td>0.823</td></tr>
+        <tr><td>RoPE-Flat</td><td>RoPE·index</td><td>0.978</td><td>0.914</td><td>0.827</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Raw position effect here: <b>−0.007 (T=512) / −0.017 (T=1024)</b>. A frequency-learning control (<span class="mono">FREQ_CONTROL.md</span>) isolates pure position at −0.042 / −0.060 (3/3 seeds), so it is not an omega confound (+0.004 / −0.008). <b>But this is a confounded test</b> — see the fairness note below. Sources: <span class="mono">MINIGRID_2X2X2_n8.md</span>, <span class="mono">FREQ_CONTROL.md</span>.</div>
+  </div>
+
+  <div class="callout">MiniGrid's raw actions are <b>turn / forward</b>, so a forward's displacement depends on accumulated heading (non-commutative). MapFormer's commutative <span class="mono">cumsum</span> cannot represent that, so path-integration models integrate a corrupted position; index models don't integrate actions at all, so they are unaffected. The matched-input comparison records world-fixed displacement instead — below.</div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Allocentric action recoding — the fair, input-matched comparison</span><span class="badge b-win">the fix</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>setting</th><th>action encoding</th><th>position effect (path-int − index)</th></tr></thead>
+      <tbody>
+        <tr class="floor-row"><td>MiniGrid DoorKey-16 · T=1024 — raw</td><td>turn / forward</td><td>−0.021</td></tr>
+        <tr class="win"><td>MiniGrid DoorKey-16 · T=1024 — recoded</td><td>absolute displacement</td><td>+0.024 <span class="u">(n=3)</span></td></tr>
+        <tr><td>synthetic rotation env, 4 headings — recoded</td><td>absolute displacement</td><td>+0.488 <span class="u">(8/8, ±.005)</span></td></tr>
+        <tr><td>synthetic rotation env, 12 headings — recoded</td><td>absolute displacement</td><td>+0.26 to +0.38 <span class="u">(range)</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Recording <b>absolute displacement</b> instead of turn/forward — available wherever the agent's heading is known — flips the DoorKey-16 position effect from <b>−0.02 (raw) to +0.02 (recoded)</b>. <b>Caveat — the allocentric rerun is 7 of 8 cells:</b> <span class="mono">PoPE-Hier</span> (PoPE + index + hierarchy) was never run, and it is the <em>best arm in the raw factorial</em> (0.955), so its absence biases the comparison toward path-int. Correcting with an estimated PoPE-Hier moves the effect +0.026 → <b>~+0.021</b> — the flip survives, its magnitude is inflated ~20%, and a stronger ranking claim (all path-int arms above all index arms, margin only +0.003) does <b>not</b> survive. The missing cell needs running. On the map-requiring synthetic rotation env the effect is far larger (+0.488 at 4 headings, exceeding the translation baseline; +0.26–0.38 at 12 — Habitat's 30° granularity, <b>not real Habitat</b>, which adds continuous navmesh sliding the discrete recode doesn't model; MiniWorld is the cheaper 3D next rung). <b>Note:</b> absolute DoorKey scores are lower under recoding (best 0.825 vs raw 0.953) — DoorKey is content-solvable, so recoding levels the comparison rather than making the task easier. Sources: <span class="mono">MINIGRID_ALLOCENTRIC_2X2X2.md</span>, <span class="mono">KNOB_SWEEP.md</span>.</div>
+  </div>
+</section>
+
+
+<!-- ================= MAP EXTENT ================= -->
+<section id="extent">
+  <div class="sec-head"><span class="num">1a</span><div class="eyebrow">Mechanism · what triggers the effect</div></div>
+  <h2>It is map size, and it is a threshold</h2>
+  <p class="sec-intro">Four candidate explanations were tested against each other by holding one constant and varying the others. Only map extent survives. Aliasing survives too — with the opposite sign to what was claimed.</p>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Map extent at matched aliasing (2.0 cells per observation token)</span><span class="badge b-win">threshold</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>grid</th><th>occupied cells</th><th>position effect</th><th>converged</th></tr></thead>
+      <tbody>
+        <tr><td>8 × 8</td><td>32</td><td>−0.010</td><td>3/3 flat</td></tr>
+        <tr><td>16 × 16</td><td>128</td><td>+0.015</td><td>3/3 flat</td></tr>
+        <tr class="hl"><td>32 × 32</td><td>512</td><td class="best">+0.305</td><td>6/6 flat, 800 ep</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Flat, flat, <b>jump</b> — a threshold between 128 and 512 occupied cells, not a gradient. Aliasing is held constant across all three rows, so it cannot be the driver.</div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Aliasing at fixed map size — the pre-registered prediction inverted</span><span class="badge b-neg">hypothesis falsified</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>observation types</th><th>cells per token</th><th>position effect</th><th>seeds</th></tr></thead>
+      <tbody>
+        <tr><td>16</td><td>32</td><td>+0.178</td><td>n=5, 10/10 flat</td></tr>
+        <tr><td>64</td><td>8</td><td>+0.310</td><td>n=4</td></tr>
+        <tr class="hl"><td>256</td><td>2</td><td class="best">+0.305</td><td>n=3, 6/6 flat, 800 ep</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Grid pinned at 32; only the observation vocabulary varies, which relabels the map and changes nothing else — scored positions and revisit lags are byte-identical across all three. Endpoints differ +0.127 (t=2.52). The pre-registered prediction was a collapse below the 0.150 noise floor at 2 cells/token; it rose instead.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h3>Why aliasing runs backwards</h3><p class="kv">Distinctive observations do not substitute for position — they <b>raise the precision demand</b>. Knowing what sits at cells you have already seen never tells you which cell you are standing on; with 32 cells sharing a token an approximate fix still earns partial credit, with 2 it does not.</p></div>
+    <div class="card"><h3>What the budget was worth</h3><p class="kv">At 400 epochs the index arm was flat in 1/5 seeds and the effect read <span class="mono">+0.374</span>. Doubling to 800 converged it 3/3 and the effect fell to <span class="mono">+0.305</span>. A convergence-conditioning argument had predicted the opposite direction — <b>trust budget extensions over conditioning arguments</b>.</p></div>
+  </div>
+
+  <div class="callout"><b>Structural limit, worth knowing before designing here.</b> Prior-visit counts per grid size do not overlap (grid 8 spans 5.67–18.35 across episode lengths; grid 32 spans 1.95–4.13). Small maps <em>force</em> frequent revisits, so map extent and visit statistics are near-inseparable in this environment at any episode length. The separation above comes from pooling conditions where episode length varies at fixed map size; confirming it needs an environment where the two are independently settable.</div>
+</section>
+
+<!-- ================= RECURSION ================= -->
+<section id="recursion">
+  <div class="sec-head"><span class="num">1b</span><div class="eyebrow">Axis · recursion</div></div>
+  <h2>Looping substitutes for depth, at a third of the parameters</h2>
+  <p class="sec-intro">One transformer block applied four times, at exactly one layer's parameter count (207,457 against four layers' 802,273). The clearest surviving addition in this study — and the axis it pays on is <b>parameters</b>, not accuracy-per-FLOP.</p>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Torus · revisit accuracy by interval, index-position arm</span><span class="badge b-win">n=3</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>config</th><th>params</th><th>9–16</th><th>17–32</th><th>33–64</th><th>65+</th><th>horizon</th></tr></thead>
+      <tbody>
+        <tr><td>1 real layer</td><td>204K</td><td>0.615</td><td>0.492</td><td>0.496</td><td>0.499</td><td>9–16</td></tr>
+        <tr><td>4 real layers</td><td>802K</td><td>0.995</td><td>0.878</td><td>0.523</td><td>0.508</td><td>17–32</td></tr>
+        <tr class="hl"><td>1 block × 4 loops</td><td class="best">204K</td><td>0.992</td><td class="best">0.855</td><td>0.512</td><td>0.481</td><td>17–32</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">At interval 17–32 the loop is worth <b>+0.363 over one layer</b> (sd 0.018, 3/3 seeds) and is statistically indistinguishable from four real layers (Δ −0.023). What depth provided was effective <b>iteration</b>, not per-layer specialisation. The floor is 0.50 throughout.</div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Match-Query 128² · where one layer is genuinely not enough</span><span class="badge b-win">composes</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>arm</th><th>params</th><th>accuracy</th><th>sd</th><th>failures &lt;0.30</th></tr></thead>
+      <tbody>
+        <tr><td>index, no loop</td><td>204K</td><td>0.108</td><td>0.025</td><td>—</td></tr>
+        <tr><td>index + loop</td><td>204K</td><td>0.207</td><td>0.032</td><td>0/8</td></tr>
+        <tr><td>path integration, 1 layer</td><td>204K</td><td>0.456</td><td>0.220</td><td>1/8</td></tr>
+        <tr class="hl"><td>path integration + loop</td><td class="best">204K</td><td class="best">0.803</td><td>0.200</td><td>1/16</td></tr>
+        <tr><td>path integration, 3 real layers</td><td>601K</td><td>0.771</td><td>0.263</td><td>1/8</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Chance 0.0625. Loop vs no loop <b>+0.346 (t=3.75)</b>; loop vs three real layers +0.032 (t=0.30) — it <b>matches</b> depth at a third of the parameters. The loop appears to help the path-integrated arm far more than the index arm (+0.346 against +0.099) — but that reading did not survive: there is <b>no depth baseline on the index row here</b>, so the two frontiers cannot be compared. Built at n=16 with both rows, the interaction is <b>+0.014 and not detectable</b> (§1c). The apparent super-additivity is specific to this task.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h3>Refining the position estimate buys nothing <span class="badge b-neg">null</span></h3><p class="kv">A loop that <em>carries and corrects</em> θ each pass — this project's Kalman work moved to the depth axis — adds <span class="mono">+0.090 (t=1.56)</span>. The learned gate settles at mean |g| <b>0.083</b> with inconsistent sign across seeds, capping the correction at 0.14 rad against a θ spanning ~2πT. The gate was verifiably escapable; the optimiser simply declined to refine.</p></div>
+    <div class="card"><h3>What that extends</h3><p class="kv">The standing finding on the sequence axis was that the Kalman win came from <b>stabilisation and token-type gating, not inference</b>. The depth axis now says the same thing by an independent route: the loop's benefit is iteration, not a better position estimate.</p></div>
+  </div>
+  <div class="callout">Recursion buys <b>parameters, not compute</b> — four passes cost four passes, measured. It does not move the wall: every index configuration still collapses past interval ~32 while a 204K one-layer path-integrated model holds 0.945 at 65+. And it is <b>not this project's idea</b> — "recursion substitutes for depth" is the premise of the Recursive-Transformer line (ALBERT; Mixture-of-Recursions, NeurIPS 2025), which our index-arm result replicates rather than establishes.</div>
+  <div class="callout warn"><b>The loop's margin shrinks whenever the baseline is trained better.</b> On Match-Query it went <b>+0.373 → +0.146</b> between two recipes, because the better recipe gained the baseline +0.139 while the loop <em>lost</em> 0.089. On the clean torus its training-length win is +0.052 raw and <b>+0.006 loss-matched</b>. Much of what looks like capability is optimisation assistance — though not all of it: it stays detectable at every noise level tested.</div>
+</section>
+
+<!-- ================= ALGORITHMIC ================= -->
+<section id="algorithmic">
+  <div class="sec-head"><span class="num">1c</span><div class="eyebrow">Domain · the looped literature's own tasks</div></div>
+  <h2>Parity: where path integration is provably the right primitive</h2>
+  <p class="sec-intro">Everything above is navigation. The looped-transformer literature benchmarks something else — tasks with a <em>known iterative solution</em>, evaluated for length generalization (Fan et al., arXiv 2409.15647: parity, binary addition, copying). Match-Query has no such solution, so this project's loop results sat beside that literature rather than inside it. This section puts both mechanisms on its benchmark.</p>
+
+  <div class="callout"><b>A prediction written before the run.</b> MapFormer's angle is <span class="mono">θ = ω·cumsum(Δ(x<sub>t</sub>))</span> wrapped mod&nbsp;2π. Parity is a running sum mod&nbsp;2. A model that learns Δ = π for “1” and 0 for “0” has θ alternating between 0 and π — <b>the answer lives in the rotation</b>. If path integration ever helps on a standard algorithmic task, parity is the one.</div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Parity — trained at L=16, evaluated to L=256</span><span class="badge b-accent">n=8</span><span class="badge b-floor">chance 0.500</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>arm</th><th>params</th><th>L=16</th><th>L=32</th><th>L=64</th><th>L=128</th><th>L=256</th></tr></thead>
+      <tbody>
+        <tr class="floor-row"><td>index, flat</td><td>199,042</td><td>0.655</td><td>0.573</td><td>0.536</td><td>0.517</td><td>0.509</td></tr>
+        <tr><td>path-int, flat</td><td>199,490</td><td>0.971</td><td>0.899</td><td>0.703</td><td>0.600</td><td>0.550</td></tr>
+        <tr><td>index + loop ×4</td><td>199,042</td><td>0.986</td><td>0.812</td><td>0.655</td><td>0.576</td><td>0.537</td></tr>
+        <tr class="win"><td>path-int + loop ×4</td><td>199,490</td><td>0.988</td><td>0.989</td><td>0.850</td><td>0.662</td><td>0.584</td></tr>
+        <tr class="hl"><td>path-int + loop <b>sampled</b></td><td>199,490</td><td>0.989</td><td>0.989</td><td class="best">0.876</td><td class="best">0.700</td><td class="best">0.600</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Path integration minus index is <b>+0.316 / +0.326 / +0.167 / +0.083 / +0.041</b> across the five lengths — <b>8/8 seeds at every one</b>, t from 5.4 to 12.9. The prediction holds. Source: <span class="mono">ALGORITHMIC_RESULTS.md</span>.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h3>The control failed <span class="badge b-neg">honest gap</span></h3><p class="kv">Copy was included so “path integration helps” could not be a claim about our pipeline. It cannot do that job: <b>every arm scores exactly 1.000 at L=16 and 0.120–0.211 against a chance of 0.125 at L≥32</b>. Nothing helps copy, so its null is uninformative and the pipeline-artifact worry is <b>not</b> ruled out. A real control needs a task with dynamic range where path integration should not help.</p></div>
+    <div class="card"><h3>Retention ratios manufacture interactions <span class="badge b-frontier">method</span></h3><p class="kv">Normalised to L=16, retention at L=128 reads index 0.11, path-int 0.21, index+loop 0.16, both 0.33 — which looks super-additive. On the <b>raw</b> scale the 2×2 interaction is <span class="mono">+0.003</span>. Dividing by baselines that differ across arms invents the effect. Read raw differences.</p></div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">The frontier — does looping substitute for depth in <em>both</em> position codes?</span><span class="badge b-accent">n=16</span><span class="badge b-floor">accuracy at L=128</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>row</th><th>1 layer <span class="u">199K</span></th><th>2 layers <span class="u">397K</span></th><th>3 layers <span class="u">596K</span></th><th>loop ×4 <span class="u">199K</span></th></tr></thead>
+      <tbody>
+        <tr><td>index</td><td>0.519</td><td>0.541</td><td>0.565</td><td class="best">0.575</td></tr>
+        <tr class="win"><td>path integration</td><td>0.598</td><td>0.632</td><td>0.641</td><td class="best">0.667</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Eight arms, one batch. In the index row the loop <b>beats</b> three real layers by +0.010 on <b>16/16 seeds</b>; in the path-integrated row it matches (+0.026, MDE 0.102). <b>The best arm in the study is also the smallest.</b> Loop gain over one layer is +0.070 path-integrated against +0.056 index — difference <b>+0.014, not detectable</b>: looping substitutes for depth the same way regardless of position code. Source: <span class="mono">FRONTIER_ALGORITHMIC.md</span>.</div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">What each ingredient costs, and what stacking buys</span><span class="badge b-win">additive and nearly free</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>configuration</th><th>accuracy</th><th>params</th><th>gain</th><th>parameter cost</th></tr></thead>
+      <tbody>
+        <tr class="floor-row"><td>index, 1 layer</td><td>0.519</td><td>199,042</td><td><span class="u">—</span></td><td><span class="u">—</span></td></tr>
+        <tr><td>+ path integration</td><td>0.598</td><td>199,490</td><td>+0.078</td><td class="best">+448 <span class="u">(+0.23%)</span></td></tr>
+        <tr><td>+ loop</td><td>0.575</td><td>199,042</td><td>+0.056</td><td class="best">0</td></tr>
+        <tr class="win"><td><b>+ both</b></td><td class="best">0.667</td><td>199,490</td><td class="best">+0.148</td><td class="best">+448 <span class="u">(+0.23%)</span></td></tr>
+        <tr class="floor-row"><td><em>the same, bought with depth</em></td><td>0.565</td><td>595,586</td><td>+0.046</td><td>+396,544 <span class="u">(3×)</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Additive prediction 0.653 against an actual 0.667 — <b>both gains land in full and neither cancels</b>. Three real layers at 3× the parameters reach 0.565 (index) or 0.641 (path-int), both <em>below</em> the 199K model carrying both mechanisms; matching it by depth would need roughly 1.5M parameters on an optimistic linear extrapolation through a curve that will saturate.</div>
+  </div>
+
+  <div class="callout"><b>“No interaction” is not “does not compound.”</b> The two are different claims and only the first is what the frontier ruled out. The loop is worth ~+0.06 whether or not path integration is present — but since both are essentially free in parameters, <b>additive-and-free is the outcome you want</b>. What is task-specific is the interaction (Match-Query +0.315, parity +0.014); the practical stacking benefit holds in both.</div>
+
+  <div class="callout warn"><b>Adaptivity did not replicate.</b> The literature's length-generalization claim is specifically about looping with an <em>adaptive</em> number of steps, and on the torus we had found a fixed count failing OOD while a sampled count recovered it (0.816 → 0.915). On parity, sampled minus fixed is +0.027 / +0.038 / +0.015 at L=64/128/256 — directionally right at 4–5 of 8 seeds, <b>never clearing its MDE</b>.</div>
+</section>
+
+<!-- ================= ENCODING ================= -->
+<section id="encoding">
+  <div class="sec-head"><span class="num">02</span><div class="eyebrow">Axis · positional encoding</div></div>
+  <h2>RoPE vs. PoPE</h2>
+  <p class="sec-intro">PoPE (Polar Coordinate Positional Embeddings — one frequency/magnitude/phase per element, doubling RoPE's frequency count) is a small, consistent upgrade that <em>composes</em> with path integration — but is inert without it.</p>
+
+  <div class="grid2">
+    <div class="card"><div class="stat win">+0.011</div><div class="kv">encoding effect on the <b>torus</b> — negligible. PoPE-index sits on the floor (0.509); PoPE only helps when combined with path integration.</div></div>
+    <div class="card"><div class="stat">+0.076</div><div class="kv">encoding effect on <b>MiniGrid</b> at T=1024 (+0.100 at T=512, factor-of-two averaged) — here encoding is the dominant axis, not position.</div></div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">PoPE − RoPE, per setting (same position &amp; hierarchy, encoding swapped)</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>setting</th><th>arm pair</th><th>PoPE − RoPE</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>MiniGrid raw · index</td><td>PoPE-Flat vs RoPE-Flat</td><td>+0.126</td></tr>
+        <tr class="win"><td>Compositional · path-int flat</td><td>MapPoPE-Flat vs MapWM-Flat</td><td>+0.096</td></tr>
+        <tr class="win"><td>MiniGrid raw · path-int</td><td>MapPoPE-Flat vs MapWM-Flat</td><td>+0.096</td></tr>
+        <tr class="win"><td>Match-Query · path-int+hier</td><td>MapPoPE-Hier vs MapWM-Hier</td><td>+0.061</td></tr>
+        <tr class="win"><td>Torus paper task · path-int</td><td>MapPoPE-Flat vs MapWM-Flat</td><td>+0.027</td></tr>
+        <tr><td>MiniGrid allocentric · index</td><td>PoPE-Flat vs RoPE-Flat</td><td>+0.026</td></tr>
+        <tr><td>MiniGrid allocentric · path-int</td><td>MapPoPE-Flat vs MapWM-Flat</td><td>+0.009</td></tr>
+        <tr class="floor-row"><td>Compositional · hier + CoarseIdx</td><td>MapPoPE-Hier-CoarseIdx vs MapWM-Hier-CoarseIdx</td><td>−0.028 <span class="u">(RoPE wins)</span></td></tr>
+        <tr class="floor-row"><td>Torus paper task · index</td><td>PoPE-Flat vs RoPE</td><td>−0.021 <span class="u">(both on floor)</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">PoPE helps in most settings and never regresses far. <b>Biggest on MiniGrid</b> (content-heavy, egocentric), solid <b>with path integration on the torus</b>. Neutral where the position channel is floored, and it loses only where a specialized mechanism (<span class="mono">CoarseIdx</span>) already closes the gap. A secondary axis — position integration matters far more.</div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">MapPoPE-Flat is the strongest torus config at every length</span><span class="badge b-win">best measured</span><span class="badge b-accent">n=8</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>model</th><th>IID l=128</th><th>OOD-d l=64</th><th>OOD-s l=512</th><th>ext l=1024</th><th>ext l=2048</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>MapPoPE-Flat</td><td>0.994</td><td>0.991</td><td>0.995</td><td>0.985</td><td>0.970 <span class="u">± .028</span></td></tr>
+        <tr><td>MapEM-os (single p₀)</td><td>0.987</td><td>0.983</td><td>0.988</td><td>0.963</td><td>0.939 <span class="u">± .020</span></td></tr>
+        <tr><td>MapWM-Flat</td><td>0.969</td><td>0.958</td><td>0.978</td><td>0.893</td><td>0.854 <span class="u">± .026</span></td></tr>
+        <tr class="floor-row"><td>paper reports</td><td>0.99 / 1.0</td><td>0.99</td><td>0.96 / 0.97</td><td><span class="u">—</span></td><td><span class="u">—</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">At l=2048: MapPoPE-Flat beats MapWM by <b>+0.116</b> (t=8.6, decisive) and MapEM-os by +0.031 (t=2.55, but n=8 ±1sd bands overlap). Beats the paper's own reported numbers in every column. <span class="mono">ext</span> columns have no published counterpart. Source: <span class="mono">PAPER_OOD_EXTENDED_n8.md</span>, <span class="mono">PAPER_OOD_WITH_POPE.md</span>.</div>
+  </div>
+  <div class="callout"><b>The one-line encoding claim:</b> PoPE is not a better idea than RoPE in itself — it is inert without path integration (0.509 on the torus) — but combined with it, <span class="mono">MapPoPE-Flat</span> beats everything measured here, including the paper's models.</div>
+</section>
+
+<!-- placeholder sections filled after agents 2 & 3 land -->
+<section id="hierarchy">
+  <div class="sec-head"><span class="num">03</span><div class="eyebrow">Axis · time-hierarchy</div></div>
+  <h2>Hierarchy — Hourglass &amp; coarse structure</h2>
+  <p class="sec-intro">The Hourglass Transformer (Nawrot 2021) used as a scaffold with MapFormer layers swapped in. Unifying principle: <b>hierarchy helps only when a lossy summary is a sufficient statistic</b> — it wins on compositional transfer, is inert or harmful on exact recall.</p>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Compositional-motif task — cross-instance accuracy (the compositional target)</span><span class="badge b-accent">n=8 hier / n=3 flat</span><span class="badge b-floor">floor ≈ 0.072</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>model</th><th>structure</th><th>T=256</th><th>T=512</th><th>T=1024</th><th>T=2048</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>MapWM-Hier-CoarseIdx</td><td>hier · re-indexed coarse</td><td>0.556</td><td>0.429</td><td>0.308</td><td>0.232</td></tr>
+        <tr><td>MapPoPE-Hier-CoarseIdx</td><td>hier · PoPE</td><td>0.528</td><td>0.401</td><td>0.302</td><td>0.243</td></tr>
+        <tr><td>MapWM-Hier-CoarsePI</td><td>hier · pooled θ coarse</td><td>0.498</td><td>0.371</td><td>0.258</td><td>0.166</td></tr>
+        <tr><td>MapWM-Hier</td><td>hier · fixed-stride</td><td>0.415 <span class="u">±.096</span></td><td>0.289</td><td>0.170</td><td>0.108</td></tr>
+        <tr><td>Plain-Hier <span class="u">(no path-int)</span></td><td>hier</td><td>0.318 <span class="u">±.029</span></td><td>0.196</td><td>0.088</td><td>0.042</td></tr>
+        <tr class="floor-row"><td>MapWM-FlatHG</td><td>flat (scaffold, no pool)</td><td>0.285</td><td>0.172</td><td>0.085</td><td>0.053</td></tr>
+        <tr class="floor-row"><td>MapWM-Flat</td><td>flat</td><td>0.270</td><td>0.164</td><td>0.081</td><td>0.048</td></tr>
+        <tr class="floor-row"><td>Plain-Flat</td><td>flat</td><td>0.216</td><td>0.100</td><td>0.038</td><td>0.018</td></tr>
+        <tr class="floor-row"><td>MapEM-Flat</td><td>flat · EM AND-gate</td><td>0.097</td><td>0.047</td><td>0.026</td><td>0.015</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Train T=256, eval fresh held-out env. <b>Hierarchy helps in BOTH backbones</b> (~+0.11 at matched backbone; Plain-Hier vs Plain-Flat is clean at 5–30× lower variance). Source: <span class="mono">COMPOSITIONAL_MULTISEED.md</span>.</div>
+  </div>
+
+  <div class="callout"><b>CoarseIdx is the standout — and it answers a mechanistic question.</b> Re-indexing the coarse tokens (<span class="mono">CoarseIdx</span>) beats carrying pooled absolute-θ (<span class="mono">CoarsePI</span>, +0.06) beats fixed-stride Hier. It has the best compositional accuracy (0.556), best exact recall (0.988), and best likelihood (NLL 0.765). Giving the coarse level a clean re-index, rather than a pooled position, is what unlocks the gain.</div>
+
+  <div class="grid2">
+    <div class="card"><h3>Where it helps</h3><p class="kv"><b>Compositional transfer</b> (~+0.11 over flat, in both backbones), largest when motif reuse is high (n_templates=2: +0.195) and for weaker base models (MiniGrid: +0.096 for the weakest arm, +0.002 for the strongest). The gain is generic multi-scale compression.</p></div>
+    <div class="card"><h3>Where it doesn't</h3><p class="kv"><b>Exact recall</b> — path integration, not hierarchy, drives that (hierarchy adds ~0). And when motif reuse is low (n_templates=16), flat overtakes. Hierarchy helps only where a lossy summary is a sufficient statistic.</p></div>
+  </div>
+  <p class="kv" style="max-width:68ch">The two axes are orthogonal: <b>path integration → exact positional recall; hierarchy → compositional transfer.</b></p>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">The principle, tested at its most favourable case — and a length condition it did not carry</span><span class="badge b-accent">n=12–16</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>training length</th><th>pooled tokens</th><th>hierarchy − flat</th><th>t</th><th>seeds</th><th>sign test</th></tr></thead>
+      <tbody>
+        <tr class="floor-row"><td>L=16</td><td>8</td><td>+0.001 <span class="u">(MDE 0.006)</span></td><td>—</td><td>9/16</td><td><span class="u">tight null</span></td></tr>
+        <tr class="win"><td>L=512 · index-style row</td><td>256</td><td>+0.060</td><td>2.23</td><td class="best">12/12</td><td class="best">p = 0.0005</td></tr>
+        <tr class="win"><td>L=512 · weight-shared row</td><td>256</td><td>+0.071</td><td>2.44</td><td>11/12</td><td class="best">p = 0.006</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Parity is a <b>tree reduction</b> — the partial parity of a pooled pair is exactly a sufficient statistic, with zero loss — so it is the single case the principle says must win. At L=16 it produced a tight null and we concluded the principle was not predictive. <b>That test was designed at a length where the mechanism cannot operate:</b> pooling k=2 over 16 tokens leaves 8 coarse tokens, nothing to compress. At L=512 hierarchy helps on 23 of 24 seeds. The principle survives, with an added condition — <b>the summary must be sufficient AND the sequence long enough for compression to mean anything</b>. Sources: <span class="mono">HIER_PARITY.md</span>, <span class="mono">LOOP_HIER_PARITY.md</span>.</div>
+  </div>
+
+  <div class="callout warn"><b>A methodological catch worth carrying.</b> Both L=512 effects sit at t = 2.23 and 2.44, under this project's t &gt; 2.8 bar, and would have been filed as “unmeasured”. Twelve of twelve seeds in the same direction is <b>p = 0.0005</b> by a sign test. The MDE rule is conservative for small <em>consistent paired</em> effects — report the sign count beside it, and never read t &lt; 2.8 as absence when the signs are lopsided.</div>
+</section>
+<section id="backbone">
+  <div class="sec-head"><span class="num">04</span><div class="eyebrow">Axis · backbone</div></div>
+  <h2>MapFormer-WM vs. EM, and non-commutativity</h2>
+  <p class="sec-intro">WM (additive OR-gate attention) vs EM (multiplicative AND-gate). The ordering <b>flips by task</b>, so "EM is the better backbone" is a paper-task claim, not a universal one.</p>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">WM vs EM ordering flips by task</span><span class="badge b-accent">n=3–8</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>task</th><th>MapWM</th><th>MapEM</th><th>winner</th></tr></thead>
+      <tbody>
+        <tr><td>Paper task, fresh map (floor .506)</td><td>0.967</td><td>0.987 <span class="u">(single p₀)</span></td><td class="best">EM +0.020</td></tr>
+        <tr><td>Match-Query TQ=256 (chance .0625)</td><td>0.888</td><td>0.808</td><td class="best">WM +0.080</td></tr>
+        <tr><td>Compositional cross_nb T=256 (floor .072)</td><td>0.270</td><td>0.097 <span class="u">(sep q0/k0)</span></td><td class="best">WM +0.173</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov"><b>EM never beats WM on any task except the clean paper task.</b> On compositional transfer EM's AND-gate actively suppresses cross-room reuse (0.097, worse than plain 0.216). Sources: <span class="mono">BASELINE_TABLE.md §A</span>, <span class="mono">MATCH_QUERY_EM.md</span>, <span class="mono">EM_COMP_SAMEBATCH.md</span>.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h3>Init: single p₀ &gt; separate q₀/k₀</h3><p class="kv">A single initial position vector beats the paper's separate q₀/k₀ by <b>+0.358</b> on Match-Query (3/3 seeds). The gap grows with reliance on the position channel: paper task +0.089 → compositional +0.167 → Match-Query +0.358.</p></div>
+    <div class="card"><h3>Non-commutativity costs 34×, buys ~nothing</h3><p class="kv">On a family-tree structure with measured non-commutativity <b>1.000</b>, the non-commutative MapEM-NC beats its commutative control by only <b>+0.005–0.014</b> — for 34× the compute. On the same task <b>path integration buys +0.115</b> (23× the NC effect), and plain MapWM-Flat (0.805) beats every NC variant.</p></div>
+  </div>
+</section>
+<section id="correction">
+  <div class="sec-head"><span class="num">05</span><div class="eyebrow">Axis · state correction</div></div>
+  <h2>Level 1.5 InEKF correction</h2>
+  <p class="sec-intro">An Invariant-EKF correction on the path-integration angle. Verdict across five within-batch tests: <b>it improves likelihood and stability reliably, accuracy almost never.</b> Two further tests since — a component ablation and a task built to supply its missing premise — say <b>the named decomposition does not exist and the mechanism does not pay even at its best case</b>.</p>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Five within-batch tests</span><span class="badge b-accent">n=3</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>task</th><th>accuracy vs MapWM-Flat</th><th>likelihood / stability</th></tr></thead>
+      <tbody>
+        <tr><td>Paper task, 50 epochs</td><td>1.000 vs 0.993 <span class="u">(ceiling)</span></td><td class="best">16× lower train loss</td></tr>
+        <tr class="floor-row"><td>Match-Query (blind)</td><td>0.876 vs 0.888 <span class="u">— no advantage</span></td><td>nothing to correct with</td></tr>
+        <tr><td>Family tree</td><td>n.s. (t≈0.89)</td><td class="best">spread ±0.015 vs ±0.072</td></tr>
+        <tr class="floor-row"><td>lm200</td><td>+0.142, but capacity control <b>ties</b> it (t=0.79)</td><td>worst-seed loss 0.19 vs 0.99</td></tr>
+        <tr class="floor-row"><td>Compositional</td><td>worse on 2/3 seeds</td><td class="best">better NLL 3/3, both lengths</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov"><b>Not capacity</b> — an ExtraHead control with more params (270,934 vs 254,230) reaches only 0.985 on the paper task where Level 1.5 hits 1.000. On Match-Query, withholding observations gives the filter nothing to gate on → no gain. Sources: <span class="mono">LEVEL15_MEETS_GATED_*.md</span>, <span class="mono">NODROP_PARETO_RESULTS.md</span>.</div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">The decomposition does not replicate</span><span class="badge b-neg">retracted</span><span class="badge b-accent">n=5</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>remove one component</th><th>at n=1 <span class="u">(published)</span></th><th>at n=5, loss-matched</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td>the measurement head <span class="u">(keep only the wrap)</span></td><td>0.831 vs 0.993 — decisive</td><td>+0.036 <span class="u">(t 1.23)</span></td><td>unmeasured — does not reproduce</td></tr>
+        <tr class="hl"><td>the per-token gate</td><td>0.672 — <b>worse than removing everything</b></td><td>+0.000</td><td><b>sign inverted</b>: at n=5 it is one of the two best arms, 5/5 seeds</td></tr>
+        <tr><td>the learned Π <span class="u">(use the DARE solution)</span></td><td>1.000 / 0.992 — irrelevant</td><td>+0.008</td><td>consistent, still underpowered</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov"><b>No individual component can be shown to be load-bearing</b> — each can be removed alone at no measurable cost. Rule-9 note: r(final loss, accuracy) is −0.930 / −0.897 / −0.812 over the 30 runs, and loss-matching <em>flips two readings in opposite directions</em> — the only raw-detectable contrast vanishes, while Level 1.5 − Vanilla appears (+0.124, t 3.83 at T=1024). Source: <span class="mono">L15_ABLATION.md</span>.</div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">The sharpest test: a task where the premise actually holds</span><span class="badge b-neg">prediction refuted twice</span><span class="badge b-accent">n=8</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>take</th><th>recipe</th><th>no drift</th><th>13 cells of drift</th><th>change with drift</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>300 ep, lr 3e-4</td><td>+0.035</td><td>+0.038</td><td>+0.003</td></tr>
+        <tr class="floor-row"><td>2</td><td>600 ep, lr 1e-3</td><td>+0.146</td><td>+0.005</td><td class="best">−0.141</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Every correction result in this project had been measured where the correction had <em>nothing to correct</em> — Match-Query's actions are clean, the torus is at ceiling. So stochastic transitions were built into Match-Query's explore phase: the recorded action stream drifts from true position (0 → 13 cells), while observations still reflect true cells. Drift to correct <b>and</b> signal to correct with. Gated before any GPU: every shortcut baseline held at its clean-task level while drift rose to 22 cells. <b>The pre-registered prediction was that the effect grows with drift.</b> It is flat in one take and negative in the other, and never detectable at p=0.10. A correction whose benefit does not scale with the amount to be corrected is not doing correction. Sources: <span class="mono">MQ_NOISE_2X2.md</span>, <span class="mono">MQ_NOISE_2X2_C2.md</span>.</div>
+  </div>
+
+  <div class="callout warn"><b>A gate this exposed, and it is worth stating.</b> The noisy variant of Match-Query was assumed to inherit the clean task's context-destruction pass. It does not: with the query path destroyed the model still scores 0.142–0.167 against a chance of 0.0625 — the explore phase leaks a <b>local observation prior</b>, so ~45% of the score there is non-positional. The clean task collapses to chance under the same manipulation and is unaffected. <b>Gate every variant, not every family.</b></div>
+</section>
+<section id="baselines">
+  <div class="sec-head"><span class="num">06</span><div class="eyebrow">Reference models</div></div>
+  <h2>Baselines &amp; collapse magnitudes</h2>
+  <p class="sec-intro">The corrected lm200 (landmark) leaderboard — fresh, current-code retrains in one batch (the April checkpoints were non-converged; see Caveats). It shows which architectures can build a cognitive map and which collapse.</p>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">lm200 landmark task — corrected multi-seed leaderboard</span><span class="badge b-accent">n=3</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>model</th><th>fresh train loss</th><th>T=128</th><th>T=512 (OOD)</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>Level15 (correction)</td><td>0.008</td><td>0.996</td><td>0.990 <span class="u">±.005</span></td></tr>
+        <tr><td>TEMFaithful</td><td>0.001</td><td>1.000</td><td>0.974 <span class="u">±.008</span></td></tr>
+        <tr><td>MapWM-Flat (Vanilla)</td><td>0.774</td><td>0.814</td><td>0.742 <span class="u">±.075</span></td></tr>
+        <tr><td>VanillaEM</td><td>0.972</td><td>0.830</td><td>0.656 <span class="u">±.130</span></td></tr>
+        <tr class="floor-row"><td>MambaLike <span class="u">(diagonal-A SSM)</span></td><td>1.817</td><td>0.562</td><td>0.549 <span class="u">±.013</span></td></tr>
+        <tr class="floor-row"><td>RoPE <span class="u">(index)</span></td><td>1.532</td><td>0.636</td><td>0.482 <span class="u">±.023</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov"><b>Cognitive-map necessity, made concrete:</b> RoPE collapses to 0.482 and Mamba to 0.549 (at/below floor) while path-integration + correction reaches 0.990 — a ~0.5 gap. Diagonal-A SSMs lack the rotation expressivity. Sources: <span class="mono">LM200_CORRECTED_MULTISEED.md</span>. <em>Note: LSTM and CoPE have no current top-level table (older sweeps only); present baselines are RoPE, MambaLike, TEMFaithful.</em></div>
+  </div>
+</section>
+<section id="efficiency">
+  <div class="sec-head"><span class="num">07</span><div class="eyebrow">Compute</div></div>
+  <h2>Efficiency &amp; timing</h2>
+  <p class="sec-intro">Two independent compute results: the Hourglass reproduces Hourglass's <em>efficiency</em> property (iso-quality at less compute), and the parallel-scan property holds against recurrent baselines.</p>
+
+  <div class="grid2">
+    <div class="card"><h3>enwik8 · Hourglass efficiency <span class="badge b-frontier">iso-quality</span></h3>
+      <p class="kv">At <b>identical params</b> (31.8M), seq=2048: Hourglass uses <b>−18.75% FLOPs</b>, with val-bpc marginally <em>worse</em> (1.484 vs flat 1.473). <b>Replicated in the MapFormer family at exact parity</b> (28,371,016 both): 1.4537 vs 1.4506 — inside the 0.003–0.007 checkpoint noise, so a <b>null on quality</b>, against <b>1.23× throughput and −14% peak memory</b> measured on an idle GPU. Two families agree: on text, hierarchy is an <b>efficiency</b> property, not a quality win. The saving is also <em>linear</em> — half the tokens through one block's FFN — not the quadratic attention win the hourglass is sold on: attention is only 8.8% of a block at d=880, L=512.</p></div>
+    <div class="card"><h3>Parallel scan holds <span class="badge b-win">verified</span></h3>
+      <p class="kv">Forward+backward, cost growth L=128→2048: <b>Vanilla 2.5×</b>, EM 3.9×, MapEM-NC 14.4×, TEMFaithful 120×. At L=2048 Vanilla is <b>34× faster than MapEM-NC</b> and <b>1624× faster than TEMFaithful</b> (which has 20× fewer params).</p></div>
+  </div>
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Training-cost scaling (ms, batch 4, d=128, 2 layers)</span><span class="badge b-accent">median of 15</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>variant</th><th>params</th><th>L=128</th><th>L=2048</th><th>growth</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>Vanilla</td><td>405K</td><td>4.8</td><td>12.1</td><td>2.5×</td></tr>
+        <tr><td>VanillaEM</td><td>406K</td><td>4.3</td><td>16.7</td><td>3.9×</td></tr>
+        <tr><td>MapEM-NC</td><td>430K</td><td>28.5</td><td>410</td><td>14.4×</td></tr>
+        <tr class="floor-row"><td>TEMFaithful</td><td>21K</td><td>163</td><td>19,646</td><td>120×</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Not parameter-matched — compare the <b>scaling</b>, not absolute times. Source: <span class="mono">TIMING_BENCHMARK.md</span>, <span class="mono">hourglass_enwik8_long/*.json</span>.</div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Loop × hierarchy — the two savings compose exactly</span><span class="badge b-win">free</span><span class="badge b-accent">L=2048, batch 64, measured alone on an idle device</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>arm</th><th>params</th><th>ms / step</th><th>peak MiB</th></tr></thead>
+      <tbody>
+        <tr><td>3-block scaffold, flat</td><td>596,034</td><td>280.97</td><td>20,552</td></tr>
+        <tr><td>+ hierarchy <span class="u">(pooled middle block)</span></td><td>596,034</td><td class="best">216.62 <span class="u">−22.9%</span></td><td class="best">16,468 <span class="u">−19.9%</span></td></tr>
+        <tr><td>+ weight sharing <span class="u">(one block, applied 3×)</span></td><td class="best">199,490 <span class="u">−66.5%</span></td><td>281.20 <span class="u">+0.1%</span></td><td>20,547</td></tr>
+        <tr class="win"><td><b>both</b></td><td class="best">199,490 <span class="u">−66.5%</span></td><td class="best">216.77 <span class="u">−22.8%</span></td><td class="best">16,463 <span class="u">−19.9%</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">The loop saves <b>parameters</b> and costs <b>compute</b>; hierarchy saves <b>compute</b> and costs <b>parameters</b>. Because the resources are independent, the savings compose with no cross-interference — sharing costs +0.1% time, hierarchy costs 0% parameters. On accuracy the combination matches the unshared flat scaffold (+0.026 / +0.009 / −0.006 at L=512/1024/2048, none detectable), so <b>a null on accuracy is the success case here</b>. It is an equivalence read off a null, so the MDE of 0.180 is the claim's real precision — the cost is smaller than that, not zero. <b>The saving is length-dependent and absent at short sequences:</b> hierarchy is 12% <em>slower</em> at L=16 and 2% slower at L=128, both overhead-dominated. Source: <span class="mono">LOOP_HIER_COMPUTE.md</span>.</div>
+  </div>
+</section>
+
+<!-- ================= LANGUAGE ================= -->
+<section id="language">
+  <div class="sec-head"><span class="num">7b</span><div class="eyebrow">Domain · language</div></div>
+  <h2>Both axes transfer to text — at ~1% of their navigation magnitude</h2>
+  <p class="sec-intro">enwik8, byte-level, flat 9 layers, ~28.6M parameters, 36k iterations, seq 512, deterministic validation. The full 2×2 of encoding × position, same as §00 but on text instead of a grid.</p>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">enwik8 — bits per byte, lower is better</span><span class="badge b-frontier">mixed power</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>arm</th><th>encoding</th><th>position</th><th>bpc</th><th>seeds</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>MapPoPE-Flat</td><td>PoPE</td><td>path-int</td><td class="best">1.3740</td><td>n=3</td></tr>
+        <tr><td>PoPE-Flat</td><td>PoPE</td><td>index</td><td>1.3746</td><td><span class="u">n=1</span></td></tr>
+        <tr><td>Vanilla (MapWM)</td><td>RoPE</td><td>path-int</td><td>1.3758</td><td><span class="u">n=1</span></td></tr>
+        <tr class="floor-row"><td>RoPE</td><td>RoPE</td><td>index</td><td>1.3799</td><td>n=3</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov"><b>Only one of these comparisons has seeds on both sides.</b> MapPoPE − RoPE = <b>−0.0058 bpc (t=3.49)</b> — established. The two single-axis arms are n=1, so "PoPE beats RoPE" and "path integration beats RoPE" are each one run against a three-seed baseline: right direction, right magnitude, <b>not measured</b>. Seed sd on RoPE is 0.0018. Sources: <span class="mono">enwik8_long/*.json</span>.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h3>This is consistent with the paper, not a contradiction</h3><p class="kv">MapFormer v4 §5.5 reports <b>RoPE 19.14 vs MapWM 18.79 ppl</b> on OpenWebText (12 layers, ~10<sup>11</sup> tokens, 5 seeds, p&lt;0.005). Converted to our units that is 0.0266 bits per BPE token ≈ <b>0.0067 bits per byte</b> at ~4 bytes/token. Our −0.0041 is the <b>same direction and same order</b>. At n=3 our MDE is 0.0041 — the size of the effect — and the path-integrated arm is n=1, so this setup is <b>underpowered</b>, not null.</p></div>
+    <div class="card"><h3>The axes OVERLAP here <span class="badge b-frontier">hypothesis</span></h3><p class="kv">PoPE alone −0.0053, path integration alone −0.0041, sum −0.0093 — but <b>both together only −0.0058</b>. On text the two are largely <b>substitutes</b>: each is a way of making the position signal more expressive. That is the opposite of the <b>super-additive</b> loop × path-integration result in §1b. Both singles are n=1, so this is a hypothesis to test.</p></div>
+  </div>
+
+  <div class="callout"><b>Scale, not absence.</b> The position axis is worth <b>+0.461 accuracy</b> on the torus and <b>≈0.005 bpc</b> on text — the same ingredient, roughly two orders of magnitude apart in impact. That is what §1a predicts: text has no spatial extent to exceed attention's capacity, so the property that triggers the effect is missing. The paper reaches the same boundary from the other side — its OpenWebText win comes with <b>no BLiMP gain</b> (0.78 vs 0.79) and length extrapolation that <em>loses</em> to CoPE and PathAtt.</div>
+
+  <div class="callout warn"><b>Not run: the loop axis on text.</b> Every looped result in §1b is navigation. Sizing it properly matters — to resolve a 0.005 bpc effect against a 0.0018 seed sd needs <b>n≥5</b>, so the 2×2×3 design is ~48 runs, not the 18 an n=3 habit would suggest.</div>
+</section>
+
+<!-- ================= MINIWORLD ================= -->
+<section id="miniworld">
+  <div class="sec-head"><span class="num">08</span><div class="eyebrow">Environment · continuous 3D</div></div>
+  <h2>Continuous 3D — does the allocentric flip survive?</h2>
+  <p class="sec-intro">The §01 flip was measured in discrete grids. MiniWorld is the cheaper 3D rung toward Habitat: real continuous geometry, <b>15° rotation actions</b> whose forward displacement depends on accumulated heading. Following the cognitive-map convention (TEM / CSCG, and DeepMind-Lab token models), the RGB frame is discarded and each discretized floor cell emits a fixed token — so it isolates <em>path integration through rotation geometry</em>, not perception.</p>
+
+  <div class="callout"><b>First a task-design result:</b> a <em>fresh</em> map per episode forces in-context map <em>building</em>, which memorises a finite trajectory buffer (held-out NLL 6.2 = confidently wrong). A <b>fixed map per seed</b> — novel walk each episode — isolates position tracking on a known map and is genuinely learnable: held-out non-blank accuracy <b>0.62–0.82</b> vs the memorising ceiling 0.23. This is the MiniGrid design, and it is the well-posed test.</div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Fixed-map factorial — the flip does NOT reproduce</span><span class="badge b-accent">n=3</span><span class="badge b-floor">chance 0.0625 · oracle 1.0</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>encoding</th><th>path-int mean</th><th>index mean</th><th>position effect</th></tr></thead>
+      <tbody>
+        <tr><td>raw (turn / forward) · T=512</td><td>0.658</td><td>0.638</td><td>+0.020 <span class="u">±.013</span></td></tr>
+        <tr><td>allocentric (displacement) · T=512</td><td>0.810</td><td>0.802</td><td>+0.008 <span class="u">±.009</span></td></tr>
+        <tr><td>raw · T=1024 (OOD)</td><td>0.538</td><td>0.528</td><td>+0.010 <span class="u">±.017</span></td></tr>
+        <tr class="floor-row"><td>allocentric · T=1024 (OOD)</td><td>0.680</td><td>0.701</td><td>−0.021 <span class="u">±.013</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Unlike MiniGrid (−0.02 → +0.02), the position effect stays near zero and does <b>not</b> rise with recoding. Allocentric lifts <em>every</em> arm ~+0.15 (Vanilla 0.65→0.80, RoPE 0.62→0.80) — richer displacement-direction <b>input</b>, not the cumsum mechanism. <b>Why:</b> on a fixed map the model memorises cell→token and needs only <em>coarse</em> position, which attention reads from the action tokens — so explicit path integration is dead weight here, exactly as on the strongest MiniGrid arms (§01). Source: <span class="mono">MINIWORLD_FIXED_RESULTS.md</span>.</div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Fresh-map factorial — the flip fails decisively; path integration is a liability</span><span class="badge b-neg">superseded</span><span class="badge b-accent">n=3</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>model</th><th>position</th><th>raw</th><th>allocentric</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>RoPE</td><td>index</td><td>0.398</td><td>0.501</td></tr>
+        <tr><td>PoPE-Flat</td><td>index</td><td>0.384</td><td>0.364</td></tr>
+        <tr class="floor-row"><td>MapPoPE-Flat</td><td>path-int</td><td>0.308</td><td>0.232</td></tr>
+        <tr class="floor-row"><td>Vanilla</td><td>path-int</td><td>0.303</td><td>0.284</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Position effect (path-int − index), <b>all 3 seeds negative</b>: raw <b>−0.086</b> / allo <b>−0.174</b> (T=512); raw −0.051 / allo −0.184 (T=1024). Index BEATS path-int (the reverse of the torus), and allocentric <b>widens</b> the index lead rather than rescuing path-int — the richer displacement input helps the flexible attention arm most (RoPE-allo 0.501, the best arm). Validated: context-destruction PASS on all 24 arms (intact 0.17–0.51 → shuffled 0.01–0.09 = genuine maps). Source: <span class="mono">MINIWORLD_FRESH_RESULTS.md</span>.</div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Why — the oracle test: an EXACT recode makes index near-solve, not path-int flip</span><span class="badge b-neg">superseded</span><span class="badge b-accent">n=3</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>model</th><th>position</th><th>allo (24-bin, R²=0.55)</th><th>oracle (exact cell Δ, R²→1)</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>RoPE</td><td>index</td><td>0.501</td><td><b>0.977</b></td></tr>
+        <tr class="win"><td>PoPE-Flat</td><td>index</td><td>0.364</td><td><b>0.938</b></td></tr>
+        <tr class="floor-row"><td>Vanilla</td><td>path-int</td><td>0.284</td><td>0.448</td></tr>
+        <tr class="floor-row"><td>MapPoPE-Flat</td><td>path-int</td><td>0.232</td><td>0.324</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">The decisive test held env/demand/budget fixed and changed only integration fidelity. Prediction (reconstruction-fidelity hypothesis): path-int flips positive. Result: the OPPOSITE — position effect went allo −0.174 → <b>oracle −0.571</b> (all seeds). An exact displacement token let the INDEX arm's <b>attention</b> reconstruct position near-perfectly (0.94–0.98) while the rigid cumsum lagged. Ablation PASS all arms (RoPE-oracle 0.977 → shuffled 0.07). Source: <span class="mono">MINIWORLD_ORACLE_RESULTS_T512.md</span>.</div>
+  </div>
+
+  <div class="callout warn"><b>SUPERSEDED — the attention-horizon mechanism is falsified.</b> This section's explanation, that what sets the sign is whether attention can span the revisit distance, is contradicted by the study's own pre-training gate data: measured revisit lags <em>shorten</em> as the grid grows (47 / 43 / 38 / 33) and the fraction inside the horizon <em>rises</em> (0.43 → 0.50). The numbers in this section were also trained under a linear-decay-from-step-one schedule that prevented plateau escape — refitting with warmup+cosine moved one arm from 0.448 to 0.990 and <b>inverted the headline sign</b>. Read §1a instead: the driver is <b>map extent</b>, a threshold between 128 and 512 occupied cells, and the converged series is −0.010 / +0.015 / +0.305.</div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Grid sweep — WITHDRAWN, these arms never converged</span><span class="badge b-neg">withdrawn</span><span class="badge b-accent">n=3</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>grid</th><th>Vanilla (path-int)</th><th>RoPE (index)</th><th>effect (T=512)</th><th>effect (T=1024)</th></tr></thead>
+      <tbody>
+        <tr class="floor-row"><td>8</td><td>0.448</td><td>0.977</td><td>−0.529</td><td>−0.253</td></tr>
+        <tr class="win"><td>16</td><td>0.886</td><td>0.738</td><td><b>+0.148</b></td><td><b>+0.333</b></td></tr>
+        <tr class="win"><td>24</td><td>0.694</td><td>0.618</td><td>+0.076</td><td>+0.208</td></tr>
+        <tr class="win"><td>32</td><td>0.703</td><td>0.615</td><td>+0.087</td><td>+0.172</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov"><b>WITHDRAWN.</b> The crossover reported here does not survive convergence. Both arms were trained on a budget and schedule under which neither reliably converged; retrained to a flat loss (400 ep, warmup+cosine) the grid-8 effect is <b>−0.010</b>, not −0.529, and there is <b>no sign flip anywhere</b> — index never beats path integration, there is only a regime where the choice does not matter. See §1a.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h3>Method — validated against the field</h3><p class="kv">Headless EGL, <b>render disabled</b> (MiniWorld renders the discarded POV every step with no state-only API — patching it out is necessary and gave a <b>37× speedup</b>). Location-keyed token is the standard cognitive-map paradigm; using it on MiniWorld's geometry (vs its RGB) is the one non-standard choice, stated plainly.</p></div>
+    <div class="card"><h3>Scope — geometry, not perception</h3><p class="kv">This keeps MiniWorld's continuous rotation dynamics and discards vision by design, isolating the action-encoding axis. A separate <b>perception experiment</b> (learned visual encoder, 5–25M params) is planned and gated on this flip result. It is the honest boundary before a Habitat claim.</p></div>
+  </div>
+</section>
+
+<section id="tasks">
+  <div class="sec-head"><span class="num">09</span><div class="eyebrow">Appendix</div></div>
+  <h2>Task-by-task — the four citable results</h2>
+  <p class="sec-intro">The through-line — <b>path integration is what makes in-context cognitive maps work</b> — rests on four independent tasks.</p>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Match-Query — blind continuation (path-int necessary)</span><span class="badge b-accent">n=5 base</span><span class="badge b-floor">chance 0.0625</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>model</th><th>position</th><th>64² acc</th><th>128² acc</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>MapWM-Flat</td><td>path-int</td><td>0.730 <span class="u">±.247</span></td><td>0.823 <span class="u">±.043</span></td></tr>
+        <tr class="floor-row"><td>PlainFlat</td><td>index</td><td>0.154 <span class="u">±.018</span></td><td>0.192 <span class="u">±.022</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">No seed overlap (worst path-int 0.398 &gt; best index 0.178). The axis is path integration, not encoding: MapPoPE-Hier 0.847 vs PoPE-Flat 0.117 (same attention, opposite outcome). Control — shuffling the explored observations drops accuracy to chance (<b>0.918 → 0.074</b>), confirming the model reads a genuine map. Source: <span class="mono">MATCH_QUERY_SCALE.md</span>.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h3>Family tree <span class="badge b-win">+0.115</span></h3><p class="kv">Non-commutative relational structure. Path integration buys <b>+0.115</b> over index; map-destroyed condition lands exactly on the 0.163 hub floor. Passes context destruction.</p></div>
+    <div class="card"><h3>Stitch / CSCG <span class="badge b-win">+0.131</span></h3><p class="kv">CSCG's transitive-inference negative control reproduces in MapFormer's attention: paired difference <b>+0.131 ± 0.024</b> (floor exactly 0) vs index −0.005 ± 0.016.</p></div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Compositional Match-Query — the synergy frontier (this session)</span><span class="badge b-accent">n=6, curriculum</span><span class="badge b-floor">chance 0.0625</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>model family</th><th>exact-blind hit-rate</th><th>cross-blind hit-rate</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>MapFormer (path-int)</td><td>16/18 <span class="u">(Hg_k2 6/6)</span></td><td>4/18 <span class="u">(CoarseIdx best 2/6)</span></td></tr>
+        <tr class="floor-row"><td>Plain (index)</td><td>0/12</td><td>0/12</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov"><b>Path integration necessary + a short→long curriculum → reliable blind matching (16/18); plain never clears it (0/12).</b> The compositional cross-blind extension is an improved frontier — curriculum lifted it 4× (1/18 → 4/18) — but not yet reliable. Source: <span class="mono">COMPOSITIONAL_MATCH_QUERY.md</span>.</div>
+  </div>
+</section>
+<section id="setup">
+  <div class="sec-head"><span class="num">10</span><div class="eyebrow">Reference</div></div>
+  <h2>Experimental setup</h2>
+  <p class="sec-intro">Every task shares one data format and one training recipe; the environments differ in what the actions and observations mean.</p>
+
+  <div class="grid2">
+    <div class="card"><h3>Data format — a single interleaved stream</h3><p class="kv">Each episode is one token sequence <span class="mono">s = [a₁, o₁, a₂, o₂, …]</span> in a unified vocabulary (actions, then observation types, then a blank). The model predicts the next token; the loss is masked to <b>observation positions at revisited cells</b> (the paper's self-supervised objective) or the task-specific target below. The model must learn to separate the action and observation channels itself.</p></div>
+    <div class="card"><h3>Position code — path integration</h3><p class="kv">MapFormer turns each action token into a small displacement Δ and computes position as <span class="mono">θ = ω · cumsum(Δ)</span>, a rotation applied to attention (RoPE-style). Index baselines replace θ with the token's sequence position. This is the single axis the study isolates.</p></div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Environments &amp; tasks</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>environment</th><th>space &amp; actions</th><th>observations</th><th>prediction target</th><th>floor</th></tr></thead>
+      <tbody>
+        <tr><td><b>Torus paper task</b></td><td>64×64 wrap-around grid; 4 actions (N/S/E/W), each a fixed ±1 translation; directed walk, run-length 1–10</td><td>16 object types + blank, fixed per cell, p_empty=0.5</td><td>obs at revisited cells</td><td>0.506</td></tr>
+        <tr><td><b>Compositional-motif</b></td><td>torus tiled into 8×8 rooms; n_templates motif patterns reused across rooms, redrawn every episode</td><td>obs = template[local-position] — same pattern wherever a template repeats</td><td>cross-instance: obs at a cell whose motif was seen in another room copy</td><td>~0.072</td></tr>
+        <tr><td><b>Match-Query</b></td><td>torus; explore phase then a <b>blind</b> phase (observations withheld, MASK fed back)</td><td>revealed during explore, hidden during query</td><td>obs at the current cell during the blind phase</td><td>0.0625</td></tr>
+        <tr><td><b>MiniGrid DoorKey-16</b></td><td>real Gym env, egocentric; 7 actions (turn L/R, forward, pickup, drop, toggle, done); forward-biased policy; 25K cached buffer</td><td>the cell directly in front (obj+color, 66 types)</td><td>obs at revisited (x,y,dir) states</td><td>0.49–0.64</td></tr>
+        <tr><td><b>Family tree</b></td><td>relational graph with non-commutative structure; 8 relation actions</td><td>node identities</td><td>node at the walk's endpoint</td><td>0.163</td></tr>
+        <tr><td><b>enwik8</b></td><td>char-level language modeling; sequence length 512 / 2048</td><td>256-byte vocabulary</td><td>next character (bits-per-char)</td><td>—</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">The DoorKey environment is also run in an <b>allocentric</b> variant — see below.</div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head"><span class="t">Allocentric action recoding (MiniGrid) — data change &amp; result</span><span class="badge b-win">flips the ordering</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th></th><th>raw (turn / forward)</th><th>allocentric (recoded)</th></tr></thead>
+      <tbody>
+        <tr><td>action token</td><td>commanded action (7 classes: turn L/R, forward, …)</td><td>realized per-step displacement (5 world-fixed classes: stay, ±x, ±y)</td></tr>
+        <tr><td>how it's computed</td><td>the action the policy chose</td><td>change in agent (x,y) after the step — a wall-blocked forward records <b>stay</b></td></tr>
+        <tr><td>position effect T=1024 (path-int − index)</td><td class="floor-row">−0.021</td><td class="best">+0.024</td></tr>
+        <tr><td>ordering at T=1024</td><td>index arms on top</td><td>path-int arms lead the <em>present</em> index arms by only +0.003 — <b>not established</b>: the best index cell (PoPE-Hier) is missing from the rerun</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prov">Recording world-fixed displacement is the input-matched comparison for path integration on rotation actions (a commutative <span class="mono">cumsum</span> can integrate displacement but not heading-dependent turn/forward). It flips the DoorKey position effect from −0.02 to +0.02. Absolute scores are lower than raw (best 0.825 vs 0.953) because DoorKey is content-solvable — recoding levels the comparison rather than making the task easier. Source: <span class="mono">MINIGRID_ALLOCENTRIC_2X2X2.md</span>.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h3>Training recipe (shared)</h3><p class="kv">d_model=128, 2 heads; <b>1 layer</b> (paper task) or <b>3 layers</b> param-matched (factorials). AdamW, lr 3e-4, weight decay 0.05, linear decay; batch 128. Paper task ~200K sequences (16 or 50 epochs); MiniGrid 50 epochs on the cached buffer.</p></div>
+    <div class="card"><h3>Metrics</h3><p class="kv">Revisit / cross-instance <b>accuracy</b> against the measured floor, and <b>NLL</b> (calibration). Held-out evaluation always uses a <em>fresh</em> environment (distinct seed) so nothing is memorized. Length generalization: train short, evaluate to 4–16× length.</p></div>
+  </div>
+</section>
+
+<section id="caveats">
+  <div class="sec-head"><span class="num">11</span><div class="eyebrow">Method</div></div>
+  <h2>How to read these numbers</h2>
+  <p class="sec-intro">Three conventions make the tables comparable. They apply to every result above.</p>
+
+  <div class="grid2">
+    <div class="card"><h3>Read against the floor</h3><p class="kv">Each table states its own <b>measured floor</b> (always-predict-blank / chance), which ranges from <b>0.06 to 0.80</b> across tasks. A raw score is only meaningful relative to its column's floor.</p></div>
+    <div class="card"><h3>Compare within a batch</h3><p class="kv">Every cross-model comparison here is trained in one batch, seed-matched and parameter-matched. Numbers from different batches (or different tables) are not directly comparable.</p></div>
+    <div class="card"><h3>Failure rates, not point estimates</h3><p class="kv">Outcomes here are <b>bimodal</b>, not noisy-around-a-mean: the same configuration lands at 0.448 <em>or</em> 0.990. Retraining with identical seeds and settings does not reproduce (mean per-seed drift <b>0.185</b>), so the seed does not index the basin. What matters is the <b>failure rate</b>, and n must be large enough to estimate a distribution — three seeds agreeing is the shape of this trap, not evidence against it.</p></div>
+  </div>
+
+    <div class="callout warn"><b>Schedule matters more than it should.</b> Numbers trained under <span class="mono">LinearLR(1→0)</span> — which decays from step one with no warmup — can be measuring time-to-solve rather than capability: on a plateau-then-cliff landscape a run can never escape late. Refitting one arm with 5% warmup + cosine moved it from <b>0.448 to 0.990 on the same task</b> and inverted the sign of the headline effect. Tables marked withdrawn above are the ones this caught.</div>
+
+  <p class="kv" style="max-width:68ch">Paper reference (Table 2, 2D): MapWM 0.99 / 0.99 / 0.96, MapEM-os 1.0 / 0.99 / 0.97 (IID / OOD-d / OOD-s).</p>
+</section>
+
+</main>
+<footer class="foot"><div class="wrap">MapFormer results brief · numbers from one-batch, seed-matched runs · every table carries its measured floor.</div></footer>
+
+</body></html>
