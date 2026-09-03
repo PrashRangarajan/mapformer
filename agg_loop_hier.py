@@ -94,13 +94,13 @@ def main():
     o.append("")
 
     o += ["## Length decay -- the sharper half of the prediction", "",
-          "Accuracy above chance at L, as a fraction of that at L=16. A tree",
+          "Accuracy above chance at L, as a fraction of that at the training length. A tree",
           "reduction should decay FLATTER, not merely start higher.", "",
           "| arm | " + " | ".join(f"L={L}" for L in LENS) + " |",
           "|---" * (len(LENS) + 1) + "|"]
     for _r, f, h in ROWS:
         for v in (f, h):
-            b = [x for x in A[(v, 16)] if x is not None]
+            b = [x for x in A[(v, LENS[0])] if x is not None]
             base = st.mean(b) - CHANCE if b else 0.0
             cells = []
             for L in LENS:

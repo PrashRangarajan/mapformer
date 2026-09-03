@@ -1,5 +1,15 @@
 # Does hierarchy help parity?
 
+> **SUPERSEDED IN PART, 2026-09-03 (LOOP_HIER_PARITY.md).** This run trains at
+> **L=16**, where pooling k=2 leaves 8 coarse tokens -- there is nothing to compress
+> and no depth to save, so the mechanism cannot operate. Trained at **L=512**
+> instead, hierarchy helps on **23 of 24 seeds** (+0.060 unshared, sign-test
+> p=0.0005; +0.071 shared, p=0.006). The tight null below is a property of THIS
+> length, and the conclusion drawn from it -- that the sufficient-statistic
+> principle is not predictive -- was wrong. The principle holds with an added
+> condition: the summary must be sufficient AND the sequence long enough for
+> compression to mean anything.
+
 Parity is a TREE REDUCTION: parity(a,b,c,d) = parity(parity(a,b),
 parity(c,d)). The partial parity of a pooled pair is EXACTLY a sufficient
 statistic, so this is the case this project's standing principle --

@@ -160,7 +160,7 @@ parameters -- an earlier "beats depth by +0.273" was an n=3 artifact. Its most r
 contribution is STABILITY: 8/8 seeds >= 0.77 (sd 0.099) against 1-layer 0.11-0.80 and
 3-layer 0.14-1.00. It raises the floor, not the ceiling.
 
-**THE SUFFICIENT-STATISTIC PRINCIPLE IS NOT PREDICTIVE (2026-09-03, HIER_PARITY.md).**
+**~~THE SUFFICIENT-STATISTIC PRINCIPLE IS NOT PREDICTIVE~~ -- RETRACTED SAME DAY, see the entry below. (2026-09-03, HIER_PARITY.md).**
 Tested at its single most favourable case and it produced a tight null. Parity is a
 TREE REDUCTION -- parity(a,b,c,d) = parity(parity(a,b), parity(c,d)) -- so a pooled
 pair's partial parity is EXACTLY sufficient, zero loss, and a log-depth tree should
@@ -181,4 +181,26 @@ path integration buys +0.078 for 448 params and the loop +0.056 for zero, while
 hierarchy buys nothing at 3x the parameters. Its real record -- compositional
 transfer, and compute at equal quality on text -- is a different axis from both.
 See [[project-loop-and-correction]].
+
+**RETRACTION of the entry above, same day (LOOP_HIER_PARITY.md).** The L=16 test
+was designed at a length where hierarchy CANNOT OPERATE: pooling k=2 over 16 tokens
+leaves 8 coarse tokens, nothing to compress. Trained at **L=512** instead,
+hierarchy helps in BOTH rows -- +0.060 unshared (**12/12 seeds**, sign-test
+p=0.0005) and +0.071 shared (11/12, p=0.006) -- washing out by L=1024. So the
+principle SURVIVES, with an added condition: **the summary must be sufficient AND
+the sequence long enough for compression to mean anything.**
+
+**Methodological catch worth keeping.** Both those effects have t = 2.23 and 2.44,
+under this project's t>2.8 bar, and would have been filed as "unmeasured". 12/12
+same-sign is p=0.0005 by a sign test. The MDE rule is conservative for small
+consistent PAIRED effects -- report the sign count alongside it, and never read
+t<2.8 as absence when the signs are lopsided.
+
+**THE LOOP x HIERARCHY PAIRING IS FREE.** LoopedHourglass (one shared block in the
+hourglass scaffold, 199,490 params) matches the unshared 596,034-param flat
+scaffold on accuracy (+0.026/+0.009/-0.006 at L=512/1024/2048, all null) while
+measuring **-66.5% parameters, -22.8% time, -19.9% memory** at L=2048. The savings
+compose exactly because the resources are independent: sharing costs +0.1% time,
+hierarchy costs 0% parameters. Caveat: the compute saving is length-dependent and
+NEGATIVE at short lengths (hierarchy is 12% slower at L=16, 2% at L=128).
 
