@@ -107,3 +107,29 @@ at p=0.10 in both takes (t 5.22 and t 6.31, 8/8 seeds each).
 and moved it 0.263 -> 0.261 on Match-Query. Means improved a lot, variance not at
 all. Do not assume a power fix transfers across tasks -- re-measure it.
 
+**PATH INTEGRATION WORKS ON PARITY (2026-09-03, ALGORITHMIC_RESULTS.md).** First
+test of this project's mechanisms on the looped literature's OWN tasks
+(arXiv 2409.15647). Mechanistic prediction, written before the run: theta =
+omega * cumsum(Delta(x_t)) wrapped mod 2*pi IS a parity register, so Delta = pi for
+'1' and 0 for '0' solves it. Confirmed: path-int minus index is +0.316 / +0.326 /
++0.167 / +0.083 / +0.041 at L=16/32/64/128/256, **8/8 seeds at every length**,
+t = 5.4 to 12.9. Largest, most consistent effect outside navigation.
+
+**But the COPY control failed** -- zero dynamic range at every length (exactly
+1.000 at L=16, 0.120-0.211 against chance 0.125 at L>=32), so "path integration
+does not help copy" is uninformative and the pipeline-artifact worry is NOT ruled
+out. Need a control task with actual dynamic range.
+
+**Loop x path integration are ADDITIVE here, NOT super-additive.** Raw-scale 2x2
+interaction +0.028 / +0.003 / +0.007 at L=64/128/256, all inside MDE; the loop's
+main effect is nearly identical in both rows (+0.062 path-int vs +0.058 index at
+L=128). **This contradicts Match-Query's +0.315 interaction** -- the
+super-additivity is Match-Query-specific and does not generalise.
+
+**Retention ratios lie.** The L=128 retention table (index 0.11, path-int 0.21,
+index+loop 0.16, both 0.33) looks super-additive; the raw scale shows additivity.
+Normalising by a baseline that differs across arms manufactures interactions.
+
+**Adaptivity (LoopedSampled) did NOT replicate**: directionally positive on parity
+at every long length (+0.027/+0.038/+0.015) but never clears MDE at n=8.
+
