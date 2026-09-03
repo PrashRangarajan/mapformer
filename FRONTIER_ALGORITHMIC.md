@@ -69,6 +69,35 @@ degeneracy `ALGORITHMIC_RESULTS.md` flagged. It supports nothing and refutes
 nothing; it is reported only so the failure is on the record rather than quietly
 dropped.
 
+## Do they compound? YES practically, NO multiplicatively -- these are different claims
+
+"No interaction" is a statement about the interaction TERM, not about whether
+stacking pays. Stacking pays, and it is close to free:
+
+| config | accuracy | params | gain | param cost |
+|---|---|---|---|---|
+| index, 1 layer | 0.519 | 199,042 | — | — |
+| + path integration | 0.598 | 199,490 | +0.078 | **+448 (+0.23%)** |
+| + loop | 0.575 | 199,042 | +0.056 | **0** |
+| **+ both** | **0.667** | **199,490** | **+0.148** | **+448 (+0.23%)** |
+
+Additive prediction 0.653 against an actual 0.667: both gains land IN FULL and
+neither cancels the other. The +0.014 residual is the interaction term and it is
+not detectable -- which practically is the good case, not a disappointment.
+
+**Buying the same accuracy with parameters instead does not work.** Three real
+layers at 3x the parameters reaches 0.565 (index) or 0.641 (path-integrated), both
+BELOW the 199K model that has both mechanisms. Depth buys about +0.023 per 198K
+parameters on the index row, so reaching 0.667 that way needs roughly 1.5M
+parameters -- a 7.5x increase -- and that is a linear extrapolation through a curve
+that will saturate, so it is an optimistic bound rather than a prediction.
+
+The best arm in the study is also the smallest arm in the study.
+
+**What IS task-specific is the interaction, not the stacking.** Match-Query gave
++0.315; parity gives +0.014. The multiplicative reading does not generalise. The
+practical one -- use both, pay nothing, get both -- holds in both venues.
+
 ## What this settles
 
 **Parameter efficiency: CONFIRMED, in both position codes, at n=16.** On parity a

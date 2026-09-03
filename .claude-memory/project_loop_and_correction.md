@@ -133,3 +133,24 @@ Normalising by a baseline that differs across arms manufactures interactions.
 **Adaptivity (LoopedSampled) did NOT replicate**: directionally positive on parity
 at every long length (+0.027/+0.038/+0.015) but never clears MDE at n=8.
 
+**FRONTIER (2026-09-03, FRONTIER_ALGORITHMIC.md, n=16): parameter efficiency
+confirmed, and "no interaction" must not be reported as "does not compound".**
+Parity at L=128: index L1 0.519 @199,042 -> +path-int 0.598 @199,490 (+448 params,
++0.23%) -> +loop 0.575 @199,042 (0 params) -> **BOTH 0.667 @199,490**. Additive
+prediction 0.653 vs actual 0.667: both gains land IN FULL, nothing cancels. Three
+REAL layers at 3x params reach only 0.565 (index) / 0.641 (path-int), i.e. BELOW
+the 199K two-mechanism model; matching it by depth would need ~1.5M params on an
+optimistic linear extrapolation. **The best arm in the study is the smallest.**
+
+The loop matches or beats 3x its parameters in BOTH rows (index: +0.010 over L3,
+16/16 seeds, DETECTABLE; path-int: +0.026, unmeasured).
+
+**No interaction between loop and path integration**: loop gain +0.070 path-int vs
++0.056 index, difference +0.014, not detectable. LOOP_HEADROOM's +0.315 was
+uninterpretable (no depth baseline on the index row) and is TASK-SPECIFIC. Keep the
+two claims apart: the interaction does not generalise, the practical stacking does.
+
+**The path-integrated row is far noisier than the index row** (sd 0.077-0.146 vs
+0.004-0.021) -- whatever makes training bimodal in this project rides on the
+path-integration machinery, and the index arms are near-perfectly reproducible.
+
