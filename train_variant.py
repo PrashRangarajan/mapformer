@@ -74,6 +74,7 @@ from mapformer.model_hourglass import (
     MapFormerWM_Hourglass_k2, MapFormerWM_Hourglass_k4,
     MapFormerWM_Hourglass_k2_deep, MapFormerWM_HourglassFlat3,
     MapFormerWM_Hourglass_MotifSeg,
+    MapFormerWM_LoopedHourglass, MapFormerWM_LoopedHourglassFlat,
     MapFormerWM_Hourglass_MotifSeg_FR, MapFormerWM_FrameResetFlat,
     MapFormerWM_Hourglass_CoarseIdx, MapFormerWM_Hourglass_CoarsePI,
 )
@@ -114,6 +115,8 @@ VARIANT_MAP = {
     "Level1":     MapFormerWM_ParallelInEKF,
     "Level15":    MapFormerWM_Level15InEKF,
     "Level15Looped": MapFormerWM_Level15Looped,
+    "LoopedHourglass": MapFormerWM_LoopedHourglass,
+    "LoopedHourglassFlat": MapFormerWM_LoopedHourglassFlat,
     "Level15Beta": MapFormerWM_Level15Beta,
     "Level15GSF": MapFormerWM_Level15GSF,
     "Level15GSF_NoDrop": MapFormerWM_Level15GSF_NoDrop,

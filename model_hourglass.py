@@ -464,3 +464,61 @@ class MapFormerWM_FrameResetFlat(MapFormerWM_Hourglass):
     n_pre, n_coarse, n_post = 1, 1, 1
     frame_reset = True
     wants_seg_id = True
+
+
+# --------------------------------------------------------------------------
+# Weight-shared hourglass: the loop and hierarchy on their two efficiency axes
+# --------------------------------------------------------------------------
+class MapFormerWM_LoopedHourglass(MapFormerWM_Hourglass):
+    """The hourglass scaffold with ONE shared block, applied three times.
+
+    WHY THIS EXISTS. The loop and hierarchy save different resources, and neither
+    saves the other's:
+
+        loop       saves PARAMETERS, costs COMPUTE   (four passes cost four passes)
+        hierarchy  saves COMPUTE,    costs PARAMETERS (a 3-block scaffold)
+
+    Measured separately in this project they look unrelated -- the loop matches or
+    beats 3x its parameters on parity, hierarchy buys nothing there at all
+    (HIER_PARITY.md, index row +0.001 with an MDE of 0.006). But hierarchy's ONE
+    surviving win is exactly compute at equal quality (enwik8: 1.23x throughput,
+    -14% memory, bpc null), which is the resource the loop spends. So the pairing
+    is worth testing even though hierarchy adds nothing to accuracy: the question is
+    not "is it better" but "is it cheaper at the same accuracy".
+
+    IMPLEMENTATION. pre / coarse / post all reference a single WMTransformerLayer,
+    so the parameter count is one block rather than three while the forward pass is
+    byte-identical to the unshared scaffold's. nn.Module dedupes by identity, so
+    .parameters() counts the shared block once -- verified, not assumed.
+
+    The honest 2x2 this belongs to:
+
+        arm                   params   full-res block applications
+        HourglassFlat3         3 x     3.0
+        Hourglass_k2           3 x     2.5   (middle block at half resolution)
+        LoopedHourglassFlat    1 x     3.0
+        LoopedHourglass        1 x     2.5   <- both savings at once
+
+    Compute is MEASURED (wall-clock and peak memory), never inferred from the
+    block count -- attention is a small fraction of a block at these widths, so
+    the analytic saving and the real one differ.
+    """
+    shorten_factor = 2
+    n_pre, n_coarse, n_post = 1, 1, 1
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        shared = self.pre_layers[0]
+        self.coarse_layers = nn.ModuleList([shared])
+        self.post_layers = nn.ModuleList([shared])
+
+
+class MapFormerWM_LoopedHourglassFlat(MapFormerWM_LoopedHourglass):
+    """Shared-block control at FULL resolution throughout (shorten_factor = 1).
+
+    Isolates the hierarchy axis inside the shared-weight row: identical parameters
+    and identical block applications to LoopedHourglass, differing only in whether
+    the middle application runs on pooled tokens. This is the same control
+    HourglassFlat3 provides for Hourglass_k2, one row down.
+    """
+    shorten_factor = 1
