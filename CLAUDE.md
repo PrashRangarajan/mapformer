@@ -2005,6 +2005,86 @@ depth embedding, theta computed once. The refine-theta-per-iteration variant
 untested and is now the natural follow-on.
 
 
+## The InEKF does not pay even where its premise holds (2026-09-02, two takes)
+
+`MQ_NOISE_2X2.md` (take 1) and `MQ_NOISE_2X2_C2.md` (take 2). Every correction
+result in this project had been measured where the correction had nothing to
+correct -- Match-Query's actions are clean, the torus is at ceiling. So stochastic
+transitions were built into Match-Query's EXPLORE phase: it records the commanded
+action and executes a resampled one, so the recorded stream drifts from true
+position (0 -> 13.05 cells at p=0.10) while observations still reflect TRUE cells.
+Drift to correct AND signal to correct with, on a task with headroom.
+
+Gated before any GPU by threading the knob through the EXISTING validator (rule 7):
+every shortcut gate held at its clean-task level (ngram1 0.044 -> 0.059, ngram3
+0.080 -> 0.085, never-moved 0.089 -> 0.120, chance 0.0625) while drift went to 22
+cells at p=0.25. p=0 is byte-identical to the pre-patch environment.
+
+**PRE-REGISTERED PREDICTION REFUTED TWICE.** Level15 - Vanilla:
+
+| take | recipe | p=0 | p=0.10 | change with drift |
+|---|---|---|---|---|
+| 1 | 300 ep, lr 3e-4 | +0.035 | +0.038 | **+0.003** |
+| 2 | 600 ep, lr 1e-3 | +0.146 | +0.005 | **-0.141** |
+
+The prediction was that the effect GROWS with drift. It is flat in take 1 and
+NEGATIVE in take 2, and never detectable at p=0.10 (MDE 0.068 / 0.065). A
+correction whose benefit does not scale with the amount to be corrected is not
+doing correction. **"Stabilisation and token-type gating, not inference" now
+survives the sharpest test available**, on two recipes, in two batches.
+
+**The loop is the only detectable contrast in either take**: Looped - Vanilla at
+p=0.10 is +0.121 (t 5.22, 8/8) and +0.057 (t 6.31, 8/8).
+
+**But the loop's advantage SHRINKS when the baseline is trained better.** At p=0,
+Looped - Vanilla went +0.373 (take 1) -> +0.146 (take 2): Vanilla gained +0.139
+from the recipe while Looped LOST 0.089. Same conclusion as the clean-torus 2x2,
+where the loop's training-length win was +0.052 raw but +0.006 loss-matched. The
+loop substitutes for optimisation more than it adds capability -- though not
+entirely, since it stays detectable at p=0.10 in both takes.
+
+**They still do not compose.** Interaction -0.176 / -0.063 (take 1) and -0.081 /
+-0.058 (take 2); the filter INSIDE the loop is negative at p=0.10 in both. Same
+direction as the clean-torus 2x2, now on a task that HAS a premise.
+
+**Two honest negatives about the method.**
+- **Recipe transfer FAILED on variance.** Step 1 found lr 1e-3 cut Vanilla's seed
+  sd 3.5x on the torus (0.096 -> 0.028 at T=512). On Match-Query at p=0 it moved
+  0.263 -> 0.261. Means improved a lot (Vanilla 0.505 -> 0.644, Level15 0.540 ->
+  0.790); variance did not move at all. A recipe that fixes power on one task does
+  not fix it on another.
+- **p=0.10 is still not converged** even at 2x budget and 3.3x LR: final match loss
+  1.97-2.23 against a chance of 2.77, versus 0.47-1.16 at p=0. With aliased
+  observations (16 types over 16384 cells) correcting 13 cells of drift may be near
+  the limit of what is learnable here -- which is itself the project's oldest
+  finding about why Kalman updates cannot sharpen on this task.
+
+## Fixing power: lr 1e-3 on the torus (2026-09-02, RECIPE_POWER.md)
+
+3 conditions x {Vanilla, Looped} x 8 seeds. Vanilla's seed sd, which sets every MDE
+in this project: T=128 0.086 -> **0.017** (4.9x), T=512 0.096 -> **0.028** (3.5x),
+T=1024 0.110 -> **0.064** (1.7x), with a HIGHER mean at every length. MDE at n=8 and
+T=512 falls 0.095 -> 0.027. Looped was never the problem (8/8 converged everywhere).
+
+Two errors of mine in reading it, both worth not repeating:
+- **The Pareto rule was wrong**: it required a strictly higher converged count on
+  EVERY arm, impossible when one arm is already 8/8, so it printed "no condition
+  beats the current recipe" while C1 was cutting sd 3.5x.
+- **The pre-registered primary metric was the wrong proxy.** Converged fraction
+  ranks C2 > C1 > C0; accuracy sd -- what actually sets the MDE -- ranks C1 best and
+  C2 WORST at T=1024. Convergence and OOD variance are decoupled, the same way
+  r(loss, acc) falls from -0.956 at T=128 to -0.326 at T=1024.
+
+## MoR routing: nothing to route on here (2026-09-02, LOOP_DEPTH_STRATA.md)
+
+Mixture-of-Recursions (arXiv 2507.10524, NeurIPS 2025) routes each TOKEN to its own
+recursion depth. Measured whether tokens here want different depths, on 8 existing
+checkpoints with no training. A per-stratum ORACLE router scores 0.854 against 0.847
+for the single best global count -- an upper bound of **+0.007**, against a seed sd
+of 0.152, i.e. **22x smaller than the noise**. Above k=3 the curve is flat to within
+0.010. Not worth building. Note also that **"recursion substitutes for depth" is
+NOT ours** -- it is the premise of that whole line; see the memory note.
+
 ## Filter x loop: NOT complementary (2026-09-01, n=12)
 
 `L15_LOOP_2X2.md`. The 2x2 that had never been run -- there was no arm with both

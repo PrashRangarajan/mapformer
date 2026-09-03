@@ -91,3 +91,19 @@ premise as well as one without.
 Clean replication worth noting: Looped at p=0 scored 0.878 +/- 0.092 against
 LOOP_HEADROOM's 0.870 +/- 0.099 in a different batch.
 
+**TAKE 2 CONFIRMS IT (2026-09-02, MQ_NOISE_2X2_C2.md, lr 1e-3 / 600 ep).**
+Level15 - Vanilla: +0.146 at p=0 -> **+0.005** at p=0.10. The effect SHRINKS with
+drift (-0.141) where the pre-registration said it must grow; take 1 had it flat
+(+0.003). Refuted on two recipes, two batches. Never detectable at p=0.10.
+
+**New qualification of the LOOP result: its advantage shrinks when the baseline is
+trained better.** Looped - Vanilla at p=0 went +0.373 (take 1) -> +0.146 (take 2),
+because the better recipe gained Vanilla +0.139 while Looped LOST 0.089. Matches
+the clean-torus 2x2 (+0.052 raw, +0.006 loss-matched). The loop substitutes for
+optimisation more than it adds capability -- but not entirely: it stays detectable
+at p=0.10 in both takes (t 5.22 and t 6.31, 8/8 seeds each).
+
+**Recipe transfer FAILED on variance**: lr 1e-3 cut Vanilla's sd 3.5x on the torus
+and moved it 0.263 -> 0.261 on Match-Query. Means improved a lot, variance not at
+all. Do not assume a power fix transfers across tasks -- re-measure it.
+
