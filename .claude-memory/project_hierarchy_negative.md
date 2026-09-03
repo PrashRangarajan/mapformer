@@ -160,3 +160,25 @@ parameters -- an earlier "beats depth by +0.273" was an n=3 artifact. Its most r
 contribution is STABILITY: 8/8 seeds >= 0.77 (sd 0.099) against 1-layer 0.11-0.80 and
 3-layer 0.14-1.00. It raises the floor, not the ceiling.
 
+**THE SUFFICIENT-STATISTIC PRINCIPLE IS NOT PREDICTIVE (2026-09-03, HIER_PARITY.md).**
+Tested at its single most favourable case and it produced a tight null. Parity is a
+TREE REDUCTION -- parity(a,b,c,d) = parity(parity(a,b), parity(c,d)) -- so a pooled
+pair's partial parity is EXACTLY sufficient, zero loss, and a log-depth tree should
+extrapolate better than a linear scan. At n=16, exact param parity within each row:
+
+  index row     +0.001 at L=128, MDE **0.006**  -> a REAL null, effect bounded tiny
+  path-int row  -0.014 at L=128, MDE  0.109     -> underpowered, says nothing
+
+Length decay is indistinguishable (index flat 0.57/0.28/0.14/0.07 vs hier
+0.55/0.27/0.14/0.07). Summary-sufficiency is evidently NECESSARY but not SUFFICIENT.
+Cite the principle as a description of observed failures, never as a predictor.
+
+Hierarchy's only gain here is at TRAINING length and small: +0.020 index (15/16),
++0.012 path-int (16/16, MDE 0.002). Gone by L=32.
+
+**Hierarchy does not join the path-integration + loop stack.** On the same task
+path integration buys +0.078 for 448 params and the loop +0.056 for zero, while
+hierarchy buys nothing at 3x the parameters. Its real record -- compositional
+transfer, and compute at equal quality on text -- is a different axis from both.
+See [[project-loop-and-correction]].
+
