@@ -94,6 +94,12 @@ from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
+from mapformer.model_rope_canonical import MapFormerWM_RoPE_Canonical
+from mapformer.model_rank import (MapFormerWM_r3, MapFormerWM_r4,
+                                  MapFormerWM_r5, MapFormerWM_r7,
+                                  MapFormerWM_r8, MapFormerWM_r16,
+                                  MapFormerWM_r32)
+from mapformer.model_rank import MapFormerEM_r4, MapFormerEM_r8
 from mapformer.model_selective import (MapFormerWM_SRoPEGen, MapFormerWM_NoBottleneck,
                                       MapFormerWM_ConvAngle, MapFormerWM_GateAngle)
 from mapformer.model_looped import (MapFormerWM_Looped, MapFormerWM_RoPE_Looped,
@@ -119,6 +125,16 @@ VARIANT_MAP = {
     "Level15Looped": MapFormerWM_Level15Looped,
     "LoopedHourglass": MapFormerWM_LoopedHourglass,
     "SRoPEGen": MapFormerWM_SRoPEGen,
+    "RoPE_Canonical": MapFormerWM_RoPE_Canonical,
+    "Vanilla_r3": MapFormerWM_r3,
+    "Vanilla_r4": MapFormerWM_r4,
+    "Vanilla_r5": MapFormerWM_r5,
+    "Vanilla_r7": MapFormerWM_r7,
+    "Vanilla_r8": MapFormerWM_r8,
+    "Vanilla_r16": MapFormerWM_r16,
+    "Vanilla_r32": MapFormerWM_r32,
+    "VanillaEM_r4": MapFormerEM_r4,
+    "VanillaEM_r8": MapFormerEM_r8,
     "NoBottleneck": MapFormerWM_NoBottleneck,
     "ConvAngle": MapFormerWM_ConvAngle,
     "GateAngle": MapFormerWM_GateAngle,
@@ -268,8 +284,13 @@ def main():
                         help="Override d_model. For Grid hexagonal config "
                              "(11 modules x 3 orientations) need d_model=132.")
     parser.add_argument("--n-heads", type=int, default=2)
+    parser.add_argument("--n-dims", type=int, default=2,
+                        help="Dimensionality of the torus. Only used when "
+                             "--env nd. D=2 reproduces the paper's task shape "
+                             "with 4 actions; D actions are +/- e_i, so the "
+                             "vocabulary grows as 2D + n_obs_types + 1.")
     parser.add_argument("--env", type=str, default="torus",
-                        choices=["torus", "minigrid_empty", "minigrid_doorkey",
+                        choices=["torus", "nd", "minigrid_empty", "minigrid_doorkey",
                                  "minigrid_doorkey16", "minigrid_multiroom",
                                  "minigrid_memory",
                                  "minigrid_keycorridor", "minigrid_obstructedmaze"],
@@ -325,7 +346,15 @@ def main():
     out = Path(args.output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    if args.env == "torus":
+    if args.env == "nd":
+        # D-dimensional torus for the rank-threshold test. Deliberately a
+        # SEPARATE class from GridWorld -- see environment_nd.py.
+        from mapformer.environment_nd import GridWorldND
+        env = GridWorldND(dims=args.n_dims, size=args.grid_size,
+                          n_obs_types=args.n_obs_types, p_empty=0.5,
+                          seed=args.seed)
+        grid_size = args.grid_size
+    elif args.env == "torus":
         env = GridWorld(
             size=args.grid_size, n_obs_types=args.n_obs_types, p_empty=0.5,
             n_landmarks=args.n_landmarks, seed=args.seed,
@@ -396,7 +425,8 @@ def main():
             "vocab_size": env.unified_vocab_size,
             "d_model": args.d_model, "n_heads": args.n_heads,
             "n_layers": args.n_layers,
-            "grid_size": 64, "n_obs_types": args.n_obs_types, "p_empty": 0.5,
+            "grid_size": grid_size, "n_obs_types": args.n_obs_types,
+            "p_empty": 0.5, "env": args.env, "n_dims": args.n_dims,
             "n_landmarks": args.n_landmarks,
         },
     }, ckpt_path)

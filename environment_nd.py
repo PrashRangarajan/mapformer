@@ -66,6 +66,10 @@ class GridWorldND:
         #   [2D .. 2D+K-1]     K regular observation types
         #   [2D+K]             blank
         self.n_actions = 2 * dims
+        # train.py's action-noise path reads env.N_ACTIONS. Unused at
+        # p_action_noise=0 (the only setting this env is run at), but present
+        # so the attribute error cannot surface mid-batch.
+        self.N_ACTIONS = self.n_actions
         self.action_offset = 0
         self.obs_offset = self.n_actions
         self.blank_token = n_obs_types

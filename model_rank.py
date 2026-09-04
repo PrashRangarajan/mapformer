@@ -63,7 +63,34 @@ def _rank(r):
     return _R
 
 
+MapFormerWM_r3 = _rank(3)   # = D at D=3, for the D x r threshold test
 MapFormerWM_r4 = _rank(4)
+MapFormerWM_r5 = _rank(5)   # = D at D=5, and D+2 at D=3
+MapFormerWM_r7 = _rank(7)   # = D+2 at D=5
 MapFormerWM_r8 = _rank(8)
 MapFormerWM_r16 = _rank(16)
 MapFormerWM_r32 = _rank(32)
+
+
+# --- EM counterparts, for the Fig. 4 C4 check --------------------------------
+# The paper's Fig. 4 reports value-embedding norms much larger for observations
+# than actions. On MapWM we measure 0.57 -- inverted. Sec 5.4's framing is
+# explicitly about EM's factorisation into "two separate pools of neurons ...
+# specialized for either position or observation", which MapWM's additive
+# attention does not have, so the claim may simply be scoped to EM.
+from mapformer.model import MapFormerEM
+
+
+def _rank_em(r):
+    class _E(MapFormerEM):
+        def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
+                     dropout=0.1, grid_size=64, bottleneck_r=2, **kw):
+            super().__init__(vocab_size, d_model, n_heads, n_layers, dropout,
+                             grid_size, r)
+    _E.__name__ = f"MapFormerEM_r{r}"
+    _E.__doc__ = f"MapFormer-EM with bottleneck rank r={r}."
+    return _E
+
+
+MapFormerEM_r4 = _rank_em(4)
+MapFormerEM_r8 = _rank_em(8)
