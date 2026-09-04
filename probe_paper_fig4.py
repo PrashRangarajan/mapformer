@@ -36,7 +36,8 @@ def main():
     a = ap.parse_args()
     dev = torch.device(a.device)
 
-    R = {"Vanilla": 2, "Vanilla_r4": 4, "Vanilla_r8": 8, "Vanilla_r32": 32}
+    R = {"Vanilla": 2, "Vanilla_r4": 4, "Vanilla_r8": 8, "Vanilla_r32": 32,
+         "VanillaEM": 2, "VanillaEM_r4": 4, "VanillaEM_r8": 8}
     res = {}
     for arm in a.arms:
         acc = {k: [] for k in ("dnorm", "cos_opp", "cos_orth", "vnorm")}
@@ -88,19 +89,21 @@ def main():
     o = ["# Do we reproduce the paper's Figure 4?", "",
          "Sec 5.4 / Fig 4 makes four checkable claims about a trained MapFormer.",
          "Each is tested here with the paper's own metric, on 8 seeds, at the",
-         "paper's r=2 and at r=4.", "",
-         "| claim | paper reports | r=2 (ours) | r=4 (ours) |", "|---|---|---|---|"]
+         "paper's rank and at a widened one.", ""]
+    base, wide = (a.arms + [None, None])[:2]
+    o += [f"| claim | paper reports | `{base}` | `{wide}` |", "|---|---|---|---|"]
+
     def cell(arm, k, fmt="{:.3f}"):
-        if arm not in res: return "—"
+        if arm is None or arm not in res: return "—"
         m, s = res[arm][k]; return f"{fmt.format(m)} ± {fmt.format(s)}"
-    o += [f"| **C1** ‖Δ_action‖ / ‖Δ_obs‖ | ≫ 1 <br><sub>observations leave position untouched</sub> | {cell('Vanilla','dnorm','{:.1f}')} | {cell('Vanilla_r4','dnorm','{:.1f}')} |",
-          f"| **C2** cos(Δ_left, Δ_right) | **−1** <br><sub>opposite actions cancel</sub> | {cell('Vanilla','cos_opp')} | {cell('Vanilla_r4','cos_opp')} |",
-          f"| **C3** \\|cos(Δ_left, Δ_up)\\| | **≫ 0** <br><sub>reported as a LIMITATION</sub> | {cell('Vanilla','cos_orth')} | {cell('Vanilla_r4','cos_orth')} |",
-          f"| **C4** ‖v_obs‖ / ‖v_action‖ | ≫ 1 <br><sub>only observations update content</sub> | {cell('Vanilla','vnorm','{:.2f}')} | {cell('Vanilla_r4','vnorm','{:.2f}')} |",
+    o += [f"| **C1** ‖Δ_action‖ / ‖Δ_obs‖ | ≫ 1 <br><sub>observations leave position untouched</sub> | {cell(base,'dnorm','{:.1f}')} | {cell(wide,'dnorm','{:.1f}')} |",
+          f"| **C2** cos(Δ_left, Δ_right) | **−1** <br><sub>opposite actions cancel</sub> | {cell(base,'cos_opp')} | {cell(wide,'cos_opp')} |",
+          f"| **C3** \\|cos(Δ_left, Δ_up)\\| | **≫ 0** <br><sub>reported as a LIMITATION</sub> | {cell(base,'cos_orth')} | {cell(wide,'cos_orth')} |",
+          f"| **C4** ‖v_obs‖ / ‖v_action‖ | ≫ 1 <br><sub>only observations update content</sub> | {cell(base,'vnorm','{:.2f}')} | {cell(wide,'vnorm','{:.2f}')} |",
           ""]
     o += ["## Verdict", ""]
-    if "Vanilla" in res:
-        v = res["Vanilla"]
+    if base in res:
+        v = res[base]
         o += [f"**C1 reproduces**: actions rotate {v['dnorm'][0]:.0f}x more than "
               f"observations.",
               f"**C2 reproduces**: cos(opposite) = {v['cos_opp'][0]:.3f} against the "
@@ -109,15 +112,16 @@ def main():
               f"{v['cos_orth'][0]:.3f}, which is the ≫ 0 the paper reports and flags "
               f"as needing an added constraint to fix.",
               f"**C4**: ‖v_obs‖/‖v_action‖ = {v['vnorm'][0]:.2f}.", ""]
-    if "Vanilla_r4" in res and "Vanilla" in res:
-        a2, a4 = res["Vanilla"]["cos_orth"][0], res["Vanilla_r4"]["cos_orth"][0]
+    if wide in res and base in res:
+        a2, a4 = res[base]["cos_orth"][0], res[wide]["cos_orth"][0]
         o += [f"**On C3, widening the bottleneck does what the paper says needs an "
               f"extra loss term.** |cos(orthogonal)| falls {a2:.3f} → {a4:.3f} going "
-              f"from r=2 to r=4, with no bounded-energy constraint and no change to "
+              f"from {base} to {wide}, with no bounded-energy constraint and no change to "
               f"the objective. The paper's own remedy for its disentanglement "
               f"failure is an added regulariser; a wider bottleneck gets most of the "
               f"way there for +384 parameters.", ""]
-    o += ["Inference only, 8 seeds, torus checkpoints from `runs/rank_sweep`. "
+    o += [f"Inference only, 8 seeds, torus checkpoints from `{a.runs_dir}`, "
+          f"arms `{base}` and `{wide}`. "
           "Δ_in is the r-dimensional Lie-algebra code (the paper's metric for "
           "C2/C3); Δ is the full per-head increment (C1)."]
     Path(a.out).write_text("\n".join(o) + "\n")
