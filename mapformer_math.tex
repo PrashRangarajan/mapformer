@@ -1,0 +1,325 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage[svgnames]{xcolor}
+\usepackage[colorlinks=true,linkcolor=Teal,citecolor=Teal,urlcolor=Teal]{hyperref}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\hd}{d_{\mathrm{head}}}
+\newcommand{\nb}{n_b}
+\DeclareMathOperator{\softplus}{softplus}
+\DeclareMathOperator{\atantwo}{atan2}
+\DeclareMathOperator*{\cumsum}{cumsum}
+
+\title{Path Integration and PoPE:\\ how the two mechanisms compose}
+\author{Notes derived from the implementation}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Every positional mechanism in this project is a choice about one of two factors in
+the same product. Writing an attention score in polar form as
+$\mu\,e^{i\varphi}$, \textbf{MapFormer's path integration determines the phase
+$\varphi$} and \textbf{PoPE determines the magnitude $\mu$}. They occupy orthogonal
+halves of the same decomposition, which is why the combination
+(\textsc{MapPoPE}) is not a new mechanism but the conjunction of two independent
+ones. All formulas below are transcribed from the implementation, with the one
+place the source paper's printed equation is corrected noted explicitly.
+\end{abstract}
+
+\section{The shared frame}
+
+Let $x_1,\dots,x_T \in \R^{d}$ be token embeddings, and for a single head write
+queries and keys $q_t = W_Q x_t$, $k_s = W_K x_s \in \R^{\hd}$.
+Group the $\hd$ coordinates into $\nb$ two-dimensional blocks and identify each
+block with a complex number,
+\begin{equation}
+  \tilde q_t^{(c)} \;=\; q_{t,2c} + i\,q_{t,2c+1},
+  \qquad
+  \tilde k_s^{(c)} \;=\; k_{s,2c} + i\,k_{s,2c+1},
+  \qquad c = 0,\dots,\nb-1 .
+\end{equation}
+
+A rotary scheme attaches a per-position angle $\theta_t^{(c)}$ and rotates:
+\begin{equation}
+  \label{eq:rot}
+  \begin{pmatrix} q'_{t,2c} \\ q'_{t,2c+1}\end{pmatrix}
+  =
+  \underbrace{\begin{pmatrix}
+    \cos\theta_t^{(c)} & -\sin\theta_t^{(c)}\\
+    \sin\theta_t^{(c)} & \phantom{-}\cos\theta_t^{(c)}
+  \end{pmatrix}}_{R(\theta_t^{(c)})\,\in\,SO(2)}
+  \begin{pmatrix} q_{t,2c}\\ q_{t,2c+1}\end{pmatrix},
+\end{equation}
+and likewise for $k_s$. The unnormalised attention logit is then
+\begin{equation}
+  \label{eq:score}
+  a_{ts}
+  \;=\;\frac{1}{\sqrt{\hd}}\,\langle q'_t,\, k'_s\rangle
+  \;=\;\frac{1}{\sqrt{\hd}}\sum_{c=0}^{\nb-1}
+        \big\langle R(\theta_t^{(c)})\,q_t^{(c)},\; R(\theta_s^{(c)})\,k_s^{(c)}\big\rangle .
+\end{equation}
+
+Because $R$ is orthogonal, $R(\alpha)^{\!\top} R(\beta) = R(\beta-\alpha)$, so
+\begin{equation}
+  \label{eq:relative}
+  a_{ts}
+  \;=\;\frac{1}{\sqrt{\hd}}\sum_c
+       \big\langle q_t^{(c)},\, R\!\left(\theta_s^{(c)}-\theta_t^{(c)}\right) k_s^{(c)}\big\rangle
+  \;=\;\frac{1}{\sqrt{\hd}}\sum_c
+       \operatorname{Re}\!\Big[\overline{\tilde q_t^{(c)}}\;\tilde k_s^{(c)}\;
+         e^{\,i(\theta_s^{(c)}-\theta_t^{(c)})}\Big].
+\end{equation}
+Only the \emph{difference} of angles survives: this is the relative-position
+property, and it holds for \emph{any} choice of $\theta$.
+
+Finally, write each complex factor in polar form,
+$\tilde q_t^{(c)} = \mu^q_{t,c}\,e^{i\psi^q_{t,c}}$ and similarly for $k$.
+Then \eqref{eq:relative} becomes
+\begin{equation}
+  \label{eq:polar}
+  \boxed{\;
+  a_{ts} \;=\; \frac{1}{\sqrt{\hd}}\sum_c
+     \underbrace{\mu^q_{t,c}\,\mu^k_{s,c}}_{\text{magnitude}}\;
+     \cos\!\big(\underbrace{\theta_s^{(c)}-\theta_t^{(c)} + \psi^k_{s,c}-\psi^q_{t,c}}_{\text{phase}}\big).}
+\end{equation}
+Equation~\eqref{eq:polar} is the frame for everything that follows. \textbf{Each
+mechanism is a decision about where the magnitude comes from and where the phase
+comes from.}
+
+\section{RoPE: the fixed clock}
+
+Standard RoPE fixes the angle to be linear in the token index,
+\begin{equation}
+  \theta_t^{(c)} \;=\; t\cdot\omega_c,
+  \qquad
+  \omega_c \;=\; \text{base}^{-2c/\hd},
+\end{equation}
+with $\omega$ a non-learnable buffer. The magnitude and the intrinsic phase
+$\psi$ are whatever $W_Q, W_K$ happen to produce; they are never constrained, and
+in particular $\tilde q$ may lie anywhere in $\C$. Substituting into
+\eqref{eq:relative} gives the familiar dependence on $s-t$ alone.
+
+\section{MapFormer: path integration replaces the clock}
+
+MapFormer keeps \eqref{eq:rot} and changes only what generates $\theta$.
+
+\paragraph{Step 1 --- token to Lie-algebra increment.}
+A low-rank map (rank $r=2$; paper App.~A.7, $W_\Delta = W_\Delta^{\mathrm{out}}
+W_\Delta^{\mathrm{in}}$) reads \emph{every} token, action or observation:
+\begin{equation}
+  \Delta_t \;=\; W_{\mathrm{out}}\,W_{\mathrm{in}}\,x_t \;\in\;\R^{H\times \nb},
+  \qquad
+  W_{\mathrm{in}}\in\R^{r\times d},\quad W_{\mathrm{out}}\in\R^{(H\nb)\times r}.
+\end{equation}
+Nothing tells the model which tokens are actions; it must \emph{learn}
+$\Delta \approx 0$ on observations. The rank bottleneck is load-bearing --- at
+$r=1$ the 2D task drops to $0.66$.
+
+\paragraph{Step 2 --- integrate.}
+\begin{equation}
+  \label{eq:pi}
+  \boxed{\;\theta_t^{(h,c)} \;=\; \omega^{(h,c)}\sum_{u\le t}\Delta_u^{(h,c)}
+  \;=\;\omega^{(h,c)}\,\cumsum(\Delta)^{(h,c)}_t . }
+\end{equation}
+Because $SO(2)$ is abelian, the prefix product of rotations collapses to a
+\emph{cumulative sum of angles}, which is what makes this an $O(\log T)$ parallel
+scan rather than a sequential recurrence:
+\begin{equation}
+  \prod_{u\le t} R\!\left(\omega\Delta_u\right) \;=\; R\!\Big(\omega\textstyle\sum_{u\le t}\Delta_u\Big).
+\end{equation}
+Commutativity is the entire computational argument, and it is also the limitation:
+a turn/forward action space, where displacement depends on accumulated heading, is
+\emph{not} representable by \eqref{eq:pi}.
+
+\paragraph{Step 3 --- frequency schedule.}
+The $\omega$ are learnable, initialised geometrically over $\nb$ blocks:
+\begin{equation}
+  \label{eq:omega}
+  \omega_i \;=\; \omega_{\max}\left(\frac{1}{\Delta_{\max}}\right)^{\frac{i}{\nb-1}},
+  \qquad i = 0,\dots,\nb-1,
+  \qquad \omega_{\max}=2\pi,\quad \Delta_{\max}=\text{grid size}.
+\end{equation}
+
+\begin{quote}\small
+\textbf{Correction to the published equation.} The paper prints this (v1 eq.~17,
+v4 eq.~18) with a sign that yields an \emph{increasing} schedule, contradicting its
+own stated boundary condition $\omega_{\min} = \omega_{\max}/\Delta_{\max} \le
+\omega_i \le \omega_{\max}$. The decreasing form above is what satisfies that
+inequality and what matches RoPE's $\theta_i = \text{base}^{-2i/d}$. The typo
+survives into v4; this implementation uses the corrected form.
+\end{quote}
+
+\paragraph{RoPE is a special case.} Setting $\Delta_t \equiv 1$ for all $t$ turns
+\eqref{eq:pi} into $\theta_t = t\,\omega$, recovering RoPE exactly. Path
+integration is therefore not a different family of positional encoding --- it is
+RoPE with a \emph{learned, content-dependent clock rate}, which may be zero or
+negative.
+
+\medskip
+\noindent In terms of \eqref{eq:polar}: MapFormer sets the \textbf{phase} and
+leaves the magnitude untouched.
+
+\section{PoPE: an explicit polar parameterisation}
+
+PoPE (Polar Coordinate Positional Embeddings) makes \eqref{eq:polar} explicit
+rather than emergent. Per element $c$ (note: \emph{element}, not 2D block):
+\begin{align}
+  \mu^q_{t,c} &= \softplus\!\big(Q_{t,c}\big), &
+  \mu^k_{s,c} &= \softplus\!\big(K_{s,c}\big), &&\text{(content, strictly positive)}\\
+  \varphi^q_{t,c} &= t\,\vartheta_c, &
+  \varphi^k_{s,c} &= s\,\vartheta_c + \delta_c, &&\text{(position, plus a bias)}
+\end{align}
+with $\vartheta_c = \text{base}^{-c/\nb}$ a \textbf{fixed buffer} and
+$\delta_c$ a learnable per-(head, frequency) constant, clamped for stability.
+The logit is
+\begin{equation}
+  \label{eq:pope}
+  \boxed{\;a_{ts} \;=\; \frac{1}{\sqrt{\hd}}\sum_{c}
+    \softplus(Q_{t,c})\;\softplus(K_{s,c})\;
+    \cos\!\big((s-t)\,\vartheta_c + \delta_c\big).}
+\end{equation}
+Implemented via the angle-difference expansion, so no complex arithmetic is
+needed:
+\begin{align}
+  \cos^K_{s,c} &= \cos\varphi_{s,c}\cos\delta_c - \sin\varphi_{s,c}\sin\delta_c, &
+  \sin^K_{s,c} &= \sin\varphi_{s,c}\cos\delta_c + \cos\varphi_{s,c}\sin\delta_c,\\
+  a_{ts} &= \tfrac{1}{\sqrt{\hd}}\Big[
+      (\mu^q\!\cos\varphi)_t \cdot (\mu^k\!\cos^K)_s^{\top}
+    + (\mu^q\!\sin\varphi)_t \cdot (\mu^k\!\sin^K)_s^{\top}\Big].
+\end{align}
+
+\paragraph{What PoPE does \emph{not} do.} Its phase is a function of position
+only. The magnitude is content-dependent; the \emph{angle} is not, apart from the
+constant bias $\delta_c$. This is worth stating because the name invites the
+opposite reading: PoPE is \textbf{not} in the CoPE / Selective-RoPE family, which
+learn content-dependent \emph{angles}. It modifies the other factor.
+
+\medskip
+\noindent In terms of \eqref{eq:polar}: PoPE sets the \textbf{magnitude} and
+leaves the phase as a fixed clock.
+
+\section{MapPoPE: the conjunction}
+
+Since MapFormer determines $\varphi$ and PoPE determines $\mu$, combining them
+requires no new mechanism --- only substituting one into the other. Replace
+PoPE's positional phase $t\vartheta_c$ with the path-integrated angle
+\eqref{eq:pi}:
+\begin{equation}
+  \label{eq:mappope}
+  \boxed{\;
+  a_{ts} \;=\; \frac{1}{\sqrt{\hd}}\sum_{c}
+    \underbrace{\softplus(Q_{t,c})\,\softplus(K_{s,c})}_{\text{PoPE: magnitude from content}}
+    \;\cos\Big(
+      \underbrace{\theta_s^{(c)} - \theta_t^{(c)}}_{\text{MapFormer: phase from the path integral}}
+      + \;\underbrace{\delta_c}_{\text{PoPE bias}}\Big),}
+\end{equation}
+with $\theta^{(c)}_t = \omega^{(c)}\sum_{u\le t}\Delta^{(c)}_u$ as in
+\eqref{eq:pi}. In code the class is three lines: inherit MapFormer's forward pass
+(so $\cos\theta,\sin\theta$ still come from the path integrator), widen the angle
+machinery, and swap the attention module.
+
+\paragraph{The one non-trivial detail: frequency count.}
+RoPE rotates \emph{pairs} of coordinates, so it needs $\nb = \hd/2$ angles. PoPE
+assigns one frequency per \emph{element}, so it needs $\nb = \hd$. The combination
+therefore rebuilds both position modules at the wider count:
+\begin{equation}
+  \nb \;:\; \hd/2 \;\longmapsto\; \hd,
+  \qquad
+  W_{\mathrm{out}} \in \R^{(H\hd)\times r},
+  \qquad
+  \omega \in \R^{H\times \hd}.
+\end{equation}
+This is a real capacity change, not bookkeeping --- \textsc{MapPoPE} is
+consequently \emph{not} exactly parameter-matched to \textsc{MapWM}, and any
+comparison between them should say so.
+
+\section{Why the two compose, and when they do not}
+
+\eqref{eq:mappope} predicts the observed pattern.
+
+\begin{itemize}
+\item \textbf{PoPE alone is inert where position carries the signal.} On the torus
+  navigation task, PoPE with an index phase scores $0.509$ against a measured
+  floor of $0.506$. A better magnitude parameterisation is worth nothing when the
+  phase encodes no spatial information.
+\item \textbf{PoPE plus path integration is the strongest configuration measured.}
+  $0.994$ on the same task. Once the phase carries genuine position, sharpening the
+  content channel pays.
+\item \textbf{On text they are sub-additive.} PoPE alone $-0.0053$ bpc, path
+  integration alone $-0.0041$, sum $-0.0093$; both together only $-0.0058$. With no
+  spatial extent to encode, both factors end up doing the same job of making the
+  position signal more expressive, so they \emph{substitute} rather than compose.
+  (Both single-axis arms are $n=1$; this is a hypothesis, not a measurement.)
+\end{itemize}
+
+\noindent The general statement: the two mechanisms are independent as
+\emph{parameterisations} --- they touch disjoint factors of \eqref{eq:polar} ---
+but that does not make their \emph{effects} independent. Whether they add depends
+on whether the task has separate work for a phase and a magnitude to do.
+
+\appendix
+\section{The other mechanisms, in the same notation}
+
+\paragraph{Weight-shared recursion (the ``loop'').}
+With $B_\vartheta$ a single transformer block and $n$ the loop count,
+\begin{equation}
+  h^{(0)} = \text{Emb}(x), \qquad
+  h^{(j+1)} = B_\vartheta\!\left(h^{(j)};\,\cos\theta,\sin\theta\right),\quad j=0,\dots,n-1 .
+\end{equation}
+$\theta$ is computed \emph{once} from the token embeddings and reused, matching
+both parents. Parameter count equals one layer; compute equals $n$ layers.
+Recomputing $\theta$ per iteration is a different model (tested; null).
+
+\paragraph{Level 1.5 invariant EKF (withdrawn; recorded for completeness).}
+A correction applied to $\theta$ before the rotation:
+\begin{align}
+  R_t &= \exp\!\big(\mathrm{clamp}(f_R(x_t),-5,5)\big) & &\text{per-token measurement noise}\\
+  z_t &= \pi\tanh\!\big(f_z(x_t)\big) & &\text{measurement in }[-\pi,\pi]\\
+  \nu_t &= \atantwo\!\big(\sin(z_t-\theta_t),\,\cos(z_t-\theta_t)\big) & &\text{wrapped innovation}\\
+  K_t &= \Pi/(\Pi + R_t),\qquad \Pi = e^{\log\Pi} & &\text{gain, }\Pi\text{ a learned scalar}\\
+  d_t &= (1-K_t)\,d_{t-1} + K_t\,\nu_t, \qquad d_{-1}=0 & &\text{affine scan}\\
+  \hat\theta_t &= \theta_t + d_t . & &
+\end{align}
+The recurrence is scalar and affine, so it is one more parallel scan. Empirically
+no component is load-bearing, and the effect does not grow with the drift it is
+meant to correct; the mechanism is withdrawn.
+
+\paragraph{Hierarchy (hourglass).} With pooling factor $k$, a causal mean-pool
+$P_k$ and its upsample $P_k^{\dagger}$,
+\begin{equation}
+  h \leftarrow B_{\mathrm{pre}}(h), \qquad
+  h \leftarrow h + P_k^{\dagger}\,B_{\mathrm{coarse}}\!\big(P_k h\big), \qquad
+  h \leftarrow B_{\mathrm{post}}(h),
+\end{equation}
+with the coarse angle pooled alongside the content. Setting all three blocks to
+the \emph{same} shared module gives the weight-shared hourglass: one block's
+parameters, with the coarse block's token reduction retained.
+
+\section{Empirical anchors}
+
+\begin{center}\small
+\begin{tabular}{llrr}
+\toprule
+mechanism & sets & parameter cost & measured effect \\
+\midrule
+Path integration & phase $\theta$ & $+448$ ($+0.23\%$) & $+0.078$ parity, $+0.461$ torus \\
+PoPE             & magnitude $\mu$ & $\hd/2 \to \hd$ widening & $+0.027$ with path int.; $-0.021$ without \\
+Recursion        & block reuse & $0$ & $+0.056$ parity; matches $3\times$ params \\
+Hierarchy        & token count & $0$ if shared & $\approx 0$ accuracy; $-22.8\%$ time \\
+InEKF            & $\theta \to \hat\theta$ & $+49{,}600$ & none measurable \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Parity figures are at $L=128$ trained at $L=16$; torus figures are the
+position-axis factor average. Every comparison is one-batch, seed-matched, and
+read against a measured floor.
+
+\end{document}
