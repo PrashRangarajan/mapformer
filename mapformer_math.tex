@@ -8,6 +8,7 @@
 
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\C}{\mathbb{C}}
+\newcommand{\Z}{\mathbb{Z}}
 \newcommand{\hd}{d_{\mathrm{head}}}
 \newcommand{\nb}{n_b}
 \DeclareMathOperator{\softplus}{softplus}
@@ -137,11 +138,12 @@ $\Delta \approx 0$ on observations. The paper states only $r \ll d$, ``for insta
 $r=2$'' (App.~A.7).
 
 \begin{quote}\small
-\textbf{Unverified.} A note in this project's log records the bottleneck as
-load-bearing, with $r=1$ dropping the 2D task to $0.66$. \emph{No experiment in
-this repository varies $r$ on the 2D task}, and the locally held paper version
-(v3) contains no rank ablation. The claim is repeated here only to be marked
-unsupported; do not cite it.
+\textbf{Superseded.} An earlier note here recorded the bottleneck as load-bearing
+with $r=1$ dropping the 2D task to $0.66$, and marked it unsupported. It is still
+unsupported --- no $r=1$ run exists anywhere --- but the rank axis is no longer
+untested: $\S$\ref{sec:srope} reports an $8$-seed sweep over $r\in\{2,4,8,16,32\}$
+in which $r=2$ is the \emph{worst} setting. Read $r=2$ below as the paper's
+prescription, not as a verified optimum.
 \end{quote}
 
 \paragraph{Step 2 --- integrate.}
@@ -348,6 +350,215 @@ the index-phase PoPE baseline also runs at $\nb = \hd$.
 but that does not make their \emph{effects} independent. Whether they add depends
 on whether the task has separate work for a phase and a magnitude to do.
 
+\section{Selective RoPE, and the family of phase generators}
+\label{sec:srope}
+
+Selective RoPE (Movahedi et al., arXiv:2511.17388, ICLR 2026) was posted on 21
+November 2025, three days before MapFormer, and neither paper cites the other in
+any version. Its rotation angle is, in the notation of \eqref{eq:rot},
+\begin{equation}
+  \label{eq:srope}
+  \theta_t^{(h,c)}
+  \;=\;\tau\sum_{u\le t}
+  \Big[\underbrace{\sigma\!\left(W_g x_u\right)}_{\text{gate}}\odot
+       \underbrace{\left(\kappa * W_\omega x\right)_u}_{\text{smoothed increment}}\Big]^{(h,c)},
+\end{equation}
+with $\kappa$ a causal depthwise kernel of width $4$ and $\tau$ a learned
+temperature. Set beside \eqref{eq:pi}, both mechanisms put a content-dependent
+cumulative sum in the phase. This section states the relation exactly, and it is
+tighter than a family resemblance.
+
+\subsection{The generator family}
+
+Call a \emph{phase generator} the triple $(m,\varphi,K)$ producing
+\begin{equation}
+  \label{eq:gen}
+  \boxed{\;
+  s_t \;=\; s_{t-1} + \varphi\!\left(x_{t-K+1},\dots,x_t\right) \;\in\;\R^{m},
+  \qquad
+  \theta_t \;=\; A\,s_t \;\in\;\R^{H\nb}. \;}
+\end{equation}
+Here $m$ is the \textbf{state rank}, $\varphi$ the increment map, $K$ its temporal
+support and $A$ a fixed linear readout. Cumulative summation is linear, so it
+commutes with any linear map and the accumulation may always be pushed down to the
+smallest space the increment factors through. Three mechanisms are instances:
+
+\begin{center}\small
+\begin{tabular}{lcccc}
+\toprule
+generator & $m$ & $\varphi$ & $K$ & $A$ \\
+\midrule
+RoPE           & $1$      & $\equiv 1$                                              & $1$ & $\omega$ (frozen) \\
+MapFormer      & $r$      & $W_{\mathrm{in}}x$                                      & $1$ & $\operatorname{diag}(\omega)\,W_{\mathrm{out}}$ \\
+Selective RoPE & $H\nb$   & $\sigma(W_g x)\odot(\kappa * W_\omega x)$                & $4$ & $\tau I$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent For MapFormer the factorisation is an identity, not a reading. Because
+$\Delta_t = W_{\mathrm{out}}W_{\mathrm{in}}x_t$ and $\cumsum$ is linear,
+\begin{equation}
+  \label{eq:factor}
+  \theta_t
+  \;=\;\omega\odot\cumsum\!\left(W_{\mathrm{out}}W_{\mathrm{in}}x\right)_t
+  \;=\;\omega\odot W_{\mathrm{out}}
+       \underbrace{\sum_{u\le t} W_{\mathrm{in}}x_u}_{\textstyle s_t\,\in\,\R^{r}},
+\end{equation}
+checked against the implementation to $9\times10^{-7}$. \textbf{All $H\nb = 64$
+phase channels of MapFormer are linear readouts of a single \emph{two}-dimensional
+accumulator.} Selective RoPE admits no such factorisation: its $64$ channels
+integrate $64$ independent signals.
+
+\subsection{The inclusion}
+
+The three generators are nested, and each inclusion \emph{removes a constraint}
+rather than adding a mechanism:
+\[
+  \underbrace{\text{RoPE}}_{m=1,\;\varphi\equiv\mathrm{const}}
+  \;\subset\;
+  \underbrace{\text{MapFormer}}_{m=r,\;\varphi\text{ linear},\;K=1}
+  \;\subset\;
+  \underbrace{\text{Selective RoPE}}_{m=H\nb,\;\varphi\text{ gated},\;K=4}.
+\]
+The right-hand inclusion is exact up to a saturating limit: a rank-$r$ $W_\omega$
+lies in the span of a full-rank one, the delta kernel $\kappa=(0,0,0,1)$ recovers
+$K=1$, per-channel scales absorb $\omega$ into the rows of $W_\omega$, and
+$\sigma(\cdot)\to\text{const}$ as the gate's bias grows. The left-hand inclusion is
+of functional form only, with the three qualifications recorded in $\S$3.
+
+\medskip
+\noindent Consequently \textbf{MapFormer's generator is a constrained submodel of
+Selective RoPE's}, and every comparison between the two is a question about
+whether a constraint is worth keeping. It is never a question about expressivity,
+and no experiment here can be read as one.
+
+\subsection{Coherence rank}
+
+Define the \textbf{coherence rank} $\rho = \operatorname{rank}(A)\le m$: the
+dimension of the subspace of $\R^{H\nb}$ that the phase vector is confined to as
+$t$ varies. It is $1$ for RoPE, $r$ for MapFormer, $H\nb$ for Selective RoPE.
+
+Why this is the load-bearing quantity. Attention observes only
+$\cos(\theta_s-\theta_t+\psi)$, and cosine is $2\pi$-periodic, so no single block
+can separate displacements differing by $2\pi/\omega_c$. Position survives only
+because the blocks are read \emph{jointly} --- a residue decoding across the
+frequency spectrum, whose ambiguity shrinks with the least common multiple of the
+periods. That decoding is well posed exactly when the blocks measure the same
+underlying quantity, i.e.\ when $\rho$ is small. At $\rho = H\nb$ there is nothing
+to decode jointly: one has $64$ individually ambiguous single-block codes whose
+conjunction says nothing about position that each does not say alone.
+
+Two consequences follow, one an impossibility and one an optimisation claim.
+
+\paragraph{(i) Expressivity requires $\rho \ge D$.} On a $D$-dimensional lattice
+with actions $\pm e_i$, $\varphi$ is linear, so the state after a trajectory with
+action counts $n_a$ is $s = \sum_a n_a v_a$ with $v_a = W_{\mathrm{in}}x_a\in\R^r$.
+Two positions with equal $s$ have identical phase in \emph{every} block. The
+induced map $\Z^{D}\to\R^{r}$ therefore has a kernel of dimension $D-r$ whenever
+$r<D$: \textbf{$r<D$ makes the position code non-injective by construction} --- not
+badly conditioned but unrepresentable, and no amount of training or depth repairs
+it.
+
+\paragraph{(ii) $\rho = D$ is expressible but not trainable.} In $2$D, $r=2$ is
+exactly sufficient by (i), and is what the paper prescribes ($r$ is the
+dimensionality of the action space, App.~A.7). It nonetheless costs $0.085$
+accuracy at $T=1024$ against $r=4$ ($8/8$ seeds, $t=3.57$), and the code it learns
+is skewed: opposite actions fail to cancel by half the action scale ($0.495$) and
+the two axes are close to parallel ($|\cos| = 0.783$), against $0.092$ and $0.175$
+at $r=4$. Yet the $r=4$ latents still place $100.0\%$ of their spectral energy in a
+$2$-plane. \textbf{The extra rank carries no signal; it is optimisation slack for
+realising an exact group homomorphism under gradient descent.} The paper's
+structural argument for $r=2$ is right about what is expressible and wrong about
+what is reachable.
+
+\subsection{What the constraints are worth, measured}
+
+One batch, $8$ arms, the generator swapped and nothing else changed. Increments are
+against MapFormer at $r=2$; \textsc{mde} is $2.8\,\mathrm{sd}/\sqrt{n}$.
+
+\begin{center}\small
+\begin{tabular}{lrll}
+\toprule
+constraint removed & params & parity $L{=}128$ & torus $T{=}1024$ \\
+\midrule
+$K=1 \to 4$ (causal conv)      & $+193$    & $-0.020$ detectable & $-0.064$ ($t\,{-}1.99$) \\
+$m = r \to H\nb$ (full rank)   & $+7{,}873$ & $-0.020$ detectable & $+0.058$ ($7/8$) \\
+$\varphi$ linear $\to$ gated   & $+8{,}193$ & $-0.030$ detectable & $+0.086$ ($8/8$, sign $p{=}0.008$) \\
+all three (Selective RoPE)     & $+16{,}385$& $-0.009$ unmeasured & $+0.048$ ($t\,1.36$) \\
+\midrule
+\emph{$r=2\to4$, constraint kept} & $\mathbf{+384}$ & --- & $\mathbf{+0.085}$ ($8/8$, $t\,3.57$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Three readings, in decreasing order of how well they are supported.
+
+\textbf{Rank is the only axis with a measurable effect, and it saturates at $4$.}
+$r=4,8,16,32$ are flat within noise ($+0.085$ to $+0.095$), so this is a step at
+$r=2$, not a capacity slope. The same gain is available inside MapFormer's
+parameterisation for $21\times$ fewer parameters than outside it.
+
+\textbf{The gate is not doing what its name suggests.} It is statistically
+indistinguishable from the unrelated full-rank addition of comparable size
+($+0.018$ at $T{=}512$ against an \textsc{mde} of $0.026$), so the parameters and
+not the mechanism are the plausible cause. The natural mechanism --- that a sigmoid
+suppresses observation tokens, which MapFormer must instead learn to send to
+$\Delta\approx 0$ --- was tested directly and falsified: the gate is $1.35\times$
+larger on actions than observations on the torus \emph{where it helps}, and
+$1.54\times$ larger on the analogous split on parity \emph{where it hurts}.
+
+\textbf{The convolution is the one knob with a principled sign, and it is
+negative on both tasks at negligible cost.} With $K>1$ the increment of a token
+depends on its neighbours, so the phase ceases to be a function of the multiset of
+tokens traversed and the map from action sequences to $SO(2)^{\nb}$ is no longer a
+group homomorphism. Commutativity is MapFormer's entire computational argument ---
+and the word does not appear once in Selective RoPE. The measured cost of giving it
+up is $-0.020$ on parity and $-0.064$ on the torus for $193$ parameters.
+
+\subsection{A prediction, and the paper's own 5D negative}
+
+MapFormer v4 Table 6 reports MapWM collapsing in $5$D: $0.75/0.50/0.35$ on
+IID/OOD-d/OOD-s, \emph{below} CoPE at $0.94/0.80/0.69$, while MapEM-s holds at
+$1.00/1.00/0.87$. The paper reports this without an account of it.
+
+Consequence (i) supplies one. If $r=2$ was held fixed at $D=5$ --- the paper
+specifies only $r\ll d$, ``for instance $r=2$'' --- then the position code has a
+three-dimensional kernel and \textbf{the collapse is structurally forced}, a
+property of the chosen rank rather than of path integration. MapEM's survival is
+consistent on the same reading: its multiplicative $A_X\odot A_P$ lets the content
+channel disambiguate what a degenerate position channel cannot.
+
+\medskip
+\noindent \textbf{Pre-registered test.} A $D$-dimensional torus, $r\in\{2,D,D{+}2\}$
+at $D\in\{3,5\}$, one batch, $8$ seeds.
+\begin{itemize}\itemsep2pt
+\item $r=2$ collapses at $D=5$ and degrades only mildly at $D=3$ --- kernel
+  dimensions $3$ and $1$.
+\item $r=D$ recovers most of the loss, being exactly expressible, but retains the
+  $r{=}2$ conditioning skew (opposition and $|\cos|$ well above their $r{=}4$
+  values in $2$D).
+\item $r=D{+}2$ is clean, and larger $r$ is flat.
+\end{itemize}
+Falsified if $r=2$ is unimpaired at $D=5$, or if $r=D$ is already flat --- either
+outcome kills the two-threshold reading, and the first would show the $5$D collapse
+has nothing to do with rank.
+
+\subsection{The difference that has not been tested}
+
+Everything above concerns the \emph{generator}. Selective RoPE also differs in
+\emph{placement}: it derives the angle per head and per layer from that layer's own
+queries, whereas MapFormer computes $\theta$ once from the token embeddings and
+shares it across all layers and heads. The arms here swap the generator only, and
+at one layer the distinction is nearly vacuous, since $q = W_Q\,\mathrm{LN}(x)$ is
+itself a learned linear map of the token. At depth it is real, and it is the sole
+axis on which the two designs remain uncompared.
+
+It is also not the axis probed by the refinement experiment of Appendix~A: that
+carried a \emph{bounded gated correction} to $\theta$ across iterations of a shared
+block and the optimiser declined to use it. Recomputing $\theta$ from scratch at
+each layer, from that layer's representation, is a different model and an open
+question.
+
 \appendix
 \section{The other mechanisms, in the same notation}
 
@@ -431,6 +642,7 @@ mechanism & sets & parameter cost & measured effect \\
 \midrule
 Path integration & phase $\theta$ & $+448$ on $199{,}042$ ($+0.23\%$) & $+0.078$ parity ($16/16$); $+0.461$ torus \\[2pt]
 PoPE             & magnitude $\mu$ & $\hd/2 \to \hd$ widening, $+320$ & $+0.027$ \emph{with} path int. Without it, both arms are on the floor --- see note \\[2pt]
+Bottleneck rank  & state rank $\rho$ & $+384$ on $204{,}373$ ($+0.19\%$) & $+0.085$ torus $T{=}1024$ for $r{=}2\to4$ ($8/8$); flat to $r{=}32$ \\[2pt]
 Recursion        & block reuse & $0$ & $+0.056$ parity ($16/16$); matches or beats $3\times$ params \\[2pt]
 Hierarchy        & token count & $0$ if weight-shared & length-dependent: $\approx 0$ at $L=16$, $+0.060$ at $L=512$ ($23/24$ seeds); $-22.8\%$ time \emph{at $L=2048$}, but see note (iv) \\[2pt]
 InEKF            & $\theta \to \hat\theta$ & $+49{,}600$ on $204{,}373$ ($+24\%$) & no individual \emph{component} is load-bearing; the whole filter is $+0.06$ to $+0.13$, at OOD length only \\
