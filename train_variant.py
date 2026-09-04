@@ -94,6 +94,8 @@ from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
 from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
+from mapformer.model_selective import (MapFormerWM_SRoPEGen, MapFormerWM_NoBottleneck,
+                                      MapFormerWM_ConvAngle, MapFormerWM_GateAngle)
 from mapformer.model_looped import (MapFormerWM_Looped, MapFormerWM_RoPE_Looped,
                                     MapFormerWM_LoopedRefine, MapFormerWM_LoopedSampled,
                                     MapFormerWM_Level15Looped)
@@ -116,6 +118,10 @@ VARIANT_MAP = {
     "Level15":    MapFormerWM_Level15InEKF,
     "Level15Looped": MapFormerWM_Level15Looped,
     "LoopedHourglass": MapFormerWM_LoopedHourglass,
+    "SRoPEGen": MapFormerWM_SRoPEGen,
+    "NoBottleneck": MapFormerWM_NoBottleneck,
+    "ConvAngle": MapFormerWM_ConvAngle,
+    "GateAngle": MapFormerWM_GateAngle,
     "LoopedHourglassFlat": MapFormerWM_LoopedHourglassFlat,
     "Level15Beta": MapFormerWM_Level15Beta,
     "Level15GSF": MapFormerWM_Level15GSF,
