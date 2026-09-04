@@ -15,7 +15,7 @@
 \DeclareMathOperator{\atantwo}{atan2}
 \DeclareMathOperator*{\cumsum}{cumsum}
 
-\title{Path Integration and PoPE:\\ how the two mechanisms compose}
+\title{Positional Mechanisms in Rotary Attention:\\ two factors, one scan}
 \author{Notes derived from the implementation}
 \date{}
 
@@ -24,28 +24,47 @@
 
 \begin{abstract}
 \noindent
-Every positional mechanism here is a choice about one of two factors in the same
-product. Writing an attention score in polar form as $\mu\,e^{i\varphi}$,
-\textbf{MapFormer's path integration determines the positional part of the phase
-$\varphi$} and \textbf{PoPE determines the magnitude $\mu$}, which is why the
-combination (\textsc{MapPoPE}) is not a new mechanism but the conjunction of two
-independent choices.
+Rotary attention writes every logit as a sum of products
+$\mu\cos\varphi$. \textbf{A positional mechanism is a choice about one of those
+two factors, and nothing else.} MapFormer's path integration, Selective RoPE and
+ordinary RoPE all set the \emph{phase} $\varphi$; PoPE sets the \emph{magnitude}
+$\mu$; MapPoPE is their conjunction and not a third mechanism.
 
 \medskip
-\noindent\textbf{The symmetry is not exact, and the asymmetry matters.} MapFormer
-\emph{adds} a term to the phase and leaves the rest of the attention untouched.
-PoPE does two things: it replaces the magnitude \emph{and} it eliminates the
-content-dependent intrinsic phase $\psi$ that ordinary rotary attention carries.
-Under PoPE each element is a non-negative real times a purely positional phasor, so
-$\tilde q$ can no longer lie anywhere in $\C$. PoPE is therefore a
-\emph{restriction} on the object MapFormer rotates, not merely a different
-parameterisation of one factor --- and that is a plausible source of the
-sub-additivity observed on text ($\S$6).
+\noindent\textbf{The phase mechanisms are one machine.} Each maintains a state by
+cumulative summation and reads it out linearly into the phase,
+$s_t = s_{t-1} + \varphi(x_{t-K+1:t})$, $\theta_t = A s_t$, and they differ only in
+the \emph{state rank} $m$, the nonlinearity of the increment, and its temporal
+support $K$. RoPE, MapFormer and Selective RoPE are then \emph{nested}, each
+inclusion removing a constraint rather than adding a mechanism, so every
+comparison between them asks whether a constraint is worth keeping and none of
+them is about expressivity. For MapFormer the reduction is an identity: all $64$
+of its phase channels are linear readouts of a single \emph{two}-dimensional
+accumulator.
 
 \medskip
-\noindent Formulas below are transcribed from the implementation, and where the
-implementation departs from the published equation or from canonical RoPE that is
-stated at the point of departure.
+\noindent\textbf{Rank is the axis that binds, and it binds twice.} Confining the
+phase to an $r$-dimensional subtorus forces the $N^D$ positions of a $D$-torus
+apart by no more than $\sim N^{-\max(D/r,\,1)}$, so \emph{geometry} sets a hard
+threshold at $r = D$ and says nothing above it; the measured cost of $r=2$ in two
+dimensions is therefore not geometric but an \emph{optimisation} failure, and the
+two are separable exactly this way. $\S$2.5 states both, with the correction that
+the first version of the geometric argument --- an appeal to a kernel --- was
+wrong and was falsified by its own gate.
+
+\medskip
+\noindent\textbf{The asymmetry between the two factors matters.} MapFormer adds a
+term to the phase and leaves the rest of attention untouched. PoPE replaces the
+magnitude \emph{and} eliminates the content-dependent intrinsic phase that
+ordinary rotary attention carries, so it is a \emph{restriction} on the object
+MapFormer rotates rather than a parallel choice --- a plausible source of the
+sub-additivity seen on text ($\S$4).
+
+\medskip
+\noindent Formulas are transcribed from the implementation. Where it departs from
+a published equation or from canonical RoPE, that is stated at the point of
+departure. Empirical claims carry their seed counts and minimum detectable
+effects; several are recorded here only to be marked unsupported.
 \end{abstract}
 
 \section{The shared frame}
@@ -108,7 +127,41 @@ Equation~\eqref{eq:polar} is the frame for everything that follows. \textbf{Each
 mechanism is a decision about where the magnitude comes from and where the phase
 comes from.}
 
-\section{RoPE: the fixed clock}
+\section{The phase axis: a family of scans}
+\label{sec:phase}
+
+Every mechanism that sets $\theta$ in \eqref{eq:polar} does so the same way. Call a
+\textbf{phase generator} the triple $(m,\varphi,K)$ producing
+\begin{equation}
+  \label{eq:gen}
+  \boxed{\;
+  s_t \;=\; s_{t-1} + \varphi\!\left(x_{t-K+1},\dots,x_t\right) \;\in\;\R^{m},
+  \qquad
+  \theta_t \;=\; A\,s_t \;\in\;\R^{H\nb}. \;}
+\end{equation}
+$m$ is the \textbf{state rank}, $\varphi$ the increment map, $K$ its temporal
+support and $A$ a fixed linear readout. Cumulative summation is linear, so it
+commutes with any linear map: the accumulation may always be pushed down to the
+smallest space the increment factors through, and $m$ is that dimension. Three
+named mechanisms are instances, and $\S$2.1--2.3 give them in turn.
+
+\begin{center}\small
+\begin{tabular}{lcccc}
+\toprule
+generator & $m$ & $\varphi$ & $K$ & $A$ \\
+\midrule
+RoPE           & $1$      & $\equiv 1$                               & $1$ & $\omega$ (frozen) \\
+MapFormer      & $r$      & $W_{\mathrm{in}}x$                       & $1$ & $\operatorname{diag}(\omega)\,W_{\mathrm{out}}$ \\
+Selective RoPE & $H\nb$   & $\sigma(W_g x)\odot(\kappa * W_\omega x)$ & $4$ & $\tau I$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Because the state is accumulated and the readout is linear, all three
+are $O(\log T)$ parallel scans. That property is shared and is not what
+distinguishes them.
+
+\subsection{RoPE: the fixed clock}
 
 Standard RoPE fixes the angle to be linear in the token index,
 \begin{equation}
@@ -121,7 +174,7 @@ $\psi$ are whatever $W_Q, W_K$ happen to produce; they are never constrained, an
 in particular $\tilde q$ may lie anywhere in $\C$. Substituting into
 \eqref{eq:relative} gives the familiar dependence on $s-t$ alone.
 
-\section{MapFormer: path integration replaces the clock}
+\subsection{MapFormer: path integration replaces the clock}
 
 MapFormer keeps \eqref{eq:rot} and changes only what generates $\theta$.
 
@@ -141,7 +194,7 @@ $r=2$'' (App.~A.7).
 \textbf{Superseded.} An earlier note here recorded the bottleneck as load-bearing
 with $r=1$ dropping the 2D task to $0.66$, and marked it unsupported. It is still
 unsupported --- no $r=1$ run exists anywhere --- but the rank axis is no longer
-untested: $\S$\ref{sec:srope} reports an $8$-seed sweep over $r\in\{2,4,8,16,32\}$
+untested: $\S$\ref{sec:rank} reports an $8$-seed sweep over $r\in\{2,4,8,16,32\}$
 in which $r=2$ is the \emph{worst} setting. Read $r=2$ below as the paper's
 prescription, not as a verified optimum.
 \end{quote}
@@ -201,7 +254,199 @@ negative --- over a learned frequency spectrum}.
 \noindent In terms of \eqref{eq:polar}: MapFormer sets the \textbf{phase} and
 leaves the magnitude untouched.
 
-\section{PoPE: an explicit polar parameterisation}
+\subsection{Selective RoPE: the unconstrained generator}
+
+Selective RoPE (Movahedi et al., arXiv:2511.17388, ICLR 2026) was posted on 21
+November 2025, three days before MapFormer, and neither paper cites the other in
+any version. Its angle is, in the present notation,
+\begin{equation}
+  \label{eq:srope}
+  \theta_t^{(h,c)}
+  \;=\;\tau\sum_{u\le t}
+  \Big[\underbrace{\sigma\!\left(W_g x_u\right)}_{\text{gate}}\odot
+       \underbrace{\left(\kappa * W_\omega x\right)_u}_{\text{smoothed increment}}\Big]^{(h,c)},
+\end{equation}
+with $\kappa$ a causal depthwise kernel of width $4$ and $\tau$ a learned
+temperature. It is \eqref{eq:gen} at $m = H\nb$: \textbf{$64$ channels integrating
+$64$ independent signals}, against MapFormer's $64$ readouts of one
+two-dimensional accumulator. There is no rank bottleneck, so no cross-channel
+constraint, and $K=4$ rather than $1$.
+
+\begin{quote}\small
+\textbf{Scope of every Selective-RoPE number below.} The arms here swap the
+\emph{generator} and keep MapFormer's \emph{placement} --- the angle is computed
+once from the token embeddings before the blocks, not per head and per layer from
+that layer's queries. At one layer the distinction is nearly vacuous, since
+$q = W_Q\,\mathrm{LN}(x)$ is itself a learned linear map of the token. At depth it
+is not, and $\S$\ref{sec:place} records it as the one axis on which the two designs
+remain uncompared. \textbf{A negative result here does not refute Selective RoPE}; it is
+evidence about the generator's components in this setting, on tasks their paper
+does not run.
+\end{quote}
+
+\subsection{The inclusion}
+
+The three generators are nested, and each inclusion \emph{removes a constraint}
+rather than adding a mechanism:
+\[
+  \underbrace{\text{RoPE}}_{m=1,\;\varphi\equiv\mathrm{const}}
+  \;\subset\;
+  \underbrace{\text{MapFormer}}_{m=r,\;\varphi\text{ linear},\;K=1}
+  \;\subset\;
+  \underbrace{\text{Selective RoPE}}_{m=H\nb,\;\varphi\text{ gated},\;K=4}.
+\]
+The right-hand inclusion is exact up to a saturating limit: a rank-$r$ $W_\omega$
+lies in the span of a full-rank one, the delta kernel $\kappa=(0,0,0,1)$ recovers
+$K=1$, per-channel scales absorb $\omega$ into the rows of $W_\omega$, and
+$\sigma(\cdot)\to\text{const}$ as the gate's bias grows. The left-hand inclusion is
+of functional form only, with the three qualifications recorded in $\S$3.
+
+\medskip
+\noindent Consequently \textbf{MapFormer's generator is a constrained submodel of
+Selective RoPE's}, and every comparison between the two is a question about
+whether a constraint is worth keeping. It is never a question about expressivity,
+and no experiment here can be read as one.
+
+\subsection{Coherence rank, and the two thresholds}
+\label{sec:rank}
+
+Define the \textbf{coherence rank} $\rho = \operatorname{rank}(A) \le m$: the
+dimension of the subspace of $\R^{H\nb}$ that the phase vector occupies as $t$
+varies. It is $1$ for RoPE, $r$ for MapFormer, $H\nb$ for Selective RoPE.
+
+For MapFormer this is an identity rather than a reading. Because
+$\Delta_t = W_{\mathrm{out}}W_{\mathrm{in}}x_t$ and $\cumsum$ is linear,
+\begin{equation}
+  \label{eq:factor}
+  \theta_t
+  \;=\;\omega\odot\cumsum\!\left(W_{\mathrm{out}}W_{\mathrm{in}}x\right)_t
+  \;=\;\omega\odot W_{\mathrm{out}}
+       \underbrace{\sum_{u\le t} W_{\mathrm{in}}x_u}_{\textstyle s_t\,\in\,\R^{r}},
+\end{equation}
+checked against the implementation to $9\times10^{-7}$. \textbf{All $H\nb = 64$
+phase channels are linear readouts of a single two-dimensional accumulator.}
+
+Rank binds twice, for two unrelated reasons, and separating them is the point of
+this section.
+
+\subsubsection*{(i) Geometry: a packing bound, with a correction}
+
+\begin{quote}\small
+\textbf{The first version of this argument was wrong, and its own gate falsified
+it.} It claimed that on a $D$-dimensional lattice the induced map $\Z^{D}\to\R^{r}$
+has a kernel of dimension $D-r$, so that $r<D$ makes distinct positions
+\emph{identical} in phase. That is false. The kernel of a generic linear map is a
+$(D-r)$-dimensional subspace of $\R^{D}$ containing no non-zero lattice point
+almost surely, so a generic $W$ is injective on any finite set of positions and
+exact collisions never occur. The validator written to measure the collision rate
+returned $0.0\%$ at every $(D,r)$, which is what a correct gate on a wrong claim
+looks like. What actually binds is not identity but \emph{separation}, below.
+\end{quote}
+
+\noindent The phase enters attention only through $\cos(\theta_s-\theta_t+\psi)$,
+which is $2\pi$-periodic in each block, so the code lives on the torus
+$\mathbb{T}^{H\nb}$ --- and by \eqref{eq:gen} it is confined to an
+\emph{$\rho$-dimensional subtorus} of it. Packing the $N^{D}$ positions of a
+$D$-torus into an $\rho$-dimensional one forces them close together: with the
+cloud normalised to unit scale, the minimum separation between distinct positions
+obeys
+\begin{equation}
+  \label{eq:packing}
+  \boxed{\;\min_{p\neq p'}\left\lVert s(p)-s(p')\right\rVert
+   \;\lesssim\; N^{-\max\left(D/\rho,\;1\right)}. \;}
+\end{equation}
+Two regimes follow, and the exponent is the whole content of the bound.
+\begin{itemize}\itemsep2pt
+\item $\rho \ge D$: the accumulator can embed the position lattice faithfully, and
+  the separation is set by the lattice's own minimal distance against a spread of
+  order $N$. The exponent \textbf{saturates at $1$}; more rank buys nothing
+  geometric.
+\item $\rho < D$: the image is a projected lattice, dense in the subtorus, and the
+  exponent is $D/\rho > 1$ --- strictly worse, and worse the smaller $\rho$ is.
+\end{itemize}
+
+\noindent Measured by projecting the full position set through random rank-$\rho$
+maps and fitting $\log(\text{separation})$ against $\log N$:
+
+\begin{center}\small
+\begin{tabular}{ccccc}
+\toprule
+$D$ & $\rho$ & $D/\rho$ & predicted exponent & fitted \\
+\midrule
+2 & 2 & 1.00 & $-1.00$ & $-1.02$ \\
+2 & 4 & 0.50 & $-1.00$ \emph{(saturated)} & $-1.04$ \\
+3 & 2 & 1.50 & $-1.50$ & $-1.51$ \\
+3 & 3 & 1.00 & $-1.00$ & $-1.44$ \\
+4 & 2 & 2.00 & $-2.00$ & $-2.17$ \\
+4 & 4 & 1.00 & $-1.00$ & $-1.23$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The $\rho < D$ rows track the prediction closely; the $\rho = D$ rows
+overshoot the floor, which is a finite-size effect --- they are fitted over four
+map sizes with $N \le 10$, where the asymptotic regime has not been reached. The
+saturation itself is confirmed by the $D{=}2,\rho{=}4$ row, whose exponent stays
+at $-1$ rather than falling to the naive $-0.5$.
+
+\begin{quote}\small
+\textbf{What this does \emph{not} explain.} At $D=2$ both $\rho=2$ and $\rho=4$
+sit at the floor exponent, so the bound predicts \emph{no} advantage for $r=4$ on
+a two-dimensional grid. One is measured, at $+0.085$ and $8/8$ seeds. The
+geometric argument is therefore silent about the effect this project actually
+observed, which is the reason for (ii) --- and a useful discipline, since a theory
+that explained the $2$D gap as well would have been explaining it twice.
+\end{quote}
+
+\subsubsection*{(ii) Optimisation: $\rho = D$ is expressible but not reachable}
+
+In $2$D, $r=2$ is exactly sufficient by (i) and is what the paper prescribes ($r$
+is the dimensionality of the action space, App.~A.7). It nonetheless costs $0.085$
+accuracy at $T=1024$ against $r=4$ ($8/8$ seeds, $t=3.57$), and the code it learns
+is skewed: opposite actions fail to cancel by half the action scale ($0.495$) and
+the two axes are close to parallel ($|\cos| = 0.783$), against $0.092$ and $0.175$
+at $r=4$. Yet the $r=4$ latents still place $100.0\%$ of their spectral energy in a
+$2$-plane, and $r=8,16,32$ are flat within noise of $r=4$.
+
+\textbf{The extra rank carries no signal; it is slack that lets gradient descent
+reach an exact group homomorphism it otherwise misses.} The representation is
+two-dimensional at convergence either way. The paper's structural argument for
+$r=2$ is right about what is expressible and wrong about what is reachable, and
+the distinction is not rhetorical --- it is the difference between a bound that
+saturates at $r=D$ and a measurement that does not.
+
+\subsubsection*{Why coherence is cheap to keep}
+
+Nothing above says a \emph{large} $\rho$ is harmful in itself, and the direct
+comparison bears that out: the unconstrained generator's $\rho = 64$ buys no more
+on the torus than $r=4$ does ($\S$\ref{sec:measured}), at $20\times$ the parameters. The
+constraint is worth keeping because it is nearly free and because it is what makes
+the phase a multi-scale code for one quantity rather than $64$ unrelated clocks
+--- not because incoherence has been shown to cost. On parity, where the latent is
+a single bit and $\rho^{*}=1$, the unconstrained generator does measurably worse;
+that is the only place in these experiments where incoherence has a price.
+
+\subsection{What $K > 1$ costs: the group structure}
+
+With $K=1$ and $\varphi$ linear, \eqref{eq:gen} is exactly the action of the free
+commutative monoid on tokens: the phase depends on the \emph{multiset} of tokens
+traversed and on nothing else, so
+$\theta(a\ \text{then}\ b) = \theta(b\ \text{then}\ a) = \theta(a)+\theta(b)$, and
+$\prod_{u\le t}R(\omega\Delta_u) = R(\omega\sum_{u\le t}\Delta_u)$. Commutativity
+is MapFormer's entire computational argument, and it is also its stated limitation:
+a turn/forward action space, where displacement depends on accumulated heading, is
+not representable --- measured, on MiniWorld, as $-0.388$ of a $-0.438$ swing
+attributable to rotation alone.
+
+A convolution with $K>1$ makes the increment of a token depend on its neighbours,
+so the phase ceases to be a function of the multiset and the map is no longer a
+homomorphism. The word ``commutativity'' does not appear once in Selective RoPE.
+The measured cost of giving it up is $-0.020$ on parity and $-0.064$ on the torus,
+for $193$ parameters --- the only knob in $\S$\ref{sec:measured} that is free and negative on both
+tasks, and the only one whose sign was predicted.
+
+\section{The magnitude axis: PoPE}
+\label{sec:pope}
 
 PoPE (Polar Coordinate Positional Embeddings) makes \eqref{eq:polar} explicit
 rather than emergent.
@@ -320,7 +565,7 @@ width; it has not been run.
 \noindent The widening is a property of PoPE itself, not of the combination ---
 the index-phase PoPE baseline also runs at $\nb = \hd$.
 
-\section{Why the two compose, and when they do not}
+\subsection{Why the two compose, and when they do not}
 
 \eqref{eq:mappope} predicts the observed pattern.
 
@@ -350,128 +595,37 @@ the index-phase PoPE baseline also runs at $\nb = \hd$.
 but that does not make their \emph{effects} independent. Whether they add depends
 on whether the task has separate work for a phase and a magnitude to do.
 
-\section{Selective RoPE, and the family of phase generators}
-\label{sec:srope}
+\section{What leaves the frame}
 
-Selective RoPE (Movahedi et al., arXiv:2511.17388, ICLR 2026) was posted on 21
-November 2025, three days before MapFormer, and neither paper cites the other in
-any version. Its rotation angle is, in the notation of \eqref{eq:rot},
-\begin{equation}
-  \label{eq:srope}
-  \theta_t^{(h,c)}
-  \;=\;\tau\sum_{u\le t}
-  \Big[\underbrace{\sigma\!\left(W_g x_u\right)}_{\text{gate}}\odot
-       \underbrace{\left(\kappa * W_\omega x\right)_u}_{\text{smoothed increment}}\Big]^{(h,c)},
-\end{equation}
-with $\kappa$ a causal depthwise kernel of width $4$ and $\tau$ a learned
-temperature. Set beside \eqref{eq:pi}, both mechanisms put a content-dependent
-cumulative sum in the phase. This section states the relation exactly, and it is
-tighter than a family resemblance.
+Two kinds of mechanism are outside \eqref{eq:polar}, and it is worth being
+explicit about which, since both are routinely grouped with the ones above.
 
-\subsection{The generator family}
+\paragraph{CoPE, and why it is not in this family.} Contextual Position Encoding
+computes a gate from a \emph{query--key pair}, $g_{ts} = \sigma(q_t\cdot k_s)$, and
+takes the position of $s$ relative to $t$ to be $\sum_{s < i \le t} g_{ti}$. That
+quantity depends on both indices and on the query, so it cannot be written as
+$\theta_s - \theta_t$ for any per-token $\theta$: the factorisation that
+\eqref{eq:relative} relies on --- and with it the relative-position property that
+holds for \emph{any} $\theta$ --- does not exist. \textbf{CoPE is not a phase
+generator with a different $(m,\varphi,K)$; it leaves the frame.} This is worth
+stating because CoPE, Selective RoPE and MapFormer are often listed together as
+``content-dependent position'', and only the last two are the same machine.
 
-Call a \emph{phase generator} the triple $(m,\varphi,K)$ producing
-\begin{equation}
-  \label{eq:gen}
-  \boxed{\;
-  s_t \;=\; s_{t-1} + \varphi\!\left(x_{t-K+1},\dots,x_t\right) \;\in\;\R^{m},
-  \qquad
-  \theta_t \;=\; A\,s_t \;\in\;\R^{H\nb}. \;}
-\end{equation}
-Here $m$ is the \textbf{state rank}, $\varphi$ the increment map, $K$ its temporal
-support and $A$ a fixed linear readout. Cumulative summation is linear, so it
-commutes with any linear map and the accumulation may always be pushed down to the
-smallest space the increment factors through. Three mechanisms are instances:
+\paragraph{PoPE is not in the CoPE family either, despite the name.} Its magnitude
+is content-dependent; its \emph{angle} is not, apart from the constant bias
+$\delta_c$ ($\S$3). It modifies the other factor.
 
-\begin{center}\small
-\begin{tabular}{lcccc}
-\toprule
-generator & $m$ & $\varphi$ & $K$ & $A$ \\
-\midrule
-RoPE           & $1$      & $\equiv 1$                                              & $1$ & $\omega$ (frozen) \\
-MapFormer      & $r$      & $W_{\mathrm{in}}x$                                      & $1$ & $\operatorname{diag}(\omega)\,W_{\mathrm{out}}$ \\
-Selective RoPE & $H\nb$   & $\sigma(W_g x)\odot(\kappa * W_\omega x)$                & $4$ & $\tau I$ \\
-\bottomrule
-\end{tabular}
-\end{center}
+\paragraph{Mechanisms that act elsewhere in the network.} Weight-shared recursion,
+hierarchical pooling and the InEKF correction are not choices about $\mu$ or
+$\varphi$ at all: the first two change how the residual stream is processed at
+fixed $\theta$, and the third post-processes $\theta$ before the rotation.
+Appendix~\ref{app:other} gives all three in this notation, together with what each
+was measured to be worth --- which in the InEKF's case is a withdrawal.
 
-\noindent For MapFormer the factorisation is an identity, not a reading. Because
-$\Delta_t = W_{\mathrm{out}}W_{\mathrm{in}}x_t$ and $\cumsum$ is linear,
-\begin{equation}
-  \label{eq:factor}
-  \theta_t
-  \;=\;\omega\odot\cumsum\!\left(W_{\mathrm{out}}W_{\mathrm{in}}x\right)_t
-  \;=\;\omega\odot W_{\mathrm{out}}
-       \underbrace{\sum_{u\le t} W_{\mathrm{in}}x_u}_{\textstyle s_t\,\in\,\R^{r}},
-\end{equation}
-checked against the implementation to $9\times10^{-7}$. \textbf{All $H\nb = 64$
-phase channels of MapFormer are linear readouts of a single \emph{two}-dimensional
-accumulator.} Selective RoPE admits no such factorisation: its $64$ channels
-integrate $64$ independent signals.
+\section{What is measured}
+\label{sec:measured}
 
-\subsection{The inclusion}
-
-The three generators are nested, and each inclusion \emph{removes a constraint}
-rather than adding a mechanism:
-\[
-  \underbrace{\text{RoPE}}_{m=1,\;\varphi\equiv\mathrm{const}}
-  \;\subset\;
-  \underbrace{\text{MapFormer}}_{m=r,\;\varphi\text{ linear},\;K=1}
-  \;\subset\;
-  \underbrace{\text{Selective RoPE}}_{m=H\nb,\;\varphi\text{ gated},\;K=4}.
-\]
-The right-hand inclusion is exact up to a saturating limit: a rank-$r$ $W_\omega$
-lies in the span of a full-rank one, the delta kernel $\kappa=(0,0,0,1)$ recovers
-$K=1$, per-channel scales absorb $\omega$ into the rows of $W_\omega$, and
-$\sigma(\cdot)\to\text{const}$ as the gate's bias grows. The left-hand inclusion is
-of functional form only, with the three qualifications recorded in $\S$3.
-
-\medskip
-\noindent Consequently \textbf{MapFormer's generator is a constrained submodel of
-Selective RoPE's}, and every comparison between the two is a question about
-whether a constraint is worth keeping. It is never a question about expressivity,
-and no experiment here can be read as one.
-
-\subsection{Coherence rank}
-
-Define the \textbf{coherence rank} $\rho = \operatorname{rank}(A)\le m$: the
-dimension of the subspace of $\R^{H\nb}$ that the phase vector is confined to as
-$t$ varies. It is $1$ for RoPE, $r$ for MapFormer, $H\nb$ for Selective RoPE.
-
-Why this is the load-bearing quantity. Attention observes only
-$\cos(\theta_s-\theta_t+\psi)$, and cosine is $2\pi$-periodic, so no single block
-can separate displacements differing by $2\pi/\omega_c$. Position survives only
-because the blocks are read \emph{jointly} --- a residue decoding across the
-frequency spectrum, whose ambiguity shrinks with the least common multiple of the
-periods. That decoding is well posed exactly when the blocks measure the same
-underlying quantity, i.e.\ when $\rho$ is small. At $\rho = H\nb$ there is nothing
-to decode jointly: one has $64$ individually ambiguous single-block codes whose
-conjunction says nothing about position that each does not say alone.
-
-Two consequences follow, one an impossibility and one an optimisation claim.
-
-\paragraph{(i) Expressivity requires $\rho \ge D$.} On a $D$-dimensional lattice
-with actions $\pm e_i$, $\varphi$ is linear, so the state after a trajectory with
-action counts $n_a$ is $s = \sum_a n_a v_a$ with $v_a = W_{\mathrm{in}}x_a\in\R^r$.
-Two positions with equal $s$ have identical phase in \emph{every} block. The
-induced map $\Z^{D}\to\R^{r}$ therefore has a kernel of dimension $D-r$ whenever
-$r<D$: \textbf{$r<D$ makes the position code non-injective by construction} --- not
-badly conditioned but unrepresentable, and no amount of training or depth repairs
-it.
-
-\paragraph{(ii) $\rho = D$ is expressible but not trainable.} In $2$D, $r=2$ is
-exactly sufficient by (i), and is what the paper prescribes ($r$ is the
-dimensionality of the action space, App.~A.7). It nonetheless costs $0.085$
-accuracy at $T=1024$ against $r=4$ ($8/8$ seeds, $t=3.57$), and the code it learns
-is skewed: opposite actions fail to cancel by half the action scale ($0.495$) and
-the two axes are close to parallel ($|\cos| = 0.783$), against $0.092$ and $0.175$
-at $r=4$. Yet the $r=4$ latents still place $100.0\%$ of their spectral energy in a
-$2$-plane. \textbf{The extra rank carries no signal; it is optimisation slack for
-realising an exact group homomorphism under gradient descent.} The paper's
-structural argument for $r=2$ is right about what is expressible and wrong about
-what is reachable.
-
-\subsection{What the constraints are worth, measured}
+\subsection{What the constraints are worth}
 
 One batch, $8$ arms, the generator swapped and nothing else changed. Increments are
 against MapFormer at $r=2$; \textsc{mde} is $2.8\,\mathrm{sd}/\sqrt{n}$.
@@ -516,34 +670,89 @@ and the word does not appear once in Selective RoPE. The measured cost of giving
 up is $-0.020$ on parity and $-0.064$ on the torus for $193$ parameters.
 
 \subsection{A prediction, and the paper's own 5D negative}
+\label{sec:predict}
 
 MapFormer v4 Table 6 reports MapWM collapsing in $5$D: $0.75/0.50/0.35$ on
 IID/OOD-d/OOD-s, \emph{below} CoPE at $0.94/0.80/0.69$, while MapEM-s holds at
 $1.00/1.00/0.87$. The paper reports this without an account of it.
 
-Consequence (i) supplies one. If $r=2$ was held fixed at $D=5$ --- the paper
-specifies only $r\ll d$, ``for instance $r=2$'' --- then the position code has a
-three-dimensional kernel and \textbf{the collapse is structurally forced}, a
-property of the chosen rank rather than of path integration. MapEM's survival is
-consistent on the same reading: its multiplicative $A_X\odot A_P$ lets the content
-channel disambiguate what a degenerate position channel cannot.
+Equation \eqref{eq:packing} supplies a candidate. If $r=2$ was held fixed at $D=5$
+--- the paper specifies only $r \ll d$, ``for instance $r=2$'' --- then the phase
+code is confined to a $2$-torus while the task needs a $5$-torus, the separation
+exponent is $D/r = 2.5$ rather than the floor value $1$, and position becomes
+progressively unresolvable as the map grows. MapEM's survival is consistent on the
+same reading: its multiplicative $A_X \odot A_P$ lets the content channel
+disambiguate what a degenerate position channel cannot.
 
-\medskip
-\noindent \textbf{Pre-registered test.} A $D$-dimensional torus, $r\in\{2,D,D{+}2\}$
-at $D\in\{3,5\}$, one batch, $8$ seeds.
+\begin{quote}\small
+\textbf{How strong this is, stated plainly.} It is weaker than the kernel claim it
+replaces, in the way that a correct argument is often weaker than a wrong one.
+\eqref{eq:packing} predicts \emph{degradation growing in $D/r$ and in $N$}, not an
+impossibility, so it cannot say on its own whether $5$D falls to $0.35$ or merely
+slips. And their $r$ in $5$D is not observable from the paper. The strongest
+available claim after the experiment below is ``$r=2$ suffices to produce a $5$D
+collapse of the reported shape in our reproduction'', which is a candidate
+explanation for their number and not a demonstration of it.
+\end{quote}
+
+\paragraph{Design.} A $D$-dimensional torus (\texttt{environment\_nd.py}): $2D$
+actions $\pm e_i$, allocentric aliased observations, the interleaved stream and
+revisit-masked loss of the paper's task, and --- mirrored exactly, because it sets
+the revisit statistics every $2$D number here rests on --- the \emph{directed}
+walk, which draws an action and repeats it $k\sim U\{1..10\}$ times. State-space
+size is held near-constant so that only dimensionality moves: $D=2$ at grid $32$
+($1024$ cells), $D=3$ at grid $10$ ($1000$), $D=5$ at grid $4$ ($1024$). Arms
+$r \in \{2, D, D{+}2\}$, $8$ seeds, one batch, the recipe of the $2$D rank sweep.
+
+\paragraph{What the two mechanisms predict, separately.} The scale-free minimum
+separation at each cell of the design, from the gate:
+
+\begin{center}\small
+\begin{tabular}{lccc}
+\toprule
+ & $D=2$, $N{=}32$ & $D=3$, $N{=}10$ & $D=5$, $N{=}4$ \\
+\midrule
+$r=2$              & $0.047$ & $0.033$ & $0.020$ \\
+$r=D$              & $0.047$ & $0.065$ & $0.218$ \\
+$r=D{+}2$          & $0.067$ & $0.193$ & $0.388$ \\
+\midrule
+ratio $r{=}D$ : $r{=}2$ & $1.0\times$ & $2.0\times$ & $\mathbf{11\times}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
 \begin{itemize}\itemsep2pt
-\item $r=2$ collapses at $D=5$ and degrades only mildly at $D=3$ --- kernel
-  dimensions $3$ and $1$.
-\item $r=D$ recovers most of the loss, being exactly expressible, but retains the
-  $r{=}2$ conditioning skew (opposition and $|\cos|$ well above their $r{=}4$
-  values in $2$D).
-\item $r=D{+}2$ is clean, and larger $r$ is flat.
+\item \textbf{Geometry} predicts the $r{=}2$ deficit ordered $D{=}5 \gg D{=}3 >
+  D{=}2$, tracking the ratio row, and predicts \emph{nothing} for $r=D$ versus
+  $r=D{+}2$, which are both above the threshold.
+\item \textbf{Optimisation} predicts a further gap from $r=D$ to $r=D{+}2$ of
+  roughly the size measured in $2$D ($\approx 0.085$ at $4\times$ training length),
+  present at every $D$ and \emph{not} growing with it.
 \end{itemize}
-Falsified if $r=2$ is unimpaired at $D=5$, or if $r=D$ is already flat --- either
-outcome kills the two-threshold reading, and the first would show the $5$D collapse
-has nothing to do with rank.
+
+\noindent The two are separable because they act on different cells of the same
+table, which is the reason for running all three ranks rather than two.
+
+\paragraph{Falsifiers.} $r=2$ unimpaired at $D=5$ kills the geometric account
+entirely and with it the explanation of Table 6. A flat $r{=}D$ versus $r{=}D{+}2$
+contrast at every $D$ makes the optimisation half a $2$D artifact. A deficit at
+$r=2$ that does \emph{not} grow with $D$ leaves both halves standing but refutes
+\eqref{eq:packing} as the mechanism, since the exponent is the only thing $D$
+changes.
+
+\paragraph{Gates, run before any GPU time (\texttt{ND\_GATES.md}).} All three
+configurations pass: an $n$-gram on the action stream alone at orders $1$--$5$
+reaches at most $0.536$ against a measured majority-class rate of $0.526$, and
+revisit rates are $0.23/0.28/0.62$ with $30$--$79$ scored positions per
+trajectory. The revisit gate is not a formality here: a simple random walk on
+$\Z^{D}$ is \emph{transient} for $D \ge 3$ (P\'olya), so revisits exist only
+because the torus is finite, and a configuration where they collapsed would show
+a ``rank effect'' that was really an absence of labels. The cross-$D$ difference
+in revisit rate is a real confound and is the reason the primary contrast is
+\emph{within} $D$; cross-$D$ comparisons here are descriptive only.
 
 \subsection{The difference that has not been tested}
+\label{sec:place}
 
 Everything above concerns the \emph{generator}. Selective RoPE also differs in
 \emph{placement}: it derives the angle per head and per layer from that layer's own
@@ -559,8 +768,49 @@ block and the optimiser declined to use it. Recomputing $\theta$ from scratch at
 each layer, from that layer's representation, is a different model and an open
 question.
 
+\subsection{Empirical anchors}
+
+\begin{center}\small
+\begin{tabular}{p{2.6cm}p{2.1cm}p{3.1cm}p{5.6cm}}
+\toprule
+mechanism & sets & parameter cost & measured effect \\
+\midrule
+Path integration & phase $\theta$ & $+448$ on $199{,}042$ ($+0.23\%$) & $+0.078$ parity ($16/16$); $+0.461$ torus \\[2pt]
+PoPE             & magnitude $\mu$ & $\hd/2 \to \hd$ widening, $+320$ & $+0.027$ \emph{with} path int. Without it, both arms are on the floor --- see note \\[2pt]
+Bottleneck rank  & state rank $\rho$ & $+384$ on $204{,}373$ ($+0.19\%$) & $+0.085$ torus $T{=}1024$ for $r{=}2\to4$ ($8/8$); flat to $r{=}32$ \\[2pt]
+Recursion        & block reuse & $0$ & $+0.056$ parity ($16/16$); matches or beats $3\times$ params \\[2pt]
+Hierarchy        & token count & $0$ if weight-shared & length-dependent: $\approx 0$ at $L=16$, $+0.060$ at $L=512$ ($23/24$ seeds); $-22.8\%$ time \emph{at $L=2048$}, but see note (iv) \\[2pt]
+InEKF            & $\theta \to \hat\theta$ & $+49{,}600$ on $204{,}373$ ($+24\%$) & no individual \emph{component} is load-bearing; the whole filter is $+0.06$ to $+0.13$, at OOD length only \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent \textbf{Reading the table.} Parity figures are at $L=128$ trained at
+$L=16$, from one batch of $8$ arms $\times$ $16$ seeds. Torus figures are the
+position-axis factor average over both encodings ($+0.4379$ RoPE, $+0.4851$ PoPE).
+\textbf{Three qualifications the columns cannot carry.}
+(i) The hierarchy row is \emph{not} a parity-at-$L=128$ figure: its accuracy comes
+from runs trained at $L=16$ and $L=512$, and its time saving is measured at
+$L=2048$ --- at $L=128$ the same benchmark shows $+0.4\%$, i.e.\ no saving at all.
+(ii) The InEKF's parameter cost is measured on a $204{,}373$-parameter torus model
+and the path-integration cost on a $199{,}042$-parameter parity model; the two
+percentages are not commensurable, and the InEKF has never been run on parity.
+(iii) PoPE without path integration is a difference between two models sitting on
+the measured floor of $0.506$ ($0.509$ vs $0.530$), with a seed spread wider than
+the gap --- it is a floor artifact, not an effect, and is omitted from the column
+for that reason.
+(iv) The $-22.8\%$ is measured on \textsc{LoopedHourglass} against the unshared
+flat scaffold, so it \emph{bundles} the shared block's parameter saving with the
+pooling's compute saving. Isolated on text, hierarchy alone is $1.23\times$
+throughput ($\approx -18.7\%$) at $-14.1\%$ memory. Attributing $-22.8\%$ to the
+hierarchy axis alone overstates it.
+
+
+
 \appendix
+
 \section{The other mechanisms, in the same notation}
+\label{app:other}
 
 \paragraph{Weight-shared recursion (the ``loop'').}
 With $B_\vartheta$ a single transformer block and $n$ the loop count,
@@ -632,42 +882,5 @@ hourglass: one block's parameters (204,373, identical to the flat 1-layer model,
 against 600,917 unshared) with the coarse block's token reduction retained. Note
 that every hourglass class ignores \texttt{n\_layers} and is always this 3-block
 scaffold, so a flat control must be built at 3 blocks, not 1.
-
-\section{Empirical anchors}
-
-\begin{center}\small
-\begin{tabular}{p{2.6cm}p{2.1cm}p{3.1cm}p{5.6cm}}
-\toprule
-mechanism & sets & parameter cost & measured effect \\
-\midrule
-Path integration & phase $\theta$ & $+448$ on $199{,}042$ ($+0.23\%$) & $+0.078$ parity ($16/16$); $+0.461$ torus \\[2pt]
-PoPE             & magnitude $\mu$ & $\hd/2 \to \hd$ widening, $+320$ & $+0.027$ \emph{with} path int. Without it, both arms are on the floor --- see note \\[2pt]
-Bottleneck rank  & state rank $\rho$ & $+384$ on $204{,}373$ ($+0.19\%$) & $+0.085$ torus $T{=}1024$ for $r{=}2\to4$ ($8/8$); flat to $r{=}32$ \\[2pt]
-Recursion        & block reuse & $0$ & $+0.056$ parity ($16/16$); matches or beats $3\times$ params \\[2pt]
-Hierarchy        & token count & $0$ if weight-shared & length-dependent: $\approx 0$ at $L=16$, $+0.060$ at $L=512$ ($23/24$ seeds); $-22.8\%$ time \emph{at $L=2048$}, but see note (iv) \\[2pt]
-InEKF            & $\theta \to \hat\theta$ & $+49{,}600$ on $204{,}373$ ($+24\%$) & no individual \emph{component} is load-bearing; the whole filter is $+0.06$ to $+0.13$, at OOD length only \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\noindent \textbf{Reading the table.} Parity figures are at $L=128$ trained at
-$L=16$, from one batch of $8$ arms $\times$ $16$ seeds. Torus figures are the
-position-axis factor average over both encodings ($+0.4379$ RoPE, $+0.4851$ PoPE).
-\textbf{Three qualifications the columns cannot carry.}
-(i) The hierarchy row is \emph{not} a parity-at-$L=128$ figure: its accuracy comes
-from runs trained at $L=16$ and $L=512$, and its time saving is measured at
-$L=2048$ --- at $L=128$ the same benchmark shows $+0.4\%$, i.e.\ no saving at all.
-(ii) The InEKF's parameter cost is measured on a $204{,}373$-parameter torus model
-and the path-integration cost on a $199{,}042$-parameter parity model; the two
-percentages are not commensurable, and the InEKF has never been run on parity.
-(iii) PoPE without path integration is a difference between two models sitting on
-the measured floor of $0.506$ ($0.509$ vs $0.530$), with a seed spread wider than
-the gap --- it is a floor artifact, not an effect, and is omitted from the column
-for that reason.
-(iv) The $-22.8\%$ is measured on \textsc{LoopedHourglass} against the unshared
-flat scaffold, so it \emph{bundles} the shared block's parameter saving with the
-pooling's compute saving. Isolated on text, hierarchy alone is $1.23\times$
-throughput ($\approx -18.7\%$) at $-14.1\%$ memory. Attributing $-22.8\%$ to the
-hierarchy axis alone overstates it.
 
 \end{document}
