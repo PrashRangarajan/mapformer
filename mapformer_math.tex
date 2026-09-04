@@ -119,8 +119,16 @@ W_\Delta^{\mathrm{in}}$) reads \emph{every} token, action or observation:
   W_{\mathrm{in}}\in\R^{r\times d},\quad W_{\mathrm{out}}\in\R^{(H\nb)\times r}.
 \end{equation}
 Nothing tells the model which tokens are actions; it must \emph{learn}
-$\Delta \approx 0$ on observations. The rank bottleneck is load-bearing --- at
-$r=1$ the 2D task drops to $0.66$.
+$\Delta \approx 0$ on observations. The paper states only $r \ll d$, ``for instance
+$r=2$'' (App.~A.7).
+
+\begin{quote}\small
+\textbf{Unverified.} A note in this project's log records the bottleneck as
+load-bearing, with $r=1$ dropping the 2D task to $0.66$. \emph{No experiment in
+this repository varies $r$ on the 2D task}, and the locally held paper version
+(v3) contains no rank ablation. The claim is repeated here only to be marked
+unsupported; do not cite it.
+\end{quote}
 
 \paragraph{Step 2 --- integrate.}
 \begin{equation}
@@ -148,12 +156,16 @@ The $\omega$ are learnable, initialised geometrically over $\nb$ blocks:
 \end{equation}
 
 \begin{quote}\small
-\textbf{Correction to the published equation.} The paper prints this (v1 eq.~17,
-v4 eq.~18) with a sign that yields an \emph{increasing} schedule, contradicting its
-own stated boundary condition $\omega_{\min} = \omega_{\max}/\Delta_{\max} \le
-\omega_i \le \omega_{\max}$. The decreasing form above is what satisfies that
-inequality and what matches RoPE's $\theta_i = \text{base}^{-2i/d}$. The typo
-survives into v4; this implementation uses the corrected form.
+\textbf{Correction to the published equation.} Eq.~\eqref{eq:omega} differs from
+the paper (v1/v3 eq.~17, v4 eq.~18) in \emph{two} places, both deliberate. First
+the \textbf{sign}: the paper prints a negative exponent, giving an \emph{increasing}
+schedule that contradicts its own stated boundary condition $\omega_{\min} =
+\omega_{\max}/\Delta_{\max} \le \omega_i \le \omega_{\max}$. Second the
+\textbf{denominator}: the paper writes $n_b$ with $1 \le i \le n_b$, so the endpoint
+$\omega_{\min}$ is never attained; eq.~\eqref{eq:omega} uses $n_b-1$ with
+$0 \le i \le n_b-1$, which hits both endpoints exactly. The corrected form is what
+satisfies the paper's own inequality and what matches RoPE's
+$\theta_i = \text{base}^{-2i/d}$. Both defects survive into v4.
 \end{quote}
 
 \paragraph{RoPE is a special case.} Setting $\Delta_t \equiv 1$ for all $t$ turns
@@ -252,11 +264,17 @@ comparison between them should say so.
 \item \textbf{PoPE plus path integration is the strongest configuration measured.}
   $0.994$ on the same task. Once the phase carries genuine position, sharpening the
   content channel pays.
-\item \textbf{On text they are sub-additive.} PoPE alone $-0.0053$ bpc, path
-  integration alone $-0.0041$, sum $-0.0093$; both together only $-0.0058$. With no
-  spatial extent to encode, both factors end up doing the same job of making the
-  position signal more expressive, so they \emph{substitute} rather than compose.
-  (Both single-axis arms are $n=1$; this is a hypothesis, not a measurement.)
+\item \textbf{On text the picture does not survive its own metric.} Reading the
+  \emph{final} checkpoint gives PoPE alone $-0.0053$ bpc, path integration alone
+  $-0.0041$, sum $-0.0093$, both together $-0.0058$ --- apparently sub-additive.
+  But the within-run checkpoint standard deviation is $0.003$--$0.007$, larger than
+  every one of those quantities, which is why the source file specifies the
+  \textbf{mean of the last five checkpoints} instead. On that metric the numbers
+  are $-0.0041$, $-0.0006$, sum $-0.0047$, both $-0.0052$: path integration alone
+  nearly vanishes and the combination is mildly \emph{super}-additive --- the
+  opposite sign. Both single-axis arms are also $n=1$. \textbf{Nothing about
+  additivity on text is established here in either direction}; the two readings are
+  reported so the fragility is visible rather than resolved by choosing one.
 \end{itemize}
 
 \noindent The general statement: the two mechanisms are independent as
@@ -305,21 +323,32 @@ parameters, with the coarse block's token reduction retained.
 \section{Empirical anchors}
 
 \begin{center}\small
-\begin{tabular}{llrr}
+\begin{tabular}{p{2.6cm}p{2.1cm}p{3.1cm}p{5.6cm}}
 \toprule
 mechanism & sets & parameter cost & measured effect \\
 \midrule
-Path integration & phase $\theta$ & $+448$ ($+0.23\%$) & $+0.078$ parity, $+0.461$ torus \\
-PoPE             & magnitude $\mu$ & $\hd/2 \to \hd$ widening & $+0.027$ with path int.; $-0.021$ without \\
-Recursion        & block reuse & $0$ & $+0.056$ parity; matches $3\times$ params \\
-Hierarchy        & token count & $0$ if shared & $\approx 0$ accuracy; $-22.8\%$ time \\
-InEKF            & $\theta \to \hat\theta$ & $+49{,}600$ & none measurable \\
+Path integration & phase $\theta$ & $+448$ on $199{,}042$ ($+0.23\%$) & $+0.078$ parity ($16/16$); $+0.461$ torus \\[2pt]
+PoPE             & magnitude $\mu$ & $\hd/2 \to \hd$ widening, $+320$ & $+0.027$ \emph{with} path int. Without it, both arms are on the floor --- see note \\[2pt]
+Recursion        & block reuse & $0$ & $+0.056$ parity ($16/16$); matches or beats $3\times$ params \\[2pt]
+Hierarchy        & token count & $0$ if weight-shared & length-dependent: $\approx 0$ at $L=16$, $+0.060$ at $L=512$ ($23/24$ seeds); $-22.8\%$ time \emph{at $L=2048$} \\[2pt]
+InEKF            & $\theta \to \hat\theta$ & $+49{,}600$ on $204{,}373$ ($+24\%$) & no individual \emph{component} is load-bearing; the whole filter is $+0.06$ to $+0.13$, at OOD length only \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\noindent Parity figures are at $L=128$ trained at $L=16$; torus figures are the
-position-axis factor average. Every comparison is one-batch, seed-matched, and
-read against a measured floor.
+\noindent \textbf{Reading the table.} Parity figures are at $L=128$ trained at
+$L=16$, from one batch of $8$ arms $\times$ $16$ seeds. Torus figures are the
+position-axis factor average over both encodings ($+0.4379$ RoPE, $+0.4851$ PoPE).
+\textbf{Three qualifications the columns cannot carry.}
+(i) The hierarchy row is \emph{not} a parity-at-$L=128$ figure: its accuracy comes
+from runs trained at $L=16$ and $L=512$, and its time saving is measured at
+$L=2048$ --- at $L=128$ the same benchmark shows $+0.4\%$, i.e.\ no saving at all.
+(ii) The InEKF's parameter cost is measured on a $204{,}373$-parameter torus model
+and the path-integration cost on a $199{,}042$-parameter parity model; the two
+percentages are not commensurable, and the InEKF has never been run on parity.
+(iii) PoPE without path integration is a difference between two models sitting on
+the measured floor of $0.506$ ($0.509$ vs $0.530$), with a seed spread wider than
+the gap --- it is a floor artifact, not an effect, and is omitted from the column
+for that reason.
 
 \end{document}
