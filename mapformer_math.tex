@@ -548,6 +548,18 @@ position frequencies, indexed per element rather than per pair. So the two are
 neither exactly parameter-matched nor frequency-matched, and the second is what a
 comparison has to contend with.
 
+\paragraph{Why the parameter count barely moves: the content budget is conserved.}
+The widening is not a capacity increase, and the arithmetic says why. Ordinary
+rotary attention groups $\hd$ coordinates into $\hd/2$ complex numbers, each
+carrying a magnitude \emph{and} an intrinsic phase --- $\hd$ real degrees of
+freedom of content per head. PoPE assigns one frequency to each of the $\hd$
+elements and keeps only a magnitude --- again $\hd$. \textbf{PoPE spends the same
+content budget differently}: it buys twice the frequency resolution by giving up
+the per-block phase $\psi$. That is the same trade as the ``restriction'' noted in
+$\S$\ref{sec:pope}, counted rather than described, and it is the reason the two
+models differ by $320$ parameters rather than by a factor.
+
+
 \begin{quote}\small
 \textbf{What this does and does not contaminate.} In the $2\times2$
 $\{$RoPE, PoPE$\}\times\{$index, path-integrated$\}$, both PoPE cells are wide and
