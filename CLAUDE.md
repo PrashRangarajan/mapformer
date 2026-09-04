@@ -1631,6 +1631,131 @@ shortcut). The DIAGNOSTICS that established each verdict are kept at top level -
 they are current results. `RESULTS_INDEX.md` regenerated; it leads with the four
 citable results and the seven standing rules.
 
+## Session 2026-09-03/04 -- rank is the story; Selective RoPE is not
+
+### The headline: r=2 is under-provisioned, and r=4 fixes it for 384 parameters
+
+`RANK_SWEEP.md` (torus, 8 seeds, one batch, lr 1e-3 / 300 ep cosine). Against r=2
+at T=1024: **r4 +0.085 (t 3.57, 8/8, sign p=0.008)**, r8 +0.091, r16 +0.079, r32
++0.095. At T=512: +0.038 / +0.037 / +0.028 / +0.038. **A STEP at r=2, not a
+capacity slope** -- flat from r=4 to r=32.
+
+Selective RoPE's sigmoid gate bought +0.086 at T=1024 for **+8,193** params.
+**r=4 buys +0.085 for +384. Same win, 21x cheaper.** There is nothing to build
+between the two designs.
+
+**Why r=2 loses -- the code it learns is SKEWED** (`ACTION_GEOMETRY.md`). Given 4
+dimensions the model puts its actions in a 2-plane anyway (100.0% of spectral
+energy; 99.96% even at r=32), so the paper's dimensional claim is vindicated. What
+fails is the code r=2 is forced into:
+
+| | opposition (N+S~=0) | \|cos(N,E)\| | obs/action norm |
+|---|---|---|---|
+| r=2 | **0.495** | **0.783** | 0.139 |
+| r=4 | **0.092** | **0.175** | 0.042 |
+
+At r=2 opposite actions fail to cancel by half the action scale and north/east are
+nearly PARALLEL. Not missing capacity -- a badly conditioned basis. **Recommended
+default r=4** (+0.19% params, +0.085 at 4x train length, and seed sd 0.012 vs 0.064
+at T=1024, which matters because sd sets every MDE here).
+
+**Interpretability survives**: project r=4 latents onto their top two singular
+directions and the paper's displacement reading is recovered, from a cleaner model.
+What is lost is that it becomes a step you perform rather than a property by
+construction.
+
+**Untested**: r=3 (would separate "2 displacement axes + 1 action/obs axis" from
+"the optimiser needs slack") and r=1 (the only genuine test of the dimensional
+argument; the "r=1 -> 0.66" claim has NO experiment behind it anywhere here).
+
+### Reproducing the paper's Fig. 4: three of four claims hold
+
+`PAPER_FIG4_REPRO.md`, 8 seeds, our r=2 checkpoints.
+
+| claim | paper | r=2 ours | r=4 |
+|---|---|---|---|
+| C1 \|\|D_act\|\|/\|\|D_obs\|\| | >>1 | **25.0** ok | 35.9 |
+| C2 cos(left,right) | -1 | **-0.729 +/- 0.373** weak | -0.996 +/- 0.004 |
+| C3 \|cos(left,up)\| | >>0 (their LIMITATION) | **0.779** ok | 0.174 |
+| C4 \|\|v_obs\|\|/\|\|v_act\|\| | >>1 | **0.57** FAILS | 0.60 |
+
+**C3 is the paper's OWN reported failure**, with bounded-energy constraints
+proposed as the fix -- I initially read it as our reproduction breaking. **On C3,
+r=4 does what the paper says needs an extra loss term**: |cos| 0.779 -> 0.174 with
+no regulariser and no objective change.
+
+**C4 does not reproduce and is INVERTED.** Hypothesis under test (`run_em_fig4.sh`,
+in flight at time of writing): Fig. 4 shows an **EM** model -- Sec 5.4 is explicitly
+about EM's "two separate pools of neurons ... specialized for either position or
+observation", which MapWM's additive attention lacks by construction. Pre-registered:
+EM >> 1 while WM < 1 means the caption is unscoped and our repro is complete; EM
+also < 1 means a real discrepancy, to be recorded as one.
+
+### Selective RoPE: same slot as MapFormer, and no better here
+
+`SELECTIVE_ROPE.md` (6 arms; 16 seeds parity, 8 torus). Their angle is
+`temp * cumsum(conv1d(W_omega q))` against MapFormer's `omega * cumsum(W_out W_in x)`
+-- both a content-dependent cumsum in the PHASE. PoPE is the orthogonal half
+(magnitude). Priority: SRoPE 21 Nov 2025, MapFormer 24 Nov; **neither cites the
+other in any version**.
+
+**The full generator does not beat MapFormer's on either task** (parity -0.009;
+torus +0.031/+0.048) at +8.2% params, and its three knobs **flip sign between
+tasks**:
+
+| knob | params | parity L=128 | torus T=1024 |
+|---|---|---|---|
+| causal conv | +193 | -0.020 DETECTABLE | -0.064 |
+| no bottleneck | +7,873 | -0.020 DETECTABLE | +0.058 |
+| sigmoid gate | +8,193 | -0.030 DETECTABLE | **+0.086 (8/8)** |
+
+The two ~8k knobs are **indistinguishable from each other** (+0.018 / +0.028, both
+inside MDE), so it was never "the gate". **Gate-as-token-suppressor FALSIFIED**
+(`GATE_PROBE.md`): 1.35x action-vs-observation on the torus where it helps, **1.54x
+on parity where it HURTS**, and 0.416 on observations is nowhere near suppression.
+
+### Other results this session
+
+- **Parity/copy** (`ALGORITHMIC_RESULTS.md`): path integration +0.316/+0.326/+0.167/
+  +0.083/+0.041 at L=16..256, **8/8 seeds at every length**. theta = cumsum mod 2pi
+  IS a parity register. **The copy control FAILED its job** -- no dynamic range at
+  any length (1.000 at L=16, chance at L>=32), so it rules nothing out.
+- **Frontier** (`FRONTIER_ALGORITHMIC.md`, n=16): loop at 199K matches or beats 3
+  real layers at 596K in BOTH position codes; **no interaction** (+0.014). Stacking
+  is additive and nearly free: +0.148 for +448 params, where 3 layers cost +397K for
+  less. Match-Query's +0.315 super-additivity is TASK-SPECIFIC.
+- **Loop x hierarchy** (`LOOP_HIER_COMPUTE.md`): savings compose exactly --
+  -66.5% params, -22.8% time, -19.9% memory at equal accuracy. Length-dependent:
+  hierarchy is 12% SLOWER at L=16.
+- **Hierarchy at L=512** (`LOOP_HIER_PARITY.md`): helps 23/24 seeds. My earlier
+  "the principle is not predictive" was an artifact of testing at L=16 where pooling
+  k=2 leaves 8 coarse tokens and the mechanism cannot operate.
+- **RoPE schedule switched to canonical**, measured first: indistinguishable at
+  every length (`ROPE_CANONICAL.md`).
+
+### Process lessons, each bought by an error here
+
+21. **Read the CODE, not its COMMENT.** eq. (6) of the math note transcribed
+    `model_baseline_rope.py`'s comment (canonical RoPE) while the line beneath it
+    computed something else. Two independent agent checks were needed to catch it.
+22. **A python replacement anchored "from X to end of file" will eat the file.**
+    My docstring edit to `model_rank.py` deleted every class definition. Caught by
+    an import check; no job launched into the window. Always re-import after
+    editing a module.
+23. **Verify WHAT a probe is measuring, not just that it ran.** The first learned-
+    rank probe read the weight-norm magnitude vector `original0`, a (64,1) column,
+    and reported "100% of energy in the top 2 singular values" -- true of any
+    rank-1 object. Reconstruct parameterised weights explicitly.
+24. **Post-hoc truncation is not a sufficiency test.** An unconstrained map could
+    not be projected below rank ~16 (-0.576 at rank 2) while r=4 TRAINS fine.
+    Trained-at-rank and truncated-to-rank are different objects, the way pruning a
+    dense net to 2% says nothing about training one sparse.
+25. **Check whether a "failure to reproduce" is the paper's own reported result.**
+    I presented C3's non-orthogonality as evidence r=2 was defective; the paper
+    documents it in the Fig. 4 caption and proposes a fix for it.
+26. **`pgrep -f` self-match, SECOND form** -- see the dedicated section below.
+    Splitting the pattern protects a script from ITSELF, not from its AUTHOR.
+
 ### RoPE's frequency schedule switched to canonical (2026-09-04)
 
 `model_baseline_rope.py` computed `inv_freq_c = base^(-c/(n_b-1))` while the
