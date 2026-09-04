@@ -35,6 +35,33 @@ for.** And the curve is a STEP, not a slope: r4 through r32 are flat within nois
 (+0.085 to +0.095), so this is not "more capacity is better" -- it is "r=2
 specifically is too tight".
 
+## Why r=2 loses: the code it learns is skewed
+
+`ACTION_GEOMETRY.md` reads the learned latents directly. Given four dimensions the
+model puts its actions in a 2-plane anyway -- 100.0% of the spectral energy, and
+still 99.96% at r=32 -- so the paper's dimensional claim is vindicated. What fails
+is the code r=2 is forced into:
+
+| arm | opposition (N+S~=0) | \|cos(N,E)\| | obs / action norm |
+|---|---|---|---|
+| r=2 | **0.495** | **0.783** | 0.139 |
+| r=4 | **0.092** | **0.175** | 0.042 |
+
+At r=2 opposite actions fail to cancel by half the action scale, and north and east
+are nearly PARALLEL. At r=4 both are 4-5x cleaner and observations sit closer to
+the origin. Squeezing the latent into exactly two dimensions does not produce a
+clean displacement vector -- it produces a badly conditioned one, because the
+optimiser cannot separate the axes inside so tight a space.
+
+**That is the mechanism for the +0.085**: not missing capacity, a skewed basis.
+
+**Interpretability is preserved, with one caveat.** The displacement reading the
+paper relies on is recovered exactly by projecting the r=4 latents onto their top
+two singular directions -- and from a cleaner model. What is lost is that the
+projection becomes a step you perform rather than a property you get by
+construction. If the latent must BE the displacement with no post-processing, r=2
+remains the only option, and it costs 0.085 and a non-orthogonal basis.
+
 ## What this says about the paper's justification
 
 App. A.7 justifies r=2 structurally: r is the dimensionality of the action space,
