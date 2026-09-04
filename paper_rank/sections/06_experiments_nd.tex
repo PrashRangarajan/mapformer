@@ -1,0 +1,42 @@
+\section{The rank threshold across dimension}
+\label{sec:nd}
+
+\PENDING{gates pass and the environment is built; training is not launched.}
+
+\paragraph{What it tests.} Section~\ref{sec:rank} splits rank into a geometric
+threshold at $r=D$ and an optimisation threshold above it, and the two are
+separable because they predict effects in \emph{different cells} of a
+$D\times r$ table. Nothing so far tests the geometric half: every rank
+measurement in this paper is at $D=2$, where the bound saturates and predicts
+nothing.
+
+\paragraph{Design.} A $D$-dimensional torus (\texttt{environment\_nd.py}): $2D$
+actions $\pm e_i$, allocentric aliased observations, the interleaved stream and
+revisit-masked loss of the reference task, and the \emph{directed} walk --- draw
+an action, repeat it $k\sim U\{1..10\}$ times --- mirrored exactly, since it is
+what sets the revisit statistics all $2$D numbers here rest on. State-space size
+is held near-constant so only dimensionality moves: $D=2$ at grid $32$ ($1024$
+cells), $D=3$ at grid $10$ ($1000$), $D=5$ at grid $4$ ($1024$). Arms
+$r\in\{2,D,D{+}2\}$, $8$ seeds, one batch, the recipe of \S\ref{sec:2d}.
+
+\paragraph{Predictions, separated by mechanism.} Geometry predicts an $r=2$
+deficit ordered $D{=}5\gg D{=}3>D{=}2$, tracking the measured separation ratios
+($11\times$, $2.0\times$, $1.0\times$), and predicts \emph{nothing} for $r=D$
+against $r=D{+}2$. Optimisation predicts a further gap from $r=D$ to $r=D{+}2$ of
+roughly the $2$D size ($\approx 0.085$), present at every $D$ and not growing
+with it.
+
+\paragraph{Falsifiers.} $r=2$ unimpaired at $D=5$ kills the geometric account.
+A flat $r{=}D$ vs $r{=}D{+}2$ contrast at every $D$ makes the optimisation half a
+$2$D artifact. An $r=2$ deficit that does not grow with $D$ refutes the packing
+bound as the mechanism, since the exponent is the only thing $D$ changes.
+
+\paragraph{Gates.} Run before any GPU time; all three configurations pass
+(\texttt{ND\_GATES.md}). An $n$-gram on the action stream alone at orders $1$--$5$
+reaches at most $0.536$ against a measured majority-class rate of $0.526$; revisit
+rates are $0.23/0.28/0.62$ with $30$--$79$ scored positions per trajectory. The
+revisit gate is load-bearing rather than a formality: a simple random walk on
+$\Z^{D}$ is transient for $D\ge 3$, so revisits exist here only because the torus
+is finite, and a configuration where they collapsed would present an absence of
+labels as a rank effect. The cross-$D$ difference in revisit rate is a genuine
+confound, and is why the primary contrast is \emph{within} $D$.

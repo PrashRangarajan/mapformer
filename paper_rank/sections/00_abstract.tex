@@ -1,0 +1,32 @@
+\noindent
+Rotary attention writes every logit as a sum of products $\mu\cos\varphi$, and a
+positional mechanism is a choice about one of those two factors. We show that the
+mechanisms which choose the \emph{phase} --- RoPE, MapFormer's path integration,
+and Selective RoPE --- are a single machine: a state accumulated by cumulative
+summation and read out linearly into the angle, differing only in the state's
+rank, the increment's nonlinearity, and its temporal support. The three are
+\emph{nested}, each inclusion removing a constraint rather than adding a
+mechanism, so comparisons among them are never about expressivity. For MapFormer
+the reduction is an identity: all $64$ phase channels are linear readouts of a
+single two-dimensional accumulator.
+
+We then show that rank binds twice. \textbf{Geometrically}, confining the phase to
+an $r$-dimensional subtorus forces the $N^{D}$ positions of a $D$-torus apart by
+no more than $N^{-\max(D/r,1)}$, so there is a hard threshold at $r=D$ and the
+bound saturates above it. \textbf{Empirically}, the rank the original work
+prescribes --- $r=2$, the dimensionality of the action space --- is the worst
+setting we measure in two dimensions, costing $0.085$ accuracy at four times
+training length ($8/8$ seeds) for want of $384$ parameters, and the cause is not
+capacity but a badly conditioned basis: opposite actions fail to cancel by half
+the action scale and the two axes are near-parallel. Since the geometric bound is
+silent at $D=2$, the two thresholds are separable, and we separate them.
+
+Finally we compare against Selective RoPE, an independently-derived mechanism
+occupying the same slot. Its three additions --- a full-rank increment map, a
+causal convolution, and a sigmoid gate --- reverse sign between two tasks, and the
+two that help buy no more than MapFormer's own rank knob at $21\times$ the
+parameters. The gate is not doing what its name suggests: tested directly, it
+fails to suppress the tokens it would need to.
+
+\PENDING{the $D\times r$ experiment, which tests the geometric threshold and would
+account for the $5$D collapse the original work reports without explaining.}

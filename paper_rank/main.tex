@@ -1,0 +1,48 @@
+% paper_rank/main.tex -- the rank paper.
+%
+% Replaces paper/, whose thesis (Kalman correction as inference) is withdrawn
+% and whose lm200 evidence was retracted 2026-07-16. See paper/RETRACTED.md.
+%
+% Build:  cd paper_rank && pdflatex main && bibtex main && pdflatex main && pdflatex main
+%
+% THE MATH LIVES IN ../mapformer_math.tex and is the authoritative statement of
+% the theory. This document is the paper-shaped presentation of it plus the
+% experiments. When the two disagree, the math note is right -- it is the one
+% that gets corrected first.
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx,booktabs,microtype,natbib}
+\usepackage[colorlinks=true,linkcolor=blue!60!black,citecolor=blue!60!black,
+            urlcolor=blue!60!black]{hyperref}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\hd}{d_{\mathrm{head}}}
+\newcommand{\nb}{n_b}
+\DeclareMathOperator*{\cumsum}{cumsum}
+
+% Marks a claim that is not yet supported by a run in this repository.
+\newcommand{\PENDING}[1]{\textcolor{red}{\textbf{[PENDING: #1]}}}
+\usepackage{xcolor}
+
+\title{How Much State Does a Positional Code Need?\\
+       Rank thresholds in content-dependent rotary attention}
+\author{Prashant Rangarajan}
+\date{\today}
+
+\begin{document}
+\maketitle
+\begin{abstract}\input{sections/00_abstract}\end{abstract}
+
+\input{sections/01_introduction}
+\input{sections/02_frame}
+\input{sections/03_rank}
+\input{sections/04_experiments_2d}
+\input{sections/05_experiments_generator}
+\input{sections/06_experiments_nd}
+\input{sections/07_discussion}
+
+\bibliographystyle{plainnat}
+\bibliography{../paper/references}
+\end{document}
