@@ -70,3 +70,41 @@ not oppose at all. Widening to r=4 lands both backbones on the same clean
 geometry to three decimals. The r=2 conditioning failure is therefore not a
 property of the WM attention form; it is a property of the bottleneck, which is
 what the rank account claims.
+
+## Is C4 a metric mismatch rather than a model difference?
+
+Checked, because the published probe applies `norm1` (a LayerNorm) before
+`v_proj`, and a LayerNorm flattens exactly the magnitude difference C4 is about.
+The paper's wording is unambiguous about what it measures -- "the norm of value
+embeddings v_t in the attention layer becomes much bigger for observations than
+actions" -- so three readings of that were tested on the same checkpoints.
+
+| arm | with LN (published) | no LN | contextual |
+|---|---|---|---|
+| MapWM r=2 | 0.57 ± 0.06 | 0.74 ± 0.09 | 0.58 ± 0.10 |
+| MapWM r=4 | 0.60 ± 0.04 | 0.87 ± 0.05 | 0.60 ± 0.06 |
+| MapEM r=2 | 0.90 ± 0.21 | **1.25 ± 0.31** | 0.98 ± 0.21 |
+| MapEM r=4 | 0.64 ± 0.04 | 0.95 ± 0.08 | 0.77 ± 0.04 |
+
+The metric choice moves the number by 30--40% and **does not change the verdict**.
+One of eight cells crosses 1 (MapEM without the LayerNorm, 1.25 ± 0.31), which is
+the paper's direction; none is anywhere near "much bigger than". So C4 is a
+genuine discrepancy whose *magnitude* is metric-dependent, not an artifact of how
+we chose to measure it.
+
+## What this does and does not touch
+
+The paper's Fig. 4 asserts a **double dissociation**: action tokens update
+position and not content, observation tokens update content and not position.
+We reproduce the position half decisively (C1: actions rotate 22--36x more than
+observations, on both backbones) and fail to reproduce the content half. The
+paper's central claim -- that input-dependent SO(2) rotations are what let a
+transformer build a cognitive map -- rests on the position half, on Table 2
+accuracy, and on the baselines, all of which reproduce.
+
+**Untested hypothesis, stated so it is not mistaken for a finding.** There may be
+no gradient pressure to shrink action tokens' value vectors, because attention can
+simply decline to attend to action positions; zeroing the *position* increment for
+observations, by contrast, is forced. If so, C4 would be a property of the
+optimisation rather than of the architecture, and the discriminating measurement
+is the attention mass landing on action positions. Not run.
