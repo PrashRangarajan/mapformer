@@ -30,11 +30,16 @@ REPO="$(cd "$(dirname "$0")" && pwd)"; cd "$REPO/.."
 LOG="$REPO/rope_canonical.log"; echo "queued $(date)" > "$LOG"
 R="$REPO/runs/rope_canon"; mkdir -p "$R"
 
+# Wait for real python trainers only. `pgrep -f` matches ANY process whose command
+# line contains the pattern -- including the interactive shell that typed it -- so
+# splitting the pattern protects the script from ITSELF but not from its author.
+# That blocked the first launch of this script for two hours against zero running
+# jobs. Require comm == python3 and the module path.
+busy(){ ps -u "$USER" -o comm=,args= | awk '$1=="python3" && /mapformer\.train_/' | wc -l; }
 echo "$(date +%H:%M) waiting for the selective batch to clear" >> "$LOG"
 until [ -f "$REPO/.selective_done" ]; do sleep 60; done
-for P in "train_algo""rithmic" "train_var""iant"; do
-  while [ "$(pgrep -u "$USER" -f "$P" | wc -l)" -gt 0 ]; do sleep 30; done
-done
+while [ "$(busy)" -gt 0 ]; do sleep 30; done
+echo "$(date +%H:%M) GPUs clear; proceeding" >> "$LOG"
 
 # register the control now that nothing is spawning from train_variant
 python3 - "$REPO" >> "$LOG" 2>&1 <<'PYEOF'

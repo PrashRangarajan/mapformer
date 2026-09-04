@@ -1631,6 +1631,23 @@ shortcut). The DIAGNOSTICS that established each verdict are kept at top level -
 they are current results. `RESULTS_INDEX.md` regenerated; it leads with the four
 citable results and the seven standing rules.
 
+### The pgrep self-match trap has a SECOND form (2026-09-03)
+
+The documented version is that `pgrep -f` matches the shell that typed the pattern,
+fixed by splitting it (`P="run_thing"".sh"`). **That only protects a script from
+matching ITSELF.** It does not protect it from matching the AUTHOR: a waiter looping
+on `pgrep -u $USER -f train_algorithmic` counts every interactive shell whose
+command line mentions that string -- including the tool call that launched it, and
+every later one that discusses it. `run_rope_canonical.sh` sat in its wait loop for
+**two hours against zero running jobs** for exactly this reason.
+
+The fix that actually works is to require the process be a real interpreter:
+
+    busy(){ ps -u "$USER" -o comm=,args= | awk '$1=="python3" && /mapformer\.train_/' | wc -l; }
+
+`comm` is the executable name, so shells cannot match however they quote the
+pattern. Use this everywhere a script waits on a batch.
+
 ### Harness traps that cost real time (2026-08-19)
 
 Three ways to lose work that have nothing to do with the science:
