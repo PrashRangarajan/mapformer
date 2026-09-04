@@ -23,14 +23,28 @@
 
 \begin{abstract}
 \noindent
-Every positional mechanism in this project is a choice about one of two factors in
-the same product. Writing an attention score in polar form as
-$\mu\,e^{i\varphi}$, \textbf{MapFormer's path integration determines the phase
-$\varphi$} and \textbf{PoPE determines the magnitude $\mu$}. They occupy orthogonal
-halves of the same decomposition, which is why the combination
-(\textsc{MapPoPE}) is not a new mechanism but the conjunction of two independent
-ones. All formulas below are transcribed from the implementation, with the one
-place the source paper's printed equation is corrected noted explicitly.
+Every positional mechanism here is a choice about one of two factors in the same
+product. Writing an attention score in polar form as $\mu\,e^{i\varphi}$,
+\textbf{MapFormer's path integration determines the positional part of the phase
+$\varphi$} and \textbf{PoPE determines the magnitude $\mu$}, which is why the
+combination (\textsc{MapPoPE}) is not a new mechanism but the conjunction of two
+independent choices.
+
+\medskip
+\noindent\textbf{The symmetry is not exact, and the asymmetry matters.} MapFormer
+\emph{adds} a term to the phase and leaves the rest of the attention untouched.
+PoPE does two things: it replaces the magnitude \emph{and} it eliminates the
+content-dependent intrinsic phase $\psi$ that ordinary rotary attention carries.
+Under PoPE each element is a non-negative real times a purely positional phasor, so
+$\tilde q$ can no longer lie anywhere in $\C$. PoPE is therefore a
+\emph{restriction} on the object MapFormer rotates, not merely a different
+parameterisation of one factor --- and that is a plausible source of the
+sub-additivity observed on text ($\S$6).
+
+\medskip
+\noindent Formulas below are transcribed from the implementation, and where the
+implementation departs from the published equation or from canonical RoPE that is
+stated at the point of departure.
 \end{abstract}
 
 \section{The shared frame}
@@ -99,9 +113,20 @@ Standard RoPE fixes the angle to be linear in the token index,
 \begin{equation}
   \theta_t^{(c)} \;=\; t\cdot\omega_c,
   \qquad
-  \omega_c \;=\; \text{base}^{-2c/\hd},
+  \omega_c \;=\; \text{base}^{-2c/\hd}
+  \qquad\text{(canonical)},
 \end{equation}
-with $\omega$ a non-learnable buffer. The magnitude and the intrinsic phase
+with $\omega$ a non-learnable buffer.
+
+\begin{quote}\small
+\textbf{The baseline here is not canonical.} This repository's RoPE arm computes
+$\omega_c = \text{base}^{-c/(\nb-1)} = \text{base}^{-2c/(\hd-2)}$, so that the last
+block lands exactly on $\text{base}^{-1}$. The difference from the canonical form
+is small but nonzero ($1.0\!\times\!10^{-4}$ versus $1.32\!\times\!10^{-4}$ at the
+last block, max absolute difference $0.0116$ across blocks). The convention matches
+the $\nb-1$ endpoint handling used in eq.~\eqref{eq:omega}; the code's own comment
+states the canonical form and is wrong.
+\end{quote} The magnitude and the intrinsic phase
 $\psi$ are whatever $W_Q, W_K$ happen to produce; they are never constrained, and
 in particular $\tilde q$ may lie anywhere in $\C$. Substituting into
 \eqref{eq:relative} gives the familiar dependence on $s-t$ alone.
@@ -168,11 +193,18 @@ satisfies the paper's own inequality and what matches RoPE's
 $\theta_i = \text{base}^{-2i/d}$. Both defects survive into v4.
 \end{quote}
 
-\paragraph{RoPE is a special case.} Setting $\Delta_t \equiv 1$ for all $t$ turns
-\eqref{eq:pi} into $\theta_t = t\,\omega$, recovering RoPE exactly. Path
-integration is therefore not a different family of positional encoding --- it is
-RoPE with a \emph{learned, content-dependent clock rate}, which may be zero or
-negative.
+\paragraph{RoPE is a special case --- of the functional form, not the encoding.}
+If the model learns $\Delta_t \equiv 1$ for all $t$, \eqref{eq:pi} becomes
+$\theta_t = (t{+}1)\,\omega$ (the cumsum is inclusive; only differences enter
+\eqref{eq:relative}, so the offset is immaterial). That is RoPE's \emph{form}, with
+the token index as the clock. It is \emph{not} RoPE identically, for three reasons:
+$\omega$ here is a trained parameter rather than a frozen buffer; its schedule
+spans $[2\pi/64,\,2\pi] = [0.098,\,6.28]$ against RoPE's $[10^{-4},\,1]$, a ratio
+running from $6.3\times$ at $c=0$ to $982\times$ at $c=\nb-1$; and $\Delta_t$ is a
+rank-2 function of the embedding, so $\Delta\equiv 1$ is a hypothesis about what
+was learned, not a setting. The accurate statement is that path integration is
+\textbf{RoPE with a learned, content-dependent clock rate --- which may be zero or
+negative --- over a learned frequency spectrum}.
 
 \medskip
 \noindent In terms of \eqref{eq:polar}: MapFormer sets the \textbf{phase} and
@@ -181,7 +213,17 @@ leaves the magnitude untouched.
 \section{PoPE: an explicit polar parameterisation}
 
 PoPE (Polar Coordinate Positional Embeddings) makes \eqref{eq:polar} explicit
-rather than emergent. Per element $c$ (note: \emph{element}, not 2D block):
+rather than emergent.
+
+\begin{quote}\small
+\textbf{Notation change, from here on.} $\S$1 defined $\nb$ as the number of
+\emph{2D blocks}, $\nb = \hd/2$. PoPE indexes one frequency per \emph{element}, so
+throughout this section and the next $\nb = \hd$. Read $\vartheta_c =
+\text{base}^{-c/\nb}$ below as $\text{base}^{-c/\hd}$; under $\S$1's definition it
+would be wrong by a factor of two in the exponent.
+\end{quote}
+
+\noindent Per element $c$:
 \begin{align}
   \mu^q_{t,c} &= \softplus\!\big(Q_{t,c}\big), &
   \mu^k_{s,c} &= \softplus\!\big(K_{s,c}\big), &&\text{(content, strictly positive)}\\
@@ -189,7 +231,20 @@ rather than emergent. Per element $c$ (note: \emph{element}, not 2D block):
   \varphi^k_{s,c} &= s\,\vartheta_c + \delta_c, &&\text{(position, plus a bias)}
 \end{align}
 with $\vartheta_c = \text{base}^{-c/\nb}$ a \textbf{fixed buffer} and
-$\delta_c$ a learnable per-(head, frequency) constant, clamped for stability.
+$\delta_c$ a learnable per-(head, frequency) constant.
+
+\begin{quote}\small
+\textbf{$\delta_c$ is very nearly inert in practice.} It is clamped to $[-2\pi, 0]$
+in the \emph{forward pass}, not projected onto that range, so its gradient is
+identically zero outside the interval --- and it is initialised at exactly $0$,
+i.e.\ \emph{on} the upper boundary. Any step that would push it positive kills its
+gradient permanently. Measured on trained checkpoints (4 heads $\times$ 64
+frequencies $\times$ 4 layers), \textbf{91--98\% of $\delta_c$ entries end at
+$\ge 0$}, clamped to zero with dead gradient; per-layer means run $-0.0003$ to
+$-0.018$ rad. For roughly 95\% of frequencies, \eqref{eq:pope} is effectively
+$\cos((s-t)\vartheta_c)$. Treat the bias as a nominal degree of freedom, not a
+working one.
+\end{quote}
 The logit is
 \begin{equation}
   \label{eq:pope}
@@ -248,9 +303,31 @@ therefore rebuilds both position modules at the wider count:
   \qquad
   \omega \in \R^{H\times \hd}.
 \end{equation}
-This is a real capacity change, not bookkeeping --- \textsc{MapPoPE} is
-consequently \emph{not} exactly parameter-matched to \textsc{MapWM}, and any
-comparison between them should say so.
+In parameters this is small: at $d_{\text{model}}=128$, $H=2$, one layer, the two
+models are \textbf{204,373} and \textbf{204,693}, a difference of $+320$
+($+0.16\%$) --- $+64$ on $\omega$, $+128$ on $W_{\mathrm{out}}$, $+128$ for
+$\delta_c$. The consequential change is not the parameter count but the
+\textbf{frequency count}: \textsc{MapPoPE} carries twice as many independent
+position frequencies, indexed per element rather than per pair. So the two are
+neither exactly parameter-matched nor frequency-matched, and the second is what a
+comparison has to contend with.
+
+\begin{quote}\small
+\textbf{What this does and does not contaminate.} In the $2\times2$
+$\{$RoPE, PoPE$\}\times\{$index, path-integrated$\}$, both PoPE cells are wide and
+both RoPE cells narrow, so the width confound is \emph{constant along the encoding
+factor}. The position main effect and the interaction are therefore clean; only the
+encoding main effect carries it --- and that is the small one ($+0.011$ on the
+torus against $+0.461$ for position). There is also a direct empirical check: if
+the extra frequencies were doing the work, PoPE with an index phase should beat
+RoPE with an index phase. It does not ($0.509$ vs $0.530$, both on the $0.506$
+floor). The missing control is a \emph{narrow} PoPE at $\nb = \hd/2$ with each
+angle repeated across its pair, which would isolate the parameterisation from the
+width; it has not been run.
+\end{quote}
+
+\noindent The widening is a property of PoPE itself, not of the combination ---
+the index-phase PoPE baseline also runs at $\nb = \hd$.
 
 \section{Why the two compose, and when they do not}
 
@@ -293,7 +370,15 @@ With $B_\vartheta$ a single transformer block and $n$ the loop count,
 \end{equation}
 $\theta$ is computed \emph{once} from the token embeddings and reused, matching
 both parents. Parameter count equals one layer; compute equals $n$ layers.
-Recomputing $\theta$ per iteration is a different model (tested; null).
+
+Carrying a \emph{bounded, gated correction} to $\theta$ across iterations ---
+$\theta \leftarrow \theta_0 + g\cdot\tanh(\text{refine}(h))$ with $g$ initialised
+to zero --- is a different model, and it is null: the learned gate settles at mean
+$|g| \approx 0.083$ with inconsistent sign across seeds, capping the correction at
+$0.14$ rad against a $\theta$ spanning $\sim 2\pi T$. The gate was verified
+escapable (gradient $1.9\times 10^{-3}$ at zero), so the optimiser declined rather
+than failed to express it. A genuine per-iteration recomputation of
+$\omega\cdot\mathrm{cumsum}(\Delta(h^{(j)}))$ has \emph{not} been run.
 
 \paragraph{Level 1.5 invariant EKF (withdrawn; recorded for completeness).}
 A correction applied to $\theta$ before the rotation:
@@ -301,24 +386,52 @@ A correction applied to $\theta$ before the rotation:
   R_t &= \exp\!\big(\mathrm{clamp}(f_R(x_t),-5,5)\big) & &\text{per-token measurement noise}\\
   z_t &= \pi\tanh\!\big(f_z(x_t)\big) & &\text{measurement in }[-\pi,\pi]\\
   \nu_t &= \atantwo\!\big(\sin(z_t-\theta_t),\,\cos(z_t-\theta_t)\big) & &\text{wrapped innovation}\\
-  K_t &= \Pi/(\Pi + R_t),\qquad \Pi = e^{\log\Pi} & &\text{gain, }\Pi\text{ a learned scalar}\\
+  K_t &= \Pi/(\Pi + R_t),\qquad \Pi = e^{\log\Pi} & &\text{gain; }\Pi\in\R^{H\times \nb}\text{, constant in }t\\
   d_t &= (1-K_t)\,d_{t-1} + K_t\,\nu_t, \qquad d_{-1}=0 & &\text{affine scan}\\
   \hat\theta_t &= \theta_t + d_t . & &
 \end{align}
-The recurrence is scalar and affine, so it is one more parallel scan. Empirically
-no component is load-bearing, and the effect does not grow with the drift it is
-meant to correct; the mechanism is withdrawn.
+$\Pi$ is a learned $(H\times\nb)$ constant --- 64 values at the default config, one
+per head and frequency block --- not a scalar; it is constant across \emph{tokens},
+which is what distinguishes Level 1.5 from the full heteroscedastic filter. The
+recurrence is scalar in each channel and affine, so it is one more parallel scan.
 
-\paragraph{Hierarchy (hourglass).} With pooling factor $k$, a causal mean-pool
-$P_k$ and its upsample $P_k^{\dagger}$,
+\paragraph{Initialisation, which turned out to matter.} $\log R$'s head is
+initialised with weights scaled by $0.01$ and bias $0$, giving $R\approx 1$ and
+hence $K \approx 0.5$ \emph{at initialisation} --- corrections at half strength
+before anything is learned. On the multiplicative-attention backbone this destroyed
+the gradient path and diverged 3 of 9 seeds; the fix was a bias of $3.0$, i.e.\
+$K\approx 0.05$, making the filter a near-no-op at init.
+
+\paragraph{Status.} No individual component is load-bearing: the measurement head,
+the per-token gate and the learned $\Pi$ can each be removed alone at no measurable
+cost ($n=5$). The whole filter does have an effect, but only at out-of-distribution
+length ($+0.062$ at $T{=}512$, $+0.124$ at $T{=}1024$, loss-matched), and on a task
+built to supply the drift it is meant to correct the effect \emph{does not grow
+with the drift} --- flat in one recipe, negative in another. The mechanism is
+withdrawn as inference; what survives is stabilisation.
+
+\paragraph{Hierarchy (hourglass).} With pooling factor $k$, a causal
+\emph{shift-then-mean} pool $P_k$ and an upsample $U_k$,
 \begin{equation}
   h \leftarrow B_{\mathrm{pre}}(h), \qquad
-  h \leftarrow h + P_k^{\dagger}\,B_{\mathrm{coarse}}\!\big(P_k h\big), \qquad
+  h \leftarrow h + U_k\,B_{\mathrm{coarse}}\!\big(P_k h\big), \qquad
   h \leftarrow B_{\mathrm{post}}(h),
 \end{equation}
-with the coarse angle pooled alongside the content. Setting all three blocks to
-the \emph{same} shared module gives the weight-shared hourglass: one block's
-parameters, with the coarse block's token reduction retained.
+with the coarse angle pooled alongside the content, and the sequence padded to a
+multiple of $k$ then truncated after $B_{\mathrm{post}}$.
+
+Two details the notation would otherwise hide. $P_k$ right-shifts by $k-1$ with a
+zero pad \emph{before} averaging, so coarse token $j$ is the mean over original
+indices $jk-1,\dots,jk+k-2$ --- not the plain group mean, and the first coarse token
+is dragged toward zero by the pad. And $U_k$ is \texttt{repeat\_interleave}, which
+is \emph{not} the adjoint of $P_k$ (that would carry a $1/k$ and the matching
+shift); it is written $U_k$ rather than $P_k^{\dagger}$ for that reason.
+
+Setting all three blocks to the \emph{same} shared module gives the weight-shared
+hourglass: one block's parameters (204,373, identical to the flat 1-layer model,
+against 600,917 unshared) with the coarse block's token reduction retained. Note
+that every hourglass class ignores \texttt{n\_layers} and is always this 3-block
+scaffold, so a flat control must be built at 3 blocks, not 1.
 
 \section{Empirical anchors}
 
@@ -330,7 +443,7 @@ mechanism & sets & parameter cost & measured effect \\
 Path integration & phase $\theta$ & $+448$ on $199{,}042$ ($+0.23\%$) & $+0.078$ parity ($16/16$); $+0.461$ torus \\[2pt]
 PoPE             & magnitude $\mu$ & $\hd/2 \to \hd$ widening, $+320$ & $+0.027$ \emph{with} path int. Without it, both arms are on the floor --- see note \\[2pt]
 Recursion        & block reuse & $0$ & $+0.056$ parity ($16/16$); matches or beats $3\times$ params \\[2pt]
-Hierarchy        & token count & $0$ if weight-shared & length-dependent: $\approx 0$ at $L=16$, $+0.060$ at $L=512$ ($23/24$ seeds); $-22.8\%$ time \emph{at $L=2048$} \\[2pt]
+Hierarchy        & token count & $0$ if weight-shared & length-dependent: $\approx 0$ at $L=16$, $+0.060$ at $L=512$ ($23/24$ seeds); $-22.8\%$ time \emph{at $L=2048$}, but see note (iv) \\[2pt]
 InEKF            & $\theta \to \hat\theta$ & $+49{,}600$ on $204{,}373$ ($+24\%$) & no individual \emph{component} is load-bearing; the whole filter is $+0.06$ to $+0.13$, at OOD length only \\
 \bottomrule
 \end{tabular}
@@ -350,5 +463,10 @@ percentages are not commensurable, and the InEKF has never been run on parity.
 the measured floor of $0.506$ ($0.509$ vs $0.530$), with a seed spread wider than
 the gap --- it is a floor artifact, not an effect, and is omitted from the column
 for that reason.
+(iv) The $-22.8\%$ is measured on \textsc{LoopedHourglass} against the unshared
+flat scaffold, so it \emph{bundles} the shared block's parameter saving with the
+pooling's compute saving. Isolated on text, hierarchy alone is $1.23\times$
+throughput ($\approx -18.7\%$) at $-14.1\%$ memory. Attributing $-22.8\%$ to the
+hierarchy axis alone overstates it.
 
 \end{document}
