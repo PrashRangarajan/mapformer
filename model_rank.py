@@ -25,25 +25,26 @@ If r=8 at +1,152 captures the +0.086 the gate bought for +8,193, the answer to
 machinery -- you need to widen the bottleneck MapFormer already has, at a seventh
 of the cost, with no new mechanism and no conv to pay for.
 
-This also tests the paper's own choice. App. A.7 says only r << d, "for instance
-r = 2". The one claim that r is load-bearing (r=1 -> 0.66) has no experiment behind
-it anywhere in this repository.
+WHAT THE PAPER ACTUALLY ARGUES, checked rather than assumed. App. A.7: "the
+internal projection W_in in R^{d x r} (r << d) maps the high-dimensional input X to
+a low-dimensional Delta_in (for instance, in a 2D environment, Delta_in could be
+the 2D movement vector Delta_tk, where r = 2)". App. A.1: "a in R^r (e.g. in 2D,
+r = 2 and 'move right')".
+
+So r is meant to be the DIMENSIONALITY OF THE ACTION SPACE, and the bottleneck is
+an INDUCTIVE BIAS rather than a capacity budget -- it forces the rotation to depend
+on exactly a 2-vector, which is what a 2D displacement is. That is not arbitrary,
+and it checks out: the torus's four actions are +/-x and +/-y, so two dimensions
+span them exactly, and observations need Delta = 0, which lies in any subspace.
+**r = 2 is sufficient by construction on this task.**
+
+Consequently the paper predicts these arms are FLAT, and flat is the informative
+outcome: it would confirm the inductive-bias account AND rule capacity out as the
+explanation for Selective RoPE's ~8k-parameter torus win, leaving optimisation
+(a full-rank map is better conditioned than a rank-2 one) as the live candidate.
+
+The separate claim that r=1 collapses to 0.66 in 2D has no experiment behind it
+anywhere in this repository -- see mapformer_math.tex. Note that r=1 would be a
+genuine test of the bias, since one dimension cannot span two independent axes;
+these arms only probe the over-provisioned side.
 """
-from mapformer.model import MapFormerWM
-
-
-def _rank(r):
-    class _R(MapFormerWM):
-        def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
-                     dropout=0.1, grid_size=64, bottleneck_r=2, **kw):
-            super().__init__(vocab_size, d_model, n_heads, n_layers, dropout,
-                             grid_size, r)
-    _R.__name__ = f"MapFormerWM_r{r}"
-    _R.__doc__ = f"MapFormer-WM with bottleneck rank r={r}."
-    return _R
-
-
-MapFormerWM_r4 = _rank(4)
-MapFormerWM_r8 = _rank(8)
-MapFormerWM_r16 = _rank(16)
-MapFormerWM_r32 = _rank(32)

@@ -17,16 +17,41 @@
 #   r=32  210,133  +5,760
 #   ---- for comparison: the sigmoid gate cost +8,193 and bought +0.086 ----
 #
-# PRE-REGISTERED:
-#   some r reaches the gate's +0.086 at a fraction of its cost -> the answer to
-#       "something between MapFormer and Selective RoPE" is that you do not need
-#       their machinery, only a wider bottleneck. Report the cheapest r that gets
-#       there, and the parameter ratio.
-#   accuracy flat in r -> capacity in the ANGLE GENERATOR is not what the gate
-#       bought, the indistinguishability of the two ~8k arms was coincidence, and
-#       the gate needs its own explanation. Do not then claim capacity.
-#   accuracy falls with r -> r=2 is load-bearing after all, which would be the
-#       first evidence for the paper's choice in this repository.
+# WHAT THE PAPER ACTUALLY SAYS, and it is not "r=2 was a guess". App. A.7:
+#   "the internal projection W_in in R^{d x r} (r << d) maps the high-dimensional
+#    input X to a low-dimensional Delta_in (for instance, in a 2D environment,
+#    Delta_in could be the 2D movement vector Delta_tk, where r = 2)"
+# and App. A.1: "a in R^r (e.g. in 2D, r = 2 and 'move right')". So r is meant to
+# be the DIMENSIONALITY OF THE ACTION SPACE. The bottleneck is an inductive bias,
+# not a capacity budget: it forces the angle to depend on exactly a 2-vector,
+# which is what a 2D displacement is. It checks out arithmetically -- the torus's
+# four actions are +/-x and +/-y, so two dimensions span them exactly, and
+# observations need Delta = 0, which lies in any subspace. r=2 is SUFFICIENT BY
+# CONSTRUCTION here.
+#
+# PRE-REGISTERED, with the paper's prediction named first because it is the
+# hypothesis this run is most likely to confirm:
+#   accuracy FLAT in r -> the paper's inductive-bias story is right, two dimensions
+#       suffice for a 2D environment, and CAPACITY IS NOT what Selective RoPE's
+#       ~8k-parameter knobs bought on the torus. The gate's +0.086 then needs
+#       another explanation, and the leading candidate is OPTIMISATION: a full-rank
+#       map is better conditioned than a rank-2 one, which is a different claim
+#       from "more capacity". That prediction is testable the way this project has
+#       twice before -- an optimisation artifact shrinks when the baseline trains
+#       better (the loop went +0.373 -> +0.146 across recipes, and its
+#       training-length win was +0.052 raw against +0.006 loss-matched).
+#   accuracy RISES with r -> the bottleneck is under-provisioned even for a 2D
+#       environment, contradicting the paper's own justification, and the cheapest
+#       r that reaches the gate's +0.086 is the answer to "something between
+#       MapFormer and Selective RoPE". Report that r and the parameter ratio.
+#   accuracy FALLS with r -> the bias is actively load-bearing and over-provisioning
+#       costs. This would be the first evidence anywhere in this repository for the
+#       paper's choice, which is currently asserted and never measured.
+#
+# NOTE ON A RETRACTION THIS REPLACES. An earlier version of this header framed
+# "flat in r" as the boring outcome and r=2 as an unmotivated default. That was
+# wrong: it read the paper's "for instance" as hedging when it is illustrating a
+# principle (r = dim of the action space). Flat is the paper-confirming result.
 #
 # Torus, T=128 train, eval to 1024, 8 seeds, one batch, same recipe as the
 # selective run so the gate's numbers are directly comparable.
