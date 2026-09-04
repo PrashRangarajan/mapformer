@@ -48,3 +48,22 @@ anywhere in this repository -- see mapformer_math.tex. Note that r=1 would be a
 genuine test of the bias, since one dimension cannot span two independent axes;
 these arms only probe the over-provisioned side.
 """
+
+from mapformer.model import MapFormerWM
+
+
+def _rank(r):
+    class _R(MapFormerWM):
+        def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
+                     dropout=0.1, grid_size=64, bottleneck_r=2, **kw):
+            super().__init__(vocab_size, d_model, n_heads, n_layers, dropout,
+                             grid_size, r)
+    _R.__name__ = f"MapFormerWM_r{r}"
+    _R.__doc__ = f"MapFormer-WM with bottleneck rank r={r}."
+    return _R
+
+
+MapFormerWM_r4 = _rank(4)
+MapFormerWM_r8 = _rank(8)
+MapFormerWM_r16 = _rank(16)
+MapFormerWM_r32 = _rank(32)

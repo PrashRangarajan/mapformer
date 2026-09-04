@@ -1631,6 +1631,25 @@ shortcut). The DIAGNOSTICS that established each verdict are kept at top level -
 they are current results. `RESULTS_INDEX.md` regenerated; it leads with the four
 citable results and the seven standing rules.
 
+### RoPE's frequency schedule switched to canonical (2026-09-04)
+
+`model_baseline_rope.py` computed `inv_freq_c = base^(-c/(n_b-1))` while the
+comment above the line claimed the canonical `base^(-2c/d_head)` -- the file
+contradicted itself. The `n_b-1` form reaches exactly `base^-1` at the last block
+and matched `PathIntegrator`'s endpoint handling, so it was plausibly deliberate,
+but nothing had ever tested it.
+
+**Measured before switching** (`ROPE_CANONICAL.md`, n=16, parity, one batch): the
+two schedules are indistinguishable at every length. Largest contrast -0.0035
+against an MDE of 0.0169 at L=128; sign counts 7-8 of 16, i.e. coin flips. The
+schedules differ by up to 25% only at frequencies whose wavelength is 47k-63k
+tokens -- DC over anything run here -- and agree to within 1% over the
+high-frequency blocks that actually resolve position.
+
+Switched to canonical. **`inv_freq` is a registered buffer**, so it lives in the
+state dict: RoPE checkpoints trained before this date keep their own schedule when
+loaded and remain valid. Only future runs change.
+
 ### The pgrep self-match trap has a SECOND form (2026-09-03)
 
 The documented version is that `pgrep -f` matches the shell that typed the pattern,

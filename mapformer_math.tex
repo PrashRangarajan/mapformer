@@ -113,20 +113,9 @@ Standard RoPE fixes the angle to be linear in the token index,
 \begin{equation}
   \theta_t^{(c)} \;=\; t\cdot\omega_c,
   \qquad
-  \omega_c \;=\; \text{base}^{-2c/\hd}
-  \qquad\text{(canonical)},
+  \omega_c \;=\; \text{base}^{-2c/\hd} \;=\; \text{base}^{-c/\nb},
 \end{equation}
-with $\omega$ a non-learnable buffer.
-
-\begin{quote}\small
-\textbf{The baseline here is not canonical.} This repository's RoPE arm computes
-$\omega_c = \text{base}^{-c/(\nb-1)} = \text{base}^{-2c/(\hd-2)}$, so that the last
-block lands exactly on $\text{base}^{-1}$. The difference from the canonical form
-is small but nonzero ($1.0\!\times\!10^{-4}$ versus $1.32\!\times\!10^{-4}$ at the
-last block, max absolute difference $0.0116$ across blocks). The convention matches
-the $\nb-1$ endpoint handling used in eq.~\eqref{eq:omega}; the code's own comment
-states the canonical form and is wrong.
-\end{quote} The magnitude and the intrinsic phase
+with $\omega$ a non-learnable buffer. The magnitude and the intrinsic phase
 $\psi$ are whatever $W_Q, W_K$ happen to produce; they are never constrained, and
 in particular $\tilde q$ may lie anywhere in $\C$. Substituting into
 \eqref{eq:relative} gives the familiar dependence on $s-t$ alone.

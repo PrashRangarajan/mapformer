@@ -36,9 +36,17 @@ class MapFormerWM_RoPE(nn.Module):
 
         self.token_emb = nn.Embedding(vocab_size, d_model)
 
-        # Precompute RoPE base frequencies (standard RoPE: θ_i = base^(-2i/d_head))
+        # Canonical RoPE frequencies: theta_i = base^(-2i/d_head) = base^(-i/n_b).
+        # Until 2026-09-04 this line used base^(-i/(n_b - 1)), which reaches exactly
+        # base^-1 at the last block and matched PathIntegrator's endpoint handling,
+        # while the comment above it claimed the canonical form -- the file
+        # contradicted itself. Measured before switching (ROPE_CANONICAL.md, n=16 on
+        # parity): the two schedules are indistinguishable at every length, largest
+        # contrast -0.0035 against an MDE of 0.0169 at L=128, sign counts 7-8/16.
+        # inv_freq is a registered buffer, so checkpoints trained before this date
+        # keep their own schedule on load and remain valid.
         k_idx = torch.arange(self.n_blocks, dtype=torch.float32)
-        inv_freq = base ** (-k_idx / max(self.n_blocks - 1, 1))
+        inv_freq = base ** (-k_idx / self.n_blocks)
         self.register_buffer("inv_freq", inv_freq)  # (n_blocks,)
 
         self.layers = nn.ModuleList([
