@@ -269,8 +269,18 @@ any version. Its angle is, in the present notation,
 with $\kappa$ a causal depthwise kernel of width $4$ and $\tau$ a learned
 temperature. It is \eqref{eq:gen} at $m = H\nb$: \textbf{$64$ channels integrating
 $64$ independent signals}, against MapFormer's $64$ readouts of one
-two-dimensional accumulator. There is no rank bottleneck, so no cross-channel
-constraint, and $K=4$ rather than $1$.
+two-dimensional accumulator. Their \emph{baseline} has no rank bottleneck, so no
+cross-channel constraint, and $K>1$.
+
+\begin{quote}\small
+\textbf{Their stability fixes converge on ours.} The paper reports that Selective
+RoPE trains unstably at higher learning rates and that this is remedied ``by either
+placing a weight norm on the $\omega$ projection or using a low-rank MLP with rank
+$8$ or $16$''. A documented variant of Selective RoPE is therefore \emph{low-rank},
+at a rank in the same range this project measures as sufficient. Calling it ``the
+unconstrained generator'' is accurate for the arm implemented here and for their
+headline design, and overstates the distance between the two papers.
+\end{quote}
 
 \begin{quote}\small
 \textbf{Scope of every Selective-RoPE number below.} The arms here swap the
@@ -279,7 +289,12 @@ once from the token embeddings before the blocks, not per head and per layer fro
 that layer's queries. At one layer the distinction is nearly vacuous, since
 $q = W_Q\,\mathrm{LN}(x)$ is itself a learned linear map of the token. At depth it
 is not, and $\S$\ref{sec:place} records it as the one axis on which the two designs
-remain uncompared. \textbf{A negative result here does not refute Selective RoPE}; it is
+remain uncompared. \emph{Correction:} an earlier version of this box also called the
+token-versus-query source a deviation. It is not --- their own ablation moves to the
+input: ``we find that this can be remedied by using the $\ell_2$-normalised input
+$x_t$, instead of the queries $q_t$, to parametrise the rotation angles $\omega$''.
+Only the per-layer half of the placement gap is real.
+\textbf{A negative result here does not refute Selective RoPE}; it is
 evidence about the generator's components in this setting, on tasks their paper
 does not run.
 \end{quote}
@@ -444,6 +459,35 @@ homomorphism. The word ``commutativity'' does not appear once in Selective RoPE.
 The measured cost of giving it up is $-0.020$ on parity and $-0.064$ on the torus,
 for $193$ parameters --- the only knob in $\S$\ref{sec:measured} that is free and negative on both
 tasks, and the only one whose sign was predicted.
+
+\paragraph{The $K$ axis is sharper than ``blurring'', and their own derivation says
+so.} Selective RoPE motivates its convolution as a \emph{shift}: ``the shift over
+the queries $q$ can be expressed by a 1d short-convolution'', from an angle
+$\phi_j = \langle \omega_j,\, q_t - q_{t-1}\rangle$. That is a first difference,
+$K=2$ with weights $(-1,+1)$ --- and a first difference inside a cumulative sum
+\emph{telescopes}:
+\begin{equation}
+  \sum_{u\le t}\big(z_u - z_{u-1}\big) \;=\; z_t - z_0 .
+\end{equation}
+With the exact difference kernel the angle is a function of the \emph{current}
+token alone and no accumulation is left. So $K$ does not interpolate between sharp
+and blurred increments; it interpolates between \textbf{accumulation} ($K=1$,
+identity kernel) and \textbf{no accumulation} (the differencer), and the kernel's
+DC gain says where a trained model sits.
+
+\begin{quote}\small
+\textbf{Measured, and the answer is neither} (\texttt{CONV\_KERNEL\_PROBE.md}).
+Projecting the learned unit-normalised kernels onto the identity and onto the
+differencer gives $0.423$--$0.470$ and $0.345$--$0.463$ across both tasks, against
+$0.424$ for a kernel drawn uniformly at random. The convolution does not learn to
+get out of the way, and does not learn the difference its own derivation motivates
+--- it stays an arbitrary smear of the increment applied before accumulation, which
+is a sufficient account of the cost. \textbf{The width $K=4$ used here is an
+assumption}, following the Mamba/GLA convention; the paper states no width in its
+pseudocode, its two ablation tables or its hyperparameter appendices, and $K=2$
+with a fixed difference kernel --- the setting its derivation specifies --- has not
+been run.
+\end{quote}
 
 \section{The magnitude axis: PoPE}
 \label{sec:pope}

@@ -43,6 +43,15 @@ from mapformer.model import MapFormerWM
 class _CausalDepthwiseConv(nn.Module):
     """Depthwise conv over POSITIONS, left-padded so position t sees only <= t."""
 
+    # KERNEL WIDTH IS OUR ASSUMPTION, NOT THEIRS. The Selective RoPE paper states
+    # no width -- not in its pseudocode (their Fig. 4), its two ablation tables, or
+    # its hyperparameter appendices. 4 is the Mamba / GLA short-conv convention
+    # (d_conv = 4). Their DERIVATION specifies something different and narrower:
+    # the conv arises from the shift q_t - q_{t-1}, i.e. a FIRST DIFFERENCE at
+    # width 2. That matters because a first difference inside a cumsum telescopes
+    # -- cumsum(diff(u))_t = u_t - u_0 -- so the exact difference kernel removes
+    # the accumulation entirely. See CONV_KERNEL_PROBE.md: the learned kernels are
+    # neither identity nor differencer, they sit at the random baseline.
     def __init__(self, channels: int, kernel: int = 4):
         super().__init__()
         self.kernel = kernel
