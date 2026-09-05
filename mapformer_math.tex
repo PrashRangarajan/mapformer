@@ -152,9 +152,13 @@ generator & $m$ & $\varphi$ & $K$ & $A$ \\
 \midrule
 RoPE           & $1$      & $\equiv 1$                               & $1$ & $\omega$ (frozen) \\
 MapFormer      & $r$      & $W_{\mathrm{in}}x$                       & $1$ & $\operatorname{diag}(\omega)\,W_{\mathrm{out}}$ \\
-Selective RoPE & $H\nb$   & $\sigma(W_g x)\odot(\kappa * W_\omega x)$ & $4$ & $\tau I$ \\
+Selective RoPE & $H\nb$   & $\sigma(W_g x)\odot(\kappa * W_\omega x)$ & $4^{\dagger}$ & $\tau I$ \\
 \bottomrule
 \end{tabular}
+
+\smallskip
+{\footnotesize $^{\dagger}$ our choice, not theirs: the paper states no
+convolution width, and its own derivation implies $K=2$. See $\S$\ref{sec:group}.}
 \end{center}
 
 \noindent Because the state is accumulated and the readout is linear, all three
@@ -266,8 +270,9 @@ any version. Its angle is, in the present notation,
   \Big[\underbrace{\sigma\!\left(W_g x_u\right)}_{\text{gate}}\odot
        \underbrace{\left(\kappa * W_\omega x\right)_u}_{\text{smoothed increment}}\Big]^{(h,c)},
 \end{equation}
-with $\kappa$ a causal depthwise kernel of width $4$ and $\tau$ a learned
-temperature. It is \eqref{eq:gen} at $m = H\nb$: \textbf{$64$ channels integrating
+with $\kappa$ a causal depthwise kernel and $\tau$ a learned temperature. (We take
+the width to be $4$; the paper states none, and $\S$\ref{sec:group} shows why that
+matters more than it looks.) It is \eqref{eq:gen} at $m = H\nb$: \textbf{$64$ channels integrating
 $64$ independent signals}, against MapFormer's $64$ readouts of one
 two-dimensional accumulator. Their \emph{baseline} has no rank bottleneck, so no
 cross-channel constraint, and $K>1$.
@@ -308,7 +313,7 @@ rather than adding a mechanism:
   \;\subset\;
   \underbrace{\text{MapFormer}}_{m=r,\;\varphi\text{ linear},\;K=1}
   \;\subset\;
-  \underbrace{\text{Selective RoPE}}_{m=H\nb,\;\varphi\text{ gated},\;K=4}.
+  \underbrace{\text{Selective RoPE}}_{m=H\nb,\;\varphi\text{ gated},\;K>1}.
 \]
 The right-hand inclusion is exact up to a saturating limit: a rank-$r$ $W_\omega$
 lies in the span of a full-rank one, the delta kernel $\kappa=(0,0,0,1)$ recovers
@@ -442,6 +447,7 @@ a single bit and $\rho^{*}=1$, the unconstrained generator does measurably worse
 that is the only place in these experiments where incoherence has a price.
 
 \subsection{What $K > 1$ costs: the group structure}
+\label{sec:group}
 
 With $K=1$ and $\varphi$ linear, \eqref{eq:gen} is exactly the action of the free
 commutative monoid on tokens: the phase depends on the \emph{multiset} of tokens
@@ -538,7 +544,8 @@ needed:
   \cos^K_{s,c} &= \cos\varphi_{s,c}\cos\delta_c - \sin\varphi_{s,c}\sin\delta_c, &
   \sin^K_{s,c} &= \sin\varphi_{s,c}\cos\delta_c + \cos\varphi_{s,c}\sin\delta_c,\\
   a_{ts} &= \tfrac{1}{\sqrt{\hd}}\Big[
-      (\mu^q\!\cos\varphi)_t \cdot (\mu^k\!\cos^K)_s^{\top}
+      (\mu^q\!\cos\varphi)_t \cdot (\mu^k\!\cos^K)_s^{\top}\notag\\
+    &\qquad\quad
     + (\mu^q\!\sin\varphi)_t \cdot (\mu^k\!\sin^K)_s^{\top}\Big].
 \end{align}
 
@@ -564,7 +571,7 @@ PoPE's positional phase $t\vartheta_c$ with the path-integrated angle
   a_{ts} \;=\; \frac{1}{\sqrt{\hd}}\sum_{c}
     \underbrace{\softplus(Q_{t,c})\,\softplus(K_{s,c})}_{\text{PoPE: magnitude from content}}
     \;\cos\Big(
-      \underbrace{\theta_s^{(c)} - \theta_t^{(c)}}_{\text{MapFormer: phase from the path integral}}
+      \underbrace{\theta_s^{(c)} - \theta_t^{(c)}}_{\text{MapFormer: path-integrated phase}}
       + \;\underbrace{\delta_c}_{\text{PoPE bias}}\Big),}
 \end{equation}
 with $\theta^{(c)}_t = \omega^{(c)}\sum_{u\le t}\Delta^{(c)}_u$ as in
