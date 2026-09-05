@@ -70,6 +70,10 @@ def main():
     ap.add_argument("--env-seed", type=int, default=10000)
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--title", default=None,
+                    help="Header for the generated file. The default describes "
+                         "the refine-theta experiment this evaluator was written "
+                         "for, which mislabels every other use of it.")
     a = ap.parse_args()
     dev = torch.device(a.device)
 
@@ -96,14 +100,19 @@ def main():
                     print(f"p={p:.2f} {v:14s} s{s} T={T:4d}  acc {acc:.4f}  nll {nl:.3f}", flush=True)
                 del m; torch.cuda.empty_cache()
 
-    out = ["# Does refining theta help when the ACTIONS ARE NOISY?", "",
-           "The refine-theta loop was first tested on Match-Query, where actions are clean",
-           "and the query phase is blind -- neither half of the InEKF premise holds there, and",
-           "the null merely replicated a known negative. Action noise is the regime the",
-           "mechanism was built for: the action RECORD is corrupted while the agent moves per",
-           "the true action, so the path integral drifts and the observations (which reflect",
-           "TRUE position) carry the correction signal.", "",
-           "Torus paper task, held-out map, evaluated under the same noise it trained on.", ""]
+    if a.title:
+        out = [f"# {a.title}", "",
+               "Torus paper task, held-out map, evaluated under the same noise it "
+               "trained on.", ""]
+    else:
+      out = ["# Does refining theta help when the ACTIONS ARE NOISY?", "",
+             "The refine-theta loop was first tested on Match-Query, where actions are clean",
+             "and the query phase is blind -- neither half of the InEKF premise holds there, and",
+             "the null merely replicated a known negative. Action noise is the regime the",
+             "mechanism was built for: the action RECORD is corrupted while the agent moves per",
+             "the true action, so the path integral drifts and the observations (which reflect",
+             "TRUE position) carry the correction signal.", "",
+             "Torus paper task, held-out map, evaluated under the same noise it trained on.", ""]
     for T in a.lengths:
         out += [f"## T={T}", "",
                 "| p_action_noise | " + " | ".join(a.variants) + " |",
