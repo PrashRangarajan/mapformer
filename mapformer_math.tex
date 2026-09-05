@@ -477,6 +477,16 @@ saturation itself is confirmed by the $D{=}2,\rho{=}4$ row, whose exponent stays
 at $-1$ rather than falling to the naive $-0.5$.
 
 \begin{quote}\small
+\textbf{TESTED, AND IT DOES NOT BIND} ($\S$\ref{sec:predict}). The bound is
+correct and its exponent is verified, but at $n=8$ across $D\in\{2,3,5\}$ two of
+the three pre-registered falsifiers fired: $r=2$ is not impaired at $D=5$ --- it
+posts its \emph{highest} score there ($0.896$ at $T{=}512$, against $0.848$ at
+$D{=}2$ and $0.707$ at $D{=}3$) --- and the $r=2$ deficit does not grow with $D$.
+Read what follows as a true statement about the geometry of the code that is not
+the reason the code fails.
+\end{quote}
+
+\begin{quote}\small
 \textbf{What this does \emph{not} explain.} At $D=2$ both $\rho=2$ and $\rho=4$
 sit at the floor exponent, so the bound predicts \emph{no} advantage for $r=4$ on
 a two-dimensional grid. One is measured, at $+0.085$ and $8/8$ seeds. The
@@ -977,8 +987,45 @@ ratio $r{=}D$ : $r{=}2$ & $1.0\times$ & $2.0\times$ & $\mathbf{11\times}$ \\
 \noindent The two are separable because they act on different cells of the same
 table, which is the reason for running all three ranks rather than two.
 
-\paragraph{Falsifiers.} $r=2$ unimpaired at $D=5$ kills the geometric account
-entirely and with it the explanation of Table 6. A flat $r{=}D$ versus $r{=}D{+}2$
+\paragraph{RESULT ($n=8$, one batch, \texttt{DXR\_RANK\_THRESHOLD.md}).}
+
+\begin{center}\small
+\begin{tabular}{lccc}
+\toprule
+$T=512$ & $D=2$ (grid 32) & $D=3$ (grid 10) & $D=5$ (grid 4) \\
+\midrule
+$r=2$        & $0.848 \pm 0.056$ & $0.707 \pm 0.077$ & $\mathbf{0.896 \pm 0.076}$ \\
+$r=D$        & ---               & $0.793 \pm 0.092$ & $0.877 \pm 0.072$ \\
+$r=D{+}2$    & $0.959 \pm 0.036$ & $0.860 \pm 0.055$ & $0.950 \pm 0.045$ \\
+\midrule
+$r{=}D{+}2$ minus $r{=}D$ & $+0.110$ & $+0.067$ & $+0.073$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent \textbf{The geometric half is refuted and the optimisation half
+stands.} Two of the three falsifiers below fired. $r=2$ is not impaired at $D=5$;
+it posts its best score of the three conditions there. And its deficit does not
+grow with $D$: at $T{=}512$ it is $+0.110$, $+0.153$, $+0.055$ for $D=2,3,5$ ---
+\emph{smallest} where the bound says it should be largest. Meanwhile the
+$r{=}D \to r{=}D{+}2$ gap is present at every $D$ and does not grow with it
+($+0.110 / +0.067 / +0.073$), which is exactly what the optimisation half
+predicted and what geometry predicted should not exist at all.
+
+\textbf{The account of Table 6 offered above is therefore WITHDRAWN.} The paper's
+$5$D collapse is not explained by $r=2$; in this reproduction $r=2$ handles $D=5$
+better than it handles $D=2$. Whatever causes their collapse, rank deficiency of
+the position code is not it.
+
+\begin{quote}\small
+\textbf{Rule 9 flag on one cell.} At $D=2$, $T=128$, $r(\text{final loss},
+\text{accuracy}) = -1.000$ over $16$ runs, so that column carries no information
+the training loss does not and its $+0.015$ must not be read as an architecture
+effect. The $T{=}512$ columns are informative ($r = -0.70 / -0.75 / -0.18$).
+\end{quote}
+
+\paragraph{Falsifiers (as pre-registered).} $r=2$ unimpaired at $D=5$ kills the
+geometric account entirely and with it the explanation of Table 6. A flat $r{=}D$ versus $r{=}D{+}2$
 contrast at every $D$ makes the optimisation half a $2$D artifact. A deficit at
 $r=2$ that does \emph{not} grow with $D$ leaves both halves standing but refutes
 \eqref{eq:packing} as the mechanism, since the exponent is the only thing $D$
