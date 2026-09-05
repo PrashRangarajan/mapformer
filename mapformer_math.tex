@@ -315,11 +315,52 @@ rather than adding a mechanism:
   \;\subset\;
   \underbrace{\text{Selective RoPE}}_{m=H\nb,\;\varphi\text{ gated},\;K>1}.
 \]
-The right-hand inclusion is exact up to a saturating limit: a rank-$r$ $W_\omega$
-lies in the span of a full-rank one, the delta kernel $\kappa=(0,0,0,1)$ recovers
-$K=1$, per-channel scales absorb $\omega$ into the rows of $W_\omega$, and
-$\sigma(\cdot)\to\text{const}$ as the gate's bias grows. The left-hand inclusion is
-of functional form only, with the three qualifications recorded in $\S$3.
+The right-hand inclusion is \textbf{exact}, and it is worth constructing rather
+than asserting. Given MapFormer's $(W_{\mathrm{in}}, W_{\mathrm{out}}, \omega)$,
+set Selective RoPE's parameters as follows.
+
+\begin{enumerate}\itemsep2pt
+\item[\textbf{1}] $\kappa :=$ the delta at the \emph{last} tap, $(0,0,0,1)$. The
+  convolution is left-padded by $K-1$, so $\text{out}_t = \sum_j w_j\,u_{t+j-3}$
+  and this weight gives $\text{out}_t = u_t$: \textbf{$K$ collapses $4\to1$}.
+\item[\textbf{2}] $W_g := 0$. The gate is then the \emph{constant}
+  $\sigma(b_g)\in(0,1)^{H\nb}$ for \emph{any} bias, and a constant is absorbed at
+  step 3.
+\item[\textbf{3}] $W_\omega := \operatorname{diag}(\operatorname{vec}\omega)\,
+  W_{\mathrm{out}}W_{\mathrm{in}} \,/\, \big(\tau\,\sigma(b_g)\big)$, row-wise.
+  Legal because the full-rank parameterisation does not \emph{constrain} rank, and
+  weight normalisation represents any matrix (rows $g_i v_i/\lVert v_i\rVert$,
+  with $g_i=0$ for a zero row).
+\item[\textbf{4}] $b_\omega := 0$, or MapFormer acquires an index-RoPE component.
+\end{enumerate}
+
+\noindent Verified against both implementations
+(\texttt{verify\_inclusion.py}): $\max|\Delta\cos| = 1.5\times10^{-5}$ over a
+length-64 stream.
+
+\begin{quote}\small
+\textbf{Correction.} An earlier version of this paragraph called the gate step a
+\emph{saturating limit}. It is not a limit: $W_g = 0$ makes the gate exactly
+constant for any bias, and the constant is absorbed. The inclusion is exact, not
+asymptotic.
+\end{quote}
+
+\paragraph{The inclusion is on the function, not the state.} Selective RoPE
+realises MapFormer's $\theta$ with a $64$-dimensional state confined to an
+$r$-dimensional subspace: the constructed $W_\omega$ has rank $2$, measured. This
+forces the definition in $\S$\ref{sec:rank} to be taken on the \textbf{composite}
+token-to-phase map $A\!\cdot\!B$ where $\varphi(x) = Bx$, not on $A$ alone ---
+otherwise this very construction would read $\rho = H\nb = 64$ while computing a
+rank-$2$ function.
+
+\paragraph{The chain is not uniformly exact.} RoPE sits inside Selective RoPE
+\emph{unconditionally}: $W_\omega := 0$ with bias $b$ gives $\theta_t = \tau(t{+}1)b$,
+an exact index clock (constant to $7\times10^{-9}$). It sits inside MapFormer only
+\emph{conditionally}, because $\Delta$ has \textbf{no bias term} --- so
+$\Delta_t \equiv \text{const}$ requires the learned embeddings to share a
+projection onto $W_{\mathrm{in}}$, which is a hypothesis about what training
+produced rather than a setting one can choose. The three further qualifications
+are in $\S$3.
 
 \medskip
 \noindent Consequently \textbf{MapFormer's generator is a constrained submodel of
@@ -330,9 +371,13 @@ and no experiment here can be read as one.
 \subsection{Coherence rank, and the two thresholds}
 \label{sec:rank}
 
-Define the \textbf{coherence rank} $\rho = \operatorname{rank}(A) \le m$: the
-dimension of the subspace of $\R^{H\nb}$ that the phase vector occupies as $t$
-varies. It is $1$ for RoPE, $r$ for MapFormer, $H\nb$ for Selective RoPE.
+Define the \textbf{coherence rank} as the rank of the \emph{composite}
+token-to-phase map, $\rho = \operatorname{rank}(A\!\cdot\!B)$ where
+$\varphi(x) = Bx$: the dimension of the subspace of $\R^{H\nb}$ that the phase
+vector occupies as $t$ varies. It is $1$ for RoPE, $r$ for MapFormer, and
+generically $H\nb$ for Selective RoPE. Taking the rank on $A$ alone would be
+wrong --- $\S$2.4 constructs a Selective RoPE with $A = \tau I$ that computes a
+rank-$2$ function.
 
 For MapFormer this is an identity rather than a reading. Because
 $\Delta_t = W_{\mathrm{out}}W_{\mathrm{in}}x_t$ and $\cumsum$ is linear,
