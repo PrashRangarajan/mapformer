@@ -94,3 +94,19 @@ def _rank_em(r):
 
 MapFormerEM_r4 = _rank_em(4)
 MapFormerEM_r8 = _rank_em(8)
+
+
+# --- the loop at a wider bottleneck -------------------------------------------
+# LOOP_HEADROOM showed the loop's contribution on Match-Query is mostly to the
+# FLOOR: 8/8 seeds >= 0.77 against the 1-layer arm's 0.11-0.80. RANK_SWEEP's
+# mechanism is that r=2 learns a SKEWED basis, which is exactly the shape of a
+# bimodal seed distribution. So r=4 and the loop may be removing the same failure
+# mode by different routes -- untestable without an arm that has both.
+from mapformer.model_looped import MapFormerWM_Looped
+
+
+class MapFormerWM_Looped_r4(MapFormerWM_Looped):
+    def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
+                 dropout=0.1, grid_size=64, bottleneck_r=2, n_loops=None, **kw):
+        super().__init__(vocab_size, d_model, n_heads, n_layers, dropout,
+                         grid_size, 4, n_loops)
