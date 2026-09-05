@@ -814,9 +814,17 @@ Level15 seeds.
   cannot be attributed to "PC doing PC." Likely: RNG drift
   (forward_model consumes init draws, shifting all subsequent
   params) or AdamW second-order effects through shared optimizer
-  state. **The RNG-matched control was not run** (vanilla Level15
-  with a dummy forward_model instantiated-but-unused). Init drift
-  remains the leading hypothesis.
+  state. **CORRECTED 2026-09-05: the control WAS run** the following day
+  (`V4_CONTROL_RESULTS.md`, `run_v4_control.sh`) and this entry's
+  "was not run" misled two later sessions. On the surviving `clean`
+  config the control (`aux_coef=0`, forward_model present but never
+  gradiented) is **byte-identical to Level15 on every seed** --
+  0.991 / 0.990 / 0.998 against 0.991 / 0.990 / 0.998. So the extra
+  module shifts no RNG at all (it is constructed last, drawing after
+  everything it could perturb), and init drift is **dead** as the
+  hypothesis. There is also nothing left to explain: the +3.4pp was an
+  lm200 number and lm200 is retracted, while the clean rows show v4
+  slightly WORSE than Level15 (0.985 vs 0.995). No surviving v4 win.
 
 ### Theoretical reframing — PC and Kalman are duals, not complements
 
