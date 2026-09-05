@@ -740,6 +740,59 @@ factors of \eqref{eq:polar}. The bottom-right cell is well defined and has not
 been built --- and there is presently no reason to, since Selective RoPE's
 generator does not beat MapFormer's on either task here ($\S$\ref{sec:measured}).
 
+\paragraph{Writing the unbuilt cell down.} Substituting Selective RoPE's angle
+into PoPE's bilinear form is immediate, since they touch disjoint coordinates:
+\begin{equation}
+  \label{eq:sropepope}
+  a_{ts} = \frac{1}{\sqrt{\hd}}\sum_{c}
+    \softplus(Q_{t,c})\,\softplus(K_{s,c})\,
+    \cos\!\Big(\theta^{(c)}_s - \theta^{(c)}_t + \delta_c\Big),
+  \quad
+  \theta^{(c)}_t = \tau\!\!\sum_{u\le t}\!\big[\sigma(W_gx_u)\odot(\kappa*W_\omega x)_u\big]^{(c)}.
+\end{equation}
+The only thing that does not carry over for free is the \emph{width}. PoPE indexes
+one frequency per element, so $c$ runs to $\hd$ rather than $\hd/2$, and the whole
+generator must be rebuilt at twice the channel count. Measured on the
+implementation:
+
+\begin{center}\small
+\begin{tabular}{lrr}
+\toprule
+angle path & rotary width ($\nb = \hd/2$) & PoPE width ($\nb = \hd$) \\
+\midrule
+MapFormer generator      & $448$    & $768$ (incl.\ $\delta$) \\
+Selective RoPE generator & $16{,}833$ & $\mathbf{33{,}793}$ (incl.\ $\delta$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent So \textsc{MapPoPE} spends $768$ parameters on its angle, $0.38\%$ of the
+model, while \eqref{eq:sropepope} would spend $33{,}793$ --- $44\times$ more, and
+$14.2\%$ of the whole model. Against a generator that does not beat MapFormer's on
+either task measured here, at a rank knob that buys the same thing for $384$.
+
+\paragraph{Why PoPE composes with an accumulated phase and is inert with an index
+one.} The two things PoPE does are \emph{not independent choices}: deleting
+$\psi$ is what \emph{buys} the doubled frequency count, and the constraint is
+forced by geometry. A rotation acts on a $2$-plane and has one angle, so $\hd$
+coordinates admit exactly $\hd/2$ rotary frequencies; there is no rotary scheme
+with $\hd$ of them. PoPE escapes that ceiling only by not rotating at all --- it
+builds $\mu_c e^{i\varphi_c}$ elementwise and assembles the bilinear form
+directly, which costs the per-element phase and returns a per-element frequency.
+Same $\hd$ real degrees of freedom of content either way, reallocated.
+
+That makes the composition result mechanical rather than fortunate. Doubling the
+frequency resolution is worth nothing when the phase is an index clock read over a
+window shorter than its shortest period --- which is why PoPE alone sits on the
+floor ($0.509$ against $0.506$). It is worth something when the phase encodes a
+\emph{wrapped, multi-dimensional} quantity that must be decoded jointly across
+frequencies, which is exactly the residue problem of $\S$\ref{sec:rank}. Hence
+$0.994$ with path integration, and hence a prediction: \textbf{PoPE's gain should
+scale with how much wrapping the phase actually does} --- with map size and with
+sequence length --- and should vanish on a task whose phase never wraps. That has
+not been tested, and it is the measurement that would turn this paragraph into a
+claim.
+
 \medskip
 \noindent One asymmetry is worth naming, because it is the reason the two axes
 behave differently. Descending the phase column \textbf{removes} constraints and
