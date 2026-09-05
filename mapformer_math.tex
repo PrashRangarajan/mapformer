@@ -694,6 +694,52 @@ two-attention-matrix construction has no counterpart in that literature}, which
 is consistent with the reading that MapEM's AND-gate is the genuinely distinct
 piece of the MapFormer paper.
 
+\paragraph{Is PoPE a variant of Selective RoPE?} No, and not narrowly. Selective
+RoPE \emph{rotates} $\tilde q,\tilde k$; rotation is orthogonal, so it preserves
+$\mu = |\tilde q^{(c)}|$ and merely shifts $\psi = \arg \tilde q^{(c)}$. It
+therefore cannot reach PoPE, which needs three things outside that reach:
+\begin{itemize}\itemsep2pt
+\item $\mu = \softplus(Q_{t,c})$, a strictly positive nonlinearity of a linear
+  functional, against $\mu = \lVert(q_{2c},q_{2c+1})\rVert$, the norm of a linear
+  map --- different function classes, neither containing the other;
+\item $\psi \equiv 0$. No rotation can impose this: $\arg\tilde q' = \psi +
+  \theta_t$, so eliminating the intrinsic phase is a constraint on $W_Q$, not
+  something the generator can apply;
+\item $\nb = \hd$ rather than $\hd/2$, which is a change of blocking, not of
+  parameters.
+\end{itemize}
+Nor does the reverse inclusion hold: PoPE cannot produce a negative real part.
+\textbf{The two are not nested in either direction.}
+
+\paragraph{So the design space is a product, not a chain.} Inclusion holds
+\emph{within} the phase column and nowhere else:
+\begin{center}\small
+\begin{tabular}{lll}
+\toprule
+phase generator & standard $(\mu,\psi)$ & PoPE $(\mu,\psi{=}0)$ \\
+\midrule
+RoPE            & RoPE            & PoPE-Flat \\
+$\cap$ \; MapFormer & MapFormer   & MapPoPE \\
+$\cap$ \; Selective RoPE & Selective RoPE & \emph{(unbuilt)} \\
+\bottomrule
+\end{tabular}
+\end{center}
+The vertical inclusions are the exact ones of $\S$2.4; the columns are a separate
+choice, and $\S$4 is the statement that they compose because they touch disjoint
+factors of \eqref{eq:polar}. The bottom-right cell is well defined and has not
+been built --- and there is presently no reason to, since Selective RoPE's
+generator does not beat MapFormer's on either task here ($\S$\ref{sec:measured}).
+
+\medskip
+\noindent One asymmetry is worth naming, because it is the reason the two axes
+behave differently. Descending the phase column \textbf{removes} constraints and
+gains expressivity. PoPE \textbf{adds} one: it gives up the intrinsic phase in
+exchange for twice the frequencies, at an unchanged content budget of $\hd$ real
+degrees of freedom. And in Selective RoPE's own taxonomy PoPE is neither of their
+two selectivities --- it is not a rotation and it is not a decay on the state
+transition, but a restriction on the read and write vectors themselves. It does
+not fit their frame any more than it fits CoPE's.
+
 \section{MapPoPE: the conjunction}
 
 Since MapFormer determines $\varphi$ and PoPE determines $\mu$, combining them
