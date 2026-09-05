@@ -12,6 +12,7 @@
 \newcommand{\hd}{d_{\mathrm{head}}}
 \newcommand{\nb}{n_b}
 \DeclareMathOperator{\softplus}{softplus}
+\DeclareMathOperator{\softmax}{softmax}
 \DeclareMathOperator{\atantwo}{atan2}
 \DeclareMathOperator*{\cumsum}{cumsum}
 
@@ -338,6 +339,27 @@ set Selective RoPE's parameters as follows.
 (\texttt{verify\_inclusion.py}): $\max|\Delta\cos| = 1.5\times10^{-5}$ over a
 length-64 stream.
 
+\paragraph{The reduction, line by line.} Substituting the four settings into
+\eqref{eq:srope} and using that $\cumsum$ is linear:
+\begin{align}
+  \theta_t
+  &= \tau\sum_{u\le t}\Big[\sigma(W_g x_u)\odot(\kappa * W_\omega x)_u\Big]
+  && \text{Selective RoPE, \eqref{eq:srope}} \notag\\
+  &= \tau\sum_{u\le t}\Big[\sigma(b_g)\odot(\kappa * W_\omega x)_u\Big]
+  && \text{step 2: }W_g=0 \notag\\
+  &= \tau\,\sigma(b_g)\odot\sum_{u\le t} W_\omega x_u
+  && \text{step 1: }\kappa=\delta\text{; constants leave the sum} \notag\\
+  &= \tau\,\sigma(b_g)\odot
+     \frac{\operatorname{diag}(\operatorname{vec}\omega)W_{\mathrm{out}}W_{\mathrm{in}}}
+          {\tau\,\sigma(b_g)}\sum_{u\le t}x_u
+  && \text{step 3} \notag\\
+  &= \omega\odot W_{\mathrm{out}}W_{\mathrm{in}}\sum_{u\le t}x_u
+  \;=\;\omega\odot\cumsum(\Delta)_t
+  && \text{which is \eqref{eq:pi}.}
+\end{align}
+Each line is an identity, not an approximation, which is what makes the inclusion
+exact rather than asymptotic.
+
 \begin{quote}\small
 \textbf{Correction.} An earlier version of this paragraph called the gate step a
 \emph{saturating limit}. It is not a limit: $W_g = 0$ makes the gate exactly
@@ -603,6 +625,74 @@ learn content-dependent \emph{angles}. It modifies the other factor.
 \medskip
 \noindent In terms of \eqref{eq:polar}: PoPE sets the \textbf{magnitude} and
 leaves the phase as a fixed clock.
+
+\subsection{The magnitude axis is also a scan: forget gates}
+\label{sec:decay}
+
+Selective RoPE's own framing arrives at the two-factor decomposition from the
+opposite direction, and it is worth recording because it names a cell this note
+had left empty. Their stated design principle is \emph{rotation and decay}:
+recall needs ``(i) rotation, to encode relative position while preserving norms,
+and (ii) decay, to selectively discard past key--value associations'', summarised
+as \textbf{``Real parts forget; imaginary parts encode position.''} A complex
+diagonal state transition has a modulus and a phase; the modulus is a forget
+gate, the phase is a rotation.
+
+That is \eqref{eq:polar}'s two factors, derived from diagonal SSMs rather than
+from the polar form of a rotary logit. But their magnitude is \emph{accumulated}
+--- a product $\prod_{u}\gamma_u$ over the transition --- where PoPE's is
+\emph{instantaneous}, a function of the current token only. Crossing that against
+the phase axis completes the design space:
+
+\begin{center}\small
+\begin{tabular}{lll}
+\toprule
+ & \textbf{phase} & \textbf{magnitude} \\
+\midrule
+\textbf{accumulated} & MapFormer, Selective RoPE & forget gate / decay (GLA, Mamba, FoX) \\
+\textbf{instantaneous} & $\psi$ (free in RoPE; deleted by PoPE) & PoPE's $\softplus(Q)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent \textbf{MapFormer occupies one cell and has nothing in the
+accumulated-magnitude one.} It uses softmax attention, which carries no decay,
+and adds no forget gate. On their reading that is a real omission rather than a
+stylistic difference --- their classification of existing models runs the same
+way, with DeltaNet already possessing a rotational component and gaining from an
+added forget gate, and the softmax Transformer possessing rotation implicitly
+along random axes so that ``only a forget gate is needed to fully satisfy the
+rotation + decay recipe'', which is the Forgetting Transformer.
+
+\begin{quote}\small
+\textbf{Which of their selectivities is MapFormer's.} \emph{Selective rotation},
+exactly: same factor, same accumulation, differing only in the $(m,\varphi,K)$
+settings of $\S$\ref{sec:phase}. \emph{Selective decay} has no MapFormer
+counterpart at all. Whether it should is untested here --- a forget gate on a
+navigation task with a bounded map is not obviously wanted, since discarding old
+key--value associations is the opposite of what a cognitive map is for.
+\end{quote}
+
+\paragraph{Does anything on their side resemble MapEM?} MapEM computes two
+attention matrices and multiplies them elementwise, $A = \softmax(A_X \odot A_P)$.
+Nothing in Selective RoPE does that, and the closest structural analogue is the
+forget gate rather than anything in the rotation. Writing their eq.~(13) with a
+decayed transition, the weight linking query $t$ to key $\tau$ factors as
+\begin{equation}
+  \underbrace{\Big(\textstyle\prod_{u=\tau+1}^{t}\gamma_u\Big)}_{\text{positional}}
+  \;\times\;
+  \underbrace{k_\tau^{\!\top} \check R_{\tau+1:t}\, q_t}_{\text{content}\,\times\,\text{position}},
+\end{equation}
+which has the \emph{shape} of $A_X \odot A_P$ --- a positional scalar gating a
+content term, an AND rather than an OR. Three things make it a weak analogue.
+The positional factor is a \emph{monotone} decay, so it can only downweight with
+distance and can never peak at a particular displacement, which is the thing a
+cognitive map needs. It is itself content-dependent, since $\gamma$ reads the
+intervening tokens, so it is not a clean position channel. And it falls out of the
+recurrence rather than being a decision to factor attention. \textbf{The
+two-attention-matrix construction has no counterpart in that literature}, which
+is consistent with the reading that MapEM's AND-gate is the genuinely distinct
+piece of the MapFormer paper.
 
 \section{MapPoPE: the conjunction}
 
