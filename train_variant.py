@@ -127,6 +127,7 @@ VARIANT_MAP = {
     "SRoPEGen": MapFormerWM_SRoPEGen,
     "RoPE_Canonical": MapFormerWM_RoPE_Canonical,
     "Forget": __import__("mapformer.model_forget", fromlist=["x"]).MapFormerWM_Forget,
+    "Forget_Frozen": __import__("mapformer.model_forget", fromlist=["x"]).MapFormerWM_ForgetFrozen,
     "Forget_r4": __import__("mapformer.model_forget", fromlist=["x"]).MapFormerWM_Forget_r4,
     "Looped_r4": __import__("mapformer.model_rank", fromlist=["x"]).MapFormerWM_Looped_r4,
     "Vanilla_r3": MapFormerWM_r3,

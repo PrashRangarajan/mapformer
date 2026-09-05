@@ -132,3 +132,33 @@ class MapFormerWM_Forget(MapFormerWM):
 
 class MapFormerWM_Forget_r4(MapFormerWM_Forget):
     BOTTLENECK_R = 4
+
+
+class MapFormerWM_ForgetFrozen(MapFormerWM_Forget):
+    """The control: gate parameters PRESENT, mechanism provably OFF.
+
+    FORGET_GATE.md establishes that the gate is worth +0.086 at r=2 while the
+    gain is ANTI-correlated with how much the model forgets (r(lambda, gain) =
+    -0.516; five of eight seeds learn lambda < 0). So the named mechanism is
+    ruled out and what remains is 259 parameters on the attention path. This
+    arm separates those: lambda becomes a BUFFER pinned at zero, so
+
+      - the decay bias is identically 0 and the forward pass is exactly vanilla
+        MapFormer;
+      - W_f still exists, still consumes the same initialisation draws in the
+        same order (lambda is created by torch.zeros and draws no RNG, so
+        converting it after construction leaves the stream untouched);
+      - W_f receives zero gradient, because the gate is multiplicative in
+        lambda -- the parameters are present and inert, which is exactly the
+        control.
+
+    If this matches Forget, the gain is parameter count and initialisation shift,
+    not the gate. If it matches Vanilla, something about having a live lambda is
+    doing the work even though what lambda learns is ~0. This is the control
+    V4_MULTISEED.md identified and never ran.
+    """
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        del self.forget.lam
+        self.forget.register_buffer("lam", torch.zeros(1))
