@@ -45,6 +45,7 @@ lambda learns. Positive would be the surprise. The regime the mechanism was buil
 for is language, which this does not test.
 """
 import math
+import os
 
 import torch
 import torch.nn as nn
@@ -62,8 +63,22 @@ class ForgetGate(nn.Module):
         # start at EXACTLY no decay, with a live gradient -- see the module docstring
         self.lam = nn.Parameter(torch.zeros(1))
 
+    # Trajectory logging, opt-in via the MF_LAM_LOG env var and OFF otherwise.
+    # It lives here rather than in train.py deliberately: train.py and
+    # train_variant.py are imported by every running batch, and editing a module
+    # while jobs are spawning from it silently turns a within-batch comparison
+    # into a between-code one. model_forget.py is imported by no other arm.
     def forward(self, x):                       # x: (B, T, d_model)
         g = torch.sigmoid(self.proj(x))         # (B, T, H) in (0,1)
+        path = os.environ.get("MF_LAM_LOG")
+        if path and self.training:
+            self._step = getattr(self, "_step", 0) + 1
+            if self._step % 50 == 1:
+                # effective decay per step is lambda * E[sigmoid], so both are
+                # needed -- lambda alone is not interpretable
+                with open(path, "a") as f:
+                    f.write(f"{self._step} {float(self.lam.detach()):.6f} "
+                            f"{float(g.detach().mean()):.6f}\n")
         log_gamma = -self.lam * g
         L = torch.cumsum(log_gamma, dim=1).transpose(1, 2)          # (B, H, T)
         return L.unsqueeze(-1) - L.unsqueeze(-2)                    # (B, H, T, T)

@@ -68,5 +68,28 @@ hypothesis and not a finding.
 batch to **0.0000 maximum per-seed drift** at T=1024. So the cross-batch
 non-reproducibility recorded for Match-Query (MQ_RANK_2X2 vs LOOP_HEADROOM) is
 **not** a general property of this codebase. The torus runs here do not pass
-`--fast-attn`; the Match-Query batches do, which makes SDPA the leading suspect
-and isolates it to a knob rather than the pipeline.
+`--fast-attn` and the Match-Query batches do.
+
+> **CORRECTED 2026-09-05 -- SDPA is NOT the cause, and I asserted it without
+> testing.** Same weights, same inputs, two identical forward+backward passes:
+> gradients are **bitwise identical** with `USE_SDPA` both on and off, on CUDA and
+> on CPU. The real diagnosis came from comparing the two Match-Query runs
+> directly. Epoch-1 loss is `6.27648126` vs `6.27648135` -- agreeing to seven
+> significant figures, so the initialisation and the data stream are the same --
+> and the final loss is `1.907` vs `3.477`, with final weights differing by
+> `4.6e-01`. **A sub-epsilon numerical difference amplifies to a completely
+> different solution over 300 epochs.** The likely source is cuBLAS selecting a
+> different GEMM algorithm under different ambient load, which changes reduction
+> order in the last bit.
+>
+> So reproducibility here is a property of the **task's optimisation landscape**,
+> not of the pipeline or of any flag. The torus converges to a training loss of
+> ~`0.0001` -- a strong attractor, where perturbations wash out and runs reproduce
+> to `0.0000`. Match-Query converges to `1.9`-`3.5` with no such attractor, so
+> perturbations amplify.
+>
+> **Consequence for every Match-Query number in this project:** "8 seeds"
+> understates the uncertainty, because a single seed does not pin the outcome.
+> Those figures carry an irreducible run-to-run spread *on top of* seed spread,
+> and the honest reading of the large seed sd there (0.18-0.26) is that part of it
+> is not seed variance at all.
