@@ -750,6 +750,103 @@ two selectivities --- it is not a rotation and it is not a decay on the state
 transition, but a restriction on the read and write vectors themselves. It does
 not fit their frame any more than it fits CoPE's.
 
+\subsection{One equation: the complex log-polar accumulator}
+\label{sec:unify}
+
+PoPE and Selective RoPE are not nested, but they are not unrelated either --- they
+constrain different coordinates of a single object, and writing that object down
+subsumes every mechanism in this note.
+
+Work in the complex domain of $\S$1 and put each token's contribution in
+\emph{log}-polar form. Let $c,G:\R^d\to\C^{\nb}$ and set
+\begin{equation}
+  \label{eq:unified}
+  \boxed{\;
+  \tilde q_t \;=\; \exp\!\Big(c(x_t) \;-\; \overline{S_t}\Big),
+  \qquad
+  \tilde k_s \;=\; \exp\!\Big(c(x_s) \;+\; S_s\Big),
+  \qquad
+  S_t \;=\; \textstyle\sum_{u\le t} G(x_u),}
+\end{equation}
+componentwise, with $a_{ts} = \tfrac{1}{\sqrt{\hd}}\sum_c
+\operatorname{Re}\big[\overline{\tilde q_t^{(c)}}\,\tilde k_s^{(c)}\big]$ as
+before. The conjugate on $S_t$ is load-bearing and is the whole content of the
+sign discussion below: it negates the accumulated \emph{magnitude} on the query
+while leaving the accumulated \emph{phase} alone, and the Hermitian form's own
+conjugation then turns both into differences over $t<u\le s$. Verified
+numerically to $1\times10^{-11}$; writing $-S_t$ instead is wrong by four orders
+of magnitude, since the phase terms then add rather than cancel. Writing $c = \gamma + i\pi$ and $G = \delta + i\eta$ with all four real:
+\begin{equation}
+  a_{ts} = \frac{1}{\sqrt{\hd}}\sum_c
+  \underbrace{e^{\,\gamma^q_{t,c}+\gamma^k_{s,c}
+        \;+\;\sum_{t<u\le s}\delta_{u,c}}}_{\text{magnitude}}
+  \;
+  \cos\Big(\underbrace{\pi^k_{s,c}-\pi^q_{t,c}
+        \;+\;\textstyle\sum_{t<u\le s}\eta_{u,c}}_{\text{phase}}\Big).
+\end{equation}
+\textbf{$c$ is the instantaneous complex log, $G$ the accumulated one.} Real parts
+are magnitude, imaginary parts are phase --- which is Selective RoPE's ``real
+parts forget, imaginary parts encode position'' read off the algebra rather than
+from diagonal SSMs.
+
+\paragraph{Every mechanism is a constraint on $(c,G)$.} The parameterisation is
+fully general --- $c = \log$ of whatever linear map produces $\tilde q$ --- so
+this is a change of coordinates, not a new model.
+
+\begin{center}\small
+\begin{tabular}{lllll}
+\toprule
+ & $\operatorname{Re}c$ & $\operatorname{Im}c$ & $\operatorname{Re}G$ & $\operatorname{Im}G$ \\
+ & \emph{inst.\ magnitude} & \emph{inst.\ phase} & \emph{acc.\ magnitude} & \emph{acc.\ phase} \\
+\midrule
+RoPE            & free & free & $0$ & $\omega$ (const) \\
+MapFormer       & free & free & $0$ & $\omega\,W_{\mathrm{out}}W_{\mathrm{in}}x$ \\
+Selective RoPE  & free & free & $0$ & $\tau\,\sigma(W_gx)\odot(\kappa*W_\omega x)$ \\
+PoPE            & $\log\softplus(Q)$ & $\mathbf{0}$ & $0$ & $\vartheta$ (const) \\
+forget gate / GLA & free & free & $\log\gamma(x)$ & $0$ \\
+MapPoPE         & $\log\softplus(Q)$ & $\mathbf{0}$ & $0$ & $\omega\,W_{\mathrm{out}}W_{\mathrm{in}}x$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent \textbf{This is the unification asked for.} PoPE constrains $c$;
+Selective RoPE and MapFormer constrain $\operatorname{Im}G$. Disjoint coordinates,
+so neither contains the other ($\S$3.1) and both can be imposed at once
+($\S$4) --- the composition is not a design decision but an immediate consequence
+of which entries of one table each mechanism writes to.
+
+\paragraph{Why the two accumulators carry opposite signs, and what that buys.}
+The Hermitian form $\overline{\tilde q}\,\tilde k$ \emph{subtracts} phases and
+\emph{adds} log-magnitudes. So an accumulator yields a \emph{relative} quantity
+only if it is signed to match:
+\begin{itemize}\itemsep2pt
+\item $\operatorname{Im}G$ accumulated with the \emph{same} sign on $q$ and $k$
+  gives $\sum_{t<u\le s}\eta_u$ --- relative by construction. This is the
+  relative-position property of $\S$1, and it is why a rotation gets it for free.
+\item $\operatorname{Re}G$ accumulated with the same sign would give
+  $\sum_{u\le t} + \sum_{u\le s}$, a joint scale carrying no information about
+  separation. Signing it \emph{oppositely}, as \eqref{eq:unified} does, gives
+  $\sum_{t<u\le s}\delta_u$ --- and with $\delta = \log\gamma < 0$ that is exactly
+  the forget gate's $\prod_{t<u\le s}\gamma_u$.
+\end{itemize}
+So the forget gate is not merely the magnitude analogue of path integration; it is
+the \emph{antisymmetrically} accumulated one, and the antisymmetry is what turns a
+scale into a decay over distance. A symmetrically accumulated magnitude is a
+well-defined object that no mechanism here uses, and it would encode ``how much
+total stuff has happened by $t$ and by $s$'' rather than anything relative.
+
+\paragraph{What the table says is missing.} MapFormer, Selective RoPE and PoPE
+between them leave two entries untouched. $\operatorname{Re}G$ is $0$ in every row
+that this project has built --- no forget gate anywhere. And
+$\operatorname{Im}c$, the instantaneous phase, is only ever \emph{free} or
+\emph{deleted}; nothing designs it. The second may be principled: $c$ is
+instantaneous, so a constraint on it removes degrees of freedom without creating a
+code, whereas a constraint on $G$ propagates over the whole sequence. That would
+predict that constraints pay on the accumulated coordinates and not the
+instantaneous ones --- consistent with low rank helping on $\operatorname{Im}G$
+($\S$\ref{sec:rank}) and with PoPE being inert alone ($\S$4), but it has not been
+tested as a claim in its own right.
+
 \section{MapPoPE: the conjunction}
 
 Since MapFormer determines $\varphi$ and PoPE determines $\mu$, combining them
