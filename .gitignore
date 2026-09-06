@@ -72,3 +72,7 @@ runs/lap_probe/
 *.log
 *.out
 *.synctex.gz
+
+# paper PDFs: 69 MB, restore with `bash papers/fetch.sh`
+papers/pdf/
+papers/_fetch.out

@@ -52,3 +52,48 @@ and CARoPE are constrained non-negative, as a side-effect of using a softplus or
 gate rather than by design. A monotone clock cannot represent a -1 action, so the
 prediction is: invisible on language, decisive on navigation. Two-arm ablation on
 existing machinery. See [[project_rank_and_selective_rope]].
+
+
+## Verified 2026-09-06 — the frame has a published proof, and three claims changed
+
+All 28 sources are now read first-hand and stored (see [[reference-paper-corpus]]).
+
+**The frame is Puranik's** (Jane Street Blog, 22 Apr 2026, `papers/txt/puranik_janestreet.txt`):
+linear + translation-invariant + continuous ⇒ `A(d)=exp(dM)` a one-parameter group,
+so classifying positional encodings IS classifying M up to conjugacy. Diagonalisable
+real ⇒ decay/NoPE; conjugate pair ⇒ damped RoPE (this is the Re/Im split — there are
+two slots because C has two); defective ⇒ polynomial, which he flags as unexplored.
+He also states the reparameterised-time reading as an aside: gated models "learn how
+far to advance time, as opposed to changing the rate of decay". Jordan-RoPE
+(2605.04217) then fills the defective cell AND needs a contragredient query action —
+the q/k sign asymmetry, published, in non-semisimple form.
+
+**Three corrections to the relational map:**
+- CARoPE differs on TWO axes, not one: `f = 1/(softplus(xW)+1) ∈ (0,1)` — cannot
+  reverse *or stay* — and `W ∈ R^{d×h}` is one scalar per head, so its rank is
+  1/head, BELOW MapFormer's r, not above.
+- TAPE (2501.00712), not "TAPA", and it breaks the PATH STRUCTURE (layerwise update
+  through attention+MLP), not the per-token factorisation. It belongs with
+  MesaNet/Titans, not with CoPE.
+- Jordan-RoPE is NON-SEMISIMPLE (complex eigenvalue coupled to a nilpotent in one
+  block, modes d^r e^{iωd}), not unipotent, and its magnitude factor is polynomial
+  in the lag, not exponential.
+
+**LieRE (2406.10322, ICML 2025) is the rank axis's nearest neighbour and must be
+cited.** `R(p) = exp(Σ p_i A_i)` with a learned skew-symmetric basis — structurally
+MapFormer's ActionToLieAlgebra driven by a known POSITION. Its Fig 6 sweeps generator
+tile size 2x2..48x48 and PEAKS AT 8x8, an interior optimum: same shape as our step at
+r=2, on the other side of the map (output-side density vs input-side bottleneck).
+The input-side bottleneck is what remains unstudied.
+
+**The two HGRN claims are verified and are published negatives for content-dependent
+phase ON LANGUAGE.** HGRN Table 11, in its own words: "the phase argument θ should
+not be data-dependent". HGRN2 Table 1: real HGRN at 2x state size beats complex
+HGRN — the gain was state expansion, not the phase. With our own underpowered enwik8
+result that is three independent lines pointing the same way on text, and none of
+them evaluates navigation. This STRENGTHENS the scoping of the surviving claim.
+
+**PoPE is defined by DELETING RoPE's implicit content-phase interaction term**
+(φ_k − φ_q), keeping only the content-dependent magnitude. The exact complement of
+MapFormer, which amplifies that term into a learned accumulator. The polar frame
+equation in the note is PoPE's eq. 2, and should be attributed as such.

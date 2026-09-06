@@ -762,11 +762,12 @@ generator does not beat MapFormer's on either task here ($\S$\ref{sec:measured})
 into PoPE's bilinear form is immediate, since they touch disjoint coordinates:
 \begin{equation}
   \label{eq:sropepope}
+  \begin{gathered}
   a_{ts} = \frac{1}{\sqrt{\hd}}\sum_{c}
     \softplus(Q_{t,c})\,\softplus(K_{s,c})\,
-    \cos\!\Big(\theta^{(c)}_s - \theta^{(c)}_t + \delta_c\Big),
-  \quad
+    \cos\!\Big(\theta^{(c)}_s - \theta^{(c)}_t + \delta_c\Big),\\[2pt]
   \theta^{(c)}_t = \tau\!\!\sum_{u\le t}\!\big[\sigma(W_gx_u)\odot(\kappa*W_\omega x)_u\big]^{(c)}.
+  \end{gathered}
 \end{equation}
 The only thing that does not carry over for free is the \emph{width}. PoPE indexes
 one frequency per element, so $c$ runs to $\hd$ rather than $\hd/2$, and the whole
@@ -1139,7 +1140,40 @@ was measured to be worth --- which in the InEKF's case is a withdrawal.
 \label{sec:prior}
 
 Read after the fact, and recorded here because it changes what any of the above
-can be claimed as. \textbf{GRAPE} (Group Representational Position Encoding;
+can be claimed as.
+
+\paragraph{The frame is a published classification, and it has a proof.} Alok
+Puranik, \emph{Using group theory to explore the space of positional encodings for
+attention} (Jane Street Blog, 22 April 2026), derives $\S$\ref{sec:unify} from
+three assumptions and gets a stronger result than this note states. Take
+$\tilde q_t=F(t)q_t$, $\tilde k_s=G(s)k_s$ so the logit is $q_t^\top F(t)^\top G(s)k_s$;
+require \emph{linearity}, \emph{translation invariance} ($F(t)^\top G(s)$ depends only
+on $s-t$), and \emph{continuity}. Then $A(d):=F(0)^\top G(d)$ satisfies $A(0)=I$ and
+$A(d)A(e)=A(d+e)$ --- a one-parameter matrix group --- so $A(d)=\exp(dM)$ for a
+fixed generator $M$, and the classification of positional encodings \emph{is} the
+classification of $M$ up to conjugacy:
+\begin{itemize}\itemsep1pt
+\item $M$ diagonalisable, real eigenvalue $\lambda$: $e^{\lambda d}$, i.e.\ exponential
+  decay ($\lambda<0$), NoPE ($\lambda=0$), or a blow-up that is discarded.
+\item $M$ diagonalisable, conjugate pair: real canonical form
+  $e^{\lambda d}\!\cdot\!\mathrm{rot}(\omega d)$ --- damped RoPE. \textbf{This is
+  \eqref{eq:unified}'s $\operatorname{Re}/\operatorname{Im}$ split, and the reason
+  there are exactly two slots is that $\C$ has exactly two.}
+\item $M$ defective: polynomial factors $d^r$. He reports finding no literature on
+  defective generators for positional encoding and calls the interpretation unclear;
+  ALiBi is then shown to be realisable this way after augmenting $q,k$.
+\end{itemize}
+He also states the reparameterised-time reading directly: gated models with a
+data-dependent decay should be understood as ``learning how far to advance time, as
+opposed to changing the rate of decay'' --- which is $S_t=\sum_u G(x_u)$ replacing
+$t$, published as an aside. \textbf{Jordan-RoPE} (arXiv:2605.04217, May 2026) then
+fills his defective cell: a complex eigenvalue coupled to a nilpotent \emph{in the
+same block}, giving modes $d^re^{i\omega d}$, and --- because such blocks are not
+orthogonal --- requiring a \emph{contragredient} query action to recover a pure
+relative score. That last point is the $q$/$k$ sign asymmetry of $\S$\ref{sec:unify}
+in its non-semisimple form; it is also published.
+
+\textbf{GRAPE} (Group Representational Position Encoding;
 Zhang, Chen, Liu, Qin, Yuan, Xu, Yuan, Gu, Yao; arXiv:2512.07805, ICLR 2026) is
 this note's two-slot decomposition, published. Verified against the paper itself,
 not a summary:
@@ -1243,16 +1277,42 @@ and both are empirical rather than structural:
   in-context cognitive maps, against a measured floor, on four independent legs ---
   lives there.
 \end{itemize}
-and CARoPE (arXiv:2507.23083, July 2025) is reported
-to be a third independent rediscovery of the accumulated content-dependent angle,
-predating both Selective RoPE and MapFormer, with a strictly \emph{positive}
-increment --- which, if right, is the sharpest thing separating MapFormer's
-signed $\Delta$ from the language-side versions, since a monotone clock cannot
-represent a $-1$ action. Also reported: HGRN's Table 11 finds a data-dependent
-phase \emph{worse} on language than a constant one, and HGRN2 attributes the
-complex-recurrence gain to state expansion at matched real capacity. Both cut
-against the content-dependent-phase direction on text and neither speaks to
-navigation. \textbf{None of this paragraph is verified; check before citing.}
+\paragraph{Verified 2026-09-06.} Every source below was read first-hand and is
+stored under \texttt{papers/} (index: \texttt{papers/INDEX.md}). Three checks
+came back stronger than reported.
+
+\emph{CARoPE} (arXiv:2507.23083, July 2025) does accumulate a content-dependent
+angle, predating both Selective RoPE and MapFormer, and its increment is
+\[
+f(x_t)=\frac{1}{\operatorname{softplus}(x_tW)+1}\in(0,1),
+\qquad \phi_i(m)=\sum_{t\le m} f(x_t)_i ,
+\]
+so it is not merely non-negative: it is bounded strictly inside $(0,1)$ and can
+neither reverse nor \emph{stay}. It also differs on a second axis --- $W\in\R^{d\times h}$
+emits \textbf{one scalar per head}, so its content-to-angle map is rank $1$ per
+head, \emph{below} MapFormer's $r$ rather than above it. A monotone rank-one clock
+cannot represent a $-1$ action at all, which is the sharpest structural separation
+in the table and is untested on either side.
+
+\emph{HGRN} (arXiv:2311.04823) Table~11 ablates exactly this and concludes, in its
+own words, that ``the phase argument $\theta$ should not be data-dependent'';
+\emph{HGRN2} (arXiv:2404.07904) Table~1 shows real HGRN at twice the state size
+beating complex HGRN, attributing the gain to state expansion rather than to the
+phase. Together with our own (underpowered) enwik8 result, three independent
+lines point the same way on \emph{language}. None of them evaluates navigation,
+which is precisely why the surviving claim is scoped to that regime.
+
+\emph{LieRE} (arXiv:2406.10322, ICML 2025) is the nearest published neighbour to
+the rank axis and must be cited as such. It learns a skew-symmetric basis
+$\{A_i\}$ and rotates by $R(p)=\exp(\sum_i p_iA_i)$ --- structurally MapFormer's
+\texttt{ActionToLieAlgebra}, driven by a \emph{known position} instead of by
+content. Its Fig.~6 sweeps the generator's tile size $2\times2$ through
+$48\times48$ and \textbf{peaks at $8\times8$}: an interior optimum, denser is
+worse. That is the same \emph{shape} of finding as our step at $r=2$, on a
+different axis --- LieRE varies density on the output side (how much of
+$\mathfrak{so}(d)$ the rotation may occupy), $r$ varies the bottleneck on the
+input side (how many dimensions the content may steer). Neither subsumes the
+other, and a reviewer will ask.
 
 \section{The relational map}
 \label{sec:map}
@@ -1279,29 +1339,35 @@ no two mechanisms below agree on all eight.
 \begin{sidewaystable}\small
 \centering
 \caption{Mechanisms that fit \eqref{eq:unified} or its unipotent extension.
-$^\dagger$ read first-hand; others from a literature pass and \textbf{not
-verified here}.}
+Every row was read first-hand
+(2026-09-06); the sources are stored under \texttt{papers/} and indexed in
+\texttt{papers/INDEX.md}. $^\ast$Jordan-RoPE's magnitude factor is a
+\emph{polynomial} in the lag, $d^r e^{i\omega d}$, not an exponential: its
+generator couples a complex eigenvalue to a nilpotent in one defective block, so
+it is non-semisimple rather than unipotent.}
 \begin{tabular}{llllllll}
 \toprule
 mechanism & A1 factor & A2 locus & A3 driver & A4 algebra & A5 sign & A6 rank & A7 host \\
 \midrule
-NoPE                        & ---        & ---     & ---    & ---        & ---     & ---        & softmax \\
-RoPE                        & phase      & acc.    & index  & $\C^\times$ & n/a    & n/a        & softmax \\
-ALiBi                       & magnitude  & acc.    & index  & unipotent  & fixed $<0$ & n/a     & softmax \\
-xPos                        & both       & acc.    & index  & $\C^\times$ & n/a    & n/a        & softmax \\
+NoPE$^\dagger$              & ---        & ---     & ---    & ---        & ---     & ---        & softmax \\
+RoPE$^\dagger$              & phase      & acc.    & index  & $\C^\times$ & n/a    & n/a        & softmax \\
+ALiBi$^\dagger$             & magnitude  & acc.    & index  & unipotent  & fixed $<0$ & n/a     & softmax \\
+xPos$^\dagger$              & both       & acc.    & index  & $\C^\times$ & n/a    & n/a        & softmax \\
 PoPE$^\dagger$              & magnitude  & \textbf{inst.} & content & ---  & $>0$    & full      & softmax \\
 \midrule
 \textbf{MapFormer}$^\dagger$ & phase     & acc.    & content & $\C^\times$ & \textbf{signed} & \textbf{rank $r$} & softmax \\
 MapPoPE$^\dagger$           & both       & inst.+acc. & content & $\C^\times$ & signed & rank $r$ & softmax \\
 Selective RoPE$^\dagger$    & phase      & acc.    & content & $\C^\times$ & signed & full (or 8--16) & both \\
-CARoPE                      & phase      & acc.    & content & $\C^\times$ & \textbf{$>0$} & full & softmax \\
+CARoPE$^\dagger$            & phase      & acc.    & content & $\C^\times$ & \textbf{$\in(0,1)$} & \textbf{1/head} & softmax \\
 \midrule
 GRAPE-M$^\dagger$           & phase      & acc.    & \textbf{index} & $\C^\times$ & n/a & n/a  & softmax \\
 GRAPE-A / AP$^\dagger$      & magnitude  & acc.    & content & \textbf{unipotent} & \textbf{$\ge 0$} & full & softmax \\
 FoX$^\dagger$               & magnitude  & acc.    & content & unipotent  & $<0$    & scalar/head & softmax \\
-Jordan-RoPE                 & both       & acc.    & index   & \textbf{unipotent} & n/a & n/a & softmax \\
+Jordan-RoPE$^\dagger$       & both$^\ast$ & acc.   & index   & \textbf{non-ss.} & n/a & n/a & softmax \\
+LieRE$^\dagger$             & phase      & acc.    & \textbf{position} & $GL$ & n/a & \textbf{tile $b\!\times\!b$} & softmax \\
+Algebraic PE$^\dagger$      & phase      & acc.    & \textbf{structure} & $\C^\times$ & n/a & n/a & softmax \\
 \midrule
-Mamba / Mamba-2, GLA        & magnitude  & acc.    & content & $\C^\times$ & $<0$   & full/scalar & SSM \\
+Mamba / Mamba-2, GLA$^\dagger$ & magnitude & acc.  & content & $\C^\times$ & $<0$   & full/scalar & SSM \\
 \textbf{Mamba-3}$^\dagger$  & \textbf{both} & acc. & \textbf{content} & $\C^\times$ & \textbf{signed} & full & SSM \\
 \bottomrule
 \end{tabular}
@@ -1312,16 +1378,16 @@ is what being abelian buys, and it is the property the next table's occupants gi
 up.
 
 \begin{center}\small
-\begin{tabular}{lll}
+\begin{tabular}{@{}p{0.26\textwidth}p{0.30\textwidth}p{0.38\textwidth}@{}}
 \toprule
 mechanism & what breaks & consequence \\
 \midrule
-PaTH, DeltaNet, RWKV-7 & the \emph{fixed basis} (A4 non-abelian)
-  & path-ordered product; no $S_t$ exists \\
-CoPE, TAPA             & \emph{per-token factorisation} (A3 = pair)
-  & position is query-dependent; no $\theta_t$ \\
-MesaNet, Titans        & the \emph{path structure} (A8)
-  & prefix-global inverse / deep-MLP memory \\
+PaTH, DeltaNet, RWKV-7$^\dagger$ & the \emph{fixed basis} (A4 non-abelian)
+  & path-ordered product of $I+\text{rank-}1$; no $S_t$ \\
+CoPE$^\dagger$         & \emph{per-token factorisation} (A3 = pair)
+  & $p_{ij}=\sum\sigma(q_i\!\cdot\!k_j)$; no $\theta_t$ \\
+MesaNet, Titans, TAPE$^\dagger$ & the \emph{path structure} (A8)
+  & prefix-global inverse / deep memory / layerwise update \\
 MapEM$^\dagger$        & the \emph{single bilinear form}
   & $A_X\odot A_P$ is a product of two attentions \\
 \bottomrule
@@ -1337,12 +1403,27 @@ cell; Mamba-3 and Selective RoPE hold the content-phase cell. This is the findin
 of $\S$\ref{sec:prior} in tabular form.
 
 \emph{(ii) A5 and A6 are the axes nobody varies deliberately.} Sign is a
-side-effect of the parameterisation --- GRAPE-AP and CARoPE land on non-negative
-increments because a softplus or a gate produced them, not because monotonicity
-was wanted --- and rank is unconstrained everywhere except MapFormer. Those are
-the two columns where this project has a measurement and the literature does not:
-$r=2$ is the worst setting and $r=4$ buys $+0.085$ at $4\times$ training length
-for $384$ parameters.
+side-effect of the parameterisation: GRAPE-AP needs $\omega=g(x)\ge0$, FoX's
+$\log\sigma(\cdot)$ is negative by construction, CoPE's sigmoid gate is
+non-negative, and CARoPE's $1/(\softplus+1)$ lands in the open interval $(0,1)$
+--- so it cannot reverse \emph{or stay}. In every case a squashing function
+produced monotonicity; in none was monotonicity argued for. MapFormer's $\Delta$
+is signed only because nothing in its construction squashes it. Since a monotone
+clock cannot represent a $-1$ action, this is the sharpest structural separation
+in the table, and it is untested on both sides.
+
+Rank is thinner than a blank column would suggest but still open. Two rows
+constrain something rank-like for reasons of their own: PaTH's Householder factors
+are $I+\text{rank-}1$ by definition, and CARoPE emits one scalar per head --- so
+its content-to-angle map is rank $1$ per head, \emph{below} MapFormer's $r$ rather
+than above it. The nearest deliberate study is LieRE's tile-size sweep, which
+varies density on the \emph{output} side and peaks in the interior at
+$8\times8$ --- the same shape of result as our step at $r=2$, on the other side of
+the map. What remains unstudied is the \emph{input-side bottleneck}: how many
+dimensions of content may steer the angle. That is the column where this project
+has a measurement --- $r=2$ is the worst setting, $r=4$ buys $+0.085$ at $4\times$
+training length for $384$ parameters, and the cause is a skewed basis rather than
+missing capacity.
 
 \emph{(iii) A7 is nearly free.} Selective RoPE runs in both hosts and Mamba-3
 crosses over by state-space duality, so ``softmax versus SSM'' separates
@@ -1373,10 +1454,10 @@ all three (Selective RoPE)     & $+16{,}385$& $-0.009$ unmeasured & $+0.048$ ($t
 \end{center}
 
 \begin{quote}\small
-\textbf{CONFOUND, found on audit and verified.} These arms are \emph{not}
+\sloppy\textbf{CONFOUND, found on audit and verified.} These arms are \emph{not}
 single-knob. \texttt{SelectiveAngle} has no $\omega$ --- its readout is
 $A=\tau I$ with one scalar --- so every row above also deletes
-\texttt{path\_integrator.omega} and \texttt{action\_to\_lie.\{w\_in,w\_out\}},
+the $\omega$ buffer and both factors of the low-rank map,
 swapping $A:\operatorname{diag}(\omega)W_{\mathrm{out}}\to\tau I$. That discards
 the $64$ learnable geometrically-initialised per-(head, block) frequencies
 spanning $[2\pi/64,2\pi]$ --- which $\S$\ref{sec:rank} calls the very thing that
