@@ -2480,3 +2480,65 @@ opposite of loop x path-integration on navigation. Both singles are n=1.
     diagnostic on a trained language model is possible without retraining. Worth
     fixing before the next language run.
 
+
+## Session 2026-09-05/06 -- the theory is mostly published; rank and navigation survive
+
+**Read `reference_positional_landscape` in memory and `mapformer_math.tex` (24pp)
+before claiming anything theoretical.**
+
+### The prior art, verified first-hand (not from a search summary)
+
+- **GRAPE** (arXiv:2512.07805, ICLR 2026) IS the two-slot unification: multiplicative
+  rotations in SO(d) + additive logit biases from unipotent actions in GL,
+  recovering RoPE and ALiBi exactly and PROVING FoX an exact instance. Appendix D
+  calls its own multiplicative extension "NON-CONTEXTUAL"; Appendix E composes both
+  as one subgroup indexed by the OFFSET. Its content-dependence is entirely additive,
+  and needs `omega = g(x) >= 0` -- a monotone clock.
+- **Mamba-3** (arXiv:2603.15569, Dao/Gu) closes the rest: `Diag(A(t) + i theta(t))`
+  with BOTH parts data-dependent, Prop 3 titled "Complex SSM, Data-Dependent RoPE
+  Equivalence", rotations accumulated onto B and C = query and key.
+
+**So the taxonomy, the closure argument and the content-dependent rotation are all
+published. Two things survive, both empirical: the RANK of the content-to-angle map
+(nobody constrains it), and the NAVIGATION regime (nobody evaluates there).**
+
+Untested and worth having: **SIGN**. MapFormer's Delta is signed; GRAPE-AP and
+CARoPE are non-negative as a side-effect of a softplus/gate. A monotone clock
+cannot represent a -1 action -> invisible on language, decisive on navigation.
+
+### Results this session
+
+- **D x r (n=8, 64 runs)**: geometry REFUTED, 2 of 3 pre-registered falsifiers fired.
+  r=2 is UNIMPAIRED at D=5 (0.896, its best of three conditions) and its deficit does
+  not grow with D (+0.110/+0.153/+0.055). The Table 6 account is WITHDRAWN. The
+  optimisation half stands but -- on audit -- rests on ONE independent detectable
+  cell, not three (D=3 is unmeasured, and at D=2 r=D IS r=2).
+- **Match-Query rank x loop (n=8)**: `r=4 + loop x4` = **0.986 +/- 0.020, 8/8 seeds
+  >= 0.941, at 204,757 params**, best on that task. Interaction +0.149 POSITIVE --
+  my pre-registration had the sign backwards; r=4 alone does nothing (+0.005).
+- **Forget gate (n=8)**: +0.086 at r=2, loss-matched, but the gain is
+  ANTI-correlated with lambda (r=-0.516); 5/8 seeds learn lambda < 0. The
+  frozen-lambda control lands on Vanilla (-0.016), so it needs a LIVE lambda but not
+  the decay. The lambda trace REFUTES the transient-aid story: r(peak, gain) =
+  -0.531, peak interior in 2/8. **Mechanism unidentified.**
+- **PoPE wrapping sweep (n=8, 4 grids)**: octave prediction REFUTED (loss-matched
+  +0.077/+0.095/+0.079, flat); length prediction HOLDS 3/3. Grid 16 is BIMODAL, not a
+  ceiling. Caveat: "helps at OOD length" is this project's UNIVERSAL signature --
+  rank, InEKF, forget gate and PoPE all show it, and nothing explains that axis.
+
+### Method findings that touch older results
+
+- **SELECTIVE_ROPE's per-knob attribution is CONFOUNDED.** Every "single-knob" arm
+  also deletes `path_integrator.omega`, swapping the readout `diag(omega)W_out ->
+  tau I`. Conv/rank/gate effects cannot be attributed. RANK_SWEEP is unaffected.
+- **Match-Query is NOT reproducible across batches, and SDPA is not why** (tested:
+  bitwise identical gradients). Epoch-1 losses agree to 7 significant figures and
+  final losses are 1.91 vs 3.48 -- sub-epsilon numerical noise amplifying. It is the
+  TASK'S LANDSCAPE: the torus converges to ~0.0001 (strong attractor, reproduces to
+  0.0000); Match-Query converges to 1.9-3.5. **Part of the large Match-Query seed sd
+  is not seed variance.**
+- **The v4 RNG control WAS run** (2026-04-30) and CLAUDE.md's "was not run" line
+  misled two sessions. Control is byte-identical to Level15 on every clean seed.
+- **An adversarial audit found 13 errors in the theory note**, two substantive (the
+  confound above, and an inverted sign table). The algebra checked out; the errors
+  were all in the interpretive layer.

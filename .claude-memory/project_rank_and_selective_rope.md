@@ -39,3 +39,16 @@ it helps, 1.54x on parity where it hurts).
 
 Priority: SRoPE 21 Nov 2025, MapFormer 24 Nov, neither cites the other.
 See [[reference-language-and-pope]] for the polar decomposition these sit in.
+
+**CONFOUND found 2026-09-05, and it invalidates the per-knob attribution.** The
+Selective RoPE "single-knob" arms are NOT single-knob. `SelectiveAngle` has no
+omega -- its readout is `A = tau*I` with one scalar -- so every arm also deletes
+`path_integrator.omega` and `action_to_lie`, swapping
+`A: diag(omega) W_out -> tau I` and discarding 64 learnable
+geometrically-initialised frequencies. **The conv / rank / gate rows in
+SELECTIVE_ROPE.md cannot attribute effects to conv, rank or gate.** The sign flip
+between tasks survives as an observation about the arms as built. RANK_SWEEP is
+unaffected -- its arms differ only in `bottleneck_r`.
+
+**Prior art, 2026-09-06:** the r=4 result stands but the FRAME around it does not
+-- see [[reference_positional_landscape]]. Rank is one of only two things left.

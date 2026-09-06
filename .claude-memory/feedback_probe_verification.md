@@ -30,3 +30,11 @@ context-destruction check used "fails if it keeps >50% of control accuracy"; the
 leak kept 46-47% and it printed PASS. Threshold against the MEASURED FLOOR instead.
 
 See [[feedback-convergence-first]] and [[feedback-scheduler-and-measurement-traps]].
+
+**2026-09-05/06 additions.** Three more, all mine: a probe that varied two
+coordinates at once so nothing could read as structured; a Toeplitz test, which is
+the wrong invariant once increments are content-dependent (the right one is
+insensitivity to tokens outside the interval); and a perturbation that was purely
+REAL, so a test of the PHASE never fired and both arms looked identical. Also a
+loss-matched analysis that regressed accuracy on its own eval NLL -- circular, and
+it appeared to null an established effect. See [[verify_before_relaying]].
