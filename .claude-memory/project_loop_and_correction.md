@@ -8,7 +8,9 @@ metadata:
 **REFINING THETA IS DEAD**, tested in the regime built for it (action noise, torus,
 4 arms x 3 noise x 3 seeds). refine minus fixed-theta: -0.001/-0.011/+0.005 at
 T=128, +0.006/+0.003/-0.005 at T=512. Every |t|<2, NO slope in noise (a positive
-slope was pre-registered). Learned gate mean|g| **0.083 with inconsistent sign** —
+slope was pre-registered). Learned gate, on the ACTION-NOISE run this null comes from, mean|g| **0.144,
+max 0.320, 7/9 positive** -- sign largely CONSISTENT. (0.083 / 4-of-8-positive is
+the premise-invalid Match-Query run and was long mis-cited for this one.) Still tiny --
 the optimiser DECLINED to refine, and the gate was verified escapable first. That
 plus the sequence-axis finding makes "the Kalman win is stabilisation and
 token-type gating, NOT inference" a two-axis result.

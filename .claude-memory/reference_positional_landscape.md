@@ -37,7 +37,8 @@ published.** Do NOT claim them.
 **What survives, and it is empirical not structural:**
 1. **The rank of the content-to-angle map.** Nobody constrains it -- Mamba-3's
    theta is a per-channel projection. r=2 is the WORST setting; r=4 buys +0.085 at
-   4x training length for 384 params, 8/8 seeds; the cause is a skewed basis.
+   8x training length (trained T=128, measured T=1024) for 384 params, 8/8 seeds;
+   at 4x (T=512) it is only +0.038. The cause is a skewed basis.
 2. **The navigation regime.** All of this literature evaluates on language, recall
    or state tracking. None runs grid navigation.
 

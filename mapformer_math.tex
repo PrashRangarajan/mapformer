@@ -496,7 +496,10 @@ exist at all'' is withdrawn.
 
 \begin{quote}\small
 \textbf{TESTED, AND IT DOES NOT BIND} ($\S$\ref{sec:predict}). The bound is
-correct and its exponent is verified, but at $n=8$ across $D\in\{2,3,5\}$ two of
+correct as algebra; its exponent is \emph{not} verified here (see the audit note
+under the table --- the fitted ladder has no surviving script, and for the one
+cell it shares with \texttt{ND\_GATES.md} the two disagree, $-1.51$ against
+$-1.04$). At $n=8$ across $D\in\{2,3,5\}$ two of
 the three pre-registered falsifiers fired: $r=2$ is not impaired at $D=5$ --- it
 posts its \emph{highest} score there ($0.896$ at $T{=}512$, against $0.848$ at
 $D{=}2$ and $0.707$ at $D{=}3$) --- and the $r=2$ deficit does not grow with $D$.
@@ -559,7 +562,17 @@ so the phase ceases to be a function of the multiset and the map is no longer a
 homomorphism. The word ``commutativity'' does not appear once in Selective RoPE.
 The measured cost of giving it up is $-0.020$ on parity and $-0.064$ on the torus,
 for $193$ parameters --- the only knob in $\S$\ref{sec:measured} that is free and negative on both
-tasks, and the only one whose sign was predicted.
+tasks.\footnote{\textbf{Read every per-knob number in this document against the
+confound recorded in $\S$\ref{sec:measured}.} The \texttt{SelectiveAngle} arms are
+not single-knob: each also deletes $\omega$ and both factors of the low-rank map,
+swapping the readout $\operatorname{diag}(\omega)W_{\mathrm{out}}\to\tau I$. So
+$-0.020$, $-0.064$, the $\rho=64$ comparisons above, and the gate and bottleneck
+figures below are all differences between arms that vary more than their names say,
+and none of them can be attributed to conv, rank or gate alone. The arm that would
+fix this --- keeping $\operatorname{diag}(\omega)W_{\mathrm{out}}$ and adding only
+the conv or only the gate --- has not been run.} Its \emph{torus} sign was pre-registered; its parity sign was not --- the
+pre-registration was, in \texttt{SELECTIVE\_ROPE.md}'s own words, ``half right
+\dots\ it hurts on parity too, which the mechanism story did not predict''.
 
 \paragraph{The $K$ axis is sharper than ``blurring'', and their own derivation says
 so.} Selective RoPE motivates its convolution as a \emph{shift}: ``the shift over
@@ -620,7 +633,7 @@ in the \emph{forward pass}, not projected onto that range, so its gradient is
 identically zero outside the interval --- and it is initialised at exactly $0$,
 i.e.\ \emph{on} the upper boundary. Any step that would push it positive kills its
 gradient permanently. Measured on trained checkpoints (4 heads $\times$ 64
-frequencies $\times$ 4 layers), \textbf{91--98\% of $\delta_c$ entries end at
+frequencies $\times$ 4 layers, $n=36$), \textbf{83--98\% (mean 93\%) of $\delta_c$ entries end at
 $\ge 0$}, clamped to zero with dead gradient; per-layer means run $-0.0003$ to
 $-0.018$ rad. For roughly 95\% of frequencies, \eqref{eq:pope} is effectively
 $\cos((s-t)\vartheta_c)$. Treat the bias as a nominal degree of freedom, not a
@@ -808,9 +821,15 @@ floor ($0.509$ against $0.506$). It is worth something when the phase encodes a
 frequencies, which is exactly the residue problem of $\S$\ref{sec:rank}. Hence
 $0.994$ with path integration, and hence a prediction: \textbf{PoPE's gain should
 scale with how much wrapping the phase actually does} --- with map size and with
-sequence length --- and should vanish on a task whose phase never wraps. That has
-not been tested, and it is the measurement that would turn this paragraph into a
-claim.
+sequence length --- and should vanish on a task whose phase never wraps.
+
+\textbf{Tested, and half of it is refuted} (\texttt{POPE\_WRAPPING.md}, $n=8$,
+grids $\{16,32,64,128\}$, one batch). The \emph{length} half holds $3/3$. The
+\emph{octave} half does not: the loss-matched gain is $+0.077 / +0.095 / +0.079$
+across grid size --- flat, not rising with $\log_2 N$. So PoPE's gain is not
+buying relief from wrapping in the way this paragraph argues, and the argument
+above should be read as the motivation for a measurement that came back against
+it.
 
 \medskip
 \noindent One asymmetry is worth naming, because it is the reason the two axes
@@ -970,8 +989,10 @@ non-abelian \emph{and} non-semisimple design space. Mechanisms that appear to ad
 a slot break one of four things rather than adding a scalar: the \emph{fixed
 basis} (PaTH, DeltaNet, DeltaProduct, RWKV-7 --- the interval acts by a
 path-ordered product, so no accumulated $S_t$ exists); \emph{per-token
-factorisation} (CoPE, TAPA --- position becomes query-dependent); \emph{the path
-structure itself} (MesaNet, log-linear attention, Titans); or
+factorisation} (CoPE --- position becomes query-dependent); \emph{the path
+structure itself} (MesaNet, log-linear attention, Titans, and TAPE, which updates
+its positional tensor across layers through attention and MLP rather than by
+accumulating per-token increments); or
 \emph{semisimplicity} (the shear slot above).
 
 That is a closure result rather than an opening one, and it is the more useful
@@ -998,8 +1019,14 @@ nothing}, while a single-frequency phase is crippled. Neither has been run, and
 the asymmetry is cheap to test in both directions.
 
 \paragraph{What the table says is missing.} MapFormer, Selective RoPE and PoPE
-between them leave two entries untouched. $\operatorname{Re}G$ is $0$ in every row
-that this project has built --- no forget gate anywhere. And
+between them leave two entries untouched \emph{in the published rows}.
+$\operatorname{Re}G$ is $0$ in every row of the table --- but this project has since
+built and measured it: \texttt{model\_forget.py} adds
+$\log\gamma_t = -\lambda\,\sigma(W_fx_t)$ for $259$ parameters and buys $+0.086$
+loss-matched at $T=1024$, $8/8$ seeds, at $r=2$ (\texttt{FORGET\_GATE.md}). The
+mechanism is \emph{not} identified: the gain is anti-correlated with $\lambda$
+($r=-0.516$), $5/8$ seeds learn $\lambda<0$, and the frozen-$\lambda$ control lands
+on Vanilla, so it needs a live $\lambda$ but not the decay. And
 $\operatorname{Im}c$, the instantaneous phase, is only ever \emph{free} or
 \emph{deleted}; nothing designs it. The second may be principled: $c$ is
 instantaneous, so a constraint on it removes degrees of freedom without creating a
@@ -1179,11 +1206,14 @@ this note's two-slot decomposition, published. Verified against the paper itself
 not a summary:
 
 \begin{itemize}\itemsep2pt
-\item \textbf{Both slots.} Its abstract: ``GRAPE unifies two families of
+\item \textbf{Both slots.} Its abstract: ``GRAPE brings together two families of
   mechanisms: (i) multiplicative rotations (Multiplicative GRAPE) in $SO(d)$ and
   (ii) additive logit biases (Additive GRAPE) arising from unipotent actions in
-  the general linear group $GL$'', recovering RoPE and ALiBi ``as exact special
-  cases while preserving an exact relative law''.
+  the general linear group $GL$''. On the special cases, the sentence that says it
+  is ``This perspective recovers RoPE and ALiBi as exact special cases, proves that
+  FoX is an exact instance of Additive GRAPE'' --- an earlier draft spliced in the
+  abstract's ``as exact special cases while preserving an exact relative law'',
+  whose subjects there are ALiBi and FoX, not RoPE.
 \item \textbf{The ``third slot'' of $\S$3.3 is GRAPE's additive family.} Their
   additive side \emph{is} the unipotent/nilpotent algebra --- the shear whose
   omission from \eqref{eq:unified} that section corrects. The correction is right
@@ -1265,16 +1295,25 @@ closed, by the Mamba authors, in March 2026.}
 not the closure argument, not the content-dependent rotation. Two things survive,
 and both are empirical rather than structural:
 \begin{itemize}\itemsep2pt
-\item \textbf{The rank bottleneck.} None of GRAPE, Selective RoPE or Mamba-3
-  constrains the angle map to low rank; Mamba-3's $\theta(t)$ is a per-channel
-  projection. The measured result --- $r=2$ is the worst setting, $r=4$ buys
-  $+0.085$ at $4\times$ training length for $384$ parameters, $8/8$ seeds, and the
+\item \textbf{The rank bottleneck --- the \emph{input-side} one.} Stated too
+  broadly in an earlier draft (``none of them constrains the angle map to low
+  rank''), which the same document falsifies two pages earlier: Selective RoPE uses
+  ``a low-rank MLP with rank 8 or 16'' on the $\omega$ projection, and GRAPE's
+  abstract specifies ``a rank-2 skew generator'' and ``rank-1 (or low-rank)
+  unipotent actions''. What none of them constrains is the \emph{input} side --- how
+  many dimensions of token content may steer the angle --- as a designed variable
+  swept against performance. Their ranks are stability and efficiency choices;
+  MapFormer's $r$ is an inductive bias about the dimensionality of the action space.
+  Mamba-3's $\theta(t)$ is a per-channel projection with no such bottleneck. The measured result --- $r=2$ is the worst setting, $r=4$ buys
+  $+0.085$ at $8\times$ training length ($T=1024$ against a training length of $128$;
+  at $4\times$ it is $+0.038$) for $384$ parameters, $8/8$ seeds, and the
   cause is a skewed basis rather than missing capacity --- is a claim about a
   constraint nobody else imposes.
-\item \textbf{The navigation regime.} Every paper above evaluates on language,
-  recall or state tracking. None runs grid navigation, and the one result this
+\item \textbf{The navigation regime.} The papers above evaluate on language,
+  recall, state tracking, and --- for LieRE and Algebraic Positional Encodings ---
+  image, video and tree-transduction benchmarks. None runs grid navigation, and the one result this
   project has that survives every audit --- that path integration is necessary for
-  in-context cognitive maps, against a measured floor, on four independent legs ---
+  in-context cognitive maps, against a measured floor and a context-destruction ablation ---
   lives there.
 \end{itemize}
 \paragraph{Verified 2026-09-06.} Every source below was read first-hand and is
@@ -1421,7 +1460,7 @@ varies density on the \emph{output} side and peaks in the interior at
 $8\times8$ --- the same shape of result as our step at $r=2$, on the other side of
 the map. What remains unstudied is the \emph{input-side bottleneck}: how many
 dimensions of content may steer the angle. That is the column where this project
-has a measurement --- $r=2$ is the worst setting, $r=4$ buys $+0.085$ at $4\times$
+has a measurement --- $r=2$ is the worst setting, $r=4$ buys $+0.085$ at $8\times$
 training length for $384$ parameters, and the cause is a skewed basis rather than
 missing capacity.
 
@@ -1435,7 +1474,10 @@ in the literature's own framing and matters least in this one.
 
 \subsection{What the constraints are worth}
 
-One batch, $6$ arms. Increments are
+The first four rows are one batch of $6$ arms
+(\texttt{\_SELECTIVE\_TORUS.json}); the $r$ row is a second batch
+(\texttt{RANK\_SWEEP.json}). They are comparable because the shared \texttt{Vanilla}
+arm is bit-identical across the two at every length (max $|\Delta| = 0$). Increments are
 against MapFormer at $r=2$; \textsc{mde} is $2.8\,\mathrm{sd}/\sqrt{n}$.
 
 \begin{center}\small
@@ -1497,16 +1539,33 @@ up is $-0.020$ on parity and $-0.064$ on the torus for $193$ parameters.
 
 MapFormer v4 Table 6 reports MapWM collapsing in $5$D: $0.75/0.50/0.35$ on
 IID/OOD-d/OOD-s, \emph{below} CoPE at $0.94/0.80/0.69$, while MapEM-s holds at
-$1.00/1.00/0.87$. \emph{Corrected on audit:} the paper does give an account --- ``performances
-quickly degrade, since the amount of positions to represent grows
-exponentially'' --- and its $5$D setting is \textbf{grid size 5 at sequence
-length 16}, against the reproduction below at grid $4$ and $T=128$. (In the
-locally held v3 this is Table 4, not Table 6.)
+$1.00/1.00/0.87$. \emph{Corrected on audit, twice.} First, the paper does give an account, and it is
+a \emph{neuron-budget} account, not a packing one: ``performances quickly degrade,
+since the amount of \textbf{dimensions} to represent \textbf{with a fixed neuron
+budget} grows exponentially'' (Table~6 caption), glossed in the body as ``the
+difficulty of encoding each axis accurately in high dimension, given a fixed neural
+budget''. An earlier draft printed ``positions'' for ``dimensions'' and dropped the
+budget clause, which converted their explanation into the one below. Its $5$D
+setting is \textbf{grid size 5 at sequence length 16}, against the reproduction
+below at grid $4$ and $T=128$.
 
-Equation \eqref{eq:packing} supplies a candidate. If $r=2$ was held fixed at $D=5$
---- the paper specifies only $r \ll d$, ``for instance $r=2$'' --- then the phase
-code is confined to a $2$-torus while the task needs a $5$-torus, the separation
-exponent is $D/r = 2.5$ rather than the floor value $1$, and position becomes
+\begin{quote}\small
+\textbf{And second, the premise of what follows is counterfactual.} $\S$D.1 states
+the rank outright: ``for each model, we set the dimension of its inner rank to the
+dimension of the world, i.e.: $\Delta_{\mathrm{in}} \in \R^k$, $k = 3, 5$.'' So
+their $5$D run uses $r=5$, not $r=2$, and the $5$D collapse cannot be a rank
+artefact of the kind hypothesised here. That also agrees with $\S$\ref{sec:rank}'s
+own reading of App.~A.7 ($r$ is the dimensionality of the action space) and
+contradicts the ``for instance $r=2$'' gloss, which in the source is specific to
+$2$D: ``in 2D, $\Delta_{\mathrm{in}}^t$ is the 2D movement vector \dots\ where
+$r=2$''. The subsection is kept because the experiment it motivated was run and
+reported below, and because its result stands on its own; the motivation does not.
+\end{quote}
+
+Equation \eqref{eq:packing} supplied the candidate. Had $r=2$ been held fixed at
+$D=5$, the phase
+code would be confined to a $2$-torus while the task needs a $5$-torus, the separation
+exponent would be $D/r = 2.5$ rather than the floor value $1$, and position becomes
 progressively unresolvable as the map grows. MapEM's survival is consistent on the
 same reading: its multiplicative $A_X \odot A_P$ lets the content channel
 disambiguate what a degenerate position channel cannot.
@@ -1553,7 +1612,7 @@ ratio $r{=}D$ : $r{=}2$ & $1.0\times$ & $2.0\times$ & $\mathbf{11\times}$ \\
   D{=}2$, tracking the ratio row, and predicts \emph{nothing} for $r=D$ versus
   $r=D{+}2$, which are both above the threshold.
 \item \textbf{Optimisation} predicts a further gap from $r=D$ to $r=D{+}2$ of
-  roughly the size measured in $2$D ($\approx 0.085$ at $4\times$ training length),
+  roughly the size measured in $2$D ($\approx 0.085$ at $8\times$ training length),
   present at every $D$ and \emph{not} growing with it.
 \end{itemize}
 
@@ -1581,7 +1640,7 @@ stands.} Two of the three falsifiers below fired. $r=2$ is not impaired at $D=5$
 it posts its best score of the three conditions there. And its deficit does not
 grow with $D$: at $T{=}512$ it is $+0.110$, $+0.153$, $+0.055$ for $D=2,3,5$ ---
 \emph{smallest} where the bound says it should be largest. Meanwhile the
-$r{=}D \to r{=}D{+}2$ gap is $+0.110 / +0.066 / +0.073$ at $D=2/3/5$ and does not
+$r{=}D \to r{=}D{+}2$ gap is $+0.110 / +0.067 / +0.073$ at $D=2/3/5$ and does not
 grow with $D$. \emph{Corrected on audit:} paired at $T{=}512$ these are
 DETECTABLE at $D{=}2$ ($t\,4.08$, $7/8$) and $D{=}5$ ($t\,3.35$, $8/8$) but
 \textbf{unmeasured} at $D{=}3$ ($t\,1.93$, $6/8$); and at $D{=}2$, $r{=}D$
@@ -1659,7 +1718,7 @@ position-axis factor average over both encodings ($+0.4379$ RoPE, $+0.4851$ PoPE
 \textbf{Three qualifications the columns cannot carry.}
 (i) The hierarchy row is \emph{not} a parity-at-$L=128$ figure: its accuracy comes
 from runs trained at $L=16$ and $L=512$, and its time saving is measured at
-$L=2048$ --- at $L=128$ the same benchmark shows $+0.4\%$, i.e.\ no saving at all.
+$L=2048$ --- at $L=128$ the same benchmark shows hierarchy alone at $+2.0\%$ (and the combined loop$\times$hierarchy arm at $+0.4\%$), i.e.\ no saving at all.
 (ii) The InEKF's parameter cost is measured on a $204{,}373$-parameter torus model
 and the path-integration cost on a $199{,}042$-parameter parity model; the two
 percentages are not commensurable, and the InEKF has never been run on parity.
@@ -1693,9 +1752,15 @@ both parents. Parameter count equals one layer; compute equals $n$ layers.
 
 Carrying a \emph{bounded, gated correction} to $\theta$ across iterations ---
 $\theta \leftarrow \theta_0 + g\cdot\tanh(\text{refine}(h))$ with $g$ initialised
-to zero --- is a different model, and it is null: the learned gate settles at mean
-$|g| \approx 0.083$ with inconsistent sign across seeds, capping the correction at
-$0.14$ rad against a $\theta$ spanning $\sim 2\pi T$. The gate was verified
+to zero --- is a different model, and it is null. On the action-noise run the null
+is drawn from ($n=9$), the learned gate settles at mean $|g| = 0.144$, max $0.320$,
+with the sign \emph{consistent} in $7$ of $9$ seeds --- so the correction is capped
+at $0.32$ rad against a $\theta$ spanning $\sim 2\pi T$, i.e.\ the optimiser points
+the refinement somewhere and then makes it negligible.\footnote{An earlier draft
+gave $|g|\approx0.083$ with \emph{inconsistent} sign. Those are the Match-Query
+checkpoints --- the premise-invalid run --- read by mistake for the action-noise
+ones. The conclusion is unchanged and the supporting reading is not: the sign is
+largely consistent, so the argument rests on the magnitude alone.} The gate was verified
 escapable (gradient $1.9\times 10^{-3}$ at zero), so the optimiser declined rather
 than failed to express it. A genuine per-iteration recomputation of
 $\omega\cdot\mathrm{cumsum}(\Delta(h^{(j)}))$ has \emph{not} been run.
@@ -1725,7 +1790,10 @@ $K\approx 0.05$, making the filter a near-no-op at init.
 \paragraph{Status.} No individual component is load-bearing: the measurement head,
 the per-token gate and the learned $\Pi$ can each be removed alone at no measurable
 cost ($n=5$). The whole filter does have an effect, but only at out-of-distribution
-length ($+0.062$ at $T{=}512$, $+0.124$ at $T{=}1024$, loss-matched), and on a task
+length ($+0.062$ at $T{=}512$, $+0.124$ at $T{=}1024$, \emph{loss-matched only} ---
+the raw contrasts are $+0.057$ and $+0.120$, both inside their MDEs of $0.150$ and
+$0.180$ at $n=5$, so the detectability comes entirely from the post-hoc regression
+on final training loss), and on a task
 built to supply the drift it is meant to correct the effect \emph{does not grow
 with the drift} --- flat in one recipe, negative in another. The mechanism is
 withdrawn as inference; what survives is stabilisation.

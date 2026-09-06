@@ -80,7 +80,7 @@ truncated-to-rank-r are different objects: r=4 trains fine, while a full-rank ma
 truncated to 4 scores 0.594. Post-hoc rank is not training-time rank.
 
 **Recommended default: r=4.** It costs 0.19% more parameters and buys +0.085 at
-4x the training length, with lower seed variance at every length (±0.012 against
+8x the training length (trained at T=128, measured at T=1024; at 4x it is +0.038), with lower seed variance at every length (±0.012 against
 ±0.064 at T=1024).
 
 ## What is not tested

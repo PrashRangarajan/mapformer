@@ -1664,7 +1664,7 @@ fails is the code r=2 is forced into:
 
 At r=2 opposite actions fail to cancel by half the action scale and north/east are
 nearly PARALLEL. Not missing capacity -- a badly conditioned basis. **Recommended
-default r=4** (+0.19% params, +0.085 at 4x train length, and seed sd 0.012 vs 0.064
+default r=4** (+0.19% params, +0.085 at 8x train length (trained T=128, measured T=1024; at 4x it is +0.038), and seed sd 0.012 vs 0.064
 at T=1024, which matters because sd sets every MDE here).
 
 **Interpretability survives**: project r=4 latents onto their top two singular
@@ -2333,7 +2333,12 @@ DEPTH axis. Torus paper task under action noise, 4 arms x 3 noise x 3 seeds.
 refine minus fixed-theta: **-0.001 / -0.011 / +0.005** at T=128 and
 **+0.006 / +0.003 / -0.005** at T=512 for p_action_noise 0 / 0.10 / 0.25. Every
 |t| < 2, and NO SLOPE in noise -- the pre-registered prediction was a positive
-slope. The learned gate settles at mean|g| **0.083** with INCONSISTENT SIGN across
+slope. CORRECTED 2026-09-06: mean|g| **0.083 / 4-of-8 positive** is the MATCH-QUERY
+run (the premise-invalid one). The action-noise run this null comes from gives
+mean|g| **0.144, max 0.320, 7 of 9 POSITIVE** -- the sign is largely CONSISTENT.
+The optimiser still declines to refine (0.32 rad against a theta spanning ~2*pi*T),
+so the conclusion holds, but the 'inconsistent sign' evidence for it does not.
+The old text read: the learned gate settles at mean|g| 0.083 with inconsistent sign across
 seeds, capping the correction at 0.14 rad against a theta spanning ~2*pi*T. The
 gate was verified escapable before launch (gradient 1.9e-03 at zero), so the
 optimiser DECLINED to refine. That is a mechanism answer, not a failure to express.
