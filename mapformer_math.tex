@@ -197,8 +197,12 @@ $r=2$'' (App.~A.7).
 
 \begin{quote}\small
 \textbf{Superseded.} An earlier note here recorded the bottleneck as load-bearing
-with $r=1$ dropping the 2D task to $0.66$, and marked it unsupported. It is still
-unsupported --- no $r=1$ run exists anywhere --- but the rank axis is no longer
+with $r=1$ dropping the 2D task to $0.66$, and marked it unsupported. \emph{Corrected 2026-09-05:} ``no $r=1$ run exists
+anywhere'' was wrong about the paper. The locally held copy is \textbf{v3}
+(6 Feb 2026), which has no rank-split arms; \textbf{v4} splits MapWM into r1/r2
+and reports an r1 row, so the $0.66$ figure is most likely the paper's own 2D IID
+number rather than folklore. Treat it as the paper's evidence for the structural
+rank argument, not as unsupported --- but the rank axis is no longer
 untested: $\S$\ref{sec:rank} reports an $8$-seed sweep over $r\in\{2,4,8,16,32\}$
 in which $r=2$ is the \emph{worst} setting. Read $r=2$ below as the paper's
 prescription, not as a verified optimum.
@@ -907,16 +911,64 @@ $\operatorname{Re}G$ & aligned & $1\!\times\!10^{8}$   & leaks the prefix & --- 
 \end{tabular}
 \end{center}
 
-\noindent The two unoccupied rows are not unexplored opportunities; they are
-\textbf{structurally excluded}. Exactly one sign choice per coordinate yields a
-relative code, and the literature occupies both. \textbf{There is no third slot of
-this kind to invent.}
+\noindent Given the parameterisation, the two unoccupied rows are excluded:
+exactly one sign choice per coordinate yields a relative code, and the literature
+occupies both.
+
+\begin{quote}\small
+\textbf{CORRECTION -- ``there is no third slot to invent'' is FALSE as printed,
+and the counterexample lives inside the commuting family.} The closure argument
+silently assumes the per-channel transition is \emph{semisimple}: that the
+interval acts by a scalar in $\C^\times \cong \R_{>0}\times S^1$, whose only two
+coordinates are $\operatorname{Re}\log$ and $\operatorname{Im}\log$. Commuting is
+weaker than diagonalisable. Over $\R$ there are exactly \emph{three} unital
+commutative $2$-dimensional algebras --- $\C$, $\R\oplus\R$ (a degenerate double
+copy of the magnitude slot), and the \textbf{dual numbers}
+$\R[\varepsilon]/(\varepsilon^2)$, whose group is the unipotent shear
+$\left(\begin{smallmatrix}1&b\\0&1\end{smallmatrix}\right)$.
+
+The shear slot is real and I have checked it: it commutes and satisfies the group
+law exactly; it is interval-invariant to $7\times10^{-16}$ under the perturbation
+test above; and it contributes
+\[
+  q^{\!\top} M_t^{-1}M_s\,k \;=\; q_1k_1 + q_2k_2 +
+  \Big(\textstyle\sum_{t<u\le s} b_u\Big)\,q_1k_2 ,
+\]
+a term \textbf{linear in the accumulated interval quantity} with a
+content-dependent coefficient. Since $e^{\operatorname{Re}}\cos(\operatorname{Im})$
+is an exponential times a sinusoid, it can never be polynomial in the accumulator,
+so this is outside \eqref{eq:unified} while remaining abelian, per-token, and
+parallel-scannable. The kernels it generates are $d\,e^{-\gamma d}\cos(\omega d)$
+rather than $e^{-\gamma d}\cos(\omega d)$.
+
+It is also \emph{occupied}: Jordan-RoPE (arXiv:2605.04217) builds the defective
+block directly, and GRAPE (arXiv:2512.07805) uses the same nilpotent algebra as
+its ``additive'' family, recovering ALiBi and the Forgetting Transformer from it.
+\end{quote}
+
+\paragraph{The claim that survives.} \emph{For per-token increments valued in a
+fixed maximal torus of $GL(d)$ --- simultaneously diagonalisable, semisimple
+transitions --- the relative accumulators are exactly $\operatorname{Re}G$ and
+$\operatorname{Im}G$, and both are occupied.} That is a real result and it is the
+precise sense in which commutativity buys the parallel scan at the cost of the
+non-abelian \emph{and} non-semisimple design space. Mechanisms that appear to add
+a slot break one of four things rather than adding a scalar: the \emph{fixed
+basis} (PaTH, DeltaNet, DeltaProduct, RWKV-7 --- the interval acts by a
+path-ordered product, so no accumulated $S_t$ exists); \emph{per-token
+factorisation} (CoPE, TAPA --- position becomes query-dependent); \emph{the path
+structure itself} (MesaNet, log-linear attention, Titans); or
+\emph{semisimplicity} (the shear slot above).
 
 That is a closure result rather than an opening one, and it is the more useful
 kind. It says any new relative-position mechanism in this family must be a
 different $(m,\varphi,K)$ \emph{inside} one of the two existing slots, not a new
-slot --- which retro-explains why RoPE, CoPE-adjacent schemes, PaTH, MapFormer and
-Selective RoPE all cluster where they do. And it sharpens what MapFormer is
+slot --- which retro-explains why RoPE, its frequency-schedule variants (YaRN,
+LongRoPE, FoPE) and Selective RoPE all cluster where they do. \emph{Corrected:} an
+earlier version of this sentence also listed PaTH and CoPE. Neither belongs ---
+PaTH is non-abelian and provably outside (its Theorem 2.1 puts a one-layer
+two-head PaTH transformer on an $NC^1$-complete problem, i.e.\ outside $TC^0$,
+where every mechanism inside this frame sits), and CoPE is excluded two sections
+later for a different reason again. And it sharpens what MapFormer is
 missing: not ``some unexplored cell'', but the \emph{only other slot there is}.
 
 \paragraph{Why the two slots are parameterised so differently.} The coordinates
