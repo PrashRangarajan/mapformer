@@ -1172,11 +1172,41 @@ what I read, GRAPE's content-dependent cumulative phase enters an \emph{additive
 linear-in-offset bias on the unipotent side, while its \emph{multiplicative}
 angle is indexed by $n$ and its extensions there concern generator geometry
 (learned commuting subspaces, compact non-commuting mixtures) rather than
-content-dependence of the angle. A content-dependent cumsum \emph{in the rotation
-angle} --- MapFormer's, Selective RoPE's, CARoPE's --- is the part I did not find
-in it. The paper does claim ``contextual extensions on both sides'', and I have
-not read Appendices C, D or J, so treat that boundary as provisional rather than
-settled.
+content-dependence of the angle.
+
+\paragraph{Boundary, now settled --- Appendices C, D, E and J read.} It holds,
+and more sharply than expected.
+\begin{itemize}\itemsep2pt
+\item \textbf{App.~C} confirms the magnitude slot exactly: prefix sums
+  $U_{t,h}=\sum_{\ell<t}\log f_{\ell,h}$, bias $D_{ij,h}=U_{i,h}-U_{j,h}$,
+  ``FoX is an exact GRAPE-A / GRAPE-AP instance''. This is $\operatorname{Re}G$
+  with a content-dependent increment, published and proved.
+\item \textbf{App.~D} is about the \emph{spectral} structure of the non-commuting
+  multiplicative extension, and labels it in as many words ``the expressive power
+  of \textbf{non-contextual} non-commuting MS-GRAPE''. The multiplicative side is
+  not contextual.
+\item \textbf{App.~E} composes the two as one block-diagonal one-parameter
+  subgroup $G_{\mathrm{joint}}(m)=\exp(mL)$, $L = L_{so(d)} \oplus \omega\Lambda
+  A_0$ --- and it is indexed by the \emph{offset} $m=j-i$. The content modulation
+  $\Lambda=\lambda_q+\lambda_k$ enters only the nilpotent block.
+\item \textbf{App.~J.4} shows GRAPE is aware of contextual multiplicative maps,
+  but only through PaTH, which it critiques as contractive and near-singular ---
+  and PaTH is non-orthogonal and non-commuting.
+\end{itemize}
+
+\noindent \textbf{So GRAPE's content-dependence lives entirely on the additive
+side}, and there it carries a constraint worth noting: the phase-modulated form
+requires $\omega_\ell = g(x_\ell) \ge 0$, i.e.\ a \emph{monotone} clock, whereas
+MapFormer's $\Delta$ is a signed linear map and can represent a $-1$ action.
+
+\paragraph{What is left, stated precisely.} GRAPE occupies
+\emph{index}-multiplicative and \emph{content}-additive. PaTH occupies
+\emph{content}-multiplicative but non-abelian, at the cost of orthogonality and of
+any accumulated $S_t$. \textbf{Content-dependent, signed, orthogonal --- i.e.\
+contextual multiplicative and still abelian --- is the hole between them}, and it
+is exactly where MapFormer, Selective RoPE and CARoPE sit. That is a narrow claim
+compared with ``a unified theory of positional encoding'', and it is the one the
+literature actually leaves open.
 
 \paragraph{Two further items, from a literature pass I did not verify
 first-hand.} Mamba-3 (arXiv:2603.15569) is reported to occupy the both-slots
