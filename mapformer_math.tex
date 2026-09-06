@@ -267,8 +267,10 @@ leaves the magnitude untouched.
 \subsection{Selective RoPE: the unconstrained generator}
 
 Selective RoPE (Movahedi et al., arXiv:2511.17388, ICLR 2026) was posted on 21
-November 2025, three days before MapFormer, and neither paper cites the other in
-any version. Its angle is, in the present notation,
+November 2025, three days before MapFormer, and neither paper cites the other.
+(Dates from the arXiv identifiers; the mutual non-citation is verified in the
+versions held locally, SRoPE v3 and MapFormer v4, so ``in any version'' is more
+than two PDFs can establish.) Its angle is, in the present notation,
 \begin{equation}
   \label{eq:srope}
   \theta_t^{(h,c)}
@@ -424,7 +426,7 @@ $\Delta_t = W_{\mathrm{out}}W_{\mathrm{in}}x_t$ and $\cumsum$ is linear,
   \;=\;\omega\odot W_{\mathrm{out}}
        \underbrace{\sum_{u\le t} W_{\mathrm{in}}x_u}_{\textstyle s_t\,\in\,\R^{r}},
 \end{equation}
-checked against the implementation to $9\times10^{-7}$. \textbf{All $H\nb = 64$
+checked against the implementation at $1.5\times10^{-5}$ in float32 (\texttt{verify\_theory.py}). \textbf{All $H\nb = 64$
 phase channels are linear readouts of a single two-dimensional accumulator.}
 
 Rank binds twice, for two unrelated reasons, and separating them is the point of
@@ -890,8 +892,10 @@ before. The conjugate on $S_t$ is load-bearing and is the whole content of the
 sign discussion below: it negates the accumulated \emph{magnitude} on the query
 while leaving the accumulated \emph{phase} alone, and the Hermitian form's own
 conjugation then turns both into differences over $t<u\le s$. Verified
-numerically to $1\times10^{-11}$; writing $-S_t$ instead is wrong by four orders
-of magnitude, since the phase terms then add rather than cancel. Writing $c = \gamma + i\pi$ and $G = \delta + i\eta$ with all four real:
+numerically at $1.3\times10^{-14}$ against the closed form; writing $-S_t$ instead
+takes the same error to $3.6\times10^{1}$ --- the identity does not merely degrade,
+it fails, because the phase terms add rather than cancel
+(\texttt{verify\_theory.py}). Writing $c = \gamma + i\pi$ and $G = \delta + i\eta$ with all four real:
 \begin{equation}
   a_{ts} = \frac{1}{\sqrt{\hd}}\sum_c
   \underbrace{e^{\,\gamma^q_{t,c}+\gamma^k_{s,c}
@@ -951,6 +955,29 @@ only if it is signed to match:
   $\sum_{t<u\le s}\delta_u$ --- and with $\delta = \log\gamma < 0$ that is exactly
   the forget gate's $\prod_{t<u\le s}\gamma_u$.
 \end{itemize}
+
+\noindent\sloppy Measured by perturbing the \emph{prefix} $u\le t$ only and
+asking whether the score moves --- a relative score must not
+(\texttt{verify\_theory.py}):
+
+\begin{center}\small
+\begin{tabular}{llr}
+\toprule
+$\operatorname{Re}G$ & $\operatorname{Im}G$ & relative prefix leak \\
+\midrule
+\textbf{opposed} & \textbf{aligned} & $\mathbf{3.4\times10^{-16}}$ \\
+opposed & opposed & $1.4$ \\
+aligned & aligned & $3.1$ \\
+aligned & opposed & $7.1$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Exactly one of the four combinations is interval-relative, and it is the
+one \eqref{eq:unified} writes. An earlier draft of this table had the two rows
+backwards; so did the first version of the script that checks it, which
+parameterised its two branches inconsistently and had to be rewritten against
+$\tilde q,\tilde k$ as written.
 So the forget gate is not merely the magnitude analogue of path integration; it is
 the \emph{antisymmetrically} accumulated one, and the antisymmetry is what turns a
 scale into a decay over distance. A symmetrically accumulated magnitude is a
@@ -993,7 +1020,7 @@ $\R[\varepsilon]/(\varepsilon^2)$, whose group is the unipotent shear
 $\left(\begin{smallmatrix}1&b\\0&1\end{smallmatrix}\right)$.
 
 The shear slot is real and I have checked it: it commutes and satisfies the group
-law exactly; it is interval-invariant to $7\times10^{-16}$ under the perturbation
+law exactly; it is interval-invariant to $1.5\times10^{-16}$ (\texttt{verify\_theory.py}) under the perturbation
 test above; and it contributes
 \[
   q^{\!\top} M_t^{-1}M_s\,k \;=\; q_1k_1 + q_2k_2 +
@@ -1033,7 +1060,7 @@ slot --- which retro-explains why RoPE, its frequency-schedule variants (YaRN,
 LongRoPE, FoPE) and Selective RoPE all cluster where they do. \emph{Corrected:} an
 earlier version of this sentence also listed PaTH and CoPE. Neither belongs ---
 PaTH is non-abelian and provably outside (its Theorem 2.1 puts a one-layer
-two-head PaTH transformer on an $NC^1$-complete problem, i.e.\ outside $TC^0$,
+two-head PaTH transformer on an $NC^1$-complete problem, i.e.\ outside $TC^0$, on their stated assumption $TC^0 \neq NC^1$,
 where every mechanism inside this frame sits), and CoPE is excluded two sections
 later for a different reason again. And it sharpens what MapFormer is
 missing: not ``some unexplored cell'', but the \emph{only other slot there is}.
@@ -1295,6 +1322,19 @@ side}, and there it carries a constraint worth noting: the phase-modulated form
 requires $\omega_\ell = g(x_\ell) \ge 0$, i.e.\ a \emph{monotone} clock, whereas
 MapFormer's $\Delta$ is a signed linear map and can represent a $-1$ action.
 
+\emph{Scoped on audit.} ``Not contextual'' is App.~D's word for one sub-case (the
+thin compression $L = EL_rE^\top$), not for GRAPE-M as a family. The paper claims
+contextual multiplicative variants in at least four places --- Fig.~1's caption
+(``also extends to contextual forms via state-dependent generators''), the related
+work (``phase-modulated and dictionary-based contextual variants \dots\ cumulative
+token-adaptive phases''), App.~F (``the GRAPE-M scale cleanly translates to
+contextual versions where frequencies or phases depend on the token content'') and
+App.~J.4 (``both non-contextual and contextual types''). What I could not find is
+any \emph{formal definition} of one in the body. So the defensible claim is that
+GRAPE does not formalise a contextual multiplicative angle, not that its
+multiplicative side is non-contextual; the table's GRAPE-M row (A3 = index) carries
+the same caveat.
+
 \paragraph{What is left, stated precisely.} GRAPE occupies
 \emph{index}-multiplicative and \emph{content}-additive. PaTH occupies
 \emph{content}-multiplicative but non-abelian, at the cost of orthogonality and of
@@ -1355,7 +1395,7 @@ came back stronger than reported.
 angle, predating both Selective RoPE and MapFormer, and its increment is
 \[
 f(x_t)=\frac{1}{\operatorname{softplus}(x_tW)+1}\in(0,1),
-\qquad \phi_i(m)=\sum_{t\le m} f(x_t)_i ,
+\qquad \phi_i(m)=\sum_{t\le m} \big(f(x_t)_h\big)^{i} ,
 \]
 so it is not merely non-negative: it is bounded strictly inside $(0,1)$ and can
 neither reverse nor \emph{stay}. It also differs on a second axis --- $W\in\R^{d\times h}$
@@ -1368,8 +1408,12 @@ in the table and is untested on either side.
 own words, that ``the phase argument $\theta$ should not be data-dependent'';
 \emph{HGRN2} (arXiv:2404.07904) Table~1 shows real HGRN at twice the state size
 beating complex HGRN, attributing the gain to state expansion rather than to the
-phase. Together with our own (underpowered) enwik8 result, three independent
-lines point the same way on \emph{language}. None of them evaluates navigation,
+phase --- though note this is evidence about \emph{complex recurrence} at matched
+real capacity, and HGRN's own $\theta$ is data-\emph{in}dependent by design (``we
+find that parameterizing $\theta_t$ in a data-independent manner is preferable''),
+so it speaks to a neighbouring axis rather than to content-dependence itself.
+With our own (underpowered) enwik8 result, that is one direct negative and two
+adjacent ones, all on \emph{language}. None of them evaluates navigation,
 which is precisely why the surviving claim is scoped to that regime.
 
 \emph{LieRE} (arXiv:2406.10322, ICML 2025) is the nearest published neighbour to
@@ -1418,7 +1462,14 @@ it is non-semisimple rather than unipotent. $^\ddagger$FoX's bias
 $\sum\log f_\ell$ and GLA's weight $\prod\gamma$ are the same object; the unipotent
 label follows GRAPE's realisation, which augments $q,k$ to embed the bias in $GL$,
 and is a choice of embedding rather than a property of the mechanism. Read as
-$\C^\times$ it sits with Mamba/GLA.}
+$\C^\times$ it sits with Mamba/GLA. $^{\S}$Three cells are scoped rather than
+exact. LieRE's $R(p)=\exp(\sum_i p_iA_i)$ reads its rotation directly off a known
+position rather than accumulating increments, and its $A_i$ need not commute, so it
+obeys no prefix-sum law. Algebraic PE is $\C^\times$ for its sequence and grid
+constructions but non-abelian for $k$-ary trees, which need $\kappa$ matrices.
+GRAPE's additive family is ``rank-1 (or low-rank)'' in its own abstract and its
+phase-modulated instance emits one scalar, like FoX; ``full'' applies only to the
+general edge potential.}
 \begin{tabular}{llllllll}
 \toprule
 mechanism & A1 factor & A2 locus & A3 driver & A4 algebra & A5 sign & A6 rank & A7 host \\
@@ -1435,11 +1486,11 @@ Selective RoPE$^\dagger$    & phase      & acc.    & content & $\C^\times$ & sig
 CARoPE$^\dagger$            & phase      & acc.    & content & $\C^\times$ & \textbf{$\in(0,1)$} & \textbf{1/head} & softmax \\
 \midrule
 GRAPE-M$^\dagger$           & phase      & acc.    & \textbf{index} & $\C^\times$ & n/a & n/a  & softmax \\
-GRAPE-A / AP$^\dagger$      & magnitude  & acc.    & content & \textbf{unipotent} & \textbf{$\ge 0$} & full & softmax \\
+GRAPE-A / AP$^\dagger$      & magnitude  & acc.    & content & \textbf{unipotent} & \textbf{$\ge 0$} & 1--full$^{\S}$ & softmax \\
 FoX$^\dagger$               & magnitude  & acc.    & content & unipotent$^\ddagger$  & $<0$    & scalar/head & softmax \\
 Jordan-RoPE$^\dagger$       & both$^\ast$ & acc.   & index   & \textbf{non-ss.} & n/a & n/a & softmax \\
-LieRE$^\dagger$             & phase      & acc.    & \textbf{position} & $GL$ & n/a & \textbf{tile $b\!\times\!b$} & softmax \\
-Algebraic PE$^\dagger$      & phase      & acc.    & \textbf{structure} & $\C^\times$ & n/a & n/a & softmax \\
+LieRE$^\dagger$             & phase      & direct$^{\S}$ & \textbf{position} & $SO(d)$, non-ab. & n/a & \textbf{tile $b\!\times\!b$} & softmax \\
+Algebraic PE$^\dagger$      & phase      & acc.    & \textbf{structure} & $\C^\times$\,$^{\S}$ & n/a & n/a & softmax \\
 \midrule
 Mamba / Mamba-2, GLA$^\dagger$ & magnitude & acc.  & content & $\C^\times$ & $<0$   & full/scalar & SSM \\
 \textbf{Mamba-3}$^\dagger$  & \textbf{both} & acc. & \textbf{content} & $\C^\times$ & \textbf{signed} & full & SSM \\
@@ -1476,17 +1527,47 @@ Mamba-3's rotation, FoX. GRAPE holds the index diagonal and the content-additive
 cell; Mamba-3 and Selective RoPE hold the content-phase cell. This is the finding
 of $\S$\ref{sec:prior} in tabular form.
 
-\emph{(ii) A5 and A6 are the axes nobody varies deliberately.} Sign is a
-side-effect of the parameterisation: GRAPE-AP needs $\omega=g(x)\ge0$, FoX's
-$\log\sigma(\cdot)$ is negative by construction, CoPE's sigmoid gate is
-non-negative, and CARoPE's $1/(\softplus+1)$ lands in the open interval $(0,1)$
---- so it cannot reverse \emph{or stay}. In every case a squashing function
-produced monotonicity; in none was monotonicity argued for. MapFormer's $\Delta$
-is signed only because nothing in its construction squashes it. Since a monotone
-clock cannot represent a $-1$ action, this is the sharpest structural separation
-in the table, and it is untested on both sides.
+\emph{(ii) A5 is varied deliberately --- in a literature next door.} An earlier
+draft of this paragraph read ``A5 and A6 are the axes nobody varies
+deliberately''. That is false, and it is worth spelling out how badly, because the
+correct version is more useful.
 
-Rank is thinner than a blank column would suggest but still open. Two rows
+The \emph{observation} is Sarrof et al.\ (arXiv:2405.17394), two years earlier and
+about SSM gates rather than positional encodings: ``Across all non-time-invariant
+SSMs surveyed, we find that the gate is always \textbf{nonnegative} \dots\
+\textbf{due to exponential or sigmoid parameterizations of the gate}.'' That is
+the observation below --- monotonicity as a squashing-function side-effect, never
+argued for --- and it arrives with Theorem~2: such models cannot recognise
+\textsc{parity}. Grazzi et al.\ (arXiv:2411.12537, ICLR 2025) then \emph{prove}
+that finite-precision LRNNs whose state-transition matrices have only positive
+eigenvalues cannot solve parity, extend Mamba's and DeltaNet's range from $[0,1]$
+to $[-1,1]$, and show the fix trains stably to $1.3$B. PaTH adopts it on purpose
+(``we use $\beta_t\in(0,2)$ as this allows for negative eigenvalues in the
+transition matrix, which has been shown to boost the state tracking
+performance''), and RWKV-7 restricts the range only because of observed training
+instability. \textbf{And Selective RoPE has already carried it into this exact
+cell}: its $\S$4.2 cites Grazzi, argues that ``the input dependent rotations allow
+it to model \emph{flips} depending on the input'', and reports that ``Transformer
+with Selective RoPE is the only variant of Transformers capable of solving the
+parity task with a single layer up to this sequence length.''
+
+What survives is narrower and is a statement about \emph{reading}, not about
+novelty. GRAPE-AP needs $\omega=g(x)\ge0$, CoPE's gate is a sigmoid, and CARoPE's
+$1/(\softplus+1)$ lands in the open interval $(0,1)$ --- so it can reverse neither
+\emph{nor stay} --- and none of those three cites Sarrof, Grazzi, or negative
+eigenvalues at all ($0$ hits each). The axis is settled in the state-tracking
+literature and is not being applied as a design constraint in the
+positional-encoding-for-language literature. Two things follow that the corpus
+does not contain: nobody tests the axis on \emph{navigation} rather than parity
+and formal languages ($S_2$, $A_3$, Dyck), and no comparison isolates it --- the
+existing evidence is architecture-level, where $|\Delta|$ against $\Delta$ is one
+operation at identical parameter count. Both are cheap, and the experiment is
+consequently a replication in a new regime rather than a discovery; see
+\texttt{SIGN\_ABLATION\_PREREG.md}, whose amendment records this.
+
+\emph{(ii$'$) A6 is thinner than a blank column suggests, but still open.}
+
+Two rows
 constrain something rank-like for reasons of their own: PaTH's Householder factors
 are $I+\text{rank-}1$ by definition, and CARoPE emits one scalar per head --- so
 its content-to-angle map is rank $1$ per head, \emph{below} MapFormer's $r$ rather
