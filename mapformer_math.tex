@@ -1134,6 +1134,64 @@ fixed $\theta$, and the third post-processes $\theta$ before the rotation.
 Appendix~\ref{app:other} gives all three in this notation, together with what each
 was measured to be worth --- which in the InEKF's case is a withdrawal.
 
+\section{Prior art: most of this frame is published}
+\label{sec:prior}
+
+Read after the fact, and recorded here because it changes what any of the above
+can be claimed as. \textbf{GRAPE} (Group Representational Position Encoding;
+Zhang, Chen, Liu, Qin, Yuan, Xu, Yuan, Gu, Yao; arXiv:2512.07805, ICLR 2026) is
+this note's two-slot decomposition, published. Verified against the paper itself,
+not a summary:
+
+\begin{itemize}\itemsep2pt
+\item \textbf{Both slots.} Its abstract: ``GRAPE unifies two families of
+  mechanisms: (i) multiplicative rotations (Multiplicative GRAPE) in $SO(d)$ and
+  (ii) additive logit biases (Additive GRAPE) arising from unipotent actions in
+  the general linear group $GL$'', recovering RoPE and ALiBi ``as exact special
+  cases while preserving an exact relative law''.
+\item \textbf{The ``third slot'' of $\S$3.3 is GRAPE's additive family.} Their
+  additive side \emph{is} the unipotent/nilpotent algebra --- the shear whose
+  omission from \eqref{eq:unified} that section corrects. The correction is right
+  and it is not new.
+\item \textbf{The accumulated-magnitude slot, with a content-dependent
+  increment.} They prove FoX is an exact instance: ``Let $f_t\in(0,1]$ be
+  per-token forget scalars and set $\omega_t := \log f_t$. The resulting additive
+  bias is $b(t,j)=\sum_{\ell=j+1}^{t}\omega_\ell$, which coincides with FoX's
+  forgetting bias $D_{ij}$.'' That is exactly $\operatorname{Re}G = \log\gamma(x)$
+  accumulated over the interval.
+\item \textbf{And a content-dependent accumulated phase.} Path-Integral Additive
+  GRAPE: the bias depends on ``a contextual phase difference $\Phi_j-\Phi_i$ when
+  using cumulative phases \dots\ $\Phi_t$ is a scalar path variable, typically
+  defined as a cumulative sum $\Phi_t = \sum_{\ell<t}\omega_\ell$ of per-token
+  frequencies $\omega_\ell$, so that $\Phi_j - \Phi_i$ plays the role of an
+  effective relative position.''
+\end{itemize}
+
+\paragraph{What that leaves.} Not the taxonomy, and not the closure argument. On
+what I read, GRAPE's content-dependent cumulative phase enters an \emph{additive}
+linear-in-offset bias on the unipotent side, while its \emph{multiplicative}
+angle is indexed by $n$ and its extensions there concern generator geometry
+(learned commuting subspaces, compact non-commuting mixtures) rather than
+content-dependence of the angle. A content-dependent cumsum \emph{in the rotation
+angle} --- MapFormer's, Selective RoPE's, CARoPE's --- is the part I did not find
+in it. The paper does claim ``contextual extensions on both sides'', and I have
+not read Appendices C, D or J, so treat that boundary as provisional rather than
+settled.
+
+\paragraph{Two further items, from a literature pass I did not verify
+first-hand.} Mamba-3 (arXiv:2603.15569) is reported to occupy the both-slots
+data-dependent cell with a complex diagonal transition $A(t)+i\theta(t)$ from one
+data-dependent projection; and CARoPE (arXiv:2507.23083, July 2025) is reported
+to be a third independent rediscovery of the accumulated content-dependent angle,
+predating both Selective RoPE and MapFormer, with a strictly \emph{positive}
+increment --- which, if right, is the sharpest thing separating MapFormer's
+signed $\Delta$ from the language-side versions, since a monotone clock cannot
+represent a $-1$ action. Also reported: HGRN's Table 11 finds a data-dependent
+phase \emph{worse} on language than a constant one, and HGRN2 attributes the
+complex-recurrence gain to state expansion at matched real capacity. Both cut
+against the content-dependent-phase direction on text and neither speaks to
+navigation. \textbf{None of this paragraph is verified; check before citing.}
+
 \section{What is measured}
 \label{sec:measured}
 
