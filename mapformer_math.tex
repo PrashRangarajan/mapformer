@@ -2,6 +2,7 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
+\usepackage{rotating}
 \usepackage{microtype}
 \usepackage[svgnames]{xcolor}
 \usepackage[colorlinks=true,linkcolor=Teal,citecolor=Teal,urlcolor=Teal]{hyperref}
@@ -1252,6 +1253,101 @@ phase \emph{worse} on language than a constant one, and HGRN2 attributes the
 complex-recurrence gain to state expansion at matched real capacity. Both cut
 against the content-dependent-phase direction on text and neither speaks to
 navigation. \textbf{None of this paragraph is verified; check before citing.}
+
+\section{The relational map}
+\label{sec:map}
+
+Eight axes separate everything in this literature. They are not independent, but
+no two mechanisms below agree on all eight.
+
+\begin{enumerate}\itemsep1pt
+\item[\textbf{A1}] \textbf{Factor} --- magnitude ($\operatorname{Re}$), phase
+  ($\operatorname{Im}$), both, or neither.
+\item[\textbf{A2}] \textbf{Locus} --- instantaneous ($c$, a function of the
+  current token) or accumulated ($G$, summed over the interval).
+\item[\textbf{A3}] \textbf{Driver} --- the position index $n$, the token content
+  $x_t$, or a query--key \emph{pair}.
+\item[\textbf{A4}] \textbf{Algebra} --- semisimple diagonal ($\C^\times$),
+  unipotent (dual numbers, the shear), or non-abelian ($GL$).
+\item[\textbf{A5}] \textbf{Sign} --- may the increment be negative?
+\item[\textbf{A6}] \textbf{Rank} of the content-to-increment map.
+\item[\textbf{A7}] \textbf{Host} --- softmax attention, or linear attention / SSM.
+\item[\textbf{A8}] \textbf{Composition} --- parallel prefix sum, path-ordered
+  product, or neither.
+\end{enumerate}
+
+\begin{sidewaystable}\small
+\centering
+\caption{Mechanisms that fit \eqref{eq:unified} or its unipotent extension.
+$^\dagger$ read first-hand; others from a literature pass and \textbf{not
+verified here}.}
+\begin{tabular}{llllllll}
+\toprule
+mechanism & A1 factor & A2 locus & A3 driver & A4 algebra & A5 sign & A6 rank & A7 host \\
+\midrule
+NoPE                        & ---        & ---     & ---    & ---        & ---     & ---        & softmax \\
+RoPE                        & phase      & acc.    & index  & $\C^\times$ & n/a    & n/a        & softmax \\
+ALiBi                       & magnitude  & acc.    & index  & unipotent  & fixed $<0$ & n/a     & softmax \\
+xPos                        & both       & acc.    & index  & $\C^\times$ & n/a    & n/a        & softmax \\
+PoPE$^\dagger$              & magnitude  & \textbf{inst.} & content & ---  & $>0$    & full      & softmax \\
+\midrule
+\textbf{MapFormer}$^\dagger$ & phase     & acc.    & content & $\C^\times$ & \textbf{signed} & \textbf{rank $r$} & softmax \\
+MapPoPE$^\dagger$           & both       & inst.+acc. & content & $\C^\times$ & signed & rank $r$ & softmax \\
+Selective RoPE$^\dagger$    & phase      & acc.    & content & $\C^\times$ & signed & full (or 8--16) & both \\
+CARoPE                      & phase      & acc.    & content & $\C^\times$ & \textbf{$>0$} & full & softmax \\
+\midrule
+GRAPE-M$^\dagger$           & phase      & acc.    & \textbf{index} & $\C^\times$ & n/a & n/a  & softmax \\
+GRAPE-A / AP$^\dagger$      & magnitude  & acc.    & content & \textbf{unipotent} & \textbf{$\ge 0$} & full & softmax \\
+FoX$^\dagger$               & magnitude  & acc.    & content & unipotent  & $<0$    & scalar/head & softmax \\
+Jordan-RoPE                 & both       & acc.    & index   & \textbf{unipotent} & n/a & n/a & softmax \\
+\midrule
+Mamba / Mamba-2, GLA        & magnitude  & acc.    & content & $\C^\times$ & $<0$   & full/scalar & SSM \\
+\textbf{Mamba-3}$^\dagger$  & \textbf{both} & acc. & \textbf{content} & $\C^\times$ & \textbf{signed} & full & SSM \\
+\bottomrule
+\end{tabular}
+\end{sidewaystable}
+
+\noindent Every row above composes by \textbf{parallel prefix sum} (A8) --- that
+is what being abelian buys, and it is the property the next table's occupants give
+up.
+
+\begin{center}\small
+\begin{tabular}{lll}
+\toprule
+mechanism & what breaks & consequence \\
+\midrule
+PaTH, DeltaNet, RWKV-7 & the \emph{fixed basis} (A4 non-abelian)
+  & path-ordered product; no $S_t$ exists \\
+CoPE, TAPA             & \emph{per-token factorisation} (A3 = pair)
+  & position is query-dependent; no $\theta_t$ \\
+MesaNet, Titans        & the \emph{path structure} (A8)
+  & prefix-global inverse / deep-MLP memory \\
+MapEM$^\dagger$        & the \emph{single bilinear form}
+  & $A_X\odot A_P$ is a product of two attentions \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Reading the map.} Three things fall out that no single row shows.
+
+\emph{(i) The frame's own cells are full.} Crossing A1 (magnitude / phase) with A3
+(index / content) gives four cells and all four are occupied: RoPE, ALiBi,
+Mamba-3's rotation, FoX. GRAPE holds the index diagonal and the content-additive
+cell; Mamba-3 and Selective RoPE hold the content-phase cell. This is the finding
+of $\S$\ref{sec:prior} in tabular form.
+
+\emph{(ii) A5 and A6 are the axes nobody varies deliberately.} Sign is a
+side-effect of the parameterisation --- GRAPE-AP and CARoPE land on non-negative
+increments because a softplus or a gate produced them, not because monotonicity
+was wanted --- and rank is unconstrained everywhere except MapFormer. Those are
+the two columns where this project has a measurement and the literature does not:
+$r=2$ is the worst setting and $r=4$ buys $+0.085$ at $4\times$ training length
+for $384$ parameters.
+
+\emph{(iii) A7 is nearly free.} Selective RoPE runs in both hosts and Mamba-3
+crosses over by state-space duality, so ``softmax versus SSM'' separates
+implementations rather than mechanisms. It is the axis that looks most important
+in the literature's own framing and matters least in this one.
 
 \section{What is measured}
 \label{sec:measured}
