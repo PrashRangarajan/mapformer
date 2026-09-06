@@ -1,0 +1,3269 @@
+Published as a conference paper at ICLR 2026
+
+S ELECTIVE ROTARY P OSITION E MBEDDING
+Sajad Movahedi∗1,4 , Timur Carstensen∗1,3 , Arshia Afzal∗2 ,
+Frank Hutter1,3,5 , Antonio Orvieto†1,4 , Volkan Cevher†2
+Equal contribution∗ , Equal supervision†
+ELLIS Institute Tübingen1 , LIONS, EPFL2 , University of Freiburg3 ,
+Max-Planck-Institute for Intelligent Systems4 , Prior Labs5
+
+arXiv:2511.17388v3 [cs.CL] 23 Jun 2026
+
+sajad.movahedi@tue.ellis.eu
+arshia.afzal@epfl.ch
+
+timurcarstensen@gmail.com
+
+A BSTRACT
+Positional information is essential for language modeling. Softmax Transformers with Rotary Position Embeddings (RoPE) encode it with fixed-angle rotations,
+while linear Transformers rely on input-dependent gates that only decay past keyvalue norms. We provide a theoretical argument for the necessity of a rotation
+and decay component in well-performing sequence models, and observe that the
+missing ingredient in linear models is precisely the rotation that softmax attention performs implicitly. We introduce Selective Rotary Position Embedding (Selective RoPE), an input-dependent, learnable rotary embedding that generalizes
+RoPE to arbitrary angles and composes seamlessly with decay gates. Equipping
+gated linear attention with Selective RoPE yields a complex-valued recurrent layer
+that can be implemented efficiently with the RoPE trick. On synthetic benchmarks (MQAR, copying, state tracking) and 370M-parameter language-model
+pre-training, the method improves recall, downstream accuracy, and expressivity
+while adding minimal architectural overhead. We open-source our implementation here.
+
+1
+
+I NTRODUCTION
+
+Transformers with softmax attention (Vaswani et al., 2017) form the foundation of state-of-the-art
+language models, largely because every token can attend to all past tokens without decay, yielding strong in-context recall. This expressivity comes at a computational cost: even with memoryefficient kernels, the arithmetic complexity of softmax attention is quadratic in the sequence length.
+To mitigate this, a parallel line of work has developed sub-quadratic sequence models. These models are recurrent architectures that run in linear time and require only constant memory per step
+at inference (Katharopoulos et al., 2020; Yang et al., 2024b; Gu & Dao, 2023; Dao & Gu, 2024).
+Their main bottleneck is the fixed state size: information must be selectively retained or overwritten,
+which often harms long-horizon retrieval. Consequently, recent progress has focused on improving
+state management in these models.
+Theoretical investigations have proven the benefits of complex gating mechanisms for this purpose (Orvieto et al., 2023b; Ran-Milo et al., 2024; François et al., 2025). However, in practice
+selective gating (Yang et al., 2024a; Gu & Dao, 2023; Dao & Gu, 2024), more expressive state updates (Yang et al., 2024b; Siems et al., 2025; Peng et al., 2025) and readouts (Peng et al., 2025; Hu
+et al., 2025) usually play the main role in memory management. As these mechanisms largely act by
+modulating the norms of key-value associations (i.e., how quickly they decay) and do not directly
+provide the complementary capability of rotating query-key representations to encode relative position, they fail to materialize the full benefits of the gating mechanism as done in earlier variants of
+recurrent sequence models (Gu et al., 2022c; Orvieto et al., 2023a; Sun et al., 2023b).
+Our view: recall needs rotation and decay. We posit that strong recall requires two complementary mechanisms: (i) rotation, to encode relative position while preserving norms, and (ii) decay, to
+selectively discard past keyvalue associations. By relying on the relationship between the softmax
+function and Random Fourier Features (RFF), we reveal that softmax attention can be interpreted
+as performing input-dependent selective rotations of query-key pairs, thus motivating the use of
+RoPE-like rotation matrices in recurrent models.
+1
+
+Published as a conference paper at ICLR 2026
+
+q̃t
+
+qt
+q̃t
+
+qt
+
+A1:t
+
+q̃t
+A1:t
+
+k̃τ
+A1:τ
+
+R1:t
+
+qt
+
+Rωt
+
+kτ
+
+Rωτ
+
+kτ
+
+A1:τ
+
+kτ
+R1:τ
+
+k̃τ
+(a) GLA/Mamba2 gating
+
+(b) RoPE
+
+k̃τ
+(c) Selective RoPE
+
+Figure 1: Scaling vs. rotation on the unit circle. Left: GLA/Mamba-style forgetting encodes
+history primarily through norm scaling: cumulative gates A1:t and A1:τ attenuate qt and kτ to
+q̃t and k̃τ without changing direction. Middle: RoPE encodes position via fixed index-dependent
+rotations (Rωt , Rωτ ) that preserve norms. Right: Selective RoPE + decay composes input-dependent
+rotations with norm scaling, capturing both phase (relative position) and forgetting.
+
+Why rotation alone is insufficient. A purely complex (rotation-only) linear recurrent model behaves like a spectral analyzer with fixed state size. When applied to the input sequence, which can
+be seen as a finite-length signal, such a model suffers from spectral leakage, leading to a poorer
+approximation of the underlying signal. This can be mitigated by adding an exponentially decaying
+component to the recurrence. In linear recurrent architectures, the analog of spectral leakage is the
+suboptimal compression of keyvalue associations into the fixed-size hidden state, which is remedied
+by adding selective gating to the state transition.
+Based on our recipe, we introduce a complex version of Gated Linear Attention (GLA) (Yang et al.,
+2024a) and demonstrate its superior performance and expressivity. In practice, we show that by using
+the RoPE trick (Su et al., 2021), we are able to efficiently compute a complex GLA by applying a
+learned, input-dependent rotary position embedding to the queries and keys. Selective RoPE is
+easily incorporated into most gated linear Transformers by applying input-dependent and
+learned rotations to queries and keys. In Figure 1, we provide a visual comparison.
+Contributions.
+• Unifying view. We show that effective recall needs both rotation and decay. Softmax implicitly implements input-dependent rotations. Complex-only linear models suffer from spectral
+leakage, motivating explicit decay. Real parts forget; imaginary parts encode position.
+• Theory. (1) Using an RFF approximation of the exponential kernel, we expose selective
+rotations in softmax and derive an optimal temperature distribution that matches exponentially
+decaying frequencies used in RoPE. (2) We investigate diagonal SSMs as spectral analysers,
+showing that they suffer from spectral leakage which can be suppressed through forget gates.
+• Method: We propose Selective RoPE. An input-dependent rotary embedding that generalizes
+RoPE to learned angles and composes with gates; we make the implementation efficient by
+incorporating the RoPE trick in both linear and softmax attention.
+• Empirics. We integrate Selective RoPE with GLA, significantly boosting performance on
+recall-centric synthetic tasks (MQAR, copying, state tracking) and improving downstream
+language modeling.
+
+2
+
+BACKGROUND
+
+In this section, we provide some mathematical background, beginning with an introduction of the
+Transformer architecture, its relevant variants and the RoPE trick (Su et al., 2021). The results of
+this section also establish a relationship between a linear Transformer architecture with RoPE and a
+recurrent sequence model with rotations in the state transition. This relationship later aid us through
+a more efficient computation of the latter.
+2
+
+Published as a conference paper at ICLR 2026
+
+Transformers. Standard causal softmax attention (Vaswani et al., 2017) transforms a sequence of
+L
+d
+L inputs (xt )L
+t=1 into the sequence of outputs (ot )t=1 , with xt , st , ot ∈ R and zt ∈ R:
+t
+t
+
+
+
+
+X
+X
+st
+1 ⊤
+√
+ot = , st =
+(1)
+exp √1d qt⊤ kτ ,
+exp d qt kτ · vτ , zt =
+zt
+τ =1
+τ =1
+where qt , kt , vt = Wq xt , Wk xt , Wv xt , and Wq , Wk , Wv ∈ Rd×d are the projection matrices and
+zt is the normalization factor. Linear attention (Katharopoulos et al., 2020) replaces the exponential
+kernel in softmax attention with a kernel with a positive feature map ϕ(·) : Rd → (R+ )d , which
+gives rise to the following model:
+ot =
+
+St ϕ(qt )
+,
+zt⊤ ϕ(qt )
+
+St =
+
+t
+X
+
+vτ ϕ(kτ )⊤ ,
+
+zt =
+
+τ =1
+
+t
+X
+
+ϕ(kτ ).
+
+(2)
+
+τ =1
+
+Here St ∈ Rd×d and zt ∈ Rd are the state and the normalization factor. Due to the linear
+relationship, one can write the hidden state and the normalization factor in a recurrent form as:
+St = St−1 + vt ϕ(kt )⊤ and zt = zt−1 + ϕ(kt ). Moving forward, we subsume the feature map ϕ(·)
+into query-key vectors to simplify notation and drop the normalization factor zt following Sun et al.
+(2023a). Equation (2) was enhanced with a forget gate, At , to manage the finite-sized hidden state
+better when processing long sequences:
+!
+t
+t
+n
+o
+X
+Y
+⊤
+⊤
+vτ kτ
+St = St−1 At + vt kt , ot = St qt =
+A κ qt ,
+(3)
+τ =1
+
+κ=τ +1
+
+|
+
+{z
+
+Attt,τ
+
+}
+
+which is either diagonal (Yang et al., 2024a; Gu & Dao, 2023) or scalar-valued (Dao & Gu, 2024).
+In both, the channels of the hidden state evolve independently. In Equation (3), Attt,τ denotes
+Qt
+the attention score between qt and kτ , while the factor κ=τ +1 Aκ attenuates this inner product
+according to the cumulative gate between positions τ and t. This term can therefore be interpreted
+as a position encoding (Yang et al., 2025b), since it depends on the relative distance between t
+and τ . For Equation (3) to be stable, the gates must be contractive, which is typically enforced by
+bounding the spectral norm of At (Gu & Dao, 2023). More recently, the simple forget gate has been
+generalized to more expressive state transition matrices that also mix channels across time. These
+are often parameterized in diagonal-plus-low-rank (DPLR) form (Yang et al., 2025a; Peng et al.,
+2025), which admits a memory-efficient representation of products of such matrices.
+RoPE and Complex Linear Attention. Rotary Position Embeddings (RoPE) are used to add
+relative positional information through rotations of the query-key pairs (Su et al., 2021). For queries
+and keys qt , kτ ∈ R2 , RoPE applies relative positional encoding using the rotation matrix Rω :
+
+
+
+
+cos ω − sin ω
+Attt,τ = exp kτ⊤ Rωt−τ qt = exp (Rωτ kτ )⊤ (Rωt qt ) , Rω =
+,
+(4)
+sin ω
+cos ω
+with ω being the frequency of rotation. The query at time t and key at time τ are rotated via
+(Rω )t = Rtω . For d-dimensional queries and keys, qt , kτ are split into d/2 vectors ∈ R2 , each
+rotated independently with their own frequency. This yields a block-diagonal rotation matrix R ∈
+Rd×d where each 2 × 2 real matrix Rωk is parameterized by a frequency ωk .
+The RoPE trick allows expressing a complex parametrization of a linear Transformer in the real
+domain. Consider the real part of the following complex attention score:
+
+
+(5)
+Attt,τ = ℜ{k̃τH diag eiω1 (t−τ ) · · · eiωn (t−τ ) q̃t }, with q˜t , k˜τ ∈ Cd/2 ,
+|
+{z
+}
+R̄ ∈ Cd/2×d/2
+
+where R̄ is a unitary diagonal state transition matrix. This expression can be understood as applying
+RoPE to queries and keys qt , kτ in Rd , where we interleave the real and imaginary part in the odd
+and even indices of queries and keys:
+⊤ 
+
+
+d/2 
+X
+kτ,2n−1
+cos ωn (t − τ ) − sin ωn (t − τ ) qt,2n−1
+Attt,τ =
+.
+(6)
+kτ,2n
+sin ωn (t − τ ) cos ωn (t − τ )
+qt,2n
+n=1
+|
+{z
+}
+t−τ
+Rω
+n
+
+3
+
+Published as a conference paper at ICLR 2026
+
+When we unroll the recurrence in Equation (3) and replace the forget gate, Aκ , with the blockdiagonal rotation matrix R ∈ Rd×d in RoPE, we get:
+ot =
+
+t
+X
+
+n
+o
+vτ kτ⊤ Rt−τ qt
+
+with Rt−τ = blockdiag
+
+
+
+Rωt−τ
+· · · Rωt−τ
+1
+n
+
+
+
+(7)
+
+τ =1
+⊤
+
+Note that due to the block-diagonal structure of R, we can write Rt−τ = (Rτ ) Rt , from which
+⊤
+follows that kτ⊤ Rt−τ qt = (Rτ kτ ) Rt qt . This allows us to express the rotation matrix as applying
+RoPE to queries and keys, similar to Equation (6).
+In summary, a linear Transformer with RoPE is equivalent to the same model with a unitary, diagonal and non-selective transition in half the dimensions. The RoPE trick allows us to implement
+this complex parameterization by applying RoPE to queries and keys, effectively staying in the real
+domain which, allows us to re-use existing (linear) attention kernels. A full derivation is shown
+in Appendix A.1.
+
+3
+
+A UNIFYING VIEW: D ECAY AND ROTATION
+
+In this section, we motivate our method, Selective RoPE, by first observing that pure softmax attention implicitly performs selective rotations when viewed through the lens of Random Fourier
+Features (RFFs) (Section 3.1). These rotations are missing in linear attention. In Section 3.2, we
+explain why rotations do not suffice and why selective gating is necessary, building on the complementary roles that real (gating) and imaginary (rotation) parts play in diagonal SSMs. Finally,
+in Section 3.3 we combine the previous insights and present our proposed method.
+3.1
+
+S OFTMAX ATTENTION IMPLICITLY PERFORMS ROTATIONS
+
+We begin with the connection between RFFs and softmax attention, and illustrate that rotation is an
+integral component in softmax attention. Specifically, we start from the definition of the softmax
+attention in Equation (1) (omitting temperature for simplicity). Following Peng et al. (2021) and
+Rahimi & Recht (2007, Theorem 1), we define the RFF kernel as ϕω (x) = exp ∥x∥22 /2 + iω ⊤ x
+with ω ∼ N (0, I). When applying the kernel to the dot-product of queries and keys ⟨qt , kτ ⟩, whose
+expected real component is equivalent to the attention score Attt,τ , we obtain:
+
+
+
+
+ℜ Eω∼N (0,I) ϕω (qt )⊤ ϕω (kτ ) = exp qt⊤ kτ .
+(8)
+
+2
+By the law of large numbers, with i.i.d. ωj ∼ N 0, σ I for j ∈ {1,· · ·, D} and σ = 1 we can
+approximate the output of softmax attention before normalizing the attention scores as:
+
+
+( " t
+#)
+D
+
+1 X
+X
+ŝt,j
+st = ℜ E
+ϕω (qt )H ϕω (kτ ) · vτ
+= lim ℜ
+D→∞
+
+D
+τ =1
+j=1
+Pt
+H
+where ŝt,j =
+τ =1 ϕωj (qt ) ϕωj (kτ ) · vτ is the j-th contribution to the attention score Attt,τ .
+With some algebraic manipulations and mild assumptions (full derivation in Appendix A.2) and
+using the definition of ϕωj , we can re-express ŝj as a recurrence. Stacking D of these recurrences
+horizontally gives us a matrix-valued recurrence over Ŝt ∈ Rd×D :
+
+
+Ŝt = Ŝt−1 R̄t + vt k̃tH , R̄t = diag exp iΩ(qt − qt−1 ) , k̃t = ϕ(qt ) ⊙ ϕ(kτ ), (9)
+Crucially, R̄t is a diagonal input-dependent rotation matrix parametrized by random Gaussian features Ω, conditioned on the input via qt − qt−1 . Furthermore, due to the corresponding telescoping
+product, the induced rotation is path independent. Consequently, the rotation introduced by the softmax attention itself lacks an explicit positional inductive bias or encoding. Therefore, the relevance
+of this expression is structural, allowing us to introduce an efficient way to compute a general form
+of R̄t , the significance of which will become clear.
+Recalling the RoPE trick in Section 2, it should become clear that we can re-express R̄t as
+a block-diagonal matrix where each 2 × 2 rotation matrix on its diagonal rotates by the angle
+ϕj = ⟨ωj , (qt − qt−1 )⟩. This is a stable recurrence, since Rt is norm preserving, which also
+means that it does not forget past key-value associations. Interestingly, the shift over the queries q
+can be expressed by a 1d short-convolution, which is a component that is already frequently used
+in recurrent architectures (Yang et al., 2025a; Dao & Gu, 2024). We can follow a similar derivation
+4
+
+Published as a conference paper at ICLR 2026
+
+Input signal x(t)
+
+Windowed signal
+
+1.0
+
+1.0
+
+0.5
+
+0.5
+
+0.0
+
+0.0
+
+1.00
+
+100
+
+0.75
+
+10−3
+
+−0.5
+x(t)
+Window
+0.5
+
+1.0
+
+1.5
+
+2.0 0.0
+
+x(t) ∗ w(t)
+w(t)
+
+0.5
+
+1.0
+
+10−9
+1.5
+
+2.0
+
+0
+
+Rectangular
+Hann
+
+0.50
+
+10−6
+
+−0.5
+−1.0
+0.0
+
+Window FFT Comparison
+
+Magnitude Spectrum
+103
+
+Leaked spectrum
+Windowed spectrum
+
+10
+
+20
+
+Time
+
+Time
+
+Frequency [Hz]
+
+(a)
+
+(b)
+
+(c)
+
+30
+
+0.25
+0.00
+−50
+
+−25
+
+0
+
+25
+
+50
+
+Frequency [Hz]
+
+(d)
+
+Figure 3: The effects of windowing on the spectrogram of a finite sample of a sequence.
+as in Equation (9) for the normalizer zt . The read-out proceeds slightly differently than in normal
+linear attention: since each column j of the recurrent state represents the contribution of the j-th
+random feature to the approximation of st , we sum over the columns: Ŝt 1.
+ 0.1
+
+0.001 0.0001
+RoPE
+Ours
+
+0.5
+
+0.0
+0
+
+Extending this perspective, we define the rotation matrix as R̂t =
+exp(iΩΘ(qt − qt−1 )), where Θ is a diagonal matrix of temperatures. Assuming the angle between the queries and keys are
+uniformly distributed in [0, 2π], the optimal temperatures follow
+tan2 ( θ2 ) with θ ∼ U [0, 2π] (ref. Theorem 1). Interestingly, this distribution closely resembles the exponentially decaying frequencies
+used in RoPE, with a slightly faster decline, as shown in Figure 2.
+
+0.01
+
+1.0
+
+Θ
+
+The equivalence of the RFF kernel in Equation (8) only holds for
+an unlimited number of samples, i.e., D → ∞. However, as shown
+in Theorem 1 (Appendix A.3), in the presence of limited samples,
+one can have an optimal variance for the RFFs for a single querykey pair, proportional to the angle between the two vectors. Assuming a uniform distribution for the angle between the query-key
+pairs, we obtain a spectrum of optimal variances.
+
+20
+40
+Channel Index
+
+60
+
+Figure 2: Distribution of phase
+temperatures in RoPE vs. Selective RoPE. ϵ is the inverse
+of the RoPE base frequency and
+the upper-bound of query-key angle in our temperature (details in
+App. A.3.1).
+
+In summary, we have shown that softmax attention implicitly performs random input-dependent
+rotations to encode relative positional information between tokens. A comparison to other kernelized
+linear-attention variants (e.g., Performer, RoFormer, and CosFormer) is provided in Appendix A.6.
+3.2
+
+N ECESSITY OF G ATING : S PECTRAL L EAKAGE IN D IAGONAL SSM S
+
+By analyzing the role of real and imaginary parts in complex diagonal SSMs, in this section we show
+that rotations alone are not enough to close the gap between linear and softmax attention. Inspired
+by the findings of Section 3.1, we analyze a model that is related to GLA, where the diagonal gate
+At is instead replaced by the rotation matrix R̄t introduced in Equation (9):
+St = St−1 R̄t + vt ktH ,
+
+ot = ℜ{St qt } .
+
+(10)
+
+By unrolling the recurrence, we can write the output as:
+nP
+o
+d/2
+iωt,j P+∞
+−iωτ,j
+ot = ℜ
+q
+e
+k
+e
+v
+u
+(τ
+)dτ
+.
+τ t
+j=1 t,j
+τ =−∞ τ,j
+This equation contains a convolution of the value and key (i.e., the input) with an exponential function with pure imaginary exponents (i.e., e−iωτ,j ). This is a spectral analysis (discrete Fourier transform, DFT) of the value signal in the presence of the step-window function ut (τ ) (definition in Appendix A.4), which is visualized in Figure 3a. When naively performing a DFT over a finite sample,
+the resulting discontinuities at the margins of the sample cause spectral leakage in the spectrogram
+as shown in Figure 3c. To avoid spectral leakage, one usually places a non-rectangular window
+which tapers off towards the margins. The convolution of the signal with a Hann window (Oppenheim, 1999) function is shown in Figure 3b and the resulting magnitude spectrum in Figure 3c.
+In Figure 3d, we show that we are able to recover the correct frequency after a window FFT when
+applying a Hann window to our input signal. The window function chosen here acts like an exponential decay towards the margins, which is analogous to using a gate in our model in Equation (10).
+The use of gates in sequence models has a long history. Starting from the gating mechanism in
+LSTMs (Hochreiter & Schmidhuber, 1997), it is also widely used in linear attention, linear RNNs
+and SSMs (Yang et al., 2024a; Gu & Dao, 2023), and even softmax Transformers (Lin et al., 2025).
+Our results in this section provide a theoretical motivation for the use of gating mechanisms.
+5
+
+Published as a conference paper at ICLR 2026
+
+3.3
+
+D ESIGN P RINCIPLES FOR L INEAR ATTENTION
+
+In this section we combine the insights gained in Sections 3.1 and 3.2 to formulate general design
+principles that are required to narrow the gap between linear and softmax attention. For this, we
+analyze a general form of linear attention, which encompasses both models in Equation (3) and
+Equation (10):
+(
+)
+t
+t
+Y
+
+X
+H
+H
+St = St−1 At + vt k̃t , ot = ℜ{St q̃t }, ot =
+vτ ℜ k̃τ
+Aκ q̃t .
+(11)
+τ =1
+
+κ=τ
+
+In Section 3.1 we showed that softmax attention implicitly performs input-dependent rotations, a
+capability that is absent in standard linear attention. We can inject rotations into the general form
+in eq. (11) by setting At = R̄t . Since R̄t is a rotation matrix, this choice is stable and recovers the
+model in Equation (10). However, a purely rotational (complex) linear recurrent model behaves like
+a spectral analyzer: positional information is encoded through phase, but without any decay it cannot
+effectively control the contribution of distant tokens and suffers from spectral leakage. To remedy
+this, we also need a decaying (window) component, for which we choose an exponentially decaying
+gate. Setting At = Λt yields the gated model in Equation (3). In summary, a well-performing linear
+Transformer requires both (a) rotation and (b) gating.
+Both components can be combined by factorizing the transition as At = Λt R̄t . Interestingly, in
+DeltaNet the rotational component is already present in the form of an input-dependent Householder
+transform, which performs rotations along the key dimension. Adding an explicit forget gate on top
+of this, as done by Yang et al. (2025a), improves performance in line with our design principle. For
+softmax Transformers, the rotational component is already provided implicitly along random axes
+(cf. Section 3.1); thus, only a forget gate is needed to fully satisfy the rotation + decay recipe, as
+empirically validated by the Forgetting Transformer (Lin et al., 2025).
+In summary, as the main contribution of the paper, we introduce Selective RoPE, which we define
+as Linear Attention with an input-dependent rotation matrix Rt as its state transition:
+St = St−1 Rt + vt kt⊤ ,
+
+ot = St qt .
+(12)
+Qj
+Recalling the RoPE trick in Equation (7) and defining Ri:j = κ=i Rκ for the input-dependent
+rotation matrix Rκ , we can equivalently write this as:
+Selective RoPE:
+
+ot =
+
+t
+X
+
+t
+n
+o X
+
+⊤
+vτ kτ⊤ Rτ +1:t qt =
+vτ kτ⊤ R1:τ
+R1:t qt .
+
+τ =1
+
+τ =1
+
+(13)
+
+Here, R̂t should be understood as an input-dependent state transition. Although it is parameterized
+similar to Equation (9), this does not mean that a query is being written into memory; rather, it should
+be seen as a selective modulation of the state transition. This can easily be applied to both queries
+and keys, allowing us to reuse many parts of existing RoPE kernels. Considering the extensive
+research done on the forget gate, we rely on the built-in forgetting functionality of the baseline
+architectures.
+In summary, in this section we provide theoretical results that motivate the use of complex rotation and exponential decay in a linear attention model. The resulting design principle argues that
+both these components are required for a well-performing sequence model. This design principle
+also provides a fresh perspective on the success of variants of softmax Transformers (Press et al.,
+2021; Lin et al., 2025) and DeltaNet (Yang et al., 2024b; 2025a), which we further elaborate on
+in Appendix A.7 and Appendix A.5.
+
+4
+
+E XPERIMENTS
+
+In the following section we test our proposed model on synthetic and real-world language modeling
+tasks. For this we first provide our implementation details and then explain the specific experimental
+setup for each task and discuss the accompanying results. We primarily apply Selective RoPE to
+Gated Linear Attention (GLA) (Yang et al., 2024a) and compare with other linear and softmax
+attention variants. We sweep learning rates (reported in Appendix B) unless otherwise specified.
+4.1
+
+I MPLEMENTATION
+6
+
+Published as a conference paper at ICLR 2026
+
+GLA: String copying
+
+Accuracy
+
+1.0
+
+Table 1: MAD benchmark results. We ablate the effectiveness of each
+extra component introduced to Selective RoPE on GLA. The best results
+are marked in bold and the second best in underline.
+
+0.5
+
+Model
+0.0
+
+50
+100
+150
+Sequence Length
+
+Selective RoPE
+
+RoPE
+
+NoPE
+
+Figure 5: Copying accuracy of
+GLA with CIs. Dashed line is
+the training sequence length.
+
+Compress Fuzzy In-Context Memorize Noisy Selective Average
+Recall
+Recall
+Recall Copy
+
+GLA
+NoPE
+RoPE
+Selective RoPE
++ phase gate
++ bias
++ phase gate & bias
+
+82.0
+85.2
+
+8.5
+7.5
+
+87.3
+92.6
+
+38.7
+61.4
+
+87.6
+91.9
+
+91.1
+96.4
+
+65.9
+72.5
+
+85.2
+85.1
+85.0
+85.4
+
+9.0
+7.5
+8.4
+7.2
+
+94.0
+96.6
+95.0
+95.9
+
+57.1
+56.9
+61.3
+60.4
+
+91.7
+94.3
+91.2
+95.0
+
+94.9
+93.5
+95.4
+95.6
+
+72.0
+72.3
+72.7
+73.2
+
+In the implementation of Selective RoPE we make
+several design choices that go beyond the architecdef s rope(q, k, W omega, temp):
+omega = W omega@q
+ture described in Section 3.3: Following Zhang et al.
+omega = conv1d(omega)
+(2024), where learning the random features introomega = temp∗cumsum(omega)
+duced by Choromanski et al. (2021a) was shown to
+sin o, cos o = sincos(omega)
+be more effective, we make the parameters ω in Sereturn rope(q, k, cos o, sin o)
+lective RoPE learnable. This makes the rotations
+input-dependent and learnable. Following Yang et al.
+(2025b), we place a sigmoid gate on the rotation anFigure 4: Pseudocode of Selective RoPE.
+gles to allow the model to control whether to rotate
+or not. We also add a learnable bias term, which is not dependent on relative token positions (Li
+et al., 2024). Finally, we place a weight norm (Kingma, 2016) on the input projection. We ablate
+our architectural choices on the MAD dataset and language modeling experiments.
+We
+implement
+Selective
+RoPE
+in
+PyTorch
+and
+integrate
+it
+into
+flash-linear-attention (Yang & Zhang, 2024) for our experiments. Using the RoPE
+trick, we are able to implement our method as a prelude to RoPE where we determine the sin and
+cos from the input as shown in Figure 4. To optimize the throughput of our implementation, we
+follow the GPT-NeoX (Black et al., 2022) style of applying rotations to allow for coalesced memory
+access. This is equivalent to our derivations up to an index permutation.
+4.2
+
+S YNTHETIC L ANGUAGE TASKS
+
+To investigate which capabilities of linear attention are improved when using Selective RoPE, we
+run experiments on synthetic tasks. For this, we mostly focus on recall, since it is essential for
+language modeling (Arora et al., 2024a;b) and a good proxy for performance at scale.
+Seq. 512, KV pairs 64
+100
+
+Accuracy
+
+MQAR. We evaluate GLA + Selective RoPE on Multi-Query
+Associative Recall, following the same experimental setup as
+in Arora et al. (2024a, Figure 2) with a finer learning rate grid,
+as this has been shown to improve performance (Okpekpe &
+Orvieto, 2025) (cf. Appendix B.2). The results in Figure 6 show
+that GLA improves with extra positional information and that
+Selective RoPE achieves the greatest improvement over the base
+model with no positional embedding.
+
+GLA
+Selective RoPE
+RoPE
+NoPE
+
+50
+
+0
+
+64
+
+128
+
+256
+
+512
+
+Model dimension
+
+H3
+RWKV
+Hyena
+Base Conv
+Transformer
+
+Figure 6: MQAR results.
+
+MAD and Copying. We also evaluate our method on the MAD benchmark suite (Poli et al.,
+2024) which tests a model’s ability to store and recall information within its context. Across MAD,
+Selective RoPE improves over NoPE and matches or improves upon RoPE on several recall-oriented
+tasks; the phase-gated variant achieves the strongest overall average. This task differs from Selective
+Copy in MAD in that the entire input sequence has to be copied token-by-token after the model is
+presented with a <copy> token. The results in Figure 5 show that Selective RoPE again improves
+over the alternatives and learns to length extrapolate very robustly. The poor result of RoPE is
+reported in prior works (Jelassi et al., 2024; Li et al., 2024) and attributable to its generally poor
+length extrapolation performance without fine-tuning on longer sequence lengths.
+State Tracking. A common way to evaluate the expressivity of a model is state tracking on permutation composition (Liu et al., 2023). Recently, it has been shown that SSMs and linear RNNs
+are not capable of learning parity (Merrill et al., 2024), which amounts to permutation composition
+7
+
+Published as a conference paper at ICLR 2026
+
+Group S2
+DeltaNet
+
+GLA
+
+Group A3
+DeltaNet
+
+Transformer
+
+Accuracy
+
+1.0
+
+0.5
+
+0.0
+
+128
+
+512
+
+128
+
+512
+
+128
+
+512
+
+128
+
+512
+
+Sequence Length
+Selective RoPE
+
+RoPE
+
+NoPE
+
+Figure 7: State tracking peformance of GLA, Transformer, and DeltaNet with different positional
+embeddings on S2 and A3 . The models on S2 were trained with one layer whereas DeltaNet was
+trained with two layers on A3 . Vertical dashed line indicates training sequence length.
+on the symmetric group of two elements, S2 , and that one needs to extend the eigenvalue range of
+the state transition At from [0, 1] to [−1, 1] (Grazzi et al., 2025). In Figure 7 we see that GLA with
+Selective RoPE is able to learn and length-extrapolate on S2 . This is in line with our expectations
+since the input dependent rotations allow it to model “flips” depending on the input either being a
+0 or a 1, while GLA with NoPE and RoPE does not even learn the training context length. Similarly, we can see that Selective RoPE also improves the state tracking abilities in Transformers (i.e.,
+softmax attention) allowing them to solve the parity problem up to, and slightly more, than the train
+sequence length. To the best of our knowledge, Transformer with Selective RoPE is the only variant
+of Transformers capable of solving the parity task with a single layer up to this sequence length (Liu
+et al., 2023). We also experiment on A3 with a 2-layer DeltaNet (Yang et al., 2024b), which is the
+permutation composition on the symmetric group of three elements, limited to even permutations.
+As we can observe, Selective RoPE improves the expressivity of the model up to a point where it is
+capable of solving A3 up to the training sequence length. To the best of our knowledge, this is the
+first time these results have been presented for our choice of model on this task.
+4.3
+
+L ANGUAGE M ODELING
+
+For our language modeling experiments we train 370M and 1.3B parameter versions of GLA (Yang
+et al., 2024a) and the Forgetting Transformer (FoX) (Lin et al., 2025) using AdamW (Loshchilov &
+Hutter, 2019) and a warmup and cosine-decay schedule (Loshchilov & Hutter, 2017). All models
+are trained on 10B and 26B tokens respectively. We use FineWeb (Penedo et al., 2024) at a context
+length of 4096 and use the Mistral 7B tokenizer (Jiang et al., 2023) with a vocabulary size of 32 000.
+All remaining architectural and optimizer hyperparameters (batch size, learning rate schedule, gradient clipping, weight decay) follow Siems et al. (2025) and are detailed in Appendix B. To account
+for differences in optimal learning rates for the considered positional embedding schemes, we sweep
+learning rates following Orvieto & Gower (2025). To select the best learning rate for each model and
+position embedding combination, we use the perplexity on 4 million tokens not seen during training.
+The best models are then evaluated on downstream tasks from lm-eval-harness (Gao et al.,
+2024), the results of which are shown in Table 3. We follow the default zero-shot evaluation setup
+in lm-eval-harness, using its standard prompting and report the macro-average accuracy over
+the core multiple-choice tasks in the Avg. column. We select the same set of tasks as in GLA (Yang
+et al., 2024a).
+Initial experiments have shown that Selective RoPE dis- Table 2: Selective RoPE ablations.
+plays training instabilities at higher learning rates, earlier GLA 370M trained on 10B tokens of
+than models trained with RoPE or NoPE. We find that FineWeb.
+this can be remedied by using the ℓ2 -normalized input,
+xt , instead of the queries, qt , to parametrize the rotation
+Model
+Avg-PPL ↓ Avg-Acc ↑
+angles ω. Further stability improvements were achieved
+NoPE
+20.78
+46.8
+by either placing a weight norm (Kingma, 2016) on the
+RoPE
+21.42
+46.5
+ω projection or using a low-rank MLP with rank 8 or 16.
+Selective RoPE
+We also test adding a learnable bias term (Li et al., 2024)
+Baseline
+21.27
+45.8
+but find that this does not significantly improve perfor+ SiLU
+21.14
+46.7
+mance. We find that the most significant performance im+ phase gate
+21.16
+47.1
+provements come from adding a SiLU activation after the
+8
+
+Published as a conference paper at ICLR 2026
+
+Model
+
+Wiki. LMB. LMB. PIQA Hella. Wino. ARC-e ARC-c Avg.
+ppl ↓ ppl ↓ acc ↑ acc ↑ acc n ↑ acc ↑ acc ↑ acc n ↑
+
+FoX 370M params / 10B tokens
+NoPE
+RoPE
+Selective RoPE
+
+25.52 17.76
+25.29 17.71
+33.87 17.29
+
+43.0
+42.2
+43.5
+
+67.0
+68.4
+68.7
+
+42.2
+41.9
+42.5
+
+52.8
+50.8
+53.0
+
+47.1
+47.7
+48.4
+
+25.0
+24.6
+25.7
+
+45.3
+45.1
+46.1
+
+GLA 370M params / 10B tokens
+NoPE
+RoPE
+Selective RoPE
+
+25.72 15.83
+26.51 16.32
+25.98 16.33
+
+43.1
+42.5
+42.2
+
+67.8
+69.6
+69.1
+
+43.1
+43.3
+43.8
+
+52.2
+50.7
+51.3
+
+49.4
+48.2
+49.9
+
+24.9
+24.5
+26.6
+
+46.8
+46.5
+47.1
+
+Gated DeltaNet ∼400M params / 10B tokens
+NoPE
+25.82 16.27
+RoPE
+25.92 16.79
+Selective RoPE†
+26.13 15.93
+
+43.0
+41.7
+42.3
+
+68.6
+69.5
+69.1
+
+43.3
+43.3
+44.3
+
+52.2
+52.5
+54.1
+
+48.4
+49.2
+49.9
+
+24.2
+24.1
+25.5
+
+46.6
+46.7
+47.5
+
+GLA 1.3B params / 26B tokens
+NoPE
+RoPE
+Selective RoPE
+
+53.8
+53.0
+53.8
+
+73.3
+72.4
+73.1
+
+56.5
+56.6
+56.9
+
+58.2
+57.1
+56.0
+
+59.0
+58.5
+59.3
+
+30.0
+28.5
+28.8
+
+55.2
+54.4
+54.6
+
+18.18
+18.50
+17.87
+
+8.59
+8.88
+8.50
+
+Table 3: Evaluation results on tasks from lm-eval-harness (Gao et al., 2024). FoX rows
+correspond to the output-norm-OFF setting only. GLA blocks are kept from the original table.
+Gated DeltaNet rows are added from the local ∼400M-parameter / 10B-token sweep, selecting the
+best checkpoint by final validation perplexity within each positional-encoding setting. For Gated
+DeltaNet, the selective row († ) corresponds to the available stable selective rope variant.
+convolution that follows the ω projection and from adding a gate on the rotation (phase) Yang et al.
+(2025b) as described in Table 2.
+The results in Table 3 use the best configuration of Selective RoPE for both FoX and GLA at 370M
+and 370 and 1.3B params with 10B and 26B tokens, respectively. We find that Selective RoPE
+changes the trade-off between perplexity and downstream accuracy in a model-dependent way: it
+often improves perplexity and/or specific downstream tasks, while the macro-average accuracy may
+stay similar or decrease slightly depending on architecture and scale.
+
+5
+
+R ELATED W ORK
+
+There have been several attempts at reducing the quadratic complexity of softmax attention (Dao,
+2024), one of which is linearization (Katharopoulos et al., 2020), which results in a recurrent model
+with sub-quadratic cost (Martin & Cundy, 2018; Gu et al., 2020). However, the reduced complexity comes at the cost of lower performance, especially in recall-intensive tasks (Waleffe et al.,
+2024; Peng et al., 2021; Choromanski et al., 2021a; Zhang et al., 2024). This led to the development of architectures which used gating to increase their expressivity. Non-selective state-space
+models (SSMs) made use of input-independent gating mechanisms and vector-valued states to perform sequence modeling (Orvieto et al., 2023a; Gu et al., 2022b;a; Sun et al., 2023a). Later, these
+architectures were improved by adding selective gating (De et al., 2024; Qin et al., 2023) and matrixvalued states (Gu & Dao, 2023; Dao & Gu, 2024; Yang et al., 2024a; Beck et al., 2024; Qin et al.,
+2024). Concurrently, DeltaNet (Schlag et al., 2021; Yang et al., 2024b) extended the notion of a
+gate to a state transition matrix by using an input-dependent generalized Householder matrix, which
+implements the error-correcting delta-rule (Widrow et al., 1988). A byproduct of our theoretical
+analysis are further insights into the functionality of the gating mechanism and forget gate in Section 3. Another line of work has improved sub-quadratic sequence models through better kernel
+approximations of softmax attention (Katharopoulos et al., 2020). This approach led to the use of
+random features (Choromanski et al., 2021a; 2022), which was extended to learning the features
+directly (Zhang et al., 2024). Interestingly, a polynomial kernel inspired by the Taylor expansion
+of the exponential function has proved effective in closing the performance gap, while being less
+efficient in terms of computational complexity (Zhang et al., 2024; Kacham et al., 2023). We base
+our theoretical investigation on the work of Peng et al. (2021), deriving a linear attention variant as
+an approximation of the softmax Transformer.
+9
+
+Published as a conference paper at ICLR 2026
+
+RoPE and complex parameterizations of RNNs. The primary method of encoding positional
+information in sub-quadratic attention variants is exponential decay (Lin et al., 2025). However, in softmax Transformers, rotary position embeddings (RoPE) have proven to be very effective (Su et al., 2021; Shaw et al., 2018; Yang et al., 2025b) compared to no positional embeddings
+(NoPE) (Kazemnejad et al., 2023). RoPE encodes positional information through point-wise rotation of the query-key pairs. Other variants of RoPE have made attempts at improving RoPE in terms
+of its shortcomings in generalizing to longer sequences by learning the position embedding (Li et al.,
+2024), framing it as a kernel design problem (Chi et al., 2022), or utilizing theoretical tools (Peng
+et al., 2024). Interestingly, our model generalizes RoPE by making angles input-dependent. In our
+experiments, we show the effectiveness of our proposed position embedding both in linear attention
+models and softmax Transformers. As shown in Section 2, applying RoPE to a linear Transformer is
+equivalent to operating in the complex domain and theoretically, this is essential for the universality
+guarantees of RNNs and SSMs (Orvieto et al., 2024; Gu et al., 2020). Further investigation showed
+an improvement in the recall capabilities and expressivity of SSMs when operating in the complex
+domain (Ran-Milo et al., 2024). However, later variants of these models removed the complex recurrence due to inconclusive evidence for their benefits in language modeling and implementation
+overhead (Gu & Dao, 2023; Dao & Gu, 2024; De et al., 2024). In this paper, we focus on the kernel
+view of softmax attention, providing a connection between it and linear attention models operating in the complex domain. The resulting design principle provides a connection between softmax
+attention, complex linear attention, the gating mechanism, and position embeddings.
+
+6
+
+C ONCLUSION
+
+We introduced Selective RoPE, an input-dependent rotary position embedding that generalizes RoPE
+from fixed to arbitrary, learnable rotations. Our theory shows that (i) softmax attention admits a complex linear formulation that implicitly performs selective rotations, and (ii) this complex formulation
+introduces spectral leakage, which can be suppressed through the forget gate mechanism. Empirically, equipping certain sequence models (namely, GLA, Gated DeltaNet, and softmax Transformers) with Selective RoPE improves recall-centric synthetic tasks and strengthens language modeling
+downstream performance for linear attention variants. Furthermore, we show that this improvement
+in performance comes at very little computational cost, with an easy implementation thanks to the
+RoPE trick.
+Future work. There are several aspects of Selective RoPE and the proposed design principle introduced in our paper that require further investigation. Firstly, we note that incorporating RoPE is
+notoriously detrimental to the length-extrapolation capabilities of sequence models (Li et al., 2024).
+In this paper, we do not investigate this aspect since we consider it to be out of the scope of our
+research. Secondly, we believe that further investigation of the effect of the extra components used
+in Selective RoPE, namely the bias term and the phase gate, can be a fruitful direction for future
+research. Thirdly, we consider the impact of choosing a diagonal as opposed to a scalar forget gate
+to be an interesting question, since our theoretical justification for forget gates is only concerned
+with an exponentially decaying component in the sequence model, and not the dimensionality of it.
+Finally, given the existing variants of RoPE (Black et al., 2022; Su et al., 2021), we believe it to be
+important to also incorporate the progress on the positional embedding front into future work.
+
+10
+
+Published as a conference paper at ICLR 2026
+
+ACKNOWLEDGEMENTS
+We would like to thank Philipp Nazari, Julie Naegelen, Felix Sarnthein, and Gwendolyn Neitzel for
+constructive discussions and feedback. We would also like to thank Songlin Yang for pointing out an
+error in a previous version of our manuscript which overstated the expressivity of Selective RoPE.
+This research was partially supported by the following sources: PNRR MUR Project PE000013
+CUP J53C22003010006 Future Artificial Intelligence Research (FAIR), funded by the European
+Union NextGenerationEU, and EU Project ELSA under grant agreement No. 101070617. TAILOR, a project funded by EU Horizon 2020 research and innovation programme under GA No
+952215; the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) under grant
+number 417962828; the European Research Council (ERC) Consolidator Grant ’Deep Learning 2.0’
+(grant no. 10). This research was partially funded by the Deutsche Forschungsgemeinschaft (DFG,
+German Research Foundation) under grant number 539134284, through EFRE (FEIH 2698644)
+and the state of Baden-Württemberg. Frank Hutter, Antonio Orvieto, Sajad Movahedi, and Timur
+Carstensen acknowledge financial support by the Hector Foundation. The authors acknowledge support from ELLIS and ELIZA, funded by the European Union. The authors gratefully acknowledge
+the computing time made available to them on the high-performance computers and at the NHR
+Centers at TU Dresden and KIT. These centers are jointly supported by the Federal Ministry of
+Research, Technology and Space of Germany and the state governments participating in the NHR.
+Arshia Afzal acknowledges support under project ID #37 as part of the Swiss AI Initiative, through
+a grant from the ETH Domain, and computational resources provided by the Swiss National Supercomputing Centre (CSCS) under the Alps infrastructure. This work was funded by the Swiss
+National Science Foundation (SNSF) under grant number 2000-1-240094. Research was sponsored
+by the Army Research Office and was accomplished under Grant Number W911NF-24-1-0048.
+Views and opinions expressed are however those of the author(s) only and do not necessarily reflect
+those of the European Union or the ERC. Neither the European Union nor the ERC can be held responsible for them. Finally, we gratefully acknowledge the support of the Schmidt Sciences AI2050
+fellowship.
+
+11
+
+Published as a conference paper at ICLR 2026
+
+R EFERENCES
+Niccol Ajroldi. plainlm: Language model pretraining in pytorch. https://github.com/
+Niccolo-Ajroldi/plainLM, 2024.
+S. Arora, S. Eyuboglu, A. Timalsina, I. Johnson, M. Poli, J. Zou, A. Rudra, and C. Ré. Zoology:
+Measuring and Improving Recall in Efficient Language Models. In The Twelfth International
+Conference on Learning Representations (ICLR’24) ICL (2024).
+S. Arora, S. Eyuboglu, M. Zhang, A. Timalsina, S. Alberti, J. Zou, A. Rudra, and C. Re. Simple
+linear attention language models balance the recall-throughput tradeoff. In Salakhutdinov et al.
+(2024).
+M. Beck, K. Pöppel, M. Spanring, A. Auer, O. Prudnikova, M. Kopp, G. Klambauer, J. Brandstetter,
+and S. Hochreiter. xLSTM: Extended Long Short-Term Memory. In Globerson et al. (2024).
+S. Black, S. Biderman, E. Hallahan, Q. Anthony, L. Gao, L. Golding, H. He, C. Leahy, K. McDonell,
+J. Phang, M. Pieler, U. Prashanth, S. Purohit, L. Reynolds, J. Tow, B. Wang, and S. Weinbach.
+GPT-NeoX-20B: An open-source autoregressive language model. arXiv:2204.06745 [cs.CL],
+2022.
+T.-C. Chi, T.-H. Fan, P. Ramadge, and A. Rudnicky. KERPLE: Kernelized Relative Positional
+Embedding for Length Extrapolation. In Koyejo et al. (2022).
+K. Choromanski, V. Likhosherstov, D. Dohan, X. Song, A. Gane, T. Sarlos, P. Hawkins, J. Davis,
+A. Mohiuddin, L. Kaiser, D. Belanger, L. Colwell, and A. Weller. Rethinking attention with
+performers. In The Ninth International Conference on Learning Representations (ICLR’21) ICL
+(2021).
+K. Choromanski, H. Chen, H. Lin Y. Ma, A. Sehanobish, D. Jain, M. Ryoo, J. Varley, A. Zeng,
+V. Likhosherstov, D. Kalashnikov, V. Sindhwani, and A. Weller. Hybrid Random Features. In
+The Tenth International Conference on Learning Representations (ICLR’22) ICL (2022).
+Krzysztof Marcin Choromanski, Valerii Likhosherstov, David Dohan, Xingyou Song, Andreea
+Gane, Tamas Sarlos, Peter Hawkins, Jared Quincy Davis, Afroz Mohiuddin, Lukasz Kaiser,
+David Benjamin Belanger, Lucy J Colwell, and Adrian Weller. Rethinking attention with performers. In International Conference on Learning Representations, 2021b.
+N. M. Cirone, A. Orvieto, B. Walker, C. Salvi, and T. Lyons. Theoretical Foundations of Deep
+Selective State-Space Models. In Globerson et al. (2024).
+T. Dao. FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning. In The
+Twelfth International Conference on Learning Representations (ICLR’24) ICL (2024).
+T. Dao and A. Gu. Transformers are SSMs: Generalized models and efficient algorithms through
+structured state space duality. In Salakhutdinov et al. (2024).
+S. De, S. L. Smith, A. Fernando, A. Botev, G. Cristian-Muraru, A. Gu, R. Haroun, L. Berrada,
+Y. Chen, S. Srinivasan, G. Desjardins, A. Doucet, D. Budden, Y. W. Teh, R. Pascanu, N. De
+Freitas, and C. Gulcehre. Griffin: Mixing gated linear recurrences with local attention for efficient
+language models. arXiv:2402.19427 [cs.LG], 2024.
+Alexandre François, Antonio Orvieto, and Francis Bach. An uncertainty principle for linear recurrent neural networks. In Nika Haghtalab and Ankur Moitra (eds.), Proceedings of the 38th
+Conference on Learning Theory (COLT’25), volume 291 of Proceedings of Machine Learning
+Research, pp. 2143–2187. PMLR, 2025.
+L. Gao, J. Tow, B. Abbasi, S. Biderman, S. Black, A. DiPofi, C. Foster, L. Golding, J. Hsu, A. Le
+Noac’h, H. Li, K. McDonell, N. Muennighoff, C. Ociepa, J. Phang, L. Reynolds, H. Schoelkopf,
+A. Skowron, L. Sutawika, E. Tang, A. Thite, B. Wang, K. Wang, and A. Zou. The language model
+evaluation harness, 2024. URL https://zenodo.org/records/12608602.
+A. Globerson, L. Mackey, D. Belgrave, A. Fan, U. Paquet, J. Tomczak, and C. Zhang (eds.). Proceedings of the 37th International Conference on Advances in Neural Information Processing
+Systems (NeurIPS’24), 2024.
+12
+
+Published as a conference paper at ICLR 2026
+
+R. Grazzi, J. Siems, A. Zela, J. Franke, F. Hutter, and M. Pontil. Unlocking State-Tracking in Linear
+RNNs Through Negative Eigenvalues. In The Thirteenth International Conference on Learning
+Representations (ICLR’25) ICL (2025).
+A. Gu and T. Dao. Mamba: Linear time sequence modeling with selective state spaces.
+arXiv:2312.00752 [cs.LG], 2023.
+A. Gu, T. Dao, S. Ermon, A. Rudra, and C. Re. HiPPO: Recurrent Memory with Optimal Polynomial Projections. In H. Larochelle, M. Ranzato, R. Hadsell, M.-F. Balcan, and H. Lin (eds.),
+Proceedings of the 33rd International Conference on Advances in Neural Information Processing
+Systems (NeurIPS’20), 2020.
+A. Gu, K. Goel, and C. Re. Efficiently Modeling Long Sequences with Structured State Spaces. In
+The Tenth International Conference on Learning Representations (ICLR’22) ICL (2022).
+A. Gu, A. Gupta, K. Goel, and C. R. On the Parameterization and Initialization of Diagonal State
+Space Models. In Koyejo et al. (2022).
+Albert Gu, Karan Goel, and Christopher Ré. Efficiently modeling long sequences with structured
+state spaces. In International Conference on Learning Representations (ICLR 2022), 2022c.
+F. Harris. On the use of windows for harmonic analysis with the discrete fourier transform. Proceedings of the IEEE, 66(1):51–83, 2005.
+A. Henry, P. Dachapally, S. Pawar, and Y. Chen. Query-Key Normalization for Transformers. In
+B. Webber, T. Cohn, Y. He, and Y. Liu (eds.), Proceedings of the 2020 Conference on Empirical
+Methods in Natural Language Processing (EMNLP). Association for Computational Linguistics,
+2020.
+S. Hochreiter and J. Schmidhuber. Long Short-Term Memory. Neural Computation, 9(8):1735–
+1780, 1997. Based on TR FKI-207-95, TUM (1995).
+J. Hu, Y. Pan, J. Du, D. Lan, X. Tang, Q. Wen, Y. Liang, and W. Sun. Comba: Improving Bilinear
+RNNs with Closed-loop Control. arXiv:2506.02475 [cs.LG], 2025.
+Proceedings of the International Conference on Learning Representations (ICLR’21), 2021. ICLR.
+Proceedings of the International Conference on Learning Representations (ICLR’22), 2022. ICLR.
+Proceedings of the International Conference on Learning Representations (ICLR’24), 2024. ICLR.
+Proceedings of the International Conference on Learning Representations (ICLR’25), 2025. ICLR.
+J. Smith III. Spectral audio signal processing. (No Title), 2011.
+S. Jelassi, D. Brandfonbrener, S. Kakade, and E. Malach. Repeat After Me: Transformers are Better
+than State Space Models at Copying. In Salakhutdinov et al. (2024).
+A. Jiang, A. Sablayrolles, A. Mensch, C. Bamford, D. Chaplot, D. de las Casas, F. Bressand,
+G. Lengyel, G. Lample, L. Saulnier, L. Lavaud, M.-A. Lachaux, P. Stock, T. Le Scao, T. Lavril,
+T. Wang, T. Lacroix, and W. El Sayed. Mistral 7B. arXiv:2310.06825 [cs.CL], 2023.
+P. Kacham, V. Mirrokni, and P. Zhong. PolySketchFormer: Fast Transformers via Sketching Polynomial Kernels. arXiv:2310.01655 [cs.LG], 2023.
+A. Katharopoulos, A. Vyas, N. Pappas, and F. Fleuret. Transformers are RNNs: Fast Autoregressive
+Transformers with Linear Attention. In H. Daume III and A. Singh (eds.), Proceedings of the 37th
+International Conference on Machine Learning (ICML’20), volume 98. Proceedings of Machine
+Learning Research, 2020.
+A. Kazemnejad, I. Padhi, K. Natesan, P. Das, and S. Reddy. The impact of positional encoding on
+length generalization in transformers. In Oh et al. (2023).
+13
+
+Published as a conference paper at ICLR 2026
+
+T. Salimans D. Kingma. Weight Normalization: A simple reparameterization to accelerate training
+of deep neural networks. In D. Lee, M. Sugiyama, U. von Luxburg, I. Guyon, and R. Garnett
+(eds.), Proceedings of the 30th International Conference on Advances in Neural Information Processing Systems (NeurIPS’16), volume 29, 2016.
+S. Koyejo, S. Mohamed, A. Agarwal, D. Belgrave, K. Cho, and A. Oh (eds.). Proceedings of the 35th
+International Conference on Advances in Neural Information Processing Systems (NeurIPS’22),
+2022.
+S. Li, C. You, G. Guruganesh, J. Ainslie, S. Ontanon, M. Zaheer, S. Sanghai, Y. Yang, S. Kumar, and
+S. Bhojanapalli. Functional Interpolation for Relative Positions Improves Long Context Transformers. In The Twelfth International Conference on Learning Representations (ICLR’24) ICL
+(2024).
+Z. Lin, E. Nikishin, X. He, and A. Courville. Forgetting Transformer: Softmax Attention with a
+Forget Gate. In The Thirteenth International Conference on Learning Representations (ICLR’25)
+ICL (2025).
+B. Liu, J. Ash, S. Goel, A. Krishnamurthy, and C. Zhang. Transformers Learn Shortcuts to Automata. In The Eleventh International Conference on Learning Representations (ICLR’23). ICLR,
+2023.
+I. Loshchilov and F. Hutter. SGDR: Stochastic gradient descent with warm restarts. In The Fifth
+International Conference on Learning Representations (ICLR’17). ICLR, 2017.
+I. Loshchilov and F. Hutter. Decoupled weight decay regularization. In The Seventh International
+Conference on Learning Representations (ICLR’19). ICLR, 2019.
+E. Martin and C. Cundy. Parallelizing linear recurrent neural nets over sequence length. In International Conference on Learning Representations, 2018.
+W. Merrill, J. Petty, and A. Sabharwal. The Illusion of State in State-Space Models. In Salakhutdinov
+et al. (2024).
+A. Oh, T. Naumann, A. Globerson, K. Saenko, M. Hardt, and S. Levine (eds.). Proceedings
+of the 36th International Conference on Advances in Neural Information Processing Systems
+(NeurIPS’23), 2023.
+D. Okpekpe and A. Orvieto.
+When recalling in-context, Transformers are not SSMs.
+arXiv:2508.19029 [cs.LG], 2025.
+A. Oppenheim. Discrete-time signal processing. Pearson Education India, 1999.
+A. Orvieto and R. Gower. In search of adam’s secret sauce. arXiv:2505.21829 [cs.LG], 2025.
+A. Orvieto, S. L. Smith, A. Gu, A. Fernando, C. Gulcehre, R. Pascanu, and S. De. Resurrecting
+recurrent neural networks for long sequences. In A. Krause, E. Brunskill, K. Cho, B. Engelhardt,
+S. Sabato, and J. Scarlett (eds.), Proceedings of the 40th International Conference on Machine
+Learning (ICML’23), volume 202 of Proceedings of Machine Learning Research. PMLR, 2023a.
+A. Orvieto, S. De, C. Gulcehre, R. Pascanu, and S. Smith. Universality of Linear Recurrences Followed by Non-linear Projections: Finite-Width Guarantees and Benefits of Complex Eigenvalues.
+In Salakhutdinov et al. (2024).
+Antonio Orvieto, Soham De, Caglar Gulcehre, Razvan Pascanu, and Samuel L Smith. Universality
+of linear recurrences followed by non-linear projections: finite-width guarantees and benefits of
+complex eigenvalues. arXiv preprint arXiv:2307.11888, 2023b.
+G. Penedo, H. Kydlı́ček, L. Ben allal, A. Lozhkov, M. Mitchell, C. Raffel, L. Von Werra, and
+T. Wolf. The fineweb datasets: Decanting the web for the finest text data at scale. In Globerson
+et al. (2024).
+B. Peng, J. Quesnelle, H. Fan, and E. Shippole. YaRN: Efficient Context Window Extension of
+Large Language Models. In The Twelfth International Conference on Learning Representations
+(ICLR’24) ICL (2024).
+14
+
+Published as a conference paper at ICLR 2026
+
+B. Peng, R. Zhang, D. Goldstein, E. Alcaide, X. Du, H. Hou, J. Lin, J. Liu, J. Lu, W. Merrill,
+G. Song, K. Tan, S. Utpala, N. Wilce, J. Wind, T. Wu, D. Wuttke, and C. Zhou-Zheng. RWKV-7
+”Goose” with Expressive Dynamic State Evolution. arXiv:2503.14456 [cs.CL], 2025.
+H. Peng, N. Pappas, D. Yogatama, R. Schwartz, N. Smith, and L. Kong. Random Feature Attention.
+In The Ninth International Conference on Learning Representations (ICLR’21) ICL (2021).
+M. Poli, A. W. Thomas, E. Nguyen, P. Ponnusamy, B. Bjö”rn Deiseroth, K. Kersting, T. Suzuki,
+B. Hie, S. Ermon, C. Re, C. Zhang, and S. Massaroli. Mechanistic design and scaling of hybrid
+architectures. In Salakhutdinov et al. (2024).
+Ofir Press, Noah A Smith, and Mike Lewis. Train short, test long: Attention with linear biases
+enables input length extrapolation. arXiv preprint arXiv:2108.12409, 2021.
+Z. Qin, W. Sun, H. Deng, D. Li, Y. Wei, B. Lv, J. Yan, L. Kong, and Y. Zhong. cosFormer: Rethinking Softmax in Attention. In The Tenth International Conference on Learning Representations
+(ICLR’22) ICL (2022).
+Z. Qin, S. Yang, and Y. Zhong. Hierarchically Gated Recurrent Neural Network for Sequence
+Modeling. In Oh et al. (2023).
+Z. Qin, S. Yang, W. Sun, X. Shen, D. Li, W. Sun, and Y. Zhong. HGRN2: Gated Linear RNNs with
+State Expansion. arXiv:2404.07904 [cs.CL], 2024.
+A. Rahimi and B. Recht. Random features for large-scale kernel machines. In J. Platt, D. Koller,
+Y. Singer, and S. Roweis (eds.), Proceedings of the 21st International Conference on Advances in
+Neural Information Processing Systems (NeurIPS’07), 2007.
+Y. Ran-Milo, E. Lumbroso, E. Cohen-Karlik, R. Giryes, A. Globerson, and N. Cohen. Provable
+Benefits of Complex Parameterizations for Structured State Space Models. In Globerson et al.
+(2024).
+R. Salakhutdinov, Z. Kolter, K. Heller, A. Weller, N. Oliver, J. Scarlett, and F. Berkenkamp (eds.).
+Proceedings of the 41st International Conference on Machine Learning (ICML’24), volume 251
+of Proceedings of Machine Learning Research, 2024. PMLR.
+I. Schlag, K. Irie, and J. Schmidhuber. Linear transformers are secretly fast weight programmers.
+In M. Meila and T. Zhang (eds.), Proceedings of the 38th International Conference on Machine
+Learning (ICML’21), volume 139 of Proceedings of Machine Learning Research. PMLR, 2021.
+P. Shaw, J. Uszkoreit, and A. Vaswani.
+arXiv:1803.02155 [cs.CL], 2018.
+
+Self-attention with relative position representations.
+
+J. Siems, T. Carstensen, A. Zela, F. Hutter, M. Pontil, and R. Grazzi. DeltaProduct: Increasing the
+expressivity of deltanet through products of householders. arXiv:2502.10297 [cs.LG], 2025.
+J. Su, Y. Lu, S. Pan, A. Murtadha, B. Wen, and Y. Liu. Roformer: Enhanced transformer with rotary
+position embedding. arXiv:2104.09864 [cs.CL], 2021.
+Y. Sun, L. Dong, S. Huang, S. Ma, Y. Xia, J. Xue, J. Wang, and F. Wei. Retentive Network: A
+Successor to Transformer for Large Language Models. arXiv:2307.08621 [cs.CL], 2023a.
+Yutao Sun, Li Dong, Shaohan Huang, Shuming Ma, Yuqing Xia, Jilong Xue, Jianyong Wang, and
+Furu Wei. Retentive network: A successor to transformer for large language models. arXiv
+preprint arXiv:2307.08621, 2023b.
+H. Touvron, T. Lavril, G. Izacard, X. Martinet, M. Lachaux, T. Lacroix, B. Rozière, N. Goyal,
+E. Hambro, F. Azhar, A. Rodriguez, A. Joulin, E. Grave, and G. Lample. LLaMA: Open and
+efficient foundation language models. arXiv:2302.13971 [cs.CL], 2023.
+A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. Gomez, L. Kaiser, and I. Polosukhin.
+Attention is all you need. In I. Guyon, U. von Luxburg, S. Bengio, H. Wallach, R. Fergus,
+S. Vishwanathan, and R. Garnett (eds.), Proceedings of the 31st International Conference on
+Advances in Neural Information Processing Systems (NeurIPS’17). Curran Associates, Inc., 2017.
+15
+
+Published as a conference paper at ICLR 2026
+
+R. Waleffe, W. Byeon, D. Riach, B. Norick, V. Korthikanti, T. Dao, A. Gu, A. Hatamizadeh,
+S. Singh, D. Narayanan, G. Kulshreshtha, V. Singh, J. Casper, J. Kautz, M. Shoeybi, and B. Catanzaro. An Empirical Study of Mamba-based Language Models. arXiv:2406.07887 [cs.LG], 2024.
+B. Widrow, , and M. E. Hoff. Adaptive switching circuits, pp. 123134. MIT Press, Cambridge, MA,
+USA, 1988.
+S. Yang and Y. Zhang. Fla: A triton-based library for hardware-efficient implementations
+of linear attention mechanism, January 2024. URL https://github.com/fla-org/
+flash-linear-attention.
+S. Yang, B. Wang, Y. Shen, R. Panda, and Y. Kim. Gated Linear Attention Transformers with
+Hardware-Efficient Training. In Salakhutdinov et al. (2024).
+S. Yang, B. Wang, Y. Zhang, Y. Shen, and Y. Kim. Parallelizing Linear Transformers with the Delta
+Rule over Sequence Length. In Globerson et al. (2024).
+S. Yang, J. Kautz, and A. Hatamizadeh. Gated delta networks: Improving mamba2 with delta rule.
+In The Thirteenth International Conference on Learning Representations (ICLR’25) ICL (2025).
+S. Yang, Y. Shen, K. Wen, S. Tan, M. Mishra, L. Ren, R. Panda, and Y. Kim. PaTH Attention:
+Position encoding via accumulating householder transformations. arXiv:2505.16381 [cs.CL],
+2025b.
+M. Zhang, K. Bhatia, H. Kumbong, and C. R. The Hedgehog & the Porcupine: Expressive Linear
+Attentions with Softmax Mimicry. In The Twelfth International Conference on Learning Representations (ICLR’24) ICL (2024).
+
+16
+
+Published as a conference paper at ICLR 2026
+
+The supplementary is structured as follows:
+Appendix A contains all derivations and proofs:
+• A.1 shows that parameterizing a linear transformer with a unitary diagonal state transition
+can be implemented by applying RoPE to the queries and keys of the same models.
+• A.2 shows that one can use Random Fourier Features (RFFs) to approximate the exponential kernel and thereby softmax attention and, when limiting the approximation to the
+D-dimensions, can be expressed as a recurrent model that can be implemented using an
+input-dependent variant of RoPE.
+• A.3 derives the optimal variance for the RFFs used in Appendix A.2.
+• A.4 shows that complex diagonal SSMs can be understood as spectral analyzers that suffer
+from spectral leakage. A well known remedy for spectral leakage is using real-valued
+decaying window functions, which can also be seen as forget gates, a prevalent component
+in sequence models. This highlights the complementary roles of both imaginary and real
+parts of a gate in recurrent sequence models, with the former rotating and the latter decaying
+the past observation.
+• Appendix A.5 derives the connection between rotation using RoPE and Householder products used in DeltaNet.
+Appendix B lists the experimental details for language modeling and synthetic tasks and includes a
+code listing of the implementation of Selective RoPE.
+
+Notation. We use the following notation for mathematical objects: Lower-case letters denote
+scalars (α, β). Upper-case bold letters denote matrices (W , A). Lower-case bold letters denote
+vectors (v, k, q). ⊤ denotes the transpose operator. H denotes the conjugate transpose operator.
+⊙ denotes the Hadamard-product. Taking the real or imaginary component of an expression is
+denoted by either ℜ or ℑ. Expressing a vector as a diagonal matrix is denoted by diag(·). Blockdiagonalizing a set
+ of square
+ matrices is denoted by blockdiag (·). Concatenating vectors is denoted
+⊤
+by xt = concat [· · ·] . By φ we denote the argument of a complex number.
+
+A
+
+M ATHEMATICAL D ERIVATIONS AND P ROOFS
+
+A.1
+
+RoPE AS I MAGINARY- VALUED L INEAR T RANSFORMER
+
+We start by unrolling the linear Transformers recurrence:
+St = St−1 R̄ + vt k̃tH , ot = ℜ{St q̃t }
+( t
+)
+t
+n
+o
+X
+X
+H t−τ
+vτ ℜ k̃τH R̄t−τ q̃t
+ot = ℜ
+vτ k̃τ R̄ q̃t =
+τ =1
+
+τ =1
+
+Therefore, the attention score applied to value vτ is:
+n
+o
+Attt,τ = ℜ k̃τ⊤ R̄t−τ q̃t
+17
+
+Published as a conference paper at ICLR 2026
+
+Since R̄ is diagonal, we can expand the expression as:
+
+
+d/2
+X
+
+R
+I
+R
+I
+Atttτ = ℜ
+(q̃t,n
++ i q̃t,n
+) · eiωn (t−τ ) · (k̃τ,n
++ i k̃τ,n
+)
+
+
+n=1
+
+
+d/2
+
+X
+=ℜ
+|q̃t,n | e−iφ(q̃t,n ) · eiωn (t−τ ) · |k̃τ,n | e−iφ(k̃τ,n )
+
+
+n=1
+
+
+d/2
+X
+
+=ℜ
+|q̃t,n | |k̃τ,n | ei(ωn (t−τ )−φ(q̃t,n )−φ(k̃τ,n ))
+
+
+n=1
+
+=
+
+d/2
+X
+
+
+
+|q̃t,n | |k̃τ,n | cos ωn (t − τ ) − φ(q̃t,n ) − φ(k̃τ,n )
+
+(14)
+
+n=1
+
+where φ(q̃t,n ) and φ(k̃τ,n ) denote the complex phases (angles) of the n-th component of q̃t and k̃τ ,
+respectively. Equation (14) shows that an imaginary forget gate rotates the query-key pairs at each
+index n with a distinct frequency ωn . We now demonstrate that this is equivalent to applying RoPE.
+Replacing the cosine in eq. (14) with its matrix multiplication equivalent:
+⊤ 
+
+ 
+cos(∠q̃t,n )
+cos(ωn (t − τ ))
+cos ωn (t − τ ) − ∠q̃t,n − ∠k̃τ,n =
+sin(∠q̃t,n )
+sin(ωn (t − τ ))
+
+
+
+− sin(ωn (t − τ )) cos(∠k̃τ,n )
+cos(ωn (t − τ ))
+sin(∠k̃τ,n )
+
+Plugging above in eq. (14) we achieve:
+Attt,τ =
+
+d/2
+X
+n=1
+
+=
+
+d/2
+X
+n=1
+
+
+⊤ 
+cos(ωn (t − τ ))
+cos(∠q̃t,n )
+|q̃t,n | |k̃τ,n |
+sin(∠q̃t,n )
+sin(ωn (t − τ ))
+
+⊤ 
+cos(∠q̃t,n )
+cos(ωn (t − τ ))
+|q̃t,n |
+sin(∠q̃t,n )
+sin(ωn (t − τ ))
+
+d/2  R ⊤ 
+X
+q̃t,n
+cos(ωn (t − τ ))
+=
+I
+sin(ωn (t − τ ))
+q̃t,n
+n=1
+
+
+
+− sin(ωn (t − τ )) cos(∠k̃τ,n )
+cos(ωn (t − τ ))
+sin(∠k̃τ,n )
+
+
+
+
+− sin(ωn (t − τ ))
+cos(∠k̃τ,n )
+|k̃τ,n |
+cos(ωn (t − τ ))
+sin(∠k̃τ,n )
+
+ R 
+− sin(ωn (t − τ )) k̃τ,n
+I
+cos(ωn (t − τ ))
+k̃τ,n
+
+(15)
+
+Using the definition of:
+d/2  R 
+M
+q̃
+
+t,n
+qt =
+I
+q̃t,n
+n=1
+
+kτ =
+
+,
+
+d/2  R 
+M
+k̃
+τ,n
+
+I
+k̃τ,n
+n=1
+
+.
+
+we can write Equation (15) as:
+Attt,τ =
+
+d/2
+X
+
+qt,n Rωt−τ
+kτ,n
+n
+
+n=1
+
+which is theoretically equivalent to applying RoPE to query-key pairs qt , kτ . RoPE interleaves the
+real and imaginary parts of complex queries and keys across the hidden dimension, then applies 2D
+rotations to each pair.
+A.2
+
+R ANDOM F OURIER F EATURE A PPROXIMATION OF S OFTMAX ATTENTION
+
+We start with the definition of softmax attention:
+ot =
+
+st
+,
+zt
+
+st =
+
+t
+X
+
+exp
+
+
+
+√1 q ⊤ kτ
+d t
+
+
+
+τ =1
+
+· vτ ,
+
+zt =
+
+t
+X
+
+exp
+
+
+
+√1 q ⊤ kτ
+d t
+
+
+
+,
+
+τ =1
+
+√
+where qt , kτ ∈ Rd . For simplicity, we omit the normalization factor 1/ d and first focus on the
+numerator of the output, specifically the exponential kernel. As in Equation (2), the denominator
+scaling can be handled separately through an external state zt .
+18
+
+Published as a conference paper at ICLR 2026
+
+To approximate the exponential kernel exp(·), we use Random Fourier Features (RFF) (Rahimi &
+Recht, 2007) with frequencies ω ∈ Rd ∼ N (0, σ 2 I). The feature map is defined as
+
+
+∥x∥22
+ϕω (x) = exp
++ iω ⊤ x ,
+2
+so that
+
+
+
+
+exp(qt⊤ kτ ) = ℜ Eω∼N (0,σ2 I) ϕω (qt )⊤ ϕω (kτ ) ,
+for σ = 1. By applying this feature map to the linear attention formulation in Equation (2), we can
+approximate the exponential kernel in softmax attention. Continuing the approximation:
+
+
+
+
+
+
+∥qt ∥22 + ∥kτ ∥22
+⊤
+exp qt kτ = exp
+· ℜ Eω∼N (0,I) exp(iω ⊤ qt ) exp(−iω ⊤ kτ ) .
+2
+
+Let ωj ∼ N 0, σ 2 I for j ∈ {1, 2, . . . , D}. Then due to the law of large numbers we have:
+
+
+
+
+D
+
+
+2
+2
+X
+
+
+
+1
+∥qt ∥2 + ∥kτ ∥2
+· ℜ lim
+exp iωj⊤ qt · exp −iωj⊤ kτ
+exp qt⊤ kτ = exp
+.
+D→∞ D
+
+2
+j=1
+
+Therefore, we can approximate exp qt⊤ kτ as the dot product of the random exponential projection
+of the query and the key using D random ωj s:
+
+
+t
+D
+
+
+∥qt ∥22 + ∥kτ ∥22
+1 XX
+D
+exp
+exp iωj⊤ qt exp −iωj⊤ kτ · vτ .
+ŝt =
+D τ =1 j=1
+2
+
+
+This allows us to compute the softmax attention as the linear attention parameterized by:
+
+
+
+
+∥qt ∥22
+∥kt ∥22
+ϕ(qt ) = exp
+· exp(iΩ⊤ qt ), ϕ(kτ ) = exp
+· exp(−iΩ⊤ kτ ),
+2
+2
+
+
+Pt
+= τ =1 exp qt⊤ kτ · vτ and Ω = [ω1 , ..., ωD ]. Omitting the superscript
+with limD→∞ ℜ ŝD
+t
+D for simplifying the notation, let us focus on one random feature ωj and its contribution to the
+output:
+
+
+
+
+t
+X
+
+
+∥qt ∥22
+∥kτ ∥22
+ŝt,j =
+exp
+exp
+exp iωj⊤ qt exp −iωj⊤ kτ · vτ .
+2
+2
+τ =1
+1 D
+d×D
+D
+. Now note that
+In this case, we have ŝD
+t = D Ŝt 1, where Ŝt = [ŝt,1 ŝt,2 . . . ŝt,D ] ∈ C
+we have:
+t−1
+
+
+X
+
+
+
+∥qt ∥22 −∥qt−1 ∥22
+ŝt,j =
+exp
+exp iωj⊤ qt−1 exp iωj⊤ (qt − qt−1 ) exp −iωj⊤ kτ · vτ (16)
+2
+τ =1
+
+
+
+
+
+
+∥qt ∥22
+∥kt ∥22
++ exp
+exp
+exp iωj⊤ (qt − kt ) · vt .
+2
+2
+
+
+
+∥qt ∥22 −∥qt−1 ∥22
+= exp
+exp iωj⊤ (qt − qt−1 ) ŝjt−1 + ϕωj (qt ) · ϕωj (kt ) · vt
+2
+
+(17)
+(18)
+
+Note that the real exponential component in Equation (18) can introduce instability to the recurrence.
+Therefore, following the standard in both linear Transformers (Yang et al., 2024b;a; 2025a; Lin et al.,
+2025) and deep softmax Transformers (Henry et al., 2020), we assume L2 normalization over the
+query and the key, i.e., ∥qt ∥2 = ∥qt−1 ∥2 . Thus, recurrence presented in Equation (18) simplifies to:
+
+ŝt,j = exp iωj⊤ (qt − qt−1 ) ŝt−1,j + ϕωj (qt ) · ϕωj (kt ) · vt ,
+
+with ŝt,j being the j th column of ŜtD is scaled by the values exp iωj⊤ (qt − qt−1 ) . Therefore, we
+can write the recurrence over Ŝt as:
+1 D
+⊤
+Ŝ 1.
+ŜtD = Ŝt−1 R̄t + vt (ϕ(qt ) ◦ ϕ(kt )) , ŝD
+t =
+D t
+where ϕ(x) is a vector with its j th element equal to ϕωj (x), and R̄t is:
+R̄t = diag(exp(iΩ⊤ (qt − qt−1 )))
+19
+
+(19)
+
+Published as a conference paper at ICLR 2026
+
+Focusing on Equation (19), we observe that exponential kernel in softmax attention implicitly applies a form of input-dependent (Selective) RoPE (see Sec. 2). However, instead of learning the
+frequencies Ω, they are randomly sampled from a normal distribution.
+Similarly, we can also approximate the normalizing factor zt as:
+
+
+t
+D
+
+
+1 XX
+∥qt ∥22 + ∥kτ ∥22
+ẑtD =
+exp iωj⊤ qt exp −iωj⊤ kτ .
+exp
+D τ =1 j=1
+2
+Separating the contribution of each random feature, we have:
+
+
+
+
+t
+X
+
+
+∥kτ ∥22
+∥qt ∥22
+exp
+exp iωj⊤ qt exp −iωj⊤ kτ .
+ẑt,j =
+exp
+2
+2
+τ =1
+Finally, defining ẐtD = [ẑt,1 ẑt,2 . . . ẑt,D ,] we arrive at a similar result. The full recurrence
+of softmax attention, therefore, can be written as:
+⊤
+
+D
+ŜtD = Ŝt−1
+R̄t + vt (ϕ(qt ) ◦ ϕ(kt )) ,
+
+D
+ẐtD = Ẑt−1
+R̄t + ϕ(qt ) ◦ ϕ(kt ),
+
+ôt =
+
+ŜtD 1
+.
+ẑtD 1
+
+which again highlights the importance of the gate R̄ as selective rotation.
+A.3
+
+O PTIMAL VARIANCE FOR R ANDOM F OURIER F EATURES
+
+
+Theorem 1 Let the expected error of the RFF kernel over ωj ∼ N 0, σ 2 I be as follows:
+ P
+ 2
+D
+1
+⊤
+ERR [qt , kτ ] = Eωj
+ϕ
+(q
+)
+·
+ϕ
+k
+(k
+)
+−
+exp
+q
+. Then, for a given a pair of
+ω
+t
+ω
+τ
+τ
+t
+j
+j
+j=1
+D
+
+
+arccos(qt⊤ kτ )
+.
+L2 normalized query and key, the optimal value of σ is equal to σ = tan
+2
+Proof 1 We start by writing down the error:
+
+ii
+e2 X h h
+⊤
+ERR [qt , kτ ] = 2
+E ℜ exp i (ωj + ωj ′ ) (qt − kτ )
+D
+′
+j,j =1
+
+
+
+2e X  
+E ℜ exp iωj⊤ (qt − kτ ) exp qt⊤ kτ + const.
+−
+D j=1
+
+ e2 D2 − D 
+2
+e2  2
+⊤
+= E cos iω (qt − kτ ) +
+E cos iω ⊤ (qt − kτ )
+2
+D
+D 
+
+
+− 2e · E cos iω ⊤ (qt − kτ ) exp qt⊤ kτ + const.,
+where the const. term corresponds to the terms constant w.r.t. the variance of the distribution σ 2 .
+Plugging in the expectation of the cos(·) and cos2 (·) functions (Choromanski et al., 2021a), we get
+the following optimization problem:
+"
+#
+
+2
+
+
+
+e2−4σ · exp −4σ 2 ξ
+2
+D − 1 2−2σ2
+min
++
+e
+exp −2σ 2 ξ − 2e1−σ exp 1 − σ 2 ξ ,
+σ
+2D
+D
+where for simplicity, we set qt⊤ kτ = ξ ∈ [0, 1]. Since in most cases, D is a sizable number, we try
+to solve this optimization problem in the limit D → ∞, which is equivalent to:
+h
+i
+2
+2
+min e2−2σ (1+ξ) − 2e(1−σ )(1+ξ) ,
+σ
+
+with the optimal value equal to:
+s
+σ=
+
+1−ξ
+.
+1+ξ
+
+20
+
+Published as a conference paper at ICLR 2026
+
+Considering normalized queries and keys ||kt || = ||qt || = 1 we can replace the ξ = qt⊤ kτ with
+cos(θ) therefore above also simplifies to:
+s
+1 − cos(θ)
+σ=
+= tan(θ/2).
+1 + cos(θ)
+■
+
+This completes our proof.
+A.3.1
+
+PARAMETERIZATION OF THE TEMPERATURES
+
+We can generalize the parameterization of our proposed temperatures vs. that of RoPE introduced
+by Su et al. (2021) as follows. Let ϵ be a small enough number. Then, we have:
+RoPE:
+
+ϕ = arange(0, D//2)
+
+Selective RoPE:
+
+ϕ = arange(0, D//2) ·
+
+Θ = ϵϕ
+(1 − ϵ)π
+(D//2 − 1)
+
+Θ = tan(ϕ/2)
+
+Here, ϵ can be seen as the inverse of the base frequency in RoPE (Su et al., 2021), and the upperbound on the angle between the queries and keys in our temperature scheme. A visualization of the
+temperature distribution in Selective RoPE compared to standard RoPE is shown in Figure 2. Our
+proposed variation of the temperature has an extremely similar distribution, but with a slightly faster
+decay to 0.
+A.4
+
+ROLE OF R EAL AND I MAGINARY PARTS IN D IAGONAL SSM S
+
+We start our analysis with non-selective diagonal SSMs and show the distinct roles of the real and
+imaginary components. SSMs can be derived from continuous-time representations, expressed as1 :
+ds(t)
+= As(t) + kv(t),
+dt
+
+o(t) = q ⊤ s(t),
+
+K(t) = q ⊤ eAt k,
+
+o(t) = K(t) ∗ v(t),
+
+(20)
+
+where we assume the continuous value signal v(t) and the continuous output signal o(t) to both be
+scalars. Inspired by S4D (Gu et al., 2022b), which is an SSM with diagonal A, we initialize the
+imaginary part of the state matrix as An = iωn (n ∈ [0, N ], roots of unity), from which the output
+is derived as:
+
+o(t) =
+
+N
+X
+
+k n qn e
+
+iωn t
+
+Z ∞
+
+−iωn τ
+
+e
+
+
+v(τ )ut (τ )dτ,
+
+ut (τ ) =
+
+−∞
+
+n=1
+
+1,
+0,
+
+0≤τ ≤t
+o.w.
+
+(21)
+
+where ut (τ ) is a step-window function. The integral in Equation (21) is equivalent to computing the
+Fourier Transform of the windowed signal v(τ ) ut (τ ) at frequency ωn . Duality between convolution
+in the time domain and multiplication in the frequency domain simplifies eq. (21) to:
+o(t) =
+
+N
+X
+
+kn qn (Vωn ∗ Ut,ωn ),
+
+n=1
+
+Ut,2ω =
+
+sin(ωt) −iωt
+e
+ω
+
+(22)
+
+with Vωn and Ut,ωn denoting the Fourier transforms of v(τ ) and ut (τ ), respectively. The input
+spectrum Vω is convolved with the window spectrum Ut,ω , causing distortion, a phenomenon known
+as spectral leakage. In the discrete domain, the integral in eq. (21) becomes a summation:
+ot =
+
+N
+X
+n=0
+
+qn kn
+
+t
+X
+
+
+exp − 2πinτ
+vτ .
+N
+
+(23)
+
+τ =0
+
+1
+where ωn = 2πni
+N and ∆ = N . Thus, S4D with a purely imaginary state matrix A acts as a spectral
+analyzer: it accurately computes the N -point DFT of the value vt for t ≤ N . But for t > N ,
+1
+For consistency within our notation, we replace the common SSM notation for the B and C matrix and
+the input with our self-attention based notation, i.e., B denoted as the key k, C denoted as the query q, and the
+input signal u denoted as the value v. For a detailed comparison, refer to Table 2 from Yang et al. (2024b).
+
+21
+
+Published as a conference paper at ICLR 2026
+
+this spectral analysis suffers from spectral leakage since the state size can at most represent N
+frequencies. Therefore, the higher frequencies are being aliased or overwritten.
+In Signal Processing, spectral leakage is addressed by windowing (Harris, 2005). In S4D, this is
+achieved implicitly by using a complex state matrix A with the real part acting as a window function,
+a classical solution to spectral leakage (Oppenheim, 1999). Concretely, with A = exp(−αn ∆ +
+2πin∆), S4D performs a windowed DFT using a Poisson window (III, 2011), thereby avoiding
+spectral leakage. Its output can be written as:
+ot =
+
+N
+X
+n=0
+
+qn kn
+
+t
+X
+
+
+exp − 2πinτ
+vτ exp(−αn ∆τ ),
+N
+|
+{z
+}
+τ =0
+
+(24)
+
+wτ
+
+where wτ is the Poisson window and ∆ = N1 is chosen for clarity in the DFT formulation. Thus,
+the real part of A in S4D acts as a window, suppressing spectral leakage and enabling undistorted
+spectral representations. Therefore, to summarize: the two real and imaginary parts of state transition matrix A serve distinct but complementary roles; Imaginary parts extract spectral information,
+while Real parts suppress leakage and ensure clean representation of the spectrum.
+A.5
+
+C OMPLEX ROTATIONS AND H OUSEHOLDER MATRICES
+
+Another approach towards introducing rotations to the queries and keys is using Householder reflection matrices (Yang et al., 2024b; 2025b). In this approach, the rotation of the query and key pair is
+limited to a single reflection along the direction of an input-dependent vector. Specifically, let wt be
+an input-dependent unit vector. Then, the positional information is encoded through the product of
+Householder reflection matrices as:
+!
+t
+Y
+
+⊤
+⊤
+⊤
+qt Rt:τ kτ = qt
+I − 2βκ · wκ wκ
+kτ .
+κ=τ +1
+
+Therefore, the positional information between the tth and τ th token is encoded through a rotation
+consisting of t − τ reflections.
+Conveniently, we can also write the complex diagonal rotation matrix in Selective RoPE in terms
+of the product of Householder matrices. Specifically, we can write the realification of the rotation
+matrix Rt as the product of d Householder reflections, each of which performs the reflection over a
+single pair of adjacent elements:
+
+⊤ 
+
+
+
+
+⊤  
+0j
+0j
+0j
+0j
+d
+Y
+1  1  
+cos (ωt,j /2) cos (ωt,j /2) 
+
+
+I − 2 · 
+Rt =
+ 0  0  
+ I − 2  sin (ωt,j /2)   sin (ωt,j /2)   ,
+
+j=1
+0d−j−2
+0d−j−2
+0d−j−2
+0d−j−2
+where we define 0m ∈ Rm as a vector with all zeros. Assuming we split adjacent elements in the
+query-key into the real and imaginary components, then Selective RoPE is performing two reflections over each adjacent element pair of the input, with one of them a parametric reflection, and the
+other negating the first element.
+This interpretation also explains why we gain more expressivity when using Selective RoPE: due to
+the block-diagonal structure, there is a channel mixing happening between the adjacent query-key
+elements. Channel mixing is a key component in improving the expressivity of sequence models (Cirone et al., 2024), thus improving the state-tracking abilities of the network (Siems et al.,
+2025).
+A.6
+
+K ERNELIZED LINEAR ATTENTION WITH FIXED PARAMETERS
+
+In order to further contextualize our results for the RFF kernel and its relationship to other variants
+of kernelized linear attention, we try to replicate our mathematical derivations for two more variants
+of these models: namely Performer and CosFormer (Choromanski et al., 2021b; Qin et al., 2022).
+We then present the results side-by-side to provide further insights into the importance of complex
+parameterization in Linear attention. We provide a summary of the models in Table 4.
+22
+
+Published as a conference paper at ICLR 2026
+
+Model
+
+Transition Matrix
+Input-dependent
+
+R̄t = diag exp Ω⊤ (qt − qt−1 ) 
+R̄t = diag exp i Ω⊤ (qt − qt−1 )
+
+Performer (PRF-based)
+RFA (RFF-based)
+
+Input-independent
+RoFormer (RoPE)
+CosFormer (diagonal RoPE)
+
+R̄ = diag(exp(i ω))
+R̄ = exp(i ω)I
+
+Table 4: Kernelized linear attention models under the shared recurrence St = St−1 At + vt kt⊤ .
+The top block lists input-dependent transitions, while the bottom block lists input-independent ones.
+Among these, the Performer transition is not norm-preserving in general.
+A.6.1
+
+P ERFORMER
+
+We use the notation provided in Appendix A.2. To approximate the exponential kernel exp(·), we use
+Positive Random Features (PRF) (Rahimi & Recht, 2007; Choromanski et al., 2021b) with random
+features ω ∈ Rd ∼ N (0, σ 2 I). The feature map is defined as
+
+
+∥x∥22
+⊤
+ϕω (x) = exp −
++ω x ,
+2
+so that
+
+
+exp(qt⊤ kτ ) = Eω∼N (0,σ2 I) ϕω (qt )⊤ ϕω (kτ ) ,
+for σ = 1. By applying this feature map, the linear attention formulation in Equation (2), we can
+approximate the exponential kernel in softmax attention. Continuing the approximation:
+
+
+
+
+
+∥qt ∥22 + ∥kτ ∥22
+exp qt⊤ kτ = exp −
+· Eω∼N (0,I) exp(ω ⊤ qt ) exp(ω ⊤ kτ ) .
+2
+
+2
+Let ωj ∼ N 0, σ I for j ∈ {1, 2, . . . , D}. Then due to the law of large numbers we have:
+
+
+D
+
+
+
+∥qt ∥22 + ∥kτ ∥22
+1 X
+exp qt⊤ kτ = exp −
+· lim
+exp ωj⊤ qt · exp ωj⊤ kτ .
+D→∞ D
+2
+j=1
+
+⊤
+Therefore, we can approximate exp qt kτ as the dot product of the random exponential projection
+of the query and the key using D random ωj s:
+
+
+D
+t
+
+
+∥qt ∥22 + ∥kτ ∥22
+1 XX
+D
+exp ωj⊤ qt exp ωj⊤ kτ · vτ .
+ŝt =
+exp −
+D τ =1 j=1
+2
+This allows us to compute the softmax attention as the linear attention parameterized by:
+
+
+
+
+∥kt ∥22
+∥qt ∥22
+· exp(Ω⊤ qt ), ϕ(kτ ) = exp −
+· exp(Ω⊤ kτ ),
+ϕ(qt ) = exp −
+2
+2
+
+
+Pt
+with limD→∞ ℜ ŝD
+= τ =1 exp qt⊤ kτ · vτ and Ω = [ω1 , ..., ωD ]. Omitting the superscript
+t
+D for simplifying the notation, let us focus on one random feature ωj and its contribution to the
+output:
+
+
+
+
+t
+X
+
+
+∥qt ∥22
+∥kτ ∥22
+ŝt,j =
+exp −
+exp −
+exp ωj⊤ qt exp ωj⊤ kτ · vτ .
+2
+2
+τ =1
+1 D
+D
+d×D
+. Now note that
+In this case, we have ŝD
+t = D Ŝt 1, where Ŝt = [ŝt,1 ŝt,2 . . . ŝt,D ] ∈ R
+we have:
+t−1
+
+
+X
+
+
+
+∥q ∥2 −∥q
+∥2
+ŝt,j =
+exp − t 2 2 t−1 2 exp ωj⊤ qt−1 exp ωj⊤ (qt − qt−1 ) exp ωj⊤ kτ · vτ (25)
+τ =1
+
+
+
+
+
+
+∥k ∥2
+∥q ∥2
++ exp − 2t 2 exp − 2t 2 exp ωj⊤ (qt − kt ) · vt .
+
+
+
+∥q ∥2 −∥q
+∥2
+= exp − t 2 2 t−1 2 exp ωj⊤ (qt − qt−1 ) ŝjt−1 + ϕωj (qt ) · ϕωj (kt ) · vt
+23
+
+(26)
+(27)
+
+Published as a conference paper at ICLR 2026
+
+Note that the real exponential component in Equation (27) can introduce instability to the recurrence.
+Therefore, following the standard in both linear Transformers (Yang et al., 2024b;a; 2025a; Lin et al.,
+2025) and deep softmax Transformers (Henry et al., 2020), we assume L2 normalization over the
+query and the key, i.e., ∥qt ∥2 = ∥qt−1 ∥2 . Thus, recurrence presented in Equation (27) simplifies to:
+
+ŝt,j = exp ωj⊤ (qt − qt−1 ) ŝt−1,j + ϕωj (qt ) · ϕωj (kt ) · vt ,
+
+with ŝt,j being the j th column of ŜtD is scaled by the values exp ωj⊤ (qt − qt−1 ) . Therefore, we
+can write the recurrence over Ŝt as:
+1 D
+⊤
+ŜtD = Ŝt−1 R̄t + vt (ϕ(qt ) ◦ ϕ(kt )) , ŝD
+Ŝ 1.
+t =
+D t
+where ϕ(x) is a vector with its j th element equal to ϕωj (x), and R̄t is:
+R̄t = diag(exp(Ω⊤ (qt − qt−1 )))
+
+(28)
+
+Focusing on Equation (28), we observe that the PRF approximation no-longer results in an inputdepedent rotation matrix, but rather a more general form of a real-valued input-dependent state
+transition matrix. However, the features Ω are randomly sampled from a normal distribution.
+Similarly, we can also approximate the normalizing factor zt as:
+
+
+D
+t
+
+
+1 XX
+∥qt ∥22 + ∥kτ ∥22
+D
+ẑt =
+exp −
+exp ωj⊤ qt exp ωj⊤ kτ .
+D τ =1 j=1
+2
+Separating the contribution of each random feature, we have:
+
+
+
+
+t
+X
+
+
+∥qt ∥22
+∥kτ ∥22
+ẑt,j =
+exp −
+exp −
+exp ωj⊤ qt exp ωj⊤ kτ .
+2
+2
+τ =1
+Finally, defining ẐtD = [ẑt,1 ẑt,2 . . . ẑt,D ,] we arrive at a similar result. The full recurrence
+of softmax attention, therefore, can be written as:
+⊤
+
+D
+ŜtD = Ŝt−1
+R̄t + vt (ϕ(qt ) ◦ ϕ(kt )) ,
+
+D
+ẐtD = Ẑt−1
+R̄t + ϕ(qt ) ◦ ϕ(kt ),
+
+ôt =
+
+ŜtD 1
+.
+ẑtD 1
+
+Interestingly, unlike the results provided in Appendix A.3, in this case we won’t be able to rely on
+a spectrum of choices for σ in order to limit the approximation error for a finite number of random
+feature samples. More concretely, we provide the following theorem to highlight this issue:
+
+Theorem 2 Let the expected error of the PRF kernel over ωj ∼ N 0, σ 2 I be as follows:
+ P
+ 2
+D
+1
+⊤
+k
+ϕ
+(q
+)
+·
+ϕ
+(k
+)
+−
+exp
+q
+. Then, for a given a pair of
+ERR [qt , kτ ] = Eωj
+ω
+t
+ω
+τ
+τ
+t
+j
+j
+j=1
+D
+L2 normalized query and key, the optimal value of σ is equal to σ = 1.
+Proof 2 We start by writing down the error:
+i
+
+e−2 X h
+⊤
+ERR [qt , kτ ] = 2
+E exp (ωj + ωj ′ ) (qt − kτ )
+D
+′
+j,j =1
+
+
+
+2e−1 X 
+−
+E exp ωj⊤ (qt − kτ ) exp qt⊤ kτ + const.
+D j=1
+
+ e−2 D2 − D 
+2
+e−2 
+⊤
+=
+E exp 2ω (qt + kτ ) +
+E exp ω ⊤ (qt + kτ )
+2
+D
+D
+
+
+
+− 2e−1 · E exp ω ⊤ (qt + kτ ) exp qt⊤ kτ + const.,
+where the const. term corresponds to the terms constant w.r.t. the variance of the distribution σ 2 .
+Plugging in the expectation of the exp(·) function (Choromanski et al., 2021a), we get the following
+optimization problem:
+ −2
+
+ e−2 (D − 1)
+
+
+e
+2
+2
+−1
+2
+min
+exp 4σ (1 + ξ) +
+exp 2σ (1 + ξ) − 2e exp σ (1 + ξ) + ξ ,
+σ
+D
+D
+24
+
+Published as a conference paper at ICLR 2026
+
+where for simplicity, we set qt⊤ kτ = ξ ∈ [0, 1]. Since in most cases, D is a sizable number, we try
+to solve this optimization problem in the limit D → ∞, which is equivalent to:
+i
+h 2
+2
+min e2σ (1+ξ)−2 − 2eσ (1+ξ)+ξ−1 ,
+σ
+
+with the optimal value equal to σ = 1.
+■
+
+This completes our proof.
+
+Following Theorem 2, we observe that for a fixed pair of queries and keys, the optimal variance is
+independent of the angle between the two vectors. This is in stark contrast of the RFF-related results
+in Theorem 1, where the variance of the random feature is a function of the angle between the query
+and key vectors.
+At first glance, this may seem as a good incentive to instead adopt the transition matrix introduced
+in Equation (28) for the recurrence. However, one also need to consider that there is no stable
+generalization of a recurrence based on this transition matrix, as there won’t be any guarantees about
+the matrix being contractive or orthogonal. On the other hand, the rotation matrix in Equation (19)
+will always be stable, as it corresponds to an orthogonal matrix. This makes RFFs a much more
+suitable choice for a random features-based approximation of the softmax attention function.
+A.6.2
+
+C OS F ORMER
+
+We start by defining the output in the CosFormer model (Qin et al., 2022):
+
+St qt
+ot = ⊤ ,
+zt qt
+
+t
+X
+
+
+
+π (t − τ )
+cos
+St =
+2M
+τ =1
+
+
+
+· vτ kτ⊤ ,
+
+t
+X
+
+
+
+π (t − τ )
+cos
+zt =
+2M
+τ =1
+
+
+· kτ ,
+
+(29)
+
+where M corresponds to a pre-defined, large scalar value. First, we focus on the state St in Equation (29), which we can write as:
+
+
+t−1
+ π  X
+(t − 1 − τ )π
+St = cos
+·
+cos
+· vτ kτ⊤
+2M
+2M
+τ =1
+
+ X
+
+
+t−1
+(t − 1 − τ )π
+(t − 1 − τ )π
+− sin
+·
+sin
+· vτ kτ⊤ + vt kt⊤
+2M
+2M
+τ =1
+ π 
+ π 
+sin
+= cos
+· St−1 − sin
+· St−1
++ vt kt⊤ ,
+2M
+2M
+where we define:
+
+
+t
+X
+(t − τ )π
+· vτ kτ⊤
+Stsin =
+sin
+2M
+τ =1
+
+
+
+
+t−1
+t−1
+ π  X
+ π  X
+(t − 1 − τ )π
+(t − 1 − τ )π
+= sin
+·
+cos
+· vτ kτ⊤ + cos
+·
+sin
+· vτ kτ⊤
+2M
+2M
+2M
+2M
+τ =1
+τ =1
+ π 
+ π 
+sin
+= sin
+St−1 + cos
+St−1 .
+2M
+2M
+Now, let us define:
+
+
+S̃t = St Stsin ,
+for which we can write the following recurrence:
+
+
+ 
+π
+π
+
+
+cos 2M
+I
+sin 2M
+
+ I + vt kt⊤ 0 .
+S̃t = S̃t−1
+π
+π
+− sin 2M I cos 2M I
+This recurrence is equivalent to a complex-domain recurrence where St corresponds to the real
+component of the state and Stsin to the imaginary component:
+25
+
+Published as a conference paper at ICLR 2026
+
+ π 
+I.
+R̄ = exp i
+2M
+
+S̃t = S̃t−1 R̄ + vt kt⊤ ,
+
+(30)
+
+Similarly, we can define the complex-domain normalization factor z̃t as:
+
+ztsin ,
+
+
+z̃t = zt
+where we define ztsin as:
+
+ π 
+ π 
+sin
+ztsin = sin
+zt−1 + cos
+zt−1
+.
+2M
+2M
+This recurrence is also equivalent to a complex-domain recurrence of the following form:
+ π 
+I.
+R = exp i
+2M
+
+z̃t = z̃t−1 R̄ + kt ,
+
+The model introduced in Equation (29) is a complex-domain linear attention model, in which the
+rotation matrix is defined as a diagonal matrix with the same values on the diagonal (see Equation (30)). Note that as demonstrated by Qin et al. (2022), the rope trick can be applied to further
+simplify the computation.
+A.7
+
+R ELATIONSHIP BETWEEN Selective RoPE, AL I B I , AND F OX
+
+The use of exponential decay in softmax Transformer has been common practice for a while (Press
+et al., 2021; Jelassi et al., 2024; Lin et al., 2025), proving advantageous for length generalization and
+position encoding. In this section, we investigate ALiBi and FoX as two examples of such models
+and provide context for their success based on the findings of this paper.
+A.7.1
+
+ATTENTION WITH L INEAR B IASES (AL I B I )
+
+ALiBi (Press et al., 2021) was originally introduced as a position encoding technique aiming at
+improving the length generalization of softmax Transformers. Borrowing the notation from Equation (1), we write the attention mechanism in ALiBi as:
+!
+!
+t
+t
+t
+t
+X
+X
+X
+X
+⊤
+⊤
+1
+1
+st =
+exp √d qt kτ +
+log A vτ , zt =
+exp √d qt kτ +
+log A ,
+τ =1
+
+κ=τ +1
+
+τ =1
+
+κ=τ +1
+
+where log A < 0 can be a scalar or a diagonal matrix. Note that we can re-write st and zt by
+moving the input-independent summation outside of the exponent:
+st =
+
+t
+X
+
+
+
+exp √1d qt⊤ kτ · At−τ vτ ,
+
+zt =
+
+t
+X
+
+
+
+exp √1d qt⊤ kτ · At−τ ,
+
+τ =1
+
+τ =1
+
+which can be interpreted as a Transformer layer with exponential decay.
+A.7.2
+
+F ORGETTING T RANSFORMERS (F OX)
+
+FoX (Lin et al., 2025) is a softmax Transformer that aims to augment the attention mechanism with
+a forget gate, inspired by the success of the exponentially decaying gating mechanisms in linear
+RNNs and linear Transformers (Yang et al., 2024a; Gu & Dao, 2023). Borrowing the notation
+from Equation (1), we write the attention mechanism in FoX as:
+!
+!
+t
+t
+t
+t
+X
+X
+X
+X
+st =
+exp √1d qt⊤ kτ +
+log Aκ vτ , zt =
+exp √1d qt⊤ kτ +
+log Aκ ,
+τ =1
+
+κ=τ +1
+
+τ =1
+
+26
+
+κ=τ +1
+
+Published as a conference paper at ICLR 2026
+
+where log Aκ < 0 can be a scalar or a diagonal matrix. In this case, Aκ is an input dependent
+factor and a function of the κth token. We can re-write st and zt by moving the input-dependent
+summation outside of the exponent:
+st =
+
+t
+X
+
+exp
+
+
+
+√1 q ⊤ kτ
+d t
+
+
+
+·
+
+τ =1
+
+t
+Y
+
+zt =
+
+A κ vτ ,
+
+κ=τ +1
+
+t
+X
+
+exp
+
+
+
+√1 q ⊤ kτ
+d t
+
+
+
+·
+
+τ =1
+
+t
+Y
+
+Aκ ,
+
+κ=τ +1
+
+which can be interpreted as a Transformer layer with selective exponential decay.
+A.7.3
+
+T HE COMPLEMENTARY ROLE OF ROTATION AND DECAY
+
+The success of models belonging to the family of softmax Transformers with forget gates, namely
+ALiBi and FoX, demonstrate that the exponential decaying factor is a missing component in these
+models. This observation aligns with our proposed unifying framework in Section 3. Interestingly,
+in the softmax setting, Selective RoPE closely parallels FoX: it can be seen as endowing the decay
+term at with a rotation component Rt .
+
+B
+
+E XPERIMENTAL D ETAILS
+
+In this section we provide additional details on our experimental setup for the tasks considered in
+the paper.
+B.1
+
+L ANGUAGE M ODELING
+
+We use PlainLM (Ajroldi, 2024) together with an adapted version of
+flash-linear-attention for all of our language model trainings. We train on > 80GB
+VRAM GPUs including NVIDIA A100, H100 and B200. One model training (370M parameters,
+10B tokens) is performed on a single node with 4 to 8 of such GPUs and takes anywhere from 48
+hours (on 4 A100) to 9 hours on 8 B200. We use Distributed Data Parallel (DDP) for multi-GPU
+training.
+Table 5: Optimizer and learning-rate schedule hyperparameters for language modeling.
+Optimizer
+Parameter
+
+Symbol
+
+Value
+
+Base learning rate (candidates)
+Adam β1
+Adam β2
+Weight decay
+Numerical epsilon
+Gradient clipping (global norm)
+
+η
+β1
+β2
+λ
+ϵ
+clipℓ2
+
+[5e-4, 1e-3, 2e-3, 4e-3, 8e-3, 1.6e-2]
+0.9
+0.95
+0.1
+1 × 10−8
+1.0
+
+LR Schedule / Training Horizon
+LR start (schedule)
+LR end (schedule)
+Warmup (fraction of steps)
+Total optimizer steps
+
+B.2
+B.2.1
+
+ηstart
+ηend
+–
+T
+
+1e-5
+1e-4
+0.1
+66,758
+
+S YNTHETIC TASKS
+MAD
+
+For MAD, we take the implementation from mad lab and implement Selective RoPE in GLA. We
+follow the exact experimental setup outlined in the paper (Poli et al., 2024) and run all variations of
+task difficulty and optimizer hyperparameters which results in 66 task settings × 6 optimizer settings
+= 396 trained models per considered setting (i.e., GLA with Selective RoPE, RoPE or NoPE). We
+provide the logs from the experiments in our supplementary.
+B.2.2
+
+S TATE T RACKING
+
+For state tracking we adopt the exact experimental setup as described in DeltaProduct (Siems et al.,
+2025) and Grazzi et al. (2025).
+27
+
+Published as a conference paper at ICLR 2026
+
+Table 6: Training state tracking configuration.
+Training Loop
+Parameter
+
+Value
+
+Epochs
+Batch size
+
+100
+4096
+Optimization
+
+Learning rate
+β1
+β2
+Optimizer ϵ
+Weight decay
+LR scheduler
+
+1e-3
+0.9
+0.999
+1e-8
+1e-6
+cosine
+Precision / Compile
+
+Mixed precision
+DType
+
+true
+bfloat16
+
+Train set size
+Train sequence length
+Eval set size
+Eval sequence length
+
+2,000,000 sequences
+128 tokens
+500,000 sequences
+512 tokens
+
+Data
+
+Seeds & Eval
+Seeds
+Eval batch size
+
+B.2.3
+
+[555, 666, 777, 888, 999]
+128
+
+MQAR
+
+We have carefully followed the training recipe of Arora et al. (2024a) for all models including: GLA
+(Yang et al., 2024a), DeltaNet (Yang et al., 2024b), Mamba2 (Dao & Gu, 2024) and Transformer++
+(Touvron et al., 2023). The learning rate for all models was swept within the range of [0.0001, 0.01]
+for 8 different values per each model ranging uniformly from 0.01 to 0.001. All other configuration
+and the model dimensions were remained the same as original reference Arora et al. (2024a).
+B.2.4
+
+C OPYING
+
+T HE U SE OF L ARGE L ANGUAGE M ODELS (LLM S )
+While preparing this manuscript, we used Large Language Models (LLMs) to a limited extent. Their
+role was restricted to assisting with editing and polishing the writing, such as improving clarity,
+grammar, and flow. All conceptual ideas, methods, experiments, and analyses presented in this
+paper are entirely the work of the authors. No ideas, algorithms, or research contributions were
+generated by an LLM. The LLM served only as a tool to refine the presentation of the text without
+influencing the substance of the research.
+
+28
+
+Published as a conference paper at ICLR 2026
+
+Table 7: Optimizer and Data parameters for Copying
+Optimizer
+Learning rate
+Weight decay
+β1
+β2
+Optimizer ϵ
+Gradient clipping (global norm)
+
+5.0e-5
+0.1
+0.9
+0.999
+1.0e-8
+1.0
+
+Scheduler
+Scheduler
+Warmup (fraction of steps)
+
+linear
+0.1
+
+Seeds & Eval
+Seed
+Eval batch size
+
+42
+256
+Data
+
+Vocab size
+n-gram
+Answer length
+Train task
+Eval task
+Sequence length
+Min length (train)
+Max length (train)
+Min length (eval)
+Max length (eval)
+Sampler type
+Sampler seed
+
+26
+0
+0
+copy
+copy
+420
+2
+64
+2
+512
+sequential
+null
+
+29
+
+

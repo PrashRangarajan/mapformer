@@ -1,0 +1,2090 @@
+Jordan-RoPE: Non-Semisimple Relative Positional Encoding via Complex
+Jordan Blocks
+
+arXiv:2605.04217v2 [cs.LG] 21 May 2026
+
+Yaobo Zhang
+School of Physics, Ningxia University
+Yinchuan, 750021, China
+yaobozhang@zju.edu.cn
+Abstract
+Relative positional encodings determine the primitive functions of query-key lag that are available to attention. We study a non-semisimple
+rotary extension in which a complex RoPE eigenvalue and a nilpotent response live in the same defective Jordan block. The resulting exact
+one-parameter representation turns RoPE into a finite frequency-jet basis: the order-two block supplies the first tangent mode d eiωd , while
+order-m chains supply modes dr eiωd for r = 0, . . . , m − 1. Geometrically, complex Jordan blocks turn rotary frequencies into infinitesimal
+frequency jets rather than adding an independent distance axis. Because these blocks are non-orthogonal, we spell out the contragredient query
+action required to recover a pure relative score, and we separate Exact/raw and Scaled-exact Jordan-RoPE representations from Stabilized
+Jordan-RoPE approximations. Fixed-kernel probes and a Jordan-friendly synthetic language-model task confirm that the coupled basis is useful
+when the target contains distance-modulated phase interactions. High-order probes verify the finite-jet hierarchy, while MusicNet and WikiText
+experiments are treated as task-selective and boundary evidence rather than broad performance claims: MusicNet gives a natural positive case
+for a Scaled-exact order-three variant, and small WikiText runs suggest that weak jet corrections help mainly when composed with a recency
+bias such as ALiBi.
+
+1
+
+Introduction
+
+matrix exponential contains nilpotent polynomial factors. For
+real eigenvalues this gives linear or higher-order shear. For
+complex eigenvalues it gives something more structured: a
+rotary phase coupled to a polynomial response.
+
+Attention uses inner products to decide which previous representations should influence the current token (Vaswani et al.,
+2017). Without positional modification, however, this inner
+product has no intrinsic notion of order. A relative positional
+encoding therefore does more than label tokens: it specifies
+which functions of the query-key lag can enter the primitive
+attention logit (Shaw et al., 2018; Dai et al., 2019). This point
+becomes especially important in long-context modeling, where
+the same positional rule is evaluated far outside the range of
+lags seen during training.
+Many successful mechanisms can be understood from this
+perspective. Relative position representations make attention
+depend explicitly on pairwise displacement. RoPE turns absolute rotations of queries and keys into a relative phase (Su
+et al., 2021). ALiBi adds a monotone distance penalty directly
+to the logits (Press et al., 2022). A later line of work modifies, interpolates, or rescales rotary phases to improve length
+extrapolation (Sun et al., 2022; Chen et al., 2023; Peng et al.,
+2023; Ding et al., 2024). Although these methods differ operationally, they all make a choice about the analytic form of the
+relative-position kernel.
+A complementary viewpoint is algebraic (Kogkalidis et al.,
+2024; Ostmeier et al., 2025; Puranik, 2026; Zhang et al., 2025).
+If the positional modification is linear, translation-invariant,
+and continuous, then the relative operator is naturally a oneparameter matrix action. This observation explains why rotations, exponential decays, and additive distance biases appear
+so persistently. It also exposes a less explored possibility: the
+generator need not be diagonalizable. In a defective block, the
+
+Motivating observation. The starting point of this note is a
+small but suggestive gap in the group-theoretic view of positional encoding. A recent group-theoretic discussion observed
+that, under linearity, translation invariance, and continuity,
+relative positional encodings are naturally organized by oneparameter matrix groups (Puranik, 2026). In that classification,
+diagonalizable generators lead to familiar exponential, damping, and rotary mechanisms, while defective generators lead to
+polynomial factors through Jordan blocks. The real defective
+case already gives a linear-in-time shear and can be related
+to ALiBi after augmenting the bilinear form. The complex
+defective case, however, is less developed: the simplest real
+realization involves a doubled conjugate pair and a nontrivial
+Jordan chain.
+This observation suggests a different interpretation of defective positional encoding. Rather than treating it as a pathological matrix case, we view it as a non-normal linear dynamical system inserted into the attention kernel. The nilpotent
+part of a Jordan block does not merely add a distance feature;
+when coupled to a complex rotary eigenvalue, it generates the
+tangent mode d eiωd . The question studied here is therefore deliberately narrow: what new primitive relative-position features
+arise from the simplest complex Jordan block, and can a Transformer use them when the task rewards distance-modulated
+phase structure?
+This note follows that non-semisimple corner. We place
+
+1
+
+the rotary complex eigenvalue and a nilpotent response in the
+same defective Jordan block. The resulting relative operator
+contains primitive oscillatory-polynomial features such as
+d e−γd cos(ωd),
+
+• We formulate Exact Jordan-RoPE as a one-parameter
+relative representation and give its real block implementation. Because the block is non-orthogonal, we spell
+out the contragredient query action needed to recover a
+pure relative attention score.
+
+d e−γd sin(ωd),
+
+which realize a distance-modulated phase basis at the presoftmax bilinear-kernel level. Equivalently, the nilpotent channel supplies the frequency-tangent feature
+d eiωd =
+
+• We separate the exact representation from Stabilized
+Jordan-RoPE. The bounded-τ implementation preserves
+the local Jordan response but breaks the group law, while
+Scaled-exact Jordan-RoPE preserves the one-parameter
+structure with controlled damping.
+
+1
+∂ω eiωd .
+i
+
+• We test the induced basis on fixed kernel probes, structured sequence probes, a synthetic language-model task
+with teacher kernel K(d) = (d/L) cos(ωd), and a small
+WikiText-103 byte language model.
+
+The order-two construction is therefore the first nontrivial member of a finite frequency-jet hierarchy: higher-order complex
+Jordan chains provide primitive modes dr eiωd .
+
+• We add a high-order frequency-jet diagnostic showing
+that order-m complex Jordan blocks realize the finite jet
+basis {dr eiωd }m−1
+r=0 . Beyond fixed-basis and synthetic
+high-jet probes, a small music-token transfer sweep
+identifies MusicNet as a task-selective natural positive
+case for a Scaled-exact order-three variant, and auxiliary WikiText runs show that normalized high-jet spectra
+help mainly as weak corrections composed with ALiBi
+rather than as standalone replacements for recency bias.
+
+Geometric intuition: infinitesimal thickening of rotary frequencies. RoPE can be viewed as sampling points on the
+Fourier-character curve
+ω 7→ χω ,
+
+χω (d) = eiωd .
+
+A complex Jordan block does not attach an independent distance coordinate to this curve. Instead, it replaces a reduced
+frequency point by a nilpotent thickening. Formally, if εm = 0,
+then evaluating the Fourier character at an infinitesimal neighborhood of ω gives
+ei(ω+ηε)d = eiωd
+
+The evidence should be read structurally rather than as
+a broad performance claim. At the representation level, Exact Jordan-RoPE is a non-semisimple one-parameter relative
+positional representation when implemented with the contragredient query action. At the basis level, it directly provides
+the primitive tangent feature d eiωd , instead of separating phase
+and distance into independent channels. At the task level, when
+the teacher kernel contains (d/L) cos(ωd), Stabilized JordanRoPE extrapolates better than RoPE and direct-sum baselines.
+Natural language modeling is treated as a boundary test rather
+than the main evidence.
+
+m−1
+X
+
+(iηd)r r
+ε .
+r!
+r=0
+
+Up to a harmless rescaling of the nilpotent coordinate, this is
+the same finite chain as the undamped Jordan operator
+G(γ=0)
+(d) = eiωd
+m
+
+m−1
+X
+
+(ηd)r r
+Nm .
+r!
+r=0
+
+Thus order-m Jordan-RoPE realizes the (m − 1)-jet of the
+Fourier character at ω. In this sense, RoPE samples reduced
+spectral points, while Jordan-RoPE samples non-reduced infinitesimal neighborhoods. The direct-sum baseline adds an
+external distance axis; the Jordan block instead thickens the
+rotary frequency itself.
+We do not introduce group-theoretic positional encoding
+as a new paradigm, nor do we claim that nilpotent positional
+mechanisms are new. Instead, we ask what happens when
+the rotary complex eigenvalue and the nilpotent response are
+coupled inside one defective block. This distinction matters:
+a large downstream network may learn products of separate
+channels, but the positional encoding itself supplies a different
+primitive logit basis.
+Our contributions are structural and experimental:
+
+2
+
+Related Work and Positioning
+
+Let i be a query position and j ≤ i a key position in causal
+attention. We write the causal lag as
+d = i − j ≥ 0.
+This convention is important: damping terms are written as
+e−γd , so reversing the sign would make distant past tokens
+grow rather than decay. The sign of the oscillatory phase can
+be absorbed by ω 7→ −ω, but the damping sign cannot.
+Relative positional encoding. Relative positional representations make attention scores depend on pairwise displacement rather than only absolute token index (Shaw et al., 2018).
+Transformer-XL (Dai et al., 2019) combines segment-level
+recurrence with relative positional terms to model dependencies beyond a fixed segment. RoPE applies orthogonal block
+rotations to queries and keys so that Ri⊤ Rj = Rj−i , turning
+
+• We identify the order-two complex Jordan block as the
+minimal non-semisimple extension of rotary relative positional encoding in which phase and nilpotent response
+are coupled rather than placed in separate subspaces.
+
+2
+
+Geometric intuition of Jordan-RoPE
+RoPE samples reduced points on the Fourier phase curve; Jordan-RoPE thickens each frequency point into a local frequency jet.
+
+2
+
+RoPE
+ω 7→ eiωd
+
+Fourier
+phase curve
+
+3
+
+Direct-sum
+baseline
+ω 7→ eiωd
+
+d
+
+Fourier
+phase curve
+
+reduced point
+
+ω 7→ eiωd
+
+ω
+
+ω
+
+basis: eiωd
+
+eiωd ⊕ (I + dN )
+product geometry
+phase curve × distance line
+
+point on phase curve
+
+Jordan-RoPE
+
+(order-2)
+external distance axis
+
+1
+
+Fourier
+phase curve
+
+d eiωd = 1 ∂ω eiωd
+i
+
+4
+
+High-order
+Jordan-RoPE
+ω 7→ ω + ηε, εm = 0
+dm−1 eiωd
+
+Fourier
+phase curve
+
+.
+. 2 iωd
+. d e
+
+fat point
+
+d eiωd
+
+ω
+
+ω
+
+point + tangent vector
+
+non-reduced fat point
+
+tangent mode in
+frequency direction
+
+finite jet /
+osculating frame
+
+Complex Jordan blocks turn rotary frequencies into infinitesimal frequency jets.
+RoPE: reduced spectral point
+
+|
+
+Jordan-RoPE: non-reduced infinitesimal neighborhood
+
+Figure 1: Geometric intuition of Jordan-RoPE. RoPE samples reduced points on the Fourier-character curve. A direct-sum
+baseline adds an external distance coordinate. A complex Jordan block instead replaces a rotary frequency by a non-reduced
+infinitesimal neighborhood, producing the tangent mode d eiωd and, at order m, the finite jet basis {dr eiωd }m−1
+r=0 .
+Algebraic and group-action views. Algebraic Positional
+Encodings map algebraic structure into orthogonal operators
+(Kogkalidis et al., 2024). LieRE generalizes RoPE by learning
+higher-dimensional skew-symmetric generators and exponentiating them to rotations (Ostmeier et al., 2025). Jane Street’s
+group-theoretic treatment emphasizes one-parameter matrix
+actions for linear, translation-invariant positional mechanisms
+and notes that defective generators produce polynomial terms
+(Puranik, 2026). GRAPE gives a broad group-action framework that recovers RoPE from rotational actions and ALiBistyle biases from unipotent additive lifts (Zhang et al., 2025).
+
+absolute rotations into a relative phase (Su et al., 2021). ALiBi
+adds a head-dependent linear penalty, typically −mh d, directly
+to the logits (Press et al., 2022).
+Length extrapolation and context extension. Long-context
+evaluation asks positional kernels to operate at lags larger than
+those seen during training. XPos modifies rotary attention with
+a decay structure for length extrapolation (Sun et al., 2022).
+Position Interpolation rescales positions into the pretraining
+range for RoPE-based LLMs (Chen et al., 2023), and YaRN
+improves the efficiency of such RoPE context extension (Peng
+et al., 2023). LongRoPE further uses non-uniform interpolation
+and progressive extension to reach much larger context windows (Ding et al., 2024). These methods differ operationally,
+but share the concern that unseen-distance behavior is shaped
+by the analytic form of the positional kernel.
+There is also a kernel/function-design view of relative position encodings. KERPLE treats relative positional embedding
+as a kernelization of positional differences, while FIRE parameterizes relative position as a learned function and interpolates
+it for long contexts (Chi et al., 2022; Li et al., 2024). Empirical
+studies such as NoPE further show that length generalization is
+highly sensitive to the way positional information is supplied
+or omitted (Kazemnejad et al., 2023). Our construction fits this
+line at the primitive-basis level: the lag functions are fixed by
+a non-semisimple one-parameter representation.
+
+From semisimple positional geometry to non-semisimple
+blocks. Most algebraic or group-theoretic positional encodings used in attention are built from well-conditioned actions
+such as rotations, orthogonal maps, or direct sums of independently acting subspaces. Our object is narrower but different.
+We do not introduce group-theoretic positional encoding as a
+new paradigm. Instead, we study what happens when the rotary complex eigenvalue is placed in a defective block, so that
+the phase factor and the nilpotent response are coupled in the
+same non-semisimple representation. This produces primitive
+bilinear features of the form d eiωd , rather than separate access
+to eiωd and d. We therefore do not claim novelty at the level
+of group-theoretic positional encoding, nilpotent positional
+mechanisms, or long-context extrapolation in general. The
+specific contribution is the coupled complex Jordan block and
+
+3
+
+the induced primitive basis d eiωd for relative attention logits.
+Recent theory on linear recurrences and structured state-space
+models also suggests that complex eigenvalues are not merely a
+notational convenience: they can improve information storage
+and yield formal expressivity or learnability gaps relative to
+real parameterizations (Orvieto et al., 2024; Ran-Milo et al.,
+2024). Jordan-RoPE asks a complementary question: what
+happens when the complex rotary eigenvalue is made defective
+rather than diagonal? Figure 1 summarizes this basis compared
+with RoPE and a direct-sum construction.
+
+This makes phase and distance available, but not as a coupled
+primitive bilinear feature.
+The non-semisimple rotary object studied here instead
+places the complex rotary eigenvalue and the nilpotent response
+in the same indecomposable block:
+
+The phase and polynomial response are therefore coupled before the attention softmax. Several baselines arise by constraining this object. If η = 0, it becomes damped RoPE. If ω = 0,
+it becomes a real unipotent/Jordan distance block. If γ = 0, it
+is an undamped complex Jordan block.
+For the ALiBi-like row, “augmentation” means that a linear
+d term can be realized after adding a constant channel to the
+bilinear form, for example through the unipotent lift
+
+
+1 d
+,
+0 1
+
+3 Non-semisimple Relative Representations
+3.1 Relative scoring for non-orthogonal actions
+We use the causal-lag convention d = i − j ≥ 0. The
+representation-level object in this paper is an exact oneparameter relative operator
+G(d) = exp(dJ),
+
+rather than claiming that the usual ALiBi implementation is
+itself a query/key linear action.
+
+G(d1 + d2 ) = G(d1 )G(d2 ).
+
+3.3 Complex Jordan blocks and finite frequency
+jets
+
+For orthogonal rotary actions, applying the same absolute map
+to queries and keys is enough. For non-orthogonal actions,
+this is no longer true: in general G(i)⊤ G(j) ̸= G(i − j). The
+relative score is recovered by using the dual action on queries.
+
+The order-m complex Jordan relative operator is
+Gm (d) = edJm = e(−γ+iω)d
+
+Proposition 1 (Relative scoring for non-orthogonal actions).
+Let G : R → GL(D) be a one-parameter representation, and
+let A(t) = G(−t). Define transformed queries and keys by
+qei = A(i)−⊤ qi ,
+
+m
+Nm
+= 0.
+
+Jm = (−γ + iω)I + ηNm ,
+
+m−1
+X
+
+(ηd)r r
+Nm .
+r!
+r=0
+
+This is the standard matrix-function behavior of a Jordan block:
+applying an analytic function to a nontrivial Jordan chain exposes derivatives of that function along the nilpotent direction
+(Higham, 2008). For fω (d) = eiωd ,
+
+e
+kj = A(j)kj .
+
+Then the attention score is a function of the causal lag:
+
+∂ωr eiωd = (id)r eiωd .
+
+⟨e
+qi , e
+kj ⟩ = qi⊤ A(i)−1 A(j)kj = qi⊤ G(i − j)kj .
+Proof. Since A(t) = G(−t), the one-parameter law gives
+
+Theorem 1 (Finite rotary frequency-jet basis). An order-m
+complex Jordan block generates primitive relative-position
+features
+
+A(i)−1 A(j) = G(−i)−1 G(−j) = G(i)G(−j) = G(i − j).
+
+dr e−γd cos(ωd),
+
+Substituting this into the bilinear score gives the claim.
+
+Equivalently, up to constants, it realizes the finite frequency-jet
+span
+span{∂ωr eiωd }m−1
+r=0 .
+
+This contragredient query action is the main implementation distinction from ordinary RoPE. It is the convention used
+by the Transformer experiments in this repository: the module
+applies a position-wise transform with t = −position, using
+the inverse transpose on queries and the primal transform on
+keys.
+
+dr e−γd sin(ωd),
+
+r = 0, . . . , m−1.
+
+Proof. Expanding the matrix exponential gives
+ed((−γ+iω)I+ηNm ) = e(−γ+iω)d
+
+m−1
+X
+
+(ηd)r r
+Nm ,
+r!
+r=0
+
+m
+because Nm
+= 0. Realifying the complex coordinates splits
+each complex feature into cosine and sine components, yielding the displayed basis.
+
+3.2 Semisimple, direct-sum, and defective generators
+
+Thus an order-three block supplies phase, first-jet, and
+second-jet channels, while an order-four block also supplies a
+third-jet channel. The hierarchy is nested: an order-m chain
+contains all lower-order jets in the same frequency family. This
+is why a higher-order basis can fit a lower-jet target on a finite
+grid without implying that the higher order is theoretically
+necessary.
+
+RoPE is the semisimple complex case: for one rotary frequency,
+the generator is JRoPE = iωI, giving the phase basis eiωd . A
+direct-sum phase/distance baseline keeps these ingredients in
+separate invariant subspaces, schematically
+
+
+iωI 0
+Jds =
+,
+exp(dJds ) = eiωd ⊕ (I + dN ).
+0
+N
+4
+
+Table 1: Mechanism taxonomy at the primitive pre-softmax bilinear-kernel level. Complex Jordan blocks are the non-semisimple
+exact case: they thicken the rotary frequency itself rather than adding a separate distance axis.
+Class
+
+Method
+
+Primitive basis
+
+Representation status
+
+Semisimple
+Augmented
+Direct sum
+Non-semisimple
+Non-semisimple
+Stabilized
+Composition
+
+RoPE
+ALiBi-like lift
+RoPE ⊕ distance
+Complex Jordan
+Scaled-exact Jordan-RoPE
+Bounded-τ shear
+Jordan + ALiBi
+
+cos(ωd), sin(ωd)
+1, d after a constant-channel lift
+separate phase and distance channels
+coupled jets dr eiωd
+scaled coupled jets (d/L)r e−cd/L eiωd
+bounded local first-jet response
+jets plus additive recency bias
+
+E XACT
+AUGMENTED EXACT
+E XACT
+E XACT
+E XACT
+A PPROX .
+auxiliary
+
+3.4 The order-two block as the first rotary tangent
+
+The reported comparisons keep the same total head dimension
+and attention-head budget across methods. They are therefore
+dimension-matched, but not exactly frequency-count matched
+to standard RoPE, whose two-dimensional rotary blocks can
+use dh /2 frequencies. A frequency-grid ablation, for example
+using ωk = θ−4k/dh to span the same endpoint range with
+dh /4 Jordan frequencies or restricting RoPE to the same number of frequencies, is a natural follow-up and is not included in
+the present runs.
+
+The minimal nontrivial member is m = 2. Let
+
+
+0 1
+N=
+,
+N 2 = 0,
+0 0
+and
+J2 = (−γ + iω)I + ηN.
+Then
+G2 (d) = e
+
+(−γ+iω)d
+
+(I + ηdN ) = e
+
+(−γ+iω)d
+
+
+
+1
+0
+
+
+ηd
+.
+1
+
+The resulting real primitive features are
+e
+
+−γd
+
+cos(ωd),
+
+−γd
+
+de
+
+−γd
+
+e
+
+cos(ωd),
+
+de
+
+Implementation Regimes
+
+4.1
+
+Raw exact Jordan-RoPE
+
+The Exact/raw order-m object is
+
+sin(ωd),
+
+−γd
+
+Gm,raw (d) = e(−γ+iω)d
+
+sin(ωd).
+
+Order-two Jordan-RoPE is therefore the first rotary frequency
+tangent:
+1
+d eiωd = ∂ω eiωd .
+i
+It should not be read as merely adding a separate distance
+channel to RoPE; the nilpotent response is coupled to the
+rotary phase inside one defective block.
+
+3.5
+
+4
+
+m−1
+X
+
+(ηd)r r
+Nm .
+r!
+r=0
+
+For m = 2, this reduces to
+G2,raw (d) = e(−γ+iω)d (I + ηdN ).
+It is a strict one-parameter representation, so the contragredient
+position-wise implementation recovers a pure relative score. Its
+drawback is scale: the nilpotent channels grow polynomially
+with d, which is useful for unbounded synthetic targets but can
+be numerically or statistically awkward at long context.
+
+Real block form and channel budget
+4.2
+
+Writing
+
+Rϕ =
+
+cos ϕ
+sin ϕ
+
+
+
+− sin ϕ
+,
+cos ϕ
+
+Scaled-exact Jordan-RoPE
+
+The scaled-exact family keeps the representation law while
+normalizing damping and shear by the training length L:
+ c
+
+η
+Jm,scaled = − + iω I + Nm ,
+L
+L
+
+the realified order-two block acts on four real coordinates:
+
+
+Rωd ηd Rωd
+G2 (d) = e−γd
+.
+0
+Rωd
+
+and therefore
+
+An order-m complex Jordan block realifies to 2m real coordinates per frequency. Thus an order-two block uses dh /4
+frequencies in a head of dimension dh , an order-three block
+uses dh /6, and an order-four block uses dh /8, assuming divisibility. The implementation repeats such blocks across a
+RoPE-style frequency grid; for order two, the default is
+
+Gm,scaled (d) = e−cd/L eiωd
+
+m−1
+X
+
+(ηd/L)r r
+Nm .
+r!
+r=0
+
+This is not an approximation to a group action; it is an exact
+one-parameter representation with a different generator. Writing x = d/L, the real primitive span contains, up to constant
+coefficients,
+
+ωk = θ−2k/dh .
+
+xr e−cx cos(ωd),
+5
+
+xr e−cx sin(ωd),
+
+r = 0, . . . , m−1.
+
+damping and bounded η. The experimental names follow the
+hierarchy above: Exact/raw Jordan-RoPE disables bounded
+τ , Scaled-exact Jordan-RoPE uses the d/L-normalized generator and preserves the group law, and Stabilized Jordan-RoPE
+refers to the bounded-τ implementation. The ALiBi-composed
+variants add the usual additive recency bias to the attention
+logits; they are auxiliary compositions, not new one-parameter
+representations.
+For mix-order jet experiments, we also use normalized jet
+spectra. There the nonnegative coefficients αr sum to one
+and specify the distribution of mass across the base phase and
+higher jet orders. This separates coefficient distribution from
+overall gain: a spectrum such as (.70, .20, .10) means that most
+mass remains on the base rotary phase, with weaker first- and
+second-jet corrections.
+The high-jet construction is adjacent to polynomial-basis
+memory models: HiPPO represents sequence history through
+online projections onto polynomial bases, and later work interprets S4 through exponentially warped orthogonal bases (Gu
+et al., 2020, 2023). Our mechanism is different. The polynomial factors are not used to compress history into a recurrent
+state; they are inserted directly into the relative attention logit
+basis as polynomially weighted Fourier modes. In this sense,
+high-order Jordan-RoPE asks whether a Transformer benefits
+when the pre-softmax positional bilinear form itself contains a
+finite frequency-jet hierarchy.
+
+This is the origin of the scaled high-jet targets used in the experiments: the factors x2 e−0.1x cos(ωd) and x3 e−0.1x cos(ωd)
+are the second and third real frequency jets of the scaled orderm relative operator. In the experiments, scaled-exact variants
+are important because they preserve the representation-level
+theory while controlling long-lag growth.
+
+4.3
+
+Stabilized Jordan-RoPE
+
+Stabilized Jordan-RoPE replaces the linear shear coordinate by
+the bounded-τ coordinate
+τ (d) =
+
+d
+.
+1 + d/L
+
+The corresponding explicit relative-kernel diagnostic is
+
+
+Rωd ητ (d)Rωd
+Gstab (d) = e−γd
+.
+0
+Rωd
+This keeps the same first-order response near d = 0, since
+τ (d) = d + O(d2 /L), while preventing the nilpotent channel
+from growing without bound. However,
+τ (d1 + d2 ) ̸= τ (d1 ) + τ (d2 ),
+so Stabilized Jordan-RoPE is not a strict one-parameter representation. It is a representation-inspired engineering approximation.
+
+4.4 Position-wise q/k factorization versus explicit relative kernels
+
+5
+
+Experiments
+
+5.1
+
+Experimental setup
+
+Unless otherwise noted, reported means and standard deviations use three seeds. The main order-two synthetic queryLM trains at length 1024 and evaluates at 1024, 2048, 4096,
+and 8192. The high-order synthetic and music-token transfer
+runs are smaller auxiliary matrices trained at length 256, and
+the auxiliary high-jet WikiText run is trained at length 512.
+The natural language experiment is a byte-level WikiText-103
+(Merity et al., 2017) language model. The plots and tables
+in the experimental sections are generated from local CSV
+logs produced by the released scripts and configs, including
+supplemental exact-scaled runs. The reported experimental
+names follow the convention above: Stabilized Jordan-RoPE
+is the bounded-τ default, Exact/raw Jordan-RoPE disables
+bounded τ , and Scaled-exact Jordan-RoPE denotes the d/Lnormalized exact variant. All Transformer baselines use the
+same total head dimension dh . RoPE can therefore use dh /2
+two-dimensional rotary frequencies, while the order-two complex Jordan variants use dh /4 four-dimensional blocks; the
+direct-sum baseline splits the same dh between a RoPE subspace and a real unipotent/Jordan distance subspace. Damped
+RoPE in these comparisons is implemented as the same ordertwo Jordan block with η = 0, so it also uses dh /4 frequencies;
+a full-frequency damped RoPE baseline is left to a separate
+ablation. Thus the comparisons are dimension-matched under the implemented attention budget, while frequency-count
+matching is left as a separate ablation.
+
+The basis-level experiments can evaluate an explicit pairwise
+kernel G(d) directly. Transformer attention is implemented
+more efficiently by position-wise query/key maps. For exact
+one-parameter representations, Proposition 1 shows that the
+two views coincide. For nonlinear bounded-τ coordinates, they
+generally do not.
+To see the obstruction, isolate the unipotent coordinate and
+write
+Bσ (t) = I + ησ(t)N.
+Then
+
+Bσ (−i)−1 Bσ (−j) = I + η σ(−j) − σ(−i) N.
+If σ(t) = t, this coefficient is η(i − j), a pure function of
+the lag. If σ is nonlinear, such as the bounded-τ coordinate,
+the coefficient generally depends on the absolute pair (i, j),
+not only on i − j. This is why Exact/raw and Scaled-exact
+Jordan-RoPE variants are exact relative representations, while
+Stabilized Jordan-RoPE should be understood as an engineering approximation with the same local Jordan response.
+
+4.5 Practical parameterization and auxiliary
+compositions
+The implementation parameterizes damping and nilpotent amplitude with constrained learnable variables, using nonnegative
+6
+
+Table 2: Experiment roadmap. The evidence chain moves from primitive basis checks, to trainable synthetic tasks, to high-order
+jets, to task-selective natural transfer and natural-language boundary tests.
+Claim tested
+
+Experiment group
+
+Lengths
+
+Primitive basis
+
+Fixed kernel and structured probes
+
+1024 → 8192
+
+Usable inductive bias
+
+Synthetic query LM
+
+1024 → 8192
+
+Finite jet hierarchy
+Trainable high jets
+
+High-order fixed-basis probes
+High-jet synthetic query-LM
+
+1024 → 8192
+256 → 1024
+
+Natural positive case
+
+Music-token transfer
+
+256 → 2048
+
+WikiText boundary tests
+
+512/1024 → 8192
+
+Boundary
+
+5.2
+
+Basis-level mixed target
+
+5.3
+
+The first diagnostic is a linear readout over fixed relativeposition features. This is deliberately a kernel-level test, not a
+general neural approximation test. The mixed target is
+d
+cos(ωd),
+L
+fit on d < L = 1024 and evaluated out to 8192. At this
+primitive logit-basis level, additive or direct-sum combinations
+provide separate phase and distance channels, whereas the
+Jordan block directly provides d cos(ωd) and d sin(ωd)-type
+modes.
+Table 3 shows the expected specialization. RoPE solves the
+phase target, ALiBi/direct distance solves the linear target, and
+the Jordan-family features are strongest on the mixed target.
+The large Linear MSE of the Jordan variants is expected: the
+complex Jordan block is not a pure distance basis unless an ω =
+0 block is included. Its advantage is on distance-modulated
+phase targets, not isolated linear-distance targets. The strongest
+gains in this diagnostic come from the Exact/raw Jordan and
+Scaled-exact c = 0.1 bases. Exact/raw Jordan has the lowest
+mixed MSE because the target itself grows linearly. The Scaledexact basis with c = 0.1 nearly matches Exact/raw Jordan on
+the mixed target, while c = 1 is over-damped for this growing
+synthetic target. Stabilized Jordan-RoPE gives a smaller but
+consistent improvement, reflecting the tradeoff introduced by
+τ (d).
+
+Phase drift
+Seasonal trend
+Damped wave
+Rhythm envelope
+Motif spacing
+
+Table 3: Basis-level MSE at evaluation length 8192. The mixed
+target isolates the coupled frequency-tangent feature; it does
+not test arbitrary downstream multiplication by an MLP.
+RoPE
+Damped RoPE
+RoPE+ALiBi
+ALiBi
+Direct-sum
+Stabilized Jordan-RoPE
+Exact/raw Jordan
+Scaled-exact c=.1
+Scaled-exact c=1
+
+Linear MSE
+
+Mixed MSE
+
+0.000
+0.054
+0.000
+0.505
+0.000
+0.039
+0.004
+0.011
+0.309
+
+17.618
+17.583
+0.000
+0.000
+0.000
+50.463
+462.392
+541.274
+20.485
+
+8.791
+9.510
+8.791
+10.666
+8.819
+7.414
+1.975
+2.011
+10.254
+
+Structured sequence probes
+
+Table 4: Structured fixed-basis probes confirm the same
+mechanism-level pattern: when the target contains persistent
+distance-modulated oscillation, Exact/raw Jordan modes are
+favored.
+Benchmark
+Best method
+MSE@8192
+
+5.4
+
+Phase MSE
+
+Jordan features directly fit mixed distance-phase targets.
+A trained Transformer can exploit the coupled first-jet
+mode.
+Order-m blocks fit frequency jets up to order m − 1.
+Exact order-three/four variants help when the teacher
+contains higher jets.
+MusicNet gives a task-selective Scaled-exact m = 3
+positive case.
+ALiBi remains strong; Jordan/jet terms help mainly
+as weak corrections.
+
+We also evaluate fixed relative bases on structured targets designed to contain phase drift, seasonal trends, damped waves,
+rhythm envelopes, and motif spacing. These are still basislevel probes, but they test a broader set of distance-modulated
+oscillatory patterns.
+The structured probes support the same mechanism-level
+picture. When the target contains a persistent product of distance and phase, Jordan modes are favored. When the target
+is pure phase, RoPE or Jordan (γ = 0) variants can match it
+more cleanly. Full per-method probe scores are reported in
+Appendix C.
+
+y(d) =
+
+Method
+
+Main takeaway
+
+Jordan (γ = 0)
+Exact/raw Jordan
+Exact/raw Jordan
+Exact/raw Jordan
+Exact/raw Jordan
+
+0.003
+1.686
+0.000
+0.835
+0.229
+
+Jordan-friendly synthetic LM
+
+The strongest discrete sequence evidence comes from a synthetic query language-model task. Each sequence contains
+random bits followed by a query token. The next-token label
+is determined by the sign of a weighted sum of previous bits
+using the teacher kernel
+K(d) =
+
+d
+cos(ωd),
+L
+
+with L = 1024. The model must learn a distance-modulated
+phase rule and extrapolate it beyond the training length.
+At length 8192, Stabilized Jordan-RoPE reaches 0.906 ±
+0.054 accuracy, compared with 0.865 ± 0.048 for damped
+7
+
+MSE on mixed target (lower is better)
+
+101
+
+near-exact fit with
+controlled growth
+
+100
+10−1
+best for growing
+target
+
+10−2
+10−3
+10−4
+1024
+
+2048
+
+4096
+
+8192
+
+Evaluation context length
+RoPE
+Stabilized Jordan-RoPE
+
+Damped RoPE
+Exact/raw Jordan
+
+RoPE+ALiBi
+Scaled-exact c=.1
+
+Direct-sum
+Scaled-exact c=1
+
+Figure 2: Jordan features directly fit mixed distance-phase targets. On y(d) = (d/L) cos(ωd), Exact/raw Jordan and Scaled-exact
+c = .1 extrapolate substantially better than RoPE, RoPE+ALiBi, and direct-sum baselines at the primitive fixed-basis level.
+Table 5: Synthetic query-LM endpoint summary after 1200 training steps. The 8192-context endpoint is the main extrapolation
+test.
+Method
+
+Acc@1024
+
+Acc@8192
+
+Interpretation
+
+RoPE
+Damped RoPE
+RoPE+ALiBi
+Direct-sum
+Stabilized Jordan-RoPE
+Scaled-exact c=.1
+Scaled-exact c=1
+
+0.969 ± 0.031
+0.938 ± 0.031
+0.927 ± 0.048
+0.594 ± 0.062
+0.969 ± 0.000
+0.958 ± 0.036
+0.958 ± 0.036
+
+0.781 ± 0.083
+0.865 ± 0.048
+0.531 ± 0.094
+0.500 ± 0.083
+0.906 ± 0.054
+0.865 ± 0.079
+0.521 ± 0.110
+
+phase-only baseline
+strong damping baseline
+recency composition baseline
+fails coupled rule
+best long-context
+controlled exact variant
+over-damped for this target
+
+RoPE, 0.781 ± 0.083 for RoPE, and 0.500 ± 0.083 for directsum. The Scaled-exact variant with c = 0.1 reaches 0.865 ±
+0.079, roughly matching damped RoPE but below Stabilized
+Jordan-RoPE on this task. With c = 1, accuracy drops to
+0.521 ± 0.110, indicating that the teacher kernel is too growthdependent for strong damping. This is the main evidence that
+Stabilized Jordan-RoPE can be useful in a trainable sequence
+model when the task actually rewards the coupled mode. These
+sequence results should be interpreted as an inductive-bias
+comparison under a fixed architecture and training budget, not
+as an approximation lower bound. Direct-sum and additive
+baselines may form coupled products through deeper nonlinear computation; the point is that the Jordan block provides
+the coupled distance-phase feature directly at the pre-softmax
+positional-bilinear level.
+
+5.5
+
+The scaled targets are
+yr (d) = xr e−0.1x cos(ωd),
+fit on d < L and evaluated at length 8192. The comparison includes frequency-count matched RoPE controls, directsum polynomial controls, ordinary order-two Jordan-RoPE,
+order-three and order-four Stabilized Jordan-RoPE variants,
+and Scaled-exact high-jet bases. Table 6 also reports the theoretical minimal Jordan order for each jet target and an explicit
+scaled m = 2 R2 check. The control column reports the best
+R2 among the matched RoPE and direct-sum controls.
+The fixed-basis results cleanly support the jet interpretation.
+Matched RoPE and direct-sum controls have low R2 on the
+scaled second- and third-jet targets, while the Scaled-exact
+order-three and order-four Jordan bases fit them almost exactly.
+The selection of an order-four basis on the first-jet target should
+not be read as evidence that a fourth-order chain is necessary
+for the first jet. The minimal order for a first jet is two. Here the
+first target is the undamped x cos(ωd), while the scaled bases
+include the damping factor e−0.1x ; the higher-order scaled
+
+High-order fixed-basis probes
+
+We test the frequency-jet hierarchy from Section 3.3 with fixedbasis high-jet probes. Let x = d/L, with L the training length.
+
+8
+
+1.0
+8192: 0.906 ± 0.054
+
+Accuracy
+
+0.9
+0.8
+0.7
+0.6
+chance
+
+0.5
+0.4
+
+1024
+
+2048
+
+4096
+
+8192
+
+Evaluation context length
+RoPE
+Stabilized Jordan-RoPE
+
+Damped RoPE
+Scaled-exact c=.1
+
+RoPE+ALiBi
+Scaled-exact c=1
+
+Direct-sum
+
+Figure 3: A Transformer can use the coupled Jordan mode when the teacher kernel requires it. On the synthetic query-LM
+task with K(d) = (d/L) cos(ωd), Stabilized Jordan-RoPE preserves the highest long-context accuracy, while direct-sum and
+RoPE+ALiBi fail to reliably recover the coupled rule under the same training budget.
+Table 6: High-order fixed-basis probes verify the finite-jet hierarchy. A target with jet order r requires a Jordan chain of order
+m ≥ r + 1; the control column shows that matched RoPE and direct-sum polynomial controls do not supply the same local
+frequency jet. The first row uses an undamped first-jet target; Appendix E gives the damping-matched control where m = 2 fits
+the first jet essentially exactly.
+Target at length 8192
+
+Min. order
+
+x cos(ωd) (undamped)
+x2 e−.1x cos(ωd)
+x3 e−.1x cos(ωd)
+
+2
+3
+4
+
+Scaled m = 2 R2
+0.8387
+0.2908
+0.0396
+
+Best high-jet basis
+Scaled-exact m = 4, c = .1
+Scaled-exact m = 3, c = .1
+Scaled-exact m = 4, c = .1
+
+MSE
+
+R2
+
+Best control R2
+
+8.14×10−3
+3.14×10−6
+1.61
+
+0.9992
+1.0000
+0.9997
+
+0.1757
+0.0326
+0.0033
+
+bases can use their nested lower jets and extra polynomial terms
+to compensate this finite-grid damping mismatch. Appendix E
+reports the matched scaled target xe−0.1x cos(ωd), where the
+expected m = 2 basis fits the first jet essentially exactly. This
+is a basis-level result: it shows that the intended functions
+are present in the positional feature family, not that a trained
+Transformer will necessarily learn to use every higher jet.
+
+These results should be read as a controlled extension of
+the main order-two claim. They do not imply that higher-order
+Jordan blocks are broadly better positional encodings. Rather,
+they show that when the teacher actually contains a higher
+frequency jet, the corresponding nilpotent chain can provide a
+usable inductive bias. The detailed high-jet synthetic matrix is
+reported in Appendix B.
+
+5.6
+
+5.7 Task-selective music-token transfer: a MusicNet positive case
+
+High-jet synthetic query-LM
+
+We therefore also run a high-jet synthetic query-LM task. As in
+the first-jet synthetic LM, each sequence contains random bits
+followed by a query token, and the label is determined by the
+sign of a teacher-kernel weighted sum. Here the teacher kernels
+are the scaled second- and third-jet targets y2 (d) and y3 (d).
+Appendix B reports the long-context results most relevant to the
+high-order claim. The second-jet task favors the order-three
+exact variant. For the third-jet task, allowing the nilpotent
+amplitude to reach order-one scale makes the order-four exact
+variant the best mean-loss method at contexts 512 and 1024,
+and the best accuracy method at 1024.
+
+Music is a natural stress test for relative-position mechanisms
+because repetition, motif return, phrase-level timing, and longrange self-reference occur on multiple timescales. This motivation also underlies Music Transformer, where relative attention was used to model long-term musical structure (Huang
+et al., 2019). We therefore include a small music-token transfer sweep using byte-level streams derived from MAESTRO
+MIDI, FMA-small mel features, MusicNet mel features, and a
+mixed audio/MIDI corpus (Hawthorne et al., 2019; Defferrard
+et al., 2017; Thickstun et al., 2017). Models are trained at
+9
+
+length 256 for 800 steps and evaluated up to length 2048 with
+five seeds. Table 7 reports the 2048-context validation loss.
+The result is not uniformly positive across datasets, but
+it reveals a clear natural positive case. On MusicNet melbyte tokens, the Scaled-exact order-three variant (m = 3, c =
+0.5, η0 = 0.1) is the best method at contexts 512, 1024, and
+2048, reaching 3.5901 ± 0.1201 validation loss at length 2048.
+This compares with 4.1211 ± 0.3638 for damped RoPE and
+4.7015 ± 0.2265 for the direct-sum phase/distance baseline.
+By contrast, the mixed audio/MIDI corpus continues to favor
+direct-sum, FMA-small favors damped RoPE, and MAESTRO
+gives only a weaker Scaled-exact m = 3 signal. Thus the
+MusicNet result should be read as evidence for task-selective
+transfer of the high-jet inductive bias, not as a broad claim that
+higher-order Jordan blocks are uniformly better for audio.
+We further inspected the MusicNet checkpoints by measuring the positioned query/key norm profiles. For the winning m = 3, c = 0.5, η0 = 0.1 model, the positioned-key
+norm grows by roughly 206× from position 0 to 2047, while
+the positioned-query norm shrinks to roughly 1% of its initial value. The learned parameters have mean γ ≈ 0.0024
+and mean |η| ≈ 0.104. This norm profile is not merely a
+numerical artifact: it is the expected signature of an exact nonorthogonal Jordan factorization, where the key side stores a
+position-amplified high-jet basis and the contragredient query
+side compensates it in the bilinear score. It also marks a practical caveat for cache compression, because the same steep Kcache norm profile may make low-bit key quantization harder.
+Overall, the music-token results reinforce the task-selective interpretation: high-order Jordan modes are useful when the data
+rewards higher-order distance-modulated phase structure, but
+they are not a uniform replacement for damping or direct-sum
+biases.
+
+5.8
+
+hurts long-length loss, and the strongest gains appear to come
+from controlled damping with a compatible weak Jordan-RoPE
+channel. Thus the WikiText result is best interpreted as evidence that a Scaled-exact Jordan-RoPE parameterization can
+coexist with useful damping, rather than as evidence for strong
+oscillatory-polynomial shear in natural language.
+
+5.9
+
+High-jet WikiText auxiliary run
+
+We additionally test whether the high-order exact variants that
+helped in the synthetic probes and in selected music-token
+tasks transfer to WikiText. Because order-three and orderfour Jordan blocks require head dimensions divisible by 6
+and 8, respectively, the auxiliary high-jet runs use a separate
+dmodel = 192, three-layer, four-head byte LM trained at length
+512 on a WikiText-103 subset. It should therefore be read as
+an internal comparison within the auxiliary matrix, not as a
+direct numerical replacement for Table 8.
+Table 9 summarizes the auxiliary matrix. Without ALiBi,
+the best standalone method remains an order-two exact control, and the best normalized order-three spectrum is close
+but strongly base-heavy, approximately (.84, .11, .05). When
+the same ALiBi bias is added to tuned Jordan candidates, a
+learned normalized order-three jet spectrum, approximately
+α = (.69, .21, .10), reaches 1.9759 ± 0.0138, slightly lower
+than the RoPE+ALiBi baseline in the same auxiliary setup.
+The full no-ALiBi and ALiBi-composed tables are reported in
+Appendix D. Together these results support a narrow conclusion: on this WikiText subset, high-order jets are most useful
+as weak corrections on top of a strong recency prior, not as
+standalone replacements for that prior.
+
+6
+
+WikiText boundary tests
+
+Discussion and Limitations
+
+The purpose of the experiments is to isolate the induced
+relative-position basis, not to establish a new state-of-the-art
+positional encoding. The fixed-basis probes verify that the
+complex Jordan block supplies coupled oscillatory-polynomial
+modes directly. The synthetic LM shows that a Transformer
+can use the Stabilized Jordan-RoPE channel when the task
+requires that mode. The WikiText runs show partial transfer to
+natural language length extrapolation: Scaled-exact variants
+give the best mean losses within the Jordan family in the base
+comparison, and focused auxiliary runs show that normalized
+high-jet spectra do not replace ALiBi by themselves but can
+improve when composed with it. The high-order experiments
+extend this picture from the first tangent mode d eiωd to a
+finite frequency-jet hierarchy. The Scaled-exact order-three
+MusicNet result suggests that such higher jets can be useful
+beyond teacher-designed synthetic kernels, but the mixed
+audio/MIDI, FMA-small, and no-ALiBi WikiText results also
+show that this benefit is task-selective.
+
+Finally, we train a small causal Transformer byte language
+model on WikiText-103. The run uses dmodel = 384, six
+layers, six heads, training length 1024, and evaluation lengths
+up to 8192. This is a small natural-language test case, not
+a claim that the Jordan family dominates established longcontext biases.
+Table 8 shows the boundary of the claim. Stabilized JordanRoPE improves substantially over RoPE and direct-sum in
+long-context loss. The Scaled-exact Jordan-RoPE variant with
+c = 1 gives the lowest Jordan-family mean loss, reaching
+1.869 ± 0.020 at length 8192, compared with 1.903 ± 0.027
+for Stabilized Jordan-RoPE and 1.884 ± 0.022 for damped
+RoPE. The difference from damped RoPE is small at three
+seeds and should be read as a mean trend rather than a statistically decisive separation. However, RoPE+ALiBi remains
+strongest at 1.796 ± 0.042. The learned default shear stays
+small, and larger η0 initializations for Stabilized Jordan-RoPE
+worsen long-length loss. The natural-LM results should therefore not be read as evidence that large learned shear is broadly
+beneficial. In this small byte-level setting, the learned shear
+remains small, larger forced η0 in Stabilized Jordan-RoPE
+
+Defective generators as non-normal attention dynamics.
+The original puzzle behind this construction was the status of
+defective generators in positional encoding. Diagonalizable
+
+10
+
+Table 7: Music/audio transfer gives a selective natural positive case, not a universal win. MusicNet is the strongest case for
+Scaled-exact m = 3; other datasets honestly favor damping or direct-sum structure.
+Dataset
+
+Winner at 2048
+
+Scaled-exact m = 3 status
+
+Interpretation
+
+Mixed audio/MIDI
+MAESTRO
+
+Direct-sum, 4.1369 ± 0.1200
+Scaled-exact m = 3, c = .1, η0 = .2,
+3.6857 ± 0.2822
+Damped RoPE, 3.8711 ± 0.0297
+Scaled-exact m = 3, c = .5, η0 = .1,
+3.5901 ± 0.1201
+
+close, 4.2336 ± 0.0552
+best
+
+separate channels suffice
+weak high-jet signal
+
+not best, 4.0991 ± 0.2103
+best
+
+damping dominates
+strongest natural positive case
+
+Byte LM validation loss (lower is better)
+
+FMA-small
+MusicNet
+
+2.6
+2.4
+2.2
+best Jordan-family mean
+
+2.0
+strongest overall
+
+1.8
+1024
+
+2048
+
+4096
+
+8192
+
+Evaluation context length
+RoPE
+Direct-sum
+
+Damped RoPE
+Stabilized Jordan-RoPE
+
+RoPE+ALiBi
+Scaled-exact c=1
+
+Figure 4: WikiText is a boundary test rather than a broad win. RoPE+ALiBi remains strongest overall, while Scaled-exact
+Jordan-RoPE with c = 1 gives the best mean loss within the Jordan family and stays competitive with damped RoPE.
+generators have a clear interpretation: real eigenvalues give exponential decay or growth, and complex conjugate eigenvalues
+give rotations. Defective generators are less transparent because their exponentials contain polynomial terms. The experiments here suggest one useful interpretation. In the complex
+case, the nilpotent direction should not be viewed as an isolated
+polynomial bias; it is a tangent direction attached to the rotary
+phase. This is why the natural primitive mode is d eiωd , not
+merely d. Equivalently, Jordan-RoPE is a non-reduced Fourier
+positional encoding: ordinary RoPE samples reduced points
+on the Fourier phase curve, while a complex Jordan block replaces each point by a finite infinitesimal neighborhood. The
+high-order variants then supply the corresponding osculating
+jet rather than simply adding more Fourier frequencies.
+From this angle, Jordan-RoPE is a small attention-kernel
+instance of non-normal linear dynamics, where stable eigenvalues need not preclude large transient responses (Trefethen et al.,
+1993; Trefethen and Embree, 2005). Stabilized Jordan-RoPE
+and Scaled-exact Jordan-RoPE are practical ways of retaining
+this transient response while controlling long-lag growth. This
+interpretation also explains the empirical boundary: tasks with
+
+explicit distance-modulated phase structure can benefit from
+the Jordan channel, while natural byte-level language modeling
+in our small setting mostly rewards damping and recency bias.
+Linear dynamical kernels. The oscillatory-polynomial functions produced by a Jordan block are also familiar from linear
+dynamical systems: matrix exponentials of defective generators contain polynomial factors multiplying exponentials. This
+connects Jordan-RoPE conceptually to the broader use of linear
+state-space dynamics and long convolutional sequence operators in long-range sequence modeling, including S4, DSS,
+and Hyena (Gu et al., 2022; Gupta et al., 2022; Poli et al.,
+2023). However, our construction is not a state-space layer.
+It uses the same exponential-polynomial algebra inside the
+relative attention logit kernel, thereby changing the primitive
+pairwise positional basis rather than replacing attention by a
+convolutional or recurrent operator.
+There are several limitations. First, bounded τ sacrifices
+the exact one-parameter law. Second, the current Transformer
+implementation is a position-wise stabilized factorization; it is
+not the same object as an explicit pairwise Gstab (d) relative
+
+11
+
+Table 8: WikiText-103 byte LM boundary summary at length 8192. ∆ loss is relative to each method’s loss at length 1024; the
+larger-η0 sweep is moved to Appendix D.
+Method
+
+Loss@8192
+
+∆ loss
+
+|η| mean
+
+RoPE
+Damped RoPE
+RoPE+ALiBi
+ALiBi
+Direct-sum
+Stabilized Jordan-RoPE
+Scaled-exact c=1
+Scaled-exact c=.1
+
+2.322 ± 0.069
+1.884 ± 0.022
+1.796 ± 0.042
+1.932 ± 0.028
+2.578 ± 0.238
+1.903 ± 0.027
+1.869 ± 0.020
+1.907 ± 0.027
+
+0.460 ± 0.056
+0.051 ± 0.010
+0.028 ± 0.007
+0.017 ± 0.002
+0.694 ± 0.206
+0.059 ± 0.003
+0.031 ± 0.009
+0.047 ± 0.010
+
+–
+0.0000
+–
+–
+0.0013 ± 0.0000
+0.0013 ± 0.0000
+0.0014 ± 0.0001
+0.0021 ± 0.0001
+
+Role
+phase-only baseline
+damping baseline
+best overall
+additive recency
+weak baseline
+bounded-τ default
+best Jordan family
+weaker damping
+
+Table 9: Auxiliary high-jet WikiText summary. High-order jets do not replace recency bias by themselves, but weak normalized
+jet corrections can help when composed with ALiBi.
+Setting
+
+Best method
+
+Loss@8192
+
+No ALiBi
+
+Exact m = 2, c = 1.5, η0 = .010
+
+2.0482 ± 0.0040
+
++ALiBi
+
+Norm-jet m = 3, c = 1.5, α ≈ (.69, .21, .10)+ALiBi
+
+1.9759 ± 0.0138
+
+Baseline
+
+RoPE+ALiBi
+
+2.0037 ± 0.0167
+
+High jets alone do not replace recency; normalized m = 3 is close but base-heavy.
+Weak jet corrections can improve on top of a
+strong recency prior.
+Strong additive-bias baseline.
+
+parameters use ωm = θ−2m/dh , γ = softplus(a) + 10−4 , η =
+0.1 tanh(b), and L = 1024. The default Stabilized JordanRoPE path uses bounded τ ; the jordan_raw_tau ablation
+disables bounded τ . Although the relative kernel is damped, the
+position-wise contragredient factorization uses compensating
+absolute query/key rescalings. For example, the Scaled-exact
+variant with c = 1, L = 1024, and T = 8192 can introduce
+factors on the order of e8 before cancellation in the bilinear
+score. This did not cause numerical failures in our runs, but
+it is a practical reason to consider centered factorizations or
+explicit pairwise relative kernels for much longer contexts. A
+simple mitigation is to use a centered factorization over a finite
+evaluation window. For an exact one-parameter representation,
+
+kernel once τ is nonlinear. Third, although the relative kernel
+is damped, the non-orthogonal position-wise contragredient
+factorization can introduce compensating absolute rescalings
+in queries and keys. In our small-scale experiments this is
+numerically stable, but exact pairwise relative-kernel implementations or centered factorizations may be preferable for
+very long contexts. Fourth, the natural-LM runs are small,
+byte-level, and undertrained relative to modern long-context
+language-model practice. Fifth, direct-sum and additive baselines might produce coupled products through deeper nonlinear
+computation, so our expressivity statement is intentionally restricted to the primitive pre-softmax bilinear positional basis.
+Sixth, retrieval-style tasks require separate training and tuning,
+and are not reported here.
+Future work should test broader c, η, frequency-grid
+choices, and exact relative-kernel implementations, as well
+as tasks where distance-modulated phase structure occurs
+naturally.
+
+A(i − c0 )−1 A(j − c0 ) = G(i − j)
+for any center c0 . Choosing c0 near the middle of the current
+window reduces the largest absolute query/key rescaling while
+preserving the exact relative score. For nonlinear bounded τ ,
+this no longer restores a pure lag law, but it can still reduce the
+numerical range.
+
+Code and data availability. The implementation, configuration files, smoke tests, and lightweight reproducibility bundle
+are available at https://github.com/ybzhang-nxu
+/jordan_rope. The repro/ directory contains the CSV
+logs and scripts used to regenerate the reported tables and figures. Large checkpoints, downloaded datasets, and processed
+corpora are not included because they can be regenerated from
+the released scripts and configurations.
+
+A
+
+Takeaway
+
+B High-Jet Synthetic Query-LM Details
+Table 10 reports the detailed high-jet synthetic query-LM matrix. The second-jet run uses three seeds; the third-jet η0 -range
+confirmation uses five seeds. Methods are trained at length 256
+and evaluated at longer contexts.
+
+Implementation Notes
+
+The experimental module exposes JordanRoPE.apply(q,
+k, positions) with tensors shaped B × H × T × dh and
+dh divisible by four for the order-two realified block. Default
+12
+
+Table 10: Trainable models can exploit higher frequency jets
+when the teacher kernel contains them. The second-jet task
+favors exact m = 3, while the third-jet task benefits from exact
+m = 4 once the nilpotent amplitude is allowed to be large
+enough.
+Teacher kernel
+
+Context
+
+Best accuracy method
+
+Accuracy
+
+Best loss method
+
+Loss
+
+Scaled second jet
+Scaled second jet
+
+512
+1024
+
+Exact m = 3, c = .1, η0 = .01
+Exact m = 3, c = .1, η0 = .01
+
+0.9097 ± 0.0335
+0.9410 ± 0.0318
+
+Exact m = 3, c = .1, η0 = .01
+Exact m = 3, c = .1, η0 = .01
+
+0.2697 ± 0.1507
+0.2280 ± 0.1652
+
+Scaled third jet
+Scaled third jet
+
+512
+1024
+
+Exact m = 3, c = .1, η0 = .1
+Exact m = 4, c = .1, η0 = .1
+
+0.9333 ± 0.0380
+0.9083 ± 0.0298
+
+Exact m = 4, c = .1, η0 = .1
+Exact m = 4, c = .1, η0 = .1
+
+0.1713 ± 0.0747
+0.2328 ± 0.0652
+
+Table 13: Auxiliary high-jet WikiText-103 subset run at length
+8192, without adding ALiBi to the Jordan variants. Exact
+high-jet variants with c = 1 form a strong second tier, but
+RoPE+ALiBi remains best in this no-composition comparison.
+Loss@8192
+
+∆ loss
+
+2.1316 ± 0.0126
+2.1734 ± 0.0106
+2.1740 ± 0.0145
+2.1933 ± 0.0046
+2.1945 ± 0.0082
+2.1994 ± 0.0142
+2.3659 ± 0.0244
+2.3799 ± 0.0255
+2.3876 ± 0.0127
+2.5184 ± 0.0674
+2.5204 ± 0.0156
+2.5226 ± 0.0682
+
+−0.1631 ± 0.0274
+−0.1725 ± 0.0122
+−0.1845 ± 0.0174
+−0.1663 ± 0.0144
+−0.1586 ± 0.0359
+−0.1659 ± 0.0164
+−0.0118 ± 0.0417
+0.0132 ± 0.0450
+0.0354 ± 0.0417
+0.1589 ± 0.0810
+0.1595 ± 0.0425
+0.1709 ± 0.0523
+
+Method
+
+C
+
+Full Structured Probe Scores
+
+RoPE+ALiBi
+Exact m = 3, c = 1, η0 = .1
+Exact m = 2, c = 1, η0 = .002
+Exact m = 4, c = 1, η0 = .1
+Exact m = 3, c = .1, η0 = .1
+Exact m = 4, c = .1, η0 = .1
+Damped RoPE
+Stabilized Jordan-RoPE m = 3
+Stabilized Jordan-RoPE
+RoPE
+Direct-sum
+Stabilized Jordan-RoPE m = 4
+
+Table 11 reports all fixed-basis structured probe scores at evaluation length 8192. In this appendix, “Jordan (γ = 0)” denotes
+the same Jordan basis with damping disabled, while “Jordan
+(m = 3)” uses an order-three nilpotent chain. In the kernel and
+WikiText tables, “large η0 init” denotes the larger initial-shear
+variant used in the η0 initialization sweep.
+Table 11: Full structured probe MSE at length 8192.
+Method
+RoPE
+ALiBi
+RoPE+ALiBi
+Damped RoPE
+Direct-sum
+Stabilized Jordan-RoPE
+Jordan (γ = 0)
+Exact/raw Jordan
+Jordan (m = 3)
+
+Phase drift
+
+Seasonal trend
+
+Damped wave
+
+Rhythm envelope
+
+Motif spacing
+
+0.004
+0.505
+0.004
+0.056
+0.004
+0.041
+0.003
+0.005
+0.028
+
+7.120
+9.996
+7.121
+8.164
+7.145
+6.395
+4.632
+1.686
+4.832
+
+1.345
+2.103
+1.346
+1.493
+1.345
+0.935
+0.608
+0.000
+0.543
+
+3.449
+4.671
+3.450
+3.901
+3.457
+3.034
+2.226
+0.835
+2.302
+
+0.693
+1.093
+0.696
+0.829
+0.711
+0.511
+0.265
+0.229
+0.259
+
+Table 14: Auxiliary normalized jet-spectrum WikiText-103
+subset run at length 8192, without ALiBi. Normalization
+makes the coefficients a spectrum over jet orders rather than
+an unnormalized gain.
+
+D WikiText Initialization and High-Jet
+Details
+
+Method
+
+Table 12 reports the Stabilized Jordan-RoPE η0 initialization
+sweep omitted from the main WikiText boundary table. Larger
+forced η0 increases |η| and worsens long-context loss, supporting the main text’s weak-shear interpretation.
+
+Exact m = 2, c = 1.5, η0 = .010
+Norm-jet m = 3, α ≈ (.84, .11, .05)
+Norm-jet m = 3, α ≈ (.69, .21, .10)
+Jetmix m = 3, α = (1, .10, .05)
+Norm-jet fixed m = 3, α = (.70, .20, .10)
+Norm-jet fixed m = 3, α = (.50, .30, .20)
+Norm-jet m = 4, α ≈ (.38, .31, .20, .10)
+RoPE
+
+Table 12: WikiText Stabilized Jordan-RoPE η0 initialization
+sweep at length 8192. Larger forced η0 hurts this natural-LM
+setting.
+Initialization
+Stabilized Jordan-RoPE η0 = .005
+Stabilized Jordan-RoPE η0 = .010
+Stabilized Jordan-RoPE η0 = .020
+Stabilized Jordan-RoPE η0 = .050
+
+Loss@8192
+
+∆ loss
+
+|η| mean
+
+1.945 ± 0.055
+1.970 ± 0.012
+2.131 ± 0.049
+2.275 ± 0.044
+
+0.074 ± 0.002
+0.097 ± 0.019
+0.177 ± 0.050
+0.219 ± 0.035
+
+0.0040 ± 0.0000
+0.0081 ± 0.0000
+0.0176 ± 0.0001
+0.0476 ± 0.0001
+
+Loss@8192
+
+Notes
+
+2.0482 ± 0.0040
+2.0535 ± 0.0091
+2.0590 ± 0.0076
+2.0605 ± 0.0029
+2.0607 ± 0.0035
+2.0622 ± 0.0079
+2.0827 ± 0.0056
+2.6392 ± 0.1091
+
+best mean
+learned, base-heavy
+learned
+unnormalized
+fixed simplex
+larger high-jet mass
+learned order-four
+no ALiBi
+
+Tables 13, 14, and 15 give the auxiliary high-jet WikiText
+matrices summarized in Table 9.
+
+E
+
+Table 15: ALiBi-composed auxiliary WikiText run at length
+8192. All rows use the same ALiBi bias.
+
+Matched High-Jet Basis Control
+
+Method
+Norm-jet m = 3, c = 1.5, α ≈ (.69, .21, .10)+ALiBi
+Jetmix m = 3, c = 1.5, α = (1, .10, .05)+ALiBi
+Exact m = 2, c = 1.5, η0 = .010+ALiBi
+Norm-jet fixed m = 3, c = 1.5, α = (.50, .30, .20)+ALiBi
+Jetmixfull m = 4, c = 1.5, α = (1, .50, .30, .20)+ALiBi
+RoPE+ALiBi
+
+Table 16 repeats the fixed-basis high-jet check with damping
+matched across all targets:
+xr e−0.1x cos(ωd),
+
+r = 1, 2, 3.
+
+This removes the finite-grid damping mismatch in the first row
+of Table 6. With the matched first-jet target, the scaled m = 2
+13
+
+Loss@8192
+
+Notes
+
+1.9759 ± 0.0138
+1.9805 ± 0.0222
+1.9812 ± 0.0170
+1.9822 ± 0.0141
+1.9877 ± 0.0174
+2.0037 ± 0.0167
+
+best mean
+unnormalized
+order-two control
+fixed simplex
+larger high-jet tail
+additive-bias baseline
+
+basis fits essentially exactly, while the second and third targets
+are fit by the expected m = 3 and m = 4 bases.
+
+Yiran Ding, Li Lyna Zhang, Chengruidong Zhang, Yuanyuan
+Xu, Ning Shang, Jiahang Xu, Fan Yang, and Mao Yang. Longrope: Extending LLM context window beyond 2 million
+tokens. arXiv preprint arXiv:2402.13753, 2024.
+
+Table 16: Matched scaled high-jet fixed-basis controls at evaluation length 8192. The control column is the best R2 among
+matched RoPE and direct-sum polynomial controls.
+Matched scaled target
+
+Min. order
+
+Scaled m = 2 R2
+
+Scaled m = 3 R2
+
+Scaled m = 4 R2
+
+Best control R2
+
+xe−.1x cos(ωd)
+x2 e−.1x cos(ωd)
+x3 e−.1x cos(ωd)
+
+2
+3
+4
+
+1.0000
+0.2908
+0.0396
+
+1.0000
+1.0000
+0.3740
+
+0.9989
+0.9995
+0.9997
+
+0.2979
+0.0326
+0.0033
+
+F
+
+Albert Gu, Tri Dao, Stefano Ermon, Atri Rudra, and Christopher Ré. HiPPO: Recurrent memory with optimal polynomial projections. In Advances in Neural Information
+Processing Systems, 2020.
+Albert Gu, Karan Goel, and Christopher Ré. Efficiently modeling long sequences with structured state spaces. In International Conference on Learning Representations, 2022.
+
+Scope of Claims
+
+Albert Gu, Isys Johnson, Aman Timalsina, Atri Rudra, and
+Christopher Ré. How to train your HiPPO: State space
+models with generalized orthogonal basis projections. In International Conference on Learning Representations, 2023.
+
+The paper makes four deliberately narrow claims. First,
+exact complex Jordan blocks are valid non-semisimple oneparameter positional representations when implemented with
+the contragredient query action. Second, their primitive
+logit basis contains coupled modes d cos(ωd) and d sin(ωd).
+Third, Stabilized Jordan-RoPE can help when a sequence
+task rewards those modes. Fourth, order-m complex Jordan
+chains realize a finite frequency-jet basis {dr eiωd }m−1
+r=0 , and
+controlled high-jet probes show that the corresponding higher
+nilpotent chains can be useful when the target actually contains
+higher distance-modulated phase structure. The MusicNet
+result and the ALiBi-composed WikiText jet-spectrum run
+are reported only as task-selective transfer evidence. The
+normalized no-ALiBi WikiText ablation is a negative control:
+it shows that high-order jet spectra alone do not replace
+additive recency biases in this setting. The composed result
+instead shows a small positive case for weak Jordan/jet
+corrections added on top of such a bias. The paper does not
+claim that Stabilized Jordan-RoPE is an exact representation,
+that nilpotent positional encodings are new, or that the Jordan
+family dominates all existing positional encodings on natural
+language modeling.
+
+Ankit Gupta, Albert Gu, and Jonathan Berant. Diagonal state
+spaces are as effective as structured state spaces. In Advances
+in Neural Information Processing Systems, 2022.
+Curtis Hawthorne, Andriy Stasyuk, Adam Roberts, Ian Simon,
+Cheng-Zhi Anna Huang, Sander Dieleman, Erich Elsen,
+Jesse Engel, and Douglas Eck. Enabling factorized piano
+music modeling and generation with the MAESTRO dataset.
+In International Conference on Learning Representations,
+2019.
+Nicholas J. Higham. Functions of Matrices: Theory and Computation. SIAM, 2008.
+Cheng-Zhi Anna Huang, Ashish Vaswani, Jakob Uszkoreit,
+Noam Shazeer, Ian Simon, Curtis Hawthorne, Andrew M.
+Dai, Matthew D. Hoffman, Monica Dinculescu, and Douglas
+Eck. Music transformer: Generating music with long-term
+structure. In International Conference on Learning Representations, 2019.
+Amirhossein Kazemnejad, Inkit Padhi, Karthikeyan Natesan Ramamurthy, Payel Das, and Siva Reddy. The impact of
+positional encoding on length generalization in transformers. In Advances in Neural Information Processing Systems,
+2023.
+
+References
+Shouyuan Chen, Sherman Wong, Liangjian Chen, and Yuandong Tian. Extending context window of large language models via positional interpolation. arXiv preprint
+arXiv:2306.15595, 2023.
+
+Konstantinos Kogkalidis, Jean-Philippe Bernardy, and Vikas
+Garg. Algebraic positional encodings. In Advances in Neural
+Information Processing Systems, 2024.
+
+Ta-Chung Chi, Ting-Han Fan, Peter J. Ramadge, and Alexander I. Rudnicky. KERPLE: Kernelized relative positional
+embedding for length extrapolation. In Advances in Neural
+Information Processing Systems, 2022.
+
+Shanda Li, Chong You, Guru Guruganesh, Joshua Ainslie,
+Santiago Ontanon, Manzil Zaheer, Sumit Sanghai, Yiming
+Yang, Sanjiv Kumar, and Srinadh Bhojanapalli. Functional
+interpolation for relative positions improves long context
+transformers. In International Conference on Learning Representations, 2024.
+
+Zihang Dai, Zhilin Yang, Yiming Yang, Jaime Carbonell,
+Quoc V. Le, and Ruslan Salakhutdinov. Transformer-XL:
+Attentive language models beyond a fixed-length context. In
+Proceedings of ACL, 2019.
+
+Stephen Merity, Caiming Xiong, James Bradbury, and Richard
+Socher. Pointer sentinel mixture models. In International
+Conference on Learning Representations, 2017.
+
+Michaël Defferrard, Kirell Benzi, Pierre Vandergheynst, and
+Xavier Bresson. FMA: A dataset for music analysis. In
+International Society for Music Information Retrieval Conference, 2017.
+14
+
+Antonio Orvieto, Soham De, Caglar Gulcehre, Razvan Pascanu,
+and Samuel L. Smith. Universality of linear recurrences followed by non-linear projections: Finite-width guarantees
+and benefits of complex eigenvalues. In International Conference on Machine Learning, 2024.
+
+Lloyd N. Trefethen, Anne E. Trefethen, Satish C. Reddy, and
+Tobin A. Driscoll. Hydrodynamic stability without eigenvalues. Science, 261(5121):578–584, 1993.
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit,
+Llion Jones, Aidan N. Gomez, Lukasz Kaiser, and Illia
+Polosukhin. Attention is all you need. In Advances in
+Neural Information Processing Systems, 2017.
+
+Sophie Ostmeier, Brian Axelrod, Maya Varma, Michael Moseley, Akshay S. Chaudhari, and Curtis Langlotz. LieRE: Lie
+rotational positional encodings. In Proceedings of the 42nd
+International Conference on Machine Learning, 2025.
+
+Yifan Zhang, Zixiang Chen, Yifeng Liu, Zhen Qin, Huizhuo
+Yuan, Kangping Xu, Yang Yuan, Quanquan Gu, and Andrew
+Chi-Chih Yao. Group representational position encoding.
+arXiv preprint arXiv:2512.07805, 2025.
+
+Bowen Peng, Jeffrey Quesnelle, Honglu Fan, and Enrico Shippole. YaRN: Efficient context window extension of large
+language models. arXiv preprint arXiv:2309.00071, 2023.
+Michael Poli, Stefano Massaroli, Eric Nguyen, Daniel Y. Fu,
+Tri Dao, Stephen Baccus, Yoshua Bengio, Stefano Ermon,
+and Christopher Ré. Hyena hierarchy: Towards larger convolutional language models. In International Conference on
+Machine Learning, 2023.
+Ofir Press, Noah A. Smith, and Mike Lewis. Train short,
+test long: Attention with linear biases enables input length
+extrapolation. In International Conference on Learning
+Representations, 2022.
+Alok Puranik. Using group theory to explore the space of
+positional encodings for attention. Jane Street Blog, Apr
+2026. Available at https://blog.janestreet.co
+m/using-group-theory-to-explore-posit
+ional-encodings-attention/; accessed 2026-0506.
+Yuval Ran-Milo, Eden Lumbroso, Edo Cohen-Karlik, Raja
+Giryes, Amir Globerson, and Nadav Cohen. Provable benefits of complex parameterizations for structured state space
+models. In Advances in Neural Information Processing
+Systems, 2024.
+Peter Shaw, Jakob Uszkoreit, and Ashish Vaswani. Selfattention with relative position representations. In Proceedings of NAACL-HLT, 2018.
+Jianlin Su, Yu Lu, Shengfeng Pan, Ahmed Murtadha, Bo Wen,
+and Yunfeng Liu. Roformer: Enhanced transformer with rotary position embedding. arXiv preprint arXiv:2104.09864,
+2021.
+Yutao Sun, Li Dong, Barun Patra, Shuming Ma, Shaohan
+Huang, Alon Benhaim, Vishrav Chaudhary, Xia Song, and
+Furu Wei. A length-extrapolatable transformer. arXiv
+preprint arXiv:2212.10554, 2022.
+John Thickstun, Zaid Harchaoui, and Sham M. Kakade. Learning features of music from scratch. In International Conference on Learning Representations, 2017.
+Lloyd N. Trefethen and Mark Embree. Spectra and Pseudospectra: The Behavior of Nonnormal Matrices and Operators. Princeton University Press, 2005.
+
+15
+
+

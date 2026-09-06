@@ -1,0 +1,2210 @@
+Published as a conference paper at COLM 2024
+
+HGRN2: Gated Linear RNNs with State Expansion
+1 Zhen Qin† , 2 Songlin Yang† , 3 Weixuan Sun, 3 Xuyang Shen, 3 Dong Li, 3 Weigao Sun,
+
+3 Yiran Zhong∗
+
+1 TapTap 2 MIT CSAIL 3 OpenNLPLab, Shanghai AI Lab
+
+arXiv:2404.07904v2 [cs.CL] 19 Aug 2024
+
+ https://github.com/OpenNLPLab/HGRN2
+
+Abstract
+Hierarchically gated linear RNN (HGRN, Qin et al. 2023c) has demonstrated
+competitive training speed and performance in language modeling while
+offering efficient inference. However, the recurrent state size of HGRN
+remains relatively small, limiting its expressiveness. To address this issue,
+we introduce a simple outer product-based state expansion mechanism,
+which significantly enlarges the recurrent state size without introducing
+any additional parameters. This enhancement also provides a linear attention interpretation for HGRN2, enabling hardware-efficient training.
+Our extensive experiments verify the advantage of HGRN2 over HGRN
+consistently across different settings and competitive with other recurrent
+models.
+
+1
+
+Introduction
+
+Large language models (LLMs) have achieved significant empirical success in recent years.
+However, serving Transformer-based LLMs is costly due to the expensive KV cache management. Recurrent neural networks (RNNs), on the other hand, offer linear inference
+complexity with constant state size, making them ideal for serving. Consequently, there
+is substantial interest in studying parallelizable linear recurrent models, such as linear
+RNNs (Peng et al., 2023; Orvieto et al., 2023; Qin et al., 2023c; De et al., 2024), linear attention
+(Sun et al., 2023; Qin et al., 2023b; Yang et al., 2023; 2024; Arora et al., 2024), and state space
+models (Gu et al., 2022a; Smith et al., 2023; Gu & Dao, 2023; Dao & Gu, 2024).
+RNNs have a fixed recurrent state size to encode all historical information. Therefore, it
+is important for RNNs to (i) utilize the fixed-sized states effectively and (ii) increase the
+recurrent state size to enhance memory capacity. Recent improvements in linear RNNs
+follow this approach, incorporating techniques such as data-dependent decays and state
+expansion.
+Data-dependent decays (also known as forget gates) are crucial for RNNs (van der Westhuizen & Lasenby, 2018), allowing them to selectively retain useful information while
+erasing irrelevant information. This enables the fixed-size recurrent state to store only
+important information more efficiently. HGRN (Qin et al., 2023c) first emphasized the
+importance of data-dependent decays for linear RNNs. Many recent linear recurrent models,
+such as Mamba (Gu & Dao, 2023), Gated Linear Attention (GLA, Yang et al. 2023), Griffin
+(De et al., 2024), and RWKV-6 (Peng et al., 2024), also employ data-dependent decays.
+However, HGRN did not increase the recurrent state size, which is greatly restricted by
+limited memory capacity. This limitation prevents it from achieving LLaMa-like (Touvron
+et al., 2023a;b) language modeling performance, as noted in Qin et al. (2024). Recent stateof-the-art linear recurrent models, such as Mamba, GLA, and RWKV-6, have addressed this
+issue by employing state-expansion techniques. These techniques significantly increase the
+recurrent state size and thereby enhance memory capacity, which has been shown to be
+∗ Corresponding author. Email: zhongyiran@gmail.com. † Equal contributions.
+
+1
+
+Published as a conference paper at COLM 2024
+
+crucial for language modeling performance and directly correlated with retrieval ability
+(Arora et al., 2024).
+In this work, we propose HGRN2, which aims to increase the recurrent state size for HGRN
+while retaining both parameter and training efficiency. We first explore structured matrices
+to expand the state size directly in a parameter-efficient manner. Empirically, we found
+that this approach improves language modeling performance but still encounters training
+inefficiencies, which limit the scaling of the recurrent state size. Inspired by linear attention,
+we then explore using a non-parametric outer product-based state expansion mechanism.
+This approach allows for efficient scaling of the recurrent state size during training without
+introducing additional parameters. Due to the matrix multiply form of linear attention,
+we can leverage the hardware-efficient linear attention training algorithm described in
+Yang et al. (2023); Qin et al. (2024) for large-scale experiments. As a result, HGRN2 can be
+regarded as an improved parameterization of GLA.
+We extensively evaluate HGRN2 across various tasks, demonstrating that it consistently
+outperforms HGRN1 in multiple domains. In language modeling, we show HGRN2 to be
+highly competitive compared to other subquadratic efficient models.
+
+2
+
+Background
+
+2.1
+
+Gated linear RNN
+
+Given input x ∈ R N ×d , where the sequence length is N and the model dimension is d, a
+minimalist gated linear recurrent layer (Martin & Cundy, 2018) transforms the input x into
+hidden states h ∈ R N ×d and the output y ∈ R N ×d , as defined below:
+gt = σ (Uxt + bu ) ,
+it = τ (Vxt + bv ) ,
+(1)
+
+ot = σ (Wxt + bw ) ,
+ht = gt ⊙ ht −1 + (1 − gt ) ⊙ it ,
+yt = ht ⊙ ot ,
+
+where ⊙ denotes element-wise product; σ is the sigmoid function, and τ is a nonlinear
+activation function (we choose to use SiLU); it is the input vector; gt and ot are the forget
+gate and output gate, respectively. The input gate is tied to the forget gate as 1 − gt , a
+common approach used in many gated RNNs such as GRU (Chung et al., 2014).
+2.2
+
+HGRN (Qin et al., 2023c)
+
+Compared to Eq. 1, HGRN makes two adjustments: (i) complex-valued recurrence and (ii)
+forget gates with monotonically increased lower bound values from bottom layers to upper
+layers.
+For (i), similar to the findings in Gu & Dao (2023) and De et al. (2024), we empirically found
+that complex-valued recurrence is not necessary, as shown in Table 1. The reason why
+HGRN found it useful is due to state expansion: the complex-valued recurrent state is twice
+the size of that in the real-valued recurrent state. If we directly expand the real-valued
+recurrent state size from d to 2d, the language modeling performance on the Wikitext-103
+corpus is even better. Therefore, we only consider the real-valued recurrence thereafter.
+For (ii), suppose the total number of layers is L. HGRN introduces a data-independent
+learnable matrix Γ ∈ R L×d , where Γi represents the lowest values of the forget gate for the
+i-th layer at all time steps. HGRN argues that this lower bound should be monotonically
+increasing from bottom to top, encouraging the bottom layers to model short-term local
+dependencies and the upper layers to model long-term dependencies. To enforce this
+monotonicity, HGRN uses the cumulative softmax operator cumax (Shen et al., 2018):
+β := cumax(Γ) = cumsum(softmax(Γ, dim = 0), dim = 0) ∈ R L×d ,
+2
+
+β i = [ β ] i ∈ Rd .
+
+Published as a conference paper at COLM 2024
+
+Table 1: Comparison of real HGRN and complex HGRN. We found that real HGRN with
+twice the state size performs better than complex HGRN in Wiki103 language modeling.
+Method
+Complex HGRN1
+Real HGRN1
+Real HGRN1
+
+State size
+
+PPL(val)
+
+PPL(test)
+
+Params (M)
+
+2d
+d
+2d
+
+24.14
+25.34
+24.04
+
+24.82
+26.12
+24.64
+
+46.25
+46.24
+45.46
+
+To prevent the lower bound from reaching one in the highest layer, HGRN subtracts all β
+values by β0 , making the lower bound for the first layer zero. After obtaining the lower
+bound values, the forget gate gt learns residuals instead, resulting in a new forget gate ft :
+fit = βi + (1 − βi ) ⊙ git ,
+hit = fit ⊙ hit−1 + (1 − fit ) ⊙ iit ,
+
+(2)
+
+where the superscript indicates the layer index. This additive lower bound approach has
+been shown to mitigate the issue of saturated gates (Gu et al., 2020).
+
+3
+
+Method
+
+3.1
+
+Explorations of state expansion methods
+
+The goal of this work is to scale the size of the HGRN recurrent state from d to nd, where n
+is the state expansion ratio. However, if we use the original parameterization in Eq. 1, the
+matrices U, V, W will have dimensions d × nd, which becomes very parameter inefficient
+when n is large. Ideally, the number of parameters should be around d2 , as in the original
+case for each projection. To achieve this, we first consider using structured matrices (e.g.,
+low-rank matrices) to replace the dense projection matrix Rd → Rnd , as described in Table
+2.
+Table 2: Parameter Efficient State Expansion (PESE) methods using Einstein Summation
+notation. Blue represents the input, Black represents data-independent weights, and Red
+represents the output. We list the Einstein Summation for low-rank (LR), group linear
+transformation (GLT), group linear transformation with interaction (GLTI), Khatri-Rao
+product (KRP), and Kronecker product (KP).
+Method
+
+Equation
+
+Parameter #
+
+Naive
+
+d, d nd → nd
+
+nd2
+
+LR
+
+d, d r, r nd → nd
+
+dr (n + 1) ≈ d2
+
+GLT
+
+d = (n e) → n e
+n e, n e d → n d
+
+d2
+
+GLTI
+
+d = (n e) → n e
+n e, n e d, n n → nd
+
+d2 + n2
+
+KRP
+
+d, n d → nd
+
+nd
+
+KP
+
+d, d d, n → nd
+
+d2 + n
+
+After obtaining the expanded g, i, o, we feed them into element-wise gated linear recurrent
+layers as in Eq. 1 and Eq. 2, resulting in the output vector yt ∈ Rn×d . To project the
+expanded dimension back to the original dimension, we simply sum over the dimension
+corresponding to n.
+The results are shown in Table 3. We found that state expansion generally improves
+performance, with the low-rank matrix performing the best among these candidates.
+3
+
+Published as a conference paper at COLM 2024
+
+However, these methods face training inefficiency
+issues, as they require conducting element-wise linear recurrence in high dimensions (i.e., nd). Since
+these element-wise operations cannot leverage tensor
+cores (a fast matrix multiplication unit on GPUs), the
+dramatically increasing FLOPs and I/O costs significantly slow down training when n is large. We notice
+that this is similar to the case in Mamba1 , which requires a relatively small expansion ratio (i.e., n = 16)
+and a custom I/O-efficient CUDA implementation
+to achieve a reasonably fast running speed.
+In the next subsection, we explore an alternative strategy that does not replace the dense projection matrices with structured ones but instead changes the
+element-wise gating operations in Eq.1 to other matrix/vector operations similar to those used in linear
+attention. This approach allows for more efficient
+training.
+3.2
+
+Table 3: PESE Ablation. Ablation studies on various parameterefficient methods, as described in Table 2. Each model was trained on 10
+billion tokens from the Pile dataset.
+Method
+
+n
+
+PPL
+
+Params (M)
+
+Xfmr
+Xfmr++
+HGRN1
+LR
+
+1
+4
+8
+4
+4
+4
+4
+
+5.16
+4.62
+5.10
+4.76
+4.77
+5.06
+4.83
+5.08
+5.06
+
+380
+386
+379
+385
+386
+386
+386
+386
+386
+
+4
+8
+128
+
+4.79
+4.73
+4.62
+
+385
+385
+385
+
+GLT
+GLTI
+KRP
+KP
+HGRN2
+
+HGRN2
+Output
+
+Output
+HGRU2
+
+Linear
+LayerNorm
+
+GLU
+N×
+
+𝑜𝑡
+
+HGRU2
+
+SiLU
+Linear
+
+Recurrent Computing
+
+𝑖𝑡
+Linear
+
+𝑔𝑡
+
+𝛽𝑖
+
+Sigmoid
+Linear
+
+Input
+
+Input
+
+Figure 1: Network Structure of HGRN2. Each HGRN2 layer includes a token mixer layer,
+HGRU2, and a channel mixer, GLU. HGRU2 employs recurrent computation as described
+in Eq. 3, where it is the input state, gt is the forget gate, ot is the output gate, and βi is the
+lower bound for layer i.
+The modification from HGRN1 to HGRN2 is simple yet effective. For the input gate, HGRN2
+replaces the element-wise product with the outer product for state expansion. Consequently,
+ht ∈ Rd×d , and HGRN2 first diagonalizes the forget gate vector and uses the matrix dot
+product to update the hidden state. For the output gate, HGRN2 replaces the element-wise
+product with matrix-vector multiplication to project the expanded state back to the original
+dimension. The recurrent equation of HGRN2 is as follows:
+ht = ht−1 · Diag{ft } + it ⊗ (1 − ft ) ∈ Rd×d ,
+yt = ht · ot ∈ Rd ,
+
+(3)
+
+where Diag denotes the diagonalization of vectors, · represents the matrix dot product, and
+⊗ indicates the outer product.
+1 Though Mamba has an attention mechanism (Ali et al., 2024) similar to that in linear attention, the
+attention computation cannot be expressed as a matrix multiplication like linear attention, and thus
+does not facilitate tensor core-based GPU acceleration, as well acknowledged in Mamba2 (Dao & Gu,
+2024).
+
+4
+
+24.6
+24.4
+24.2
+24.0
+23.8
+23.6
+23.4
+23.2
+
+PPL
+
+PPL
+
+Published as a conference paper at COLM 2024
+
+1
+
+2
+
+4
+
+8 16 32
+Expand Ratio
+
+64 128
+
+4.90
+4.85
+4.80
+4.75
+4.70
+4.65
+1
+
+2
+
+4
+
+8 16 32
+Expand Ratio
+
+64 128
+
+Figure 2: Expand Ratio (Head Dimension) Ablation. We tested the relationship between
+PPL (Perplexity) and the expand ratio on the Wikitext-103 (Merity et al., 2017) dataset (left)
+and a subset of the Pile (Gao et al., 2020) dataset (right).
+Multihead Variant. The complexity of recurrence increases dramatically from O( BNd)
+to O( BNd2 ) due to state expansion. To address this, we introduce a multihead variant of
+HGRN (similar to that in linear attention) such that the complexity is reduced to O( BNd2 /H )
+for the number of heads H, effectively making the state size d2 /H, i.e., the expansion ratio
+n = dh = d/H.2 We conducted an ablation study on the expansion ratio (or head dimension)
+n = Hd , as shown in Figure 2. The results show that state expansion significantly improves
+language modeling performance. However, when the head dimension (i.e., state expansion
+ratio) exceeds 128, the performance gain diminishes. To balance computational cost and
+performance, we chose dh = 128 for the main experiments.
+Comparison to GLA. It is important to note that the recurrence form in HGRN2 is identical
+to that of GLA (Yang et al., 2023), except for the specific parameterization. We list the
+correspondences between the two parameterizations in Table 4. As shown, the output gate
+in HGRN2 corresponds to the query in GLA, while the output gate in GLA is omitted in
+HGRN2. The key vector in GLA corresponds to the input gate in HGRN2, which is tied to
+the forget gate, thereby saving parameters.
+Table 4: The correspondence between HGRN2 and GLA is as follows.
+HGRN2
+
+GLA
+
+o (output gate)
+1 − f (input gate)
+i (input vector)
+f (forget gate)
+−
+
+q (query vector)
+k (key vector)
+v (value vector)
+α (forget gate)
+o (output gate)
+
+Hardware-Efficient Training. Due to its computational structure’s similarity to GLA, we
+can directly leverage their chunkwise algorithm and highly optimized kernels for hardwareefficient large-scale training. For more details, we refer readers to their paper.
+Concluding Remarks. Although HGRN2 shares many similarities with GLA, we believe
+that HGRN2 offers a unique perspective distinct from linear attention, originating from
+the approach of gated linear RNNs. For instance, it may not be immediately clear from the
+perspective of linear attention why key vectors should be constrained within the range of (0,
+1) or why the key vector and forget gate value should sum to one. However, these concepts
+become quite intuitive when starting from the gated linear RNN framework and exploring
+state expansion.
+2 See Bolya et al. (2022) for more detailed complexity analysis.
+
+5
+
+Published as a conference paper at COLM 2024
+
+4
+
+Experiments
+
+4.1
+
+MQAR
+
+Setting. Multi-Query Associative Recall (MQAR) (Arora et al., 2023) is an enhanced
+version of the synthetic induction head dataset (Fu et al., 2023), designed to test the in-context
+associative recall ability of subquadratic models. Arora et al. (2023) found strong correlations
+between MQAR accuracy and language modeling performance. Our experimental setting
+strictly follows the original paper3 . Our hyperparameter sweep included the following
+ranges: expansion ratio ∈ {64, 128} and learning rate ∈ {1e − 5, 5e − 5, 1e − 4, 5e − 4, 1e −
+3, 5e − 3, 1e − 2}.
+
+Accuracy
+
+Result. As shown in Fig. 3, HGRN2 significantly outperforms HGRN1 across various
+model dimensions, demonstrating the benefits of state expansion in improving memory
+capacity and, consequently, in-context recall ability.
+1.00
+0.75
+0.50
+0.25
+0.00
+
+Sequence Length: 64 Sequence Length: 128 Sequence Length: 256 Sequence Length: 512
+HGRN1
+HGRN2
+64
+
+128
+
+256
+
+512 64
+
+Model dimension
+
+128
+
+256
+
+512 64
+
+Model dimension
+
+128
+
+256
+
+512 64
+
+Model dimension
+
+128
+
+256
+
+512
+
+Model dimension
+
+Figure 3: Results on MQAR, where the x-axis represents the model dimension and the y-axis
+represents accuracy. The task becomes more challenging as the sequence length increases.
+HGRN2 outperforms HGRN1 in all scenarios.
+4.2
+4.2.1
+
+Table 5: Results on Wikitext-103.
+
+Language modeling
+Wikitext-103
+
+Model
+
+Setting. For the Wikitext-103 experiment, we
+followed the configuration of HGRN1 to validate the performance of 44M models against
+a wide range of subquadratic models: FLASH
+(Hua et al., 2022), 1+elu (Katharopoulos et al.,
+2020), Performer (Choromanski et al., 2021), cosFormer (Qin et al., 2022b), Syn(D), Syn(R) (Tay
+et al., 2021a), gMLP (Liu et al., 2021), S4 (Gu et al.,
+2022a), DSS (Gupta & Berant, 2022), RWKV-v4
+(Peng et al., 2023), LRU (Orvieto et al., 2023),
+HGRN1 (Qin et al., 2023c), TNN (Qin et al.,
+2023a), and Mamba (Gu & Dao, 2023). All reported results are from our own runs under the
+same settings.
+
+Transformer
+FLASH
+1+elu
+Performer
+cosFormer
+Syn(D)
+Syn(R)
+gMLP
+S4
+DSS
+GSS
+RWKV-4
+LRU
+TNN
+Mamba
+HGRN1
+HGRN2
+
+PPL (val)
+
+PPL (test)
+
+Params (M)
+
+24.40
+25.92
+27.44
+62.50
+26.53
+31.31
+33.68
+28.08
+38.34
+39.39
+29.61
+24.31
+29.86
+23.98
+22.58
+24.14
+23.10
+
+24.78
+26.70
+28.05
+63.16
+27.06
+32.43
+34.78
+29.13
+39.66
+41.07
+30.74
+25.07
+31.12
+24.67
+23.19
+24.82
+23.73
+
+44.65
+42.17
+44.65
+44.65
+44.65
+46.75
+44.65
+47.83
+45.69
+45.73
+43.84
+46.23
+46.24
+48.68
+44.39
+46.25
+44.66
+
+Result. Table 5 shows the results. HGRN2 clearly outperforms HGRN1 but slightly
+underperforms Mamba.
+4.2.2
+
+Slimpajama
+
+We conducted language modeling experiments with 1.3B and 2.7B parameters on the
+Slimpajama dataset (Soboleva et al., 2023), using the F LASH L INEAR ATTENTION (Yang &
+Zhang, 2024) codebase for training. 4 The results, shown in Table 6, demonstrate that
+3 https://github.com/HazyResearch/zoology
+4 Model checkpoints are available at https://huggingface.co/fla-hub.
+
+6
+
+Published as a conference paper at COLM 2024
+
+HGRN2 consistently outperforms other competitive linear recurrent models across three
+model scales. This suggests that HGRN2 provides a superior parameterization compared to
+GLA, as both models share an identical recurrent structure.
+Table 6: Slimpajama language modeling results.
+Lamb.
+
+4.2.3
+
+Wiki.
+ppl↓
+
+ARCe
+ppl↓
+
+ARCc
+acc
+
+Hella.
+accn
+
+Lamb.
+accn
+
+PIQA
+acc
+
+Wino.
+acc
+
+Avg
+acc
+
+1.3B parameters with 100B training tokens
+Transformer++
+15.3 17.1
+54.1
+Mamba
+16.5 18.2
+57.3
+RetNet
+15.4 17.3
+57.4
+GLA
+15.4 17.6
+55.4
+HGRN2
+11.8 16.9
+58.1
+
+27.1
+26.6
+27.9
+27.7
+28.1
+
+49.3
+48.1
+50.3
+49.0
+51.8
+
+47.0
+43.4
+44.6
+46.4
+49.4
+
+70.3
+69.5
+71.7
+69.9
+71.4
+
+54.9
+53.7
+51.8
+54.0
+52.3
+
+50.5
+49.8
+50.6
+50.4
+51.9
+
+2.7B parameters with 100B training tokens
+Transformer++
+10.7 15.2
+59.8
+Mamba
+13.6 15.9
+60.7
+RetNet
+11.9 15.8
+59.6
+GLA
+12.4 15.5
+59.2
+HGRN2
+8.8 14.6
+60.8
+
+27.5
+29.8
+28.1
+29.9
+30.3
+
+54.2
+53.9
+54.0
+54.0
+58.7
+
+52.3
+46.4
+49.6
+50.4
+55.4
+
+72.7
+72.8
+72.3
+71.7
+73.0
+
+56.2
+53.9
+53.8
+55.7
+54.2
+
+53.8
+52.9
+52.9
+53.5
+55.4
+
+The Pile
+
+We also conducted experiments on the Pile dataset. First, we trained 150M, 350M, and 1B
+HGRN1 and HGRN2 models for 100B tokens, and the results are shown in Table 7. We
+observe that HGRN2 consistently outperforms HGRN1.
+Table 7: Comparison between HGRN1 and HGRN2 on Commonsense Reasoning Tasks.
+Model
+
+Bn Params
+
+Bn Tokens
+
+PIQA
+
+Hella.
+
+Wino.
+
+ARC-e
+
+ARC-c
+
+OBQA
+
+AVG
+
+HGRN1
+HGRN2
+
+0.15
+0.15
+
+100
+100
+
+65.02
+66.43
+
+33.33
+35.44
+
+50.20
+51.70
+
+46.68
+46.63
+
+23.81
+24.32
+
+28.60
+28.40
+
+41.27
+42.15
+
+HGRN1
+HGRN2
+
+0.35
+0.39
+
+100
+100
+
+66.70
+69.97
+
+38.12
+46.16
+
+51.70
+52.72
+
+49.20
+53.58
+
+25.26
+23.98
+
+30.60
+32.40
+
+43.60
+46.47
+
+HGRN1
+HGRN2
+
+1
+1
+
+100
+100
+
+70.89
+74.16
+
+48.02
+54.85
+
+51.62
+56.12
+
+55.64
+58.71
+
+27.90
+27.22
+
+31.60
+34.00
+
+47.61
+50.84
+
+Next, we scaled the token horizon to 300B and trained strong baseline models, Mamba and
+LLaMA, under the same settings for comparison. We also compared them against several
+open-sourced language models, such as OPT (Zhang et al., 2022), Pythia (Biderman et al.,
+2023), BLOOM (Scao et al., 2022), and RWKV-4 (Peng et al., 2023). We found that HGRN2
+performs competitively with Mamba, LLaMA, and other open-sourced LLMs.
+To evaluate long-context abilities, we conducted tests on SCROLLs (Shaham et al., 2022)
+and found that HGRN2 exhibits better scaling behavior compared to Mamba, indicating
+stronger long-context capabilities, potentially due to its larger recurrent state size. However,
+we also observed that the 7B HGRN2 model is still not as strong as the LLaMA model,
+suggesting that the scaling behavior of linear models for long-context modeling remains an
+area for further study.
+To test the retrieval ability of our trained 3B models, we ran the easy mode of the Needle
+in a Haystack Test. 5 LLaMA almost achieves perfect retrieval performance for evaluation
+5 In this mode (Shen, 2024; Shen et al., 2024), both the question and answer (QA pair) are embedded
+within a lengthy text, challenging the model to locate and respond to the query. This mode is
+particularly suitable for base models without instruction tuning. In contrast, the standard mode only
+places the answer within the long context, requiring the model to understand the question and find
+the relevant answer.
+
+7
+
+Published as a conference paper at COLM 2024
+
+Table 8: Comparison between HGRN2 and other open-sourced language models, alongside
+strong baseline models (LLaMA and Mamba re-trained under the same settings), on Commonsense Reasoning Tasks. † indicates our own trained model.
+Model
+
+Bn Params
+
+Bn Token
+
+PIQA
+
+Hella.
+
+Wino.
+
+ARC-e
+
+ARC-c
+
+OBQA
+
+AVG
+
+OPT
+Pythia
+BLOOM
+RWKV-4
+Llama†
+Mamba†
+HGRN2†
+
+0.35
+0.40
+0.56
+0.43
+0.4
+0.4
+0.4
+
+300
+300
+350
+350
+300
+300
+
+64.58
+67.08
+64.09
+67.52
+67.19
+67.90
+67.74
+
+36.69
+40.52
+46.97
+39.00
+38.75
+40.74
+40.32
+
+52.49
+53.59
+52.80
+51.14
+52.19
+52.72
+51.78
+
+44.02
+51.81
+47.35
+52.86
+49.24
+53.07
+54.21
+
+23.89
+24.15
+29.38
+25.17
+23.72
+24.74
+24.83
+
+28.20
+29.40
+28.20
+32.40
+30.00
+31.20
+31.20
+
+41.65
+44.43
+42.23
+45.00
+43.51
+45.06
+45.01
+
+GPT-Neo
+OPT
+Pythia
+BLOOM
+RWKV-4
+Llama†
+Mamba†
+HGRN2†
+
+1.3
+1.3
+1.4
+1.3
+1.5
+1.0
+1.0
+1.0
+
+300
+300
+300
+350
+300
+300
+300
+
+71.11
+71.71
+70.67
+71.42
+72.36
+69.97
+71.27
+71.65
+
+48.93
+53.70
+47.18
+49.83
+52.48
+47.04
+50.15
+49.52
+
+54.93
+59.35
+53.51
+51.47
+54.62
+52.72
+56.35
+54.38
+
+56.19
+57.24
+56.99
+55.63
+60.48
+57.07
+58.71
+60.27
+
+25.85
+29.69
+26.88
+29.40
+29.44
+26.18
+29.27
+28.07
+
+33.60
+33.20
+31.40
+44.50
+34.00
+32.60
+31.20
+33.40
+
+48.44
+50.82
+47.77
+47.27
+50.56
+47.93
+49.45
+49.55
+
+OPT
+Pythia
+BLOOM
+RWKV-4
+Llama†
+Mamba†
+HGRN2†
+
+2.7
+2.8
+3.0
+3.0
+3.0
+3.0
+3.0
+
+300
+300
+350
+350
+300
+300
+
+73.83
+74.10
+70.57
+72.42
+73.18
+74.92
+74.10
+
+60.60
+59.31
+54.53
+58.75
+57.88
+61.68
+61.48
+
+61.01
+59.91
+58.49
+57.30
+59.59
+59.19
+58.64
+
+60.77
+64.14
+59.43
+62.92
+63.93
+65.33
+65.61
+
+31.31
+33.02
+30.38
+35.15
+33.51
+31.45
+34.47
+
+35.20
+35.60
+32.20
+36.20
+35.40
+35.60
+35.60
+
+53.79
+54.35
+50.77
+53.79
+53.93
+55.31
+54.98
+
+Llama†
+HGRN2†
+
+7.0
+7.0
+
+300
+300
+
+75.19
+76.50
+
+64.39
+66.96
+
+61.88
+61.40
+
+67.55
+69.02
+
+35.41
+36.86
+
+35.00
+38.00
+
+56.57
+58.12
+
+Table 9: Performance Comparison on SCROLLS. R-1/2/L stand for parameter size, tokens,
+and rouge-1/rouge-2/rouge-l, respectively.
+Model
+
+Params
+Bn
+
+Token
+Bn
+
+GovRep
+R-1/2/L
+
+SumScr
+R-1/2/L
+
+QMSum
+R-1/2/L
+
+Qspr
+F1
+
+Nrtv
+F1
+
+QALT
+EM
+
+CNLI
+EM
+
+Avg ↑
+
+Llama
+Mamba
+HGRN2
+
+0.4
+0.4
+0.4
+
+300
+300
+300
+
+8.2/3.5/6.2
+8.2/2.4/6.2
+15.3/3.5/10.9
+
+11.3/1.6/8.7
+11.2/1.8/8.9
+7.4/0.8/6.2
+
+10.7/2.1/9.4
+9.3/1.6/8.4
+8.3/1.2/7.4
+
+17.8
+14.9
+12.4
+
+15.4
+11.6
+10.9
+
+28.0
+25.8
+26.4
+
+13.9
+19.4
+31.5
+
+10.5
+10.0
+10.9
+
+Llama
+Mamba
+HGRN2
+
+1.0
+1.0
+1.0
+
+300
+300
+300
+
+12.9/3.1/9.4
+15.2/4.2/10.6
+14.9/4.2/10.5
+
+9.5/0.8/7.7
+12.3/1.6/9.4
+11.4/1.4/9.2
+
+10.9/2.2/9.4
+13.9/3.1/11.7
+10.9/2.3/9.7
+
+22.8
+18.3
+16.2
+
+16.0
+14.7
+15.1
+
+28.4
+26.7
+27.8
+
+9.9
+9.1
+10.6
+
+11.0
+11.6
+11.1
+
+Llama
+Mamba
+HGRN2
+
+3.0
+3.0
+3.0
+
+300
+300
+300
+
+11.2/4.9/8.1
+21.5/6.6/13.9
+21.7/6.6/14.1
+
+11.9/1.9/9.3
+13.2/2.0/10.1
+14.6/2.1/10.8
+
+16.1/4.3/12.9
+15.0/3.2/12.3
+12.5/2.7/10.6
+
+28.6
+22.1
+25.4
+
+20.8
+17.9
+18.8
+
+30.4
+28.8
+28.9
+
+20.2
+24.0
+31.9
+
+13.9
+14.7
+15.4
+
+Llama
+HGRN2
+
+7.0
+7.0
+
+300
+300
+
+17.4/7.3/11.4
+14.9/5.2/10.2
+
+12.9/1.8/10.0
+15.4/2.4/11.1
+
+14.6/3.7/11.8
+14.3/3.0/11.8
+
+32.4
+27.1
+
+22.3
+19.6
+
+33.8
+30.1
+
+10.0
+10.0
+
+14.6
+13.5
+
+lengths no greater than the training length. As shown in Figure 4, HGRN2 and Mamba still
+face difficulties in retrieval tasks; however, HGRN2 outperforms Mamba due to its larger
+state size, enabled by linear attention-styled state expansion.
+
+Figure 4: Easy mode Needle in a Haystack Test on 3B models: Mamba (left) and HGRN2
+(right). The evaluation context length is 16K, and the models were trained on a sequence
+length of 8K.
+8
+
+Published as a conference paper at COLM 2024
+
+4.3
+
+Long Range Arena
+Table 10: Results on LRA. † indicates the results reported by Alonso et al. (2024).
+Model
+
+ListOps
+
+Text
+
+Retrieval
+
+Image
+
+Pathfinder
+
+Path-X
+
+AVG
+
+Transformer
+cosFormer
+FLASH
+S4
+TNN
+S5
+Mega
+SGConv
+LRU
+Mamba†
+Griffin†
+
+38.37
+36.50
+38.70
+59.60
+61.04
+62.15
+63.14
+61.45
+60.20
+38.02
+32.34
+
+61.95
+67.70
+64.10
+86.82
+87.90
+89.31
+90.43
+89.20
+89.40
+82.98
+71.75
+
+80.69
+83.15
+86.10
+90.90
+90.97
+91.40
+91.25
+91.11
+89.90
+72.14
+66.58
+
+40.57
+51.23
+47.40
+88.65
+88.24
+88.00
+90.44
+87.97
+89.00
+69.82
+61.15
+
+65.26
+71.96
+70.25
+94.20
+93.00
+95.33
+96.01
+95.46
+95.10
+69.26
+73.38
+
+96.35
+96.10
+98.56
+97.98
+97.83
+94.20
+67.32
+69.53
+
+47.81
+51.76
+51.09
+86.09
+86.21
+87.46
+88.21
+87.17
+86.30
+66.59
+62.45
+
+HGRN1
+HGRN2
+
+59.95
+60.52
+
+88.14
+88.97
+
+94.23
+95.07
+
+88.69
+89.33
+
+92.92
+93.95
+
+97.50
+98.12
+
+86.91
+87.66
+
+Setting. Long Range Arena (Tay et al., 2021b) is a benchmark designed to assess a model’s
+ability to handle long-range dependencies. We used HGRN1’s configuration and compared
+it with existing methods, as shown below.
+Result. Table 10 shows the results. HGRN2 outperforms HGRN1, while Mamba and
+Griffin failed to achieve high accuracy on this benchmark.
+4.4
+
+Image Modeling
+
+Setting. For the image classification task, we followed the configuration of HGRN1 and
+trained it on ImageNet-1k, comparing it with TNN and the vanilla transformer.
+Result. Table 11 shows the results. HGRN2 outperforms HGRN1 with a similar parameter
+size, while also demonstrating an advantage over previous TNN (Qin et al., 2023a) and
+DeiT models (Touvron et al., 2021).
+Table 11: Performances comparison of image classification on ImageNet-1k. HGRN2 performs favorably compared to competing methods with similar parameter sizes.
+
+Model
+
+5
+
+DeiT-Tiny
+Top-1 Acc Params (M)
+
+DeiT-Small
+Top-1 Acc Params (M)
+
+DeiT
+TNN
+HGRN1
+
+72.20
+72.29
+74.40
+
+5.7
+6.4
+6.1
+
+79.90
+79.20
+80.09
+
+22.0
+23.4
+23.7
+
+HGRN2
+
+75.39
+
+6.1
+
+80.12
+
+23.8
+
+Related work
+
+Linear recurrent models. Linear recurrent models mainly include linear RNNs, state-space
+models, and linear attention. State-space models (SSMs) are gaining great attention since
+the seminal work S4 (Gu et al., 2022a) and its more efficient diagonalized version (Gu et al.,
+2022b). Despite excellent performance in the LRA benchmark, it has been shown to have
+inferior performance in language modeling. Gating mechanisms have been shown to be
+crucial in improving SSMs’ language modeling performance (Mehta et al., 2023; Wang et al.,
+9
+
+Published as a conference paper at COLM 2024
+
+2022; Gu & Dao, 2023). Gupta et al. (2022) build the connection between SSM and linear
+RNN. Orvieto et al. (2023) proposes a linear RNN layer (i.e., LRU) inspired by SSMs. Peng
+et al. (2023) successfully scale linear RNN models to billions of parameters for the first time.
+For linear attention models, their language modeling performance has been underperforming softmax attention for a long time. Several improvements have been proposed to bridge
+the performance gap: (i) incorporating the forgetting mechanism (Peng et al., 2021; Schlag
+et al., 2021; Sun et al., 2023; Qin et al., 2023b; Yang et al., 2023; Peng et al., 2024), (ii) using
+local attention (Qin et al., 2022a; Zhang et al., 2023; Arora et al., 2024; Ren et al., 2024),
+(iii) using higher-order polynomial feature map (Arora et al., 2024; Kacham et al., 2023) to
+make the resulting attention distribution more sharp (Zhang et al., 2024), (iv) using more
+expressive yet efficient recurrent update rule (Schlag et al., 2021; Yang et al., 2024; Liu et al.,
+2024; Sun et al., 2024a).
+
+Gated linear recurrence. Martin & Cundy (2018) first proposed a minimal gated linear
+recurrent layer and showed how to use the parallel scan algorithm to train linear RNNs
+in sequence-level parallel. Qin et al. (2023c) is largely based on this work with several
+adaptations and highlights the importance of data-dependent decay. De et al. (2024) build
+their model on LRU (Orvieto et al., 2023) and replace data-independent decays with datadependent ones. They further use sliding-window attention to boost the performance.
+These models are limited in recurrent state size.
+Gated recurrent models with matrix-valued recurrent state have been investigated in the
+literature of Neural Turing Machine (NTM Graves et al. 2014) and linear Transformer
+(Katharopoulos et al., 2020). In NTM, the number of memory slots can be regarded as the
+state expansion ratio discussed in this work. NTM also included data-dependent decays
+in the form of erase vectors. However, NTM is hard to parallelize and thus slow to train in
+practice. The linear transformer is known to have the recurrent form (Katharopoulos et al.,
+2020) and is known to be closely related to fast weight programming (FWP Schlag et al.
+2021). Gated FWPs have been investigated since Schlag & Schmidhuber (2017); Zhang &
+Zhou (2017), and have recently been revisited in Peng et al. (2021); Mao (2022); Yang et al.
+(2023); Katsch (2023); Pramanik et al. (2023). In particular, Yang et al. (2023) proposed a
+hardware-efficient training algorithm for these types of models.
+More recently, Mamba2 (Dao & Gu, 2024), xLSTM (Beck et al., 2024), and Gated Retention
+(Sun et al., 2024b) have shown that sharing data-dependent decays across different dimensions within the same head is effective. This approach improves efficiency over GLA because
+intra-chunk computations are more amenable to tensor core-based matrix multiplication
+acceleration, at the cost of sacrificing the fine-grainedness of decays. In GLA/HGRN2, each
+head dimension has its own decay rate, whereas in Mamba2/xLSTM/Gated Retention, all
+dimensions share the decay under a single head. It is an interesting question to study how
+much improvement fine-grained decay will bring.
+
+6
+
+Conclusion
+
+In this work, we propose HGRN2, an enhancement of HGRN (Qin et al., 2023c) using
+an outer product-based state expansion mechanism inspired by linear attention, enabling
+efficient training. Experiments across multiple tasks validate the advantages of HGRN2
+over HGRN1.
+
+Acknowledgement
+We thank Yu Zhang for conducting some language modeling experiments and for the
+valuable discussions.
+10
+
+Published as a conference paper at COLM 2024
+
+References
+Ameen Ali, Itamar Zimerman, and Lior Wolf. The hidden attention of mamba models. 2024.
+URL https://api.semanticscholar.org/CorpusID:268248520.
+Carmen Amo Alonso, Jerome Sieber, and Melanie Nicole Zeilinger. State space models as foundation models: A control theoretic overview. 2024. URL https://api.
+semanticscholar.org/CorpusID:268681121.
+Simran Arora, Sabri Eyuboglu, Aman Timalsina, Isys Johnson, Michael Poli, James Zou,
+Atri Rudra, and Christopher Ré. Zoology: Measuring and improving recall in efficient
+language models. arXiv:2312.04927, 2023.
+Simran Arora, Sabri Eyuboglu, Michael Zhang, Aman Timalsina, Silas Alberti, Dylan Zinsley,
+James Zou, Atri Rudra, and Christopher Ré. Simple linear attention language models
+balance the recall-throughput tradeoff. CoRR, abs/2402.18668, 2024. doi: 10.48550/ARXIV.
+2402.18668. URL https://doi.org/10.48550/arXiv.2402.18668.
+Maximilian Beck, Korbinian Poppel, Markus Spanring, Andreas Auer, Oleksandra Prudnikova, Michael K Kopp, Günter Klambauer, Johannes Brandstetter, and Sepp Hochreiter. xlstm: Extended long short-term memory. ArXiv, abs/2405.04517, 2024. URL
+https://api.semanticscholar.org/CorpusID:269614336.
+Stella Biderman, Hailey Schoelkopf, Quentin G. Anthony, Herbie Bradley, Kyle O’Brien, Eric
+Hallahan, Mohammad Aflah Khan, Shivanshu Purohit, USVSN Sai Prashanth, Edward
+Raff, Aviya Skowron, Lintang Sutawika, and Oskar van der Wal. Pythia: A suite for
+analyzing large language models across training and scaling. ArXiv, abs/2304.01373, 2023.
+URL https://api.semanticscholar.org/CorpusID:257921893.
+Daniel Bolya, Cheng-Yang Fu, Xiaoliang Dai, Peizhao Zhang, and Judy Hoffman. Hydra
+attention: Efficient attention with many heads. In ECCV Workshops, 2022. URL https:
+//api.semanticscholar.org/CorpusID:252284084.
+Krzysztof Marcin Choromanski, Valerii Likhosherstov, David Dohan, Xingyou Song, Andreea Gane, Tamás Sarlós, Peter Hawkins, Jared Quincy Davis, Afroz Mohiuddin, Lukasz
+Kaiser, David Benjamin Belanger, Lucy J. Colwell, and Adrian Weller. Rethinking attention with performers. In 9th International Conference on Learning Representations, ICLR 2021,
+Virtual Event, Austria, May 3-7, 2021. OpenReview.net, 2021.
+Junyoung Chung, Çaglar Gülçehre, KyungHyun Cho, and Yoshua Bengio. Empirical evaluation of gated recurrent neural networks on sequence modeling. CoRR, abs/1412.3555,
+2014. URL http://arxiv.org/abs/1412.3555.
+Tri Dao and Albert Gu. Transformers are ssms: Generalized models and efficient algorithms
+through structured state space duality. ArXiv, abs/2405.21060, 2024. URL https://api.
+semanticscholar.org/CorpusID:270199762.
+Soham De, Samuel L. Smith, Anushan Fernando, Aleksandar Botev, George Cristian-Muraru,
+Albert Gu, Ruba Haroun, Leonard Berrada, Yutian Chen, Srivatsan Srinivasan, Guillaume
+Desjardins, Arnaud Doucet, David Budden, Yee Whye Teh, Razvan Pascanu, Nando
+de Freitas, and Caglar Gulcehre. Griffin: Mixing gated linear recurrences with local
+attention for efficient language models. ArXiv, abs/2402.19427, 2024. URL https://api.
+semanticscholar.org/CorpusID:268091246.
+Daniel Y. Fu, Tri Dao, Khaled Kamal Saab, Armin W. Thomas, Atri Rudra, and Christopher
+Ré. Hungry hungry hippos: Towards language modeling with state space models. In
+The Eleventh International Conference on Learning Representations, ICLR 2023, Kigali, Rwanda,
+May 1-5, 2023. OpenReview.net, 2023.
+Leo Gao, Stella Biderman, Sid Black, Laurence Golding, Travis Hoppe, Charles Foster,
+Jason Phang, Horace He, Anish Thite, Noa Nabeshima, Shawn Presser, and Connor
+Leahy. The Pile: An 800gb dataset of diverse text for language modeling. arXiv preprint
+arXiv:2101.00027, 2020.
+11
+
+Published as a conference paper at COLM 2024
+
+Alex Graves, Greg Wayne, and Ivo Danihelka. Neural turing machines. ArXiv,
+abs/1410.5401, 2014. URL https://api.semanticscholar.org/CorpusID:15299054.
+Albert Gu and Tri Dao. Mamba: Linear-time sequence modeling with selective state spaces.
+2023.
+Albert Gu, Çaglar Gülçehre, Thomas Paine, Matt Hoffman, and Razvan Pascanu. Improving
+the gating mechanism of recurrent neural networks. In Proceedings of the 37th International
+Conference on Machine Learning, ICML 2020, 13-18 July 2020, Virtual Event, volume 119
+of Proceedings of Machine Learning Research, pp. 3800–3809. PMLR, 2020. URL http:
+//proceedings.mlr.press/v119/gu20a.html.
+Albert Gu, Karan Goel, and Christopher Ré. Efficiently modeling long sequences with
+structured state spaces. In The Tenth International Conference on Learning Representations,
+ICLR 2022, Virtual Event, April 25-29, 2022. OpenReview.net, 2022a.
+Albert Gu, Ankit Gupta, Karan Goel, and Christopher Ré. On the parameterization and
+initialization of diagonal state space models. ArXiv, abs/2206.11893, 2022b. URL https:
+//api.semanticscholar.org/CorpusID:249953875.
+Ankit Gupta and Jonathan Berant. Diagonal state spaces are as effective as structured
+state spaces. ArXiv, abs/2203.14343, 2022. URL https://api.semanticscholar.org/
+CorpusID:247762199.
+Ankit Gupta, Harsh Mehta, and Jonathan Berant. Simplifying and understanding state
+space models with diagonal linear rnns. ArXiv, abs/2212.00768, 2022. URL https:
+//api.semanticscholar.org/CorpusID:254125297.
+Weizhe Hua, Zihang Dai, Hanxiao Liu, and Quoc V. Le. Transformer quality in linear time.
+In Kamalika Chaudhuri, Stefanie Jegelka, Le Song, Csaba Szepesvári, Gang Niu, and
+Sivan Sabato (eds.), International Conference on Machine Learning, ICML 2022, 17-23 July
+2022, Baltimore, Maryland, USA, volume 162 of Proceedings of Machine Learning Research, pp.
+9099–9117. PMLR, 2022.
+Praneeth Kacham, Vahab Mirrokni, and Peilin Zhong. Polysketchformer: Fast transformers
+via sketching polynomial kernels, 2023.
+Angelos Katharopoulos, Apoorv Vyas, Nikolaos Pappas, and François Fleuret. Transformers
+are rnns: Fast autoregressive transformers with linear attention. In International conference
+on machine learning, pp. 5156–5165. PMLR, 2020.
+Tobias Katsch. Gateloop: Fully data-controlled linear recurrence for sequence modeling.
+ArXiv, abs/2311.01927, 2023.
+Bo Liu, Rui Wang, Lemeng Wu, Yihao Feng, Peter Stone, and Qian Liu. Longhorn: State
+space models are amortized online learners. 2024. URL https://api.semanticscholar.
+org/CorpusID:271310065.
+Hanxiao Liu, Zihang Dai, David R. So, and Quoc V. Le. Pay attention to mlps, 2021.
+Huanru Henry Mao. Fine-tuning pre-trained transformers into decaying fast weights. In
+Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing,
+pp. 10236–10242, Abu Dhabi, United Arab Emirates, December 2022. Association for
+Computational Linguistics. doi: 10.18653/v1/2022.emnlp-main.697.
+Eric Martin and Chris Cundy. Parallelizing linear recurrent neural nets over sequence length.
+In 6th International Conference on Learning Representations, ICLR 2018, Vancouver, BC, Canada,
+April 30 - May 3, 2018, Conference Track Proceedings. OpenReview.net, 2018.
+Harsh Mehta, Ankit Gupta, Ashok Cutkosky, and Behnam Neyshabur. Long range language
+modeling via gated state spaces. In The Eleventh International Conference on Learning
+Representations, ICLR 2023, Kigali, Rwanda, May 1-5, 2023. OpenReview.net, 2023.
+12
+
+Published as a conference paper at COLM 2024
+
+Stephen Merity, Caiming Xiong, James Bradbury, and Richard Socher. Pointer sentinel
+mixture models. 5th International Conference on Learning Representations, ICLR, Toulon,
+France, 2017.
+Antonio Orvieto, Samuel L. Smith, Albert Gu, Anushan Fernando, Çaglar Gülçehre, Razvan
+Pascanu, and Soham De. Resurrecting recurrent neural networks for long sequences. In
+Andreas Krause, Emma Brunskill, Kyunghyun Cho, Barbara Engelhardt, Sivan Sabato,
+and Jonathan Scarlett (eds.), International Conference on Machine Learning, ICML 2023,
+23-29 July 2023, Honolulu, Hawaii, USA, volume 202 of Proceedings of Machine Learning
+Research, pp. 26670–26698. PMLR, 2023. URL https://proceedings.mlr.press/v202/
+orvieto23a.html.
+Bo Peng, Eric Alcaide, Quentin Anthony, Alon Albalak, Samuel Arcadinho, Huanqi Cao,
+Xin Cheng, Michael Chung, Matteo Grella, Kranthi Kiran G. V., Xuzheng He, Haowen
+Hou, Przemyslaw Kazienko, Jan Kocon, Jiaming Kong, Bartlomiej Koptyra, Hayden Lau,
+Krishna Sri Ipsit Mantri, Ferdinand Mom, Atsushi Saito, Xiangru Tang, Bolun Wang,
+Johan S. Wind, Stanislaw Wozniak, Ruichong Zhang, Zhenyuan Zhang, Qihang Zhao,
+Peng Zhou, Jian Zhu, and Rui-Jie Zhu. RWKV: reinventing rnns for the transformer era.
+CoRR, abs/2305.13048, 2023. doi: 10.48550/ARXIV.2305.13048.
+Bo Peng, Daniel Goldstein, Quentin Anthony, Alon Albalak, Eric Alcaide, Stella Biderman,
+Eugene Cheah, Teddy Ferdinan, Haowen Hou, Przemys l aw Kazienko, G Kranthikiran, Jan Koco’n, Bartlomiej Koptyra, Satyapriya Krishna, Ronald McClelland, Niklas
+Muennighoff, Fares Obeid, Atsushi Saito, Guangyu Song, Haoqin Tu, Stanislaw Wo’zniak,
+Ruichong Zhang, Bingchen Zhao, Qihang Zhao, Peng Zhou, Jian Zhu, and Ruijie Zhu.
+Eagle and finch: Rwkv with matrix-valued states and dynamic recurrence. ArXiv,
+abs/2404.05892, 2024. URL https://api.semanticscholar.org/CorpusID:269010053.
+Hao Peng, Nikolaos Pappas, Dani Yogatama, Roy Schwartz, Noah A Smith, and Lingpeng
+Kong. Random feature attention. arXiv preprint arXiv:2103.02143, 2021.
+Subhojeet Pramanik, Esraa Elelimy, Marlos C. Machado, and Adam White. Recurrent linear
+transformers. CoRR, abs/2310.15719, 2023.
+Zhen Qin, Xiaodong Han, Weixuan Sun, Dongxu Li, Lingpeng Kong, Nick Barnes, and
+Yiran Zhong. The devil in linear transformer. arXiv preprint arXiv:2210.10340, 2022a.
+Zhen Qin, Weixuan Sun, Hui Deng, Dongxu Li, Yunshen Wei, Baohong Lv, Junjie Yan,
+Lingpeng Kong, and Yiran Zhong. cosformer: Rethinking softmax in attention. In The
+Tenth International Conference on Learning Representations, ICLR 2022, Virtual Event, April
+25-29, 2022. OpenReview.net, 2022b.
+Zhen Qin, Xiaodong Han, Weixuan Sun, Bowen He, Dong Li, Dongxu Li, Yuchao Dai,
+Lingpeng Kong, and Yiran Zhong. Toeplitz neural network for sequence modeling.
+In The Eleventh International Conference on Learning Representations (ICLR), 2023a. URL
+https://openreview.net/forum?id=IxmWsm4xrua.
+Zhen Qin, Dong Li, Weigao Sun, Weixuan Sun, Xuyang Shen, Xiaodong Han, Yunshen Wei,
+Baohong Lv, Fei Yuan, Xiao Luo, et al. Scaling transnormer to 175 billion parameters.
+arXiv preprint arXiv:2307.14995, 2023b.
+Zhen Qin, Songlin Yang, and Yiran Zhong. Hierarchically gated recurrent neural network for
+sequence modeling. In Alice Oh, Tristan Naumann, Amir Globerson, Kate Saenko, Moritz
+Hardt, and Sergey Levine (eds.), Advances in Neural Information Processing Systems 36:
+Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans,
+LA, USA, December 10 - 16, 2023, 2023c. URL http://papers.nips.cc/paper_files/
+paper/2023/hash/694be3548697e9cc8999d45e8d16fe1e-Abstract-Conference.html.
+Zhen Qin, Weigao Sun, Dong Li, Xuyang Shen, Weixuan Sun, and Yiran Zhong. Lightning
+attention-2: A free lunch for handling unlimited sequence lengths in large language
+models. 2024.
+13
+
+Published as a conference paper at COLM 2024
+
+Liliang Ren, Yang Liu, Yadong Lu, Yelong Shen, Chen Liang, and Weizhu Chen. Samba: Simple hybrid state space models for efficient unlimited context language modeling. ArXiv,
+abs/2406.07522, 2024. URL https://api.semanticscholar.org/CorpusID:270380294.
+Teven Le Scao, Angela Fan, Christopher Akiki, Ellie Pavlick, Suzana Ili’c, Daniel Hesslow,
+Roman Castagn’e, Alexandra Sasha Luccioni, François Yvon, Matthias Gallé, Jonathan
+Tow, Alexander M. Rush, Stella Biderman, Albert Webson, Pawan Sasanka Ammanamanchi, Thomas Wang, Benoı̂t Sagot, Niklas Muennighoff, Albert Villanova del Moral,
+Olatunji Ruwase, Rachel Bawden, Stas Bekman, Angelina McMillan-Major, Iz Beltagy,
+Huu Nguyen, Lucile Saulnier, Samson Tan, Pedro Ortiz Suarez, Victor Sanh, Hugo Laurenccon, Yacine Jernite, Julien Launay, Margaret Mitchell, Colin Raffel, Aaron Gokaslan,
+Adi Simhi, Aitor Soroa Etxabe, Alham Fikri Aji, Amit Alfassy, Anna Rogers, Ariel Kreisberg Nitzav, Canwen Xu, Chenghao Mou, Chris C. Emezue, Christopher Klamm, Colin
+Leong, Daniel Alexander van Strien, David Ifeoluwa Adelani, Dragomir R. Radev, Eduardo Gonz’alez Ponferrada, Efrat Levkovizh, Ethan Kim, Eyal Natan, Francesco De
+Toni, Gérard Dupont, Germán Kruszewski, Giada Pistilli, Hady ElSahar, Hamza Benyamina, Hieu Trung Tran, Ian Yu, Idris Abdulmumin, Isaac Johnson, Itziar Gonzalez-Dios,
+Javier de la Rosa, Jenny Chim, Jesse Dodge, Jian Zhu, Jonathan Chang, Jorg Frohberg,
+Josephine Tobing, Joydeep Bhattacharjee, Khalid Almubarak, Kimbo Chen, Kyle Lo, Leandro von Werra, Leon Weber, Long Phan, Loubna Ben Allal, Ludovic Tanguy, Manan Dey,
+Manuel Romero Muñoz, Maraim Masoud, Mar’ia Grandury, Mario vSavsko, Max Huang,
+Maximin Coavoux, Mayank Singh, Mike Tian-Jian Jiang, Minh Chien Vu, Mohammad A.
+Jauhar, Mustafa Ghaleb, Nishant Subramani, Nora Kassner, Nurulaqilla Khamis, Olivier
+Nguyen, Omar Espejel, Ona de Gibert, Paulo Villegas, Peter Henderson, Pierre Colombo,
+Priscilla Amuok, Quentin Lhoest, Rheza Harliman, Rishi Bommasani, Roberto L’opez, Rui
+Ribeiro, Salomey Osei, Sampo Pyysalo, Sebastian Nagel, Shamik Bose, Shamsuddeen Hassan Muhammad, Shanya Sharma, S. Longpre, Somaieh Nikpoor, S. Silberberg, Suhas
+Pai, Sydney Zink, Tiago Timponi Torrent, Timo Schick, Tristan Thrush, Valentin Danchev,
+Vassilina Nikoulina, Veronika Laippala, Violette Lepercq, Vrinda Prabhu, Zaid Alyafeai,
+Zeerak Talat, Arun Raja, Benjamin Heinzerling, Chenglei Si, Elizabeth Salesky, Sabrina J.
+Mielke, Wilson Y. Lee, Abheesht Sharma, Andrea Santilli, Antoine Chaffin, Arnaud
+Stiegler, Debajyoti Datta, Eliza Szczechla, Gunjan Chhablani, Han Wang, Harshit Pandey,
+Hendrik Strobelt, Jason Alan Fries, Jos Rozen, Leo Gao, Lintang Sutawika, M Saiful Bari,
+Maged S. Al-Shaibani, Matteo Manica, Nihal V. Nayak, Ryan Teehan, Samuel Albanie,
+Sheng Shen, Srulik Ben-David, Stephen H. Bach, Taewoon Kim, Tali Bers, Thibault Févry,
+Trishala Neeraj, Urmish Thakker, Vikas Raunak, Xiang Tang, Zheng-Xin Yong, Zhiqing
+Sun, Shaked Brody, Y Uri, Hadar Tojarieh, Adam Roberts, Hyung Won Chung, Jaesung
+Tae, Jason Phang, Ofir Press, Conglong Li, Deepak Narayanan, Hatim Bourfoune, Jared
+Casper, Jeff Rasley, Max Ryabinin, Mayank Mishra, Minjia Zhang, Mohammad Shoeybi,
+Myriam Peyrounette, Nicolas Patry, Nouamane Tazi, Omar Sanseviero, Patrick von
+Platen, Pierre Cornette, Pierre Franccois Lavall’ee, Rémi Lacroix, Samyam Rajbhandari,
+Sanchit Gandhi, Shaden Smith, Stéphane Requena, Suraj Patil, Tim Dettmers, Ahmed
+Baruwa, Amanpreet Singh, Anastasia Cheveleva, Anne-Laure Ligozat, Arjun Subramonian, Aur’elie N’ev’eol, Charles Lovering, Daniel H Garrette, Deepak R. Tunuguntla,
+Ehud Reiter, Ekaterina Taktasheva, Ekaterina Voloshina, Eli Bogdanov, Genta Indra
+Winata, Hailey Schoelkopf, Jan-Christoph Kalo, Jekaterina Novikova, Jessica Zosa Forde,
+Xiangru Tang, Jungo Kasai, Ken Kawamura, Liam Hazan, Marine Carpuat, Miruna Clinciu, Najoung Kim, Newton Cheng, Oleg Serikov, Omer Antverg, Oskar van der Wal,
+Rui Zhang, Ruochen Zhang, Sebastian Gehrmann, Shachar Mirkin, S. Osher Pais, Tatiana Shavrina, Thomas Scialom, Tian Yun, Tomasz Limisiewicz, Verena Rieser, Vitaly
+Protasov, Vladislav Mikhailov, Yada Pruksachatkun, Yonatan Belinkov, Zachary Bamberger, Zdenvek Kasner, Zdeněk Kasner, Amanda Pestana, Amir Feizpour, Ammar Khan,
+Amy Faranak, Ananda Santa Rosa Santos, Anthony Hevia, Antigona Unldreaj, Arash
+Aghagol, Arezoo Abdollahi, Aycha Tammour, Azadeh HajiHosseini, Bahareh Behroozi,
+Benjamin Ayoade Ajibade, Bharat Kumar Saxena, Carlos Muñoz Ferrandis, Danish Contractor, David M. Lansky, Davis David, Douwe Kiela, Duong Anh Nguyen, Edward Tan,
+Emi Baylor, Ezinwanne Ozoani, Fatim Tahirah Mirza, Frankline Ononiwu, Habib Rezanejad, H.A. Jones, Indrani Bhattacharya, Irene Solaiman, Irina Sedenko, Isar Nejadgholi, Jan
+Passmore, Joshua Seltzer, Julio Bonis Sanz, Karen Fort, Lı́via Dutra, Mairon Samagaio,
+14
+
+Published as a conference paper at COLM 2024
+
+Maraim Elbadri, Margot Mieskes, Marissa Gerchick, Martha Akinlolu, Michael McKenna,
+Mike Qiu, Muhammed Ghauri, Mykola Burynok, Nafis Abrar, Nazneen Rajani, Nour
+Elkott, Nourhan Fahmy, Olanrewaju Samuel, Ran An, R. P. Kromann, Ryan Hao, Samira
+Alizadeh, Sarmad Shubber, Silas L. Wang, Sourav Roy, Sylvain Viguier, Thanh-Cong
+Le, Tobi Oyebade, Trieu Nguyen Hai Le, Yoyo Yang, Zach Nguyen, Abhinav Ramesh
+Kashyap, Alfredo Palasciano, Alison Callahan, Anima Shukla, Antonio Miranda-Escalada,
+Ayush Kumar Singh, Benjamin Beilharz, Bo Wang, Caio Matheus Fonseca de Brito, Chenxi
+Zhou, Chirag Jain, Chuxin Xu, Clémentine Fourrier, Daniel Le’on Perin’an, Daniel Molano,
+Dian Yu, Enrique Manjavacas, Fabio Barth, Florian Fuhrimann, Gabriel Altay, Giyaseddin
+Bayrak, Gully Burns, Helena U. Vrabec, Iman I.B. Bello, Isha Dash, Ji Soo Kang, John
+Giorgi, Jonas Golde, Jose David Posada, Karthi Sivaraman, Lokesh Bulchandani, Lu Liu,
+Luisa Shinzato, Madeleine Hahn de Bykhovetz, Maiko Takeuchi, Marc Pàmies, Marı́a Andrea Castillo, Marianna Nezhurina, Mario Sanger, Matthias Samwald, Michael Cullan,
+Michael Weinberg, M Wolf, Mina Mihaljcic, Minna Liu, Moritz Freidank, Myungsun
+Kang, Natasha Seelam, Nathan Dahlberg, Nicholas Michio Broad, Nikolaus Muellner,
+Pascale Fung, Patricia Haller, Patrick Haller, Renata Eisenberg, Robert Martin, Rodrigo
+Canalli, Rosaline Su, Ruisi Su, Samuel Cahyawijaya, Samuele Garda, Shlok S Deshmukh,
+Shubhanshu Mishra, Sid Kiblawi, Simon Ott, Sinee Sang-aroonsiri, Srishti Kumar, Stefan
+Schweter, Sushil Pratap Bharati, Tanmay Laud, Théo Gigant, Tomoya Kainuma, Wojciech
+Kusa, Yanis Labrak, Yashasvi Bajaj, Y. Venkatraman, Yifan Xu, Ying Xu, Yu Xu, Zhee Xao
+Tan, Zhongli Xie, Zifan Ye, Mathilde Bras, Younes Belkada, and Thomas Wolf. Bloom: A
+176b-parameter open-access multilingual language model. ArXiv, abs/2211.05100, 2022.
+URL https://api.semanticscholar.org/CorpusID:253420279.
+Imanol Schlag and Jürgen Schmidhuber. Gated fast weights for on-the-fly neural program
+generation. 2017. URL https://api.semanticscholar.org/CorpusID:216094255.
+Imanol Schlag, Kazuki Irie, and Jürgen Schmidhuber. Linear transformers are secretly fast
+weight programmers. In Marina Meila and Tong Zhang (eds.), Proceedings of the 38th
+International Conference on Machine Learning, ICML 2021, 18-24 July 2021, Virtual Event,
+volume 139 of Proceedings of Machine Learning Research, pp. 9355–9366. PMLR, 2021.
+Uri Shaham, Elad Segal, Maor Ivgi, Avia Efrat, Ori Yoran, Adi Haviv, Ankit Gupta, Wenhan
+Xiong, Mor Geva, Jonathan Berant, and Omer Levy. SCROLLS: Standardized CompaRison
+over long language sequences. In Yoav Goldberg, Zornitsa Kozareva, and Yue Zhang
+(eds.), Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing,
+pp. 12007–12021, Abu Dhabi, United Arab Emirates, December 2022. Association for
+Computational Linguistics. doi: 10.18653/v1/2022.emnlp-main.823. URL https://
+aclanthology.org/2022.emnlp-main.823.
+Xuyang Shen. Llmtest needleinahaystack hfmodel: Support huggingface model to do simple
+retrieval from llm models at various context lengths to measure accuracy, 2024. URL
+https://github.com/XuyangShen/LLMTest_NeedleInAHaystack_HFModel.
+Xuyang Shen, Dong Li, Ruitao Leng, Zhen Qin, Weigao Sun, and Yiran Zhong. Scaling laws
+for linear complexity language models, 2024. URL https://arxiv.org/abs/2406.16690.
+Yikang Shen, Shawn Tan, Alessandro Sordoni, and Aaron C. Courville. Ordered neurons:
+Integrating tree structures into recurrent neural networks. ArXiv, abs/1810.09536, 2018.
+URL https://api.semanticscholar.org/CorpusID:53034786.
+Jimmy T. H. Smith, Andrew Warrington, and Scott W. Linderman. Simplified state space
+layers for sequence modeling. In The Eleventh International Conference on Learning Representations, ICLR 2023, Kigali, Rwanda, May 1-5, 2023. OpenReview.net, 2023.
+Daria Soboleva, Faisal Al-Khateeb, Robert Myers, Jacob R Steeves, Joel Hestness, and Nolan
+Dey. SlimPajama: A 627B token cleaned and deduplicated version of RedPajama, 2023.
+Yu Sun, Xinhao Li, Karan Dalal, Jiarui Xu, Arjun Vikram, Genghan Zhang, Yann Dubois,
+Xinlei Chen, Xiaolong Wang, Sanmi Koyejo, Tatsunori Hashimoto, and Carlos Guestrin.
+Learning to (learn at test time): Rnns with expressive hidden states. 2024a. URL https:
+//api.semanticscholar.org/CorpusID:271039606.
+15
+
+Published as a conference paper at COLM 2024
+
+Yutao Sun, Li Dong, Shaohan Huang, Shuming Ma, Yuqing Xia, Jilong Xue, Jianyong Wang,
+and Furu Wei. Retentive network: A successor to transformer for large language models.
+arXiv preprint arXiv:2307.08621, 2023.
+Yutao Sun, Li Dong, Yi Zhu, Shaohan Huang, Wenhui Wang, Shuming Ma, Quanlu Zhang,
+Jianyong Wang, and Furu Wei. You only cache once: Decoder-decoder architectures for
+language models. ArXiv, abs/2405.05254, 2024b. URL https://api.semanticscholar.
+org/CorpusID:269626143.
+Yi Tay, Dara Bahri, Donald Metzler, Da-Cheng Juan, Zhe Zhao, and Che Zheng. Synthesizer:
+Rethinking self-attention in transformer models, 2021a.
+Yi Tay, Mostafa Dehghani, Samira Abnar, Yikang Shen, Dara Bahri, Philip Pham, Jinfeng
+Rao, Liu Yang, Sebastian Ruder, and Donald Metzler. Long range arena : A benchmark for
+efficient transformers. In 9th International Conference on Learning Representations, ICLR 2021,
+Virtual Event, Austria, May 3-7, 2021. OpenReview.net, 2021b. URL https://openreview.
+net/forum?id=qVyeW-grC2k.
+Hugo Touvron, Matthieu Cord, Matthijs Douze, Francisco Massa, Alexandre Sablayrolles,
+and Herve Jegou. Training data-efficient image transformers &amp; distillation through
+attention. In International Conference on Machine Learning, volume 139, pp. 10347–10357,
+July 2021.
+Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux,
+Timothée Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, et al.
+Llama: Open and efficient foundation language models. arXiv preprint arXiv:2302.13971,
+2023a.
+Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei,
+Nikolay Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, Dan Bikel, Lukas
+Blecher, Cristian Canton Ferrer, Moya Chen, Guillem Cucurull, David Esiobu, Jude
+Fernandes, Jeremy Fu, Wenyin Fu, Brian Fuller, Cynthia Gao, Vedanuj Goswami, Naman
+Goyal, Anthony Hartshorn, Saghar Hosseini, Rui Hou, Hakan Inan, Marcin Kardas,
+Viktor Kerkez, Madian Khabsa, Isabel Kloumann, Artem Korenev, Punit Singh Koura,
+Marie-Anne Lachaux, Thibaut Lavril, Jenya Lee, Diana Liskovich, Yinghai Lu, Yuning
+Mao, Xavier Martinet, Todor Mihaylov, Pushkar Mishra, Igor Molybog, Yixin Nie, Andrew
+Poulton, Jeremy Reizenstein, Rashi Rungta, Kalyan Saladi, Alan Schelten, Ruan Silva,
+Eric Michael Smith, Ranjan Subramanian, Xiaoqing Ellen Tan, Binh Tang, Ross Taylor,
+Adina Williams, Jian Xiang Kuan, Puxin Xu, Zheng Yan, Iliyan Zarov, Yuchen Zhang,
+Angela Fan, Melanie Kambadur, Sharan Narang, Aurelien Rodriguez, Robert Stojnic,
+Sergey Edunov, and Thomas Scialom. Llama 2: Open foundation and fine-tuned chat
+models, 2023b.
+Jos van der Westhuizen and Joan Lasenby. The unreasonable effectiveness of the forget gate.
+CoRR, abs/1804.04849, 2018.
+Junxiong Wang, Jing Nathan Yan, Albert Gu, and Alexander M. Rush. Pretraining without
+attention. CoRR, abs/2212.10544, 2022.
+Songlin Yang and Yu Zhang. FLA: A Triton-Based Library for Hardware-Efficient Implementations of Linear Attention Mechanism, January 2024. URL https://github.com/
+sustcsonglin/flash-linear-attention.
+Songlin Yang, Bailin Wang, Yikang Shen, Rameswar Panda, and Yoon Kim. Gated linear
+attention transformers with hardware-efficient training. CoRR, abs/2312.06635, 2023. doi:
+10.48550/ARXIV.2312.06635. URL https://doi.org/10.48550/arXiv.2312.06635.
+Songlin Yang, Bailin Wang, Yu Zhang, Yikang Shen, and Yoon Kim. Parallelizing linear
+transformers with the delta rule over sequence length. arXiv preprint arXiv:2406.06484,
+2024.
+Jun Zhang, Shuyang Jiang, Jiangtao Feng, Lin Zheng, and Lingpeng Kong. Linear attention
+via orthogonal memory, 2023.
+16
+
+Published as a conference paper at COLM 2024
+
+Michael Zhang, Kush Bhatia, Hermann Kumbong, and Christopher Ré. The hedgehog &
+the porcupine: Expressive linear attentions with softmax mimicry, 2024.
+Susan Zhang, Stephen Roller, Naman Goyal, Mikel Artetxe, Moya Chen, Shuohui Chen,
+Christopher Dewan, Mona T. Diab, Xian Li, Xi Victoria Lin, Todor Mihaylov, Myle Ott,
+Sam Shleifer, Kurt Shuster, Daniel Simig, Punit Singh Koura, Anjali Sridhar, Tianlu Wang,
+and Luke Zettlemoyer. Opt: Open pre-trained transformer language models. ArXiv,
+abs/2205.01068, 2022. URL https://api.semanticscholar.org/CorpusID:248496292.
+Wei Zhang and Bowen Zhou. Learning to update auto-associative memory in recurrent
+neural networks for improving sequence memorization. ArXiv, abs/1709.06493, 2017.
+URL https://api.semanticscholar.org/CorpusID:22458497.
+
+A
+
+Appendix
+
+A.1
+
+Experiment Configurations
+
+In Table 12, the experiment configurations provided detail setups for both Auto-regressive
+Language Modeling (ALM) and ImageNet (IM) experiments, focusing on the WikiText-103
+and ImageNet-1k datasets, respectively. ALM experiments utilize Byte Pair Encoding (BPE)
+with a vocabulary size of 50, 265 and sequence length of 512, featuring a total batch size
+of 128 and 50, 000 updates. ImageNet experiments differentiate between 6 million and
+23 million parameter models, with total batch sizes of 1024 and 2048, both running for
+300 epochs but with differing warm-up periods. Optimization strategies vary between
+Adam for ALM and AdamW for IM, with specific learning rate schedulers and hyperparameters tailored to each model’s scale. Additional configurations outline variations in
+model complexity, from 0.15 to 2.9 million parameters, adjusting layers, hidden dimensions,
+and GPUs used, aiming to comprehensively explore model performance across scales and
+setups.
+Table 12: Comprehensive Configurations of the Model and Training Procedures for
+HGRN2 Experiments “Total batch size” means batch per gpu × update freq × num gpus;
+“ALM” stands for Autoregressive Language Model; “IM” stands for Image Modeling.
+ALM
+WikiText-103
+BPE
+50265
+512
+128
+50k updates
+4k steps
+5e-4
+Inverse sqrt
+Adam
+1e-8
+(0.9, 0.98)
+0.1
+-
+
+Dataset
+Tokenizer method
+Src Vocab size
+Sequence length
+Total batch size
+Number of updates/epochs
+Warmup steps/epochs
+Peak learning rate
+Learning rate scheduler
+Optimizer
+Adam ϵ
+Adam ( β 1 , β 2 )
+Weight decay
+Gradient clipping
+
+IM(6M)
+ImageNet-1k
+1024
+300 epochs
+20 epochs
+7.5e-4
+Cosine
+Adamw
+1e-8
+(0.9, 0.98)
+0.05
+5.0
+
+IM(23M)
+ImageNet-1k
+2048
+300 epochs
+10 epochs
+7.5e-4
+Cosine
+Adamw
+1e-8
+(0.9, 0.98)
+0.1
+5.0
+
+Table 13: Model configurations
+Params
+0.15
+0.385
+1
+2.9
+
+Layers
+15
+26
+18
+36
+
+Hidden Dim
+768
+1024
+2048
+2560
+
+Exp. Ratio
+128
+128
+128
+128
+
+17
+
+L. R.
+3.00E-04
+3.00E-04
+3.00E-04
+3.00E-04
+
+Batch Size
+26
+15
+10
+36
+
+SeqLen
+2048
+2048
+2048
+2048
+
+GPUS
+8
+8
+16
+64
+
+Published as a conference paper at COLM 2024
+
+A.2
+
+Loss curve of HGRN2
+
+The training loss curves for the HGRN2 models of different sizes—150M, 385M, and 1B, as
+shown in Fig. 5, which as the number of parameters increases, the model’s performance
+improves, with the 1B model consistently outperforming the others.
+
+Loss Curve Across Model Sizes
+
+4.8
+
+HGRN2-150M
+HGRN2-385M
+HGRN2-1B
+
+4.6
+
+4.4
+
+Loss
+
+4.2
+4.0
+
+3.8
+
+3.6
+
+3.4
+
+3.2
+
+3.0
+
+0
+
+10
+
+20
+
+30
+
+40
+
+50
+
+60
+
+70
+
+80
+
+90
+
+100
+
+Billion Tokens
+Figure 5: Training loss over train tokens for the 150m, 385m, 1B models. All models
+consumed approximately 100 billion tokens, and it can be observed that as the model size
+increases, the loss significantly decreases.
+
+18
+
+

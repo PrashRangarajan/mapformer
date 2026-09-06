@@ -1,0 +1,359 @@
+ 
+ Jane Street Blog - Using group theory to explore the space of positional encodings for attention 
+ Home 
+ All Posts 
+ Machine Learning 
+ Authors Index 
+ Jane Street 
+ Subscribe to email updates 
+ Subscribe to Email Updates 
+ Featured Reads 
+ Read more 
+ Using ASCII waveforms to test hardware designs 
+ Read more 
+ Finding memory leaks with Memtrace 
+ Tags 
+ async 
+ book 
+ c 
+ camlp4 
+ code-review 
+ comments 
+ compiler 
+ core 
+ hackerschool 
+ hg 
+ incremental 
+ internship 
+ interviewing 
+ machine-learning 
+ ocaml 
+ parallel-programming 
+ performance 
+ ppx 
+ real-world-ocaml 
+ registers 
+ speed 
+ ui 
+ Get the RSS feed 
+ Jane Street Open Source 
+ Join Our Team 
+ Using group theory to explore the space of positional encodings for attention 
+ Apr 22, 2026 | 
+ 13 min read
+ Share on Facebook 
+ Share on Twitter 
+ Share on LinkedIn 
+ By: Alok Puranik 
+ Attention is a computational primitive at the core of modern language models, allowing
+internal representations to reference and influence each other. It’s how these models
+handle sequential data in the first place. 
+ Yet, naively implemented, attention doesn’t have any notion of position. In the core
+attention computation, you calculate the dot product between a given “query” and a “key,”
+which tells you how much to attend to the value at that key—and this dot product says
+nothing about where in the sequence the queries and keys are. Since in most settings that
+information matters a great deal, you generally want to somehow perturb your dot-product
+calculation so that it depends on the positions (usually just the relative positions) of
+the query and key. 
+ The so-called “positional encoding” that you use represents an important modeling
+decision, because it governs how the model views the passage of time. The most popular
+positional encoding, called RoPE, rotates components of key and query vectors by an angle
+that depends on the position in the sequence, like the hands of a clock. This works well
+in practice, but it’s far from the only option. 
+ On a recent Friday afternoon I wondered, well, what are all the options? I’m an ML
+researcher at Jane Street, and when we’re working with sequential models we’ve often
+debated whether we’re using the best positional encoding. This raises the question: what
+positional encodings are even possible? As I started investigating, I discovered to my
+surprise that the space is quite constrained. 
+ The reason is that there are a few key properties that any desirable positional encoding
+should have, and once you formalize those, you’re left with a very particular mathematical
+structure. (Spoiler: a one-parameter
+group .) In exploring that
+structure, I was able to show that there are only a few families of valid positional
+encoding—the demonstration of that fact forms the bulk of this blog post—and actually all
+of the sensible ones are already being used in real systems. 
+ It was a reassuring finding, because it means that we don’t need to rack our brains to
+come up with some perfect positional encoding, as we are probably already using it. Even
+so, in doing this analysis I did discover a strange, unlikely-to-work-out-in-practice, but
+technically legal class of positional encodings that seems to be totally unexplored. 
+ Formalizing a positional encoding 
+ Let’s suppose we have a time series of queries ,
+and a time series of keys . We write and
+ as functions of time so that we can accommodate continuous or irregularly sampled
+inputs, but we could just as well restrict ourselves to only integer times if we prefer.
+“Time” here is a stand-in for any increasing quantity that we might care to use to
+measure progression through a sequence; it could be a sequence index, or literal elapsed
+time in a time series modeling problem, or even some kind of learned notion of time, as
+used in the Mamba family of models. We’re only concerned with the time-dependent
+aspects of the positional encoding, so we’ll allow ourselves to apply certain
+time-independent operations, most notably changes of basis, to and without
+really considering the positional encoding to have changed. (When and are
+produced by linear layers in neural networks, the basis is arbitrary anyway.) 
+ In the absence of positional encodings, attention would require us to compute inner
+products like . We want to modify these inner products to encode the
+progression of time. For the sake of computational efficiency, we won’t modify every
+pairwise inner product independently; instead we’ll transform the queries and keys
+themselves, using some explicitly time-dependent functions
+ and
+ . We’ll set
+ , , so that the attention score of the pair
+ becomes . We’ve assumed here that and don’t change
+the dimension of our queries and keys, which we may do without loss of generality. (If we
+wanted a different dimension, we could have applied a time-independent projection to our
+keys and queries prior to the positional encoding.) Now let’s add some more restrictions. 
+ Properties of good positional encodings 
+ Linearity: is linear in , and is linear in . This one
+isn’t rigorously justifiable, but we’re working with a vector space, so it’s only right
+that our encoding should be linear. We’ll leave the study of nonlinear encodings to
+others. 
+ Linearity ensures that we can write and
+ , with and being square matrices. Now our
+attention dot product is 
+ We can see at this point that any positional encoding scheme will be fully characterized
+by the square matrix , which determines how we modify the inner product
+between times and . 
+ Translation invariance: For any times and , we have
+ . This property ensures that only relative positions
+are observable, which will help with generalization to longer sequences, among other
+things. (If the absolute index is observable in your positional encoding, what do you do
+when you train on sequences only up to length , and now need to deal with a longer
+one?) 
+ If you consider computing pairwise as you range over and , you
+get a table like: 
+ \(s = 0\) 
+ \(s = 1\) 
+ \(s = 2\) 
+ \(t = 0\) 
+ \(F(0)^\top G(0)\) 
+ \(F(0)^\top G(1)\) 
+ \(F(0)^\top G(2)\) 
+ \(t = 1\) 
+ \(F(1)^\top G(0)\) 
+ \(F(1)^\top G(1)\) 
+ \(F(1)^\top G(2)\) 
+ \(t = 2\) 
+ \(F(2)^\top G(0)\) 
+ \(F(2)^\top G(1)\) 
+ \(F(2)^\top G(2)\) 
+ Translation invariance is basically just saying that all you need to care about are the
+diagonals in this table, since by assumption along the diagonals the values will be equal. 
+ We make one more assumption, namely that . Effectively this is
+saying that for equal times, our positional encoding modification simply drops out. (We
+can do this without loss of generality, because if we’d started with
+ instead, we could have folded into the keys by redefining
+ , and as usual we’re happy to ignore such time-independent
+transformations.) Therefore by translation invariance. And since the
+matrices are square, we also now know that and are inverses, so
+ is also equal to . 
+ Let’s define a new matrix-valued function . You can think of
+ as giving a single value for each of the diagonals in the table above: 
+ \(s = 0\) 
+ \(s = 1\) 
+ \(s = 2\) 
+ \(t = 0\) 
+ \(A(0)\) 
+ \(A(-1)\) 
+ \(A(-2)\) 
+ \(t = 1\) 
+ \(A(1)\) 
+ \(A(0)\) 
+ \(A(-1)\) 
+ \(t = 2\) 
+ \(A(2)\) 
+ \(A(1)\) 
+ \(A(0)\) 
+ says how much you should perturb the inner product when shifted by . In
+other words, is a translation across time that brings the key from the
+past, at time , to the present, at time , where it can be compared to .
+This key piece of intuition simultaneously suggests that: 
+ Shifting by should be a no-op 
+ Shifting by and then by should be the same as shifting by 
+ And indeed, thanks to the assumptions above we can immediately conclude that
+ , and that: 
+ The property is a very powerful constraint. If you’re familiar with
+group theory, the family of matrices form a one-parameter
+group as long as we require that
+ is continuous in . This fact makes our enumeration possible, because such
+groups are well understood. So our last assumption is: 
+ Continuity: is a continuous function of . There are discontinuous
+functions that satisfy our constraints, but they require the axiom of choice to describe
+and are far too deranged to implement on a physical computer. 
+ Enumerating all the representations 
+ Remember that we’re trying to use these constraints to characterize the space of possible
+positional encodings. The fact that any positional encoding under the above assumptions
+must be a one-parameter group lets us bring known results about one-parameter groups to
+bear against this problem. 
+ In particular, we know that every one-parameter matrix group has the form for some fixed generator matrix . So now our task comes down to
+determining how the choice of generator affects our encoding. The presence of a matrix
+exponential hints that we should try to diagonalize . 
+ Diagonalizable generators 
+ There’s a lot more we can say when is diagonalizable. Through a time-independent
+change of basis that we may fold into our keys and values, we can convert to have
+the form: 
+ Diagonalizing is convenient because it lets us chop up our positional encoding into
+non-interacting components. More precisely, our -dimensional vector space is
+decomposable into a direct sum of different 1-dimensional vector spaces, where our
+positional encoding acts on each 1D space separately via multiplication by
+ . 
+ When we do this decomposition, we encounter a problem: the new basis will in general be
+complex, not real, and the resulting diagonal matrix will also have complex
+entries in general. However, if the original un-diagonalized was real, then after
+diagonalization, the non-real values will come in conjugate pairs. We will therefore pick
+a slightly coarser direct sum decomposition: real diagonal elements get cut into their own
+subspaces, and pairs of conjugate diagonal elements get 2D subspaces, where acts
+like: 
+ Here denotes the conjugate of . 
+ The action of on a 1D subspace corresponds to exponential decay or blowup. We can
+write the single diagonal value of as the scalar , for some real
+ . Recalling how operates on products, we find that restricted to this
+subspace, . That allows us to contemplate a few
+cases: 
+ If we have , then the influence of key blows up exponentially as time proceeds. This is clearly impractical—you don’t want your attention to increase exponentially as the time gap increases—so we throw out this possibility. 
+ When , our positional encoding is everywhere, and we’ve recovered NoPE. 
+ When , exponentially suppresses the influence of key as
+time goes on, and we recover the exponential decay that so commonly appears in linear
+attention variants. Note that when analyzing gated models, which learn a data-dependent
+decay factor, from the lens of positional encoding, we should think of them as learning
+how far to advance time, as opposed to changing the rate of decay. (Also note that the
+ case only makes sense when we are running causal attention, where the future
+is masked out. Otherwise tokens in the far future have exponentially increased influence
+on our early queries, which presents its own problems.) 
+ The action of on the 2D subspaces can be rewritten in polar form as: 
+ with and real. The role of in this subspace is exactly the same as
+in the 1D subspace, so we’ll require . 
+ To connect to something more familiar, we’ll first note that: 
+ can be converted by change of basis into the 2D rotation matrix . This is called the real canonical form,
+and as long as our original matrix was real, the change of basis required to convert
+it to blocks of this form will also be real. We can implement our choice
+ by taking , so .
+We can immediately check that 
+ and 
+ Here you can see how and behave as we vary and : 
+ Thus and are constant-frequency rotations on our query and key subspaces.
+We’ve derived RoPE, with a new exponential damping factor induced by . This
+exponentially damped RoPE is the positional encoding used in
+ RetNet and
+ Mamba-3 , among others. 
+ Defective generators 
+ Finally, let’s examine the possibility that our generator is a defective matrix, and
+thus not diagonalizable. Instead, when we put it in Jordan normal form, we find that
+Jordan blocks appear around repeated eigenvalues. For simplicity, we can assume for now
+that consists entirely of one Jordan block. 
+ To get some intuition for what happens here, let’s analyze the defective matrix
+ . This matrix satisfies ,
+and therefore
+ . If we
+apply to a 2D vector , we get the result . 
+ This is not just some mathematical pathology; this choice of appears naturally in
+certain dynamical systems. Consider a frictionless hockey puck launched from position
+ with velocity at time . At time , its new position is , and
+its velocity remains . The time evolution of this simple physical system is governed
+precisely by . 
+ Our analysis above covered only the simplest case where the Jordan block had the shared
+eigenvalue , but we can visualize the more general case of a real shared eigenvalue
+ , which adds exponential decays to the mix: 
+ The complex eigenvalue case is messier—the simplest examples involve a
+ Jordan block involving a conjugate pair of doubled eigenvalues—but
+there’s nothing fundamentally new there, and the analysis is left as an exercise to the
+reader. 
+ In general, unlike diagonalizable matrices which produce only exponential and
+trigonometric factors, defective matrices give rise to positional encodings involving
+polynomial terms. Whereas exponential factors produce time decay and rotations produce a
+sort of analog clock, it’s entirely unclear how to interpret these polynomials in the
+context of attention. I failed to find any existing literature which directly addresses
+the possibility of defective generators for positional encodings in deep learning, and
+most likely they have no practical application. Nevertheless, the curious possibility
+remains. 
+ Addendum: ALiBi 
+ @StefanGliga pointed out on X that the restriction to only
+linear functions of and narrows the space of positional encodings so much that
+it excludes ALiBi, which applies a penalty to the attention dot product. And it’s true
+that the assumptions made in this post don’t cover the class of positional encodings which
+map the dot product to for some arbitrary
+function . But ALiBi was a particularly interesting example to use, because that
+particular encoding is possible (though admittedly impractical) to implement with linear
+positional encodings, as long as we augment our queries and keys appropriately. Let’s see
+how. 
+ ALiBi takes the dot product and replaces it with
+ , where is a constant chosen per-head. The first term is
+trivial to produce, so we just need to construct a dot product that evaluates to .
+This means we need a generator matrix that can grow a component linearly in time. We met
+exactly such a matrix in the defective generators section:
+ , which satisfies
+ . Now we’d like to
+pick 2D time-independent and vectors such that
+ . We can set 
+and , and we find: 
+ So, intentionally or otherwise, Stefan found a useful example of a positional encoding
+generated by a defective matrix! 
+ Addendum: Group Representational Positional Encoding (GRAPE) 
+ While writing this post, I somehow missed this recent paper 
+by Zhang et al. which attacks a closely related problem and points out the connection
+between defective generators and ALiBi. Roughly speaking, while this post tries to
+enumerate a universe of positional encodings, the GRAPE paper demonstrates the utility of
+certain classes of positional encodings using essentially the same framework of
+one-parameter groups. Thanks to Yifan Zhang for noticing the connection between this blog
+post and his research. 
+ Alok has been a researcher at Jane Street since 2020. When not training
+neural networks, he enjoys running and pretending to understand theoretical
+physics.
+ #machine-learning 
+ prev ious post 
+ next post 
+ Subscribe to Email Updates 
+ Signals & Threads Podcast 
+ Listen to the latest episode 
+ Featured Tech Talk 
+ The Algorithm for Precision Medicine 
+ Jane Street YouTube Channel 
+ Featured Reads 
+ Read more 
+ Using ASCII waveforms to test hardware designs 
+ Read more 
+ Finding memory leaks with Memtrace 
+ Tags 
+ async 
+ book 
+ c 
+ camlp4 
+ code-review 
+ comments 
+ compiler 
+ core 
+ hackerschool 
+ hg 
+ incremental 
+ internship 
+ interviewing 
+ machine-learning 
+ ocaml 
+ parallel-programming 
+ performance 
+ ppx 
+ real-world-ocaml 
+ registers 
+ speed 
+ ui 
+ RSS 
+ Get the RSS feed 
+ Jane Street Open Source 
+ From committing patches to the Linux kernel to releasing our own projects, we’re always looking for ways to participate in the open source community. 
+ Join Our Team 
+ Where FP meets the real world. 
+ If you're interested in working at a place where functional programming meets the real world, then apply for a job at Jane Street. 
+ Learn more 
+ Who We Are 
+ What We Do 
+ Client Offering 
+ The Latest 
+ Culture 
+ Join Jane Street 
+ Contact Us 
+ Disclosures & Policies 
+ © Copyright 2015-2026 Jane Street Group, LLC. All rights reserved. Services are provided in the U.S. by Jane Street Capital, LLC and Jane Street Execution Services, LLC, each of which is a SEC-registered broker dealer and member of FINRA ( www.finra.org ). Regulated activities are undertaken in Europe by Jane Street Financial Limited, an investment firm authorized and regulated by the U.K. Financial Conduct Authority, and Jane Street Netherlands B.V., an investment firm authorized and regulated by the Netherlands Authority for the Financial Markets ( Autoriteit Financiële Markten ), and in Hong Kong by Jane Street Hong Kong Limited, a regulated entity under the Hong Kong Securities and Futures Commission (CE No. BAL548). Each of these entities is a wholly owned subsidiary of Jane Street Group, LLC. This material is provided for informational purposes only and does not constitute an offer or solicitation for the purchase or sale of any security or other financial instrument. | Jane Street and the concentric circle mark are registered trademarks of Jane Street.
+ Privacy 
+ Cookies 
+ Jane Street Group, LLC uses cookies and similar technologies, including third-party cookies, on this Site to provide basic functionalities and perform analytics. You may accept or decline cookies by selecting “Accept” or “Reject”. For information regarding our cookie practices, see Jane Street’s
+ Ad and Cookie Policy .
+ Accept All 
+ Reject All 

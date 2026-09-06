@@ -1,0 +1,9820 @@
+Published as a conference paper at ICLR 2026
+
+M ESA N ET: S EQUENCE M ODELING BY L OCALLY
+O PTIMAL T EST-T IME T RAINING
+Johannes von Oswald1,∗ , Nino Scherrer1,∗,
+Seijin Kobayashi1 , Luca Versari1 , Songlin Yang3 , Sarthak Mittal1 , Maximilian Schlegel1 ,
+Kaitlin Maile1 , Yanick Schimpf1 , Oliver Sieberling3 , Alexander Meulemans1 ,
+Rif A. Saurous1 , Guillaume Lajoie1 , Charlotte Frenkel1 , Razvan Pascanu2 ,
+Blaise Agüera y Arcas1 and João Sacramento1
+
+arXiv:2506.05233v2 [cs.LG] 3 Jun 2026
+
+1
+
+Google, Paradigms of Intelligence Team, 2 Google DeepMind, 3 MIT CSAIL
+
+A BSTRACT
+Sequence modeling is currently dominated by causal transformer architectures that
+use softmax self-attention. Although widely adopted, transformers require scaling
+memory and compute linearly during inference. A recent stream of work linearized
+the softmax operation, resulting in powerful recurrent neural network (RNN)
+models with constant memory and compute costs such as DeltaNet, Mamba or
+xLSTM. These models can be unified by noting that their recurrent layer dynamics
+can all be derived from an in-context regression objective, approximately optimized
+through an online learning rule. Here, we join this line of work and introduce a
+numerically stable, chunkwise parallelizable version of the recently proposed Mesa
+layer (von Oswald et al., 2024), which could only run sequentially in time and was
+therefore not scalable. This layer again stems from an in-context loss, but which is
+now minimized to optimality at every time point using a fast conjugate gradient
+solver. Through an extensive suite of experiments study up to the billion-parameter
+scale, we show that optimal test-time training enables reaching lower language
+modeling perplexity and higher downstream benchmark performance than previous
+RNNs, especially on tasks requiring long context understanding. This performance
+gain comes at the cost of additional flops spent during inference time. Our results
+are therefore intriguingly related to recent trends of increasing test-time compute to
+improve performance – here by spending compute to solve sequential optimization
+problems within the neural network itself.
+
+1
+
+I NTRODUCTION
+
+While Transformers dominate sequence modeling, their per-token computational and memory requirements scale linearly with sequence length during inference. This limitation motivates the development
+of efficient recurrent neural networks (RNNs) with constant complexity, particularly for autoregressive tasks like language modeling. Recent progress has focused on fast weight programming layers,
+which process a given sequence by representing and learning a linear model in their activations
+(Schmidhuber, 1992; Schlag et al., 2021a; Yang et al., 2024c; Dao & Gu, 2024). Such ‘fast weights’
+undergo one learning step whenever the input sequence advances, following simple Hebbian (Hebb,
+1949) or error-correcting (delta) rules (Widrow & Hoff, 1960). Both rules correspond to gradient
+descent on a suitable quadratic loss function, measured on the latest input.
+Here, we take this concept one step further, and design an optimal fast weight programming layer.
+Following previous related work, we consider linear fast weight models, and measure how well a given
+context is modeled using a quadratic loss. However, instead of gradually learning through gradient
+descent, we design a layer that always responds with the optimal fast weights, which achieve minimum
+loss on all data seen so far. This allows retaining past information while adapting to new evidence
+quickly as a sequence unfolds. Our work builds off the recent recurrent Mesa layer (von Oswald
+et al., 2024), proposing a version of this layer that is parallelizable leveraging matrix multiplication
+∗
+
+Equal Contribution – Correspondence to {jvoswald, scherrernino}@google.com
+
+1
+
+Published as a conference paper at ICLR 2026
+
+Linear
+MLP
+RMSNorm
+
+Linear
+Linear
+
+RMSNorm
+
+Linear
+
+Mesa Rule
+
+(B) Gated MLP block
+Sequence 
+
+mixing block
+RMSNorm
+
+MHA, xLSTM, Mamba2, DeltaNet or Mesa
+
+(A) Residual block
+
+Conv
+
+Conv
+
+Conv
+
+Linear
+
+Linear
+
+Linear
+
+LinLin
+
+(C) Recurrent block
+
+Figure 1: Model Architecture of the MesaNet. (A) We adopt the widespread decoder-only transformer
+architecture (Touvron et al., 2023) stacking N residual blocks of a channel mixing (B) and sequence mixing (C)
+components. (B) Channel mixing is a vanilla SwiGLU MLP. (C) Sequence mixing is performed by the Mesa
+layer. From its inputs, it generates keys, queries and values as well as input and forget strengths. These are then
+processed according to the Mesa Rule (Equation 7). We compare the MesaNet to models which share the exact
+same architecture and only change the sequence mixing rule to multi-head-attention (MHA), xLSTM, Mamba2
+or (Gated) DeltaNet.
+
+accelerators, numerically stable, and that allows for context-dependent forgetting. Moreover, the layer
+dynamically adapts its computational cost at test time to the sequence at hand. This is because the
+layer introduced here explicitly invokes an external solver, for which the number of iterations required
+to reach a given stopping criterion differs across sequences. We summarize our contributions below:
+• A novel Mesa layer which is parallelizable over sequence length and flexibly allocates testtime computation: We adapt the previously proposed Mesa layer (von Oswald et al., 2024) to
+allow for chunkwise parallel training. We leverage an equivalence of the conjugate gradient (CG)
+method over multiple time steps with gated linear self-attention, which allows using established
+hardware-efficient training (Yang et al., 2024a). During inference, the layer reallocates test-time
+compute dynamically as different sequences lead to varying CG iterations to reach a stopping
+criterion, allowing to trade off test-time compute and performance.
+• The MesaNet is a strong language model: We train 140M, 440M and 1B parameters MesaNets,
+see Figure 1, on the SlimPajama dataset (Soboleva et al., 2023). On all of these scales, the
+MesaNet reaches lower validation perplexity compared to models such as Mamba2 (Gu & Dao,
+2024), xLSTM (Beck et al., 2024), DeltaNet (Yang et al., 2024c), Gated DeltaNet (Yang et al.,
+2024a) and Transformers (Vaswani et al., 2017) with the same base architecture.
+• In-depth analyses of modern RNNs including MesaNet: Intriguingly, we find that while
+reaching the same or better perplexity on language modeling, all RNN models reduce perplexity
+remarkably differently, namely focus on early tokens in the sequence while transformers excel at
+later tokens. We further disentangle downstream language benchmarks according to their need for
+global or only local language modeling, through controlled Sliding-Window Attention ablations.
+We find that MesaNet outperforms all modern RNNs on global reasoning, in-context learning &
+in-context recall benchmarks, but unsurprisingly still lack behind Transformers in in-context recall.
+
+2
+
+A PARALLELIZABLE M ESA L AYER
+
+We consider autoregressive sequence modeling tasks where the objective is to predict element
+et+1 ∈ Rne given a sequence of token embeddings e = (et )Tt=1 . At present, autoregressive sequence
+modeling is dominated by architectures based on the causally-masked softmax self-attention layer,
+PH
+sa
+⊤
+whose token updates et ← et + ∆esa
+t follow the rule ∆et =
+h=1 Ph Vh,t α(Kh,t qh,t ), where
+na
+qh,t = Wh,q et ∈ R is referred to as a query, each column kh,t′ = Wh,k et′ ∈ Rna of matrix
+Kh,t ∈ Rna ×t as a key, and each column vh,t′ = Wh,v et′ ∈ Rnv of matrix Vh,t ∈ Rnv ×t as a
+value; in this paper, we follow the convention that vectors are column vectors. The parameters of
+this layer are the matrices {(Ph , Wh,q , Wh,k , Wh,v )}H
+h=1 for all H heads; for notational simplicity,
+we omit positional encodings and absorb bias terms, and assume here for conciseness that all heads
+t
+are equally sized. The function α applied to vector
+an attention weight vector: in the
+Pat ∈ R returns−1
+standard transformer, α(a)i = softmax(a)i := ( t′ =1 exp(at′ )) exp(ai ) (Vaswani et al., 2017).
+2
+
+Published as a conference paper at ICLR 2026
+
+Since each head is processed independently and only interacts through the summation in ∆esa
+t , for
+simplicity we drop the head index h and the projection matrix P in what follows.
+Linear self-attention and test-time training. We focus on the case where α is the identity function.
+This yields a linear attention layer (Schmidhuber, 1992), which as we will see next turns out to be a
+linear RNN (Katharopoulos et al., 2020):
+∆elsa
+t = Φt qt .
+
+(1)
+
+Unlike its softmax counterpart, linear attention can be implemented recurrently, by maintaining and
+updating a matrix-valued state Φ ∈ Rnv ×na according to the linear dynamics
+Φt = γt Φt−1 + βt vt ktT .
+
+(2)
+
+Above, we add forget gates γt and input gates βt which have been shown to improve performance
+(Yang et al., 2024a). Both are usually a function of the current input et , like queries, values and keys,
+but bounded within [0, 1]. Importantly, and in contrast to softmax self-attention, linear attention only
+requires constant memory and compute to predict the next token. As we review below and more
+extensively in Appendix A, a series of recent high-performance models (e.g., Gu & Dao, 2024; Peng
+et al., 2023; Beck et al., 2024; Schlag et al., 2021a; Yang et al., 2024c;a) can be cast into the same
+basic linear self-attention model (equation 1) using variations of equation 2.
+Such modern RNNs can also be seen from the unifying perspective of test-time training (Schlag et al.,
+2021a; Liu et al., 2025; von Oswald et al., 2024; Wang et al., 2025; Behrouz et al., 2025b). Under
+this view, the key-value linear map Φt : Rna → Rnv introduced in equation 1 is learned from the
+data in context e1:t . Let us introduce a time-varying loss, from which we will derive a gradient-based
+dynamics for Φ:
+Lt (Φ) = lt (Φ) +
+
+1
+Tr(ΦΛt Φ⊤ ).
+2
+
+(3)
+
+Above, lt measures the instantaneous loss incurred at the current time step, and the second term
+acts as a regularizer with strength controlled by a symmetric na × na matrix Λt . Now, setting
+t
+lt (Φ) = ltHopfield (Φ) := −vt⊤ Φkt and Λt = 1−γ
+βt I, and letting Φ evolve through online gradient
+descent, Φt = Φt−1 − βt ∇ϕ Lt (Φt−1 ) = γt Φt−1 + βt vt ktT , we recover gated linear attention
+(equation 2). In passing, we have also connected modern linear attention to classical associative
+memory models (Schlag et al., 2021a): ltHopfield is the energy function that governs continuous-state
+Hopfield networks, and Φ is learned through Hebb’s associative rule (Hopfield, 1984; Hertz et al.,
+1991). If we take instead the squared error loss lt (Φ) = ltsq-err (Φ) := 21 ∥vt − Φkt ∥2 , we recover
+DeltaNet (Schlag et al., 2021a; Yang et al., 2024c;a), which learns a linear model with the online
+delta rule (Widrow & Hoff, 1960). Recent work has extended the DeltaNet to perform mini-batch
+updates, and to perform gradient updates on a 1-hidden-layer MLP (Sun et al., 2025), and Titans
+adds momentum to the mini-batched gradient update (Behrouz et al., 2024). We return to this point
+in Appendices A and B, where we discuss additional related work from the viewpoint of test-time
+regression, and derive in more detail the update rules above.
+The Mesa layer: optimal test-time regression. In this work, we revisit the recently proposed
+Mesa layer (von Oswald et al., 2024), also referred to as an intention layer in the context of nonautoregressive models (Garnelo & Czarnecki, 2023). This layer again updates tokens according to the
+linear self-attention rule (equation 1) but now defines the linear map Φt as the solution of a test-time
+optimization problem, where a symmetric positive definite matrix Λt ∈ Rn+k ×nk controls the strength
+of a quadratic regularizer:
+t
+
+Φ̂mesa
+= arg min Lt (Φ),
+t
+
+with
+
+Lt (Φ) =
+
+Φ
+
+1X
+1
+ζtt′ ||vt′ − Φkt′ ||2 + Tr(ΦΛt Φ⊤ ).
+2 ′
+2
+t =1
+
+(4)
+In all our experiments, we take a static, diagonal
+regularizer,
+with
+Λ
+=
+Λ
+∀
+and
+Λ
+>
+0.
+Above,
+t
+t
+ii
+Qt
+the cumulative forget factor ζtt′ = 1t≥t′ s=t′ +1 γs causally weighs the contribution of past losses
+until the present (t′ = 1, . . . , t), taking into account the forget factors γt′ ∈ [0, 1] so far. The output
+∆emesa
+of the Mesa layer depends on the (unique) solution Φ̂mesa
+, which can be expressed in closed
+t
+t
+3
+
+Published as a conference paper at ICLR 2026
+
+form:
+∆emesa
+= Φ̂mesa
+qt =
+t
+t
+
+t
+X
+
+!
+ζtt′ vt′ kt⊤′
+
+t′ =1
+−1
+= Gt (Ht + Λ) qt .
+
+t
+X
+
+!−1
+ζtt′ kt′ kt⊤′ + Λ
+
+qt
+
+(5)
+
+t′ =1
+
+(6)
+
+We compute Φ̂mesa
+step by step in Appendix D.
+t
+The Mesa layer differs from the test-time training models reviewed above in two key ways. First,
+instead of considering an instantaneous loss measured only at the current input et as in equation 3,
+the Mesa layer optimizes the cumulative regularized squared-error loss taking into account all data
+e1:t so far. While at first this may seem impossible to achieve under a constant memory requirement,
+the Mesa layer circumvents the need to explicitly keep past tokens in memory (as in softmax selfattention) and exploits the fact that Lt is a quadratic function of Φ (Gauss, 1821). Second, instead
+of taking a single gradient descent step, the Mesa layer learns Φ to optimality at every time point.
+We note that the related Longhorn model (Liu et al., 2025) also derives a recurrent layer via the
+minimization of a quadratic loss, but its loss is evaluated only on the latest input as in equation 3,
+yielding a variant of DeltaNet. We further note that concurrent work (Atlas; Behrouz et al., 2025a)
+corresponds to a sliding-window variant of the Mesa layer, while also allowing the model to be
+optimized at test-time to be nonlinear, as in (Sun et al., 2025). We present the update rules and
+test-time objective functions of these two related works in Appendix B.
+The Mesa layer is the optimal (in the squared-error sense) linear associative memory (Kohonen &
+Ruohonen, 1973), and it can store a new association instantaneously (one-shot), whereas DeltaNet
+requires in general multiple pattern presentations to reduce memorization error (Hertz et al., 1991).
+This fast learning property of the Mesa layer can be further understood by recasting it as a secondorder online learner (cf. Appendix H); DeltaNet only uses first-order derivative information to learn.
+Von Oswald et al. (2024) proposed to determine Φ̂mesa
+following classical recursive least-squares.
+t
+Although computationally attractive at inference, we now stress two shortcomings of this approach.
+First, forgetting (0 ≤ γt < 1) leads to numerical instabilities, and requires a regularization term Λ
+that decays exponentially with time. Second, this original version of the layer is not parallelizable,
+and it therefore heavily underutilizes current matrix-matrix multiplication accelerators such as GPUs
+and TPUs during training. We explain this in detail in Appendix H.
+A new parallelizable Mesa layer with adaptive forgetting and regularization. To overcome
+these issues, we propose a novel parallelizable version of the Mesa layer which allows for dynamic
+forgetting. Instead of computing Φ̂mesa
+h,t recurrently, we solve a linear system of equations in parallel,
+for each query qt :
+∆emesa
+= Gt (Ht + Λ)−1 qt = Gt linsolve(Ht + Λ, qt ).
+t
+
+(7)
+
+The equation above can be computed by maintaining and updating two state variables, St = {Gt , Ht },
+through the following linear recurrence relations:
+Gt = γt Gt−1 + βt vt kt⊤ ,
+
+Ht = γt Ht−1 + βt kt kt⊤ ,
+
+(8)
+
+where as before γt ∈ [0, 1] is a forget gate and βt ∈ [0, 1] is an input gate. We adopt the conjugate
+gradient method to obtain a solution qt∗ = linsolve(Ht + Λ, qt ) = (Ht + Λ)−1 qt (Lanczos, 1950;
+Hestenes et al., 1952). This yields a numerically stable Mesa layer as linsolve(Ht + Λ, qt ) is stable
+irrespective of forgetting strength, albeit at a higher memory cost compared to single matrix state
+RNN models, as an additional matrix of size na × na needs to be propagated forward alongside the
+standard matrix of size nv × na . Although the RNN state size increases, this expansion amounts to
+less than 1% of the entire memory footprint of models, which includes both state and parameters.
+To enable efficient training, we introduce a chunkwise parallelized (Hua et al., 2022; Yang &
+Zhang, 2024) algorithm to compute equation 7. Our method builds on top of established efficient
+implementations of GLA, that we
+review now. First, note that the output of this layer can
+Pbriefly
+t
+⊤
+be written as oGLA
+=
+G
+q
+=
+ζ
+v
+t t
+t
+i=1 ti i ki qt . Let us chunk a sequence of length T in T /C
+chunks of size C, with c ∈ {0, C, . . . , T − C}. The crucial insight to enable leveraging matrixmatrix multiplication and parallelization across time for GLA is that, given a P
+chunked state variable
+t
+⊤
+Gc , we can compute the output at time c < t ≤ c + C as oGLA
+=
+(G
++
+c
+t
+i=c+1 ζti vi ki )qt =
+4
+
+Published as a conference paper at ICLR 2026
+
+Pt
+Gc qt + i=c+1 ζti vi ki⊤ qt , which can be done in parallel for t ∈ {c + 1, ...c + C}. In matrix notation
+we write
+OcGLA = Gc Qc + Vc (Zc ⊙ (Kc⊤ Q∗c )),
+(9)
+where Kc = [kc , ..., kc+C ] and OcGLA , Vc , Qc accordingly, and Zc is a upper triangular matrix of size
+C × C containing the appropriate forgetting terms.
+Now, we highlight that the Mesa layer can be decomposed into two parts:
+omesa
+=
+t
+
+t
+X
+
+ζti vi ki⊤ qt∗ ,
+
+and qt∗ = (Ht + Λ)−1 qt .
+
+(10)
+
+i=1
+
+The first part is equivalent to GLA, and can therefore be computed efficiently as just described. It
+∗
+∗
+therefore remains to be shown how to obtain Q∗h,c = [qh,c
+, . . . , qh,c+C
+] within a given chunk of size
+C in parallel. As we explain in detail in Appendices
+C
+&
+D,
+the
+key
+observation
+is that the computePt
+intensive part of a CG iteration boils down to i=1 ζti ki ki⊤ p, with p its current search direction, a
+computation that is once again in the GLA form. Alongside its fast convergence properties, this is
+the reason for picking the CG method as our solver, as it allowed us to leverage existing efficient
+chunkwise parallel linear attention implementations. The new Mesa layer proposed in this paper
+therefore admits a parallel training mode with O(T ) complexity, alongside the recurrent inference
+mode with O(1) complexity. In Appendix D, we show how to efficiently compute gradients through
+the layer in chunkwise parallel form. Finally, see for details on precision of CG solver Appendix G.5.
+
+3
+
+T RAIN AND I NFERENCE T IME OF THE M ESA L AYER
+
+Chunkwise parallel Mesa layer leads to competitive train time. In Figure 2, we report training
+times on a TPUv5 and H100 for both transformers (MHA), common RNN alternatives and the
+MesaNet. Despite having to solve t · H linear systems of equations per layer during training as well
+as compute gradients through the found solutions, the MesaNet remains competitive at train time
+with respect to MHA and RNN alternatives.
+
+Train time (ms)
+
+30
+
+Mesa-CG=0
+Mesa-CG=5
+Mesa-CG=15
+Mesa-CG=30
+MHA
+
+20
+10
+0
+
+256
+
+2k
+4k
+Sequence Length
+
+8k
+
+K Token Throughput / s
+
+We present in Appendix Table 5 an analysis of the memory and computational costs of inference,
+comparing the Mesa layer to MHA as well as recently developed RNNs. This overview highlights a
+tension that the Mesa layer faces. On the one hand, if the number of conjugate gradient (CG) steps k
+is set to zero we obtain qt∗ = qt , and so recover gated linear self-attention (GLA) and its compute and
+memory requirement. Thus, we require k > 0 for the Mesa layer to differ from GLA, which provides
+a lower bound for the computational cost of the Mesa layer. Note that the Mesa layer is, in terms of
+flops, roughly k times as costly as linearized transformer models such as GLA, Mamba2 and xLSTM
+and k − 1 times more costly as (Gated) DeltaNet. Furthermore, because the total cost of executing
+the CG method grows with kn2a , there is a maximal value of k for which the Mesa uses fewer flops
+than MHA for a given sequence length.
+80
+60
+40
+20
+0
+
+Transformer
+GLA
+DeltaNet
+2K x 16
+
+4K x 8
+
+Gated DeltaNet
+Mesa-CG=30
+Mesa-CG=15
+8K x 4
+
+16k x 2
+
+Sequence length x Batch size
+
+32k x 1
+
+Figure 2: Train and inference time of a Mesa layer using different number of CG steps. Left: Train time
+of a single Mesa later on a TPUv5: output the entire sequence, compute the cross entropy loss, and gradients
+w.r.t. layer parameters. We use batch size of 4, key size of 128 and 8 heads. Right: Token throughput (in
+thousands) when training 1B parameter models on a H100 GPU. We compare a Flash-Attention-2 (Dao, 2023)
+transformer implementation with a triton-based chunkwise parallel implementation of RNN models, including
+the MesaNet which uses 30 or 15 CG steps across all layers. All models use a key size of 128 and share the
+same backbone, see Appendix G. We observe competitive token throughput on H100s of the MesaNet despite
+using substantially more flops.
+
+5
+
+Published as a conference paper at ICLR 2026
+
+Layer
+
+Recurrence
+
+Memory read-out
+
+Mamba2
+GLA
+DeltaNet
+Gated DeltaNet
+mLSTM
+Mesa
+
+Gt = γt Gt−1 + vt kt⊤
+
+ot = Gt qt
+ot = G t q t
+ot = G t q t
+ot = G t q t
+ot = Gt qt /max{1, |zt⊤ qt |}
+ot = Gt linsolve(Ht + Λ, qt )
+
+Gt = γt Gt−1 + βt vt kt⊤
+Gt = Gt−1 (I − βt kt kt⊤ ) + βt vt kt⊤
+Gt = Gt−1 (γt (I − βt kt kt⊤ )) + βt vt kt⊤
+Gt = γt Gt−1 + βt vt kt⊤ , zt = γt zt−1 + βt kt
+Gt = γt Gt−1 + βt vt kt⊤ , Ht = γt Ht−1 + βt kt kt⊤
+
+Table 1: Overview of recent linear recurrent models which we compare to in this work, except for LRU layers,
+see De et al. (2024).
+
+Finally, we study autoregressive sampling speed for our 1B parameter model in Appendix Figure 6
+on a H100 GPU as well as TPUv5. Intriguingly, although the Mesa layers within the model consume
+significantly more flops, due to the memory boundedness of the (linear) attention operation during
+decode, we observe competitive sampling times with other linear attention variants as well as
+improved throughput of all linear attention models compared to the transformer baselines.
+The Mesa layer allocates test-time compute dynamically. Being a test-time optimizer, the Mesa
+layer offers a principled way for dynamically allocating test-time compute. The number of CG
+steps k required to reach a given desired error tolerance ϵ is generally head-, sequence- and tokenspecific due to the context-dependence of the linear systems Ht + Λ to be solved. Via utilization
+of a stopping criterion, the Mesa layer thus exhibits dynamic inference (and potentially training)
+costs. This dynamic test-time compute feature of the Mesa layer draws both parallels and differences
+to softmax self-attention: whereas softmax self-attention increases compute (and memory) as a
+function of sequence length independently of the sequence being processed, the Mesa layer adjusts
+compute dynamically, according to the incoming data it needs to process. We provide in Section 5 an
+experimental analysis of this property of the Mesa layer in trained MesaNets.
+
+4
+
+M ESA N ET IN A L ANGUAGE W ORLD
+
+Here we present results obtained on 1B-parameter models trained on 50B tokens from the SlimPajama (Soboleva et al., 2023) dataset, and refer to Section L for an extended analysis, comparing
+models ranging from 140M, 440M up to 1B parameters, each on 15B and 50B tokens. Furthermore,
+we report strong results on synthetic environments in Section K, which we omit for brevity here.
+Architecture & baselines. For the main model backbone, we follow the architecture of common
+transformers, and employ N stacked residual blocks with 1) a sequence modeling part such as
+multi-head-attention (MHA) or the Mesa layer and 2) a gated MLP block (see Figure 1). As baselines,
+we compare to a number of other efficient alternatives to MHA based on linear recurrent layers:
+Mamba2 (Dao & Gu, 2024), Gated Linear Attention (GLA) (Yang et al., 2024b; Katharopoulos et al.,
+2020), xLSTM (Beck et al., 2024), (Gated) DeltaNet (Schlag et al., 2021a; Yang et al., 2024c;a)
+and Hawk (De et al., 2024), see Table 1. The latter differs from the models reviewed in Section 2
+by employing a vector-valued state, being closer in spirit to a (now linearized) traditional LSTM
+(Hochreiter & Schmidhuber, 1997). Furthermore we investigate a recurrent hybrid Hawk-Mesa model
+alternating between a linear recurrent unit (Hawk) and the Mesa layer which we motivate in the next
+section.
+Controls. On top of related work, we train transformer models with Sliding-Window Attention
+(SWA) (Beltagy et al., 2020) of varying window sizes. These models have constant per-token memory
+and compute cost. The motivation to study SWA models is based on the assumption that transformers
+as well as SWA models have near perfect recall capabilities, at least within their attention window.
+Therefore, they provide a simple and interpretable control to study language modeling, reasoning
+and in-context recall capabilities of RNNs.
+Setup. We tokenize the SlimPajama datasets using the byte-level BPE tokenizer introduced in
+GPT-2 (Radford et al., 2018; Brown et al., 2020a) following Beck et al. (2024) and train all modes on
+a sequence length of 2048 and a fixed ordering of training data. For each model configuration, we
+scan over a range of learning rates, and select the model that minimizes perplexity on the holdout
+validation dataset of SlimPajama. For exact hyperparameters and training specifications for each
+6
+
+Published as a conference paper at ICLR 2026
+
+SLIM
+ppl ↓
+11,24
+11,39
+10,99
+11,01
+11,01
+10,89
+10,83
+10,78
+
+LMB.
+ppl ↓
+26,67
+28,02
+29,77
+26,93
+27,08
+26,79
+26,78
+26,59
+
+WIKI.
+ppl ↓
+12,23
+12,23
+11,77
+11,81
+11,73
+11,58
+11,49
+11,53
+
+PG19
+ppl ↓
+10,93
+11,42
+10,95
+10,94
+11,00
+10,81
+10,71
+10,60
+
+GOV.
+ppl ↓
+10,63
+10,42
+9,99
+10,00
+10,02
+9,88
+9,80
+9,79
+
+QASP.
+ppl ↓
+14,89
+14,02
+13,52
+13,55
+13,44
+13,28
+13,13
+13,20
+
+14.43
+14.58
+14.03
+14.03
+14.05
+13.87
+13.79
+13.75
+
+- SWA-4
+- SWA-64
+- SWA-1024
+
+16,46
+12,37
+11,00
+
+29,93
+27,76
+27,22
+
+19,42
+14,14
+11,78
+
+16,42
+12,51
+10,92
+
+17,86
+11,56
+9,79
+
+29,15
+16,77
+13,11
+
+21.54
+15.85
+13.97
+
+- Transformer
+
+10,86
+
+27,16
+
+11,42
+
+10,74
+
+9,69
+
+12,86
+
+13.79
+
+HAWK
+GLA
+MAMBA2
+
+AVG
+
+NLL Difference to MHA
+
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+XLSTM
+DELTANET
+GATED-DELTANET
+
+SWA-1024
+MHA
+
+0.04
+0.02
+0.00
+0.02
+0.04
+64 256 512
+
+1024
+
+Token Position
+
+Table 2: Language Modeling Performance (PPL ↓)
+of 1B Models (50B Tokens) evaluated on sequence
+length of 2048). Mesa and Hawk-Mesa show strong
+performance on all benchmarks, matching or exceeding
+a Transformer baseline w.r.t. to avg. per-token PPL.
+Lambada (LMB.) scores are higher due to significantly
+shorter sequences (≤ 256) with an average of 78 tokens.
+
+MESA
+HAWK-MESA
+SWA-64
+
+2048 20 22 24 26 28
+
+Token Position
+
+Figure 3: NLL Difference relative to a Transformer (1B models, 50B tokens) on SlimPajama.
+Most recurrent layers show superior language modeling performance in terms of NLL up to the 64’th
+token. MesaNet and Hawk-Mesa extend the advantage beyond 512 tokens. The advantage early in the
+sequence is even more apparent in log-scale (right).
+
+model, see Appendix G. For all results, unless otherwise specified, we use MesaNets with a fixed
+amount of 30 CG steps. See Appendix M on varying CG steps during training and Section 5 on using
+the CG stopping criterion to invoke dynamic test-time compute.
+We stress that through sharing the exact same architecture backbone, tokenizer, data and data order
+across all models, while using the same number of parameters and independently tuned learning
+rate for all models, we aim to provide a fair 1-1 comparison1 . This controlled setup should allow to
+solely assess differences on the sequence mixing layer while reducing noise. Note, however, that
+this backbone might be a suboptimal choice for RNNs, including the MesaNet. Related work has
+tuned architectures to their specific sequence layers (Beck et al., 2024; Gu & Dao, 2024). However,
+these architectural optimizations prevent the integration of Mixture-of-Experts layers, a heavily used
+building block in current language models. Therefore, we carefully evaluate all sequence layers on the
+same backbone, based on the widespread decoder-only transformer architecture – here, the Llama2
+model (Touvron et al., 2023), including rotary position encodings (RoPE; Su et al., 2024) when using
+softmax attention layers. This backbone does not fuse MLPs with sequence layers, allowing for a
+direct comparisons between layers. Furthermore, we did not attempt to optimize the architecture e.g.,
+key size and number of heads for the Mesa layer.
+Comparison to the original mesa layer. We considered comparing to the original sequential-intime Mesa layer (von Oswald et al., 2024). However, because this model was already an order
+of magnitude slower when training at the 400M parameter scale, and suffered a large increase in
+SlimPajama language modeling perplexity of about 3.2 points (∼23% performance degradation) due
+to the inability to train with forget gates, we did not pursue these comparisons further. These results
+directly motivate the new Mesa layer introduced in this paper.
+4.1 L ANGUAGE M ODELING (W ITHIN AND B EYOND T RAIN S EQUENCE L ENGTH )
+We measure a model’s general language modeling capabilities first by assessing average per-token
+perplexity (PPL) (Jelinek et al., 1977) on a set of benchmarks. We report PPL on the hold-out
+validation set of SlimPajama (Soboleva et al., 2023), as well as Lambada (Paperno et al., 2016),
+Wikitext-2 (Merity et al., 2016), PG19 (Rae et al., 2019), GovReport (Huang et al., 2021), and Qasper
+(Dasigi et al., 2021) on the train sequence length and beyond. Because uniformly averaging over all
+tokens might masquerade important differences between models, we additionally investigate average
+per-token PPL conditional on sequence position. As we see below, this turns out to be a crucial factor
+when comparing RNNs to transformers.
+MesaNet is a strong language model early in sequences. When evaluating on the training sequence
+length of 2048, MesaNet and Hawk-MesaNet outperform all recurrent baselines on all benchmarks
+on the common metric of average per-token PPL (see Table 2). MesaNet matches on average
+the performance of the transformer baseline, while Hawk-MesaNet even surpasses it. Notably, a
+SWA model with a window size of 1024 outperforms the majority of recurrent baselines. However,
+1
+Related work such as Yang et al. (2024a), Behrouz et al. (2024) and Behrouz et al. (2025a) use a single
+learning rate for all models which likely leads to biased and unfair comparisons. Behrouz et al. (2025a) further
+inherit baseline results from previous work which use a different tokenizer, confounding the comparison further.
+
+7
+
+Published as a conference paper at ICLR 2026
+
+Model
+
+Reasoning
+Global
+(Acc ↑)
+
+Reasoning
+Local
+(Acc ↑)
+
+In-Context
+Recall
+(Acc ↑)
+
+Scramble
+100-shot
+(Acc ↑)
+
+Translation
+50-shot
+(bleu-sb ↑)
+
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+41.17
+41.62
+44.34
+42.99
+43.86
+44.84
+45.03
+44.62
+
+51.57
+50.51
+51.44
+51.50
+51.58
+50.76
+50.49
+51.51
+
+25.04
+37.67
+39.64
+39.25
+40.46
+39.54
+41.79
+39.99
+
+6.49
+4.19
+7.29
+7.78
+7.93
+8.90
+10.10
+8.61
+
+4.73
+4.18
+7.58
+7.68
+5.37
+8.53
+8.17
+8.81
+
+0.14
+2.59
+5.65
+
+- SWA-4
+- SWA-64
+- SWA-1024
+
+31.20
+42.33
+45.68
+
+49.62
+50.52
+51.35
+
+11.87
+26.72
+40.84
+
+1.66
+5.91
+6.66
+
+0.51
+4.70
+14.17
+
+5.89
+
+- Transformer
+
+45.54
+
+51.62
+
+52.27
+
+6.98
+
+13.61
+
+Reasoning
+Global
+(Acc ↑)
+
+Reasoning
+Local
+(Acc ↑)
+
+In-Context
+Recall
+(Acc ↑)
+
+Scramble
+100-shot
+(Acc ↑)
+
+Translation
+50-shot
+(bleu-sb ↑)
+
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+37.42
+37.58
+39.45
+38.97
+39.72
+40.19
+40.88
+40.13
+
+50.04
+48.19
+48.86
+48.90
+48.91
+49.10
+49.64
+49.53
+
+21.29
+32.21
+36.50
+34.89
+35.19
+35.96
+39.30
+36.23
+
+4.70
+3.38
+5.06
+5.56
+5.14
+6.17
+6.22
+5.19
+
+3.51
+2.55
+2.57
+2.74
+2.47
+2.98
+3.83
+3.25
+
+- SWA-4
+- SWA-64
+- SWA-1024
+
+28.63
+38.17
+41.30
+
+48.20
+48.76
+48.84
+
+9.79
+24.84
+38.21
+
+0.82
+3.66
+5.43
+
+42.15
+
+48.80
+
+49.95
+
+6.01
+
+- Transformer
+
+Model
+
+(a) 400M Params, 50B Tokens
+
+(b) 1B Models, 50B Tokens
+
+Table 3: Grouped Benchmark Scores (↑) on models trained on 50B Tokens from SlimPajama with a
+context length of 2048. We compare the aggregated performance of models with Linearized Recurrent Unit,
+Gated Linearized Multi-Head Attention, DeltaNet and MESA layers on 5 different subsets of benchmarks. As a
+reference, we show the performance of Sliding Window-Attention models (SWA) with varying window sizes.
+
+attaining similar PPL scores does not imply equivalent language modeling abilities at different
+sequence lengths (Lin et al., 2025). Conditioning on the token position, and assessing the NLL
+difference relative to a transformer, reveals, surprisingly, that most recurrent layers exhibit superior
+language modeling performance early in the sequence but fall behind later in the sequence (see
+Figure 3). Recurrent models show especially strong performance on short sequences up to 64 tokens.
+While Hawk exhibits the best performance up to this depth, the model exhibits a sharp performance
+decline after that. This finding motivated us to introduce and investigate the Hawk-Mesa model,
+which combines the best short-sequence and long-sequence modeling layers (as measured by negative
+log-likelihood). Confirming this intuition, the Hawk-Mesa outperforms the remaining recurrent
+models, with the MesaNet being second best: MesaNet and Hawk-MesaNet not only attain the
+strongest early-in-the-sequence modeling ability, but also extend the advantage beyond a depth of
+512 tokens.
+
+PPL
+
+MesaNet is competitive on length extrapolation
+with recurrent baselines, but SWA-1024 is a hardHAWK
+DELTANET
+MHA-SWA-64
+MAMBA2 GATED-DELTANET MHA-SWA-1024
+to-beat baseline. Next, we evaluate the ability to
+GLA
+MESA
+MHA
+extrapolate to sequences of up to 32k tokens (see
+XLSTM
+HAWK-MESA
+Figure 4). While transformer, Mamba2, DeltaNet
+and HawkMesa fail to extrapolate catastrophically
+14
+to longer sequences on all evaluated benchmarks,
+MesaNet exhibits length-extrapolation capabilities
+12
+superior to Hawk, GLA, xLSTM and on-par with
+Gated DeltaNet on all evaluated long-sequence
+10
+0 2k4k 8k
+16k
+32k
+benchmarks with respect to PPL scores (aggregated
+Seq. Length
+and conditional on token positions). However, these
+results should be tempered by the fact that a SWA Figure 4: Avg. Mean-so-Far PPL on 3 Longmodel with an attention window of 1024 attains com- Context Benchmarks (WIKI, GOV, QASPER).
+petitive benchmark scores, even superior at a sequence length of 32k on some benchmarks. This
+finding is in line with recent criticism that PPL may not distinguish a model’s ability to capture local
+vs. long-range dependencies between tokens (Hu et al., 2024; Fang et al., 2024). We refer to Section L
+for detailed score breakdown and results on the Needle-in-the-haystack (NIAH) benchmark (Hsieh
+et al., 2024), where MesaNet shows strong performance.
+4.2
+
+L ANGUAGE B ENCHMARKS
+
+We next evaluate MesaNet’s capabilities on a comprehensive set of downstream tasks, ranging
+across zero-shot reasoning, in-context recall and in-context learning tasks. We evaluate on various
+benchmarks considered in prior work (Gu & Dao, 2024; Yang et al., 2024a; Beck et al., 2024), and
+complement them with few-shot learning tasks involving token-manipulation and translation. We
+present the aggregated results of 400M and 1B models trained on 50B tokens in Table 3, and report
+detailed scores in Section L. Across most evaluated benchmarks, the MesaNet matches or exceeds
+the performance of the evaluated recurrent baselines.
+8
+
+Published as a conference paper at ICLR 2026
+
+Zero-Shot Common-Sense Reasoning Performance: Transformers & MesaNet ≥ other RNNs.
+Prior work (Gu & Dao, 2024; Yang et al., 2024a; Behrouz et al., 2024; Beck et al., 2024) commonly
+reports the average performance of a set of common-sense reasoning benchmarks to compare models.
+However, evaluations of SWA models with different window sizes reveal that competitive, or even
+superior, scores on many of these frequently reported benchmarks can be attained with attention
+window size as short as 4 (see Table 13). This observation strongly indicates that some of these
+benchmarks are exploitable by short-range language heuristics, and do not require longer-range
+language modeling capabilities to reach competitive scores, or are simply too hard such that we end
+up measuring noise. To reduce the potential benchmark noise and deconfound the results, we hence
+report the zero-shot reasoning benchmarks in two separate splits:
+• The Global Reasoning Benchmark Set encompasses all benchmarks where we observe a significant performance increase with a growing attention window size. This includes Lambada (Paperno
+et al., 2016), HellaSwag (Zellers et al., 2019) and RACE-{M,H} (Lai et al., 2017). Within both
+reported model sizes (400M and 1B), MesaNet outperforms all other recurrent models on average
+on these benchmarks. However, MesaNet still underperforms the transformer baseline.
+• The Local Reasoning Benchmark Set includes all benchmarks where we see little to marginal
+improvement with a growing attention window size. This includes PIQA (Bisk et al., 2020),
+WinoGrande (Sakaguchi et al., 2021), ARC-{E,C} (Clark et al., 2018), SIQA (Sap et al., 2019),
+BoolQ (Clark et al., 2019), OpenBookQA (Mihaylov et al., 2018) and StoryCloze (Srinivasan et al.,
+2018). Unsurprisingly, we observe very similar average scores for all models. Notably, Hawk, the
+worst performing recurrent model on global reasoning and in-context recall benchmarks, shows
+excellent performance on this benchmark subset. This observation supports the hypothesis that these
+subsets of benchmarks are likely to measure different capabilities, and highlights the differences
+between Hawk to e.g. the MesaNet. These analyses motivate the recurrent hybrid Hawk-Mesa
+model, which tries to capitalize on the complimentary strengths of the two layers.
+In-Context Recall Performance: Transformers > MesaNet ≥ other RNNs. To gauge the ability
+to recall in-context information, we follow Arora et al. (2024) and Yang et al. (2024a) and evaluate
+models on SWDE (Lockard et al., 2019), SQUAD (Rajpurkar et al., 2016), FDA (Arora et al., 2023b),
+TQA (Kembhavi et al., 2017), NQ (Kwiatkowski et al., 2019) and DROP (Dua et al., 2019). We
+adopt the minimal-transformed versions of the benchmarks from Arora et al. (2024) that adjust for the
+evaluation of non-instruction-tuned models. In line with the observations on synthetic benchmarks
+in Section K, MesaNet outperforms all other recurrent models on these tasks. Moreover, MesaNet
+exceeds the performance of a SWA-1024, the only recurrent model to do so. However, there remains
+a gap in performance relative to the transformer baseline with an attention window size of 2048.
+Few-Shot Learning Performance: Transformers & MesaNet > other RNNs. Finally, we measure
+the model’s ability to learn from few-shot demonstrations. We evaluate on two GPT3 word scrambling
+tasks (cycle letters in word, anagrams of all but first and last two characters) (Brown et al., 2020b) and
+three translation tasks (WMT-14 FR-EN (Bojar et al., 2014) , WMT-16 DE-EN and RO-EN (Bojar
+et al., 2016) ). MesaNet demonstrates strong performance on all few-shot learning tasks. While it
+exceeds the performance of the Transformer on word scrambling tasks, it fails to do so in translations.
+
+5
+
+T EST-T IME C OMPUTE A NALYSIS
+
+In the previous section we showed results from models trained and evaluated with 30 CG steps. We
+study now the effect of using the MesaNet trained on 30 CG steps but evaluate the model when using
+a dynamic stopping criterion aiming to reducing the CG steps used at inference time. We refer again
+to Appendix C for a description of the CG method used in this work.
+Mesa objectives differ widely across heads and layers. When analysing the internals of the Mesa
+layer on sequences of the SlimPajama validation set, we observe a bimodal distribution of condition
+numbers of Hh,t + Λh across heads almost in every layer, see Figure 14. In particular, we observe
+that heads either have 1) large and growing condition number with sequence length, or 2) rather low
+and constant condition number over the sequence. In every layer, there are roughly 1-2 heads for
+which the condition number of linsolve(Hh,t + Λh , qh,t ) (and therefore the number of CG steps)
+grows with t. This motivates dynamic allocation of CG steps in every head.
+MesaNets allocate test-time compute dynamically. We test 1) reducing the number of CG steps of
+all layers and heads uniformly, and 2) varying the solver’s stopping criterion ϵ to dynamically allocate
+9
+
+Published as a conference paper at ICLR 2026
+
+test-time compute. As shown in Figure 7, when reducing CG steps uniformly, we observe an increase
+in negative log-likelihood when comparing to our model evaluated with 30 steps, especially on tokens
+later in the sequence. This is in line with our findings on the need for higher number of steps as t
+grows. By contrast, with a dynamic stopping criterion ϵ, increasing ϵ yields a uniform degradation
+over sequence length. A model with a stopping criterion of ϵ = 10−4 performs on-par with the base
+model using a fixed number of 30 CG steps, while reducing the average CG steps used to ≈ 9.
+
+21.37
+29.10
+
+0
+
+Reasoning
+(Local, 0-shot)
+
+44.13
+44.79
+45.03
+45.02
+
+43.62
+45.25
+45.09
+45.03
+20
+40
+Accuracy
+
+0
+
+49.91
+50.39
+50.40
+50.46
+37.50
+47.65
+50.00
+50.42
+50.54
+50.49
+20
+40
+Accuracy
+
+In-Context Recall
+39.76
+41.97
+41.96
+42.06
+
+0
+
+33.46
+41.96
+41.76
+41.79
+20
+40
+Accuracy
+
+=3e-2
+=1e-2
+
+=1e-3
+=1e-4
+
+=1e-5
+CG=4
+
+CG=5
+CG=6
+
+1e-4
+
+CG=7
+CG=10
+
+0.06
+0.04
+
+# Avg. CG Steps
+
+Reasoning
+(Global, 0-shot)
+
+Mean-so-far NLL
+to CG=30
+
+=1e-2
+=1e-3
+=1e-4
+=1e-5
+CG=0
+CG=1
+CG=5
+CG=10
+CG=20
+CG=30
+
+0
+
+0.02
+0.00
+0
+
+2k 4k
+Seq. Length
+
+8k
+
+-1e-4
+
+0
+
+2k 4k
+Seq. Length
+
+8k
+
+CG=20
+CG=30
+
+10
+8
+6
+4
+0 2k4k 8k
+Seq. Length
+
+Figure 5: Effect of Number of Conjugate Gradient (CG) Steps on SlimPajama Perplexity within and
+beyond train context length. We show here the effect of reducing the number of CG steps during inference on
+token perplexity across token position of a 1B MesaNet trained on 50B tokens. We either use a fixed number CG
+steps uniformly across the model or apply a dynamic stopping criterion ϵ > 0.
+
+6
+
+D ISCUSSION
+
+We present a chunkwise parallelized, numerically stable version of the Mesa layer (von Oswald et al.,
+2024), and scale it up to 1B parameter language models. This layer generates a prediction by solving
+an optimization problem, which yields a linear model that best fits a given sequence. Our Mesa layer
+can allocate test-time compute dynamically according to the stopping criterion. Complex sequences
+are then modeled by many of such layers, while interleaving them with MLPs, into MesaNets.
+This approach has ties to multiple long-running lines of research. It relates to alternatives to endto-end differentiation based on stacks of greedy local learners (e.g., Hinton et al., 2006; Nøkland &
+Eidnes, 2019; Veness et al., 2021), bringing these to the fast inference timescale, and then delegating
+to nonlocal backpropagation-based learning the role of determining which optimization problems
+must be solved at inference time. This in turn relates to mesa-optimization (Hubinger et al., 2019),
+since test-time optimization objectives (though not the optimizers themselves) are discovered by
+(base) sequence prediction loss optimization. The idea of specifying the output of a neural layer
+through an optimization problem is an old one (Amos & Kolter, 2017; Gould et al., 2021), with roots
+at least to energy-based neural models (Hopfield, 1984). Finally, the Mesa layer is perhaps most
+related to fast weights of Schmidhuber (1992), replacing Hebbian with locally-optimal learning.
+The Mesa layer extends state-of-the-art recurrent language models such as Mamba (Gu & Dao,
+2024), RWKV (Peng et al., 2023), xLSTM (Beck et al., 2024), and (Gated) DeltaNet (Schlag et al.,
+2021a; Yang et al., 2024c;a), which can also be motivated by an in-context regression loss, but update
+their fast weights with a slower GD process. In a new in-depth evaluation, we show that RNNs, in
+particular MesaNets, outperform transformers significantly early in sequences, while underperforming
+in next-token prediction and benchmark performance when longer contexts are needed. It should
+be stressed that it is exactly in the long-context regime, however, that RNNs show advantages over
+transformers in terms of inference time. In our view, these observations merit further investigation,
+and may serve as the starting point for novel RNN scaling law analyses.
+The biggest shortcoming of the MesaNet in its current form is the increase in test-time compute
+despite its dynamic nature. One possible way around this may lie on the findings of Figure 14,
+where we see that heads which require more CG steps often do not forget, i.e. γ ≈ 1 irrespective of
+the input data. This motivates leveraging the similarity of solutions from neighboring time steps,
+to warm-start optimization of consecutive steps. Moreover, one could envision a hybrid approach
+where the chunkwise parallel CG method introduced in this paper is used during training, while then
+reverting back to using the efficient Sherman-Morrison recursion at inference time, which could work
+given the almost-no-forgetting γ ≈ 1 condition. We point to additional discussion points in Appendix
+J and leave investigating these directions for future work.
+10
+
+Published as a conference paper at ICLR 2026
+
+ACKNOWLEDGMENTS
+The authors would like to thank the anonymous reviewers for their time and thoughtful reviews
+that helped to improve this work. We would also like to thank Soham De and Stephen Roller for
+insightful discussions and advice on model pre-training at the beginning of the project. Moreover,
+we would like to thank Angelika Steger, Rajai Nasser, Maciej Wołczyk, Eyvind Niklasson, Ahmad
+Beirami, Dimitris Papailiopoulos and the members of the Paradigms of Intelligence team for fruitful
+discussions and their support throughout the project.
+
+R EPRODUCIBILITY STATEMENT
+We provide pseudocode for the conjugate-gradient implementation of the Mesa layer in Section C and
+Section D, and provide detailed descriptions regarding numerical precision in Section G.5. All other
+important aspects for training (e.g. tokenizer, data, context length) are given in Section 4. We will
+furthermore, upon publication, provide a triton-based open source implementation of the MesaNet and
+Mesa layer, as well as educational colab notebooks to further ease reproduction and experimentation
+with our layer and models. Moreover, we focused not only on improving the numbers of our proposed
+method but scanned hyperparameters of the related works extensively (see Section E). Lastly, we
+focused on an apples-to-apples comparison between methods by using the exact same backbone
+while only varying the sequence layer.
+
+R EFERENCES
+Ekin Akyürek, Bailin Wang, Yoon Kim, and Jacob Andreas. In-context language learning: Architectures and algorithms, 2024. URL https://arxiv.org/abs/2401.12973.
+Brandon Amos and J. Zico Kolter. OptNet: Differentiable optimization as a layer in neural networks.
+In International Conference on Machine Learning, 2017.
+Simran Arora, Sabri Eyuboglu, Aman Timalsina, Isys Johnson, Michael Poli, James Zou, Atri Rudra,
+and Christopher Ré. Zoology: Measuring and improving recall in efficient language models. arXiv
+preprint arXiv:2312.04927, 2023a.
+Simran Arora, Brandon Yang, Sabri Eyuboglu, Avanika Narayan, Andrew Hojel, Immanuel Trummer,
+and Christopher Ré. Language models enable simple systems for generating structured views of
+heterogeneous data lakes. arXiv preprint arXiv:2304.09433, 2023b.
+Simran Arora, Sabri Eyuboglu, Michael Zhang, Aman Timalsina, Silas Alberti, Dylan Zinsley,
+James Zou, Atri Rudra, and Christopher Ré. Simple linear attention language models balance the
+recall-throughput tradeoff. arXiv preprint arXiv:2402.18668, 2024.
+Jimmy Ba, Geoffrey E. Hinton, Volodymyr Mnih, Joel Z. Leibo, and Catalin Ionescu. Using fast
+weights to attend to the recent past. In Advances in Neural Information Processing Systems,
+volume 29, 2016.
+Dzmitry Bahdanau, Kyunghyun Cho, and Yoshua Bengio. Neural machine translation by jointly
+learning to align and translate. arXiv preprint arXiv:1409.0473, 2014.
+Shaojie Bai, J. Zico Kolter, and Vladlen Koltun. Deep equilibrium models. Advances in Neural
+Information Processing Systems, 2019.
+Maximilian Beck, Korbinian Pöppel, Markus Spanring, Andreas Auer, Oleksandra Prudnikova,
+Michael K Kopp, Günter Klambauer, Johannes Brandstetter, and Sepp Hochreiter. xLSTM:
+Extended long short-term memory. In The Thirty-eighth Annual Conference on Neural Information
+Processing Systems, 2024. URL https://openreview.net/forum?id=ARAxPPIAhq.
+Ali Behrouz, Peilin Zhong, and Vahab Mirrokni. Titans: Learning to memorize at test time, 2024.
+URL https://arxiv.org/abs/2501.00663.
+11
+
+Published as a conference paper at ICLR 2026
+
+Ali Behrouz, Zeman Li, Praneeth Kacham, Majid Daliri, Yuan Deng, Peilin Zhong, Meisam Razaviyayn, and Vahab Mirrokni. Atlas: Learning to optimally memorize the context at test time. arXiv
+preprint arXiv:2505.23735, 2025a.
+Ali Behrouz, Meisam Razaviyayn, Peilin Zhong, and Vahab Mirrokni. It’s all connected: A journey
+through test-time memorization, attentional bias, retention, and online optimization. arXiv preprint
+arXiv:2504.13173, 2025b.
+Iz Beltagy, Matthew E Peters, and Arman Cohan. Longformer: The long-document transformer.
+arXiv preprint arXiv:2004.05150, 2020.
+Stella Biderman, Hailey Schoelkopf, Lintang Sutawika, Leo Gao, Jonathan Tow, Baber Abbasi,
+Alham Fikri Aji, Pawan Sasanka Ammanamanchi, Sidney Black, Jordan Clive, et al. Lessons from
+the trenches on reproducible evaluation of language models. arXiv preprint arXiv:2405.14782,
+2024.
+Yonatan Bisk, Rowan Zellers, Jianfeng Gao, Yejin Choi, et al. Piqa: Reasoning about physical
+commonsense in natural language. In Proceedings of the AAAI conference on artificial intelligence,
+2020.
+Ond rej Bojar, Rajen Chatterjee, Christian Federmann, Yvette Graham, Barry Haddow, Matthias
+Huck, Antonio Jimeno Yepes, Philipp Koehn, Varvara Logacheva, Christof Monz, Matteo Negri,
+Aurelie Neveol, Mariana Neves, Martin Popel, Matt Post, Raphael Rubino, Carolina Scarton, Lucia
+Specia, Marco Turchi, Karin Verspoor, and Marcos Zampieri. Findings of the 2016 conference
+on machine translation. In Proceedings of the First Conference on Machine Translation, pp.
+131–198, Berlin, Germany, August 2016. Association for Computational Linguistics. URL
+http://www.aclweb.org/anthology/W/W16/W16-2301.
+Ondrej Bojar, Christian Buck, Christian Federmann, Barry Haddow, Philipp Koehn, Johannes
+Leveling, Christof Monz, Pavel Pecina, Matt Post, Herve Saint-Amand, Radu Soricut, Lucia
+Specia, and Ale s Tamchyna. Findings of the 2014 workshop on statistical machine translation.
+In Proceedings of the Ninth Workshop on Statistical Machine Translation, pp. 12–58, Baltimore,
+Maryland, USA, June 2014. Association for Computational Linguistics. URL http://www.
+aclweb.org/anthology/W/W14/W14-3302.
+Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal,
+Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al. Language models are
+few-shot learners. Advances in neural information processing systems, 33:1877–1901, 2020a.
+Tom B. Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared Kaplan, Prafulla Dhariwal,
+Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, Sandhini Agarwal, Ariel
+Herbert-Voss, Gretchen Krueger, Tom Henighan, Rewon Child, Aditya Ramesh, Daniel M. Ziegler,
+Jeffrey Wu, Clemens Winter, Christopher Hesse, Mark Chen, Eric Sigler, Mateusz Litwin, Scott
+Gray, Benjamin Chess, Jack Clark, Christopher Berner, Sam McCandlish, Alec Radford, Ilya
+Sutskever, and Dario Amodei. Language models are few-shot learners. In Advances in Neural
+Information Processing Systems, volume 33, 2020b.
+Ryan Burnell, Wout Schellaert, John Burden, Tomer D Ullman, Fernando Martinez-Plumed, Joshua B
+Tenenbaum, Danaja Rutar, Lucy G Cheke, Jascha Sohl-Dickstein, Melanie Mitchell, et al. Rethink
+reporting of evaluation results in ai. Science, 380(6641):136–138, 2023.
+Kyunghyun Cho, Bart van Merriënboer, Caglar Gulcehre, Dzmitry Bahdanau, Fethi Bougares, Holger
+Schwenk, and Yoshua Bengio. Learning phrase representations using RNN encoder–decoder
+for statistical machine translation. In Alessandro Moschitti, Bo Pang, and Walter Daelemans
+(eds.), Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing
+(EMNLP), pp. 1724–1734, Doha, Qatar, October 2014. Association for Computational Linguistics.
+doi: 10.3115/v1/D14-1179. URL https://aclanthology.org/D14-1179/.
+Krzysztof Choromanski, Valerii Likhosherstov, David Dohan, Xingyou Song, Andreea Gane, Tamas
+Sarlos, Peter Hawkins, Jared Davis, Afroz Mohiuddin, Lukasz Kaiser, David Belanger, Lucy
+Colwell, and Adrian Weller. Rethinking attention with performers. In International Conference of
+Learning Representations, 2021.
+12
+
+Published as a conference paper at ICLR 2026
+
+Christopher Clark, Kenton Lee, Ming-Wei Chang, Tom Kwiatkowski, Michael Collins, and Kristina
+Toutanova. Boolq: Exploring the surprising difficulty of natural yes/no questions. arXiv preprint
+arXiv:1905.10044, 2019.
+Kevin Clark, Kelvin Guu, Ming-Wei Chang, Panupong Pasupat, Geoffrey Hinton, and Mohammad
+Norouzi. Meta-learning fast weight language models. In Yoav Goldberg, Zornitsa Kozareva,
+and Yue Zhang (eds.), Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing, pp. 9751–9757, Abu Dhabi, United Arab Emirates, December 2022.
+Association for Computational Linguistics. doi: 10.18653/v1/2022.emnlp-main.661. URL
+https://aclanthology.org/2022.emnlp-main.661/.
+Peter Clark, Isaac Cowhey, Oren Etzioni, Tushar Khot, Ashish Sabharwal, Carissa Schoenick, and
+Oyvind Tafjord. Think you have solved question answering? try arc, the ai2 reasoning challenge.
+arXiv preprint arXiv:1803.05457, 2018.
+Tri Dao. Flashattention-2: Faster attention with better parallelism and work partitioning, 2023. URL
+https://arxiv.org/abs/2307.08691.
+Tri Dao and Albert Gu. Transformers are SSMs: Generalized models and efficient algorithms through
+structured state space duality, 2024. URL https://arxiv.org/abs/2405.21060.
+Pradeep Dasigi, Kyle Lo, Iz Beltagy, Arman Cohan, Noah A Smith, and Matt Gardner. A dataset
+of information-seeking questions and answers anchored in research papers. arXiv preprint
+arXiv:2105.03011, 2021.
+Soham De, Samuel L. Smith, Anushan Fernando, Aleksandar Botev, George Cristian-Muraru, Albert
+Gu, Ruba Haroun, Leonard Berrada, Yutian Chen, Srivatsan Srinivasan, Guillaume Desjardins,
+Arnaud Doucet, David Budden, Yee Whye Teh, Razvan Pascanu, Nando De Freitas, and Caglar
+Gulcehre. Griffin: mixing gated linear recurrences with local attention for efficient language
+models, February 2024. URL http://arxiv.org/abs/2402.19427. arXiv:2402.19427
+[cs].
+Mostafa Dehghani, Stephan Gouws, Oriol Vinyals, Jakob Uszkoreit, and Łukasz Kaiser. Universal
+transformers, 2019. URL https://arxiv.org/abs/1807.03819.
+Dheeru Dua, Yizhong Wang, Pradeep Dasigi, Gabriel Stanovsky, Sameer Singh, and Matt Gardner.
+Drop: A reading comprehension benchmark requiring discrete reasoning over paragraphs. arXiv
+preprint arXiv:1903.00161, 2019.
+Lizhe Fang, Yifei Wang, Zhaoyang Liu, Chenheng Zhang, Stefanie Jegelka, Jinyang Gao, Bolin
+Ding, and Yisen Wang. What is wrong with perplexity for long-context language modeling? arXiv
+preprint arXiv:2410.23771, 2024.
+Daniel Y. Fu, Tri Dao, Khaled K. Saab, Armin W. Thomas, Atri Rudra, and Christopher Ré. Hungry
+hungry hippos: towards language modeling with state space models. In International Conference
+of Learning Representations, 2023.
+Marta Garnelo and Wojciech Marian Czarnecki. Exploring the space of key-value-query models with
+intention. arXiv preprint arXiv:2305.10203, 2023.
+Carl Friedrich Gauss. Theoria combinationis observationum: erroribus minimis obnoxiae. Societas
+Regia Scientiarum Gottingensis, 1821.
+Zhengyang Geng, Xin-Yu Zhang, Shaojie Bai, Yisen Wang, and Zhouchen Lin. On training implicit
+models. In Proceedings of the 35th International Conference on Neural Information Processing
+Systems, NIPS ’21, Red Hook, NY, USA, 2021. Curran Associates Inc. ISBN 9781713845393.
+F.A. Gers, J. Schmidhuber, and F. Cummins. Learning to forget: continual prediction with LSTM. In
+1999 Ninth International Conference on Artificial Neural Networks ICANN 99. (Conf. Publ. No.
+470), volume 2, pp. 850–855 vol.2, 1999. doi: 10.1049/cp:19991218.
+Stephen Gould, Richard Hartley, and Dylan John Campbell. Deep declarative networks. IEEE
+Transactions on Pattern Analysis and Machine Intelligence, 2021.
+13
+
+Published as a conference paper at ICLR 2026
+
+Alex Graves. Adaptive computation time for recurrent neural networks, 2017. URL https:
+//arxiv.org/abs/1603.08983.
+Riccardo Grazzi, Julien Siems, Jörg K.H. Franke, Arber Zela, Frank Hutter, and Massimiliano
+Pontil. Unlocking state-tracking in linear RNNs through negative eigenvalues. In The Thirteenth
+International Conference on Learning Representations, 2025. URL https://openreview.
+net/forum?id=UvTo3tVBk2.
+Albert Gu and Tri Dao. Mamba: Linear-time sequence modeling with selective state spaces. In First
+Conference on Language Modeling, 2024. URL https://openreview.net/forum?id=
+tEYskw1VY2.
+Albert Gu, Isys Johnson, Karan Goel, Khaled Saab, Tri Dao, Atri Rudra, and Christopher Ré. Combining Recurrent, Convolutional, and Continuous-time Models with Linear State Space Layers.
+In Advances in Neural Information Processing Systems, volume 34, pp. 572–585. Curran Associates, Inc., 2021. URL https://proceedings.neurips.cc/paper/2021/hash/
+05546b0e38ab9175cd905eebcc6ebb76-Abstract.html.
+Albert Gu, Karan Goel, and Christopher Ré. Efficiently modeling long sequences with structured
+state spaces. In The International Conference on Learning Representations (ICLR), 2022.
+Donald O. Hebb. The Organization of Behavior: A Neuropsychological Theory. Wiley, New York,
+1949.
+Dan Hendrycks and Kevin Gimpel. Gaussian error linear units (GELUs), 2023. URL https:
+//arxiv.org/abs/1606.08415.
+John Hertz, Richard G. Palmer, and Anders S. Krogh. Introduction to the Theory of Neural Computation. Perseus Publishing, 1st edition, 1991.
+Magnus R Hestenes, Eduard Stiefel, et al. Methods of conjugate gradients for solving linear systems.
+Journal of Research of the National Bureau of Standards, 49(6):409–436, 1952.
+Geoffrey Hinton, Simon Osindero, and Yee Whye Teh. A Fast Learning Algorithm for Deep Belief
+Nets. Neural Computation, 18:1527–1554, 2006.
+Sepp Hochreiter and Jürgen Schmidhuber. Long short-term memory. Neural Computation, 9(8):
+1735–1780, 1997. URL http://dblp.uni-trier.de/db/journals/neco/neco9.
+html#HochreiterS97.
+John J Hopfield. Neurons with graded response have collective computational properties like those of
+two-state neurons. Proceedings of the National Academy of Sciences, 81(10):3088–3092, 1984.
+Cheng-Ping Hsieh, Simeng Sun, Samuel Kriman, Shantanu Acharya, Dima Rekesh, Fei Jia, Yang
+Zhang, and Boris Ginsburg. Ruler: What’s the real context size of your long-context language
+models? arXiv preprint arXiv:2404.06654, 2024.
+Yutong Hu, Quzhe Huang, Mingxu Tao, Chen Zhang, and Yansong Feng. Can perplexity reflect large
+language model’s ability in long text understanding? arXiv preprint arXiv:2405.06105, 2024.
+Weizhe Hua, Zihang Dai, Hanxiao Liu, and Quoc Le. Transformer quality in linear time. In
+Kamalika Chaudhuri, Stefanie Jegelka, Le Song, Csaba Szepesvari, Gang Niu, and Sivan Sabato
+(eds.), Proceedings of the 39th International Conference on Machine Learning, volume 162 of
+Proceedings of Machine Learning Research, pp. 9099–9117. PMLR, 17–23 Jul 2022. URL
+https://proceedings.mlr.press/v162/hua22a.html.
+Luyang Huang, Shuyang Cao, Nikolaus Parulian, Heng Ji, and Lu Wang. Efficient attentions for long
+document summarization. In Proceedings of the 2021 Conference of the North American Chapter
+of the Association for Computational Linguistics: Human Language Technologies, pp. 1419–1436,
+Online, June 2021. Association for Computational Linguistics. doi: 10.18653/v1/2021.naacl-main.
+112. URL https://aclanthology.org/2021.naacl-main.112.
+Evan Hubinger, Chris van Merwijk, Vladimir Mikulik, Joar Skalse, and Scott Garrabrant. Risks from
+learned optimization in advanced machine learning systems. arXiv preprint 1906.01820, 2019.
+14
+
+Published as a conference paper at ICLR 2026
+
+Fred Jelinek, Robert L Mercer, Lalit R Bahl, and James K Baker. Perplexity—a measure of the
+difficulty of speech recognition tasks. The Journal of the Acoustical Society of America, 62(S1):
+S63–S63, 1977.
+Keller Jordan, Yuchen Jin, Vlado Boza, You Jiacheng, Franz Cesista, Laker Newhouse, and Jeremy
+Bernstein. Muon: An optimizer for hidden layers in neural networks, 2024. URL https:
+//kellerjordan.github.io/posts/muon/.
+Mahdi Karami, Ali Behrouz, Praneeth Kacham, and Vahab Mirrokni. Trellis: Learning to compress
+key-value memory in attention models. 2025a. URL https://openreview.net/pdf?id=
+r61s1FNYlj.
+Mahdi Karami, Razvan Pascanu, and Vahab Mirrokni. Lattice: Learning to efficiently compress the
+memory, 2025b. URL https://arxiv.org/abs/2504.05646.
+Angelos Katharopoulos, Apoorv Vyas, Nikolaos Pappas, and François Fleuret. Transformers are
+RNNs: fast autoregressive transformers with linear attention. In International Conference on
+Machine Learning, 2020.
+Aniruddha Kembhavi, Minjoon Seo, Dustin Schwenk, Jonghyun Choi, Ali Farhadi, and Hannaneh
+Hajishirzi. Are you smarter than a sixth grader? textbook question answering for multimodal
+machine comprehension. In Proceedings of the IEEE Conference on Computer Vision and Pattern
+recognition, pp. 4999–5007, 2017.
+Teuvo Kohonen and Matti Ruohonen. Representation of associated data by matrix operators. IEEE
+Transactions on Computers, 100(7):701–702, 1973.
+Ben Krause, Emmanuel Kahembwe, Iain Murray, and Steve Renals. Dynamic evaluation of neural
+sequence models. In Jennifer Dy and Andreas Krause (eds.), Proceedings of the 35th International
+Conference on Machine Learning, volume 80 of Proceedings of Machine Learning Research,
+pp. 2766–2775. PMLR, 10–15 Jul 2018. URL https://proceedings.mlr.press/v80/
+krause18a.html.
+Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redfield, Michael Collins, Ankur Parikh, Chris
+Alberti, Danielle Epstein, Illia Polosukhin, Jacob Devlin, Kenton Lee, et al. Natural questions: a
+benchmark for question answering research. Transactions of the Association for Computational
+Linguistics, 7:453–466, 2019.
+Guokun Lai, Qizhe Xie, Hanxiao Liu, Yiming Yang, and Eduard Hovy. Race: Large-scale reading
+comprehension dataset from examinations. arXiv preprint arXiv:1704.04683, 2017.
+Cornelius Lanczos. An iteration method for the solution of the eigenvalue problem of linear differential and integral operators. Journal of Research of the National Bureau of Standards, 45(4):
+255–282, 1950.
+Michael Laskin, Luyu Wang, Junhyuk Oh, Emilio Parisotto, Stephen Spencer, Richie Steigerwald,
+DJ Strouse, Steven Stenberg Hansen, Angelos Filos, Ethan Brooks, maxime gazeau, Himanshu
+Sahni, Satinder Singh, and Volodymyr Mnih. In-context reinforcement learning with algorithm
+distillation. In The Eleventh International Conference on Learning Representations, 2023. URL
+https://openreview.net/forum?id=hy0a5MMPUv.
+Zhiyuan Li, Hong Liu, Denny Zhou, and Tengyu Ma. Chain of thought empowers transformers to
+solve inherently serial problems, 2024. URL https://arxiv.org/abs/2402.12875.
+Zhixuan Lin, Evgenii Nikishin, Xu Owen He, and Aaron Courville. Forgetting transformer: Softmax
+attention with a forget gate. arXiv preprint arXiv:2503.02130, 2025.
+Bo Liu, Rui Wang, Lemeng Wu, Yihao Feng, Peter Stone, and qiang liu. Longhorn: State space
+models are amortized online learners. In The Thirteenth International Conference on Learning
+Representations, 2025. URL https://openreview.net/forum?id=8jOqCcLzeO.
+15
+
+Published as a conference paper at ICLR 2026
+
+Colin Lockard, Prashant Shiralkar, and Xin Luna Dong. Openceres: When open information extraction meets the semi-structured web. In Proceedings of the 2019 Conference of the North American
+Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume
+1 (Long and Short Papers), pp. 3047–3056, 2019.
+Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. In International Conference of Learning Representations, 2019.
+Yao Lu, Max Bartolo, Alastair Moore, Sebastian Riedel, and Pontus Stenetorp. Fantastically ordered
+prompts and where to find them: Overcoming few-shot prompt order sensitivity. arXiv preprint
+arXiv:2104.08786, 2021.
+Stephen Merity, Caiming Xiong, James Bradbury, and Richard Socher. Pointer sentinel mixture
+models, 2016.
+William Merrill and Ashish Sabharwal. The expressive power of transformers with chain of thought.
+In The Twelfth International Conference on Learning Representations, 2024. URL https:
+//openreview.net/forum?id=NjNGlPh8Wh.
+William Merrill, Jackson Petty, and Ashish Sabharwal. The illusion of state in state-space models,
+2025. URL https://arxiv.org/abs/2404.08819.
+Todor Mihaylov, Peter Clark, Tushar Khot, and Ashish Sabharwal. Can a suit of armor conduct
+electricity? a new dataset for open book question answering. arXiv preprint arXiv:1809.02789,
+2018.
+Tomas Mikolov, Martin Karafiát, Lukas Burget, Jan Černocký, and Sanjeev Khudanpur. Recurrent
+neural network based language model. In Proceedings of Interspeech 2010, pp. 1045–1048, 2010.
+doi: 10.21437/Interspeech.2010-343.
+Arild Nøkland and Lars Hiller Eidnes. Training neural networks with local error signals. In
+International Conference on Machine Learning, 2019.
+Denis Paperno, Germán Kruszewski, Angeliki Lazaridou, Quan Ngoc Pham, Raffaella Bernardi,
+Sandro Pezzelle, Marco Baroni, Gemma Boleda, and Raquel Fernández. The lambada dataset:
+Word prediction requiring a broad discourse context. arXiv preprint arXiv:1606.06031, 2016.
+Bo Peng, Eric Alcaide, Quentin Anthony, Alon Albalak, Samuel Arcadinho, Stella Biderman, Huanqi
+Cao, Xin Cheng, Michael Chung, Leon Derczynski, Xingjian Du, Matteo Grella, Kranthi Gv,
+Xuzheng He, Haowen Hou, Przemyslaw Kazienko, Jan Kocon, Jiaming Kong, Bartłomiej Koptyra,
+Hayden Lau, Jiaju Lin, Krishna Sri Ipsit Mantri, Ferdinand Mom, Atsushi Saito, Guangyu Song,
+Xiangru Tang, Johan Wind, Stanisław Woźniak, Zhenyuan Zhang, Qinghua Zhou, Jian Zhu, and
+Rui-Jie Zhu. RWKV: Reinventing RNNs for the transformer era. In Houda Bouamor, Juan
+Pino, and Kalika Bali (eds.), Findings of the Association for Computational Linguistics: EMNLP
+2023, pp. 14048–14077, Singapore, December 2023. Association for Computational Linguistics.
+doi: 10.18653/v1/2023.findings-emnlp.936. URL https://aclanthology.org/2023.
+findings-emnlp.936/.
+Hao Peng, Nikolaos Pappas, Dani Yogatama, Roy Schwartz, Noah A. Smith, and Lingpeng Kong.
+Random Feature Attention, March 2021. URL http://arxiv.org/abs/2103.02143.
+arXiv:2103.02143 [cs].
+Michael Poli, Armin W. Thomas, Eric Nguyen, Pragaash Ponnusamy, Björn Deiseroth, Kristian
+Kersting, Taiji Suzuki, Brian Hie, Stefano Ermon, Christopher Ré, Ce Zhang, and Stefano Massaroli.
+Mechanistic design and scaling of hybrid architectures. In ICML, 2024. URL https://
+openreview.net/forum?id=GDp7Gyd9nf.
+Matt Post. A call for clarity in reporting BLEU scores. In Ondřej Bojar, Rajen Chatterjee, Christian
+Federmann, Mark Fishel, Yvette Graham, Barry Haddow, Matthias Huck, Antonio Jimeno Yepes,
+Philipp Koehn, Christof Monz, Matteo Negri, Aurélie Névéol, Mariana Neves, Matt Post, Lucia
+Specia, Marco Turchi, and Karin Verspoor (eds.), Proceedings of the Third Conference on Machine
+Translation: Research Papers, pp. 186–191, Brussels, Belgium, October 2018. Association for
+Computational Linguistics. doi: 10.18653/v1/W18-6319. URL https://aclanthology.
+org/W18-6319/.
+16
+
+Published as a conference paper at ICLR 2026
+
+Zhen Qin, Dong Li, Weigao Sun, Weixuan Sun, Xuyang Shen, Xiaodong Han, Yunshen Wei, Baohong
+Lv, Xiao Luo, Yu Qiao, and Yiran Zhong. Transnormerllm: A faster and better large language
+model with improved transnormer, 2024. URL https://arxiv.org/abs/2307.14995.
+Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever. Language
+models are unsupervised multitask learners. OpenAI blog, 1(8), 2018.
+Jack W Rae, Anna Potapenko, Siddhant M Jayakumar, and Timothy P Lillicrap. Compressive
+transformers for long-range sequence modelling. arXiv preprint arXiv:1911.05507, 2019.
+Pranav Rajpurkar, Jian Zhang, Konstantin Lopyrev, and Percy Liang. Squad: 100,000+ questions for
+machine comprehension of text. arXiv preprint arXiv:1606.05250, 2016.
+Amal Rannen-Triki, Jorg Bornschein, Razvan Pascanu, Marcus Hutter, Andras György, Alexandre
+Galashov, Yee Whye Teh, and Michalis K. Titsias. Revisiting dynamic evaluation: Online adaptation for large language models, 2024. URL https://arxiv.org/abs/2403.01518.
+Tanya Rodchenko, Natasha Noy, Nino Scherrer, and Jennifer Prendki. Not every ai problem is a data
+problem: We should be intentional about data scaling. arXiv preprint arXiv:2501.13779, 2025.
+Keisuke Sakaguchi, Ronan Le Bras, Chandra Bhagavatula, and Yejin Choi. Winogrande: An
+adversarial winograd schema challenge at scale. Communications of the ACM, 64(9):99–106,
+2021.
+Maarten Sap, Hannah Rashkin, Derek Chen, Ronan LeBras, and Yejin Choi. Socialiqa: Commonsense
+reasoning about social interactions. arXiv preprint arXiv:1904.09728, 2019.
+Yash Sarrof, Yana Veitsman, and Michael Hahn. The expressive capacity of state space models: A
+formal language perspective, 2024. URL https://arxiv.org/abs/2405.17394.
+Imanol Schlag, Kazuki Irie, and Jürgen Schmidhuber. Linear transformers are secretly fast weight
+programmers. In International Conference on Machine Learning, 2021a.
+Imanol Schlag, Tsendsuren Munkhdalai, and Jürgen Schmidhuber. Learning associative inference
+using fast weight memory. In International Conference on Learning Representations, 2021b. URL
+https://openreview.net/forum?id=TuK6agbdt27.
+Jürgen Schmidhuber. Evolutionary principles in self-referential learning, or on learning how to learn:
+the meta-meta-... hook. Diploma thesis, Institut für Informatik, Technische Universität München,
+1987.
+Jürgen Schmidhuber. Learning to control fast-weight memories: an alternative to dynamic recurrent
+networks. Neural Computation, 4(1):131–139, 1992.
+Mark Schöne, Babak Rahmani, Heiner Kremer, Fabian Falck, Hitesh Ballani, and Jannes Gladrow.
+Implicit language models are RNNs: Balancing parallelization and expressivity, 2025. URL
+https://arxiv.org/abs/2502.07827.
+Noam Shazeer, Azalia Mirhoseini, Krzysztof Maziarz, Andy Davis, Quoc Le, Geoffrey Hinton, and
+Jeff Dean. Outrageously large neural networks: The sparsely-gated mixture-of-experts layer, 2017.
+URL https://arxiv.org/abs/1701.06538.
+Jack Sherman and Winifred J. Morrison. Adjustment of an inverse matrix corresponding to a change
+in one element of a given matrix. The Annals of Mathematical Statistics, 21(1):124–127, 1950.
+Daria Soboleva,
+Faisal Al-Khateeb,
+Robert Myers,
+Jacob R Steeves,
+Joel
+Hestness, and Nolan Dey.
+SlimPajama:
+A 627B token cleaned and
+deduplicated
+version
+of
+RedPajama.
+https://cerebras.ai/blog/
+slimpajama-a-627b-token-cleaned-and-deduplicated-version-of-redpajama,
+2023. URL https://huggingface.co/datasets/cerebras/SlimPajama-627B.
+Siddarth Srinivasan, Richa Arora, and Mark Riedl. A simple and effective approach to the story cloze
+test. arXiv preprint arXiv:1803.05547, 2018.
+17
+
+Published as a conference paper at ICLR 2026
+
+Jianlin Su, Murtadha Ahmed, Yu Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu. Roformer: Enhanced
+transformer with rotary position embedding. Neurocomputing, 568:127063, 2024.
+Yu Sun, Xinhao Li, Karan Dalal, Jiarui Xu, Arjun Vikram, Genghan Zhang, Yann Dubois, Xinlei
+Chen, Xiaolong Wang, Sanmi Koyejo, Tatsunori Hashimoto, and Carlos Guestrin. Learning to
+(learn at test time): RNNs with expressive hidden states, 2025. URL https://arxiv.org/
+abs/2407.04620.
+Yutao Sun, Li Dong, Shaohan Huang, Shuming Ma, Yuqing Xia, Jilong Xue, Jianyong Wang, and
+Furu Wei. Retentive network: A successor to transformer for large language models, 2023. URL
+https://arxiv.org/abs/2307.08621.
+Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei, Nikolay
+Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, Dan Bikel, Lukas Blecher, Cristian Canton Ferrer, Moya Chen, Guillem Cucurull, David Esiobu, Jude Fernandes, Jeremy Fu,
+Wenyin Fu, Brian Fuller, Cynthia Gao, Vedanuj Goswami, Naman Goyal, Anthony Hartshorn,
+Saghar Hosseini, Rui Hou, Hakan Inan, Marcin Kardas, Viktor Kerkez, Madian Khabsa, Isabel
+Kloumann, Artem Korenev, Punit Singh Koura, Marie-Anne Lachaux, Thibaut Lavril, Jenya Lee,
+Diana Liskovich, Yinghai Lu, Yuning Mao, Xavier Martinet, Todor Mihaylov, Pushkar Mishra,
+Igor Molybog, Yixin Nie, Andrew Poulton, Jeremy Reizenstein, Rashi Rungta, Kalyan Saladi,
+Alan Schelten, Ruan Silva, Eric Michael Smith, Ranjan Subramanian, Xiaoqing Ellen Tan, Binh
+Tang, Ross Taylor, Adina Williams, Jian Xiang Kuan, Puxin Xu, Zheng Yan, Iliyan Zarov, Yuchen
+Zhang, Angela Fan, Melanie Kambadur, Sharan Narang, Aurelien Rodriguez, Robert Stojnic,
+Sergey Edunov, and Thomas Scialom. Llama 2: Open foundation and fine-tuned chat models,
+2023. URL https://arxiv.org/abs/2307.09288.
+Yao-Hung Hubert Tsai, Shaojie Bai, Makoto Yamada, Louis-Philippe Morency, and Ruslan Salakhutdinov. Transformer dissection: a unified understanding of transformer’s attention via the lens
+of kernel. In Proceedings of the 2019 Conference on Empirical Methods in Natural Language
+Processing and the 9th International Joint Conference on Natural Language Processing, 2019.
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez,
+Lukasz Kaiser, and Illia Polosukhin. Attention is all you need. In Advances in Neural Information
+Processing Systems, volume 30, 2017.
+Joel Veness, Tor Lattimore, David Budden, Avishkar Bhoopchand, Christopher Mattern, Agnieszka
+Grabska-Barwinska, Eren Sezener, Jianan Wang, Peter Toth, Simon Schmitt, et al. Gated linear
+networks. In Proceedings of the AAAI conference on artificial intelligence, 2021.
+Max Vladymyrov, Johannes von Oswald, Nolan Andrew Miller, and Mark Sandler. Efficient
+linear system solver with transformers. In AI for Math Workshop @ ICML 2024, 2024. URL
+https://openreview.net/forum?id=qc2adlhAWF.
+Johannes von Oswald, Eyvind Niklasson, Ettore Randazzo, João Sacramento, Alexander Mordvintsev,
+Andrey Zhmoginov, and Max Vladymyrov. Transformers learn in-context by gradient descent. In
+International Conference on Machine Learning, 2023.
+Johannes von Oswald, Maximilian Schlegel, Alexander Meulemans, Seijin Kobayashi, Eyvind Niklasson, Nicolas Zucchet, Nino Scherrer, Nolan Miller, Mark Sandler, Blaise Agüera y Arcas, Max
+Vladymyrov, Razvan Pascanu, and João Sacramento. Uncovering mesa-optimization algorithms in
+transformers, 2024. URL https://arxiv.org/abs/2309.05858.
+Johannes von Oswald, Seijin Kobayashi, Yassir Akram, and Angelika Steger. Learning randomized algorithms with transformers. In The Thirteenth International Conference on Learning
+Representations, 2025. URL https://openreview.net/forum?id=UV5p3JZMjC.
+Ke Alexander Wang, Jiaxin Shi, and Emily B. Fox. Test-time regression: a unifying framework
+for designing sequence models with associative memory, 2025. URL https://arxiv.org/
+abs/2501.12352.
+Jos Westhuizen and Joan Lasenby. The unreasonable effectiveness of the forget gate. arXiv preprint
+arXiv:1804.04849, 2018.
+18
+
+Published as a conference paper at ICLR 2026
+
+Bernard Widrow and Marcian E. Hoff. Adaptive switching circuits. In IRE WESCON convention
+record, volume 4, 1960.
+Songlin Yang and Yu Zhang. FLA: a triton-based library for hardware-efficient implementations of linear attention mechanism, 2024. URL https://github.com/fla-org/
+flash-linear-attention.
+Songlin Yang, Jan Kautz, and Ali Hatamizadeh. Gated delta networks: Improving mamba2 with
+delta rule. arXiv preprint arXiv:2412.06464, 2024a.
+Songlin Yang, Bailin Wang, Yikang Shen, Rameswar Panda, and Yoon Kim. Gated linear attention
+transformers with hardware-efficient training. In Proceedings of ICML, 2024b.
+Songlin Yang, Bailin Wang, Yu Zhang, Yikang Shen, and Yoon Kim. Parallelizing linear transformers
+with the delta rule over sequence length. In The Thirty-eighth Annual Conference on Neural
+Information Processing Systems, 2024c. URL https://openreview.net/forum?id=
+y8Rm4VNRPH.
+Rowan Zellers, Ari Holtzman, Yonatan Bisk, Ali Farhadi, and Yejin Choi. Hellaswag: Can a machine
+really finish your sentence? arXiv preprint arXiv:1905.07830, 2019.
+Biao Zhang and Rico Sennrich. Root Mean Square Layer Normalization. In Advances in Neural
+Information Processing Systems 32, Vancouver, Canada, 2019. URL https://openreview.
+net/references/pdf?id=S1qBAf6rr.
+Yu Zhang, Songlin Yang, Ruijie Zhu, Yue Zhang, Leyang Cui, Yiqiao Wang, Bolun Wang, Freda Shi,
+Bailin Wang, Wei Bi, Peng Zhou, and Guohong Fu. Gated slot attention for efficient linear-time
+sequence modeling. In Proceedings of NeurIPS, 2024.
+
+19
+
+Published as a conference paper at ICLR 2026
+
+A
+
+R ELATED W ORK
+
+Linear Attention. As already described above, Tsai et al. (2019) demonstrated that the softmax
+attention mechanism can be linearized by replacing the softmax kernel κ(k, q) = exp(k T q) with a
+surrogate kernel κ′ = ⟨σ(k), σ(q)⟩. The resulting linear attention mechanism iteratively accumulates
+the outer product of key-value pairs into a recurrent state that is queried at each step, resembling
+RNNs (Katharopoulos et al., 2020). Since then, numerous works have proposed different designs
+of the feature map σ(·) (Katharopoulos et al., 2020; Choromanski et al., 2021; Schlag et al., 2021a;
+Peng et al., 2021; Sun et al., 2023; Dao & Gu, 2024) and key-value normalization (Yang et al.,
+2024c; Schlag et al., 2021a; Sun et al., 2023). Notably, a more general form of (unnormalized) linear
+attention was introduced in the early ‘90s as Fast Weight Programmers (Schmidhuber, 1992; Schlag
+et al., 2021a; Ba et al., 2016), connected to Meta-Learning (Schmidhuber, 1987).
+Test-time regression. Contrary to softmax attention, linear attention variants are only capable of
+storing a finite number of key-value associations. Given key dimension dkey , there exist at most dkey
+orthogonal keys, and therefore, retrieval beyond dkey tokens cannot be error-free. Inspired by the
+error-correcting delta rule (Widrow & Hoff, 1960), Schlag et al. (2021b;a) proposed to interpolate
+the value with the previously stored association, yielding the DeltaNet. The DeltaNet update rule is
+equivalent to performing a gradient descent step with respect to the recurrent state Φ on ||Φkt − vt ||2 .
+Yang et al. (2024a) demonstrated that the DeltaNet is parallelizable and achieved strong language
+modeling performance when embedded into a modern architecture. Motivated this online regression
+loss, other works derived the same update rule as the DeltaNet. Instead of a parallel implementation,
+Liu et al. (2025) approximate the update with a diagonal matrix, while Sun et al. (2025) perform the
+DeltaNet update on a per-chunk basis, implicitly performing batched gradient descent. Building on
+this, Titans (Behrouz et al., 2024) adds momentum to the batched gradient descent update. Wang
+et al. (2025); Behrouz et al. (2025b) unify numerous efficient foundation models from the perspective
+of test-time regression. Extending Titans, concurrent follow-up work Atlas Behrouz et al. (2025a)
+is effectively a sliding-window variant of the Mesa layer. It is worth highlighting that this line of
+research is an instance of Dynamic Evaluation (Mikolov et al., 2010; Krause et al., 2018; Clark et al.,
+2022; Rannen-Triki et al., 2024; Karami et al., 2025b;a), where model weights are updated at test
+time via gradient descent steps on a prediction loss. To further address the capacity constraints of
+bounded memory, Lattice Karami et al. (2025b) introduces an orthogonal recurrent update mechanism
+that incorporates information exclusively orthogonal to the current state to minimize interference.
+Similarly, Trellis Karami et al. (2025a) employs dual recurrent compression layers to independently
+manage key and value storage within separate memory structures.
+Models with recurrent depth. The MesaNet is related to a broader class of models building on
+fixed point iterations. Universal Transformers (Dehghani et al., 2019) apply transformer blocks
+iteratively, using Adaptive Computation Time (Graves, 2017) to make the number of recurrent steps
+token-dependent. Deep Equilibrium Models (DEQs) (Bai et al., 2019) take this idea further by directly
+solving the corresponding fixed point iteration using quasi Newton methods. More recently, Schöne
+et al. (2025) introduced an implicit State Space Model that also relies on a fixed-point iteration, which
+is trainable in parallel utilizing the Phantom Gradient technique (Geng et al., 2021). In contrast to
+DEQ-style methods, the Mesa layer benefits from the linear structure of fast weight memory, which
+allows for a more efficient optimization using conjugate gradient steps.
+Linear RNNs with forgetting. Forget gates were first introduced by Gers et al. (1999) within the
+framework of Long Short-Term Memory networks (LSTMs) (Hochreiter & Schmidhuber, 1997),
+and have since become part of the standard LSTM architecture. Even more, studies on simplified
+LSTM variants, such as the Gated Recurrent Unit (Cho et al., 2014), have shown the forget gate to be
+fundamental for the effectiveness of recurrent sequence models (Westhuizen & Lasenby, 2018).
+Compared to LSTMs, modern linear attention variants have adopted more coarse grained forgetting
+mechanisms on the matrix-valued recurrent state. RetNet (Sun et al., 2023) and TransNormerLLM
+(Qin et al., 2024) both utilize a trainable decay factor on the recurrent matrix. More recent work
+found that data-dependent forgetting improves language modeling performance, although the data
+dependency is usually limited to the current input, but not the recurrent state, to allow for parallel
+training. Using an input-dependent decay factor as in this work is the de-facto standard in modern
+linear attention variants, such as Mamba-2 (Dao & Gu, 2024), xLSTM (Beck et al., 2024), and Gated
+20
+
+Published as a conference paper at ICLR 2026
+
+DeltaNet (Yang et al., 2024a). Gated Linear Attention (Yang et al., 2024b) opts for a data-dependent
+decay vector, effectively using a separate forget gate for each row of the matrix-valued recurrent state.
+Similarly, Gated Slot Attention (Zhang et al., 2024) applies separate input-dependent forget gates to
+each row of both matrices of a fixed size Key-Value cache.
+State Space Models. State Space Models (SSMs) (Gu et al., 2021; 2022; Fu et al., 2023; Gu &
+Dao, 2024) build upon first-order differential equations used to describe dynamical systems, which
+are then discretized for sequence modeling. In linear time-invariant (LTI) SSMs, the recurrent state
+can be obtained through a fixed linear combination of previous recurrent states, which allows for
+a parallel mode using convolutions. Gu et al. (2022) identified the computation of the convolution
+kernel as the primary bottleneck and proposed Structured State Space Models (S4), a parametrization
+for LTI SSMs that enables efficient computation. Mamba (Gu & Dao, 2024) introduces selectivity to
+State Space Models, making the recurrent state transitions dependent on the input. Since the resulting
+time-varying SSM cannot leverage global convolutions, the authors propose a hardware-efficient
+parallel scan implementation. Mamba-2 further constrains the transition matrix to scalar times
+identity, and demonstrates that the resulting State Space Model is equivalent to (gated) linear attention
+(Dao & Gu, 2024).
+
+B
+
+D ERIVATION OF PREVIOUS TEST- TIME TRAINING RULES
+
+For completeness, we discuss in more detail the update rules for a number of closely related previous
+sequence modeling layers discussed above and in the main text section 2. Like the Mesa layer, the
+update rules of these models perform some form of test-time learning by optimizing a sequence of
+objective functions (Lt′ )tt′ =1 . We summarize in Table 4 the update rules and corresponding online
+objective functions that we cover below.
+Layer
+GLA
+DeltaNet
+LongHorn
+Atlas
+Mesa
+
+Objective function
+⊤
+t
+Lt = −vt⊤ Φkt + 1−γ
+2βt Tr(ΦΦ )
+1
+2
+Lt = 2 ∥vt − Φkt ∥
+Lt = 12 (vt −Φkt )⊤ diag(βt )(vt −Φkt )
++ 12 Tr(Φ − Φt−1 )⊤ (Φ − Φt−1 )
+Pt
+Lt = t′ =t−c+1 ζtt′ ∥vt′ − MΦ (kt′ )∥2
+Pt
+Lt = 12 t′ =1 ζtt′ ||vt′ − Φkt′ ||2
++ 12 Tr(ΦΛt Φ⊤ )
+
+Update rule
+Φt = Φt−1 − βt ∇ϕ Lt (Φt−1 )
+Φt = Φt−1 − βt ∇ϕ Lt (Φt−1 )
+Φt = arg minΦ Lt (Φ)
+Φ̃t = θ̃t Φ̃t−1 + ∇Φ Lt (Φt−1 )
+Φt = γt Φt−1 − βt NewtonSchulzk (Φ̃t )
+Φt = arg minΦ Lt (Φ)
+
+Table 4: Overview of test-time training recurrent layers, whose update rules can be derived from an online
+learning objective function.
+
+GLA and DeltaNet update rules.
+
+For convenience, we first restate equation 3 below:
+
+1
+(11)
+Tr(ΦΛt Φ⊤ ).
+2
+We show in detail how to obtain the basic GLA and DeltaNet update rules by letting Φt follow an
+online gradient-based learning dynamics,
+Lt (Φ) = lt (Φ) +
+
+Φt = Φt−1 − βt ∇ϕ Lt (Φt−1 ),
+
+(12)
+
+where the input gate βt plays the role of a time-dependent step size.
+For GLA, we choose lt to be the quadratic continuous-state Hopfield energy,
+lt (Φ) = ltHopfield (Φ) := −vt⊤ Φkt ,
+and we set the quadratic regularizer to depend on the forget gate γt and input gate βt as follows:
+Λt =
+
+1 − γt
+I.
+βt
+21
+
+Published as a conference paper at ICLR 2026
+
+Now, plugging lt and Λt into equation 12 yields
+
+
+1 − γt
+Φt = Φt−1 − βt ∇ϕ −vt⊤ Φkt +
+Tr(ΦΦ⊤ )
+2βt
+
+(13)
+Φ=Φt−1
+
+= Φt−1 − (1 − γt )Φt−1 + βt vt kt⊤
+
+(14)
+
+= γt Φt−1 + βt vt kt⊤ ,
+
+(15)
+
+which corresponds to gated linear attention as defined in the main text (equation 2).
+To obtain DeltaNet, we choose instead lt to be the squared error loss,
+1
+∥vt − Φkt ∥2 ,
+2
+and we disable the regularizer (Λt = 0), as it was not included in the original DeltaNet model (Schlag
+et al., 2021a). Performing again the same computation as above, but now with this squared error
+online loss, yields the DeltaNet update:
+
+
+1
+2
+Φt = Φt−1 − βt ∇ϕ ∥vt − Φkt ∥
+(16)
+2
+lt (Φ) = ltsq-err (Φ) :=
+
+Φ=Φt−1
+
+= Φt−1 + βt (vt − Φt−1 kt )kt⊤ .
+
+(17)
+
+LongHorn update rule. Yet another recent method called LongHorn (Liu et al., 2025) can be
+derived as online learning on a sequence of loss functions (lt ). Its update rule can be derived by
+minimizing an objective function:
+Φt = arg min LLongHorn
+t
+
+(18)
+
+Φ
+
+1
+1
+= arg min (vt − Φkt )⊤ diag(βt )(vt − Φkt ) + Tr(Φ − Φt−1 )⊤ (Φ − Φt−1 ),
+2
+2
+Φ
+
+(19)
+
+with βt now a vector of the same dimension as vt , instead of a scalar, determining an elementwise
+squared error precision. The solution can be obtained in closed-form, following the derivation
+provided in Appendix C of (Liu et al., 2025):
+Φt = Φt−1 + diag(ϵt )(vt − Φt−1 kt )kt⊤ ,
+
+(20)
+
+with ϵti = 1+ββtitik⊤ kt . This is a variant of DeltaNet with a particular diagonal input-dependent step
+t
+size that is both a function of kt and βt (which is chosen to be a vector in this model, as opposed to
+the scalar gates used in our DeltaNet and in our current MesaNet implementation). For computational
+efficiency, the actual implementation of LongHorn approximates the update above with a simpler
+rule that makes use of elementwise multiplications, denoted here by ⊙:
+Φt = (1 − ϵt (kt ⊙ kt )⊤ ) ⊙ Φt−1 + (ϵt ⊙ vt )kt⊤ ,
+
+(21)
+
+where ⊮ is a matrix of ones. Like the DeltaNet, the LongHorn objective still only takes into account
+the instantaneous squared error for the current key-value pair, with an additional memory quadratic
+potential pulling towards the previous solution to avoid forgetting it entirely through the full arg min.
+By contrast, the Mesa layer explicitly optimizes the full forget-weighted sum of squared errors from
+the beginning of the sequence until the present (t′ = 1 to t).
+Omega/Atlas update rule. Concurrent work by Behrouz et al. (2025a) investigated online learning
+layers that are intimately related to the Mesa layer. The paper focuses on a sliding window variant of
+our objective function:
+LOmega
+=
+t
+
+t
+X
+
+ζtt′ ∥vt′ − MΦ (kt′ )∥2 ,
+
+(22)
+
+t′ =t−c+1
+
+where c is the sliding window length, and ζtt′ determines the cumulative forget at time step t for the
+past loss t′ , as in the Mesa layer objective. The authors further allow MΦ to be a 1-hidden-layer
+22
+
+Published as a conference paper at ICLR 2026
+
+MLP with parameters Φ, similarly to (Sun et al., 2025), and unlike the Mesa layer, which derives a
+specialized update exploiting the fact that M is a linear model. Behrouz et al. (2025a) optimize the
+sequence of loss functions (lt ) online using a second-order Muon method (Jordan et al., 2024):
+Φ̃t = θ̃t Φ̃t−1 + ∇Φ ltOmega (Φt−1 ),
+
+(23)
+
+Φt = γt Φt−1 − βt NewtonSchulzk (Φ̃t ),
+
+(24)
+
+where NewtonSchulzk denotes the execution of k steps of the NewtonSchulz algorithm, Φ̃t is an
+auxiliary momentum gradient accumulation state variable, and θ̃t is a dynamic (time-dependent)
+momentum decay factor, which determines the retention of past accumulated gradients.
+
+23
+
+Published as a conference paper at ICLR 2026
+
+C
+
+R ANK -O NE U PDATE C ONJUGATE G RADIENT M ETHOD
+
+In the next two sections, we describe how we can use the conjugate gradient method to obtain a
+solution for (Ht + Λt )−1 qt = qt∗ for many t in parallel. As we will discuss below, the aim is to show
+how one can do this without materializing Ht for all time steps as this would lead to unnecessary
+memory overhead, see Yang et al. (2024b) for a detailed discussion of this problem and a ”chunkwise
+parallel” solution. We therefore aim to show here, as a starting point, how to compute qt∗ without
+materializing Ht = Ht−1 γt + kt ktT and only relying on Ht−1 as well as on yt and kt . This will
+eventually allow us, see the next Appendix section D, to compute and materialize Ht only every
+T /C steps with train length T and chunksize C times, leading to a drastic decrease in memory
+∗
+∗
+usage. We will do this while approximating Q∗c = [qc+1
+, . . . , qc+C
+] numerically in parallel by only
+materializing Hc where c ∈ {0, C, 2C, . . . T − C}.
+We opted to initialize the conjugate gradient method with x ← qt · diag(Ht + Λt )−1 in this work.
+Algorithm 1 Rank-One Update Conjugate Gradient Method
+1: procedure R ANKO NE C ONJUGATE G RADIENT(Ht−1 , γt , kt , qt , ϵ, kmax )
+2:
+Input: Symmetric positive-definite matrix Ht−1 ∈ Rn×n , forget strength γt ∈ (0, 1), key
+
+kt ∈ Rn , query qt ∈ Rn , tolerance ϵ > 0, maximum iterations kmax .
+3:
+Output: Approximate solution x.
+4:
+5:
+6:
+7:
+8:
+9:
+
+k←0
+x ← qt · diag(Ht−1 + Λt )−1
+r ← qt − (Ht−1 γt + kt kt⊤ + Λt )x
+p←r
+δold ← rT r
+δ0 ← δold
+
+10:
+11:
+12:
+13:
+14:
+15:
+16:
+17:
+18:
+
+while k < kmax do
+q ← (Ht−1 γt + kt kt⊤ + Λt )p
+α ← δpold
+Tq
+x ← x + αp
+r ← r − αq
+δnew ← rT r
+√
+√
+if δnew ≤ ϵ δ0 then
+break
+end if
+
+19:
+20:
+21:
+22:
+23:
+
+β ← δδnew
+old
+p ← r + βp
+δold ← δnew
+k ←k+1
+end while
+
+▷ Initial guess x ∈ Rn
+▷ Initial residual r
+▷ Initial search direction p
+▷ Squared norm of the initial residual
+▷ Store initial squared norm for relative tolerance
+▷ Loop until max iterations reached
+▷ Matrix-vector product (Ht−1 γt + kt kt⊤ + Λt )p
+▷ Step length α
+▷ Update solution x
+▷ Update residual r
+▷ Squared norm of the new residual, δnew
+▷ Check relative convergence: ||rk+1 || ≤ ϵ||r0 ||
+▷ Converged
+▷ Improvement factor β
+▷ Update search direction p
+▷ Store new norm as old for next iteration
+▷ Increment iteration counter
+
+24:
+return x
+25: end procedure
+
+▷ Return the approximate solution
+
+On top of Ht−1 p, all other parts of the (Ht−1 γt + kt ktT + Λt )p computation can be reduced to
+one vector inner-product kt⊤ p as well as element-wise products and a final addition of the results.
+One can therefore approxiamte qt∗ numerically without materializing Ht , which we will extend
+∗
+∗
+in the following to chunks i.e. compute Q∗c = [qc+1
+, . . . , qc+C
+] in parallel without explicitly
+materializing Ht with c < t ≤ c + C. This will become obvious after realizing that the computation
+of (Ht−1 γt + kt ktT + Λt )p is equivalent to GLA, therefore allowing for the chunkwise parrallel
+computation proposed in Yang et al. (2024b) of GLA.
+
+24
+
+Published as a conference paper at ICLR 2026
+
+Note that the most flops during inference are spend in the matrix-vector product Ht p where we apply
+the CG method simply to (Ht + Λt )−1 qt (and not do not use the ”rank-one” update formulation
+above) resulting in the O(kn2a ) of Table 5.
+We refer to Appendix G.5 for further details about numerical precisions considerations within our
+CG solver.
+
+D
+
+C HUNKWISE PARALLEL F ORM OF G ATED L INEAR ATTENTION AND THE
+M ESA L AYER
+
+Mesa layer forward pass. The main Mesa recurrence (Equation 7) can be rewritten as follows,
+considering only one head and assuming without loss of generality that input gates are absorbed in
+keys and values:
+Ht = Ht−1 γt + kt kt⊤
+Gt = Gt−1 γt + vt kt⊤
+
+(25)
+qt∗ = (Ht + Λ)−1 qt
+ot = Gt qt∗
+Note that Ht is symmetric, and Λ is symmetric positive definite, so Ht + Λ is also symmetric. Let’s
+define
+Qt
+if t ≥ s
+i=s+1 γi
+ζts =
+0
+otherwise
+with which the computation of ot (unrolling the definition of Gt ) has the following form:
+ot =
+
+t
+X
+
+ζti vi ki⊤ qt∗ .
+
+(26)
+
+i=1
+
+To connect to Section 2 where the Mesa layer is defined through a set of optimized linear model fast
+weights Φ, we note that this is equivalent to minimizing the following objective w.r.t. Φ,
+t
+
+1
+1X
+ζti ||vi − Φki ||2 + Tr(ΦΛΦ⊤ ),
+2 i=1
+2
+
+Φ̂mesa
+= arg min
+t
+Φ
+
+(27)
+
+qt .
+and then computing the output through ot = Φ̂mesa
+t
+To see why this is the case, let us compute the stationarity condition
+" t
+#
+1X
+1
+2
+⊤
+∇Φ
+ζti ||vi − Φki || + Tr(ΦΛΦ ) = 0
+2 i=1
+2
+⇐⇒ ΦΛ −
+
+⇐⇒ ΦΛ −
+
+t
+X
+
+(28)
+
+ζti (vi − Φki )ki⊤ = 0
+
+(29)
+
+(ζti vi ki⊤ − Φζti ki ki⊤ ) = 0
+
+(30)
+
+i=1
+t
+X
+i=1
+
+⇐⇒ ΦΛ + ΦK̃t K̃t⊤ = Ṽt K̃t⊤
+
+(31)
+
+⇐⇒ Φ = Ṽt K̃t⊤ (K̃t K̃t⊤ + Λ)−1
+⇐⇒ Φ =
+
+t
+X
+
+!
+ζti vi ki⊤
+
+i=1
+
+t
+X
+
+(32)
+!−1
+
+ζti ki ki⊤ + Λ
+
+.
+
+(33)
+
+i=1
+
+To simplify the calculation we introduced the auxiliary matrix variables Ṽt and K̃t , which absorbed
+square roots of the cumulative forget factors ζt . We denote the above (unique, for Λ > 0) solution by
+Φmesa
+.
+t
+25
+
+Published as a conference paper at ICLR 2026
+
+Now, the recurrence relation for the state variable Ht can be solved analytically, yielding
+
+
+t
+t
+t
+X
+Y
+X
+
+Ht = γt Ht−1 + kt kt⊤ =
+γj  ki ki⊤ =
+ζti ki ki⊤ ,
+i=1
+
+j=i+1
+
+(34)
+
+i=1
+
+assuming H0 = 0. The same holds for the other state variable, Gt = γt Gt−1 + vt kt⊤ =
+Pt
+⊤
+i=1 ζti vi ki .
+Therefore, as claimed, we recover equation 25:
+ot = Φ̂mesa
+qt
+t
+t
+X
+
+=
+
+(35)
+!
+
+t
+X
+
+ζti vi ki⊤
+
+i=1
+
+!−1
+ζti ki ki⊤ + Λ
+
+qt
+
+(36)
+
+i=1
+
+= Gt (Ht + Λ)−1 qt
+= Gt qt∗ .
+
+(37)
+(38)
+
+Chunkwise form. We remark that if qt∗ is given, this computation is equivalent to a Gated Linear
+Attention (GLA) layer Yang et al. (2024b), and thus can be efficiently computed on GPUs and TPUs
+by splitting the sequence in blocks of opportune sizes C resulting in a “chunkwise parallel” form of
+the layer. In short, given Gc , where c ∈ {0, C, . . . , T − C} dividing the training sequence length T
+in T /C chunks of size C, we can compute the output at time c < t ≤ c + C as
+
+ot = (Gc +
+
+t
+X
+
+ζti vi ki⊤ )qt∗ = Gc qt∗ +
+
+i=c+1
+
+t
+X
+
+ζti vi ki⊤ qt∗
+
+(39)
+
+i=c+1
+
+Similar to softmax self-attention, this computation can be done in parallel for t ∈ {c + 1, ...c + C}
+which becomes clearer when using matrix notation
+Oc = Gc Q∗c + Vc (Zc ⊙ (Kc⊤ Q∗c ))
+
+(40)
+
+where Kc = [kc , ..., kc+C ] and Oc , Vc , Q∗c accordingly. Zc is a upper triangular matrix of size
+C × C with Zc [i, j] = ζc+j,c+i . Please see for Triton-based implementation of this chunked parallel
+formulation of GLA at https://github.com/fla-org/flash-linear-attention.
+We differ from GLA as the Mesa layer replaces qt which is the standard query qt = Wq et by
+qt∗ = (Ht + Λ)−1 qt which, as we alluded to above, can as well be computed equivalently to
+GLA in chunkwise parallel form. Indeed, as shown in the previous section, the conjugate gradient
+method relies purely on simple vector additions and multiplications which can be trivially realized in
+chunkwise parallel form without extensive memory overhead, with the exception of (Ht + Λ)p. This
+operation suffers from the same memory problems as a naive GLA layer implementation as storing
+Ht for all time steps is costly which we therefore wish to circumvent. Fortunately, this can easily be
+done with the exact same chunkwise parallel trick just discussed, which we now leverage to compute
+t
+X
+(Ht + Λ)p = Ht p + Λ · p =
+ζti ki ki⊤ p + Λ · p.
+(41)
+i=1
+
+which is required in the conjugate gradient algorithm.
+Pt
+Note that the first term i=1 ζti ki ki⊤ p is in an equivalent form of GLA (by replacing vi with ki ) for
+which we just established that a fast chunkwise parallel formulation exist, if we again store only some
+intermediate states Hc . We conclude that the computation of qt∗ = (Ht + Λ)−1 qt and therefore the
+whole Mesa layer can be approximated by repeatedly applying a in chunkwise parallel computation
+leveraging matrix-matrix accelerators on GPUs or TPUs.
+Mesa layer backward pass: Let et be the error coming from future layers at time t and L be the
+final loss. Then we have the following:
+26
+
+Published as a conference paper at ICLR 2026
+
+e∗t = (Ht + Λ)−1 G⊤
+t et
+dL
+dot
+=
+et = e∗t
+dqt
+dqt
+dL
+dot
+∗ ∗
+=
+et = −qt,i
+et,i
+dΛt,i
+dΛt,i
+dot
+et = et ζts ks⊤ (Ht + Λ)−1 qt
+dvs
+X
+dL
+=
+ζts et qt∗⊤ ks
+dvs
+t≥s
+
+X
+dL
+∗ ∗⊤
+∗ ∗⊤
+=
+ζts (qt∗ e∗⊤
+t vs − e t q t k s − q t e t k s )
+dks
+t≥s
+
+X
+dL
+∗
+=
+ζts (qt∗⊤ Gs−1 et − e∗⊤
+t Hs−1 qt )
+dγs
+t≥s
+
+This is a time-reversed version of the formulas to compute the derivatives with respect to vs and
+dL
+dL
+ks . Note that dv
+and dk
+can again be computed in chunkwise parallel manner as they are sums
+s
+s
+of expressions which are all GLA formulation equivalent. e∗t is also chunkwise parallel compatible
+since, as we just established, running conjugate gradient (chunked) parallelized in time is possible.
+It remains to see how to quickly compute the derivatives with respect to γs . To that purpose, let us
+consider the first term in the equation defining the derivative, as the second can be handled similarly;
+X
+X
+we have that:
+ζts qt∗⊤ Gs−1 et =
+Tr[ζts qt∗⊤ Gs−1 et ] =
+t≥s
+
+t≥s
+
+=
+
+X
+
+Tr[Gs−1 ζts et qt∗⊤ ] =
+
+t≥s
+
+
+
+
+
+= Tr Gs−1
+
+X
+
+ζts et qt∗⊤ 
+
+t≥s
+
+This already gives a way to compute the derivatives that is linear in sequence length (as it is sufficient
+to accumulate the t-dependent part as s decreases). However, for maximum efficiency we would
+like to also split the computation into blocks and make use of matrix multiplication units for this
+computation.
+P
+Let Fs = t≥s ζts et qt∗⊤ . We now explain how to compute the value above simultaneously for a
+block of indices s = L + 1, . . . , U − 1.
+
+Gs−1 = GL ζs−1L +
+
+X
+
+ζs−1p vp kp⊤
+
+L<p<s
+
+X
+
+ζts et qt∗⊤ =
+
+t≥s
+
+
+Tr Gs−1
+
+ζts et qt∗⊤ + ζU s FU
+
+s≤t<U
+
+
+X
+
+X
+
+
+
+
+
+ζts et qt∗⊤  = Tr GL ζs−1L +
+
+X
+
+ζs−1p vp kp⊤  
+
+L<p<s
+
+t≥s
+
+
+X
+
+ζts et qt∗⊤ + ζU s FU  =
+
+s≤t<U
+
+
+
+
+X
+
+= Tr [GL FU ζU s ζs−1L ] + Tr GL ζs−1L
+
+ζts et qt∗⊤  +
+
+s≤t<U
+
+
++ Tr FU ζU s
+
+
+X
+
+
+
+ζs−1p vp kp⊤  + Tr 
+
+L<p<s
+
+
+X
+
+s≤t<U
+
+27
+
+ζts et qt∗⊤
+
+X
+L<p<s
+
+ζs−1p vp kp⊤  =
+
+Published as a conference paper at ICLR 2026
+
+= Tr [GL FU ] ζU s ζs−1L +
+
+X
+
+
+
+ζts ζs−1L Tr GL et qt∗⊤ +
+
+s≤t<U
+
+X
+
++
+
+X
+
+
+ζU s ζs−1p Tr FU vp kp⊤ +
+
+L<p<s
+
+X
+
+
+
+ζts ζs−1p Tr et qt∗⊤ vp kp⊤
+
+L<p<s s≤t<U
+
+For computing the last term, we can make use of the fact that ζab = 0 if a < b to rewrite it in the
+equivalent forms
+X X
+X X
+ζs−1p (qt∗⊤ vp )(kp⊤ et )ζts =
+ζs−1p (qt∗⊤ vp )(kp⊤ et )ζts
+L<p<s s≤t<U
+
+L<p<U L<t<U
+
+∗
+which can be computed as the product of the three matrices Z ∗ , Q, Z with Zij
+= ζi−1j , Qij =
+(qj∗⊤ vi )(ki⊤ ej ), Zij = ζij ; the requested values appear then as the main diagonal of this matrix.
+
+The second term can be similarly rewritten as
+X
+X
+ζs−1L
+(qt∗⊤ GL et )ζts = ζs−1L
+(qt∗⊤ GL et )ζts
+L<t<U
+
+s≤t<U
+
+which can be computed by multiplying the vector pt = qt∗⊤ GL et by the Z matrix defined above, and
+then by doing a point-wise vector multiplication by ζs−1L .
+Finally, the first term can be computed simply by computing the trace once and then doing a point-wise
+vector multiplication, and the third term can be computed as the second.
+
+E
+
+A F ULL D ESCRIPTION OF THE M ESA L AYER , R ELATED W ORK AND THE
+M ESA N ET
+
+For completion, we repeat the Mesa layer computation which is described throught the following
+equations
+∆emesa
+=
+t
+
+H
+X
+
+Ph Φ̂mesa
+h,t qh,t =
+
+h=1
+
+H
+X
+
+Ph Gh,t linsolve(Hh,t + Λh , qh,t ).
+
+(42)
+
+h=1
+
+The equation above depends on two state variables, Sh,t = {Gh,t , Hh,t }, which we obtain through
+the linear recurrence relations:
+⊤
+Gh,t = Gh,t−1 γh,t + vh,t kh,t
+βh,t ,
+
+⊤
+Hh,t = Hh,t−1 γh,t + kh,t kh,t
+βh,t ,
+
+(43)
+
+where as before γh,t ∈ [0, 1] is a forget gate and βh,t ∈ [0, 1] is a input gate, where we adopt the
+conjugate gradient method as the solver (Lanczos, 1950; Hestenes et al., 1952). Before the Mesa
+layer computation, we compute the keys, queries, values as well as input and forget strength in the
+following way.
+First, we normalize the embeddings with an RMS norm ei ← RMSNorm(ei ). After projections
+kt = Wk et , qt = Wq et , vt = Wk vt we convolve them in time with a window size of 4 e.g.
+P3
+kt ← i=0 kt−i bi+1 with learnable parameters b1 , . . . , b4 . Furthermore, after applying a SiLU(x) =
+x ∗ σ(x) non-linearity we normalize the keys and queries (but not values) to have L2-norm of 1 i.e.
+kt ← SiLU(kt )/||SiLU(kt )|| and qt ← SiLU(qt )/||SiLU(qt )||.
+For the forgetting and input gate we simply squeeze the RMS normed et projections through a
+sigmoid i.e. βt = σ(et Wβ ) and γt = σ(et Wγ ). After computing the output of every head, we apply
+a RMS norm i.e. the actual output of the Mesa layer amounts to
+
+∆emesa
+=
+t
+
+H
+X
+
+Ph RMSNormh (Gh,t linsolve(Hh,t + Λh , qh,t )).
+
+(44)
+
+h=1
+
+The regularization parameters are simply send through a softplus function to ensure positivity i.e.
+Λh ← softplus(Λh ). We did experiment with a input / time dependent regularization strength but
+in this work opted for a fixed lambda over time, see Section J
+28
+
+Published as a conference paper at ICLR 2026
+
+Comparison to related work: To ensure a 1-1 comparison with related work, we use the exact same
+parametrization of the keys, values and queries as well as forget and input strength parametrization for
+the GLA, Mamba2 and (gated) DeltaNet. Here, only the state update as well as output computation
+differ depending on the rule, see Table 1 for an overview. The mLSTM layers, which we also compare
+to, have a different parametrization of the forgetting as well as input strength and keys and quries are
+not normalized by their L2 norm, see Beck et al. (2024).
+Layer
+
+Memory
+
+Flops output & state update
+
+(vh,t′ , kt′ )tt′ =1 — 2na t
+
+O(na t) — O(1)
+
+ot = Φt qt with
+Φt = Φt−1 γt + βt vt ktT
+
+Φt — n2a
+
+O(n2a ) — O(n2a )
+
+DN
+
+ot = Φt qt with
+Φt = Φt−1 (yt (I − βt kt⊤ kt )) + βt vt⊤ kt
+
+Φt — n2a
+
+O(n2a ) — O(n2a )
+
+MESA
+
+Equation 7
+
+St = {Gt , Ht } — 2n2a
+
+O(n2a ) + O(kn2a ) — O(n2a )
+
+MHA
+GLMHA
+
+Output & state update
+P
+ot = tt′ =1 vt′ α(Kt⊤ qt )t′
+
+Table 5: Flops as well as state size comparison between MHA, gated linearized multi-head-attention
+(GLMHA) such as xLSTM or Mamba2, (gated) DeltaNet (DN) and the Mesa layer during inference. All
+softmax attention alternatives require O(n2a ) flops, with key size na , to compute the output as well as update the
+state(s). The Mesa layer requires an additional k steps of the CG method which costs O(kn2a ). For simplicity
+we assume nv = na .
+
+29
+
+Published as a conference paper at ICLR 2026
+
+E.1
+
+M ODEL DESIGN
+
+We give an overview over the network architecture for all models compared in this work in bullet
+points. The only difference is the way how to do the ”sequence” mixing of the keys, valyes and
+queries (and forget and input gates), with an exception of the LRU layer (De et al., 2024), see Table 1.
+• The model consists of an embedding layer of size ne , which is also shared at the end of
+the model to compute the logits. We do not apply regularization on the parameters of the
+embedding.
+• The model is then followed by N number of blocks consisting of a sequencing layer e.g.
+MHA, GLMHA, DN or Mesa, described in Section 2, followed by an MLP layer. The
+input of both the MLP as well as sequencing layer go through a RMSNorm (Zhang &
+Sennrich, 2019), see Figure 1. After computing the logits, we apply a soft hyperbolic
+tangent clip with c = 30 with logits = tanh(logits/c)c, again following the open source implementation of De et al. (2024), see https://github.com/google-deepmind/
+recurrentgemma/blob/main/recurrentgemma/jax/griffin.py.
+• To compare all different sequencing layers as closely as possible and focus on their ability
+to incorporate information from the context, MHA, GLA, Mamba2, xLSTM, the (gated)
+DeltaNet, as well as the Mesa all use the exact same key size and therefore the exact
+same amount of parameters to compute the queries, keys and values. All RNN layers, for
+direct comparison, additionally only use per head a one dimensional gate for forgetting
+as well as writing which we squeeze through a sigmoid function i.e. βt = σ(Wβ et ) and
+γt = σ(Wγ et ), except the mLSTM layer. This stands in some contrast to how the models
+were originally designed e.g. Gated Linear Attention (Yang et al., 2024a) or RWKV (Peng
+et al., 2023) use higher dimensional forget gates. Furthermore, all RNN layers convolve the
+keys and queries with a window size of 4. This is by now a standard feature of contemporary
+RNN/SSM architectures, motivated by earlier analyses (Arora et al., 2023a; Fu et al., 2023).
+Note that for all models, except from mLSTM which uses a special parameterization and
+normalization, we apply a SiLU (or swish) non-linearity (Hendrycks & Gimpel, 2023)
+before we normalize the keys and queries by their L2-norm. The output of each head is
+independently before the linear projection back to the residual stream send through an
+additional RMSNorm.
+• We define Mamba2 as forget-gated linearized multi-head attention following Yang et al.
+(2024c), and GLA as its forget- and input-gated counterpart; both methods with et -dependent
+gates.
+• When using the LRU layer (De et al., 2024), we notice that the layer, in its default hyperparameter configuration, subsumes more parameters than MHA and the other RNN
+alternatives, as they use exactly the same number of parameters to each other. We therefore
+decrease the hidden size multiplier which determines the increase of the RNN state when
+compared to the embedding size, to match parameter count.
+• The Hawk-Mesa model simply alternates between blocks that have either a LRU layer or a
+Mesa layer.
+• For the MLP layers we follow again De et al. (2024). We create two branches both with
+dimension of ne · 3, apply a SiLU non-linearity to one of the branches and merge them by
+multiplying. We then down project with a simple linear layer into ne dimension.
+• All weights are initialized by sampling them from a normal distribution and in ”fan in”
+mode, while scaling the variance of the weights which project back to the residual stream by
+2.0/N .
+
+F
+
+E XPERIMENTAL D ETAILS : M ESA N ET IN S YNTHETIC E NVIRONMENTS
+
+F.1
+
+MAD B ENCHMARK S UITE
+
+We follow the benchmarking procedure detailed in Poli et al. (2024) precisely: For each task in
+the suite, we evaluate the architectures on subtasks of varying difficulty (i.e. varying sequence
+length, number of training examples, vocabulary sizes and further, task-specific parameters) and
+30
+
+Published as a conference paper at ICLR 2026
+
+Hyper Parameter
+
+Search
+
+Embedding dimension
+Number of layers
+Number of heads
+Key size
+Epochs
+Batch size
+Optimizer
+Learning rate
+Weight decay
+βs
+Scheduler
+Minimum learning rate
+Warm-up start learning rate
+Warm-up steps
+
+128
+2
+8
+16
+200
+32
+AdamW
+[3e-3, 1e-3, 5e-4, 1e-4]
+[0.01, 0.1]
+(0.9, 0.98)
+Cosine Scheduler with Warmup
+1e-5
+1e-7
+750
+
+Table 6: MAD benchmark suite hyper-parameters, taken from Poli et al. (2024).
+
+Hyper Parameter
+
+Search
+
+Embedding dimension
+Number of layers
+Number of heads
+Epochs
+Batch size
+Optimizer
+Learning rate
+Weight decay
+βs
+Scheduler
+Minimum learning rate
+Warm-up start learning rate
+Warm-up steps
+
+[64, 128, 256, 512, 1024]
+[1, 2, 4, 8, 12]
+[1, 2, 4]
+50
+32
+AdamW
+[1e-4, 2.5e-4, 1e-3]
+[0.01, 0.1]
+(0.9, 0.99)
+Cosine Scheduler with Warmup
+2.5e-5
+1e-7
+25000
+
+Table 7: RegBench hyper-parameter search-space, taken from Akyürek et al. (2024). For all models, we keep
+the key size fixed to 128 across combinations of embedding dimension and number of heads.
+
+compute the mean accuracy. We further sweep over varying learning rates and weight decay values
+for each model and report the maximum average task accuracy. For each architecture, we fix a set of
+hyper-parameters that can be found in Table 6.
+F.2
+
+R EG B ENCH I N -C ONTEXT L ANGUAGE L EARNING B ENCHMARK
+
+Following Akyürek et al. (2024), we report the test-accuracy of the configuration obtained from a
+grid-search over a pre-defined set of shared hyper-parameters for all models, which can be found in
+Table 7.
+
+G
+
+E XPERIMENTAL DETAILS : M ESA N ET IN A L ANGUAGE W ORLD
+
+We follow closely the experimental setup of Beck et al. (2024) as well as De et al. (2024).
+G.1
+
+DATA
+
+We train models on SlimPajama Soboleva et al. (2023) and use the GPT-2 tokenizer Radford et al.
+(2018) which uses a vocab size of 50257, as in Beck et al. (2024). We pre-tokenize the dataset
+31
+
+Published as a conference paper at ICLR 2026
+
+and fill up sequences with context length shorter than the train length, which is set to 2048, with
+other randomly sampled sequences until the context train length is full. We separate these separate
+sequences with a BOS token. We follow the same recipe when creating the validation data. Note that
+this procedure might bias the training as well as evaluation of the model towards shorter sequences.
+We train on two dataset sizes: 15 billion and 50 billion tokens.
+G.2
+
+M ODEL DESIGN
+
+We give an overview over the network in bullet points.
+• The model consists of an embedding layer of size ne , which is also shared at the end of
+the model to compute the logits. We do not apply regularization on the parameters of the
+embedding. We follow again De et al. (2024) and initialize the parameters of
+√ the embedding
+matrix in ”fan in” mode but scale back the embedding during inference by ne leading to a
+variance of 1 in the residual stream.
+• The model is then followed by N number of blocks consisting of a sequencing layer e.g.
+MHA, GLMHA, DN or Mesa, described in Section 2, followed by an MLP layer. The input
+of both the MLP as well as sequencing layer go through a RMSNorm (Zhang & Sennrich,
+2019), see Figure 1. After computing the logits, we apply a soft hyperbolic tangent clip with
+c = 30 with logits = tanh(logits/c)c, again following De et al. (2024).
+• To compare all different sequencing layers as closely as possible and focus on their ability
+to incorporate information from the context, MHA, GLA, Mamba2, xLSTM, the (gated)
+DeltaNet, as well as the Mesa all use the exact same key size and therefore the exact same
+amount of parameters to compute the queries, keys and values. All RNN layers, for direct
+comparison, additionally only use per head a one dimensional gate for forgetting as well
+as writing which we squeeze through a sigmoid function i.e. βt = σ(Wβ et + bβ ), γt =
+σ(Wγt et + bγt ), except the mLSTM layer which has a more elaborate parametrization.
+This stands in some contrast to how the models were originally designed e.g. Gated Linear
+Attention (Yang et al., 2024a) or RWKV (Peng et al., 2023) use higher dimensional forget
+gates. Furthermore, all RNN layers convolve the keys and queries with a window size of
+4. Note that for all models, except from mLSTM which uses a special parameterization
+and normalization, we apply a SiLU (or swish) non-linearity (Hendrycks & Gimpel, 2023)
+before we normalize the keys and queries by their L2-norm. The output of each head is
+independently before the linear projection back to the residual stream send through an
+additional RMSNorm.
+• We define Mamba2 as non-gated linearized multi-head attention following Yang et al.
+(2024c) and GLA as its gated counterpart with et -dependent forget strength γt .
+• When using the LRU layer (De et al., 2024), we notice that the layer, in its default hyperparameter configuration, subsumes more parameters than MHA and the other RNN
+alternatives, as they use exactly the same number of parameters to each other. We therefore
+decrease the hidden size multiplier which determines the increase of the RNN state when
+compared to the embedding size, to match parameter count.
+• The Hawk-Mesa model simply alternates between blocks that have either a LRU layer or a
+Mesa layer.
+• For the MLP layers we follow again De et al. (2024). We create two branches both with
+dimension of 3ne , apply a SiLU non-linearity to one of the branches and merge them by
+multiplying. We then down project with a simple linear layer into ne dimension.
+• All weights are initialized by sampling them from a normal distribution and in ”fan in”
+mode, while scaling the variance of the weights which project back to the residual stream by
+2.0/N .
+G.3
+
+T RAINING DETAILS
+
+We train over all the models in this work with batch size of 256, the AdamW optimizer (Loshchilov
+& Hutter, 2019) with weight decay strength 0.1, ϵ = 1 × 10−8 , β1 = 0.9, β2 = 0.98, and a cosine
+learning rate scheduler with initial learning rate 1 × 10−6 , warmup steps of 2000 and a peak learning
+32
+
+Published as a conference paper at ICLR 2026
+
+Model size
+
+Train size
+
+Small
+Small
+Medium
+Medium
+Large
+Large
+
+15
+50
+15
+50
+15
+50
+
+Transformer
+
+Mamba2
+
+GLA
+
+xLSTM
+
+DeltaNet
+
+Gated DeltaNet
+
+Hawk
+
+Hawk-Mesa
+
+Mesa
+
+0.0025
+0.003
+0.0015
+0.001
+0.002
+0.0008
+
+0.003
+0.001
+0.0025
+0.001
+0.002
+0.0009
+
+0.002
+0.001
+0.0025
+0.00095
+0.002
+0.00085
+
+0.0025
+0.001
+0.003
+0.0009
+0.0015
+0.0008
+
+0.003
+0.001
+0.003
+0.00085
+0.0015
+0.0008
+
+0.001
+0.001
+0.0025
+0.00095
+0.002
+0.0009
+
+0.002
+0.001
+0.0025
+0.0009
+0.002
+0.0009
+
+0.0025
+0.001
+0.002
+0.0009
+0.002
+0.00085
+
+0.003
+0.00095
+0.0025
+0.001
+0.002
+0.00085
+
+Table 8: Peak learning rate for all models trained for this work determined by a learning rate grid scan.
+
+rate of l which is scanned for each experiment, see below. We cosine decay the learning rate to
+10% of the peak learning rate till the end of the training determined by the train set size. We use as
+loss the classic cross entropy on the next token; we do not compute the loss on the BOS token. We
+apply gradient norm clipping to norm 1. We apply mixed precision training where the weights are
+float32 but activations are bfloat16 following Beck et al. (2024). Interestingly, we find that
+this actually improves next token perplexity slightly compared to using float32 everywhere.
+G.4
+
+H YPERPARAMETER SCANS
+
+We train 3 model sizes: 140 million, 440 million and 940 million parameters following roughly
+Beck et al. (2024). As already mentioned, all architectures have by construction almost exactly the
+same number of parameters for the same architectrual dimensions. All recurrent neural network
+types have the same parameters as multi-head attention but additionally have two parameter vectors
+of size na which produce the two gates per head. The Mesa layer has additionally na (fixed in
+time) parameters for (meta-)learned Λ regularization. Since the parametrization of the LRU layer is
+different by construction, we simply adjust the hidden size scaling to 1.25 to match the parameters
+of the other RNN layers. The 3 different model sizes use key size na = 128 and otherwise are setup
+as follows:
+• 140 million — Small: N = 14 blocks, h = 6 heads, embedding dimension ne = 768.
+• 440 million — Medium : N = 28 blocks, h = 8 heads, embedding dimension ne = 1024.
+• 940 million — Large : N = 28 blocks, h = 12 heads, embedding dimension ne = 1536.
+The exact number of parameters and peak learning rate can be found in Table 8. For all models, we
+scan the same range of learning rates: for models trained for 15 billion tokens we scanned {0.003,
+0.0025, 0.002, 0.001, 0.0015}, and for models trained for 50 billion tokens, we observe, similar to
+Beck et al. (2024), that smaller learning rates were beneficial and thus scan {0.001, 0.00095, 0.0009,
+0.0085, 0.0008}. We train all sliding window attention (SWA) models, as they are only reference
+points, with learning rate 0.001.
+G.5
+
+N OTES ON PRECISION USED IN THE CG- SOLVER , M ESA LAYER DESIGN CONSIDERATIONS
+OR Why you shouldn’t scream at your Mesa layer
+
+The MesaNet, for the model sizes we consider for the language experiments, solves during training
+millions of linear systems of equations numerically in one forward pass. Somewhat surprisingly,
+we did not encounter many training instabilities when setting some crucial hyperparameters and
+architectural details accordingly. First, we follow related work and normalize keys and queries - this
+is a crucial first step to stabilize the Mesa layer. Second, the most important hyperparameter for the
+Mesa layer, which strongly influences the conditioning number and therefore the number of CG steps
+needed to solve the linear systems, is the regularization strength Λ. Due to experimentation when
+training small models, we initialized Λ = I but restricted its values to be lower-bounded by 0.25. We
+hypothesize that this lower bound is important to, implicitly, upper bound the condition number. We
+determined the Λ lower bound by a grid scan when training the medium sized model on 15B tokens.
+See Figure O for some Λ values of a trained model. We parameterize Λ through a softplus function
+i.e. Λ = 0.25 + softplus(Λ) and adjusted the initialization of the Λ parameter accordingly.
+When training on SlimPajama and using the GPT-2 tokenizer, we noticed that the dataset, especially
+the sequences which contain code, contains sequences which consist of many repeated tokens such as
+the empty token ” ”. We call this ”screaming at your language model”. These kind of inputs to the
+33
+
+Published as a conference paper at ICLR 2026
+
+T
+Mesa layer lead to a matrix Hh,t = Kh,t Kh,t
+which contains sums of the same vector outer product
+which we analysed leads to instabilities when γt ≈ 1. We therefore upper-bound γt by bγ = 0.9975
+(which might be train length specific) and adjust its value depending the input strength βt : when
+training on SlimPajama, we use γt = γt sγt with sγt = (1 − (1 − bγ )βt2 ). Note that other tokenizers
+which merge repeated ” ” should solve this problem partially. This correction improves perplexity in
+scans on small models and so we adopted it throughout our experiments.
+
+A final comment on the precision of the CG solver: The opted to use FP32 matrix multiplication
+precision inside the CG solver solely within our Pallas kernel. Note that we used BF16 everywhere
+else to compare other RNN and transformer models with our MesaNet fairly. This reduces memory
+loading times as we only load data with BF16 precision, compute q∗ in our solver with FP32 precision,
+and cast it down in our solver to FB16.
+Although we did not investigate in depth FP16 or BF16 precision within the CG solver for which
+convergence problems are well known, we found the training times when using FP32 acceptable. We
+leave this important investigation for future work.
+We end here with a note of caution when using these lower precisions on GPUs as more work might
+be needed to ensure stable convergence to the approximate solution of the linear solver.
+G.6
+
+E XPERIMENTS COMPUTE RESOURCES
+
+We provide here an estimate of the compute resources used for a single run of a 1B model. We note
+that transformers, MesaNets and other RNNs were of somewhat comparable speed on average and
+so estimate compute by averaging and not differentiating costs across models. We mostly relied on
+TPUv5 to conduct our experiment. Here we used multi-pod TPUv5s which fit the whole models,
+without model sharding, and therefore were able to rely solely on batch sharding. For the 1B models,
+one training run, with sparse intermediate evaluation, when training on 50B tokens lasted around 36
+hours on average. When training on smaller models, the train time significantly dropped. All Mesa
+layer investigations were done on the 400million scale when training on 15B tokens resulting in
+train runs which last 3-12 hours depending on the amount of CG steps used and data parallelization
+applied.
+Running our evaluation pipeline for all downstream benchmarks took on average 3 hours on the same
+hardware, although we note that we did not optimize this pipeline for run time.
+G.7
+
+T OKEN THROUGHPUT COMPARISONS OF RECURRENT MODELS FOR 1B MODELS
+
+We report in Figure 6 the throughput (in tokens / second) of the 1B MesaNet (for different fixed
+CG steps), Gated DeltaNet, Gated Linear Attention, as well as standard (global softmax-attention)
+Transformers. The MesaNet performs competitively, especially with a fixed number of 10 CG steps.
+We note that 10 CG steps are sufficient to obtain the superior MesaNet results reported in the main
+text. Gated linear attention, due to the limited flops and matrix multiplications needed to perform a
+forward pass, reaches significantly higher throughput than all other models. As expected, transformer
+throughput degrades with increasing sequence length.
+
+H
+
+T HE O RIGINAL R ECURSIVE L EAST-S QUARES M ESA L AYER
+
+We now review the original version of the Mesa layer (Von Oswald et al., 2024), where Φ̂mesa
+t
+was determined through the classical recursive least-squares algorithm. The key observation is
+
+
+−1
+Pt
+Pt
+⊤
+⊤
+′
+′
+that Φ̂mesa
+= Vt Kt⊤ Rt−1 =
+, and that one can calculate the
+t
+t′ =1 vt kt′
+t′ =1 kt kt′ + Λ
+inverse Rt−1 recursively through the Sherman-Morrison formula (Sherman & Morrison, 1950; Gauss,
+−1
+1821), Rt−1 = Rt−1
+−
+
+−1
+−1
+Rt−1
+kt kt⊤ Rt−1
+−1
+1+kt⊤ Rt−1
+kt
+
+, with R0−1 = Λ−1 . While efficient for sequential inference,
+
+this solution is problematic for two reasons. First, when introducing time-dependent forget gates
+γt ∈ [0, 1] which scale the previous state, i.e., (Rt−1 γt + kt kt⊤ )−1 , the matrix inversion for small γt
+−1 1
+can introduce numerical instabilities as Rt−1
+γt can grow unbounded. Moreover, note that this Mesa
+layer version forgets the regularization term Λ exponentially fast, as it only enters through the initial
+34
+
+Published as a conference paper at ICLR 2026
+
+Length: 512
+
+Throughput tokens/sec
+
+104
+
+Throughput tokens/sec
+
+Batch Size: 8
+
+212
+211
+
+Attention
+
+103
+21
+
+23
+
+25
+
+Batch Size
+
+Transformer
+Mesa-10
+Mesa-20
+Mesa-30
+Gated DeltaNet
+Gated Linear Attention
+27
+29
+
+210
+
+Attention
+
+29
+28
+27
+
+Transformer
+Mesa-10
+Mesa-20
+Mesa-30
+Gated DeltaNet
+Gated Linear Attention
+28
+29
+210
+
+211
+
+Length
+
+212
+
+213
+
+214
+
+215
+
+Figure 6: 1B model throughput (tokens / sec) with bfloat16 activation and float32 weight precision
+on a H100 GPU (top row) using the open source framework of https://github.com/fla-org/
+flash-linear-attention or our custom TPUv5 implementation (bottom row). We show the effect
+of scaling the batch size (left), while fixing the generation length, or scaling the generation length, while fixing
+the batch size on the token throughput / sec. For this experiment, we averaged over 5 iterations to reduce noise.
+On both hardware systems, we see that 1) MesaNet and Gated DeltaNet perform competitive despite MesaNet
+consuming significantly more flops, 2) Gated Linear Attention outperforming other layers significantly as well
+as 3) the throughput of the Transformer degrading with larger batchsize and especially sequence length. We
+chose sequence length for left panels and batch size for the right panels small enough, such that the (global
+softmax) Transformer does not run out of memory for the H100. On the TPUv5 and the left configuration, the
+Transformer is running out of memory for the largest batchsize.
+
+.
+
+21.37
+29.10
+
+0
+
+Reasoning
+(Local, 0-shot)
+
+44.13
+44.79
+45.03
+45.02
+
+43.62
+45.25
+45.09
+45.03
+20
+40
+Accuracy
+
+0
+
+49.91
+50.39
+50.40
+50.46
+37.50
+47.65
+50.00
+50.42
+50.54
+50.49
+20
+40
+Accuracy
+
+In-Context Recall
+39.76
+41.97
+41.96
+42.06
+
+0
+
+33.46
+41.96
+41.76
+41.79
+20
+40
+Accuracy
+
+=3e-2
+=1e-2
+
+=1e-3
+=1e-4
+
+=1e-5
+CG=4
+
+CG=5
+CG=6
+
+1e-4
+
+CG=7
+CG=10
+
+0.06
+0.04
+
+# Avg. CG Steps
+
+Reasoning
+(Global, 0-shot)
+
+Mean-so-far NLL
+to CG=30
+
+=1e-2
+=1e-3
+=1e-4
+=1e-5
+CG=0
+CG=1
+CG=5
+CG=10
+CG=20
+CG=30
+
+0
+
+0.02
+0.00
+0
+
+2k 4k
+Seq. Length
+
+8k
+
+-1e-4
+
+0
+
+2k 4k
+Seq. Length
+
+8k
+
+CG=20
+CG=30
+
+10
+8
+6
+4
+0 2k4k 8k
+Seq. Length
+
+Figure 7: Effect of Number of Conjugate Gradient (CG) Steps on SlimPajama Perplexity within and
+beyond train context length. We show here the effect of reducing the number of CG steps during inference on
+token perplexity across token position of a 1B MesaNet trained on 50B tokens. We either use a fixed number CG
+steps uniformly across the model or apply a dynamic stopping criterion ϵ > 0.
+
+35
+
+Published as a conference paper at ICLR 2026
+
+state R0−1 . Second, we are not aware of a way of computing Rt−1 in a parallel-in-time fashion. This
+precludes efficient parallel training at scale in current hardware.
+The Mesa layer as a second-order in-context learning method. As reviewed in Sections 2 and A,
+the closely related DeltaNet model (Schlag et al., 2021a) updates a matrix-valued state variable
+Φ ∈ Rnv ×na following online gradient descent on a squared error loss. Omitting the head index, the
+dynamics of this layer reads
+Φt = Φt−1 − βt ∇ltsq-err (Φt−1 ) = Φt−1 + βt (vt − Φt−1 kt )kt⊤ .
+
+(45)
+
+To make comparison with this layer easier, we now express the Mesa layer (equation 4) in a similar
+recurrent form. We assume that we are in the case where the Sherman-Morrison recursion explained
+−1
+above holds, so that we can write Ht−1 as a function of Ht−1
+. This requires that forgetting is disabled
+(∀t γt = 1), or that the regularizer Λ decays exponentially with time. For simplicity, we assume in
+what follows that there is no forgetting. Then, using the convention that H0 = Λ, we have that
+Φt = Gt Ht−1
+
+(46)
+
+= (Gt−1 + vt kt⊤ )Ht−1
+= (Φt−1 Ht−1 + vt kt⊤ )Ht−1
+
+= Φt−1 Ht − kt kt⊤ Ht−1 + vt kt⊤ Ht−1
+= Φt−1 − Φt−1 kt kt⊤ Ht−1 + vt kt⊤ Ht−1
+= Φt−1 − (Φt−1 kt − vt )kt⊤ Ht−1
+= Φt−1 − ∇2ϕϕ Lt (Φt−1 )−1 ∇Φ ltsq-err (Φt−1 ),
+
+(47)
+(48)
+(49)
+(50)
+(51)
+(52)
+
+recalling that Lt is the cumulative regularized loss (equation 4) and ltsq-err = ∥vt2 − Φkt ∥2 . To go
+−1
+from equations 47 to 48, we used the fact that Φt−1 = Gt−1 Ht−1
+. From equations 48 to 49, we used
+−1
+−1
+⊤
+the identity Ht−1 Ht = (Ht − kt kt )Ht .
+Thus, while the DeltaNet and related layers perform (first-order) online gradient descent on a squared
+error loss, the Mesa layer implements instead an online (second-order) Newton descent algorithm.
+
+A P RELIMINARY I NVESTIGATION INTO S TATE T RACKING WITH THE M ESA
+L AYER
+
+Train loss
+
+1.5
+
+t
+t
+
+(0, 1)
+( 1, 1)
+
+Test Accuracy
+
+I
+
+0.5
+0.0
+
+64
+128
+192
+Train samples (x104)
+
+256
+
+1.0
+0.9
+0.8
+0.7
+0.6
+0.5
+
+( 1, 1)
+(0, 1)
+Train length
+Random guessing
+t
+t
+
+40 64
+128
+192
+Sequence length
+
+256
+
+Figure 8: Negative γt and high Λ allow MesaNets to solve parity: When using γt ∈ (−1, 1) as well as
+enforce high Λ, we enforce the MesaNet into functionality close to GLA as qt∗ = qt which allows us to use
+MesaNet with γt ∈ (−1, 1) which naive applied does not lead to a well-defined mesa-optimization problem.
+
+Recent work has investigated the (missing) state-tracking ability of transformers, modern state space
+models and linearized transformer RNN models, see e.g. (Merrill et al., 2025). It remains an active
+research direction to study under which circumstances these in-time parallelizable RNN models can
+better track state than transformers (Merrill & Sabharwal, 2024; Li et al., 2024).
+One simple architecture change proposed in Sarrof et al. (2024); Grazzi et al. (2025) which allows
+layers such as Mamba, GLA or gated DeltaNet to solve certain state tracking tasks is to use forget
+strength γt ∈ (−1, 1) instead of γt ∈ (0, 1). We highlight that this change naively is not possible
+36
+
+Published as a conference paper at ICLR 2026
+
+to incorporate into the Mesa layer. Indeed, γt ∈ (−1, 1) could violate the positive definiteness
+of (Ht−1 γt + kt kt⊤ + Λ) leading to a potentially ill-defined linear system of equations problem.
+The Mesa layer is equivalent to GLA if qt∗ = qt which can be enforced by setting Λ to very large
+values such that (Ht + Λ)−1 ≈ Λ−1 and rescaling qt by Λ. Although undesirably from an online
+learning perspective, high Λ should lead to (Ht−1 γt + kt kt⊤ + Λ) rendering positive definite even
+if γt ∈ (−1, 1) leading to state tracking capabilities as observed in Grazzi et al. (2025) for models
+such as Mamba or DeltaNet with γt ∈ (−1, 1). We show first state tracking results for MesaNets
+with γt ∈ (−1, 1) or γt ∈ (0, 1) while initializing Λ = 50 · I and restricting its lower value to 49.
+These values are chosen by hand, generally a wide range of (large) Λ actually gave us the same
+results. When now learning parity, see Figure 8, MesaNets, as hypothesized, start solving parity
+with perfect accuracy when endowed with γt ∈ (−1, 1), similar to results presented for Mamba
+and gated DeltaNet in Grazzi et al. (2025) when using γt ∈ (−1, 1). Although this parametrization
+showcases the flexibility of the Mesa layer encompassing the capacity of GLA (and similar layers
+such as Mamba and mLSTM) by enforcing high regularization, we stress that this solution is in our
+opinion rather a bug than a feature. This is because we actually wish to utilize the extra flops spend
+to compute qt∗ . We leave investigating how the MesaNet could track state while not falling back to
+GLA functionally for future work.
+Experimental details. We train a MesaNet with 2 layers, an embedding dimension of 128, and
+4 heads per sequence mixing module (each head with dimension 128) amounting to roughly 1M
+parameters. For training we sample bitstrings on the fly and compute the respective ground truth parity
+scores at each sequence position. We then train the model to predict the parity score at each position
+in the sequence. During training bitstrings are restricted to a length of 40. In a final evaluation, we
+test the trained model on sequences up to length 256. We train on a batch size of 256 and train in the
+infinite data regime sampling a total of 10000 batches. We use a weight decay of 0.03 and a learning
+rate of 0.001. To obtain the results displayed in Figure 8 we initialize Λ = 50 and lower bound
+it to 49 and train once with positive eigenvalues only (γt ∈ (0, 1)) and once allowing for negative
+eigenvalues (γt ∈ (−1, 1)).
+
+J
+
+F URTHER D ISCUSSION P OINTS
+
+We list here some additional discussion points which we couldn’t place in the main text because of
+space constraints
+• Backpropagation through the conjugate gradient method: Currently, we are computing
+the gradient through the Mesa layer assuming that we have approximated qt∗ numerically
+well. We believe this current version is a shortcoming of the Mesa layer and speculate that it
+is actually feasible to train the MesaNet to cope better with fewer steps (and not approximate
+qt∗ as well). For this we would use a stochastic number of CG steps during training, ranging
+for example from 0 to 30, and backpropagate through the unrolled process, potentially
+obtaining a model which is trained to be behave ”optimally” given a certain number of
+CG steps. This would allow for an even better dynamic test-time compute allocation of
+the MesaNet during inference as users could flexibly decide to spend more compute for
+a better model. Interestingly, one could additionally condition (e.g. with a set of BOS
+token indicating the number of CG steps used during the forward pass) the models forward
+computation and therefore allow the model to learn to adjust its representation at every layer
+dependent on the CG steps used in the Mesa layers. We speculate that we therefore would
+obtain a MesaNet which behaves on par with e.g. GLA, Mamba or xLSTM with 0 CG steps
+and outperforms these RNNs when allocating more CG steps.
+• Architecture considerations: We decided to benchmark related work while using the
+common transformer backbone allowing for a direct 1-1 comparison between all models.
+This architecture is extremely widespread and has the advantage to allow for a direct usage
+of Mixture-of-Experts Shazeer et al. (2017) layers. xLSTM and Mamba, see e.g. Beck
+et al. (2024), use a different backbone which notably merges the MLP layer and the RNN
+layer in one while matching parameter count. This architecture change leads to overall
+better perplexity but question if the particular RNN layer or the architecture change, or its
+combination offers better results. We leave an investigation of a fair comparison of the
+Mesa layer and other related work when changing the architecture backbone for future
+37
+
+Published as a conference paper at ICLR 2026
+
+work. Generally, we acknowledge that it is unclear if these architecture changes address the
+shortcomings of RNNs, which we show in the evaluation section, namely to incorporate
+sequential long range information. We are excited to study the influence of the backbone
+when optimizing for incorporating long-range understanding and not perplexity.
+• Learning fast matrix inversion algorithms from data: To obtain (Ht +Λ)−1 qt we decided
+to use the well known and powerful conjugate gradient method. While this algorithm is
+widespread, we hypothesis that learning a neural network to solve (Ht + Λ)−1 qt directly or
+adjusting the CG method by learned parameterization, could lead to significant speed ups.
+We generally find extending well-known algorithms with the help of deep learning or using
+them as building blocks of deep neural networks an exciting research direction (von Oswald
+et al., 2023; 2025; Vladymyrov et al., 2024).
+• Mesa layer to model sequences outside the language domain: We speculate that the
+Mesa layer is a promising layer for sequence modeling of continuous data, where in-context
+generalization and not memory is the driving factor of improving next token prediction.
+Therefore the Mesa layer might excel in domains which require some form of in-context
+(control or reinforcement learning) algorithm distillation (Laskin et al., 2023).
+• The fundamental limit of RNNs with finite memory: (Modern) RNNs do have a finite
+amount of state which they can use to save information for future access. This has two
+interconnected, intermediate shortcomings when comparing to softmax: The interpretation
+and the relevance of certain information in a sentence can drastically change even at the last
+token. Since softmax stores all information of the past (all input text and its representations
+in all layers), it can recall information relevant to the current query (for example, a particular
+question about the text. RNNs need to anticipate when processing information which needs
+saving such that it can be accessed later on.
+
+38
+
+Published as a conference paper at ICLR 2026
+
+K
+
+M ESA N ET T RAINED IN S YNTHETIC E NVIRONMENTS
+
+We evaluate the token manipulation and in-context learning capabilities by training and evaluating
+MesaNets on two purely synthetic benchmarks: (i) Mechanistic Architecture Design (MAD) (Poli
+et al., 2024) and (ii) RegBench (Akyürek et al., 2024). For MAD, we train 2-layer models and sweep
+over a range of optimization hyperparameters for each task. For RegBench, we follow Akyürek et al.
+(2024) and sweep over a larger grid of hyperparameters for each task, including number of layers and
+heads, see Appendix F.
+MesaNet excels at the MAD benchmark. MAD comprises a suite of recall, memorization, compression, and copying tasks. As shown in Table 9, the MesaNet achieves the highest average performance,
+outperforming all linear recurrent architectures and matching the performance of transformers. These
+strong results demonstrate the MesaNet’s efficacy in managing its fixed-size recurrent state to store
+and retrieve necessary information across diverse manipulation challenges.
+MesaNet and Transformers perform on par on the RegBench. This benchmark requires models to
+infer the underlying grammar of pseudo-languages, defined by probabilistic finite automata (PFAs),
+solely from context sequences. At test time, this in-context learning capability is tested on token
+sequences generated with held-out PFAs. Again, the MesaNet surpasses other RNN models and
+matches transformers, demonstrating its capability to infer rules at test time (Figure 9).
+
+Mamba2
+GLA
+xLSTM
+DeltaNet
+Gated DeltaNet
+Hawk
+MesaNet
+Hawk-MesaNet
+Transformer
+
+IC & Noisy
+Recall
+100
+100
+100
+100
+100
+93.0
+100
+100
+100
+
+Fuzzy
+Recall
+51.2
+39.0
+47.6
+55.5
+32.7
+13.6
+58.5
+30.2
+48.6
+
+Memorize
+Train Data
+42.0
+82.5
+79.8
+40.8
+81.7
+91.3
+77.2
+85.6
+84.7
+
+Selective
+Copy
+95.4
+96.1
+95.4
+98.8
+95.7
+77.0
+99.2
+99.6
+96.0
+
+Compress
+
+Avg.
+
+41.3
+42.3
+43.4
+43.3
+45.0
+47.7
+45.4
+52.3
+49.5
+
+66.0
+72.0
+73.2
+67.7
+71.0
+64.5
+76.1
+73.5
+75.8
+
+Table 9: Performance (% Accuracy ↑) on the MAD bench- Figure 9: Performance on RegBench (Akyürek
+mark (Poli et al., 2024). The MesaNet performs strongly et al., 2024). MesaNet outperforms other linear
+compared to other RNNs and matches the transformer.
+architectures and closes the gap to transformers.
+
+L
+
+E XTENDED R ESULTS IN L ANGUAGE E NVIRONMENT
+
+L.1
+
+L ANGUAGE M ODELLING / P ERPLEXITY A NALYSES
+
+The common approach to measure language modeling performance on a set of sequences S =
+{s1 , . . . , sN } is perplexity (PPL), which is defined as the exponential of the average negative loglikelihood per token (Jelinek et al., 1977; Brown et al., 2020b; Biderman et al., 2024):
+|S| |sj |
+X
+X
+
+1
+
+NLL = − P|S|
+
+j=1 |sj | j=1 i=1
+
+log P (sj,i |sj,1 , . . . , sj,i−1 )
+
+(53)
+
+PPL = exp [NLL]
+where |S| is the number of sequences, sj is the j’th sequence in S and sj,i is the i’th token in the
+sequence sj . However, all tokens are weighted equally in these metrics, independent of their token
+position. This is especially critical, as the magnitudes of the log-likelihood scores tend to be quite
+different for early and late tokens in a sequence. As a consequence, interesting differences between
+models might be masked in these aggregated metrics, especially when comparing different model
+families with different inductive biases. Therefore, one needs to condition on the sequence position
+to pinpoint qualitative model differences in a quantitative manner.
+Mean-so-far {NLL, PPL}. To investigate whether models exhibit different language modelling
+capabilities at different sequence depths k, we therefore assess mean-so-far NLL and PPL:
+Mean-so-far-NLL:k = − P|S|
+
+|S| min(|sj |,k)
+X
+X
+
+1
+
+j=1 min(|sj |, k) j=1
+
+i=1
+
+Mean-so-far-PPL:k = exp [Mean-so-far-NLL:k ]
+39
+
+log P (sj,i |sj,1 , . . . , sj,i−1 )
+
+(54)
+
+Published as a conference paper at ICLR 2026
+
+Intuitively, these metrics can be interpreted as how well are sequences modeled up to length k.
+While these metrics give a more granular picture of the loss behavior dependent on sequence length,
+they still mask important transition points due to the cumulative aggregation up to position k. For
+instance, the mean-so-far NLL could still be decreasing for higher k (decreasing slope), despite the
+token-position-dependent NLL may have already plateaued or increased (Lin et al., 2025).
+Token-Position-Dependent NLL. Consequently, we follow (Lin et al., 2025) and assess the average
+negative log-likelihood conditional on the token-position k (for which only sum over sequences with
+|sj | ≥ k):
+|S|
+
+1 X
+log P (sj,k |sj,1 , . . . , sj,k−1 ).
+NLLk = −
+|S| j=1
+
+(55)
+
+Difference in Token-Position-Dependent NLL Relative to a multi-head-attention transformer.
+As the field’s main interest is to improve upon the current state-of-the-art transformer architecture,
+we investigate the difference in token-position-dependent NLL with respect to a transformer (MHA):
+∆NLLmodel
+= NLLmodel
+− NLLMHA
+,
+k
+k
+k
+
+(56)
+
+where a negative ∆NLLmodel
+means superior language modelling ability at position k relative to a
+k
+
+transformer as the model’s loss is lower. The same difference can be formulated for the mean-so-far
+metrics. Certainly, such a relative metric requires a well-tuned transformer baseline.
+L.1.1
+
+W ITHIN T RAIN C ONTEXT-L ENGTH
+
+Here, we expand upon the results shown in Section 4.1 and present within-train-context-length
+language modelling evaluations on all evaluated pairs of model sizes (i.e., 145M, 400M and 1B
+parameters) and number of training tokens (15B and 50B tokens).
+PPL. We present the PPL scores on the five evaluated datasets in Table 10. Across all model sizes
+and number of training tokens, Hawk-MesaNet exhibits the best PPL performance on the majority of
+benchmarks among the recurrent models, closely followed by MesaNet. Notably, Hawk-Mesa and
+Mesa match or exceed the transformer baseline with respect to PPL on the majority of benchmarks
+on all model sizes. Furthermore, one can clearly observe the impact of the attention window size on
+PPL based on our SWA baselines. PPL is decreasing with an increasing window size in all settings.
+Notably, SWA-1024 reaches competitive performance with the majority of recurrent models, i.e.
+Hawk, Mamba2, GLA, xLSTM and DeltaNet.
+Conditioning on the Sequence Position. As indicated in the metrics description, and shown in
+Section 4.1, uniformly averaging over all tokens in the PPL computation, independent of a token’s
+depth in a sequence, may masquerade important qualitative difference between models. Therefore,
+we condition on the token position and investigate the difference in token-position-dependent NLL
+relative to a multi-head-attention transformer NLLmodel
+. As shown in Figure 10, most recurrent models
+k
+demonstrate superior language modelling abilities early in a sequence relative to the transformer
+baseline. However, beyond a certain token position, transformers surpass the performance of all
+recurrent models.
+• Which model performs strongest early in the sequence? Notably, MesaNet and Hawk-MesaNet
+exhibit the strong performance early-in-the-sequence tokens except Hawk. However, while Hawk
+exhibits the best performance up to a certain depth, the model exhibits a sharp performance decline
+after that and falls behind most models. See Figure 11 for a clearer visualization (equivalent to
+Figure 10, but token-position in log-scale).
+• Which model offers superior performance to a transformer “for the longest”? While Hawk
+losses its advantage the earliest, Hawk-MesaNet extends the performance advantage to the largest
+token depths, closely followed by MesaNet.
+For completeness, we also show the mean-so-far NLL difference ∆Mean-so-far-NLLmodel
+rela:k
+tive to a Transformer in Figure 12. However, as indicated, the cummulative aggregation in the metric
+skews the important token depth transition point where a transformer surpasses the recurrent models
+in terms of language modeling.
+
+40
+
+Published as a conference paper at ICLR 2026
+
+15B Token:
+
+NLL Difference to MHA
+
+50B Token:
+
+0.075
+0.050
+0.025
+0.000
+0.025
+0.050
+0.075
+
+NLL Difference to MHA
+
+HAWK
+GLA
+
+0.075
+0.050
+0.025
+0.000
+0.025
+0.050
+0.075
+
+64
+
+MAMBA2
+XLSTM
+
+145M Models:
+
+512
+
+64
+
+DELTANET
+GATED-DELTANET
+
+512
+
+1024
+
+2048
+
+1024
+
+2048
+
+Token Position
+
+0.075
+0.050
+0.025
+0.000
+0.025
+0.050
+0.075
+0.075
+0.050
+0.025
+0.000
+0.025
+0.050
+0.075
+
+MESA
+HAWK-MESA
+
+MHA-SWA-4
+MHA-SWA-64
+
+400M Models:
+
+64
+
+512
+
+64
+
+512
+
+1024
+
+2048
+
+1024
+
+2048
+
+Token Position
+
+MHA-SWA-256
+MHA-SWA-1024
+0.075
+0.050
+0.025
+0.000
+0.025
+0.050
+0.075
+0.075
+0.050
+0.025
+0.000
+0.025
+0.050
+0.075
+
+MHA
+
+1B Models:
+
+64
+
+512
+
+1024
+
+2048
+
+64
+
+512
+
+1024
+
+2048
+
+Token Position
+
+Figure 10: NLL Difference (per token-position) ∆NLLmodel
+relative to a Transformer on SlimPajama
+k
+Validaton Dataset. Most recurrent models demonstrate superior language modelling abilities early in a sequence
+relative to the transformer baseline, across all settings. However, beyond a certain token position, transformers
+surpass the performance of all recurrent models.
+
+15B Token:
+
+NLL Difference to MHA
+
+50B Token:
+
+0.075
+0.050
+0.025
+0.000
+0.025
+0.050
+0.075
+
+NLL Difference to MHA
+
+HAWK
+GLA
+
+0.075
+0.050
+0.025
+0.000
+0.025
+0.050
+0.075
+
+MAMBA2
+XLSTM
+
+145M Models:
+
+23
+
+21
+
+23
+
+21
+
+DELTANET
+GATED-DELTANET
+
+25
+
+25
+
+27
+
+27
+
+Token Position
+
+29
+
+29
+
+211
+
+211
+
+MESA
+HAWK-MESA
+
+MHA-SWA-4
+MHA-SWA-64
+
+400M Models:
+
+0.075
+0.050
+0.025
+0.000
+0.025
+0.050
+0.075
+
+21
+
+0.075
+0.050
+0.025
+0.000
+0.025
+0.050
+0.075
+
+21
+
+23
+
+23
+
+25
+
+25
+
+29
+
+27
+
+27
+
+Token Position
+
+29
+
+211
+
+211
+
+MHA-SWA-256
+MHA-SWA-1024
+0.075
+0.050
+0.025
+0.000
+0.025
+0.050
+0.075
+0.075
+0.050
+0.025
+0.000
+0.025
+0.050
+0.075
+
+MHA
+
+1B Models:
+
+21
+
+23
+
+25
+
+27
+
+29
+
+211
+
+21
+
+23
+
+25
+
+27
+
+29
+
+211
+
+Token Position
+
+Figure 11: NLL Difference (per token-position) ∆NLLmodel
+relative to a Transformer on SlimPajama
+k
+Validaton Dataset in log-scale. MesaNet and Hawk-MesaNet exhibit the strong language modeling performance
+early-in-the-sequence tokens except Hawk. While Hawk exhibits the best performance up to a certain depth, the
+model exhibits a sharp performance decline relatively early in the seq. depth.
+
+15B Token:
+
+Mean-so-far NLL
+Difference to MHA
+
+HAWK
+GLA
+
+50B Token:
+
+DELTANET
+GATED-DELTANET
+
+MESA
+HAWK-MESA
+
+145M Models:
+
+MHA-SWA-4
+MHA-SWA-64
+
+400M Models:
+
+MHA-SWA-256
+MHA-SWA-1024
+
+0.04
+
+0.04
+
+0.04
+
+0.02
+
+0.02
+
+0.02
+
+0.00
+
+0.00
+
+0.00
+
+0.02
+
+0.02
+
+0.02
+
+0.04
+
+0.04
+64
+
+Mean-so-far NLL
+Difference to MHA
+
+MAMBA2
+XLSTM
+
+512
+
+1024
+
+2048
+
+512
+
+1024
+
+2048
+
+0.04
+
+0.04
+
+0.02
+
+0.02
+
+0.02
+
+0.00
+
+0.00
+
+0.00
+
+0.02
+
+0.02
+
+0.02
+
+0.04
+
+0.04
+512
+
+1024
+
+Sequence Length
+
+2048
+
+1B Models:
+
+0.04
+64
+
+0.04
+
+64
+
+MHA
+
+64
+
+512
+
+1024
+
+2048
+
+64
+
+512
+
+1024
+
+2048
+
+0.04
+64
+
+512
+
+1024
+
+Sequence Length
+
+2048
+
+Sequence Length
+
+Figure 12: Mean-so-far NLL Difference ∆Mean-so-far-NLLmodel
+relative to a Transformer on SlimPa:k
+jama Validaton Dataset. The cummulative aggregation in the mean-so-far metric skews the important token
+depth transition point where a transformer surpasses the recurrent models in terms of language modeling.
+
+41
+
+Published as a conference paper at ICLR 2026
+
+15B Tokens
+
+145M
+
+400M
+
+1B
+
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated-DeltaNet
+- Mesa
+- Hawk-Mesa
+- Transformer
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated-DeltaNet
+- Mesa
+- Hawk-Mesa
+- SWA-4
+- SWA-64
+- SWA-256
+- SWA-1024
+- Transformer
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated-DeltaNet
+- Mesa
+- Hawk-Mesa
+- SWA-4
+- SWA-64
+- SWA-256
+- SWA-1024
+- Transformer
+
+SLIM
+ppl ↓
+19.73
+18.29
+17.37
+17.35
+17.26
+17.12
+17.02
+16.81
+16.95
+14.40
+14.45
+13.69
+13.71
+13.80
+13.48
+13.44
+13.37
+23.36
+15.98
+14.69
+13.95
+13.64
+12.71
+12.78
+12.28
+12.38
+12.23
+12.06
+12.02
+11.91
+20.27
+14.08
+12.98
+12.33
+12.16
+
+LMB.
+ppl ↓
+38.94
+40.34
+37.96
+37.97
+38.18
+37.62
+37.64
+37.20
+38.69
+31.54
+33.38
+31.64
+31.70
+31.98
+31.40
+31.38
+31.10
+38.65
+32.97
+32.64
+32.63
+32.25
+28.72
+30.30
+29.13
+29.21
+29.13
+28.67
+28.57
+28.45
+34.66
+30.01
+29.63
+29.65
+29.55
+
+WIKI.
+ppl ↓
+23.06
+20.86
+19.57
+19.57
+19.29
+19.18
+19.10
+18.87
+18.65
+16.12
+15.99
+15.01
+14.95
+15.07
+14.71
+14.65
+14.55
+29.29
+18.89
+16.99
+15.40
+14.71
+13.95
+13.97
+13.29
+13.43
+13.20
+13.00
+12.92
+12.79
+24.56
+16.47
+14.76
+13.47
+12.90
+
+PG19
+ppl ↓
+19.87
+19.17
+18.11
+18.12
+17.93
+17.77
+17.72
+17.14
+17.47
+14.23
+14.80
+13.89
+13.88
+14.01
+13.59
+13.51
+13.32
+23.51
+16.31
+15.04
+14.09
+13.73
+12.44
+12.92
+12.35
+12.40
+12.28
+12.05
+11.96
+11.83
+20.33
+14.33
+13.18
+12.35
+12.10
+
+50B Tokens
+GOV.
+ppl ↓
+19.23
+17.03
+15.86
+15.88
+15.67
+15.55
+15.44
+15.29
+15.00
+13.67
+13.27
+12.36
+12.28
+12.51
+12.16
+12.02
+12.07
+26.94
+15.20
+13.42
+12.36
+12.06
+11.90
+11.68
+11.08
+11.16
+11.04
+10.85
+10.76
+10.72
+22.98
+13.34
+11.82
+10.92
+10.68
+
+QASP.
+ppl ↓
+29.66
+23.71
+22.37
+22.50
+21.75
+22.13
+21.87
+21.62
+20.80
+19.85
+18.36
+17.08
+17.10
+17.20
+16.64
+16.56
+16.68
+48.24
+23.08
+19.36
+17.05
+16.51
+17.30
+15.97
+15.20
+15.33
+15.11
+14.86
+14.76
+14.60
+40.37
+19.78
+16.82
+14.93
+14.47
+
+AVG
+ppl ↓
+25.08
+23.23
+21.87
+21.90
+21.68
+21.56
+21.47
+21.15
+21.26
+18.30
+18.37
+17.28
+17.27
+17.43
+17.00
+16.93
+16.85
+31.66
+20.40
+18.69
+17.58
+17.15
+16.17
+16.27
+15.55
+15.65
+15.50
+15.25
+15.17
+15.05
+27.20
+18.00
+16.53
+15.61
+15.31
+
+SLIM
+ppl ↓
+18.34
+17.05
+16.30
+16.20
+16.17
+16.05
+16.05
+15.82
+15.81
+12.87
+13.07
+12.61
+12.56
+12.59
+12.44
+12.34
+12.30
+19.32
+14.04
+13.23
+12.52
+12.40
+11.24
+11.39
+10.99
+11.01
+11.01
+10.89
+10.83
+10.78
+16.46
+12.37
+11.60
+11.00
+10.86
+
+LMB.
+ppl ↓
+37.43
+38.22
+36.20
+36.19
+36.55
+35.80
+36.17
+35.51
+36.54
+29.44
+31.05
+29.93
+29.79
+30.00
+29.57
+29.57
+29.38
+33.76
+30.51
+30.36
+30.13
+30.10
+26.67
+28.02
+26.98
+26.93
+27.08
+26.79
+26.78
+26.59
+29.93
+27.76
+27.39
+27.22
+27.16
+
+WIKI.
+ppl ↓
+21.25
+19.24
+18.43
+18.31
+18.08
+18.04
+17.96
+17.70
+17.35
+14.30
+14.28
+13.73
+13.60
+13.68
+13.45
+13.36
+13.33
+23.43
+16.35
+14.94
+13.71
+13.23
+12.23
+12.23
+11.77
+11.81
+11.73
+11.58
+11.49
+11.53
+19.42
+14.14
+12.89
+11.78
+11.42
+
+PG19
+ppl ↓
+18.49
+17.87
+16.90
+16.97
+16.78
+16.79
+16.60
+16.19
+16.25
+12.71
+13.28
+12.75
+12.72
+12.70
+12.52
+12.40
+12.30
+19.35
+14.19
+13.38
+12.56
+12.42
+10.93
+11.42
+10.95
+10.94
+11.00
+10.81
+10.71
+10.60
+16.42
+12.51
+11.71
+10.92
+10.74
+
+GOV.
+ppl ↓
+18.17
+15.90
+15.02
+14.91
+14.81
+14.77
+14.72
+14.55
+14.04
+12.24
+12.10
+11.52
+11.49
+11.49
+11.31
+11.15
+11.28
+21.50
+13.25
+12.08
+11.12
+10.96
+10.63
+10.42
+9.99
+10.00
+10.02
+9.88
+9.80
+9.79
+17.86
+11.56
+10.58
+9.79
+9.69
+
+QASP.
+ppl ↓
+27.83
+22.10
+20.91
+20.85
+20.53
+20.67
+20.57
+20.38
+19.33
+17.54
+16.37
+15.77
+15.72
+15.57
+15.42
+15.19
+15.32
+35.41
+19.37
+17.09
+15.26
+14.84
+14.89
+14.02
+13.52
+13.55
+13.44
+13.28
+13.13
+13.20
+29.15
+16.77
+14.69
+13.11
+12.86
+
+AVG
+ppl ↓
+23.59
+21.73
+20.62
+20.57
+20.49
+20.35
+20.34
+20.02
+19.89
+16.52
+16.69
+16.05
+15.98
+16.00
+15.79
+15.67
+15.65
+25.46
+17.95
+16.85
+15.88
+15.66
+14.43
+14.58
+14.03
+14.04
+14.05
+13.87
+13.79
+13.75
+21.54
+15.85
+14.81
+13.97
+13.79
+
+Table 10: PPL at a Maximum Sequence Length of 2048. The score of the best recurrent model with respect
+to PPL on each dataset is highlighted, and PPL scores from SWA and the transformer baseline are shown as
+reference. Across all model sizes and number of training tokens, Hawk-Mesa exhibits the best PPL performance
+on most benchmarks, closely followed by Mesa.
+
+42
+
+Published as a conference paper at ICLR 2026
+
+L.1.2
+
+B EYOND T RAIN C ONTEXT-L ENGTH
+
+PPL. We present the PPL scores for context lengths of 4k (see Table 11) and 32k (see Table 12)
+respectively on all model sizes and number of training tokens.
+15B Tokens
+
+145M
+
+400M
+
+1B
+
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated-DeltaNet
+- Mesa
+- Hawk-Mesa
+- Transformer
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated-DeltaNet
+- Mesa
+- Hawk-Mesa
+- SWA-4
+- SWA-64
+- SWA-256
+- SWA-1024
+- Transformer
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DelaNet
+- Mesa
+- Hawk-Mesa
+- SWA-4
+- SWA-64
+- SWA-256
+- SWA-1024
+- Transformer
+
+WIKI.
+ppl ↓
+23.80
+24.28
+20.07
+20.04
+19.85
+19.64
+19.52
+19.33
+27.68
+16.61
+18.31
+15.31
+15.31
+15.49
+14.99
+15.02
+14.90
+30.09
+19.58
+17.54
+15.90
+33.17
+14.37
+15.90
+13.56
+13.71
+13.55
+13.26
+13.21
+13.08
+25.40
+17.05
+15.25
+13.89
+24.40
+
+PG19
+ppl ↓
+24.23
+27.31
+22.14
+22.13
+22.05
+21.75
+21.60
+20.86
+34.18
+17.35
+20.59
+16.84
+16.82
+17.07
+16.46
+16.41
+16.15
+29.68
+20.23
+18.41
+17.28
+46.81
+15.11
+18.03
+14.90
+14.98
+14.90
+14.50
+14.43
+14.27
+25.64
+17.70
+16.11
+15.03
+31.60
+
+GOV.
+ppl ↓
+19.64
+20.07
+15.68
+15.56
+15.47
+15.23
+15.10
+15.03
+23.59
+13.80
+15.33
+12.08
+11.98
+12.27
+11.84
+11.73
+11.82
+28.80
+15.65
+13.59
+12.32
+34.34
+12.01
+13.33
+10.81
+10.88
+10.82
+10.56
+10.50
+10.49
+24.58
+13.74
+11.98
+10.84
+24.06
+
+50B Tokens
+
+QASP.
+ppl ↓
+30.09
+27.51
+21.38
+21.43
+20.85
+21.03
+20.78
+20.69
+30.77
+19.73
+20.59
+16.20
+16.18
+16.37
+15.73
+15.72
+15.86
+50.69
+23.38
+19.29
+16.58
+41.51
+17.10
+17.85
+14.37
+14.54
+14.30
+14.01
+13.93
+13.85
+42.51
+20.02
+16.71
+14.45
+30.51
+
+AVG
+ppl ↓
+24.44
+24.79
+19.82
+19.79
+19.55
+19.41
+19.25
+18.98
+29.06
+16.87
+18.70
+15.11
+15.07
+15.30
+14.76
+14.72
+14.68
+34.82
+19.71
+17.21
+15.52
+38.96
+14.65
+16.28
+13.41
+13.53
+13.39
+13.08
+13.02
+12.92
+29.53
+17.13
+15.01
+13.56
+27.64
+
+WIKI.
+ppl ↓
+21.90
+24.13
+18.83
+18.68
+18.66
+18.46
+18.38
+18.15
+52.12
+14.70
+17.94
+14.05
+13.90
+14.09
+13.75
+13.67
+13.67
+24.31
+16.93
+15.47
+14.22
+74.74
+12.59
+17.56
+12.05
+12.11
+12.11
+11.86
+11.78
+11.81
+20.17
+14.66
+13.33
+12.20
+46.14
+
+PG19
+ppl ↓
+22.63
+27.85
+20.70
+20.67
+20.64
+20.47
+20.25
+19.72
+65.58
+15.45
+20.75
+15.43
+15.39
+15.50
+15.13
+14.98
+14.83
+24.55
+17.48
+16.44
+15.41
+130.23
+13.25
+20.90
+13.15
+13.15
+13.32
+12.98
+12.90
+12.72
+20.71
+15.34
+14.24
+13.27
+64.04
+
+GOV.
+ppl ↓
+18.54
+22.56
+14.73
+14.61
+14.64
+14.45
+14.42
+14.31
+47.93
+12.33
+16.07
+11.26
+11.22
+11.35
+11.04
+10.87
+11.05
+22.88
+13.55
+12.19
+11.27
+122.52
+10.67
+16.28
+9.77
+9.79
+9.84
+9.62
+9.57
+9.60
+18.99
+11.81
+10.65
+9.75
+57.04
+
+QASP.
+ppl ↓
+28.10
+29.17
+19.95
+19.89
+19.76
+19.63
+19.52
+19.48
+59.37
+17.35
+20.48
+14.95
+14.87
+14.86
+14.60
+14.36
+14.54
+37.16
+19.44
+16.88
+14.92
+142.67
+14.68
+19.98
+12.80
+12.86
+12.79
+12.54
+12.43
+12.53
+30.44
+16.84
+14.49
+12.71
+74.80
+
+AVG
+ppl ↓
+22.79
+25.93
+18.55
+18.46
+18.42
+18.25
+18.14
+17.91
+56.25
+14.96
+18.81
+13.92
+13.85
+13.95
+13.63
+13.47
+13.52
+27.23
+16.85
+15.25
+13.95
+117.54
+12.80
+18.68
+11.94
+11.98
+12.02
+11.75
+11.67
+11.66
+22.58
+14.66
+13.18
+11.98
+60.50
+
+Table 11: PPL at a Maximum Sequence Length of 4k.
+15B Tokens
+
+145M
+
+400M
+
+1B
+
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated-DeltaNet
+- Mesa
+- Hawk-Mesa
+- Transformer
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated-DeltaNet
+- Mesa
+- Hawk-Mesa
+- SWA-4
+- SWA-64
+- SWA-256
+- SWA-1024
+- Transformer
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+- SWA-4
+- SWA-64
+- SWA-256
+- SWA-1024
+- Transformer
+
+WIKI.
+ppl ↓
+23.93
+37.56
+20.28
+20.30
+25.11
+19.73
+19.70
+19.72
+42.42
+16.65
+26.64
+15.43
+15.34
+18.59
+15.16
+15.40
+15.43
+30.07
+19.69
+17.63
+16.01
+118.84
+14.40
+21.43
+13.61
+13.74
+14.75
+13.25
+13.35
+13.57
+25.35
+17.10
+15.31
+13.93
+48.41
+
+PG19
+ppl ↓
+29.50
+96.96
+27.32
+28.02
+979.34
+27.03
+26.67
+26.79
+72.04
+21.10
+65.40
+23.08
+20.86
+487.01
+21.19
+21.94
+22.70
+37.94
+25.07
+22.43
+21.02
+538.89
+18.44
+48.14
+18.72
+18.38
+145.22
+17.75
+18.17
+139.08
+32.78
+21.83
+19.61
+18.15
+119.56
+
+GOV.
+ppl ↓
+20.16
+44.95
+16.21
+15.91
+43.10
+15.46
+15.26
+15.69
+43.19
+14.04
+34.37
+12.76
+12.02
+28.09
+12.27
+12.31
+12.98
+29.66
+16.01
+13.82
+12.40
+188.16
+12.20
+23.28
+10.96
+10.91
+17.33
+10.55
+10.80
+19.41
+25.33
+14.05
+12.17
+10.84
+56.09
+
+50B Tokens
+QASP.
+ppl ↓
+30.73
+38.47
+21.40
+21.61
+24.93
+21.05
+20.79
+20.97
+41.64
+20.10
+28.00
+16.33
+16.20
+19.28
+15.85
+15.98
+16.40
+52.16
+23.90
+19.62
+16.73
+94.22
+17.42
+23.01
+14.44
+14.58
+15.54
+13.97
+14.04
+14.55
+43.92
+20.49
+17.00
+14.58
+53.95
+
+AVG
+ppl ↓
+26.08
+54.48
+21.30
+21.46
+268.12
+20.82
+20.61
+20.79
+49.82
+17.97
+38.60
+16.90
+16.11
+138.24
+16.12
+16.40
+16.88
+37.46
+21.17
+18.38
+16.54
+235.03
+15.61
+28.96
+14.43
+14.40
+48.21
+13.88
+14.09
+46.65
+31.85
+18.37
+16.02
+14.38
+69.50
+
+WIKI.
+ppl ↓
+21.98
+49.51
+18.96
+18.78
+26.79
+18.59
+18.58
+18.44
+528.05
+14.72
+53.90
+14.25
+14.00
+19.13
+13.82
+13.83
+14.04
+24.29
+16.98
+15.59
+14.48
+428.15
+12.62
+47.30
+12.11
+12.20
+14.65
+11.87
+11.92
+12.31
+20.15
+14.68
+13.39
+12.27
+228.12
+
+PG19
+ppl ↓
+27.62
+174.03
+26.30
+26.25
+883.32
+27.27
+25.72
+26.09
+4436.78
+18.82
+919.97
+20.36
+20.21
+359.90
+20.72
+19.55
+31.61
+31.49
+21.53
+20.07
+19.01
+4312.79
+16.07
+240.81
+16.85
+16.95
+150.90
+15.77
+16.29
+17.50
+26.44
+18.83
+17.28
+16.04
+1326.59
+
+GOV.
+ppl ↓
+19.01
+106.47
+15.23
+15.11
+52.20
+14.77
+14.65
+14.69
+2029.43
+12.53
+172.39
+11.74
+11.29
+31.71
+11.37
+11.17
+12.27
+23.59
+13.81
+12.37
+11.89
+2013.32
+10.84
+101.96
+9.98
+10.02
+21.92
+9.60
+9.71
+17.51
+19.55
+12.03
+10.78
+9.80
+563.97
+
+QASP.
+ppl ↓
+28.78
+50.52
+20.09
+20.02
+26.31
+19.77
+19.62
+19.99
+324.84
+17.64
+41.73
+15.08
+14.97
+17.98
+14.67
+14.51
+15.04
+38.40
+19.83
+17.17
+15.26
+473.55
+14.95
+39.52
+12.89
+13.03
+14.95
+12.53
+12.58
+13.03
+31.49
+17.21
+14.71
+12.87
+234.95
+
+Table 12: PPL at a Maximum Sequence Length of 32k.
+
+43
+
+AVG
+ppl ↓
+24.35
+95.13
+20.15
+20.04
+247.16
+20.10
+19.64
+19.80
+1829.77
+15.93
+297.00
+15.36
+15.12
+107.18
+15.14
+14.77
+18.24
+29.44
+18.04
+16.30
+15.16
+1806.95
+13.62
+107.40
+12.96
+13.05
+50.60
+12.44
+12.63
+15.09
+24.41
+15.69
+14.04
+12.75
+588.41
+
+Published as a conference paper at ICLR 2026
+
+Global Subset
+RACE-M RACE-H
+acc ↑
+acc ↑
+
+LMB.
+acc ↑
+
+Hella.
+acc ↑
+
+400M Parameters / 15B Tokens
+- SWA-4
+- SWA-16
+- SWA-64
+
+4,62
+27,11
+38,54
+
+34,97
+37,20
+39,35
+
+25,97
+28,18
+32,87
+
+- SWA-256
+- SWA-1024
+
+40,52
+41,43
+
+40,44
+40,90
+
+- Transformer
+
+41,12
+
+400M Parameters / 50B Tokens
+- SWA-4
+- SWA-16
+- SWA-64
+
+Local Subset
+ARC-C SIQA
+acc ↑
+acc ↑
+
+AVG
+
+PIQA
+acc ↑
+
+Wino
+acc ↑
+
+ARC-E
+acc ↑
+
+25,93
+28,04
+30,24
+
+22,87
+30,13
+35,25
+
+66,81
+67,63
+68,93
+
+49,33
+52,64
+52,17
+
+43,81
+43,52
+44,40
+
+24,23
+23,81
+22,87
+
+34,25
+37,57
+
+31,48
+34,26
+
+36,67
+38,54
+
+69,21
+67,90
+
+50,67
+52,80
+
+43,35
+44,49
+
+41,27
+
+37,29
+
+34,45
+
+38,53
+
+68,23
+
+51,07
+
+18,28
+35,03
+42,34
+
+39,02
+41,52
+44,14
+
+29,56
+29,01
+34,53
+
+27,66
+28,33
+31,67
+
+28,63
+33,47
+38,17
+
+67,85
+68,99
+69,53
+
+- SWA-256
+- SWA-1024
+
+43,86
+45,08
+
+45,31
+46,43
+
+36,46
+38,95
+
+35,79
+34,74
+
+40,36
+41,30
+
+- Transformer
+
+44,96
+
+46,30
+
+41,44
+
+35,89
+
+42,15
+
+1B Parameters / 15B Tokens
+- SWA-4
+- SWA-16
+- SWA-64
+
+8,46
+33,81
+42,60
+
+38,56
+41,52
+44,04
+
+27,62
+28,73
+31,49
+
+27,18
+27,66
+30,72
+
+- SWA-256
+- SWA-1024
+
+45,82
+45,06
+
+45,64
+46,23
+
+35,91
+39,50
+
+- Transformer
+1B Parameters / 50B Tokens
+- SWA-4
+- SWA-16
+- SWA-64
+
+45,31
+
+46,65
+
+41,16
+
+24,63
+39,03
+46,11
+
+44,90
+48,10
+51,30
+
+- SWA-256
+- SWA-1024
+
+50,28
+50,38
+
+- Transformer
+
+48,92
+≈0
+
+- Random
+
+BOOLQ
+acc ↑
+
+OBQA
+acc ↑
+
+SC.
+acc ↑
+
+AVG
+
+39,82
+39,71
+39,76
+
+57,31
+54,89
+58,56
+
+30,00
+27,60
+29,20
+
+63,78
+65,82
+64,99
+
+46,89
+46,95
+47,61
+
+24,91
+22,61
+
+40,89
+40,58
+
+56,82
+60,37
+
+30,20
+30,20
+
+66,90
+66,58
+
+47,87
+48,19
+
+44,28
+
+24,57
+
+40,23
+
+58,10
+
+28,40
+
+66,58
+
+47,68
+
+51,93
+52,72
+53,75
+
+44,49
+45,88
+45,24
+
+24,83
+24,32
+24,74
+
+39,71
+39,56
+40,28
+
+58,23
+57,40
+56,45
+
+32,40
+33,00
+31,60
+
+66,14
+67,54
+68,49
+
+48,20
+48,68
+48,76
+
+70,24
+69,64
+
+52,33
+52,25
+
+45,79
+45,71
+
+23,98
+25,00
+
+40,23
+40,07
+
+57,00
+57,92
+
+32,40
+32,20
+
+68,94
+67,92
+
+48,86
+48,84
+
+69,91
+
+52,64
+
+45,96
+
+24,06
+
+40,48
+
+57,31
+
+30,40
+
+69,64
+
+48,80
+
+25,46
+32,93
+37,21
+
+67,95
+68,77
+69,91
+
+51,30
+52,64
+51,30
+
+46,72
+47,26
+46,72
+
+23,72
+24,32
+24,66
+
+40,17
+40,28
+41,10
+
+56,73
+55,26
+58,56
+
+30,40
+33,40
+33,20
+
+65,50
+67,41
+67,98
+
+47,81
+48,67
+49,18
+
+34,35
+34,74
+
+40,43
+41,38
+
+69,86
+70,29
+
+52,09
+53,99
+
+47,26
+47,39
+
+25,26
+24,15
+
+41,91
+40,94
+
+58,53
+59,54
+
+31,40
+30,60
+
+69,06
+69,00
+
+49,42
+49,49
+
+35,79
+
+42,23
+
+70,78
+
+52,25
+
+48,19
+
+23,55
+
+40,28
+
+52,91
+
+31,40
+
+67,98
+
+48,42
+
+28,18
+28,73
+38,40
+
+27,08
+29,47
+33,49
+
+31,20
+36,33
+42,33
+
+70,35
+72,09
+71,87
+
+52,49
+53,04
+53,35
+
+48,19
+48,99
+49,62
+
+24,83
+25,43
+26,71
+
+39,56
+41,15
+40,74
+
+60,15
+53,39
+56,70
+
+32,80
+32,80
+33,40
+
+68,56
+70,78
+71,74
+
+49,62
+49,71
+50,52
+
+52,08
+53,69
+
+40,88
+41,44
+
+35,69
+37,22
+
+44,74
+45,68
+
+72,20
+72,47
+
+52,64
+53,35
+
+49,37
+49,41
+
+27,05
+27,13
+
+40,84
+41,61
+
+58,35
+62,20
+
+32,80
+32,60
+
+73,01
+72,06
+
+50,78
+51,35
+
+53,63
+
+42,27
+
+37,32
+
+45,54
+
+72,31
+
+54,62
+
+49,41
+
+28,24
+
+40,17
+
+60,73
+
+35,20
+
+72,25
+
+51,62
+
+25,00
+
+25,00
+
+25,00
+
+-
+
+50.00
+
+50.00
+
+25.00
+
+25.00
+
+33.33
+
+50.00
+
+25.00
+
+50.00
+
+-
+
+Table 13: Reference Scores of Sliding Window Attention (SWA) Models on Common-Sense Reasoning
+Benchmarks. On LAMBADA, HellaSwag and RACE-M and RACE-H, we observe significant performance
+increases with a growing attention window. On the remaining benchmarks, we only observe marginal performance differences between a Transformer with a sliding window-size of 4 (SWA-4) and a full-window attention
+Transformer (attention window of 2048). We highlight the scores of the first short-range SWA model (window
+sizes = {4,16,64}) that matches or exceeds the Transformer performance.
+
+L.2
+
+D OWNSTREAM B ENCHMARKS
+
+To evaluate the performance of the investigated models on downstream task, we investigate three
+classes of benchmarks:
+• Zero-Shot Common-Sense Reasoning Benchmarks (Section L.2.1)
+• In-Context Recall Benchmarks ( Section L.2.2)
+• Few-Shot Learning Benchmarks (Section L.2.3)
+Within each benchmark section, we report all raw numbers on all model sizes and number of training
+tokens, and complement them with reference scores of Sliding-Window Attention models with
+varying attention-window sizes.
+L.2.1
+
+Z ERO -S HOT C OMMON -S ENSE R EASONING B ENCHMARKS
+
+When tracking the performance of “many models” on “many benchmarks”, it is common to resort to
+aggregated benchmark scores. However, aggregated scores tend to masquerade important sub-trends
+and limit our understanding (Burnell et al., 2023). For instance, prior work (Gu & Dao, 2024; Yang
+et al., 2024a; Beck et al., 2024) averages over a set of common-sense reasoning benchmarks. However,
+evaluations with 400M and 1B Sliding-Window Attention (SWA) models with different attentionwindow sizes reveal that competitive, or even superior, scores on a subset of these benchmarks can be
+attained with an attention windows as short as 4, 16 or 64 (see Table 13). This observation strongly
+indicates that a subset of these benchmarks are either exploitable by short-range language heuristics,
+and do not require longer-range language modeling capabilities to reach competitive scores, or are
+simply too hard such that we end up measuring noise.
+44
+
+Published as a conference paper at ICLR 2026
+
+Splitting Reasoing Benchmark into Two Groups. To reduce the potential benchmark noise and
+deconfound the results, we aim to split the benchmark into two subsets. Therefore, we employ the
+following benchmark splitting protocol:
+1. Reference Scores. Run every selected benchmark on SWA-{4,16,64} models and a transformer model (attention window of size 2048) on 400M and 1B parameters trained on 15B or
+50B tokens each.
+2. Splitting Conditions. We then assess the following splitting conditions:
+• Condition 1: Analyze for every benchmark whether benchmark scores increase with increasing attention windows (from SWA-4 to SWA-64).
+• Condition 2: Verify whether no short-range SWA model (window sizes = 4, 16 and 64)
+outperforms the transformer baseline with an attention windows of 2048.
+3. Benchmark Grouping. Finally, we split the benchmark into two subsets:
+• Local Reasoning Benchmark Set: One of the above conditions is violated.
+• Global Reasoning Benchmark Set: None of the above conditions is violated.
+We refer to Table 13 for a detailed score breakdown, including two additional SWA reference models
+(SWA-256 and SWA-1024). Additionaly, we want to highlight that these findings, and the benchmark splitting, are based on experiments 400M and 1B models trained on SlimPajama (Soboleva
+et al., 2023). The benchmark splitting is likely to change slightly when training with bigger model
+sizes or on different datasets.
+
+Results on all Model Configurations. We report the full set of benchmark scores on all model
+configuration (model sizes and number of training tokens) in Table 14. Across all settings, we observe
+similar trends – MesaNet and Hawk-MesaNet show strong performance especially on the global
+reasoning benchmark set. Among the remaining recurrent models, only Gated DeltaNet reaches
+competitive scores with MesaNet on this benchmark subset. In contrast, we do not observe much
+score variation on the local reasoning benchmark set. Hawk, the worst performing model on the
+global set, reaches competitive or even close-to-best scores within this set on average. This confirms
+the hypothesis that this set of benchmark are likely to measure different aspects of language modeling,
+or are potentially noisy, or are not suited for our models as they might be still too challenging.
+
+45
+
+Published as a conference paper at ICLR 2026
+
+Model
+
+Global Subset
+RACE-M RACE-H
+acc ↑
+acc ↑
+
+LMB.
+acc ↑
+
+Hella.
+acc ↑
+
+145M Models / 15B T.
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+21,87
+27,83
+31,05
+31,19
+32,02
+31,65
+31,65
+32,14
+
+33,54
+33,21
+34,20
+34,41
+33,89
+34,53
+34,49
+34,99
+
+29,01
+32,04
+33,43
+30,94
+32,04
+33,98
+32,87
+32,87
+
+- Transformer
+
+33,84
+
+33,91
+
+145M Models / 50B T.
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+22,14
+29,23
+32,16
+32,74
+32,89
+32,85
+32,33
+34,31
+
+- Transformer
+400M Models / 15B T.
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+Local Subset
+ARC-C SIQA
+acc ↑
+acc ↑
+
+AVG
+
+PIQA
+acc ↑
+
+Wino
+acc ↑
+
+ARC-E
+acc ↑
+
+BOOLQ
+acc ↑
+
+OBQA
+acc ↑
+
+SC.
+acc ↑
+
+AVG
+
+28,52
+30,53
+28,71
+29,47
+30,43
+29,09
+30,43
+31,96
+
+28,23
+30,90
+31,84
+31,50
+32,10
+32,31
+32,36
+32,99
+
+64,64
+64,47
+63,66
+65,13
+65,45
+64,53
+66,43
+65,40
+
+50,83
+50,36
+52,09
+52,17
+50,91
+51,07
+51,85
+52,96
+
+40,24
+39,27
+41,41
+40,78
+40,82
+41,62
+40,03
+41,16
+
+21,93
+22,27
+21,76
+21,76
+21,42
+21,59
+22,27
+23,55
+
+39,41
+39,00
+38,89
+38,79
+39,15
+39,05
+38,43
+39,05
+
+59,11
+51,44
+56,85
+56,64
+60,89
+60,03
+56,73
+55,26
+
+27,80
+26,40
+28,80
+27,40
+28,00
+28,40
+27,40
+28,00
+
+62,25
+62,13
+63,97
+63,40
+63,97
+63,21
+63,34
+62,89
+
+45,78
+44,42
+45,93
+45,76
+46,33
+46,19
+45,81
+46,03
+
+35,91
+
+30,62
+
+33,57
+
+65,34
+
+52,49
+
+39,27
+
+22,44
+
+39,10
+
+59,63
+
+28,40
+
+63,78
+
+46,31
+
+35,09
+34,24
+35,57
+35,89
+35,39
+36,15
+36,24
+36,40
+
+28,18
+33,15
+32,04
+32,87
+32,32
+33,15
+34,53
+32,04
+
+30,33
+29,86
+29,86
+30,14
+31,67
+31,96
+30,24
+31,20
+
+28,94
+31,62
+32,41
+32,91
+33,07
+33,53
+33,33
+33,49
+
+65,94
+65,78
+65,56
+66,59
+66,10
+66,76
+65,40
+66,21
+
+51,62
+51,46
+51,07
+51,54
+51,93
+51,22
+51,70
+51,93
+
+41,33
+41,08
+43,18
+41,67
+40,53
+41,92
+41,62
+41,54
+
+22,87
+21,67
+23,81
+23,12
+22,78
+23,55
+22,61
+22,53
+
+39,46
+39,82
+39,82
+39,15
+38,74
+38,38
+38,89
+38,54
+
+59,45
+59,30
+52,23
+58,65
+57,46
+60,43
+54,65
+55,57
+
+28,20
+28,00
+29,40
+27,00
+29,00
+29,00
+28,80
+30,00
+
+63,97
+61,74
+63,72
+64,23
+64,29
+64,10
+63,53
+64,74
+
+46,60
+46,11
+46,10
+46,49
+46,36
+46,92
+45,90
+46,38
+
+35,40
+
+36,03
+
+35,08
+
+31,10
+
+34,40
+
+64,58
+
+52,09
+
+41,41
+
+22,01
+
+40,12
+
+59,79
+
+30,20
+
+64,23
+
+46,80
+
+32,97
+35,92
+40,09
+39,67
+39,28
+39,98
+40,17
+39,84
+
+42,33
+39,95
+42,49
+41,99
+41,49
+42,55
+42,71
+43,15
+
+33,15
+33,70
+34,53
+35,08
+36,46
+32,87
+34,53
+34,81
+
+32,06
+32,25
+32,54
+33,11
+32,34
+33,68
+33,21
+31,67
+
+35,13
+35,46
+37,41
+37,46
+37,39
+37,27
+37,65
+37,37
+
+68,66
+68,44
+68,61
+68,50
+69,26
+69,59
+67,79
+69,64
+
+50,99
+51,70
+51,78
+52,25
+51,70
+52,33
+50,51
+52,17
+
+44,53
+43,31
+44,99
+45,12
+46,00
+45,20
+45,12
+45,33
+
+25,00
+23,46
+24,91
+23,46
+23,81
+25,17
+22,87
+22,27
+
+39,66
+39,71
+39,61
+39,87
+39,76
+40,02
+39,10
+40,23
+
+59,69
+59,54
+60,40
+59,72
+52,51
+59,14
+52,42
+58,04
+
+30,80
+30,40
+28,40
+31,60
+31,20
+29,40
+29,80
+29,80
+
+67,09
+66,45
+68,30
+68,17
+67,47
+67,60
+68,43
+67,41
+
+48,30
+47,88
+48,37
+48,59
+47,71
+48,56
+47,00
+48,11
+
+- SWA-4
+- SWA-64
+- SWA-1024
+
+4,62
+38,54
+41,43
+
+34,97
+39,35
+40,90
+
+25,97
+32,87
+37,57
+
+25,93
+30,24
+34,26
+
+22,87
+35,25
+38,54
+
+66,81
+68,93
+67,90
+
+49,33
+52,17
+52,80
+
+43,81
+44,40
+44,49
+
+24,23
+22,87
+22,61
+
+39,82
+39,76
+40,58
+
+57,31
+58,56
+60,37
+
+30,00
+29,20
+30,20
+
+63,78
+64,99
+66,58
+
+46,89
+47,61
+48,19
+
+- Transformer
+400M Models / 50B T.
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+41,12
+
+41,27
+
+37,29
+
+34,45
+
+38,53
+
+68,23
+
+51,07
+
+44,28
+
+24,57
+
+40,23
+
+58,10
+
+28,40
+
+66,58
+
+47,68
+
+36,70
+38,23
+41,98
+41,82
+42,25
+43,99
+43,39
+41,94
+
+47,02
+44,22
+46,00
+46,22
+45,92
+46,57
+46,93
+46,96
+
+33,43
+35,64
+35,08
+34,53
+37,02
+35,36
+38,95
+38,12
+
+32,54
+32,25
+34,74
+33,30
+33,68
+34,83
+34,26
+33,49
+
+37,42
+37,58
+39,45
+38,97
+39,72
+40,19
+40,88
+40,13
+
+71,93
+68,72
+69,86
+68,99
+70,18
+70,18
+70,73
+70,46
+
+52,25
+52,17
+54,14
+53,35
+52,72
+51,85
+54,46
+54,78
+
+47,26
+45,33
+46,46
+46,00
+45,24
+46,38
+46,21
+46,46
+
+24,06
+23,98
+23,98
+23,46
+24,23
+25,77
+24,91
+25,51
+
+40,89
+40,74
+40,07
+41,61
+40,48
+40,58
+41,10
+40,74
+
+59,91
+54,31
+56,57
+57,43
+57,37
+54,89
+57,89
+57,80
+
+34,20
+31,80
+29,80
+31,00
+32,20
+32,60
+32,40
+30,00
+
+69,83
+68,49
+69,96
+69,32
+68,87
+70,53
+69,38
+70,46
+
+50,04
+48,19
+48,86
+48,90
+48,91
+49,10
+49,64
+49,53
+
+- SWA-4
+- SWA-64
+- SWA-1024
+
+18,28
+42,34
+45,08
+
+39,02
+44,14
+46,43
+
+29,56
+34,53
+38,95
+
+27,66
+31,67
+34,74
+
+28,63
+38,17
+41,30
+
+67,85
+69,53
+69,64
+
+51,93
+53,75
+52,25
+
+44,49
+45,24
+45,71
+
+24,83
+24,74
+25,00
+
+39,71
+40,28
+40,07
+
+58,23
+56,45
+57,92
+
+32,40
+31,60
+32,20
+
+66,14
+68,49
+67,92
+
+48,20
+48,76
+48,84
+
+- Transformer
+1B Models / 15B T.
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+44,96
+
+46,30
+
+41,44
+
+35,89
+
+42,15
+
+69,91
+
+52,64
+
+45,96
+
+24,06
+
+40,48
+
+57,31
+
+30,40
+
+69,64
+
+48,80
+
+37,98
+39,63
+43,24
+44,05
+43,45
+45,37
+44,21
+44,05
+
+47,71
+45,06
+47,20
+46,10
+47,47
+48,49
+47,70
+48,70
+
+35,08
+36,74
+33,43
+35,91
+36,46
+35,36
+37,02
+39,23
+
+32,25
+34,35
+33,68
+33,40
+33,30
+34,07
+33,49
+33,40
+
+38,25
+38,95
+39,39
+39,86
+40,17
+40,82
+40,60
+41,34
+
+71,93
+70,13
+70,95
+70,73
+70,78
+71,60
+70,89
+71,22
+
+50,43
+52,33
+52,41
+54,30
+52,80
+53,99
+54,46
+53,20
+
+48,61
+46,97
+46,97
+47,14
+48,48
+48,57
+47,56
+49,54
+
+25,43
+25,43
+25,00
+25,00
+25,09
+24,83
+25,26
+24,74
+
+41,50
+39,41
+41,15
+40,63
+39,92
+40,07
+41,04
+40,89
+
+58,53
+57,34
+58,59
+59,27
+60,46
+53,76
+56,06
+51,93
+
+31,80
+31,80
+33,00
+32,40
+31,20
+32,40
+32,20
+32,00
+
+70,59
+70,34
+70,34
+69,64
+69,00
+70,46
+70,21
+70,78
+
+49,85
+49,22
+49,80
+49,89
+49,72
+49,46
+49,71
+49,29
+
+- SWA-4
+- SWA-64
+- SWA-1024
+
+8,46
+42,60
+45,06
+
+38,56
+44,04
+46,23
+
+27,62
+31,49
+39,50
+
+27,18
+30,72
+34,74
+
+25,46
+37,21
+41,38
+
+67,95
+69,91
+70,29
+
+51,30
+51,30
+53,99
+
+46,72
+46,72
+47,39
+
+23,72
+24,66
+24,15
+
+40,17
+41,10
+40,94
+
+56,73
+58,56
+59,54
+
+30,40
+33,20
+30,60
+
+65,50
+67,98
+69,00
+
+47,81
+49,18
+49,49
+
+- Transformer
+
+45,31
+
+46,65
+
+41,16
+
+35,79
+
+42,23
+
+70,78
+
+52,25
+
+48,19
+
+23,55
+
+40,28
+
+52,91
+
+31,40
+
+67,98
+
+48,42
+
+1B Models / 50B T.
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+41,80
+42,13
+47,27
+46,57
+47,08
+49,19
+48,83
+47,02
+
+54,25
+51,46
+53,05
+53,08
+53,21
+54,10
+53,58
+54,47
+
+34,25
+37,85
+41,44
+37,57
+40,33
+39,78
+40,88
+40,61
+
+34,35
+35,02
+35,60
+34,74
+34,83
+36,27
+36,84
+36,36
+
+41,17
+41,62
+44,34
+42,99
+43,86
+44,84
+45,03
+44,62
+
+72,91
+71,76
+72,25
+72,52
+72,20
+71,93
+71,71
+72,52
+
+52,33
+53,35
+54,14
+54,62
+54,30
+54,06
+53,59
+56,04
+
+51,52
+48,95
+50,46
+49,45
+48,19
+51,22
+49,37
+50,80
+
+28,75
+26,54
+27,56
+27,05
+27,90
+26,88
+25,68
+26,88
+
+40,84
+40,58
+41,25
+41,76
+40,84
+41,35
+40,58
+40,17
+
+56,51
+55,90
+56,85
+58,78
+60,49
+53,27
+53,30
+56,02
+
+35,00
+33,60
+35,00
+35,80
+34,40
+34,20
+35,60
+35,60
+
+74,67
+73,39
+74,03
+72,06
+74,28
+73,14
+74,09
+74,03
+
+51,57
+50,51
+51,44
+51,50
+51,58
+50,76
+50,49
+51,51
+
+- SWA-4
+- SWA-64
+- SWA-1024
+
+24,63
+46,11
+50,38
+
+44,90
+51,30
+53,69
+
+28,18
+38,40
+41,44
+
+27,08
+33,49
+37,22
+
+31,20
+42,33
+45,68
+
+70,35
+71,87
+72,47
+
+52,49
+53,35
+53,35
+
+48,19
+49,62
+49,41
+
+24,83
+26,71
+27,13
+
+39,56
+40,74
+41,61
+
+60,15
+56,70
+62,20
+
+32,80
+33,40
+32,60
+
+68,56
+71,74
+72,06
+
+49,62
+50,52
+51,35
+
+- Transformer
+
+48,92
+
+53,63
+
+42,27
+
+37,32
+
+45,54
+
+72,31
+
+54,62
+
+49,41
+
+28,24
+
+40,17
+
+60,73
+
+35,20
+
+72,25
+
+51,62
+
+Table 14: Benchmark Scores on Common Reasoning Benchmarks on all model configurations. Best scores
+among the recurrent models are highlighted for each training setting.
+
+46
+
+Published as a conference paper at ICLR 2026
+
+L.2.2
+
+I N -C ONTEXT R ECALL B ENCHMARKS
+
+To evaluate in-context recall, we adopted the minimal-transformed version of the benchmarks from
+Arora et al. (2024) to allow evaluation of non-instruction-tuned models. We truncate inputs to 2000
+tokens, and sample greedily until either 48 tokens or a new-line delimiter is generated. We then
+parsed whether the target was contained in the generation (non-case-sensitive), as in Arora et al.
+(2024) .
+Sliding-Window Attention Controls. As expected, we observe consistent score increases with
+a growing attention window size (see Table 15). However, we observe that the SWA-1024 is
+consistently better on SQUAD than the transformer baseline with an attention window of 2048.
+Closer inspection of the SQUAD benchmarks reveals that the tokens-to-recall are most frequently
+located in the last 1k tokens of the sequence. Similarly for FDA, most tokens-to-recall are located at
+the very beginning of the sequence with an average of length 2000. Hence, we observe a significant
+performance increase from SWA-1024 to the transformer baseline with an attention window of 2048.
+Results on all Model Settings. MesaNet consistently attains best, or in few cases second-best,
+performance scores on average across all evaluated model settings (see Table 16). Moreover, we
+observe that our insights from the PPL analysis in L.1 directly translate to the observed results in
+here, e.g., Hawk attaining the worst in-context recall performance.
+DROP
+acc ↑
+9,15
+15,33
+19,12
+23,67
+26,45
+
+AVG
+acc ↑
+6,72
+10,97
+18,94
+26,06
+34,29
+
+SWDE
+acc ↑
+10,98
+13,05
+19,17
+30,96
+60,04
+
+SQUAD
+acc ↑
+7,77
+18,30
+38,44
+42,19
+46,82
+
+50B Tokens
+FDA
+TQA
+NQ
+acc ↑
+acc ↑
+acc ↑
+0,45
+21,27
+5,16
+1,09
+33,35
+6,59
+11,43
+48,76
+7,25
+14,70
+56,16
+10,10
+22,60
+58,06
+13,84
+
+400M Models:
+
+- SWA-4
+- SWA-16
+- SWA-64
+- SWA-256
+- SWA-1024
+- Transformer
+
+77,50
+
+37,13
+
+79,13
+
+53,08
+
+16,57
+
+26,59
+
+48,33
+
+79,66
+
+36,93
+
+75,86
+
+58,95
+
+18,94
+
+29,37
+
+49,95
+
+1B Models:
+
+- SWA-4
+- SWA-16
+- SWA-64
+- SWA-256
+- SWA-1024
+
+9,00
+9,54
+16,74
+25,74
+60,76
+
+6,53
+15,25
+30,56
+45,34
+40,65
+
+0,27
+0,27
+16,61
+17,79
+24,23
+
+17,06
+29,15
+44,55
+56,10
+56,99
+
+4,40
+6,46
+7,19
+8,81
+11,88
+
+11,60
+16,44
+20,46
+26,45
+27,65
+
+8,14
+12,85
+22,69
+30,04
+37,03
+
+13,05
+16,74
+22,32
+35,82
+63,73
+
+10,66
+23,76
+39,85
+46,45
+47,65
+
+0,27
+2,09
+12,70
+17,33
+26,68
+
+26,54
+39,28
+51,90
+59,77
+61,43
+
+7,10
+8,46
+9,63
+12,54
+15,52
+
+13,61
+18,59
+23,91
+27,46
+30,04
+
+11,87
+18,15
+26,72
+33,23
+40,84
+
+- Transformer
+
+79,21
+
+42,76
+
+77,04
+
+56,99
+
+18,69
+
+29,47
+
+50,69
+
+83,35
+
+46,92
+
+70,96
+
+63,21
+
+21,79
+
+27,41
+
+52,27
+
+≈0
+
+≈0
+
+≈0
+
+≈0
+
+≈0
+
+≈0
+
+≈0
+
+≈0
+
+≈0
+
+≈0
+
+≈0
+
+≈0
+
+≈0
+
+≈0
+
+- Random
+
+SQUAD
+acc ↑
+5,60
+10,82
+26,74
+40,92
+43,06
+
+15B Tokens
+FDA
+TQA
+NQ
+acc ↑
+acc ↑
+acc ↑
+0,18
+14,51
+3,52
+0,27
+24,88
+4,88
+10,07
+39,34
+5,23
+12,25
+50,95
+6,87
+17,79
+52,67
+10,86
+
+SWDE
+acc ↑
+7,38
+9,63
+13,14
+21,69
+54,91
+
+DROP
+
+AVG
+
+13,13
+17,35
+23,96
+24,20
+27,89
+
+9,79
+14,95
+24,84
+29,72
+38,21
+
+Table 15: Reference Scores of SWA Models on In-Context Recall Benchmarks. The pattern of best scores
+(highlightreded) is very consistent across the evaluated settings. As expected, we see increasing performance
+with increasing sizes of attention windows. Except on SQUAD, the transformer commonly attains the best
+scores.
+
+47
+
+Published as a conference paper at ICLR 2026
+
+145M Models:
+
+400M Models:
+
+1B Models:
+
+15B Tokens
+FDA
+TQA
+acc ↑
+acc ↑
+0,27
+30,39
+14,34
+40,17
+14,07
+44,73
+11,34
+44,79
+15,61
+46,27
+16,42
+46,68
+14,88
+47,22
+13,61
+46,33
+
+NQ
+acc ↑
+4,09
+7,57
+8,58
+10,45
+9,66
+10,48
+10,20
+9,79
+
+DROP
+
+23,89
+23,86
+29,86
+39,04
+38,94
+35,62
+35,15
+38,54
+39,95
+
+54,63
+1,09
+20,42
+20,96
+23,32
+27,40
+27,04
+28,58
+23,05
+
+46,50
+42,42
+47,04
+50,12
+51,13
+50,00
+51,72
+52,13
+52,78
+
+77,50
+20,25
+54,10
+59,68
+57,61
+58,15
+59,59
+60,40
+61,03
+
+37,13
+15,72
+33,68
+41,29
+39,11
+37,60
+39,48
+49,06
+41,55
+
+79,13
+2,09
+26,41
+29,67
+24,50
+36,84
+37,30
+22,50
+27,77
+
+79,21
+
+42,76
+
+77,04
+
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+SWDE
+acc ↑
+11,43
+29,52
+37,08
+33,39
+33,57
+32,31
+36,90
+34,65
+
+SQUAD
+acc ↑
+11,09
+24,83
+38,20
+25,00
+29,69
+30,83
+34,35
+30,33
+
+- Transformer
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+63,73
+16,47
+43,11
+52,30
+51,67
+50,23
+53,20
+53,11
+52,66
+
+- Transformer
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+- Transformer
+
+50B Tokens
+FDA
+TQA
+acc ↑
+acc ↑
+0,36
+35,25
+14,70
+44,43
+15,88
+48,16
+19,96
+48,76
+18,06
+46,39
+15,79
+48,34
+15,79
+47,04
+9,89
+46,86
+
+NQ
+acc ↑
+5,38
+7,67
+10,80
+11,43
+11,40
+10,74
+11,97
+11,31
+
+DROP
+acc ↑
+14,85
+20,27
+23,86
+23,53
+20,27
+21,23
+23,77
+21,80
+
+13,33
+25,17
+28,14
+29,06
+27,83
+27,77
+28,18
+26,71
+
+30,97
+23,86
+29,76
+41,59
+38,87
+35,59
+37,23
+47,05
+39,95
+
+70,87
+1,45
+22,23
+26,23
+25,23
+27,40
+29,49
+28,95
+25,14
+
+50,30
+48,93
+52,90
+55,04
+53,67
+53,50
+53,55
+57,17
+55,51
+
+14,70
+10,83
+12,58
+16,00
+16,09
+15,11
+15,01
+17,29
+15,62
+
+23,62
+20,60
+24,77
+26,07
+24,63
+23,67
+23,96
+26,31
+27,55
+
+43,04
+21,29
+32,21
+36,50
+34,89
+35,19
+35,96
+39,30
+36,23
+
+79,66
+26,73
+59,68
+60,58
+63,37
+62,56
+60,22
+63,10
+60,31
+
+36,93
+29,96
+37,84
+43,67
+38,91
+39,01
+39,81
+46,25
+45,51
+
+75,86
+3,27
+31,13
+30,40
+31,58
+38,29
+32,12
+32,67
+28,68
+
+58,95
+52,96
+56,64
+59,24
+58,00
+59,54
+59,54
+61,37
+60,13
+
+18,94
+14,63
+15,39
+18,69
+18,06
+17,96
+18,56
+19,64
+17,61
+
+29,37
+22,66
+25,35
+25,25
+25,59
+25,40
+26,98
+27,74
+27,70
+
+49,95
+25,04
+37,67
+39,64
+39,25
+40,46
+39,54
+41,79
+39,99
+
+83,35
+
+46,92
+
+70,96
+
+63,21
+
+21,79
+
+27,41
+
+52,27
+
+14,18
+20,89
+23,38
+25,44
+23,48
+23,43
+25,68
+22,86
+
+AVG
+acc ↑
+11,91
+22,89
+27,67
+25,07
+26,38
+26,69
+28,21
+26,26
+
+SWDE
+acc ↑
+10,08
+37,62
+39,69
+34,65
+39,24
+38,07
+40,50
+34,38
+
+SQUAD
+acc ↑
+14,08
+26,34
+30,46
+36,03
+31,60
+32,44
+29,99
+36,03
+
+12,01
+8,01
+11,47
+14,16
+14,76
+14,38
+15,96
+14,29
+13,62
+
+25,59
+19,65
+22,81
+28,41
+23,48
+25,16
+24,82
+27,02
+26,26
+
+37,72
+18,58
+29,12
+34,17
+33,88
+33,80
+34,65
+35,61
+34,72
+
+67,78
+22,05
+51,04
+54,10
+50,86
+55,90
+56,53
+59,05
+53,65
+
+53,08
+48,34
+51,66
+55,04
+54,50
+55,15
+55,86
+54,38
+54,74
+
+16,57
+10,42
+13,97
+16,25
+15,17
+16,63
+17,39
+17,55
+15,33
+
+26,59
+21,61
+25,11
+25,97
+26,64
+25,35
+25,87
+27,46
+25,68
+
+48,33
+19,74
+34,15
+37,98
+36,26
+38,29
+39,25
+38,56
+37,68
+
+56,99
+
+18,69
+
+29,47
+
+50,69
+
+AVG
+
+Table 16: Benchmark Scores for In-Context Recall Benchmarks on all Model Settings. MesaNet consistently
+attains the best or second-best score on average across all evaluated model settings.
+
+48
+
+Published as a conference paper at ICLR 2026
+
+L.2.3
+
+F EW-S HOT L EARNING B ENCHMARKS
+
+To evaluate the few-shot learning ability, we tested two distinct types of few-shot tasks, (i) word
+scrambling tasks introduced in (Brown et al., 2020b) and (ii) a couple of language-to-language
+translation tasks.
+Word Scrambling Tasks. We report the few-shot performances in Table 17 for 0-,1-,10- and 100shot settings. As few-shot evaluation tend to be sensitive to the selection and ordering of few-shot
+examples (Lu et al., 2021), we report the mean performance over 10 randomly drawn few-shot prefixes.
+We observe consistent improvements with an increasing number of fewshots for all models except
+for SWA-4. MesaNet attains the strongest performance scores in most settings, and outperforms the
+transformer baseline significantly.
+While we evaluate on all five word scrambling tasks introduce in Brown et al. (2020b), we observe
+only observe signal (performance above 1%) for models in the ranges 145M to 1B on two tasks:
+gpt3/cycle letters in word and gpt3/mid word 2 anagrams. On the three remaining tasks, we observe performance score close to 0%, in line with the results of Brown et al. (2020b),
+and hence omit the scores here.
+
+145M Models
+
+400M Models
+
+1B Models
+
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+gpt3/cycle letters in word
+0-shot
+1-shot 10-shot
+100-shot
+0.2 0.4±0.2 1.3±0.5
+1.7±0.5
+0.0 0.2±0.2 1.7±0.4
+1.4±0.3
+0.1 0.2±0.3 2.4±0.7
+3.0±0.4
+0.1 0.4±0.5 2.8±0.6
+3.8±0.5
+0.1 0.5±0.4 2.6±0.9
+3.2±0.6
+0.1 0.8±0.6 2.5±0.7
+3.4±0.6
+0.1 0.2±0.3 2.2±0.5
+3.3±0.5
+0.0 0.3±0.2 1.7±0.5
+2.4±0.6
+
+gpt3/mid word 2 anagrams
+0-shot
+1-shot 10-shot 100-shot
+0.2 0.4±0.1 0.8±0.2
+0.7±0.2
+0.0 0.2±0.3 0.6±0.2
+0.3±0.1
+0.2 0.1±0.1 1.0±0.4
+1.5±0.1
+0.3 0.1±0.2 0.9±0.3
+1.6±0.1
+0.1 0.2±0.1 1.2±0.3
+1.1±0.2
+0.0 0.4±0.4 1.4±0.2
+1.7±0.2
+1.7±0.1
+0.1 0.2±0.2 1.1±0.3
+0.2 0.2±0.3 0.9±0.3
+1.4±0.2
+
+- Transformer
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+0.1
+0.1
+0.4
+0.0
+0.0
+0.1
+0.1
+0.4
+0.0
+
+0.5±0.4
+1.7±1.2
+2.0±1.4
+1.7±1.1
+2.3±1.3
+1.5±1.0
+2.1±1.7
+2.2±1.2
+1.3±0.9
+
+2.6±0.5
+5.3±1.2
+4.5±0.6
+5.2±1.0
+5.7±1.3
+5.7±1.3
+6.5±1.0
+6.6±1.0
+4.0±1.4
+
+3.7±0.3
+6.6±0.4
+5.1±0.5
+7.6±0.3
+8.2±0.5
+7.6±0.6
+9.0±0.8
+9.2±0.6
+7.3±0.5
+
+0.1
+0.1
+0.4
+0.4
+0.2
+0.0
+0.1
+0.6
+0.1
+
+0.2±0.2
+0.9±0.7
+0.9±0.5
+1.0±0.7
+1.1±0.5
+1.1±0.5
+0.9±0.5
+1.1±0.5
+0.9±0.7
+
+1.2±0.3
+2.4±0.1
+1.6±0.3
+2.4±0.2
+2.5±0.3
+2.4±0.3
+2.6±0.3
+2.6±0.3
+2.6±0.3
+
+1.7±0.2
+2.8±0.2
+1.6±0.1
+2.6±0.2
+2.9±0.3
+2.6±0.3
+3.4±0.2
+3.2±0.2
+3.1±0.1
+
+- SWA-4
+- SWA-64
+- SWA-1024
+
+0.0
+0.1
+0.3
+
+0.4±0.3
+2.5±1.5
+2.5±1.6
+
+0.8±0.3
+4.6±1.1
+6.1±0.9
+
+0.8±0.2
+4.7±0.9
+7.7±0.5
+
+0.0
+0.1
+0.8
+
+0.3±0.3
+1.2±0.5
+1.2±0.8
+
+0.9±0.3
+2.7±0.2
+2.9±0.4
+
+0.9±0.3
+2.7±0.1
+3.1±0.3
+
+- Transformer
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+0.4
+0.2
+0.8
+0.3
+0.0
+0.0
+0.3
+0.5
+0.4
+
+2.4±1.8
+1.5±1.0
+3.7±1.7
+4.1±2.1
+2.2±1.3
+2.9±1.9
+4.0±1.8
+3.3±2.0
+2.1±1.5
+
+6.7±1.2
+6.8±1.5
+6.3±0.8
+8.4±1.2
+7.7±1.8
+8.7±1.3
+8.9±1.4
+9.7±1.3
+7.2±1.5
+
+8.5±0.4
+9.2±0.6
+6.4±0.7
+10.3±0.5
+11.0±0.4
+11.7±0.8
+11.8±0.7
+14.0±0.5
+11.4±0.5
+
+0.5
+0.1
+1.1
+0.5
+0.3
+0.1
+0.5
+1.1
+0.6
+
+1.4±0.7
+0.9±0.8
+1.8±0.3
+2.3±0.7
+1.8±0.5
+1.6±0.8
+2.5±0.9
+2.1±1.1
+2.0±0.9
+
+3.3±0.4
+3.5±0.4
+2.4±0.3
+3.9±0.5
+3.9±0.3
+3.7±0.5
+4.7±0.6
+4.7±0.6
+4.4±0.4
+
+3.6±0.2
+3.8±0.2
+2.0±0.4
+4.2±0.2
+4.6±0.3
+4.1±0.3
+6.1±0.4
+6.2±0.4
+5.8±0.3
+
+- SWA-4
+- SWA-64
+- SWA-1024
+
+0.1
+1.3
+0.1
+
+1.1±0.9
+3.5±1.8
+3.4±1.8
+
+1.5±0.7
+6.3±1.3
+7.5±1.3
+
+2.0±0.8
+7.8±0.6
+9.0±0.5
+
+0.2
+1.0
+0.1
+
+0.6±0.5
+2.4±0.7
+1.9±0.9
+
+1.4±0.3
+3.8±0.3
+4.3±0.4
+
+1.4±0.3
+4.0±0.3
+4.3±0.2
+
+- Transformer
+
+0.0
+
+3.0±2.2
+
+6.8±1.7
+
+9.2±0.6
+
+0.1
+
+2.4±0.6
+
+4.2±0.4
+
+4.7±0.2
+
+Table 17: Few-Shot Performance (Accuracy ± Std.) on GPT-3 Word Scrambling Tasks (Brown et al.,
+2020b) of Models Trained on 50B Tokens. Best 50-shot scores are highlighted, and standard deviation is
+reported over 10 random drawn few-shot selections. MesaNet attains the strongest scores in most settings, and
+outperforms the transformer baseline significantly.
+
+49
+
+Published as a conference paper at ICLR 2026
+
+Language-to-Language Translation. We evaluated a model’s capability to translate from three
+different languages to English: (i) French to English (Bojar et al., 2014), (ii) German to English (Bojar
+et al., 2016) and (iii) Romanian to English (Bojar et al., 2016). We follow the exact prompt setup of
+Brown et al. (2020b) evaluate with {0,1,5,10} -and 50-shots, and report the performance in Table 18
+with respect to BLEU-sb (Post, 2018) for models trained on 50B tokens.
+We observe scores of different performance magnitudes across the three languages, which is most
+likely caused by the multi-lingual distribution of the training data corpus and French being more
+prevalent than German and Romanian. MesaNet attains superior scores among the recurrent models.
+However, MesaNet, and more general all recurrent models, fail to match the transformer performance
+by a relatively big margin, especially at the scale of 1B models. This finding is non-surprising given
+the impact of the attention mechanism on the field of machine translation (Bahdanau et al., 2014),
+indicating that pure model- and data-scaling based on recurrent models will not be enough to match
+the performance of attention-based architecture (Rodchenko et al., 2025).
+
+145M Models:
+
+400M Models:
+
+1B Models:
+
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+0
+0,61
+1,68
+1,47
+1,64
+1,57
+1,31
+1,26
+1,62
+
+WMT14 FR-EN
+1
+5
+10
+0,31
+0,25
+0,08
+0,56
+0,73
+0,73
+0,21
+0,69
+0,66
+0,07
+0,73
+0,87
+0,20
+0,78
+0,90
+0,25
+0,28
+0,35
+0,66
+0,33
+1,10
+0,19
+0,80
+0,77
+
+50
+0,11
+0,19
+0,63
+0,67
+0,59
+0,89
+1,06
+0,94
+
+0
+0,49
+2,13
+1,78
+2,09
+1,68
+1,64
+1,53
+2,03
+
+WMT16 DE-EN
+1
+5
+10
+0,16
+0,20
+0,19
+0,40
+0,28
+0,51
+0,52
+0,35
+0,52
+0,63
+0,33
+0,81
+0,49
+0,32
+0,73
+0,42
+0,35
+0,68
+0,49
+0,58
+0,46
+0,51
+0,67
+0,47
+
+50
+0,19
+0,37
+0,44
+0,77
+0,81
+0,64
+0,62
+0,79
+
+0
+0,44
+1,68
+1,52
+1,68
+1,56
+0,80
+1,56
+1,77
+
+WMT16 RO-EN
+1
+5
+10
+0,16
+0,06
+0,19
+0,32
+0,44
+0,50
+0,24
+0,12
+0,50
+0,22
+0,34
+0,50
+0,80
+0,55
+0,58
+0,67
+0,49
+0,51
+0,32
+0,51
+0,45
+0,24
+0,54
+0,49
+
+50
+0,29
+0,46
+0,51
+0,85
+0,61
+0,35
+0,52
+0,90
+
+- Transformer
+
+1,55
+
+0,05
+
+0,59
+
+0,70
+
+0,87
+
+1,90
+
+0,39
+
+0,86
+
+0,61
+
+0,71
+
+1,75
+
+0,28
+
+0,30
+
+1,41
+
+0,50
+
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+1,54
+2,15
+1,83
+2,14
+1,72
+1,87
+2,23
+1,90
+
+2,28
+4,05
+3,20
+3,08
+3,09
+3,92
+2,75
+2,83
+
+3,95
+6,07
+2,74
+3,48
+4,43
+3,86
+4,33
+3,89
+
+4,25
+4,55
+4,83
+3,66
+3,89
+4,16
+5,05
+4,54
+
+4,97
+3,49
+4,23
+3,28
+3,49
+3,77
+5,33
+4,27
+
+1,34
+2,17
+2,15
+2,29
+1,84
+2,00
+2,06
+2,00
+
+1,36
+1,43
+2,60
+2,06
+1,53
+0,85
+0,80
+2,55
+
+3,24
+3,13
+1,88
+2,68
+3,52
+3,35
+2,62
+3,66
+
+3,87
+3,19
+2,04
+2,79
+2,83
+3,18
+3,11
+3,26
+
+3,67
+2,52
+2,19
+2,77
+2,47
+2,94
+3,70
+3,20
+
+0,91
+1,68
+1,72
+1,63
+1,79
+1,80
+1,75
+1,74
+
+1,29
+0,86
+0,62
+1,10
+1,67
+1,05
+0,68
+0,68
+
+2,03
+1,36
+1,42
+1,37
+1,63
+2,56
+2,09
+1,71
+
+1,52
+1,94
+1,96
+2,20
+1,29
+2,13
+1,63
+1,71
+
+1,89
+1,64
+1,30
+2,15
+1,45
+2,22
+2,47
+2,28
+
+- SWA-4
+- SWA-64
+- SWA-1024
+
+0,34
+1,35
+4,09
+
+0,13
+3,82
+4,55
+
+0,14
+4,46
+8,49
+
+0,13
+4,94
+7,77
+
+0,12
+4,92
+9,16
+
+0,25
+1,45
+3,09
+
+0,19
+2,17
+3,66
+
+0,26
+1,66
+4,57
+
+0,21
+2,09
+5,14
+
+0,26
+1,57
+5,11
+
+0,29
+1,18
+1,96
+
+0,10
+1,10
+0,55
+
+0,06
+1,38
+1,82
+
+0,07
+0,88
+2,99
+
+0,05
+1,29
+2,67
+
+- Transformer
+
+2,61
+
+8,27
+
+8,77
+
+8,92
+
+9,63
+
+2,04
+
+3,13
+
+5,73
+
+5,34
+
+5,49
+
+1,94
+
+1,02
+
+1,29
+
+2,23
+
+2,56
+
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated DeltaNet
+- Mesa
+- Hawk-Mesa
+
+3,72
+4,20
+3,15
+4,96
+5,24
+4,71
+3,58
+3,68
+
+5,88
+11,81
+10,60
+5,11
+8,34
+8,24
+11,80
+7,99
+
+8,56
+11,90
+11,87
+11,71
+10,79
+10,03
+12,44
+10,58
+
+7,15
+11,28
+10,90
+10,32
+10,08
+11,25
+11,57
+13,16
+
+4,17
+5,83
+10,31
+10,56
+7,88
+11,31
+11,64
+12,01
+
+3,33
+3,07
+2,58
+4,13
+4,02
+4,31
+3,10
+2,92
+
+3,79
+3,62
+7,90
+5,52
+6,91
+7,59
+6,98
+8,03
+
+3,77
+6,79
+9,41
+9,17
+8,72
+9,07
+10,20
+10,50
+
+5,20
+8,18
+7,77
+8,99
+6,01
+8,60
+8,49
+8,67
+
+5,86
+3,35
+7,46
+8,59
+5,66
+8,76
+7,81
+8,43
+
+2,37
+2,04
+2,15
+2,60
+2,29
+2,45
+1,88
+2,36
+
+2,69
+4,27
+2,59
+2,33
+1,01
+4,63
+5,05
+4,73
+
+4,39
+6,83
+6,60
+4,74
+4,32
+5,67
+2,96
+4,91
+
+4,22
+4,75
+4,30
+3,81
+3,39
+5,33
+6,05
+5,81
+
+4,17
+3,38
+4,95
+3,90
+2,58
+5,51
+5,07
+5,99
+
+- SWA-4
+- SWA-64
+- SWA-1024
+
+0,54
+5,58
+8,75
+
+0,72
+6,69
+16,65
+
+0,72
+2,92
+18,09
+
+0,72
+8,43
+18,70
+
+0,74
+7,61
+19,83
+
+0,49
+4,09
+5,99
+
+0,75
+5,27
+10,85
+
+0,89
+4,69
+14,58
+
+0,87
+4,05
+14,91
+
+0,72
+3,45
+14,30
+
+0,22
+2,26
+3,36
+
+0,12
+1,68
+4,19
+
+0,14
+1,85
+10,14
+
+0,11
+3,12
+10,05
+
+0,06
+3,05
+8,38
+
+- Transformer
+
+8,30
+
+18,49
+
+17,81
+
+17,70
+
+19,14
+
+6,10
+
+13,06
+
+11,99
+
+13,99
+
+13,85
+
+3,54
+
+5,92
+
+7,11
+
+7,35
+
+7,82
+
+Table 18: Performance Scores (in BLEU-sb) on three Translation Tasks on Models Trained on 50B Tokens.
+Best 50-shot scores among recurrent models are highlighted, as well as Transformer reference scores. While
+MesaNet attains the best-score among the recurrent models in most settings, it under-performs transformer by
+relative big margin.
+
+L.3
+
+N EEDLE I N THE H AYSTACK (NIAH) R ESULTS
+
+Setup. We conducted a sweep of experiments on single-needle tasks (NIAH) from the RULER
+benchmark (Hsieh et al., 2024) suite for 1B models trained on 50B tokens. We ran experiments for
+both haystack types (noise and essays) for all key/value combinations (both can be in the form of:
+words, numbers or uuids) on context lengths 2048 and 4096.
+Results. As scores are quite sensitive to the chosen key and values types, we report mean±std percent
+accuracy over all 9 key/value combinations, with 1000 evaluation samples for each setting. On the
+“noise” haystack, MesaNet demonstrates strong scores with very low fluctuations across key/value
+combinations. On the “essay” haystack, we observe relatively high score fluctuations across key/value
+combinations for all models which makes it hard to form conclusions. However, we would still like
+to highlight the strong performance of Hawk-Mesa on the essay haystack.
+50
+
+Published as a conference paper at ICLR 2026
+
+- Hawk
+- Mamba2
+- GLA
+- xLSTM
+- DeltaNet
+- Gated-DeltaNet
+- MesaNet
+- Hawk-Mesa
+- SWA-1024
+
+NIAH Noise
+L=2048
+L=4096
+4.0 ± 5.9
+1.7 ± 2.9
+79.7 ± 17.9
+0.7 ± 1.0
+96.2 ± 4.2 68.5 ± 18.9
+94.8 ± 5.0 80.4 ± 14.9
+99.3 ± 1.0
+96.5 ± 6.3
+98.3 ± 4.1
+96.3 ± 8.1
+99.5 ± 0.5
+95.1 ± 3.9
+97.6 ± 3.5 65.3 ± 21.6
+51.8 ± 0.9
+24.3 ± 1.3
+
+NIAH-Essay
+L=2048
+L=4096
+3.0 ± 2.2
+2.1 ± 1.6
+51.3 ± 22.3
+0.0 ± 0.0
+73.5 ± 34.7 41.4 ± 26.9
+69.1 ± 20.5
+24.3 ± 9.9
+68.9 ± 32.3 27.9 ± 15.3
+52.1 ± 33.7
+11.0 ± 9.4
+66.8 ± 28.9
+17.9 ± 9.0
+90.9 ± 10.5 55.5 ± 28.5
+47.5 ± 11.8
+21.6 ± 7.2
+
+- MHA
+
+99.7 ± 0.3
+
+98.2 ± 2.5
+
+0.0 ± 0.0
+
+0.0 ± 0.0
+
+Table 19: NIAH Benchmark results for 1B models trained on 50B tokens.
+
+M
+
+VARYING THE N UMBER OF C ONJUGATE G RADIENT S TEPS WHEN
+T RAINING M ESA N ETS
+
+Here we present the effect when training the MesaNet on less than 30 steps. We opted for training
+with 30 steps, as we were not optimizing for training flops but first investigate a fully converge Mesa
+layer, and because of early experiments on our 400million model which indicated little improvement
+after 30 steps.
+As shown in Figure 13, we see a small, interestingly, uniform increase of training loss across the
+sequence length when comparing to a model which is trained on 30 steps. Only when dropping
+the number of CG steps below 10, we see a more drastic jump in loss increase. As we have show
+in section C, the backward pass also relies on running the CG method to solve linear systems of
+equations and we leave investigating for future work varying the number of steps in the forward and
+backward pass.
+
+Difference in NLL to Mesa (CG=30)
+
+Mesa (Train CG=5)
+Mesa (Train CG=5, Inference=30)
+Mesa (Train CG=10)
+Mesa (Train CG=15)
+
+Mesa (Train CG=20)
+Mesa (Train CG=25)
+Mesa (Train CG=50)
+
+0.02
+
+0.01
+
+0
+0
+
+1024
+Token Position
+
+2048
+
+Figure 13: We compare the validation loss across the sequence of 400 million parameter MesaNets trained on
+15B tokens, when varying the number of conjugate gradient steps during training. We observe a slight uniform
+increase of validation loss across the sequence length when comparing to a model which is trained on 30 steps.
+Only when dropping the CG steps drastically to 5 we see a substantial increase in loss.
+
+N
+
+E VALUATION M ETHODOLOGY
+
+Mulitple Choice Tasks: For a given question x, we assess for all possible options y the loss NLL(y|x)
+of the option conditional on the question, and then normalize by the number of tokens of y. In contrast
+to related work (Gu & Dao, 2024; Yang et al., 2024a; Beck et al., 2024), we do not heuristically
+choose between byte-normalized and non-normalized scoring schemes as we have a fixed tokenizer
+across all models.
+Greedy Matching Tasks. For a given input x and an expected target sequence y (e.g., one or multiple
+tokens), we check whether t would be matched under greedy sampling. This is done by obtaining
+the logits for the concatenated input of x + y, and checking whether all tokens belonging to y are
+matched by taking the argmax over the logits.
+51
+
+Published as a conference paper at ICLR 2026
+
+In-Context Recall Tasks. We follow closely the setup of (Arora et al., 2023b). For a given input
+x, we sample greedily a completion from the model until either 48 tokens or a new-line character is
+sampled. We then check whether the target y is contained in the output (non-case-sensitive).
+
+O
+
+A N I NTERNAL A NALYSIS OF THE M ESA N ET
+
+Figure 14: input strength β, forget strength γ, regularization strengths Λ as well as other internal statistics
+of a 400M parameter MesaNet trained on 50B tokens - averaged over 500 sequences from the SlimPajama
+validation set. We observe that high γt ≈ 1 values usually lead to the condition number of the to be inverted
+matrix Kt KtT + Λ increase over time, which in turn leads to more CG steps required to obtain an output for the
+mesa. We also observe (outer right plot) that usually these heads lead to higher cosine similarity (cos) between
+ot , the output of the layer if no CG steps are applied which corresponds to gated linear attention, compared to
+the Mesa output o∗t . We compute the number of conjugate gradient steps are computed by measuring the steps
+of the conjugate gradient method to reach an error of 0.001. We sort the heads for plotting purposes according to
+their average gamma values.
+
+52
+
+Published as a conference paper at ICLR 2026
+
+53
+
+

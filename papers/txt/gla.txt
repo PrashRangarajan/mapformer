@@ -1,0 +1,3287 @@
+Gated Linear Attention Transformers with Hardware-Efficient Training
+
+Songlin Yang 1 * Bailin Wang 1 * Yikang Shen 2 Rameswar Panda 2 Yoon Kim 1
+
+Abstract
+
+1
+
+Transformers with softmax attention (Vaswani et al., 2017)
+enjoy efficient parallel training but suffer from quadratic
+(in sequence length) complexity, thus motivating more
+RNN-like models that allow for linear-time sequence
+modeling. Linear attention, which replaces the exponential
+similarity function with a simple dot product over (possibly
+transformed) key/query vectors, has emerged as a promising
+alternative to classic softmax attention (Katharopoulos et al.,
+2020; Choromanski et al., 2021; Kasai et al., 2021; Peng
+et al., 2021). An attractive property of linear attention is that
+it admits a “recurrent form” in which it can be formulated
+as a linear RNN with 2D hidden states (Katharopoulos et al.,
+2020), thus enabling linear-time inference. For training,
+linear attention also admits a subquadratic “chunkwise parallel form” which divides the sequence into non-overlapping
+chunks and performs (serial) inter-chunk recurrent computations followed by (parallel) intra-chunk computations (Hua
+et al., 2022; Sun et al., 2023a; Lingle, 2023), thus (partially)
+maintaining parallel training. However, existing algorithms
+for linear attention are not I/O aware and thus, in practice,
+slower than optimized implementations of softmax attention
+(Dao et al., 2022b; Dao, 2023) on moderate sequence lengths.
+
+Transformers with linear attention allow for
+efficient parallel training but can simultaneously
+be formulated as an RNN with 2D (matrix-valued)
+hidden states, thus enjoying linear-time inference
+complexity. However, linear attention generally
+underperforms ordinary softmax attention. Moreover, current implementations of linear attention
+lack I/O-awareness and are thus slower than highly
+optimized implementations of softmax attention.
+This work describes a hardware-efficient algorithm for linear attention that trades off memory
+movement against parallelizability. The resulting
+implementation, dubbed F LASH L INEAR ATTENTION , is faster than F LASH ATTENTION -2
+(Dao, 2023) as a standalone layer even on short
+sequence lengths (e.g., 1K). We then generalize
+this algorithm to a more expressive variant of
+linear attention with data-dependent gates. When
+used as a replacement for the standard attention
+layer in Transformers, the resulting gated linear
+attention (GLA) Transformer is found to perform
+competitively against the LLaMA-architecture
+Transformer (Touvron et al., 2023) as well recent
+linear-time-inference baselines such as RetNet
+(Sun et al., 2023a) and Mamba (Gu & Dao, 2023)
+on moderate-scale language modeling experiments. GLA Transformer is especially effective
+at length generalization, enabling a model trained
+on 2K to generalize to sequences longer than 20K
+without significant perplexity degradations. For
+training speed, the GLA Transformer has higher
+throughput than a similarly-sized Mamba model.
+
+arXiv:2312.06635v6 [cs.LG] 27 Aug 2024
+
+Introduction
+
+From a performance standpoint, linear attention has generally been found to underperform ordinary softmax attention,
+often by a significant margin in language modeling (Kasai
+et al., 2021). Recent variants of linear attention such as
+RetNet (Sun et al., 2023a) and TransNormerLLM (Qin et al.,
+2023b) obtain significant improvements by multiplying
+the current hidden state with a decay factor before the
+RNN update. However, these works use a global, dataindependent decay factor, despite the fact that in 1D RNNs,
+a data-dependent gating mechanism has been shown to be
+crucial for performance (van der Westhuizen & Lasenby,
+2018; Qin et al., 2023c). And even with the decay factor,
+linear attention Transformers underperform the strongest
+Transformer architectures when pretrained from scratch.
+
+ https://github.com/sustcsonglin/fl
+ash-linear-attention
+
+This work develops a hardware-efficient algorithm for linear
+attention, and applies it to train a gated variant of linear
+attention that is competitive with softmax attention. We first
+discuss aspects of optimizing ordinary linear attention on
+modern GPUs and give two I/O-aware algorithms (tailored
+for different training settings) based on these principles (§3).
+Our implementation of the algorithm, called F LASH L IN -
+
+*
+
+Equal contribution 1 Massachusetts Institute of Technology
+2
+MIT-IBM Watson AI Lab. Correspondence to: Songlin Yang
+<yangsl66@mit.edu>, Bailin Wang <bailinw@mit.edu>.
+Proceedings of the 41 st International Conference on Machine
+Learning, Vienna, Austria. PMLR 235, 2024. Copyright 2024
+by the author(s).
+
+1
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+
+the calculation of ot since we have
+Pt
+Pt
+T
+T
+ϕ(qt )ϕ(ki ) vi ϕ(qt ) i=1 ϕ(ki ) vi
+=
+ot = Pi=1
+.
+Pt
+t
+T
+ϕ(qt ) i=1 ϕ(ki )T
+i=1 ϕ(qt )ϕ(ki )
+Pt
+Pt
+T
+T
+Letting St = i=1 ϕ(ki ) vi and zt = i=1 ϕ(ki ) where
+St ∈ Rd×d ,zt ∈ Rd×1 , we can rewrite the above as an RNN,
+ϕ(qt )St
+T
+T
+St = St−1 +ϕ(kt ) vt , zt = zt−1 +ϕ(kt ) , ot =
+.
+ϕ(qt )zt
+Although various kernels have been explored (Kasai et al.,
+2021; Peng et al., 2021), recent work has found that a linear
+kernel (i.e., setting ϕ to be the identity) without a normalizer
+works well in practice (Sun et al., 2023a). This results in
+an (unnormalized) linear attention layer with the following
+update equation,
+
+EAR ATTENTION , is faster than F LASH ATTENTION -2 (Dao,
+2023) even on short (e.g., 1K) sequences. We then describe
+a gated linear attention layer with a data-dependent gating
+mechanism and show how F LASH L INEAR ATTENTION can
+be generalized to the gated case (§4). We study the resulting
+gated linear attention (GLA) Transformer on moderate-scale
+language modeling benchmarks, where we train models with
+340M/1.3B parameters on 15B/100B tokens, respectively.
+We find that the GLA Transformer performs favorably
+against a strong LLaMA architecture Transformer baseline
+that makes use of recent recipes (Transformer++; Touvron
+et al., 2023) as well as recent linear-time sequence models
+such as RetNet (Sun et al., 2023a) and Mamba (Gu & Dao,
+2023). GLA Transformer is found to be particularly strong at
+length generalization and recall-intensive tasks among linear
+recurrent models. For training speed, the GLA Transformer
+has significantly higher throughput than a similarly sized
+Mamba model.
+
+T
+
+St = St−1 +kt vt ,
+
+ot = qt St .
+
+(1)
+
+We first give a brief background on linear attention layers.
+For notation we use bold upper-case letters for matrices (e.g.,
+S, Q), bold lower-case letters for vectors (e.g., qt , kt ), and
+italic upper-case for learnable parameters matrices (e.g.,
+WK ). We generally use the same alphabet to show the rows
+of a matrix, e.g., qt is the t-th row of Q.
+
+Eq. 1 makes it clear that a linear attention layer is essentially a
+linear recurrent layer with matrix-valued hidden states St that
+T
+T
+is updated via the outer-product kt vt = (xt WK ) (xt WV ).1
+The parallel form of causal linear attention, whose complex
+T
+ity is still quadratic in L, is given by O = (QK )⊙M V,
+where M ∈ {0,1}L×L is a mask such that Mij = 1 if i ≥ j
+and Mij = 0 if i < j. Due to M it is not possible to exploit
+the associative property of matrix multiplication to reduce
+the parallel form complexity from quadratic to linear.2
+
+2.1
+
+2.2
+
+2
+
+Background: Linear Attention
+
+Parallel and Recurrent Forms
+
+Standard autoregressive Transformers employ a softmax attention mechanism which takes an input sequence X ∈ RL×d
+(here L is the length and d is the hidden dimension) and
+computes the output O ∈ RL×d through,
+
+Chunkwise Parallel Form
+
+The chunkwise parallel form of linear attention strikes a
+balance between parallel and recurrent form (Hua et al.,
+2022; Sun et al., 2023a), and allows for subquadratic,
+partially parallel training. Formally, suppose the input X is
+now split into non-overlapping chunks, where each chunk
+is of length C. Let S[i] ∈ Rd×d be the chunk-level hidden
+state after processing i chunks, i.e., S[i] := SiC . Further
+let Q[i] := QiC+1:(i+1)C+1 ∈ RC×d be the query vectors
+corresponding to the i-th chunk; let K[i] , V[i] , O[i] be
+similarly defined. We then have the following inter-chunk
+L
+recurrence (for i ∈ [0,1,... C
+−1]):
+
+Q,K,V = XWQ ,XWK ,XWV ,
+
+T
+O = softmax (QK )⊙M V,
+where WQ , WK , WV ∈ Rd×d are learnable matrices and
+M ∈ {−∞, 1}L×L is a mask that prevents the model
+from attending to future tokens, i.e., Mij = 1 if i ≥ j and
+Mij = −∞ if i < j. (Here we assume a single attention head
+for simplicity.) The above parallel form of attention can
+compute O in parallel given the full input X, thus enabling
+efficient training. However, during inference Transformers
+must use the following recurrent form,
+
+(i+1)C
+
+X
+
+S[i+1] = S[i] +
+
+T
+
+kj vj
+
+∈ Rd×d .
+
+(2)
+
+j=iC+1
+
+|
+
+qt , kt , vt = xt WQ , xt WK , xt WV ,
+Pt
+T
+exp(qt ki )vi
+ot = Pi=1
+,
+T
+t
+i=1 exp(qt ki )
+which calculates the query (qt ), key (kt ), and value (vt )
+vectors given the current token’s representation xt ∈ R1×d
+and the performs attention over the (growing) set of keys
+{k1 ,...,kt } and values {v1 ,...,vt } (i.e., the “KV cache”).
+
+{z
+
+T
+
+}
+
+K[i] V[i]
+
+Here S[0] can be initialized to zero or from the previous segment’s hidden state. The sum of all RNN inputs from a chunk
+T
+(i.e., K[i] V[i] ) can be computed in O(C 2 d) in parallel. The
+1
+This type of model with matrix-valued hidden states that change
+over time is also known as “fast weights” (Hinton & Plaut, 1987;
+Schmidhuber, 1992; Ba et al., 2016), whose connection to Transformers was explored in recent work (Schlag et al., 2021; Irie et al.,
+2021; Mao, 2022).
+T
+T
+2
+Without M, one can transform (QK )V to Q(K V) reduc2
+ing the complexity from quadratic (O(L d)) to linear (O(Ld2 )).
+
+Linear attention mechanisms (Katharopoulos et al., 2020)
+T
+replace exp(qt ki ) with a kernel k(x,y) with an associated
+feature map ϕ (i.e., k(x,y) = ⟨ϕ(x),ϕ(y)⟩). This simplifies
+2
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+Algorithm 1 F LASH L INEAR ATTENTION: Forward Pass
+
+intra-chunk parallel computation for the output is given by
+
+T
+O[i+1] = Q[i+1] S[i] + (Q[i+1] K[i+1] )⊙M V[i+1] ,
+| {z }
+|
+{z
+}
+inter-chunk:Ointer
+[i+1]
+
+Input: Q, K, V ∈ RL×d , V ∈ RL×d , chunk size C ∈ [L], materialize ∈
+{True,False}
+L
+Divide Q,K,V into N = C
+blocks {Q[1] ...Q[N ] }, {K[1] ...K[N ] } of size
+C ×d each.
+d×d
+Initialize S = 0 ∈ R
+on SRAM
+On chip, construct causal mask M ∈ RC×C
+if materialize then
+▷ the materialization version
+for n ← 1,N do
+Store S to HBM as S[n] .
+Load K[n] ,V[n] ∈ RC×d from HBM to SRAM
+On chip, compute S = S+K⊤
+[n] V[n] .
+end for
+parfor n ← 1,N do
+Load Q[n] ,K[n] ,V[n] ,S[n] from HBM to SRAM.
+
+intra-chunk:Ointra
+[i+1]
+
+where O[i+1] ∈ RC×d . Here the “intra-chunk” component
+Ointra
+[i+1] has exactly the same parallel form as Eq. 1 and thus
+takes O(C 2 d+Cd2 ). The “inter-chunk” component Ointer
+[i+1]
+accounts for the contribution from the hidden state from the
+2
+previous chunk, and takes
+ O(Cd ). Training complexity
+L
+is thus O C
+(C 2 d+Cd2 ) = O(LCd+Ld2 ), which is less
+than O(L2 d) when L > d. Note that setting C = L recovers
+the parallel form, and C = 1 recovers the recurrent form.
+
+3
+
+T
+
+On chip, compute O′ = Q[n] S[n] +(Q[n] K[n] ⊙M)V[n]
+Store O′ to HBM as O[n] .
+end parfor
+return O = {O[1] ...O[N ] }, S = {S[1] ...S[N ] }.
+else
+▷ the non-materialization version
+for n ← 1,N do
+Load Q[n] ,K[n] ,V[n] ∈ RC×d from HBM to SRAM
+On chip, compute O′ = Q[n] S+(Q[n] K⊤
+[n] ⊙M)V[n]
+
+Hardware-Efficient Linear Attention
+
+We describe F LASH L INEAR ATTENTION, an I/O-aware,
+hardware-efficient algorithm for linear attention in the spirit
+of F LASH ATTENTION (Dao et al., 2022b; Dao, 2023). We
+first discuss aspects of hardware that should be taken into
+account for a practically efficient implementation.
+3.1
+
+On chip, compute S = S+K⊤
+[n] V[n] .
+Store O′ to HBM as O[n]
+end for
+return O = {O[1] ...O[N ] }
+end if
+
+Principles of Hardware-Efficient Algorithms
+
+puting the hidden states during the backward pass, as in
+Katharopoulos et al. (2020), but the elementwise operations
+in the recurrent update cannot make use of tensor cores and
+result in low arithmetic intensity. Hence, while the recurrent
+form generally has the lowest total FLOPs among the three
+forms, this does not translate to actual wall-time efficiency.
+And while it is theoretically possible to parallelize linear
+recurrences via the parallel scan algorithm, this method
+requires materializing the 2D hidden state for each time step.
+This incurs a significant memory I/O burden, thereby offsetting the benefits of parallelism over the sequence length and
+resulting in slow actual running speeds, as in Katsch (2023).
+
+An efficient algorithm should be aware of the compute
+model, memory hierarchy, and specialized compute units
+on modern hardware.
+Occupancy. GPUs have many threads executed in parallel;
+threads are grouped into thread blocks, which execute on
+streaming multiprocessors (SMs). To maintain a high GPU
+occupancy (i.e., fraction of GPU resources being used), it
+is necessary to use a sufficient number of SMs. In large-scale
+training and long-sequence modeling scenarios where the
+batch size tends to be small, parallelizing over the temporal
+dimension enables high GPU occupancy (Dao, 2023).
+Specialized compute units. Modern hardware for neural
+network training typically have specialized compute units
+(e.g., tensor cores on NVIDIA GPUs, matrix mutiply units
+on TPUs), which can significantly accelerate matmuls; for
+example half-precision matmuls on an A100 can be roughly
+16 times faster on tensor cores than on CUDA cores. These
+specialized units are crucial for large-scale training.
+
+Parallel form. The parallel form could be as efficient
+as F LASH ATTENTION using similar I/O optimization
+techniques, as demonstrated by Qin et al. (2023b). However,
+the high number of FLOPs (due to the quadratic complexity)
+makes the long-sequence training expensive, the same issue
+that the naı̈ve implementation of softmax attention would
+suffer from.
+
+Memory hierarchy. GPUs have a memory hierarchy with
+larger but slower global GPU memory (high bandwidth
+memory; HBM) and smaller but faster shared memory
+(SRAM). Optimal utilization of SRAM to reduce HBM I/O
+cost can therefore lead to significant speed-ups.
+3.2
+
+Chunkwise form. The chunkwise parallel form, which
+interpolates between the parallel and recurrent forms with an
+extra “parameter” C, makes it possible to more easily make
+the above tradeoffs for fine-grained optimization. Unlike
+the recurrent form, most operations can be done via matmuls,
+enabling the use of tensor cores (if C is set to a multiple
+of 16). Though the chunkwise training algorithm has been
+discussed before in the literature (Hua et al., 2022; Sun
+et al., 2023a), most implementations are not I/O-aware and
+thus slower than F LASH ATTENTION for moderate sequence
+lengths (e.g., 2K-4K).
+
+Hardware Considerations for Linear Attention
+
+We now discuss hardware considerations pertaining to the
+efficiency of the different forms of linear attention.
+Recurrent form. A basic implementation of the recurrent
+form stores the 2D hidden states of all time steps in HBM,
+resulting in high I/O cost (Mao, 2022). I/O cost could
+be reduced by avoiding such materialization and recom3
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+Sequential
+intra
+Ointer
+[i+1] O[i+1]
+
+S[i]
+
+Q[i] K[i] V[i]
+
+Load from HBM
+
+Q[i+1] K[i+1] V[i+1]
+
+Store to HBM
+
+K[i] V[i]
+
+S[i]
+
+(a)
+
+S[i+1]
+
+K[i+1] V[i+1]
+(b)
+
+20
+
+101
+100
+
+On-chip construct
+
+2−1
+29
+
+S[i]
+
+210 211 212 213 214 215 210
+211
+212
+Sentence length
+Sentence length
+
+FlashAttention-2 (CUDA)
+FlashLinearAttention (w/o m. Triton)
+
+intra
+Ointer
+[i+1] O[i+1]
+
+FlashLinearAttention (w/ m. Triton)
+Chunkwise Linear Attention (Pytorch)
+
+Figure 2: Speed comparison on a single H100 GPU with batch
+size 32, number of heads 16, head dimension 64, and chunk size
+64. Both x- and y-axes are on log scale. w/ m. and w/o m. denotes
+using F LASH L INEAR ATTENTION with or without materialization
+of hidden states in HBM.
+
+Q[i+1] K[i+1] V[i+1]
+(c)
+
+Figure 1: (a) F LASH L INEAR ATTENTION without materialization.
+This version is more memory-efficient. (b-c) F LASH L INEAR ATTENTION with materialization. This version enables sequence-level
+chunkwise parallelism.
+
+3.3
+
+21
+
+102
+
+Chunkwise Parallel
+
+Sequential
+S[i−1]
+
+S[i+1]
+
+GPU memory (GB)
+
+S[i−1]
+
+Memory footprint
+
+103
+Time (ms)
+
+Ointer
+Ointra
+[i]
+[i]
+
+Running speed
+
+and a pure PyTorch (i.e., I/O-unaware) implementation
+of chunkwise linear attention, showing the benefits of
+I/O-awareness.
+
+F LASH L INEAR ATTENTION: Hardware-Efficient
+Linear Attention with the Chunkwise Form
+
+4
+
+Gated Linear Attention
+
+The linear recurrence in Eq. 1 does not have a decay term
+or a forget gate, which has been shown to be crucial in
+RNNs (Hochreiter & Schmidhuber, 1997; Cho et al., 2014;
+van der Westhuizen & Lasenby, 2018). The lack of a decay
+term makes it difficult for a model to “forget” information,
+and has been hypothesized to be partially responsible for the
+instability of linear attention in long-context tasks (Buckman
+& Gelada, 2024). Recent works (Sun et al., 2023a; Qin et al.,
+2023b) obtain better performance through incorporating
+a global, non-data-dependent decay factor3 γ ∈ (0,1) into
+T
+linear attention: St = γSt−1 + kt vt . The use of a single γ
+is designed to preserve the attention-style parallel form for
+efficient training. In this work, we consider a data-dependent
+gating mechanism for linear attention. We show that despite
+having a more expressive gating factor, the resulting gated
+linear attention (GLA) layer still admits a hardware-efficient
+chunkwise form for efficient training.
+
+We describe our I/O-aware, hardware-efficient implementation of the chunkwise form. We give two versions, whose
+forward and backward passes differ depending on whether
+the chunk-level hidden states S[n] are materialized in HBM.
+See Alg. 1 and Fig. 1 for the forward pass. (Alg. 2 in the
+appendix describes the backward pass.) At a high level,
+we use tiling to load tensors block-by-block and re-use
+tensor blocks on chip to avoid multiple HBM I/O as much as
+possible. For example, when Q[n] is loaded to SRAM, both
+Q[n] S and (Q[n] K⊤
+[n] ⊙ M)V[n] can be computed on chip,
+which avoids loading Q[n] twice, thus saving HBM I/O.
+The non-materialization version computes O[n] sequentially for n ∈ [N ], using SRAM to temporarily store S[n] ,
+which is memory-efficient. This version parallelizes across
+batch size, number of heads, and head dimensions, but lacks
+sequence-level parallelim. When the batch size is large,
+this level of parallelism is sufficient to enable high GPU
+occupancy. In long-sequence and large scale training settings
+where batch size is small, the SMs cannot be fully exploited
+in this case. The materialization version first performs the
+inter-chunk recurrence (Eq. 2) and stores all S[n] for n ∈ [N ]
+in HBM. Then, the O[n] ’s can be computed in parallel for
+all chunks. This approach offers better parallelism but
+increases the memory footprint by approximately 10-20%.
+We mitigate this through recomputation, where the hidden
+states discarded after the forward pass and recomputed
+during the backward pass. We find this introduces a small
+runtime overhead but significantly reduces the memory
+footprint, and we adopt this strategy by default.
+
+4.1
+
+Recurrent and Parallel Form of GLA
+
+Recurrent form. GLA has a 2D
+Gt ∈ (0,1)dk ×dv that varies over time:
+
+forget
+
+gate
+
+St = Gt ⊙St−1 +kt⊤ vt ,
+where we now allow the hidden state to have varying
+dimensions. This Hadamard product-based recurrent form
+is very general and encompasses many recent RNNs with
+2D hidden states, as listed in Table 1.
+Central to the design of gated linear attention is the
+parameterization of Gt which requires a balance between
+parameter-efficiency, state size, and training efficiency. A
+
+Figure 2 shows the speed and memory footprint of our implementation. Both versions of F LASH L INEAR ATTENTION are
+substantially faster than F LASH ATTENTION -2 (Dao, 2023)
+
+3
+
+This can be viewed as linear attention with ALiBi position encodings (Press et al., 2021). In practice these works also incorporate
+rotary position embeddings (RoPE; Su et al., 2021).
+
+4
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+Model
+Mamba (Gu & Dao, 2023)
+Mamba-2 (Dao & Gu, 2024)
+mLSTM (Beck et al., 2024; Peng et al., 2021)
+Gated Retention (Sun et al., 2024)
+DFW (Mao, 2022; Pramanik et al., 2023)
+GateLoop (Katsch, 2023)
+HGRN-2 (Qin et al., 2024b)
+RWKV-6 (Peng et al., 2024)
+Gated Linear Attention (GLA)
+
+Parameterization
+
+Learnable parameters
+
+T
+
+Gt = exp(−(1 αt )⊙exp(A)), αt = softplus(xt Wα1 Wα2 )
+T
+Gt = γt 1 1, γt = exp(−softplus(xt Wγ )exp(a))
+T
+Gt = γt 1 1, γt = σ(xt Wγ )
+1
+T
+Gt = γt 1 1, γt = σ(xt Wγ ) τ
+T
+Gt = αt βt , αt = σ(xt Wα ), βt = σ(xt Wβ )
+T
+Gt = αt 1, αt = σ(xt Wα1 )exp(xt Wα2 i)
+T
+Gt = αt 1, αt = γ +(1−γ)σ(xt Wα )
+T
+Gt = αt 1, αt = exp(−exp(xt Wα ))
+1
+T
+Gt = αt 1, αt = σ(xt Wα1 Wα2 ) τ
+
+d
+
+d
+
+A ∈ Rdk ×dv , Wα1 ∈ Rd× 16 , Wα2 ∈ R 16 ×dv
+Wγ ∈ Rd×1 , a ∈ R
+Wγ ∈ Rd×1
+Wγ ∈ Rd×1
+Wα ∈ Rd×dk , Wβ ∈ Rd×dv
+Wα1 ∈ Rd×dk , Wα2 ∈ Rd×dk
+Wα ∈ Rd×dk , γ ∈ (0,1)dk
+Wα ∈ Rd×dk
+Wα1 ∈ Rd×16 , Wα2 ∈ R16×dk
+
+Table 1: Gated linear attention formulation of recent models, which vary in their parameterization of Gt . The bias terms are omitted.
+
+naı̈ve mapping xt 7→ Gt to obtain a data-dependent gating
+matrix would require a matrix of size d · dk · dv , which
+would be parameter-inefficient. Mao (2022) propose a more
+efficient outer-product-based low-rank parameterization
+4
+(Gt = α⊤
+t βt ), which requires d·dv +d·dk parameters.
+
+Parallel form. We now describe a parallel form GLA for
+parallelizing across sequence length. Unrolling Eq. 3 gives
+
+
+
+t
+t
+X
+Y
+⊤ 
+
+
+St =
+α⊤
+j 1 ⊙ki vi
+i=1
+
+In Mamba (Gu & Dao, 2023), Gt is obtained by combining a
+data-independent learnable matrix A with a data-dependent
+vector αt , which allows the matrix to be full rank. However,
+this prevents the use of tensor cores because it cannot be
+reformulated into a matrix-multiply format, as discussed in
+Dao & Gu (2024). The lack of a compact matrix-multiply
+form necessitates the materialization of each time step’s
+hidden states. To reduce high I/O costs, Gu & Dao (2023)
+develop a hardware-aware algorithm that materializes the
+hidden states exclusively in SRAM rather than in HBM.
+Due to limited SRAM capacity, this approach cannot
+scale to larger hidden states, which, as we will show in
+our experiments, results in suboptimal performance on
+recall-intensive tasks. Mamba-2 (Dao & Gu, 2024) addresses
+this limitation with a more restricted gating mechanism:
+Gt = γt 1T 1, where γt ∈ (0,1) is a scalar, which makes it
+possible to to reformulate the recurrence in matrix-multiply
+form, enabling the use of tensor cores and larger state sizes.
+This scalar data-dependent gating is also used in Peng et al.
+(2021), Sun et al. (2024), and Beck et al. (2024).
+
+Letting bt :=
+
+j=i+1
+
+Qt
+
+j=1 αj , we can rewrite the above as
+
+ ⊤ !
+t
+X
+bt
+ot = qt St = qt
+1 ⊙ki⊤ vi
+b
+i
+i=1
+ ⊤
+t
+X
+ki
+=
+(qt ⊙bt )
+vi
+bi
+i=1
+where the division is element-wise. Letting B ∈ (0,1)L×d be
+the matrix obtained from stacking bt ’s, the parallel form is:
+
+
+
+ ⊤
+
+
+
+K
+ ⊙MV.
+
+O=
+
+
+(Q⊙B) B
+{z
+}
+|
+P
+
+However, this form is not numerical stable as bt is the
+cumulative product of gate values in αj ∈ (0,1)1×d , and thus
+can be extremely small when t is large, making K
+B explode.
+To handle this, we can compute in log space for P,6
+Pij =
+
+This paper adopts a middle ground between the scalar and
+5
+the fully low-rank parameterization by using Gt = α⊤
+t 1.
+This results in the following recurrent form,
+
+d
+X
+
+Qik Kjk exp(logBik −logBjk ),
+
+i ≥ j,
+
+(4)
+
+k=1
+
+where k denotes feature indices. However, unlike vanilla
+linear attention, as Eq. 4 cannot be represented via a standard
+matmul, and it cannot make use of half-precision matmuls
+on tensor cores. We will show in §4.3 how a secondary-level
+chunking mechanism can enable the use of half-precision
+matmuls for most computations while maintaining numerical
+stability, as illustrated in Figure 3.
+
+⊤
+⊤
+St = (α⊤
+t 1)⊙St−1 +kt vt = Diag(αt )St−1 +kt vt , (3)
+
+where αt is parameterized via a low-rank linear layer
+followed by sigmoid on xt (see §4.4). Note that the above
+formulation is general and encompasses several recent RNNs
+(Katsch, 2023; Qin et al., 2024b; Peng et al., 2024). Thus,
+the hardware-efficient GLA implementation (described next)
+could be directly used or adapted to other models.
+
+4.2
+
+Chunkwise Parallel Form of GLA
+
+4
+
+However, Mao (2022) works with only the recurrent form and
+materializes the hidden states for all time steps in HBM. In Appendix
+C we give a new algorithm that reformulates the model in a matrixmultiply-based parallel form, which can make use of (an extension
+of) F LASH L INEAR ATTENTION for efficient training.
+5
+Our preliminary experiments with the Gt = α⊤
+t βt parameterization resulted in only marginal improvements over Gt = α⊤
+t 1.
+
+We derive a chunkwise form of GLA similar to the
+chunkwise form of basic linear attention (§2.2). Here the
+intra-chunk operation implements the above parallel form
+6
+
+This form resembles extrapolatable position encoding (Sun
+et al., 2023b) in that the term inside the exponential can be viewed
+as a data-dependent relative position factor.
+
+5
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+
+of non-half-precision matmul FLOPs are greatly reduced,
+thus leading to wallclock improvements. We provide the
+Pytorch-style pseudo-code in Listing 1 of Appendix A.3.
+
+level tensor core
+1
+✓
+2
+✓
+2
+✗
+causal mask
+
+Memory-efficient dαt computation. Past work (Mao,
+2022, §3.1) has claimed that GLA-like models have
+to materialize the matrix-valued hidden states of size
+L × d × d in HBM to compute all the gradients dαt , since
+dαt = (St−1 ⊙dSt )1. We instead give the following closed
+form formula for dlogαt ,
+X
+dlogbt = qt ⊙dq t −kt ⊙dkt , dlogαt =
+dlogbi ,
+
+Figure 3: Attention-style map to illustrate the chunkwise computations in GLA. The inter-chunk dependencies (in gray) are not
+directly computed in the chunkwise form (only computed in the
+parallel form). The intra-chunk dependencies are modeled via secondary chunking/tiling where the inter-sub-chunk part (in orange)
+is computed by half-precision matmuls while the intra-sub-chunk
+part (in pink) is computed in full precision in log space.
+
+t≤i≤L
+
+which can be easily obtained by taking the derivative with
+respect to Eq. 4 (see Appendix A.3 for full derivation). dq t
+and dkt can be computed as in Alg. 2.
+
+at the chunk-level to obtain Ointra . For inter-chunk, we have
+b(i+1)C
+b(i+1)C
+biC+j
+ΛiC+j =
+,ΓiC+j =
+,γi+1 =
+,
+biC
+biC+j
+biC
+
+⊤
+⊤
+1 ⊙S[i] + K[i+1] ⊙Γ[i+1] V[i+1] ,
+S[i+1] = γi+1
+
+Ointer
+[i+1] = Q[i+1] ⊙Λ[i+1] S[i] .
+
+4.4
+
+We generalize the GLA layer to the multi-head case. Given
+H heads, we have the following for each head h ∈ [1,H],
+
+⊤ 
+′
+′
+T
+Sht = αht 1 ⊙Sht−1 +kth vth ∈ Rdk ×dv ,
+
+Intuitively, Λ[i+1] encodes the cumulative decay from the
+start of a chunk which will be used to propagate the hidden
+states from the previous chunk S[i] , while Γ[i+1] encodes the
+decay to the end of a chunk which will be used to accumulate
+information to be added to the next hidden state S[i+1] .
+4.3
+
+GLA Transformer
+
+′
+
+oht = qth Sht ∈ R1×dv ,
+1×dv
+o′t = concat(LN(o1t ),...,LN(oH
+,
+t )) ∈ R
+
+rt = Swish(xt Wr +br ) ∈ R1×dv ,
+yt = (rt ⊙o′t )WO ∈ R1×d .
+
+Hardware-Efficient GLA
+
+Here we use separate key (dk ) and value (dv ) dimensions;
+d′k = dk /H,d′v = dv /H are the per-head key/value dimensions. LayerNorm (LN) is applied after the output of each
+head, while the output projection and output gating operate
+on the concatenation of head outputs (Sun et al., 2023a).
+
+With the chunkwise form in hand, we can adapt the
+F LASH L INEAR ATTENTION algorithm presented in §3 to
+the gated case. The adaptation additionally relies on two
+crucial techniques described below. We give high-level
+intuitions in this section and defer the full algorithms to Alg.
+3-6 of Appendix A.3.
+
+We then build up a Transformer-like model by interleaving
+multi-head GLA layers with feed-forward networks (FFN).
+Concretely, given layer l’s contextualized representation
+X(l) , we obtain X(l+1) via,
+
+Secondary-level chunking. Unlike in ordinary linear
+attention, the intra-chunk computations in GLA cannot
+leverage half-precision matmuls (and thus tensor cores)
+due to log space computations (Eq. 4). To make better
+use of tensor cores, we use secondary-level chunking
+scheme, where a chunk is further divided into sub-chunks
+(i.e., another level of tiling) in the spirit of classic tiling
+techniques (Dao et al., 2022b). The attention-like matrix
+P ∈ RL×L is then computed in a chunkwise manner, as
+illustrated in Figure 3. Concretely, the interactions between
+sub-chunks are computed via half-precision matmuls,7
+
+
+biC T
+P[i][j] = Q[i] ⊙Λ[i] K[j] ⊙Γ[j] ⊙
+∈ RC×C .
+b(j+1)C
+
+Y(l) = GLA(LN(X(l) ))+X(l)
+X(l+1) = SwiGLU(LN(Y(l) ))+X(l) ,
+where the SwiGLU FFN layer (Touvron et al., 2023) is,
+SwiGLU(Z) = (Swish(ZW1 )⊙ZW2 )W3 .
+Parameter allocation. As presented, our GLA layer
+employs two additional matrices for predicting αt ,rt (i.e.,
+Wα ,Wr ) compared to a regular softmax attention layer. For
+parameter-efficiency, we use a low-rank parameterization
+1
+
+αt = σ((xt Wα1 Wα2 +bα ))) τ ∈ R1×dk ,
+
+This corresponds to the orange tiles in Figure 3. For the
+intra-sub-chunk part (pink tiles in Figure 3) we have to
+resort to Eq. 4 and perform the matmul in full precision for
+stability. With this two-level tiling strategy, the total amount
+
+where Wα1 ∈ Rd×16 , Wα2 ∈ R16×dk , and τ = 16 is a
+temperature term to encourage model to have a slower
+forgetting rate. We further set dk = d2 and dv = d and use
+full-rank parameterizations for (WQ ,WK ,WV ,WO ,Wr ).
+Ultimately, one GLA layer collectively needs (roughly) 4d2
+parameters, as in regular softmax attention.
+
+7
+
+To reduce notational clutter, here we use the notations from the
+first-level chunking to express the key idea. The actual implementation is done with secondary-level chunks.
+
+6
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+
+Scale
+
+Model
+
+Wiki. LMB. LMB. PIQA
+Hella.
+Wino. ARC-e
+ARC-c
+Avg.
+ppl ↓ ppl ↓ acc ↑ acc ↑ acc norm ↑ acc ↑ acc ↑ acc norm ↑ ↑
+
+340M Params Transformer++ 28.39
+15B Tokens
+RetNet
+32.33
+Mamba
+28.39
+GLA
+28.65
+1.3B Params
+100B Tokens
+
+Transformer++
+RetNet
+Mamba
+GLA
+
+16.85
+18.64
+17.06
+17.22
+
+42.69
+49.19
+39.66
+43.35
+
+31.0
+28.6
+30.6
+30.3
+
+63.3
+63.5
+65.0
+64.8
+
+34.0
+33.5
+35.4
+34.5
+
+50.4
+52.5
+50.1
+51.4
+
+44.5
+44.5
+46.3
+45.1
+
+24.2
+23.4
+23.6
+22.7
+
+41.2
+41.0
+41.8
+41.5
+
+13.44
+17.27
+13.89
+14.47
+
+48.9
+43.3
+46.2
+46.9
+
+70.8
+70.0
+72.2
+71.8
+
+49.6
+47.3
+40.1
+49.8
+
+53.6
+52.5
+54.1
+53.9
+
+56.0
+54.8
+59.0
+57.2
+
+26.5
+25.6
+28.2
+26.6
+
+50.9
+48.9
+50.0
+51.0
+
+Table 2: GLA Transformer results against Transformer++ (Touvron et al., 2023), RetNet (Sun et al., 2023a), and Mamba (Gu & Dao, 2023).
+All models are trained on the same subset of the SlimPajama dataset with the Mistral tokenizer. The 340M/1.3B models are trained for
+15B/100B tokens respectively. The individual task performance is via zero-shot. We report the main results on the same set of tasks reported
+by Gu & Dao (2023). See Appendix D for results on other benchmarks, including 5-shot results. The last column shows the average over all
+benchmarks that use (normalized) accuracy as the metric.
+Sequence Length: 256 Sequence Length: 512
+Key-Value Pairs: 16
+Key-Value Pairs: 64
+
+Empirical Study
+
+100
+
+5.1
+
+Experimental Setup
+
+75
+
+Accuracy
+
+5
+
+Our main experiments are on language modeling, where
+we study whether GLA can perform competitively against
+a (i) strong Transformer baseline with modern architectural
+recipes and (ii) recent linear-time models. We use the
+SlimPajama dataset (Soboleva et al., 2023) and tokenize it
+using the Mistral tokenizer (Jiang et al., 2023). The original
+dataset contains 627B tokens; we use a 100B subset.
+
+50
+25
+64
+
+128 256 512 64
+128 256 512
+Model dimension
+Model dimension
+
+Figure 4: Accuracy (%) on the synthetic MQAR task.
+
+2021), ARC-easy (ARC-e) and ARC-challenge (Arc-c)
+(Clark et al., 2018). In Appendix D, we also include
+results on additional tasks: Copa (Roemmele et al., 2011),
+SciQA (Auer et al., 2023), OpenbookQA (Mihaylov et al.,
+2018), BoolQA (Clark et al., 2019). We report perplexity
+(ppl) on WikiText and LAMBADA, accuracy normalized
+by length on HellaSwag, ARC-challenge and OpenbookQA,
+and accuracy on the other tasks. All evaluations are performed using the LM evaluation harness (Gao et al., 2021).
+
+Baselines. We evaluate GLA against three baselines:
+Transformer++ (Touvron et al., 2023), RetNet (Sun et al.,
+2023a), and Mamba (Gu & Dao, 2023). Transformer++
+is the LLaMA architecture with Rotary Positional Embeddings (Su et al., 2021), SWiGLU (Shazeer, 2020), and
+RMSNorm (Zhang & Sennrich, 2019); we also use SwiGLU
+in the RetNet to replace its original FFN for fair comparison.
+For Mamba, we use the open source code. All our baselines
+are trained for the exact same number of tokens on the same
+dataset for fair comparison.
+
+Our main results are shown in Table 2. Compared to
+RetNet which uses a data-independent decay rate, the GLA
+Transformer with data-dependent gates shows improved
+results on all tasks. Both GLA Transformer and Mamba
+show comparable performance to Transformer++.
+
+Training details. We train all models from scratch at
+two scales: 340M and 1.3B. All models are trained with
+AdamW (Loshchilov & Hutter, 2018) using a maximum
+learning rate of 3e-4. The 340M models are trained on 15B
+tokens with a batch size of 0.5M tokens, while the 1.3B
+models are trained on 100B tokens with a batch size of
+2M tokens. We use a cosine learning rate schedule with
+a warmup of 0.5B/1B tokens for the 340M/1.3B settings,
+respectively. The initial and final learning rates are 3e-5. We
+use a weight decay of 0.01, and gradient clipping of 1.0.
+5.2
+
+Mamba
+GLA
+RetNet
+RWKV-4
+Hyena
+
+Recall-intensive tasks. While subquadratic models can
+achieve competitive language modeling performance to
+Transformers, Arora et al. (2024) show that they lag behind
+softmax attention in recall-intensive tasks. We next evaluate
+GLA on real and synthetic tasks that focus on recall.
+The synthetic MQAR task (Arora et al., 2023a) is a more
+challenging multi-query version of the induction head task
+(Fu et al., 2023b) in which a model has to recall the token
+following a query token multiple times. We follow Arora
+et al. (2023a)’s experimental setting and compare GLA
+against recent subquadractic models, including RetNet (Sun
+et al., 2023a), Mamba (Gu & Dao, 2023), Hyena (Poli et al.,
+2023) and RWKV-4 (Peng et al., 2023). For RetNet and GLA
+the number of heads is set to 2; for other models we follow the
+default settings in Arora et al. (2023a). The results are shown
+
+Main Results
+
+In addition to perplexity (ppl) on Wikitext (Wiki.), we
+consider a wide range of downstream tasks covering
+common-sense reasoning and question-answering as was
+used in Gu & Dao (2023): LAMBADA (LMB.; Paperno
+et al., 2016), PiQA (Bisk et al., 2020), HellaSwag (Hella.;
+Zellers et al., 2019), WinoGrande (Wino.; Sakaguchi et al.,
+7
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+SlimPajama
+
+PG19
+25
+
+10
+
+Perplexity
+
+9
+20
+8
+15
+7
+10
+
+0
+
+5
+
+10
+15
+20
+Position bucket (K)
+
+25
+
+30
+
+5
+
+10
+15
+Position bucket (K)
+
+20
+
+Transformer++ (2K)
+RetNet (2K)
+RetNet∗ (12x2K)
+Mamba (2K)
+Mamba (8K)
+GLA (2K)
+GLA∗ (12x2K)
+GLA (8K)
+
+6
+
+Figure 5: Length extrapolation on the test set of SlimPajama and PG19. We pretrain 1.3B models from scratch on SlimPajama for 100B
+tokens with different training length. ∗ indicates models using truncated BPTT with over 12 segments that are each of 2K-length.
+Scale
+340M Params
+15B Tokens
+
+1.3B Params
+100B Tokens
+
+Model
+Transformer++
+RetNet
+Mamba
+GLA
+
+FDA
+21.4
+2.9
+2.1
+8.1
+
+SWDE
+42.2
+13.3
+12.4
+18.6
+
+SQUAD
+22.1
+27.6
+23.0
+27.2
+
+Transformer++
+RetNet
+Mamba
+GLA
+
+27.4
+14.3
+6.2
+19.9
+
+66.6
+42.8
+41.4
+50.6
+
+31.5
+34.7
+35.2
+42.6
+
+RetNet, and GLA models on SlimPajama for 100B tokens
+on these settings and test them on both SlimPajama test set
+and PG19 (Rae et al., 2019) test set.
+Figure 5 shows the perplexities of the tokens calculated in different position groups. For models trained on 2K-length contexts, GLA extrapolates better than Mamba/RetNet in most
+position buckets on the PG19 test set; Mamba struggles to
+extrapolate beyond 4K, while GLA/RetNet can generalize to
+18K on the Slimpajama test set. Transformers cannot extrapolate beyond training length, which is a known failure mode.9
+Pretraining in a long sequence consistently improves perplexities for all three models. We found marginal perplexity
+difference in the two settings for GLA, indicating that TBPTT
+might be a more economic approach to long-sequence training. Mamba benefits significantly from 8K-length training,
+and it performs similarly as GLA in the same training setting.
+
+Table 3: Comparison of different models in three recall-intensive
+tasks tested in Arora et al. (2024). Higher is better for all tasks.
+
+in Figure 4. Standard quadratic attention achieves perfect
+scores in all settings and is thus omitted. We find that models
+with matrix-valued hidden states (i.e., Mamba/RetNet/GLA)
+outperform Hyena/RWKV, and our GLA outperforms RetNet, confirming the benefits of using data-dependent gates.
+Following Arora et al. (2024), we also test our models on
+three real recall-intensive tasks: FDA (Arora et al., 2023b),
+SWDE (Lockard et al., 2019), and SQUAD (Rajpurkar et al.,
+2018). These tasks focus on information extraction or reading comprehension. As illustrated in Table 3, subquadratic
+models significantly underperform Transformers on the FDA
+and SWDE, both of which are information extraction tasks.
+However, GLA outperforms other subquadractic models,
+likely due to its larger recurrent state (compared to Mamba)
+and selection mechanism (compared to RetNet).
+
+Ablations. We conduct a small-scale ablation study
+by training the 340M GLA variants for 7B tokens. We
+investigate (i) the importance of having both fine-grained
+and data-dependent gating and (ii) the influence of head
+dimension size. The results are shown in Table 4. For (i),
+we find that while data dependent scalar gates substantially
+improve upon RetNet, a finer-grained gating mechanism
+is still necessary. For (ii) we tune the number of heads to
+vary head dimensions, where by default GLA uses 4 heads.
+Increasing it to 8 (i.e., smaller head dimension) leads to
+relatively large perplexity degradation; reducing it to 1 (i.e.,
+larger head dimension) actually performs best, but results
+in only marginal improvement while requiring much higher
+GPU memory. We thus choose 4 heads for our experiments.
+
+Long sequence training and length extrapolation. One
+advantage of linear attention models is that they allow for
+efficient long sequence training in linear time. To showcase
+this feature, we consider two training settings: (i) direct
+training on 8K-length contexts, (ii) training on 24K-length
+contexts through truncated backpropagation through time
+(TBPP) over 2K-length segments.8 In the latter case the
+gradients are not back-propagated across segments, and
+hence this approach has minimal overhead comparable to
+the standard 2K-length training strategy (where the initial
+hidden state is always set to zero). We pretrain 1.3B Mamba,
+
+5.3
+
+Training Efficiency
+
+Fig. 6 shows the throughput and memory usage as a function
+of the sequence length and batch size for the different 1.3B
+models on a single H100 GPU.10 Here GLA adopts the
+9
+Although there are positional encoding schemes that enable better length extrapolation, these methods still have difficulty generalizing significantly beyond context lengths seen during training (Press
+et al., 2021; Sun et al., 2023b; Li et al., 2023c).
+10
+We use the official implementation for Mamba, the fused version of SwiGLU for Transformer++ and GLA, and FlashAttention-2
+
+8
+
+We split a 24K input sequence into 12 segments. The final state
+of the previous segment is used as the initial state for the current
+segment.
+
+8
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+Training throughput
+
+Training ppl.
+14.77
+23.21
+16.55
+15.56
+15.29
+14.61
+
+30
+
+20
+
+20
+
+Gigabyte (GB)
+
+30
+
+40
+
+10
+10
+2048/8 4096/4 8192/2 16284/1
+Training length/Batch size
+Transformer++
+
+materialization version of F LASH L INEAR ATTENTION with
+recomputation of hidden state (§3.3). All models have linear
+space complexity, and the total GPU footprint difference
+among them is minimal. In terms of training throughput,
+Mamba lags behind Transformer++ and GLA, with GLA
+shows greater advantages in training lengths beyond 4096.
+
+2048/8 4096/4 8192/2 16284/1
+Training length/Batch size
+Mamba
+
+0
+
+GLA
+
+Figure 6: Training throughput and memory footprint on an H100.
+
+important for RNNs (Gers et al., 2000; van der Westhuizen
+& Lasenby, 2018). Typical forget gate values depend on both
+the previous hidden state and the current input. However
+Martin & Cundy (2018) suggest that forget gate values
+should depend solely on the current inputs to enable parallel
+training. This simple strategy has been shown to be effective
+in moderate-scale experiments conducted by HGRN (Qin
+et al., 2023b). RWKV-v6 (Peng et al., 2024) and Mamba
+(Gu & Dao, 2023) also use data-dependent decay rates
+that are reminiscent of forget gates. In the context of linear
+Transformers, Peng et al. (2021) employ a coarse-grained
+position-wise forget gate, while Mao (2022) and Katsch
+(2023) use a more fine-grained forget gate.
+
+Limitations & Future Work
+
+While our experiments with the GLA Transformer were on
+a respectable scale, we were unable to perform larger-scale
+experiments due to limited compute resources. Although
+it is unclear at this point how GLA would scale to even larger
+models/datasets, we anticipate that training efficiency of
+GLA become even more favorable compared to Mamba at
+larger scales. Specifically, when scaled to larger sizes (e.g.,
+> 7B), GLA can be more efficient than Mamba because
+of better use of tensor cores and GLA’s compatibility
+with tensor parallelism.11 Insofar as we are interested in
+leveraging the efficiency of linear attention, it would be
+interesting to apply GLA to other modalities (especially
+modalities with long-range dependencies), in line with
+recent work on applying state-of-the-art state-space models
+to other types of data (Yan et al., 2023; Zhu et al., 2024; Ma
+et al., 2024; Liu et al., 2024; Xing et al., 2024; Wang et al.,
+2024a;b; Yang et al., 2024, inter alia).
+
+6
+
+50
+
+0
+
+Table 4: Ablation study results on the 340M model trained for 7B
+tokens. We evaluate the model variants via the average perplexity
+of the last 200 training steps.
+
+5.4
+
+GPU memory usage
+40
+
+Tokens per second (Kt/s)
+
+Model variants
+GLA Transformer (4 heads)
+No gate (i.e., Linear Attention)
+Data independent scalar decay (i.e., RetNet)
+Data dependent scalar gate
+Small head dimension (8 heads)
+Large head dimension (1 head)
+
+RNNs rely on fixed-dimensional hidden states to encode their
+entire history. The hidden state dimension serves as a proxy
+for memory capacity and thus significantly influences their
+expressive power. Linear Transformers expand the hidden dimension of RNNs via the outer-product parameterization, as
+discussed §2.1. Linear SSMs on the other hand expand their
+hidden dimension via a single-input-single-output (SISO)
+strategy. Without data-dependent SSM parameters, this can
+be done efficiently during training via the Fast Fourier Transform (FFT). However, with data-dependent SSM parameters,
+FFT-based training is not possible, and thus Gu & Dao (2023)
+implements a custom CUDA kernel to train a selective statespace model using the parallel scan algorithm (Smith et al.,
+2023). To fit all the hidden states into SRAM, they can only
+afford an expansion rate up to 16. In contrast our hardwareaware training algorithm provides an alternative, efficient
+approach for expanding the hidden dimension to a wider
+range, which we have shown useful in recall-intensive tasks.
+
+Related Work
+
+We briefly discuss related work here and give an extended
+discussion of the related work in Appendix A.
+Traditional RNNs are difficult to scale due to the nonlinear dependencies between the hidden states and expensive matmulbased sequential hidden state updates. Linear RNNs/StateSpace Models (SSMs)/Transformers eliminate nonlinear
+dependencies, making training parallelizable along the
+temporal dimension (Martin & Cundy, 2018; Gu et al., 2022;
+Smith et al., 2023). Such models have been the focus of much
+recent work as a competitive sub-quadratic alternative to the
+Transformer architecture (Peng et al., 2023; Gu & Dao, 2023;
+Qin et al., 2023c;b; Sun et al., 2023a; Wang et al., 2022).
+
+7
+
+Conclusion
+
+We propose an efficient algorithm for training linear attention
+Transformers with data-dependent gating mechanisms.
+Our algorithm makes it possible to balance FLOPs against
+parallellism, while still allowing for the use of half-precision
+matmuls which can take advantage of tensor core units
+on modern GPUs. Experiments on language modeling
+demonstrate that gated linear attention Transformers can
+perform respectably compared to strong baselines.
+
+Data-dependent decay rates have always been regarded
+for Transformer++.
+11
+In particular, since Mamba is not a multi-head model it is not
+as amenable to tensor parallelism.
+
+9
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+
+Impact Statement
+
+preprint arXiv: Arxiv-2004.05150, 2020.
+https://arxiv.org/abs/2004.05150v2.
+
+This paper aims to improve the training efficiency of a
+new model family of (gated) linear attention models. The
+efficiency advantage of such models might help democratize
+access of language models. On the other hand, whether
+such new architectures would affect known issues such as
+biased and harmful outputs of language models remains an
+unexplored research question.
+
+Bisk, Y., Zellers, R., Gao, J., Choi, Y., et al. Piqa: Reasoning
+about physical commonsense in natural language.
+In Proceedings of the AAAI conference on artificial
+intelligence, volume 34, pp. 7432–7439, 2020.
+Blelloch, G. E. Prefix sums and their applications. 1990.
+Brandon, W., Nrusimha, A., Qian, K., Ankner, Z., Jin,
+T., Song, Z., and Ragan-Kelley, J. Striped attention:
+Faster ring attention for causal transformers. ArXiv,
+abs/2311.09431, 2023.
+
+Acknowledgments
+This work was supported by MIT-IBM Watson AI Lab.
+We thank Yutao Sun, Zhen Qin, Li Dong, Xinyu Yang,
+Jiacheng You, Huanqi Cao, Yu Zhang, and Shida Wang
+for their insightful discussions. We also thank Yu Zhang,
+Fares Obeid, Daniel Goldstein, and Liliang Ren for their
+proofreading. Special thanks to Yu Zhang for contributing
+to the F LASH L INEAR ATTENTION library.
+
+Buckman, J. and Gelada, C. Linear Transformers Are Faster
+After All, 2024.
+Chaurasia, G., Ragan-Kelley, J., Paris, S., Drettakis, G., and
+Durand, F. Compiling high performance recursive filters.
+In High Performance Graphics, 2015.
+
+References
+
+Child, R., Gray, S., Radford, A., and Sutskever, I. Generating
+long sequences with sparse transformers. PREPRINT,
+2019. URL https://arxiv.org/abs/1904.10509v1.
+
+Arora, S., Eyuboglu, S., Timalsina, A., Johnson, I., Poli,
+M., Zou, J., Rudra, A., and Ré, C. Zoology: Measuring
+and improving recall in efficient language models. CoRR,
+abs/2312.04927, 2023a.
+
+Cho, K., Van Merriënboer, B., Gulcehre, C., Bahdanau,
+D., Bougares, F., Schwenk, H., and Bengio, Y. Learning
+phrase representations using rnn encoder-decoder
+for statistical machine translation.
+arXiv preprint
+arXiv:1406.1078, 2014.
+
+Arora, S., Yang, B., Eyuboglu, S., Narayan, A., Hojel,
+A., Trummer, I., and Ré, C. Language Models Enable
+Simple Systems for Generating Structured Views of
+Heterogeneous Data Lakes, April 2023b. URL http:
+//arxiv.org/abs/2304.09433. arXiv:2304.09433 [cs].
+
+Choromanski, K. M., Likhosherstov, V., Dohan, D., Song, X.,
+Gane, A., Sarlós, T., Hawkins, P., Davis, J. Q., Mohiuddin,
+A., Kaiser, L., Belanger, D. B., Colwell, L. J., and
+Weller, A. Rethinking attention with performers. In 9th
+International Conference on Learning Representations,
+ICLR 2021, Virtual Event, Austria, May 3-7, 2021.
+OpenReview.net, 2021.
+
+Arora, S., Eyuboglu, S., Zhang, M., Timalsina, A., Alberti, S., Zinsley, D., Zou, J., Rudra, A., and R’e, C.
+Simple linear attention language models balance the
+recall-throughput tradeoff. ArXiv, abs/2402.18668, 2024.
+Auer, S., Barone, D. A. C., Bartz, C., Cortes, E. G., Jaradeh,
+M. Y., Karras, O., Koubarakis, M., Mouromtsev, D.,
+Pliukhin, D., Radyush, D., Shilin, I., Stocker, M., and
+Tsalapati, E. The sciqa scientific question answering
+benchmark for scholarly knowledge. Scientific Reports, 13(1):7240, May 2023. ISSN 2045-2322. doi:
+10.1038/s41598-023-33607-z.
+
+Clark, C., Lee, K., Chang, M.-W., Kwiatkowski, T., Collins,
+M., and Toutanova, K. Boolq: Exploring the surprising
+difficulty of natural yes/no questions. arXiv preprint
+arXiv:1905.10044, 2019.
+Clark, P., Cowhey, I., Etzioni, O., Khot, T., Sabharwal, A.,
+Schoenick, C., and Tafjord, O. Think you have solved
+question answering? try arc, the ai2 reasoning challenge.
+arXiv preprint arXiv:1803.05457, 2018.
+
+Ba, J., Hinton, G. E., Mnih, V., Leibo, J. Z., and Ionescu, C.
+Using fast weights to attend to the recent past. Advances
+in neural information processing systems, 29, 2016.
+
+Dao, T. Flashattention-2: Faster attention with better
+parallelism and work partitioning. CoRR, abs/2307.08691,
+2023. doi: 10.48550/ARXIV.2307.08691.
+
+Beck, M., Pöppel, K., Spanring, M., Auer, A., Prudnikova,
+O., Kopp, M., Klambauer, G., Brandstetter, J., and
+Hochreiter, S. xlstm: Extended long short-term memory.
+arXiv preprint arXiv:2405.04517, 2024.
+Beltagy, I., Peters, M. E., and Cohan, A.
+former: The long-document transformer.
+
+URL
+
+Dao, T. and Gu, A. Transformers are ssms: Generalized
+models and efficient algorithms through structured state
+space duality, 2024.
+
+LongarXiv
+10
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+
+Dao, T., Chen, B., Sohoni, N. S., Desai, A. D., Poli, M.,
+Grogan, J., Liu, A., Rao, A., Rudra, A., and Ré, C.
+Monarch: Expressive structured matrices for efficient
+and accurate training. In International Conference on
+Machine Learning, 2022a.
+
+2022, Virtual Event, April 25-29, 2022. OpenReview.net,
+2022.
+Gupta, A. and Berant, J. Diagonal state spaces are as
+effective as structured state spaces. ARXIV.ORG, 2022.
+doi: 10.48550/arXiv.2203.14343.
+
+Dao, T., Fu, D. Y., Ermon, S., Rudra, A., and Ré, C.
+Flashattention: Fast and memory-efficient exact attention
+with io-awareness. In NeurIPS, 2022b.
+
+Hasani, R., Lechner, M., Wang, T.-H., Chahine, M., Amini,
+A., and Rus, D. Liquid structural state-space models.
+arXiv preprint arXiv:2209.12951, 2022.
+
+Fu, D. Y., Arora, S., Grogan, J., Johnson, I., Eyuboglu, S.,
+Thomas, A. W., Spector, B., Poli, M., Rudra, A., and R’e,
+C. Monarch mixer: A simple sub-quadratic gemm-based
+architecture. ArXiv, abs/2310.12109, 2023a.
+
+Hinton, G. E. and Plaut, D. C. Using fast weights to deblur old
+memories. In Proceedings of the ninth annual conference
+of the Cognitive Science Society, pp. 177–186, 1987.
+Hochreiter, S. and Schmidhuber, J. Long short-term memory.
+Neural Computation, 9(8):1735–1780, 1997.
+
+Fu, D. Y., Dao, T., Saab, K. K., Thomas, A. W., Rudra, A., and
+Ré, C. Hungry hungry hippos: Towards language modeling with state space models. In The Eleventh International
+Conference on Learning Representations, ICLR 2023, Kigali, Rwanda, May 1-5, 2023. OpenReview.net, 2023b.
+
+Hooker, S. The hardware lottery. Communications of the
+ACM, 64:58 – 65, 2020.
+Hua, W., Dai, Z., Liu, H., and Le, Q. V. Transformer quality
+in linear time. In Chaudhuri, K., Jegelka, S., Song, L.,
+Szepesvári, C., Niu, G., and Sabato, S. (eds.), International Conference on Machine Learning, ICML 2022,
+17-23 July 2022, Baltimore, Maryland, USA, volume
+162 of Proceedings of Machine Learning Research, pp.
+9099–9117. PMLR, 2022.
+
+Fu, D. Y., Epstein, E. L., Nguyen, E., Thomas, A.,
+Zhang, M., Dao, T., Rudra, A., and Ré, C. Simple
+hardware-efficient long convolutions for sequence
+modeling.
+International Conference on Machine
+Learning, 2023c. doi: 10.48550/arXiv.2302.06646. URL
+https://arxiv.org/abs/2302.06646v1.
+
+Irie, K., Schlag, I., Csordás, R., and Schmidhuber, J.
+Going beyond linear transformers with recurrent fast
+weight programmers. Advances in Neural Information
+Processing Systems, 34:7703–7717, 2021.
+
+Fu, D. Y., Kumbong, H., Nguyen, E., and Ré, C. Flashfftconv:
+Efficient convolutions for long sequences with tensor
+cores. CoRR, abs/2311.05908, 2023d.
+Gao, L., Tow, J., Biderman, S., Black, S., DiPofi, A., Foster,
+C., Golding, L., Hsu, J., McDonell, K., Muennighoff,
+N., Phang, J., Reynolds, L., Tang, E., Thite, A., Wang,
+B., Wang, K., and Zou, A. A framework for few-shot
+language model evaluation, September 2021.
+
+Jiang, A. Q., Sablayrolles, A., Mensch, A., Bamford, C.,
+Chaplot, D. S., Casas, D. d. l., Bressand, F., Lengyel, G.,
+Lample, G., Saulnier, L., et al. Mistral 7b. ArXiv preprint,
+abs/2310.06825, 2023.
+Kacham, P., Mirrokni, V., and Zhong, P. Polysketchformer:
+Fast transformers via sketching polynomial kernels, 2023.
+
+Gers, F. A., Schmidhuber, J., and Cummins, F. A. Learning
+to forget: Continual prediction with LSTM. Neural
+Comput., 12(10):2451–2471, 2000.
+
+Kasai, J., Peng, H., Zhang, Y., Yogatama, D., Ilharco,
+G., Pappas, N., Mao, Y., Chen, W., and Smith, N. A.
+Finetuning pretrained transformers into RNNs. In Moens,
+M.-F., Huang, X., Specia, L., and Yih, S. W.-t. (eds.),
+Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing, pp. 10630–10643,
+Online and Punta Cana, Dominican Republic, November
+2021. Association for Computational Linguistics. doi:
+10.18653/v1/2021.emnlp-main.830.
+
+Gu, A. and Dao, T. Mamba: Linear-time sequence modeling
+with selective state spaces. 2023.
+Gu, A., Goel, K., and R’e, C. Efficiently modeling long
+sequences with structured state spaces. International
+Conference On Learning Representations, 2021a.
+Gu, A., Johnson, I., Goel, K., Saab, K. K., Dao, T., Rudra,
+A., and R’e, C. Combining recurrent, convolutional, and
+continuous-time models with linear state-space layers.
+Neural Information Processing Systems, 2021b. URL
+https://arxiv.org/abs/2110.13985v1.
+
+Katharopoulos, A., Vyas, A., Pappas, N., and Fleuret, F.
+Transformers are rnns: Fast autoregressive transformers
+with linear attention. In International conference on
+machine learning, pp. 5156–5165. PMLR, 2020.
+
+Gu, A., Goel, K., and Ré, C. Efficiently modeling long
+sequences with structured state spaces. In The Tenth International Conference on Learning Representations, ICLR
+
+Katsch, T. Gateloop: Fully data-controlled linear recurrence
+for sequence modeling. ArXiv, abs/2311.01927, 2023.
+11
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+
+Kitaev, N., Kaiser, L., and Levskaya, A. Reformer:
+The efficient transformer.
+International Conference On Learning Representations, 2020.
+URL
+https://arxiv.org/abs/2001.04451v2.
+
+Ma, X., Zhou, C., Kong, X., He, J., Gui, L., Neubig, G.,
+May, J., and Zettlemoyer, L. Mega: Moving average
+equipped gated attention. In The Eleventh International
+Conference on Learning Representations, 2023. URL
+https://openreview.net/forum?id=qNLe3iq2El.
+
+Li, D., Shao, R., Xie, A., Xing, E. P., Gonzalez, J. E.,
+Stoica, I., Ma, X., and Zhang, H. Lightseq: Sequence
+level parallelism for distributed training of long context
+transformers. ArXiv, abs/2310.03294, 2023a.
+
+Mao, H. H. Fine-tuning pre-trained transformers into
+decaying fast weights. In Proceedings of the 2022
+Conference on Empirical Methods in Natural Language
+Processing, pp. 10236–10242, Abu Dhabi, United Arab
+Emirates, December 2022. Association for Computational
+Linguistics. doi: 10.18653/v1/2022.emnlp-main.697.
+
+Li, S., Xue, F., Baranwal, C., Li, Y., and You, Y. Sequence
+parallelism: Long sequence training from system
+perspective. In Rogers, A., Boyd-Graber, J., and Okazaki,
+N. (eds.), Proceedings of the 61st Annual Meeting of the
+Association for Computational Linguistics (Volume 1:
+Long Papers), Toronto, Canada, July 2023b. Association
+for Computational Linguistics.
+
+Martin, E. and Cundy, C. Parallelizing linear recurrent neural
+nets over sequence length. In 6th International Conference
+on Learning Representations, ICLR 2018, Vancouver,
+BC, Canada, April 30 - May 3, 2018, Conference Track
+Proceedings. OpenReview.net, 2018.
+
+Li, S., You, C., Guruganesh, G., Ainslie, J., Ontanon,
+S., Zaheer, M., Sanghai, S., Yang, Y., Kumar, S., and
+Bhojanapalli, S. Functional interpolation for relative
+positions improves long context transformers. arXiv
+preprint arXiv:2310.04418, 2023c.
+
+Massaroli, S., Poli, M., Fu, D. Y., Kumbong, H., Parnichkun,
+R. N., Timalsina, A., Romero, D. W., McIntyre, Q.,
+Chen, B., Rudra, A., Zhang, C., Re, C., Ermon, S., and
+Bengio, Y. Laughing hyena distillery: Extracting compact
+recurrences from convolutions. NEURIPS, 2023. URL
+https://arxiv.org/abs/2310.18780v1.
+
+Li, Y., Cai, T., Zhang, Y., Chen, D., and Dey, D. What
+makes convolutional models great on long sequence
+modeling?
+In The Eleventh International Conference on Learning Representations, 2023d.
+URL
+https://openreview.net/forum?id=TGJSPbRpJX-.
+
+Mihaylov, T., Clark, P., Khot, T., and Sabharwal, A. Can
+a suit of armor conduct electricity? a new dataset
+for open book question answering. arXiv preprint
+arXiv:1809.02789, 2018.
+
+Lingle, L. D. Transformer-vq: Linear-time transformers via
+vector quantization. CoRR, abs/2309.16354, 2023. doi:
+10.48550/ARXIV.2309.16354.
+
+Nahshan, Y., Kampeas, J., and Haleva, E. Linear log-normal
+attention with unbiased concentration, 2023.
+
+Liu, H., Zaharia, M., and Abbeel, P. Ring attention with
+blockwise transformers for near-infinite context. ArXiv,
+abs/2310.01889, 2023.
+
+Oren, M., Hassid, M., Adi, Y., and Schwartz, R. Transformers are multi-state rnns. ArXiv, abs/2401.06104, 2024.
+
+Liu, Y., Tian, Y., Zhao, Y., Yu, H., Xie, L., Wang, Y., Ye, Q.,
+and Liu, Y. Vmamba: Visual state space model. arXiv
+preprint arXiv:2401.10166, 2024.
+
+Paperno, D., Kruszewski, G., Lazaridou, A., Pham, Q. N.,
+Bernardi, R., Pezzelle, S., Baroni, M., Boleda, G., and
+Fernández, R. The lambada dataset: Word prediction
+requiring a broad discourse context. arXiv preprint
+arXiv:1606.06031, 2016.
+
+Lockard, C., Shiralkar, P., and Dong, X. L. OpenCeres:
+When Open Information Extraction Meets the SemiStructured Web. In Burstein, J., Doran, C., and Solorio,
+T. (eds.), Proceedings of the 2019 Conference of the North
+American Chapter of the Association for Computational
+Linguistics: Human Language Technologies, Volume 1
+(Long and Short Papers), pp. 3047–3056, Minneapolis,
+Minnesota, June 2019. Association for Computational
+Linguistics. doi: 10.18653/v1/N19- 1309. URL
+https://aclanthology.org/N19-1309.
+Loshchilov, I. and Hutter, F.
+regularization in adam. 2018.
+
+Peng, B., Alcaide, E., Anthony, Q., Albalak, A., Arcadinho,
+S., Cao, H., Cheng, X., Chung, M., Grella, M., V., K. K. G.,
+He, X., Hou, H., Kazienko, P., Kocon, J., Kong, J., Koptyra,
+B., Lau, H., Mantri, K. S. I., Mom, F., Saito, A., Tang, X.,
+Wang, B., Wind, J. S., Wozniak, S., Zhang, R., Zhang, Z.,
+Zhao, Q., Zhou, P., Zhu, J., and Zhu, R. RWKV: reinventing rnns for the transformer era. CoRR, abs/2305.13048,
+2023. doi: 10.48550/ARXIV.2305.13048.
+
+Fixing weight decay
+
+Peng, B., Goldstein, D., Anthony, Q., Albalak, A., Alcaide,
+E., Biderman, S., Cheah, E., Ferdinan, T., Hou, H.,
+Kazienko, P., et al. Eagle and finch: Rwkv with matrixvalued states and dynamic recurrence. arXiv preprint
+arXiv:2404.05892, 2024.
+
+Ma, J., Li, F., and Wang, B. U-mamba: Enhancing longrange dependency for biomedical image segmentation.
+arXiv preprint arXiv:2401.04722, 2024.
+12
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+
+Peng, H., Pappas, N., Yogatama, D., Schwartz, R., Smith,
+N. A., and Kong, L. Random feature attention. arXiv
+preprint arXiv:2103.02143, 2021.
+
+Rajpurkar, P., Jia, R., and Liang, P. Know What You
+Don’t Know: Unanswerable Questions for SQuAD. In
+Gurevych, I. and Miyao, Y. (eds.), Proceedings of the 56th
+Annual Meeting of the Association for Computational
+Linguistics (Volume 2: Short Papers), pp. 784–789,
+Melbourne, Australia, July 2018. Association for
+Computational Linguistics. doi: 10.18653/v1/P18-2124.
+URL https://aclanthology.org/P18-2124.
+
+Peng, H., Kasai, J., Pappas, N., Yogatama, D., Wu, Z., Kong,
+L., Schwartz, R., and Smith, N. A. ABC: Attention with
+bounded-memory control. In Muresan, S., Nakov, P., and
+Villavicencio, A. (eds.), Proceedings of the 60th Annual
+Meeting of the Association for Computational Linguistics
+(Volume 1: Long Papers), Dublin, Ireland, May 2022.
+Association for Computational Linguistics.
+
+Ren, L., Liu, Y., Wang, S., Xu, Y., Zhu, C., and Zhai,
+C. Sparse modular activation for efficient sequence
+modeling.
+In Thirty-seventh Conference on Neural Information Processing Systems, 2023.
+URL
+https://openreview.net/forum?id=TfbzX6I14i.
+
+Poli, M., Massaroli, S., Nguyen, E., Fu, D. Y., Dao, T., Baccus, S., Bengio, Y., Ermon, S., and Ré, C. Hyena hierarchy:
+Towards larger convolutional language models. In Krause,
+A., Brunskill, E., Cho, K., Engelhardt, B., Sabato, S., and
+Scarlett, J. (eds.), International Conference on Machine
+Learning, ICML 2023, 23-29 July 2023, Honolulu,
+Hawaii, USA, volume 202 of Proceedings of Machine
+Learning Research, pp. 28043–28078. PMLR, 2023.
+
+Roemmele, M., Bejan, C. A., and Gordon, A. S. Choice
+of plausible alternatives: An evaluation of commonsense
+causal reasoning. In 2011 AAAI Spring Symposium Series,
+2011. URL https://people.ict.usc.edu/∼gordon/
+publications/AAAI-SPRING11A.PDF.
+
+Pramanik, S., Elelimy, E., Machado, M. C., and White, A. Recurrent linear transformers. CoRR, abs/2310.15719, 2023.
+
+Romero, D. W., Kuzina, A., Bekkers, E. J., Tomczak, J. M., and Hoogendoorn, M. Ckconv: Continuous kernel convolution for sequential data.
+arXiv preprint arXiv: 2102.02611, 2021.
+URL
+https://arxiv.org/abs/2102.02611v3.
+
+Press, O., Smith, N. A., and Lewis, M. Train short, test
+long: Attention with linear biases enables input length
+extrapolation. arXiv preprint arXiv:2108.12409, 2021.
+Qin, Z., Han, X., Sun, W., Li, D., Kong, L., Barnes, N., and
+Zhong, Y. The devil in linear transformer. arXiv preprint
+arXiv:2210.10340, 2022.
+
+Roy, A., Saffar, M., Vaswani, A., and Grangier, D. Efficient
+content-based sparse attention with routing transformers.
+International Conference On Topology, Algebra And
+Categories In Logic, 2020. doi: 10.1162/tacl a 00353.
+URL https://arxiv.org/abs/2003.05997v5.
+
+Qin, Z., Han, X., Sun, W., He, B., Li, D., Li, D., Dai,
+Y., Kong, L., and Zhong, Y. Toeplitz neural network
+for sequence modeling. In The Eleventh International
+Conference on Learning Representations, 2023a. URL
+https://openreview.net/forum?id=IxmWsm4xrua.
+
+Sakaguchi, K., Bras, R. L., Bhagavatula, C., and Choi, Y.
+Winogrande: An adversarial winograd schema challenge
+at scale. Communications of the ACM, 64(9):99–106,
+2021.
+
+Qin, Z., Li, D., Sun, W., Sun, W., Shen, X., Han, X., Wei,
+Y., Lv, B., Yuan, F., Luo, X., et al. Scaling transnormer to
+175 billion parameters. arXiv preprint arXiv:2307.14995,
+2023b.
+
+Saphra, N., Fleisig, E., Cho, K., and Lopez, A. First tragedy,
+then parse: History repeats itself in the new era of large
+language models. ArXiv, abs/2311.05020, 2023.
+
+Qin, Z., Yang, S., and Zhong, Y.
+Hierarchically
+gated recurrent neural network for sequence
+modeling.
+CoRR, abs/2311.04823, 2023c.
+doi:
+10.48550/ARXIV.2311.04823.
+
+Schlag, I., Irie, K., and Schmidhuber, J. Linear transformers
+are secretly fast weight programmers. In Meila, M. and
+Zhang, T. (eds.), Proceedings of the 38th International
+Conference on Machine Learning, ICML 2021, 18-24 July
+2021, Virtual Event, volume 139 of Proceedings of Machine Learning Research, pp. 9355–9366. PMLR, 2021.
+
+Qin, Z., Sun, W., Li, D., Shen, X., Sun, W., and Zhong, Y.
+Lightning attention-2: A free lunch for handling unlimited
+sequence lengths in large language models. 2024a.
+Qin, Z., Yang, S., Sun, W., Shen, X., Li, D., Sun, W., and
+Zhong, Y. Hgrn2: Gated linear rnns with state expansion.
+arXiv preprint arXiv:2404.07904, 2024b.
+
+Schmidhuber, J. Learning to control fast-weight memories:
+An alternative to dynamic recurrent networks. Neural
+Computation, 4(1):131–139, 1992.
+
+Rae, J. W., Potapenko, A., Jayakumar, S. M., Hillier, C., and
+Lillicrap, T. P. Compressive transformers for long-range
+sequence modelling. arXiv preprint, 2019.
+
+Shazeer, N. Glu variants improve transformer.
+preprint arXiv:2002.05202, 2020.
+13
+
+arXiv
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+
+Smith, J. T. H., Warrington, A., and Linderman, S. W.
+Simplified state space layers for sequence modeling.
+In The Eleventh International Conference on Learning
+Representations, ICLR 2023, Kigali, Rwanda, May 1-5,
+2023. OpenReview.net, 2023.
+
+Wu, F., Fan, A., Baevski, A., Dauphin, Y., and Auli, M. Pay
+less attention with lightweight and dynamic convolutions.
+International Conference on Learning Representations,
+2019. URL https://arxiv.org/abs/1901.10430v2.
+Xing, Z., Ye, T., Yang, Y., Liu, G., and Zhu, L. Segmamba:
+Long-range sequential modeling mamba for 3d medical
+image segmentation. arXiv preprint arXiv:2401.13560,
+2024.
+
+Soboleva, D., Al-Khateeb, F., Myers, R., Steeves, J. R.,
+Hestness, J., and Dey, N. SlimPajama: A 627B token
+cleaned and deduplicated version of RedPajama, 2023.
+
+Yan, J. N., Gu, J., and Rush, A. M. Diffusion models without
+attention. 2023.
+
+Su, J., Lu, Y., Pan, S., Wen, B., and Liu, Y. Roformer:
+Enhanced transformer with rotary position embedding.
+CoRR, abs/2104.09864, 2021.
+
+Yang, Y., Xing, Z., and Zhu, L. Vivim: a video vision mamba
+for medical video object segmentation. arXiv preprint
+arXiv:2401.14168, 2024.
+
+Sun, Y., Dong, L., Huang, S., Ma, S., Xia, Y., Xue, J.,
+Wang, J., and Wei, F. Retentive network: A successor
+to transformer for large language models. arXiv preprint
+arXiv:2307.08621, 2023a.
+
+Zaheer, M., Guruganesh, G., Dubey, K. A., Ainslie,
+J., Alberti, C., Ontanon, S., Pham, P., Ravula, A.,
+Wang, Q., Yang, L., et al. Big bird: Transformers for
+longer sequences. Advances in neural information
+processing systems, 33:17283–17297, 2020. URL
+https://arxiv.org/abs/2007.14062v2.
+
+Sun, Y., Dong, L., Patra, B., Ma, S., Huang, S., Benhaim,
+A., Chaudhary, V., Song, X., and Wei, F. A lengthextrapolatable transformer. In Rogers, A., Boyd-Graber,
+J. L., and Okazaki, N. (eds.), Proceedings of the 61st
+Annual Meeting of the Association for Computational
+Linguistics (Volume 1: Long Papers), ACL 2023,
+Toronto, Canada, July 9-14, 2023, pp. 14590–14604.
+Association for Computational Linguistics, 2023b. doi:
+10.18653/V1/2023.ACL-LONG.816.
+
+Zellers, R., Holtzman, A., Bisk, Y., Farhadi, A., and Choi,
+Y. Hellaswag: Can a machine really finish your sentence?
+arXiv preprint arXiv:1905.07830, 2019.
+Zhang, B. and Sennrich, R. Root mean square layer normalization. Advances in Neural Information Processing
+Systems, 32, 2019.
+
+Sun, Y., Dong, L., Zhu, Y., Huang, S., Wang, W., Ma, S.,
+Zhang, Q., Wang, J., and Wei, F. You only cache once:
+Decoder-decoder architectures for language models. 2024.
+
+Zhang, J., Jiang, S., Feng, J., Zheng, L., and Kong, L. Linear
+attention via orthogonal memory, 2023.
+
+Touvron, H., Lavril, T., Izacard, G., Martinet, X., Lachaux,
+M.-A., Lacroix, T., Rozière, B., Goyal, N., Hambro, E.,
+Azhar, F., et al. Llama: Open and efficient foundation
+language models. arXiv preprint arXiv:2302.13971, 2023.
+
+Zhang, M., Bhatia, K., Kumbong, H., and Ré, C. The
+hedgehog & the porcupine: Expressive linear attentions
+with softmax mimicry, 2024.
+Zhang, Y. and Cai, D. Linearizing transformer with
+key-value memory. In Goldberg, Y., Kozareva, Z., and
+Zhang, Y. (eds.), Proceedings of the 2022 Conference
+on Empirical Methods in Natural Language Processing,
+Abu Dhabi, United Arab Emirates, December 2022.
+Association for Computational Linguistics.
+
+van der Westhuizen, J. and Lasenby, J. The unreasonable
+effectiveness of the forget gate. CoRR, abs/1804.04849,
+2018.
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L.,
+Gomez, A. N., Kaiser, Ł., and Polosukhin, I. Attention is
+all you need. Advances in neural information processing
+systems, 30, 2017.
+
+Zhu, L., Liao, B., Zhang, Q., Wang, X., Liu, W., and Wang,
+X. Vision mamba: Efficient visual representation learning
+with bidirectional state space model. arXiv preprint
+arXiv:2401.09417, 2024.
+
+Wang, C., Tsepa, O., Ma, J., and Wang, B. Graph-mamba: Towards long-range graph sequence modeling with selective
+state spaces. arXiv preprint arXiv:2402.00789, 2024a.
+Wang, J., Yan, J. N., Gu, A., and Rush, A. M. Pretraining
+without attention. CoRR, abs/2212.10544, 2022.
+Wang, J., Gangavarapu, T., Yan, J. N., and Rush, A. M.
+Mambabyte: Token-free selective state space model.
+arXiv preprint arXiv:2401.13660, 2024b.
+14
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+
+A
+
+Extended Related Work
+
+A.1
+
+Linear Attention
+T
+
+Feature map ϕ. Linear attention mechanisms (Katharopoulos et al., 2020) replace exp(qt ki ) with a kernel k(x,y) having
+an associated feature map ϕ (i.e., k(x,y) = ⟨ϕ(x),ϕ(y)⟩) where ϕ ∈ Rdkey → Rddot . ϕ often consists of two parts: ϕ = ϕ0 ◦ϕ1 .
+ϕ1 could be a linear map made up by random samples (Peng et al., 2021; Choromanski et al., 2021), learnable MLPs (Kasai
+et al., 2021; Zhang et al., 2024; Kacham et al., 2023) or simply an identity map (Mao, 2022). ϕ2 is often an element-wise
+(activation) function that makes the resulting ϕ a positive feature map, such as 1+elu (Katharopoulos et al., 2020), ReLU
+(Kasai et al., 2021), exp(·) (Zhang et al., 2024; Choromanski et al., 2021). Some work (Qin et al., 2023b; Sun et al., 2023a;
+Mao, 2022) suggests that a positive feature map might not be necessary.
+Our work follows Sun et al. (2023a) and Mao (2022) by using an identity map ϕ = I. Recent work suggests that non-identity
+feature maps such as scaled element-wise exponential map (Nahshan et al., 2023; Zhang et al., 2024) and higher-order
+polynomial map (Arora et al., 2024; Kacham et al., 2023) work well empirically. We leave the exploration of integrating
+other types of feature map into GLA to future work.
+Attention spikiness. Linear attention suffers from the “attention dilution” issue (Qin et al., 2022), where the attention
+distribution is too uniform (i.e., high entropy) to concentrate on relevant tokens. Qin et al. (2022) propose adding local
+attention layers to focus more on adjacent tokens, a method adopted in (Lingle, 2023; Nahshan et al., 2023; Zhang et al., 2023)
+and proven crucial for performance. Recent work finds that a scaled element-wise exponential map—i.e., ϕ(x) = exp(t·x)
+with t ≥ 2—helps to concentrate attention (Nahshan et al., 2023; Zhang et al., 2024). Zhang et al. (2024) also find that
+higher-order polynomial kernels induce low-entropy and spiky attention distribution, partially explaining the empirical
+success of Based Linear Attention (Arora et al., 2024) and PolySketchFormer (Kacham et al., 2023).
+Memory capacity. Linear attention has bounded memory size (Peng et al., 2022) while softmax attention enjoys unbounded
+memory(Oren et al., 2024). We believe that increasing the memory size efficiently and utilizing memory effectively are the
+keys to bridging the performance gap between linear attention and softmax attention. To increase memory size, it is shown
+that directly increasing dkey is effective (Sun et al., 2023a; Mao, 2022; Zhang & Cai, 2022); however, the total parameters
+are hard to control with the increase of dkey . Parameter-efficient methods often keep dkey intact and increase ddot instead.
+Higher order polynomial kernels with order p ≥ 2 map dkey to a much higher ddot = O(dpkey ) (Arora et al., 2023a; Kacham
+et al., 2023). Schlag et al. (2021) propose the Deterministic Parameter-Free Projection (DPFP), while Pramanik et al. (2023)
+use parameterized outer product to expand ddot in a parameter-efficient/free manner.
+For better memory utilization, Schlag et al. (2021) use the delta rule to edit the memory dynamically. However, this is shown
+to underperform the gating mechanism (Mao, 2022), which is a classic method to erase irrelevant historical information
+in gated RNNs. Recently, Zhang et al. (2023) enforce orthogonality of memory vectors to potentially increase utiliziation.
+Linear attention with decay or gates. Peng et al. (2021) use position-wise scalar gates for incorporating recency bias into
+linear attention, and has been revisited in recent work (Dao & Gu, 2024; Beck et al., 2024; Sun et al., 2024), while Mao (2022);
+Pramanik et al. (2023) use matrix-valued gates (obtained by the outer product) for more fine-grained memory control.
+Scalar decays can be easily incorporated into chunkwise linear attention for training efficiency (Sun et al., 2023a; Qin et al.,
+2024a). With matrix-valued gates, the training efficiency becomes much more challenging. Both Mao (2022) and Katsch
+(2023)’s training algorithms involve materializing hidden states of all steps in HBM, which suffers from high I/O costs.
+Moreover, both approaches cannot take advantage of tensor cores. Our hardware-efficient training algorithm reduces or
+eliminates materialization and enables usage of tensor cores.
+I/O-aware chunkwise linear attention. The chunkwise form of linear attention is well-known in the literature. Hua et al.
+(2022) first propose the chunkwise linear attention form, arguing that the training algorithm of Katharopoulos et al. (2020)
+is slow in practice. Sun et al. (2023a) and Qin et al. (2024a) generalize this form to linear attention with exponential decay
+(or ALiBi). Kacham et al. (2023); Lingle (2023) also derive similar chunkwise forms.
+However, most chunkwise linear attention is not I/O-aware. To the best of our knowledge, only L IGHTNING ATTENTION 2
+(Qin et al., 2024a) (concurrent to our work) is I/O aware, and it is very similar to the non-materialization version of our
+F LASH L INEAR ATTENTION. We additionally propose a materialization version, which leverages sequence-level parallelism
+15
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+
+and thus allows for higher training throughput at the cost of a slightly increasing memory footprint.
+Other subquadratic models. Besides the Linear attention Transformer (Katharopoulos et al., 2020; Schlag et al., 2021)
+discussed in this work, previous studies have explored sparsifying attention with either a predefined fixed pattern (Child et al.,
+2019; Beltagy et al., 2020; Zaheer et al., 2020) or a context-aware learnable pattern (Roy et al., 2020; Kitaev et al., 2020; Ren
+et al., 2023) for sequence modeling with subquadratic complexity in the sequence length dimension. Leveraging convolutions
+for efficient sequence modeling has also been studied in works such as Dynamic Convolution (Wu et al., 2019), Long Convolution (Fu et al., 2023c; Qin et al., 2023a; Poli et al., 2023; Massaroli et al., 2023; Li et al., 2023d; Romero et al., 2021), and State
+Space Models (Gu et al., 2021a; Gupta & Berant, 2022; Gu et al., 2021b; Hasani et al., 2022; Smith et al., 2023; Ma et al., 2023).
+A.2
+
+Sequence parallelism
+
+The chunk-wise parallel form of linear Transformers resembles the two-stage parallel prefix sum (or parallel scan) algorithm
+(Blelloch, 1990), which also combine chunk-wise parallel computations with inter-chunk communication (Chaurasia et al.,
+2015). It also resembles sequence parallelism used for accelerating attention-based Transformers (Li et al., 2023b), which has
+recently received much attention for long-sequence modeling (Liu et al., 2023; Li et al., 2023a; Brandon et al., 2023). Sequencelevel parallelism also constitutes the main improvement of FlashAttention-2 (Dao, 2023) over FlashAttention-1 (Dao et al.,
+2022b). The main differences between these works are that (i) the chunk-level parallel form of linear Transformer needs only
+a single pass due to the linear complexity, while the sequence parallelism in Transformers needs L/C passes (i.e., left-to-right
+scan of key/value blocks for each query block) due to the inherent quadratic complexity, and (ii) the order of matrix multiplications is different. We also note that chunkwise linear attention could greatly reduce the communication cost between devices in
+the distributed training setting compared to softmax attention, which could open the door for extremely long sequence training.
+
+Algorithm 2 F LASH L INEAR ATTENTION: Backward Pass
+L
+
+Input: Q,K,V,O,dO ∈ RL×d , chunk size C ∈ [L], materialize ∈ {True,False}, S ∈ R C ×d×d
+Initialize dS = 0 ∈ Rd×d on SRAM
+On chip, construct causal mask M ∈ RC×C
+if materialize then
+for n ← N,1 do
+Store dS in HBM as dS[n]
+Load Q[n] ,dO[n] ∈ RC×d from HBM to SRAM.
+
+▷ S is available when materialize is True
+
+▷ the materialization version
+▷ in reverse order
+
+T
+
+On chip, compute dS = dS+Q[n] dO[n]
+end for
+parfor n ← 1,N do
+Load Q[n] ,K[n] ,V[n] ,dO[n] ∈ RC×d from HBM to SRAM.
+Load S[n] , dS[n] ∈ Rd×d from HBM to SRAM.
+⊤
+On chip: dQ = dO[n] S⊤
+[n] +(dO[n] V[n] ⊙M)K[n] .
+⊤
+⊤
+On chip: dK = V[n] dS⊤
+[n] +(V[n] dO[n] ⊙M )Q[n]
+⊤
+On chip: dV = K[n] dS[n] +(Q[n] K⊤
+[n] ⊙M) dO[n]
+Write dQ,dK,dV to HBM as dQ[n] ,dK[n] ,dV[n]
+end parfor
+else
+Initial S = 0 ∈ Rd×d on SRAM
+for n ← 1,N do
+Load K[n] ,V[n] ,dO[n] ∈ RC×d from HBM to SRAM.
+⊤
+On chip: dQ = dO[n] S⊤ +(dO[n] V[n]
+⊙M)K[n]
+
+▷ the non-materialization version
+▷ hidden state recomputation
+
+On chip: S = S+K⊤
+[n] V[n]
+end for
+for n ← N,1 do
+Load Q[n] ,K[n] ,V[n] ,dO[n] ∈ RC×d from HBM to SRAM.
+
+▷ in reverse order
+
+T
+
+On chip, compute dS = dS+Q[n] dO[n]
+⊤
+On chip: dQ = dO[n] S⊤
+[n] +(dO[n] V[n] ⊙M)K[n] .
+⊤
+⊤
+On chip: dK = V[n] dS⊤
++(V
+dO
+[n]
+[n]
+[n] ⊙M )Q[n]
+⊤
+On chip: dV = K[n] dS[n] +(Q[n] K⊤
+⊙M)
+dO[n]
+[n]
+
+Write dQ,dK,dV to HBM as dQ[n] ,dK[n] ,dV[n]
+end for
+end if
+return dQ = {dQ[1] ...dQ[N ] }, dK = {dK[1] ...dK[N ] }, dV = {dV[1] ...dV[N ] }.
+
+16
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+
+A.3
+
+Hardware-ware algorithm
+
+Many algorithms are fast in theory, but slow in practice, due to misalignment with hardware properties (Hooker, 2020; Saphra
+et al., 2023). For example, matmuls with butterfly matrices have theoretically lower complexity by using FFT, but in practice
+it is slow due to extensive memory transportation operations, motivating matrices (Dao et al., 2022a; Fu et al., 2023a) which
+can better align butterfly operators to GPUs. In practice it is important to reduce HBM I/O cost using techniques such as
+tiling and recomputation and leverage tensor cores as much as possible. Our F LASH L INEAR ATTENTION is similar in spirit
+to F LASH ATTENTION (Dao et al., 2022b; Dao, 2023) and F LASH C ONV FFT (Fu et al., 2023d), which implement I/O-aware
+versions of neural network layers to enable practical wallclock speedups. Concurrent work by Qin et al. (2024a) also proposes
+an I/O-aware version of linear attention, which is similar to the non-materialization version of F LASH L INEAR ATTENTION.
+We additionally propose a materialization version, which leverages sequence-level parallelism and thus allows for higher
+training throughput at the cost of a slightly increasing memory footprint.
+
+B
+
+Details for Chunkwise (Gated) Linear Attention
+
+Backward pass of F LASH L INEAR ATTENTION.
+Algorithm 2.
+
+The pseduocode for backward pass of linear attention is listed in
+
+Pseudo codes of GLA. We first present the direct adaptions of F LASH L INEAR ATTENTION to training GLA without
+secondary-level chunking. Specifically, Alg. 3 and 4 shows the forward/backward pass for the materialization version; Alg. 5
+and 6 for the non-materialization version. We show the psuedo code of our secondary-level chunking in Pytorch style in
+Listing 1.
+def gated_linear_attention_forward (Q , K , V , a , C , c):
+'''
+Q / K / V : query / key / value
+a : log forget gate
+C / c : chunk size , subchunk size
+'''
+# L : sequence length , d: head dimension
+L , d_k = Q. shape
+d_v = V . shape [ -1]
+S = torch . zeros ( d_k , d_v )
+O = torch . empty_like (V)
+# cumsum of log decay within a chunk
+B = torch . empty_like (a)
+# local compute of cumulative product of decay within a chunk
+for i in range (0 , L // C):
+b = torch . zeros ( d_k )
+for j in range (0 , C):
+b += a[i]
+B [i] = b
+for i in range (0 , L // C):
+r = range (i*C ,( i +1) *C)
+# (C , d) chunking
+bq , bk , bv , bb = Q[r], K[r], V[r], B[r]
+b = bb [ -1 , None ]
+# inter - chunk w/ matmul
+q , k , g = bq *( bb . exp () ) , bk *(( b - bb ). exp () ) , b. exp ()
+o = q @ S
+# hidden state update
+S = g .t () * S + k.t () @ bv
+# intra - chunk ( secondary chunking )
+for j in range (0 , C // c):
+t = range (j*c , (j +1) *c)
+# (c , head_dim ) subchunking
+q , k , v , b = bq [t], bk [t], bv [t], bb [t]
+p = torch . zeros (c ,c)
+# intra - subchunk w/o matmul .
+for m in range (c):
+
+17
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+for n in range (m +1) :
+p[m ,n ]= torch . sum (q[m ]* k[n ]*(( b[m]-b[n ]) . exp () ))
+o [t] += p @ v
+# inter - subchunk w/ matmul
+z = b [0 , None ]
+q = q * (b -z). exp ()
+for u in range (0 , j):
+y = range (u*c , (u +1) *c)
+p = q @ ( bk [y ]*( z - bb [y ]) . exp () ).t ()
+o[t] += p@bv [y]
+O[r] = o
+return O
+Listing 1: Pytorch-like code snippet of our two-level chunking algorithm for training GLA. We omit the dimensions of batch size and
+number of heads for clarity
+
+Derivations of dlogαt . We show the derivations for the following gradient form.
+dlogbt = kt ⊙dkt −qt ⊙dq t ,
+X
+dlogαt =
+dlogbi .
+t≤i≤L
+
+By unrolling the recurrence, we have
+ ⊤
+t
+X
+ki
+ot = qt St =
+(qt ⊙bt )
+vi
+bi
+i=1
+=
+
+t
+X
+⊤
+(qt ⊙exp(logbt ))(ki ⊙exp(−logbi )) vi
+i=1
+
+Algorithm 3 Forward pass for gated linear attention (w. materialization)
+Input: Q,K,∈ RL×dk ,V ∈ RL×dv , G = [α1 ...αL ] ∈ RL×dk , chunk size C
+L
+Divide Q,K,G into N = C
+blocks {Q[1] ...Q[N ] }, {K[1] ...K[N ] }, {G[1] ...G[N ] } of size C ×dk each.
+Divide V into N blocks {V[1] ...V[N ] } of size C ×dv each.
+Initialize S = 0 ∈ Rdk ×dv on SRAM
+for n ← 1,N do
+Write S to HBM as S[n] .
+Load K[n] ,G[n] ∈ RC×dk from HBM to SRAM.
+Load V[n] ∈ RC×dv from HBM to SRAM.
+C×dk
+and K̃[n] = K[n] ⊙Γ[n] .
+On chip, compute γ[n] 
+∈ Rdk ,Γ
+ [n] ∈ R
+T
+
+On chip, compute S = γ[n] 1 ⊙S+ K̃⊤
+[n] V[n] .
+end for
+parfor n ← 1,N do
+Load Q[n] ,K[n] ,G[n] ∈ RC×dk from HBM to SRAM.
+Load V[n] ∈ RC×dv from HBM to SRAM.
+Load S[n] ∈ Rdk ×dv from HBM to SRAM.
+On chip, construct causal mask M ∈ RC×C
+On chip, compute Λ[n] ,Γ[n] ∈ RC×dk
+On chip, compute Q̃[n] = Q[n] ⊙Λ[n] , K̃[n] = K[n] ⊙Γ[n] , K̄[n] = K[n] /Λ[n]
+C×dv
+On chip, compute Ointer
+[n] = Q̃[n] S[n] ∈ R
+T
+
+On chip, compute P = (Q̃[n] K̄[n] )⊙M ∈ RC×C
+On chip, compute Ointra = PV[n]
+On chip, compute O[n] = Ointer +Ointra
+Store O[n] to HBM.
+end parfor
+return O = {O[1] ...O[N ] }, S = {S[1] ...S[N ] }.
+
+18
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+Algorithm 4 Backward pass for gated linear attention (w. materialization)
+Input: Q,K,G ∈ RL×dk , V,O,dO ∈ RL×dv , chunk size C
+Initialize dS = 0 ∈ Rdk ×dv on SRAM
+for n ← N,1 do
+Store dS in HBM as dS[n]
+Load G[n] ∈ RC×dk from HBM to SRAM.
+Load Q[n] ∈ RC×dk from HBM to SRAM.
+Load dO[n] ∈ RC×dv from HBM to SRAM.
+On chip, compute γ[n] , Γ[n] andQ̃[n] = Q[n] ⊙Γ[n]
+T
+
+T
+
+On chip, compute dS = γ[n] 1 ⊙dS+ Q̃[n] dO[n]
+end for
+parfor n ← 1,N do
+Load Q[n] ,K[n] ,G[n] ∈ RC×dk from HBM to SRAM.
+Load S[n] ∈ Rdk ×dv from HBM to SRAM.
+Load V[n] ,O[n] ,dO[n] ∈ RC×dv from HBM to SRAM.
+Load dS[n] ∈ Rdk ×dv from HBM to SRAM.
+On chip, construct causal mask M ∈ RB×B
+On chip, compute Λ[n] ,Γ[n] ∈ RC×dk
+On chip, compute Q̃[n] = Q[n] ⊙Λ[n] , K̃[n] = K[n] ⊙Γ[n] , K̄[n] = K[n] /Λ[n] .
+T
+On chip, compute P = (Q̃[n] K̃[n] )⊙M ∈ RC×C
+T
+
+On chip, compute dP = (dO[n] V[n] )⊙M
+T
+
+On chip, compute dK̄[n] = Q̃[n] dP
+T
+On chip, compute dK̃[n] = V[n] dS[n]
+On chip, compute dK[n] = dK̃[n] ⊙Γ[n] +dK̄[n] /Λ[n]
+T
+On chip, compute dQ̃[n] = dPK̄[n] +dO[n] S[n]
+On chip, compute dQ[n] = dQ̃[n] ⊙Λ[n]
+T
+
+On chip, compute dV[n] = P dO[n] + K̃[n] dS[n]
+Store dK[n] ,dV[n] in HBM.
+end parfor
+Let dQ = {dQ[1] ...dQ[N ] }, dK = {dK[1] ...dK[N ] }, dV = {dV[1] ...dV[N ] }.
+Compute dA = Q⊙dQ−K⊙dK, dG = revcum(dA)
+return dQ,dK,dV,dG
+
+Algorithm 5 Forward pass for gated linear attention (w/o. materialization)
+Input: Q,K,∈ RL×dk ,V ∈ RL×dv , G = [α1 ...αL ] ∈ RL×dk , chunk size C
+L
+Divide Q,K,G into N = B
+blocks {Q[1] ...Q[N ] }, {K[1] ...K[N ] }, {G[1] ...G[N ] } of size C ×dk each.
+Divide V into N blocks {V[1] ...V[N ] } of size C ×dv each.
+Initialize S = 0 ∈ Rdk ×dv on SRAM
+for n ← 1,N do
+Write S to HBM as S[n] .
+Load Q[n] ,K[n] ,G[n] ∈ RC×dk from HBM to SRAM.
+Load V[n] ∈ RC×dv from HBM to SRAM.
+On chip, compute γ[n] ∈ Rdk ,Γ[n] ∈ RC×dk and K̃[n] = K[n] ⊙Γ[n] .
+On chip, construct causal mask M ∈ RC×C
+On chip, compute Λ[n] ,Γ[n] ∈ RC×dk
+On chip, compute Q̃[n] = Q[n] ⊙Λ[n] , K̃[n] = K[n] ⊙Γ[n] , K̄[n] = K[n] /Λ[n] .
+C×dv
+On chip, compute Ointer
+[n] = Q̃[n] S[n] ∈ R
+T
+
+On chip, compute P = (Q̃[n] K̄[n] )⊙M ∈ RC×C
+On chip, compute Ointra = PV[n]
+On chip, compute O[n] = Ointer +Ointra
+Store O[n] to HBM. 
+
+T
+
+On chip, compute S = γ[n] 1 ⊙S+ K̃⊤
+[n] V[n] .
+end for
+return O = {O[1] ...O[N ] }.
+
+19
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+Algorithm 6 Backward pass for gated linear attention (w/o. materialization)
+Input: Q,K,G ∈ RL×dk , V,O,dO ∈ RL×dv , chunk size C
+Initialize S = 0 ∈ Rdk ×dv on SRAM
+for n ← 1,N do
+Load G[n] ∈ RC×dk from HBM to SRAM.
+Load Q[n] ∈ RC×dk from HBM to SRAM.
+Load dO[n] ∈ RC×dv from HBM to SRAM.
+On chip, compute γ[n] ∈ Rdk ,Γ[n] ∈ RC×dk and K̃[n] = K[n] ⊙Γ[n] .
+T
+On chip, compute dP = dO[n] V[n]
+T
+
+On chip, compute dQ̃[n] = dPK̃[n] +dO[n] S
+On chip, compute dQ = dQ̃[n] ⊙Γ[n]
+Store dQ[n] to HBM.
+ T 
+On chip, compute S = γ[n] 1 ⊙S+ K̃⊤
+[n] V[n] .
+end for
+Initialize dS = 0 ∈ Rdk ×dv on SRAM
+for n ← N,1 do
+Load Q[n] ,K[n] ,G[n] ∈ RC×dk from HBM to SRAM.
+Load V[n] ,O[n] ,dO[n] ∈ RC×dv from HBM to SRAM.
+On chip, construct causal mask M ∈ RC×C
+On chip, compute Λ[n] ,Γ[n] ∈ RC×dk
+On chip, compute Q̃[n] = Q[n] ⊙Λ[n] , K̃[n] = K[n] ⊙Γ[n] .
+T
+On chip, compute P = (Q̃[n] K̃[n] )⊙M ∈ RC×C
+T
+
+On chip, compute dP = (dO[n] V[n] )⊙M
+T
+
+On chip, compute dK̄[n] = Q̃[n] dP
+T
+On chip, compute dK̃[n] = V[n] dS[n]
+On chip, compute dK[n] = dK̃[n] ⊙Γ[n] +dK̄[n] /Λ[n]
+T
+On chip, compute dV[n] = P dO[n] + K̃[n] dS
+Store dQ[n] ,dK[n] ,dV[n] in HBM.
+ T 
+T
+On chip, compute dS = γ[n] 1 ⊙dS+ Q̃[n] dO[n]
+end for
+Let dQ = {dQ[1] ...dQ[N ] }, dK = {dK[1] ...dK[N ] }, dV = {dV[1] ...dV[N ] }.
+Compute dA = Q⊙dQ−K⊙dK, dG = revcum(dA)
+return dQ,dK,dV,dG
+
+where at the second step, we apply a trivial identity: exp(logx) = x. We first derive the gradients wrt. query/key vectors,
+dq t =
+
+t
+X
+
+⟨dot ,vi ⟩bt ⊙ki /bi ,
+
+i=1
+
+dki =
+
+L
+X
+⟨dot ,vi ⟩qt ⊙bt /bi .
+t=i
+
+Then for the gradients wrt. the logits of the accumulative gates,
+dlogbt = qt ⊙
+
+t
+X
+
+⟨dot ,vi ⟩⊙bt ⊙ki /bi −kt ⊙
+
+i=t
+
+i=1
+
+|
+
+L
+X
+⟨doi ,vt ⟩qi ⊙bi /bt .
+
+{z
+
+}
+
+dq t
+
+|
+
+where we change the index notation for the dk term. It now becomes clear that
+
+Since logbt =
+
+dlogbt = qt ⊙dq t −kt ⊙dkt .
+PL
+i=1 logαi , we get dlogαt =
+t=i dlogbi .
+
+Pt
+
+20
+
+{z
+
+dkt
+
+}
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+
+C
+
+General Gated Linear Attention
+
+In the main paper, we use a simplified parameterization where β is fixed to 1 in the following gated linear attention.
+⊤
+St = (α⊤
+t βt )⊙St−1 +kt vt ,
+
+Though empirically we found that making β learnable does not lead to performance gain, we show here that the general form still
+enjoys parallel form and chunk-wise form, which could be potentially useful for future development of linear attention models.
+C.1
+
+Parallel form
+
+By unrolling the recurrence we have,
+ot = qt St = qt
+
+t
+t
+X
+Y
+
+T
+( Gi )⊙(ki vi )
+i=1
+
+(5)
+
+i+1
+
+By taking advantage of the mixed product property of Kronercker/outer product, we have
+(
+
+t
+Y
+
+bt T dt 
+T
+) ( ) ⊙(ki vi )
+bi
+di
+
+T 
+
+bt
+dt
+=
+⊙ki
+⊙vi
+bi
+di
+
+T
+
+Gj )⊙(ki vi ) = (
+
+j=i+1
+
+where bt =
+
+Qt
+
+j=1 αj ,dt =
+
+(6)
+
+(7)
+
+Qt
+
+j=1 βj . By plugging it into the expanded recurrence, we have the following form.
+t
+t
+Y
+X
+
+T
+ot = qt St = qt
+( Gi )⊙(ki vi )
+
+(8)
+
+i+1
+
+i=1
+
+t 
+X
+bt
+
+T 
+
+
+dt
+⊙vi
+bi
+Bi
+i=1
+!
+
+
+
+
+T
+t
+X
+dt
+bt
+⊙ki
+⊙vi
+=
+qt
+bi
+di
+i=1
+
+
+t 
+X
+dt
+bt
+⊙vt
+=
+qt , ⊙kt
+bi
+di
+i=1 |
+{z
+}| {z }
+= qt
+
+⊙ki
+
+R1×1
+
+t 
+X
+
+(9)
+
+(10)
+
+(11)
+
+R1×dv
+
+
+
+
+ki vi
+=
+qt ⊙bt ,
+⊙dt
+bi d i
+i=1
+ T  !
+t
+X
+ki
+vi
+=
+(qt ⊙bt )
+⊙dt
+b
+d
+i
+i
+i=1
+
+(12)
+∈ R1×dv
+
+(13)
+
+Eq. 10 is by linearity and associative property of matrix multiplication, Eq. 12 is derived based on ⟨a,b⊙c⟩ = ⟨a⊙b,c⟩. The
+final form has following equivalent parallel form similar to the parallel form of linear/softmax attention.
+Q̃ = Q⊙B
+
+K̃ = K/B
+
+T
+
+Õ = (Q̃K̃ ⊙M)Ṽ
+
+Ṽ = V/D
+
+O = Õ⊙D
+
+(14)
+(15)
+
+where Q,K,B ∈ RL×dk , V,D ∈ RL×dv , M ∈ RL×L denotes the causal mask.
+C.2
+
+Chunkwise parallel form
+
+L
+Now we show that the chunkwise parallel form for efficient training of general linear attention. Suppose X is now split into C
+dk ×dv
+chunks, each of length C. Let S[i] ∈ R
+be the chunk-level hidden state after processing i chunks, i.e., S[i] := SiC . Further
+
+21
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+
+let K[i+1] := KiC+1:(i+1)C ∈ RC×dk , V[i+1] := ViC+1:(i+1)C ∈ RC×dv . The inter-chunk recurrence is then given by,
+
+
+T
+
+B(i+1)C T  D(i+1)C 
+⊙S[i] + B′[i+1] ⊙K[i+1] D′[i+1] ⊙V[i+1] ,
+S[i+1] =
+BiC
+DiC
+B
+
+D
+
+∈ R1×dk and (D′[i+1] )j = D(i+1)C
+∈ R1×dv for j ∈ [1,C], i ∈ [0,L/C − 1]. (Therefore we have
+where (B′[i+1] )j = B(i+1)C
+iC+j
+iC+j
+B′[i+1] ∈ RC×dk ,D′[i+1] ∈ RC×dv .) The intra-chunk parallel computation is then given by,
+
+
+T
+Õ[i+1] = (Q[i+1] ⊙B†[i+1] )S[i] ⊙D†[i+1] +(Q̃[i+1] K̃[i+1] ⊙M)Ṽ[i+1] ,
+(16)
+{z
+}
+{z
+} |
+|
+intra-chunk
+
+inter-chunk
+O[i+1] = Õ[i+1] /D†[i+1] ,
+
+(17)
+
+where (B†[i+1] )j =
+
+BiC+j
+D
+1×dk
+∈ R1×dv for j ∈ [1,C], i ∈ [0,L/C − 1]. Subsequently, we have
+and (D†[i+1] )j = DiC+j
+BiC ∈ R
+iC
+K
+Q̃[i+1] = Q[i+1] ⊙ B†[i+1] , K̃[i+1] = B†[i+1] , Ṽ[i+1] = V[i+1] ⊙ D†[i+1] . For initial values, we set S0 = 0, B0 = 1, D0 = 1.
+[i+1]
+Intuitively, B′[i] encodes the cumulative decay from the start of a chunk which will be used to propagate the hidden states
+from the previous chunk S[i] ; B†[i] encodes the decay to the end of a chunk which will be used to accumulate information
+
+to be added to the next hidden state S[i+1] .
+The chunkwise form given here is a generalization of several existing forms for linear attention. If we set Aij = 1, Bij = 1,
+it reduces to the chunk-wise form presented in the main paper for vanilla linear attention; if we set Aij = 1, Bij = γ i+1 , it
+becomes RetNet’s chunk-wise form (Sun et al., 2023a). As such, our formulation can be regarded as a generalized chunk-wise
+parallel form for linear attention that enables fine-grained data-dependent decay.
+
+Memory-efficient computation of dα and dβ In the general form, we show that the gradient wrt. α and β admits the
+following closed form, which allows computing dα and dβ without instantiating S in HBM.
+dlogbt = kt ⊙dkt −qt ⊙dq t ,
+X
+dlogαt =
+dlogbi
+t≤i≤L
+
+dlogdt = ot ⊙dot −vt ⊙dv t ,
+X
+dlogdi .
+dlogβ t =
+t≤i≤L
+
+Pt
+
+Pt
+
+where logbt = i=1 logαi , logb = dt = i=1 βi (or alternatively bt =
+compute dlogbt and dlogdt for the following cumulative-sum form.
+
+ot =
+
+t
+X
+i=1
+
+
+
+ki
+(qt ⊙bt )
+bi
+
+T 
+
+vi
+di
+
+Qt
+
+i=1 αi , dt =
+
+!
+⊙dt
+
+Qt
+
+i=1 βi ). We apply the trick to
+
+∈ R1×dv .
+
+The gradient of logbt comes from two sources: one associated with qt , the other associated with ki . Similarly, logb = dt
+comes from both ot and vi .
+dlogbt = qt ⊙
+
+t
+L
+X
+X
+dt
+di
+⟨dot , vi ⟩⊙bt ⊙ki /bi −kt ⊙ ⟨doi , vt ⟩qi ⊙bi /bt
+di
+dt
+i=1
+i=t
+|
+{z
+}
+|
+{z
+}
+dq t
+
+dlogdt = dot ⊙
+
+t
+X
+i=1
+
+|
+
+dkt
+
+
+
+ki
+(qt ⊙bt )
+bi
+{z
+
+T 
+
+vi
+di
+
+!
+⊙dt −vt ⊙
+
+L
+X
+i=t
+
+}
+
+ot
+
+|
+
+ T  !
+kt
+1
+(qi ⊙bi )
+⊙di
+bt
+dt
+{z
+}
+
+(a⊙b)
+(a/b)
+The trick applied there is that ∂f∂logb
+= a⊙ ∂f (a⊙b)
+and ∂f∂logb
+= − ∂f (a/b)
+⊙a.
+∂a
+∂a
+
+22
+
+dv t
+
+Gated Linear Attention Transformers with Hardware-Efficient Training
+Model
+
+Wiki.
+ppl ↓
+
+LMB.
+ppl ↓
+
+LMB.
+acc ↑
+
+PIQA
+acc ↑
+
+Hella.
+acc norm ↑
+
+Wino.
+acc ↑
+
+ARC-e
+acc ↑
+
+ARC-c
+acc norm ↑
+
+COPA
+acc ↑
+
+OBQA
+acc norm ↑
+
+SciQA
+acc ↑
+
+BoolQ
+acc ↑
+
+Avg.
+
+28.39
+32.33
+28.39
+28.65
+
+42.69
+49.19
+39.66
+43.35
+
+31.0
+28.6
+30.6
+30.3
+
+63.3
+63.5
+65.0
+64.8
+
+34.0
+33.5
+35.4
+34.5
+
+50.4
+52.5
+50.1
+51.4
+
+44.5
+44.5
+46.3
+45.1
+
+24.2
+23.4
+23.6
+22.7
+
+66.0
+63
+71.0
+70.0
+
+28.4
+28.4
+28.4
+29.2
+
+73.8
+73.1
+73.7
+73.2
+
+60.9
+60.0
+52.6
+58.7
+
+47.7
+47.1
+47.7
+48.0
+
+16.85
+18.64
+17.06
+17.22
+
+13.44
+17.27
+13.89
+14.47
+
+48.9
+43.3
+46.2
+46.9
+
+70.8
+70.0
+72.2
+71.8
+
+49.6
+47.3
+40.1
+49.8
+
+53.6
+52.5
+54.1
+53.9
+
+56.0
+54.8
+59.0
+57.2
+
+26.5
+25.6
+28.2
+26.6
+
+75.0
+70.0
+74.0
+73.0
+
+29.8
+31.4
+33.0
+32.4
+
+83.6
+82.3
+83.1
+84.7
+
+52.3
+57.1
+59.1
+58.5
+
+54.6
+53.4
+54.9
+55.5
+
+-
+
+16.80
+23.27
+23.00
+18.87
+
+42.9
+37.3
+31.4
+41.1
+
+70.2
+69.8
+71.4
+71.9
+
+50.3
+47.5
+51.2
+49.9
+
+53.8
+51.1
+54.1
+54.4
+
+60.5
+58.5
+60.1
+61.8
+
+28.7
+27.4
+30.4
+28.4
+
+75.0
+72.0
+79.0
+75.0
+
+33.8
+31.8
+33.8
+34.2
+
+90.7
+87.5
+88.5
+90.4
+
+46.0
+45.3
+47.7
+56.9
+
+55.2
+52.8
+55.4
+56.4
+
+0-shot
+Transformer++ 340M
+RetNet 350M
+Mamba 350M
+GLA-Transformer 340M
+
+0-shot
+Transformer++ 1.3B
+RetNet 1.3B
+Mamba 1.3B
+GLA-Transformer 1.3B
+
+5-shot
+Transformer++ 1.3B
+RetNet 1.3B
+Mamba 1.3B
+GLA-Transformer 1.3B
+
+Table 5: Extended zero- and five-shot performance results. All models are trained on the same subset of SlimPajama dataset with Mistral
+tokenizer. The 340M/1.3B models are trained for 15B/100B tokens respectively. The last column shows the average of all accuracies.
+
+D
+
+Additional Experimental Results
+
+The complete results on all 11 tasks, including the 5-shot results for the 1.3B models, are shown in Table 5.
+
+23
+
+

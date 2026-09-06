@@ -1,0 +1,2313 @@
+Published as a conference paper at ICLR 2026
+
+G ROUP R EPRESENTATIONAL P OSITION E NCODING
+Yifan Zhang1 Zixiang Chen∗ 2 Yifeng Liu∗ 2 Zhen Qin∗ Huizhuo Yuan2
+Kangping Xu3 Yang Yuan Quanquan Gu2† Andrew Chi-Chih Yao3†
+1
+3
+
+Princeton University 2 University of California, Los Angeles
+IIIS, Tsinghua University
+
+arXiv:2512.07805v6 [cs.LG] 13 May 2026
+
+yifzhang@princeton.edu qgu@cs.ucla.edu
+andrewcyao@tsinghua.edu.cn
+
+A BSTRACT
+We present GRAPE (Group RepresentAtional Position Encoding), a unified
+framework for positional encoding based on group actions. GRAPE brings together two families of mechanisms: (i) multiplicative rotations (Multiplicative
+GRAPE) in SO(d) and (ii) additive logit biases (Additive GRAPE) arising from
+unipotent actions in the general linear group GL. In Multiplicative GRAPE, a
+position n ∈ Z (or t ∈ R) acts as G(n) = exp(n ω L) with a rank-2 skew generator L ∈ Rd×d , yielding a relative, compositional, norm-preserving map with a
+closed-form matrix exponential. RoPE is recovered exactly when the d/2 planes
+are the canonical coordinate pairs with log-uniform spectrum. Learned commuting subspaces and compact non-commuting mixtures strictly extend this geometry to capture cross-subspace feature coupling at O(d) and O(rd) cost per head,
+respectively. In Additive GRAPE, additive logits arise as rank-1 (or low-rank)
+unipotent actions, recovering ALiBi and the Forgetting Transformer (FoX) as exact special cases while preserving an exact relative law and streaming cacheability.
+Altogether, GRAPE supplies a principled design space for positional geometry in
+long-context models, subsuming RoPE and ALiBi as special cases. Project Page:
+https://github.com/model-architectures/GRAPE.
+
+1
+
+I NTRODUCTION
+
+Positional information is essential for sequence modeling with Transformers (Vaswani et al., 2017),
+whose self-attention is otherwise permutation-invariant. Early work injected absolute positional
+codes (sinusoidal or learned) into token representations (Vaswani et al., 2017). Later, relative encodings depending on offsets (Shaw et al., 2018) and linear logit biases such as ALiBi (Press et al.,
+2021) were introduced, the latter offering strong length extrapolation with negligible overhead.
+Rotary Position Embedding (RoPE) (Su et al., 2024) realizes relative positions as orthogonal planar
+rotations of queries and keys, preserving norms and yielding exact origin invariance of attention
+scores. Despite its appeal, RoPE fixes coordinate planes and typically a log-uniform spectrum,
+limiting cross-subspace coupling and contextual warping of phase. More broadly, absolute codes
+break translation equivariance; table-based relatives add window-dependent overhead. A new formulation is needed because current methods isolate the essential properties of stability, monotonic
+distance penalty, and expressivity. These observations motivate a unified formulation that (i) preserves RoPE’s orthogonality and exact relativity when desired, (ii) also covers additive/forgetting
+mechanisms such as ALiBi (Press et al., 2021) and Forgetting Transformer (FoX) (Lin et al., 2025),
+and (iii) admits learned and contextual generalizations with clean streaming.
+We therefore propose Group RepresentAtional Position Encoding (GRAPE), a group-theoretic
+framework that unifies two complementary families of positional mechanisms (see Figure 1 for an
+overview). The multiplicative family (Multiplicative GRAPE) models positions as norm-preserving
+rotations in SO(d) acting on (q, k); the additive family (Additive GRAPE/Path-Integral Additive GRAPE) models positions as unipotent actions in the general linear group GL that yield
+∗
+
+Core contribution; † Corresponding authors.
+
+1
+
+Published as a conference paper at ICLR 2026
+
+GRAPE
+Group Representational Position Encoding
+
+General Relative Law: G(t − s) = G(s)−1 G(t)
+G(n) = exp(n · ω · Generator)
+
+Multiplicative GRAPE
+
+Additive GRAPE
+
+Operation: Rotation
+Manifold: SO(d)
+Generator: L (Rank-2 Skew)
+
+Operation: Translation
+Manifold: GL(d+k) (Unipotent Lift)
+Generator: A (Low-rank Nilpotent)
+
+L = ab⊤ − ba⊤ ⇒
+s 2
+exp(L) = I + sins s L + 1−cos
+L
+s2
+
+A2 = 0 =⇒
+exp(A) = I + A
+bias
+
+xj
+θij
+
+xi
+Translation
+pos
+
+Norm-preserving Isometry
+Fast Matrix Exponentials
+
+Recovers: RoPE
+
+Homogeneous Space Lift
+Additive Translations
+
+Recovers: ALiBi, FoX
+
+Extensions: Learned Basis
+
+Extensions: Path Integral
+
+Also extends to contextual forms via state-dependent generators
+
+Figure 1: Overview of the GRAPE Framework. We unify positional encodings via group actions
+G(n) = exp(nωL). Left: Multiplicative GRAPE recovers RoPE via rank-2 skew generators in
+SO(d). Right: Additive GRAPE recovers ALiBi and FoX via low-rank nilpotent generators in the
+unipotent subgroup of GL(d + k) (k = 1 or 2).
+linear-in-offset logit biases (including content-gated and path-integral forms). This perspective recovers RoPE and ALiBi as exact special cases, proves that FoX is an exact instance of Additive
+GRAPE, and supplies principled, streaming-friendly contextual extensions on both sides.
+Concretely: (a) Multiplicative GRAPE (GRAPE-M) encodes n ∈ Z (or t ∈ R) as an element
+of SO(d) via a rank-2 skew generator; and (b) Additive GRAPE (GRAPE-A) and Path-Integral
+Additive GRAPE (GRAPE-AP) lifts to the general linear group GL using homogeneous coordinates
+to produce linear-in-offset logit biases (recovering ALiBi and FoX).
+For Multiplicative GRAPE, positions are mapped as
+
+G(n) = exp n ω L ∈ SO(d),
+
+L = ab⊤ − ba⊤ ∈ so(d),
+
+where a, b ∈ Rd define a rank-2 skew generator L and ω > 0 is a frequency. The action is an isometry, and G(n + m) = G(n)G(m) guarantees exact origin invariance of attention logits. We derive
+a closed-form Rodrigues-type formula (Rodrigues, 1840; Hall, 2013), enabling fast linear-time application with stable derivatives and no explicit matrix materialization. RoPE is recovered when d/2
+commuting rank-2 generators act on disjoint coordinate planes with prescribed frequencies.
+For Additive GRAPE, positions are mapped via the matrix exponential Gadd (n) = exp(nωA) =
+I + nωA in a lifted homogeneous space. Here, the generator A ∈ gl(d + 1) is a nilpotent matrix
+of rank one. While this additive transformation is not an isometry, it preserves the exact relative
+law, ensuring attention scores depend only on position offsets. This formulation provides a rigorous
+group-theoretic foundation for additive biases, recovering ALiBi and FoX as exact instances.
+Our contributions are highlighted as follows:
+2
+
+Published as a conference paper at ICLR 2026
+
+1. We propose GRAPE as a unified group-theoretic view that subsumes multiplicative orthogonal
+rotations in SO(d) and additive unipotent (all eigenvalues equal to 1) mechanisms in general
+linear group GL, recovering RoPE and ALiBi as exact special cases and proving FoX is an exact
+instance (Appendix C).
+2. Multiplicative GRAPE. We derive a closed-form rank-2 matrix exponential with fast application
+and stable differentiation; we show RoPE is a special multiplicative GRAPE in a possibly learned
+orthogonal basis.
+3. Additive GRAPE. We show that linear-in-offset logit biases arise from rank-1 (or low-rank)
+unipotent actions in the general linear group GL with an exact relative law and streaming
+cacheability. This includes query- or key-gated slopes, a commuting dictionary of additive components, and exact recoveries of ALiBi and FoX in closed form (Sections 4, 4.2, Appendix C).
+We also formalize path-integral additive biases that remain causal and support efficient training.
+(Section 5).
+
+2
+
+M ULTIPLICATIVE G ROUP R EPRESENTATIONAL P OSITION E NCODING
+
+We propose the Multiplicative GRAPE, as a Lie-group positional map with a closed-form rank-2
+matrix exponential, an exact relative law, and a streaming/cache methodology. The core intuition
+is to encode position as a norm-preserving rotation in the special orthogonal group SO(d) 1 (Hall,
+2013). A single skew-symmetric generator L ∈ so(d) produces the entire family of rotations via the
+matrix exponential. We begin with notation and the rank-2 generator.
+2.1
+
+P RELIMINARIES AND R ANK -2 G ENERATOR
+
+The generator L is formally defined as an element of the corresponding Lie algebra, so(d). Let
+so(d) = {L ∈ Rd×d : L⊤ = −L} denote the Lie algebra of SO(d). The simplest non-trivial
+generator defines a rotation within a single 2D plane. We construct such a rank-2 generator from
+two vectors, a and b, that span this plane of action. For a, b ∈ Rd , define the rank-2 generator
+L ≡ L(a, b) as
+√
+L(a, b) = ab⊤ − ba⊤ , α = ∥a∥2 , β = ∥b∥2 , γ = a⊤ b, ∆ = αβ − γ 2 ≥ 0, s = ∆. (2.1)
+Rank-2 structure. Let U = span{a, b}. The rank-2 generator L has a useful geometric property:
+applying it twice projects onto the action plane U and scales. A direct calculation shows
+L2 = − s2 PU ,
+where PU is the orthogonal projector to the space U . Hence spectrum of L (the set of its eigenvalues), denoted σ(L), is {±is, 0, . . . , 0} and the minimal polynomial is λ(λ2 + s2 ). A detailed
+derivation is given in Appendix I.
+
+Initialization. Write A ≜ [a b] ∈ Rd×2 and J = 01 −1
+so that L = AJA⊤ . For any M ∈ SL(2)
+0
+(the 2 × 2 real matrices with determinant 1, see Table 3), MJM⊤ = J and thus A 7→ AM leaves
+L invariant; for general M ∈ GL(2) the group of invertible 2 × 2pmatrices), L scales by det(M).
+Therefore the oriented plane U = span{a, b} and the scalar s = αβ − γ 2 determine the action.
+We fix a gauge at initialization by ∥a∥ = ∥b∥ = 1 and a⊤ b = 0 (absorbing scale into ω).
+Canonical 90◦ rotation operator. Fix a block-diagonal complex structure J ∈ so(d) with J ⊤ =
+−J and J 2 = −I (for odd d, act on the top-left 2⌊d/2⌋ coordinates and leave the final coordinate
+
+L⌊d/2⌋
+unchanged). Concretely, J = i=1 01 −1
+. For any a ∈ Rd , write a⊥ := J a, which equals “a
+0
+◦
+rotated by 90 ” within the canonical 2D blocks and satisfies a⊤ a⊥ = 0 and ∥a⊥ ∥ = ∥a∥.
+2.2
+
+E XACT RELATIVE LAW
+
+For a fixed L ∈ so(d), define G(n) = exp(nL) ∈ SO(d), which forms a one-parameter subgroup.
+The exact relative law property for positional encoding implies:
+G(t−s) = G(s)⊤ G(t),
+1
+
+G(n)⊤ G(n) = I.
+
+Definitions of SO(d) and other mathematical terms are postponed to Table 3 in the Appendix.
+
+3
+
+Published as a conference paper at ICLR 2026
+
+Here G(n) ∈ SO(d), so the transpose coincides with the group inverse, G(n)⊤ = G(n)−1 ; the
+identity above is exactly the relative-position law for a one-parameter subgroup. A concise
+summary of SO(d), GL(d) and SL(d) is collected in Table 3. This algebraic property enables
+relative positional encoding: interactions depend only on offsets.
+G(n) = exp(nωL),
+
+G(n + m) = G(n)G(m),
+
+G(0) = I,
+
+and
+
+G(−n) = G(n)⊤ .
+
+Crucially, this exact relative property relies solely on the one-parameter subgroup structure (G(n +
+m) = G(n)G(m)), holding true regardless of whether the generator implies commuting or coupled
+non-commuting subspaces.
+2.3
+
+C LOSED - FORM FAST MATRIX EXPONENTIAL
+
+Based on the minimal polynomial mentioned in Section 2.1, the exponential map exp(L) for a rank-2
+generator can be expressed as a quadratic in L. This yields a convenient closed-form solution, often
+referred to as a Rodrigues-type formula (Rodrigues, 1840; Hall, 2013):
+sin s
+1 − cos s 2
+L .
+L+
+s
+s2
+Geometrically, the formula is best understood via L2 as a projector onto U. Since L2 = −s2 PU ,
+the exponential can be written as
+exp(L) = I +
+
+sin s
+L,
+s
+which reveals its action explicitly: it is a rotation by angle s within the plane U = span{a, b} and
+the identity on the orthogonal complement U ⊥ . The vectors a and b thus define the plane of action
+for the positional rotation.
+exp(L) = I − (1 − cos s) PU +
+
+Cost of application. For a single rank-2 plane, computing y = G(n)x requires two inner products
+u = ⟨a, x⟩, v = ⟨b, x⟩, followed by y = x + f1 (n)(av − bu) + f2 (n) [γ(av + bu) − βau − αbv],
+where (α, β, γ) are plane scalars and f1,2 are trigonometric scalars (with series guards as s → 0).
+This is O(d) flops with a small constant and no materialization of G(n); derivative expressions are
+in Appendix I.
+2.4
+
+T HE b = J a CONSTRAINT
+
+We now consider an important special case by setting b = J a. This constraint, which makes the
+plane vectors a and b orthogonal and equal in norm, significantly simplifies the generator’s structure
+and reveals a direct connection to the canonical RoPE formulation. With this constraint,
+the scalars
+p
+simplify: γ = a⊤ b = a⊤ J a = 0, β = ∥b∥2 = ∥a∥2 = α, and hence s = αβ − γ 2 = α.
+Moreover, on the 2D subspace U = span{a, J a} one has
+L(a, J a)a = −(J a)α,
+
+L(a, J a) J a = α a,
+
+so L(a, J a)|U = − α J |U and L(a, J a)|U ⊥ = 0. Therefore
+
+
+exp nωL(a, J a) = I − 1 − cos(nωα) PU − sin(nωα) J PU ,
+This expression follows by substituting L|U = −α J |U and L2 = −α2 PU into the Rodrigues
+formula exp(nωL) = I + sin(nωs)
+L + 1−cos(nωs)
+L2 with s = α; see Appendix I for the algebraic
+s
+s2
+steps. It is a pure planar rotation by angle nωα on U and the identity on U ⊥ .
+Corollary 2.1 (Frequency–norm coupling). If ∥a∥ = 1, the rotation angle reduces to nω. Without
+normalization, the effective frequency is ωeff = ω∥a∥2 , so the scale of a can be absorbed into ω.
+2.5
+
+A PPLICATION TO RELATIVE ENCODING AND EQUIVARIANCE
+
+We now demonstrate how the GRAPE-M operator G(n) is applied in practice. As established in
+Section 2.2, the operator’s group structure guarantees the exact relative law. We first transform the
+ej :
+ei and k
+query and key vectors, qi and kj , into position-aware representations, q
+ei := G(i)qi ,
+q
+
+ej := G(j)kj .
+k
+4
+
+Published as a conference paper at ICLR 2026
+
+It follows from the exact relative law established in Section 2.2 that the attention score between these
+position-aware vectors simplifies to:
+⊤
+⊤
+⊤
+e
+e⊤
+q
+i kj = qi G(i) G(j)kj = qi G(j − i)kj .
+
+Hence, the attention score depends solely on the relative offset j − i, not on the absolute positions.
+Streaming and caching. At inference, cache k⋆j = G(j)kj once when token j arrives. At step
+⋆
+et = G(t)qt and compute logits q
+e⊤
+t, form q
+t kj . No cache rotation is needed when t increments;
+complexity matches RoPE. A full integration into multi-head attention (per-head formulation, logits,
+and streaming) is detailed in Section B.
+
+3
+
+M ULTI -S UBSPACE M ULTIPLICATIVE GRAPE
+
+A single rank-2 generator acts on a 2D subspace, leaving the rest of the d-dimensional space untouched. To encode position across the entire hidden dimension, we can combine multiple generators. This leads to the Multi-Subspace (MS) Multiplicative GRAPE (GRAPE-M) model, which
+forms the basis for both RoPE and more expressive types. Detailed rank-2 algebra appears in Appendix I.
+3.1
+
+M ULTI -S UBSPACE GRAPE-M AND RO PE AS A S PECIAL C ASE
+
+The simplest way to combine generators is to ensure they act on mutually orthogonal subspaces,
+which guarantees they commute. Let d be even. For i = 1, . . . , d/2, we can define a set of rank2 generators {Li }, each acting on a distinct 2D plane. RoPE is the canonical example of this
+construction. We further discussed non-commuting multiplicative GRAPE in Appendix D.
+
+and the coordinate selector be Ui =
+Let the 2 × 2 canonical skew matrix be J = 01 −1
+0
+[e2i−1 e2i ] ∈ Rd×2 . We set the rank-2 generators as Li = Ui JU⊤
+i = L(e2i−1 , e2i ) and assign
+per-plane frequencies θi > 0. The total generator is the commuting sum:
+LRoPE =
+
+d/2
+X
+
+θi Li
+
+with
+
+[Li , Lj ] = 0 for i ̸= j.
+
+i=1
+
+Then
+
+
+G(n) = exp nLRoPE =
+
+d/2
+Y
+
+
+exp(nθi Li ) = blockdiag R2 (nθ1 ), . . . , R2 (nθd/2 ) ,
+
+(3.1)
+
+i=1
+
+where R2 (θ) denotes the standard 2 × 2 rotation matrix introduced in Table 3, and the last equality
+holds because each term exp(nθi Li ) is identity except for a single 2×2 rotation block on its diagonal. Eq. (3.1) is precisely the RoPE mapping: a block-diagonal product of planar rotations with
+per-subspace angles nθi .
+Equality holds when the planes {Ui } are the coordinate 2D blocks and {θi } follow the canonical
+log-uniform spectrum.
+Proposition 3.1 (RoPE is a multiplicative GRAPE). Choose d/2 mutually orthogonal vectors
+{ai } and set bi = J ai with per-plane angles θi . Then the commuting MS-GRAPE G(n) =
+Qd/2
+i=1 exp(nθi L(ai , J ai )) equals the standard RoPE map in a (possibly learned) orthogonal basis. If the planes are the canonical coordinate pairs and {θi } follow the log-uniform spectrum, we
+recover the canonical RoPE exactly.
+Spectral parameterization. Classical RoPE chooses θi on a log-uniform grid across i. In
+GRAPE, θi can be learned or shared/tied across heads or layers. The MS-GRAPE view also allows P
+replacing the coordinate selectors Ui by a learned orthogonal basis B ∈ SO(d) so that
+⊤
+L = i θi BUi JU⊤
+i B , preserving commutativity while learning subspaces.
+Multimodal GRAPE. Please refer to Appendix G for 2D and 3D GRAPE for Vision and Multimodal Position Encoding.
+5
+
+Published as a conference paper at ICLR 2026
+
+4
+
+A DDITIVE G ROUP R EPRESENTATIONAL P OSITION E NCODING
+
+This section shows that additive positional mechanisms (absolute shifts of features and additive logit
+biases, including ALiBi (Press et al., 2021)) also admit a group-theoretic formulation. The key is a
+homogeneous lift to an augmented space and a one-parameter subgroup of the general linear group
+GL that acts by unipotent (all eigenvalues equal to 1) transformations. This yields an exact relative
+law and streaming/cache rules analogous to Section 2.5.
+4.1
+
+H OMOGENEOUS LIFT AND A UNIPOTENT ACTION
+
+To produce additive biases from a multiplicative group action, we employ the homogeneous lift. This
+is a standard method in linear algebra for representing affine transformations (such as translations)
+b ∈ Rd+k denote a homogeneous
+as linear transformations in a higher-dimensional space. Let x
+d
+augmentation of x ∈ R . We work within the general linear group GL(d+k) and its Lie algebra
+gl(d+k). Fix a nilpotent generator A such that A2 = 0. Its exponential is unipotent:
+Gadd (n) := exp(n ω A) = I + n ω A ∈ GL(d+k).
+Crucially, this action forms a one-parameter subgroup: Gadd (n+m) = Gadd (n)Gadd (m).
+Canonical rank-1 generator in a (d+1)-lift. A convenient concrete choice (used in Appendix J.3)
+is the rank-1 index-2 nilpotent
+
+
+0
+ushift
+A = d×d
+∈ R(d+1)×(d+1) ,
+A2 = 0,
+(4.1)
+0⊤
+0
+b = [x; 1] yields Gadd (n)b
+where ushift ∈ Rd ; acting on x
+x = [x + nωushift ; 1], i.e., a translation in
+the original d-dimensional space.
+bj , define
+bi and k
+Application and exact relative law in GL. For queries/keys augmented as q
+−⊤
+ej := Gadd (j) k
+bj .
+ei := Gadd (i) q
+bi ,
+q
+k
+(4.2)
+We use the shorthand Gadd (j)−⊤ := (Gadd (j)−1 )⊤ to emphasize that we first take the group
+inverse in GL and then transpose it. This composition results in the final form:
+ej = q
+bj , depending only on j−i.
+e⊤ k
+b⊤ Gadd (j−i)−⊤ k
+q
+(4.3)
+i
+
+i
+
+Closed form and content-gated additive term. To incorporate content dependence while strictly
+maintaining the unipotent group structure, we decompose the action into separate commuting generators for queries and keys. Let A0 be the canonical rank-1 nilpotent basis in a (d+2)-dimensional
+b = [k; 0; 1]):
+b = [q; 1; 0] and k
+lift (augmenting q
+(d+2)×(d+2)
+A0 = ed+2 e⊤
+.
+d+1 ∈ R
+
+(4.4)
+√ 
+We modulate this basis via non-negative scalar gates λq (qi ) = softplus v qi / d and λk (kj ) =
+√ 
+softplus u⊤ kj / d .
+⊤
+
+Because the scaled generators share the same nilpotent basis, they commute. Let Λij := λq (qi ) +
+λk (kj ) ≥ 0 and define the effective (endpoint-dependent) nilpotent generator Aij := −Λij A0 ,
+⊤
+so that A⊤
+ij = −Λij A0 . Their composition in the relative offset m = j − i yields a summed
+decay rate. The unipotent inverse transpose admits an exact closed form that converts the offset m
+(negative in causal attention) into a penalty:
+ ⊤
+Gadd (m)−⊤ = I − m ω A⊤
+m = j−i.
+(4.5)
+ij = I + m ω λq (qi ) + λk (kj ) A0 ,
+This formulation is rigorous: the softplus(·) function ensures the effective decay rate is strictly nonnegative. When j ≤ i, the offset m is negative, resulting in a monotonic penalty. Applying this
+operator yields the exact affine score:
+√ 
+√ 
+
+ej = q⊤ kj + (j−i) ω softplus v⊤ qi / d + softplus u⊤ kj / d .
+e⊤ k
+q
+(4.6)
+i
+
+i
+
+b = [k; 0; 1], the base inner product satisfies
+b = [q; 1; 0], k
+Note that under the asymmetric lift q
+⊤
+⊤
+b
+bi kj = qi kj (no extra constant), while the rank-1 update contributes exactly (j−i)ω(λq + λk ),
+q
+which is non-positive for causal offsets j ≤ i, which we denoted as GRAPE-A-QK. This derives a
+learnable, content-adaptive linear bias (slope) from first principles: it is the sum of query-dependent
+and key-dependent unipotent actions in the general linear group.
+6
+
+Published as a conference paper at ICLR 2026
+
+4.2
+
+E XACT AL I B I AS A R ANK -1 UNIPOTENT IN GL(d+2)
+
+ALiBi adds a head-specific scalar slope βh (j−i) to the logits that is independent of content. This is
+captured exactly by augmenting with two constant coordinates:
+bi = [qi ; 1; 0] ∈ Rd+2 ,
+q
+
+bj = [kj ; 0; 1] ∈ Rd+2 ,
+k
+
+and choosing the rank-1 nilpotent generator
+⊤
+A⊤
+h = − βh ed+1 ed+2
+
+⇐⇒
+
+Ah = − βh ed+2 e⊤
+d+1 ,
+
+2
+(A⊤
+h ) = 0.
+
+(4.7)
+
+Then Gadd,h (m)−⊤ = I − m A⊤
+h and
+−⊤ b
+b⊤
+q
+kj = q⊤
+i Gadd,h (j−i)
+i kj + (j−i) βh ,
+
+i.e., the ALiBi term emerges as a unipotent GL(d+2) action with exact relative composition.
+Remark 4.1 (Why GL(d+2)). While general additive biases, such as key-gated slopes, can be
+realized in GL(d+1), the content-independent nature of exact ALiBi necessitates the (d+2)dimensional lift. Generating a non-zero scalar bias via a nilpotent generator requires the interaction
+of two distinct constant coordinates, one for query, one for key, to avoid self-loops that would violate
+the trace-zero property of the generator.
+FoX as GRAPE-A. Let ft ∈ (0, 1] be per-token forget scalars and set ωt := log ft . The resulting
+Pt
+additive bias is b(t, j) =
+ℓ=j+1 ωℓ , which coincides with FoX’s forgetting bias Dij . A full
+derivation and the unipotent path product are given in Appendix C.
+
+5
+
+PATH I NTEGRAL A DDITIVE GRAPE
+
+Additive GRAPE (GRAPE-A) realizes exactly relative additive logits via a one-parameter unipotent
+action in the general linear group GL; the bias depends only on an offset m = j−i (or a contextual
+phase difference Φj −Φi when using cumulative phases).
+P Here the “phase” Φt is a scalar path
+variable, typically defined as a cumulative sum Φt =
+ℓ<t ωℓ of per-token frequencies ωℓ , so
+that Φj − Φi plays the role of an effective relative position. In practice, we sometimes want the
+amount of additive encouragement/suppression between a key at j and a query at t to depend on
+the endpoint t (e.g., the current syntactic or semantic needs of the query token), while preserving
+causality, boundedness, and clean composition with the orthogonal GRAPE acting on (q, k). We
+formalize this by a rigorously defined path-integral sum, deriving conditions under which the exact
+relative law of Additive GRAPE is recovered.
+Definition (Path-integral bias). Fix a head h and per-head scale αh > 0. For each time u, let
+pu,h ∈ Rd be a positional embedding obtained from token-local features (a linear projection followed by RMS normalization in our implementation). Let J be the canonical block-diagonal 90◦
+operator (Section 2.4), and define Rℓ := exp(ℓ J ) (a fixed commuting rotation). For a link function
+g : R → (−∞, 0) that is monotone increasing and 1-Lipschitz2 , define the edge potential
+
+
+1
+pt,h , Rℓ pℓ,h
+≤ 0,
+ℓ < t.
+(5.1)
+ψh (t, ℓ) := αh g
+d
+The vectors pt,h and pℓ,h here are the positional embedding. The path-integral additive bias from
+key position j to query position t is the causal sum
+bh (t, j) :=
+
+t
+X
+
+ψh (t, ℓ) ≤ 0.
+
+(5.2)
+
+ℓ=j+1
+
+The attention logit combines this additive term with either the raw or orthogonally-rotary bilinear
+part:
+1
+ℓt,j,h = √ q⊤
+t,h kj,h + bh (t, j)
+d
+
+or
+
+1
+ℓt,j,h = √ q⊤
+t,h Gh (j−t)kj,h + bh (t, j).
+d
+
+(5.3)
+
+2
+Our experiments take g(z) = log(Sigmoid(z)); then g ′ (z) = 1 − Sigmoid(z) ∈ (0, 1), ensuring 1Lipschitzness.
+
+7
+
+Published as a conference paper at ICLR 2026
+
+Group-theoretic formalization and path composition. Let E ∈ R(d+2)×(d+2) be a fixed rank-1
+nilpotent with E2 = 0 (e.g., E = ed+2 e⊤
+d+1 as in Section 4.2). For each fixed endpoint t, define
+endpoint-indexed unipotent factors
+(t)
+
+Hh (ℓ) := I − ψh (t, ℓ) E.
+Since E2 = 0, the path product along (j, t] collapses additively:
+ X
+
+t
+t
+Y
+(t)
+Hh (ℓ) = I −
+ψh (t, ℓ) E = I − bh (t, j) E.
+ℓ=j+1
+
+(5.4)
+
+ℓ=j+1
+
+Scoring in homogeneous coordinates as in Section 4 with the paired inverse-transpose removes
+multiplicative anisotropy and yields exactly the additive term bh (t, j), cf. Eq. (4.3), since I −
+−⊤
+⊤b
+b⊤
+= I + bh (t, j)E⊤ and q
+bh (t, j)E
+t,h E kj,h = 1 under the asymmetric lift. The rowwise
+semigroup law is preserved (Eq. (5.4)), while the t-dependence of the factors intentionally relaxes
+the global one-parameter group law.
+Relation to GRAPE-A. GRAPE-AP strictly contains GRAPE-A as the special case in which edge
+potentials do not depend on the endpoint:
+ψh (t, ℓ) ≡ − θh aℓ ,
+θh ≥ 0, aℓ ≥ 0 =⇒
+bh (t, j) = −θh
+
+t
+X
+
+aℓ = −θh At − Aj
+
+ℓ=j+1
+
+
+
+≤ 0, Au :=
+
+X
+
+aℓ .
+
+ℓ<u
+
+Two important instances follow directly:
+• Exact ALiBi. aℓ ≡ 1 gives bh (t, j) = −θh (t−j) = θh (j−t); setting θh = βh recovers the ALiBi
+term from Section 4.2.
+• Phase-modulated
+P Additive GRAPE. If aℓ = ωℓ with ωℓ = g(xℓ ) ≥ 0, then bh (t, j) = −θh (Φt −
+Φj ) with Φu = ℓ<u ωℓ .
+In both cases, bh (t, j) depends only on a (possibly contextual) phase difference and thus obeys
+the exact relative law with the same streaming/cache policy as Section 4. Outside these endpointindependent regimes, GRAPE-AP provides strictly more expressive, path-integral biases while preserving row-wise path composition (Eq. (5.4)).
+Computation and streaming. For each head h and decoding step t, compute the row {ψh (t, ℓ)}ℓ≤t
+by a single similarity sweep ℓ 7→ ⟨pt,h , Rℓ pℓ,h ⟩ (the rotated probes Rℓ pℓ,h can be cached on
+arrival), apply the link g, and take a prefix sum to obtain j 7→ bh (t, j). This yields O(t) per-step
+overhead with O(1) recomputation per cached key; memory is O(L) per head for the cached probes
+(or O(d) if the per-ℓ rotations are recomputed on the fly).
+(t)
+
+Spectral and stability. Each factor Hh (ℓ) = I − ψh (t, ℓ)E is unipotent with all eigenvalues 1 and
+at most two singular values deviating from 1; the full path product equals I − bh (t, j)E (Eq. (5.4)).
+As in Appendix J.3, the paired inverse-transpose used for scoring cancels multiplicative distortions
+and delivers exactly the additive bias bh (t, j); operator norms remain controlled linearly in |bh (t, j)|.
+A more extensive spectral analysis, including eigenvalue structure and singular-value behavior
+across GRAPE variants, is provided in Appendix J. There, we also give an explicit comparison
+to PaTH Attention (Yang et al., 2025b), which is shown to be contractive and near singular. These
+properties may impair PaTH’s effectiveness in long-context modeling.
+
+6
+
+E XPERIMENTS
+
+In this section, we evaluate the performance of GRAPE on the language modeling task in comparison
+with baseline positional encoding mechanisms, including RoPE (Su et al., 2024), AliBi (Press et al.,
+2021), as well as Forgetting Transformer (FoX) (Lin et al., 2025).
+6.1
+
+I MPLEMENTATION D ETAILS
+
+Based on the nanoGPT codebase (Karpathy, 2022), our experiments are implemented based on
+the Llama model (Touvron et al., 2023a). We only change the positional encoding mechanism
+8
+
+Published as a conference paper at ICLR 2026
+
+and keep the rest of the model architecture the same as Llama. We choose FineWeb-Edu 100B
+dataset (Lozhkov et al., 2024), which contains 100 billion training tokens and 0.1 billion validation
+tokens, and we randomly choose 50B tokens for training. Our medium models (353M) have 24
+layers and 8 heads, with a hidden size of 1024; large models (770M) have 36 layers and 10 heads,
+with a hidden size of 1280 and a head dimension of 128. We applied QK RMSNorm for training
+stability (Yang et al., 2025a). The context length is set to 4,096, and the batch size is 480. All the
+large models (770M) are optimized by AdamW optimizer (Loshchilov and Hutter, 2019), with a
+maximum learning rate of 2 × 10−3 for medium models and 1 × 10−3 for large models, (β1 , β2 ) =
+0.9, 0.95, and a weight decay of 0.01. We use a cosine learning rate scheduler with 2,000 warm-up
+iterations, and the minimum learning rate is 3 × 10−5 . We also clip the gradient to 1.0 for stabler
+training. The frequency of RoPE is set to 10,000. Moreover, for fair comparison, we do not use
+FoX-Pro and disabled the KV-shift module within it.
+6.2
+
+R ESULT A NALYSIS
+
+The curves for training and validation loss of models with a variant positional encoding mechanism
+are displayed in Figures 2 and 3. This analysis provides specific insight into the source of the framework’s stability and performance. It can be observed that GRAPE can keep a persistent edge over
+other mechanisms, including RoPE and FoX. Moreover, the model with RoPE suffers from training
+instability shown in Figure 3 (a), while the model with GRAPE embedding steadily improves during
+the training process.
+Table 1: The evaluation results of medium models with different positional encoding mechanisms
+pre-trained using the FineWeb-Edu 100B dataset (0-shot with lm-evaluation-harness). Avg. is recomputed over the remaining 7 tasks. The best scores in each column are bolded, and the second
+best are underlined. Results are ranked separately for w/o KV-shift and w/ KV-shift.
+Method
+
+ARC-E
+
+ARC-C
+
+HellaSwag
+
+OBQA
+
+PIQA
+
+WinoGrande
+
+SciQ
+
+Avg.
+
+RoPE
+GRAPE-M-ctx
+GRAPE-M-nonctx
+AliBi
+FoX
+GRAPE-A-Q
+GRAPE-A-K
+GRAPE-A-QK
+GRAPE-AP
+
+56.36
+56.31
+56.82
+58.21
+58.38
+58.00
+58.54
+57.95
+59.26
+
+30.38
+29.95
+28.84
+29.78
+30.89
+30.89
+30.72
+32.00
+31.31
+
+44.65
+44.37
+44.36
+45.38
+45.80
+45.70
+45.13
+45.77
+45.42
+
+35.20
+33.40
+32.80
+34.60
+35.00
+36.20
+34.60
+33.40
+35.60
+
+68.77
+68.23
+68.93
+70.08
+69.37
+68.93
+68.39
+69.37
+68.17
+
+52.33
+53.28
+53.67
+53.51
+52.88
+52.96
+53.35
+53.51
+53.28
+
+74.40
+76.90
+77.10
+78.50
+78.40
+77.00
+76.30
+79.00
+79.70
+
+51.73
+51.78
+51.79
+52.87
+52.96
+52.81
+52.43
+53.00
+53.25
+
+RoPE (w/ KV-shift)
+AliBi (w/ KV-shift)
+FoX (w/ KV-shift)
+GRAPE-AP (w/ KV-shift)
+
+58.04
+59.51
+58.84
+57.32
+
+30.80
+31.31
+30.97
+30.55
+
+45.04
+45.93
+46.25
+46.18
+
+35.40
+35.40
+34.20
+35.80
+
+68.39
+69.15
+67.85
+69.10
+
+53.99
+52.88
+55.41
+55.64
+
+78.60
+78.10
+79.70
+79.60
+
+52.89
+53.18
+53.32
+53.46
+
+Medium Model, FineWeb-edu100B
+
+3.1
+
+2.9
+2.8
+2.7
+2.6
+2.5
+
+RoPE
+AliBi
+Fox
+GRAPE-AP
+
+3.0
+Validation Loss
+
+Training Loss
+
+3.0
+
+Medium Model, FineWeb-edu100B
+
+3.1
+
+RoPE
+AliBi
+Fox
+GRAPE-AP
+
+2.9
+2.8
+2.7
+2.6
+
+0
+
+10
+
+20
+30
+Training tokens (B)
+(a) Training Loss
+
+40
+
+2.5
+
+50
+
+0
+
+10
+
+20
+30
+Training tokens (B)
+(b) Validation Loss
+
+40
+
+50
+
+Figure 2: The training and validation loss of medium-size models (353M), with different positional
+encoding mechanisms on the FineWeb-Edu 100B dataset.
+
+9
+
+Published as a conference paper at ICLR 2026
+
+Large Model, FineWeb-edu100B
+
+3.1
+3.0
+
+RoPE
+AliBi
+Fox
+GRAPE-AP
+
+3.0
+2.9
+Validation Loss
+
+Training Loss
+
+2.9
+
+Large Model, FineWeb-edu100B
+
+3.1
+
+RoPE
+AliBi
+Fox
+GRAPE-AP
+
+2.8
+2.7
+2.6
+2.5
+
+2.8
+2.7
+2.6
+2.5
+
+2.4
+
+2.4
+0
+
+10
+
+20
+30
+Training tokens (B)
+(a) Training Loss
+
+40
+
+50
+
+0
+
+10
+
+20
+30
+Training tokens (B)
+(b) Validation Loss
+
+40
+
+50
+
+Figure 3: The training and validation loss of large-size models (770M), with different positional
+encoding mechanisms on the FineWeb-Edu 100B dataset.
+
+Table 2: The evaluation results of large models with different positional encoding mechanisms pretrained using the FineWeb-Edu 100B dataset (0-shot with lm-evaluation-harness). The best scores
+in each column are bolded, and the second best are underlined. Results are ranked separately for
+w/o KV-shift and w/ KV-shift.
+
+7
+
+Method
+
+ARC-E
+
+ARC-C
+
+HellaSwag
+
+OBQA
+
+PIQA
+
+WinoGrande
+
+SciQ
+
+Avg.
+
+RoPE
+GRAPE-M-ctx
+GRAPE-M-nonctx
+AliBi
+FoX
+GRAPE-AP
+
+62.63
+60.52
+60.61
+62.67
+61.07
+63.89
+
+32.76
+32.51
+33.45
+34.39
+33.11
+34.22
+
+51.01
+50.13
+49.47
+51.33
+51.85
+51.52
+
+36.40
+35.40
+35.60
+36.60
+37.80
+35.40
+
+71.33
+70.67
+70.51
+71.11
+71.27
+71.98
+
+55.72
+54.38
+53.35
+56.27
+55.33
+56.99
+
+80.50
+79.50
+80.70
+82.70
+83.70
+84.40
+
+55.76
+54.73
+54.81
+56.44
+56.30
+56.91
+
+RoPE (w/ KV-shift)
+AliBi (w/ KV-shift)
+FoX (w/ KV-shift)
+GRAPE-AP (w/ KV-shift)
+
+62.12
+63.68
+63.55
+63.72
+
+33.70
+34.56
+33.96
+33.11
+
+50.13
+52.04
+52.72
+52.29
+
+35.80
+37.80
+38.40
+39.00
+
+71.49
+71.38
+71.71
+71.65
+
+53.51
+55.09
+56.12
+54.78
+
+80.50
+83.90
+83.20
+83.50
+
+55.32
+56.92
+57.09
+56.86
+
+C ONCLUSION
+
+GRAPE provides a general framework for positional encoding based on group actions, unifying multiplicative and additive mechanisms. Multiplicative GRAPE offers a closed-form, rank-2 exponential that is relative, compositional, and norm-preserving; it recovers RoPE and yields learned-basis
+and non-commuting extensions at controlled cost. Additive GRAPE realizes ALiBi and FoX exactly via unipotent general linear group GL lifts with the same streaming/cache policy. The GRAPE
+framework integrates seamlessly with existing Transformer models and offers a principled, extensible design space for future architectures.
+
+ACKNOWLEDGEMENTS
+We thank the anonymous reviewers and area chairs for their helpful comments. We also thank
+Zhixuan Lin, Songlin Yang, and others for their constructive feedback on the experimental settings.
+We used Large Language Models (LLMs) as assistive tools to polish part of this paper, and the roles
+of LLMs in this work are restricted to improving presentation.
+
+10
+
+Published as a conference paper at ICLR 2026
+
+R EFERENCES
+Federico Barbero, Alex Vitvitskyi, Christos Perivolaropoulos, Razvan Pascanu, and Petar
+Veličković. Round and round we go! what makes rotary positional encodings useful? arXiv
+preprint arXiv:2410.06205, 2024.
+Iz Beltagy, Matthew E. Peters, and Arman Cohan. Longformer: The long-document transformer.
+arXiv preprint arXiv:2004.05150, 2020.
+Shouyuan Chen, Sherman Wong, Liangjian Chen, and Yuandong Tian. Extending context window
+of large language models via position interpolation. arXiv preprint arXiv:2306.15595, 2023. URL
+https://arxiv.org/abs/2306.15595.
+Ta-Chung Chi, Ting-Han Fan, Peter J. Ramadge, and Alexander Rudnicky. Kerple: Kernelized relative positional embedding for length extrapolation. Advances in Neural Information Processing
+Systems, 35:8386–8399, 2022a.
+Ta-Chung Chi, Ting-Han Fan, Alexander I. Rudnicky, and Peter J. Ramadge. Dissecting transformer
+length extrapolation via the lens of receptive field analysis. arXiv preprint arXiv:2212.10356,
+2022b.
+Krzysztof Choromanski, Valerii Likhosherstov, David Dohan, Xingyou Song, Andreea Gane, Tamas
+Sarlos, Peter Hawkins, Jared Davis, Afroz Mohiuddin, Lukasz Kaiser, et al. Rethinking attention
+with performers. arXiv preprint arXiv:2009.14794, 2020.
+Zihang Dai, Zhilin Yang, Yiming Yang, Jaime G. Carbonell, Quoc Le, and Ruslan Salakhutdinov.
+Transformer-XL: Attentive language models beyond a fixed-length context. In Proceedings of the
+57th Annual Meeting of the Association for Computational Linguistics, pages 2978–2988, 2019.
+Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. BERT: Pre-training of deep
+bidirectional transformers for language understanding. In Proceedings of NAACL-HLT, pages
+4171–4186, 2019.
+Olga Golovneva, Tianlu Wang, Jason Weston, and Sainbayar Sukhbaatar. Contextual position encoding: Learning to count what’s important. arXiv preprint arXiv:2405.18719, 2024.
+Brian C. Hall. Lie groups, lie algebras, and representations. In Quantum Theory for Mathematicians,
+pages 333–366. Springer, 2013.
+Adi Haviv, Ori Ram, Ofir Press, Peter Izsak, and Omer Levy. Transformer language models without
+positional encodings still learn positional information. arXiv preprint arXiv:2203.16634, 2022.
+Pengcheng He, Xiaodong Liu, Jianfeng Gao, and Weizhu Chen. DeBERTa: Decoding-enhanced
+BERT with disentangled attention. arXiv preprint arXiv:2006.03654, 2020.
+Byeongho Heo, Song Park, Dongyoon Han, and Sangdoo Yun. Rotary position embedding for vision
+transformer. In European Conference on Computer Vision, pages 289–305. Springer, 2024.
+Hongye Jin, Xiaotian Han, Jingfeng Yang, Zhimeng Jiang, Zirui Liu, Chia-Yuan Chang, Huiyuan
+Chen, and Xia Hu. LLM Maybe LongLM: Self-extend LLM context window without tuning.
+In Proceedings of the 41st International Conference on Machine Learning, volume 235, pages
+22099–22114. PMLR, 2024.
+Andrej Karpathy. nanoGPT. https://github.com/karpathy/nanoGPT, 2022.
+Angelos Katharopoulos, Apoorv Vyas, Nikolaos Pappas, and François Fleuret. Transformers are
+RNNs: Fast autoregressive transformers with linear attention. In International Conference on
+Machine Learning, pages 5156–5165. PMLR, 2020.
+Amirhossein Kazemnejad, Inkit Padhi, Karthikeyan Natesan Ramamurthy, Payel Das, and Siva
+Reddy. The impact of positional encoding on length generalization in transformers. Advances
+in Neural Information Processing Systems, 36:24892–24928, 2023.
+Guolin Ke, Di He, and Tie-Yan Liu. Rethinking positional encoding in language pre-training. arXiv
+preprint arXiv:2006.15595, 2020.
+11
+
+Published as a conference paper at ICLR 2026
+
+Shun Kiyono, Sosuke Kobayashi, Jun Suzuki, and Kentaro Inui. SHAPE: Shifted absolute position
+embedding for transformers. In Proceedings of EMNLP, pages 3309–3321, 2021.
+Konstantinos Kogkalidis, Jean-Philippe Bernardy, and Vikas Garg. Algebraic positional encodings.
+Advances in Neural Information Processing Systems, 37:34824–34845, 2024.
+Shanda Li, Chong You, Guru Guruganesh, Joshua Ainslie, Santiago Ontanon, Manzil Zaheer, Sumit
+Sanghai, Yiming Yang, Sanjiv Kumar, and Srinadh Bhojanapalli. Functional interpolation for
+relative positions improves long context transformers. arXiv preprint arXiv:2310.04418, 2023.
+Tatiana Likhomanenko, Qiantong Xu, Gabriel Synnaeve, Ronan Collobert, and Alex Rogozhnikov.
+CAPE: Encoding relative positions with continuous augmented positional embeddings. In Advances in Neural Information Processing Systems, volume 34, pages 16079–16092, 2021.
+Zhixuan Lin, Evgenii Nikishin, Xu He, and Aaron Courville. Forgetting transformer: Softmax
+attention with a forget gate. In International Conference on Learning Representations, 2025.
+Xuanqing Liu, Hsiang-Fu Yu, Inderjit Dhillon, and Cho-Jui Hsieh. Learning to encode position for
+transformer with continuous dynamical model. In International Conference on Machine Learning, pages 6327–6335. PMLR, 2020.
+Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. In 7th International
+Conference on Learning Representations, 2019.
+Anton Lozhkov, Loubna Ben Allal, Leandro von Werra, and Thomas Wolf. FineWeb-Edu: The finest
+collection of educational content, 2024. URL https://huggingface.co/datasets/
+HuggingFaceFW/fineweb-edu.
+Masato Neishi and Naoki Yoshinaga. On the relation between position information and sentence
+length in neural machine translation. In Proceedings of the 23rd Conference on Computational
+Natural Language Learning, pages 328–338, 2019.
+Sophie Ostmeier, Brian Axelrod, Maya Varma, Michael Moseley, Akshay S. Chaudhari, and Curtis
+Langlotz. LieRE: Lie rotational positional encodings. In Forty-second International Conference
+on Machine Learning, 2025.
+Bowen Peng, Jeffrey Quesnelle, Honglu Fan, and Enrico Shippole. YaRN: Efficient context window
+extension of large language models. arXiv preprint arXiv:2309.00071, 2023.
+Ofir Press, Noah A. Smith, and Mike Lewis. Train short, test long: Attention with linear biases
+enables input length extrapolation. arXiv preprint arXiv:2108.12409, 2021.
+Zhen Qin, Weixuan Sun, Kaiyue Lu, Hui Deng, Dongxu Li, Xiaodong Han, Yuchao Dai,
+Lingpeng Kong, and Yiran Zhong. Linearized relative positional encoding. arXiv preprint
+arXiv:2307.09270, 2023.
+Colin Raffel, Noam Shazeer, Adam Roberts, Katherine Lee, Sharan Narang, Michael Matena, Yanqi
+Zhou, Wei Li, and Peter J. Liu. Exploring the limits of transfer learning with a unified text-to-text
+transformer. The Journal of Machine Learning Research, 21(1):5485–5551, 2020.
+Olinde Rodrigues. Des lois géométriques qui régissent les déplacemens d’un système solide
+dans l’espace, et de la variation des coordonnées provenant de ces déplacemens considérés
+indépendamment des causes qui peuvent les produire. Journal de Mathématiques Pures et Appliquées, 5:380–440, 1840.
+Anian Ruoss, Grégoire Delétang, Tim Genewein, Jordi Grau-Moya, Róbert Csordás, Mehdi Bennani, Shane Legg, and Joel Veness. Randomized positional encodings boost length generalization of transformers. In Proceedings of the 61st Annual Meeting of the Association for
+Computational Linguistics (Volume 2: Short Papers), pages 1889–1903, Toronto, Canada, July
+2023. Association for Computational Linguistics. doi: 10.18653/v1/2023.acl-short.161. URL
+https://aclanthology.org/2023.acl-short.161/.
+12
+
+Published as a conference paper at ICLR 2026
+
+Connor Schenck, Isaac Reid, Mithun George Jacob, Alex Bewley, Joshua Ainslie, David Rendleman, Deepali Jain, Mohit Sharma, Kumar Avinava Dubey, Ayzaan Wahid, Sumeet Singh,
+René Wagner, Tianli Ding, Chuyuan Fu, Arunkumar Byravan, Jake Varley, Alexey A. Gritsenko, Matthias Minderer, Dmitry Kalashnikov, Jonathan Tompson, Vikas Sindhwani, and
+Krzysztof Marcin Choromanski. Learning the RoPEs: Better 2d and 3d position encodings with
+STRING. In Proceedings of the 42nd International Conference on Machine Learning, volume
+267 of Proceedings of Machine Learning Research, pages 53295–53315. PMLR, 2025. URL
+https://proceedings.mlr.press/v267/schenck25a.html.
+Peter Shaw, Jakob Uszkoreit, and Ashish Vaswani. Self-attention with relative position representations. arXiv preprint arXiv:1803.02155, 2018.
+Koustuv Sinha, Amirhossein Kazemnejad, Siva Reddy, Joelle Pineau, Dieuwke Hupkes, and Adina
+Williams. The curious case of absolute position embeddings. arXiv preprint arXiv:2210.12574,
+2022.
+Jianlin Su, Murtadha Ahmed, Yu Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu. Roformer: Enhanced transformer with rotary position embedding. Neurocomputing, 568:127063, 2024.
+Yutao Sun, Li Dong, Barun Patra, Shuming Ma, Shaohan Huang, Alon Benhaim, Vishrav
+Chaudhary, Xia Song, and Furu Wei. A length-extrapolatable transformer. arXiv preprint
+arXiv:2212.10554, 2022.
+Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée
+Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, et al. LLaMA: Open and
+efficient foundation language models. arXiv preprint arXiv:2302.13971, 2023a.
+Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei, Nikolay Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, et al. Llama 2: Open foundation and fine-tuned chat models. arXiv preprint arXiv:2307.09288, 2023b.
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez,
+Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. Advances in Neural Information Processing Systems, 30, 2017.
+Benyou Wang, Donghao Zhao, Christina Lioma, Qiuchi Li, Peng Zhang, and Jakob Grue Simonsen.
+Encoding word order in complex embeddings. In Proceedings of ICLR, 2020.
+Benyou Wang, Lifeng Shang, Christina Lioma, Xin Jiang, Hao Yang, Qun Liu, and Jakob Grue
+Simonsen. On position embeddings in BERT. In Proceedings of ICLR, 2021.
+Jie Wang, Tao Ji, Yuanbin Wu, Hang Yan, Tao Gui, Qi Zhang, Xuanjing Huang, and Xiaoling
+Wang. Length generalization of causal transformers without position encoding. In Findings of the
+Association for Computational Linguistics: ACL 2024, pages 14024–14040, Bangkok, Thailand,
+August 2024. Association for Computational Linguistics. doi: 10.18653/v1/2024.findings-acl.
+834. URL https://aclanthology.org/2024.findings-acl.834/.
+Ulme Wennberg and Gustav Eje Henter. The case for translation-invariant self-attention in
+transformer-based language models. arXiv preprint arXiv:2106.01950, 2021.
+Chuhan Wu, Fangzhao Wu, and Yongfeng Huang. DA-Transformer: Distance-aware transformer.
+arXiv preprint arXiv:2010.06925, 2020.
+Wenhan Xiong, Jingyu Liu, Igor Molybog, Hejia Zhang, Prajjwal Bhargava, Rui Hou, Louis Martin,
+Rashi Rungta, Karthik Abinav Sankararaman, Barlas Oguz, et al. Effective long-context scaling
+of foundation models. arXiv preprint arXiv:2309.16039, 2023.
+An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu,
+Chang Gao, Chengen Huang, Chenxu Lv, et al. Qwen3 technical report. arXiv preprint
+arXiv:2505.09388, 2025a.
+Songlin Yang, Yikang Shen, Kaiyue Wen, Shawn Tan, Mayank Mishra, Liliang Ren, Rameswar
+Panda, and Yoon Kim. PaTH attention: Position encoding via accumulating householder transformations. arXiv preprint arXiv:2505.16381, 2025b.
+13
+
+Published as a conference paper at ICLR 2026
+
+Manzil Zaheer, Guru Guruganesh, Kumar Avinava Dubey, Joshua Ainslie, Chris Alberti, Santiago
+Ontanon, Philip Pham, Anirudh Ravula, Qifan Wang, Li Yang, et al. Big Bird: Transformers for
+longer sequences. Advances in Neural Information Processing Systems, 33:17283–17297, 2020.
+Chuanyang Zheng, Yihang Gao, Han Shi, Minbin Huang, Jingyao Li, Jing Xiong, Xiaozhe Ren,
+Michael Ng, Xin Jiang, Zhenguo Li, et al. DAPE: Data-adaptive positional encoding for length
+extrapolation. Advances in Neural Information Processing Systems, 37:26659–26700, 2024.
+Dawei Zhu, Nan Yang, Liang Wang, Yifan Song, Wenhao Wu, Furu Wei, and Sujian Li. PoSE:
+Efficient context window extension of LLMs via positional skip-wise training. arXiv preprint
+arXiv:2309.10400, 2023.
+
+14
+
+Published as a conference paper at ICLR 2026
+
+Appendix
+A Related Work
+
+16
+
+B Application in Multi-Head Attention
+
+17
+
+C Forgetting Transformer as a Special Additive GRAPE
+
+17
+
+D Non-Commuting Multiplicative GRAPE
+
+18
+
+E Composition of Additive GRAPE and Multiplicative GRAPE
+
+19
+
+F Comparison with LieRE
+
+19
+
+G 2D and 3D GRAPE for Vision and Multimodal Position Encoding
+
+20
+
+H Algorithmic Details and Pseudo Code
+
+20
+
+I
+
+Differentiation and Fast Application of Rank-2 Matrix Exponential
+
+20
+
+J
+
+Spectral Analysis of GRAPE and Other Methods
+
+21
+
+J.1
+
+Rank-2 Plane: Exact Spectrum and Geometric Interpretation . . . . . . . . . . . .
+
+21
+
+J.2
+
+Multi-subspace GRAPE-M and RoPE . . . . . . . . . . . . . . . . . . . . . . . .
+
+21
+
+J.3
+
+Additive GRAPE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+22
+
+J.4
+
+Comparison to PaTH Attention . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+23
+
+15
+
+Published as a conference paper at ICLR 2026
+
+Table 3: Summary of Notation and Definitions.
+Symbol
+
+Definition
+
+GL(d)
+
+General Linear Group: The group of all d × d invertible matrices.
+
+SO(d)
+
+Special Orthogonal Group: The group of d × d orthogonal matrices
+with determinant 1 (R⊤ R = I, det(R) = 1).
+
+SL(d)
+
+Special Linear Group: The group of d × d matrices with determinant 1.
+
+gl(d)
+
+general linear algebra: The Lie algebra of GL(d), consisting of all d × d matrices.
+
+so(d)
+
+special orthogonal algebra: The Lie algebra of SO(d), consisting of all d × d
+skew-symmetric matrices (L⊤ = −L).
+
+exp(·)
+R2 (θ)
+
+Exponential Map: A map from a Lie algebra (generator) to a Lie group (operator).
+
+
+cos θ − sin θ
+2D Rotation Matrix: The matrix
+.
+sin θ
+cos θ
+
+G(n)⊤
+
+Transpose (in SO(d)): For G ∈ SO(d), the transpose is the group inverse (G⊤ = G−1 ).
+
+G(n)−⊤
+
+Inverse Transpose (in GL(d)): The transpose of the matrix inverse, (G−1 )⊤ .
+
+Unipotent
+
+Unipotent Transform: A linear transformation whose eigenvalues are all 1.
+
+pu,h
+
+Positional Embedding/Representation: A vector derived from token-local features,
+obtained via a linear projection followed by RMS normalization.
+
+A
+
+R ELATED W ORK
+
+Positional information in Transformers mainly can be categorized into these classes: (a) absolute
+encodings (sinusoidal or learned) (Vaswani et al., 2017; Devlin et al., 2019; Neishi and Yoshinaga,
+2019; Kiyono et al., 2021; Likhomanenko et al., 2021; Wang et al., 2020; Liu et al., 2020; Wang
+et al., 2021; Sinha et al., 2022; Wennberg and Henter, 2021; Ke et al., 2020); (b) relative encodings
+that depend on offsets (Shaw et al., 2018; Dai et al., 2019; Raffel et al., 2020; He et al., 2020);
+and (c) linear logit biases with strong length extrapolation (Press et al., 2021; Chi et al., 2022a;b;
+Li et al., 2023; Ruoss et al., 2023), all shaping recency/extrapolation behavior (Haviv et al., 2022;
+Kazemnejad et al., 2023).
+Multiplicative position encoding. RoPE realizes offsets as block-diagonal planar rotations of
+queries/keys, preserving norms and exact origin invariance; it is widely deployed across LLMs
+and modalities (Su et al., 2024; Touvron et al., 2023a;b; Heo et al., 2024). Angle/spectrum designs
+improve long-context fidelity (e.g., xPos) (Sun et al., 2022); LRPE formalizes separable relative
+transforms for linear attention models (Qin et al., 2023); mechanistic work analyzes frequency usage (Barbero et al., 2024). These methods are also compatible with sparse/linear attentions (Beltagy
+et al., 2020; Zaheer et al., 2020; Katharopoulos et al., 2020; Choromanski et al., 2020) and with
+context-scaling procedures (Xiong et al., 2023; Chen et al., 2023; Peng et al., 2023; Zhu et al., 2023;
+Jin et al., 2024). Beyond 1D language modeling, 2D RoPE and variants adapt rotary encodings to
+2D grids by applying rotations along spatial axes, and have been shown to improve high-resolution
+extrapolation in Vision Transformers and related vision models (Heo et al., 2024). Recently,
+LieRE (Ostmeier et al., 2025) learns dense skew-symmetric generators whose exponentials produce high-dimensional rotations for multi-modal, n-dimensional inputs, while STRING (Schenck
+et al., 2025) designs separable, translation-invariant RoPE-style encodings that scale to 2D and 3D
+coordinates in vision and robotics settings (Ostmeier et al., 2025; Schenck et al., 2025). GRAPE-M
+identifies RoPE as commuting rank-2 exponentials in SO(d) and extends it to learned subspaces and
+compact non-commuting mixtures in closed form and a much faster way. Compared with LieRE,
+which parameterizes a dense skew-symmetric generator and applies a numerical matrix exponential (e.g., torch.matrix exp) with O(d3 ) time and O(d2 ) parameters per head, Multiplicative
+GRAPE decomposes the action into rank-2 subspaces and uses the closed-form Rodrigues-type
+formulas from Section 2.3, so we only need vector–vector operations with O(d) cost per head (a
+detailed comparison between LieRE and GRAPE is presented in Appendix F.)
+16
+
+Published as a conference paper at ICLR 2026
+
+Additive position encoding and forgetting mechanisms. Additive schemes such as ALiBi (Press
+et al., 2021) and related kernelized/randomized forms (Chi et al., 2022a;b; Li et al., 2023; Ruoss
+et al., 2023) are captured exactly by GRAPE-A as unipotent actions in the general linear group
+GL that preserve the same relative law and streaming cacheability. Importantly, forgetting mechanisms are additive: the Forgetting Transformer (FoX) implements a learnable per-head exponential decay in the attention logits and is a specific GRAPE-A / GRAPE-AP instance imposing distance-dependent attenuation (Lin et al., 2025). FoX’s data-dependent forget gates yield a
+path-additive bias D that we show is exactly the endpoint-independent GRAPE-AP case; see Appendix C for a constructive equivalence and its streaming implementation (Lin et al., 2025).
+Contextual position encoding. Content-adaptive position modulates effective phase or distance via
+token features through gating/scaling and algebraic parameterizations (Wu et al., 2020; Zheng et al.,
+2024; Kogkalidis et al., 2024), and contextual counting (CoPE) (Golovneva et al., 2024). GRAPE
+introduces phase-modulated and dictionary-based contextual variants that replace a linear phase
+with cumulative token-adaptive phases (single or multi-subspace) while retaining exact headwise
+relativity and streaming caches. Finally, models can length-generalize without explicit encodings
+(“NoPE”) under suitable training (Wang et al., 2024), which corresponds to the trivial generator
+L = 0 in our view.
+
+B
+
+A PPLICATION IN M ULTI -H EAD ATTENTION
+
+Building upon the algebraic foundation for relative encoding established in Section 2.5, this section
+details the concrete integration of the rotational map G(n) into the full Multi-Head Attention (MHA)
+architecture, covering the per-head formulation, streaming policy, and implementation complexity.
+Per-head formulation. Let H be the number of heads and d the per-head width. For head h ∈ [H],
+let (qt,h , kt,h , vt,h ) ∈ Rd denote the query/key/value at position t. A GRAPE-M position map is
+realized as an orthogonal operator Gh,t ∈ SO(d) applied to (qt,h , kt,h ):
+et,h = Gh,t qt,h ,
+q
+
+et,h = Gh,t kt,h ,
+k
+
+The headwise attention logits and outputs are then
+
+⊤
+e
+e⊤
+q
+q⊤
+t,h kj,h
+t,h Gh,t Gh,j kj,h
+√
+ℓt,j,h = √
+=
+,
+d
+d
+
+yt,h =
+
+et,h = vt,h .
+v
+
+X
+
+
+ej,h ,
+softmax ℓt,·,h j v
+
+(B.1)
+
+j≤t
+
+with the usual output projection applied after concatenation across heads.
+Exact relative law. If Gh,t arises from a one-parameter subgroup Gh (n) = exp(n Lh ) (commuting
+MS-GRAPE-M, including RoPE and learned commuting bases), then
+q⊤
+t,h Gh (j−t) kj,h
+√
+,
+d
+so logits depend only on the offset j−t (exact origin invariance).
+G⊤
+h,t Gh,j = Gh (j−t)
+
+=⇒
+
+ℓt,j,h =
+
+Streaming cache. Applying the rotational map G(t) independently to each query and key vector is
+the core property that enables an efficient streaming cache policy. For any type where Gt is known at
+ej,h = Gh,j kj,h once and never rewrite
+token arrival (non-contextual and phase-modulated), cache k
+√
+e
+et,h = Gh,t qt,h and use logits ℓt,j,h = q
+e⊤
+it; at step t, compute q
+t,h kj,h / d.
+
+C
+
+F ORGETTING T RANSFORMER AS A S PECIAL A DDITIVE GRAPE
+
+The Forgetting Transformer (FoX) introduces a scalar forget gate ft ∈ (0, 1] per head and timestep
+and adds the cumulative log-gate as an additive bias in the attention logits. Concretely, for a head h,
+⊤
+ft,h = σ(wf,h
+xt + bf,h ),
+
+Fij,h =
+
+i
+Y
+
+fℓ,h ,
+
+Dij,h = log Fij,h =
+
+ℓ=j+1
+
+and the attention is
+
+
+
+Oh = softmax √1d QK⊤ + Dh V.
+17
+
+i
+X
+
+log fℓ,h ,
+
+ℓ=j+1
+
+(FoX)
+
+Published as a conference paper at ICLR 2026
+
+We now show that Eq. (FoX) is exactly realized by our GRAPE-A framework using the
+endpoint-independent path-additive specialization of Section 5.
+FoX as GRAPE-AP with endpoint-independent edges. In GRAPE-AP (Section 5), a head-wise
+additive logit bh (t, j) arises as a causal path sum
+t
+X
+
+bh (t, j) =
+
+ψh (t, ℓ).
+
+ℓ=j+1
+
+If the edge potentials do not depend on the endpoint, i.e. ψh (t, ℓ) ≡ aℓ,h , then bh (t, j) reduces to a
+difference of per-time potentials:
+t
+X
+
+bh (t, j) =
+
+aℓ,h = Ut,h − Uj,h ,
+
+Uu,h :=
+
+ℓ=j+1
+
+X
+
+aℓ,h .
+
+ℓ<u
+
+FoX corresponds to the choice aℓ,h = log fℓ,h ≤ 0, yielding
+bh (t, j) ≡ Dij,h =
+
+t
+X
+
+log fℓ,h .
+
+ℓ=j+1
+
+Thus, the FoX forgetting bias Dh is precisely the GRAPE-AP path-integral additive bias with
+endpoint-independent edges.
+Unipotent GL lift (GRAPE-A view). Let E := ed+2 e⊤
+d+1 be the rank-1 nilpotent used in Section 4.2. For a fixed head h and endpoint t, define per-link unipotent factors
+(t)
+
+Hh (ℓ) = I + ψh (t, ℓ) E,
+
+ψh (t, ℓ) = log fℓ,h .
+
+2
+
+Since E = 0, the path product collapses:
+t
+Y
+ℓ=j+1
+
+(t)
+
+Hh (ℓ) = I +
+
+t
+ X
+
+
+log fℓ,h E = I + Dij,h E.
+
+ℓ=j+1
+
+Scoring in homogeneous coordinates as in Section 4 with the paired inverse-transpose,
+
+−⊤
+e
+bj,h = q⊤ kj,h + Dij,h ,
+e⊤
+b⊤
+q
+k
+t,h kj,h = q
+t,h I + Dij,h E
+t,h
+√
+recovers Eq. (FoX) exactly (up to the standard 1/ d factor we include throughout). Hence,
+FoX is an exact GRAPE-A / GRAPE-AP instance realized by a rank-1 unipotent path with
+endpoint-independent edges.
+P
+Streaming and complexity. Compute prefix sums Ut,h =
+ℓ<t log fℓ,h once per step; then
+Dij,h = Ui,h − Uj,h is obtained by subtraction, preserving the O(L) rowwise cost and the streaming
+cache policy from Section 4–Section 5. The headwise gates ft,h add O(1) parameters and negligible
+computation.
+Special cases and composition. If ft,h ≡ e−βh (constant per head), then Dij,h = −βh (i−j)
+and FoX reduces to exact ALiBi (Section 4.2). More generally, FoX composes additively with the
+multiplicative (orthogonal) GRAPE acting on (q, k) as in Eq. (5.3), preserving norm-preservation
+of the rotational part while adding bounded, non-positive, content-adaptive path biases.
+
+D
+
+N ON -C OMMUTING M ULTIPLICATIVE GRAPE
+
+Consider the thin compression L = ELr E⊤ with E ∈ Rd×r orthonormal and Lr ∈ so(r). Then
+
+
+σ(L) = σ(Lr ) ∪ {0}d−r ,
+σ exp(nL) = σ exp(nLr ) ∪ {1}d−r .
+Lr/2
+r/2
+If Lr = T( t=1 θt J)T⊤ is the real-Schur form, then the nontrivial eigenvalues are {±iθt }t=1
+and e±inθt for the exponential. Thus, the expressive power of non-contextual non-commuting MSGRAPE is fully captured by the r/2 mode angles {θt }; the ambient lifting via E preserves the
+spectrum.
+18
+
+Published as a conference paper at ICLR 2026
+
+E
+
+C OMPOSITION OF A DDITIVE GRAPE AND M ULTIPLICATIVE GRAPE
+
+For the unipotent forms of Additive GRAPE, applying the inverse transpose Gadd (m)−⊤ requires
+only simple scalar-vector operations per active component. Thus, the per-head overhead is O(d) and
+is negligible relative to attention matrix multiplications.
+Multiplicative GRAPE (Section 3) and Additive GRAPE (Section 4) compose naturally. This can
+be viewed either additively at the logit level:
+
+ℓt,j,h = √1d q⊤
+t,h Gh (j−t)kj,h + (j−t) ω λq,t + λk,j ,
+{z
+}
+|
+Additive GRAPE bias
+
+or rigorously as a single group action in the general linear group GL(d+2). Concretely, we construct
+b = [k; 0; 1] be the augmented vectors. Define the
+b = [q; 1; 0] and k
+the joint lift by direct sum. Let q
+joint generator L ∈ gl(d+2) as the direct sum of the rotational generator L ∈ so(d) and the gated
+nilpotent generator ωΛA0 (where Λ = λq + λk captures the content modulation):
+
+
+exp(mL) 0
+0
+1 m ω Λ ∈ GL(d+2).
+Gjoint (m) = exp(mL) =  0⊤
+0⊤
+0
+1
+This block-diagonal structure unifies the mechanisms: the top-left block applies the norm-preserving
+RoPE rotation to the features, while the bottom-right unipotent block generates the additive scalar
+bias via the auxiliary coordinates. Scoring with the paired inverse-transpose strictly preserves the
+exact relative law for the combined system:
+
+−⊤ b
+b⊤
+q
+kj = q⊤
+i Gjoint (j−i)
+i exp (j−i)L kj + (j−i) ω Λ + const,
+exactly reproducing the sum of multiplicative (rotary) and additive (slope) components. In this
+unified view, both mechanisms are simply projections of a single one-parameter subgroup action in
+high-dimensional space, retaining exact relativity and efficient streaming caches.
+
+F
+
+C OMPARISON WITH L IE RE
+
+Lie Rotational Position Encodings (LieRE) (Ostmeier et al., 2025) encode positional information
+by learning a skew-symmetric generator in SO(d). The method then applies the matrix exponential
+of this generator to get a rotational position map. For each attention head, the method learns one
+skew matrix. Its exponential gives a dense orthogonal operator on queries and keys. Positions then
+match elements of a one-parameter subgroup on the rotation manifold. This picture is a compact Lie
+theoretic version of RoPE style encodings. Different heads can learn distinct rotational geometries,
+and the map keeps the norm and an exact relative position law.
+Formally, for head h the generator is Gh ∈ so(d). The positional map is x 7→ exp(nωh Gh )x. A
+direct implementation has cost TLieRE (d) = Θ(d3 ) per head for the matrix exponential and needs
+Θ(d2 ) parameters and the same order of memory.
+Multiplicative GRAPE and LieRE both use rotations in SO(d) that come from skew-symmetric
+generators. LieRE gives each head a dense or block skew matrix. It forms the positional operator
+with the full matrix exponential exp(G). This creates very rich rotations but needs O(d3 ) time for
+the exponential and O(d2 ) parameters and memory per head. GRAPE-M restricts the generator to a
+sum of rank 2 planes and uses a closed form Rodrigues-type formula for the exponential (Section 2).
+For one token, the positional mapping then reduces to a few inner products and vector updates. So
+the cost is O(d) time and O(d) memory per head.
+This choice of parametrization has two main effects in practice. First, the GRAPE-M scale cleanly
+translates to contextual versions where frequencies or phases depend on the token content. The
+closed-form expression can be computed quickly for each token, and there is no large matrix exponential. In the LieRE setup, one needs a new dense matrix exponential for each content-dependent
+generator. This step is much more costly and makes such contextual use harder to deploy in real
+models. Second, GRAPE gives a single group-theoretic picture for multiplicative and additive mechanisms. The multiplicative part lives in SO(d) and additive or forgetting style terms (ALiBi, FoX,
+GRAPE-A, GRAPE-AP) come from unipotent actions in GL with the same relative law and the
+same streaming cacheability (Sections 4-5). LieRE only targets rotational encodings and does not
+model additive logit biases or forgetting terms.
+19
+
+Published as a conference paper at ICLR 2026
+
+G
+
+2D AND 3D GRAPE FOR V ISION AND M ULTIMODAL P OSITION
+E NCODING
+
+Extending GRAPE beyond one-dimensional token positions is easy. The construction only needs a
+chosen group action on coordinates.
+For images with integer pixel coordinates (u, v) ∈ Z2 we pick two generators L(x) and L(y) . A
+token at (u, v) then gets the encoding
+
+
+G2D (u, v) = exp u ωx L(x) exp v ωy L(y) ∈ SO(d).
+The two generators act on 2D planes that can be disjoint in the base design. In that case, the map
+reduces to a RoPE-style separable encoding. A learned choice of planes inside Rd gives the GRAPEM variant again.
+For 3D coordinates (u, v, w) that mark video space time tokens or point clouds, we follow the same
+pattern. We introduce three commuting generators and define
+
+
+
+G3D (u, v, w) = exp u ωx L(x) exp v ωy L(y) exp w ωz L(z) .
+In the non-commuting case, we use the thin Schur mode compression from Appendix D. The closedform rank 2 matrix exponential from the main text still applies. The per token cost stays O(d) even
+for higher-dimensional coordinate spaces.
+On the additive side, GRAPE-A and GRAPE-AP handle 2D or 3D structures through the scalar
+offset m. The value m can be any function of coordinate differences. For an image, we can take
+m = αx (ut − uj ) + αy (vt − vj ),
+and this keeps the same algebraic template. For 3D settings, we can set
+m = ∥rt − rj ∥
+with rt and rj in R3 . The update matrix then stays unipotent, and the exact relative composition
+law still holds. This gives a clear way to impose axis-aligned or radial recency bias in vision and
+multimodal models.
+
+H
+
+A LGORITHMIC D ETAILS AND P SEUDO C ODE
+
+This appendix contains the detailed pseudocode.
+Algorithm 1 Commuting Multi-Subspace GRAPE-M
+d/2
+
+Require: Q, K ∈ RB×L×H×d , orthogonal E ∈ Rd×d , frequencies {ωh,j }j=1 , positions n ∈ ZL
+1: for h = 1 to H do
+2:
+Q′ [:, :, h, :] ← Q[:, :, h, :] E; K′ [:, :, h, :] ← K[:, :, h, :] E
+3:
+for ℓ = 0 to L − 1 do
+4:
+for j = 1 to d/2 do
+5:
+θ ← nℓ ωh,j ; apply 2 × 2 rotation G2 (θ) to coords (2j−1, 2j) of Q′ [:, ℓ, h, :] and
+′
+K [:, ℓ, h, :]
+6:
+end for
+7:
+end for
+e :, h, :] ← Q′ E⊤ ; K[:,
+e :, h, :] ← K′ E⊤
+8:
+Q[:,
+9: end for
+e K)
+e
+10: return (Q,
+
+I
+
+D IFFERENTIATION AND FAST A PPLICATION OF R ANK -2 M ATRIX
+E XPONENTIAL
+
+z
+Differentiation and stability. Let f1 (z) = sinz z and f2 (z) = 1−cos
+with z = nωs. Then
+z2
+
+exp(nωL) = I + f1 (z)L + f2 (z)L2 .
+20
+
+Published as a conference paper at ICLR 2026
+
+For any scalar parameter θ ∈ {ω} ∪ {entries of a, b},
+
+∂θ exp(nωL) = f1 (z) ∂θ L + f2 (z) (L ∂θ L + ∂θ L L) + ∂θ z f1′ (z)L + f2′ (z)L2 ,
+∂θ z = nω ∂θ s + ns ∂θ ω,
+
+∂θ s = 21 s−1 ∂θ (αβ − γ 2 ).
+
+2
+
+2
+
+Use series for |z| < ε: f1 (z) = 1 − z6 + O(z 4 ) and f2 (z) = 12 − z24 + O(z 4 ). These formulas
+enable mixed-precision backprop with small-s guards.
+Fast application. For any x ∈ Rd ,
+Lx = a⟨b, x⟩ − b⟨a, x⟩,
+
+L2 x = γ(a⟨b, x⟩ + b⟨a, x⟩) − β a⟨a, x⟩ − α b⟨b, x⟩.
+
+Thus G(n)x = x + f1 Lx + f2 L2 x with f1 = sin(nωs)
+and f2 = 1−cos(nωs)
+, which is evaluable in
+s
+s2
+2
+2
+O(d) time via a few inner products. By the minimal polynomial λ(λ +s ), L3 = −s2 L; expanding
+exp(ηL) and regrouping yields the rank-2 update form used throughout
+
+J
+
+S PECTRAL A NALYSIS OF GRAPE AND OTHER M ETHODS
+
+In this section, we discuss eigenvalue-level results for GRAPE-M generators/exponentials and summarize the unipotent spectra of GRAPE-A/GRAPE-AP. Throughout,
+L(a, b) = ab⊤ − ba⊤ ∈
+√
+2
+2
+⊤
+2
+so(d), and α = ∥a∥ , β = ∥b∥ , γ = a b, ∆ = αβ − γ , s = ∆ as in Section 2.
+J.1
+
+R ANK -2 P LANE : E XACT S PECTRUM AND G EOMETRIC I NTERPRETATION
+
+Lemma J.1 (Rank-2 spectrum). For L = L(a, b), the eigenvalues are {±is} ∪ {0}d−2 , and there
+exists B ∈ SO(d) such that
+
+
+
+sJ
+0
+⊤
+.
+B LB =
+,
+J = 01 −1
+0
+0 0d−2
+Moreover, s = ∥a∥∥b∥ sin ϕ, where ϕ ∈ [0, π] is the angle between a and b.
+Proof. From Section 2, L2 = −s2 PU with U = span{a, b}, whence the minimal polynomial is
+λ(λ2 + s2 ) and σ(U) = {±is, 0}. Choosing an orthonormal basis aligned with U ⊕ U ⊥ yields the
+claimed form. Finally, ∆ = αβ − γ 2 = ∥a∥2 ∥b∥2 (1 − cos2 ϕ) = (∥a∥∥b∥ sin ϕ)2 .
+Corollary J.2 (Phase bounds and orthogonality). The per-step rotation angle of exp(ηL) on U
+equals θ = ηs and satisfies 0 ≤ θ ≤ η∥a∥∥b∥, with equality when a ⊥ b. If b = J a (Section 2.4)
+and ∥a∥ = 1, then s = 1 and θ = η.
+Exponential spectrum. For any n ∈ Z,
+
+σ exp(nL) = {e±ins } ∪ {1}d−2 .
+Hence ρ(exp(nL)) = 1, the map is unitary (orthogonal), and all Lyapunov exponents are zero.
+Periodicity holds with fundamental period T = 2π/s when s/π ∈ Q; otherwise, the trajectory is
+quasi-periodic on the unit circle.
+J.2
+
+M ULTI - SUBSPACE GRAPE-M AND RO PE
+Pm
+Let L = j=1 θj Lj with mutually orthogonal planes (hence [Li , Lj ] = 0 for i ̸= j) and Lj =
+Uj JU⊤
+j . Then
+⊤
+
+B LB =
+
+m
+M
+
+θj J ⊕ 0d−2m ,
+
+d−2m
+σ(L) = {±iθj }m
+,
+j=1 ∪ {0}
+
+j=1
+
+for some B ∈ SO(d). Consequently,
+
+d−2m
+σ exp(nL) = {e±inθj }m
+.
+j=1 ∪ {1}
+This recovers RoPE when the planes are the coordinate pairs and {θj } follow the canonical loguniform spectrum (Proposition 3.1).
+21
+
+Published as a conference paper at ICLR 2026
+
+J.3
+
+A DDITIVE GRAPE
+
+We now analyze the spectral properties of the additive lifts in GL introduced in Sections 4 and 5.
+The key structural fact is unipotency: all per-step factors are identity plus a rank-1 (or few-rank)
+nilpotent update of index 2.
+Setup. Let A ∈ gl(d+1) (or gl(d+2) for ALiBi) satisfy A2 = 0 as in Eq. (4.1) and Eq. (4.7). For
+a scalar path parameter s ∈ R, define the unipotent factor
+H(s) := exp(sA) = I + s A,
+
+H(s)−1 = I − s A,
+
+det H(s) = 1.
+
+For Additive GRAPE(GRAPE-A) with offset m = j−i, s = m ω; for GRAPE-PA, s = sh (t, j) :=
+Pt
+ℓ=j+1 ψh (t, ℓ) from Eq. (5.2).
+Proposition J.3 (Eigenvalues and Jordan structure of additive lifts). Let A ∈ gl(D) satisfy A2 = 0
+and A ̸= 0. Then for every s ̸= 0,
+
+σ H(s) = {1}D ,
+(H(s) − I)2 = 0,
+det H(s) = 1,
+ρ(H(s)) = 1.
+Hence, the minimal polynomial of H(s) is (λ − 1)2 , and the Jordan form consists of size-2 Jordan
+blocks for the 1-eigenspace, with the number of nontrivial blocks equal to rank(A).
+Proof. Since A2 = 0, exp(sA) = I + sA and (H(s) − I)2 = s2 A2 = 0. The characteristic
+polynomial is (λ − 1)D for H(s), so all eigenvalues equal 1. The determinant equals the product of
+eigenvalues, hence 1; the spectral radius is therefore 1.
+2
+Dictionary closure. If {Ar }R
+r=1 satisfy Ar = 0 and Ar As = 0 for all r, s, then
+X
+2 X
+X
+θr Ar =
+θr2 A2r +
+θr θs Ar As = 0,
+r
+
+r
+
+r̸=s
+
+so the combined generator is also index-2 nilpotent and yields the same unipotent spectrum.
+Singular values. Although H(s) is not orthogonal, its deviation from I is rank-limited and exactly
+analyzable. We first give a sharp, explicit formula for the canonical rank-1 case (ALiBi block), then
+a general bound.
+Lemma J.4 (Exact singular-value pair for a canonical rank-1 unipotent). Let E := ep e⊤
+q with
+p ̸= q and define H(s) := I + sE ∈ RD×D . Then D − 2 singular values equal 1, and the remaining
+two are
+r
+q
+2
+2
+σ± (H(s)) =
+1 + s2 ± |s| 1 + s4 ,
+σ+ (H(s)) σ− (H(s)) = 1.
+(J.1)
+In particular,
+κ2 (H(s)) =
+
+2
+σ+ (H(s))
+= σ+ (H(s))2 = 1 + s2 + |s|
+σ− (H(s))
+
+q
+
+2
+
+1 + s4 = 1 + |s| + O(s2 )
+
+as s → 0.
+
+Proof. The action of H(s)⊤ H(s) is identity onqspan{ep , eq }⊥ . In the basis {eq , ep } it equals
+
+2
+2
+1+s2 s , whose eigenvalues are 1 + s ± |s| 1 + s . Taking square roots yields (J.1). The
+2
+4
+s 1
+p
+product equals det(H⊤ H) = | det H| = 1.
+Corollary J.5 (ALiBi and Additive GRAPE(GRAPE-A) conditioning numbers). For the exact ALiBi generator in Eq. (4.7), let E := ed+2 e⊤
+d+1 so that Ah = −βh E. Then Gadd,h (m) = I+mAh =
+I−m βh E = I+s E with s = −m βh , and the only nontrivial
+singular
+values follow from Eq. (J.1).
+
+
+For the single-vector additive lift Eq. (4.1) with A = 00⊤ ushift
+and
+∥ushift ∥ = 1, the same for0
+mula holds with E replaced by an orthogonally similar rank-1 update and s = m ω.
+22
+
+Published as a conference paper at ICLR 2026
+
+Lemma J.6 (General operator-norm bounds for index-2 unipotents). For any A with A2 = 0 and
+any s ∈ R,
+1 − |s| ∥A∥2 ≤ σmin (I + sA) ≤ σmax (I + sA) ≤ 1 + |s| ∥A∥2 .
+These bounds are conservative but dimension-free. In the canonical rank-1 case of Lemma J.4
+2
+with ∥A∥2 = 1, one has the sharper small-|s| behavior σmax (I + sA) = 1 + |s|
+2 + O(s ) and
+|s|
+2
+σmin (I + sA) = 1 − 2 + O(s ).
+Proof. Use the triangle inequality ∥(I + sA)x∥2 ≤ ∥x∥2 + |s| ∥A∥2 ∥x∥2 and its reverse form
+applied to (I + sA)−1 = I − sA; see also Weyl inequalities for singular values under rank-1
+perturbations.
+Cancellation in the relative logit. While H(s) can be anisotropic (Lemma J.4), the Additive
+GRAPE(GRAPE-A) scoring uses a paired inverse-transpose (Eq. (4.2)), which cancels all multiplicative distortions and yields a pure additive term:
+⊤
+
+
+⊤ b
+−⊤ b
+e
+bj = q
+e⊤
+b⊤
+b⊤
+b⊤
+q
+I − j ω A⊤ k
+kj = q
+kj ,
+i kj = q
+i I + iωA
+i I − (j−i) ω A
+i Gadd (j−i)
+since (A⊤ )2 = 0. This reproduces the exact relative law Eq. (4.3) and the closed form Eq. (4.5)
+(e.g. Eq. (4.6)), independently of σ± (H(s)).
+GRAPE-AP as a path-integral unipotent. Fix a head h and endpoint t. The per-row path product
+in Section 5 is
+t
+t
+ X
+
+Y
+
+I − ψh (t, ℓ) E = I −
+ψh (t, ℓ) E = I − sh (t, j) E,
+ℓ=j+1
+
+ℓ=j+1
+
+2
+
+because E = 0. Thus GRAPE-AP inherits the unipotent spectrum of Prop. J.3 with row-dependent
+s = sh (t, j) ≤ 0 (since ψh ≤ 0 by construction). Its only two nontrivial singular values are
+exactly (J.1) with s 7→ sh (t, j); the rest equal 1. Consequently,
+
+
+2
+σ+ − sh (t, j)
+ = σ+ − sh (t, j)
+κ2 PA factor =
+σ− − sh (t, j)
+q
+
+2
+2
+= 1 + sh (t,j)
++
+|s
+(t,
+j)|
+1 + sh (t,j)
+= 1 + |sh (t, j)| + O sh (t, j)2 ,
+h
+2
+4
+while the determinant remains 1 and eigenvalues are all 1. As in Additive GRAPE(GRAPE-A), the
+paired inverse-transpose used in the bilinear scoring removes any multiplicative anisotropy, leaving
+the bounded additive term bh (t, j) in Eq. (5.2).
+Implications. Now we summarize the implications of previous results. For all s, H(s) is invertible
+with H(s)−1 = I − sA; eigenvalues do not grow with offset length (spectral radius = 1). The
+operator norm grows at most linearly in |s| (Lemma J.6) and is exactly characterized in the rank-1
+canonical cases (Lemma J.4).
+Secondly, det H(s) = 1 implies no net volume change; any expansion along one direction is exactly balanced by contraction along its paired direction (product σ+ σ− = 1). Despite anisotropy,
+the GRAPE-A and GRAPE-AP logits remain exactly relative because the key transform uses
+H(s)−⊤ , algebraically eliminating multiplicative distortion and yielding the closed-form additive
+bias (Eqs. (4.3), (4.5), (5.2)).
+J.4
+
+C OMPARISON TO PATH ATTENTION
+
+PaTH Attention (Yang et al., 2025b) proposes a contextual multiplicative position map given by a
+cumulative product of identity-plus-rank-one matrices
+Ht = I − βt wt wt⊤ ,
+
+∥wt ∥2 = 1,
+
+βt ∈ (0, 2),
+Qi
+applied along the path between key position j and query position i as s=j+1 Hs (see Section 2 of
+the PaTH paper). In contrast to GRAPE-M factors, each Ht is not orthogonal unless βt ∈ {0, 2}.
+This has immediate spectral consequences.
+23
+
+Published as a conference paper at ICLR 2026
+
+Per-step spectrum. Since Ht is symmetric rank-1 perturbation of the identity with projector Pt :=
+wt wt⊤ ,
+σ(Ht ) = { 1 − βt , 1, . . . , 1 },
+| {z }
+
+det(Ht ) = 1 − βt ,
+
+∥Ht ∥2 = max{1, |1 − βt |} = 1.
+
+d−1
+
+Thus Ht is norm nonexpansive (operator norm 1) but not norm-preserving unless βt ∈ {0, 2}.
+Singular values equal the absolute eigenvalues because Ht is symmetric; the component along wt
+is scaled by |1 − βt | < 1 for any βt ∈ (0, 2) \ {0, 2}, and flips sign when βt > 1 (a design choice
+in PaTH to allow negative eigenvalues for state-tracking).
+Qi
+Path product is contractive and near-singular. Let Pj→i = s=j+1 Hs . Submultiplicativity of
+singular values gives
+σmax (Pj→i ) ≤
+
+i
+Y
+
+∥Hs ∥2 = 1,
+
+σmin (Pj→i ) ≥
+
+s=j+1
+
+i
+Y
+
+i
+Y
+
+σmin (Hs ) =
+
+s=j+1
+
+|1 − βs |.
+
+s=j+1
+
+Hence Pj→i is (at best) nonexpansive, with a worst-case exponential lower bound on the smallest
+singular value governed by the path-length product of |1 − βs |. Whenever some βs is close to 1,
+Hs is nearly singular (and exactly singular if βs = 1), driving σmin (Pj→i ) toward zero. Volume
+contraction is quantified by
+i
+Y
+det(Pj→i ) =
+(1 − βs ),
+s=j+1
+
+which typically decays exponentially in i − j unless βs concentrates at the orthogonal endpoints
+{0, 2}.
+Aligned-plane special case. If the directions are time-invariant, ws ≡ w, then Pt = ww⊤ is an
+idempotent projector and the factors commute:
+i
+Y
+s=j+1
+
+Hs =
+
+i
+Y
+
+i
+
+
+Y
+
+I − βs P = I − 1 −
+(1 − βs ) P,
+
+s=j+1
+
+s=j+1
+
+Qi
+
+so the eigenvalue along w is exactly s=j+1 (1 − βs ), making the contraction along w explicit and
+exponential in path length unless βs ∈ {0, 2}.
+Implications for long-context modeling. Because the PaTH transport multiplies the Q/K bilinear
+by Pj→i , any persistent deviation of βt from {0, 2} yields cumulative energy loss along a moving
+one-dimensional subspace. This concentrates mass in progressively fewer directions and can flatten
+or attenuate long-range logits q⊤
+i Pj→i kj as i − j grows, unless additional renormalizations or
+forget-gates are introduced. In contrast, GRAPE-M maps lie in SO(d), so for both non-contextual
+and contextual types, all singular values are 1; volumes and norms are preserved, and Lyapunov
+exponents are 0, avoiding contraction-induced degradation of long-range interactions.
+Lemma J.7 (Orthogonality condition for PaTH factors). For Ht = I − βt wt wt⊤ with ∥wt ∥ = 1,
+Ht is orthogonal iff βt ∈ {0, 2}. For βt ∈ (0, 2) \ {0, 2}, Ht is symmetric, diagonalizable with
+eigenvalues in (−1, 1] ∪ {1}, and strictly contractive on span{wt }.
+
+24
+
+

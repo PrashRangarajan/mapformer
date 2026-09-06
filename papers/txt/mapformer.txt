@@ -1,0 +1,2602 @@
+MapFormers: Self-Supervised Learning of Cognitive
+Maps with Input-Dependent Positional Encoding
+
+Victor Rambaud1,2,3
+
+Salvador Mascarenhas1,3
+
+Yair Lakretz2,3
+
+arXiv:2511.19279v4 [cs.LG] 10 May 2026
+
+1
+
+Institut Jean Nicod 2 LSCP
+Département d’Études Cognitives - ENS, EHESS, CNRS, PSL University
+victor.rambaud@gmail.com, salvador.mascarenhas@ens.fr, yair.lakretz@gmail.com
+3
+
+Abstract
+A cognitive map is an internal model which encodes the abstract relationships
+among entities in the world, giving humans and animals the flexibility to adapt to
+new situations, with a strong out-of-distribution (OOD) generalization that current
+AI systems still do not possess. To bridge this gap, we introduce MapFormers,
+new Transformer-based architectures, which can learn cognitive maps from observational data and perform path-integration without supervision. Cognitive maps
+are learned in the model by disentangling structural relationships in the inputs
+from their specific content, a property that can be achieved by updating position
+encodings with input-dependent matrices, built as exponentials of learned combinations of Lie-algebra generators. We developed two variants of MapFormers
+that unify absolute and relative positional encoding to model episodic (EM) and
+working memory (WM), respectively. We tested MapFormers on several formal
+tasks targeting distinct cognitive capacities, including gating, 2D navigation and
+nested hierarchies (Dyck Languages). Our results demonstrate that MapFormers
+significantly outperform current AI architectures, achieving near-perfect OOD generalization where standard models fail. Furthermore, we show that MapFormers
+are scalable; evaluations on naturalistic data yield perplexity improvements over
+baselines, suggesting that these principles extend to large-scale, real-world domains.
+These results are obtained through efficient parallel computation on commutative
+maps, though our models can also learn non-commutative cognitive maps via
+sequential path-integration. Overall, these results suggest that input-dependent
+matrices provide a critical structural bias, by disentangling abstract relations from
+content in order to drive robust OOD generalization.
+
+1
+
+Introduction
+
+Transformer-based models [1] now underpin
+most modern AI systems, achieving impressive performance across a wide range of tasks.
+Yet, beneath their impressive performance,
+these models remain surprisingly brittle: when
+carefully tested, they often fail to generalize
+to out-of-distribution tasks that humans and
+animals can handle with ease [2, 3]. This gap
+suggests that Transformers might still lack the
+necessary structural biases that allow biological brains to navigate unknown scenarios and
+reason through novel problems effectively.
+Preprint.
+
+Figure 1: Cognitive maps factorize content from
+position. Actions (blue) update position consistently
+across environments, and path integration composes
+them a0→t = at−1 ◦ · · · ◦ a0 (green).
+
+A potential explanation for this gap lies in the ability to construct cognitive maps [4]: internal models
+that separate the abstract, invariant structure of an environment from its specific, variable content. This
+factorization of what from where allows known structures to be applied to entirely new observations,
+supporting both spatial navigation (e.g., finding shortcuts or detours) and non-spatial reasoning (e.g.,
+inferring family relations). Such different domains can be unified by viewing structure as a graph:
+nodes represent states and edges relationships between them—spatial or conceptual. In a world
+where observations are unbounded but the underlying structure remains stable, this factorization
+is fundamental. To navigate a structure, an agent must learn the set of actions that affect its state
+and, crucially, how they combine. This process is called path integration (fig. 1, green arrows)—the
+process of integrating a sequence of actions—which is essential for tracking state changes and mental
+planning [5]. Path integration also enables to plan shortcuts or bypass obstacles by recognizing that
+distinct action sequences, such as (↑, →, →, ↓) and (→, →), are functionally equivalent. Humans
+and animals are highly proficient at this type of relational composition [6–8], a capability for robust
+out-of-distribution generalization that current AI systems still struggle to replicate [9, 10].
+Previous work made progress in modeling cognitive maps using RNNs with action-dependent matrices
+[11, 12], but these models do not scale since (1) their matrices must be multiplied sequentially,
+preventing parallel sequence processing, and (2) they require the underlying structure (e.g., the set of
+actions) to be specified in advance rather than learned.
+To address this, we introduce MapFormers, a class of transformers that learn cognitive maps via
+next-token prediction and disentangle structure from content without supervision. For commutative
+maps, MapFormers compute path integration in parallel, enabling efficient scaling to more complex
+problems. We evaluate MapFormers on three tasks probing distinct structural capacities – navigation,
+gating, and nested hierarchies – and show systematic generalization, including perfect extrapolation
+to longer and deeper nested structures than those seen during training. More broadly, we show that
+MapFormers can scale to real-world problems, such as natural language, where we also observe
+improved performance over standard baselines.
+We introduce two variants of MapFormers, which unify relative rotary (RoPE; [13]) and absolute
+positional embeddings, respectively as models of working and episodic memory. Finally, we show
+how our principled Lie-group formalism, applicable to both transformers and State Space Models
+(SSMs) [14, 15], extends to non-commutative problems, albeit not in parallel. We validate this
+empirically against alternative input-dependent positional encoding methods, demonstrating the
+advantage of MapFormers. Taken together, our results open new pathways toward AI systems that
+achieve systematic OOD generalization by capturing latent structures via path integration rather than
+relying on heuristics, while remaining scalable to real-world domains.
+
+2
+
+Related Literature
+
+The Tolman-Eichenbaum Machine (TEM) [12] introduced a set of spatial (navigation) and nonspatial (e.g., family trees) tasks that require learning a cognitive map, and proposed an RNN using
+action-dependent matrices to update its position before querying a Hopfield memory module [16].
+This framework was extended to model the prefrontal cortex in working memory [11], representing
+structure implicitly by rotating the full neural activity into structured activity slots with actiondependent matrices. It was also shown that TEM can be seen as a Transformer (TEM-t) [17], where
+positional embeddings represent position in a cognitive map. However, TEM-t lacks scalability:
+it requires sequential updates of positional embeddings via action-dependent matrices, preventing
+parallel sequence processing and making it impractical for large-scale domains.
+Other work has demonstrated the generalization power of sequence-dependent positional encoding
+in transformers [18–21], yielding superior results in length generalization and a selection of formal
+tasks, but their representation power is poorly understood. Specifically, little is known about what
+kind of structural features these models can or cannot learn. Moreover, no connections have been
+made to cognitive maps, which is one of the main goal of this paper.
+Another line of work, Clone-Structured Causal Graphs (CSCGs) [22, 23], learn cognitive maps
+through discrete latent states (clones). While promising, these models are not parallelizable and are
+trained via Expectation-Maximization (EM), making them incompatible with standard next-token
+prediction and cross-entropy training. Moreover, their discrete formulation prevents them from
+2
+
+learning smooth maps or modeling continuous transformations such as head direction [24] or mental
+rotations [25].
+
+3
+
+Theory and Models
+
+3.1
+
+Learning Cognitive Maps and Path-Integration using Lie-group Theory
+
+We define a cognitive map as a multirelational graph G = (N, E, R), where nodes (i.e. states) are
+connected by edges E, typed by a set of cardinal relations R—such as cardinal directions on a grid
+or family relations in a family tree. Each node n ∈ N = (P, O) is characterized by both its position
+p ∈ P and an associated content (or observation) o ∈ O, independent of the map’s topology—such
+that the same map can host arbitrary content assignments (fig.1). An agent navigating this map
+occupies a position pt ∈ N , and updates it using a transition function (i.e. an action) at : N → N .
+To efficiently learn the map, the agent must recover the hidden topology by aligning each action with
+its corresponding relation. Specifically, for any relation rj→i ∈ R connecting nj to ni , the agent
+needs to learn an action at ∈ A that satisfies the condition pt+1 = at (pt = nj ) = ni .
+Once the map is learned, the agent can perform path integration (fig. 1, green arrows) by composing a
+sequence of actions. The resulting position pi reached from an initial position pj through a sequence
+of actions is defined by:
+pi = aj→i pj = (ai−1 ◦ · · · ◦ aj )pj
+where we denoted integrated actions as aj→i = ai−1 ◦ · · · ◦ aj . Note that position is always defined
+by integrated action aj→i , representing either relative or, when referenced to the origin p0 (j = 0),
+absolute position.
+In previous work [11, 12, 17], cognitive maps were modeled in RNNs with a fixed set of actiondependent recurrent weights, to compute integrated actions aj→i via matrix multiplication: Wj→i :=
+Qi−1
+s=j Was . We extend this line of work by dynamically constructing input-dependent matrices
+as exponentials of learned Lie-algebra generators (sec. A.1). Rather than hard-coding each action
+matrix separately, we learn generators of a Lie algebra that implicitly represent all possible actions.
+This reduces the inductive bias from the number of actions to the algebra’s structural complexity.
+Moreover, for abelian groups, we can replace the costly sequential product with linear accumulation
+in the Lie algebra, followed by a single exponential map (sec. A.2).
+For example, in the case of rotations, action-dependent matrices are rotation matrices Rθ that lie
+on the manifold of the special orthogonal group SO(2). Its Lie algebra so(2) is one-dimensional,
+possessing a single generator matrix S (the unit skew-symmetric matrix; S T = −S). Any matrix in
+so(2) can be expressed as A = ωS, where ω is the angular velocity. A finite rotation Rθ can then be
+generated by integrating the infinitesimal angular velocities ω over a duration ∆t . In this case, path
+integration can be computed at the level of the Lie algebra by summing the integration durations ∆t :
+
+
+i−1
+i−1
+Y
+X
+Wj→i :=
+exp (ω∆t S) = exp ωS
+∆t  := R(θj→i ),
+(1)
+t=j
+
+t=j
+
+Pi−1
+Most of the computational cost thus boils down to a simple sum t=j ∆t . Computing the exponential
+map needs to be done only once, after the summation. Furthermore, in the case of rotation, computing
+the exponential is not even necessary, as the closed-form solution for the exponential map is already
+known to be the standard rotation matrix Rθ (sec. A.1, A.2).
+In practice, in the case of navigation on a finite 2D grid, i.e. a torus, action-dependent matrices
+are 2 × 2 block-diagonal rotations, where each block lies in SO(2), defined by a constant angular
+velocity ωb . They represent rotations at different scales, and are learned by the model during training,
+adapting themselves to the size of the grid — e.g., larger grids require a smaller ω to avoid wrapping
+around. Path integration can be computed along each of the nb blocks, in parallel.
+Interestingly, there is a connection between the exponential map in Lie group formulations of cognitive maps and its role in the discretization of continuous State Space Models (SSMs). In SSMs, the
+exponential arises when discretizing continuous dynamics with step size ∆t [14], mapping a linear
+operator in continuous time to its discrete-time counterpart. This parallels the Lie algebra–group
+3
+
+mapping, where exponentiation maps infinitesimal generators to finite transformations. The continuous and discrete SSM equations (eq. 10 & 11) can thus be interpreted as operating in a 1-dimensional
+Lie algebra and Lie group, respectively. Because Linear Transformers are equivalent to SSMs [15],
+in this work, we mainly focus on SO(2)k , as it is compact and 1-dimensional—matching the SSM
+framework with a single generator. This ensures bounded neural activity and commutativity, hence
+linear path-integration, and a closed-form solution of the exponential map.
+We further develop in sec. A.3, A.4 & A.5 how Lie-group theory enables the learning of cognitive
+maps and its connection to both SSMs and Transformers. Finally, the framework can be extended to
+non-commutative cognitive maps (sec. D.2) through the introduction of multiple generator matrices,
+at the cost of losing the additive path-integration introduced in eq. 1.
+3.2
+
+MapFormers: Path-Integrating Transformers for learning Cognitive Maps
+
+Mul
+
+Mul
+
+Mul
+
+Mul
+
+Mul
+
+Mul
+
+Cumsum
+Cumsum
+
+Proj
+Proj
+
+Proj
+
+Proj
+
+Proj
+
+Proj
+
+Proj
+
+Proj
+
+(a)
+
+(b)
+
+Figure 2: Disentangling Structure and Content for Path Integration in Episodic and Working
+Memory Transformers. Overview of our MapFormers architectures for Episodic (EM; panel a) and
+Working Memory (WM; panel b). In both models, rotation angle θ = ω∆ is obtained via a low-rank
+projection of input X, before computing a cumsum along the temporal dimension to perform path
+integration (PI) in parallel: θP I = ω∆P I = ω · cumsumt (∆). Input-dependent, block-diagonal,
+rotation matrices RθP I update the position on the cognitive map. (a) Episodic Memory MapFormer
+(MapEM) with two parallel attentions AX and AP . The former captures raw similarities between
+external inputs and the latter encodes the problem’s structure, by path-integrating an initial position
+P ∗ (b) Working Memory MapFormer (MapWM) with relative positional encoding, where Q, K
+are rotated via input-dependent matrix RθP I . In MapWM, θ is learned, but keeping it fixed gives
+exactly RoPE.
+In this section, we introduce two new Transformer-based architectures, which we call MapFormers,
+designed to learn path integration and, consequently, cognitive maps. The fundamental mechanism in
+both MapFormers is the use of input-dependent matrices to update positional encoding as in sec. 3.1,
+which, as explained, represents position in a context-dependent cognitive map instead of ordinal order
+used in standard Transformers.
+Transformers achieve parallel and large-scale sequence processing via the attention mechanism.
+An input sequence X ∈ Rl×d is projected into keys, queries and values, Q, K, V ∈ Rl×d , and
+token mixing is achieved via a weighted sum of the values based on the key-query similarity matrix
+A ∈ Rl×l :
+
+
+QK T
+√
+Att(Q, K, V ) = softmax
+V
+d
+Because the attention mechanism is permutation-invariant, positional information must be provided,
+either through absolute positional embeddings added to the input [1], or relative positional encoding
+to model the distance between keys and queries [13].
+4
+
+The two proposed architectures (fig. 2a & 2b) follow this distinction: the first architecture extracts and
+represents structural information separately from the content, using absolute positional embeddings
+to form a cognitive map; this is akin to a model of episodic memory [12]. The second architecture,
+conversely, represents structure implicitly by rotating neural activity into distinct subspaces, akin to
+the models of working memory in [11].
+To learn a cognitive map, the model has to identify that action tokens (st = at ) update the internal
+position pt , while ensuring that observations (st = ot ) leave the structure untouched. This is achieved
+in
+through a two-stage projection process: first, an inner projection W∆
+∈ Rd×r maps each token
+d
+in
+representation xt ∈ R to a low-dimensional action representation ∆t ∈ Rr (where r = 1, 2 in
+out
+1D/2D navigation, capturing the actual motion to perform). Then, an outer projection W∆
+∈ Rr×nb
+projects the inner action representation to a per-block integration duration:
+
+in
+r
+out in
+out
+in
+∆in
+∆t = W∆
+∆t = W∆
+W∆
+xt ∈ Rnb
+(2)
+t = W∆ xt ∈ R ;
+The final rotation angles are then computed as θt = ω ⊙ ∆t , where ω ∈ Rnb is a learnable vector
+controlling the angular velocity on each block. Path-integration is finally computed in parallel along
+the temporal dimension via a cumulative summation: θ0→t := cumsumt (θt ), allowing to build the
+final path-integrated rotation matrix RθP I := {Rθ0 →t }t≤l (fig. 2). See sections A.7 and A.8 for
+implementation details.
+MapEM: MapFormers with Absolute Positional Embeddings as Models of Episodic Memory
+The first architecture of MapFormers makes use of absolute positional embeddings to learn a cognitive
+map (fig. 2a), inspired by the links established between TEM and transformers [17]. Once RθP I is
+computed, one only needs to learn an embedding p0 ∈ Rd , representing the origin of the cognitive
+map, such that:
+P := RθP I P ∗ ; P ∗ = [p0 , . . . , p0 ]l ∈ Rl×d
+2
+
+Attention is computed on QG := {qtg = vec(qt⊤ .pt )}t≤l ∈ Rl×d and KG , the conjunctions of
+what has been seen and where. This
+the element-wise product of content and
+√ can be reframed as √
+T
+position attentions AX = QX KX
+/ d and AP = P.P T / d, computed separately (still in parallel
+by concatenating the heads, see sec. A.7), such that AP acts as an attention mask on AX :
+Att(Qg , Kg , V ) = softmax (AX ⊙ AP ) V
+
+(3)
+
+This allows modeling Episodic Memory in a transformer that we call MapFormer-EM (or MapEM,
+in short, see sec. A.4 for details on EM models).
+MapWM: MapFormers with Relative Positional Embeddings as Models of Working Memory In
+[11], Working Memory RNNs represent structure implicitly by shifting neural activity into structured
+activity slots with action-dependent matrices. This directly models the logic of RoPE [13], where a
+fixed rotation matrix modeling relative distance is directly applied on the keys and queries, i.e. the
+state. In MapFormers-WM (MapWM; 2b)), keys and queries are rotated by RθP I , which encodes
+their relative distance in the cognitive map. We further formalize the links between MapWM and
+models of working memory in sec. A.5.
+
+4
+
+Experimental Setup
+
+4.1
+
+Tasks
+
+We evaluate our models on three formal next-token prediction tasks, each targeting an important
+cognitive ability: gating, navigating a cognitive map, and handling nested hierarchies. Each task
+admits a hidden structure that can be manipulated to create challenging OOD samples, implying
+that generalization is only possible by explicitly learning the underlying structure rather than relying
+on heuristics. Solving all three would demonstrate that the same mechanism initially developed for
+cognitive maps also supports a broader range of formal tasks. More details about data generation for
+each of these tasks can be found in sections B.2, B.3 & B.4 of the appendix.
+Selective Copy Introduced in Mamba [14] and used in CoPE [19], this task requires the model to
+copy a sequence while ignoring a blank distractor token B: CF CF EABBCBF → CF CF EACF .
+Solving it requires learning a gating mechanism to dynamically filter out distractors—something
+which transformers with static positional encoding like RoPE [13] cannot do.
+5
+
+Forced-Navigation Task Following [12], we cast navigation as next-token prediction— i.e.
+predicting the upcoming observation. The model receives a sequence of alternating tokens
+s = (a1 , o1 , . . . , aT , oT ), where at is an action and ot an observation sampled from a finite set
+of K objects, plus an empty token B when locations are empty, with probability pempty . Crucially,
+the model is not told which tokens st are actions and which are observations. Since observations are
+sampled randomly, the only way to achieve perfect accuracy when revisiting a location is for the
+model to recover the latent topology of the environment—i.e., to build a cognitive map by inferring
+which tokens act as transitions (actions in 2D: {↑, ↓, →, ←}) and how they compose.
+Dyck-2 valid continuations Dyck-2 is a context-free language over two bracket types, () and [],
+designed to test a model’s ability to handle nested hierarchies, a core feature of human language –
+By the Chomsky–Schützenberger theorem [26], any context-free language can be constructed from
+Dyck languages via homomorphisms and intersections with regular languages, making them a central
+testbed for hierarchical generalization. To predict the next token, the model must identify the valid
+continuations, which always include opening either bracket or closing the last opened one. This
+requires the model to track the stack of unclosed brackets through the sequence, which can be
+emulated via memory-augmented RNNs [27]. Conversely, transformers and standard LSTMs fail to
+generalize to longer and deeper sequences unseen during training [28].
+4.2
+
+Baseline models
+
+In all experiments, we restricted ourselves to Transformer-based models, since our goal is to introduce
+a generic architecture, trainable at scale. This rules out previous actionable models like TEM [11, 12],
+since they are not parallelizable on commutative maps, and pre-suppose what the actions should be
+instead of discovering them. We also rule-out CSCGs [22, 23], because they are neither parallelizable
+nor trainable via cross-entropy and next-token prediction. Moreover, since Transformers and SSMs
+are related [15] and because our Lie-group formalism also applies to SSMs (sec. A.3 & A.4), we
+removed SSM-based models from our analysis because some architectural variations irrelevant to our
+Lie-group formalism might alter our empirical results. Nevertheless, we show in sec. A.6 that the
+gating matrix of Mamba prevents it from learning a cognitive map.
+We therefore focus our analysis on transformer architectures with input-dependent positional encoding,
+known to generalize well on structured problems, apart from RoPE [13], the only architecture in
+our analysis without any bias for structure learning. Our baselines with input-dependent positional
+encoding are TAPE [18], CoPE [19] and PathAtt [21], which will be compared to MapWM and
+MapEM. As controls, we introduce variations of our architectures: MapEM-s/o/os that use structure,
+observation, or both in eq. 3 to validate the role that both observation and structure play in distinct
+in
+tasks. In MapWM-r, we ablate the rank r ∈ {1, 2} of the inner projection W∆
+(eq. 2) to verify that
+the rank of this projection does control movement in the cognitive map. Further details about each
+architecture are given in sec. B.1.
+
+5
+
+Results
+
+5.1
+
+MapFormers and other Path-Integrating baselines solve the Selective-Copy Task
+
+We start with the selective-copy task to test
+IID
+OOD Dense OOD Sparse
+whether MapFormers can learn a gating mechMapEM-o 0.11±0.02 0.08±0.03
+0.07±0.02
+anism required to ignore distractors. FollowMapEM-s
+0.10
+0.11
+0.10
+±0.01
+±0.01
+±0.01
+ing [19], we train 2-layer, 2-head transformers (h = 64) on sequences of 128 non-blank
+RoPE
+1.00±0.00 0.48±0.04
+0.22±0.05
+TAPE
+1.00±0.00 0.88±0.05
+0.10±0.07
+tokens (from K = 16 objects) interleaved
+CoPE
+1.00±0.00 1.00±0.00
+1.00±0.00
+with 128 blanks. OOD samples only vary the
+PathAtt
+1.00±0.00 1.00±0.00
+1.00±0.00
+amount of blank tokens B: 64 for OOD Dense
+and 256 for OOD Sparse. As we can see in
+MapWM
+1.00±0.00 1.00±0.00
+1.00±0.00
+tab. 1, only CoPE, PathAtt, and MapFormMapEM-os 1.00±0.00 1.00±0.00
+1.00±0.00
+ers—all three relying on a form of path integration—generalize OOD. TAPE improves Table 1: Selective copy accuracy. IID: 128/128
+performances in shorter sequences over RoPE, blank/non-blank. OOD dense: 64/128,OOD sparse:
+by learning a form of position interpolation, 256/128.
+but performances deteriorate on longer sequences. Since solving this tasks involves understanding its
+6
+
+structure (the tokens to ignore) and its semantic content (the tokens to copy), MapEM-s/MapEM-o,
+which relies on structure/observation only, fail.
+5.2
+
+MapFormers Solve the Grid Navigation Tasks but not Baseline Models
+1D navigation
+IID
+
+2D Navigation
+
+OOD
+
+IID
+
+D
+
+S
+
+OOD
+D
+
+S
+
+MapEM-o
+
+0.14±0.03
+
+0.20±0.01
+
+0.12±0.03
+
+0.16±0.02
+
+0.08±0.01
+
+0.08±0.01
+
+RoPE (1L)
+RoPE (4L)
+TAPE (1L)
+TAPE (4L)
+CoPE (1L)
+CoPE (4L)
+PathAtt (1L)
+
+0.25±0.03
+0.95±0.01
+0.23±0.01
+0.93±0.02
+0.63±0.21
+0.88±0.01
+0.99±0.00
+
+0.40±0.05
+0.97±0.01
+0.40±0.02
+0.96±0.03
+0.71±0.21
+0.91±0.02
+0.99±0.00
+
+0.16±0.02
+0.70±0.03
+0.15±0.03
+0.67±0.01
+0.47±0.22
+0.65±0.05
+0.98±0.00
+
+0.46±0.01
+0.82±0.05
+0.37±0.01
+0.65±0.02
+0.65±0.03
+0.76±0.01
+0.64±0.04
+
+0.52±0.02
+0.87±0.03
+0.45±0.02
+0.68±0.01
+0.71±0.04
+0.86±0.01
+0.70±0.05
+
+0.39±0.01
+0.68±0.03
+0.35±0.02
+0.53±0.02
+0.56±0.04
+0.70±0.01
+0.53±0.05
+
+MapWM-r1
+MapWM-r2
+MapEM-os
+MapEM-s
+
+1.00±0.00
+1.00±0.00
+1.00±0.00
+1.00±0.00
+
+1.00±0.00
+1.00±0.00
+1.00±0.00
+1.00±0.00
+
+1.00±0.00
+1.00±0.00
+1.00±0.00
+1.00±0.00
+
+0.66±0.02
+1.00±0.00
+1.00±0.00
+1.00±0.00
+
+0.74±0.01
+1.00±0.00
+1.00±0.00
+1.00±0.00
+
+0.62±0.03
+0.99±0.01
+1.00±0.00
+1.00±0.00
+
+Table 2: 1D-2D grid navigation accuracy. IID: sequence length 128, grid width 64, pempty = 0.5.
+OOD-dense (D): 64/32/0.2. OOD-sparse (S): 256/128/0.8. We use single layer models with one head
+(h = 64), or when specified, 2 layers and 2 heads. MapWM-r1/MapWM-r2 use a rank-1/2 matrix for
+encoding movement on the cognitive map ∆in
+t , while MapEM-o computes attention on content only,
+without positional encoding.
+For 1D-2D navigation, observations are sampled from K = 16 objects and actions from the cardinal
+directions (2 in 1D, 4 in 2D). We train single layer, single head models (h = 64) via next token
+prediction, but compute accuracy only when coming back to previously visited locations, which are
+the only tokens predictable with certainty. For additional baselines, we increase model’s depth up to
+4 layers (and 2 heads). Additional details about training are given in sec. B.3 of the appendix.
+Results in tab. 2 confirm our theory, with baselines failing for distinct but predictable reasons: because
+observations are random, the model must learn to disentangle content from structure and update its
+position from incoming actions, something that RoPE cannot do. Moreover, the model must pathintegrate its position—ruling out TAPE—and be able to represent an action (moving forward) and
+its inverse (moving backwards), preventing CoPE from solving the task, even in 1D. The structural
+bias for path-integration should also match the underlying topology, limiting PathAtt’s ability to
+solve the task in 2D. Finally, as expected, the rank r = 1, 2 of the integration time ∆t ∈ Rr directly
+influences our model’s ability to learn a cognitive map—since MapWM-r1 generalizes in 1D but not
+in 2D—while models relying on observation alone (MapEM-o) perform worse than RoPE.
+EM scale better than WM models in recall We further show in sec. C.3 the superiority of EM
+models (absolue PE) over WM (relative PE) on recall tasks due to their dedicated neural population
+for encoding position.
+High-dimensional and non-commutative navigation We extend the analysis to higher-dimensional
+and non-abelian navigation: on commutative maps, each independent dimension is encoded as a
+circle, so the same mechanism can be used but requires more neurons to encode each axis efficiently
+(sec. D.1); MapFormers can also learn non-commutative maps such as family trees, but require
+multiple generators per diagonal block, making path-integration non-parallelizable (sec D.2).
+5.3
+
+MapFormers learn to generalize to longer and deeper Dyck-2 sequences
+
+Standard transformers require at least 2 layers to generate Dyck-2 [29], but we hypothesized that
+MapFormers can emulate a stack within their positional encoding and succeed with a single layer.
+We therefore compared 1 layer, 1 head to 2 layers and 2 heads (h = 64), training on sequences of
+7
+
+(a)
+
+(c)
+
+(b)
+
+(e)
+
+(d)
+
+(f)
+
+Figure 3: MapFormers outperform baseline models on Dyck-2 and natural language modeling.
+(a) Length generalization: F1 as a function of sequence length; trained on length 32 (dashed line). (b)
+Depth generalization: F1 as a function of nesting depth; trained on depth 4 (dashed line). MapFormers
+solve the task with a single layer and generalize OOD, while baselines require a second layer to
+converge IID and fail OOD. (c) Validation perplexity on OpenWebText: 12-layer MapWM vs. RoPE,
+averaged over 5 seeds. (d-e) Learned representations of MapWM in the 2D navigation task. (d)
+2
+Inner projections ∆in
+t ∈ R : observation tokens are all projected towards 0 (orange), while tokens
+representing opposite directions (left / right or up / down) are all projected to opposite directions. (e)
+PCA of learned values: action values vat are projected towards zero. (f) Dyck-2 latent trajectory
+2
+cumsum(∆in
+t ) ∈ R , for trajectory []([]()), starting in symbol x. The model uses opposite directions
+for open/close brackets of same type and orthogonal dimensions for each bracket type
+
+length 32 and depth 4, and evaluating OOD along two axes: (1) by fixing depth and increasing length
+multiplicatively, up to 4× the training length; (2) by fixing the sequence length and increasing depth
+additively up to training depth + 8. We report continuation quality using the F1-metric of [30].
+Fig. 3a & 3b show that MapFormers with a single layer perfectly generalize OOD. In contrast,
+baseline models require a second layer to approach near-perfect training performance and, more
+importantly, fail to generalize beyond the training distribution.
+5.4
+
+Neural Analysis: Observations are Vectors, Actions are Matrices
+
+To complement the behavioral results, we analyze the learned embeddings in MapFormers. A defining
+property of cognitive maps is the separation of content from structure, which can be directly probed
+in the model’s embeddings. In order to do so, we analyzed for each token the learned inner movement
+∆in
+t on the cognitive map—where structure should be encoded—and the learned values vt —which
+encodes the semantic content passed to the next layer. See further details in sec. C.
+In 2D navigation, the model learns with no supervision to disentangle structure from content, by
+projecting observation tokens to near zero movement on the map (∆ot ≈ 0, i.e. update the cognitive
+map with a near identity rotation), while opposite actions map to opposite directions (fig. 3d).
+Conversely, since actions carry no semantic content in this task, their values are projected towards
+zero (fig. 3e).
+On Dyck-2, open and closed brackets of the same type are projected toward opposite directions, while
+different bracket types use orthogonal dimensions (fig. 3f). Unlike memory-augmented RNNs that
+require external memory modules [27], MapFormers embed the stack directly in positional encoding,
+enabling efficient parallel processing while achieving perfect generalization.
+8
+
+5.5
+
+Scalability to Natural Language
+
+To assess the scalability of our method (compatible with FlashAttention [31] for MapWM, tab. A.9),
+we pretrained a 12-layer MapWM on OpenWebText [32] against a RoPE baseline, using the nanoGPT
+codebase [33] on 4 H100 GPUs for approximately 1011 tokens (fig. 3c). Overall, MapWM’s training
+remained stable and yielded a consistent perplexity improvement over RoPE (RoPE 19.14±0.14 vs
+MapWM 18.79±0.15 ) and better length extrapolation (fig. 8 in the appendix). However, matching the
+length-extrapolation of 1D path-integrating baselines like CoPE and PathAtt [19, 21] would likely
+require more hyperparameter tuning. Notably, increasing the rank of W in might create a bias for
+depth (as in Dyck-2, fig. 3f) but reduce the precision on very long sequences.
+Moreover, since MapFormers disentangle structure from content, we further investigated whether our
+inductive bias would help to separate syntax from semantics, but preliminary results on BLIMP ([34],
+tab. 7a) show no clear improvement, suggesting that the observed gains on OpenWebText do not
+come from better syntactic modeling, which might require another mechanism than (commutative)
+path-integration. See sec. B.5 for further details and discussion on language modeling.
+
+6
+
+Discussion
+
+We introduced MapFormers, a novel class of Transformer-based architectures that learn cognitive
+maps and perform path integration without supervision. By introducing the exponential map as a
+principled framework for dynamically building action-dependent matrices, MapFormers address
+two key limitations of previous RNN-based models: (1) they enable parallel path integration on
+commutative groups (models in [11, 12, 17] are non-parallelizable even in 2D navigation), and
+(2) they remove the need to specify the underlying set of actions in advance, allowing to scale to
+multi-layer models that could learn context-dependent cognitive maps.
+We developed two variants, MapFormer-WM and MapFormer-EM, which give a new perspective on
+the difference between absolute and relative positional encoding, by relating them to episodic and
+working memory, respectively. Because EM models scale better in recall tasks but are slower to run
+(sec. C.3 & tab. A.9), future work could focus on hybrid architectures that alternate between absolute
+and relative positional encoding to improve episodic recall while maintaining competitive inference
+speed.
+Empirically, MapFormers achieved near-perfect OOD generalization on longer, sparser, and deeper
+sequences—baselines failed because they do not path-integrate with the right geometric prior—while
+our neural analysis in sec. C.2 demonstrates that the model does learns a cognitive map and allows us
+to interpret its step-by-step reasoning process. This framework enables gating (sec. 5.1) and encoding
+of nested hierarchies (sec. 5.3) and also extends to non-commutative, non-Euclidean cognitive maps
+(sec. D.2) suggesting that input-dependent matrices built from Lie-algebra generators might be a
+generic mechanism for structural learning on both smooth manifolds (infinitesimal motion in 2D
+navigation...) and symbolic structures (Dyck language, family trees...), by sampling small or large
+step sizes ∆t , respectively.
+Finally, we used natural language as a scalability test, but reinforcement learning or world modeling
+might be more natural settings for studying the impact of cognitive maps in real-world scenarios.
+
+7
+
+Limitations
+
+We highlight several limitations of our work that we leave for future explorations: (1) to compute
+path integration, we sum the rotation angles along the temporal dimension, restricting our formalism
+to causal transformers, but the same methods used to adapt SSMs to vision [35] could be used for
+non-causal problems; (2) although our analysis shows that non-commutative cognitive maps can be
+learned, the characterization of non-commutative path-integration could be broadened, and whether
+this is achievable in parallel remains an open question; (3) our baselines focused on input-dependent
+positional encoding, but the comparison could be extended to other architectures such as memoryaugmented networks; (4) we trained language models at modest scale to validate that MapFormers
+extend beyond synthetic tasks, but limited compute prevented hyperparameter tuning, longer training
+and broader benchmarking. Moreover, it is still unclear how limiting the commutative constraint will
+prove to be for language modeling.
+9
+
+Acknowledgments
+This work has benefited from public funding from the IA-Cluster PR[AI]RIE-PSAI project, managed
+by the French National Research Agency (ANR) as part of the France 2030 program, reference “ANR23-IACL-0008”. Ecole Normale Supérieure-PSL’s Département d’Etudes Cognitives is supported by
+ANR grants, ANR-10-IDEX-0001-02 and FrontCog, ANR-17-EURE0017.
+This work was performed using HPC resources from GENCI-IDRIS (Grant 2026-AD011016976).
+
+References
+[1] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N
+Gomez, Ł ukasz Kaiser, and Illia Polosukhin. Attention is all you need. In I. Guyon,
+U. Von Luxburg, S. Bengio, H. Wallach, R. Fergus, S. Vishwanathan, and R. Garnett, editors, Advances in Neural Information Processing Systems, volume 30. Curran Associates,
+Inc., 2017. URL https://proceedings.neurips.cc/paper_files/paper/2017/file/
+3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf.
+[2] Marianna Nezhurina, Lucia Cipolina-Kun, Mehdi Cherti, and Jenia Jitsev. Alice in wonderland:
+Simple tasks reveal severe generalization and basic reasoning deficits in state-of-the-art large
+language models. In NeurIPS 2024 Workshop on Scientific Methods for Understanding Deep
+Learning, 2024. URL https://openreview.net/forum?id=Mkl7dzjYiW.
+[3] Xingxuan Zhang, Jiansheng Li, Wenjing Chu, Junjia Hai, Renzhe Xu, Yuqing Yang, Shikai
+Guan, Jiazheng Xu, and Peng Cui. On the out-of-distribution generalization of multimodal large
+language models, 2024. URL https://arxiv.org/abs/2402.06599.
+[4] Timothy E.J. Behrens, Timothy H. Muller, James C.R. Whittington, Shirley Mark, Alon B.
+Baram, Kimberly L. Stachenfeld, and Zeb Kurth-Nelson. What is a cognitive map? organizing
+knowledge for flexible behavior. Neuron, 100(2):490–509, 2018. ISSN 0896-6273. doi: https://
+doi.org/10.1016/j.neuron.2018.10.002. URL https://www.sciencedirect.com/science/
+article/pii/S0896627318308560.
+[5] H. Freyja Ólafsdóttir, Daniel Bush, and Caswell Barry. The role of hippocampal replay in
+memory and planning. Current Biology, 28(1):R37–R50, Jan 2018. ISSN 0960-9822. doi:
+10.1016/j.cub.2017.10.073. URL https://doi.org/10.1016/j.cub.2017.10.073.
+[6] Torkel Hafting, Marianne Fyhn, Sturla Molden, May-Britt Moser, and Edvard I. Moser. Microstructure of a spatial map in the entorhinal cortex. Nature, 436(7052):801–806, Aug
+2005. ISSN 1476-4687. doi: 10.1038/nature03721. URL https://doi.org/10.1038/
+nature03721.
+[7] Lorelei R. Howard, Amir Homayoun Javadi, Yichao Yu, Ravi D. Mill, Laura C. Morrison, Rebecca Knight, Michelle M. Loftus, Laura Staskute, and Hugo J. Spiers. The hippocampus and entorhinal cortex encode the path and euclidean distances to goals during navigation. Current Biology, 24(12):1331–1340, 2014. ISSN 0960-9822. doi: https://doi.org/10.1016/j.cub.2014.05.001.
+URL https://www.sciencedirect.com/science/article/pii/S0960982214005260.
+[8] Rüdiger Wehner and Mandyam V. Srinivasan. Searching behaviour of desert ants, genuscataglyphis (formicidae, hymenoptera). Journal of comparative physiology, 142(3):315–338,
+Sep 1981. ISSN 1432-1351. doi: 10.1007/BF00605445. URL https://doi.org/10.1007/
+BF00605445.
+[9] Keyon Vafa, Justin Y. Chen, Ashesh Rambachan, Jon Kleinberg, and Sendhil Mullainathan.
+Evaluating the world model implicit in a generative model, 2024. URL https://arxiv.org/
+abs/2406.03689.
+[10] Lars Benedikt Kaesberg, Jan Philip Wahle, Terry Ruas, and Bela Gipp. SPaRC: A spatial
+pathfinding reasoning challenge. In Christos Christodoulopoulos, Tanmoy Chakraborty, Carolyn Rose, and Violet Peng, editors, Proceedings of the 2025 Conference on Empirical Methods
+in Natural Language Processing, pages 10359–10390, Suzhou, China, November 2025. Association for Computational Linguistics. ISBN 979-8-89176-332-6. doi: 10.18653/v1/2025.
+emnlp-main.526. URL https://aclanthology.org/2025.emnlp-main.526/.
+10
+
+[11] James C.R. Whittington, William Dorrell, Timothy E.J. Behrens, Surya Ganguli, and Mohamady
+El-Gaby. A tale of two algorithms: Structured slots explain prefrontal sequence memory and are
+unified with hippocampal cognitive maps. Neuron, 113(2):321–333.e6, Jan 2025. ISSN 08966273. doi: 10.1016/j.neuron.2024.10.017. URL https://doi.org/10.1016/j.neuron.
+2024.10.017.
+[12] James CR Whittington, Timothy H Muller, Shirley Mark, Guifen Chen, Caswell Barry, Neil
+Burgess, and Timothy EJ Behrens. The tolman-eichenbaum machine: Unifying space and
+relational memory through generalisation in the hippocampal formation. bioRxiv, 2019. doi: 10.
+1101/770495. URL https://www.biorxiv.org/content/early/2019/09/24/770495.
+[13] Jianlin Su, Yu Lu, Shengfeng Pan, Ahmed Murtadha, Bo Wen, and Yunfeng Liu. Roformer:
+Enhanced transformer with rotary position embedding, 2023. URL https://arxiv.org/
+abs/2104.09864.
+[14] Albert Gu and Tri Dao. Mamba: Linear-time sequence modeling with selective state spaces,
+2024. URL https://arxiv.org/abs/2312.00752.
+[15] Tri Dao and Albert Gu. Transformers are ssms: Generalized models and efficient algorithms
+through structured state space duality, 2024. URL https://arxiv.org/abs/2405.21060.
+[16] Hubert Ramsauer, Bernhard Schäfl, Johannes Lehner, Philipp Seidl, Michael Widrich, Thomas
+Adler, Lukas Gruber, Markus Holzleitner, Milena Pavlović, Geir Kjetil Sandve, Victor Greiff,
+David Kreil, Michael Kopp, Günter Klambauer, Johannes Brandstetter, and Sepp Hochreiter.
+Hopfield networks is all you need, 2021. URL https://arxiv.org/abs/2008.02217.
+[17] James C.R. Whittington, Joseph Warren, and Timothy E.J. Behrens. Relating transformers
+to models and neural representations of the hippocampal formation, 2022. URL https:
+//arxiv.org/abs/2112.04035.
+[18] Jiajun Zhu, Peihao Wang, Ruisi Cai, Jason D. Lee, Pan Li, and Zhangyang Wang. Rethinking
+addressing in language models via contexualized equivariant positional encoding, 2025. URL
+https://arxiv.org/abs/2501.00712.
+[19] Olga Golovneva, Tianlu Wang, Jason Weston, and Sainbayar Sukhbaatar. Contextual position
+encoding: Learning to count what’s important, 2024. URL https://arxiv.org/abs/2405.
+18719.
+[20] Anand Gopalakrishnan, Robert Csordás, Jürgen Schmidhuber, and Michael C. Mozer. Decoupling the "what" and "where" with polar coordinate positional embeddings, 2025. URL
+https://arxiv.org/abs/2509.10534.
+[21] Songlin Yang, Yikang Shen, Kaiyue Wen, Shawn Tan, Mayank Mishra, Liliang Ren, Rameswar
+Panda, and Yoon Kim. Path attention: Position encoding via accumulating householder transformations, 2026. URL https://arxiv.org/abs/2505.16381.
+[22] Dileep George, Rajeev V. Rikhye, Nishad Gothoskar, J. Swaroop Guntupalli, Antoine Dedieu,
+and Miguel Lázaro-Gredilla. Clone-structured graph representations enable flexible learning
+and vicarious evaluation of cognitive maps. Nature Communications, 12(1):2392, Apr 2021.
+ISSN 2041-1723. doi: 10.1038/s41467-021-22559-5. URL https://doi.org/10.1038/
+s41467-021-22559-5.
+[23] Rajkumar Vasudeva Raju, J. Swaroop Guntupalli, Guangyao Zhou, Carter Wendelken, Miguel
+Lázaro-Gredilla, and Dileep George. Space is a latent sequence: A theory of the hippocampus.
+Science Advances, 10(31):eadm8470, 2024. doi: 10.1126/sciadv.adm8470. URL https:
+//www.science.org/doi/abs/10.1126/sciadv.adm8470.
+[24] JS Taube, RU Muller, and JB Ranck. Head-direction cells recorded from the postsubiculum
+in freely moving rats. ii. effects of environmental manipulations. Journal of Neuroscience, 10
+(2):436–447, 1990. ISSN 0270-6474. doi: 10.1523/JNEUROSCI.10-02-00436.1990. URL
+https://www.jneurosci.org/content/10/2/436.
+11
+
+[25] Roger N. Shepard and Jacqueline Metzler. Mental rotation of three-dimensional objects. Science,
+171(3972):701–703, 1971. doi: 10.1126/science.171.3972.701. URL https://www.science.
+org/doi/abs/10.1126/science.171.3972.701.
+[26] N. Chomsky and M.P. Schützenberger. The algebraic theory of context-free languages*. In
+P. Braffort and D. Hirschberg, editors, Computer Programming and Formal Systems, volume 35
+of Studies in Logic and the Foundations of Mathematics, pages 118–161. Elsevier, 1963. doi:
+https://doi.org/10.1016/S0049-237X(08)72023-8. URL https://www.sciencedirect.com/
+science/article/pii/S0049237X08720238.
+[27] Mirac Suzgun, Sebastian Gehrmann, Yonatan Belinkov, and Stuart M. Shieber. Memoryaugmented recurrent neural networks can learn generalized dyck languages, 2019. URL
+https://arxiv.org/abs/1911.03329.
+[28] Satwik Bhattamishra, Kabir Ahuja, and Navin Goyal. On the practical ability of recurrent neural networks to recognize hierarchical languages. In Donia Scott, Nuria Bel, and
+Chengqing Zong, editors, Proceedings of the 28th International Conference on Computational Linguistics, pages 1481–1494, Barcelona, Spain (Online), December 2020. International
+Committee on Computational Linguistics. doi: 10.18653/v1/2020.coling-main.129. URL
+https://aclanthology.org/2020.coling-main.129/.
+[29] Shunyu Yao, Binghui Peng, Christos Papadimitriou, and Karthik Narasimhan. Self-attention
+networks can process bounded hierarchical languages. In Chengqing Zong, Fei Xia, Wenjie Li, and Roberto Navigli, editors, Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing (Volume 1: Long Papers), pages 3770–3785, Online, August
+2021. Association for Computational Linguistics. doi: 10.18653/v1/2021.acl-long.292. URL
+https://aclanthology.org/2021.acl-long.292/.
+[30] Michael Eric Goodale, Salvador Mascarenhas, and Yair Lakretz. Meta-learning neural mechanisms rather than Bayesian priors. In Wanxiang Che, Joyce Nabende, Ekaterina Shutova, and
+Mohammad Taher Pilehvar, editors, Proceedings of the 63rd Annual Meeting of the Association
+for Computational Linguistics (Volume 1: Long Papers), pages 17588–17605, Vienna, Austria,
+July 2025. Association for Computational Linguistics. ISBN 979-8-89176-251-0. doi: 10.
+18653/v1/2025.acl-long.860. URL https://aclanthology.org/2025.acl-long.860/.
+[31] Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, and Christopher Ré. Flashattention: Fast
+and memory-efficient exact attention with io-awareness, 2022. URL https://arxiv.org/
+abs/2205.14135.
+[32] Aaron Gokaslan and Vanya Cohen. Openwebtext corpus. http://Skylion007.github.io/
+OpenWebTextCorpus, 2019.
+[33] Andrej Karpathy. nanogpt. https://github.com/karpathy/nanoGPT, 2022.
+[34] Alex Warstadt, Alicia Parrish, Haokun Liu, Anhad Mohananey, Wei Peng, Sheng-Fu Wang,
+and Samuel R. Bowman. BLiMP: The benchmark of linguistic minimal pairs for English.
+Transactions of the Association for Computational Linguistics, 8:377–392, 2020. doi: 10.1162/
+tacl_a_00321. URL https://aclanthology.org/2020.tacl-1.25/.
+[35] Lianghui Zhu, Bencheng Liao, Qian Zhang, Xinlong Wang, Wenyu Liu, and Xinggang Wang.
+Vision mamba: Efficient visual representation learning with bidirectional state space model,
+2024. URL https://arxiv.org/abs/2401.09417.
+[36] William Dorrell, Peter E. Latham, Timothy E. J. Behrens, and James C. R. Whittington.
+Actionable neural representations: Grid cells from minimal constraints, 2023. URL https:
+//arxiv.org/abs/2209.15563.
+[37] Anthony W Knapp and Anthony William Knapp. Lie groups beyond an introduction, volume
+140. Springer, 1996.
+[38] Albert Gu, Karan Goel, and Christopher Ré. Efficiently modeling long sequences with structured
+state spaces, 2022. URL https://arxiv.org/abs/2111.00396.
+12
+
+[39] Sinong Wang, Belinda Z. Li, Madian Khabsa, Han Fang, and Hao Ma. Linformer: Self-attention
+with linear complexity, 2020. URL https://arxiv.org/abs/2006.04768.
+[40] Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization, 2019. URL https:
+//arxiv.org/abs/1711.05101.
+[41] Tomáš Kočiský, Jonathan Schwarz, Phil Blunsom, Chris Dyer, Karl Moritz Hermann, Gábor Melis, and Edward Grefenstette. The NarrativeQA reading comprehension challenge.
+Transactions of the Association for Computational Linguistics, 6:317–328, 2018. doi:
+10.1162/tacl_a_00023. URL https://aclanthology.org/Q18-1023/.
+[42] James C. R. Whittington, Will Dorrell, Surya Ganguli, and Timothy E. J. Behrens. Disentanglement with biological constraints: A theory of functional cell types, 2023. URL
+https://arxiv.org/abs/2210.01768.
+[43] Marco Baroni and Roberto Zamparelli. Nouns are vectors, adjectives are matrices: Representing
+adjective-noun constructions in semantic space. In Hang Li and Lluís Màrquez, editors,
+Proceedings of the 2010 Conference on Empirical Methods in Natural Language Processing,
+pages 1183–1193, Cambridge, MA, October 2010. Association for Computational Linguistics.
+URL https://aclanthology.org/D10-1115/.
+
+13
+
+A
+
+Appendix
+
+A.1
+
+Action-Dependent Matrices Form a Lie Group
+
+The key idea to learn a cognitive map is to move beyond fixed matrices and learn action-dependent
+matrices, specific to each input action. In [36], the authors introduce actionable representations using
+group and representation theory, as a formalism to map an input action a ∈ Rr (e.g. in 2D, r = 2 and
+‘move right’) to a neural transformation Wa ∈ Mn (R) (e.g., the corresponding weight matrix of a
+neural network that implements the effect of this action on the represented position in space p):
+ϕ : Rr → Mn (R)
+a 7→ Wa
+
+(4)
+
+where ϕa acts on the representation p ∈ Rn (e.g., abstract position in space) such that p(x + a) =
+Wa p(x). We refer to the matrices Wa ’s as action-dependent matrices, since unlike standard RNNs, the
+weight matrix may depend on the specific action taken. To be useful for updating positions in cognitive
+maps, the action-dependent matrices need to form a group, and specifically, in addition to (1) closure
+and (2) associativity, it needs to satisfy the following properties: (3) include a matrix for the null action:
+W0 = In , (4) ∀a : Wa is invertible with inverse W−a (e.g., ‘one step right’ has the exact opposite
+effect on the neural representation of ‘one step left’ - ∀x, a : p(x + a − a) = W−a Wa p(x) = p(x)).
+In summary, the requirements for a neural representation for a cognitive map to be consistently and
+reversibly updated by actions (including a null action and an inverse for every action) mean that
+the set of action matrices {Wa } must constitute a subgroup of the General Linear Group, GL(n, R),
+under matrix multiplication. Note that this results in various desired properties, such as making the
+actions a’s invariant with respect to the specific position p they update – In the absence of noise, the
+action has the same effect on any of the represented positions. Indeed, making the same step right
+should update the position in the same way whether we are in Paris or New York.
+The insight that action-dependent matrices need to form a group, and in particular a Lie group over
+R, allows the use of results from group and representation theory to understand what are the possible
+constraints on the form of Wa ’s [36]. Specifically, the Peter–Weyl theorem [37] states that any
+compact group G can be represented in Mn (R) as:
+
+I1 (a)
+0
+I2 (a)
+ 0
+Wa = M 
+..
+ ...
+.
+0
+0
+
+
+···
+0
+···
+0 
+M −1
+.. 
+..
+.
+. 
+· · · Id (a)
+
+(5)
+
+where Ik are called the irreducible representations (irreps) of group G and M is an invertible matrix.
+This representation of action-dependent matrices, through the irreps of the group G, provides insights
+into which core actions can be performed by Wa ’s. For example, for navigation on a circle (1D) or
+torus (2D), the irreps are rotations Rθk :
+Ik (a) := Rθk =
+
+
+cos(ωk .∆tk )
+sin(ωk .∆tk )
+
+
+− sin(ωk .∆tk )
+;
+cos(ωk .∆tk )
+
+θk = ωk .∆tk ∈ R,
+
+(6)
+
+where ωk , ∆tk ∈ Rr , r = 1, 2 are the angular frequencies and rotation duration, respectively, the
+former representing movement at different scales. That is, in this example, each Ik performs a
+rotation of a subspace of the neural space. The matrix M then performs a change of basis on this
+result, assuming M is not the identity.
+A.2
+
+Path Integration Can Be More Easily Computed in the Lie-Algebra Space
+
+To learn a cognitive map, we saw that it is desirable to require action-dependent matrices to form a
+Lie group G. A Lie group is a group G that is also a smooth manifold, such that the group operations
+(multiplication and inversion) are smooth maps. For example, the group of 2D rotations SO(2) is
+a Lie group. To build a neural model that can learn cognitive maps, the goal would be to learn
+action-dependent matrices that form a Lie group.
+14
+
+To further characterize the group of action-dependent matrices, it is often simpler to analyze the
+corresponding Lie algebra. The associated Lie algebra g of a Lie group G is the tangent vector
+space of G at the identity element. Lie-group theory shows the existence of an exponential map
+between the Lie algebra and the group exp(·) : g → G, and in the case of a compact group, where the
+exponential map is surjective, any element Wa ∈ G of the group can be expressed as the exponential
+of an algebra element A, Wa = exp(A) ∈ G. This is useful since studying the structure of Lie
+groups (which involves, e.g., matrix multiplication) is often simpler from the point of view of the
+corresponding Lie algebra (which involves addition operations).
+For the case of cognitive maps, we will think of elements of the Lie algebra A’s as action representations, and the corresponding group elements (expressed via the exponential map) as the
+action-dependent matrices Wa ’s, which implement these actions in synaptic weights. The exponential map provides the link between the vector space of actions (the Lie algebra) and the space of
+weight matrices (the Lie group). Specifically, given
+Pthe property
+Q of the exponential map (if the Ai ’s
+commute, see sec. D.2 for further details): exp ( i Ai ) = i exp(Ai ), the exponential mapping
+translates the additive structure of the Lie algebra (cumulation of actions in this vector space - e.g,
+‘move right’ then ‘move up’) into the multiplicative structure of the Lie group (multiplication of
+the corresponding action-dependent weight matrices). This is useful for path integration, since the
+cumulative effect
+Qn of taking actions A1 , ..., An can be translated to the final action-dependent weight
+matrix Wa = i=1 exp(Ai ). As we will see, the exponential map allows in some cases to compute
+path integration in parallel, in the vector space of the Lie algebra, by first computing the cumulative
+summation of subsequent actions and only then computing the exponent of the result.
+For example, for spatial problems, such as navigation on a circle or a torus—and more generally, any
+1-dimensional compact group, the Lie group of interest is SO(2) - the group of all 2D-rotations.
+
+cos(θ)
+Rθ :=
+sin(θ)
+
+− sin(θ)
+cos(θ)
+
+
+(7)
+
+The corresponding Lie algebra of SO(2), denoted so(2), consists of all 2 × 2 real matrices A that
+are skew-symmetric (A⊤ = −A). The Lie algebra so(2) is a one-dimensional vector space, spanned
+by a single basis skew-symmetric matrix S := −S ⊤ (2D-rotations have a single degree of freedom).
+Thus, all elements of the Lie algebra can be expressed by a single scalar (the angular velocity) ω as
+A = ωS. A finite rotation Rθ can then be seen as generated by integrating the infinitesimal angular
+velocities ω over a duration ∆t :
+
+S = −S ⊤ =
+
+
+0
+1
+
+
+
+−1
+cos(ω∆t )
+; Rθ = exp(∆t A) = exp((ω∆t )S) =
+0
+sin(ω∆t )
+
+
+− sin(ω∆t )
+cos(ω∆t )
+
+(8)
+
+Intuitively, the skew-symmetric matrix A = ωS defines the instantaneous action direction S and
+constant angular velocity ω. The finite rotation Rθ ∈ SO(2) is obtained by the exponential map,
+which performs a continuous integration of this velocity. Thus, the expression Rθ = exp(∆t A)
+shows that the final rotation yields a total angle of θ = ω∆t , which defines the smooth path (geodesic)
+on the group manifold.
+Note that the action group represented by this block-diagonal rotation matrices is the k-torus SO(2)k ,
+where k is the number of independent axis, each leaving in SO(2) and acting on orthogonal axes.
+Hence, the underlying matrix has a single generator per block, and so(2)k remains abelian, allowing additive path-integration. For this reason, we refer to SO(2)k simply as SO(2)—or for any
+other group, we mainly focus here on its block-wise representation, since it is what matters for
+parallelization—in the text.
+This framework has important implications for learning a cognitive map. Given that all elements
+of a compact and connected Lie group (the action-dependent matrices in our case, like rotation
+groups) can be expressed by the exponential of a single linear combination of the associated Lie
+algebra generators, learning a cognitive map can be simplified: learning can be performed at the
+level of the algebra rather than the non-linear group level. The algebra primarily involves linear
+operations and summation – which are naturally compatible with modern deep learning frameworks
+and backpropagation – while the Lie group involves matrix multiplication. This linearization is
+15
+
+useful because the linear path integration required by the exponential map can be much more easily
+parallelized, as we will see further below.
+More generally, given the group of action-dependent matrices Wa ’s (which, as we saw, needs to be a
+subgroup of the general linear group GL(n, R)), elements of the algebra, A(t), can be expressed by a
+linear combination of generators Ai ’s scaled by parameters ti ’s (the ‘integration times’, which can be
+seen as coordinates along the different directions defined by the generators). If surjective, all group
+elements Wa ’s can then be expressed using the exponential map:
+
+A(t) =
+
+D
+X
+
+ti Ai ∈ g,
+
+ti ∈ R
+
+(Linear combination in the Algebra)
+
+i=1
+
+Wa = exp
+
+D
+X
+
+(9)
+
+!
+t i Ai
+
+∈G
+
+(Mapped to the Group via Exponential)
+
+i=1
+
+For the special case where the generators Ai commute (i.e., the Lie bracket is zero), as in the
+simple SO(2) example, the exponential of the sum equals the product of the exponentials: Wa =
+QK
+i=1 exp(ti Ai ). This shows again the benefit of the Lie algebra: it transforms the non-linear
+composition (multiplication) of the group into linear path integration (addition) within the algebra,
+thereby facilitating efficient learning and parallelization in the model.
+A.3
+
+MAmPa: Learning Cognitive Maps with block-diagonal Mamba Models
+
+In this section, we propose a Lie-theoretic interpretation of State-Space Models (SSMs), which
+provides an interpretation of modern SSMs as models that implicitly perform path integration and can
+thus learn cognitive maps under certain conditions. This framework reveals a substantial limitation of
+current state-of-the-art SSMs, such as Mamba and Mamba2 [14, 15], to meet these conditions for
+learning cognitive maps. We thus propose a simple modification of the Mamba architecture, which
+we call MAmPa, for learning cognitive Maps with Mamba models. The link established in [15]
+between SSMs and Transformers is what will later allow us to understand the links between absolute
+and relative positional encoding with models of episodic and working memory, respectively.
+Recently, structured state-space models (S4) [38] have gained popularity over Transformers as they
+allow parallelized training of sequences while keeping a linear inference cost. These models are
+inspired by continuous state space models, where a continuous signal x(t) ∈ R is mapped to y(t) ∈ R
+via a hidden variable h ∈ Rn :
+h′ (t) = Ah(t) + Bx(t)
+y(t) = Ch(t)
+
+(10)
+
+These continuous systems can be applied to a sequence of discrete tokens, using the zero-order hold
+(ZOH) rule, which assumes that the input signal x(t) is constant during a step size ∆. This yields the
+corresponding discrete version of the dynamics:
+ht+1 = Aht + Bxt+1
+yt+1 = Cht+1
+
+(11)
+
+where A = exp(∆ · A) and B = (∆ · A)−1 (exp(∆ · A) − I) ∆B. This discretization step is
+fundamental, as it explains how the exponential map can arise from the integration of infinitesimal
+recurrent transformations over a time interval ∆ ∈ R. The fact that recurrent computations are
+define with a single synaptic weight matrix A implies that this exponential map can only generate
+1-dimensional Lie-algebras, hence commutative groups.
+In Mamba, an improved version of (S4), input selectivity is ensured via a per-token learnable step ∆t
+and matrix A, that when combined defines a per-token transformation:
+At := exp(∆t A)
+16
+
+(12)
+
+The exponential relationship between A (the continuous domain matrix) and A (the discrete domain
+matrix) directly parallels the relationship between the element A of the Lie algebra and the weight
+matrix Wa in the corresponding Lie group. In the rotation example, since the Lie-algebra so(2)
+of skew-symmetric matrices gives rise to the Lie-group of rotation matrices SO(2), A := ωS is
+the infinitesimal generator and Wa is the finite rotation over duration ∆t : Wa = exp(∆t A). By
+identifying the discrete-time SSM matrix A with the action-dependent matrix Wa , we propose a
+new theoretical framework to analyze the capacity of Mamba to learn action-dependent matrices and
+cognitive maps. In this framework, Mamba can be interpreted as learning action-dependent matrices
+At , which are dynamically created via an exponential map. As we saw, the exponential map integrates
+infinitesimal steps via A (the direction and velocity in the Lie algebra space) over a varying time
+interval ∆t , giving a finite transformation A (the element of the Lie group). In other words, Mamba
+implicitly computes path integration of action A over a duration defined by the learned parameter ∆t .
+Given this theoretical framework, it is evident that current versions of Mamba are incapable of
+learning cognitive maps that require, for example, learning rotations. In Mamba, A was chosen as
+diagonal, to reduce computational cost, but a diagonal action-dependent matrix cannot learn rotations.
+This is since A needs to be similar to a block-diagonal matrix, with blocks of size 2 (eq. 5 & 6).
+Mamba was shown to be able to learn gating problems, which increases the performance of Mamba
+on various structure-dependent tasks by ignoring irrelevant information, however, Mamba with a
+diagonal constraint is not expressive enough to represent spatial cognitive maps as Lie-group theory
+shows. In this work, we modify A in Mamba to be block-diagonal and, in particular, to blocks of size
+2 (for learning rotations) and show that this modification increases the capacity of the model to learn
+cognitive maps.
+A.4
+
+MAmPa as a Model of Episodic Memory (EM) and Working Memory (WM)
+
+(a)
+
+(b)
+
+Figure 4: An illustration of the conceptual framework of action-dependent matrices, and the
+differences between Episodic Memory (EM) and Working Memory (WM) models [11]. (a)
+Episodic Memory (EM) model: Positions (or ‘states’, more generally) in a cognitive map pt ’s
+(in blue), at times t’s, are encoded in a separate neural space by a dedicated neural population,
+which does not directly interact with the input xt (red), being updated via actions only. Actions at ’s,
+when they occur in the input, can update the position via input-dependent matrices Wat (green):
+pt = Wat pt−1 . Wa ’s are input-dependent matrices and are computed through an exponential map,
+which maps between abstract representations of actions At := ∆t ωS = θt S (in the Lie-Algebra) and
+the corresponding weight matrix Wat := exp(At ) = Rθt (in the corresponding Lie group; section
+A.2). The exponential mapping is computed based on the integration time ∆t of the action (light
+green) – roughly, how long the synaptic weights S need to be applied. Finally, the conjunction
+(purple) of the content (what) and the structure (where) can be computed. (b) Working Memory
+(WM) model: In contrast to the EM model, which factorizes content (red) and position (blue) in two
+separate neural spaces, MapFormers-WM represent position implicitly. Actions in the WM model
+directly update the conjunction of what and where (purple). The conjunction states ht ’s in the WM
+model are thus smaller by a quadratic factor compared to the EM model.
+In [11], the authors introduce two related models of episodic (EM) and working memory (WM)
+that both learn cognitive maps using RNNs with input-dependent matrices. Here, we explain why
+selective, discrete State-Space Models (SSMs) can be viewed as EM and WM models. First, note that
+discrete SSMs can be regarded as RNNs with no activation function. Second, selective SSMs learn
+17
+
+input-dependent matrices via an exponential map (eq. 11), meaning that their inner state captures
+the task’s latent structure, as in EM/WM models. Therefore, EM and WM models can naturally be
+regarded as selective SSMs.
+SSM as a model of episodic memory The EM-RNN model behaves exactly like TEM [12],
+factorizing structure and content in two distinct neural populations, but only updates its position
+with an input-dependent RNN pt := Wat pt−1 . It then queries a Hopfield memory module [16]
+with its updated position to retrieve passed observations. The RNN in TEM can be seen as an SSM
+with subtle differences: (1) it uses no external input, i.e. ∀t, xt = 0; (2) a learnable embedding p∗
+representing the cognitive map’s zero coordinate must be introduced to avoid the state being always
+null; (3) SSM’s inner state must be projected back to its final state (yt = Cht , eq.11), which implies
+in this case that the final position qt := Cpt can be obtained with an optional learnable projection C;
+(4) as in TEM, the memory module is queried with the conjunction gt of what has been seen and
+where it was observed (fig. 2a):
+!
+t
+X
+pt = exp(∆t A)pt−1 = exp ωS
+∆s p∗
+s=0
+
+qt = Cpt = CRθ0→t p∗
+
+(13)
+
+gt = vec(x⊤
+t .qt )
+Setting C := 1n implies that qt = pt , which is analogous to TEM/EM RNNs. Moreover, compared
+to RNN
+Pt based models, this formulation allows to compute path integration directly in the Lie algebra
+(ωS 0 ∆s ) and avoid sequential matrix multiplication.
+SSM as a model of working memory WM-RNNs directly updates the internal state with inputdependent matrices, which is precisely what selective SSMs do. As such, current selective SSMs with
+the appropriate matrix structure (skew-symmetric in the case of navigation, eq. 6) naturally model
+working memory (fig. 2b).
+Together, this allows us to view SSMs as both EM and WM models, where the inner state of an
+SSM can be interpreted as a cognitive map.
+In the previous section, analyzing SSMs through Lie-group theory has allowed us to understand their
+current limitations, and that one only needs to switch to block-diagonal matrices to theoretically be
+able to learn a cognitive map. However, previous work decided to keep diagonal matrices because it
+dramatically reduces the computational load. By treating A as a vector, one can avoid computing a
+matrix exponential and also dramatically reduce the memory footprint of a parallel scan, by computing
+vector-vector multiplications instead of matrix-vector’s. In Mamba2 [15], it was further reduced to a
+scalar A := a ∈ R, which allows them to implement a fully parallelized version of selective SSMs but
+looses the ability to learn cognitive maps, as we have seen above. This highlights a fatal limitations
+of parallel-selective SSMs: they can be parallelized at the cost of loosing any hope of learning a
+cognitive map (see sec. A.6 for further details). This is the reason why we decided to move away
+from SSMs and adapt Transformers to learn cognitive maps, as models of episodic (MapFormer-EM)
+and working memory (MapFormer-WM).
+A.5
+
+Relationship between MapFormers and MAmPa: Linear MapWM are selective SSMs
+
+In sec. 3.2, we have introduced the exponential map in Transformers (via the rotation matrices) to
+allow them to build input-dependent matrices and learn cognitive maps. The Transformer formalism
+cannot naturally explain how an exponential map emerges like in SSMs, but in Mamba2 [15], the
+authors show that linear transformers [39] are actually SSMs. Starting from equation 11:
+ht = At ht−1 + Bt xt
+= At ...A1 B0 x0 + At ...A2 B1 x1 + ... + At At−1 Bt−2 xt−2 + At Bt−1 xt−1 + Bt xt
+=
+
+t
+X
+s=0
+
+A×
+s→t Bs xs ;
+
+A×
+s→t :=
+
+t
+Y
+
+(14)
+Ai
+
+i=s+1
+
+18
+
+after multiplying by Ct , we get the final equation:
+t
+X
+yt =
+CtT A×
+s→t Bs xs
+
+(15)
+
+s=0
+
+⇒y = M x;
+
+mij := CjT Aj ...Ai+1 Bi
+
+If we remove the matrices At , the matrix M := (mij ); mij = CiT Bj := qiT kj can be seen as
+the key-query similarity matrix QK T without softmax normalization, as in linear transformers.
+Equation 15 is fundamental as it characterizes exactly how actionable representations can be
+implemented in transformers, where matrix A×
+i→j = Ai ...Aj+1 represents the model’s path
+integration between tokens i and j.
+If we choose matrix A := S to be a 2 × 2 block-diagonal skew-symmetric matrix and Rt :=
+exp(θt S) = exp(∆t ωS) as in equation 8, we retrieve the definition of RoPE [13]:
+×
+mij = qi Rj→i
+kj
+×
+×
+= qi⊤ R0→i
+R0→j
+
+= Ri qi
+
+T
+
+−1
+
+kj
+
+×
+Rj kj ; Ri := R0→i
+
+
+
+−1
+
+= exp −
+
+i
+X
+s=0
+
+!
+∆s ωS
+
+:= exp
+
+i
+X
+
+!
+
+(16)
+
+θs S
+
+s=0
+
+= RoPE(qi , kj )
+This proves that linear RoPE transformers are SSMs with a 2 × 2 skew-symmetric recurrent
+matrix, where θt controls the angle of rotation. In Mamba2, the authors define A := a ∈ R as
+Pi
+a scalar, giving Mij = exp(−a t=j+1 ∆t )qi⊤ kj , which is analogous to the cumulative gating of
+CoPE (Contextualized Positional Encoding) [19], with a multiplicative and not additive binding
+operation. CoPE is an enhanced Transformer architecture with context-dependent positional encoding,
+that like Mamba compresses the relative key-query distances with a cumulative gating mechanism,
+and in both models, input selectivity allows them to focus or ignore certain tokens and solve structuredependent tasks, but should not allow them to learn spatial cognitive maps.
+This extends the unification of transformers with models of episodic memory (EM) started in TEM-t
+[17], showing that the difference between absolute and relative positional encoding can be better
+understood via the SSM formulation. EM models use action-dependent matrices on a dedicated
+neural population (absolute positional encoding), before querying an external memory module, i.e.
+modeling memories in synaptic activity, while WM models directly update the whole neural activity
+with action-dependent matrices, directly
+A.6
+
+MAmPa: block-diagonal matrices improve performance of Mamba models in 2D
+navigation
+
+As explained in sec. A.3, one only needs to modify the recurrent matrix A := S = −S ⊤ of selective
+SSMs to be block-diagonal skew-symmetric in order to learn spatial cognitive maps. As a proof
+of concept, we implemented an extended version of Mamba with 2 × 2 block-diagonal matrices to
+verify that it can learn spatial maps like our theory predicts. Because the parallel scan on square
+matrices dramatically increases the computational load, we kept the inner state small (N = 32) and
+only trained models on sequences of size l = 32. We report the results in tab. 3, where OOD dense
+and OOD sparse use sequences of size 16 and 64 respectively.
+Tab. 3 confirms that our formalism extends to SSMs, since our SSM using SO(2) matrices significantly
+outperforms the Mamba variant and future work could focus on implementing a hardware efficient
+SO(2) SSM for appropriate scaling.
+We also compared our SSMs to MapFormers, the latter reaching a perfect accuracy on all datasets.
+Many things could explain this difference: (1) the convolution kernel used in Mamba-SSMs might add
+noise before computing the projection ∆ = f (conv1d(X)), since an action token will be averaged
+with nearby observation—irrelevant to the cognitive map—and conversely; (2) transformers use a
+softmax—known to increase the amount of memories that a model can remember [16]—which might
+explain the increased performances of transformers on recall tasks compared to SSMs.
+19
+
+IID
+
+OOD-d
+
+OOD-s
+
+Mamba
+MAmPa
+
+0.38±0.02
+0.84±0.03
+
+0.66±0.03
+0.96±0.03
+
+0.30±0.01
+0.71±0.04
+
+MapWM
+MapEM-os
+MapEM-s
+
+1.00±0.00
+1.00±0.00
+1.00±0.00
+
+1.00±0.00
+1.00±0.00
+1.00±0.00
+
+1.00±0.00
+1.00±0.00
+1.00±0.00
+
+Table 3: SSM 2D grid navigation - Accuracy. As expected, MaMPA offers substantial improvements
+over Mamba, but fails to reach performances a par with MapFormers.
+
+A.7
+
+Implementation details
+
+We chose rotation matrices because they are well suited to represent most bounded commutative
+structures (like movement on a finite grid or integers modulo N ), but also because they have
+useful numerical properties: (1) rotations and their inverse are orthogonal and therefore ensure
+numerical stability, not present in Mamba, since the inverse of the exponential gating matrix they
+use diverges towards infinity, making it impossible to represent both an action and its inverse in a
+numerically stable way; (2) their transpose is also their inverse, implying that the key-query dot
+⊤
+product q ⊤
+i .k j = qi RP Ij→i kj represents path integration between tokens i and j, necessary to learn
+cognitive maps in parallel.
+⊤
+
+Rotations can be ensured by enforcing S := S − S to be skew-symmetric, but since a single
+generator matrix S can only generate rotations along a single axis (see sec.D.2 for further details),
+choosing blocks of size b > 2 is useless as it increases the computational load while effectively
+reducing the amount of rotations being performed. Using blocks of size 2 also allows us to use the
+explicit irreps representation of 2 × 2 rotations and avoid computing a matrix exponential (eq.6).
+This also allows, as in RoPE [13], to rewrite matrix multiplication of Rθ x in MapFormers as:
+
+
+
+cos (∆t1 .ω1 )
+sin (∆t1 .ω1 )
+
+
+−x
+1
+ cos (∆t1 .ω1 ) 
+ sin (∆t1 .ω1 ) 
+
+ 
+  x2  
+
+.
+..
+
+ 
+ 
+ 
+
+..
+.
+.
+
+
+
+
+
+
+
+..
+
+ + 
+
+Rθ x = 
+⊙
+⊙ 
+
+x
+ cos ∆tn .ωnb  −x
+ sin ∆tn .ωnb 
+b
+b
+dh −1
+dh −1
+
+ 
+
+
+
+xdh
++xdh
+cos ∆tnb .ωnb
+sin ∆tnb .ωnb
+
+
+x1
+x2
+..
+.
+
+
+
+
+
+(17)
+
+leaving for each head only angular velocities ω ∈ Rnh ×nb (see sec. A.8 for a discussion about their
+initialization) as learnable parameters instead of matrix S ∈ Rnh ×nb ×b×b .
+The actual rotation angle θt = ω∆t is dynamically computed from the input features X using a
+out
+in
+low-rank projection W∆ = W∆
+W∆
+. The goal of this two-step process is to ensure the rotation
+relies only on the most salient action features of the input. First, for each head, the internal projection
+in
+t×nh ×r
+W∆
+∈ Rd×nh ×r (r ≪ d) maps the high-dimensional input X to a low-dimensional ∆in
+t ∈R
+in
+r
+(for instance, in 2D, ∆t is the 2D movement vector ∆tk ∈ R in eq. 6, where r = 2). Second, this
+out
+extracted action is projected by W∆
+into the final set of path increments ∆t ∈ Rt×nh ×nb , which
+controls the rotation angle for all attention heads (nh ) and all diagonal blocks (nb ), where nb = dh /b
+is the number of blocks per head dimension.
+Finally, compared to TEM and TEM-t that use a single neural population pt to encode position, our
+MapFormers use two separate initial vectors k0p and q0p . This distinction is optional and mimics the
+formalism of EM-SSMs defined in eq. 13, meaning that we could set k0p = q0p = p0 without loss
+of generality. However, we suspect this separation to be beneficial because it would create sparser
+attention values. Indeed, our positions pt vary smoothly through path-integration, implying that
+nearby positions would not be strongly separated, but introducing distinct neural populations for
+keys and queries could allow the model to find the optimal balance between separation/matching of
+distinct/similar positions.
+20
+
+Recall that the conjunctive query giq := vec(qjx ⊤ .qip ), the conjunction of what has been seen and
+where. Since ∀i, j : ⟨giq , gjk ⟩ = ⟨qjx ⊤ .qip , kix ⊤ .kjp ⟩ = ⟨qjx , kjx ⟩⟨qip , kjp ⟩, we can avoid the outer
+⊤
+products Q⊤
+X QP and KX KP by computing content and position attentions AX = Att(QX , KX )
+and AP = Att(QP , KP ) separately (still in parallel by concatenating the heads), such that AP acts
+as an attention mask on AX
+The fact that MapFormer-EM models rely on observations (content) or structure (position) attention
+AX and AP , allows to balance between the two attention maps to compute similarities. To test the
+impact of each modality, we introduce three types of EM models: (1) MapEM-os relying on both
+observation and structure to compute attention; (2) MapEM-s relying on structure alone and (3)
+MapEM-o relying solely on observation, equivalent to a Transformer without positional embeddings,
+serving as a control. Note that ideally, the model should learn to balance between observation or
+structure depending on context, but we decided to leave it for future work. This forced separation is
+primarily used to highlight the benefits of focusing on different modalities depending on the task.
+A.8
+
+Angular velocities initialization
+
+Like grid cells that fire at different frequencies [6], our formalisms uses rotations at different scales,
+scale whose initialization has a major impact on position representations.
+
+(a)
+
+(c)
+
+(b)
+
+Figure 5: (a) Distribution histogram of position in 1D navigation vs oscillation at the highest (green)
+and lowest (orange) angular velocities. The longest distances reached by the model are comparable
+with the length of ωmin cycles.(b-c) Rotation blocks at high and low frequencies.
+The highest angular velocity (or frequency f , assuming ω = 2πf ) ωmax defines the finest granularity
+2π
+∆min = ωmax
+at which the signal is encoded, while low frequencies encode long range dependencies.
+We would like the lowest angular velocity ωmin := ∆2π
+to complete its cycle once the the model
+max
+has covered the longest distance ∆max it possibly can, where ∆max = n on a n-size grid (fig. 5).
+Angular velocities should encode signal at different scales, and a geometric initialization like the one
+1
+used in RoPE [13] spreads the scales uniformly between 1 and ∆min = base
+with:
+
+ωi =
+
+− ni
+
+1
+
+b
+
+∆max
+
+,
+
+1 ≤ i ≤ nb
+
+where base ≈ 10000 in RoPE, dictates how many tokens the model has to see before completing
+a full circle. Compared to RoPE that always rotates by a constant rotation duration ∆ = 1, our
+input-dependent rotation durations ∆t can take values bellow 1, and as such we might want our
+highest angular velocity ωmax to be greater than 1. We extend the logic such that:
+
+
+∀i : ωi = ωmax
+
+1
+∆max
+
+− ni
+
+b
+
+2π
+∆min
+ωmax
+2π
+=⇒
+ωmin =
+=
+
+∆max
+n
+
+
+
+
+n × ωmax
+ =⇒ ∆
+max =
+2π
+
+
+
+
+
+
+
+
+21
+
+ωmax =
+
+(18)
+
+Leaving only ωmax and base := n as hyperparameter-parameters and find that initializing 1 <
+ωmax ≤ 2π to work well in practice.
+When modeling position in dimension n (n > 1), we devise the embedding space into n orthogonal
+subspaces, and initialize each subspace’s frequencies as a 1-dimensional space.
+A.9
+
+MapFormers achieve competitive speed over baseline Transformers
+
+In order to validate the scalability of our approach, we evaluated in tab. A.9 throughput of 12
+layer models MapFormer vs a baseline RoPE transformer, on forward, backward and optimizer
+steps, averaged over 100 calls. As expected, our Working Memory MapFormer, compatible with
+FlashAttention, shows speed on-par with baseline. The Episodic Memory model, which needs two
+neural populations while being incompatible with FlashAttention, is slower, perfectly highlighting
+the tradeoff between processing speed and recall capacities highlighted in fig. 11. We also tested
+non-commutative models (see sec. D.2), which raised OOMs at that scale.
+Architecture
+RoPE (FlashAttention)
+MapWM (FlashAttention)
+MapEM
+
+Sequence length
+
+Batch size
+
+Throughput
+
+256
+256
+256
+
+64
+64
+64
+
+1939 samples/s
+1869 samples/s
+1210 samples/s
+
+Table 4: Hardware Throughput. Benchmarks conducted on a single NVIDIA H100 GPU using
+bfloat16 precision. Model configuration: L = 12, dmodel = 768, nheads = 12, dhead = 64.
+Throughput is averaged over 100 iterations, for forward, backward and optimizer steps.
+
+B
+
+Task details and baseline models
+
+For all tasks beyond natural language, models were trained using a single H100 GPU.
+B.1
+
+Baseline models
+
+Rotary Position Embedding (RoPE) [13] is used as our baseline Transformer since it is the most
+popular (fixed) position encoding architecture, and is analogous to our MapWM model without
+input selectivity, theoretically incapable of learning input-dependent matrices and structure-based
+problems.
+Contextualized Equivariant Position Embedding (TAPE) [18] updates positional encodings after
+attention via input-dependent MLPs, which has two drawbacks: (1) updates rely on structure from
+the previous layer rather than the current one, and (2) they are driven by attention scores rather than
+path integration, with no guaranty of long-range structural coherence.
+Contextualized Positional Encoding (CoPE) [19] compresses relative distances with a cumulative
+gating mechanism, akin to path integration. Since the sigmoid gate can only take positive values, the
+model cannot represent an action and its inverse. Moreover, since CoPE only compresses relative
+ordinal distance, it should not be able to represent structure in higher dimensions.
+Path Attention (PathAtt) [21] uses rank-1 Householder matrices to sequentially update positional
+encoding. This model path integrates by learning possible inverse of actions, but rank-1 Householder
+matrices cannot learn complex structures such as 2D rotations.
+MapEM-s and MapEM-o can choose to balance between observation o and structure s, giving rise
+to MapEM-s, MapEM-o or MapEM-os by choosing to use either structure, observation or both in
+eq. 3, respectively.
+MapWM-r1 and MapWM-r2 when specified, MapWM-r designate the rank of the low-rank
+projection of our learned velocity signals ∆t defined in sec. A.7.
+B.2
+
+Selective copy
+
+The selective copy task was introduced in Mamba [14] and used in [19] to show that standard
+backbones are unable to dynamically ignore irrelevant tokens. Specifically, given a blank token B
+22
+
+and a sequence CF EABBCBF , the model must copy it in order, without the blanks CF EACF .
+If the proportion of blank tokens remains fixed during training, the model is able to learn a form of
+heuristic by attending to tokens at a fixed position offset. However, solving it OOD requires the model
+to attend to a specific token, regardless of how many distractors lie in between, therefor requiring a
+form of gating.
+Mamba SSMs [14, 15] are able to do so by multiplying the state with a negative diagonal matrix
+ht+1 = e−∆t A ht . CoPE [19] solves it by compressing position count between tokens, and we posit
+that MapFormers will be able to do so by incrementing positions on a circle.
+Following the setup of [19], we train 2 layer models with 2 heads of size h = 64, on sequences of
+length l = 128 and 128 blanks. Non blank tokens were sampled among a vocabulary of K = 16.
+OOD dense and OOD sparse are generated by lowering or increasing the amount of blank tokens to
+64 or 256, while keeping the number of non blank tokens fixed.
+We train all models on 100K sequences, with a batch size of 64, a learning rate lr = 2e−4 , AdamWM
+with a weight decay 0.05. Moreover, we found that using a temperature of 0.90 to be beneficial for
+stabilizing training on all models.
+B.3
+
+Forced Grid Navigation
+
+(b)
+
+(c)
+
+(e)
+
+(f)
+
+(a)
+
+(d)
+
+Figure 6: Navigation intuition and Dyck-2 generalization performances (a) The model only
+receives a sequence of symbols (tokens) and must understand their meaning. Notably, it needs
+to understand that only action tokens (arrows) update the cognitive map. Next-token prediction
+loss is computed on all tokens, but accuracy is computed only when the model comes back to a
+previously visited location. (b-f) Model’s length and depth generalization on Dyck-2 generalization.
+Only MapFormers reach perfect performances on the training set (L 32, D 4) and maintain strong
+performances in the hardest OOD setting (L 128 D 12).
+At each step, the model receives one token at a time and must predict the next one. The full sequence
+consists of alternating actions and observations:
+s = (s1 , s2 , . . . , s2n ) = (a1 , o1 , . . . , an , on )
+where at is an action drawn from a finite set of cardinal directions — {→, ←} in 1D; {↑, ↓, →, ←}
+in 2D — and ot an observation associated with the agent’s current location, drawn from a finite
+vocabulary of K = 16 objects. Like in the selective-copy task, we add a blank token B for empty
+grid locations.
+23
+
+Crucially, the model is not told which tokens are actions and which are observations—it sees a flat
+sequence of symbols and must learn this distinction on its own from the sequence alone. The model is
+trained to predict the next token at each step, but accuracy is computed only when the agent revisits a
+location, since these are the only positions whose observations are predictable with certainty (fig. 6a).
+Because observations are statistically uncorrelated, the only way to solve this task is to understand its
+hidden, stable topology. For this, the model needs to:
+1. Disentangle actions from observations the model isn’t told which tokens should update
+the cognitive map (actions) or leave it untouched (observations)
+2. Learn the meaning of each action the model must for example understand that opposite
+actions cancel each other
+3. Path integrate the model must sequentially compose these actions and update the state
+accordingly
+4. Bind observation and position the model must bind an observation to a precise position to
+accurately recall this observation on revisits
+When generating trajectories, to favor grid exploration, we uniformly sample a direction and the
+number of steps k to pursue in that direction (1 ≤ k ≤ 10) in 1D, (1 ≤ k ≤ 3) in 2D. Otherwise,
+agents would be statistically stuck in small environments.
+For 1D/2D grid navigation, we trained all models on sequences of l = 128 steps and a grid size of
+lgrid = 64, and a probability of sampling an empty token pempty = 0.5—which should influence the
+sampling probabilities of models unable to build a cognitive map. We tested length generalization on
+two OOD datasets, by either reducing or increasing sequence size and world size: OOD-d (dense):
+l = 64, pempty = 0.2, lgrid = 32 and OOD-s (sparse): l = 512, pempty = 0.8, lgrid = 128.
+Given the simplicity of the task, we assume that our models won’t need more than one layer and
+one head to solve it, and as such, all our models are single head, single layer transformers, with a
+head size of h = 64. To validate that without the appropriate structural bias, models cannot build a
+cognitive map, we also train deeper models for all baselines, with up to 4 layers and two heads. Since
+deeper models take longer to train and baselines are longer to converge, we first trained the deepest
+models until convergence, and used their training hyperparameters to train all other models.
+All models were therefore trained on 700 000 sequences, with AdamW optimizer [40], a linear
+learning rate decay, a base learning rate lr = 3e−4 , weight decay 0.05 and a batch size of 128 on a
+single GPU. Loss is computed on all tokens, but accuracy is only computed when coming back to a
+previously visited location (see fig. 6a for conceptual explanation).
+B.4
+
+Dyck-2 valid continuations
+
+Dyck-2 is a context-free formal language over two bracket types, () and [], where every valid string
+corresponds to a correctly nested sequence of brackets. For example, ([]) and [([])()] are valid, but ([)]
+isn’t, since only the last opened bracket can be closed. Dyck-2 is designed to test a model’s ability to
+handle nested hierarchies, which is a core feature of natural language.
+To solve this task, the model must predict for each token the set of valid continuations. Since a
+new bracket can always be opened, ( and [ are always valid continuations. When depth is non-zero,
+the model is also allowed to close the last opened bracket. For example, in the following sequence
+([]([][]?, valid continuations include (, [ and ). In other words, the model must implicitly maintain a
+stack of unclosed brackets through the sequence: each opening token pushes onto the stack, each
+closing token pops one out of it, and the top of the stack determines which closing bracket is currently
+legal.
+The external memory module of Memory-augmented RNNs allows them to emulate a stack and
+generalize to longer and deeper sequences unseen during training [27], while standard transformers
+and LSTMs fail to generalize beyond their training distribution [28], showing that even gating is
+insufficient to emulate a stack.
+To control for length and depth, and therefore carefully tune our OOD samples, we generate sequences
+by first fixing a target length L and maximum depth D that must be reached. To achieve this, we
+24
+
+modify the sampling distribution at each step to ensure that depth D is reached, and that the stack
+comes back to depth 0 at the end of the sequence.
+Since there are more than one possible valid continuation for each token, we measure valid continuations using the F1 valid continuation metric for formal languages introduced in [30]. This metric
+is the harmonic mean of valid and "better-than" continuations, the latter controlling for degenerate
+models. Specifically, the "better-than" metric counts the amount of valid tokens which have a higher
+probability than the sum of all invalid tokens, at each time step:
+P
+• Valid continuations: PV al (s) = x∈V al(s) P (x|s)
+P
+
+• Better than continuations: BT (s) =
+
+[
+
+]
+
+P
+
+x∈V al(s) P (x|s)>
+
+c∈V
+/ al(s) P (c|s)
+
+|V al(s)|
+
+(s).BT (s)
+• F1: 2 PPVValal(s)+BT
+(s)
+
+Since previous work have demonstrated the ability of transformers to generate Dyck-2 using 2 layers
+and 2 heads, we defined this setup as our baseline configuration. However, since MapFormers can
+use their positional encoding mechanism to emulate a stack (by moving forward or backwards), we
+also train models with one layer and one head of size h = 64.
+Like in the navigation task, we first optimized hyperparameters for our bigger models, and used these
+parameters to train all smaller ones. We trained all models on sequences of size L = 32 and depth
+D = 4 on 560 000 sequences, using a learning rate lr = 1e−4 , AdamWM optimizer with weight
+decay 0.01 and a cosine scheduler with warmup.
+OOD sequences were generated by varying length up to 4× the training length, and depth up to
+D + 12. Generalization performances along these two dimensions are highlighted for a 2 layer
+RoPE and single layer MapEM in fig. 6d and fig. 6f, highlighting the generalization capacities of
+MapFormers over baseline transformers.
+B.5
+
+Language modeling
+RoPE
+
+MapWM
+
+wh island
+sentential subject island
+left branch island simple q.
+left branch island echo q.
+complex NP island
+adjunct island
+
+0.83±0.01
+0.39±0.02
+0.52±0.10
+0.55±0.02
+0.59±0.03
+0.90±0.02
+
+0.81±0.02
+0.32±0.03
+0.64±0.06
+0.54±0.03
+0.64±0.00
+0.87±0.01
+
+overall island
+overall BLIMP
+
+0.63±0.03
+0.78±0.03
+
+0.64±0.02
+0.79±0.02
+
+OpenWeb val ppl
+
+19.14±0.14 18.79±0.15
+(a)
+
+RoPE MapWM
+n layers
+embed size
+head size
+rank size
+base freq
+
+12
+768
+64
+—
+—
+
+12
+768
+64
+4
+1024
+
+lr
+5e−4
+batch size
+12 × 4
+context size
+1024
+weight decay 0.1
+warmup iters 4000
+
+5e−4
+12 × 4
+1024
+0.1
+4000
+
+(b)
+
+Figure 7: Language modeling. (a) Comparing RoPE and MapWM accuracies on BLIMP after
+pretraining on OpenWeb for 1011 tokens. Results on OpenWebText are averaged across 5 seeds
+(pvalue < 0.005). For BLIMP, results are reported on each Island sub-tasks, known to be challenging
+for language models. (b) Pretraining hyperparameters for both models.
+To assess the scalability of our method beyond controlled formal tasks, we pretrained MapWM on the
+OpenWebText dataset and compared it to a RoPE baseline, using the nanoGPT repository [33]. We
+trained both models over approximately 1011 tokens on 4 H100 GPUs, using a base learning rate of
+5e−4 , AdamWM optimizer with a weight decay of 0.1. We averaged both model’s performances over
+5 runs and reported the validation perplexity through training. To reduce noise in the final validation
+perplexity, we report the mean of the last 5 validation values before averaging these across seeds in
+tab. 7a. As we can see, MapWM yields consistent perplexity improvements compare to the RoPE
+baseline on OpenWebText 19.14±0.14 vs 18.79±0.15 (pvalue < 0.005).
+25
+
+Because path-integrating models like CoPE and PathAtt [19, 21] show strong generalization beyond
+their training length, we tested whether the same effect holds for MapWM by measuring perplexity
+at varying context lengths on the NarrativeQA dataset [41], a standard benchmark for long-context
+understanding. As we can see in fig. 8, MapWM improves over baseline at all tested lengths, but
+its perplexity still degrades sharply compared to the numbers reported for CoPE and PathAtt. We
+identify several design choices that likely contribute to this gap and that would require further
+experimentations:
+1. In contrast to CoPE and PathAtt, our model can encode structures beyond 1D (tab. 2), which
+enables length and depth generalization on Dyck languages (tab. 3a & 3b), by encoding each
+bracket type on orthogonal dimensions. This expressivity comes at the cost of reducing the
+r
+amount of rotation blocks available to encode each of the r inner dimensions of ∆in
+t ∈R ,
+which may limit precision in very long contexts.
+2. Since different brackets use orthogonal inner dimensions in Dyck languages (fig. 3f) setting
+r = 4 likely biases the model towards depth generalization, which is not directly probed
+here and may be of limited use for language models with a context length of 1024, since
+multi-layer RoPE transformers already match the training distribution on Dyck. However,
+code modeling, where deep nested structures are more common, could be a natural setting
+to test this further.
+3. The angular velocities ω are learned, which might bias the model towards its training context
+length and keeping the angular velocities fixed during training could create an inductive
+bias towards long context. However, the fact that MapWM outperforms RoPE in all tested
+contexts suggests that its positional encoding didn’t just overfit the training context length,
+but learn to interpolate (path-integrate) between positions.
+4. Other inductive biases could be introduced in the architecture, such as a negative per-block
+diagonal matrix akin to Mamba SSMs [14, 15], combined with the rotation matrix used in
+MapFormers. This will remain compatible with parallel computation and the rotation prior
+could encode depth-wise structures, while the diagonal scaling could favor long contexts by
+mitigating the wrap-around effect of rotations.
+We additionally evaluated both models on BLIMP
+[34], a benchmark targeting 67 syntactic phenomena
+such as agreement, binding or island effects. Each
+sub-task consists of 1000 minimal pairs—sentences
+that differ by a single feature, where the model must
+assign a higher probability to the grammatical sentence. We selected this benchmark to test whether
+commutative path-integration might help disentangle
+syntax from semantic in language models. The results in tab. 7a show that both RoPE and MapWM
+perform on-par, with a 0.78 vs 0.79 overall accuracy,
+and no strong generalization gap is observed as in our
+synthetic tasks, which suggests that syntactic modeling likely requires more than path-integration.
+One limitation of this analysis is that due to compute constraints, both RoPE and MapWM are under- Figure 8: Validation perplexity on Narratrained. Moreover, the angular velocity initialization tive QA for longer context length. MapWM
+likely requires more careful tuning to be properly improves over the RoPE baseline, though nos
+understood at this scale, but doing so would require as much as other path-integrating models like
+extensive pretraining experiments that were beyond CoPE or PathAtt [19, 21].
+the scope of this paper. Specifically, understanding
+the tradeoff between length and depth generalization in different tasks appears as an interesting
+research direction. BLIMP, on the other hand, suggests that syntax modeling probably requires more
+than input-dependent positional encoding—the impacts that non-commutativity (sec. D.2) would
+have on syntax is still unclear. More broadly, understanding when cognitive maps help language
+modeling needs further investigation.
+
+26
+
+C
+
+Neural analysis
+
+C.1
+
+2D navigation interpretability Analysis: Observations are Vectors, Actions are Matrices
+
+0.8
+
+2.0
+
+Action angle norm || at ||
+0.6
+Observation angle norm || ot ||
+Train Accuracy
+0.4
+
+1.5
+1.0
+
+0
+
+25
+
+50
+
+75
+
+100
+
+Steps
+
+125
+
+150
+
+left
+
+up
+
+down
+
+1.0
+-1.0
+-0.6
+0.7
+
+-1.0
+1.0
+0.7
+-0.8
+
+-0.6
+0.7
+1.0
+-1.0
+
+0.7
+-0.8
+-1.0
+1.0
+
+||vot || ||vat ||
+
+0.2
+
+0.5
+0.0
+
+right
+left
+up
+down
+
+1.0
+
+2.5
+
+Train Accuracy
+
+Rotation Angle norm
+
+3.0
+
+right
+
+untrained
+trained
+
+175 0.0
+
+1.3
+18.2
+
+(a)
+
+(b)
+
+(c)
+
+(d)
+
+(e)
+
+(f)
+
+1.2
+3.1
+
+Figure 9: Neural Analyses: Actions are Matrices and Observations are Vectors. (a) Norm of
+rotation duration ||∆t || vs Accuracy through training. MapFormers reaches perfect accuracy as soon
+as it learns that action tokens at (blue curve) update the agent’s position while observation tokens
+ot (orange curve) leave it untouched via 0-angle rotations, i.e. Rθo ≈ In (b) (top table) Action’s
+movement in the Lie algebra ∆in
+at cosine similarities. Opposite actions (right v left / up v down)
+in
+cancel each other (cos(∆in
+,
+∆
+lef t
+right ) = −1, but orthogonal dimensions are not projected onto
+in
+in
+orthogonal axes (| cos(∆lef t , ∆up )| ≫ 0). Other constraints, such as bounded energy [42], could be
+added to force disentanglement (bottom table). Once trained, the norm of value embeddings vt in the
+attention layer becomes much bigger for observations than actions (||vot || ≫ ||vat ||), implying that
+only observations contribute in updating the state’s content. (c) An untrained Mapformer projects
+observations and actions randomly (d) After training, observation tokens are all projected towards 0
+(orange), while tokens representing opposite directions (left / right or up / down) are all projected
+to opposite directions. (e) An untrained Mapformer projects values vt randomly. (f) After training,
+action tokens are projected towards zero.
+In the tasks, some symbols (actions st ∈ {↑, ↓, →, ←}) must update the model’s position on its
+cognitive map, while others should leave position the same (observations) and instead modify its
+content. The model must learn by itself which ones are actions and which ones are observations.
+How can we tell whether MapFormers have learned this and therefore have learned a cognitive map?
+For this, we first compared the learned integration durations ∆t , since they define how the cognitive
+map is updated. Fig. 9a compares model performance and integration durations during training. It
+27
+
+shows that perfect generalization is achieved as soon as the model learns that action tokens at trigger
+state rotations while observation tokens ot leave it untouched. Next, we studied the representation
+of action tokens, after training. Tab. 9b-top & fig. 9d show that opposite actions (left / right or up
+/ down) cancel each other, pointing to opposite direction, and representations of observations are
+all projected to zero. That is, only action tokens at can update the cognitive map. Conversely, only
+observations need to update the state’s content, since ||vot || ≫ ||vat ||, as fig. 9d-bottom & fig. 9f
+confirm.
+From a point of view of Lie-group theory, actions are represented within the space of the Lie algebra
+g, whereas observations vt belong to the content space, the traditional latent space of transformers.
+Therefore, in MapFormers, actions are matrices and observations are vectors, which is reminiscent of
+ideas presented by Baroni and Zamparelli [43], where nouns are vectors and adjectives are matrices,
+giving the model stronger OOD generalization compared to baseline models.
+C.2
+
+MapFormers learn a continuous stack to solve Dyck-2
+
+In Dyck-2, any bracket can open a new one, which means that opening a bracket of any type is always
+a valid continuation. The real task therefore consists of identifying if a closed bracket is considered a
+valid move and if yes, of what type. Without context, only a bracket of type a can be closed by a
+bracket of same type, which means that valid continuations of an opened bracket of type a are any
+new open bracket, or a closed bracket of type a and conversely for a bracket of type b.
+Conversely, without context, closed brackets ’)’ or ’]’ cannot be followed by another closed one, and
+we should expect this to be reflected within the model’s valid continuations of closed symbols.
+
+Valθ ( ( )
+Valθ ( [ )
+Valθ ( ) )
+Valθ ( ] )
+
+(
+
+[
+
+)
+
+]
+
+1
+1
+1
+1
+
+1
+1
+1
+1
+
+1
+0
+0
+0
+
+0
+1
+0
+0
+
+Table 5: Dyck-2 learned continuations. Once trained, models learn that only opened brackets can
+produce a closed one of corresponding type Valθ (closea |opena ) = 1. This will force attention to
+retrieve the value of last opened bracket in order to produce the next token.
+To compute the valid continuations of each uncontextualized symbol, we fed the model fθ with a
+sequence of size 1 containing only the symbol s ∈ {(, [, ), ]} of interest, forcing the model to only
+attend to this specific token and return its raw value. We then approximated its valid continuations
+Valθ (s) under model fθ as follows:
+Valθ (s) := fθ (s) > 0 ∈ J0, 1K4
+
+As expected, in tab. C.2 we can see that the model returns positive logits only on valid continuations
+of uncontextualized symbols. Since the values carry this information, we also computed in fig. 10c a
+PCA of the learned values V of the model for each symbol in the vocabulary. The model splits them
+on two dimensions, the first dimension focusing on open/close, while the second dimension focuses
+on bracket identity.
+At all depths but D = 0, closed brackets are allowed to close the last open bracket. The attention
+allows this by rotating a closed query q) or q] towards the last open key k( or k[ (fig. 10d). Since
+attention maps are perfectly sparse, the retrieved value will match the identity of the last opened
+bracket, and so will the valid continuations for the next token.
+To allow for such a mechanism, the model recycles its cognitive map in order to represent a continuous
+stack. The model uses two orthogonal dimensions for bracket identity (fig. 10b), with open/close of
+the same bracket identity mapping to opposite directions.
+C.3
+
+MapEMs are computationally more demanding but scale better than MapWMs
+
+Compared to MapFormer-WM, MapFormer-EM queries its memories with the conjunction of
+observational and structural features, which requires a second pool of neurons pt ∈ Rd as well as
+computing two attention matrices AX and AP separately. This offers sparser and higher dimensional
+28
+
+(a)
+
+(b)
+
+(c)
+
+(d)
+
+Figure 10: Rotations drive closed brackets towards the closest opened one (a) Before being
+rotated, closed queries q) or q] (red) attend indifferently to open keys k( or k[ (green), while open
+queries q( or q[ attend to their type, opened or close. (b) Latent trajectory cumsum(∆t ) ∈ R2 , for
+trajectory []([]()), starting in symbol x. The model uses opposite directions for open/close brackets
+of same type and orthogonal dimensions for each bracket type—the latter facilitates the identification
+of last opened bracket at a given depth. (c) PCA of value representations for all symbols. The value
+space is organized along two dimensions, one encoding bracket identity, the other one open/close.
+(d) This mechanism allows MapFormers to produce sparse attention maps, where closed queries
+always attend to the last opened key, aligning the model’s next token prediction with the true valid
+continuations.
+
+2
+
+d
+features gt = vec(xt .p⊤
+(fig. 4a) but doubles the computational load of the attention
+t ) ∈ R
+operation, which is already the main bottleneck in scaling transformers.
+
+This factorization in two separate pools of neurons should allow EM to be more efficient than WM,
+as in the former, neurons specialize for either position or observation. To test this, we conducted three
+experiments to understand the effect of sequence length, model size and vocabulary size on recall
+performance in 2D navigation, by varying each time one parameter while keeping the others fixed.
+Fig. 11 shows that, indeed, EM models scale better than WM, consistently with previous results
+[11]. Also, MapEM-s (blue curves), which relies on position alone, is more robust to both sequence
+29
+
+1.0
+
+0.8
+
+0.9
+
+0.6
+
+MapEM-s
+MapEM-os
+MapWM
+
+0.4
+0.2
+16
+
+32
+
+48
+
+64
+
+80
+
+Head Size
+
+96
+
+112
+
+128
+
+1.00
+
+Accuracy
+
+1.0
+
+Accuracy
+
+Accuracy
+
+length (fig. 11a) and model size (fig. 11b), since sensory features only add noise in this task. Last,
+having a sufficiently large number of neurons is crucial for both learning a cognitive map (fig. 11a,
+models fail to converge with h = 16) and memorizing large sets of objects (fig. 11c). In sum, these
+results demonstrate the superior capacity of MapEM models in recall tasks, at the cost of doubling
+the attention computation.
+
+0.8
+0.7
+
+MapEM-s
+MapEM-os
+MapWM
+
+0.6
+0.5
+
+16
+
+64
+
+(a)
+
+128
+
+0.95
+0.90
+
+MapEM-s
+MapEM-os
+MapWM
+
+0.85
+192
+
+256
+
+Sequence Length
+
+320
+
+384
+
+10 100
+
+(b)
+
+500
+
+Vocab Size
+
+1000
+
+(c)
+
+Figure 11: Behavioral Analyses: MapEM scales better than MapWM. Comparison of MapEM-s,
+MapEM-os, and MapWM robustness across model size, sequence length, and vocabulary size. (a)
+Train accuracy vs. head size (fixed sequence length l = 256, vocabulary size v = 16). MapEM
+requires fewer units than MapWM to achieve high performance. (b) Train accuracy vs. sequence
+length (fixed head size h = 48, vocabulary v = 16). EM models exhibit greater robustness to
+increasing sequence lengths. (c) Train accuracy vs. vocabulary size (fixed head size h = 32, sequence
+length l = 16). EM models outperform WM models in retaining an increasing number of items.
+
+D
+
+High-dimensional Navigation and Non-Commutativity
+
+D.1
+
+3D and 5D navigation
+
+Because translations in k dimensions are just k independent 1D-translations on orthogonal axes
+(SO(2)k ), our models should theoretically be able to track position on these structures – with rotation
+blocks representing movement on one specific dimension – but should require a higher number of
+neurons to represent movement on all these orthogonal axes.
+We train all models with a head size of 64. In 3D, we choose a sequence length of 256 and a grid size
+of 16. The task being particularly hard in 5D, we decided to reduce the sequence length to 16 and the
+grid size to 5 and report the results in tab. 6. Moreover, for each model, we set the dimension of its
+inner rank to the dimension of the world, i.e.: ∆in ∈ Rk , k = 3, 5.
+3D navigation
+RoPE (1L)
+CoPE (1L)
+MapWM
+MapEM-os
+MapEM-s
+
+5D Navigation
+
+IID
+
+OOD-d
+
+OOD-s
+
+IID
+
+OOD-d
+
+OOD-s
+
+0.39±0.02
+0.78±0.03
+1.00±0.00
+1.00±0.00
+1.00±0.00
+
+0.36±0.03
+0.82±0.02
+0.95±0.03
+0.99±0.00
+1.00±0.00
+
+0.35±0.01
+0.74±0.04
+0.94±0.02
+0.99±0.01
+0.98±0.01
+
+0.74±0.01
+0.94±0.01
+0.75±0.06
+1.00±0.00
+1.00±0.00
+
+0.45±0.01
+0.80±0.01
+0.50±0.05
+0.98±0.01
+1.00±0.00
+
+0.33±0.02
+0.69±0.01
+0.35±0.08
+0.84±0.04
+0.87±0.02
+
+Table 6: 3D - 5D grid navigation accuracy. 2 × 2 block-diagonal rotation matrices can represent
+translations in 3D and 5D, since it equivalent to (3 or 5) 1D orthogonal translations. However,
+performances quickly degrade, since the amount of dimensions to represent with a fixed neuron
+budget grows exponentially. Notably, in 5D, MapWM fails to learn the task and perform a par with
+RoPE, while MapEM, which scale better in recall tasks, solve it even though performances start to
+degrade on longer sequences.
+As we can see, all of our models converge in dimension 3, confirming that 2D-rotations are enough to
+learn simple translations in higher dimension. However, our WM models never manage to learn a
+cognitive map in 5D, and actually performances comparable to RoPE and much worse than CoPE.
+This is due to the difficulty of encoding each axis accurately in high dimension, given a fixed neural
+30
+
+budget. EM models do converge, showing once again their increased robustness compared to WM on
+recall tasks.
+Note that in 5D, because we keep the world size and sequence length small, CoPE asymptotically
+approaches a perfect score on the training set but fails to generalize OOD, while EM models
+solve it with 6 times less training data and generalize, highlighting the difference between learning
+of a cognitive map versus statistical heuristics. Models learning a cognitive map achieve robust
+generalization with much fewer data points, something that has been observed when comparing
+learning efficiency in humans versus AI models.
+D.2
+
+Non-Commutative Cognitive Maps
+
+The ability to learn non-commutative relations is fundamental for most cognitive maps. For instance,
+family relations like mother and father do not commute: applying father then mother gives the
+maternal grandfather, while mother then father gives the paternal grandmother. This implies that the
+learned matrices must satisfy:
+Wmother Wfather ̸= Wfather Wmother
+Aside from non-commutativity, we want neural activity to remain bounded under sequential matrix
+multiplication. This favors orthogonal matrices in O(n), which are norm-preserving and therefore
+constrain the representation to a compact (bounded) portion of space. Akin to trajectories on 2D
+grids which wrap around on the torus, non-commutative structures like family trees will therefor be
+encoded accurately up to a finite depth.
+To do so, we can approximate non-commutative cognitive maps with M generators using the compact
+group SO(n), which has K = n(n−1)
+≥ M skew-symmetric generators {Si }1≤i≤K . Intuitively,
+2
+each canonical relation ("mother", "father", ...) will be represented by a distinct generator Si , but
+since the generators do not commute in general (Si Sj ̸= Sj Si ), we loose the ability to perform
+additive path-integration:
+
+
+n(n−1)/2
+n(n−1)/2
+X
+Y
+Rθn = exp 
+θi Si  ̸=
+exp (θi Si )
+(19)
+i=1
+
+i=1
+
+This implies that path integration cannot be performed via the exponential of a sum anymore and
+can only be achieved via a sequential matrix product, scaling linearly with sequence length L.
+Consequently, we introduce non-commutative models (EM-NC), with a basis of K = n(n − 1)/2
+canonical skew-symmetric matrices {Si }1≤i≤K ∈ Rnb ×b×b —these matrices are not learned, only
+the angular velocities ω ∈ Rnh ×K×nb are.
+Input xt is projected towards ∆t ∈ Rnh ×K×nb and combined with ω to build the final rotation angle
+θ := ω∆t ∈ Rnh ×K×nb and rotation matrix Rθn . The non commutativity forces us to compute
+path-integration sequentially and use a parallel scan to speed-up computation, since our models
+cannot leverage the parallel processing abilities of Transformers anymore, making them analogous to
+TEM-t [17], where path integration is computed sequentially before computing attention.
+Moreover, because of non-commutativity, the formulation of eq.15 that allowed us to prove the link
+between RoPE/MapWM and SSMs doesn’t hold anymore, since attention cannot be reduced to a
+bilinear operation:
+n
+aij = qi⊤ Rj→i
+kj ̸= ⟨Rθn0→i qi , Rθn0→j kj ⟩
+(20)
+This means that for WM models, only the SSM formulation can still be used, requiring a custom
+parallel scan that was beyond the scope of this paper. Since these experiments were designed as proof
+of concepts, we restricted ourselves to TEM-t like models to prove the further improvements that can
+be made.
+D.3
+
+Non-Commutative MapFormers Learn to Navigate Family-Trees
+
+To test whether our formalism allows to learn non-commutative, generic cognitive maps without
+supervision, we constructed a synthetic environment in which an agent navigates family trees by
+following relations. Crucially, this dataset isn’t embedded in an Euclidean space and is purely
+relational and non-commutative: father ◦ mother ̸= mother ◦ father.
+31
+
+IID
+
+OOD sparse
+
+RoPE
+MapWM
+MapEM
+
+0.49±0.03
+0.69±0.05
+0.72±0.04
+
+0.40±0.04
+0.58±0.04
+0.61±0.03
+
+MapEM-NC-3
+MapEM-NC-4
+MapEM-NC-6
+MapEM-NC-8
+
+0.81±0.02
+0.88±0.01
+0.97±0.01
+1.00±0.00
+
+0.73±0.01
+0.80±0.01
+0.85±0.00
+0.91±0.02
+
+Table 7: Family tree navigation accuracy. IID sequences of length L = 64 (32 observations
+and 32 actions), G = 5 generations, pout = 0.3, F = 3 founding families, and K = 10 names.
+OOD: L = 128, G = 5, G = 10, pout = 0.3, K = 10. RoPE performs worth than commutative
+MapFormers, than can still infer commutative relations like older and younger sibling. Since the graph
+is non-commutative it requires a higher number of generators to learn the map: K = n(n − 1)/2.
+We initialize generation 0 with F founding couples, each consisting of one male and one female with
+no parents. For each subsequent generation g = 1, . . . , G, every couple in generation g − 1 produces
+a number of offspring drawn from {1, . . . , K}, with sex assigned randomly. Offsprings within
+generation g are then paired into couples and with a probability pout marries a newly introduced
+individual with no parents. Otherwise, we pair a man and a woman from the previous generation.
+To navigate the graph, the agent can choose from the following set of actions:
+{mother, father, spouse, older sib, younger sib, oldest child}. This set of actions is defined to remain
+deterministic—the relation child is non-determenistic in general—but remains entirely navigable
+via transitivity. Moreover, when sampling the trajectories, we only sample actions that are possible
+within the tree (we don’t sample the action mother when arriving at a node with no parents, like when
+hitting a wall on a grid).
+Like in our grid navigation task, we alternate by sampling observations and actions, and compute
+accuracy when coming back to a previously visited location. We train our models on sequences of
+length L = 64 (32 observations and 32 actions), G = 5 generations, pout = 0.3, F = 3 founding
+families and evaluate on sequences of L = 128, G = 5, G = 10, pout = 0.3.
+Since there are 7 actions to choose from, we want to ensure that our number of generators K = n(n −
+1)/2 matches this number. Therefor, along our RoPE and commutative baselines, we evaluate four
+MapEM-NC-n models, where n = 3, 4, 6, 8 designate the dimension of SO(n), with corresponding
+block size. We train all models with a single layer, a single head of d = 192 neurons (which is
+divisible by all block sizes n).
+As we can see in tab. 7, all MapFormer models significantly outperform RoPE, but only our noncommutative models manage to reach a perfect accuracy and strong OOD generalization. Even
+though commutative MapFormers are unable to solve the task, they still outperform RoPE. This can
+be explained by the fact that some relations within the latent structure are commutative (e.g. "younger
+sibling" and "older sibling"), implying that a commutative bias can still help by partly modeling the
+underlying structure.
+These numbers also demonstrate the inherent tradeoff between the number of generators (hence
+increasing the block size, which increases the cost of matrix exponential and matrix-vector products)
+and computational efficiency.
+
+32
+
+
