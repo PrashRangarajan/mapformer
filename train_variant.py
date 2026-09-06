@@ -95,6 +95,9 @@ from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_rope_canonical import MapFormerWM_RoPE_Canonical
+from mapformer.model_sign import (MapFormerWM_Abs_r4, MapFormerWM_Pos_r4,
+                                  MapFormerWM_CARoPE_r4, MapFormerWM_Signed_r4,
+                                  MapFormerWM_Abs_r2)
 from mapformer.model_rank import (MapFormerWM_r3, MapFormerWM_r4,
                                   MapFormerWM_r5, MapFormerWM_r7,
                                   MapFormerWM_r8, MapFormerWM_r16,
@@ -132,6 +135,15 @@ VARIANT_MAP = {
     "Looped_r4": __import__("mapformer.model_rank", fromlist=["x"]).MapFormerWM_Looped_r4,
     "Vanilla_r3": MapFormerWM_r3,
     "Vanilla_r4": MapFormerWM_r4,
+    # --- the sign ablation (A5): may the phase increment be negative? ---
+    # Signed_r4 is the RNG/construction-path control for the three constrained
+    # arms; it is mathematically identical to Vanilla_r4 but builds
+    # action_to_lie twice, exactly as they do.
+    "Signed_r4": MapFormerWM_Signed_r4,
+    "Abs_r4": MapFormerWM_Abs_r4,
+    "Pos_r4": MapFormerWM_Pos_r4,
+    "CARoPE_r4": MapFormerWM_CARoPE_r4,
+    "Abs_r2": MapFormerWM_Abs_r2,
     "Vanilla_r5": MapFormerWM_r5,
     "Vanilla_r7": MapFormerWM_r7,
     "Vanilla_r8": MapFormerWM_r8,
