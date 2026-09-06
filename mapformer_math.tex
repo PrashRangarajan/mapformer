@@ -888,6 +888,48 @@ scale into a decay over distance. A symmetrically accumulated magnitude is a
 well-defined object that no mechanism here uses, and it would encode ``how much
 total stuff has happened by $t$ and by $s$'' rather than anything relative.
 
+\paragraph{The space of relative accumulators is CLOSED, and both slots are
+taken.} With content-dependent increments, ``relative'' cannot mean ``a function
+of $s-t$'' --- it means \emph{a function of the interval $(t,s]$ alone}, i.e.\
+insensitive to tokens before the query. Testing that directly, by perturbing a
+token outside the interval and measuring the change in the logit:
+
+\begin{center}\small
+\begin{tabular}{llrll}
+\toprule
+coordinate & $q,k$ exponent & change & code & occupied by \\
+\midrule
+$\operatorname{Im}G$ & opposed & $3\!\times\!10^{-15}$ & \textbf{relative} & RoPE, MapFormer, Selective RoPE \\
+$\operatorname{Im}G$ & aligned & $5\!\times\!10^{-1}$  & leaks the prefix & --- \\
+$\operatorname{Re}G$ & opposed & $4\!\times\!10^{-13}$ & \textbf{relative} & forget gate, GLA, Mamba, FoX \\
+$\operatorname{Re}G$ & aligned & $1\!\times\!10^{8}$   & leaks the prefix & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The two unoccupied rows are not unexplored opportunities; they are
+\textbf{structurally excluded}. Exactly one sign choice per coordinate yields a
+relative code, and the literature occupies both. \textbf{There is no third slot of
+this kind to invent.}
+
+That is a closure result rather than an opening one, and it is the more useful
+kind. It says any new relative-position mechanism in this family must be a
+different $(m,\varphi,K)$ \emph{inside} one of the two existing slots, not a new
+slot --- which retro-explains why RoPE, CoPE-adjacent schemes, PaTH, MapFormer and
+Selective RoPE all cluster where they do. And it sharpens what MapFormer is
+missing: not ``some unexplored cell'', but the \emph{only other slot there is}.
+
+\paragraph{Why the two slots are parameterised so differently.} The coordinates
+are bounded in different ways, and their parameterisations follow. The phase is
+\emph{periodic}, so an accumulated angle is ambiguous modulo $2\pi$ and must be
+decoded jointly across scales --- hence $32$--$64$ frequency blocks, hence the
+whole rank and residue argument of $\S$\ref{sec:rank}. The magnitude is
+\emph{unbounded below} and merely underflows, so a single rate suffices --- hence
+the forget gate is one scalar per head ($259$ parameters here against the phase
+path's $448$--$33{,}793$). \textbf{Prediction: a multi-frequency forget gate buys
+nothing}, while a single-frequency phase is crippled. Neither has been run, and
+the asymmetry is cheap to test in both directions.
+
 \paragraph{What the table says is missing.} MapFormer, Selective RoPE and PoPE
 between them leave two entries untouched. $\operatorname{Re}G$ is $0$ in every row
 that this project has built --- no forget gate anywhere. And
