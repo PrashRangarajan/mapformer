@@ -311,6 +311,7 @@ does not run.
 \end{quote}
 
 \subsection{The inclusion}
+\label{sec:incl}
 
 The three generators are nested, and each inclusion \emph{removes a constraint}
 rather than adding a mechanism:
@@ -382,11 +383,16 @@ rank-$2$ function.
 
 \paragraph{The chain is not uniformly exact.} RoPE sits inside Selective RoPE
 \emph{unconditionally}: $W_\omega := 0$ with bias $b$ gives $\theta_t = \tau(t{+}1)b$,
-an exact index clock (constant to $7\times10^{-9}$). It sits inside MapFormer only
-\emph{conditionally}, because $\Delta$ has \textbf{no bias term} --- so
-$\Delta_t \equiv \text{const}$ requires the learned embeddings to share a
-projection onto $W_{\mathrm{in}}$, which is a hypothesis about what training
-produced rather than a setting one can choose. The three further qualifications
+an exact index clock (constant to $7\times10^{-9}$). It sits inside MapFormer at a
+\textbf{price}, because $\Delta$ has \textbf{no bias term}: $\Delta_t \equiv
+\text{const}$ requires every embedding row to share its projection onto
+$W_{\mathrm{in}}$. \emph{Corrected on audit:} that is a setting one can choose, not
+a hypothesis about training. Take $W_{\mathrm{in}} = [I_r\;0]$ and pin the first
+$r$ embedding coordinates to a common value; $\Delta$ is then constant across
+tokens to exactly $0$ and $\theta_t = (t{+}1)\,\omega\odot\Delta$ reproduces to
+$3.5\times10^{-6}$. The cost is $r$ of the $d$ embedding dimensions --- at $V=21$,
+$\texttt{token\_emb}$ remains full rank, so on this task it costs nothing. Inside
+Selective RoPE the same special case is a setting of the generator alone. The three further qualifications
 are in $\S$3.
 
 \medskip
@@ -400,8 +406,11 @@ and no experiment here can be read as one.
 
 Define the \textbf{coherence rank} as the rank of the \emph{composite}
 token-to-phase map, $\rho = \operatorname{rank}(A\!\cdot\!B)$ where
-$\varphi(x) = Bx$: the dimension of the subspace of $\R^{H\nb}$ that the phase
-vector occupies as $t$ varies. It is $1$ for RoPE, $r$ for MapFormer, and
+$\varphi(x) = Bx$: the dimension of the \emph{affine} span of $\{\theta_t\}$, i.e.\
+$\operatorname{rank}[\,A\!\cdot\!B \mid A\varphi(0)\,]$. The affine part is not
+decoration --- RoPE's $\varphi\equiv1$ is constant, so $B=0$ and the linear rank
+alone would read $0$ for the one case the next sentence asserts. It is $1$ for
+RoPE, $r$ for MapFormer, and
 generically $H\nb$ for Selective RoPE. Taking the rank on $A$ alone would be
 wrong --- $\S$2.4 constructs a Selective RoPE with $A = \tau I$ that computes a
 rank-$2$ function.
@@ -480,18 +489,31 @@ $D$ & $\rho$ & $D/\rho$ & predicted exponent & fitted \\
 ladder-dominated.} Each is fitted over four map sizes, and the fitted value moves
 with which four: the repo's own gate (\texttt{ND\_GATES.md}), run on its capped
 ladder, reports $-1.04$ where this table reports $-1.51$ for the same
-$D{=}3,\rho{=}2$ cell. The table cannot be cited as verifying the exponent; the
-bound is an upper bound, so nothing is violated, but the fit is not evidence.
+$D{=}3,\rho{=}2$ cell (and $-1.40$ against $-2.17$ at $D{=}4,\rho{=}2$). Re-measured
+on a wide ladder with $60$ projections per point, five of the six cells reproduce
+(e.g.\ $-2.18$ against the printed $-2.17$), so the table is not wrong --- but at
+$D{=}5$ the measured exponents are $-2.99$ against a predicted $-2.50$ and $-1.18$
+against $-1.00$, so the bound is loose there and ``the exponent is verified'' is not
+earned. The bound is an upper bound and no cell violates it.
 \emph{(b) The note elsewhere reads the bound through its CONSTANT, not its
 exponent}, and the two readings disagree. Under the exponent reading geometry
 predicts nothing anywhere in the $\S$\ref{sec:predict} design, since every arm has
-$\rho\ge2$ and the exponents are flat. Under the constant reading, separations at
-$D{=}3$ are $0.033/0.065/0.193$ for $r=2/3/5$, so the $r{=}D\to r{=}D{+}2$ ratio
-($2.96\times$) is \emph{larger} than the $r{=}2\to r{=}D$ ratio ($1.98\times$) --
-i.e.\ geometry predicts the very contrast $\S$\ref{sec:predict} assigns to
-optimisation. \textbf{The claim that the two halves are separable by that design
-does not hold}, and the sentence there about what ``geometry predicted should not
-exist at all'' is withdrawn.
+$\rho\ge2$ and the exponents are flat. The constant reading was then used to
+withdraw the separability claim outright --- \textbf{and that withdrawal was itself
+wrong.}
+
+\emph{(b$'$) The withdrawal is retracted, on a second audit.} It rested on the
+separations $0.033/0.065/0.193$ printed for $r=2/3/5$ at $D{=}3$, which come from
+\texttt{validate\_nd.py::g5\_separation} with \texttt{trials=5}. A minimum distance
+is an extreme-value statistic and five random projections do not estimate one: at
+$n=200$ the same quantity is $0.028\pm0.015$, $0.108\pm0.053$, $0.181\pm0.059$ ---
+relative spreads near $50\%$, and the pivotal $r=3$ cell off by $65\%$. The
+\textbf{ordering inverts}: the $r{=}2\to r{=}D$ ratio is $\approx3.9\times$ and the
+$r{=}D\to r{=}D{+}2$ ratio $\approx1.7\times$, so the first jump is more than twice
+the second --- which is what the separability design needs, not what defeats it.
+The design table's ratio row is affected the same way. So the sentence in
+$\S$\ref{sec:predict} about what geometry predicts stands; what falls is the
+five-sample estimator, and every number in this project that came out of it.
 \end{quote}
 
 \begin{quote}\small
@@ -564,13 +586,14 @@ The measured cost of giving it up is $-0.020$ on parity and $-0.064$ on the toru
 for $193$ parameters --- the only knob in $\S$\ref{sec:measured} that is free and negative on both
 tasks.\footnote{\textbf{Read every per-knob number in this document against the
 confound recorded in $\S$\ref{sec:measured}.} The \texttt{SelectiveAngle} arms are
-not single-knob: each also deletes $\omega$ and both factors of the low-rank map,
-swapping the readout $\operatorname{diag}(\omega)W_{\mathrm{out}}\to\tau I$. So
-$-0.020$, $-0.064$, the $\rho=64$ comparisons above, and the gate and bottleneck
-figures below are all differences between arms that vary more than their names say,
-and none of them can be attributed to conv, rank or gate alone. The arm that would
-fix this --- keeping $\operatorname{diag}(\omega)W_{\mathrm{out}}$ and adding only
-the conv or only the gate --- has not been run.} Its \emph{torus} sign was pre-registered; its parity sign was not --- the
+not single-knob: none carries the $\omega$ buffer, so each also swaps the readout
+$\operatorname{diag}(\omega)W_{\mathrm{out}}\to\tau W_2$. For the conv and gate rows
+this preserves the function class exactly and is an \emph{initialisation} difference
+(geometric $\omega$ against a default draw) plus one scalar; for the two full-rank
+rows the class genuinely differs, since they also add \texttt{weight\_norm} and a
+bias. So $-0.020$ and $-0.064$ are attributable up to initialisation, the $\rho=64$
+comparisons are not, and the arm that would settle both --- geometric $\omega$
+retained, one knob added --- has not been run.} Its \emph{torus} sign was pre-registered; its parity sign was not --- the
 pre-registration was, in \texttt{SELECTIVE\_ROPE.md}'s own words, ``half right
 \dots\ it hurts on parity too, which the mechanism story did not predict''.
 
@@ -743,13 +766,15 @@ therefore cannot reach PoPE, which needs three things outside that reach:
 \item $\mu = \softplus(Q_{t,c})$, a strictly positive nonlinearity of a linear
   functional, against $\mu = \lVert(q_{2c},q_{2c+1})\rVert$, the norm of a linear
   map --- different function classes, neither containing the other;
-\item $\psi \equiv 0$. No rotation can impose this: $\arg\tilde q' = \psi +
-  \theta_t$, so eliminating the intrinsic phase is a constraint on $W_Q$, not
-  something the generator can apply;
+\item $\psi \equiv 0$. A rotation by $\theta_t = -\psi_t$ would impose it, but no
+  rotation \emph{from this family} can: Selective RoPE's $\theta$ is an accumulated
+  function of $x_{1..t}$ drawn from \eqref{eq:gen}, while $-\arg(W_Qx_t)$ is an
+  $\operatorname{atan2}$ of two linear functionals of the \emph{current} token
+  alone, which that class does not contain;
 \item $\nb = \hd$ rather than $\hd/2$, which is a change of blocking, not of
   parameters.
 \end{itemize}
-Nor does the reverse inclusion hold: PoPE cannot produce a negative real part.
+Nor does the reverse inclusion hold: PoPE's \emph{content} factor is positive real before the positional phase ($\mu>0$ and $\psi\equiv0$), which no choice of Selective RoPE's generator imposes. (The composite $\tilde q^{(c)}_t = \softplus(Q_{t,c})e^{it\vartheta_c}$ of course goes negative whenever $\cos(t\vartheta_c)<0$; the constraint is on the factor, not the product.)
 \textbf{The two are not nested in either direction.}
 
 \paragraph{So the design space is a product, not a chain.} Inclusion holds
@@ -849,13 +874,13 @@ constrain different coordinates of a single object, and writing that object down
 subsumes every mechanism in this note.
 
 Work in the complex domain of $\S$1 and put each token's contribution in
-\emph{log}-polar form. Let $c,G:\R^d\to\C^{\nb}$ and set
+\emph{log}-polar form. Let $c^q,c^k,G:\R^d\to\C^{\nb}$ and set
 \begin{equation}
   \label{eq:unified}
   \boxed{\;
-  \tilde q_t \;=\; \exp\!\Big(c(x_t) \;-\; \overline{S_t}\Big),
+  \tilde q_t \;=\; \exp\!\Big(c^q(x_t) \;-\; \overline{S_t}\Big),
   \qquad
-  \tilde k_s \;=\; \exp\!\Big(c(x_s) \;+\; S_s\Big),
+  \tilde k_s \;=\; \exp\!\Big(c^k(x_s) \;+\; S_s\Big),
   \qquad
   S_t \;=\; \textstyle\sum_{u\le t} G(x_u),}
 \end{equation}
@@ -875,6 +900,12 @@ of magnitude, since the phase terms then add rather than cancel. Writing $c = \g
   \cos\Big(\underbrace{\pi^k_{s,c}-\pi^q_{t,c}
         \;+\;\textstyle\sum_{t<u\le s}\eta_{u,c}}_{\text{phase}}\Big).
 \end{equation}
+(The query and key maps must be kept separate. An earlier draft wrote a single
+$c$ for both, which forces $\tilde k_t/\tilde q_t = e^{2\operatorname{Re}S_t}$, a
+positive real fixed by the accumulator --- untrue of any attention with
+$W_Q\neq W_K$, and inconsistent with the four objects
+$\gamma^q,\gamma^k,\pi^q,\pi^k$ the next display already uses. It also left PoPE's
+key-side bias $\delta_c$ with no home in the table below.)
 \textbf{$c$ is the instantaneous complex log, $G$ the accumulated one.} Real parts
 are magnitude, imaginary parts are phase --- which is Selective RoPE's ``real
 parts forget, imaginary parts encode position'' read off the algebra rather than
@@ -972,7 +1003,7 @@ a term \textbf{linear in the accumulated interval quantity} with a
 content-dependent coefficient. Since $e^{\operatorname{Re}}\cos(\operatorname{Im})$
 is an exponential times a sinusoid, it can never be polynomial in the accumulator,
 so this is outside \eqref{eq:unified} while remaining abelian, per-token, and
-parallel-scannable. The kernels it generates are $d\,e^{-\gamma d}\cos(\omega d)$
+parallel-scannable. The kernels it generates are \emph{polynomial} in the accumulated interval quantity --- linear here, optionally times a real exponential, i.e.\ $e^{-\gamma d}(\alpha+\beta d)$
 rather than $e^{-\gamma d}\cos(\omega d)$.
 
 It is also \emph{occupied}: Jordan-RoPE (arXiv:2605.04217) builds the defective
@@ -1175,7 +1206,7 @@ attention} (Jane Street Blog, 22 April 2026), derives $\S$\ref{sec:unify} from
 three assumptions and gets a stronger result than this note states. Take
 $\tilde q_t=F(t)q_t$, $\tilde k_s=G(s)k_s$ so the logit is $q_t^\top F(t)^\top G(s)k_s$;
 require \emph{linearity}, \emph{translation invariance} ($F(t)^\top G(s)$ depends only
-on $s-t$), and \emph{continuity}. Then $A(d):=F(0)^\top G(d)$ satisfies $A(0)=I$ and
+on $s-t$), and \emph{continuity}. Normalise so that $F(t)^\top G(t)=I$ (absorbing the constant $A(0)$, which the three assumptions alone do not force, into the keys). Then $A(d):=F(0)^\top G(d)$ satisfies $A(0)=I$ and
 $A(d)A(e)=A(d+e)$ --- a one-parameter matrix group --- so $A(d)=\exp(dM)$ for a
 fixed generator $M$, and the classification of positional encodings \emph{is} the
 classification of $M$ up to conjugacy:
@@ -1383,7 +1414,11 @@ Every row was read first-hand
 \texttt{papers/INDEX.md}. $^\ast$Jordan-RoPE's magnitude factor is a
 \emph{polynomial} in the lag, $d^r e^{i\omega d}$, not an exponential: its
 generator couples a complex eigenvalue to a nilpotent in one defective block, so
-it is non-semisimple rather than unipotent.}
+it is non-semisimple rather than unipotent. $^\ddagger$FoX's bias
+$\sum\log f_\ell$ and GLA's weight $\prod\gamma$ are the same object; the unipotent
+label follows GRAPE's realisation, which augments $q,k$ to embed the bias in $GL$,
+and is a choice of embedding rather than a property of the mechanism. Read as
+$\C^\times$ it sits with Mamba/GLA.}
 \begin{tabular}{llllllll}
 \toprule
 mechanism & A1 factor & A2 locus & A3 driver & A4 algebra & A5 sign & A6 rank & A7 host \\
@@ -1401,7 +1436,7 @@ CARoPE$^\dagger$            & phase      & acc.    & content & $\C^\times$ & \te
 \midrule
 GRAPE-M$^\dagger$           & phase      & acc.    & \textbf{index} & $\C^\times$ & n/a & n/a  & softmax \\
 GRAPE-A / AP$^\dagger$      & magnitude  & acc.    & content & \textbf{unipotent} & \textbf{$\ge 0$} & full & softmax \\
-FoX$^\dagger$               & magnitude  & acc.    & content & unipotent  & $<0$    & scalar/head & softmax \\
+FoX$^\dagger$               & magnitude  & acc.    & content & unipotent$^\ddagger$  & $<0$    & scalar/head & softmax \\
 Jordan-RoPE$^\dagger$       & both$^\ast$ & acc.   & index   & \textbf{non-ss.} & n/a & n/a & softmax \\
 LieRE$^\dagger$             & phase      & acc.    & \textbf{position} & $GL$ & n/a & \textbf{tile $b\!\times\!b$} & softmax \\
 Algebraic PE$^\dagger$      & phase      & acc.    & \textbf{structure} & $\C^\times$ & n/a & n/a & softmax \\
@@ -1412,7 +1447,7 @@ Mamba / Mamba-2, GLA$^\dagger$ & magnitude & acc.  & content & $\C^\times$ & $<0
 \end{tabular}
 \end{sidewaystable}
 
-\noindent Every row above composes by \textbf{parallel prefix sum} (A8) --- that
+\noindent Every \emph{abelian} row above composes by \textbf{parallel prefix sum} (A8) --- LieRE and Algebraic PE are the exceptions, since non-commuting generators satisfy no prefix-sum law and LieRE reads its rotation off a known position rather than accumulating anything. That
 is what being abelian buys, and it is the property the next table's occupants give
 up.
 
@@ -1424,7 +1459,7 @@ mechanism & what breaks & consequence \\
 PaTH, DeltaNet, RWKV-7$^\dagger$ & the \emph{fixed basis} (A4 non-abelian)
   & path-ordered product of $I+\text{rank-}1$; no $S_t$ \\
 CoPE$^\dagger$         & \emph{per-token factorisation} (A3 = pair)
-  & $p_{ij}=\sum\sigma(q_i\!\cdot\!k_j)$; no $\theta_t$ \\
+  & $p_{ij}=\sum_{k=j}^{i}\sigma(q_i\!\cdot\!k_k)$; no $\theta_t$ \\
 MesaNet, Titans, TAPE$^\dagger$ & the \emph{path structure} (A8)
   & prefix-global inverse / deep memory / layerwise update \\
 MapEM$^\dagger$        & the \emph{single bilinear form}
@@ -1496,18 +1531,30 @@ all three (Selective RoPE)     & $+16{,}385$& $-0.009$ unmeasured & $+0.048$ ($t
 \end{center}
 
 \begin{quote}\small
-\sloppy\textbf{CONFOUND, found on audit and verified.} These arms are \emph{not}
-single-knob. \texttt{SelectiveAngle} has no $\omega$ --- its readout is
-$A=\tau I$ with one scalar --- so every row above also deletes
-the $\omega$ buffer and both factors of the low-rank map,
-swapping $A:\operatorname{diag}(\omega)W_{\mathrm{out}}\to\tau I$. That discards
-the $64$ learnable geometrically-initialised per-(head, block) frequencies
-spanning $[2\pi/64,2\pi]$ --- which $\S$\ref{sec:rank} calls the very thing that
-makes the phase a multi-scale code for one quantity rather than $64$ unrelated
-clocks. \textbf{The conv / rank / gate rows therefore cannot attribute their
-effects to conv, rank or gate}, and the arm needed to fix this --- keeping
-$\operatorname{diag}(\omega)W_{\mathrm{out}}$ and adding only the conv or the
-gate --- has not been run. The parameter deltas are unaffected and verify exactly.
+\sloppy\textbf{CONFOUND --- found on one audit, then \emph{downgraded} by the
+next.} The first audit recorded that these arms are not single-knob:
+\texttt{SelectiveAngle} carries no $\omega$ buffer, so every row also replaces the
+readout $\operatorname{diag}(\omega)W_{\mathrm{out}}$ by $\tau W_2$, discarding the
+$64$ geometrically-initialised frequencies spanning $[2\pi/64,2\pi]$ that
+$\S$\ref{sec:rank} calls the thing making the phase a multi-scale code rather than
+$64$ unrelated clocks.
+
+\textbf{That reading is too strong, and the code says so.} The two rows it matters
+for --- $K{=}1\to4$ and the gate --- are built with \texttt{RANK\,=\,2}, i.e.\
+$\texttt{proj} = \operatorname{Linear}(d,2)\!\to\!\operatorname{Linear}(2,C)$, both
+bias-free, followed by $\tau\!\cdot\!\operatorname{cumsum}$. Since
+$\operatorname{diag}(\omega)W_{\mathrm{out}}$ and $\tau W_2$ range over the same set
+of $C\times r$ matrices, \textbf{the function class is preserved exactly} --- it is
+the construction of $\S$\ref{sec:incl}, and \texttt{verify\_inclusion.py} already
+certifies it. What actually differs is the \emph{initialisation} (geometric $\omega$
+against a default \texttt{Linear} draw) plus one scalar $\tau$.
+
+So the caution stands but changes kind: these are \textbf{initialisation}-confounded,
+not structurally confounded, and the conv / gate effects are attributable up to
+init. The two full-rank rows ($m=r\to H\nb$ and all-three) are a separate matter --- they
+also add \texttt{weight\_norm} and a bias, so their class genuinely differs. The arm
+that would settle it --- geometric $\omega$ retained, one knob added --- has still not
+been run. The parameter deltas are unaffected and verify exactly.
 \end{quote}
 
 \noindent Three readings, in decreasing order of how well they are supported.

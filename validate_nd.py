@@ -98,9 +98,18 @@ def g3_g4(revs):
     return float(np.mean(rate)), float(np.mean(per))
 
 
-def g5_separation(env, r, trials=5, seed=0):
+def g5_separation(env, r, trials=200, seed=0):
     """Scale-free minimum separation of the FULL position set after a random
-    rank-r projection, plus the fitted exponent of its decay in N."""
+    rank-r projection, plus the fitted exponent of its decay in N.
+
+    trials WAS 5, and that was a real bug rather than a thrift: a minimum
+    distance is an EXTREME-VALUE statistic, so five random projections do not
+    estimate one. Measured at D=3, N=10 the relative spread across projections is
+    near 50% (r=2: 0.028 +/- 0.015, r=3: 0.108 +/- 0.053, r=5: 0.181 +/- 0.059),
+    and the r=3 cell read 65% high at trials=5. The ratios built on those numbers
+    INVERTED when re-estimated properly, which is what made a correction box in
+    mapformer_math.tex withdraw a claim that did not need withdrawing. Any number
+    produced by this function before 2026-09-06 should be re-run, not cited."""
     from scipy.spatial.distance import pdist
 
     def sep_at(N, D, r):
