@@ -1208,10 +1208,41 @@ is exactly where MapFormer, Selective RoPE and CARoPE sit. That is a narrow clai
 compared with ``a unified theory of positional encoding'', and it is the one the
 literature actually leaves open.
 
-\paragraph{Two further items, from a literature pass I did not verify
-first-hand.} Mamba-3 (arXiv:2603.15569) is reported to occupy the both-slots
-data-dependent cell with a complex diagonal transition $A(t)+i\theta(t)$ from one
-data-dependent projection; and CARoPE (arXiv:2507.23083, July 2025) is reported
+\paragraph{Mamba-3 closes that hole. Verified first-hand.} arXiv:2603.15569
+(Lahoti, Li, Chen, Wang, Bick, Kolter, Dao, Gu; March 2026). Its complex SSM is
+$\dot h = \operatorname{Diag}\!\big(A(t) + i\theta(t)\big)h + (B(t)+i\hat
+B(t))x(t)$, with \emph{both} $A$ and $\theta$ functions of $t$. Proposition~2
+discretises this to a real transition $e^{\Delta_t A_t}R_t$ with
+$R_t = \operatorname{Block}\{R(\Delta_t\theta_t[i])\}$ --- ``a scalar decayed
+block-diagonal matrix of $2\times2$ \textbf{data-dependent rotation} matrices''.
+Proposition~3, titled \emph{Complex SSM, Data-Dependent RoPE Equivalence}, shows
+the rotations accumulate as a product $\prod_{i=0}^{t}R_i$ applied to $B$ and $C$
+--- ``which, by the state space duality framework, correspond to the query (Q) and
+key (K) components of attention''. Their own summary: ``our complex-valued update
+rule is equivalent to a \textbf{data-dependent rotary embedding}''.
+
+That is content-dependent, signed ($\theta(t)\in\R^{N/2}$, unconstrained, unlike
+GRAPE-AP's $\omega \ge 0$), abelian, accumulated, applied to Q and K --- every
+property of the cell named above. \textbf{The frame's remaining theoretical gap is
+closed, by the Mamba authors, in March 2026.}
+
+\paragraph{What is actually left, stated without inflation.} Not the taxonomy,
+not the closure argument, not the content-dependent rotation. Two things survive,
+and both are empirical rather than structural:
+\begin{itemize}\itemsep2pt
+\item \textbf{The rank bottleneck.} None of GRAPE, Selective RoPE or Mamba-3
+  constrains the angle map to low rank; Mamba-3's $\theta(t)$ is a per-channel
+  projection. The measured result --- $r=2$ is the worst setting, $r=4$ buys
+  $+0.085$ at $4\times$ training length for $384$ parameters, $8/8$ seeds, and the
+  cause is a skewed basis rather than missing capacity --- is a claim about a
+  constraint nobody else imposes.
+\item \textbf{The navigation regime.} Every paper above evaluates on language,
+  recall or state tracking. None runs grid navigation, and the one result this
+  project has that survives every audit --- that path integration is necessary for
+  in-context cognitive maps, against a measured floor, on four independent legs ---
+  lives there.
+\end{itemize}
+and CARoPE (arXiv:2507.23083, July 2025) is reported
 to be a third independent rediscovery of the accumulated content-dependent angle,
 predating both Selective RoPE and MapFormer, with a strictly \emph{positive}
 increment --- which, if right, is the sharpest thing separating MapFormer's
