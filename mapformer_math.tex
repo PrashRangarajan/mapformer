@@ -239,8 +239,8 @@ the paper (v1/v3 eq.~17, v4 eq.~18) in \emph{two} places, both deliberate. First
 the \textbf{sign}: the paper prints a negative exponent, giving an \emph{increasing}
 schedule that contradicts its own stated boundary condition $\omega_{\min} =
 \omega_{\max}/\Delta_{\max} \le \omega_i \le \omega_{\max}$. Second the
-\textbf{denominator}: the paper writes $n_b$ with $1 \le i \le n_b$, so the endpoint
-$\omega_{\min}$ is never attained; eq.~\eqref{eq:omega} uses $n_b-1$ with
+\textbf{denominator}: the paper writes $n_b$ with $1 \le i \le n_b$, so with the sign defect repaired the endpoint
+$\omega_{\max}$ is never attained (at $i=1$) while $\omega_{\min}$ is; eq.~\eqref{eq:omega} uses $n_b-1$ with
 $0 \le i \le n_b-1$, which hits both endpoints exactly. The corrected form is what
 satisfies the paper's own inequality and what matches RoPE's
 $\theta_i = \text{base}^{-2i/d}$. Both defects survive into v4.
@@ -252,8 +252,8 @@ $\theta_t = (t{+}1)\,\omega$ (the cumsum is inclusive; only differences enter
 \eqref{eq:relative}, so the offset is immaterial). That is RoPE's \emph{form}, with
 the token index as the clock. It is \emph{not} RoPE identically, for three reasons:
 $\omega$ here is a trained parameter rather than a frozen buffer; its schedule
-spans $[2\pi/64,\,2\pi] = [0.098,\,6.28]$ against RoPE's $[10^{-4},\,1]$, a ratio
-running from $6.3\times$ at $c=0$ to $982\times$ at $c=\nb-1$; and $\Delta_t$ is a
+spans $[2\pi/64,\,2\pi] = [0.098,\,6.28]$ against RoPE's $[1.3\times10^{-4},\,1]$, a ratio
+running from $6.3\times$ at $c=0$ to $736\times$ at $c=\nb-1$; and $\Delta_t$ is a
 rank-2 function of the embedding, so $\Delta\equiv 1$ is a hypothesis about what
 was learned, not a setting. The accurate statement is that path integration is
 \textbf{RoPE with a learned, content-dependent clock rate --- which may be zero or
@@ -474,11 +474,24 @@ $D$ & $\rho$ & $D/\rho$ & predicted exponent & fitted \\
 \end{tabular}
 \end{center}
 
-\noindent The $\rho < D$ rows track the prediction closely; the $\rho = D$ rows
-overshoot the floor, which is a finite-size effect --- they are fitted over four
-map sizes with $N \le 10$, where the asymptotic regime has not been reached. The
-saturation itself is confirmed by the $D{=}2,\rho{=}4$ row, whose exponent stays
-at $-1$ rather than falling to the naive $-0.5$.
+\begin{quote}\small
+\textbf{Two corrections, both found on audit.} \emph{(a) These exponents are
+ladder-dominated.} Each is fitted over four map sizes, and the fitted value moves
+with which four: the repo's own gate (\texttt{ND\_GATES.md}), run on its capped
+ladder, reports $-1.04$ where this table reports $-1.51$ for the same
+$D{=}3,\rho{=}2$ cell. The table cannot be cited as verifying the exponent; the
+bound is an upper bound, so nothing is violated, but the fit is not evidence.
+\emph{(b) The note elsewhere reads the bound through its CONSTANT, not its
+exponent}, and the two readings disagree. Under the exponent reading geometry
+predicts nothing anywhere in the $\S$\ref{sec:predict} design, since every arm has
+$\rho\ge2$ and the exponents are flat. Under the constant reading, separations at
+$D{=}3$ are $0.033/0.065/0.193$ for $r=2/3/5$, so the $r{=}D\to r{=}D{+}2$ ratio
+($2.96\times$) is \emph{larger} than the $r{=}2\to r{=}D$ ratio ($1.98\times$) --
+i.e.\ geometry predicts the very contrast $\S$\ref{sec:predict} assigns to
+optimisation. \textbf{The claim that the two halves are separable by that design
+does not hold}, and the sentence there about what ``geometry predicted should not
+exist at all'' is withdrawn.
+\end{quote}
 
 \begin{quote}\small
 \textbf{TESTED, AND IT DOES NOT BIND} ($\S$\ref{sec:predict}). The bound is
@@ -537,7 +550,7 @@ $\theta(a\ \text{then}\ b) = \theta(b\ \text{then}\ a) = \theta(a)+\theta(b)$, a
 $\prod_{u\le t}R(\omega\Delta_u) = R(\omega\sum_{u\le t}\Delta_u)$. Commutativity
 is MapFormer's entire computational argument, and it is also its stated limitation:
 a turn/forward action space, where displacement depends on accumulated heading, is
-not representable --- measured, on MiniWorld, as $-0.388$ of a $-0.438$ swing
+not representable --- measured on the torus with rotation actions, as $-0.388$ of a $-0.438$ swing
 attributable to rotation alone.
 
 A convolution with $K>1$ makes the increment of a token depend on its neighbours,
@@ -583,7 +596,7 @@ PoPE (Polar Coordinate Positional Embeddings) makes \eqref{eq:polar} explicit
 rather than emergent.
 
 \begin{quote}\small
-\textbf{Notation change, from here on.} $\S$1 defined $\nb$ as the number of
+\textbf{Notation change, for this section and the next.} $\S$1 defined $\nb$ as the number of
 \emph{2D blocks}, $\nb = \hd/2$. PoPE indexes one frequency per \emph{element}, so
 throughout this section and the next $\nb = \hd$. Read $\vartheta_c =
 \text{base}^{-c/\nb}$ below as $\text{base}^{-c/\hd}$; under $\S$1's definition it
@@ -903,8 +916,8 @@ token outside the interval and measuring the change in the logit:
 \toprule
 coordinate & $q,k$ exponent & change & code & occupied by \\
 \midrule
-$\operatorname{Im}G$ & opposed & $3\!\times\!10^{-15}$ & \textbf{relative} & RoPE, MapFormer, Selective RoPE \\
-$\operatorname{Im}G$ & aligned & $5\!\times\!10^{-1}$  & leaks the prefix & --- \\
+$\operatorname{Im}G$ & \textbf{aligned} & $1\!\times\!10^{-13}$ & \textbf{relative} & RoPE, MapFormer, Selective RoPE \\
+$\operatorname{Im}G$ & opposed & $1.8\!\times\!10^{2}$  & leaks the prefix & --- \\
 $\operatorname{Re}G$ & opposed & $4\!\times\!10^{-13}$ & \textbf{relative} & forget gate, GLA, Mamba, FoX \\
 $\operatorname{Re}G$ & aligned & $1\!\times\!10^{8}$   & leaks the prefix & --- \\
 \bottomrule
@@ -1051,7 +1064,8 @@ models differ by $320$ parameters rather than by a factor.
 $\{$RoPE, PoPE$\}\times\{$index, path-integrated$\}$, both PoPE cells are wide and
 both RoPE cells narrow, so the width confound is \emph{constant along the encoding
 factor}. The position main effect and the interaction are therefore clean; only the
-encoding main effect carries it --- and that is the small one ($+0.011$ on the
+encoding main effect carries it --- and that is the small one ($+0.003$ (the $n{=}8$ 2x2 main effect; $+0.011$ is the
+path-integrated row alone at $n{=}3$) on the
 torus against $+0.461$ for position). There is also a direct empirical check: if
 the extra frequencies were doing the work, PoPE with an index phase should beat
 RoPE with an index phase. It does not ($0.509$ vs $0.530$, both on the $0.506$
@@ -1125,7 +1139,7 @@ was measured to be worth --- which in the InEKF's case is a withdrawal.
 
 \subsection{What the constraints are worth}
 
-One batch, $8$ arms, the generator swapped and nothing else changed. Increments are
+One batch, $6$ arms. Increments are
 against MapFormer at $r=2$; \textsc{mde} is $2.8\,\mathrm{sd}/\sqrt{n}$.
 
 \begin{center}\small
@@ -1142,6 +1156,21 @@ all three (Selective RoPE)     & $+16{,}385$& $-0.009$ unmeasured & $+0.048$ ($t
 \bottomrule
 \end{tabular}
 \end{center}
+
+\begin{quote}\small
+\textbf{CONFOUND, found on audit and verified.} These arms are \emph{not}
+single-knob. \texttt{SelectiveAngle} has no $\omega$ --- its readout is
+$A=\tau I$ with one scalar --- so every row above also deletes
+\texttt{path\_integrator.omega} and \texttt{action\_to\_lie.\{w\_in,w\_out\}},
+swapping $A:\operatorname{diag}(\omega)W_{\mathrm{out}}\to\tau I$. That discards
+the $64$ learnable geometrically-initialised per-(head, block) frequencies
+spanning $[2\pi/64,2\pi]$ --- which $\S$\ref{sec:rank} calls the very thing that
+makes the phase a multi-scale code for one quantity rather than $64$ unrelated
+clocks. \textbf{The conv / rank / gate rows therefore cannot attribute their
+effects to conv, rank or gate}, and the arm needed to fix this --- keeping
+$\operatorname{diag}(\omega)W_{\mathrm{out}}$ and adding only the conv or the
+gate --- has not been run. The parameter deltas are unaffected and verify exactly.
+\end{quote}
 
 \noindent Three readings, in decreasing order of how well they are supported.
 
@@ -1172,7 +1201,11 @@ up is $-0.020$ on parity and $-0.064$ on the torus for $193$ parameters.
 
 MapFormer v4 Table 6 reports MapWM collapsing in $5$D: $0.75/0.50/0.35$ on
 IID/OOD-d/OOD-s, \emph{below} CoPE at $0.94/0.80/0.69$, while MapEM-s holds at
-$1.00/1.00/0.87$. The paper reports this without an account of it.
+$1.00/1.00/0.87$. \emph{Corrected on audit:} the paper does give an account --- ``performances
+quickly degrade, since the amount of positions to represent grows
+exponentially'' --- and its $5$D setting is \textbf{grid size 5 at sequence
+length 16}, against the reproduction below at grid $4$ and $T=128$. (In the
+locally held v3 this is Table 4, not Table 6.)
 
 Equation \eqref{eq:packing} supplies a candidate. If $r=2$ was held fixed at $D=5$
 --- the paper specifies only $r \ll d$, ``for instance $r=2$'' --- then the phase
@@ -1252,9 +1285,13 @@ stands.} Two of the three falsifiers below fired. $r=2$ is not impaired at $D=5$
 it posts its best score of the three conditions there. And its deficit does not
 grow with $D$: at $T{=}512$ it is $+0.110$, $+0.153$, $+0.055$ for $D=2,3,5$ ---
 \emph{smallest} where the bound says it should be largest. Meanwhile the
-$r{=}D \to r{=}D{+}2$ gap is present at every $D$ and does not grow with it
-($+0.110 / +0.067 / +0.073$), which is exactly what the optimisation half
-predicted and what geometry predicted should not exist at all.
+$r{=}D \to r{=}D{+}2$ gap is $+0.110 / +0.066 / +0.073$ at $D=2/3/5$ and does not
+grow with $D$. \emph{Corrected on audit:} paired at $T{=}512$ these are
+DETECTABLE at $D{=}2$ ($t\,4.08$, $7/8$) and $D{=}5$ ($t\,3.35$, $8/8$) but
+\textbf{unmeasured} at $D{=}3$ ($t\,1.93$, $6/8$); and at $D{=}2$, $r{=}D$
+\emph{is} $r{=}2$, so that cell is numerically the same contrast as the $r{=}2$
+deficit and cannot discriminate the two hypotheses. The optimisation half rests
+on \textbf{one} independent detectable cell, not three.
 
 \textbf{The account of Table 6 offered above is therefore WITHDRAWN.} The paper's
 $5$D collapse is not explained by $r=2$; in this reproduction $r=2$ handles $D=5$
@@ -1334,11 +1371,13 @@ percentages are not commensurable, and the InEKF has never been run on parity.
 the measured floor of $0.506$ ($0.509$ vs $0.530$), with a seed spread wider than
 the gap --- it is a floor artifact, not an effect, and is omitted from the column
 for that reason.
-(iv) The $-22.8\%$ is measured on \textsc{LoopedHourglass} against the unshared
-flat scaffold, so it \emph{bundles} the shared block's parameter saving with the
-pooling's compute saving. Isolated on text, hierarchy alone is $1.23\times$
-throughput ($\approx -18.7\%$) at $-14.1\%$ memory. Attributing $-22.8\%$ to the
-hierarchy axis alone overstates it.
+(iv) \emph{Corrected on audit:} an earlier version of this note claimed the
+$-22.8\%$ bundled the shared block's saving with the pooling's. It does not.
+\texttt{LOOP\_HIER\_COMPUTE.md} isolates both axes at exact parameter parity at
+$L{=}2048$: hierarchy alone (\textsc{Hourglass\_k2} vs \textsc{HourglassFlat3},
+both $596{,}034$) is $-22.9\%$ time and $-19.9\%$ memory, while sharing alone
+(\textsc{LoopedHourglassFlat} vs \textsc{HourglassFlat3}) is $+0.1\%$.
+Attributing $-22.8\%$ to the hierarchy axis is accurate.
 
 
 
@@ -1407,7 +1446,7 @@ multiple of $k$ then truncated after $B_{\mathrm{post}}$.
 
 Two details the notation would otherwise hide. $P_k$ right-shifts by $k-1$ with a
 zero pad \emph{before} averaging, so coarse token $j$ is the mean over original
-indices $jk-1,\dots,jk+k-2$ --- not the plain group mean, and the first coarse token
+indices $jk-k+1,\dots,jk$ --- not the plain group mean, and the first coarse token
 is dragged toward zero by the pad. And $U_k$ is \texttt{repeat\_interleave}, which
 is \emph{not} the adjoint of $P_k$ (that would carry a $1/k$ and the matching
 shift); it is written $U_k$ rather than $P_k^{\dagger}$ for that reason.

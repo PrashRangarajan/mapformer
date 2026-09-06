@@ -111,3 +111,33 @@ per-layer from the query. At 1 layer the two are close, since the query is
 itself a learned linear map of the token. **A negative result here does
 not refute Selective RoPE** — it is evidence about the generator's
 components in this setting, on tasks their paper does not run.
+
+---
+
+## CONFOUND found on audit, 2026-09-05: the arms are NOT single-knob
+
+Verified by diffing named parameters against `MapFormerWM`. Every arm above
+(`ConvAngle`, `NoBottleneck`, `GateAngle`, `SRoPEGen`) **removes**
+`path_integrator.omega`, `action_to_lie.w_in` and `action_to_lie.w_out`, because
+`SelectiveAngle` has no omega -- its readout is `A = tau * I` with a single
+scalar `log_temp`.
+
+So each arm changes **two** things: the named knob, and the readout
+`A: diag(omega) W_out -> tau I`. The second discards 64 learnable,
+geometrically-initialised per-(head, block) frequencies spanning
+`[2pi/64, 2pi]`.
+
+**Consequence.** The per-knob rows cannot attribute their effects to the conv,
+the rank, or the gate. The "sign flip between tasks" is still a real observation
+about the arms as built, but its attribution to individual components is not
+supported. The parameter deltas (+193 / +7,873 / +8,193 / +16,385) are unaffected
+and verify exactly.
+
+**The missing arm** is one that keeps `diag(omega) W_out` and adds only the conv,
+or only the gate. It has not been run. Until it is, the cheapest honest reading of
+this file is that a generator swap which also drops the learnable frequency
+spectrum costs a little on parity and buys a little on the torus, and no
+finer-grained claim survives.
+
+This does not disturb `RANK_SWEEP.md`, whose arms differ only in `bottleneck_r`
+and keep the readout intact.
