@@ -22,7 +22,7 @@ declare -A P=(
   [cope]=2405.18719       [tape]=2501.00712    [mesanet]=2506.05233
   [titans]=2501.00663
   # --- the unverified prior-art paragraph
-  [hgrn]=2311.04823       [hgrn2]=2404.07904
+  [grazzi]=2411.12537     [sarrof]=2405.17394    [hgrn]=2311.04823       [hgrn2]=2404.07904
   # --- adjacent, found while resolving
   [pj_rope]=2606.05345    [liere]=2406.10322   [alg_pe]=2312.16045
 )

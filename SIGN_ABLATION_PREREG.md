@@ -108,3 +108,81 @@ as a null.
    `probe_sign.py`.
 4. Every arm trains: 8-epoch smoke run, all six arms. **PASS** — epoch-5 loss
    Signed 0.263, Vanilla 0.274, CARoPE 0.581, Pos 0.542, Abs 0.733, RoPE 1.774.
+
+---
+
+# AMENDMENT, 2026-09-06, written while the batch was at 48/72 and before any result was read
+
+An audit of the theory note against the local corpus found that **the central
+motivating claim above — "A5 is the one axis nobody varies deliberately" — is
+false.** It is not a small correction. There is a published literature on exactly
+this axis, with a theorem, and it reaches into this very slot. Recording it here
+rather than in the results file, so it cannot be mistaken for a post-hoc reframing.
+
+## What the literature already has
+
+**Sarrof et al., *The Expressive Capacity of State Space Models* (arXiv:2405.17394,
+May 2024)** makes the observation I thought was mine, two years earlier and about
+SSM gates rather than positional encodings:
+
+> "Across all non-time-invariant SSMs surveyed, we find that the gate is always
+> **nonnegative** ... A(x_t) ≥ 0 (nonnegative) **due to exponential or sigmoid
+> parameterizations of the gate**"
+
+That is word for word the observation in the table above — non-negativity as a
+side-effect of a squashing function, never argued for — and it comes with
+Theorem 2: such models cannot recognise PARITY.
+
+**Grazzi et al., *Unlocking State-Tracking in Linear RNNs Through Negative
+Eigenvalues* (arXiv:2411.12537, ICLR 2025)** turns it into an architectural fix:
+they **prove** finite-precision LRNNs whose state-transition matrices have only
+positive eigenvalues cannot solve parity, extend Mamba's and DeltaNet's range from
+`[0,1]` to `[−1,1]`, and show it "consistently improves performance on
+state-tracking tasks", stably at 1.3B.
+
+**PaTH** adopts it deliberately — "We use `β_t ∈ (0,2)` as this allows for negative
+eigenvalues in the transition matrix, which has been shown to boost the state
+tracking performance" — and **RWKV-7** discusses it and restricts the range only
+because of observed training instability.
+
+**And Selective RoPE has already carried it into this exact slot.** Its §4.2 cites
+Grazzi for the `[0,1] → [−1,1]` result and argues that "the input dependent
+rotations allow it to model *flips* depending on the input", then demonstrates that
+"Transformer with Selective RoPE is the only variant of Transformers capable of
+solving the parity task with a single layer up to this sequence length."
+
+So: the sign of a content-dependent phase increment, in softmax attention, has been
+argued for and tested. I claimed nobody had done it. Somebody had.
+
+## What survives, stated at its real size
+
+1. **CARoPE, GRAPE-AP and CoPE are non-negative and none of them cites this
+   literature** (0 hits for Grazzi/Sarrof/negative-eigenvalue in all three). The
+   axis is known in the state-tracking community and is not being applied as a
+   design constraint in the positional-encoding-for-language community. That is
+   "some papers have not read others", not "nobody varies this".
+2. **Nobody tests it on navigation.** The whole existing literature is parity and
+   formal-language state tracking (`S_2`, `A_3`, Dyck). Parity is `cumsum mod 2`;
+   net displacement on the torus is `cumsum mod N` in two dimensions. Related, not
+   identical — and this project has already measured the parity leg separately
+   (`ALGORITHMIC_RESULTS.md`, path integration 8/8 seeds at every length).
+3. **The isolation is cleaner than what exists.** Selective RoPE's evidence is an
+   architecture comparison against NoPE and RoPE; `Abs_r4` vs `Signed_r4` differ by
+   one call to `.abs()` at identical parameter count.
+
+## What this does to the verdicts
+
+**The verdicts above are unchanged, but their INFORMATION VALUE is inverted.**
+
+- H1 firing is now the **expected** outcome — a near-corollary of Grazzi's Theorem 2
+  plus Selective RoPE's parity demonstration. It should be reported as a
+  **replication in a new regime**, not as a discovery, and the note's "nobody varies
+  A5" line must be deleted rather than softened.
+- H1 **failing** is now the interesting result: it would mean the torus task does
+  not need the sign even though parity provably does, which would separate
+  "cognitive map" from "state tracking" as computational demands and would say the
+  net-displacement argument is wrong about this task.
+
+That asymmetry is the reason to let the batch finish rather than kill it. But the
+headline it could ever have supported is gone, and was gone before the first
+checkpoint was read.
