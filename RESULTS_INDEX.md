@@ -10,9 +10,9 @@ results.
 
 | file | what it is |
 |---|---|
-| `positional_review.pdf` | **the presentable one.** 13pp review of the positional-encoding arena: the one-parameter-group classification, the log-polar unification, the relational map over eight axes, where MapEM / TEM-t / the fast-weight family sit, and the measurements. No corrections, no process. |
+| `positional_review.pdf` | **the presentable one.** 25pp review of the positional-encoding arena: the one-parameter-group classification, the log-polar unification, the relational map over eight axes, where MapEM / TEM-t / the fast-weight family sit, and the measurements. No corrections, no process. |
 | `mapformer_math.pdf` | the working record. Same content plus every correction, retraction and audit finding, kept so the same errors are not made twice. |
-| `papers/` | all 33 cited sources, read first-hand. `txt/` is tracked and greppable; `bash papers/fetch.sh` restores the PDFs. `papers/INDEX.md` records which claim each reading checks. |
+| `papers/` | all 40 cited sources, read first-hand. `txt/` is tracked and greppable; `bash papers/fetch.sh` restores the PDFs. `papers/INDEX.md` records which claim each reading checks. |
 
 ---
 
@@ -48,6 +48,36 @@ from +0.438 to +0.050, which allocentric recoding restores to +0.488
 (`KNOB_SWEEP_n8.md`, `ALLOCENTRIC_RECODING.md`).
 
 ---
+
+## The clock/map crossover -- a mechanism's value is decided by the TASK
+
+`RECENCY_RESULTS.md`, `RECENCY_GATE_ABLATION.md`, `RECENCY_H2.md`; pre-registered
+with a pre-launch amendment in `RECENCY_PREREG.md`; gates `RECENCY_GATES_K64.md`.
+6 arms x 8 seeds, one batch. Task: retrieve the k-th most recent CONTENT symbol
+with uncounted filler interleaved, so k is a contextual position (the answer sits
+129.7 +/- 10.3 tokens back at k=64). Chance 0.0625; 2x budget moves nothing.
+
+- **The crossover.** Forcing the increment to be monotone costs **-0.280** on the
+  torus (12/12 seeds) and **-0.004** here (4/8, inside MDE); loss-matched -0.215
+  vs +0.026. Interaction ~ **+0.28**. First result here showing a mechanism has a
+  MATCH rather than a quality.
+- **alpha is diagnostic, not descriptive.** The UNCONSTRAINED arm learns
+  alpha 0.591 on the torus and **0.967** here (delta +0.376, se 0.009) while every
+  CONSTRAINED arm sits at ~1.0 on both -- the control that attributes the shift to
+  the choice rather than the task's statistics.
+- **Mechanism established by intervention**, not correlation (gate strength does
+  NOT predict accuracy, r = -0.34). Magnitude-matched: a constant increment on
+  content scores 0.783, on every token 0.189 -- **+0.594 at 8/8**. An
+  unconstrained MapFormer DISCOVERS CoPE's gate.
+- **A fixed index code cannot count contextually**: 0.234 vs 0.96-1.00, **+0.750
+  at 8/8**, larger than the navigation effect. This REPRODUCES CoPE's published
+  claim in another architecture -- an anchor, not a new result.
+- **Two of my four pre-registered hypotheses were REFUTED**, and one condition I
+  pre-stated as decisive is confounded (a control changing only theta's scale
+  collapses just as hard). Both recorded.
+
+Open: **Flip-Flop LM** (Liu et al. 2023) is this task at k=1 and is a published
+dataset; it is the external-validity check and has not been run.
 
 ## What else is citable
 

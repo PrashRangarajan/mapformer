@@ -1975,6 +1975,44 @@ pure index clock) should reproduce much of it; and the gain should vanish on a t
 with no recency structure.
 \end{quote}
 
+\paragraph{Tested directly 2026-09-07, and it holds --- with two of my own
+hypotheses refuted.} Until this test every task measured here wanted a \emph{map},
+so ``signed wins'' and ``signed suits this task'' were not separable. On a k-back
+retrieval task with uncounted filler (`RECENCY\_RESULTS.md'), six arms $\times$
+eight seeds in one batch:
+
+\begin{itemize}\itemsep2pt
+\item \textbf{The crossover.} Constraining the increment to be monotone costs
+  $-0.280$ raw / $-0.215$ loss-matched on the torus (12/12 seeds) and $-0.004$ raw
+  / $+0.026$ loss-matched here, both inside their MDE. Interaction $\approx +0.28$.
+\item \textbf{$\alpha$ is diagnostic.} The unconstrained arm learns
+  $\alpha = 0.591$ on the torus and $0.967$ here ($\Delta = +0.376$, se $0.009$),
+  while every constrained arm sits at $\approx 1.0$ on both --- the control that
+  attributes the shift to the choice.
+\item \textbf{Mechanism, by intervention.} A learned content gate, $8/8$ seeds per
+  head. Correlation could not settle it ($r(\text{gate},\text{acc}) = -0.34$).
+  Magnitude-matched pair: a constant $\Delta$ on content scores $0.783$, on every
+  token $0.189$; $+0.594$ at $8/8$.
+\item \textbf{Index collapses}, $0.234$ against $0.96$--$1.00$ ($+0.750$, $8/8$),
+  larger than the navigation effect. This is CoPE's published claim reproduced, not
+  a new one.
+\end{itemize}
+
+\textbf{Refuted, both mine, both recorded before the batch or immediately after.}
+(i) I predicted an index code would do WELL on a clock task; a \emph{contextual}
+clock is precisely what a fixed index cannot encode, and the sign inverted.
+(ii) I predicted monotone would BEAT signed here. That is malformed: the signed arm
+is unconstrained and \emph{contains} the monotone solution, so signed $\ge$
+monotone on any task up to optimisation --- the same defect as the sign ablation's
+unmeasurable discriminator, in a different disguise. The well-posed form is the
+cost of constraining, above.
+
+\textbf{A confound I nearly published.} The condition I pre-stated as decisive ---
+make the filler count --- collapses to $0.086$. But a control changing \emph{only}
+$\theta$'s scale, still counting content alone, collapses just as hard ($0.110$).
+The model is acutely sensitive to $\theta$'s magnitude, so that condition proves
+nothing. The magnitude-matched pair was added afterwards.
+
 \noindent Read this way the frame's two slots are not two knobs but \textbf{two
 answers}: a signed phase is a map, a monotone accumulated magnitude is a clock, and a
 system that needs both must spend both slots. Mamba-3 claiming both deliberately is

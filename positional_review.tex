@@ -44,7 +44,11 @@ Two consequences do not follow from any single mechanism. The two slots answer
 \emph{different questions}: a signed accumulated phase measures net displacement and
 is a map, a monotone one measures elapsed path and is a clock, and the two are
 mutually exclusive --- so the monotone increments of CARoPE, GRAPE-AP and CoPE are
-correct on language and disqualifying on navigation. That the distinction is invisible
+correct on language and disqualifying on navigation. That claim is tested here by
+crossover: on a task built to want a clock the ordering inverts, and the same
+unconstrained architecture learns a diffusive accumulator on one task and a
+ballistic one on the other, which makes the growth exponent a readout of what a
+task demanded rather than a property of a model. That the distinction is invisible
 on text is not incidental: in one content-dependent mechanism's own ablation, NoPE
 attains the lowest perplexity of every encoding tested. And the frame has a second
 reading, in which the positional operator is an associative memory's transport
@@ -517,6 +521,15 @@ sign should reproduce the gain; a content-\emph{independent} constant increment 
 pure index clock) should reproduce much of it; and the gain should vanish on a task
 with no recency structure.
 \end{quote}
+
+\paragraph{This is now tested directly, and it holds.} Until recently the
+dichotomy rested on the construction above plus a correlation across four arms
+($\S$\ref{sec:growth}); every task measured here wanted a \emph{map}, so
+``signed wins'' and ``signed suits this task'' were not separable. On a task built
+to want a \emph{clock}, the ordering inverts as predicted: constraining the
+increment to be monotone costs $0.215$--$0.280$ on the torus and nothing
+measurable there, and the same unconstrained architecture learns
+$\alpha = 0.591$ on one and $0.967$ on the other. $\S$\ref{sec:crossover}.
 
 \noindent Read this way the frame's two slots are not two knobs but \textbf{two
 answers}: a signed phase is a map, a monotone accumulated magnitude is a clock, and a
@@ -1141,6 +1154,7 @@ the action/observation ratio is $1.35\times$ on the torus where the gate helps a
 $1.54\times$ on parity where it hurts.
 
 \subsection{The navigation regime}
+\label{sec:navigation}
 
 Every paper in $\S$\ref{sec:map} evaluates on language, recall, state tracking, or ---
 for LieRE and Algebraic PE --- images, video and trees. None runs grid navigation, and
@@ -1241,6 +1255,98 @@ rests on is the spread to $0.94$ and the agreement with an independently measure
 quantity.
 
 
+\subsection{The crossover: a task that wants a clock}
+\label{sec:crossover}
+
+Every measurement above is on a task that wants a \emph{map}. That makes
+``a signed increment is better'' and ``a signed increment suits this task''
+indistinguishable, and it is the obvious objection to $\S$\ref{sec:clockmap}. The
+test is a task whose answer depends on elapsed count rather than net displacement.
+
+\textbf{The task.} A stream of symbols carries interleaved queries; a query names
+an offset $k$ and the model must retrieve the $k$-th most recent \emph{content}
+symbol, where uncounted filler tokens are interleaved at rate $0.5$. It is a
+retrieval, not a decode --- asking a MapFormer to \emph{report} elapsed time
+reproduces a known failure, since the code makes positions comparable and not
+readable. The filler is what makes $k$ a \emph{contextual} position in CoPE's
+sense: the token distance back to the answer is $129.7 \pm 10.3$ at $k=64$, so no
+fixed offset addresses it. Without the filler the task is index retrieval in
+disguise, and measured that way an index code scores $1.000$ while signed and
+monotone tie. Six arms $\times$ eight seeds, one batch, $k_{\max}=64$, trained at
+$T=1024$; chance $0.0625$, shortcut gates at chance, and doubling the budget moves
+the weakest arm by $-0.009$.
+
+\begin{table}[htbp]\centering\small
+\caption{The crossover. The cost of constraining the increment to be monotone, paired per seed, on a task that wants a map and one that wants a clock.}
+\label{tab:crossover}
+\begin{tabular}{lrrl}
+\toprule
+ & torus (a map) & recency (a clock) & \\
+\midrule
+monotone $-$ signed, raw & $-0.280$ & $-0.004$ & \\
+monotone $-$ signed, loss-matched & $-0.215$ & $+0.026$ & both inside MDE \\
+seeds & 12/12 negative & 4/8 & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent Giving up cancellation costs a fifth to a quarter of accuracy on the map
+task and \textbf{nothing measurable} on the clock task: an interaction of about
+$+0.28$. The accumulator says the same thing more sharply. The unconstrained arm
+may adopt either code, and adopts a different one per task, while every arm that
+\emph{cannot} choose sits at the same exponent on both:
+
+\begin{table}[htbp]\centering\small
+\caption{The growth exponent is a readout of what the task demanded. Only the unconstrained arm can move, and it does.}
+\label{tab:alphashift}
+\begin{tabular}{lrrr}
+\toprule
+arm & $\alpha$ (torus) & $\alpha$ (recency) & $\Delta$ \\
+\midrule
+\textbf{signed, unconstrained} & $\mathbf{0.591 \pm 0.028}$ & $\mathbf{0.967 \pm 0.009}$ & $\mathbf{+0.376}$ \\
+$|\Delta|$ (monotone) & $1.010$ & $0.976$ & $-0.033$ \\
+$\mathrm{softplus}$ (monotone) & $1.005$ & $1.005$ & $+0.000$ \\
+CARoPE form (monotone) & $1.003$ & $0.992$ & $-0.011$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent $n=12$ and $8$; the shift has a standard error of $0.009$. The
+constrained rows are the control that attributes it to the \emph{choice} rather
+than to the two tasks' statistics. So $\alpha$ is a diagnostic of what a task
+demanded, not merely a description of an architecture.
+
+\paragraph{What supplies the clock, established by intervention.} The arm does not
+make every increment positive --- the negative fraction of $\Delta$ barely moves,
+$0.498 \to 0.478$. It learns a \textbf{content gate}: large increments on counted
+tokens, near-zero on filler, present in $8/8$ seeds per head. Gate \emph{strength}
+does not predict the outcome ($r=-0.34$ across a near-ceiling range), so this was
+settled by eval-only intervention rather than by more measuring. Removing the
+filler increments is a no-op ($1.000 \to 0.9997$); removing the counted ones
+destroys the task ($0.068$), which is the positive control. The decisive contrast
+holds magnitude fixed: replacing $\Delta$ with a \emph{constant} on content alone
+scores $0.783$, and with a constant on \emph{every} token --- same total drift,
+differing only in which tokens it lands on --- $0.189$, a gap of $+0.594$ at $8/8$
+seeds. A constant increment on content recovers most of the baseline, so the gate
+is most of the mechanism rather than a component of it.\footnote{An earlier
+condition that simply made the filler count also collapsed, apparently decisively.
+It is confounded and is not counted: a control that changed \emph{only} the
+accumulator's scale, still counting content alone, collapsed just as hard. This
+model is acutely sensitive to $\theta$'s magnitude, so any intervention that moves
+it is destructive for reasons unrelated to counting. The magnitude-matched pair was
+added afterwards, as a control for that confound.}
+
+\paragraph{And a fixed index code cannot do it at all.} The path-integrated arms
+reach $0.96$--$1.00$ and the index arms $0.234$, a gap of $+0.750$ at $8/8$ seeds
+--- larger than the navigation effect of $\S$\ref{sec:navigation}. The per-offset
+curve says why: the index arms solve $k=1$ ($0.99$) and collapse from $k=8$ on
+($0.11$--$0.33$), while every path-integrated arm is flat out to $k=64$. This
+reproduces CoPE's own claim in a different architecture --- against contextual
+position, a relative code's best is a decaying attention --- and is cited here as
+an anchor rather than as a new result. Note also that a token clock built inside
+this architecture ($0.189$, above) lands \emph{below} the index arms, which is
+what it is.
+
 \section{Choosing a mechanism}
 \label{sec:capability}
 
@@ -1290,6 +1396,7 @@ if the task needs \dots & it requires & and these supply it \\
 \emph{holding position far past the training length} & a diffusive accumulator, $\alpha\approx0.5$ & follows from cancellation (T2); nothing in Table~\ref{tab:map} bounds the accumulator explicitly, so this is the only route available \\[3pt]
 \emph{path-dependent actions} (turn/forward) & non-abelian transport, \textbf{or} an allocentric recoding of the input & PaTH, DeltaNet, RWKV-7, TEM-t --- none evaluated on navigation. Recoding the action to absolute displacement restores $+0.488$ and keeps the scan \\[3pt]
 \emph{overwriting stale associations} & a delta rule & DeltaNet, PaTH, RWKV-7; forfeits the parallel scan \\[3pt]
+\emph{contextual counting} --- the $k$-th most recent noun, sentence, or selected event & a \textbf{content-gated} monotone increment & CoPE, CARoPE, GRAPE-AP; and a signed MapFormer, which \emph{learns} the gate rather than being given it. \textbf{Not} any fixed index code: RoPE reaches $0.234$ where the gated arms reach $1.000$ \\[3pt]
 \emph{exact recall over a window} & the dual form; keep the items & softmax attention. A lossy summary is not a sufficient statistic, which is why hierarchy loses here and wins on compositional transfer \\[3pt]
 \emph{bounded state, linear time} & abelian transport & every row of Table~\ref{tab:map}; measured $2.6$--$3.3\times$ over a $16\times$ length increase \\
 \bottomrule
@@ -1300,7 +1407,11 @@ if the task needs \dots & it requires & and these supply it \\
 
 \emph{On language, most of this is invisible}, for the reason
 $\S$\ref{sec:clockmap} gives: order is nearly all that is demanded, and a clock is the
-right object for it.
+right object for it. The exception is worth naming, because it is the one place a
+text task makes a sharp demand: \emph{contextual} counting --- the $k$-th most
+recent item of some selected class --- is a clock a fixed index cannot supply, and
+the gap there ($+0.750$, $\S$\ref{sec:crossover}) is larger than anything measured
+on navigation. It is also the demand CoPE was built for.
 
 \emph{On navigation and any task with a metric structure, the sign and the
 conditioning of the increment are the whole game.} They are worth more per parameter than anything
@@ -1328,7 +1439,13 @@ one is a clock, and a system that needs both must spend both slots. That is why 
 monotone increments of CARoPE, GRAPE-AP and CoPE are correct on language and fail on
 navigation, and why the sign of the increment --- which costs nothing, and which no
 paper in the positional-encoding literature varies deliberately --- is worth more
-than any other ingredient measured here.
+than any other ingredient measured here. The dichotomy is not only an
+interpretation: on a task whose answer depends on elapsed count rather than net
+displacement the cost of forcing a monotone increment falls from $0.28$ to nothing
+measurable, and an architecture free to choose picks a different accumulator for
+each task ($\S$\ref{sec:crossover}). The corollary for practice is that a
+mechanism does not have a quality, it has a match: what to spend on is decided by
+the task.
 
 What the frame does not yet explain is the axis on which several mechanisms
 independently help: extrapolated length. The accumulator's growth law accounts for
@@ -1342,15 +1459,19 @@ bounds the accumulator at all, including the one that was assumed to. That is th
   $384$ parameters, but nothing explains why the optimiser finds a skewed basis at
   $r=2$ and a well-conditioned one at $r=4$ when the learned solution occupies a
   $2$-plane either way.
-\item \textbf{The OOD-length axis, now partly explained.} The accumulator's growth
+\item \textbf{The OOD-length axis, still the largest gap.} The accumulator's growth
   exponent accounts for the sign and rank results together ($\S$\ref{sec:growth}),
-  and it predicts that bounding the accumulator should help at length --- which is
-  Measured, neither the forget
-  gate nor PoPE changes $\alpha$ at all (both inside their MDEs), so at least one
-  other cause is at work. $\S$\ref{sec:clockmap} proposes one for the forget gate ---
-  it restores the clock a signed phase gives up --- with three untested predictions.
-  The direct test of the growth law itself is to vary $\alpha$ deliberately and check
-  that OOD degradation follows.
+  and it predicts that bounding the accumulator should help at length. The obvious
+  candidate for something that bounds it --- the wrapped innovation of an
+  InEKF-style correction --- does not: it wraps the innovation and not the state,
+  and the accumulator's range is unchanged ($285.6$ against $283.9$). Measured,
+  neither the forget gate nor PoPE changes $\alpha$ either (both inside their MDEs),
+  so at least one other cause is at work on an axis where four separate mechanisms
+  help. $\S$\ref{sec:clockmap} proposes an account for the forget gate --- it
+  restores the clock a signed phase gives up --- of which one prediction is now
+  cheap to run, since $\S$\ref{sec:crossover} supplies a task with explicit recency
+  structure. The direct test of the growth law itself is to vary $\alpha$
+  deliberately and check that OOD degradation follows.
 \item \textbf{Defective generators.} Jordan-RoPE occupies the cell; what polynomial
   factors in the lag are \emph{for} remains open, and no navigation evaluation exists.
 \item \textbf{NoPE.} A causal decoder learns an implicit position without any operator
@@ -1362,7 +1483,11 @@ bounds the accumulator at all, including the one that was assumed to. That is th
 \item \textbf{Sign on language.} A monotone clock cannot represent a $-1$ action, and
   on navigation that costs everything. On text HGRN's own ablation finds a
   data-dependent phase worse than a constant one. Whether the sign matters there, and
-  for what, is untested.
+  for what, is untested --- and $\S$\ref{sec:crossover} sharpens rather than settles
+  it: on a symbolic clock task the sign is free to be given up at no cost, which is
+  consistent with text needing a clock, but the arms there are trained from scratch
+  on one synthetic stream. The published dataset that would settle it is
+  Flip-Flop LM, which is that task at $k=1$.
 \item \textbf{Non-commuting action spaces.} Rotation-based actions defeat a fixed
   per-token increment. Allocentric recoding sidesteps it wherever heading is known;
   the non-abelian mechanisms (PaTH, DeltaNet, RWKV-7) address it directly and have
