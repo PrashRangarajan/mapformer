@@ -1340,7 +1340,10 @@ the same caveat.
 \emph{content}-multiplicative but non-abelian, at the cost of orthogonality and of
 any accumulated $S_t$. \textbf{Content-dependent, signed, orthogonal --- i.e.\
 contextual multiplicative and still abelian --- is the hole between them}, and it
-is exactly where MapFormer, Selective RoPE and CARoPE sit. That is a narrow claim
+is exactly where MapFormer, Selective RoPE and CARoPE sit. The three are not
+interchangeable inside it: CARoPE's increment is monotone, and
+$\S$\ref{sec:sign} measures what that costs on navigation --- at matched training
+loss it gives up the whole of path integration's advantage over an index clock. That is a narrow claim
 compared with ``a unified theory of positional encoding'', and it is the one the
 literature actually leaves open.
 
@@ -1386,6 +1389,18 @@ and both are empirical rather than structural:
   project has that survives every audit --- that path integration is necessary for
   in-context cognitive maps, against a measured floor and a context-destruction ablation ---
   lives there.
+
+  This is the more useful of the two, because it is where a difference the language
+  side cannot see becomes decisive. $\S$\ref{sec:sign} is the worked case: the
+  \emph{sign} of the increment is settled prior art on parity and formal languages
+  (Sarrof, Grazzi, and Selective RoPE's own $\S$4.2), and is invisible in the
+  positional-encoding-for-language literature, where CARoPE, GRAPE-AP and CoPE are
+  all monotone by squashing-function accident and none cites any of it. On
+  navigation it costs \emph{everything}: at matched training loss a monotone
+  content-dependent phase does not beat a plain index clock at any length, while a
+  signed one beats it by $+0.123$ and $+0.195$ at $4\times$ and $8\times$ training
+  length on $12/12$ seeds. A regime that makes a published-but-unapplied constraint
+  measurable is worth more than a regime that merely adds a benchmark.
 \end{itemize}
 \paragraph{Verified 2026-09-06.} Every source below was read first-hand and is
 stored under \texttt{papers/} (index: \texttt{papers/INDEX.md}). Three checks
@@ -1402,7 +1417,10 @@ neither reverse nor \emph{stay}. It also differs on a second axis --- $W\in\R^{d
 emits \textbf{one scalar per head}, so its content-to-angle map is rank $1$ per
 head, \emph{below} MapFormer's $r$ rather than above it. A monotone rank-one clock
 cannot represent a $-1$ action at all, which is the sharpest structural separation
-in the table and is untested on either side.
+in the table. \textbf{Measured in $\S$\ref{sec:sign}}: on navigation, CARoPE's own
+parameterisation reaches an opposition score of $1.98$ out of a possible $2.00$ ---
+its east and west are all but the same vector --- and at matched training loss the
+arm carrying it does not beat a plain index clock anywhere.
 
 \emph{HGRN} (arXiv:2311.04823) Table~11 ablates exactly this and concludes, in its
 own words, that ``the phase argument $\theta$ should not be data-dependent'';
@@ -1561,9 +1579,12 @@ positional-encoding-for-language literature. Two things follow that the corpus
 does not contain: nobody tests the axis on \emph{navigation} rather than parity
 and formal languages ($S_2$, $A_3$, Dyck), and no comparison isolates it --- the
 existing evidence is architecture-level, where $|\Delta|$ against $\Delta$ is one
-operation at identical parameter count. Both are cheap, and the experiment is
-consequently a replication in a new regime rather than a discovery; see
-\texttt{SIGN\_ABLATION\_PREREG.md}, whose amendment records this.
+operation at identical parameter count. \textbf{Both are now done} ($\S$\ref{sec:sign}): $|\Delta|$ against $\Delta$ at
+identical parameter count, $12$ seeds, on navigation. Monotone path integration
+beats an index code nowhere, and the learned code shows why --- opposite actions
+fail to cancel at an opposition score of $1.85$--$1.98$ out of a possible $2$,
+against $0.11$--$0.13$ signed. It is a replication in a new regime rather than a
+discovery, and \texttt{SIGN\_ABLATION\_PREREG.md}'s amendment says so in advance.
 
 \emph{(ii$'$) A6 is thinner than a blank column suggests, but still open.}
 
@@ -1661,6 +1682,88 @@ tokens traversed and the map from action sequences to $SO(2)^{\nb}$ is no longer
 group homomorphism. Commutativity is MapFormer's entire computational argument ---
 and the word does not appear once in Selective RoPE. The measured cost of giving it
 up is $-0.020$ on parity and $-0.064$ on the torus for $193$ parameters.
+
+\subsection{The sign of the increment (A5)}
+\label{sec:sign}
+
+The one axis of $\S$\ref{sec:map} where every mechanism outside MapFormer sits on
+the same side. Six arms $\times$ $12$ seeds, one batch, clean torus, $r=4$
+throughout, \textbf{parameter count identical at $204{,}757$} --- the constraint
+adds nothing and does not touch the rank. Pre-registered in
+\texttt{SIGN\_ABLATION\_PREREG.md}, including the verdict for the outcome that
+occurred.
+
+\begin{center}\small
+\begin{tabular}{llrrrr}
+\toprule
+arm & $\Delta$ & $T{=}128$ & $T{=}512$ & $T{=}1024$ & final loss \\
+\midrule
+\texttt{Signed}  & $W_{\mathrm{out}}W_{\mathrm{in}}x$ & $1.000$ & $0.978$ & $0.922$ & $0.0002$ \\
+\texttt{Vanilla} & \emph{(RNG control)}               & $1.000$ & $0.984$ & $0.927$ & $0.0002$ \\
+\midrule
+\texttt{Abs}     & $|W_{\mathrm{out}}W_{\mathrm{in}}x|$ & $0.946$ & $0.675$ & $0.558$ & $0.171$ \\
+\texttt{Pos}     & $\softplus(\cdot)$, GRAPE-AP        & $0.977$ & $0.798$ & $0.584$ & $0.068$ \\
+\texttt{CARoPE}  & $1/(\softplus(\cdot)+1)$            & $0.900$ & $0.809$ & $0.645$ & $0.293$ \\
+\midrule
+\texttt{RoPE}    & index                               & $0.799$ & $0.449$ & $0.345$ & $0.784$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\textbf{The result, and it does not depend on the accuracy table's
+caveats.} At \emph{matched training loss}, signed path integration beats an index
+code by $+0.123$ and $+0.195$ at $T=512$ and $T=1024$, $12/12$ seeds. Monotone path
+integration beats an index code \textbf{nowhere}: $-0.028$ at $T=128$ (detectable)
+and unmeasured beyond. \emph{The entire measured value of a content-dependent phase
+over a plain index clock, on this task, requires the increment to be signed.}
+
+\textbf{Mechanism, at the level of the learned code.} The opposition score
+$\lVert\Delta(+x)+\Delta(-x)\rVert / \overline{\lVert\Delta\rVert}$ is $0$ when
+opposite actions cancel exactly and $2$ when they are identical:
+
+\begin{center}\small
+\begin{tabular}{lrrr}
+\toprule
+arm & oppose$_x$ & oppose$_y$ & $|\cos(N,E)|$ \\
+\midrule
+\texttt{Signed} / \texttt{Vanilla} & $\mathbf{0.125}$ / $0.128$ & $\mathbf{0.106}$ / $0.130$ & $0.218$ / $0.133$ \\
+\texttt{Abs}    & $1.849$ & $1.855$ & $0.587$ \\
+\texttt{Pos}    & $1.905$ & $1.885$ & $0.723$ \\
+\texttt{CARoPE} & $\mathbf{1.981}$ & $\mathbf{1.977}$ & $\mathbf{0.930}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent CARoPE's published parameterisation reaches $1.98$ of a possible $2.00$,
+with its north and east axes all but collapsed onto one another. These models do not
+merely score worse --- they \textbf{cannot represent a $-1$ action}, and the probe
+shows they do not.
+
+\begin{quote}\small
+\textbf{The pre-registered accuracy discriminator failed, by my design error.} It
+asked for a deficit at \emph{training length} as well as OOD, on the reasoning that
+a representational failure should appear where the code is formed. At $T=128$ the
+baseline is $1.000\pm0.000$: $0.054$ of headroom against an \textsc{mde} of $0.057$.
+The cell cannot show a deficit of any size, so the test required something the
+design could not deliver --- the rule-11 ceiling trap, written into my own verdict
+rule.
+
+The training-length effect is nonetheless there, in the \emph{loss}: every
+constrained arm fits strictly worse than the signed baseline on \textbf{$12$ of $12$
+seeds} at identical parameters ($+0.171$, $+0.067$, $+0.293$ against $0.0002$).
+Loss-matching at $T=128$ therefore partials out the very quantity the constraint
+causes, and $r(\text{loss},\text{acc}) = -0.978$ there in any case. A ceiling on
+accuracy is not the absence of an effect; look at what the model could not fit.
+\end{quote}
+
+\noindent\textbf{Scope: a replication in a new regime, not a discovery.} Recorded
+before the first checkpoint was read. Sarrof et al.\ observed the non-negativity and
+proved it blocks \textsc{parity}; Grazzi et al.\ proved the eigenvalue version and
+fixed it; Selective RoPE's $\S$4.2 already demonstrated single-layer Transformer
+parity from rotations that ``model \emph{flips}''. New here is the regime
+(navigation, not parity or formal languages) and the isolation --- $|\Delta|$
+against $\Delta$ is one operation at identical parameter count, with an RNG-path
+control that lands at $+0.006$, unmeasured at every length.
 
 \subsection{A prediction, and the paper's own 5D negative}
 \label{sec:predict}
@@ -1835,7 +1938,8 @@ PoPE             & magnitude $\mu$ & $\hd/2 \to \hd$ widening, $+320$ & $+0.027$
 Bottleneck rank  & state rank $\rho$ & $+384$ on $204{,}373$ ($+0.19\%$) & $+0.085$ torus $T{=}1024$ for $r{=}2\to4$ ($8/8$); flat to $r{=}32$ \\[2pt]
 Recursion        & block reuse & $0$ & $+0.056$ parity ($16/16$); matches or beats $3\times$ params \\[2pt]
 Hierarchy        & token count & $0$ if weight-shared & length-dependent: $\approx 0$ at $L=16$, $+0.060$ at $L=512$ ($23/24$ seeds); $-22.8\%$ time \emph{at $L=2048$}, but see note (iv) \\[2pt]
-InEKF            & $\theta \to \hat\theta$ & $+49{,}600$ on $204{,}373$ ($+24\%$) & no individual \emph{component} is load-bearing; the whole filter is $+0.06$ to $+0.13$, at OOD length only \\
+InEKF            & $\theta \to \hat\theta$ & $+49{,}600$ on $204{,}373$ ($+24\%$) & no individual \emph{component} is load-bearing; the whole filter is $+0.06$ to $+0.13$, at OOD length only \\[2pt]
+\textbf{Signed} $\Delta$ & sign of the increment & $\mathbf{0}$ & the largest effect here per parameter. Removing it: $-0.215$ / $-0.280$ loss-matched at $T{=}512/1024$ ($12/12$); a monotone phase beats an index clock \emph{nowhere} \\
 \bottomrule
 \end{tabular}
 \end{center}
