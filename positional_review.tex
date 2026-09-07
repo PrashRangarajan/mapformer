@@ -1696,6 +1696,59 @@ any structural code & \textbf{sample efficiency}, not final accuracy & if a wher
 \end{tabular}
 \end{table}
 
+\subsection{What to borrow, specifically, for the what/where separation}
+\label{sec:borrow}
+
+If the goal is a cleaner separation of the structural code from the sensory one,
+the table says which mechanisms have a part worth taking and which do not.
+
+\textbf{Take CoPE's gate, but not its sign.} MapFormer's separator is a linear
+bottleneck: $\Delta$ must reach zero on observations by cancellation in
+$W_{\mathrm{out}}W_{\mathrm{in}}$, and nothing makes zero a natural output. CoPE's
+is a sigmoid, for which zero is the resting state, and its entire purpose is
+deciding \emph{which tokens count}. The evidence that this is the right borrow is
+that MapFormer re-derives it unprompted: on contextual counting an unconstrained
+increment learns a content gate in $8/8$ seeds, and a magnitude-matched intervention
+shows the gate is most of the mechanism rather than a component of it
+($\S$\ref{sec:crossover}). But CoPE's gate is $\sigma(\cdot)\in(0,1)$ and therefore
+non-negative, which by $\S$\ref{sec:clockmap} builds a clock and not a map. The two
+mechanisms answer \emph{different} questions --- a gate says \emph{whether} a token
+moves you, a sign says \emph{which way} --- and CoPE has only the first. The
+combination to build is a gate on a \emph{signed} increment. One cost is worth
+stating: CoPE's gate is computed per query--key \emph{pair}, which is why it has no
+$\theta_t$ at all and sits outside the frame; a \emph{per-token} gate is the weaker
+but cheap version that keeps the prefix scan.
+
+\textbf{Read PoPE as the what-channel, which reframes MapPoPE.}
+$\S$\ref{sec:mappope} treats PoPE's magnitude being \emph{instantaneous} as a
+deficiency, because it supplies no second accumulator. Under the factorisation
+question it is the opposite: an instantaneous content-driven magnitude carries
+sensory information \emph{inside} the positional operator while being structurally
+unable to corrupt the structural code, and that is measured --- adding it does not
+move the growth exponent ($0.689$ against $0.710$, inside its \textsc{mde}). So
+MapPoPE is already a what/where split within the operator: an accumulated signed
+phase for the where, a non-accumulated content magnitude for the what. It is also
+the best arm measured on the torus task ($0.994$ against $0.967$). The same property
+is a defect for a system needing a clock and a virtue for one needing a clean
+separation, which is the sort of thing only the frame makes visible.
+
+\textbf{Do not borrow Selective RoPE's gate for this.} It is the obvious candidate
+--- a sigmoid on the phase increment --- and it was tested directly. It does not
+suppress by token class: on the torus it gives $0.560$ on actions against $0.415$ on
+observations, a ratio of $1.35\times$ and nowhere near suppression, and on parity it
+is $1.54$--$1.70\times$ in a setting where the gate \emph{hurts}. Whatever it does,
+it is not separating what from where.
+
+\textbf{Do not borrow the forget gate for this either.} It sits in the magnitude
+slot and is monotone, so it is a clock ($\S$\ref{sec:clockmap}); it suppresses what
+is \emph{remembered}, not what updates position. It is the right borrow for a
+different problem, listed below.
+
+\textbf{And keep the bottleneck.} Since $W_{\mathrm{in}}$ \emph{is} the
+identification mechanism, its rank is the channel the whole distinction passes
+through, which is why $r=2$'s skewed basis is a fact about the separation and $r=4$
+repairs it for $384$ parameters ($\S$\ref{sec:rankmeas}).
+
 \subsection{Combinations worth building}
 
 \begin{table}[htbp]\centering\small
