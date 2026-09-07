@@ -1418,6 +1418,55 @@ an anchor rather than as a new result. Note also that a token clock built inside
 this architecture ($0.189$, above) lands \emph{below} the index arms, which is
 what it is.
 
+\subsection{Where MapPoPE lands}
+\label{sec:mappope}
+
+This review began from a concrete question --- MapFormer supplies a
+content-dependent \emph{phase}, PoPE a content-dependent \emph{magnitude}, and the
+coordinates are disjoint, so what does imposing both buy? --- and the frame exists
+to answer it in a way that generalises. The answer is mixed, and the shape of the
+mixture is the useful part.
+
+\begin{table}[htbp]\centering\small
+\caption{MapPoPE's record. It is the strongest arm on the task the phase mechanism was designed for, and loses to a pure index code on the task where path integration itself fails.}
+\label{tab:mappope}
+\begin{tabular}{@{}p{4.5cm}p{3.1cm}p{3.3cm}p{3.4cm}@{}}
+\toprule
+task & MapPoPE & best alternative & reading \\
+\midrule
+torus revisit, held-out map ($n{=}8$) & $\mathbf{0.994 \pm 0.017}$ & MapEM-os $0.987$; MapFormer $0.967$ & \textbf{best measured} \\[2pt]
+torus, OOD $l = 2048$ ($n{=}8$) & $\mathbf{0.970 \pm 0.028}$ & MapFormer $0.854$ & \textbf{best measured} \\[2pt]
+PoPE's contribution, loss-matched, 4 grids ($n{=}8$) & $+0.077$ to $+0.095$ & --- & helps; \emph{flat} in octaves, so the frequency-count account is refuted \\[2pt]
+MiniGrid DoorKey-16$\times$16, $T{=}1024$ ($n{=}8$) & $0.942 \pm 0.017$ & \textbf{PoPE + \emph{index}} $0.955 \pm 0.003$ & \textbf{loses to an index code} \\[2pt]
+compositional transfer ($n{=}8$) & $0.429 \pm 0.117$ & MapFormer+hier $0.415 \pm 0.096$ & tied \\[2pt]
+enwik8 bpc ($n{=}3$) & $1.3786$ (lowest) & PoPE+index $1.3806$ & numerically best, \textbf{not established}: the margin is under its own checkpoint sd \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent Three things follow, and the third is the one worth carrying away.
+
+\textbf{It is the best arm on the task the phase mechanism was built for}, at the
+training length and at $16\times$ it. That is a real result and it is where the
+combination earns its place.
+
+\textbf{It is not a general improvement.} On MiniGrid it is beaten by PoPE with an
+\emph{index} phase, because rotation-based actions defeat a fixed per-token
+increment ($\S$\ref{sec:navigation}) --- so the phase half is a liability exactly
+where path integration itself is. And on text the margin is inside its own noise.
+A combination inherits its components' failure modes, not only their strengths.
+
+\textbf{It fills a cell in the table without supplying what that cell promises.}
+MapPoPE reads as ``both slots'' in Table~\ref{tab:map}, and $\S$\ref{sec:clockmap}
+says a system needing map \emph{and} clock must spend both. But PoPE's magnitude is
+\emph{instantaneous} --- read off the current token, not accumulated --- so it adds
+no second accumulator, and measured, it does not move the growth exponent at all
+($\alpha = 0.689$ against a baseline $0.710$, inside its \textsc{mde}). MapPoPE is
+two mechanisms in the phase-and-magnitude slots that supplies \emph{one} answer.
+The genuinely unoccupied configuration is a signed accumulated phase beside an
+\emph{accumulated} content-dependent magnitude in softmax attention, and
+$\S$\ref{sec:predictions} says what to build there.
+
 \section{Choosing a mechanism}
 \label{sec:capability}
 
@@ -1492,6 +1541,58 @@ else measured here, and both dominate the choice of positional \emph{encoding}
 \emph{One combination is ruled out rather than merely absent.} A mechanism with a
 bounded recurrent state, signed transport \emph{and} rewritable memory does not exist,
 and T1 says the last two cannot both be had while keeping the parallel scan.
+
+\section{Predictions}
+\label{sec:predictions}
+
+The frame is worth something only if it says what to try next. These follow from
+the axes rather than from the measurements, and none has been run. Each is stated
+with what would refute it, so that the section is falsifiable rather than a wish
+list.
+
+\subsection{Mechanisms on tasks they have not been evaluated on}
+
+\begin{table}[htbp]\centering\small
+\caption{Untested deployments the frame implies. None of these experiments exists.}
+\label{tab:predictions}
+\begin{tabular}{@{}p{2.9cm}p{3.2cm}p{4.2cm}p{3.5cm}@{}}
+\toprule
+mechanism & task & why the frame predicts it & refuted by \\
+\midrule
+PaTH, DeltaNet, RWKV-7 & navigation with \textbf{rotation} actions & non-abelian transport is exactly what turn/forward needs, and a fixed per-token increment cannot represent it: MapFormer falls from $+0.438$ to $+0.050$ there & landing at MapFormer's rotate level, which would mean the deficit is not about commutativity \\[3pt]
+MapFormer & \textbf{state tracking} ($A_5$, $S_5$), formal languages & a signed increment is a parity register --- measured $+0.316$ at $L{=}16$ --- and it keeps the parallel scan, which the delta-rule family forfeits & failing where DeltaNet succeeds, at matched budget \\[3pt]
+Mamba-3 & \textbf{cognitive-map} navigation & the only mechanism holding both slots with a signed rotation; should be the strongest non-attention arm & falling to Mamba-2/GLA's level, which would mean the rotation is not what navigation uses \\[3pt]
+LieRE & navigation with rotation actions & its generators need not commute, so it is the one \emph{positional} code that can express a heading-dependent displacement & needing a commuting special case to train at all \\[3pt]
+CoPE, CARoPE, GRAPE-AP & \textbf{navigation} & they are monotone, so $\S$\ref{sec:clockmap} predicts they fail on a map task specifically, not generally & matching a signed phase on the torus \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Combinations worth building}
+
+\begin{table}[htbp]\centering\small
+\caption{Combinations the frame identifies, ordered by how much evidence already points at them. None has been built.}
+\label{tab:combinations}
+\begin{tabular}{@{}p{3.6cm}p{3.9cm}p{3.6cm}p{3.2cm}@{}}
+\toprule
+combination & what it fixes & the evidence pointing at it & refuted by \\
+\midrule
+\textbf{signed accumulated phase $+$ accumulated content-dependent magnitude} (MapFormer $+$ a forget gate), in softmax attention & the empty cell: a map \emph{and} a clock at once. Mamba-3 holds it in an SSM; nothing holds it in softmax attention & the forget gate's own accumulator is ballistic ($\alpha = +0.956$) beside the phase's $0.6$, so the clock is already there and unexploited; and it explains why the gate needs a \emph{live} $\lambda$ but not decay & no gain on a task needing both, i.e. recency-dependent navigation, which does not yet exist \\[3pt]
+MapPoPE $+$ a forget gate & MapPoPE's actual deficit --- it reads as both slots and supplies one answer ($\S$\ref{sec:mappope}) & $\alpha$ unchanged by PoPE ($0.689$ vs $0.710$), so the second accumulator is genuinely absent & $\alpha$ still unmoved, which would mean the magnitude slot cannot host a clock at all \\[3pt]
+explicit content gate $+$ signed phase & pays for at initialisation what the model otherwise spends capacity learning & on contextual counting an \emph{unconstrained} signed arm learns the gate by itself, and a constant increment on the gated class recovers $0.783$ of $1.000$ ($\S$\ref{sec:crossover}) & the explicit gate not beating the learned one, which would mean the learning is free \\[3pt]
+signed phase $+$ non-abelian transport & rotation action spaces, without the allocentric recoding that needs known heading & recoding restores $+0.488$, so the information is sufficient; the question is whether the mechanism can carry it & the parallel-scan loss costing more than the accuracy gained \\[3pt]
+rank $r{=}4$ $+$ weight sharing across depth & reliability rather than peak accuracy & measured together: $0.986 \pm 0.020$ with $8/8$ seeds above $0.941$, against $0.416$ for either alone --- the one super-additive pair found here & --- (this one is measured; it is listed because it is the template the others are proposed on) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent \textbf{The ordering principle.} Every combination above pairs mechanisms
+that occupy \emph{disjoint} coordinates of \eqref{eq:unified}. That is the frame's
+one practical prescription: mechanisms in the same slot compete and mechanisms in
+different slots may compose, and which of the two is happening can be read off the
+table before anything is trained. MapPoPE is the cautionary case --- disjoint
+coordinates are necessary and not sufficient, because both of its halves answer the
+same question.
 
 \section{Conclusion}
 
