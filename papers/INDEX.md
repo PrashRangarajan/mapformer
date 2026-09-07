@@ -10,6 +10,25 @@ Grep the corpus, don't re-search the web:
 grep -n -i "data-dependent" papers/txt/hgrn.txt
 ```
 
+### Surveys of the same arena — checked for coverage
+
+The review's positioning rests on these. Coverage was measured by grepping each for
+the content-dependent mechanisms, case-sensitively.
+
+| key | arXiv / venue | content-dependent phase mechanisms covered |
+|---|---|---|
+| `survey_rope` | 2608.10021, Aug 2026 | **none** (0 hits for CoPE, MapFormer, Selective RoPE, CARoPE, FoX, Mamba, GRAPE) |
+| `survey_lenext` | 2312.17044 | CoPE and Mamba, twice each; none of the rest |
+| `survey_infext` | 2601.06113, Jan 2026 | none. Decomposes the score into "a multiplicative transformation and an additive bias" — a third independent statement of the two-slot decomposition, after GRAPE and Puranik |
+| `survey_longctx` | 2503.17407, Mar 2025 | **has the category.** §3.1.1 "content-aware position embedding", two members: CoPE and `dape` (2405.14722). Predates CARoPE by 4 months, Selective RoPE / MapFormer / GRAPE by 8–9, Mamba-3 by a year |
+| — | 2511.08243 | **WITHDRAWN by the author. Do not chase.** A field-theoretic manifold framing of positional encoding; the abstract is still served by the arXiv API but the PDF 404s, which is how a withdrawal presents. Not readable, not citable. |
+
+So the accurate positioning is: four of five surveys contain no content-dependent
+phase mechanism, and the fifth has the category but predates almost everything in it.
+The cell was opened on the ADDITIVE side (DAPE and CoPE, both 2024); the
+multiplicative side filled in afterwards. Do not write "no survey covers this" —
+that was in the review and was wrong.
+
 ## Verification status
 
 Every row below was **read first-hand on 2026-09-06** unless marked otherwise.
