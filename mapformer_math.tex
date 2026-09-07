@@ -760,6 +760,83 @@ two-attention-matrix construction has no counterpart in that literature}, which
 is consistent with the reading that MapEM's AND-gate is the genuinely distinct
 piece of the MapFormer paper.
 
+\subsection{Where MapEM and TEM-t sit}
+\label{sec:emtem}
+
+Two mechanisms in this project's own experiments were left out of the map. Both
+turn out to be placeable, and the placements are opposite.
+
+\paragraph{MapEM does not leave the frame; it lifts it.} An earlier version of the
+table above put MapEM under ``breaks the single bilinear form''. That is wrong.
+With $(A_X)_{ts} = q^x_t\!\cdot\!k^x_s$ and $(A_P)_{ts} = q^p_t\!\cdot\!k^p_s$,
+\[
+  (A_X \odot A_P)_{ts}
+  \;=\; \big(q^x_t \otimes q^p_t\big)\cdot\big(k^x_s \otimes k^p_s\big),
+\]
+so the Hadamard product \emph{is} a single bilinear form --- in the tensor product
+of the content and position spaces, of dimension $d_xd_p$ rather than $d$ (verified
+to $1.9\times10^{-6}$ in float32). MapEM is therefore in the frame, evaluated on a
+lifted space: everything in $\S$\ref{sec:unify} applies to it, with $c$ and $G$
+taking values in $\C^{d_xd_p}$ and the position factor entering every one of the
+$d_xd_p$ channels rather than being summed alongside content in $d$ of them.
+
+That is a sharper statement than ``an AND-gate instead of an OR-gate'', and it says
+what the lift costs: a rank-one tensor $q^x\otimes q^p$ cannot represent a query
+that is content-\emph{or}-position, only content-\emph{and}-position, and there is
+no fallback channel when either factor is uninformative. It also predicts nothing
+about \emph{when} EM wins --- the regime narrative built on the AND-gate was
+retracted in this project on a pre-registered test, and the algebra here is
+deliberately silent about it. What the algebra does explain is the observed
+sensitivity to how the position channel is initialised: on Match-Query, a single
+$p_0$ beats the paper-faithful separate $q^p_0, k^p_0$ by $+0.358$ ($3/3$ seeds,
+the separate form collapsing to $0.107$ on one), because with no additive fallback a
+mis-set position factor multiplies the whole score rather than being outvoted.
+
+\paragraph{TEM-t is MapFormer with the two structural conditions removed --- and it
+came first.} TEM-t (Whittington et al., arXiv:2112.04035) generates position
+recurrently, $e_t = \sigma(e_{t-1}W_{a_t})$ with $\sigma$ a ReLU and $W_a$ a general
+per-action matrix, and then sets $Q = K = W_e e$ and $V = W_x x$. Content is absent
+from the logit entirely; it enters only through the values.
+
+Its logit is $e_t^\top W_e^\top W_e\, e_s$. Writing $e_s = W_{t\to s}e_t$ and
+$e_t = W_{0\to t}e_0$, with $W_e$ orthogonal this is
+$e_0^\top W_{0\to t}^{\top}\,W_{t\to s}\,W_{0\to t}\,e_0$ --- the interval operator
+\emph{conjugated by the prefix}. Conjugation is trivial exactly when the group is
+abelian. So:
+
+\begin{center}\small
+\begin{tabular}{lc}
+\toprule
+transition group & logit depends on the interval alone? \\
+\midrule
+abelian (block rotations), no $\sigma$ & \textbf{yes} \\
+general $SO(d)$, no $\sigma$           & no \\
+abelian, with ReLU                     & no \\
+general $SO(d)$, with ReLU             & no \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent (\texttt{verify\_theory.py}; the abelian linear row agrees to
+$10^{-6}$ and the others differ in the first digit.) \textbf{MapFormer is precisely
+the surviving row}: $SO(2)^{\nb}$ is abelian by construction and there is no
+nonlinearity on the path. TEM-t breaks both conditions, and either break alone is
+enough.
+
+This is the mechanical explanation of a cost this project measured without
+explaining: no group law means no $S_t$, hence no parallel prefix scan, hence a
+sequential loop. At $L=2048$, \texttt{TEMFaithful} is $120\times$ slower than at
+$L=128$ and $1632\times$ slower than \texttt{Vanilla} in absolute terms --- with
+$20\times$ \emph{fewer} parameters ($20{,}705$ against $405{,}472$). The constant
+includes Python-loop overhead, but the \emph{shape} is the missing group law, not
+the implementation.
+
+The historical order is worth stating plainly: TEM-t is 2022 and MapFormer is 2025,
+so on this axis MapFormer is the later paper, and what it contributes is the
+\emph{restriction} --- abelian, linear --- that buys the parallel scan and the
+relative law. That is the same move as $\S$\ref{sec:group}'s $K=1$ argument, applied
+to the transition group instead of the convolution width.
+
 \paragraph{Is PoPE a variant of Selective RoPE?} No, and not narrowly. Selective
 RoPE \emph{rotates} $\tilde q,\tilde k$; rotation is orthogonal, so it preserves
 $\mu = |\tilde q^{(c)}|$ and merely shifts $\psi = \arg \tilde q^{(c)}$. It
@@ -1531,8 +1608,8 @@ CoPE$^\dagger$         & \emph{per-token factorisation} (A3 = pair)
   & $p_{ij}=\sum_{k=j}^{i}\sigma(q_i\!\cdot\!k_k)$; no $\theta_t$ \\
 MesaNet, Titans, TAPE$^\dagger$ & the \emph{path structure} (A8)
   & prefix-global inverse / deep memory / layerwise update \\
-MapEM$^\dagger$        & the \emph{single bilinear form}
-  & $A_X\odot A_P$ is a product of two attentions \\
+TEM-t$^\dagger$        & \emph{linearity} and \emph{commutativity}
+  & $e_t = \sigma(e_{t-1}W_{a_t})$; see $\S$\ref{sec:emtem} \\
 \bottomrule
 \end{tabular}
 \end{center}

@@ -10,6 +10,8 @@ covers the rest.
 
     cd /home/prashr && python3 -m mapformer.verify_theory
 """
+import math
+
 import numpy as np
 import torch
 
@@ -145,7 +147,79 @@ def shear():
     return abs(lhs - rhs)
 
 
+def mapem_lift():
+    """MapEM's Hadamard product IS a single bilinear form -- on the tensor product.
+
+    (A_X . A_P)_ts = (q^x_t (x) q^p_t) . (k^x_s (x) k^p_s), dimension d_x*d_p.
+    So MapEM does not leave the frame of eq:unified; it evaluates it on a lifted
+    space. An earlier draft listed it under "breaks the single bilinear form".
+    """
+    hdr("MapEM = the frame lifted to the tensor product")
+    torch.manual_seed(0)
+    T, dx, dp = 6, 8, 5
+    qx, kx = torch.randn(T, dx), torch.randn(T, dx)
+    qp, kp = torch.randn(T, dp), torch.randn(T, dp)
+    had = (qx @ kx.T) * (qp @ kp.T)
+    Q = torch.einsum("ti,tj->tij", qx, qp).reshape(T, dx * dp)
+    K = torch.einsum("si,sj->sij", kx, kp).reshape(T, dx * dp)
+    e = float((had - Q @ K.T).abs().max())
+    print(f"  max|Hadamard - tensor-product bilinear| = {e:.3e}   (float32)")
+    print(f"  lifted dimension d_x*d_p = {dx * dp}, against {dx} and {dp} separately")
+    return e
+
+
+def tem_conjugation():
+    """TEM-t's logit is interval-relative iff the transition group is ABELIAN and
+    there is no nonlinearity.
+
+    logit = e_t^T W_e^T W_e e_s. With e_s = W_{t->s} e_t and e_t = W_{0->t} e_0 and
+    W_e orthogonal, this is e_0^T W_{0->t}^T W_{t->s} W_{0->t} e_0 -- the interval
+    operator CONJUGATED BY THE PREFIX. Conjugation is trivial exactly when the group
+    commutes. MapFormer is the surviving configuration: SO(2)^n_b, no nonlinearity.
+    """
+    hdr("TEM-t: interval-relative iff abelian and linear")
+    torch.manual_seed(0)
+    d = 8
+
+    def blocks(angles):
+        M = torch.zeros(d, d)
+        for i, a in enumerate(angles):
+            c, s_ = math.cos(a), math.sin(a)
+            M[2*i, 2*i] = c; M[2*i, 2*i+1] = -s_
+            M[2*i+1, 2*i] = s_; M[2*i+1, 2*i+1] = c
+        return M
+
+    Wc = torch.stack([blocks([.3*k, .7*k, 1.1*k, .2*k]) for k in (1, -1, 2, -2)])
+    S = torch.randn(4, d, d); S = S - S.transpose(1, 2)
+    Wg = torch.matrix_exp(0.6 * S)
+    e0 = torch.randn(d)
+
+    def logit(prefix, suffix, W, relu):
+        e = e0.clone()
+        for a in prefix:
+            e = e @ W[a]
+            if relu:
+                e = torch.relu(e)
+        et = e.clone()
+        for a in suffix:
+            e = e @ W[a]
+            if relu:
+                e = torch.relu(e)
+        return float(et @ e)
+
+    print(f"  {'transition group':24s} {'prefix A':>11s} {'prefix B':>11s}  interval-relative")
+    for W, lab, relu in ((Wc, "abelian, linear", False),
+                         (Wg, "general SO(d), linear", False),
+                         (Wc, "abelian, ReLU", True),
+                         (Wg, "general SO(d), ReLU", True)):
+        a, b = logit([0, 1], [1, 3], W, relu), logit([2, 3, 2], [1, 3], W, relu)
+        print(f"  {lab:24s} {a:11.6f} {b:11.6f}  {abs(a - b) < 1e-4}")
+    print(f"  ||[W_0,W_1]||: abelian {float((Wc[0]@Wc[1]-Wc[1]@Wc[0]).abs().max()):.1e}, "
+          f"general {float((Wg[0]@Wg[1]-Wg[1]@Wg[0]).abs().max()):.3f}")
+
+
 if __name__ == "__main__":
     torch.set_grad_enabled(False)
     factorisation(); log_polar(); sign_asymmetry(); shear()
+    mapem_lift(); tem_conjugation()
     print("\nQuote these magnitudes, not remembered ones.")
