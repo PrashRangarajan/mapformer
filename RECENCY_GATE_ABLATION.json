@@ -1,0 +1,82 @@
+[
+  {
+    "none": 1.0,
+    "zero_filler": 1.0,
+    "equalize": 0.08333333333333333,
+    "scale_match": 0.10964912280701754,
+    "uniform_content": 0.9013157894736842,
+    "uniform_all": 0.17324561403508773,
+    "zero_content": 0.06578947368421052,
+    "zero_query": 0.918859649122807
+  },
+  {
+    "none": 1.0,
+    "zero_filler": 1.0,
+    "equalize": 0.09210526315789473,
+    "scale_match": 0.12280701754385964,
+    "uniform_content": 0.7960526315789473,
+    "uniform_all": 0.19078947368421054,
+    "zero_content": 0.08552631578947369,
+    "zero_query": 0.8223684210526315
+  },
+  {
+    "none": 1.0,
+    "zero_filler": 1.0,
+    "equalize": 0.07456140350877193,
+    "scale_match": 0.1118421052631579,
+    "uniform_content": 0.7017543859649122,
+    "uniform_all": 0.17982456140350878,
+    "zero_content": 0.043859649122807015,
+    "zero_query": 0.7828947368421053
+  },
+  {
+    "none": 1.0,
+    "zero_filler": 1.0,
+    "equalize": 0.09649122807017543,
+    "scale_match": 0.08771929824561403,
+    "uniform_content": 0.9100877192982456,
+    "uniform_all": 0.23903508771929824,
+    "zero_content": 0.09429824561403509,
+    "zero_query": 0.8837719298245614
+  },
+  {
+    "none": 1.0,
+    "zero_filler": 1.0,
+    "equalize": 0.08333333333333333,
+    "scale_match": 0.1118421052631579,
+    "uniform_content": 0.8881578947368421,
+    "uniform_all": 0.18421052631578946,
+    "zero_content": 0.07017543859649122,
+    "zero_query": 0.8574561403508771
+  },
+  {
+    "none": 1.0,
+    "zero_filler": 0.9978070175438597,
+    "equalize": 0.07675438596491228,
+    "scale_match": 0.1206140350877193,
+    "uniform_content": 0.5921052631578947,
+    "uniform_all": 0.15350877192982457,
+    "zero_content": 0.046052631578947366,
+    "zero_query": 0.7192982456140351
+  },
+  {
+    "none": 1.0,
+    "zero_filler": 1.0,
+    "equalize": 0.08771929824561403,
+    "scale_match": 0.14473684210526316,
+    "uniform_content": 0.7785087719298246,
+    "uniform_all": 0.20175438596491227,
+    "zero_content": 0.07017543859649122,
+    "zero_query": 0.8925438596491229
+  },
+  {
+    "none": 1.0,
+    "zero_filler": 1.0,
+    "equalize": 0.08991228070175439,
+    "scale_match": 0.06798245614035088,
+    "uniform_content": 0.6929824561403509,
+    "uniform_all": 0.18640350877192982,
+    "zero_content": 0.06798245614035088,
+    "zero_query": 0.7083333333333334
+  }
+]

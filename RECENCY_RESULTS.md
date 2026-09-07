@@ -82,21 +82,50 @@ statistics.
 
 This is what the clock/map dichotomy predicted and had never been tested on.
 
-### How it does it -- likely, not established
+### How it does it -- ESTABLISHED causally (`RECENCY_GATE_ABLATION.md`)
 
 The negative fraction of Delta barely moves (0.498 -> 0.478), so the arm does NOT
-make every increment positive. Measured per seed, sign-normalised (the global
-sign of theta is arbitrary, so cross-seed averages of signed values are
-meaningless -- an earlier version of this probe reported one and it was noise):
+make every increment positive. It learns a **content gate**: large increments on
+counted tokens, near-zero on filler. Per head that gate is present in **8/8**
+seeds (an earlier mean-over-heads statistic said 6/8 and was the wrong statistic;
+an earlier version still averaged SIGNED values across seeds, where theta's global
+sign is arbitrary, and reported noise).
 
-|Delta| on COUNTED tokens vs on FILLER: median **18x**, range 0.03x-162x,
-**6/8 seeds** with content > filler.
+Correlation could not settle it -- gate strength does not predict the outcome,
+r(log gate ratio, accuracy) = **-0.34**, across a range where every seed is near
+ceiling and the correlation has no power either way. Settled by eval-only
+intervention instead:
 
-So the likely mechanism is a **learned content gate** -- large increments on
-counted tokens, near-zero on filler -- which is CoPE's gate arrived at by an
-unconstrained MapFormer rather than built in. But 2/8 seeds do not show it and
-the spread is three orders of magnitude, so this is the probable account of HOW,
-not an established one. The alpha shift itself is 8/8 and not in doubt.
+| condition | accuracy | delta |
+|---|---|---|
+| baseline | 1.000 | -- |
+| `zero_filler` (filler increments removed) | **0.9997** | **-0.0003** |
+| `zero_content` (counted increments removed) | 0.068 | -0.932 |
+| `uniform_content` -- constant Delta on content, magnitude-matched | **0.783** | -0.217 |
+| `uniform_all` -- constant Delta on every token, magnitude-matched | **0.189** | -0.811 |
+
+1. **`zero_filler` is a no-op.** Filler increments carry nothing.
+2. **`zero_content` destroys it.** The positive control bites, so the
+   intervention reaches the pathway.
+3. **`uniform_content` beats `uniform_all` by +0.594 at 8/8 seeds.** Both replace
+   Delta with a constant and both make theta travel the same total distance; they
+   differ only in WHICH tokens the constant lands on. That isolates the value of
+   counting content rather than tokens.
+
+A constant increment on content alone recovers 0.783 of 1.000, so everything the
+model learned beyond "count the counted tokens" is worth ~0.22 -- **the gate is
+most of the mechanism, not a part of it.** And `uniform_all` (0.189) lands BELOW
+the index arms (0.234): a token clock inside this architecture is no better than
+an index code, which is exactly what it is.
+
+**A confound I nearly published.** My pre-stated criterion used an `equalize`
+condition (filler increments set equal to content). It collapses to 0.086 --
+apparently decisive. But `scale_match`, which changes ONLY theta's scale while
+still counting content alone, collapses just as hard (0.110). This model is
+acutely sensitive to theta's absolute magnitude, so `equalize` proves nothing and
+is not counted. The magnitude-matched pair was added afterwards, as a control for
+that confound rather than a second bite at the hypothesis, and was not
+pre-registered.
 
 ## 4. Two of my four pre-registered hypotheses were REFUTED
 
@@ -109,11 +138,13 @@ not an established one. The alpha shift itself is 8/8 and not in doubt.
 
 ## Caveats, none of which are buried
 
-- **Convergence is marginal (rule 10).** Loss slope over the final 10% is
-  -0.002 to -0.005/epoch and the flat fraction at |slope| < 1e-3 is only 1/8 to
-  4/8 per arm. A 2x-budget check on the index arms and `Signed_r4` (3 seeds,
-  600 epochs) is in flight; until it lands, **0.234 is not licensed as a
-  converged number** and the +0.750 is an upper bound.
+- **Convergence (rule 10): CHECKED, and it holds.** The loss slope over the
+  final 10% is -0.002 to -0.005/epoch and the flat fraction only 1/8 to 4/8 per
+  arm, so the 300-epoch numbers were not licensed on their own. A 2x-budget rerun
+  (600 epochs, 3 seeds) moves nothing: RoPE 0.251 -> 0.242, PlainFlat 0.247 ->
+  0.248, `Signed_r4` 1.000 -> 1.000, index final loss 2.15 -> 2.12. **0.234 is a
+  capability limit, not a budget limit**, so +0.750 is licensed rather than an
+  upper bound.
 - **r(final loss, accuracy) = -0.999** over all 48 runs and **-0.875** within the
   four path-integrated arms at T=2048 (rule 9). Section 2 is therefore reported
   loss-matched as well as raw; section 1 is not, for the reason given there.
