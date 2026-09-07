@@ -15,7 +15,7 @@
 \DeclareMathOperator{\softmax}{softmax}
 
 \title{Positional Mechanisms in Attention:\\
-\large two factors, one scan, and where the arena's mechanisms sit}
+\large two slots, one scan, and what each one is for}
 \date{}
 \author{}
 
@@ -24,28 +24,96 @@
 
 \begin{abstract}
 \noindent
-Attention has no intrinsic notion of order, and every positional mechanism is a
-choice about how to put one in. This review organises the current arena --- RoPE,
-ALiBi, xPos, PoPE, CoPE, MapFormer, Selective RoPE, CARoPE, GRAPE, FoX, Jordan-RoPE,
-LieRE, PaTH, DeltaNet, RWKV-7, Mamba and its successors, MesaNet, Titans, TAPE and
-TEM --- around a single classification and eight axes of variation.
+Attention encodes no order by itself, and the mechanisms proposed to supply it now
+number in the dozens. This review argues the space is far smaller than the list.
 
-The classification is sharp. If the positional map is linear in the query and key,
-translation-invariant, and continuous, the family of interval operators is a
+If the positional map is linear in the query and key, translation-invariant and
+continuous, the interval operators form a one-parameter matrix group
+$A(d)=\exp(dM)$, so classifying positional encodings reduces to classifying the
+generator $M$ up to conjugacy --- which leaves exactly two live slots, a real part
+that scales and an imaginary part that rotates, because $\C$ has exactly two.
+Defective generators add polynomial factors and nothing else. Writing both slots as
+one complex log-polar accumulator makes every mechanism a choice of where content
+enters: magnitude or phase, instantaneous or accumulated, at what sign and what rank.
+Mechanisms that appear to escape --- PaTH, DeltaNet, RWKV-7, CoPE, MesaNet, Titans,
+TAPE, TEM-t, and the classical relative methods of Shaw, Transformer-XL and T5 ---
+escape by breaking one of the three assumptions, and it is possible to say which.
+
+Two consequences do not follow from any single mechanism. The two slots answer
+\emph{different questions}: a signed accumulated phase measures net displacement and
+is a map, a monotone one measures elapsed path and is a clock, and the two are
+mutually exclusive --- so the monotone increments of CARoPE, GRAPE-AP and CoPE are
+correct on language and disqualifying on navigation. And the frame has a second
+reading, in which the positional operator is an associative memory's transport
+kernel; under it the fast-weight literature and the positional-encoding literature
+are seen to have divided the two slots between them without either saying so.
+
+The review closes with measurements on navigation and algorithmic tasks isolating the
+two axes the frame exposes and nobody varies deliberately --- the \emph{sign} of the
+increment, which costs nothing and is worth more than any other ingredient here, and
+the \emph{input-side rank} of the content-to-phase map --- and with what the two imply
+for choosing a mechanism for a given task.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+Attention computes content-dependent interactions between tokens and, by itself,
+encodes no order at all: permute the inputs and the outputs permute with them. A
+positional mechanism is whatever is added to restore order, and the space of such
+mechanisms is now large --- absolute embeddings, relative biases, rotary phases,
+decays, gates, content-dependent variants of each, and their state-space analogues.
+
+This review argues that the space is much smaller than the list suggests.
+
+\paragraph{The thesis.} If the positional map is linear in the query and key,
+translation-invariant, and continuous, then the family of interval operators is a
 one-parameter matrix group $A(d) = \exp(dM)$, and classifying positional encodings
-reduces to classifying the generator $M$ up to conjugacy. Diagonalising $M$ gives
+reduces to classifying the generator $M$ up to conjugacy. Diagonalising $M$ leaves
 exactly two live slots --- a real part that scales and an imaginary part that
-rotates --- because $\C$ has exactly two. Defective generators add polynomial
-factors and nothing else. Everything that appears to escape this picture escapes by
+rotates --- because $\C$ has exactly two. Writing both as one complex log-polar
+accumulator turns every mechanism in the arena into a choice of \emph{where content
+enters}: in the magnitude or the phase, instantaneously or accumulated, with what
+sign and at what rank. Mechanisms that appear to escape this picture escape by
 breaking one of the three assumptions, and it is usually possible to say which.
 
-Writing the two slots as one complex log-polar accumulator makes the whole arena a
-choice of where content enters --- instantaneously or accumulated, in the magnitude
-or in the phase --- and with what sign and rank. Two of those axes turn out to be
-where the differences actually live. We give the algebra, the relational map, and
-the measurements that separate the axes on a navigation task where they are
-distinguishable.
-\end{abstract}
+\paragraph{What the frame buys.} Two things a list of mechanisms does not.
+First, the two slots turn out to answer \emph{different questions} rather than to be
+two settings of one dial: a signed accumulated phase measures net displacement and is
+a map, while a monotone one measures elapsed path and is a clock, and the two are
+mutually exclusive by construction ($\S$\ref{sec:clockmap}). Second, the frame makes
+visible two axes on which the mechanisms genuinely differ and which nobody varies
+deliberately --- the \emph{sign} of the increment and the \emph{input-side rank} of
+the content-to-phase map --- and both are invisible on the tasks the literature
+evaluates.
+
+\paragraph{Scope, and what this review is not.} It covers positional mechanisms as
+operators on the attention logit: how position enters, what algebra it lives in, and
+what that implies for what can be computed. It does not cover the
+frequency-allocation and context-extension line (Position Interpolation, NTK-aware
+scaling, YaRN, LongRoPE), which varies the readout rather than the operator and is
+surveyed elsewhere; $\S$\ref{sec:readout} states only what that line contributes to
+the frame. Original measurements are reported in $\S$\ref{sec:measured} and are
+marked as such throughout.
+
+\paragraph{Positioning.} The existing surveys partition almost perfectly from this
+one. The most recent (Li, arXiv:2608.10021, August 2026) treats absolute and relative
+methods, RoPE and long-context scaling, and contains \textbf{zero} occurrences of
+CoPE, MapFormer, Selective RoPE, CARoPE, FoX, Mamba or GRAPE; the 2023
+length-extrapolation survey (arXiv:2312.17044) mentions CoPE and Mamba twice each and
+none of the rest. The content-dependent half of the arena, the memory reading of
+$\S$\ref{sec:memory}, and the navigation regime appear in neither.
+
+\paragraph{Organisation.} $\S$\ref{sec:frame}--\ref{sec:classification} set up the
+polar frame and the classification. $\S$\ref{sec:classical} places the classical
+relative methods, which fail the classification's third condition.
+$\S$\ref{sec:phase}--\ref{sec:pope} treat the two slots in turn and
+$\S$\ref{sec:unify} unifies them in one equation. $\S$\ref{sec:clockmap} is the
+conceptual consequence. $\S$\ref{sec:map} is the relational map over eight axes;
+$\S$\ref{sec:emtem} places two mechanisms from the cognitive-map literature and
+$\S$\ref{sec:memory} re-reads the whole frame from the fast-weight side.
+$\S$\ref{sec:measured} reports the measurements and $\S$\ref{sec:capability} draws
+out what they imply for choosing a mechanism.
 
 \section{The shared frame}
 \label{sec:frame}
@@ -115,6 +183,41 @@ Putting $M$ in Jordan form gives three cases and no others.
 everything content-dependent: a gate with a data-dependent decay should be read as
 \emph{learning how far to advance time}, not as changing a rate. That is exactly
 the substitution $t \mapsto S_t = \sum_{u\le t}G(x_u)$ of $\S$\ref{sec:unify}.
+
+\section{The classical relative methods}
+\label{sec:classical}
+\label{sec:classical}
+
+Shaw-style relative position representations, Transformer-XL and T5's relative bias
+predate the rotary line and are still widely deployed. They are the first row of the
+table above, and the one whose escape route is least obvious.
+
+Shaw et al.\ add a learned vector indexed by the \emph{clipped} lag,
+\[
+  s_{ij} = \frac{q_i^{\!\top}\big(k_j + a^K_{r_{ij}}\big)}{\sqrt{\hd}},
+  \qquad r_{ij} = \mathrm{clip}(j-i,\,-K,\,K),
+\]
+and T5 compresses the same idea to a per-head scalar,
+$s_{ij} \mathrel{+}= b_{h,\,\mathrm{bucket}(j-i)}$. Transformer-XL carries the
+relative form across cached segments.
+
+They are linear in $q$ and $k$ and translation-invariant, and they fail only on
+continuity --- $\mathrm{clip}$ and $\mathrm{bucket}$ are step functions, so no
+generator exists and beyond the table's range the operator is constant rather than
+continuing.
+
+The trade-off is exact and worth stating, because it is the one design choice the
+rotary line silently makes. \textbf{A table can represent an arbitrary function of
+the lag inside its window and cannot extrapolate outside it at all; a one-parameter
+group is restricted to the three families of $\S$\ref{sec:classification} and
+extrapolates by construction.} RoPE gives up expressiveness over short lags to buy
+a functional form that is defined at every lag. Whether that purchase is honoured is
+a separate question, and the long-context literature's own conclusion is that it
+frequently is not: the ability to \emph{compute} positional features beyond the
+training length does not imply reliable generalisation there, which is why context
+extension is evaluated by short-context retention, position-wise perplexity,
+retrieval and long-context reasoning rather than by whether the encoding is defined.
+
 
 \section{The phase axis: a family of scans}
 \label{sec:phase}
@@ -318,92 +421,86 @@ content-dependent increments the logit is not a function of $s-t$ and the score
 matrix is not Toeplitz. The property that survives, and the one that matters, is
 that the score depends on the tokens in $(t,s]$ and not on the prefix.
 
-\section{The readout, and what the long-context literature varies}
-\label{sec:readout}
 
-$\S$\ref{sec:phase} treats the readout $A = \operatorname{diag}(\omega)$ as fixed.
-A large and practically important literature varies exactly that, and it is disjoint
-from everything above: Position Interpolation, RoPE scaling laws, NTK-aware scaling,
-Dynamic NTK, NTK-by-parts, YaRN, LongRoPE and LongRoPE2 all rescale the frequency
-ladder so a model trained at one length runs at another. Every one of them is
-index-driven, so on Table~1 they occupy a single cell --- but they vary something the
-eight axes do not name.
+\section{A map or a clock: what cancellation chooses}
+\label{sec:clockmap}
 
-\paragraph{The critical dimension.} The argument that organises that line is worth
-importing. Channel $r$ has wavelength $T_r = 2\pi b^{2r/\hd}$. High-frequency
-channels complete many cycles inside the training length $L_0$ and are trained
-through their whole phase range; low-frequency channels may not complete even one.
-The boundary
-\[
-  r_{\mathrm{crit}} \;=\; \min\{\,r : T_r \ge L_0\,\}
-\]
-separates them, and beyond the training length the channels past it enter phase
-intervals never seen in training. For LLaMA-2 ($\hd = 128$, $L_0 = 4096$) that is
-$36$ of $128$ dimensions. This is a mechanism for length-extrapolation failure that
-is about \emph{which channels were trained}, not about capacity or precision.
+It is tempting to read a signed increment as simply better. It is not, and the
+reason decides which mechanism a task wants.
 
-\paragraph{Tested, and the account is wrong.} Transposed to a content-dependent
-phase the coordinate is the accumulator rather than the index, which gives a
-prediction: the benefit of the OOD-helping mechanisms should localise to the
-channels whose period exceeds the trained range of $S_t$, and ablating those
-channels should cost \emph{less} at extrapolated length because they are already
-being read out of distribution.
-
-The precondition holds --- at the training length $8$--$17$ of $64$ channels never
-complete a cycle of their own period, and at $8\times$ that length only $1$--$4$ do
---- so the mechanism could operate. It does not. Ablating the $32$ lowest-frequency
-channels is free at training length ($-0.001$) and costs $0.14$--$0.25$ at $T=1024$,
-on every arm whose baseline is off the floor. \textbf{Those channels are more
-load-bearing at extrapolated length, not less}, which is the opposite of the
-prediction. Damage is localised in frequency --- high-frequency ablation costs
-$0.42$--$0.57$ --- but the plainer reading wins: the low-frequency channels carry
-position at map scale, and coarse position matters more when the walk covers more of
-the map.
-
-\paragraph{What the same measurement did find: the accumulator's growth law.} All
-four arms start from the same accumulator range at training length ($88$--$94$) and
-separate entirely by how fast it grows with sequence length,
-$\operatorname{range}(S) \sim T^{\alpha}$:
+Attention sees only the interval sum
+$\theta_s - \theta_t = \omega\sum_{t<u\le s}\Delta_u$. What that quantity
+\emph{is} depends entirely on whether the increments can cancel:
 
 \begin{center}\small
-\begin{tabular}{lrrrr}
+\begin{tabular}{@{}p{3.0cm}p{5.3cm}p{5.6cm}@{}}
 \toprule
-arm & $T{=}128$ & $T{=}1024$ & $\alpha$ & opposition score \\
+ & $\Delta$ signed & $\Delta$ monotone \\
 \midrule
-signed, $r{=}4$   & $91.8$ & $269.7$ & $\mathbf{0.518}$ & $0.125$ \\
-signed, $r{=}4$ (second batch) & $94.1$ & $279.7$ & $\mathbf{0.524}$ & $0.092$ \\
-signed, $r{=}2$   & $88.5$ & $320.5$ & $0.619$ & $0.495$ \\
-monotone, $r{=}4$ & $91.5$ & $649.8$ & $\mathbf{0.943}$ & $1.849$ \\
+the interval sum is & \textbf{net displacement} & \textbf{monotone in path length} \\[2pt]
+two routes $A\!\to\!B$ & agree & disagree \\[2pt]
+injective in & \textbf{space}, blind to time & \textbf{time}, blind to space \\[2pt]
+what collides & same place, different times & nothing --- every instant is distinct \\[2pt]
+the accumulator is & a \textbf{map} & a \textbf{clock} \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\noindent A signed, well-conditioned increment gives $\alpha \approx 0.52$: the
-accumulator performs a \textbf{diffusive random walk}. A monotone one gives
-$\alpha \approx 0.94$: \textbf{ballistic drift}. The last column is the opposition
-score $\lVert\Delta(+x)+\Delta(-x)\rVert/\overline{\lVert\Delta\rVert}$, measured in a
-different batch for a different purpose; across the four arms
-$r(\text{opposition},\alpha) = +0.9995$.
+\noindent These are mutually exclusive by construction, and each is \emph{correct}
+for one job. A cognitive map \textbf{needs} same-place-different-time to collide ---
+that collision is exactly what revisit prediction asks for. Language needs the
+opposite: a code that made token $5$ and token $15$ interchangeable because some
+``backward'' token intervened would be broken, not economical.
 
-\textbf{This is one mechanism for two separate results.} How completely opposite
-actions cancel sets whether the accumulator diffuses or drifts; that sets how fast it
-leaves the range it was trained on; and that sets the rate of degradation with
-length. A skewed rank-$2$ basis (opposition $0.495$) and a monotone increment
-($1.849$) are the same failure at different severities. Four points, correlational
-across arms; $\alpha\approx0.5$ for a signed walk is expected in itself, and what
-carries the result is the spread to $0.94$ and the cross-batch agreement with a
-quantity measured for another reason.
+So the monotone increment of CARoPE, GRAPE-AP and CoPE is not an oversight that the
+state-tracking literature caught them in. \textbf{On language a monotone clock is the
+right object}, which is why RoPE --- $\Delta\equiv1$, maximally monotone --- is the
+sensible default there and why nothing went visibly wrong. The limitation appears
+only where the task demands a quantity that is invariant to route, which on text is
+essentially parity and formal-language state tracking, and on navigation is
+everything.
 
-\paragraph{Scope of the existing surveys.} This is worth stating plainly because it
-determines what this review is for. The most recent survey of position encoding
-(Li, August 2026) is a careful treatment of exactly the line above --- absolute and
-relative methods, RoPE, and long-context scaling --- and contains \textbf{zero
-occurrences} of CoPE, MapFormer, Selective RoPE, CARoPE, FoX, Mamba or GRAPE. The
-2023 length-extrapolation survey mentions CoPE and Mamba twice each and none of the
-rest. The content-dependent half of the arena, the memory reading of
-$\S$\ref{sec:memory}, and the navigation regime are not covered by either; the
-frequency-allocation and context-extension line is not covered here. The two
-partitions are close to complementary.
+\paragraph{The growth exponent is a readout of which question, not a score.}
+$\alpha\approx1$ means the accumulator is measuring elapsed time, which is unbounded,
+so the code must eventually leave any range it was trained on. $\alpha\approx0.5$
+means it is measuring a random-walk position. The ideal for a bounded map would be
+$\alpha = 0$ --- position on a torus is bounded --- and nothing here achieves it,
+because every mechanism accumulates without wrapping. That is a design gap, not a
+property of the frame.
+
+\paragraph{What MapFormer gave up to get the map.} A signed $\Delta$ makes two
+visits to the same cell positionally identical. That is the point, and it also means
+the phase cannot represent \emph{how long ago}. Anything recency-dependent has to get
+that information from somewhere else.
+
+\begin{quote}\small
+\textbf{Which is a candidate account of the forget gate, whose mechanism is otherwise
+unaccounted for.} It adds a second, content-dependent, \emph{monotone}
+accumulator in the magnitude slot --- measured at $\alpha = +0.956$, ballistic,
+beside the phase accumulator's $0.6$ --- so it restores the clock that the signed
+phase gave up. Every otherwise-puzzling detail follows: it needs a \emph{live}
+$\lambda$ (frozen at zero it lands on the baseline, $-0.016$, unmeasured) but not
+\emph{decay}; $5$ of $8$ seeds learn $\lambda<0$, and those gain most
+($r(\lambda,\text{gain}) = -0.516$). A negative $\lambda$ still gives a monotone
+accumulator, counting up instead of down. On this reading it was never a forget gate
+--- it is a clock, and the sign of $\lambda$ only sets which way it runs.
+
+\textbf{Predicted, and untested:} any monotone content-dependent increment of either
+sign should reproduce the gain; a content-\emph{independent} constant increment (a
+pure index clock) should reproduce much of it; and the gain should vanish on a task
+with no recency structure.
+\end{quote}
+
+\noindent Read this way the frame's two slots are not two knobs but \textbf{two
+answers}: a signed phase is a map, a monotone accumulated magnitude is a clock, and a
+system that needs both must spend both slots. Mamba-3 claiming both deliberately is
+then the natural endpoint rather than a curiosity. In softmax attention the
+combination is so far only partial: MapPoPE pairs a content-dependent phase with a
+content-dependent magnitude that is \emph{instantaneous}, so it supplies no clock at
+all. A content-dependent phase alongside an \emph{accumulated} content-dependent
+magnitude, in softmax attention, is the configuration nothing in the table
+occupies.
+
 
 \section{The relational map}
 \label{sec:map}
@@ -469,9 +566,12 @@ Mamba / Mamba-2, GLA & magnitude & acc.  & content & $\C^\times$ & $<0$   & full
 \end{tabular}
 \end{sidewaystable}
 
-\noindent Every \emph{abelian} row above composes by parallel prefix sum (A8); LieRE
-and Algebraic PE are the exceptions, since non-commuting generators obey no
-prefix-sum law.
+\noindent Every \emph{abelian} row above composes by parallel prefix sum --- the
+eighth axis, \textbf{A8}, which the table does not have a column for because all but
+one row share a value. LieRE is the exception: its generators need not commute, so it
+obeys no prefix-sum law and reads its rotation directly off a position rather than
+accumulating. (Algebraic PE is abelian for sequences and grids, and non-abelian only
+for $k$-ary trees.)
 
 \subsection{What leaves the frame, and how}
 
@@ -493,42 +593,6 @@ TEM-t        & \emph{linearity} and \emph{commutativity}
 \bottomrule
 \end{tabular}
 \end{center}
-
-\subsection{The classical relative methods, and a fourth way out of the frame}
-\label{sec:classical}
-
-Shaw-style relative position representations, Transformer-XL and T5's relative bias
-predate the rotary line and are still widely deployed. They belong in the map, and
-they occupy a slot the out-of-frame table did not have.
-
-Shaw et al.\ add a learned vector indexed by the \emph{clipped} lag,
-\[
-  s_{ij} = \frac{q_i^{\!\top}\big(k_j + a^K_{r_{ij}}\big)}{\sqrt{\hd}},
-  \qquad r_{ij} = \mathrm{clip}(j-i,\,-K,\,K),
-\]
-and T5 compresses the same idea to a per-head scalar,
-$s_{ij} \mathrel{+}= b_{h,\,\mathrm{bucket}(j-i)}$. Transformer-XL carries the
-relative form across cached segments.
-
-These are linear in $q$ and $k$ and translation-invariant, but the map from lag to
-operator is a \textbf{lookup table over a discretised lag}. That fails Puranik's
-third condition, \emph{continuity}, and with it the group law: there is no generator
-$M$ because $\mathrm{clip}$ and $\mathrm{bucket}$ are step functions, and beyond the
-table's range the operator is constant rather than continuing. So they leave the
-frame by a route distinct from non-abelian transport, pair-dependence or a broken
-path structure.
-
-The trade-off is exact and worth stating, because it is the one design choice the
-rotary line silently makes. \textbf{A table can represent an arbitrary function of
-the lag inside its window and cannot extrapolate outside it at all; a one-parameter
-group is restricted to the three families of $\S$\ref{sec:classification} and
-extrapolates by construction.} RoPE gives up expressiveness over short lags to buy
-a functional form that is defined at every lag. Whether that purchase is honoured is
-a separate question, and the long-context literature's own conclusion is that it
-frequently is not: the ability to \emph{compute} positional features beyond the
-training length does not imply reliable generalisation there, which is why context
-extension is evaluated by short-context retention, position-wise perplexity,
-retrieval and long-context reasoning rather than by whether the encoding is defined.
 
 \subsection{Reading the map}
 
@@ -561,6 +625,72 @@ bottleneck: how many dimensions of content may steer the angle.
 \emph{(iv) A7 is nearly free.} Selective RoPE runs in both hosts and Mamba-3 crosses
 over by state-space duality, so ``softmax versus SSM'' separates implementations
 rather than mechanisms.
+
+
+
+
+
+\section{Where MapEM and TEM-t sit}
+\label{sec:emtem}
+
+Two mechanisms from the cognitive-map literature are placeable, and the placements
+are opposite.
+
+\paragraph{MapEM lifts the frame rather than leaving it.} MapEM computes two
+attention matrices and multiplies them elementwise,
+$A = \softmax(A_X \odot A_P)$. With $(A_X)_{ts} = q^x_t\!\cdot\!k^x_s$ and
+$(A_P)_{ts} = q^p_t\!\cdot\!k^p_s$,
+\[
+  (A_X \odot A_P)_{ts} \;=\; \big(q^x_t \otimes q^p_t\big)\cdot\big(k^x_s \otimes k^p_s\big),
+\]
+so the Hadamard product \emph{is} a single bilinear form --- on the tensor product of
+the content and position spaces, of dimension $d_xd_p$ rather than $d$ (verified to
+$1.9\times10^{-6}$ in float32). Everything in $\S$\ref{sec:unify} applies with $c$ and
+$G$ valued in $\C^{d_xd_p}$.
+
+That is sharper than ``an AND-gate rather than an OR-gate'', and it says what the lift
+costs: a rank-one tensor $q^x\otimes q^p$ can express content-\emph{and}-position but
+not content-\emph{or}-position, and there is no fallback channel when either factor is
+uninformative. It predicts the observed sensitivity to how the position channel is
+initialised --- a single shared $p_0$ beats separate $q^p_0, k^p_0$ by $+0.358$ on a
+matching task ($3/3$ seeds) --- because with no additive fallback a mis-set position
+factor multiplies the whole score instead of being outvoted.
+
+\paragraph{TEM-t is the same machine with two conditions removed.} TEM-t
+(Whittington et al., 2022) generates position recurrently,
+$e_t = \sigma(e_{t-1}W_{a_t})$ with $\sigma$ a ReLU and $W_a$ a general per-action
+matrix, then sets $Q = K = W_e e$ and $V = W_x x$; content is absent from the logit
+entirely and enters only through the values.
+
+Its logit is $e_t^\top W_e^\top W_e\,e_s$. Writing $e_s = W_{t\to s}e_t$ and
+$e_t = W_{0\to t}e_0$, with $W_e$ orthogonal this is
+$e_0^\top W_{0\to t}^{\top}W_{t\to s}W_{0\to t}e_0$ --- \textbf{the interval operator
+conjugated by the prefix}. Conjugation is trivial exactly when the group is abelian:
+
+\begin{center}\small
+\begin{tabular}{lc}
+\toprule
+transition group & logit depends on the interval alone? \\
+\midrule
+abelian (block rotations), no $\sigma$ & \textbf{yes} \\
+general $SO(d)$, no $\sigma$           & no \\
+abelian, with ReLU                     & no \\
+general $SO(d)$, with ReLU             & no \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent \textbf{MapFormer is precisely the surviving row}: $SO(2)^{\nb}$ is abelian
+by construction and there is no nonlinearity on the path. TEM-t breaks both, and
+either break alone suffices.
+
+This is the mechanical account of a large empirical cost. No group law means no
+$S_t$, hence no parallel prefix scan, hence a sequential loop: at $L=2048$ a faithful
+TEM is $120\times$ slower than at $L=128$ and $1632\times$ slower in absolute terms
+than a MapFormer of $20\times$ \emph{more} parameters. The constant includes
+interpreter overhead; the shape is the missing group law. TEM-t is 2022 and MapFormer
+2025, so on this axis the later contribution is the \emph{restriction} --- abelian and
+linear --- that buys the scan and the relative law.
 
 \section{The memory reading: what the frame looks like from the other side}
 \label{sec:memory}
@@ -672,243 +802,67 @@ observation bound to its place rather than superposing the two channels additive
 --- which is the same trade the primal/dual axis makes, one level down.
 
 \medskip
-\noindent Everything in this section is a change of reading, not of mechanism. It
-matters because it says where to look for the unoccupied designs: the cells that are
+\noindent This is a change of reading, not of mechanism. It says where to look for the unoccupied designs: the cells that are
 empty in one literature are usually the ones the other has already filled.
 
-\section{Where MapEM and TEM-t sit}
-\label{sec:emtem}
+\section{The readout axis}
+\label{sec:readout}
 
-Two mechanisms from the cognitive-map literature are placeable, and the placements
-are opposite.
+$\S$\ref{sec:phase} treats the readout $A = \operatorname{diag}(\omega)$ as fixed.
+A large and practically important literature varies exactly that, and it is disjoint
+from everything above: Position Interpolation, RoPE scaling laws, NTK-aware scaling,
+Dynamic NTK, NTK-by-parts, YaRN, LongRoPE and LongRoPE2 all rescale the frequency
+ladder so a model trained at one length runs at another. Every one of them is
+index-driven, so on Table~1 they occupy a single cell --- but they vary something the
+eight axes do not name.
 
-\paragraph{MapEM lifts the frame rather than leaving it.} MapEM computes two
-attention matrices and multiplies them elementwise,
-$A = \softmax(A_X \odot A_P)$. With $(A_X)_{ts} = q^x_t\!\cdot\!k^x_s$ and
-$(A_P)_{ts} = q^p_t\!\cdot\!k^p_s$,
+\paragraph{The critical dimension.} The argument that organises that line is worth
+importing. Channel $r$ has wavelength $T_r = 2\pi b^{2r/\hd}$. High-frequency
+channels complete many cycles inside the training length $L_0$ and are trained
+through their whole phase range; low-frequency channels may not complete even one.
+The boundary
 \[
-  (A_X \odot A_P)_{ts} \;=\; \big(q^x_t \otimes q^p_t\big)\cdot\big(k^x_s \otimes k^p_s\big),
+  r_{\mathrm{crit}} \;=\; \min\{\,r : T_r \ge L_0\,\}
 \]
-so the Hadamard product \emph{is} a single bilinear form --- on the tensor product of
-the content and position spaces, of dimension $d_xd_p$ rather than $d$ (verified to
-$1.9\times10^{-6}$ in float32). Everything in $\S$\ref{sec:unify} applies with $c$ and
-$G$ valued in $\C^{d_xd_p}$.
+separates them, and beyond the training length the channels past it enter phase
+intervals never seen in training. For LLaMA-2 ($\hd = 128$, $L_0 = 4096$) that is
+$36$ of $128$ dimensions. This is a mechanism for length-extrapolation failure that
+is about \emph{which channels were trained}, not about capacity or precision.
 
-That is sharper than ``an AND-gate rather than an OR-gate'', and it says what the lift
-costs: a rank-one tensor $q^x\otimes q^p$ can express content-\emph{and}-position but
-not content-\emph{or}-position, and there is no fallback channel when either factor is
-uninformative. It predicts the observed sensitivity to how the position channel is
-initialised --- a single shared $p_0$ beats separate $q^p_0, k^p_0$ by $+0.358$ on a
-matching task ($3/3$ seeds) --- because with no additive fallback a mis-set position
-factor multiplies the whole score instead of being outvoted.
+\paragraph{Scope of the existing surveys.} The most recent survey of position encoding
+(Li, August 2026) is a careful treatment of exactly the line above --- absolute and
+relative methods, RoPE, and long-context scaling --- and contains \textbf{zero
+occurrences} of CoPE, MapFormer, Selective RoPE, CARoPE, FoX, Mamba or GRAPE. The
+2023 length-extrapolation survey mentions CoPE and Mamba twice each and none of the
+rest. The content-dependent half of the arena, the memory reading of
+$\S$\ref{sec:memory}, and the navigation regime are not covered by either; the
+frequency-allocation and context-extension line is not covered here. The two
+partitions are close to complementary.
 
-\paragraph{TEM-t is the same machine with two conditions removed.} TEM-t
-(Whittington et al., 2022) generates position recurrently,
-$e_t = \sigma(e_{t-1}W_{a_t})$ with $\sigma$ a ReLU and $W_a$ a general per-action
-matrix, then sets $Q = K = W_e e$ and $V = W_x x$; content is absent from the logit
-entirely and enters only through the values.
-
-Its logit is $e_t^\top W_e^\top W_e\,e_s$. Writing $e_s = W_{t\to s}e_t$ and
-$e_t = W_{0\to t}e_0$, with $W_e$ orthogonal this is
-$e_0^\top W_{0\to t}^{\top}W_{t\to s}W_{0\to t}e_0$ --- \textbf{the interval operator
-conjugated by the prefix}. Conjugation is trivial exactly when the group is abelian:
-
-\begin{center}\small
-\begin{tabular}{lc}
-\toprule
-transition group & logit depends on the interval alone? \\
-\midrule
-abelian (block rotations), no $\sigma$ & \textbf{yes} \\
-general $SO(d)$, no $\sigma$           & no \\
-abelian, with ReLU                     & no \\
-general $SO(d)$, with ReLU             & no \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\noindent \textbf{MapFormer is precisely the surviving row}: $SO(2)^{\nb}$ is abelian
-by construction and there is no nonlinearity on the path. TEM-t breaks both, and
-either break alone suffices.
-
-This is the mechanical account of a large empirical cost. No group law means no
-$S_t$, hence no parallel prefix scan, hence a sequential loop: at $L=2048$ a faithful
-TEM is $120\times$ slower than at $L=128$ and $1632\times$ slower in absolute terms
-than a MapFormer of $20\times$ \emph{more} parameters. The constant includes
-interpreter overhead; the shape is the missing group law. TEM-t is 2022 and MapFormer
-2025, so on this axis the later contribution is the \emph{restriction} --- abelian and
-linear --- that buys the scan and the relative law.
-
-\section{What each mechanism can and cannot do}
-\label{sec:capability}
-
-The axes of $\S$\ref{sec:map} are descriptive. This section is the part that
-predicts: what a task demands of a positional code, which mechanisms supply it, and
-which trade-offs are forced rather than incidental.
-
-\subsection{Three hard trade-offs}
-
-\paragraph{(T1) Commutativity buys the scan and costs path-dependence.} With $K=1$
-and a linear increment the phase depends on the multiset of tokens traversed, the
-prefix product collapses to a prefix sum, and inference is $O(\log T)$ parallel. The
-same property makes displacement-under-accumulated-heading unrepresentable: a fixed
-per-token increment cannot express ``forward'' when forward depends on where you are
-facing. Measured both ways --- the position effect falls from $+0.438$ to $+0.050$
-under turn/turn/forward actions, and a mechanism that abandons the group law
-(TEM-t, whose ReLU and non-commuting per-action matrices each break it
-independently) runs $120\times$ slower at $L=2048$ than at $L=128$ with $20\times$
-fewer parameters. You may have the scan or the path-dependence.
-
-\paragraph{(T2) A signed increment buys a map and gives up a clock.} The accumulator's
-growth exponent is set by how completely opposite actions cancel:
-$\alpha\approx0.52$ (diffusive) when they do, $\alpha\approx0.94$ (ballistic) when
-they cannot. But the exponent is a symptom; the substance is $\S$\ref{sec:clockmap} ---
-a signed increment makes the interval sum a \emph{net displacement}, invariant to
-route and blind to elapsed time, and a monotone one makes it a \emph{path length},
-injective in time and blind to place. Neither dominates. On navigation the signed
-form wins outright (at matched training loss the monotone one does not beat a plain
-index clock anywhere); on language the monotone form is the correct object, and the
-signed one would be discarding the very distinction position exists to make.
-
-\paragraph{(T3) Compressing the memory makes decay compulsory; keeping it makes decay
-optional and the cost quadratic.} In the primal form the outer-product state
-saturates, so $\operatorname{Re}G<0$ is capacity management --- something must evict.
-In the dual form items are kept separately and the softmax renormalises, so a decay
-term is an inductive bias one may decline. And a memory that must \emph{overwrite}
-stale associations needs a delta-rule update, whose transition matrix is a reflection
-rather than a scalar --- which forfeits T1.
-
-\subsection{Cancellation is not a quality axis: it chooses the question}
-\label{sec:clockmap}
-
-The measurements above make it tempting to read cancellation as simply better. It
-is not, and the reason matters for choosing a mechanism.
-
-Attention sees only the interval sum
-$\theta_s - \theta_t = \omega\sum_{t<u\le s}\Delta_u$. What that quantity
-\emph{is} depends entirely on whether the increments can cancel:
-
-\begin{center}\small
-\begin{tabular}{@{}p{3.0cm}p{5.3cm}p{5.6cm}@{}}
-\toprule
- & $\Delta$ signed & $\Delta$ monotone \\
-\midrule
-the interval sum is & \textbf{net displacement} & \textbf{monotone in path length} \\[2pt]
-two routes $A\!\to\!B$ & agree & disagree \\[2pt]
-injective in & \textbf{space}, blind to time & \textbf{time}, blind to space \\[2pt]
-what collides & same place, different times & nothing --- every instant is distinct \\[2pt]
-the accumulator is & a \textbf{map} & a \textbf{clock} \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\noindent These are mutually exclusive by construction, and each is \emph{correct}
-for one job. A cognitive map \textbf{needs} same-place-different-time to collide ---
-that collision is exactly what revisit prediction asks for. Language needs the
-opposite: a code that made token $5$ and token $15$ interchangeable because some
-``backward'' token intervened would be broken, not economical.
-
-So the monotone increment of CARoPE, GRAPE-AP and CoPE is not an oversight that the
-state-tracking literature caught them in. \textbf{On language a monotone clock is the
-right object}, which is why RoPE --- $\Delta\equiv1$, maximally monotone --- is the
-sensible default there and why nothing went visibly wrong. The limitation appears
-only where the task demands a quantity that is invariant to route, which on text is
-essentially parity and formal-language state tracking, and on navigation is
-everything.
-
-\paragraph{The growth exponent is a readout of which question, not a score.}
-$\alpha\approx1$ means the accumulator is measuring elapsed time, which is unbounded,
-so the code must eventually leave any range it was trained on. $\alpha\approx0.5$
-means it is measuring a random-walk position. The ideal for a bounded map would be
-$\alpha = 0$ --- position on a torus is bounded --- and nothing here achieves it,
-because every mechanism accumulates without wrapping. That is a design gap, not a
-property of the frame.
-
-\paragraph{What MapFormer gave up to get the map.} A signed $\Delta$ makes two
-visits to the same cell positionally identical. That is the point, and it also means
-the phase cannot represent \emph{how long ago}. Anything recency-dependent has to get
-that information from somewhere else.
-
-\begin{quote}\small
-\textbf{Which is a candidate account of the forget gate, listed elsewhere as
-mechanism-unidentified.} It adds a second, content-dependent, \emph{monotone}
-accumulator in the magnitude slot --- measured at $\alpha = +0.956$, ballistic,
-beside the phase accumulator's $0.6$ --- so it restores the clock that the signed
-phase gave up. Every otherwise-puzzling detail follows: it needs a \emph{live}
-$\lambda$ (frozen at zero it lands on the baseline, $-0.016$, unmeasured) but not
-\emph{decay}; $5$ of $8$ seeds learn $\lambda<0$, and those gain most
-($r(\lambda,\text{gain}) = -0.516$). A negative $\lambda$ still gives a monotone
-accumulator, counting up instead of down. On this reading it was never a forget gate
---- it is a clock, and the sign of $\lambda$ only sets which way it runs.
-
-\textbf{Testable, and untested:} any monotone content-dependent increment of either
-sign should reproduce the gain; a content-\emph{independent} constant increment (a
-pure index clock) should reproduce much of it; and the gain should vanish on a task
-with no recency structure.
-\end{quote}
-
-\noindent Read this way the frame's two slots are not two knobs but \textbf{two
-answers}: a signed phase is a map, a monotone accumulated magnitude is a clock, and a
-system that needs both must spend both slots. Mamba-3 claiming both deliberately is
-then the natural endpoint rather than a curiosity, and the empty diagonal of
-$\S$\ref{sec:map} --- content-dependent phase \emph{and} content-dependent magnitude,
-in softmax attention --- is the cell worth building.
-
-\subsection{What a task demands, and what supplies it}
-
-\begin{center}\small
-\begin{tabular}{@{}p{4.0cm}p{3.4cm}p{6.6cm}@{}}
-\toprule
-if the task needs \dots & it requires & and these supply it \\
-\midrule
-\emph{order only} --- which token came first & any monotone clock & RoPE, ALiBi, CoPE, CARoPE, GRAPE-AP, every gated linear RNN \\[3pt]
-\emph{signed displacement} --- parity, net motion, state tracking & a signed increment & MapFormer, Selective RoPE, Mamba-3; DeltaNet/PaTH/RWKV-7 with $\beta>1$. \textbf{Not} CARoPE, GRAPE-AP or CoPE \\[3pt]
-\emph{absolute location in a bounded map} & signed \textbf{and} well-conditioned ($r\ge4$) & MapFormer at $r\ge4$; $r=2$ degrades because its basis is skewed, not because it lacks capacity \\[3pt]
-\emph{holding position far past the training length} & a diffusive accumulator, $\alpha\approx0.5$ & follows from cancellation (T2); or bound the accumulator explicitly, which is what a wrapped filter does \\[3pt]
-\emph{path-dependent actions} (turn/forward) & non-abelian transport, \textbf{or} an allocentric recoding of the input & PaTH, DeltaNet, RWKV-7, TEM-t --- none evaluated on navigation. Recoding the action to absolute displacement restores $+0.488$ and keeps the scan \\[3pt]
-\emph{overwriting stale associations} & a delta rule & DeltaNet, PaTH, RWKV-7; forfeits the parallel scan \\[3pt]
-\emph{exact recall over a window} & the dual form; keep the items & softmax attention. A lossy summary is not a sufficient statistic, which is why hierarchy loses here and wins on compositional transfer \\[3pt]
-\emph{bounded state, linear time} & abelian transport & every row of Table~1; measured $2.6$--$3.3\times$ over a $16\times$ length increase \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\subsection{What follows for choosing a model}
-
-\emph{On language, most of this is invisible.} Order is nearly all that is demanded,
-so a monotone clock suffices, which is why the constraint has gone unnoticed on that
-side: CARoPE, GRAPE-AP and CoPE are all monotone and none cites the state-tracking
-literature that proves the limitation. The one place it surfaces on text is parity
-and formal-language state tracking, where it has been both proved and fixed.
-
-\emph{On navigation and any task with a metric structure, the sign and the
-conditioning of the increment are the whole game.} They are worth more per parameter
-than anything else measured here --- the sign costs nothing at all, and $r=2\to4$
-costs $384$ parameters --- and they dominate the choice of positional encoding by two
-orders of magnitude ($+0.461$ for path integration against $+0.003$ for the
-encoding).
-
-\emph{Where the environment breaks the assumption, fix the environment.} No abelian
-mechanism can represent turn/forward dynamics, and the non-abelian ones pay the scan
-for it. Recording the absolute displacement instead of the commanded turn is a
-change to the data, not the model, and it restores the full effect --- available
-wherever heading is known, which is every simulator.
-
-\emph{The two literatures are complementary, and the empty cells are informative.}
-The fast-weight line owns the magnitude slot and never touches the phase; the
-positional line owns the phase and treats decay as a side-condition. Mamba-3 is the
-first design to claim both. A mechanism that needs a bounded state \emph{and}
-signed transport \emph{and} rewritability does not currently exist, and T1 says the
-last two cannot both be had with a parallel scan.
-
-\section{What is measured}
+\section{Measurements}
 \label{sec:measured}
 
-The axes above are separable only on a task where position must be reconstructed from
-the input rather than read off the index. All measurements below use a torus
-grid-navigation task: an agent takes actions on an $N\times N$ torus, observations are
-aliased across cells, and the model predicts the observation at revisited cells.
+The axes above are separable only where position must be reconstructed from the input
+rather than read off the index, which is why the measurements below are on
+navigation and algorithmic tasks rather than on text.
+
+\paragraph{Setup.} The primary task is \textbf{torus revisit prediction}: an agent
+takes actions on an $N\times N$ torus, observations are aliased across cells ($16$
+types over $N^2$ cells, half of them blank), the token stream interleaves actions and
+observations, and the model predicts the observation at \emph{revisited} cells only.
+Unless stated otherwise: $N=64$, one layer, two heads, $d_{\mathrm{model}}=128$,
+$\nb=32$, trained at sequence length $128$ for $300$ epochs with warmup and cosine
+decay at $\mathrm{lr}=10^{-3}$, and evaluated on a held-out observation map.
+``Accuracy'' is next-token accuracy at revisited positions, against a measured
+always-predict-blank floor of $0.506$. Two further tasks appear where noted:
+\textbf{parity} at sequence length $L$, and \textbf{blind continuation}, in which the
+model explores with observations revealed and then predicts the observation at each
+cell with observations withheld (chance $1/16 = 0.0625$).
+
 Standard errors are over seeds; \textsc{mde} is $2.8\,\mathrm{sd}/\sqrt{n}$, and a
-contrast inside its \textsc{mde} is reported as unmeasured.
+contrast inside its \textsc{mde} is reported as \emph{unmeasured} rather than as a
+null. Contrasts are paired per seed, and arms compared against one another were
+trained in one batch.
 
 \subsection{The sign of the increment}
 \label{sec:sign}
@@ -960,12 +914,12 @@ with its north and east axes all but collapsed onto one another. These models do
 merely score worse --- they cannot represent a $-1$ action, and the probe confirms
 they do not.
 
-\emph{Limitation.} At the training length the signed baseline is at $1.000\pm0.000$,
+At the training length the signed baseline is at $1.000\pm0.000$,
 so accuracy there cannot show a deficit of any size. The training-length effect is
 visible in the \emph{loss} instead: every constrained arm fits strictly worse on
 $12/12$ seeds at identical parameters.
 
-\emph{Scope.} This is a replication in a new regime. The constraint and its
+This is a replication in a new regime. The constraint and its
 consequence for parity are established (\S\ref{sec:map}(ii)); what is new is
 navigation rather than formal languages, and an isolation in which $|\Delta|$ against
 $\Delta$ is a single operation at identical parameter count.
@@ -1045,7 +999,7 @@ thing for $384$ parameters, $21\times$ cheaper. Second, the convolution is the o
 knob negative on both tasks, consistent with $\S$\ref{sec:group}: $K>1$ costs the
 homomorphism.
 
-\emph{Caveat.} These arms replace the readout $\operatorname{diag}(\omega)W_{\mathrm{out}}$
+These arms replace the readout $\operatorname{diag}(\omega)W_{\mathrm{out}}$
 by $\tau W_2$. For the conv and gate rows the function class is preserved exactly ---
 it is the construction of $\S$\ref{sec:incl} --- so the difference is initialisation
 (a geometric frequency ladder against a default draw) plus one scalar; those effects
@@ -1091,11 +1045,153 @@ Path integration & phase $\theta$ & $+448$ on $199{,}042$ ($+0.23\%$) & $+0.078$
 \textbf{Signed} increment & sign of $\Delta$ & $\mathbf{0}$ & largest per parameter: removing it costs $-0.215$/$-0.280$ at $T{=}512/1024$ ($12/12$) \\[2pt]
 Bottleneck rank & state rank $\rho$ & $+384$ ($+0.19\%$) & $+0.085$ at $T{=}1024$ for $r{=}2\to4$ ($8/8$); flat to $r{=}32$ \\[2pt]
 PoPE & magnitude $\mu$ & $+320$ & $+0.027$ \emph{with} path integration; both arms on the floor without it \\[2pt]
-Recursion & block reuse & $0$ & $+0.056$ parity ($16/16$); matches $3\times$ the parameters \\[2pt]
-Hierarchy & token count & $0$ if shared & length-dependent: $\approx0$ at $L{=}16$, $+0.060$ at $L{=}512$; $-22.8\%$ time at $L{=}2048$ \\
 \bottomrule
 \end{tabular}
 \end{center}
+\subsection{Where the length dependence does not come from}
+
+Transposed to a content-dependent
+phase the coordinate is the accumulator rather than the index, which gives a
+prediction: the benefit of the OOD-helping mechanisms should localise to the
+channels whose period exceeds the trained range of $S_t$, and ablating those
+channels should cost \emph{less} at extrapolated length because they are already
+being read out of distribution.
+
+The precondition holds --- at the training length $8$--$17$ of $64$ channels never
+complete a cycle of their own period, and at $8\times$ that length only $1$--$4$ do
+--- so the mechanism could operate. It does not. Ablating the $32$ lowest-frequency
+channels is free at training length ($-0.001$) and costs $0.14$--$0.25$ at $T=1024$,
+on every arm whose baseline is off the floor. \textbf{Those channels are more
+load-bearing at extrapolated length, not less}, which is the opposite of the
+prediction. Damage is localised in frequency --- high-frequency ablation costs
+$0.42$--$0.57$ --- but the plainer reading wins: the low-frequency channels carry
+position at map scale, and coarse position matters more when the walk covers more of
+the map.
+
+\subsection{The accumulator's growth law}
+\label{sec:growth} All
+four arms start from the same accumulator range at training length ($88$--$94$) and
+separate entirely by how fast it grows with sequence length,
+$\operatorname{range}(S) \sim T^{\alpha}$:
+
+\begin{center}\small
+\begin{tabular}{lrrrr}
+\toprule
+arm & $T{=}128$ & $T{=}1024$ & $\alpha$ & opposition score \\
+\midrule
+signed, $r{=}4$   & $91.8$ & $269.7$ & $\mathbf{0.518}$ & $0.125$ \\
+signed, $r{=}4$ (rank sweep) & $94.1$ & $279.7$ & $\mathbf{0.524}$ & $0.092$ \\
+signed, $r{=}2$   & $88.5$ & $320.5$ & $0.619$ & $0.495$ \\
+monotone, $r{=}4$ & $91.5$ & $649.8$ & $\mathbf{0.943}$ & $1.849$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent A signed, well-conditioned increment gives $\alpha \approx 0.52$: the
+accumulator performs a \textbf{diffusive random walk}. A monotone one gives
+$\alpha \approx 0.94$: \textbf{ballistic drift}. The last column is the opposition score of
+$\S$\ref{sec:sign}; across the four arms $r(\text{opposition},\alpha) = +0.9995$.
+
+\textbf{This is one mechanism for two separate results.} How completely opposite
+actions cancel sets whether the accumulator diffuses or drifts; that sets how fast it
+leaves the range it was trained on; and that sets the rate of degradation with
+length. A skewed rank-$2$ basis (opposition $0.495$) and a monotone increment
+($1.849$) are the same failure at different severities. The relation is correlational across four
+arms, and $\alpha\approx0.5$ for a signed walk is unsurprising in itself; what it
+rests on is the spread to $0.94$ and the agreement with an independently measured
+quantity.
+
+
+\section{Choosing a mechanism}
+\label{sec:capability}
+
+What
+a task demands of a positional code, which mechanisms supply it, and
+which trade-offs are forced rather than incidental.
+
+\subsection{Three hard trade-offs}
+
+\paragraph{(T1) Commutativity buys the scan and costs path-dependence.} With $K=1$
+and a linear increment the phase depends on the multiset of tokens traversed, the
+prefix product collapses to a prefix sum, and inference is $O(\log T)$ parallel. The
+same property makes displacement-under-accumulated-heading unrepresentable: a fixed
+per-token increment cannot express ``forward'' when forward depends on where you are
+facing. Measured both ways --- the position effect falls from $+0.438$ to $+0.050$
+under turn/turn/forward actions, and a mechanism that abandons the group law pays for
+it in the scan ($\S$\ref{sec:emtem}). You may have one or the other.
+
+\paragraph{(T2) A signed increment buys a map and gives up a clock.} The accumulator's
+growth exponent is set by how completely opposite actions cancel, but the
+exponent is a symptom and the substance is $\S$\ref{sec:clockmap}:
+a signed increment makes the interval sum a \emph{net displacement}, invariant to
+route and blind to elapsed time, and a monotone one makes it a \emph{path length},
+injective in time and blind to place. Neither dominates. On navigation the signed
+form wins outright (at matched training loss the monotone one does not beat a plain
+index clock anywhere); on language the monotone form is the correct object, and the
+signed one would be discarding the very distinction position exists to make.
+
+\paragraph{(T3) Compressing the memory makes decay compulsory; rewriting it forfeits
+T1.} Both halves are argued in $\S$\ref{sec:memory}: the primal form saturates so
+something must evict, while the dual form renormalises and may decline a decay term;
+and a memory that must \emph{overwrite} needs a delta rule, whose transition matrix is
+a reflection rather than a scalar.
+
+\subsection{What a task demands, and what supplies it}
+
+\begin{center}\small
+\begin{tabular}{@{}p{4.0cm}p{3.4cm}p{6.6cm}@{}}
+\toprule
+if the task needs \dots & it requires & and these supply it \\
+\midrule
+\emph{order only} --- which token came first & any monotone clock & RoPE, ALiBi, CoPE, CARoPE, GRAPE-AP, every gated linear RNN \\[3pt]
+\emph{signed displacement} --- parity, net motion, state tracking & a signed increment & MapFormer, Selective RoPE, Mamba-3; DeltaNet/PaTH/RWKV-7 with $\beta>1$. \textbf{Not} CARoPE, GRAPE-AP or CoPE \\[3pt]
+\emph{absolute location in a bounded map} & signed \textbf{and} well-conditioned ($r\ge4$) & MapFormer at $r\ge4$; $r=2$ degrades because its basis is skewed, not because it lacks capacity \\[3pt]
+\emph{holding position far past the training length} & a diffusive accumulator, $\alpha\approx0.5$ & follows from cancellation (T2); or bound the accumulator explicitly, which is what a wrapped filter does \\[3pt]
+\emph{path-dependent actions} (turn/forward) & non-abelian transport, \textbf{or} an allocentric recoding of the input & PaTH, DeltaNet, RWKV-7, TEM-t --- none evaluated on navigation. Recoding the action to absolute displacement restores $+0.488$ and keeps the scan \\[3pt]
+\emph{overwriting stale associations} & a delta rule & DeltaNet, PaTH, RWKV-7; forfeits the parallel scan \\[3pt]
+\emph{exact recall over a window} & the dual form; keep the items & softmax attention. A lossy summary is not a sufficient statistic, which is why hierarchy loses here and wins on compositional transfer \\[3pt]
+\emph{bounded state, linear time} & abelian transport & every row of Table~1; measured $2.6$--$3.3\times$ over a $16\times$ length increase \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{What follows for choosing a model}
+
+\emph{On language, most of this is invisible}, for the reason
+$\S$\ref{sec:clockmap} gives: order is nearly all that is demanded, and a clock is the
+right object for it.
+
+\emph{On navigation and any task with a metric structure, the sign and the
+conditioning of the increment are the whole game.} They are worth more per parameter than anything
+else measured here, and both dominate the choice of positional \emph{encoding}
+($\S$\ref{sec:measured}).
+
+\emph{One combination is ruled out rather than merely absent.} A mechanism with a
+bounded recurrent state, signed transport \emph{and} rewritable memory does not exist,
+and T1 says the last two cannot both be had while keeping the parallel scan.
+
+\section{Conclusion}
+
+Three assumptions --- linearity, translation invariance, continuity --- reduce the
+space of positional mechanisms to the classification of a single generator, and the
+generator has exactly two live parts. Everything in the arena is a choice about
+where content enters those two parts, and everything that appears to escape does so
+by giving up one of the three assumptions, at a price that can be named: the
+classical relative methods give up continuity and with it any extrapolation; the
+delta-rule family gives up commutativity and with it the parallel scan; CoPE gives up
+per-token factorisation and with it any $\theta_t$ at all.
+
+The two parts are not two knobs. A signed accumulated phase is a map and a monotone
+one is a clock, and a system that needs both must spend both slots. That is why the
+monotone increments of CARoPE, GRAPE-AP and CoPE are correct on language and fail on
+navigation, and why the sign of the increment --- which costs nothing, and which no
+paper in the positional-encoding literature varies deliberately --- is worth more
+than any other ingredient measured here.
+
+What the frame does not yet explain is the axis on which several mechanisms
+independently help: extrapolated length. The accumulator's growth law accounts for
+two of them and demonstrably not for the others, and no mechanism in the table
+bounds the accumulator at all. That is the gap worth building into.
 
 \section{Open questions}
 
@@ -1129,12 +1225,9 @@ Hierarchy & token count & $0$ if shared & length-dependent: $\approx0$ at $L{=}1
 \section*{Sources}
 \addcontentsline{toc}{section}{Sources}
 
-\noindent\small
-Every mechanism above was read in its own paper rather than in a summary, and every
-externally-checkable cell of Table~1 was checked against the source.
 
 \begin{center}
-\begin{tabular}{@{}llll@{}}
+\begin{tabular}{@{}p{2.9cm}p{3.5cm}p{2.9cm}p{3.5cm}@{}}
 \toprule
 \multicolumn{2}{@{}l}{\emph{the frame}} & \multicolumn{2}{l}{\emph{content-dependent phase}} \\
 Puranik & Jane Street Blog, Apr 2026 & MapFormer & 2511.19279 \\
