@@ -890,8 +890,21 @@ while $x$ does not.
 
 The results above say that MapFormer is that factorisation carried into attention
 with a parallel scan. The accumulated phase $\theta_t = \omega\sum\Delta_u$ is $g$:
-driven by the action stream, not the sensory stream, and identical in any
-environment with the same transition structure. Content is $x$. And the conjunction
+identical in any environment with the same transition structure, because it depends
+on the action stream and not on what was seen.
+
+\textbf{But that separation is learned, not built.} It is worth being exact here,
+because it is the difference between a factorisation the architecture guarantees and
+one it merely tends to find. MapFormer's increment is computed from \emph{every}
+token embedding --- $\Delta_u = W_{\mathrm{out}}W_{\mathrm{in}}x_u$ with no gating by
+token type --- so the model has to \emph{discover} that $\Delta \approx 0$ on
+observations. It does: on a trained model actions move the phase about five times as
+much as observations do. And the recency result of $\S$\ref{sec:crossover} is the
+same phenomenon isolated --- an unconstrained increment learns a content gate in
+$8/8$ seeds, and a magnitude-matched intervention shows the gate is most of the
+mechanism rather than a component of it. So the separation is real and measurable;
+it is simply emergent rather than enforced, which is a fact about MapFormer and not
+about the thesis. Content is $x$. And the conjunction
 is exactly the WM/EM distinction --- additively in the score for MapFormer-WM, and
 for MapEM \emph{literally} the tensor product, since
 $(A_X \odot A_P)_{ts} = (q^x_t \otimes q^p_t)\cdot(k^x_s \otimes k^p_s)$. TEM's
