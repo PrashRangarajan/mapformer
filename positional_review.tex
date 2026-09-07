@@ -318,6 +318,54 @@ content-dependent increments the logit is not a function of $s-t$ and the score
 matrix is not Toeplitz. The property that survives, and the one that matters, is
 that the score depends on the tokens in $(t,s]$ and not on the prefix.
 
+\section{The readout, and what the long-context literature varies}
+\label{sec:readout}
+
+$\S$\ref{sec:phase} treats the readout $A = \operatorname{diag}(\omega)$ as fixed.
+A large and practically important literature varies exactly that, and it is disjoint
+from everything above: Position Interpolation, RoPE scaling laws, NTK-aware scaling,
+Dynamic NTK, NTK-by-parts, YaRN, LongRoPE and LongRoPE2 all rescale the frequency
+ladder so a model trained at one length runs at another. Every one of them is
+index-driven, so on Table~1 they occupy a single cell --- but they vary something the
+eight axes do not name.
+
+\paragraph{The critical dimension.} The argument that organises that line is worth
+importing. Channel $r$ has wavelength $T_r = 2\pi b^{2r/\hd}$. High-frequency
+channels complete many cycles inside the training length $L_0$ and are trained
+through their whole phase range; low-frequency channels may not complete even one.
+The boundary
+\[
+  r_{\mathrm{crit}} \;=\; \min\{\,r : T_r \ge L_0\,\}
+\]
+separates them, and beyond the training length the channels past it enter phase
+intervals never seen in training. For LLaMA-2 ($\hd = 128$, $L_0 = 4096$) that is
+$36$ of $128$ dimensions. This is a mechanism for length-extrapolation failure that
+is about \emph{which channels were trained}, not about capacity or precision.
+
+\paragraph{A candidate for the open OOD-length question.} $\S$\ref{sec:measured}
+reports several mechanisms whose benefit appears only at extrapolated length, with no
+common account. The critical-dimension argument supplies one, transposed. For a
+content-dependent phase the relevant coordinate is not the index but the accumulator
+$S_t$: the trained range of $\sum_u\Delta_u$ grows with sequence length, so at
+$4\times$ or $8\times$ the training length the low-frequency channels --- the ones
+that disambiguate position at map scale --- are being read at accumulated angles they
+never saw. Anything that keeps the accumulator inside its trained range, improves the
+conditioning of the readout, or adds redundancy across channels should then help
+disproportionately \emph{there and nowhere else}, which is the observed signature.
+It predicts, testably, that the benefit localises to channels with
+$T_r \ge$ the trained range of $S_t$. That has not been measured.
+
+\paragraph{Scope of the existing surveys.} This is worth stating plainly because it
+determines what this review is for. The most recent survey of position encoding
+(Li, August 2026) is a careful treatment of exactly the line above --- absolute and
+relative methods, RoPE, and long-context scaling --- and contains \textbf{zero
+occurrences} of CoPE, MapFormer, Selective RoPE, CARoPE, FoX, Mamba or GRAPE. The
+2023 length-extrapolation survey mentions CoPE and Mamba twice each and none of the
+rest. The content-dependent half of the arena, the memory reading of
+$\S$\ref{sec:memory}, and the navigation regime are not covered by either; the
+frequency-allocation and context-extension line is not covered here. The two
+partitions are close to complementary.
+
 \section{The relational map}
 \label{sec:map}
 
@@ -490,6 +538,39 @@ arrives from the memory side, stating the crossing as a proposition on
 ``data-dependent RoPE equivalence''. The hybrid quadratic-linear transformers of
 Irie et al.\ (2025) use RoPE, but only as an off-the-shelf component inside the
 attention half rather than as a design axis.
+
+\paragraph{Positional mechanisms are key-side by construction, which makes the frame
+a theory of addressing.} Gershman, Fiete and Irie (2025) argue that what
+distinguishes key--value memory from classical similarity-based retrieval is that it
+holds \emph{separate} representations for storage and for retrieval, so the two can
+be optimised independently --- fidelity for values, discriminability for keys --- and
+that the binding constraint on memory performance is addressing rather than capacity.
+
+Every mechanism in Table~1 acts on $q$ and $k$ and none of them touches $v$. Read
+through the correspondence above that is not a convention: \textbf{a positional
+mechanism is an addressing rule}, and $A(d)$ says how the address of a trace changes
+as it ages. The two slots are then two ways for an address to move:
+$\operatorname{Im}G$ transports it around a torus, so a trace becomes retrievable
+again at a predictable displacement; $\operatorname{Re}G$ makes it fade, so the trace
+becomes unretrievable at a rate the content chooses. Nothing in the frame can alter
+what was stored, only where it can be found.
+
+\paragraph{Why decay is compulsory on one side of the line and optional on the
+other.} A visible asymmetry in Table~1 is that every SSM row carries
+$\operatorname{Re}G < 0$ while most softmax rows leave the magnitude slot empty.
+Schlag et al.\ (2021) supply the reason: an additive outer-product memory has a
+finite \emph{capacity}, and once the sequence length exceeds it the model enters an
+overcapacity regime in which stored associations interfere. In the primal form decay
+is therefore capacity management and not a modelling preference --- something has to
+evict. In the dual form the items are kept separately and the softmax renormalises,
+so nothing saturates and a decay term (ALiBi, FoX) is an inductive bias one may
+decline. The same equation, and the slot is mandatory on one side and free on the
+other.
+
+That also sharpens what the delta rule is for. Schlag et al.\ introduce it precisely
+because purely additive updates cannot \emph{edit} a stale association, only bury it;
+the rewrite is a capacity fix before it is an expressivity fix, and the expressivity
+--- state tracking, parity --- comes along with it.
 
 \paragraph{The non-abelian family is the rewritable-memory family.} The first row of
 the out-of-frame table is not a collection of exceptions. DeltaNet, PaTH and RWKV-7
@@ -786,7 +867,9 @@ Hierarchy & token count & $0$ if shared & length-dependent: $\approx0$ at $L{=}1
   $2$-plane either way.
 \item \textbf{The OOD-length axis.} Rank, forget gating, PoPE and Kalman-style
   correction all help at extrapolated length and only there. Four mechanisms, one
-  axis, no account.
+  axis. $\S$\ref{sec:readout} offers a candidate --- the low-frequency channels are
+  read at accumulated angles outside their trained range --- with a localisation
+  prediction that has not been tested.
 \item \textbf{Defective generators.} Jordan-RoPE occupies the cell; what polynomial
   factors in the lag are \emph{for} remains open, and no navigation evaluation exists.
 \item \textbf{Sign on language.} A monotone clock cannot represent a $-1$ action, and
@@ -831,6 +914,9 @@ RWKV-7 & 2503.14456                    &      & \\
 CoPE & 2405.18719                      & \multicolumn{2}{l}{\emph{cognitive maps}} \\
 TAPE & 2501.00712                      & TEM-t & 2112.04035, ICLR 2022 \\
 MesaNet, Titans & 2506.05233, 2501.00663 & & \\
+\midrule
+\multicolumn{2}{@{}l}{\emph{surveys of the same arena}} & & \\
+Li (position encoding) & 2608.10021 & Length extrapolation & 2312.17044 \\
 \midrule
 \multicolumn{4}{@{}l}{\emph{the memory reading}} \\
 Schlag et al. & 2102.11174, ICML 2021    & Irie et al. (dual form) & 2202.05798, ICML 2022 \\

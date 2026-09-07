@@ -1523,6 +1523,107 @@ $\mathfrak{so}(d)$ the rotation may occupy), $r$ varies the bottleneck on the
 input side (how many dimensions the content may steer). Neither subsumes the
 other, and a reviewer will ask.
 
+\section{The memory reading, and the readout axis}
+\label{sec:memory}
+
+Two literatures work on the same equation from other directions. Both were absent
+from this note and both change what the map is a map of.
+
+\subsection{Fast weights, linear attention, and the primal/dual choice}
+
+The outer product $v_u\otimes k_u$ binds a value to a key; superposing bindings gives
+an associative memory read by a query. It appears as Kohonen's correlation-matrix
+memory (1972), Schmidhuber's fast weight programmer (1992), the recurrent form of
+linear attention (Katharopoulos et al., 2020), the hidden state of a scalar-$A$
+state-space model, Smolensky's tensor-product role--filler binding (1990), and --- via
+the dual form of Irie et al.\ (2022) --- the weight matrix of any linearly-parameterised
+layer trained by gradient descent. Schlag et al.\ (2021) made the linear-attention
+correspondence explicit. Every mechanism therefore has two readings,
+\[
+  \underbrace{W_t = \textstyle\sum_{u\le t} A(t-u)\,v_uk_u^{\!\top},\; y_t = W_tq_t}_{\text{\emph{primal}: compress}}
+  \qquad\Longleftrightarrow\qquad
+  \underbrace{a_{ts} = \tilde q_t\!\cdot\!\tilde k_s \text{ over kept items}}_{\text{\emph{dual}: keep and attend}}
+\]
+and $A(d)$ --- the object $\S$\ref{sec:prior} classifies --- is the memory's
+\textbf{transport kernel}: what happens to a stored trace as it ages $d$ steps.
+$\operatorname{Re}G$ is how fast it is forgotten; $\operatorname{Im}G$ is how it is
+re-addressed. Three consequences.
+
+\paragraph{A8 is not a separate axis.} A positional mechanism admits a parallel prefix
+scan exactly when the memory admits a bounded recurrent state, because both are the
+group law $A(d)A(e)=A(d+e)$. Primal/dual and scannable/not are one condition.
+
+\paragraph{Positional mechanisms are key-side by construction.} Gershman, Fiete and
+Irie (2025) argue that key--value memory's distinguishing feature is separate
+representations for storage and retrieval, and that the binding constraint on memory
+is addressing rather than capacity. Every row of the map acts on $q$ and $k$ and none
+touches $v$: \textbf{the frame is a theory of addressing}, and the two slots are the
+two ways an address can move --- transported around a torus, or faded.
+
+\paragraph{Why the magnitude slot is compulsory in the SSM rows and optional in the
+softmax rows.} Schlag et al.\ show the additive outer-product memory has finite
+capacity and enters an overcapacity regime once the sequence exceeds it. In the primal
+form decay is capacity management --- something must evict --- while in the dual form
+items are kept separately and the softmax renormalises, so nothing saturates and decay
+(ALiBi, FoX) is an inductive bias one may decline. Same equation; the slot is
+mandatory on one side of the line and free on the other. It also reframes the delta
+rule: $I-\sigma(\beta_t)\phi\phi^{\!\top}$ is introduced because additive updates
+cannot \emph{edit} a stale association, so rewritability is a capacity fix that brings
+state-tracking expressivity with it --- and with $\sigma = 2\,\mathrm{sigmoid}$ its
+eigenvalues lie in $(-1,1)$ including negatives, which is $\S$\ref{sec:sign}'s axis
+exercised from the memory side.
+
+\begin{quote}\small
+\textbf{The two literatures have divided the slots without noticing.} Irie and
+Gershman's review (TMLR 2025) categorises the entire modern linear family by
+\emph{decay type} --- RetNet a constant scalar, Mamba-2 a scalar, GLA a rate per row
+--- and the strings \texttt{RoPE}, \texttt{rotary} and \texttt{positional} occur
+\textbf{zero} times in it (checked case-sensitively; a case-insensitive grep for
+\texttt{rope} matches \texttt{p\underline{rope}rty} and reported $17$ false hits).
+The hybrid quadratic-linear transformers of Irie et al.\ (2025) use RoPE only as an
+off-the-shelf component inside the attention half. Mamba-3 is the first design to
+claim both slots deliberately, and it arrives from the memory side.
+\end{quote}
+
+\subsection{The readout, and the critical dimension}
+\label{sec:readout}
+
+$\S$\ref{sec:phase} treats the readout $A = \operatorname{diag}(\omega)$ as fixed. The
+long-context literature varies exactly that: Position Interpolation, NTK-aware scaling,
+Dynamic NTK, NTK-by-parts, YaRN, LongRoPE and LongRoPE2 all rescale the frequency
+ladder. All are index-driven, so they occupy one cell of the map --- but they vary
+something the eight axes do not name.
+
+Their organising argument transposes usefully. Channel $r$ has wavelength
+$T_r = 2\pi b^{2r/\hd}$; high-frequency channels complete many cycles inside the
+training length $L_0$ and are trained through their whole phase range, low-frequency
+channels may not complete one, and
+$r_{\mathrm{crit}} = \min\{r : T_r \ge L_0\}$ separates them. Beyond $L_0$ the channels
+past $r_{\mathrm{crit}}$ are read at phases never seen in training --- $36$ of $128$
+dimensions for LLaMA-2.
+
+\begin{quote}\small
+\textbf{This is a candidate for the OOD-length signature this note keeps reporting
+without explaining.} Rank, the InEKF, the forget gate and PoPE all help at extrapolated
+length and only there. For a content-dependent phase the relevant coordinate is the
+accumulator $S_t$ rather than the index: its trained range grows with sequence length,
+so at $4$--$8\times$ the training length the low-frequency channels --- exactly the ones
+that disambiguate position at map scale --- are read at accumulated angles outside it.
+Anything that bounds the accumulator (the InEKF's wrap does this literally), improves
+the conditioning of the readout ($r=4$), or adds channel redundancy should then help
+there and nowhere else. \textbf{Testable prediction, not measured here:} the benefit
+localises to channels with $T_r \ge$ the trained range of $S_t$.
+\end{quote}
+
+\noindent\textbf{Scope of the existing surveys.} The most recent survey of position
+encoding (Li, arXiv:2608.10021, August 2026) covers absolute and relative methods, RoPE
+and long-context scaling, and contains \textbf{zero} occurrences of CoPE, MapFormer,
+Selective RoPE, CARoPE, FoX, Mamba or GRAPE. The 2023 length-extrapolation survey
+(arXiv:2312.17044) mentions CoPE and Mamba twice each and none of the rest. The
+content-dependent half of the arena, the memory reading above and the navigation regime
+are in neither; the frequency-allocation line is in neither this note nor the
+positional review. The partitions are close to complementary.
+
 \section{The relational map}
 \label{sec:map}
 
@@ -1564,7 +1665,8 @@ obeys no prefix-sum law. Algebraic PE is $\C^\times$ for its sequence and grid
 constructions but non-abelian for $k$-ary trees, which need $\kappa$ matrices.
 GRAPE's additive family is ``rank-1 (or low-rank)'' in its own abstract and its
 phase-modulated instance emits one scalar, like FoX; ``full'' applies only to the
-general edge potential.}
+general edge potential. $^{\P}$MapEM evaluates the same equation on the
+\emph{tensor product} of the content and position spaces; see $\S$\ref{sec:emtem}.}
 \begin{tabular}{llllllll}
 \toprule
 mechanism & A1 factor & A2 locus & A3 driver & A4 algebra & A5 sign & A6 rank & A7 host \\
@@ -1576,6 +1678,7 @@ xPos              & both       & acc.    & index  & $\C^\times$ & n/a    & n/a  
 PoPE              & magnitude  & \textbf{inst.} & content & ---  & $>0$    & full      & softmax \\
 \midrule
 \textbf{MapFormer} & phase     & acc.    & content & $\C^\times$ & \textbf{signed} & \textbf{rank $r$} & softmax \\
+MapEM$^{\P}$      & phase      & acc.    & content & $\C^\times$ & signed & rank $r$ & softmax \\
 MapPoPE           & both       & inst.+acc. & content & $\C^\times$ & signed & rank $r$ & softmax \\
 Selective RoPE    & phase      & acc.    & content & $\C^\times$ & signed & full (or 8--16) & both \\
 CARoPE            & phase      & acc.    & content & $\C^\times$ & \textbf{$\in(0,1)$} & \textbf{1/head} & softmax \\

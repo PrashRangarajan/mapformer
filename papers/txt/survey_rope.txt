@@ -1,0 +1,2555 @@
+Position Encoding in Transformers
+
+Position Encoding in Transformers
+From Absolute and Relative Methods to RoPE and Long-Context Scaling
+Jiguo Li1
+jiguolee@gmail.com
+
+arXiv:2608.10021v1 [cs.CL] 9 Aug 2026
+
+Abstract
+Self-attention models content-dependent interactions between tokens but does not by itself encode token order. Position
+encoding addresses this limitation by introducing absolute coordinates, relative distances, or position-dependent rotations
+into Transformer representations and attention scores. This technical survey develops a unified account of sinusoidal and
+learned absolute position embeddings, Shaw-style relative position representations, Transformer-XL, T5 relative position
+bias, ALiBi, and Rotary Position Embeddings (RoPE). We derive how RoPE converts absolute position indices into relative phase differences in Query-Key inner products and compare these methods in terms of where position is injected,
+computational cost, compatibility with KV caching, and length extrapolation. We then examine long-context extensions,
+including Position Interpolation, RoPE scaling laws, NTK-aware scaling, Dynamic NTK, NTK-by-parts, YaRN, LongRoPE,
+and LongRoPE2, with emphasis on frequency allocation, attention rescaling, training length, and target context length. We
+also summarize implementation considerations, evaluation protocols, and position-encoding choices in representative large
+language models. A central conclusion is that the ability to compute positional features beyond the training length does not
+imply reliable long-context generalization; context extension must be evaluated through short-context retention, positionwise perplexity, retrieval, reasoning, and long-context code tasks.
+
+Keywords: Transformer; position encoding; relative position encoding; RoPE; long context; length extrapolation
+Key point: Absolute methods assign coordinates to tokens, relative methods represent pairwise distances, and
+RoPE writes position into the rotational phase of Query and Key vectors.
+
+1 This report was completed with the assistance of Codex.
+
+1
+
+Position Encoding in Transformers
+
+CONTENTS
+
+Contents
+1 Why Transformers Need Explicit Positional Information
+1.1 RNNs, CNNs, and Transformers . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+1.2 What does Self-Attention without position see? . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+3
+3
+3
+
+2
+
+Overview of the Technical Evolution
+
+3
+
+3
+
+First generation: absolute position encoding
+3.1 Learned Absolute Position Embeddings . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+3.2 Sine-cosine position encoding . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+4
+4
+4
+
+4
+
+Second generation: relative position encoding
+4.1 Shaw: Add relative distance to Key and Value . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+4.2 Transformer-XL: Relative positions in memory across segments . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+4.3 T5: compress relative position into scalar bias . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+5
+5
+5
+5
+
+5 Third Generation: Rotary Position Encoding RoPE
+5.1 Derivation of core formulas from two-dimensional rotations . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+5.2 High-dimensional RoPE and complex-number forms . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+5.3 Engineering implementation and pairing conventions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+5.4 RoPE and KV Cache . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+5.5 Does RoPE Guarantee Monotonic Attention Decay with Distance? . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+6
+6
+6
+6
+7
+7
+
+6
+
+Extending RoPE to Long Contexts: From Uniform Scaling to Per-Dimension Search
+7
+6.1 Source of the problem: Extrapolation introduces untrained phases . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7
+6.2 RoPE scaling law: base, training length and extrapolation range . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7
+6.3 Position Interpolation: Uniformly Compressing Position Indices . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 8
+6.4 NTK-aware: Non-uniform frequency scaling by modifying RoPE base . . . . . . . . . . . . . . . . . . . . . . . . . . . 8
+6.5 Dynamic NTK: Dynamically select scaling by current sequence length . . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+6.6 NTK-by-parts: Select interpolation strategy by frequency interval . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+6.7 YaRN: NTK-by-parts plus attention scale calibration . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+6.8 LongRoPE: Per-Dimension and Position-Dependent Scaling Search . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+6.9 LongRoPE2: From Theoretical Periods to Effective Training Periods . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10
+6.10 Method comparison and applicable conditions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10
+
+7 An Alternative Design: ALiBi’s Linear Distance Bias
+
+11
+
+8 A unified perspective on three types of positional mechanisms
+
+11
+
+9
+
+Engineering Experimentation and Evaluation Recommendations
+11
+9.1 Position Configuration Must Be Bound to the Checkpoint . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+9.2 Long-Context Evaluation Must Go Beyond Input Acceptance . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+
+10 Common misunderstandings
+
+12
+
+11 Summary and Outlook
+
+12
+
+A Position-Encoding Choices in Representative LLMs
+
+14
+
+2
+
+Position Encoding in Transformers
+
+2
+
+OVERVIEW OF THE TECHNICAL EVOLUTION
+
+1 Why Transformers Need Explicit Positional Information
+1.1 RNNs, CNNs, and Transformers
+RNN recursively in time:
+(1)
+
+ht = f (xt , ht−1 ),
+
+The calculation path itself is x1 → x2 → · · · → xn , and the order naturally exists in state transfer. The convolution kernel
+of CNN first aggregates local neighborhoods and therefore also has local structure priors.
+Transformer removes recursion and convolution, allowing all tokens to interact in parallel. This is the source of high
+throughput, and also means that the model structure itself no longer knows the order of tokens. The original Transformer
+must therefore additionally inject position information [1].
+
+1.2 What does Self-Attention without position see?
+Given an input matrix:
+X = [x1 , x2 , . . . , xn ]⊤ ∈ Rn×d ,
+
+(2)
+
+Standard Self-Attention calculation:
+Q = XWQ ,
+
+K = XWK ,
+
+QK ⊤
+Attn(X) = softmax √
+V.
+dh
+The score of the i Query for the j Key is:
+
+
+
+V = XWV ,
+
+qi⊤ kj
+sij = √
+.
+dh
+
+(3)
+(4)
+
+(5)
+
+The score uses the content vector but not the location i, j directly. Assume P is any permutation matrix, then:
+Attn(P X) = P Attn(X).
+
+(6)
+
+Therefore, Self-Attention without the position mechanism is replacing the equivalent variable : after the input is scrambled, the output is only scrambled in the same way. Position can be injected in the input representation, attention score or
+geometric transformation of Query/Key, corresponding to three types of solutions: absolute position, relative position and
+RoPE respectively.
+
+2 Overview of the Technical Evolution
+Time
+
+represents work
+
+core position mechanism
+
+2017
+2018
+2018
+2019
+2020
+2021
+2021
+2023
+2024–
+2025
+
+Transformer
+BERT
+Shaw et al.
+Transformer-XL
+T5
+RoFormer / RoPE
+ALiBi
+PI / YaRN
+LongRoPE / LongRoPE2
+
+Fixed sine – Cosine absolute position encoding
+can learn absolute position embedding
+Add relative distance representation to attention
+Relative position decomposition, support fragment-level memory
+Each attention head learns bucket distance bias
+Rotate by position Query and Key
+Add linear distance penalty to logits
+RoPE interpolation, frequency division scaling and attention calibration
+Search for dimension-wise scaling factors and mix long and short context training
+
+Table 1: Representative evolution of the Transformer position mechanism.
+These methods are not a simple replacement of old with new. Fixed-length encoder, encoder-decoder and autoregressive
+LLM have different task structures, reasoning methods and contextual requirements, so multiple solutions coexist to this
+day.
+
+3
+
+Position Encoding in Transformers
+
+3
+
+FIRST GENERATION: ABSOLUTE POSITION ENCODING
+
+3 First generation: absolute position encoding
+Absolute position encoding provides the vector pi for position i:
+(0)
+
+hi
+
+(7)
+
+= e(xi ) + pi .
+
+It is equivalent to labeling each token with a global coordinate such as ”position 137”.
+
+3.1 Learned Absolute Position Embeddings
+The most straightforward implementation is to maintain the parameter table:
+P ∈ RLmax ×d .
+
+(8)
+
+Line i is the vector pi at position i. BERT adds token, segment and position embedding as input [2]. It is simple to implement
+and can directly fit the position pattern within the task, but the parameter table is bound to a maximum length; untrained
+positions have no reliable representation; adjacent position differences are not structurally constrained; content and position
+are mixed before the first layer:
+qi = (e(xi ) + pi )WQ = e(xi )WQ + pi WQ .
+(9)
+
+3.2 Sine-cosine position encoding
+The original Transformer uses multiple sets of sine and cosine functions to generate the position vector [1]:
+
+
+pos
+P E(pos, 2i) = sin
+,
+2i/dmodel
+10000pos
+
+P E(pos, 2i + 1) = cos
+.
+100002i/dmodel
+
+(10)
+(11)
+
+Define the i group angular frequency:
+θi = 10000−2i/dmodel ,
+
+(12)
+
+Then a set of two-dimensional representation is:
+"
+
+#
+sin(posθi )
+P Ei (pos) =
+.
+cos(posθi )
+
+(13)
+
+The complete position vector concatenates multiple frequency pairs:
+P E(pos) = [sin(posθ0 ), cos(posθ0 ), . . . , sin(posθd/2−1 ), cos(posθd/2−1 )].
+
+(14)
+
+3.2.1 An intuitive explanation of ”multiple clocks”
+Each pair of dimensions can be viewed as a pointer on the unit circle, and its phase and wavelength are:
+ϕi (pos) = posθi ,
+2π
+λi =
+= 2π · 100002i/dmodel .
+θi
+
+(15)
+(16)
+
+The large θi corresponds to the ”fast clock”, which can distinguish adjacent positions; the small θi corresponds to the ”slow
+clock”, which describes longer scales. The cycle of a single clock is repeated, and the combination of multiple clocks with
+different rotation speeds can distinguish positions in a wider range. The constant 10000 is the frequency base, not the only
+mathematically correct choice.
+When dmodel = 8, the four groups of frequencies are:
+θ0 = 1,
+
+θ1 = 0.1,
+
+θ2 = 0.01,
+
+θ3 = 0.001.
+
+(17)
+
+3.2.2 Why Use Both Sine and Cosine?
+From the sum angle formula:
+sin((pos + ∆)θ) = sin(posθ) cos(∆θ) + cos(posθ) sin(∆θ).
+
+4
+
+(18)
+
+Position Encoding in Transformers
+
+4 SECOND GENERATION: RELATIVE POSITION ENCODING
+
+Saving only sin cannot obtain the translation result through fixed linear transformation; after saving in pairs, there are:
+"
+#
+cos(∆θi ) sin(∆θi )
+P Ei (pos + ∆) =
+P Ei (pos).
+(19)
+− sin(∆θi ) cos(∆θi )
+The matrix depends only on the displacement ∆. The dot product of two position codes at the same frequency is:
+P Ei (m)⊤ P Ei (n) = cos((m − n)θi ),
+The complete encoding satisfies:
+P E(m)⊤ P E(n) =
+
+X
+
+cos((m − n)θi ).
+
+(20)
+
+(21)
+
+i
+
+Therefore, the sinusoidal encoding is an absolute position representation in form, but the geometric relationship includes
+relative displacement. The original Transformer actually uses the formula (7) and does not directly use the formula (21)
+as the attention score. The model still needs to be trained to take advantage of this structure.
+It should be noted that the position function can be calculated to any pos, which does not mean that the entire
+model can reliably understand any long context. The training length still constrains attention distribution, state
+representation and optimization results.
+
+4 Second generation: relative position encoding
+Many relationships in the language and code are more concerned with j − i than knowing i versus j respectively. For
+example, ”the closest definition on the left”, ”the declaration closest to the call point”, ”the parameters of the two tokens on
+the right”.
+
+4.1 Shaw: Add relative distance to Key and Value
+Shaw et al. directly added the relative distance of token pairs to Self-Attention[3]. Cut the distance first:
+rij = clip(j − i, −K, K),
+
+(22)
+
+Learn the relative Key vector aK
+rij for each distance:
+sij =
+
+qi⊤ (kj + aK
+qi⊤ kj + qi⊤ aK
+rij )
+rij
+√
+√
+=
+.
+dh
+dh
+
+(23)
+
+The first item represents content matching, and the second item represents the current Query’s preference for a certain
+direction and distance. Value can also be expressed in relative terms:
+X
+zi =
+αij (vj + aVrij ).
+(24)
+j
+
+4.2 Transformer-XL: Relative positions in memory across segments
+Transformer-XL allows the current fragment to reuse the previous fragment’s hidden state [4]. If the cache carries the
+absolute coordinates of the old fragment, reusing it to the new fragment will cause ambiguity; the relative position only
+depends on the true distance between the current Query and the historical Key. Its unnormalized attention can be decomposed
+into:
+Aij = qi⊤ kj + qi⊤ Wk,R Ri−j
+(25)
++ u⊤ kj + v ⊤ Wk,R Ri−j ,
+Corresponding to content – content, content – position, global content offset and global position offset respectively.
+
+4.3 T5: compress relative position into scalar bias
+T5 learns a scalar [5] for each attention head and distance bucket:
+(h)
+
+sij =
+
+(h)⊤ (h)
+kj
+
+qi
+
+√
+
+dh
+5
+
++ bh,bucket(j−i) .
+
+(26)
+
+Position Encoding in Transformers
+
+5 THIRD GENERATION: ROTARY POSITION ENCODING ROPE
+
+Fine-grained bucketing is used when the distance is small, and logarithmic bucketing is approximated when the distance is
+large. Different heads can learn different distance priors, forming a clear decomposition of ”content similarity + distance
+preference”.
+The traditional relative position method is intuitive in modeling, but usually has to deal with n×n token pairs. Relative
+information may enter Key, Value, logits or multiple cross-terms, increasing the complexity of operator fusion, incremental
+decoding and eﬀicient attention implementation. The key value of RoPE is to explicitly express relative displacements while
+retaining the standard QK ⊤ form.
+
+5 Third Generation: Rotary Position Encoding RoPE
+RoPE does not add position vectors to the input, nor does it explicitly construct relative vectors for token pairs. Instead, it
+rotates Query and Key[6] based on their absolute positions.
+
+5.1 Derivation of core formulas from two-dimensional rotations
+"
+
+The two-dimensional rotation matrix is:
+
+cos ϕ
+R(ϕ) =
+sin ϕ
+
+#
+− sin ϕ
+.
+cos ϕ
+
+(27)
+
+The rotation angle at position m is mθ:
+′
+qm
+= R(mθ)qm ,
+
+The rotated dot product is:
+
+kn′ = R(nθ)kn .
+
+′⊤ ′
+⊤
+qm
+k n = qm
+R(mθ)⊤ R(nθ)kn
+⊤
+= qm
+R((n − m)θ)kn .
+
+(28)
+
+(29)
+
+Used here:
+R(mθ)⊤ = R(−mθ),
+
+R(−mθ)R(nθ) = R((n − m)θ).
+
+(30)
+
+′
+depends on the absolute position m; the Query-Key interaction only depends on the relative position
+The single vector qm
+through n − m. Therefore, RoPE encodes the absolute position on a single vector, and presents the relative position in
+the dot product.
+
+5.2 High-dimensional RoPE and complex-number forms
+Combine the head dimensions into two-dimensional subspaces, and the r pair frequency is:
+θr = b−2r/dh ,
+
+r = 0, 1, . . . , dh /2 − 1,
+
+(31)
+
+Classic base b = 10000. The overall rotation matrix is:
+
+Rm = diag R(mθ0 ), R(mθ1 ), . . . , R(mθdh /2−1 ) .
+
+(32)
+
+If the two-dimensional vector is written as a complex number zr = x2r + ix2r+1 , RoPE is equivalent to:
+zr′ = zr eimθr .
+
+(33)
+
+e−imθr einθr = ei(n−m)θr ,
+
+(34)
+
+The phase factor multiplied by Query and Key is:
+
+That is, only the relative phase remains after the absolute phase is subtracted.
+
+5.3 Engineering implementation and pairing conventions
+The following implementation uses adjacent dimension pairing. Some frameworks pair the first half dimension with the
+second half dimension; the two only have different arrangement conventions, but the weights, cos/sin cache, and rotation
+functions must be consistent.
+
+6
+
+Position Encoding in6 Transformers
+EXTENDING ROPE TO LONG CONTEXTS: FROM UNIFORM SCALING TO PER-DIMENSION SEARCH
+
+def apply_rope(x, cos, sin):
+x_even = x[..., 0::2]
+x_odd = x[..., 1::2]
+y_even = x_even * cos - x_odd * sin
+y_odd = x_even * sin + x_odd * cos
+y = torch.empty_like(x)
+y[..., 0::2] = y_even
+y[..., 1::2] = y_odd
+return y
+
+Value is usually not rotated because position mainly affects the weight of ”who to follow”; the aggregation object is
+still the content Value.
+
+5.4 RoPE and KV Cache
+Under fixed RoPE configuration, historical keys are usually cached in rotated form:
+ki′ = Ri ki .
+
+(35)
+
+When generating location t just calculate:
+qt′ = Rt qt ,
+
+kt′ = Rt kt .
+
+(36)
+
+Historical keys do not need to be recalculated. The most error-prone thing in engineering is position offset: prefill, decode,
+padding, sequence packing, prefix cache and sliding window must use the same logical position id for the same token.
+
+5.5 Does RoPE Guarantee Monotonic Attention Decay with Distance?
+Relative terms for a single frequency include:
+cos((n − m)θr ),
+
+sin((n − m)θr ),
+
+(37)
+
+They oscillate periodically with distance and do not decay monotonically. RoFormer discussed the long-distance attenuation
+tendency [6] after multi-frequency aggregation, but it cannot be deduced that ”the further away the score must be, the smaller
+it will be” for any fixed Query/Key, any head and any distance.
+
+6 Extending RoPE to Long Contexts: From Uniform Scaling to Per-Dimension
+Search
+6.1 Source of the problem: Extrapolation introduces untrained phases
+Let the original training length be L0 and the target length be L1 = sL0 , where s > 1. The period of the rth two-dimensional
+subspace is:
+2π
+Tr =
+= 2πb2r/dh .
+(38)
+θr
+The high-frequency dimension goes through many cycles within L0 , and the local pattern is fully trained; the low-frequency
+dimension may not even cover a complete cycle. It is directly inferred that L1 will cause some dimensions to enter an unseen
+phase interval, causing RoPE OOD. LongRoPE2 defines the theoretical critical dimension as the boundary [12] of whether
+the period exceeds the original training length:
+rcrit = min{r : Tr ≥ L0 }.
+
+(39)
+
+What the extension method really needs to deal with is the scaling method of each frequency and the adaptation of the model
+weights to the new phase distribution, not just increasing the value range of position id.
+
+6.2 RoPE scaling law: base, training length and extrapolation range
+Liu et al. studied RoPE length extrapolation from the perspective of period coverage and proposed RoPE-based extrapolation
+scaling laws[9]. Here, “scaling law” describes the relationship among the rotation base, training length, and extrapolation
+range; it is distinct from classical model scaling laws relating parameter count, data volume, and compute.
+7
+
+Position Encoding in6 Transformers
+EXTENDING ROPE TO LONG CONTEXTS: FROM UNIFORM SCALING TO PER-DIMENSION SEARCH
+
+For the original base 10000, the period of the n group frequency is:
+Tn =
+
+2π
+= 2π · 100002n/dh .
+θn
+
+(40)
+
+If the pre-training length is Ttrain , the paper writes the upper limit of the dimension that can cover at least a complete period
+within the training interval as:
+
+
+
+dh
+Ttrain
+dextra = 2
+log10000
+.
+(41)
+2
+2π
+Low-frequency dimensions exceeding dextra are not observed in full cycles during training and are more prone to phase
+distribution shifts beyond the training length. Taking dh = 128 and Ttrain = 4096 of LLaMA 2 as an example, the paper
+calculated dextra = 92; the remaining 36 dimensions are regarded as the part [9] that is more prone to instability during
+extrapolation.
+When the rotation base is changed to β > 10000 during the fine-tuning phase, this work uses the new period estimate
+of the critical dimension to extrapolate the upper limit:
+Textra = 2π β dextra /dh .
+
+(42)
+
+In turn, given the desired length Teextra , the required critical cardinality can be estimated by the relationship given in the
+paper:
+e
+β0 = 10000logTtrain /(2π) (Textra /(2π)) .
+(43)
+The paper also observes that, with a fixed fine-tuning length, turning the base smaller may also improve extrapolation, since more dimensions can experience fuller changes in the trigonometric function within the training interval. The
+corresponding three phase coverage points are:
+β1 =
+
+2Ttrain
+,
+π
+
+β2 =
+
+Ttrain
+,
+π
+
+β3 =
+
+Ttrain
+.
+2π
+
+(44)
+
+This set of results reveals the connection between RoPE extrapolation and period coverage, but it is not appropriate to regard
+the formula (42) as a hard contextual upper limit across models. The paper is mainly verified on LLaMA 2. The actual
+effective length is also affected by the long-distance dependency distribution in the corpus, fine-tuning data, attention head
+behavior and evaluation tasks.
+
+6.3 Position Interpolation: Uniformly Compressing Position Indices
+PI presses the position in the target range back to the original training interval [8]:
+m′ =
+
+m
+L0
+=m .
+s
+L1
+
+(45)
+
+Equivalently, scale all frequencies uniformly:
+θr
+.
+(46)
+s
+The advantage is that all new positions fall back into the trained phase range, with minimal structural changes; the disadvantage is that high frequencies are also compressed, the phase difference of adjacent tokens changes from θr to θr /s, and the
+local resolution decreases. The expansion of the PI paper from 2K to 32K requires only short-range fine-tuning to adapt,
+but it is also clearly stated that there will be a certain performance loss within the original length [8].
+θr′ =
+
+6.4 NTK-aware: Non-uniform frequency scaling by modifying RoPE base
+The intuition of NTK-aware is: instead of compressing all frequencies equally like PI, adjust the frequency base b so that
+high frequencies are maintained as much as possible and low frequencies bear more expansion. A common form sets the
+new base as:
+b′ = b sdh /(dh −2) ,
+(47)
+thereby:
+θr′ = (b′ )−2r/dh = θr s−2r/(dh −2) .
+
+(48)
+
+The highest frequency remains unchanged when r = 0; as r increases, the low frequency is scaled more strongly. It has a
+smoother transition between local accuracy and long-range coverage than uniform PI. It should be noted that NTK-aware
+originally came from the open source community experience and was later organized by the YaRN paper system, rather than
+the independent peer-reviewed paper [10] from the beginning.
+8
+
+Position Encoding in6 Transformers
+EXTENDING ROPE TO LONG CONTEXTS: FROM UNIFORM SCALING TO PER-DIMENSION SEARCH
+
+6.5 Dynamic NTK: Dynamically select scaling by current sequence length
+Scaling with fixed target length L1 causes short inputs to also suffer positional compression. Dynamic Scaling updates the
+magnification [10] based on the current sequence length ℓ:
+
+
+ℓ
+,
+(49)
+s(ℓ) = max 1,
+L0
+Then substitute s(ℓ) into (47). The short sequence maintains the original RoPE and gradually expands after exceeding L0 .
+This approach conflicts with the KV Cache after rotation: when s(ℓ) changes, the rotation angle of the same historical
+token also changes. If the cached Key has been rotated, the old cache will be inconsistent with the new magnification. Strict
+implementations either cache the Key before rotation and re-rotate after the magnification changes, or fix the magnification
+within a generation session; the YaRN paper also clearly reminds this point [10].
+
+6.6 NTK-by-parts: Select interpolation strategy by frequency interval
+YaRN measures the training coverage of frequency r by the number of rotations within the original training length:
+L0 θr
+.
+2π
+
+ρ(r) =
+
+(50)
+
+If ρ(r) is very small, it means that the dimension has not been completely rotated within the training interval, and should
+be fully interpolated like PI to avoid OOD; if ρ(r) is very large, it means that it has been rotated many times, and should be
+preserved as much as possible to maintain local resolution. Define piecewise linear ramp:
+
+
+0,
+ρ < α,
+
+
+ρ− α
+, α ≤ ρ ≤ β,
+γ(ρ) =
+(51)
+β−α
+
+
+
+1,
+ρ > β,
+Then the new frequency of NTK-by-parts can be written as:
+θr′ = 1 − γ(ρ(r))
+
+ θr
++ γ(ρ(r))θr .
+s
+
+(52)
+
+The low-turn frequency is close to PI, the high-turn frequency remains at the original value, and the intermediate frequency
+transitions smoothly. The empirical setting given by YaRN for the LLaMA series is α = 1, β = 32, but this is not the
+cross-model universal constant [10].
+
+6.7 YaRN: NTK-by-parts plus attention scale calibration
+Attention entropy often changes after expansion. YaRN adds attention scaling[10] based on NTK-by-parts:
+ ⊤ 
+qm kn
+αmn = softmaxn √
+,
+t dh
+
+(53)
+
+And it can be equivalently achieved by scaling q, k at the same time:
+q
+q̃ = √ ,
+t
+
+k
+k̃ = √ .
+t
+
+(54)
+
+The paper gives an empirical relationship for LLaMA/Llama 2:
+1
+√ = 0.1 ln s + 1.
+t
+
+(55)
+
+So YaRN is not ”another single interpolation formula”;frequency division interpolation+Attention temperature calibration. The paper reports that it uses about less than PI2.5×The number of training steps and data achieve similar expansion
+effects[10]. in actual frameworkfactor, beta_fast, beta_slow, attention_factorThe naming may be different and must be
+consistent with the checkpoint training configuration.
+
+6.8 LongRoPE: Per-Dimension and Position-Dependent Scaling Search
+The aforementioned methods all use parsing rules to generate scaling. LongRoPE further exploits two types of nonuniformity [11]:
+9
+
+Position Encoding in6 Transformers
+EXTENDING ROPE TO LONG CONTEXTS: FROM UNIFORM SCALING TO PER-DIMENSION SEARCH
+
+1. Different RoPE dimensions require different scaling factors λr ;
+2. The position at the beginning of the sequence is more sensitive to interpolation, and the retention interval nhat can be
+set.
+Its generalized frequency is written as:
+θr′ =
+
+θr
+,
+λr
+
+(56)
+
+And use evolutionary search to find {λr } and nhat in the constraint space. LongRoPE first adapted at 256K length, and then
+performed second-stage search and interpolation based on this model. The paper reported that it reached 2048K; at the same
+time, it searched for another set of scaling configurations for the short context to restore the original length performance [11].
+The key idea is: expansion magnification should not be assumed to be uniform across dimensions and locations.
+
+6.9 LongRoPE2: From Theoretical Periods to Effective Training Periods
+LongRoPE2 pointed out that low-frequency/high-dimensional RoPE not only has a long theoretical period in the pre-training
+corpus, but also has few samples that actually have long-distance dependence, resulting in itsEffective phase rangeNarrower
+than theoretical predictions[12]. Therefore, the theoretical critical dimension may not be equal to the actual critical dimension. It makes three improvements:
+1. uses needle-driven perplexity to guide evolutionary search, jointly finding the actual critical dimensions and dimensionby-dimension scaling factors;
+2. imposes a monotonic non-decreasing λr constraint on the OOD dimension;
+3. Mixed context training: short samples use original RoPE, long samples use rescaled RoPE.
+The hybrid training goal can be abstracted as:
+L = η Lshort (θorig ) + (1 − η) Llong (θscaled ),
+
+(57)
+
+It directly handles the conflict between ”long context adaptation” and ”short context preservation”. The paper reports 128K
+effective context and higher short context retention rate on LLaMA3-8B and Phi3-mini; these numbers are the experimental
+conclusions of the paper and should not be extrapolated to the default guarantee [12] for all models.
+
+6.10 Method comparison and applicable conditions
+Method
+
+Scale object
+
+Main benefits
+
+Main costs/risks
+
+PI
+
+All positions/frequencies are uniformly
+divided by s
+Modifies base, dimensionally non-uniform
+scaling
+The
+magnification
+changes with the current length
+Partition interpolation
+according to the number of rotations
+NTK-by-parts + temperature calibration
+
+Stable and simplest to implement
+
+High-frequency local resolution decreases, usually finetuning is required
+
+retains the highest frequency local structure
+
+Originates from community experience, super parameters
+are based on model
+
+Short input keeps the
+original RoPE
+
+Conflicts with KV Cache after rotation
+
+High frequency retention,
+low frequency protection
+OOD
+Long and short range
+compromise is more complete
+Can
+exploit
+nonuniformity and support
+progressive expansion
+Optimize effective length
+and short-range preservation simultaneously
+
+Need to select α, β
+
+NTK-aware
+
+Dynamic NTK
+
+NTK-by-parts
+
+YaRN
+
+LongRoPE
+
+LongRoPE2
+
+Searches for dimensionwise factors and position retention areas
+Search for effective critical dimensions + hybrid training
+
+Must match training recipe and attention factor
+
+Higher search and verification costs
+
+Requires specialized data, search and mid-training
+
+Table 2: A unified comparison of the main RoPE extension methods.
+
+10
+
+Position Encoding in Transformers
+
+9
+
+ENGINEERING EXPERIMENTATION AND EVALUATION RECOMMENDATIONS
+
+Practical suggestions: For existing checkpoints, the native RoPE configuration and training recipe should be
+reused; rope_theta, PI factor, YaRN factor, and LongRoPE’s dimension-wise factors are not equivalent. When
+training a long context model from scratch, RoPE scaling, long and short sample mix, position-id semantics and
+evaluation matrix need to be jointly designed.
+
+7 An Alternative Design: ALiBi’s Linear Distance Bias
+ALiBi does not rotate the vector, but adds a linear distance penalty [7] to the attention score of the h head:
+(h)
+
+sij =
+
+(h)⊤ (h)
+kj
+
+qi
+
+√
+
+dh
+
+− mh |i − j|.
+
+(58)
+
+Different heads use different slopes mh . It is simple in form, has no position table, and explicitly injects recency bias; but
+its inductive bias is different from the multi-frequency phase of RoPE and is a relative position bias branch rather than an
+extension of RoPE.
+
+8 A unified perspective on three types of positional mechanisms
+Three types of methods modify the input, token pair score and Query-Key geometric relationship respectively:
+x′i = xi + pi ,
+
+absolute position ,
+
+(59)
+
+qi⊤ kj
+
+relative position bias,
+
+(60)
+
+RoPE.
+
+(61)
+
+sij = √
+
++ b(i − j),
+dh
+(Ri qi )⊤ (Rj kj )
+q ⊤ Rj−i kj
+√
+sij =
+= i √
+,
+dh
+dh
+
+Mechanism
+
+Injection position
+
+Relative
+tance
+
+Learned Absolute
+Sinusoidal
+Relative Bias
+
+Input
+Input
+logits/K/V
+
+Not explicit
+Implied
+Explicit
+
+RoPE
+
+Q/K
+
+Explicit
+
+ALiBi
+
+logits
+
+explicit
+
+dis-
+
+Extra long position can be calculated
+
+Reliable extrapolation conditions
+
+Normally no
+in geometry is
+Depends
+on
+bucketing
+in dot product
+Yes
+is
+
+Limited by position table and training length
+Computable does not equal exploitable
+Depends on bucketing and training
+Usually scaling and adaptation training is required
+with strong recency bias
+
+Table 3: A structural comparison of positional mechanisms.
+
+9 Engineering Experimentation and Evaluation Recommendations
+9.1 Position Configuration Must Be Bound to the Checkpoint
+For decoder-only LLMs, at least save and verify:
+• rope_theta or base frequency;
+• rotary dimension: full dimension or partial rotary;
+• dimension pairing layout;
+• original training length and target length;
+• scaling type, factor, attention factor and dimension-wise parameters; Definition of position id under
+• packing, prefix cache, and sliding window.
+
+9.2 Long-Context Evaluation Must Go Beyond Input Acceptance
+It is recommended to report at least:
+1. short context retention rate: original length PPL and benchmark before and after expansion;
+11
+
+Position Encoding in Transformers
+
+11 SUMMARY AND OUTLOOK
+
+2. PPL bucketed by token position and dependent span;
+3. needle/passkey length – depth two-dimensional grid;
+4. RULER class multi-task long context evaluation instead of single retrieval;
+5. Valid context: The point where performance starts to degrade significantly, rather than configuring the maximum
+length;
+6. prefill/decode latency, peak memory, KV Cache occupancy and throughput.
+The code model should also supplement definition-use span, cross-file import/call graph positioning, same-name symbol disambiguation, repo-level completion and patch correctness, and verify whether the short-range syntax and algorithmic
+capabilities of the HumanEval class are degraded after the extension.
+
+10 Common misunderstandings
+1. Self-Attention The order is completely invisible. More precisely, Self-Attention without position mechanism is
+equivariant to input displacement. The causal mask provides visible directions but is not equivalent to a fine distance
+representation.
+2. sine code is an absolute position, so it does not contain relative information. The formula (19) and the formula
+(20) indicate that the fixed offset corresponds to the fixed rotation, and the dot product only depends on m − n.
+3. RoPE is a relative position encoding, so it does not encode an absolute position. single Rm qm explicitly depends
+on m; the absolute phases cancel only in the dot product.
+4. position function can be calculated to 128K, and the model has 128K context. configuration length, value
+runnability length and effective context length are three things.
+5. RoPE naturally causes attention to decrease monotonically with distance. formula (37) is a periodic function,
+and there is no strict monotonic guarantee on a sample-by-sample basis.
+6. Just increase rope_theta to complete the expansion. frequency scaling is only the first step. Model adaptation, KV
+Cache consistency, short-range persistence and valid context must also be verified.
+
+11 Summary and Outlook
+Absolute position encoding writes coordinates into token representations, relative position encoding directly modifies the relationship between token pairs, and RoPE converts absolute positions into relative phases in dot products through Query-Key
+rotation. PI, NTK-aware, YaRN and LongRoPE further deal with frequency scaling and long and short context compatibility
+issues; RoPE scaling law starts from period coverage and links base, training length, critical dimension and extrapolation
+range. However, there are still several unresolved issues with the existing location mechanism:
+1. Nominal length is not effective length. Accepting 128K or 1M input tokens does not mean that all positions are used
+reliably. Effective context also depends on the dependency spans represented in training, optimization behavior, and
+attention dilution.
+2. periodically brings phase aliasing. Different distances may produce similar phases; multi-frequency combination
+can alleviate, but cannot eliminate this problem theoretically.
+3. expansion and short-range capabilities still conflict. interpolation will reduce local resolution, and dimension-bydimensional scaling and mixed-length training also lack stable rules that can be transferred across models.
+4. system implementation may break location semantics. packing, prefix cache, sliding window, speculative decoding
+and KV Cache reuse may cause hidden position-id misalignment.
+5. One-dimensional distance is diﬀicult to express complex structures. The file hierarchy, call graph and definitionuse relationships of the code, as well as the spatial and temporal structure of the multimodal data, are beyond the
+expression range of a single sequence coordinate.
+6. position encoding and eﬀicient attention lack a unified design. Sparse attention, sliding window, KV compression
+and linear attention will change the information propagation path, and the position mechanism needs to be designed
+together with the operator.
+7. evaluation method is still weak. needle-in-a-haystack does not adequately reflect multi-hop reasoning, cross-file code
+understanding, and long-range causal dependencies.
+Follow-up research should not only amplify the nominal context, but establish a location mechanism that is predictable,
+trainable, cacheable, and capable of expressing multi-dimensional structures, and examine long-range information utilization
+12
+
+Position Encoding in Transformers
+
+11 SUMMARY AND OUTLOOK
+
+with real long-dependency tasks. For code models, definition-use, cross-file calls, and repository-level modifications are
+closer to actual needs than random needles.
+
+13
+
+Position Encoding in Transformers
+
+11 SUMMARY AND OUTLOOK
+
+A Position-Encoding Choices in Representative LLMs
+Table 4 summarizes the position mechanisms that can be verified in public papers, technical reports or oﬀicial open source
+configurations. The data status is updated to August 7, 2026. The ”context extension” in the table only records the practices
+related to positional encoding, and does not mean that the model can reach the nominal context length by relying on this
+mechanism alone. For models that do not disclose architectural details, the positional encoding cannot be deduced based
+on the context length or old models of the same series.
+Table 4: Publicly disclosed positional encodings for representational language models.
+Model/series
+
+Position mechanism
+
+Related designs in technical report
+
+GPT-2 / GPT-3
+
+Learnable absolute position embedding
+
+T5
+
+bucket relative position
+bias
+
+BLOOM
+
+ALiBi
+
+Falcon
+
+ALiBi
+
+PaLM
+
+RoPE
+
+LLaMA / Llama 2
+
+RoPE
+
+Code Llama
+
+RoPE, increase the base
+
+Llama 3
+
+RoPE, θ = 500,000
+
+Qwen2
+
+RoPE + YaRN + DCA
+
+Qwen3 / Qwen3.6
+
+RoPE Series + YaRN
+
+Gemma
+
+RoPE
+
+GPT-2 uses learnable position embedding; GPT-3 follows
+the basic Transformer architecture of GPT-2, so it still
+uses the learned absolute solution [13, 14]. The maximum
+length for this type of design is usually constrained by the
+location table and training length.
+Each attention head learns a scalar bias for the relative
+distance bucket; short-distance subdivision, long-distance
+approximate logarithmic bucket [5].
+does not add position vectors to the embedding, but instead applies a linear negative bias [15] that grows with
+distance on the attention logits.
+Falcon Series technical report using ALiBi; ablation experiments comparing ALiBi, URPE and RoPE[16] simultaneously.
+Use RoPE instead of absolute or relative position embedding; the report lists its long sequence performance as one
+of the reasons for adoption [17].
+LLaMA replaces absolute position embedding with
+RoPE; Llama 2 continues RoPE and expands the pretraining context from 2K to 4K[18, 19].
+. Based on Llama 2, adjust the RoPE base to 106 , and
+continue training using 16K sequences; the report studies
+the extrapolation of [20] to 100K.
+technical report increases RoPE base to 500K to improve
+long context support; this configuration is consistent with
+[21] for 8B, 70B and 405B models.
+In the later stage of pre-training, the context is expanded
+from 4K to 32K, and the RoPE base is adjusted from
+10K to 106 ; the inference side combines YaRN and Dual
+Chunk Attention to support longer input [22].
+The oﬀicial configuration of Qwen3 uses θ = 106 , scalable from native 32K to 131K[27] via YaRN. Qwen3.6
+further adopts a hybrid structure of full attention and linear attention; its oﬀicial configuration uses partially rotated M-RoPE, θ = 107 , in the full attention layer, natively supports 262K, and provides a configuration [28]
+that uses YaRN to expand to about 1M.
+Gemma uses rotary positional embeddings at each layer
+instead of absolute positional embedding; the basic model
+training length is 8K[23].
+Continued on next page
+
+14
+
+Position Encoding in Transformers
+
+11 SUMMARY AND OUTLOOK
+
+Table 4(continued)
+
+Model/series
+
+Position mechanism
+
+Related designs in technical report
+
+Phi-3 / Phi-3.5
+
+RoPE system architecture
++ LongRoPE
+
+The
+RoPE
+
+decoupled
+
+in DeepSeek-V2 / V3
+
+The
+RoPE
+
+decoupled
+
+LongCat-Flash, LongCatFlash-Thinking and 2601
+versions of LongCat series
+
+Phi-3-mini uses a block similar to Llama 2; the 128K version is extended by LongRoPE, and Phi-3.5 continues to
+use LongRoPE and mixed context training [24].
+MLA is compatible with low-rank KV compression and
+decouples the Query/Key subspace carrying RoPE from
+the content compression subspace; V3 continues this
+MLA design [25, 26].
+MLA follow MLA and divide Query/Key into RoPE and
+NoPE subspaces. The oﬀicial configuration of the first
+version of Flash is 64-dimensional RoPE subspace, 128dimensional NoPE subspace, θ = 107 , and the maximum
+position is 131K; the public configuration of 2601 sets θ
+to 106 [29, 30, 31].
+does not inject explicit position encoding into MLA’s
+Query/Key; position sensitivity is provided implicitly by
+KDA’s recursive gating and decay mechanism. The technical report states that the design can continue training to
+1M context [32] without RoPE rescaling or interpolation.
+in MLA/DSA GLM-5 is calculated with the attention of
+DSA sparse MLA; the oﬀicial configuration retains the
+64-dimensional RoPE subspace and the 192-dimensional
+NoPE subspace, and sets θ = 106 . DSA changes sparse
+retrieval path without canceling RoPE[33, 34].
+Oﬀicial service documentation lists Qwen3.8-Max, but as
+of the date of this article, there are no public technical
+reports, weights, or configurations to confirm the location mechanism. Therefore, the RoPE solution [35] of
+Qwen3/Qwen3.6 cannot be directly applied.
+The GPT-4 technical report does not disclose the model
+structure, position encoding or RoPE configuration, so its
+position mechanism [36] cannot be determined from public materials.
+
+Kimi K3
+
+NoPE + Kimi Delta Attention
+
+GLM-5
+
+decoupled RoPE
+
+Qwen3.8-Max
+
+Unpublished
+
+GPT-4
+
+Unpublished
+
+It can be seen from public information that decoder-only open source models have obviously concentrated on RoPE
+after 2022, but they have not fully converged: BLOOM and Falcon use ALiBi, the T5 series model uses relative position bias,
+DeepSeek, LongCat and GLM-5 split the RoPE/NoPE subspace to adapt to MLA or sparse attention, and Kimi K3 turns
+to the NoPE scheme in which KDA implicitly provides position information. The so-called ”use RoPE” is not a complete
+configuration. Base, rotary dimension, scaling, training length and position-id semantics will all change the actual behavior;
+for models with undisclosed architectures such as Qwen3.8-Max, keeping ”unknown” in the table is more reliable than
+following the series of historical configurations.
+
+15
+
+Position Encoding in Transformers
+
+REFERENCES
+
+References
+[1] A. Vaswani et al. Attention Is All You Need. NeurIPS, 2017.
+[2] J. Devlin et al. BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding. NAACL, 2019.
+[3] P. Shaw, J. Uszkoreit, A. Vaswani. Self-Attention with Relative Position Representations. NAACL, 2018.
+[4] Z. Dai et al. Transformer-XL: Attentive Language Models Beyond a Fixed-Length Context. ACL, 2019.
+[5] C. Raffel et al. Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer. JMLR, 2020.
+[6] J. Su et al. RoFormer: Enhanced Transformer with Rotary Position Embedding. 2021.
+[7] O. Press, N. A. Smith, M. Lewis. Train Short, Test Long: Attention with Linear Biases Enables Input Length Extrapolation. ICLR,
+2022.
+[8] S. Chen et al. Extending Context Window of Large Language Models via Position Interpolation. 2023.
+[9] X. Liu et al. Scaling Laws of RoPE-based Extrapolation. ICLR, 2024.
+[10] B. Peng et al. YaRN: Eﬀicient Context Window Extension of Large Language Models. ICLR, 2024; arXiv revised 2026.
+[11] Y. Ding et al. LongRoPE: Extending LLM Context Window Beyond 2 Million Tokens. ICML, 2024.
+[12] N. Shang et al. LongRoPE2: Near-Lossless LLM Context Window Scaling. 2025.
+[13] A. Radford et al. Language Models are Unsupervised Multitask Learners. OpenAI, 2019.
+[14] T. Brown et al. Language Models are Few-Shot Learners. NeurIPS, 2020.
+[15] T. Le Scao et al. BLOOM: A 176B-Parameter Open-Access Multilingual Language Model. 2022.
+[16] E. Almazrouei et al. The Falcon Series of Open Language Models. 2023.
+[17] A. Chowdhery et al. PaLM: Scaling Language Modeling with Pathways. 2022.
+[18] H. Touvron et al. LLaMA: Open and Eﬀicient Foundation Language Models. 2023.
+[19] H. Touvron et al. Llama 2: Open Foundation and Fine-Tuned Chat Models. 2023.
+[20] B. Rozière et al. Code Llama: Open Foundation Models for Code. 2023.
+[21] A. Dubey et al. The Llama 3 Herd of Models. 2024.
+[22] A. Yang et al. Qwen2 Technical Report. 2024.
+[23] Gemma Team. Gemma: Open Models Based on Gemini Research and Technology. 2024.
+[24] M. Abdin et al. Phi-3 Technical Report: A Highly Capable Language Model Locally on Your Phone. 2024.
+[25] DeepSeek-AI. DeepSeek-V2: A Strong, Economical, and Eﬀicient Mixture-of-Experts Language Model. 2024.
+[26] DeepSeek-AI. DeepSeek-V3 Technical Report. 2024.
+[27] Qwen Team. Qwen3 Technical Report. 2025.
+[28] Qwen Team. Qwen3.6-35B-A3B Oﬀicial Model Configuration; Processing Ultra-Long Texts. 2026.
+[29] Meituan LongCat Team. LongCat-Flash Technical Report. 2025.
+[30] Meituan LongCat Team. LongCat-Flash-Thinking-2601 Technical Report. 2026.
+[31] Meituan LongCat Team. LongCat-Flash-Chat Oﬀicial Model Configuration; LongCat-Flash-Thinking-2601 Oﬀicial Model Configuration. 2025–2026.
+[32] Kimi Team. Kimi K3: Open Frontier Intelligence. 2026.
+[33] GLM-5 Team. GLM-5: From Vibe Coding to Agentic Engineering. 2026.
+[34] Z.ai. GLM-5 Oﬀicial Model Configuration. 2026.
+[35] Alibaba Cloud. Model Studio: Supported Models. Accessed 2026-08-07.
+[36] OpenAI. GPT-4 Technical Report. 2023.
+
+16
+
+Transformer 位置编码的前世今生
+
+Transformer 位置编码的前世今生
+从绝对位置、相对位置到旋转位置编码 RoPE
+Jiguo Li1
+jiguolee@gmail.com
+
+摘要
+Self-Attention 能有效建模 token 之间的内容相关性，但其计算本身不包含序列顺序。位置编码的作用，是把
+绝对坐标、相对距离或旋转相位注入注意力，使模型能够区分词序、表达局部结构，并在更长上下文中保持可用
+的位置信号。
+本文从 Self-Attention 的置换等变性出发，依次推导正弦–余弦位置编码、Shaw 相对位置表示、TransformerXL、T5 Relative Position Bias 与 RoPE，比较它们注入位置的环节、计算代价、长度外推能力及对 KV Cache 的影
+响。在此基础上，进一步梳理 Position Interpolation、RoPE scaling law、NTK-aware、Dynamic NTK、NTK-by-parts、
+YaRN、LongRoPE 和 LongRoPE2，说明这些方法如何调整频率、位置尺度与注意力温度，以及训练长度、目标上
+下文长度和微调数据之间的约束。全文同时给出公式推导、直观解释、实现要点与一手文献，便于在模型设计和
+长上下文扩展中据此选择方案。
+
+关键词：Transformer；位置编码；相对位置编码；RoPE；长上下文；长度外推
+阅读提要：绝对位置编码为 token 指定坐标；相对位置编码描述 token 对之间的距离；RoPE 则把位置写入
+Query/Key 的旋转相位。
+
+1 本文在 Codex 协助下完成
+
+17
+
+Transformer 位置编码的前世今生
+
+目录
+
+目录
+A 为什么 Transformer 必须显式注入位置
+19
+A.1 RNN、CNN 与 Transformer 的差异 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+A.2 不带位置的 Self-Attention 看到了什么 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+B 技术演进概览
+
+19
+
+C 第一代：绝对位置编码
+19
+C.1 可学习绝对位置 embedding . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20
+C.2 正弦–余弦位置编码 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20
+D 第二代：相对位置编码
+D.1 Shaw：把相对距离加入 Key 和 Value . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+D.2 Transformer-XL：跨片段记忆中的相对位置 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+D.3 T5：将相对位置压缩为标量 bias . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+21
+21
+21
+21
+
+E 第三代：旋转位置编码 RoPE
+E.1 从二维旋转推导核心公式 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+E.2 高维 RoPE 与复数形式 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+E.3 工程实现与配对约定 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+E.4 RoPE 与 KV Cache . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+E.5 RoPE 是否保证距离越远注意力越弱 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+21
+21
+22
+22
+22
+22
+
+F RoPE 长上下文扩展：从统一缩放到逐维搜索
+F.1 问题根源：外推引入未训练相位 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+F.2 RoPE scaling law：基数、训练长度与外推范围 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+F.3 Position Interpolation：统一压缩位置索引 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+F.4 NTK-aware：通过修改 RoPE base 非均匀缩放频率 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+F.5 Dynamic NTK：按当前序列长度动态选择缩放 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+F.6 NTK-by-parts：按频率区间选择插值策略 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+F.7 YaRN：NTK-by-parts 加注意力尺度校准 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+F.8 LongRoPE：逐维、分位置搜索缩放因子 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+F.9 LongRoPE2：从“理论周期”转向“有效训练周期” . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+F.10 方法对比与适用条件 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+23
+23
+23
+23
+24
+24
+24
+24
+25
+25
+25
+
+G 另一种设计：ALiBi 的距离线性偏置
+
+25
+
+H 三类位置机制的统一视角
+
+26
+
+I
+
+工程实验与评估建议
+26
+I.1 配置必须随 checkpoint 固化 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 26
+I.2 长上下文评估不能只看“能否输入” . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 26
+
+J
+
+常见误解
+
+26
+
+K 总结与展望
+
+27
+
+A 代表性 LLM 的位置编码选择
+
+28
+
+18
+
+Transformer 位置编码的前世今生
+
+C
+
+第一代：绝对位置编码
+
+A 为什么 Transformer 必须显式注入位置
+A.1 RNN、CNN 与 Transformer 的差异
+RNN 按时间递推：
+(1)
+
+ht = f (xt , ht−1 ),
+
+计算路径本身就是 x1 → x2 → · · · → xn ，顺序天然存在于状态传递中。CNN 的卷积核先聚合局部邻域，因此也
+带有局部结构先验。
+Transformer 去掉递归和卷积，让所有 token 并行交互。这是高吞吐的来源，也意味着模型结构本身不再知道
+token 的先后顺序。原始 Transformer 因此必须额外注入位置信息 [1]。
+
+A.2 不带位置的 Self-Attention 看到了什么
+给定输入矩阵：
+X = [x1 , x2 , . . . , xn ]⊤ ∈ Rn×d ,
+
+(2)
+
+标准 Self-Attention 计算：
+Q = XWQ ,
+
+K = XWK ,
+
+QK ⊤
+Attn(X) = softmax √
+V.
+dh
+第 i 个 Query 对第 j 个 Key 的分数为：
+
+
+
+V = XWV ,
+
+qi⊤ kj
+sij = √
+.
+dh
+
+(3)
+(4)
+
+(5)
+
+该分数使用了内容向量，却没有直接使用位置 i, j。设 P 为任意置换矩阵，则：
+Attn(P X) = P Attn(X).
+
+(6)
+
+因此，不含位置机制的 Self-Attention 是置换等变的：打乱输入后，输出只按相同方式打乱。位置可以在输入表示、
+注意力分数或 Query/Key 的几何变换中注入，分别对应绝对位置、相对位置和 RoPE 三类方案。
+
+B 技术演进概览
+时间
+
+代表工作
+
+核心位置机制
+
+2017
+2018
+2018
+2019
+2020
+2021
+2021
+2023
+2024–
+2025
+
+Transformer
+BERT
+Shaw et al.
+Transformer-XL
+T5
+RoFormer / RoPE
+ALiBi
+PI / YaRN
+LongRoPE / LongRoPE2
+
+固定正弦–余弦绝对位置编码
+可学习绝对位置 embedding
+在注意力中加入相对距离表示
+相对位置分解，支持片段级记忆
+每个注意力头学习分桶距离 bias
+按位置旋转 Query 和 Key
+对 logits 加线性距离惩罚
+RoPE 插值、分频缩放与注意力校准
+搜索逐维缩放因子并混合长短上下文训练
+
+表 1: Transformer 位置机制的代表性演进。
+这些方法不是简单的新旧替代。固定长度 encoder、encoder-decoder 与自回归 LLM 的任务结构、推理方式和
+上下文需求不同，因此多种方案至今并存。
+
+C 第一代：绝对位置编码
+绝对位置编码为位置 i 提供向量 pi ：
+(0)
+
+hi
+
+= e(xi ) + pi .
+
+它相当于给每个 token 贴上“第 137 位”这样的全局坐标。
+19
+
+(7)
+
+Transformer 位置编码的前世今生
+
+C
+
+第一代：绝对位置编码
+
+C.1 可学习绝对位置 embedding
+最直接的实现是维护参数表：
+P ∈ RLmax ×d .
+
+(8)
+
+第 i 行就是位置 i 的向量 pi 。BERT 将 token、segment 与 position embedding 相加作为输入 [2]。它实现简单、可直
+接拟合任务内位置模式，但参数表绑定最大长度；未训练位置没有可靠表示；相邻位置差不被结构性约束；内容
+与位置在第一层前即混合：
+qi = (e(xi ) + pi )WQ = e(xi )WQ + pi WQ .
+(9)
+
+C.2 正弦–余弦位置编码
+原始 Transformer 用多组正弦和余弦函数生成位置向量 [1]：
+
+
+pos
+P E(pos, 2i) = sin
+,
+2i/dmodel
+10000pos
+
+P E(pos, 2i + 1) = cos
+.
+100002i/dmodel
+
+(10)
+(11)
+
+定义第 i 组角频率：
+θi = 10000−2i/dmodel ,
+则一组二维表示为：
+
+(12)
+
+#
+sin(posθi )
+P Ei (pos) =
+.
+cos(posθi )
+"
+
+(13)
+
+完整位置向量由多组不同频率拼接：
+P E(pos) = [sin(posθ0 ), cos(posθ0 ), . . . , sin(posθd/2−1 ), cos(posθd/2−1 )].
+
+(14)
+
+C.2.1 “多只钟表”的直观解释
+每对维度可看成单位圆上的一根指针，其相位与波长分别为：
+ϕi (pos) = posθi ,
+2π
+λi =
+= 2π · 100002i/dmodel .
+θi
+
+(15)
+(16)
+
+大的 θi 对应“快钟”
+，能区分相邻位置；小的 θi 对应“慢钟”
+，描述较长尺度。单只钟周期重复，多只不同转速的
+钟联合后能在更大范围区分位置。常数 10000 是频率基数，不是数学上唯一正确的选择。
+当 dmodel = 8 时，四组频率为：
+θ0 = 1,
+
+θ1 = 0.1,
+
+θ2 = 0.01,
+
+θ3 = 0.001.
+
+(17)
+
+C.2.2 为什么必须同时使用 sin 和 cos
+由和角公式：
+sin((pos + ∆)θ) = sin(posθ) cos(∆θ) + cos(posθ) sin(∆θ).
+只保存 sin 无法通过固定线性变换得到平移结果；成对保存后有：
+"
+#
+cos(∆θi ) sin(∆θi )
+P Ei (pos + ∆) =
+P Ei (pos).
+− sin(∆θi ) cos(∆θi )
+
+(18)
+
+(19)
+
+矩阵只依赖位移 ∆。同一频率下两个位置编码的点积为：
+P Ei (m)⊤ P Ei (n) = cos((m − n)θi ),
+完整编码满足：
+P E(m)⊤ P E(n) =
+
+X
+
+cos((m − n)θi ).
+
+(20)
+(21)
+
+i
+
+所以正弦编码形式上是绝对位置表示，几何关系中却包含相对位移。原始 Transformer 实际使用式 (7)，并未直接
+以式 (21) 作为注意力分数，模型仍需训练才能利用这种结构。
+需要注意：位置函数可以计算到任意 pos，不等于整个模型能可靠理解任意长上下文。训练长度仍约束注
+意力分布、状态表示与优化结果。
+20
+
+Transformer 位置编码的前世今生
+
+E 第三代：旋转位置编码 ROPE
+
+D 第二代：相对位置编码
+语言和代码中的许多关系更关心 j −i，而不是分别知道 i 与 j。例如“左侧最近的定义”
+“距调用点最近的声明”
+“右
+侧两个 token 的参数”。
+
+D.1 Shaw：把相对距离加入 Key 和 Value
+Shaw 等人将 token 对的相对距离直接加入 Self-Attention[3]。先裁剪距离：
+rij = clip(j − i, −K, K),
+
+(22)
+
+qi⊤ (kj + aK
+qi⊤ kj + qi⊤ aK
+rij )
+rij
+√
+√
+=
+.
+dh
+dh
+
+(23)
+
+为每个距离学习相对 Key 向量 aK
+rij ：
+sij =
+
+第一项表示内容匹配，第二项表示当前 Query 对某个方向与距离的偏好。Value 也可加入相对表示：
+X
+zi =
+αij (vj + aVrij ).
+
+(24)
+
+j
+
+D.2 Transformer-XL：跨片段记忆中的相对位置
+Transformer-XL 允许当前片段复用上一片段隐藏状态 [4]。若缓存携带旧片段的绝对坐标，复用到新片段会产生歧
+义；相对位置只依赖当前 Query 与历史 Key 的真实距离。其未归一化注意力可分解为：
+Aij = qi⊤ kj + qi⊤ Wk,R Ri−j
++ u⊤ kj + v ⊤ Wk,R Ri−j ,
+
+(25)
+
+分别对应内容–内容、内容–位置、全局内容偏置和全局位置偏置。
+
+D.3 T5：将相对位置压缩为标量 bias
+T5 为每个注意力头和距离桶学习一个标量 [5]：
+(h)⊤ (h)
+qi
+kj
+(h)
++ bh,bucket(j−i) .
+sij = √
+dh
+
+(26)
+
+距离较小时使用细粒度桶，距离较大时近似对数分桶。不同 head 可学习不同距离先验，形成“内容相似度 + 距
+离偏好”的清晰分解。
+传统相对位置方法在建模上直观，但通常要处理 n × n 个 token 对。相对信息可能进入 Key、Value、logits 或
+多个交叉项，增加算子融合、增量解码与高效注意力实现的复杂度。RoPE 的关键价值，就是在显式表达相对位
+移的同时保留标准 QK ⊤ 形式。
+
+E 第三代：旋转位置编码 RoPE
+RoPE 不把位置向量加到输入，也不为 token 对显式构造相对向量，而是根据绝对位置旋转 Query 和 Key[6]。
+
+E.1 从二维旋转推导核心公式
+二维旋转矩阵为：
+
+"
+
+cos ϕ
+R(ϕ) =
+sin ϕ
+
+#
+− sin ϕ
+.
+cos ϕ
+
+(27)
+
+位置 m 的旋转角为 mθ：
+′
+qm
+= R(mθ)qm ,
+
+旋转后的点积为：
+
+kn′ = R(nθ)kn .
+
+′⊤ ′
+⊤
+qm
+k n = qm
+R(mθ)⊤ R(nθ)kn
+⊤
+= qm
+R((n − m)θ)kn .
+
+21
+
+(28)
+
+(29)
+
+Transformer 位置编码的前世今生
+
+E 第三代：旋转位置编码 ROPE
+
+这里使用了：
+R(mθ)⊤ = R(−mθ),
+
+R(−mθ)R(nθ) = R((n − m)θ).
+
+(30)
+
+′
+单个向量 qm
+依赖绝对位置 m；Query-Key 交互只通过 n − m 依赖相对位置。因此，RoPE 在单个向量上编码绝对
+位置，在点积中呈现相对位置。
+
+E.2 高维 RoPE 与复数形式
+将 head dimension 两两组成二维子空间，第 r 对频率为：
+θr = b−2r/dh ,
+
+r = 0, 1, . . . , dh /2 − 1,
+
+(31)
+
+经典基数 b = 10000。整体旋转矩阵为：
+
+Rm = diag R(mθ0 ), R(mθ1 ), . . . , R(mθdh /2−1 ) .
+
+(32)
+
+若把二维向量写成复数 zr = x2r + ix2r+1 ，RoPE 等价于：
+zr′ = zr eimθr .
+
+(33)
+
+e−imθr einθr = ei(n−m)θr ,
+
+(34)
+
+Query 与 Key 的相位因子相乘后为：
+即绝对相位相减后只剩相对相位。
+
+E.3 工程实现与配对约定
+以下实现使用相邻维度配对。某些框架采用前半维与后半维配对；两者只是排列约定不同，但权重、cos/sin cache
+与旋转函数必须一致。
+def apply_rope(x, cos, sin):
+x_even = x[..., 0::2]
+x_odd = x[..., 1::2]
+y_even = x_even * cos - x_odd * sin
+y_odd = x_even * sin + x_odd * cos
+y = torch.empty_like(x)
+y[..., 0::2] = y_even
+y[..., 1::2] = y_odd
+return y
+
+Value 通常不旋转，因为位置主要影响“关注谁”的权重；聚合对象仍是内容 Value。
+
+E.4 RoPE 与 KV Cache
+固定 RoPE 配置下，历史 Key 通常以旋转后的形式缓存：
+ki′ = Ri ki .
+
+(35)
+
+生成位置 t 时只需计算：
+qt′ = Rt qt ,
+
+kt′ = Rt kt .
+
+(36)
+
+历史 Key 无需重算。工程上最易出错的是 position offset：prefill、decode、padding、sequence packing、prefix cache
+与 sliding window 必须对同一 token 使用一致的逻辑 position id。
+
+E.5 RoPE 是否保证距离越远注意力越弱
+单个频率的相对项包含：
+cos((n − m)θr ),
+
+sin((n − m)θr ),
+
+(37)
+
+它们随距离周期振荡，并非单调衰减。RoFormer 讨论了多频率汇总后的远距离衰减倾向 [6]，但不能对任意固定
+Query/Key、任意 head 和任意距离推出“越远分数必然越小”。
+
+22
+
+Transformer 位置编码的前世今生
+
+F
+
+ROPE 长上下文扩展：从统一缩放到逐维搜索
+
+F RoPE 长上下文扩展：从统一缩放到逐维搜索
+F.1 问题根源：外推引入未训练相位
+设原始训练长度为 L0 ，目标长度为 L1 = sL0 ，其中 s > 1。第 r 个二维子空间的周期为：
+Tr =
+
+2π
+= 2πb2r/dh .
+θr
+
+(38)
+
+高频维度在 L0 内经历许多周期，局部模式训练充分；低频维度可能连一个完整周期都未覆盖。直接推理到 L1 会
+让部分维度进入未见过的相位区间，造成 RoPE OOD。LongRoPE2 将理论临界维度定义为周期是否超过原训练长
+度的分界 [12]：
+rcrit = min{r : Tr ≥ L0 }.
+(39)
+扩展方法真正需要处理的是各频率的缩放方式，以及模型权重对新相位分布的适应，而不仅是增大 position id 的
+取值范围。
+
+F.2 RoPE scaling law：基数、训练长度与外推范围
+Liu 等人从周期覆盖的角度研究了 RoPE 的长度外推，并提出 RoPE-based extrapolation scaling laws[9]。这里的
+“scaling law”描述的是旋转基数、训练长度与外推范围之间的关系，与参数量、数据量和计算量之间的经典模型
+scaling law 含义不同。
+对原始基数 10000，第 n 组频率的周期为：
+Tn =
+
+2π
+= 2π · 100002n/dh .
+θn
+
+(40)
+
+若预训练长度为 Ttrain ，论文把能够在训练区间内至少覆盖完整周期的维度上限写为：
+
+
+
+dh
+Ttrain
+dextra = 2
+log10000
+.
+2
+2π
+
+(41)
+
+超过 dextra 的低频维度在训练中没有观察到完整周期，超出训练长度后更容易出现相位分布偏移。以 LLaMA 2 的
+dh = 128、Ttrain = 4096 为例，论文计算得到 dextra = 92；其余 36 个维度被视为外推时更容易失稳的部分 [9]。
+当微调阶段把旋转基数改为 β > 10000，该工作用临界维度的新周期估计外推上限：
+Textra = 2π β dextra /dh .
+
+(42)
+
+反过来，给定期望长度 Teextra ，可由论文给出的关系估计所需的临界基数：
+e
+
+β0 = 10000logTtrain /(2π) (Textra /(2π)) .
+
+(43)
+
+论文还观察到，在固定微调长度下，将基数调小也可能改善外推，因为更多维度能在训练区间内经历更充分
+的三角函数变化。对应的三个相位覆盖点为：
+β1 =
+
+2Ttrain
+,
+π
+
+β2 =
+
+Ttrain
+,
+π
+
+β3 =
+
+Ttrain
+.
+2π
+
+(44)
+
+这组结果揭示了 RoPE 外推与周期覆盖之间的联系，但不宜把式 (42) 当成跨模型的硬性上下文上限。论文主要在
+LLaMA 2 上验证，实际有效长度还受到语料中的长距离依赖分布、微调数据、attention head 行为和评测任务影
+响。
+
+F.3 Position Interpolation：统一压缩位置索引
+PI 将目标范围中的位置压回原训练区间 [8]：
+m′ =
+
+L0
+m
+=m .
+s
+L1
+
+(45)
+
+等价地，对所有频率统一缩放：
+θr
+.
+(46)
+s
+其优点是所有新位置都落回已训练相位范围，结构改动极小；缺点是高频也被压缩，相邻 token 的相位差从 θr 变
+成 θr /s，局部分辨率下降。PI 论文从 2K 扩至 32K，仅需短程微调即可适应，但也明确指出原长度内会有一定性
+能损失 [8]。
+θr′ =
+
+23
+
+Transformer 位置编码的前世今生
+
+F
+
+ROPE 长上下文扩展：从统一缩放到逐维搜索
+
+F.4 NTK-aware：通过修改 RoPE base 非均匀缩放频率
+NTK-aware 的直觉是：不要像 PI 一样等比例压缩所有频率，而是调整频率基数 b，使高频尽量保持、低频承担更
+多扩展。常见形式把新基数设为：
+b′ = b sdh /(dh −2) ,
+(47)
+从而：
+θr′ = (b′ )−2r/dh = θr s−2r/(dh −2) .
+
+(48)
+
+当 r = 0 时最高频保持不变；随 r 增大，低频被更强地缩放。它在局部精度和长程覆盖之间比统一 PI 更平滑。需
+要注意，NTK-aware 最初来自开源社区经验，后来由 YaRN 论文系统整理，而不是一开始就有独立同行评议论文
+[10]。
+
+F.5 Dynamic NTK：按当前序列长度动态选择缩放
+固定目标长度 L1 的缩放会使短输入也承受位置压缩。Dynamic Scaling 根据当前序列长度 ℓ 更新倍率 [10]：
+
+
+ℓ
+s(ℓ) = max 1,
+,
+(49)
+L0
+再将 s(ℓ) 代入式 (47)。短序列保持原 RoPE，超过 L0 后逐步扩展。
+这一做法与旋转后 KV Cache 存在冲突：当 s(ℓ) 变化时，同一个历史 token 的旋转角也变化。若缓存的是已
+经旋转的 Key，旧缓存便与新倍率不一致。严格实现要么缓存旋转前 Key 并在倍率变化后重新旋转，要么在一次
+生成会话内固定倍率；YaRN 论文也明确提醒了这一点 [10]。
+
+F.6 NTK-by-parts：按频率区间选择插值策略
+YaRN 用原训练长度内的旋转圈数衡量第 r 个频率的训练覆盖：
+ρ(r) =
+
+L0 θr
+.
+2π
+
+(50)
+
+若 ρ(r) 很小，说明该维度在训练区间内尚未完整旋转，应像 PI 一样充分插值以避免 OOD；若 ρ(r) 很大，说明它
+已经多次旋转，应尽量保留以维持局部分辨率。定义分段线性 ramp：
+
+
+0,
+ρ < α,
+
+
+ρ− α
+, α ≤ ρ ≤ β,
+γ(ρ) =
+(51)
+β−α
+
+
+
+1,
+ρ > β,
+则 NTK-by-parts 的新频率可写为：
+
+ θr
++ γ(ρ(r))θr .
+(52)
+s
+低圈数频率接近 PI，高圈数频率保持原值，中间频率平滑过渡。YaRN 对 LLaMA 系列给出的经验设置为 α =
+1, β = 32，但这不是跨模型通用常数 [10]。
+θr′ = 1 − γ(ρ(r))
+
+F.7 YaRN：NTK-by-parts 加注意力尺度校准
+扩长后 attention entropy 往往改变。YaRN 在 NTK-by-parts 基础上加入 attention scaling[10]：
+ ⊤ 
+qm kn
+αmn = softmaxn √
+,
+t dh
+
+(53)
+
+并可通过同时缩放 q, k 来等价实现：
+k
+k̃ = √ .
+t
+
+q
+q̃ = √ ,
+t
+论文对 LLaMA/Llama 2 给出经验关系：
+
+1
+√ = 0.1 ln s + 1.
+t
+
+(54)
+
+(55)
+
+因此 YaRN 不是“另一种单一插值公式”，而是分频率插值 + 注意力温度校准。论文报告它用比 PI 少约 2.5× 的
+训练步数和数据达到相近扩展效果 [10]。实际框架中的 factor、beta_fast、beta_slow、attention_factor 等命名可能
+不同，必须与 checkpoint 训练配置一致。
+24
+
+Transformer 位置编码的前世今生
+
+G 另一种设计：ALIBI 的距离线性偏置
+
+F.8 LongRoPE：逐维、分位置搜索缩放因子
+前述方法都用解析规则生成缩放。LongRoPE 进一步利用两种非均匀性 [11]：
+1. 不同 RoPE 维度需要不同缩放因子 λr ；
+2. 序列开头一段位置对插值更敏感，可设置保留区间 nhat 。
+其一般化频率写作：
+θr
+,
+(56)
+λr
+并用 evolutionary search 在约束空间中寻找 {λr } 与 nhat 。LongRoPE 先在 256K 长度适配，再基于该模型进行第二
+阶段搜索与插值，论文报告达到 2048K；同时为短上下文搜索另一套缩放配置以恢复原长度性能 [11]。关键思想
+是：扩展倍率不应被假设为跨维度、跨位置均匀。
+θr′ =
+
+F.9 LongRoPE2：从“理论周期”转向“有效训练周期”
+LongRoPE2 指出，低频/高维 RoPE 在预训练语料中不仅理论周期长，而且真正发生长距离依赖的样本稀少，导致
+其有效相位范围比理论预测更窄 [12]。因此，理论临界维度未必等于实际临界维度。它做了三项改进：
+1. 使用 needle-driven perplexity 指导 evolutionary search，联合寻找实际临界维度与逐维缩放因子；
+2. 对 OOD 维度施加单调非减的 λr 约束；
+3. 混合上下文训练：短样本使用原始 RoPE，长样本使用 rescaled RoPE。
+混合训练目标可抽象为：
+L = η Lshort (θorig ) + (1 − η) Llong (θscaled ),
+
+(57)
+
+它直接处理“长上下文适配”和“短上下文保持”之间的冲突。论文在 LLaMA3-8B 与 Phi3-mini 上报告 128K 有
+效上下文与较高短上下文保持率；这些数字是论文实验结论，不应外推为所有模型的默认保证 [12]。
+
+F.10 方法对比与适用条件
+方法
+
+缩放对象
+
+主要优点
+
+主要代价/风险
+
+PI
+
+所有位置/频率统一除
+以s
+修改 base，逐维非均匀
+缩放
+倍率随当前长度变化
+按旋转圈数分区插值
+NTK-by-parts + 温度校
+准
+搜索逐维因子与位置
+保留区
+搜索有效临界维度 +
+混合训练
+
+稳定、实现最简单
+
+高频局部分辨率下降，通常需微调
+
+保留最高频局部结构
+
+社区经验起源，超参依模型
+
+短输入保持原 RoPE
+高频保留、低频防 OOD
+长短程折中更完整
+
+与旋转后 KV Cache 冲突
+需选择 α, β
+必须匹配训练 recipe 与 attention factor
+
+能利用非均匀性，支持
+渐进扩长
+同时优化有效长度和短
+程保持
+
+搜索与验证成本更高
+
+NTK-aware
+Dynamic NTK
+NTK-by-parts
+YaRN
+LongRoPE
+LongRoPE2
+
+需要专门数据、搜索和 mid-training
+
+表 2: 主要 RoPE 扩展方法的统一比较。
+实践建议：对已有 checkpoint，应复用其原生 RoPE 配置和训练 recipe；rope_theta、PI factor、YaRN factor 与
+LongRoPE 的逐维因子并不等价。从头训练长上下文模型时，需要联合设计 RoPE scaling、长短样本 mix、
+position-id 语义和评估矩阵。
+
+G 另一种设计：ALiBi 的距离线性偏置
+ALiBi 不旋转向量，而是在第 h 个 head 的注意力分数中加入线性距离惩罚 [7]：
+(h)
+
+sij =
+
+(h)⊤ (h)
+kj
+
+qi
+
+√
+
+dh
+
+− mh |i − j|.
+
+(58)
+
+不同 head 使用不同斜率 mh 。它形式简单、没有位置表，并显式注入 recency bias；但其归纳偏置与 RoPE 的多频
+率相位不同，是相对位置 bias 分支而非 RoPE 扩展。
+25
+
+Transformer 位置编码的前世今生
+
+J 常见误解
+
+H 三类位置机制的统一视角
+三类方法分别修改输入、token 对分数和 Query-Key 几何关系：
+x′i = xi + pi ,
+qi⊤ kj
+sij = √
++ b(i − j),
+dh
+(Ri qi )⊤ (Rj kj )
+q ⊤ Rj−i kj
+√
+sij =
+= i √
+,
+dh
+dh
+
+绝对位置,
+
+(59)
+
+相对位置 bias,
+
+(60)
+
+RoPE.
+
+(61)
+
+机制
+
+注入位置
+
+相对距离
+
+超长位置可计
+算
+
+可靠外推条件
+
+Learned Absolute
+Sinusoidal
+Relative Bias
+RoPE
+ALiBi
+
+输入
+输入
+logits/K/V
+Q/K
+logits
+
+不显式
+几何中隐含
+显式
+点积中显式
+显式
+
+通常否
+是
+依分桶而定
+是
+是
+
+受位置表与训练长度限制
+可计算不等于可利用
+取决于分桶与训练
+通常需 scaling 与适配训练
+具有强 recency bias
+
+表 3: 位置机制的结构比较。
+
+I 工程实验与评估建议
+I.1 配置必须随 checkpoint 固化
+对 decoder-only LLM，至少应保存并验证：
+• rope_theta 或 base frequency；
+• rotary dimension：全维或 partial rotary；
+• 维度配对布局；
+• 原始训练长度与目标长度；
+• scaling 类型、factor、attention factor 与逐维参数；
+• packing、prefix cache、sliding window 下 position id 的定义。
+
+I.2 长上下文评估不能只看“能否输入”
+建议至少报告：
+1. 短上下文保持率：扩长前后原长度 PPL 与 benchmark；
+2. 按 token position、依赖跨度分桶的 PPL；
+3. needle/passkey 的长度–深度二维网格；
+4. RULER 类多任务长上下文评估，而非单一检索；
+5. 有效上下文：性能开始显著退化的位置，而非配置最大长度；
+6. prefill/decode latency、峰值显存、KV Cache 占用与吞吐。
+代码模型还应补充 definition-use 跨度、跨文件 import/call graph 定位、同名符号消歧、repo-level completion 与
+patch correctness，并验证扩长后 HumanEval 类短程语法和算法能力是否退化。
+
+J 常见误解
+1. Self-Attention 完全看不见顺序。更准确地说，不含位置机制的 Self-Attention 对输入置换等变。causal mask 提
+供可见方向，但不等于精细距离表示。
+2. 正弦编码是绝对位置，所以不含相对信息。式 (19) 与式 (20) 表明固定偏移对应固定旋转，点积只依赖 m − n。
+3. RoPE 是相对位置编码，因此不编码绝对位置。单个 Rm qm 明确依赖 m；只有点积时绝对相位才相消。
+4. 位置函数能算到 128K，模型就有 128K 上下文。配置长度、数值可运行长度与有效上下文长度是三件事。
+5. RoPE 天然让注意力随距离单调下降。式 (37) 是周期函数，不存在逐样本严格单调保证。
+
+26
+
+Transformer 位置编码的前世今生
+
+K 总结与展望
+
+6. 只调大 rope_theta 就完成扩长。频率缩放只是第一步，还要验证模型适配、KV Cache 一致性、短程保持与有
+效上下文。
+
+K 总结与展望
+绝对位置编码把坐标写入 token 表示，相对位置编码直接修改 token 对之间的关系，RoPE 则通过 Query-Key 旋转
+把绝对位置转化为点积中的相对相位。PI、NTK-aware、YaRN 和 LongRoPE 进一步处理频率缩放与长短上下文兼
+容问题；RoPE scaling law 则从周期覆盖出发，联系 base、训练长度、临界维度与外推范围。不过，现有位置机制
+仍有若干问题没有解决：
+1. 标称长度与有效长度不一致。能接收 128K 或 1M token，不代表能稳定利用所有位置；有效上下文还受训练
+依赖跨度、优化过程和注意力稀释影响。
+2. 周期性带来相位混叠。不同距离可能产生相近相位；多频率组合能够缓解，却不能从理论上消除这一问题。
+3. 扩长与短程能力仍有冲突。插值会降低局部分辨率，逐维缩放和混合长度训练也缺少可跨模型迁移的稳定规
+律。
+4. 系统实现可能破坏位置语义。packing、prefix cache、sliding window、speculative decoding 和 KV Cache 复用都
+可能造成隐蔽的 position-id 错位。
+5. 一维距离难以表达复杂结构。代码的文件层级、调用图和 definition-use 关系，以及多模态数据的空间与时间
+结构，都超出单一序列坐标的表达范围。
+6. 位置编码与高效注意力缺少统一设计。稀疏注意力、滑窗、KV 压缩和线性注意力会改变信息传播路径，位
+置机制需要与算子共同设计。
+7. 评估方法仍然偏弱。needle-in-a-haystack 不能充分反映多跳推理、跨文件代码理解和长程因果依赖。
+后续研究不应只放大标称上下文，而应建立可预测、可训练、可缓存且能表达多维结构的位置机制，并用真
+实长依赖任务检验远距离信息利用率。对代码模型而言，definition-use、跨文件调用和 repository-level 修改比随机
+needle 更接近实际需求。
+
+27
+
+Transformer 位置编码的前世今生
+
+K 总结与展望
+
+A 代表性 LLM 的位置编码选择
+表 4 汇总公开论文、技术报告或官方开源配置中可以核验的位置机制，资料状态更新至 2026 年 8 月 7 日。表中
+的“上下文扩展”只记录位置编码相关做法，不代表模型仅凭该机制就能达到标称上下文长度。对于没有公开架
+构细节的模型，不能依据上下文长度或同系列旧模型反推出其位置编码。
+表 4: 代表性语言模型公开披露的位置编码方式。
+模型/系列
+
+位置机制
+
+GPT-2 / GPT-3
+
+可学习绝对位置 embedding
+
+T5
+BLOOM
+Falcon
+PaLM
+LLaMA / Llama 2
+Code Llama
+Llama 3
+Qwen2
+
+Qwen3 / Qwen3.6
+
+Gemma
+Phi-3 / Phi-3.5
+
+DeepSeek-V2 / V3
+
+LongCat 系列
+
+Kimi K3
+
+技术报告中的相关设计
+
+GPT-2 使用可学习的位置 embedding；GPT-3 沿用
+GPT-2 的基本 Transformer 架构，因此仍采用 learned
+absolute 方案 [13, 14]。这类设计的最大长度通常受位
+置表和训练长度约束。
+分桶相对位置 bias
+每个 attention head 对相对距离桶学习标量偏置；近距
+离细分、远距离近似对数分桶 [5]。
+ALiBi
+不向 embedding 加位置向量，而是在注意力 logits 上
+施加按距离增长的线性负偏置 [15]。
+ALiBi
+Falcon 系列技术报告采用 ALiBi；其消融实验同时比
+较了 ALiBi、URPE 与 RoPE[16]。
+RoPE
+使用 RoPE 取代绝对或相对位置 embedding；报告将
+其长序列表现列为采用理由之一 [17]。
+RoPE
+LLaMA 以 RoPE 取代绝对位置 embedding；Llama 2 延
+续 RoPE，并把预训练上下文从 2K 扩为 4K[18, 19]。
+RoPE，增大基数
+在 Llama 2 基础上把 RoPE base 调为 106 ，使用 16K
+序列继续训练；报告研究了向 100K 的外推 [20]。
+RoPE，θ = 500,000
+技术报告把 RoPE base 提高到 500K，用于改善长上
+下文支持；该配置对 8B、70B 与 405B 模型一致 [21]。
+RoPE + YaRN + DCA
+预训练后期把上下文从 4K 扩到 32K，并把 RoPE base
+从 10K 调为 106 ；推理侧结合 YaRN 与 Dual Chunk
+Attention 支持更长输入 [22]。
+Qwen3 的官方配置使用 θ = 106 ，可通过 YaRN 从原
+RoPE 系列 + YaRN
+生 32K 扩展到 131K[27]。Qwen3.6 进一步采用全注意
+力与线性注意力混合结构；其官方配置在全注意力层
+使用部分旋转的 M-RoPE，θ = 107 ，原生支持 262K，
+并给出使用 YaRN 扩展至约 1M 的配置 [28]。
+RoPE
+Gemma 在每层使用 rotary positional embeddings，而不
+是绝对位置 embedding；基础模型训练长度为 8K[23]。
+RoPE 系 架 构 + Lon- Phi-3-mini 采用与 Llama 2 相近的 block；128K 版本
+gRoPE
+通过 LongRoPE 扩展，Phi-3.5 继续使用 LongRoPE 与
+混合上下文训练 [24]。
+MLA 中 的 decoupled 为兼容低秩 KV 压缩，将携带 RoPE 的 Query/Key 子
+RoPE
+空间与内容压缩子空间解耦；V3 延续该 MLA 设计
+[25, 26]。
+MLA 中 的 decoupled LongCat-Flash、LongCat-Flash-Thinking 与 2601 版本
+RoPE
+沿用 MLA，把 Query/Key 分成 RoPE 与 NoPE 子空间。
+初版 Flash 的官方配置为 64 维 RoPE 子空间、128 维
+NoPE 子空间，θ = 107 ，最大位置为 131K；2601 的
+公开配置将 θ 设为 106 [29, 30, 31]。
+NoPE + Kimi Delta Atten- 不向 MLA 的 Query/Key 注入显式位置编码；位置敏
+tion
+感性由 KDA 的递归门控与衰减机制隐式提供。技术
+报告指出该设计无需 RoPE rescaling 或 interpolation
+即可继续训练到 1M 上下文 [32]。
+下页续
+
+28
+
+Transformer 位置编码的前世今生
+
+K 总结与展望
+
+表 4（续）
+
+模型/系列
+
+位置机制
+
+技术报告中的相关设计
+
+GLM-5
+
+MLA/DSA 中 的 decoupled RoPE
+
+Qwen3.8-Max
+
+未公开
+
+GPT-4
+
+未公开
+
+GLM-5 以 DSA 稀疏化 MLA 的注意力计算；官方配
+置保留 64 维 RoPE 子空间与 192 维 NoPE 子空间，并
+设置 θ = 106 。DSA 改变稀疏检索路径，但没有取消
+RoPE[33, 34]。
+官方服务文档已列出 Qwen3.8-Max，但截至本文资料
+截止日尚无公开技术报告、权重或配置可以确认位置
+机制。因此不能直接套用 Qwen3/Qwen3.6 的 RoPE 方
+案 [35]。
+GPT-4 技术报告未披露模型结构、位置编码或 RoPE
+配置，因此无法从公开材料确定其位置机制 [36]。
+
+从公开资料可以看到，decoder-only 开源模型在 2022 年以后明显集中到 RoPE，但并未完全收敛：BLOOM 与
+Falcon 使用 ALiBi，T5 系模型采用相对位置 bias，DeepSeek、LongCat 与 GLM-5 为适配 MLA 或稀疏注意力而拆
+分 RoPE/NoPE 子空间，Kimi K3 则转向由 KDA 隐式提供位置信息的 NoPE 方案。所谓“使用 RoPE”也不是一个
+完整配置，base、rotary dimension、scaling、训练长度和 position-id 语义都会改变实际行为；对于 Qwen3.8-Max 这
+类未披露架构的模型，表中保留“未知”比沿用系列历史配置更可靠。
+
+29
+
+Transformer 位置编码的前世今生
+
+参考文献
+
+参考文献
+[1] A. Vaswani et al. Attention Is All You Need. NeurIPS, 2017.
+[2] J. Devlin et al. BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding. NAACL, 2019.
+[3] P. Shaw, J. Uszkoreit, A. Vaswani. Self-Attention with Relative Position Representations. NAACL, 2018.
+[4] Z. Dai et al. Transformer-XL: Attentive Language Models Beyond a Fixed-Length Context. ACL, 2019.
+[5] C. Raffel et al. Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer. JMLR, 2020.
+[6] J. Su et al. RoFormer: Enhanced Transformer with Rotary Position Embedding. 2021.
+[7] O. Press, N. A. Smith, M. Lewis. Train Short, Test Long: Attention with Linear Biases Enables Input Length Extrapolation. ICLR,
+2022.
+[8] S. Chen et al. Extending Context Window of Large Language Models via Position Interpolation. 2023.
+[9] X. Liu et al. Scaling Laws of RoPE-based Extrapolation. ICLR, 2024.
+[10] B. Peng et al. YaRN: Eﬀicient Context Window Extension of Large Language Models. ICLR, 2024; arXiv revised 2026.
+[11] Y. Ding et al. LongRoPE: Extending LLM Context Window Beyond 2 Million Tokens. ICML, 2024.
+[12] N. Shang et al. LongRoPE2: Near-Lossless LLM Context Window Scaling. 2025.
+[13] A. Radford et al. Language Models are Unsupervised Multitask Learners. OpenAI, 2019.
+[14] T. Brown et al. Language Models are Few-Shot Learners. NeurIPS, 2020.
+[15] T. Le Scao et al. BLOOM: A 176B-Parameter Open-Access Multilingual Language Model. 2022.
+[16] E. Almazrouei et al. The Falcon Series of Open Language Models. 2023.
+[17] A. Chowdhery et al. PaLM: Scaling Language Modeling with Pathways. 2022.
+[18] H. Touvron et al. LLaMA: Open and Eﬀicient Foundation Language Models. 2023.
+[19] H. Touvron et al. Llama 2: Open Foundation and Fine-Tuned Chat Models. 2023.
+[20] B. Rozière et al. Code Llama: Open Foundation Models for Code. 2023.
+[21] A. Dubey et al. The Llama 3 Herd of Models. 2024.
+[22] A. Yang et al. Qwen2 Technical Report. 2024.
+[23] Gemma Team. Gemma: Open Models Based on Gemini Research and Technology. 2024.
+[24] M. Abdin et al. Phi-3 Technical Report: A Highly Capable Language Model Locally on Your Phone. 2024.
+[25] DeepSeek-AI. DeepSeek-V2: A Strong, Economical, and Eﬀicient Mixture-of-Experts Language Model. 2024.
+[26] DeepSeek-AI. DeepSeek-V3 Technical Report. 2024.
+[27] Qwen Team. Qwen3 Technical Report. 2025.
+[28] Qwen Team. Qwen3.6-35B-A3B Oﬀicial Model Configuration; Processing Ultra-Long Texts. 2026.
+[29] Meituan LongCat Team. LongCat-Flash Technical Report. 2025.
+[30] Meituan LongCat Team. LongCat-Flash-Thinking-2601 Technical Report. 2026.
+[31] Meituan LongCat Team. LongCat-Flash-Chat Oﬀicial Model Configuration; LongCat-Flash-Thinking-2601 Oﬀicial Model Configuration. 2025–2026.
+[32] Kimi Team. Kimi K3: Open Frontier Intelligence. 2026.
+[33] GLM-5 Team. GLM-5: From Vibe Coding to Agentic Engineering. 2026.
+[34] Z.ai. GLM-5 Oﬀicial Model Configuration. 2026.
+[35] Alibaba Cloud. Model Studio: Supported Models. Accessed 2026-08-07.
+[36] OpenAI. GPT-4 Technical Report. 2023.
+
+30
+
+

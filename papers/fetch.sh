@@ -26,6 +26,8 @@ declare -A P=(
   # --- memory / fast-weight line (Irie, Gershman, Schlag) ---
   [fwp_linear]=2102.11174  [dual_form]=2202.05798   [kv_brain]=2501.02950
   [fwp_neuro]=2508.08435   [hybrid_qlin]=2506.00744
+  # --- surveys of the same arena ---
+  [survey_rope]=2608.10021  [survey_lenext]=2312.17044  [survey_ctx]=2503.13299
   # --- adjacent, found while resolving
   [pj_rope]=2606.05345    [liere]=2406.10322   [alg_pe]=2312.16045
 )
