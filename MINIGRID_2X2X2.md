@@ -54,11 +54,15 @@ Each factor averaged over the other two:
 
 | | encoding (PoPE−RoPE) | hierarchy (hier−flat) | position (path-int−index) |
 |---|---|---|---|
-| **torus paper task** (n=8) | +0.011 | — | **+0.461** |
+| **torus paper task** (n=8) | +0.003 (unmeasured) | — | **+0.461** |
 | MiniGrid T=512 | **+0.038** | +0.033 | −0.012 |
 | MiniGrid T=1024 | **+0.085** | +0.069 | **−0.037** |
 
-On the torus, position is worth 40x the encoding. On MiniGrid the order is
+On the torus, position moves the result by roughly half while the encoding does
+not move it measurably (MDE 0.029, 5/8 seeds); no ratio is quoted, the
+denominator being too close to zero to be stable. (Corrected 2026-09-06: the
+encoding cell read +0.011, which is the path-integrated ROW alone at n=3, not
+the n=8 main effect.) On MiniGrid the order is
 **encoding > hierarchy > position**, and position is *negative*. Three
 architectural factors, and which one to spend on is decided by the environment,
 not by the architecture.

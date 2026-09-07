@@ -1847,10 +1847,16 @@ environment families, each factor averaged over the other:
 
 |                          | encoding | hierarchy | position |
 |--------------------------|----------|-----------|----------|
-| torus paper task (n=8)   | +0.011   | --        | **+0.461** |
+| torus paper task (n=8)   | +0.003*  | --        | **+0.461** |
 | MiniGrid DK-16x16 (n=8)  | **+0.076** | +0.048  | **-0.021** |
 
-Position is worth 40x the encoding on the torus and is NEGATIVE on MiniGrid.
+Position moves the torus result by roughly half; the encoding does not move it
+measurably (MDE 0.029, 5/8 seeds), and on MiniGrid position is NEGATIVE. No ratio
+is quoted -- the denominator is too close to zero for the quotient to be stable.
+*CORRECTED 2026-09-06: this cell read +0.011 with a '40x' ratio. That +0.011 is
+MapPoPE-Flat - MapWM-Flat, the path-integrated ROW alone at n=3, not the encoding
+main effect at n=8; the ratio inherited the mismatch. Both figures are now the
+paired n=8 2x2 main effects on the fresh map.
 
 > **CORRECTED 2026-08-30 -- the ALIASING explanation of this table is FALSIFIED,
 > with the sign INVERTED.** The reading that survived the 2026-08-26 convergence

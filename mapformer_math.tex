@@ -1228,9 +1228,13 @@ models differ by $320$ parameters rather than by a factor.
 $\{$RoPE, PoPE$\}\times\{$index, path-integrated$\}$, both PoPE cells are wide and
 both RoPE cells narrow, so the width confound is \emph{constant along the encoding
 factor}. The position main effect and the interaction are therefore clean; only the
-encoding main effect carries it --- and that is the small one ($+0.003$ (the $n{=}8$ 2x2 main effect; $+0.011$ is the
-path-integrated row alone at $n{=}3$) on the
-torus against $+0.461$ for position). There is also a direct empirical check: if
+encoding main effect carries it --- and that is the small one ($+0.003$ on the torus
+against $+0.461$ for position, both paired $n{=}8$ main effects on the held-out map).
+\footnote{\textsc{Corrected 2026-09-06.} \texttt{BASELINE\_TABLE.md}, \texttt{CLAUDE.md}
+and \texttt{MINIGRID\_2X2X2.md} all printed $+0.011$ in this cell, with a ``$40\times$''
+ratio derived from it. That $+0.011$ is \texttt{MapPoPE-Flat} $-$ \texttt{MapWM-Flat},
+the path-integrated \emph{row} alone at $n{=}3$ --- not the encoding main effect --- and
+the ratio inherited the mismatch. All three files now carry the $n{=}8$ figure.} There is also a direct empirical check: if
 the extra frequencies were doing the work, PoPE with an index phase should beat
 RoPE with an index phase. It does not ($0.509$ vs $0.530$, both on the $0.506$
 floor). The missing control is a \emph{narrow} PoPE at $\nb = \hd/2$ with each

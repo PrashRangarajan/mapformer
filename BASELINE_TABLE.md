@@ -22,14 +22,22 @@ two environment families, each factor averaged over the other:
 
 | | encoding | hierarchy | position |
 |---|---|---|---|
-| **torus paper task** (n=8) | +0.011 | — | **+0.461** |
+| **torus paper task** (n=8) | +0.003 (unmeasured) | — | **+0.461** |
 | **MiniGrid DoorKey-16x16** T=512 (n=8) | **+0.035** | +0.022 | −0.005 |
 | **MiniGrid DoorKey-16x16** T=1024 (n=8) | **+0.076** | +0.048 | **−0.021** |
 
 *(MiniGrid figures average all four pairs of the complete 8-cell factorial.)*
 
-Position is worth **40x** the encoding on the torus and is *negative* on
-MiniGrid. Section I isolates why: of the five properties that differ between
+*(Torus figures are the paired n=8 2x2 main effects on the fresh map of
+section A, re-derived from `INDEX_BASELINE_PAPER_TASK_n8.json`. **Corrected
+2026-09-06:** this cell previously read +0.011 with a 40x ratio. That +0.011
+was `MapPoPE-Flat - MapWM-Flat` --- the path-integrated ROW alone, at n=3 ---
+not the encoding main effect, and the ratio inherited the mismatch.)*
+
+Position moves the torus result by roughly half; the encoding does not move it
+measurably (MDE 0.029, 5/8 seeds), and on MiniGrid position is *negative*. No
+ratio is quoted: with a denominator that close to zero the quotient is not a
+stable quantity. Section I isolates why: of the five properties that differ between
 them, **rotation-based actions account for −0.388 of the −0.438 swing** (n=8) —
 more than the other four combined. Section I also gives the remedy: recording
 the action stream as absolute displacement rather than turn/forward restores the
