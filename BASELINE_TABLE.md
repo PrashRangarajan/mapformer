@@ -123,10 +123,19 @@ single-batch version is table E.
 | model | cross_nb @T=256 | exact_acc @T=256 |
 |---|---|---|
 | MapWM-Hier | **0.415 ± 0.096** (n=8) | 0.959 ± 0.027 |
+| **MapWM-FlatHG** (param-matched flat control) | **0.285 ± 0.067** (n=8) | 0.929 ± 0.028 |
 | Plain-Hier | 0.318 ± 0.029 (n=8) | 0.918 ± 0.005 |
 | MapWM-Flat | 0.270 ± 0.030 (n=3) | 0.924 ± 0.020 |
 | Plain-Flat | 0.216 ± 0.004 (n=8) | 0.904 ± 0.002 |
-| MapEM-Flat | 0.097 | — |
+| MapEM-Flat | 0.097 (n=3) | — |
+
+**Cite the hierarchy gap as 0.415 vs 0.285 (+0.130), not vs 0.270 (+0.145).** The
+seed counts in this table are not randomly assigned: every flat MapFormer/PoPE arm
+is n=3 and every hierarchy arm is n=8, so the 0.270 comparison crosses seed counts
+with the tight-looking three-seed sd on the flat side. `MapWM-FlatHG` is the
+parameter-matched flat scaffold at n=8 and scores *higher* than the n=3 arm it
+replaces. The plain-family pair (0.318 vs 0.216) is n=8 on both sides already.
+See `N3_AUDIT.md`.
 
 ---
 
@@ -171,7 +180,10 @@ three decimals — see `FAMILY_TREE_WM_GAP.md`.
 | Plain-Flat (index) | 0.601 ± 0.011 | 0.550 ± 0.031 |
 
 Two corrections to the earlier version of this table:
-- **The plain-WM arm was missing and is the best of the published set** (+0.076
+- **The plain-WM arm was missing and scores above the published set** — though at
+  n=3 the gap is inside its MDE (+0.077, sd 0.068, MDE 0.111, 2/3 seeds; the
+  detectable contrasts in this batch are path-integration-over-index +0.205 and the
+  paper's own +0.013). Nominally (+0.076
   over MapEM-NC-NL, five times the margin the non-commutativity comparison turns
   on). Non-commutativity still buys +0.014 for 34x the compute — but it does so
   *below* plain MapWM-Flat.
@@ -291,7 +303,10 @@ at every condition, n=3, floors measured per condition.
 | **all five combined** | **−0.076** | −0.514 | 8 |
 | **rotate + allocentric recoding** | **+0.488** | **+0.050** | 8 |
 
-**Rotation actions dominate**, at twice the next knob and 90% of the available
+**Rotation actions dominate**, at nominally twice the next knob (that runner-up is
+n=3 at the 16-epoch budget rule 5 was bought with, and `rotate` itself moved
++0.004 -> +0.050 when that budget was extended — so read the dominance, not the
+multiple) and 90% of the available
 swing. Mechanism: MapFormer path-integrates by cumsumming a *fixed per-token*
 delta, and under turn/turn/forward the displacement depends on accumulated
 heading — which that form cannot represent.
@@ -321,7 +336,7 @@ gating after training instead of before.
 | ~~Level15 absent from the paper task~~ | **CLOSED**: 1.000 ± 0.000 at 50 epochs vs Vanilla 0.993; at the paper's own 16-epoch budget it reads 0.938, a budget artifact |
 | ~~Level15 absent from the family tree~~ | **CLOSED** (F): variance reduction, no significant mean gain |
 | ~~Level15 absent from compositional~~ | **CLOSED**: worse on 2/3 seeds, better on likelihood 3/3 |
-| ~~No plain-WM arm on the family tree~~ | **CLOSED** (F): it was the best of the published set |
+| ~~No plain-WM arm on the family tree~~ | **CLOSED** (F): it scores above the published set, though the margin is unmeasured at n=3 (`N3_AUDIT.md`) |
 | ~~lm200 never gated~~ | **CLOSED** (G): passes, interpretation withdrawn |
 | ~~Single environment family~~ | **CLOSED** (H): MiniGrid, full factorial, **n=8** |
 | ~~Position/frequency confound~~ | **CLOSED** (H): measured, empirically negligible |

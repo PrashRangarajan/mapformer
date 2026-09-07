@@ -1512,7 +1512,9 @@ WM and hierarchy help ORTHOGONAL metrics:
 > **What the hierarchy evidence actually says**, all of it predating this result:
 > hierarchy buys COMPOSITIONAL TRANSFER and long-horizon AGGREGATION, and costs a
 > little on PRECISE RETRIEVAL.
->   wins  — compositional motif 0.415 vs flat 0.270 (and Plain 0.318 vs 0.216);
+>   wins  — compositional motif 0.415 vs flat 0.285 (MapWM-FlatHG, the
+>           parameter-matched flat control; both n=8. NOT vs MapWM-Flat's 0.270,
+>           which is n=3 -- see N3_AUDIT.md) (and Plain 0.318 vs 0.216, both n=8);
 >           aggregate task T=2048 0.537 vs 0.401; enwik8 -18.75% FLOPs at
 >           SLIGHTLY WORSE bpc (1.4844 vs 1.4727) -- efficiency, not quality
 >   loses — HIER_ATTN_LONGT T=4096 0.769 vs flat 0.861; ROUTE_ATTN 0.764 vs 0.849;
@@ -1908,8 +1910,12 @@ per-seed table in `H12_BUDGET_CURVE.md`.
   control (Vanilla_ExtraHead) TIES it (t=0.79), so the +24.8pp is not evidence
   for the Kalman mechanism. lm200 passes its context-destruction gate but its
   interpretation is withdrawn.
-- **Family tree**: the missing plain-WM arm beats every published variant
-  (0.805 vs MapEM-NC-NL 0.729). Non-commutativity still buys +0.014 for 34x the
+- **Family tree**: the missing plain-WM arm SCORES ABOVE every published variant
+  (0.805 vs MapEM-NC-NL 0.729) -- but at n=3 that +0.077 is UNMEASURED (paired sd
+  0.068, MDE 0.111, 2/3 seeds, the whole margin one MapEM seed). What IS detectable
+  in that batch is path integration over an index code (+0.205, 3/3) and, because
+  the EM arms have seed sd 0.005, the paper's own non-commutativity axis (+0.013,
+  MDE 0.008). Do not write "beats" again below n=8. See N3_AUDIT.md. Non-commutativity still buys +0.014 for 34x the
   cost -- but below plain MapWM-Flat.
 - **Frequency control**: path-integrated arms learn omega, index arms do not, so
   every "position effect" was confounded. Measured: the confound is real in the

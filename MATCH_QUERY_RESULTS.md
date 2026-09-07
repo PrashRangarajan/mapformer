@@ -80,8 +80,9 @@ This is expected rather than surprising: Match-Query is a flat torus with i.i.d.
 observations and the task is per-cell retrieval, so there is no multi-scale
 structure to exploit and pooling can only blur the position precision the task
 needs. On a task that DOES have structure, hierarchy helps both backbones --
-compositional motifs, cross_nb @T=256: MapWM-Flat 0.270 -> MapWM-Hier 0.415
-(+0.145), Plain-Flat 0.216 -> Plain-Hier 0.318 (+0.102)
+compositional motifs, cross_nb @T=256: MapWM-FlatHG 0.285 -> MapWM-Hier 0.415
+(+0.130, both n=8), Plain-Flat 0.216 -> Plain-Hier 0.318 (+0.102, both n=8).
+(The often-quoted +0.145 uses MapWM-Flat's 0.270, which is n=3 -- N3_AUDIT.md)
 (`COMPOSITIONAL_MULTISEED.md`, unaffected by the 2026-08-09 retractions).
 
 Consistent with the standing framing in CLAUDE.md: hierarchy buys compositional

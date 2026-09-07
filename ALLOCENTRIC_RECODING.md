@@ -1,8 +1,10 @@
 # Allocentric action recoding fully restores MapFormer under rotation actions
 
 `KNOB_SWEEP.md` established that rotation-based actions (turn-left / turn-right /
-forward) cut the position effect from +0.478 to +0.049 — twice the next largest
-knob and 90% of the total swing between the torus and MiniGrid. Proposed
+forward) cut the position effect from +0.478 to +0.049 — nominally twice the next
+largest knob, and 90% of the total swing between the torus and MiniGrid. (The
+runner-up knobs are n=3 at the 16-epoch budget later shown short, so read the
+dominance rather than the multiple; `N3_AUDIT.md`.) Proposed
 mechanism: MapFormer path-integrates by cumsumming a **fixed per-token delta**,
 and under turn/forward the displacement depends on the accumulated heading, which
 that form cannot represent.

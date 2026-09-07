@@ -94,6 +94,7 @@ a null, not proof of one (standing rule 11).
 
 Does not settle: whether hierarchy helps text tasks that reward COMPOSITIONAL
 TRANSFER or LONG-HORIZON AGGREGATION, which is where its wins actually live
-(compositional motif 0.415 vs flat 0.270; aggregate T=2048 0.537 vs 0.401).
+(compositional motif 0.415 vs flat 0.285 -- MapWM-FlatHG, the parameter-matched
+flat control, both arms n=8; aggregate T=2048 0.537 vs 0.401).
 Next-byte prediction is an exact-recall objective, the regime where a lossy
 summary is NOT a sufficient statistic and hierarchy is expected to lose.

@@ -1,4 +1,13 @@
-# Family tree with the missing arms: plain WM beats every published variant
+# Family tree with the missing arms: plain WM scores above every published variant
+
+> **POWER CAVEAT (2026-09-07).** Everything here is n=3 and was never extended.
+> Computed from the per-seed columns below, `MapWM-Flat - MapEM-NC-NL` is **+0.077
+> against an MDE of 0.111** -- unmeasured, 2/3 seeds, and the entire margin is one
+> MapWM seed at 0.724. The two contrasts that ARE detectable at n=3 are
+> `MapWM-Flat - Plain-Flat` (+0.205, 3/3, MDE 0.118) and, because the EM arms have
+> a seed sd of 0.005, `MapEM-NC-NL - MapEM-os` (+0.013, MDE 0.008) -- i.e. the
+> paper's own axis survives and the claim below that displaces it does not.
+> The DIRECTION stands; the margin needs n>=8. See `N3_AUDIT.md`.
 
 `FAMILY_TREE_RESULTS.md` compared four models and had **no plain-WM arm at all** —
 a gap flagged in `BASELINE_TABLE.md`. This retrains all four in ONE batch
@@ -29,10 +38,13 @@ that motivated re-running them was unfounded — but it could not have been know
 without doing it, and it is what licenses reading the two new rows against the
 old ones.
 
-## 1. The missing arm was the best of the published set
+## 1. The missing arm scores above the published set
 
-MapWM-Flat scores **0.805**, beating MapEM-NC-NL by **+0.076** — five times the
-margin the non-commutativity comparison itself turns on.
+MapWM-Flat scores **0.805**, above MapEM-NC-NL by **+0.077** — nominally five times
+the margin the non-commutativity comparison itself turns on, but see the caveat at
+the top: at n=3 that gap is inside its own MDE, while the +0.013 it is being
+compared against is not. The ordering is suggestive; the multiple is not a
+measurement.
 
 This does not overturn `FAMILY_TREE_RESULTS.md`'s conclusion, which was that
 non-commutativity buys +0.014 over a commutative control for 34x the compute.
