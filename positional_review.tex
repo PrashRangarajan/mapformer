@@ -35,15 +35,18 @@ that scales and an imaginary part that rotates, because $\C$ has exactly two.
 Defective generators add polynomial factors and nothing else. Writing both slots as
 one complex log-polar accumulator makes every mechanism a choice of where content
 enters: magnitude or phase, instantaneous or accumulated, at what sign and what rank.
-Mechanisms that appear to escape --- PaTH, DeltaNet, RWKV-7, CoPE, MesaNet, Titans,
-TAPE, TEM-t, and the classical relative methods of Shaw, Transformer-XL and T5 ---
-escape by breaking one of the three assumptions, and it is possible to say which.
+Mechanisms that appear to escape --- PaTH, DeltaNet, RWKV-7, CoPE, DAPE, MesaNet,
+Titans, TAPE, TEM-t, and the classical relative methods of Shaw, Transformer-XL and
+T5 --- escape by breaking one of the three assumptions, and it is possible to say
+which.
 
 Two consequences do not follow from any single mechanism. The two slots answer
 \emph{different questions}: a signed accumulated phase measures net displacement and
 is a map, a monotone one measures elapsed path and is a clock, and the two are
 mutually exclusive --- so the monotone increments of CARoPE, GRAPE-AP and CoPE are
-correct on language and disqualifying on navigation. And the frame has a second
+correct on language and disqualifying on navigation. That the distinction is invisible
+on text is not incidental: in one content-dependent mechanism's own ablation, NoPE
+attains the lowest perplexity of every encoding tested. And the frame has a second
 reading, in which the positional operator is an associative memory's transport
 kernel; under it the fast-weight literature and the positional-encoding literature
 are seen to have divided the two slots between them without either saying so.
@@ -96,13 +99,13 @@ surveyed elsewhere; $\S$\ref{sec:readout} states only what that line contributes
 the frame. Original measurements are reported in $\S$\ref{sec:measured} and are
 marked as such throughout.
 
-\paragraph{Positioning.} Five surveys of this material were checked. Four --- Li
+\paragraph{Positioning.} Four surveys of this material were checked. Three --- Li
 (arXiv:2608.10021, August 2026) on absolute and relative methods, RoPE and
-long-context scaling; the length-extrapolation survey (arXiv:2312.17044); the
-infinite-extrapolation framework of Vetcha (arXiv:2601.06113); and the
-context-extension line generally --- contain no content-dependent phase mechanism at
-all: zero occurrences of MapFormer, Selective RoPE, CARoPE, FoX, GRAPE or Mamba-3
-between them. The fifth, Zhang et al.'s long-context survey (arXiv:2503.17407, March
+long-context scaling; the length-extrapolation survey (arXiv:2312.17044); and the
+infinite-extrapolation framework of Vetcha (arXiv:2601.06113) --- contain no
+content-dependent \emph{phase} mechanism at all: between them, zero occurrences of
+MapFormer, Selective RoPE, CARoPE, FoX, GRAPE or Mamba-3, and CoPE and Mamba twice
+each. The fourth, Zhu et al.'s long-context survey (arXiv:2503.17407, March
 2025), \emph{does} carry a category for it, ``content-aware position embedding'',
 with two members: CoPE and DAPE. That category is the closest existing treatment of
 this material, and it predates almost all of it --- CARoPE by four months, Selective
@@ -122,7 +125,8 @@ $\S$\ref{sec:unify} unifies them in one equation. $\S$\ref{sec:clockmap} is the
 conceptual consequence. $\S$\ref{sec:map} is the relational map over eight axes;
 $\S$\ref{sec:emtem} places two mechanisms from the cognitive-map literature and
 $\S$\ref{sec:memory} re-reads the whole frame from the fast-weight side.
-$\S$\ref{sec:measured} reports the measurements and $\S$\ref{sec:capability} draws
+$\S$\ref{sec:readout} covers what the long-context line contributes,
+$\S$\ref{sec:measured} reports the measurements, and $\S$\ref{sec:capability} draws
 out what they imply for choosing a mechanism.
 
 \section{The shared frame}
@@ -202,11 +206,10 @@ the substitution $t \mapsto S_t = \sum_{u\le t}G(x_u)$ of $\S$\ref{sec:unify}.
 
 \section{The classical relative methods}
 \label{sec:classical}
-\label{sec:classical}
 
 Shaw-style relative position representations, Transformer-XL and T5's relative bias
-predate the rotary line and are still widely deployed. They are the first row of the
-table above, and the one whose escape route is least obvious.
+predate the rotary line and are still widely deployed. They are one of the four escape routes of
+$\S$\ref{sec:map}, and the one whose route out is least obvious.
 
 Shaw et al.\ add a learned vector indexed by the \emph{clipped} lag,
 \[
@@ -497,7 +500,9 @@ that information from somewhere else.
 
 \begin{quote}\small
 \textbf{Which is a candidate account of the forget gate, whose mechanism is otherwise
-unaccounted for.} It adds a second, content-dependent, \emph{monotone}
+unaccounted for.} (The measurements cited here are set out with their protocol in
+$\S$\ref{sec:measured}; ``unmeasured'' there has the specific sense of a contrast
+inside its minimum detectable effect.) It adds a second, content-dependent, \emph{monotone}
 accumulator in the magnitude slot --- measured at $\alpha = +0.956$, ballistic,
 beside the phase accumulator's $0.6$ --- so it restores the clock that the signed
 phase gave up. Every otherwise-puzzling detail follows: it needs a \emph{live}
@@ -591,10 +596,10 @@ Mamba / Mamba-2, GLA & magnitude & acc.  & content & $\C^\times$ & $<0$   & full
 
 \noindent Every \emph{abelian} row above composes by parallel prefix sum --- the
 eighth axis, \textbf{A8}, which the table does not have a column for because all but
-one row share a value. LieRE is the exception: its generators need not commute, so it
-obeys no prefix-sum law and reads its rotation directly off a position rather than
-accumulating. (Algebraic PE is abelian for sequences and grids, and non-abelian only
-for $k$-ary trees.)
+one row share a value. There are two exceptions. LieRE's generators need not
+commute, so it obeys no prefix-sum law and reads its rotation directly off a position
+rather than accumulating; and Algebraic PE is abelian for sequences and grids but not
+for $k$-ary trees.
 
 \subsection{What leaves the frame, and how}
 
@@ -649,7 +654,7 @@ so it too is a function of the \emph{pair}, and the MLP costs linearity as well.
 is worth naming because of when it appeared: DAPE and CoPE are both 2024, and they
 made position content-dependent on the \textbf{additive} side more than a year before
 CARoPE, Selective RoPE, MapFormer and Mamba-3 did the same on the multiplicative
-side. The cell was opened from the magnitude slot.
+side.
 
 \paragraph{Broken path structure: MesaNet, Titans, TAPE.} These give up
 increment-accumulation itself. MesaNet solves a local least-squares problem to
@@ -684,14 +689,13 @@ evidence, not to rank them.
 mechanism & as reported \\
 \midrule
 RoPE & the default in most open large language models; the baseline every row below is measured against \\[2pt]
-CoPE & solves selective copying, counting and Flip-Flop, on which standard encodings fail; improves perplexity on language and code \\[2pt]
+CoPE & see $\S$\ref{sec:map}; its reported results are the toy-task set that motivates it \\[2pt]
 FoX & outperforms the Transformer on long-context language modelling, length extrapolation and short-context downstream tasks \\[2pt]
 Selective RoPE & at $370$M, \textbf{NoPE attains the lowest average perplexity of the five arms} ($20.78$ against RoPE's $21.42$); the content-dependent phase passes RoPE on downstream accuracy only after two further components ($47.1$ against $46.5$, from a $45.8$ baseline). Solves parity with a single-layer Transformer \\[2pt]
-HGRN & Table~11: a \emph{data-dependent} phase is worse than a constant one; HGRN2 attributes the complex-recurrence gain to state expansion \\[2pt]
+HGRN & its own Table 11: a \emph{data-dependent} phase is worse than a constant one; HGRN2 attributes the complex-recurrence gain to state expansion \\[2pt]
 Mamba-3 & at $1.5$B, $+0.6$ points average downstream accuracy over Gated DeltaNet, $+1.8$ with the MIMO variant; matches Mamba-2's perplexity at half the state size \\[2pt]
 LieRE & up to $15.1\%$ relative accuracy over absolute embeddings on video, $\ge 1.5\%$ over RoPE-style, at $0.68\%$ of a ViT-B's parameters \\[2pt]
-MesaNet & lower perplexity than Mamba-2 and other modern RNNs at matched scale; still behind transformers on in-context recall \\[2pt]
-Titans & scales past $2$M-token needle-in-a-haystack \\[2pt]
+MesaNet, Titans & see $\S$\ref{sec:map} \\[2pt]
 MapFormer & $1.00/1.00/0.99$ on $2$D grid navigation (IID / OOD-d / OOD-s) against Mamba's $0.38/0.66/0.30$; in $5$D MapWM collapses to $0.75/0.50/0.35$, \emph{below} CoPE's $0.94/0.80/0.69$ \\
 \bottomrule
 \end{tabular}
@@ -713,7 +717,9 @@ is already one.
 rotation, FoX. GRAPE holds the index-multiplicative and content-additive cells;
 Mamba-3, Selective RoPE and CARoPE hold content-phase. The remaining structure is
 \textbf{content-dependent, signed, orthogonal and still abelian} --- contextual
-multiplicative --- which is exactly where MapFormer, Selective RoPE and CARoPE sit.
+multiplicative --- which is where MapFormer, Selective RoPE and Mamba-3 sit.
+CARoPE occupies the same cell on every axis but the sign, where its increment is
+constrained to $(0,1)$; $\S$\ref{sec:clockmap} is about what that costs.
 
 \emph{(ii) A5 is settled next door and unapplied here.} Sarrof et al.\ (2024)
 observed that SSM gates are ``always nonnegative \dots\ due to exponential or sigmoid
@@ -945,15 +951,6 @@ intervals never seen in training. For LLaMA-2 ($\hd = 128$, $L_0 = 4096$) that i
 $36$ of $128$ dimensions. This is a mechanism for length-extrapolation failure that
 is about \emph{which channels were trained}, not about capacity or precision.
 
-\paragraph{Scope of the existing surveys.} The most recent survey of position encoding
-(Li, August 2026) is a careful treatment of exactly the line above --- absolute and
-relative methods, RoPE, and long-context scaling --- and contains \textbf{zero
-occurrences} of CoPE, MapFormer, Selective RoPE, CARoPE, FoX, Mamba or GRAPE. The
-2023 length-extrapolation survey mentions CoPE and Mamba twice each and none of the
-rest. The content-dependent half of the arena, the memory reading of
-$\S$\ref{sec:memory}, and the navigation regime are not covered by either; the
-frequency-allocation and context-extension line is not covered here. The two
-partitions are close to complementary.
 
 \section{Measurements}
 \label{sec:measured}
@@ -987,7 +984,7 @@ Six arms $\times$ $12$ seeds, one batch, $r=4$ throughout, \textbf{parameter cou
 identical at $204{,}757$} --- the constraint adds nothing and does not touch the rank.
 
 \begin{table}[htbp]\centering\small
-\caption{The sign ablation. Six arms $\times$ $12$ seeds, one batch, identical parameter count ($204{,}757$).}
+\caption{The sign ablation, \textbf{raw} accuracy. Six arms $\times$ $12$ seeds, one batch, identical parameter count ($204{,}757$). The construction control \texttt{Vanilla\_r4}, omitted here for width, is within $+0.006$ of \texttt{signed} at every length --- \emph{unmeasured}, which is the condition for the batch to be readable at all. Read this table beside the loss-matched contrasts below: raw and loss-matched point the same way for the signed-vs-monotone comparison and opposite ways for monotone-vs-index.}
 \label{tab:sign}
 \begin{tabular}{llrrrr}
 \toprule
@@ -1004,10 +1001,15 @@ RoPE      & index                               & $0.799$ & $0.449$ & $0.345$ & 
 \end{tabular}
 \end{table}
 
-\noindent\textbf{At matched training loss, signed path integration beats an index code
-by $+0.123$ and $+0.195$ at $T=512$ and $T=1024$ ($12/12$ seeds); monotone path
-integration beats an index code nowhere} --- $-0.028$ at $T=128$ and unmeasured
-beyond. The entire measured value of a content-dependent phase over a plain index
+\noindent The raw column is not the contrast of interest, and says so plainly: the
+monotone arms fit far worse ($0.171$, $0.068$, $0.293$ final loss against $0.0002$),
+so a raw comparison against an index arm that fits worse still ($0.784$) reports
+convergence rather than representation. \textbf{At matched training loss, signed path
+integration beats an index code by $+0.123$ and $+0.195$ at $T=512$ and $T=1024$
+($12/12$ seeds), while monotone path integration beats it nowhere} --- $-0.028$ at
+$T=128$ and unmeasured beyond. Note also that the index arm sits at or below the
+measured always-predict-blank floor of $0.506$ at both OOD lengths, so its raw
+margins are not interpretable as skill. The entire measured value of a content-dependent phase over a plain index
 clock, on this task, requires the increment to be signed.
 
 The learned code shows why. The opposition score
@@ -1149,8 +1151,13 @@ revealed and then continues blind, predicting the observation at each cell, path
 integration scores $0.730 \pm 0.247$ ($n=5$, $64^2$) against $0.154 \pm 0.018$ for an
 index code, chance $0.0625$, with no seed overlap. The axis is path integration and not
 the encoding: PoPE with path integration scores $0.847$ against $0.117$ for PoPE with
-an index. On the standard revisit task the position effect is $+0.461$ against $+0.003$
-for the encoding --- a factor of $150$.
+an index. On the standard revisit task, re-derived from the per-seed data
+($n=8$), the position main effect is $+0.468$ and the encoding main effect is
+$+0.001$. No ratio is quoted: with a denominator that close to zero the quotient is
+not a stable quantity, and published values for it range from $40\times$ to
+$370\times$ depending on which seed set and averaging convention is used. The
+defensible statement is that one factor moves the result by roughly half and the
+other does not move it measurably.
 
 Two boundaries are worth stating. The effect is not a property of navigation as such
 but of \emph{map extent}: at matched observation aliasing it is $-0.010$, $+0.015$ and
@@ -1278,7 +1285,7 @@ if the task needs \dots & it requires & and these supply it \\
 \emph{order only} --- which token came first & any monotone clock & RoPE, ALiBi, CoPE, CARoPE, GRAPE-AP, every gated linear RNN \\[3pt]
 \emph{signed displacement} --- parity, net motion, state tracking & a signed increment & MapFormer, Selective RoPE, Mamba-3; DeltaNet/PaTH/RWKV-7 with $\beta>1$. \textbf{Not} CARoPE, GRAPE-AP or CoPE \\[3pt]
 \emph{absolute location in a bounded map} & signed \textbf{and} well-conditioned ($r\ge4$) & MapFormer at $r\ge4$; $r=2$ degrades because its basis is skewed, not because it lacks capacity \\[3pt]
-\emph{holding position far past the training length} & a diffusive accumulator, $\alpha\approx0.5$ & follows from cancellation (T2); or bound the accumulator explicitly, which is what a wrapped filter does \\[3pt]
+\emph{holding position far past the training length} & a diffusive accumulator, $\alpha\approx0.5$ & follows from cancellation (T2); nothing in Table~\ref{tab:map} bounds the accumulator explicitly, so this is the only route available \\[3pt]
 \emph{path-dependent actions} (turn/forward) & non-abelian transport, \textbf{or} an allocentric recoding of the input & PaTH, DeltaNet, RWKV-7, TEM-t --- none evaluated on navigation. Recoding the action to absolute displacement restores $+0.488$ and keeps the scan \\[3pt]
 \emph{overwriting stale associations} & a delta rule & DeltaNet, PaTH, RWKV-7; forfeits the parallel scan \\[3pt]
 \emph{exact recall over a window} & the dual form; keep the items & softmax attention. A lossy summary is not a sufficient statistic, which is why hierarchy loses here and wins on compositional transfer \\[3pt]
@@ -1310,8 +1317,9 @@ generator has exactly two live parts. Everything in the arena is a choice about
 where content enters those two parts, and everything that appears to escape does so
 by giving up one of the three assumptions, at a price that can be named: the
 classical relative methods give up continuity and with it any extrapolation; the
-delta-rule family gives up commutativity and with it the parallel scan; CoPE gives up
-per-token factorisation and with it any $\theta_t$ at all.
+delta-rule family gives up commutativity and with it the parallel scan; CoPE and DAPE
+give up per-token factorisation and with it any $\theta_t$ at all; and MesaNet,
+Titans and TAPE give up the accumulation structure itself.
 
 The two parts are not two knobs. A signed accumulated phase is a map and a monotone
 one is a clock, and a system that needs both must spend both slots. That is why the
@@ -1322,8 +1330,8 @@ than any other ingredient measured here.
 
 What the frame does not yet explain is the axis on which several mechanisms
 independently help: extrapolated length. The accumulator's growth law accounts for
-two of them and demonstrably not for the others, and no mechanism in the table
-bounds the accumulator at all. That is the gap worth building into.
+two of them and demonstrably not for the others --- and no mechanism in the table
+bounds the accumulator at all, including the one that was assumed to. That is the gap worth building into.
 
 \section{Open questions}
 
@@ -1333,9 +1341,9 @@ bounds the accumulator at all. That is the gap worth building into.
   $r=2$ and a well-conditioned one at $r=4$ when the learned solution occupies a
   $2$-plane either way.
 \item \textbf{The OOD-length axis, now partly explained.} The accumulator's growth
-  exponent accounts for the sign and rank results together ($\S$\ref{sec:readout}),
+  exponent accounts for the sign and rank results together ($\S$\ref{sec:growth}),
   and it predicts that bounding the accumulator should help at length --- which is
-  what a wrapped filter does and what it is measured to do. Measured, neither the forget
+  Measured, neither the forget
   gate nor PoPE changes $\alpha$ at all (both inside their MDEs), so at least one
   other cause is at work. $\S$\ref{sec:clockmap} proposes one for the forget gate ---
   it restores the clock a signed phase gives up --- with three untested predictions.
@@ -1389,13 +1397,14 @@ CoPE & 2405.18719                      & \multicolumn{2}{l}{\emph{cognitive maps
 DAPE & 2405.14722                      & TEM-t & 2112.04035, ICLR 2022 \\
 TAPE & 2501.00712                      & & \\
 \midrule
-\multicolumn{2}{@{}l}{\emph{surveys checked}} & & \\
-Li & 2608.10021 & Zhang et al. (long context) & 2503.17407 \\
-Length extrapolation & 2312.17044 & Vetcha & 2601.06113 \\
+\multicolumn{2}{@{}l}{\emph{classical relative methods}} & & \\
+Shaw et al. & NAACL 2018 & T5 & 1910.10683 \\
+Transformer-XL & 1901.02860 & & \\
 MesaNet, Titans & 2506.05233, 2501.00663 & & \\
 \midrule
-\multicolumn{2}{@{}l}{\emph{surveys of the same arena}} & & \\
-Li (position encoding) & 2608.10021 & Length extrapolation & 2312.17044 \\
+\multicolumn{2}{@{}l}{\emph{surveys checked}} & & \\
+Li (position encoding) & 2608.10021 & Zhu et al. (long context) & 2503.17407 \\
+Length extrapolation & 2312.17044 & Vetcha & 2601.06113 \\
 \midrule
 \multicolumn{4}{@{}l}{\emph{the memory reading}} \\
 Schlag et al. & 2102.11174, ICML 2021    & Irie et al. (dual form) & 2202.05798, ICML 2022 \\
