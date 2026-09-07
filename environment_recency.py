@@ -86,6 +86,7 @@ class RecencyWorld:
 
     def __init__(self, n_symbols: int = 16, k_max: int = 8,
                  p_query: float = 0.25, min_gap: Optional[int] = None,
+                 n_filler: int = 8, p_filler: float = 0.5,
                  seed: Optional[int] = None):
         """`min_gap` = symbols that must be emitted between consecutive queries.
 
@@ -108,18 +109,25 @@ class RecencyWorld:
         """
         if min_gap is None:
             min_gap = k_max
+        if p_filler and n_filler < 1:
+            raise ValueError("p_filler > 0 needs n_filler >= 1")
         if not 1 <= k_max:
             raise ValueError("k_max must be >= 1")
         self.n_symbols = n_symbols
         self.k_max = k_max
         self.p_query = p_query
         self.min_gap = min_gap
+        self.n_filler = n_filler
+        self.p_filler = p_filler
 
-        # vocab layout: [symbols][query offsets q_1..q_kmax][MASK]
+        # vocab: [content symbols][filler][query offsets q_1..q_kmax][MASK]
+        # The answer is always a CONTENT symbol, so a trainer keeps slicing
+        # logits[..., 0:n_symbols] and chance stays 1/n_symbols.
         self.sym_offset = 0
-        self.query_offset = n_symbols
-        self.mask_tok = n_symbols + k_max
-        self.unified_vocab_size = n_symbols + k_max + 1
+        self.filler_offset = n_symbols
+        self.query_offset = n_symbols + n_filler
+        self.mask_tok = n_symbols + n_filler + k_max
+        self.unified_vocab_size = n_symbols + n_filler + k_max + 1
 
         self._rng = np.random.RandomState(seed)
 
@@ -141,7 +149,8 @@ class RecencyWorld:
         score_pos: list[int] = []
         answers: list[int] = []
         offsets: list[int] = []
-        gap = self.min_gap              # symbols emitted since the last query
+        gap = self.min_gap              # CONTENT symbols since the last query
+        tok_dist: list[int] = []        # token distance query -> answer, for G8
 
         while len(tokens) < T:
             can_query = (len(sym_values) >= self.k_max
@@ -155,7 +164,19 @@ class RecencyWorld:
                 # k-th most recent symbol: k=1 is the immediately preceding one
                 answers.append(sym_values[-k] + self.sym_offset)
                 offsets.append(k)
+                tok_dist.append(len(tokens) - 1 - sym_positions[-k])
                 gap = 0
+            elif self.p_filler > 0.0 and rng.random() < self.p_filler:
+                # FILLER: emitted into the stream but NOT counted. This is what
+                # makes k a CONTEXTUAL position rather than a token offset --
+                # the token distance back to the k-th content symbol becomes a
+                # random variable, so a fixed index code cannot address it,
+                # while a content-dependent counter (Delta=1 on content, 0 on
+                # filler and query tokens) can. Without it an index code solves
+                # the task outright: measured, RoPE 1.000 at every k_max tried,
+                # with signed and monotone TIED at 0.946. See G8.
+                tokens.append(self.filler_offset
+                              + int(rng.randint(0, self.n_filler)))
             else:
                 s = int(rng.randint(0, self.n_symbols))
                 sym_positions.append(len(tokens))
@@ -168,7 +189,7 @@ class RecencyWorld:
         keep = [i for i, p in enumerate(score_pos) if p + 1 < T]
         info = {"sym_positions": sym_positions, "sym_values": sym_values,
                 "offsets": [offsets[i] for i in keep], "T": int(toks.shape[0]),
-                "n_scored": len(keep)}
+                "tok_dist": [tok_dist[i] for i in keep], "n_scored": len(keep)}
         return (toks, [score_pos[i] for i in keep],
                 [answers[i] for i in keep], info)
 

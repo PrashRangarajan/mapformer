@@ -81,12 +81,15 @@ def main():
             rng = np.random.RandomState(a.seed + 1)
 
             answers, mostrecent_hit, oracle_hit = [], [], []
+            dist_by_k = defaultdict(list)
             n_scored_tot = n_tok_tot = 0
             sgn_amb, mono_amb, sgn_cands = [], [], []
 
             for _ in range(a.episodes):
                 toks, sp, ans, info = env.generate_episode(T, rng)
                 answers.extend(ans)
+                for k, d in zip(info["offsets"], info["tok_dist"]):
+                    dist_by_k[k].append(d)
                 n_scored_tot += len(sp); n_tok_tot += info["T"]
 
                 sym_pos = info["sym_positions"]; sym_val = info["sym_values"]
@@ -121,6 +124,8 @@ def main():
                 most_recent=float(np.mean(mostrecent_hit)) if mostrecent_hit else float("nan"),
                 oracle=float(np.mean(oracle_hit)) if oracle_hit else float("nan"),
                 scored_rate=n_scored_tot / max(n_tok_tot, 1),
+                dist_sd={int(k): float(np.std(v)) for k, v in dist_by_k.items()},
+                dist_mean={int(k): float(np.mean(v)) for k, v in dist_by_k.items()},
                 signed_ambiguous=float(np.mean(sgn_amb)) if sgn_amb else float("nan"),
                 signed_candidates=float(np.mean(sgn_cands)) if sgn_cands else float("nan"),
                 monotone_ambiguous=float(np.mean(mono_amb)) if mono_amb else float("nan"),
@@ -149,6 +154,28 @@ def main():
                  f"{r['marginal']:.4f} | {g[1]:.4f} | {g[2]:.4f} | {g[3]:.4f} | "
                  f"{g[5]:.4f} | {r['most_recent']:.4f} | {r['oracle']:.4f} | "
                  f"{r['scored_rate']:.3f} | {r['n_answers']} |")
+
+    L += ["", "## G8 -- can a FIXED INDEX code address the answer?", "",
+          "The token distance from a query back to its answer, per offset k. If "
+          "that distance were constant, `k` would just be a token offset and an "
+          "index code could address it directly -- measured, and it does: with "
+          "`p_filler = 0`, RoPE scores **1.000** at every `k_max` tried while "
+          "signed and monotone TIE at 0.946, i.e. the task was index retrieval "
+          "in disguise. Filler tokens are emitted into the stream but not "
+          "counted, so the distance becomes a random variable and `k` becomes a "
+          "CONTEXTUAL position in CoPE's sense (arXiv:2405.11582: relative PE "
+          "\"can do\" no better than \"a decaying attention\"). With "
+          "`p_filler = 0.5`, RoPE falls to **0.31-0.37**.", "",
+          "| min_gap | T | k=1 mean+/-sd | k=mid mean+/-sd | k=max mean+/-sd |",
+          "|---|---|---|---|---|"]
+    for r in rows:
+        dm, ds = r["dist_mean"], r["dist_sd"]
+        ks = sorted(dm)
+        if not ks:
+            continue
+        pick = [ks[0], ks[len(ks) // 2], ks[-1]]
+        L.append(f"| {r['min_gap']} | {r['T']} | " + " | ".join(
+            f"k={k}: {dm[k]:.1f}+/-{ds[k]:.1f}" for k in pick) + " |")
 
     L += ["", "## G7 -- does the accumulator difference address a unique key?", "",
           "The mechanism the task is built to separate. `signed ambiguous` is the "

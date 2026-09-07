@@ -87,3 +87,102 @@ The sign ablation's pre-registered discriminator was unmeasurable by constructio
 floor at 0.18, so every verdict cell can go either way. If the real budget pushes
 any arm to ceiling, the primary contrast moves to a longer T where headroom
 remains, and that substitution is recorded here rather than chosen afterwards.
+
+---
+
+# AMENDMENT 2026-09-07, before any batch was launched
+
+Four headroom pilots (n=1, 60 epochs) were run to pick a config, as the ceiling
+clause above requires. They forced a redesign of the TASK and refuted two of the
+four hypotheses above. Recorded here in full, before any multi-seed run, in the
+same way the sign ablation's A5 claim was amended at 48/72 checkpoints.
+
+## The task as first built was index retrieval in disguise
+
+| config | Signed_r4 | Abs_r4 | RoPE (index) |
+|---|---|---|---|
+| k_max=8, T=256 | 1.000 | 1.000 | 1.000 |
+| k_max=32, T=512 | 1.000 | 1.000 | 1.000 |
+| k_max=64, T=512 | 0.946 | 0.946 | **1.000** |
+
+Everything at ceiling, and where it was not, **RoPE was the best arm and signed
+and monotone were EXACTLY TIED**. Diagnosis: `k` counted symbols in a stream
+whose only non-symbols were the query pairs themselves, so the token distance
+back to the answer was nearly constant and a fixed index offset addressed it
+directly. The task never tested contextual counting at all.
+
+**Fix (`p_filler`, default 0.5):** filler tokens are emitted into the stream but
+not counted. The token distance to the k-th content symbol becomes a random
+variable -- measured at `k=64`, **129.7 +/- 10.3 tokens** (G8) -- so `k` is a
+CONTEXTUAL position in CoPE's sense (arXiv:2405.11582, verified in the local
+corpus: relative PE's best is "a decaying attention"). Result:
+
+| config (p_filler=0.5) | Signed_r4 | Abs_r4 | Pos_r4 | RoPE |
+|---|---|---|---|---|
+| k_max=16, T=512 | 1.000 | 1.000 | -- | **0.366** |
+| k_max=32, T=512 | 1.000 | 0.966 | -- | **0.315** |
+| **k_max=64, T=1024** | **0.610** | **0.531** | **0.309** | -- |
+
+## H4 is REFUTED, with the sign inverted
+
+H4 predicted index would be at or above the path-integrated arms here. With
+contextual counting index **collapses** (0.31-0.37 against 1.000). The prediction
+was wrong and the reason is instructive: I had reasoned "a clock task is what
+index natively encodes", but a CONTEXTUAL clock is precisely what a fixed index
+cannot encode. This task is therefore NOT an index-friendly regime and does not
+test a position-axis inversion. Withdrawn.
+
+## H1 is MALFORMED, and this is the important one
+
+`Signed_r4` is UNCONSTRAINED: its Delta may take either sign, so the monotone
+solution is a special case it contains. `Abs`/`Pos`/`CARoPE` are strict
+restrictions of it. Therefore **signed >= monotone on ANY task, up to
+optimisation**, and "monotone beats signed on a clock task" -- H1 as written --
+can essentially never be true. Every pilot shows exactly this (0.610 vs 0.531;
+1.000 vs 0.966; 1.000 vs 1.000). Running it as stated would have produced a null
+that means nothing, which is the same defect as the sign ablation's unmeasurable
+discriminator, in a different disguise.
+
+**H1 is replaced by the COST OF CONSTRAINING**, which is well posed:
+
+    cost(task) = acc(monotone) - acc(signed),  both trained in one batch
+
+  torus (measured, 12 seeds, loss-matched): **-0.215 / -0.280** at T=512/1024
+  recency (predicted): **~0**, i.e. the penalty for giving up cancellation
+  disappears when the task does not need it.
+
+The interaction is `cost(recency) - cost(torus)`, predicted POSITIVE. The pilot
+gives -0.079 at k_max=64, so a value near zero is not guaranteed and the honest
+prediction is "substantially smaller in magnitude than on the torus", tested
+against the torus's own seed sd rather than against zero.
+
+## H2 is now the primary claim, not the secondary one
+
+Since the unconstrained arm can adopt either code, the substantive question is
+which one it DOES adopt. Predicted: `Signed_r4` trained on recency shows a HIGH
+opposition score and alpha near 0.94; the same architecture trained on the torus
+shows opposition 0.11 and alpha 0.52. That is the claim that makes alpha a
+diagnostic of what a task demanded rather than a description of an architecture,
+and no pilot touches it. Measured with `probe_sign.py` / `probe_accumulator.py`
+on the trained checkpoints.
+
+H3 (per-offset slope) is unchanged and remains the mechanism readout.
+
+## Falsifiers, restated for the amended hypotheses
+
+- **If `cost(recency)` is statistically indistinguishable from `cost(torus)`,
+  the clock/map dichotomy is WITHDRAWN from both documents.** The dichotomy's
+  entire content is that the right code depends on the task.
+- **If `Signed_r4` learns the SAME accumulator on both tasks** (opposition and
+  alpha within their seed sds), H2 fails and alpha is descriptive only -- which
+  would be a direct retraction of a claim currently in `positional_review.tex`.
+- If every arm lands within the 0.150 noise floor, "unmeasured", not "null".
+
+## Launched configuration
+
+`k_max=64`, `p_filler=0.5`, `n_symbols=16`, `min_gap=64` (the structural
+guarantee, kept over the empirically-passing `min_gap=16` because this project
+has a long record of empirical passes that later failed), train `T=1024`, eval
+`T` in {1024, 2048}, 300 epochs, cosine, lr 1e-3, 1 layer, d=128, 2 heads,
+fast-attn, **8 seeds, 6 arms, one batch**. Gates at this exact config:
+`RECENCY_GATES_K64.md`, all rows PASS at 800 episodes.
