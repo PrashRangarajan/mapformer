@@ -121,6 +121,41 @@ that has since filled the \emph{multiplicative} side arrived after the last surv
 that had a place to put it. The memory reading of $\S$\ref{sec:memory} and the
 navigation regime appear in none of the five.
 
+\paragraph{What is claimed, and what is not.} Three claims, in descending order
+of how much of the evidence is ours.
+
+\textbf{C1 (analytical).} The arena is a classification rather than a list: under
+linearity, translation invariance and continuity the interval operators form a
+one-parameter group, leaving two live slots, and every mechanism that appears to
+escape breaks one of the three assumptions in a way that can be named. \emph{The
+classification itself is not ours} --- Puranik states it, GRAPE and Mamba-3
+independently state the two-slot decomposition. The contribution is the audit: the
+placement of every mechanism in $\S$\ref{sec:map}, the escape routes in
+$\S$\ref{sec:escape}, and the observation that the fast-weight literature has been
+occupying the same two slots from the other side ($\S$\ref{sec:memory}).
+
+\textbf{C2 (conceptual, and tested).} The two slots answer \emph{different
+questions}. A signed accumulated phase measures net displacement and is a map; a
+monotone one measures elapsed path and is a clock; they are mutually exclusive by
+construction. The consequence is that a monotone increment is not a defect --- it is
+correct on language and disqualifying on navigation. This is falsifiable and is
+tested by crossover in $\S$\ref{sec:crossover}: on a task built to want a clock the
+cost of forcing monotonicity falls from $0.28$ to nothing measurable, and an
+architecture free to choose adopts a different accumulator per task. Had the cost
+been the same on both, the claim would be withdrawn.
+
+\textbf{C3 (empirical).} Two properties of the content-to-phase map that no paper
+in this literature varies deliberately --- the \emph{sign} of the increment and its
+\emph{input-side rank} --- are worth more per parameter than anything else measured
+here, and both dominate the choice of positional \emph{encoding}.
+
+\emph{Not claimed}: the taxonomy and the closure argument (C1's caveat above); the
+content-dependent rotation, which MapFormer, Selective RoPE and Mamba-3 arrived at
+independently; that a signed increment is generally better, which C2 denies; and
+that a fixed index code cannot perform contextual counting, which is CoPE's result
+and is reproduced here in another architecture as an anchor
+($\S$\ref{sec:crossover}).
+
 \paragraph{Organisation.} $\S$\ref{sec:frame}--\ref{sec:classification} set up the
 polar frame and the classification. $\S$\ref{sec:classical} places the classical
 relative methods, which fail the classification's third condition.
@@ -615,6 +650,7 @@ rather than accumulating; and Algebraic PE is abelian for sequences and grids bu
 for $k$-ary trees.
 
 \subsection{What leaves the frame, and how}
+\label{sec:escape}
 
 \begin{table}[htbp]\centering\small
 \caption{Mechanisms that leave the frame, and which of the three assumptions each gives up.}
@@ -990,7 +1026,38 @@ contrast inside its \textsc{mde} is reported as \emph{unmeasured} rather than as
 null. Contrasts are paired per seed, and arms compared against one another were
 trained in one batch.
 
-\subsection{The sign of the increment}
+\paragraph{What these measurements assert.} Three findings and one negative, each
+with the contrast that would have refuted it.
+
+\begin{itemize}\itemsep2pt
+\item \textbf{F1. The sign of the increment is load-bearing where the task needs a
+  map, and free.} At matched loss and identical parameter count, a signed increment
+  beats an index code by $0.12$--$0.20$ ($12/12$ seeds); a monotone one beats it
+  nowhere ($\S$\ref{sec:sign}). \emph{Refuted by} a monotone arm matching the
+  signed arm on the map task.
+\item \textbf{F2. Rank $r=2$ fails by conditioning, not capacity.} $r=4$ buys
+  $+0.085$ for $384$ parameters and is flat to $r=32$; the learned code at $r=2$ is
+  skewed rather than small ($\S$\ref{sec:rankmeas}). \emph{Refuted by} a capacity
+  slope, or by the deficit growing with world dimension --- which was tested, and
+  it does not.
+\item \textbf{F3. One quantity accounts for F1 and F2, and it reads off the
+  task.} The accumulator's growth exponent $\alpha$ correlates with cancellation at
+  $r = +0.9995$ across arms ($\S$\ref{sec:growth}), and an unconstrained
+  architecture moves it from $0.591$ to $0.967$ between a map task and a clock task
+  while every constrained arm stays fixed ($\S$\ref{sec:crossover}).
+  \emph{Refuted by} the free arm learning the same accumulator on both.
+\item \textbf{N1. The axis on which most mechanisms help is not explained.} Four
+  separate mechanisms help at extrapolated length; $\alpha$ accounts for two and
+  demonstrably not the others, and the imported long-context account is refuted
+  outright ($\S$\ref{sec:localisation}). This is the gap, stated as one.
+\end{itemize}
+
+\noindent The remaining subsections are supporting rather than load-bearing: what
+the neighbouring constraints are worth ($\S$\ref{sec:knobs}), why these axes are
+invisible on text ($\S$\ref{sec:navigation}), and a cost/benefit summary
+($\S$\ref{sec:anchors}).
+
+\subsection{F1: the sign is load-bearing, and free}
 \label{sec:sign}
 
 Six arms $\times$ $12$ seeds, one batch, $r=4$ throughout, \textbf{parameter count
@@ -1059,7 +1126,8 @@ consequence for parity are established (\S\ref{sec:map}(ii)); what is new is
 navigation rather than formal languages, and an isolation in which $|\Delta|$ against
 $\Delta$ is a single operation at identical parameter count.
 
-\subsection{Rank}
+\subsection{F2: rank $r=2$ fails by conditioning, not capacity}
+\label{sec:rankmeas}
 
 The bottleneck $r$ is meant to be the dimensionality of the action space --- for a
 $2$D grid, a $2$-vector --- which makes $r=2$ sufficient \emph{by construction}. It is
@@ -1110,7 +1178,8 @@ the packing account of \eqref{eq:packing} does not explain it. And an unconstrai
 generator cannot be projected below rank $\approx16$ post hoc while $r=4$ trains fine
 --- trained-at-rank and truncated-to-rank are different objects.
 
-\subsection{What the other constraints are worth}
+\subsection{Supporting: what the neighbouring constraints are worth}
+\label{sec:knobs}
 
 Selective RoPE's three additions to MapFormer's generator, measured on the torus at
 $T=1024$ and on a parity task at $L=128$; increments against MapFormer at $r=2$.
@@ -1153,7 +1222,7 @@ $\Delta\approx0$ --- the gate would be near zero on observations. It is $0.416$,
 the action/observation ratio is $1.35\times$ on the torus where the gate helps and
 $1.54\times$ on parity where it hurts.
 
-\subsection{The navigation regime}
+\subsection{Supporting: why these axes are invisible on text}
 \label{sec:navigation}
 
 Every paper in $\S$\ref{sec:map} evaluates on language, recall, state tracking, or ---
@@ -1183,7 +1252,8 @@ displacement depends on accumulated heading, the effect falls from $+0.438$ to $
 which is $\S$\ref{sec:group}'s commutativity limitation made concrete. Recording the
 absolute displacement instead of the commanded turn restores it to $+0.488$.
 
-\subsection{Anchors}
+\subsection{Supporting: what each ingredient costs and buys}
+\label{sec:anchors}
 
 \begin{table}[htbp]\centering\small
 \caption{Anchors: what each ingredient costs and buys on the torus task.}
@@ -1199,7 +1269,8 @@ PoPE & magnitude $\mu$ & $+320$ & $+0.027$ \emph{with} path integration; both ar
 \bottomrule
 \end{tabular}
 \end{table}
-\subsection{Where the length dependence does not come from}
+\subsection{N1: the length axis, and a refuted import}
+\label{sec:localisation}
 
 Transposed to a content-dependent
 phase the coordinate is the accumulator rather than the index, which gives a
@@ -1219,7 +1290,7 @@ $0.42$--$0.57$ --- but the plainer reading wins: the low-frequency channels carr
 position at map scale, and coarse position matters more when the walk covers more of
 the map.
 
-\subsection{The accumulator's growth law}
+\subsection{F3: one quantity accounts for both}
 \label{sec:growth} All
 four arms start from the same accumulator range at training length ($88$--$94$) and
 separate entirely by how fast it grows with sequence length,
@@ -1255,7 +1326,7 @@ rests on is the spread to $0.94$ and the agreement with an independently measure
 quantity.
 
 
-\subsection{The crossover: a task that wants a clock}
+\subsection{F3, continued: the crossover, and what $\alpha$ reads off}
 \label{sec:crossover}
 
 Every measurement above is on a task that wants a \emph{map}. That makes
