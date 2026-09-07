@@ -758,13 +758,16 @@ under turn/turn/forward actions, and a mechanism that abandons the group law
 independently) runs $120\times$ slower at $L=2048$ than at $L=128$ with $20\times$
 fewer parameters. You may have the scan or the path-dependence.
 
-\paragraph{(T2) A signed increment buys cancellation and is what makes the code
-survive length.} The accumulator's growth exponent is set by how completely opposite
-actions cancel: $\alpha\approx0.52$ (diffusive) when they do, $\alpha\approx0.94$
-(ballistic) when they cannot. A monotone clock leaves its trained range $\sim
-T^{0.4}$ faster, and at matched training loss it does not beat a plain index clock
-anywhere. There is no compensating benefit measured on either side; the constraint
-is pure loss on navigation and invisible on order-only tasks.
+\paragraph{(T2) A signed increment buys a map and gives up a clock.} The accumulator's
+growth exponent is set by how completely opposite actions cancel:
+$\alpha\approx0.52$ (diffusive) when they do, $\alpha\approx0.94$ (ballistic) when
+they cannot. But the exponent is a symptom; the substance is $\S$\ref{sec:clockmap} ---
+a signed increment makes the interval sum a \emph{net displacement}, invariant to
+route and blind to elapsed time, and a monotone one makes it a \emph{path length},
+injective in time and blind to place. Neither dominates. On navigation the signed
+form wins outright (at matched training loss the monotone one does not beat a plain
+index clock anywhere); on language the monotone form is the correct object, and the
+signed one would be discarding the very distinction position exists to make.
 
 \paragraph{(T3) Compressing the memory makes decay compulsory; keeping it makes decay
 optional and the cost quadratic.} In the primal form the outer-product state
@@ -773,6 +776,82 @@ In the dual form items are kept separately and the softmax renormalises, so a de
 term is an inductive bias one may decline. And a memory that must \emph{overwrite}
 stale associations needs a delta-rule update, whose transition matrix is a reflection
 rather than a scalar --- which forfeits T1.
+
+\subsection{Cancellation is not a quality axis: it chooses the question}
+\label{sec:clockmap}
+
+The measurements above make it tempting to read cancellation as simply better. It
+is not, and the reason matters for choosing a mechanism.
+
+Attention sees only the interval sum
+$\theta_s - \theta_t = \omega\sum_{t<u\le s}\Delta_u$. What that quantity
+\emph{is} depends entirely on whether the increments can cancel:
+
+\begin{center}\small
+\begin{tabular}{@{}p{3.0cm}p{5.3cm}p{5.6cm}@{}}
+\toprule
+ & $\Delta$ signed & $\Delta$ monotone \\
+\midrule
+the interval sum is & \textbf{net displacement} & \textbf{monotone in path length} \\[2pt]
+two routes $A\!\to\!B$ & agree & disagree \\[2pt]
+injective in & \textbf{space}, blind to time & \textbf{time}, blind to space \\[2pt]
+what collides & same place, different times & nothing --- every instant is distinct \\[2pt]
+the accumulator is & a \textbf{map} & a \textbf{clock} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent These are mutually exclusive by construction, and each is \emph{correct}
+for one job. A cognitive map \textbf{needs} same-place-different-time to collide ---
+that collision is exactly what revisit prediction asks for. Language needs the
+opposite: a code that made token $5$ and token $15$ interchangeable because some
+``backward'' token intervened would be broken, not economical.
+
+So the monotone increment of CARoPE, GRAPE-AP and CoPE is not an oversight that the
+state-tracking literature caught them in. \textbf{On language a monotone clock is the
+right object}, which is why RoPE --- $\Delta\equiv1$, maximally monotone --- is the
+sensible default there and why nothing went visibly wrong. The limitation appears
+only where the task demands a quantity that is invariant to route, which on text is
+essentially parity and formal-language state tracking, and on navigation is
+everything.
+
+\paragraph{The growth exponent is a readout of which question, not a score.}
+$\alpha\approx1$ means the accumulator is measuring elapsed time, which is unbounded,
+so the code must eventually leave any range it was trained on. $\alpha\approx0.5$
+means it is measuring a random-walk position. The ideal for a bounded map would be
+$\alpha = 0$ --- position on a torus is bounded --- and nothing here achieves it,
+because every mechanism accumulates without wrapping. That is a design gap, not a
+property of the frame.
+
+\paragraph{What MapFormer gave up to get the map.} A signed $\Delta$ makes two
+visits to the same cell positionally identical. That is the point, and it also means
+the phase cannot represent \emph{how long ago}. Anything recency-dependent has to get
+that information from somewhere else.
+
+\begin{quote}\small
+\textbf{Which is a candidate account of the forget gate, listed elsewhere as
+mechanism-unidentified.} It adds a second, content-dependent, \emph{monotone}
+accumulator in the magnitude slot --- measured at $\alpha = +0.956$, ballistic,
+beside the phase accumulator's $0.6$ --- so it restores the clock that the signed
+phase gave up. Every otherwise-puzzling detail follows: it needs a \emph{live}
+$\lambda$ (frozen at zero it lands on the baseline, $-0.016$, unmeasured) but not
+\emph{decay}; $5$ of $8$ seeds learn $\lambda<0$, and those gain most
+($r(\lambda,\text{gain}) = -0.516$). A negative $\lambda$ still gives a monotone
+accumulator, counting up instead of down. On this reading it was never a forget gate
+--- it is a clock, and the sign of $\lambda$ only sets which way it runs.
+
+\textbf{Testable, and untested:} any monotone content-dependent increment of either
+sign should reproduce the gain; a content-\emph{independent} constant increment (a
+pure index clock) should reproduce much of it; and the gain should vanish on a task
+with no recency structure.
+\end{quote}
+
+\noindent Read this way the frame's two slots are not two knobs but \textbf{two
+answers}: a signed phase is a map, a monotone accumulated magnitude is a clock, and a
+system that needs both must spend both slots. Mamba-3 claiming both deliberately is
+then the natural endpoint rather than a curiosity, and the empty diagonal of
+$\S$\ref{sec:map} --- content-dependent phase \emph{and} content-dependent magnitude,
+in softmax attention --- is the cell worth building.
 
 \subsection{What a task demands, and what supplies it}
 
@@ -1028,10 +1107,12 @@ Hierarchy & token count & $0$ if shared & length-dependent: $\approx0$ at $L{=}1
 \item \textbf{The OOD-length axis, now partly explained.} The accumulator's growth
   exponent accounts for the sign and rank results together ($\S$\ref{sec:readout}),
   and it predicts that bounding the accumulator should help at length --- which is
-  what a wrapped filter does and what it is measured to do. What it does not yet
-  explain is why the forget gate and PoPE show the same signature, since neither
-  bounds the accumulator. The direct test is to vary $\alpha$ deliberately and check
-  that OOD degradation follows it.
+  what a wrapped filter does and what it is measured to do. Measured, neither the forget
+  gate nor PoPE changes $\alpha$ at all (both inside their MDEs), so at least one
+  other cause is at work. $\S$\ref{sec:clockmap} proposes one for the forget gate ---
+  it restores the clock a signed phase gives up --- with three untested predictions.
+  The direct test of the growth law itself is to vary $\alpha$ deliberately and check
+  that OOD degradation follows.
 \item \textbf{Defective generators.} Jordan-RoPE occupies the cell; what polynomial
   factors in the lag are \emph{for} remains open, and no navigation evaluation exists.
 \item \textbf{Sign on language.} A monotone clock cannot represent a $-1$ action, and
