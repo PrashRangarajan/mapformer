@@ -95,6 +95,9 @@ from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
 from mapformer.model_ablations import ABLATIONS
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_rope_canonical import MapFormerWM_RoPE_Canonical
+from mapformer.model_gated import (MapFormerWM_Gated_r4,
+                                   MapFormerWM_Gated_r2,
+                                   MapFormerWM_Gated_r4_frozen)
 from mapformer.model_sign import (MapFormerWM_Abs_r4, MapFormerWM_Pos_r4,
                                   MapFormerWM_CARoPE_r4, MapFormerWM_Signed_r4,
                                   MapFormerWM_Abs_r2)
@@ -140,6 +143,10 @@ VARIANT_MAP = {
     # arms; it is mathematically identical to Vanilla_r4 but builds
     # action_to_lie twice, exactly as they do.
     "Signed_r4": MapFormerWM_Signed_r4,
+    # CoPE's selection on MapFormer's signed increment; see model_gated.py
+    "Gated_r4": MapFormerWM_Gated_r4,
+    "Gated_r2": MapFormerWM_Gated_r2,
+    "Gated_r4_frozen": MapFormerWM_Gated_r4_frozen,
     "Abs_r4": MapFormerWM_Abs_r4,
     "Pos_r4": MapFormerWM_Pos_r4,
     "CARoPE_r4": MapFormerWM_CARoPE_r4,

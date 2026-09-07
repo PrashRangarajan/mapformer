@@ -1744,6 +1744,42 @@ slot and is monotone, so it is a clock ($\S$\ref{sec:clockmap}); it suppresses w
 is \emph{remembered}, not what updates position. It is the right borrow for a
 different problem, listed below.
 
+\textbf{Algebraic PE is the one to take when the structure is known} --- and it is
+the most relevant row in the table to a \emph{relational} goal. It maps ``the
+algebraic specification of a domain'' to orthogonal operators so that the model
+``upholds its desired structural properties'', and it covers sequences, grids,
+\textbf{trees, and their compositions}. Two consequences. It expresses structures
+MapFormer's abelian $SO(2)$ cannot --- a tree is not a product of circles --- so it
+is the natural vehicle for the one prediction in Table~\ref{tab:predictions} that
+the factorisation thesis most needs and this work does not test, transfer across a
+change of \emph{structure} rather than of instance. And it is the honest oracle for
+the separation itself: where MapFormer must \emph{infer} the where from the action
+stream, Algebraic PE is handed it, so the gap between them prices what inference
+costs.
+
+\textbf{TAPE's idea is already tested here, and it is a null.} TAPE contextualises
+the positional encoding ``with sequence content across layers'', refining it at each
+update --- i.e. content-driven \emph{re-estimation} of the where along depth. That is
+the same object as the refine-$\theta$ variant measured in this project, which
+carried and corrected the position estimate at each pass. It does nothing:
+$-0.001/-0.011/+0.005$ at training length across three noise levels, with no slope
+in noise, and the learned gate settles near zero, so the optimiser \emph{declines}
+to refine rather than being unable to. That is a mechanism answer and it applies to
+this borrow before it is attempted.
+
+\textbf{HGRN offers a third kind of separation: by timescale, bound to depth.} Its
+forget rate carries a lower bound that ``increases monotonically when moving up
+layers'', so lower layers model short-range and upper layers long-range structure.
+That is neither a slot nor a gate but a third axis on which what and where could be
+divided, and it has a concrete form here: MapFormer fixes the same geometric
+$\omega$ ladder in every layer, and binding its range to depth instead is a
+free change with a published precedent. Untested.
+
+\textbf{Titans gates the other side.} Its memory is written by \emph{surprise} ---
+selection on what is worth storing, not on what updates position. A gate on the
+where and a gate on the what are complementary, and only the first is discussed
+above.
+
 \textbf{And keep the bottleneck.} Since $W_{\mathrm{in}}$ \emph{is} the
 identification mechanism, its rank is the channel the whole distinction passes
 through, which is why $r=2$'s skewed basis is a fact about the separation and $r=4$
