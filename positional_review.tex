@@ -600,7 +600,7 @@ mechanisms agree on all eight.
 
 \begin{sidewaystable}\small
 \centering
-\caption{\textbf{The relational map.} Mechanisms that fit \eqref{eq:unified} or its unipotent extension.
+\caption{\textbf{The relational map.} Mechanisms that fit \eqref{eq:unified} or its unipotent extension. \textbf{Bold} marks a value held by at most three of the eighteen rows --- what distinguishes that mechanism from the field --- and nothing else; no row is emphasised as a whole. Note what this does \emph{not} bold: \texttt{signed} is held by five rows and is not rare. The claim of $\S$\ref{sec:measured} is that nobody varies it \emph{deliberately}, which is a different statement.
 $^\ast$Jordan-RoPE's magnitude factor is a \emph{polynomial} in the lag,
 $d^re^{i\omega d}$: its generator couples a complex eigenvalue to a nilpotent in one
 defective block. $^\ddagger$FoX's bias $\sum\log f_\ell$ and GLA's weight
@@ -622,13 +622,13 @@ ALiBi             & magnitude  & acc.    & index  & unipotent  & fixed $<0$ & n/
 xPos              & both       & acc.    & index  & $\C^\times$ & n/a    & n/a        & softmax \\
 PoPE              & magnitude  & \textbf{inst.} & content & ---  & $>0$    & full      & softmax \\
 \midrule
-\textbf{MapFormer} & phase     & acc.    & content & $\C^\times$ & \textbf{signed} & \textbf{rank $r$} & softmax \\
+MapFormer         & phase      & acc.    & content & $\C^\times$ & signed & \textbf{rank $r$} & softmax \\
 MapEM$^{\P}$      & phase      & acc.    & content & $\C^\times$ & signed & rank $r$ & softmax \\
 MapPoPE           & both       & inst.+acc. & content & $\C^\times$ & signed & rank $r$ & softmax \\
 Selective RoPE    & phase      & acc.    & content & $\C^\times$ & signed & full (or 8--16) & both \\
 CARoPE            & phase      & acc.    & content & $\C^\times$ & \textbf{$\in(0,1)$} & \textbf{1/head} & softmax \\
 \midrule
-GRAPE-M           & phase      & acc.    & \textbf{index} & $\C^\times$ & n/a & n/a  & softmax \\
+GRAPE-M           & phase      & acc.    & index & $\C^\times$ & n/a & n/a  & softmax \\
 GRAPE-A / AP      & magnitude  & acc.    & content & \textbf{unipotent} & \textbf{$\ge 0$} & 1--full$^{\S}$ & softmax \\
 FoX               & magnitude  & acc.    & content & unipotent$^\ddagger$  & $<0$    & scalar/head & softmax \\
 Jordan-RoPE       & both$^\ast$ & acc.   & index   & \textbf{non-ss.} & n/a & n/a & softmax \\
@@ -636,7 +636,7 @@ LieRE             & phase      & direct$^{\S}$ & \textbf{position} & $SO(d)$, no
 Algebraic PE      & phase      & acc.    & \textbf{structure} & $\C^\times$\,$^{\S}$ & n/a & n/a & softmax \\
 \midrule
 Mamba / Mamba-2, GLA & magnitude & acc.  & content & $\C^\times$ & $<0$   & full/scalar & SSM \\
-\textbf{Mamba-3}  & \textbf{both} & acc. & \textbf{content} & $\C^\times$ & \textbf{signed} & full & SSM \\
+Mamba-3           & \textbf{both} & acc. & content & $\C^\times$ & signed & full & SSM \\
 \bottomrule
 \end{tabular}
 \label{tab:map}
