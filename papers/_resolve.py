@@ -23,4 +23,4 @@ for term in sys.argv[1:]:
             print(f"  {aid:16s} {dt}  {ti[:95]}")
     except Exception as ex:
         print("  ERR", ex)
-    time.sleep(3.5)
+    time.sleep(12)

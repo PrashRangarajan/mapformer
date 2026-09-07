@@ -350,7 +350,9 @@ which augments $q,k$ to embed the bias in $GL$, and read as $\C^\times$ it sits 
 Mamba/GLA. $^{\S}$Scoped: LieRE reads its rotation directly off a known position and
 its generators need not commute; Algebraic PE is abelian for sequences and grids but
 not for $k$-ary trees; GRAPE's additive family is ``rank-1 (or low-rank)'' in its own
-abstract, and ``full'' applies only to its general edge potential.}
+abstract, and ``full'' applies only to its general edge potential. $^{\P}$MapEM evaluates the same
+equation on the \emph{tensor product} of the content and position spaces rather
+than on $\C^{\nb}$; see $\S$\ref{sec:emtem}.}
 \begin{tabular}{llllllll}
 \toprule
 mechanism & A1 factor & A2 locus & A3 driver & A4 algebra & A5 sign & A6 rank & A7 host \\
@@ -362,6 +364,7 @@ xPos              & both       & acc.    & index  & $\C^\times$ & n/a    & n/a  
 PoPE              & magnitude  & \textbf{inst.} & content & ---  & $>0$    & full      & softmax \\
 \midrule
 \textbf{MapFormer} & phase     & acc.    & content & $\C^\times$ & \textbf{signed} & \textbf{rank $r$} & softmax \\
+MapEM$^{\P}$      & phase      & acc.    & content & $\C^\times$ & signed & rank $r$ & softmax \\
 MapPoPE           & both       & inst.+acc. & content & $\C^\times$ & signed & rank $r$ & softmax \\
 Selective RoPE    & phase      & acc.    & content & $\C^\times$ & signed & full (or 8--16) & both \\
 CARoPE            & phase      & acc.    & content & $\C^\times$ & \textbf{$\in(0,1)$} & \textbf{1/head} & softmax \\
@@ -433,6 +436,87 @@ bottleneck: how many dimensions of content may steer the angle.
 \emph{(iv) A7 is nearly free.} Selective RoPE runs in both hosts and Mamba-3 crosses
 over by state-space duality, so ``softmax versus SSM'' separates implementations
 rather than mechanisms.
+
+\section{The memory reading: what the frame looks like from the other side}
+\label{sec:memory}
+
+A large literature --- fast weight programmers, linear attention, gated linear
+RNNs, state-space models and their hybrids --- studies the same equation while
+asking a different question. It is worth stating the correspondence, because the
+two literatures partition the design space almost perfectly and neither says so.
+
+\paragraph{One primitive, two forms.} The outer product $v_u \otimes k_u$ binds a
+value to a key, and superposing bindings gives an associative memory read by a
+query. The object appears as Kohonen's correlation-matrix memory (1972),
+Schmidhuber's fast weight programmer (1992), the recurrent form of linear attention
+(Katharopoulos et al., 2020), the hidden state of a scalar-$A$ state-space model,
+Smolensky's tensor-product role--filler binding (1990), and --- via the dual form of
+Irie et al.\ (2022) --- the weight matrix of any linearly-parameterised layer trained
+by gradient descent. Schlag et al.\ (2021) made the linear-attention correspondence
+explicit. This gives every mechanism two readings:
+\[
+  \underbrace{W_t = \textstyle\sum_{u\le t} A(t-u)\,v_u k_u^{\!\top},\quad y_t = W_tq_t}_{\text{\emph{primal}: compress, bounded state}}
+  \qquad\Longleftrightarrow\qquad
+  \underbrace{a_{ts} = \tilde q_t\!\cdot\!\tilde k_s \text{ over kept items}}_{\text{\emph{dual}: keep and attend}}
+\]
+
+\paragraph{The positional operator is the memory's transport kernel.} $A(d)$ is what
+happens to a stored trace as it ages $d$ steps, and $\S$\ref{sec:classification}
+says there are two things it can do:
+\begin{center}\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+slot & positional reading & memory reading \\
+\midrule
+$\operatorname{Re}G$ & magnitude / decay & \textbf{how fast the trace is forgotten} \\
+$\operatorname{Im}G$ & phase / rotation  & \textbf{how the trace is re-addressed as it ages} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent It also identifies A8 with the primal/dual choice: \textbf{a positional
+mechanism admits a parallel prefix scan exactly when the memory admits a bounded
+recurrent state}, because both are the group law $A(d)A(e) = A(d+e)$. That is one
+condition, not two.
+
+\paragraph{The two literatures have divided the slots without noticing.} The
+fast-weight literature owns $\operatorname{Re}G$ exhaustively. Irie and Gershman's
+review (TMLR 2025) categorises the whole modern family by \emph{decay type} ---
+RetNet a constant scalar, Mamba-2 a scalar, GLA a rate per row of the fast weight
+--- and the words ``rotary'', ``RoPE'' and ``positional'' do not occur in it. The
+positional-encoding literature owns $\operatorname{Im}G$ and treats decay as a
+side-condition. Mamba-3 is the first design to claim both deliberately, and it
+arrives from the memory side, stating the crossing as a proposition on
+``data-dependent RoPE equivalence''. The hybrid quadratic-linear transformers of
+Irie et al.\ (2025) use RoPE, but only as an off-the-shelf component inside the
+attention half rather than as a design axis.
+
+\paragraph{The non-abelian family is the rewritable-memory family.} The first row of
+the out-of-frame table is not a collection of exceptions. DeltaNet, PaTH and RWKV-7
+replace the \emph{additive} Hebbian update with a \emph{delta rule},
+\[
+  W_t = W_{t-1} + \sigma(\beta_t)\big(v_t - W_{t-1}\phi(k_t)\big)\otimes\phi(k_t),
+\]
+whose state-transition matrix $I - \sigma(\beta_t)\phi\phi^{\!\top}$ is a
+Householder-like reflection rather than a scalar. Memory becomes rewritable ---
+stale associations are corrected instead of accumulated --- and the price is exactly
+the group law: reflections do not commute, so no $A(d)$ and no $S_t$ exist and the
+composition is a path-ordered product. \textbf{What that family trades away is the
+positional structure, and what it buys is a memory that can overwrite.} It is also
+where the sign axis of $\S$\ref{sec:map}(ii) is deliberately exercised: with
+$\sigma = 2\,\mathrm{sigmoid}$ the eigenvalues lie in $(-1,1)$ \emph{including
+negative values}, which is what unlocks parity and modular state tracking.
+
+\paragraph{And MapEM's lift is a binding.} The tensor product
+$q^x \otimes q^p$ of $\S$\ref{sec:emtem} is Smolensky's role--filler binding: content
+as filler, position as role. Read from the memory side, MapEM stores each
+observation bound to its place rather than superposing the two channels additively
+--- which is the same trade the primal/dual axis makes, one level down.
+
+\medskip
+\noindent Everything in this section is a change of reading, not of mechanism. It
+matters because it says where to look for the unoccupied designs: the cells that are
+empty in one literature are usually the ones the other has already filled.
 
 \section{Where MapEM and TEM-t sit}
 \label{sec:emtem}
@@ -747,6 +831,11 @@ RWKV-7 & 2503.14456                    &      & \\
 CoPE & 2405.18719                      & \multicolumn{2}{l}{\emph{cognitive maps}} \\
 TAPE & 2501.00712                      & TEM-t & 2112.04035, ICLR 2022 \\
 MesaNet, Titans & 2506.05233, 2501.00663 & & \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{the memory reading}} \\
+Schlag, Irie \& Schmidhuber & 2102.11174, ICML 2021 & Irie, Csord\'as \& Schmidhuber & 2202.05798, ICML 2022 \\
+Irie \& Gershman & 2508.08435, TMLR 2025 & Irie, Yau \& Gershman & 2506.00744, NeurIPS 2025 \\
+Gershman, Fiete \& Irie & 2501.02950, Neuron 2025 & Katharopoulos et al. & 2006.16236, ICML 2020 \\
 \bottomrule
 \end{tabular}
 \end{center}

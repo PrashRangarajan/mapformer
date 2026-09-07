@@ -23,6 +23,9 @@ declare -A P=(
   [titans]=2501.00663
   # --- the unverified prior-art paragraph
   [grazzi]=2411.12537     [sarrof]=2405.17394    [hgrn]=2311.04823       [hgrn2]=2404.07904
+  # --- memory / fast-weight line (Irie, Gershman, Schlag) ---
+  [fwp_linear]=2102.11174  [dual_form]=2202.05798   [kv_brain]=2501.02950
+  [fwp_neuro]=2508.08435   [hybrid_qlin]=2506.00744
   # --- adjacent, found while resolving
   [pj_rope]=2606.05345    [liere]=2406.10322   [alg_pe]=2312.16045
 )
