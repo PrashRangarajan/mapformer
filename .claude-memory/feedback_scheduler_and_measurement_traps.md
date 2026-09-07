@@ -36,3 +36,12 @@ before the read point makes it resume mid-token. Kill and relaunch — cheap whe
 script is parked in a wait loop, and children survive killing the parent.
 
 Related: [[feedback_convergence_first]], [[feedback_cwd_aggregator_bug]].
+
+
+## The `pkill -f` self-match trap, hit AGAIN 2026-09-06
+
+`pkill -u $USER -f "_resolve.py"` matched the shell that typed it and killed my own
+command mid-task. This is documented twice in CLAUDE.md and I still did it. The rule
+is not "split the pattern" — that only protects a script from itself. **Do not use
+`pkill -f` at all.** Filter by `ps -o comm=` and require a real interpreter, or just
+let the background job finish, which is what should have happened here (it already had).

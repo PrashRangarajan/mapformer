@@ -2547,3 +2547,84 @@ cannot represent a -1 action -> invisible on language, decisive on navigation.
 - **An adversarial audit found 13 errors in the theory note**, two substantive (the
   confound above, and an inverted sign table). The algebra checked out; the errors
   were all in the interpretive layer.
+
+## Session 2026-09-06 -- the sign axis, the clock/map reframe, and a review that had to be rebuilt
+
+**Read `positional_review.pdf` (presentable, 23pp) and `papers/INDEX.md` (40 sources,
+all read first-hand). `mapformer_math.pdf` keeps the full record.**
+
+### The one new empirical result, and its correct scope
+
+**The sign of the phase increment is load-bearing on navigation** (`SIGN_ABLATION.md`,
+6 arms x 12 seeds, one batch, identical parameter count 204,757). At matched training
+loss, signed path integration beats an index code by +0.123/+0.195 at T=512/1024
+(12/12 seeds); **a monotone increment beats an index code NOWHERE**. The learned code
+shows why: opposition score 0.11 signed vs 1.85-1.98 monotone, where 2.0 means
+opposite actions are identical. CARoPE's published parameterisation reaches 1.98.
+
+**Scope: a replication, not a discovery**, recorded in the pre-registration BEFORE any
+checkpoint was read. Sarrof (2405.17394) observed the non-negativity with a parity
+theorem; Grazzi (2411.12537, ICLR 2025) proved and fixed the eigenvalue version;
+Selective RoPE 4.2 already demonstrated single-layer Transformer parity from rotations
+that "model flips". New here is navigation, and the isolation (|D| vs D, one operation).
+
+**My pre-registered discriminator failed by design error** -- it asked for a deficit at
+training length where the baseline is 1.000 +/- 0.000. The effect IS there, in the
+LOSS (12/12 seeds worse). Rule 11 now covers this: check whether a verdict cell could
+have gone the other way.
+
+### The reframe that makes it coherent -- see [[project-clock-vs-map]] in memory
+
+**Cancellation is not a quality axis; it chooses what the accumulator measures.**
+Signed -> net displacement, a MAP. Monotone -> path length, a CLOCK. Mutually
+exclusive, each correct for one job. So CARoPE/GRAPE-AP/CoPE being monotone is not an
+oversight -- on text a clock is the right object.
+
+Measured: `range(S) ~ T^alpha` with alpha 0.518 (signed) vs 0.943 (monotone), 0.619 at
+r=2, and r(opposition, alpha) = +0.9995 across two independent batches. **One
+mechanism covers the sign result AND the rank result.**
+
+**Scope, measured (`ACCUMULATOR.md`): it explains TWO of four.** Neither the forget
+gate nor PoPE nor Level15 changes alpha (all inside their MDEs). **And the positive
+control FAILED: "the InEKF's wrap bounds the accumulator" is FALSE** -- it wraps the
+INNOVATION, so range(theta_hat) 285.6 vs range(theta_path) 283.9. Asserted twice
+without measuring; withdrawn.
+
+**Candidate account of the forget gate**, consistent with everything and untested: it
+adds a second, monotone accumulator (`Sum log gamma`, alpha = +0.956), restoring the
+clock a signed phase gives up. Explains why it needs a LIVE lambda but not DECAY, and
+why 5/8 seeds learn lambda<0 and gain most. It was never a forget gate.
+
+### A refuted import, worth keeping as a negative
+
+`LOCALISATION.md`: the long-context literature's critical-dimension account
+(low-frequency channels read at unseen phases) predicts that ablating them costs LESS
+at OOD. It costs MORE -- free at training length, 0.14-0.25 at T=1024, on every arm off
+the floor. Refuted; removed from both documents.
+
+### Positioning, measured not asserted
+
+Five surveys checked. Four have no content-dependent phase mechanism. **The fifth
+(Zhang et al. 2503.17407) HAS the category** -- "content-aware position embedding",
+members CoPE and DAPE -- and predates almost everything in it. **Do not write "no
+survey covers this"; that was in the review and was wrong.** The real point: the cell
+was opened on the ADDITIVE side (DAPE, CoPE, both 2024). 2511.08243 is WITHDRAWN.
+
+The two-slot decomposition has now been stated independently three times: GRAPE
+(Dec 2025), Vetcha 2601.06113 (Jan 2026), Puranik (Apr 2026). Treat as settled.
+
+### Process, each bought today
+
+- **A failed `git add` stages NOTHING.** One bad pathspec killed the whole call and
+  `2>/dev/null` hid the fatal; two commits shipped the paper corpus without the
+  document it supports. ` M` with a leading space in `git status --short` is
+  UNSTAGED. Verify `git show HEAD:<file>`.
+- **Case matters in verification greps.** `-i` on `rope` matches `property` (17 false
+  hits); `grep -c "Undefined"` misses LaTeX's `undefined`.
+- **`pkill -f` matched my own shell and killed the task.** Documented twice already.
+  Do not use it.
+- **Two referees on the review returned MAJOR REVISION.** It had no introduction at
+  all, sixteen duplication clusters, five self-contradictions (one two lines from the
+  table it contradicted, both added in the same commit), no methods section, and 15
+  of 16 tables unnumbered. A document that grows by accretion needs an end-to-end
+  read, not another append.

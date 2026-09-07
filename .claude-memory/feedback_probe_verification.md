@@ -38,3 +38,21 @@ insensitivity to tokens outside the interval); and a perturbation that was purel
 REAL, so a test of the PHASE never fired and both arms looked identical. Also a
 loss-matched analysis that regressed accuracy on its own eval NLL -- circular, and
 it appeared to null an established effect. See [[verify_before_relaying]].
+
+
+## 2026-09-06: three more, and two were mine catching mine
+
+- **A case-insensitive grep for `rope` matches `p-ROPE-rty`.** I reported "RoPE
+  appears 17 times in the Irie–Gershman review" from exactly that. Case-sensitively
+  it is zero, which was the actual finding. Same family: `grep -ic "Undefined"`
+  misses LaTeX's lowercase `undefined`, which hid a broken reference I had just
+  introduced.
+- **My own verification script printed the sign table BACKWARDS**, because its two
+  branches were parameterised inconsistently — and a matrix transpose gave 5e-01
+  where the truth was 1.5e-16. Both were caught only because I ran it against a
+  claim I already believed and let the disagreement be the script's fault rather
+  than the claim's. Write the script, then check it against something you know.
+- **A pre-registered verdict rule can be unmeasurable.** My sign-ablation
+  discriminator required a deficit at training length, where the baseline is
+  1.000 +/- 0.000 — a ceiling with 0.054 of headroom against an MDE of 0.057. When a
+  verdict branch fires, check whether its cell COULD have gone the other way.
