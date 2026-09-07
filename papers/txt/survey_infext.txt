@@ -1,0 +1,798 @@
+Towards Infinite Length Extrapolation : A Unified Approach
+Nitin Vetcha
+Department of Computer Science
+Indian Institute of Science, Bangalore
+nitinvetcha@iisc.ac.in
+
+arXiv:2601.06113v1 [cs.AI] 3 Jan 2026
+
+Abstract
+Large language models (LLMs) have revolutionized natural language processing, but their ability to process long sequences is fundamentally limited
+by the context window size during training. Existing length extrapolation
+methods often suffer from performance degradation or computational inefficiencies. We thereby use a unified framework that reinterprets positional
+encoding methods as a decomposition of the attention score into a multiplicative transformation and an additive bias. This perspective not only
+subsumes popular approaches such as relative position embeddings and
+attention-bias moderated approaches but also exposes their inherent limitations in handling long-range dependencies. To address these shortcomings,
+motivated by our framework, we introduce Adaptive Positional Encoding
+(APE), which leverages adaptive frequency modulation and an intricately
+designed decay bias that incorporates linear, logarithmic, and square-root
+terms. Our theoretical analysis establishes conditions for infinite-context extrapolation, ensuring that the softmax normalization remains well-defined
+over unbounded sequences while preserving long-distance correlations,
+entropy boundedness and gradient positional sensitivity. We substantiate our claims with an experimental case study on TinyStories dataset as
+well as a new synthetic dataset, Long Tiny Stories featuring stories up to
+32,000 words. Relevant code, dataset and model weights are available at
+https://anonymous.4open.science/r/Check-2DAD/.
+
+1
+
+Introduction
+
+The remarkable contemporary progress in natural language processing has been due to
+rapid advances in LLM technologies based on the transformer architecture (Vaswani et al.
+(2017)). A critical factor influencing the performance of LLMs is their scale and contextwindow sizes, as robust natural language processing requires effective context retention
+over long sequences (Pawar et al. (2024)) – LLMs with longer context windows show
+substantial improvements in tasks requiring processing extended language patterns, for
+example, in long document summarization, question-answering on lengthy documents, to
+name a few (Qian et al. (2024)). Increasing adoption of LLMs for processing long texts across
+applications in both the scientific enterprise (e.g., LLMs for paper analysis for scientific
+workflows), and industry (e.g., LLMs for code review in large code bases), makes handling
+long-context handling a core issue in advancing LLM technologies (Watkins (2024); Lu
+et al. (2023)). While various techniques have been proposed to mitigate this constraint
+(e.g., relative position encodings and sparse attention mechanisms), there lacks a unified
+approach and a mathematical formalization of long context understanding for LLMs. In
+this regard, main contributions of our work include
+• Development of a unified theoretical framework that decomposes the attention
+score into a multiplicative transformation and an additive bias, showing that existing positional encoding methods fit within this general approach, and use this
+information to propose several novel approaches for infinite-context extrapolation,
+accompanied by rigorous theoretical analysis for unbounded token sequences.
+1
+
+• In depth, mathematical analysis and empirical case study of one such motivated
+novel method, the Adaptive Positional Encodings which yield superior empirical
+performance over state-of-the-art techniques, improving metrics such as perplexity
+and reducing memory footprints at train time.
+• Introduction of a new dataset tailored for evaluating long-context processing abilities of small large language models, addressing current limitations in evaluation
+procedures.
+
+2
+
+Related Work
+
+Position Encoding Methods - Various context extension techniques have been proposed
+in recent literature, primarily based on positional embeddings due to their impact on
+length generalization (Kazemnejad et al. (2023)). Relative position embeddings have been
+shown to be very promising for a long time (Shaw et al. (2018)), with state-of-the-art
+being Rotary Position Embeddings (Su et al. (2024)) , that has thus far, prevailed and been
+studied extensively as the most effective technique across a variety of LLM architectures,
+benchmarks, tasks, and datasets (Chen et al. (2023); Press et al. (2022b)) – RoPE’s effectiveness
+can be attributed to its capacity to overcome decaying relevance as the context-size increases,
+by instead modeling relative dependencies among token positions, additionally baking this
+information directly into the attention mechanism through rotation matrices over the embedding
+dimensions of the query and key vectors (Zhong et al. (2025)). Although this technique
+helps with training with large context windows, crucially, the core mechanism in RoPE
+and it’s extensions also allows inference time extensions through interpolation to beyond
+context-sizes seen at training time. Another approach is through the induction of bias
+terms in attention mechanism such as T5-Bias and Attention With Linear Biases (Press
+et al. (2022a)). Additionally, Zhao et al. (2023) conduct a survey on length Extrapolation of
+Transformers from the perspective of positional encodings.
+Sparse and Memory-based Approaches - Compressive memory systems represent a
+promising direction for extreme sequence lengths. Recent methods include, Google’s
+Infini-attention (Munkhdalai et al. (2024)) which exemplifies this approach by integrating
+compressive memory into vanilla dot-product attention layers. This technique enables
+transformers to process theoretically infinite input sequences while maintaining bounded
+memory footprint and computation requirements. Another approach is SPARSEK Attention
+(Lou et al. (2024)) which introduces a scoring network and a differentiable top-k mask
+operator to select a constant number of key-value pairs for each query. It achieves linear
+time complexity and constant memory footprint during generation, significantly improving
+speed and reducing computational overhead There have been several prior techniques, as
+well, such as Longformer (Beltagy et al. (2020)) and BigBird (Zaheer et al. (2020)) reduce
+the computational burden by sparsifying the attention mechanism and using low-rank
+approximations (Chen et al. (2024b)). These methods often discard distant tokens or employ
+fixed attention windows, which can limit their ability to capture long-range dependencies. Memory-based approaches like Transformer-XL (Dai et al. (2019)) and Compressive
+Transformers (Rae et al. (2019)) introduce recurrence or memory modules to recycle past
+context. Although effective, they typically require architectural modifications and additional
+training.
+In addition to the above two broad classes, there are several other recent directions as
+well such as retrieval based approaches (Xu et al. (2024), Mohtashami & Jaggi (2023)),
+multi-agent collaboration (Zhang et al. (2024) introduce a framework where multiple LLMs
+collaborate to process long-context tasks by dividing inputs into chunks and assigning them
+to agents for sequential processing) and reasoning based methods (Qian et al. (2024) propose
+a divide-and-conquer strategy for short LLMs to access and utilize long-context information
+effectively). In addition, there is an increasing interest in innovative architectures like
+Cascading KV Cache () which aim to rethink how LLMs process vast (Sun et al. (2024),
+Willette et al. (2024), Li et al. (2024)) inputs by weaving broader memory tapestries without
+retraining. These methods promise human-like context handling while reducing inference
+latency and compute overhead.
+2
+
+3
+
+Mathematical Analysis
+
+3.1
+
+Background
+
+We use the Generalized Positional Encoding (GPE) framework, which unifies several existing
+methods by decomposing the modification of attention scores into a multiplicative transformation and an additive bias based on the relative position n = i − j of tokens. For further
+analysis, we consider Rotary Position Embeddings (RoPE) and Attention with Linear Biases
+(ALiBi) as representatives of the widely prevalent approaches - relative position embeddings
+and attention-bias methods.
+Let qi , k j ∈ Rd be the query and key vectors corresponding to positions i and j respectively,
+and denote by n = i − j their relative position. The GPE framework modifies the raw
+attention score via
+
+
+A(n) = f (n) · qi⊤ W(n) k j + b(n),
+(1)
+where: W(n) ∈ Rd×d is a position-dependent transformation matrix (for example, a rotation
+or scaling), f : Z → R+ is a gain/decay function that modulates the multiplicative term and
+b : Z → R is an additive bias function.
+In this framework, one can recover RoPE ( by setting W(n) = R(n), f (n) = 1, b(n) = 0,
+where R(n) is a block-diagonal rotation matrix with angles θm = base−2m/d · n, for block
+index m ) and ALiBi (by setting W(n) = I, f (n) = 1, b(n) = −m · |n|, with a positive
+slope parameter m > 0).
+We now first mathematically state, three key properties which are essential for infinitecontext extrapolation and then present the intuition for it.
+Definition 3.1 (Convergent Normalization). A positional encoding method is said to achieve
+infinite-context extrapolation if its softmax normalization denominator converges even for unbounded
+sequences. Formally, letting Z = ∑nL=0 e A(n) , the method exhibits convergent normalization if
+lim L→∞ Z < ∞.
+Definition 3.2 (Entropy Boundedness). A positional encoding method is said to exhibit entropy
+boundedness if the Shannon entropy of its resulting attention distribution is finite. That is, if the
+normalized attention weights are given by p(n) = e A(n) /∑n∈Z e A(n) , then entropy boundedness is
+the property that H = − ∑n∈Z p(n) log p(n) < ∞.
+Definition 3.3 (Long-Distance Correlation Preservation (LDCP)). A positional encoding method
+satisfies LDCP if there exists a constant C > 0 and an infinite set S ⊂ Z such that for all n ∈ S,
+|E[ A(n)]| ≥ C, or, more generally, if with high probability the absolute attention score does not
+vanish as |n| increases.
+Definition 3.4 (Gradient Positional Sensitivity (GPS)). A positional encoding method is said
+to exhibit gradient positional sensitivity if the gradient of the attention score with respect to the
+query (key) vector depends explicitly on the relative position n. Formally, there exists a non-constant
+function g(n) such that
+∂A(n)
+∂(q⊤ k )
+= g(n) ·
+.
+∂q
+∂q
+Convergent normalization guarantees that the softmax denominator remains finite as the
+sequence length tends to infinity, ensuring that the attention distribution is well-defined.
+Entropy boundedness is necessary to prevent the distribution from becoming too diffuse
+or overly concentrated. This balance is crucial for stable learning and inference. Lastly,
+Long-Distance Correlation Preservation (LDCP) makes sure that even tokens that are far apart
+still contribute meaningfully to the attention scores, allowing the model to capture longrange dependencies. While there could be possibly more properties, we present our further
+analysis in the backdrop of convergent normalization, entropy boundedness and LDCP.
+Gradient Positional Sensitivity (GPS) property ensures that the backpropagated gradient
+carries positional information, thereby allowing the learning dynamics to adapt based on n.
+Theorem 3.5 (Equivalence of Entropy Boundedness and Convergent Normalization). .
+3
+
+(i) If Z < ∞, then H < ∞.
+(ii) Conversely, if for every L the truncated distribution p L (n) = e A(n) /∑kL=0 e A(k) has entropy
+uniformly bounded by Hmax (i.e. HL ≤ Hmax for all L), then Z < ∞.
+(Proof - A.1 )
+Lemma 3.6 (LDCP - Convergent Normalization Tradeoff ). Assume a positional encoding
+method satisfies LDCP, then it cannot simultaneously satisfy convergent normalization.
+Proof. For each n ∈ S, by Jensen’s inequality, E[e A(n) ] ≥ eE[ A(n)] and by LDCP eE[ A(n)] ≥ eC .
+Since S is infinite, the sum ∑n∈S E[e A(n) ] ≥ ∑n∈S eC = ∞, diverges. Thus, convergent
+normalization is violated because S ⊂ Z.
+3.2
+
+Limitations of Existing Methods
+
+Proposition 3.7. For any query and key vectors with bounded norms, RoPE violates Convergent
+Normalization and Entropy Boundedness.
+(Proof - A.2)
+Assumption 3.8. The query and key vector q, k are independent uniformly distributed unit vectors
+on the sphere Sd−1 in Rd . Then, E[q⊤ k ] = 0 and Var[q⊤ k ] = 1/d.
+Proposition 3.9. ALiBi fails to satisfy LDCP under assumption 3.8 and GPS.
+(Proof - A.3)
+3.3
+
+Advantages of Existing Methods
+
+Proposition 3.10. RoPE satisfies LDCP under assumption 3.8 and GPS.
+(Proof - A.4)
+Proposition 3.11. For any query and key vector with bounded norms, ALiBi is able to achieve
+convergent normalization and entropy boundedness.
+(Proof -A.5)
+In order to balance the limitations and advantages of both approaches, we propose Adaptive
+Positional Encoding (APE) in the next section.
+
+4
+
+Proposed Methodology
+
+Definition 4.1 (Adaptive Positional Encoding (APE)).
+
+
+A APE (n) = temp(n) · qi⊤ Rα(n) (n) k j +
+|
+{z
+}
+Adaptive Multiplicative
+
+b(n)
+|{z}
+
+,
+
+(2)
+
+Adaptive Additive
+
+where the components are specified as follows:
+
+1. Frequency Adaptation: The rotation matrix is given by Rα(n) (n) = R θ (n) , with an
+adaptive rotation angle θ (n) = n/α(n), where α(n) ∝ attention entropy(n). That is,
+for positions where the attention distribution is less peaked, a larger α(n) is used to achieve
+a smoother (more gradual) decay.
+2. Temperature Scheduling: We set temp(n) = 1/(1 + λ|n|),
+scores for large |n|.
+
+λ > 0, which dampens
+
+3. Learnable
+p Additive Bias: We now define the bias term as b(n) = −δ|n| − β log(1 +
+|n|) − γ |n|, with parameters δ, β, γ > 0. This combination of linear, logarithmic, and
+square-root penalties is designed to penalize large distances sublinearly while still ensuring
+a sufficient decay.
+Proposition 4.2. For any query and key vector with bounded norms, APE is able to achieve
+convergent normalization, entropy boundedness and gradient positional sensitivity. (Proof - A.6)
+A noteworthy point is that, since bias b(n) term of APE decays slower (due to the additional
+logarithmic and square-root terms) than the linear decay in ALiBi, the resulting attention
+distribution p(n) = e A(n) /Z has a heavier tail. This implies a larger expected value E p [|n|]
+4
+
+and, by the formula H = log Z + E p [− A(n)],, this leads to a higher entropy relative to
+ALiBi, preserving useful long-range interactions. However, on the contrary, due to similar
+reasons as in ALiBi, APE as well fails to achieve global LDCP. We can however, show that
+APE performas better by relaxing the condition as follows,
+Definition 4.3 (Local LDCP Range). The local LDCP range NLDCP is the largest integer such
+that for all |n| ≤ NLDCP , the expected attention score satisfies |E[ A(n)]| ≥ C1 > 0, for a fixed
+threshold C1 .
+APE ≥ N ALiBi for equivalent δ = m, due to sublinear terms under assumption 3.8.
+Lemma 4.4. NLDCP
+LDCP
+ALiBi = ⌊C /m ⌋.
+Proof. Solving |E[ A ALiBi (n)]| = m|n| ≥ C1 , yields |n| ≤ C1 /m. Thus, NLDCP
+1
+p
+ALiBi , we need to solve |E[ A
+For, NLDCP
+APE ( n )]| = δ | n | + β log(1 + | n |) + γ | n | ≤ C1 . If δ = m,
+compare to ALiBi’s linear decay:
+q
+m|n| ≤ m|n| + β log(1 + |n|) + γ |n| ≤ C1 .
+|{z} |
+{z
+}
+ALiBi
+
+APE
+
+The inequality m|n| ≤ C1 gives |n| ≤ C1 /m, but APE’s additional terms allow larger |n|
+APE ≥ N ALiBi .
+while still satisfying E[ A(n)] ≥ C1 . Thus, NLDCP
+LDCP
+Now, as shown by the below lemma, even for values outside the local LDCP range, APE
+fairs better than ALiBi.
+ALiBi , ALiBi’s attention scores are deterLemma 4.5 (APE’s Variance Advantage). For |n| > NLDCP
+ministically suppressed, while APE’s scores satisfy:
+P ( AAPE (n) ≥ C1 ) ≥
+
+Var[ AAPE (n)]
+
+(E[ AAPE (n)] + C1 )2 + Var[ AAPE (n)]
+
+.
+
+Proof. Using Chebyshev’s inequality for X = AAPE (n): P( X ≥ E[ X ] + t) ≤ Var[ X ]/t2 . Set
+t = C1 − E[ X ]. For E[ X ] ≤ C1 :
+P( X ≥ C1 ) ≥ 1 −
+
+Var[ X ]
+
+(C1 − E[ X ])2
+
+.
+
+Var[ AAPE (n)] = 1/d(1 + λ|n|)2 ensures higher non-zero probability of A(n) ≥ C1 as
+Var[ AALiBi (n)] = 1/d
+
+5
+
+Case Study
+
+In order to evaluate our approach and mathematical claims empirically, we conduct the following case study using our model, the Tiny Story Maker (TSM). The setup is in accordance
+with the Chinchilla Scaling laws as well, as the number of tokens for training is roughly in
+the order of 20 times the number of model parameters.
+5.1
+
+Experimental Setup
+
+Model Architecture: TSM is a decoder-only 30M transformer similar to GPT-2 but in a
+scaled down version (number of heads = 6, number of layers = 6, embedding dimension =
+384). The baselines RoPE and ALiBi are implemented following prior work i.e., for RoPE,
+the standard base of 10000 was used while for ALiBi, as recommended, the layer-wise slopes
+(m) is the geometric sequence which starts with 2−4/3 and uses the same value as the ratio.
+Our proposed APE method replaces the standard positional encoding module.
+Datasets: Owing to the proven effectiveness in training small LLMs, we use the Microsoft’s
+TinyStories dataset Eldan & Li (2023). For controlled evaluations, we also create a synthetic
+dataset, namely LongTinyStories (LTS), in a very similar manner to how Tiny Stories has
+been generated (the only difference being is that at prompting instead of using the line 5
+
+Write a short story (3-5 paragraphs), we replace it with Write a very long story (5-7 chapters)).
+LTS contains stories containing a wide range of words ranging from 500 to 32,000 words.
+This was done because, each story in the validation split of Tiny Stories dataset, contains
+on average, around 180 words. Thus, evaluation of perplexity using this dataset, although
+may demonstrate the superiority of an approach in capturing short range dependencies
+when given very long prompts, it is not able to effectively demonstrated the medium or
+long-range dependencies as promised.
+Dataset
+
+FRE
+
+Gunning Fog
+
+ARI
+
+LongTinyStories
+TinyStories
+
+93.06
+105.19
+
+3.63
+4.83
+
+2.64
+0.85
+
+Table 1: Readability metrics across different datasets. Lower FRE and higher Gunning Fog
+and ARI scores is indicative of a more complex dataset. ( Yam & Paek (2024) )
+Training Details: All models are trained over 3 different context window sizes, namely
+64, 128 and 256 tokens for 25,000 iterations using identical hyperparameters (learning rate,
+batch size, optimizer settings, etc.) to ensure fair comparisons, namely the values as used
+in nanoGPT 1 (batch size = 12, initial learning rate = 6e-4, weight decay = 1e-1, gradient
+clip = 1.0, dropout = 0.0, optimizer = AdamW). To evaluate extrapolation, we test models
+on sequences longer than the training context, up to 16,384 tokens in multiples of 2. All
+experiments were conducted using an AMD EPYC 9554 CPU (128 cores), 252 GB RAM, and
+an NVIDIA H200 NVL GPU (140 GB), running Linux kernel 6.11 and Python 3.12.
+Metrics: We report perplexity on the validation sets and further analyze the attention
+distributions by measuring the Shannon entropy of the softmax outputs.
+5.2
+
+Experiments
+
+We evaluate the baseline and proposed approach on the perplexity metric, over three ranges,
+namely validation split of TinyStories featuring short-range dependency as well as on
+the 0-5k split and 5k-10k split of LTS which captures performance when medium-range
+and long-range dependencies are needed. In addition to pretraining experiments, we also
+demonstrate the performance enhancement obtained by using APE during fine-tuning.
+5.3
+5.3.1
+
+Results
+Short-Range Dependency Handling
+
+As can be seen from Figure 1, even though the perplexity metrics for RoPE and ALiBi begin
+to explode, soon after evaluation on prompts of length higher than the context window
+used during pretraining was encountered, APE still maintains an reasonably low perplexity
+value even for prompts of length 16,384 (which if, 64 context window training is considered,
+is then a 256-fold increase).
+We now analyze the internal behavior of models by examining the entropy of the attention
+distributions. As can be seen from Figure 2, in case of RoPE, it grows rapidly with increasing
+prompt length, as expected from our earlier analysis while for ALiBi, it soon starts saturating.
+APE on the other hand, achieves a middle ground, thereby enjoying the advantages of both
+the approaches.
+We then analyze in Figure 3 training speed, inference speed and memory footprints across
+the three approaches. As expected, due to extra learnable parameters in APE, its memory
+footprint is slightly higher. Moreover, ALiBi is superior when training and inference speeds
+are measured in terms of words per second. This might be attributed to the fact that, ALiBi
+simply adds a precomputed linear bias based on the relative distance in contrast to the
+1 https://github.com/karpathy/nanoGPT/blob/master/train.py
+
+6
+
+Figure 1: Plots of Perplexity on Validation set of Tiny Stories Dataset vs Prompt lengths for
+RoPE, ALiBi and APE trained with context windows of 64, 128 and 256.
+
+Figure 2: Plots of Attention Entropy vs Prompt lengths for RoPE, ALiBi and APE trained
+with context windows of 64, 128 and 256
+
+costly trigonometric and matrix rotation computations required by RoPE and thus APE as
+well.
+
+Figure 3: A comparison of batched training, inference speed and memory usage of RoPE,
+ALiBi and APE.
+Despite this, APE can still be considered to memory efficient because from Figure 4, performance of APE trained with context window of 64, is still remarkably better when compared
+with that of ALiBi and RoPE trained with context windows of 128 and 256. This implies that
+APE, by using ∼ 66% lower memory than ALiBi and RoPE, can still achieve remarkably
+superior performance.
+5.3.2
+
+Medium-Range Dependency Handling
+
+We now, use the stories in the synthetic LTS dataset in the range 0 to 5000 words for this
+purpose. It can be seen that, while APE continues to fair consistently better than ALiBi
+and RoPE, an increase in perplexity is observed compared to that while testing upon on
+Tinystores. We believe that this can be attributed to the enhanced complexity of LTS over
+TinyStories, as is reflected when evaluated upon three metrics - namely, Flesch reading ease
+(FRE), ARI (Automated Readability Index), and the Gunning fog index 1.
+7
+
+Figure 4: Perplexity vs Prompt lengths for RoPE and ALiBi trained with context windows
+of 64, 128 and 256 compared with APE trained only with context window of 64
+
+Figure 5: Plots of Perplexity on LTS (upto 5,000 words) vs Prompt lengths for RoPE, ALiBi
+and APE trained with context windows of 64, 128 and 256
+5.3.3
+
+Long-Range Dependency Handling
+
+Even in the long-range scenario, as well similar trends are observed, demonstrating the
+superiority of APE in all regimes of prompt lengths over ALiBi and RoPE.
+
+Figure 6: Perplexity plots on LTS (from 5,000 to 10,000 words) vs Prompt lengths for RoPE,
+ALiBi and APE trained with context windows of 64, 128 and 256
+5.3.4
+
+Fine-tuning
+
+We now, see how reliable of an approach is APE to deploy during fine-tuning. After training
+with RoPE and ALiBi, we finetuned the model with APE by using just 1% of initial training
+corpora and for only 500 iterations. The resulting performance was considerably improved as
+seen in Figure 7
+
+6
+
+Limitations
+
+Despite the promising results, our work has several limitations. To begin with, our approach
+only holds in the context of positional encodings, which although has a significant impact
+on length generalization Kazemnejad et al. (2023), represents only one of the efforts in a race
+8
+
+Figure 7: Perplexity plots on TinyStories vs Prompt lengths while training on context
+window of 64 (a) RoPE, RoPE finetuned APE and (b) ALiBi, ALiBi finetuned with APE
+to achieving infinite length extrapolation. Secondly, only four key properties - convergent
+normalization, entropy boundedness, long distance correlation preservation and gradient
+positional sensitivity - have been identified as desirable, based on formal intuition and
+proven mathematical results. There may exist more such properties which can lead either
+interesting equivalences or trade-offs, which haven’t been explored in sufficient detail.
+Thirdly, our case study involves one such motivated approach by our framework and
+conducts experiments in a low-dimensional setting. Moreover, even though this particular
+approach has demonstrated that successful unification of two broad families of positional
+embeddings empirically, the trade-off between convergent normalization and LDCP is
+yet to be studied precisely. Also, though our model might be memory efficient, when
+considered on the basis of context window, its memory footprint, throwput and inference is
+still lower than that of ALiBi. Lastly, the gradient positional sensitivity property might need
+modification so as to ensure it has some theoretical guarantee, despite empirical evidence
+supporting it (Morita (2024) reports an unintuitive finding that positional encoding enhances
+learning of recurrent neural networks by stabilizing the gradients.
+
+7
+
+Future Research Directions
+
+Given that the field of exploration of positional encodings for extrapolation is still an
+active research area (Chen et al. (2024a), Hua et al. (2025)), we hope that our work might
+serve hereby as an intuitive guideline during ideation phases as to what properties should
+be looked out for in such embeddings. Failure to satisfy any one such property might
+indicate potential flaws before conducting experimental results. Secondly, although the
+case study is in a low-dimensional setting, but it obeys the Chinchilla scaling laws. The
+methods motivated by this framework may thus be able to generalize to larger models
+as well. Hence, scaling is one further such avenue. Lastly, since most of the widely used
+language modelling benchmarks such WikiText, Project Gutenberg-19 are much complex
+than TinyStories, testing of approaches would be entail much bigger models. However, now
+due to introduction of the LongTinyShort Stories dataset, length extrapolation capabilities
+can now be tested upon with small language models as well.
+
+8
+
+Conclusion
+
+In this paper, we introduced a unified framework for positional encoding that decomposes
+attention scores into adaptive multiplicative and additive components. Through theoretical analysis and extensive empirical evaluation on the Tiny Stories and Long Tiny Stories
+datasets, we demonstrated that our proposed Adaptive Positional Encoding (APE) outperforms existing methods in terms of infinite-context extrapolation, perplexity, and attention
+entropy. Despite some challenges in hyperparameter tuning and computational overhead,
+AEPE provides a promising direction for extending the capabilities of transformer-based
+language models. Future research will focus on optimizing these adaptive mechanisms,
+integrating our approach with scalable architectures, and exploring broader applications
+across diverse domains.
+
+9
+
+References
+Iz Beltagy, Matthew E Peters, and Arman Cohan. Longformer: The long-document transformer. arXiv preprint arXiv:2004.05150, 2020.
+Shouyuan Chen, Sherman Wong, Liangjian Chen, and Yuandong Tian. Extending context window of large language models via positional interpolation. arXiv preprint
+arXiv:2306.15595, 2023.
+Yuhan Chen, Ang Lv, Jian Luan, Bin Wang, and Wei Liu. Hope: A novel positional encoding
+without long-term decay for enhanced context awareness and extrapolation, 2024a. URL
+https://arxiv.org/abs/2410.21216.
+Yukang Chen, Shengju Qian, Haotian Tang, Xin Lai, Zhijian Liu, Song Han, and Jiaya
+Jia. Longlora: Efficient fine-tuning of long-context large language models, 2024b. URL
+https://arxiv.org/abs/2309.12307.
+Zihang Dai, Zhilin Yang, Yiming Yang, Jaime Carbonell, Quoc V Le, and Ruslan Salakhutdinov. Transformer-xl: Attentive language models beyond a fixed-length context. arXiv
+preprint arXiv:1901.02860, 2019.
+Ronen Eldan and Yuanzhi Li. Tinystories: How small can language models be and still
+speak coherent english? arXiv preprint arXiv:2305.07759, 2023.
+Ermo Hua, Che Jiang, Xingtai Lv, Kaiyan Zhang, Ning Ding, Youbang Sun, Biqing Qi,
+Yuchen Fan, Xuekai Zhu, and Bowen Zhou. Fourier position embedding: Enhancing
+attention’s periodic extension for length generalization, 2025. URL https://arxiv.org/
+abs/2412.17739.
+Amirhossein Kazemnejad, Inkit Padhi, Karthikeyan Natesan Ramamurthy, Payel Das, and
+Siva Reddy. The impact of positional encoding on length generalization in transformers.
+Advances in Neural Information Processing Systems, 36:24892–24928, 2023.
+Yucheng Li, Huiqiang Jiang, Qianhui Wu, Xufang Luo, Surin Ahn, Chengruidong Zhang,
+Amir H Abdi, Dongsheng Li, Jianfeng Gao, Yuqing Yang, et al. Scbench: A kv cache-centric
+analysis of long-context methods. arXiv preprint arXiv:2412.10319, 2024.
+Chao Lou, Zixia Jia, Zilong Zheng, and Kewei Tu. Sparser is faster and less is more: Efficient
+sparse attention for long-range transformers, 2024. URL https://arxiv.org/abs/2406.
+16747.
+Junyi Lu, Lei Yu, Xiaojia Li, Li Yang, and Chun Zuo. Llama-reviewer: Advancing code
+review automation with large language models through parameter-efficient fine-tuning.
+In 2023 IEEE 34th International Symposium on Software Reliability Engineering (ISSRE), pp.
+647–658. IEEE, 2023.
+Amirkeivan Mohtashami and Martin Jaggi. Random-access infinite context length for
+transformers. In Thirty-seventh Conference on Neural Information Processing Systems, 2023.
+URL https://openreview.net/forum?id=7eHn64wOVy.
+Takashi Morita. Positional encoding helps recurrent neural networks handle a large
+vocabulary. Transactions on Machine Learning Research, 2024. ISSN 2835-8856. URL
+https://openreview.net/forum?id=PtnwXd13SF.
+Tsendsuren Munkhdalai, Manaal Faruqui, and Siddharth Gopal. Leave no context behind:
+Efficient infinite context transformers with infini-attention, 2024. URL https://arxiv.
+org/abs/2404.07143.
+Saurav Pawar, SM Towhidul Islam Tonmoy, SM Mehedi Zaman, Vinija Jain, Aman Chadha,
+and Amitava Das. The what, why, and how of context length extension techniques in
+large language models-a detailed survey. CoRR, 2024.
+Ofir Press, Noah Smith, and Mike Lewis. Train short, test long: Attention with linear biases
+enables input length extrapolation. In International Conference on Learning Representations,
+2022a. URL https://openreview.net/forum?id=R8sQPpGCv0.
+10
+
+Ofir Press, Noah A. Smith, and Mike Lewis. Train short, test long: Attention with linear
+biases enables input length extrapolation, 2022b. URL https://arxiv.org/abs/2108.
+12409.
+Hongjin Qian, Zheng Liu, Peitian Zhang, Kelong Mao, Yujia Zhou, Xu Chen, and Zhicheng
+Dou. Are long-llms a necessity for long-context tasks? CoRR, 2024.
+Jack W Rae, Anna Potapenko, Siddhant M Jayakumar, and Timothy P Lillicrap. Compressive
+transformers for long-range sequence modelling. arXiv preprint arXiv:1911.05507, 2019.
+Peter Shaw, Jakob Uszkoreit, and Ashish Vaswani. Self-attention with relative position
+representations. arXiv preprint arXiv:1803.02155, 2018.
+Jianlin Su, Murtadha Ahmed, Yu Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu. Roformer:
+Enhanced transformer with rotary position embedding. Neurocomputing, 568:127063, 2024.
+Hanshi Sun, Li-Wen Chang, Wenlei Bao, Size Zheng, Ningxin Zheng, Xin Liu, Harry Dong,
+Yuejie Chi, and Beidi Chen. Shadowkv: Kv cache in shadows for high-throughput
+long-context llm inference. arXiv preprint arXiv:2410.21465, 2024.
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez,
+Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. Advances in neural information processing systems, 30, 2017.
+Ryan Watkins. Guidance for researchers and peer-reviewers on the ethical use of large
+language models (llms) in scientific research workflows. AI and Ethics, 4(4):969–974, 2024.
+Jeffrey Willette, Heejun Lee, Youngwan Lee, Myeongjae Jeon, and Sung Ju Hwang. Trainingfree exponential context extension via cascading kv cache. arXiv preprint arXiv:2406.17808,
+2024.
+Peng Xu, Wei Ping, Xianchao Wu, Lawrence McAfee, Chen Zhu, Zihan Liu, Sandeep
+Subramanian, Evelina Bakhturina, Mohammad Shoeybi, and Bryan Catanzaro. Retrieval
+meets long context large language models. In The Twelfth International Conference on
+Learning Representations, 2024. URL https://openreview.net/forum?id=xw5nxFWMlo.
+Hong Meng Yam and Nathan J Paek. What should baby models read? exploring sampleefficient data composition on model performance, 2024. URL https://arxiv.org/abs/
+2411.06672.
+Manzil Zaheer, Guru Guruganesh, Kumar Avinava Dubey, Joshua Ainslie, Chris Alberti,
+Santiago Ontanon, Philip Pham, Anirudh Ravula, Qifan Wang, Li Yang, et al. Big bird:
+Transformers for longer sequences. Advances in neural information processing systems, 33:
+17283–17297, 2020.
+Yusen Zhang, Ruoxi Sun, Yanfei Chen, Tomas Pfister, Rui Zhang, and Sercan Ö. Arik.
+Chain of agents: Large language models collaborating on long-context tasks, 2024. URL
+https://arxiv.org/abs/2406.02818.
+Liang Zhao, Xiachong Feng, Xiaocheng Feng, Weihong Zhong, Dongliang Xu, Qing Yang,
+Hongtao Liu, Bing Qin, and Ting Liu. Length extrapolation of transformers: A survey
+from the perspective of positional encoding. arXiv preprint arXiv:2312.17044, 2023.
+Meizhi Zhong, Chen Zhang, Yikun Lei, Xikai Liu, Yan Gao, Yao Hu, Kehai Chen, and Min
+Zhang. Understanding the rope extensions of long-context llms: An attention perspective.
+In Proceedings of the 31st International Conference on Computational Linguistics, pp. 8955–8962,
+2025.
+
+11
+
+A
+
+Proofs
+
+A.1
+Theorem A.1 (Equivalence of Entropy Boundedness and Convergent Normalization). .
+(i) If Z < ∞, then H < ∞.
+(ii) Conversely, if for every L the truncated distribution p L (n) = e A(n) /∑kL=0 e A(k) has entropy
+uniformly bounded by Hmax (i.e. HL ≤ Hmax for all L), then Z < ∞.
+Proof. (i) ⇒ (ii): Assume that Z < ∞. Then p(n) = e A(n) /Z defines a probability mass
+function on Z. To prove that H < ∞, we argue as follows. Since Z < ∞, for large
+|n| there exists an ϵ > 0 and a constant C > 0 such that e A(n) ≤ C/|n|1+ϵ . This is
+1+ϵ ) converges by the integral test. Taking logarithms (for | n | sufbecause ∑∞
+n=1 (1/n
+ficiently large) gives A(n) ≤ −(1 + ϵ) log |n| + log C. Now, the Shannon entropy is:
+H = − ∑n∈Z p(n) log p(n) = − ∑n∈Z p(n) ( A(n) − log Z ) = log Z − E p [ A(n)]. The expectation is:
+e A(n)
+E p [ A(n)] = ∑
+A ( n ).
+Z
+n∈Z | {z }
+p(n)
+
+Substituting A(n) ≤ −ϵ log |n|, the dominant terms for large |n| are: e A(n) A(n) ≈
+ϵ
+−(ϵ log |n|)/|n|ϵ . The series ∑∞
+n=1 log n/n converges for ϵ > 0. Hence, E p [ A ( n )] converges
+absolutely. Since E p [ A(n)] and log Z are finite, H = log Z − E p [ A(n)] is also finite.
+(ii) ⇒ (i): Assume that the truncated entropies HL = − ∑nL=− L p L (n) log p L (n) are uniformly bounded by some constant Hmax for all L, where p L (n) = e A(n) /ZL and ZL =
+∑nL=− L e A(n) . Suppose, for contradiction, that Z = lim L→∞ ZL = ∞. Then, for large L if the
+tail of e A(n) does not decay sufficiently fast, the normalized distribution p L (n) tends toward a
+near-uniform distribution over 2L + 1 points. In that case, one would have HL ≈ log(2L + 1),
+which diverges as L → ∞. This contradicts the uniform bound HL ≤ Hmax . Therefore,
+Z must be finite. To summarize, the uniform entropy bound forces E A(n) to decay sufficiently fast to prevent Z Z from diverging. This excludes distributions with heavy tails (e.g.,
+uniform-like).
+
+A.2
+Proposition A.2. For any query and key vectors with bounded norms, RoPE violates Convergent
+Normalization and Entropy Boundedness.
+Proof. Since R(n) is an orthogonal matrix for every n, it preserves the norm and the
+structure of the inner product. Write the vectors in a coordinate system adapted to the
+(1) (2)
+(d/2) 
+(1) (2)
+(d/2) 
+block-diagonal structure: qi = qi , qi , . . . , qi
+, kj = kj , kj , . . . , kj
+, with each
+(m)
+
+qi
+
+(m)
+
+, kj
+
+(m)
+
+∈ R2 . In each block, the rotation R(m) (n) rotates k j
+
+by an angle nθm , where
+
+R(n) = diag(R(1) (n), R(2) (n), . . . , R(d/2) (n)). Hence,
+(m)⊤
+
+qi
+
+(m)
+
+R(m) ( n ) k j
+
+(m)
+
+= ∥ qi
+
+(m)
+
+where φm is the phase difference between qi
+d/2
+
+g ( n ) = ∑ ∥ qi
+m =1
+
+(m)
+
+(m)
+
+∥∥k j
+
+12
+
+(m)
+
+and k j
+
+(m)
+
+∥∥k j
+
+
+
+∥ cos nθm − φm ,
+. Summing over all blocks gives
+
+
+
+∥ cos nθm − φm .
+
+Each cosine term is periodic and oscillatory, and unless all θm are chosen to induce cancellation, the sum does not vanish as |n| → ∞. In particular, since no decay factor appears
+in g(n), the magnitude |qi⊤ R(n)k j | remains on the order of O(1) for all n. In other words,
+as n increases, the cosine factors oscillate but do not decay: qi⊤ R(n)k j ∼ O(1).. This
+is precisely the phenomenon termed attention leakage. Thus, the modified attention score
+A RoPE (n) = qi⊤ R(n)k j remains bounded (and oscillatory) rather than decaying as |n| grows.
+Because there is no decay in A RoPE (n), the exponential term e ARoPE (n) does not vanish for
+large |n|. More formally, there exists some constant c > 0 such that for infinitely many
+n, e A(n) ≥ e−c > 0.. Therefore, the normalization constant Z = ∑n∈Z e ARoPE (n) contains
+infinitely many terms that are bounded away from zero. This sum necessarily diverges:
+lim L→∞ ∑nL=0 e ARoPE (n) = ∞, which violates the property of Convergent Normalization. By
+the equivalence established in Theorem 3.5, the divergence of Z implies that the Shannon
+entropy of the attention distribution is unbounded. Hence, RoPE also violates Entropy
+Boundedness.
+A.3
+Proposition A.3. ALiBi fails to satisfy LDCP under assumption 3.8 and GPS.
+Proof. For ALiBi, E[ AALiBi (n)] = E[q⊤ k ] − m|n| = −m|n|. Since by assumption, E[q⊤ k ] = 0,
+we have E[ AALiBi (n)] = −m|n|. Therefore, as |n| increases, the expectation decreases
+without bound, suppressing long-range contributions. Note that the additive term
+−m|n| does not depend on q; hence, its derivative with respect to q is zero. Therefore,
+∂AALiBi (n)/∂q = ∂(q⊤ k )/∂q = k. Taking the norm, we obtain ∥∂AALiBi (n)/∂q∥ = ∥k ∥. This
+expression is independent of n, which shows that the gradient with respect to q does not
+carry any information about the relative position n. Although the decay term −m|n| ensures
+that AALiBi (n) decays (thereby leading to convergence of the normalization constant), the
+absence of n-dependent modulation in the gradient means that ALiBi lacks gradient positional sensitivity. This decoupling can hinder the model’s ability to learn position-specific
+adaptations during training.
+A.4
+Proposition A.4. RoPE satisfies LDCP under assumption 3.8 and GPS.
+Proof. Under the assumption 3.8, E[ ARoPE (n)] = E[q⊤ R(n)k] = 0, and Var[ ARoPE (n)] =
+Var[q⊤ k ] = 1/d = O(1). Thus, by Chebyshev’s inequality, for any ϵ > 0,
+
+
+1/d
+P | ARoPE (n)| < ϵ ≤ 2 .
+ϵ
+√
+For any fixed small ϵ (e.g., ϵ < 1/ d), this probability is small, so with high probability
+| ARoPE (n)| ≥ ϵ. Hence, LDCP holds (in a probabilistic sense).
+A.5
+Proposition A.5. For any query and key vector with bounded norms, ALiBi is able to achieve
+convergent normalization and entropy boundedness.
+⊤
+
+⊤
+
+Proof. The additive bias b(n) = −m|n| leads to e A ALiBi (n) = eqi k j · e−m|n| . Since eqi k j can be
+bounded by a constant (for bounded qi and k j ), the softmax denominator is dominated by
+terms of the form e A(n) ∼ e−m|n| ,, which yields
+∞
+
+1
+
+∑ e−m|n| = 1 − e−m < ∞.
+
+n =0
+
+13
+
+Thus ALiBi satisfies convergent normalization and hence entropy boundedness as well by
+Theorem 3.5
+A.6
+Proposition A.6. For any query and key vector with bounded norms, APE is able to achieve
+convergent normalization, entropy boundedness and gradient positional sensitivity.
+Proof. For sufficiently large |n| under the assumption of bounded query and key vectors, the
+adaptive rotation term qi⊤ Rα(n) (n)k j can be bounded by some C0 . Hence, the multiplicative
+term satisfies |temp(n) · qi⊤ Rα(n) (n)k j | ≤ C0 /(1 + λ|n|). Thus, using the definition of A(n)
+we have
+C0
+e A(n) ≤
+· eb(n) .
+1 + λ|n|
+√
+√
+Substituting the bias term, eb(n) = e−δ|n|− β log(1+|n|)−γ |n| = e−δ|n| (1 + |n|)− β e−γ |n| , we
+obtain
+√
+C0 e−δ|n| e−γ |n|
+A(n)
+e
+≤
+.
+(1 + λ|n|)(1 + |n|) β
+For large |n|, even though
+the denominator grows polynomially in |n|, the exponential
+√
+terms e−δ|n| and e−γ |n| ensure rapid decay. Therefore, by comparison with a convergent
+geometric series, the sum ∑n∈N∪{} e A APE (n) converges provided δ > 0 and γ > 0. BY virtue
+of Theorem 3.5, it satisfies entropy boundedness as well and using a similar argument as
+in RoPE, APE achieves GPS (the dependency is also implied through temp(n) as well in
+addition to rotation).
+
+14
+
+

@@ -28,6 +28,8 @@ declare -A P=(
   [fwp_neuro]=2508.08435   [hybrid_qlin]=2506.00744
   # --- surveys of the same arena ---
   [survey_rope]=2608.10021  [survey_lenext]=2312.17044  [survey_ctx]=2503.13299
+  [survey_geom]=2511.08243  [survey_infext]=2601.06113  [survey_longctx]=2503.17407
+  [dape]=2405.14722       [dape2]=2410.04798
   # --- adjacent, found while resolving
   [pj_rope]=2606.05345    [liere]=2406.10322   [alg_pe]=2312.16045
 )

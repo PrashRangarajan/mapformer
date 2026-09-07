@@ -96,13 +96,23 @@ surveyed elsewhere; $\S$\ref{sec:readout} states only what that line contributes
 the frame. Original measurements are reported in $\S$\ref{sec:measured} and are
 marked as such throughout.
 
-\paragraph{Positioning.} The existing surveys partition almost perfectly from this
-one. The most recent (Li, arXiv:2608.10021, August 2026) treats absolute and relative
-methods, RoPE and long-context scaling, and contains \textbf{zero} occurrences of
-CoPE, MapFormer, Selective RoPE, CARoPE, FoX, Mamba or GRAPE; the 2023
-length-extrapolation survey (arXiv:2312.17044) mentions CoPE and Mamba twice each and
-none of the rest. The content-dependent half of the arena, the memory reading of
-$\S$\ref{sec:memory}, and the navigation regime appear in neither.
+\paragraph{Positioning.} Five surveys of this material were checked. Four --- Li
+(arXiv:2608.10021, August 2026) on absolute and relative methods, RoPE and
+long-context scaling; the length-extrapolation survey (arXiv:2312.17044); the
+infinite-extrapolation framework of Vetcha (arXiv:2601.06113); and the
+context-extension line generally --- contain no content-dependent phase mechanism at
+all: zero occurrences of MapFormer, Selective RoPE, CARoPE, FoX, GRAPE or Mamba-3
+between them. The fifth, Zhang et al.'s long-context survey (arXiv:2503.17407, March
+2025), \emph{does} carry a category for it, ``content-aware position embedding'',
+with two members: CoPE and DAPE. That category is the closest existing treatment of
+this material, and it predates almost all of it --- CARoPE by four months, Selective
+RoPE, MapFormer and GRAPE by eight to nine, Mamba-3 by a year.
+
+So the gap is not that nobody noticed content-dependence. It is that the cell was
+opened on the \emph{additive} side, by DAPE (2024) and CoPE (2024), and everything
+that has since filled the \emph{multiplicative} side arrived after the last survey
+that had a place to put it. The memory reading of $\S$\ref{sec:memory} and the
+navigation regime appear in none of the five.
 
 \paragraph{Organisation.} $\S$\ref{sec:frame}--\ref{sec:classification} set up the
 polar frame and the classification. $\S$\ref{sec:classical} places the classical
@@ -159,7 +169,13 @@ interval operators form a \emph{one-parameter matrix group}, so $A(d) = \exp(dM)
 for a fixed generator $M$, and the classification of positional encodings is the
 classification of $M$ up to conjugacy. This argument is due to
 Puranik (2026); GRAPE (Zhang et al., ICLR 2026) develops the same framework
-independently and uses it to prove exact special cases.
+independently and uses it to prove exact special cases. The two-slot decomposition
+itself has now been stated at least three times independently: as multiplicative
+rotations plus additive logit biases (GRAPE, December 2025), as ``a multiplicative
+transformation and an additive bias'' indexed by the relative position
+(Vetcha, January 2026), and as the real and imaginary parts of one generator
+(Puranik, April 2026). It should be treated as settled rather than as anyone's
+contribution.
 
 Putting $M$ in Jordan form gives three cases and no others.
 
@@ -591,7 +607,7 @@ mechanism & assumption broken & consequence \\
 \midrule
 PaTH, DeltaNet, RWKV-7 & the \emph{fixed basis} (A4 non-abelian)
   & path-ordered product of $I+\text{rank-}1$; no $S_t$ \\
-CoPE         & \emph{per-token factorisation} (A3 = pair)
+CoPE, DAPE   & \emph{per-token factorisation} (A3 = pair)
   & $p_{ij}=\sum_{k=j}^{i}\sigma(q_i\!\cdot\!k_k)$; no $\theta_t$ \\
 MesaNet, Titans, TAPE & the \emph{path structure} (A8)
   & prefix-global inverse / deep memory / layerwise update \\
@@ -626,6 +642,14 @@ solves selective copying, counting and Flip-Flop, on which standard encodings fa
 and improves perplexity on language and code. It is also monotone ($\sigma>0$), so
 $\S$\ref{sec:clockmap} applies: CoPE builds a better \emph{clock}, one whose tick is
 chosen by content, and not a map.
+
+DAPE leaves by the same door and one more. It computes an additive bias as
+$\mathrm{MLP}(a_{ij}, b_{ij})$ from the attention score and a fixed positional prior,
+so it too is a function of the \emph{pair}, and the MLP costs linearity as well. It
+is worth naming because of when it appeared: DAPE and CoPE are both 2024, and they
+made position content-dependent on the \textbf{additive} side more than a year before
+CARoPE, Selective RoPE, MapFormer and Mamba-3 did the same on the multiplicative
+side. The cell was opened from the magnitude slot.
 
 \paragraph{Broken path structure: MesaNet, Titans, TAPE.} These give up
 increment-accumulation itself. MesaNet solves a local least-squares problem to
@@ -1362,7 +1386,12 @@ PaTH & 2505.16381                      & Sarrof et al. & 2405.17394 \\
 DeltaNet & 2406.06484                  & Grazzi et al. & 2411.12537, ICLR 2025 \\
 RWKV-7 & 2503.14456                    &      & \\
 CoPE & 2405.18719                      & \multicolumn{2}{l}{\emph{cognitive maps}} \\
-TAPE & 2501.00712                      & TEM-t & 2112.04035, ICLR 2022 \\
+DAPE & 2405.14722                      & TEM-t & 2112.04035, ICLR 2022 \\
+TAPE & 2501.00712                      & & \\
+\midrule
+\multicolumn{2}{@{}l}{\emph{surveys checked}} & & \\
+Li & 2608.10021 & Zhang et al. (long context) & 2503.17407 \\
+Length extrapolation & 2312.17044 & Vetcha & 2601.06113 \\
 MesaNet, Titans & 2506.05233, 2501.00663 & & \\
 \midrule
 \multicolumn{2}{@{}l}{\emph{surveys of the same arena}} & & \\

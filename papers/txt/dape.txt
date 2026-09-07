@@ -1,0 +1,8603 @@
+arXiv:2405.14722v6 [cs.CL] 5 Nov 2024
+
+DAPE: Data-Adaptive Positional Encoding for Length
+Extrapolation
+
+Chuanyang Zheng1∗† Yihang Gao2∗ Han Shi3 Minbin Huang1 Jingyao Li1
+Jing Xiong4 Xiaozhe Ren3 Michael Ng5 Xin Jiang3 Zhenguo Li3 Yu Li1
+1
+CUHK 2 NUS 3 Noah’s Ark Lab 4 HKU 5 HKBU
+
+Abstract
+Positional encoding plays a crucial role in transformers, significantly impacting model performance and length generalization. Prior research has introduced
+absolute positional encoding (APE) and relative positional encoding (RPE) to
+distinguish token positions in given sequences. However, both APE and RPE
+remain fixed after model training regardless of input data, limiting their adaptability
+and flexibility. Hence, we expect that the desired positional encoding should be
+data-adaptive and can be dynamically adjusted with the given attention. In this
+paper, we propose a Data-Adaptive Positional Encoding (DAPE) method, which
+dynamically and semantically adjusts based on input context and learned fixed
+priors. Experimental validation on real-world datasets (Arxiv, Books3, and CHE)
+demonstrates that DAPE enhances model performances in terms of trained length
+and length generalization, where the improvements are statistically significant. The
+model visualization suggests that our model can keep both local and anti-local
+information. Finally, we successfully train the model on sequence length 128 and
+achieve better performance at evaluation sequence length 8192, compared with
+other static positional encoding methods, revealing the benefit of the adaptive
+positional encoding method.
+
+1
+
+Introduction
+
+Transformer-based models have shown state-of-the-art performances in many language processing
+tasks, including translation [6], question-and-answer [82, 29, 3], and commonsense reasoning [65].
+The transformer mainly consists of attention block, feed-forward block, and positional encoding.
+Recent works [8] have proved that quadratic-cost attention from the softmax is necessary for better
+performance, especially in long-context processing. The attention block was originally designed
+by applying softmax to the key-query multiplication, which requires quadratic computational cost.
+To address such challenges, some efficient transformers were proposed, including sliding window
+transformers (e.g., Streaming LLMs [77]), linear transformers (e.g., Performer [17]), and sparse
+transformers (e.g., Reformer and sparse Sinkhorn transformer [66, 25]), etc. However, some negative
+results exist regarding efficient transformers’ performances [80].
+It has been noticed recently that well-designed positional encoding significantly improves the model
+performances, especially in the long-context tasks [33]. While transformer-based models exhibit
+satisfying performances in tasks of consistent length and distribution, their effectiveness tends to
+diminish sharply when the input length exceeds the training length, e.g., long document summarization, “needle in a haystack” search, and long text generation. To avoid the expensive computation in
+training, the training length is usually preferred to be relatively small due to the quadratic cost of
+∗
+†
+
+Equal Contribution
+Contact Email: cyzheng21@link.cuhk.edu.hk
+
+38th Conference on Neural Information Processing Systems (NeurIPS 2024).
+
+Kerple Positional Bias
+
+5.0
+
+Attention Value
+
+Example 1: Kerple Bias (Layer 11)
+
+0
+
+2.5
+0.0
+2.5
+5.0
+7.5
+
+Example 1: DAPE Bias (Layer 11)
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+5
+6
+7
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+5
+
+DAPE Positional Bias
+
+Example 1: Attention (Layer 11)
+7.5
+
+0
+5
+10
+15
+20
+25
+30
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Figure 1: Visualization of DAPE learned positional biases for the 8192th query position with key positions
+between 1 and 8192, while the training length is 512. We notice that DAPE learns both local and anti-local
+position patterns. The model is trained with Equation 2: (1) The Attention is XWQ (XWK )⊤ ; (2) The Kerple
+bias is B; (3) The DAPE (with Kerple) bias is f (XWQ (XWK )⊤ , B). More examples are shown in Appendix
+I
+
+softmax-based transformers. However, real-world applications often require processing longer input
+sequences, posing a significant challenge. Therefore, there is a growing interest in evaluating model
+performance by training on shorter sequences while testing on longer inputs. Standard transformers
+may not distinguish the ordering of tokens without external assistance. In practice, they depend on
+positional encoding to incorporate positional information, enabling the model to make meaningful
+token predictions. Without these encodings, token generation would lack the necessary contextual
+order, rendering the outputs nonsensical. The RoPE [62] positional encoding method demonstrated a
+notable performance degradation, failing entirely when the input length is double that of the training
+length [51, 10, 24]. A common characteristic among these positional encodings is their pre-defined
+and static nature. Specifically, they are fixed across various tasks and models, which may lead
+to their inability to adapt to varying input lengths and contexts effectively. To address this issue,
+recent works have introduced Functional Interpolation for Relative Positional Encoding (FIRE) [41],
+which utilizes a neural network to learn an implicit mapping from input positions to positional bias.
+A functional approach to positional encoding that dynamically adjusts positional biases based on
+semantic information (input context) allows the model to empower adaptability beyond the fixed
+inductive bias as adopted in previous studies (such as RoPE [62] and Alibi [52]). Although FIRE
+utilizes MLPs to learn positional embeddings, these embeddings remain fixed across different tasks
+once the training is completed. Intuitively, the learned static positional encoding (such as Kerple
+and FIRE) is an average optimal solution across all training samples. Consequently, while they
+might be generally effective, they are inherently suboptimal for any specific instance. This static
+nature limits their flexibility and applicability in various real-world scenarios that deviate from the
+training context. In this paper, we introduce a data-adaptive positional encoding (DAPE) method,
+inspired by the limitations of static PEs. DAPE dynamically adjusts the PE based on the semantic
+information (e.g., the current attention value) a and the positional indicator b. The proposed PE is
+represented by MLPs due to their universal approximatability, i.e., MLPs(a, b). We note that DAPE is
+compatible with all additive relative PEs and offers advantages in terms of interpretability and ease of
+implementation. The proposed DAPE incorporates both the semantic and the positional information,
+making the PE adaptive with the input data. The adaptivity allows DAPE to overcome the inflexibility
+and achieve relatively optimal performance for each individual instance by dynamically adjusting on
+each specific input data. To the best of our knowledge, this is the first semantically dependent and
+adaptive positional encoding method introduced in transformer architectures.
+The paper is organized as follows. In Section 2, we review some related works on positional encoding
+methods, including absolute and relative positional encodings as well as the potentially no positional
+encoding in some transformer models. In Section 3, we introduce the proposed DAPE method
+with implementation on multi-head attention and analysis on computational costs. We conduct
+comprehensive experiments on DAPE, validating its effectiveness and performances on various
+language tasks and datasets, as reported in Section 4. In Section 6, some concluding remarks and
+potential future works are presented.
+
+2
+
+Related Works
+
+No positional encoding. Haviv et al. [30] show that decoder-only Transformers with causal attention
+masks can learn positional information even without any explicit positional encoding. Recently,
+Kazemnejad et al. [33] proved the effectiveness of no positional encoding (NoPE) [71]. Although
+2
+
+the NoPE can implicitly catch the positional information, it performs poorly compared with some
+explicit positional encoding methods [41].
+Absolute positional encoding. Vaswani et al. [69] proposed Absolute positional encoding (APE) to
+endow transformers with positional information. In particular, in the first layer, a (learnable or fixed
+sinusoidal) real-valued encoding [69, 35, 42, 70, 47] ei ∈ Rd is assigned to each position i, leading
+to an APE matrix E = [e1 , · · · , en ]⊤ , which will be added to the input sequence. Though simple
+and straightforward, APE-based Transformers usually generalize poorly to longer sequences [52].
+Relative positional encoding. Relative Positional Encoding (RPE) is another popular way to
+encode positional information [58, 56, 52], One popular RPE method in large language models
+is rotary positional encoding (RoPE) [62, 18, 67]. RoPE rotates the query and key vectors with
+an angle proportional to their absolute positions before the dot product attention, which results in
+attention being a function of the relative distance between the tokens, capturing the relative positional
+information. Press et al. [52] and Kazemnejad et al. [33] found that RoPE-based language models
+have poor length generalization. To address this, positional interpolation (PI) [11] is proposed to
+extend the context window. Following the direction, there are LongLora [12], LongRope [24], YaRN
+[51] and CLEX [10]. Another popular direction is additive positional encoding. For most of these
+additive RPE methods, the computation of the (pre-softmax) attention logits can be unified using the
+following formula:
+ARPE (X) = XWQ (XWK )⊤ + B,
+where the bias matrix B ∈ Rn×n is induced by the position encoding function b : N2 → R and the
+(i, j)-th entry of B is defined as b(i, j). Different formulations and parameterizations of b lead to
+various RPE variants. Several methodologies that facilitate arbitrary sequence lengths include T5’s
+RPE [56], Alibi [52], Kerple [13], Sandwich [14], and FIRE [41]. Currently, additive RPE delivers
+relatively robust performance in length extrapolation without necessitating additional operations.
+Alibi constructs the bias matrix B utilizing prior knowledge, resulting in a basis matrix devoid of
+learnable parameters [52]. Conversely, both Kerple [13] and Sandwich [14] incorporate two learnable
+parameters to facilitate the learning of a bias matrix while retaining some elements of priors. FIRE
+suggests adopting a learnable continuous function, such as MLPs, to convert input positions to biases
+[41]. Observing these developments, it becomes evident that the next generation of bias matrices will
+likely incorporate adaptivity and flexibility. Based on this insight, we propose our method DAPE, a
+semantically adaptive method.
+
+3
+
+Method
+
+In this section, we formally introduce DAPE (data-adaptive positional encoding), a new relative
+positional encoding approach that further enhances transformer performance. Compared with previous
+works on static positional encoding methods, DAPE adopts semantically adaptive positional bias
+matrices depending on input context. We first demonstrate that most of the popular positional bias
+matrices are fixed once the training is finished, independent of the input sequences. To address this
+limitation, we then accordingly develop DAPE that captures the implicit relationships by MLPs and
+adjusts the bias matrices based on input context. Furthermore, we discuss a variant of DAPE with
+residual connections and its extensions to multi-head transformers.
+3.1
+
+Additive Relative Positional Encoding
+
+For most additive RPE methods, the computation of pre-softmax attention logits can be unified under
+the following formula:
+ARPE (X) = XWQ (XWK )⊤ + B,
+(1)
+where the bias matrix B ∈ Rn×n is induced by the position encoding function b : N2 → R and the
+(i, j)-th entry of B is defined as b(i, j). Various formulations and parameterizations of b give rise to
+different variants of RPE. Examples of additive RPE include: (1) Alibi: b(i, j) = −r|i − j|, with
+the scaler r > 0 as a hyper-parameter; (2) Kerple: b(i,
++ r2 |i − j|) with r1 and r2
+ j) = −r1 log(1
+
+ψ(i−j)
+are two learnable parameters; (3) FIRE: b(i, j) = fθ ψ(max{L,i}) , where the positional encoding
+function fθ parameterized by θ is learned from data and ψ is a transformation function aimed at
+assigning more model capacity to local positions.
+3
+
+We observe from the formulation of those additive RPEs that they remain static once the training
+process is completed and depend solely on the positions, regardless of the input context. This
+inflexibility and lack of adaptivity can lead to performance degradation, especially in tasks involving
+long-context generation and reasoning. Intuitively, the learned static RPEs are optimal on average
+across all training samples. However, this means they are suboptimal when considering each
+individual instance, as they cannot adapt to specific tasks. To address these challenges and enhance
+model performance, it is essential to adopt an alternative approach using a semantically adaptive RPE
+that depends on input context.
+3.2
+
+Data-Adaptive Positional Encoding
+
+For simplicity, we first consider the single-head case and the extension to the multi-head transformer
+will be discussed subsequently. The design of data-adaptive positional encodings in natural language
+tasks is motivated by the need to capture the intricate relationships between tokens. Arora et al. [5]
+reveals that associate recall accounts for most of the perplexity difference between transformer, RNNbased, and convolution models. For example, we consider a consistent pairing that “Hakuna” is always
+followed by “Matata” in a long paragraph. This pattern suggests a reduced reliance on positional
+information in favor of enhancing token embedding similarity, thus allowing for ‘Hakuna’ to be
+effectively linked with a preceding ‘Matata’. Similarly, in tasks involving long-context understanding
+and search, semantic similarity should be prioritized in the attention mechanism rather than being
+overshadowed by positional encodings, which can be less relevant over long distances. Consequently,
+the transformer should preserve information without being influenced overly by positional distance.
+Instead, a satisfactory PE should integrate both semantic and positional information. Therefore, a
+semantically dependent positional encoding approach is preferable and expected to enhance model
+performances. Here, we use the attention XWQ (XWK )⊤ to represent the semantic information
+and positional bias matrices B (e.g., Alibi and FIRE) to capture positional details. Then the
+context-adaptive PE is described by f (XWQ (XWK )⊤ , B), where f (·) is an implicit function
+that integrates both semantic and positional data into the desired positional encodings. Thus, the
+pre-softmax attention logit incorporated with DAPE is formulated as
+ADAPE (X) = XWQ (XWK )⊤ + f (XWQ (XWK )⊤ , B).
+
+(2)
+
+Here, f : RT ×T × RT ×T → RT ×T is an element-wise function. In practice, we utilize a two-layer
+LeakyReLU neural network to parameterize f (·) due to its universal approximability [36]. All
+parameters are learned directly from the data during the training process. This architecture allows f (·)
+to dynamically adjust positional embeddings based on the input context, ensuring that the encoding
+method is both adaptive and dependent on the input data.
+Different from FIRE, which also models the implicit positional encoding by MLPs, our approach
+additionally integrates semantic information. This integration enables the adaptivity, flexibility, and
+context-dependency of the positional encodings. Significantly, our method is compatible with most
+additive RPE techniques, as these commonly involve positional bias matrices B that inherently contain
+positional relations. Unlike previous RPEs, which rely solely on absolute positional differences, our
+DAPE method, can be seen as utilizing multi-level positional bias matrices. Here, the bias matrices
+dynamically adjust based on the input context, offering a more reasonable and responsive encoding
+mechanism.
+Expressiveness. Due to the universal approximability of (LeakyReLU) neural networks [36], f (·)
+is capable of capturing complex relationships between the desired positional encoding and both
+semantic and positional information. Regardless of the semantic component, when the relative
+position i − j is used as input, DAPE can realize classical additive RPEs (e.g., Alibi and Kerple),
+according to [41]. This demonstrates the versatility of DAPE in accommodating traditional encoding
+schemes while also offering enhanced capabilities. There exists a fundamental trade-off between the
+expressiveness and computational costs. Wider hidden layers lead to higher expressiveness but also
+contribute to more computational costs. In practice, we find that two-layer neural networks with 32
+hidden units per layer provide sufficient expressiveness to deliver satisfactory performance, balancing
+complexity and efficiency effectively.
+Discussion. We can also interpret the proposed method from an alternative perspective. In the standard
+transformer architecture, the pre-softmax attention typically involves the key-query similarity and the
+positional encoding by either addition (in the form of a + b, e.g., Alibi and Kerple) or multiplication
+(in the form of a ∗ b, e.g., RoPE). Here, we propose a unified approach by replacing them with
+4
+
+learnable MLPs, i.e., MLP(a, b). This configuration allows the model to learn the desired relationship
+between the pre-softmax attention, the key-query similarity and the positional encoding. It can also
+be regarded as a new transformer architecture that empower the transformer with additional MLPs on
+pre-softmax attentions.
+A variant of DAPE with residual connections. It is well-known that deep neural networks may
+suffer from gradient vanishing. To further enhance the practical performances, we introduce the
+residual connection for positional information. Consequently, Equation 2 is modified as follows:
+ADAPE (X) = XWQ (XWK )⊤ + B + f (XWQ (XWK )⊤ , B).
+
+(3)
+
+In this reformulation, f (·) acts as an adaptive correction term to the traditionally fixed RPE, dynamically adjusting the positional bias matrices B based on both semantic and positional inputs. In
+Section 4, we empirically explore the impact of residual connections in DAPE. Our observations
+reveal that for well-behaved bias matrices B, the DAPE model with residual connections, as specified
+in Equation 3, is preferable. Conversely, if the bias matrix is underperforming but still conveys
+positional information, the original implementation in Equation 2 is more effective.
+Multi-head DAPE. In its simplest form, DAPE is considered for a single-head case as described
+in Equation 2 and Equation 3. However, adopting a multi-head mechanism significantly enhances
+model capabilities. To effectively combine both semantic and positional information, the DAPE in a
+multi-head setup processes the key-query similarities and bias matrices from all heads. Specifically,
+for an h-head layer, the function f (·) inputs a 2h-dimensional concatenation of key-query similarities
+and positional biases. It then outputs h-dimensional vectors, where each element corresponds to the
+DAPE for the respective head. We have shown the code implementation in Appendix J. Importantly,
+semantic and positional information across different heads are processed simultaneously within the
+same MLPs, rather than sequentially. This approach not only improves computational efficiencies
+through parallel processing but also capitalizes on the richer semantic information available across all
+heads. Compared to the key-query similarity derived from a single head, the comprehensive attention
+from all heads yields more substantial semantic information.
+Computational costs analysis. Here, we evaluate the additional computational costs introduced
+by the DAPE method, compared with the classical positional encoding methods (e.g., Alibi and
+Kerple). We consider a transformer model with h heads and assume a sequence length of N and all
+hidden dimensions in the attention layer being d. Then the total
+ computational cost for a standard
+transformer equipped with classical PEs is O hN 2 d + hN d2 . When incorporating the proposed
+DAPE, which employs two-layer
+MLPs with hidden dimension DDAPE , the additional computational
+
+costs are O hN 2 DDAPE . If the hidden dimensions DDAPE ≪ d, the incremental computational cost
+introduced by DAPE is not significant.
+
+4
+
+Experiment
+
+Baselines. We evaluate the proposed DAPE against a range of established baselines, including
+NoPE [33], RoPE [62], YaRN [51], Randomized RoPE [57, 31], T5’s Bias [56], Alibi [52], Kerple [13], and FIRE [41]. For RoPE, the randomized positional encoding [57, 31] is applied to enhance
+the model performance, extending the randomized length to four times that of the training length.
+Datasets. Our analysis involves training language models on the Arxiv and Books3 datasets, which
+are frequently used benchmarks for evaluating model performance [52, 13, 41, 24]. We start our
+evaluation by comparing the last 256 tokens’ zero-shot perplexity across different input lengths.
+Besides perplexity as evaluation metrics, we also employ the downstream datasets in randomized
+positional encoding [57] to evaluate DAPE, where details are included in Appendix D.
+Experiment settings. Initially, we compare DAPE with other baselines at training lengths of 128,
+512, and 1024, with model size 125M decoder-only Transformers [9], whose configuration is shown
+in Appendix B. Subsequently, we evaluate the performance of larger model size 350M, DAPE variants
+and explore the impact of hidden dimension of MLPs DDAPE . We also examine the computational
+efficiency of DAPE, focusing on processing times. Additionally, we provide visualizations of the
+DAPE bias in the Appendix I. Finally, we also evaluate DAPE on algorithmic reasoning datasets via
+accuracy metrics.
+5
+
+12
+
+12
+
+10
+8
+6
+4 128
+
+Validation perplexity
+
+Validation perplexity
+
+14
+
+40.0
+37.5
+35.0
+32.5
+30.0
+27.5
+25.0
+22.5
+20.0 128
+
+256
+
+512
+1024
+2048
+Validation sequence length
+
+4096
+
+Books3 Dataset (Length 128)
+
+256
+
+512
+1024
+2048
+Validation sequence length
+
+10
+8
+6
+4
+
+40
+
+4096
+
+Arxiv Dataset (Length 512)
+
+2 512
+
+8192
+
+Validation perplexity
+
+Validation perplexity
+
+Arxiv Dataset (Length 128)
+14
+
+35
+30
+25
+20
+
+1024
+2048
+4096
+Validation sequence length
+
+Books3 Dataset (Length 512)
+
+NoPE
+RoPE
+YaRN
+Randomized RoPE
+T5's bias
+Alibi
+Kerple
+FIRE
+DAPE-Alibi
+DAPE-Kerple
+DAPE-Fire
+
+15 512
+
+8192
+
+8192
+
+1024
+2048
+4096
+Validation sequence length
+
+8192
+
+Figure 2: Comparisons with baselines: performance with training lengths 128 and 512 on Arxiv and Books3
+datasets.
+
+4.1
+
+Comparisons with Baselines
+
+DAPE’s superior performance within training length and beyond training length, compared
+to all baselines. As shown in Figure 2 and Table 5, DAPE consistently outperforms established
+baselines such as RoPE, Alibi, and Kerple across various settings. Notably, DAPE-Kerple (the
+positional information in DAPE comes from Kerple bias matrices) outstands in both short and long
+training lengths (128 and 512), compared to previous RoPE, T5’s bias, and so on. It demonstrates
+that the semantic adaptivity of DAPE significantly enhances its state-of-the-art performance against
+all other static positional encoding methods.
+Arxiv Dataset (Length 1024)
+RoPE
+
+Validation perplexity
+
+14
+YaRN
+The performance on longer training length
+Randomized RoPE
+12
+T5's bias
+1024. As shown in Figure 3, the proposed
+Alibi
+method consistently delivers state-of-the-art perKerple
+10
+FIRE
+formance for the training length of 1024. When
+DAPE-Alibi
+8
+DAPE-Kerple
+the evaluation extends to 2048, both DAPEDAPE-Fire
+6
+Kerple and DAPE-FIRE achieve notable re4
+sults, recording performances of 3.91 and 3.93
+perplexity scores, respectively. Remarkably,
+2 1024
+2048
+4096
+8192
+DAPE-FIRE behaves well at the longer evalValidation sequence length
+uation length of 8192, achieving a performance
+of 3.91 scores and surpassing Alibi’s score of Figure 3: Results on the training length 1024.
+4.28. These findings reveal that DAPE sustains robust performance with a longer training length of
+1024.
+
+DAPE enhances intra-length performance, indicating that its lower perplexity may come
+from thorough utilization of entire sentences but not disregarding long-distance information
+(Also proved in Figure 1). Compared to Alibi, Kerple, and FIRE, the adapted versions DAPEAlibi, DAPE-Kerple, and DAPE-FIRE demonstrate consistently and significantly better intra-length
+performance. With the growing sequence length, the Alibi tends to transition from full attention
+to almost local attention, and this is why Alibi is worse than most baselines within training length
+but better beyond training lengths. The results (as shown in Table 5) indicate that the superior intralength performance of DAPE is statistically significant, with a p-value less than 0.05. Therefore, the
+consistent intra-length performances across various training lengths indicate that the lower perplexity
+of DAPE results from effectively utilizing the entire sequence, rather than focusing on local parts and
+neglecting long-distance information.
+6
+
+DAPE significantly improves length extrapolation performance, compared to ALibi, Kerple,
+and FIRE. DAPE-Kerple significantly surpasses competitors like vanilla Kerple when training and
+evaluating at different lengths. On the Arxiv dataset trained at a length of 128, DAPE-Kerple achieves
+a remarkably low perplexity of 5.00 at an evaluation length of 8192, in stark contrast to Kerple’s 31.93.
+Similarly, on the Books3 dataset with a training length of 512, DAPE-Kerple records a perplexity of
+17.88 at the same extended evaluation length, far outperforming Kerple’s 39.31. These results affirm
+that DAPE, through its semantic adaptivity and flexibility, consistently enhances performance beyond
+training lengths, eclipsing static positional encoding methods.
+4.2
+
+The Effect of Model Size
+
+350M Model (Length 128)
+Validation perplexity
+
+Validation perplexity
+
+14
+12
+10
+8
+6
+4 128
+
+14
+12
+10
+8
+6
+4
+2
+
+350M Model (Length 512)
+
+Randomized RoPE
+T5's bias
+Alibi
+Kerple
+FIRE
+DAPE-Alibi
+DAPE-Kerple
+DAPE-Fire
+
+256
+
+512 1024 2048 4096 8192
+512
+1024
+2048
+4096
+8192
+Validation sequence length
+Validation sequence length
+Figure 4: The effect of model size: for the 350M model, the performance with training lengths 128 and 512 on
+the Arxiv dataset.
+
+DAPE enhances performance with increasing model sizes. As the model size grows (as shown
+in Figure 4), DAPE consistently demonstrates an improvement in performance metrics. When the
+model size is augmented from 125M to 350M, the perplexity at an evaluation sequence length of
+8192 (with a training length of 512) for DAPE-Alibi shows a notable decrease from 3.82 to 3.57.
+These numbers are appreciably smaller than those recorded for original Alibi, which decreases from
+4.54 to 4.21 in perplexity, indicating a robust performance improvement. Additionally, DAPE-Kerple
+significantly reduces the perplexity for Kerple, bringing it down from an initial 22.76 to an impressive
+3.43. These results confirm that DAPE retains its efficacy and continues to perform well even as the
+model size is increased, mainly due to the adoption of semantically adaptive PEs.
+DAPE methods almost are ranked top-3 with large model size. With the incremental model size,
+DAPE-FIRE begins to match, and nearly approach, the performance levels of Alibi. Initially, at a
+model size of 125M and a training length of 512, DAPE-FIRE achieves a perplexity of 5.71 at an
+evaluation sequence length of 8192, while Alibi stands at a perplexity of 4.54. However, as the model
+size is increased to 350M, the performance gap significantly narrows. Specifically, DAPE-FIRE
+outperforms Alibi regarding the perplexity scores when the evaluation length is smaller than 4096,
+as the model size grows for evaluation. In conclusion, as shown in Figure 4, we observe that the
+DAPE methods almost win the top-3 among all positional encoding methods. This trend underlines
+the scalability and adaptability of DAPE, emphasizing its potential to handle more substantial
+computation challenges.
+4.3
+
+Different Variants of DAPE
+
+In this section, we evaluate the performance of DAPE across its various forms. Our analysis
+focuses on DAPE-Kerple. Notably, as shown in Figure 5, all variants of DAPE surpass the baseline
+performance of Kerple. The Addition_Residual variant of DAPE, while requiring less computational
+effort, delivers relatively inferior results. As illustrated in Figure 5, concatenation methods (either
+Concat or Concat_Residual) outperform the Addition_Residual approach, for both the training length
+of 128 and 512. Furthermore, both Concat and Concat_Residual exhibit comparable performance
+metrics. Specifically, at a training length of 128, Concat_Residual records a score of 5.00 and Concat
+scores 5.03 at an evaluation length of 8192, whereas Add_Residual posts a 5.17 perplexity score.
+With a training length of 512, Concat_Residual achieves a score of 3.70, and Concat scores 3.69 at
+an evaluation length of 8192, compared to Add_Residual’s 3.75. Based on the current observation,
+the different variants of DAPE show comparable performances, compared to baselines.
+7
+
+Different Variant (Length 128)
+
+9
+
+Validation perplexity
+
+Validation perplexity
+
+10
+8
+7
+6
+5
+4 128
+
+256
+
+512
+1024
+2048
+Validation sequence length
+
+4096
+
+8192
+
+Different Variant (Length 512)
+10
+Baseline
+Concat
+9
+Add_Residual
+Concat_Residual
+8
+7
+6
+5
+4
+3 512
+1024
+2048
+4096
+Validation sequence length
+
+8192
+
+Figure 5: Different variants of DAPE: the DAPE-Kerple performance under different variants. (1)
+Add_Residual: XWQ (XWK )⊤ + B + f (XWQ (XWK )⊤ + B); (2) Concate: XWQ (XWK )⊤ +
+f (XWQ (XWK )⊤ , B); (3) Concate_Residual: XWQ (XWK )⊤ + B + f (XWQ (XWK )⊤ , B).
+4.4
+
+The Effect of the Hidden Dimension DDAPE
+
+Even small DDAPE can improve the performance. The experiments are conducted with Alibi and
+DAPE-Alibi. As shown in Appendix Figure 6, when considering the training length 128 and DDAPE
+is set as 4, the DAPE-Alibi achieves 8.25 at evaluation length 128 and 5.67 at length 8192, which
+is better than Alibi’s 8.31 and 5.85. Whatever DDAPE is 4, 16 32, or 64, the performance is always
+better than the original Alibi at all evaluation lengths. This suggests the effectiveness of DAPE, even
+with smaller DDAPE .
+The choice of DDAPE . Based on the experiment, overly small values of DDAPE can degrade performance, although they still perform better than the baseline. Conversely, larger values of DDAPE
+increase computational costs. The function f (·) is implemented as a two-layer MLP, where the input
+dimension is either the head number or twice the head number, and the output dimension is the head
+number. Therefore, we recommend setting the hidden dimension to the head number to prevent
+information loss and ensure the capacity of f (·).
+4.5
+
+The Time Cost
+
+Table 1: The time cost (millisecond) under different testing lengths, with DDAPE as 32 and default
+batch size 1, with training length 512.
+
+Method
+
+350M Total
+
+Ratio
+
+2.7B Total
+
+Ratio
+
+6.7B Total
+
+Ratio
+
+RoPE [62]
+
+210.01
+
+0.9366
+
+472.63
+
+1.1187
+
+635.57
+
+0.8858
+
+T5’s bias [56]
+
+355.16
+
+1.5839
+
+537.62
+
+1.2725
+
+808.85
+
+1.1273
+
+ALiBi [52]
+
+172.60
+
+0.7697
+
+325.95
+
+0.7715
+
+596.77
+
+0.8317
+
+Kerple [13]
+
+189.91
+
+0.8469
+
+370.32
+
+0.8765
+
+661.82
+
+0.9224
+
+FIRE [41]
+
+248.13
+
+1.1066
+
+432.63
+
+1.0240
+
+797.68
+
+1.1118
+
+DAPE-Kerple
+
+224.22
+
+1.0000
+
+422.48
+
+1.0000
+
+717.46
+
+1.0000
+
+Practical additional time cost. The additional training ratio will gradually decrease with
+a larger model size, compared to baseline Kerple.. The cost of Feed-Forward Network is:
+O(N d2head d2hidden )=aN d2head d2hidden , where a is a constant, N is the sequence length, dhead
+is the attention head number and dhidden is the dimension for attention calculation. The cost
+of Attention: O(N 2 dhead dhidden )=bN 2 dhead dhidden , where b is a constant. The additional
+cost of DAPE: O(N 2 dhead dDAP E )=cN 2 dhead dDAP E , where c is a constant. The cost ratio
+aN d2
+d2hidden +bN 2 dhead dhidden
+ad
+d2
++bN dhidden
+is aN d2 d2 head
+= adhead d2head hidden
+. Therefore,
+2
+2
+head hidden +bN dhead dhidden +cN dhead dDAP E
+hidden +bN dhidden +cN dDAP E
+with the fixed sequence length and dDAP E , with the model becomes larger (with bigger dhead and
+dhidden ), the additional cost ratio of DAPE will greatly become smaller. Also, we have shown in
+Figure 6 that dDAP E still works well with very small value, such as 4.
+8
+
+Table 2: Train on length 40 with 200k steps, and test from lengths 41 to 500. The random accuracy is
+50%, except for M ODULAR A RITHMETIC (S IMPLE ), C YCLE NAVIGATION, B UCKET S ORT, S OLVE
+E QUATION and M ODULAR A RITHMETIC, where it is 20%. ††† denotes permutation-invariant tasks,
+which are expected to be solved without positional information.
+Randomized
+
+DAPE (Ours)
+
+Level
+
+Task
+
+Learned
+
+sin / cos
+
+RoPE
+
+Relative [19]
+
+ALiBi
+
+Kerple
+
+FIRE
+
+Alibi
+
+Kerple
+
+FIRE
+
+R
+
+E VEN PAIRS
+M ODULAR A RITHMETIC (S IMPLE )
+PARITY C HECK†††
+C YCLE NAVIGATION†††
+
+50.04
+19.95
+50.14
+24.97
+
+91.27
+20.39
+50.52
+25.37
+
+99.98
+21.35
+50.05
+27.63
+
+96.60
+20.84
+50.09
+26.95
+
+73.52
+20.02
+50.09
+24.64
+
+57.50
+21.79
+50.07
+29.47
+
+73.86
+21.09
+50.97
+28.41
+
+99.99
+23.58
+50.30
+22.99
+
+99.58
+24.47
+50.07
+34.53
+
+100
+24.46
+50.04
+27.54
+
+DCF
+
+S TACK M ANIPULATION
+R EVERSE S TRING
+M ODULAR A RITHMETIC
+S OLVE E QUATION
+
+59.92
+52.76
+31.00
+20.00
+
+65.92
+67.28
+30.70
+19.97
+
+61.49
+65.23
+31.25
+21.85
+
+64.73
+65.59
+31.74
+22.93
+
+66.42
+71.09
+30.56
+19.92
+
+66.93
+71.54
+24.79
+21.15
+
+69.33
+65.89
+30.92
+22.06
+
+68.18
+73.37
+31.34
+20.03
+
+72.04
+70.74
+32.37
+22.49
+
+70.90
+76.40
+31.50
+22.42
+
+D UPLICATE S TRING
+M ISSING D UPLICATE
+O DDS F IRST
+B INARY A DDITION
+C OMPUTE S QRT
+B UCKET S ORT†††
+
+52.77
+50.38
+52.77
+54.63
+50.47
+98.32
+
+65.44
+49.78
+58.61
+55.78
+51.11
+98.92
+
+64.97
+63.37
+61.00
+55.59
+51.88
+98.12
+
+67.66
+72.34
+61.57
+56.96
+51.63
+99.31
+
+65.13
+74.21
+59.88
+54.72
+50.63
+98.45
+
+66.72
+79.06
+62.59
+56.35
+51.11
+99.38
+
+69.03
+79.27
+63.28
+55.70
+50.80
+99.57
+
+70.84
+83.41
+63.78
+59.71
+51.64
+99.38
+
+72.95
+87.57
+67.08
+60.88
+51.33
+98.81
+
+72.71
+89.17
+66.34
+56.62
+52.46
+99.37
+
+CS
+
+4.6
+
+The Visualization of DAPE
+
+In this subsection, we present the visualization of learned positional encoding biases from a DAPEKerple model pretrained on Arxiv (training length is 512). We plot the learned positional encoding
+bias for the query token at the 8192th position, for all the attention heads from selected layers in
+Figure 1. We would like to highlight two features of DAPE. First, in different attention heads, the
+bias matrix of DAPE learns both local and “anti-local” attention patterns that emphasize more on
+far-away keys (just like FIRE), compared to a fixed local inductive bias (such as Kerple and Alibi).
+Secondly, the bias matrix can be dynamically adjusted with different attention values, compared to
+the static bias fixed for all attentions. We have shown more examples, including different layers and
+different samples, in Appendix I.
+
+4.7
+
+Experiments on CHE Benchmark
+
+Besides employing perplexity as an evaluation metric, we also evaluated DAPE on downstream Chomsky Hierarchy Evaluation Benchmark (CHE) [21] (need to utilize the whole sentence information to
+generate correct answers) to further discuss its effects. The experimental setup follows randomized
+positional encodings [57], detailed in Table 4, with the experiment setting shown in Appendix Section
+D. Overall, FIRE outperforms Kerple in 9 out of 14 tasks, while Kerple outperforms Alibi in 11 out
+of 14 tasks. This observation aligns with findings in [41], suggesting that the experiments in Table 2
+are reliable and reflect the performance of positional encoding in downstream tasks.
+DAPE works better on permutation-variant tasks. DAPE (with Kerple and FIRE) presented the
+best performance in 10 out of 11 permutation-variant tasks (which require positional information),
+achieving the second-best performance in the S OLVE E QUATION task. This underscores the efficacy
+of DAPE with semantic adaptivity in handling permutation-variant challenges.
+DAPE’s performance on permutation-invariant tasks. In tasks that are permutation-invariant,
+where positional information is non-critical, DAPE demonstrated comparable performance. Notably,
+DAPE-Alibi achieved scores of 50.30 on PARITY C HECK and 99.38 on B UCKET S ORT tasks, compared to the highest scores of 50.97 and 99.57, respectively, demonstrating competitive performances.
+Comparative performance improvements. DAPE consistently enhanced performance across
+various tasks, especially on permutation-variant tasks. Specifically, DAPE improved upon Alibi and
+FIRE’s results in all 11 tested permutation-invariant tasks. Similarly, it outperformed Kerple in 10
+of these tasks. These results highlight the effectiveness of DAPE over static positional encoding
+methods like Alibi, Kerple, and FIRE, resulting from its dynamic adaptivity.
+9
+
+5
+
+Evaluation Protocol
+
+In this work, we initially utilize the model to process the entire input sentence and subsequently
+select the final 256 tokens for perplexity computation. This approach contrasts with a variety of
+other studies, which employ methods that process the full sequence during perplexity calculations
+[51, 31, 12, 24, 10, 41]. As a result, our reported baseline perplexity is comparatively higher than
+the results presented in ALiBi [52], which adopt a non-overlapping evaluation strategy. This method
+divides sequences longer than L into multiple segments of length L, thereby yielding lower perplexity
+figures.
+Though ALiBi [52] and Kerple all claim that they use non-overlapping evaluations, their reported
+results are different. For example, in the ALiBi paper Table 2, the sinusoidal position encoding
+perplexity increases from 20.05 (evaluation length 512) to 406.01 (evaluation length (evaluation
+length 15512), while in Kerple paper Table 3 the sinusoidal position encoding perplexity from 33 to
+30046. This may be caused by different evaluation protocols and training strategies.
+Recommended Protocols. We strongly recommend that researchers process the entirety of the
+sequence before selecting the last K tokens for the purpose of calculating perplexity. The rationale
+behind processing the whole sentence is that it provides a comprehensive evaluation of the model’s
+capability to handle long-context dependencies, thus offering a more accurate reflection of its
+performance. Following this step, we advocate for the selection of the last K tokens to compute
+perplexity, ensuring that the same number of tokens is used across different evaluation lengths, which
+promotes consistency and comparability in the results.
+Release this work’s code for future work. In light of this methodology, we have made our code
+publicly available to other researchers in the field. This initiative aims to facilitate a standardized
+comparison and evaluation of their respective methods, thereby advancing the collective understanding
+of model performance in relation to perplexity calculations.
+
+6
+
+Conclusion
+
+In this paper, we propose the data-adaptive positional encoding (DAPE) by incorporating both the
+semantic and the positional information to improve the model performance. We show that the additional computation introduced by DAPE is not significant under proper choices of hyperparameters.
+We conduct comprehensive experiments on Arxiv, Books3, and CHE to validate the effectiveness
+of the proposed method, revealing that the adaptive PE method has advantages over static PEs. We
+believe that the DAPE could benefit the whole community, especially on length generalization tasks.
+
+References
+[1] Muhammad Adnan, Akhil Arunkumar, Gaurav Jain, Prashant J Nair, Ilya Soloveychik, and
+Purushotham Kamath. Keyformer: KV cache reduction through key tokens selection for efficient
+generative inference. arXiv preprint arXiv:2403.09054, 2024.
+[2] Devanshu Agrawal, Shang Gao, and Martin Gajek. Can’t remember details in long documents?
+you need some r&r. arXiv preprint arXiv:2403.05004, 2024.
+[3] Joshua Ainslie, Tao Lei, Michiel de Jong, Santiago Ontanon, Siddhartha Brahma, Yury Zemlyanskiy, David Uthus, Mandy Guo, James Lee-Thorp, Yi Tay, et al. CoLT5: Faster long-range
+transformers with conditional computation. In The 2023 Conference on Empirical Methods in
+Natural Language Processing, 2023.
+[4] Chenxin An, Fei Huang, Jun Zhang, Shansan Gong, Xipeng Qiu, Chang Zhou, and Lingpeng Kong. Training-free long-context scaling of large language models. arXiv preprint
+arXiv:2402.17463, 2024.
+[5] Simran Arora, Sabri Eyuboglu, Aman Timalsina, Isys Johnson, Michael Poli, James Zou, Atri
+Rudra, and Christopher Ré. Zoology: Measuring and improving recall in efficient language
+models. arXiv preprint arXiv:2312.04927, 2023.
+10
+
+[6] Dzmitry Bahdanau, Kyunghyun Cho, and Yoshua Bengio. Neural machine translation by jointly
+learning to align and translate. International Conference on Learning Representations, 2015.
+[7] Maximilian Beck, Korbinian Pöppel, Markus Spanring, Andreas Auer, Oleksandra Prudnikova,
+Michael Kopp, Günter Klambauer, Johannes Brandstetter, and Sepp Hochreiter. xLSTM:
+Extended long short-term memory. arXiv preprint arXiv:2405.04517, 2024.
+[8] Iz Beltagy, Matthew E Peters, and Arman Cohan. Longformer: The long-document transformer.
+arXiv preprint arXiv:2004.05150, 2020.
+[9] Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal,
+Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al. Language models are
+few-shot learners. Advances in Neural Information Processing Systems, 33:1877–1901, 2020.
+[10] Guanzheng Chen, Xin Li, Zaiqiao Meng, Shangsong Liang, and Lidong Bing. CLEX: Continuous length extrapolation for large language models. In International Conference on Learning
+Representations, 2023.
+[11] Shouyuan Chen, Sherman Wong, Liangjian Chen, and Yuandong Tian. Extending context
+window of large language models via positional interpolation. arXiv preprint arXiv:2306.15595,
+2023.
+[12] Yukang Chen, Shengju Qian, Haotian Tang, Xin Lai, Zhijian Liu, Song Han, and Jiaya Jia. LongLoRA: Efficient fine-tuning of long-context large language models. International Conference
+on Learning Representations, 2023.
+[13] Ta-Chung Chi, Ting-Han Fan, Peter J Ramadge, and Alexander Rudnicky. KERPLE: Kernelized relative positional embedding for length extrapolation. Advances in Neural Information
+Processing Systems, 35:8386–8399, 2022.
+[14] Ta-Chung Chi, Ting-Han Fan, Alexander Rudnicky, and Peter Ramadge. Dissecting transformer
+length extrapolation via the lens of receptive field analysis. In Proceedings of the 61st Annual
+Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages
+13522–13537, 2023.
+[15] Ta-Chung Chi, Ting-Han Fan, and Alexander I Rudnicky. Attention alignment and flexible positional embeddings improve transformer length extrapolation. arXiv preprint arXiv:2311.00684,
+2023.
+[16] Noam Chomsky. Three models for the description of language. IRE Transactions on Information
+Theory, 2(3):113–124, 1956.
+[17] Krzysztof Marcin Choromanski, Valerii Likhosherstov, David Dohan, Xingyou Song, Andreea
+Gane, Tamas Sarlos, Peter Hawkins, Jared Quincy Davis, Afroz Mohiuddin, Lukasz Kaiser,
+David Benjamin Belanger, Lucy J Colwell, and Adrian Weller. Rethinking attention with
+performers. In International Conference on Learning Representations, 2021.
+[18] Aakanksha Chowdhery, Sharan Narang, Jacob Devlin, Maarten Bosma, Gaurav Mishra, Adam
+Roberts, Paul Barham, Hyung Won Chung, Charles Sutton, Sebastian Gehrmann, et al. Palm:
+Scaling language modeling with pathways. Journal of Machine Learning Research, 24(240):1–
+113, 2023.
+[19] Zihang Dai, Zhilin Yang, Yiming Yang, Jaime G Carbonell, Quoc Le, and Ruslan Salakhutdinov.
+Transformer-XL: Attentive language models beyond a fixed-length context. In Proceedings of
+the 57th Annual Meeting of the Association for Computational Linguistics, pages 2978–2988,
+2019.
+[20] Soham De, Samuel L Smith, Anushan Fernando, Aleksandar Botev, George Cristian-Muraru,
+Albert Gu, Ruba Haroun, Leonard Berrada, Yutian Chen, Srivatsan Srinivasan, et al. Griffin:
+Mixing gated linear recurrences with local attention for efficient language models. arXiv
+preprint arXiv:2402.19427, 2024.
+11
+
+[21] Gregoire Deletang, Anian Ruoss, Jordi Grau-Moya, Tim Genewein, Li Kevin Wenliang, Elliot
+Catt, Chris Cundy, Marcus Hutter, Shane Legg, Joel Veness, et al. Neural networks and the
+chomsky hierarchy. In International Conference on Learning Representations, 2022.
+[22] Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. BERT: Pre-training
+of deep bidirectional transformers for language understanding. In Proceedings of the 2019
+Conference of the North American Chapter of the Association for Computational Linguistics:
+Human Language Technologies, Volume 1 (Long and Short Papers), pages 4171–4186, 2019.
+[23] Hantian Ding, Zijian Wang, Giovanni Paolini, Varun Kumar, Anoop Deoras, Dan Roth, and Stefano Soatto. Fewer truncations improve language modeling. arXiv preprint arXiv:2404.10830,
+2024.
+[24] Yiran Ding, Li Lyna Zhang, Chengruidong Zhang, Yuanyuan Xu, Ning Shang, Jiahang Xu, Fan
+Yang, and Mao Yang. LongRoPE: Extending llm context window beyond 2 million tokens.
+arXiv preprint arXiv:2402.13753, 2024.
+[25] Zafeirios Fountas, Martin A Benfeghoul, Adnan Oomerjee, Fenia Christopoulou, Gerasimos
+Lampouras, Haitham Bou-Ammar, and Jun Wang. Human-like episodic memory for infinite
+context llms. arXiv preprint arXiv:2407.09450, 2024.
+[26] Yao Fu, Rameswar Panda, Xinyao Niu, Xiang Yue, Hannaneh Hajishirzi, Yoon Kim, and
+Hao Peng. Data engineering for scaling language models to 128k context. arXiv preprint
+arXiv:2402.10171, 2024.
+[27] Yihang Gao, Chuanyang Zheng, Enze Xie, Han Shi, Tianyang Hu, Yu Li, Michael K Ng,
+Zhenguo Li, and Zhaoqiang Liu. On the expressive power of a variant of the looped transformer.
+arXiv preprint arXiv:2402.13572, 2024.
+[28] Albert Gu and Tri Dao. Mamba: Linear-time sequence modeling with selective state spaces.
+arXiv preprint arXiv:2312.00752, 2023.
+[29] Mandy Guo, Joshua Ainslie, David Uthus, Santiago Ontanon, Jianmo Ni, Yun-Hsuan Sung, and
+Yinfei Yang. LongT5: Efficient text-to-text transformer for long sequences. Findings of the
+Association for Computational Linguistics: NAACL, 2022.
+[30] Adi Haviv, Ori Ram, Ofir Press, Peter Izsak, and Omer Levy. Transformer language models
+without positional encodings still learn positional information. In Findings of the Association
+for Computational Linguistics: EMNLP 2022, pages 1382–1390, 2022.
+[31] Zhenyu He, Guhao Feng, Shengjie Luo, Kai Yang, Di He, Jingjing Xu, Zhi Zhang, Hongxia
+Yang, and Liwei Wang. Two stones hit one bird: Bilevel positional encoding for better length
+extrapolation. arXiv preprint arXiv:2401.16421, 2024.
+[32] Hongye Jin, Xiaotian Han, Jingfeng Yang, Zhimeng Jiang, Zirui Liu, Chia-Yuan Chang, Huiyuan
+Chen, and Xia Hu. LLM maybe LongLM: Self-extend LLM context window without tuning.
+arXiv preprint arXiv:2401.01325, 2024.
+[33] Amirhossein Kazemnejad, Inkit Padhi, Karthikeyan Natesan Ramamurthy, Payel Das, and Siva
+Reddy. The impact of positional encoding on length generalization in transformers. Advances
+in Neural Information Processing Systems, 36, 2024.
+[34] Guolin Ke, Di He, and Tie-Yan Liu. Rethinking positional encoding in language pre-training.
+In International Conference on Learning Representations, 2020.
+[35] Shun Kiyono, Sosuke Kobayashi, Jun Suzuki, and Kentaro Inui. SHAPE: Shifted absolute
+position embedding for transformers. In Proceedings of the 2021 Conference on Empirical
+Methods in Natural Language Processing, pages 3309–3321, 2021.
+[36] Moshe Leshno, Vladimir Ya Lin, Allan Pinkus, and Shimon Schocken. Multilayer feedforward
+networks with a nonpolynomial activation function can approximate any function. Neural
+Networks, 6(6):861–867, 1993.
+12
+
+[37] Jingyao Li, Pengguang Chen, Zexin He, Shaozuo Yu, Shu Liu, and Jiaya Jia. Rethinking
+out-of-distribution (OOD) detection: Masked image modeling is all you need. In Proceedings
+of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages
+11578–11589, June 2023.
+[38] Jingyao Li, Pengguang Chen, and Jiaya Jia. Motcoder: Elevating large language models with
+modular of thought for challenging programming tasks, 2024.
+[39] Jingyao Li, Pengguang Chen, Shengju Qian, and Jiaya Jia. Tagclip: Improving discrimination
+ability of open-vocabulary semantic segmentation, 2023.
+[40] Jingyao Li, Pengguang Chen, Shaozuo Yu, Shu Liu, and Jiaya Jia. Bal: Balancing diversity and
+novelty for active learning. IEEE Transactions on Pattern Analysis and Machine Intelligence,
+46(5):3653–3664, 2024.
+[41] Shanda Li, Chong You, Guru Guruganesh, Joshua Ainslie, Santiago Ontanon, Manzil Zaheer,
+Sumit Sanghai, Yiming Yang, Sanjiv Kumar, and Srinadh Bhojanapalli. Functional interpolation
+for relative positions improves long context transformers. In International Conference on
+Learning Representations, 2023.
+[42] Tatiana Likhomanenko, Qiantong Xu, Gabriel Synnaeve, Ronan Collobert, and Alex Rogozhnikov. CAPE: Encoding relative positions with continuous augmented positional embeddings.
+Advances in Neural Information Processing Systems, 34:16079–16092, 2021.
+[43] Bin Lin, Tao Peng, Chen Zhang, Minmin Sun, Lanbo Li, Hanyu Zhao, Wencong Xiao, Qi Xu, Xiafei Qiu, Shen Li, et al. Infinite-LLM: Efficient LLM service for long context with distattention
+and distributed kvcache. arXiv preprint arXiv:2401.02669, 2024.
+[44] Jiacheng Liu, Sewon Min, Luke Zettlemoyer, Yejin Choi, and Hannaneh Hajishirzi. Infinigram: Scaling unbounded n-gram language models to a trillion tokens. arXiv preprint
+arXiv:2401.17377, 2024.
+[45] Jiaheng Liu, Zhiqi Bai, Yuanxing Zhang, Chenchen Zhang, Yu Zhang, Ge Zhang, Jiakai Wang,
+Haoran Que, Yukang Chen, Wenbo Su, et al. Eˆ 2-LLM: Efficient and extreme length extension
+of large language models. arXiv preprint arXiv:2401.06951, 2024.
+[46] Xiaoran Liu, Hang Yan, Chenxin An, Xipeng Qiu, and Dahua Lin. Scaling laws of RoPE-based
+extrapolation. In International Conference on Learning Representations, 2023.
+[47] Xuanqing Liu, Hsiang-Fu Yu, Inderjit Dhillon, and Cho-Jui Hsieh. Learning to encode position
+for transformer with continuous dynamical model. In International Conference on Machine
+Learning, pages 6327–6335. PMLR, 2020.
+[48] Shengjie Luo, Shanda Li, Tianle Cai, Di He, Dinglan Peng, Shuxin Zheng, Guolin Ke, Liwei
+Wang, and Tie-Yan Liu. Stable, fast and accurate: Kernelized attention with relative positional
+encoding. Advances in Neural Information Processing Systems, 34:22795–22807, 2021.
+[49] Adam Paszke, Sam Gross, Francisco Massa, Adam Lerer, James Bradbury, Gregory Chanan,
+Trevor Killeen, Zeming Lin, Natalia Gimelshein, Luca Antiga, et al. Pytorch: An imperative
+style, high-performance deep learning library. Advances in Neural Information Processing
+Systems, 32, 2019.
+[50] Bo Peng, Eric Alcaide, Quentin Anthony, Alon Albalak, Samuel Arcadinho, Huanqi Cao, Xin
+Cheng, Michael Chung, Matteo Grella, Kranthi Kiran GV, et al. RWKV: Reinventing RNNs for
+the transformer era. Findings of the Association for Computational Linguistics: EMNLP, 2023.
+[51] Bowen Peng, Jeffrey Quesnelle, Honglu Fan, and Enrico Shippole. YaRN: Efficient context window extension of large language models. In International Conference on Learning
+Representations, 2023.
+[52] Ofir Press, Noah Smith, and Mike Lewis. Train short, test long: Attention with linear biases
+enables input length extrapolation. In International Conference on Learning Representations,
+2021.
+13
+
+[53] Zhen Qin, Weigao Sun, Dong Li, Xuyang Shen, Weixuan Sun, and Yiran Zhong. Lightning
+attention-2: A free lunch for handling unlimited sequence lengths in large language models.
+arXiv preprint arXiv:2401.04658, 2024.
+[54] Zhen Qin, Yiran Zhong, and Hui Deng. Exploring transformer extrapolation. In Proceedings of
+the AAAI Conference on Artificial Intelligence, volume 38, pages 18897–18905, 2024.
+[55] Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, Ilya Sutskever, et al.
+Language models are unsupervised multitask learners. OpenAI blog, 1(8):9, 2019.
+[56] Colin Raffel, Noam Shazeer, Adam Roberts, Katherine Lee, Sharan Narang, Michael Matena,
+Yanqi Zhou, Wei Li, and Peter J Liu. Exploring the limits of transfer learning with a unified
+text-to-text transformer. Journal of Machine Learning Research, 21(140):1–67, 2020.
+[57] Anian Ruoss, Grégoire Delétang, Tim Genewein, Jordi Grau-Moya, Róbert Csordás, Mehdi
+Bennani, Shane Legg, and Joel Veness. Randomized positional encodings boost length generalization of transformers. In Proceedings of the 61st Annual Meeting of the Association for
+Computational Linguistics (Volume 2: Short Papers), pages 1889–1903, 2023.
+[58] Peter Shaw, Jakob Uszkoreit, and Ashish Vaswani. Self-attention with relative position representations. In Proceedings of the 2018 Conference of the North American Chapter of the
+Association for Computational Linguistics: Human Language Technologies, Volume 2 (Short
+Papers), pages 464–468, 2018.
+[59] Weijia Shi, Sewon Min, Maria Lomeli, Chunting Zhou, Margaret Li, Victoria Lin, Noah A Smith,
+Luke Zettlemoyer, Scott Yih, and Mike Lewis. In-context pretraining: Language modeling
+beyond document boundaries. International Conference on Learning Representations, 2023.
+[60] Konrad Staniszewski, Szymon Tworkowski, Sebastian Jaszczur, Henryk Michalewski, Łukasz
+Kuciński, and Piotr Miłoś. Structured packing in LLM training improves long context utilization.
+arXiv preprint arXiv:2312.17296, 2023.
+[61] Jianlin Su, Murtadha Ahmed, Luo Ao, Mingren Zhu, Yunfeng Liu, et al. Naive bayes-based
+context extension for large language models. arXiv preprint arXiv:2403.17552, 2024.
+[62] Jianlin Su, Murtadha Ahmed, Yu Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu. Roformer:
+Enhanced transformer with rotary position embedding. Neurocomputing, 568:127063, 2024.
+[63] Jiankai Sun, Chuanyang Zheng, Enze Xie, Zhengying Liu, Ruihang Chu, Jianing Qiu, Jiaqi
+Xu, Mingyu Ding, Hongyang Li, Mengzhe Geng, et al. A survey of reasoning with foundation
+models. arXiv preprint arXiv:2312.11562, 2023.
+[64] Yutao Sun, Li Dong, Barun Patra, Shuming Ma, Shaohan Huang, Alon Benhaim, Vishrav
+Chaudhary, Xia Song, and Furu Wei. A length-extrapolatable transformer. Proceedings of the
+61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers),
+pages 14590–14604, July 2023.
+[65] Alon Talmor, Jonathan Herzig, Nicholas Lourie, and Jonathan Berant. Commonsenseqa: A
+question answering challenge targeting commonsense knowledge. In Proceedings of the 2019
+Conference of the North American Chapter of the Association for Computational Linguistics:
+Human Language Technologies, Volume 1 (Long and Short Papers), pages 4149–4158, 2019.
+[66] Yi Tay, Dara Bahri, Liu Yang, Donald Metzler, and Da-Cheng Juan. Sparse sinkhorn attention.
+In International Conference on Machine Learning, pages 9438–9447. PMLR, 2020.
+[67] Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, et al. Llama: Open
+and efficient foundation language models. arXiv preprint arXiv:2302.13971, 2023.
+[68] Szymon Tworkowski, Konrad Staniszewski, Mikołaj Pacek, Yuhuai Wu, Henryk Michalewski,
+and Piotr Miłoś. Focused transformer: Contrastive training for context scaling. Advances in
+Neural Information Processing Systems, 36, 2024.
+14
+
+[69] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez,
+Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. Advances in Neural Information
+Processing Systems, 30, 2017.
+[70] Benyou Wang, Lifeng Shang, Christina Lioma, Xin Jiang, Hao Yang, Qun Liu, and Jakob Grue
+Simonsen. On position embeddings in BERT. In International Conference on Learning
+Representations, 2020.
+[71] Jie Wang, Tao Ji, Yuanbin Wu, Hang Yan, Tao Gui, Qi Zhang, Xuanjing Huang, and Xiaoling
+Wang. Length generalization of causal transformers without position encoding. arXiv preprint
+arXiv:2404.12224, 2024.
+[72] Suyuchen Wang, Ivan Kobyzev, Peng Lu, Mehdi Rezagholizadeh, and Bang Liu. Resonance
+RoPE: Improving context length generalization of large language models. arXiv preprint
+arXiv:2403.00071, 2024.
+[73] Y Wang, D Ma, and D Cai. With greater text comes greater necessity: Inference-time training
+helps long text generation. arXiv preprint arXiv:2401.11504, 2024.
+[74] BigScience Workshop, Teven Le Scao, Angela Fan, Christopher Akiki, Ellie Pavlick, Suzana
+Ilić, Daniel Hesslow, Roman Castagné, Alexandra Sasha Luccioni, François Yvon, et al. Bloom:
+A 176b-parameter open-access multilingual language model. arXiv preprint arXiv:2211.05100,
+2022.
+[75] Wenhao Wu, Yizhong Wang, Yao Fu, Xiang Yue, Dawei Zhu, and Sujian Li. Long context
+alignment with short instructions and synthesized positions. arXiv preprint arXiv:2405.03939,
+2024.
+[76] Chaojun Xiao, Pengle Zhang, Xu Han, Guangxuan Xiao, Yankai Lin, Zhengyan Zhang, Zhiyuan
+Liu, Song Han, and Maosong Sun. InfLLM: Unveiling the intrinsic capacity of LLMs for understanding extremely long sequences with training-free memory. arXiv preprint arXiv:2402.04617,
+2024.
+[77] Guangxuan Xiao, Yuandong Tian, Beidi Chen, Song Han, and Mike Lewis. Efficient streaming
+language models with attention sinks. In International Conference on Learning Representations,
+2024.
+[78] Jing Xiong, Zixuan Li, Chuanyang Zheng, Zhijiang Guo, Yichun Yin, Enze Xie, Zhicheng
+Yang, Qingxing Cao, Haiming Wang, Xiongwei Han, et al. Dq-lore: Dual queries with low rank
+approximation re-ranking for in-context learning. arXiv preprint arXiv:2310.02954, 2023.
+[79] Wenhan Xiong, Jingyu Liu, Igor Molybog, Hejia Zhang, Prajjwal Bhargava, Rui Hou, Louis
+Martin, Rashi Rungta, Karthik Abinav Sankararaman, Barlas Oguz, et al. Effective long-context
+scaling of foundation models. arXiv preprint arXiv:2309.16039, 2023.
+[80] Kai Yang, Jan Ackermann, Zhenyu He, Guhao Feng, Bohang Zhang, Yunzhen Feng, Qiwei
+Ye, Di He, and Liwei Wang. Do efficient transformers really save computation? International
+Conference on Machine Learning, 2024.
+[81] Howard Yen, Tianyu Gao, and Danqi Chen. Long-context language modeling with parallel
+context encoding. arXiv preprint arXiv:2402.16617, 2024.
+[82] Jingqing Zhang, Yao Zhao, Mohammad Saleh, and Peter Liu. PEGASUS: Pre-training with
+extracted gap-sentences for abstractive summarization. In International Conference on Machine
+Learning, pages 11328–11339. PMLR, 2020.
+[83] Zhenyu Zhang, Runjin Chen, Shiwei Liu, Zhewei Yao, Olatunji Ruwase, Beidi Chen, Xiaoxia
+Wu, and Zhangyang Wang. Found in the middle: How language models use long contexts better
+via plug-and-play positional encoding. arXiv preprint arXiv:2403.04797, 2024.
+[84] Chuanyang Zheng, Zhengying Liu, Enze Xie, Zhenguo Li, and Yu Li. Progressive-hint prompting improves reasoning in large language models. arXiv preprint arXiv:2304.09797, 2023.
+15
+
+[85] Hattie Zhou, Arwen Bradley, Etai Littwin, Noam Razin, Omid Saremi, Joshua M. Susskind,
+Samy Bengio, and Preetum Nakkiran. What algorithms can transformers learn? a study in
+length generalization. In International Conference on Learning Representations, 2024.
+[86] Yongchao Zhou, Uri Alon, Xinyun Chen, Xuezhi Wang, Rishabh Agarwal, and Denny
+Zhou. Transformers can achieve length generalization but not robustly. arXiv preprint
+arXiv:2402.09371, 2024.
+[87] Dawei Zhu, Nan Yang, Liang Wang, Yifan Song, Wenhao Wu, Furu Wei, and Sujian Li. PoSE:
+Efficient context window extension of llms via positional skip-wise training. In International
+Conference on Learning Representations, 2023.
+[88] Shiyi Zhu, Jing Ye, Wei Jiang, Qi Zhang, Yifan Wu, and Jianguo Li. CoCA: Fusing position
+embedding with collinear constrained attention for fine-tuning free context window extending.
+arXiv e-prints, pages arXiv–2309, 2023.
+
+16
+
+A
+
+Broader impacts
+
+Positive societal impacts. We propose a method for length extrapolation, which will be helpful for
+transformer-based models to process long context.
+Negative societal impacts.
+tions.
+
+B
+
+This method may be abused for other potential long-context applica-
+
+Model Configuration
+
+All experiments are conducted on 8 x A800 GPUs. The 125M model configuration is the following.
+Table 3: Model Configurations.
+125M
+350M
+Training sequence length
+Batch size
+Numer of iterations
+Dropout prob.
+Attention dropout prob.
+Attention head
+Feature dimension
+Layer number
+Optimizer
+Optimizer parameter betas
+Learning rate
+Precision
+
+17
+
+512
+32 × 8
+50k
+0.0
+0.0
+12
+768
+12
+Adam
+[0.9, 0.95]
+6e − 4
+float16
+
+512
+32 × 8
+50k
+0.0
+0.0
+16
+1024
+24
+Adam
+[0.9, 0.95]
+3e − 4
+float16
+
+C
+
+Appendix: The Effect of the Hidden Dimension DDAPE
+Hidden Size (Length 128)
+
+9
+
+8
+
+Validation perplexity
+
+Validation perplexity
+
+9
+7
+6
+5
+4
+3 128
+
+256
+
+512
+1024
+2048
+Validation sequence length
+
+4096
+
+8
+7
+6
+5
+4
+3 512
+
+8192
+
+Hidden Size (Length 512)
+
+Baseline
+DDAPE=4
+DDAPE=8
+DDAPE=16
+DDAPE=32
+DDAPE=64
+
+1024
+2048
+4096
+Validation sequence length
+
+8192
+
+Figure 6: The effect of DDAPE : the performance with training lengths 128 and 512 on the Arxiv dataset.
+The experiments are conducted with Alibi and DAPE-Alibi.
+
+D
+
+Experiments on Chomsky Hierarchy Evaluation Benchmark (CHE)
+
+Following the framework established by [21, 57], we conduct evaluations of our DAPE on a suite
+of tasks derived from the domain of formal language recognition. These tasks include modular
+arithmetic, reversing and duplicating strings, binary operations and bucket sort. Based on the
+Chomsky hierarchy [16], these tasks are categorized into distinct classes: Regular (R), Context-Free,
+Context-Sensitive (CS), and Recursively Enumerable. Each class aligns with specific computational
+models: Regular tasks are solvable using Finite-State Automata (FSA); Deterministic Context-Free
+tasks can be addressed by an FSA equipped with a deterministic stack; and Context-Sensitive tasks
+require an FSA complemented by access to a bounded tape.
+Table 4: The example of different tasks. ††† denotes permutation-invariant tasks, which are expected
+to be solved without positional information. More explanation of tasks can be found in [21].
+
+Level
+
+Task
+
+Example Input
+
+Example Output
+
+Regular
+
+E VEN PAIRS
+M ODULAR A RITHMETIC (S IMPLE )
+PARITY C HECK†††
+C YCLE NAVIGATION†††
+
+aabba
+1+2−4
+aaabba
+011210
+
+True
+4
+True
+2
+
+DCF
+
+S TACK M ANIPULATION
+R EVERSE S TRING
+M ODULAR A RITHMETIC
+S OLVE E QUATION
+
+abbaa POP PUSH a POP
+aabba
+−(1 − 2) · (4 − 3 · (−2))
+−(x − 2) · (4 − 3 · (−2))
+
+abba
+abbaa
+0
+1
+
+D UPLICATE S TRING
+M ISSING D UPLICATE
+O DDS F IRST
+B INARY A DDITION
+C OMPUTE S QRT
+B UCKET S ORT†††
+
+abaab
+10011021
+aaabaa
+10010 + 101
+100010
+421302214
+
+abaababaab
+0
+aaaaba
+10111
+110
+011222344
+
+CS
+
+Problem Setting Building upon the framework proposed by Ruoss et al. (2023) [57], we utilize the
+encoder-only configuration of the original sequence-to-sequence Transformer model, as delineated
+by Vaswani et al. (2017) [69]. In scenarios that necessitate a multi-token output sequence y, such
+as the task of string duplication, we extend the input sequence by appending |y| placeholder tokens.
+Subsequently, we compute the entire Transformer output from this augmented sequence without
+resorting to autoregressive sampling techniques. Training is conducted on sequences whose lengths
+are uniformly distributed, sampled from U (1, N ), with N set to 40. Evaluation is performed on
+sequences that vary in length from N + 1 to M , where M equals 500. The implemented architecture
+comprises 5 layers, 8 attention heads, and a feature dimension of 256. The dimension DDAPE is
+established at 64, while the maximum randomized position L is set to 2048.
+18
+
+E
+
+The Error Bar and Significance Value
+
+Table 5: The perplexity performances on the Arxiv dataset when the training length is 512 and
+running with three random seeds.
+
+Method
+
+512
+1024
+2048
+4096
+8192
+mean 4.5755 45.1974 134.1615 222.3333 265.4545
+RoPE
+std 0.0216 12.2241 21.8522 22.5955 20.3862
+mean 4.5547 4.3730 12.1017 163.9289 595.0829
+T5’s bias
+std 0.0204 0.0747 6.5327 136.8294 306.3671
+mean 4.6146 4.5475 4.8693
+5.0278
+4.7679
+Alibi
+std 0.0278 0.0990 0.1246
+0.1845
+0.2196
+mean 4.5262 4.1921 4.1068
+4.1315
+4.0013
+DAPE-Alibi
+std 0.0270 0.0653 0.0885
+0.0617
+0.2708
+mean 4.5817 4.3504 5.4438
+8.7511 13.3524
+Kerple
+std 0.0252 0.0526 0.3187
+1.1066
+2.4109
+mean 4.5123 4.1716 4.0505
+4.0033
+3.8642
+DAPE-Kerple
+std 0.0251 0.0637 0.0973
+0.0333
+0.2342
+mean 4.5741 4.6953 30.1164 165.5394 308.6173
+FIRE
+std 0.0227 0.1125 4.4317 41.2065 78.4652
+mean 4.4879 4.1990 4.2826
+4.7983
+6.1623
+DAPE-FIRE
+std 0.0206 0.0619 0.0709
+0.1701
+0.9226
+According to Table 5, the performances of different methods are evaluated based on perplexity
+across various validation lengths ranging from 512 to 8192. The results indicate that DAPE-Alibi
+consistently outperforms the Alibi method, DAPE-Kerple surpasses Kerple, and DAPE-FIRE shows
+better performance than FIRE, all with p-values less than 0.05, suggesting significant improvements.
+DAPE-Alibi demonstrates lower perplexity values compared to Alibi at all lengths, indicating more
+effective learning and generalization. Similarly, DAPE-Kerple shows significant improvements over
+Kerple, especially at larger lengths, where the gap in performance widens. The DAPE-FIRE method
+also shows notable enhancements over the FIRE method, particularly at higher lengths where standard
+FIRE struggles with increased perplexity.
+Moreover, DAPE-Alibi, DAPE-Kerple, and DAPE-FIRE not only perform better than their respective
+original methods but also show superiority over RoPE and T5’s bias across all validation lengths. This
+suggests that the modifications implemented in DAPE versions provide a more robust and generalized
+model, capable of maintaining lower perplexity and thus better performance on the Arxiv dataset.
+In conclusion, the statistical analysis confirms that the proposed DAPE variations offer significant
+improvements in perplexity performance, thereby validating their effectiveness in comparison to their
+original counterparts and other baseline methods.
+
+F
+
+Data-Adaptive Related Position Encoding Performance Comparison
+
+Table 6: The performance comparison between data-related position encoding, with dataset Books3
+and training length 128.
+
+Method
+
+128
+
+256
+
+512
+
+1024
+
+2048
+
+4096
+
+8192
+
+Transformer-XL
+
+31.57
+
+28.49
+
+26.07
+
+26.98
+
+27.90
+
+32.76
+
+41.12
+
+CoPE
+
+31.61
+
+28.41
+
+25.79
+
+27.96
+
+33.80
+
+54.08
+
+90.66
+
+DAPE-Kerple
+
+31.49
+
+28.27
+
+24.93
+
+24.31
+
+23.34
+
+24.38
+
+25.01
+
+19
+
+According to the experiment, the transformer-xl achieves good performance on length extrapolation.
+Therefore, this also suggests that the position encoding should interact with attention/query/key to
+further improve the performance.
+
+G
+
+Ablation Study on Bias Matrix
+Table 7: Books Dataset Results: Train Length 512
+
+512
+
+1024
+
+2048
+
+4096
+
+8192
+
+19.68
+
+19.06
+
+20.44
+
+28.34
+
+39.31
+
+QK + B + f (B)
+
+19.64
+
+18.83
+
+18.49
+
+20.62
+
+23.49
+
+QK T + B + f (QK T , B)
+
+19.22
+
+18.22
+
+17.15
+
+17.63
+
+17.88
+
+QK T + B (baseline)
+T
+
+We further conduct an ablation study on the f , proving that f help enhance the bias matrix. DAPE
+improves the bias matrix for Af inal , while the Af inal is used to calculate Af inal K. For the unseen
+position, the B partially could handle it (FIRE changes the problem to interpolation), but is not
+accurate enough so that DAPE helps enhance the bias matrix B via attention score. The experiment
+suggests two points: 1) The DAPE f (QK T , B) is better than naive f (B), suggesting that the contextadaptive is important. 2) The QK T + B + f (B) is better than QK T + B, suggesting that benefiting
+from improving the expressiveness of the bias matrix.
+
+H
+
+The result on 2.7B and 6.7B
+Table 8: Model Size and Method Comparison with Training Length 512
+
+Model Size
+2.7B
+
+Method
+RoPE
+RPE
+Alibi
+Kerple
+DAPE-Kerple
+
+512
+21.01
+21.10
+21.23
+21.14
+20.52
+
+1024
+25.00
+21.88
+22.17
+22.08
+21.01
+
+2048
+48.13
+23.59
+22.91
+23.38
+20.23
+
+4096
+160.59
+33.23
+23.22
+27.21
+19.57
+
+Table 9: Model Size and Method Comparison with Training Length 512
+
+Model Size
+6.7B
+
+Method
+RoPE
+RPE
+Alibi
+Kerple
+DAPE-Kerple
+
+512
+20.86
+20.79
+20.79
+20.71
+20.09
+
+1024
+22.27
+21.60
+21.63
+21.57
+20.54
+
+2048
+28.01
+22.32
+22.45
+22.07
+19.83
+
+According to the result, we can find that the proposed DAPE still works well, whatever the model size
+is 2.7B or 6.7B. With 2.7B model size, RoPE achieves 21.01 on evaluation length 512 and 160.50 on
+evaluation 4096, while our DAPE-Kerple achieves 20.52 and 19.57 respectively. Also, DAPE-Kerple
+achieves the best performance, whatever the model size is 2.7B or 6.7B from evaluation length 512 to
+8192. This suggests that our proposed DAPE has great scalability.
+
+20
+
+I
+
+DAPE Visualization
+
+The model is trained with DAPE-Kerple on length 512.
+Visualization on length 512
+
+2
+
+0
+
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 1: Attention (Layer 2)
+
+8
+
+500
+
+0
+
+Kerple Positional Bias
+
+Attention Value
+
+4
+2
+0
+2
+4
+6
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+Example 1: Attention (Layer 3)
+
+12.5
+
+Kerple Positional Bias
+
+Attention Value
+
+7.5
+5.0
+2.5
+0.0
+2.5
+5.0
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+400
+
+Relative Distance
+Example 1: Kerple Bias (Layer 2)
+
+2
+3
+4
+5
+0
+
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 1: Kerple Bias (Layer 3)
+
+2
+3
+4
+
+0
+
+Example 1: Attention (Layer 4)
+
+0
+
+Kerple Positional Bias
+
+5.0
+2.5
+0.0
+2.5
+5.0
+7.5
+0
+
+100
+
+200
+
+300
+
+400
+
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 1: Kerple Bias (Layer 4)
+
+Relative Distance
+Example 1: Attention (Layer 5)
+
+2
+3
+4
+
+0
+
+Kerple Positional Bias
+
+6
+4
+2
+0
+2
+4
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 1: DAPE Bias (Layer 2)
+
+0
+5
+10
+15
+20
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 1: DAPE Bias (Layer 3)
+0
+5
+10
+15
+20
+25
+30
+35
+
+500
+
+100
+
+200
+
+300
+
+400
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 1: DAPE Bias (Layer 4)
+
+5
+0
+5
+10
+15
+20
+
+Relative Distance
+Example 1: Kerple Bias (Layer 5)
+
+500
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+5
+
+0
+
+100
+
+25
+
+0
+
+8
+
+25
+
+5
+
+500
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+500
+
+20
+
+0
+
+5
+
+10.0
+
+15
+
+500
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+500
+
+7.5
+
+Attention Value
+
+300
+
+5
+
+7.5
+
+Attention Value
+
+200
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+0
+
+10.0
+
+100
+
+1
+
+6
+
+500
+
+5
+10
+
+30
+
+0
+
+6
+
+6
+
+3
+4
+
+3
+
+8
+
+2
+
+DAPE Positional Bias
+
+0
+1
+
+1
+
+Example 1: DAPE Bias (Layer 1)
+0
+
+DAPE Positional Bias
+
+1
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+DAPE Positional Bias
+
+Kerple Positional Bias
+
+Attention Value
+
+2
+
+4
+
+Example 1: Kerple Bias (Layer 1)
+
+0
+
+DAPE Positional Bias
+
+Example 1: Attention (Layer 1)
+3
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+0
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 1: DAPE Bias (Layer 5)
+
+0
+5
+10
+15
+20
+
+0
+
+Figure 7: Evaluation Length 512 Example 1: Part 1
+
+21
+
+100
+
+5
+
+DAPE Positional Bias
+
+I.1
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+2.5
+0.0
+2.5
+5.0
+
+0
+
+8
+
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 1: Attention (Layer 7)
+
+3
+
+100
+
+2
+0
+2
+4
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 1: Kerple Bias (Layer 7)
+
+0
+
+4
+
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 1: Attention (Layer 8)
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+
+500
+
+100
+
+Kerple Positional Bias
+
+2
+0
+2
+4
+6
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 1: Kerple Bias (Layer 8)
+
+0
+
+4
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 1: Attention (Layer 9)
+
+2
+3
+4
+5
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 1: Kerple Bias (Layer 9)
+
+0
+
+Kerple Positional Bias
+
+4
+6
+
+400
+
+500
+
+10
+15
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 1: DAPE Bias (Layer 8)
+2.5
+0.0
+2.5
+5.0
+7.5
+10.0
+
+500
+
+2
+3
+4
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 1: DAPE Bias (Layer 9)
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+0
+
+0
+2
+4
+6
+8
+
+0
+
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 1: Attention (Layer 10)
+
+10.0
+
+500
+
+0
+
+100
+
+300
+
+400
+
+Relative Distance
+Example 1: Kerple Bias (Layer 10)
+
+0.0
+
+7.5
+
+200
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+Kerple Positional Bias
+
+0.5
+
+5.0
+2.5
+0.0
+2.5
+5.0
+
+1.0
+1.5
+2.0
+2.5
+3.0
+3.5
+
+7.5
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+4.0
+
+500
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 1: DAPE Bias (Layer 10)
+
+5
+
+DAPE Positional Bias
+
+Attention Value
+
+0
+2
+
+300
+
+12.5
+
+0
+
+4
+2
+
+200
+
+Relative Distance
+
+5
+
+500
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+500
+
+100
+
+0
+
+DAPE Positional Bias
+
+100
+
+7.5
+
+Example 1: DAPE Bias (Layer 7)
+
+6
+0
+
+5.0
+
+20
+
+0
+
+6
+
+0.0
+2.5
+
+0
+
+DAPE Positional Bias
+
+0
+
+2.5
+
+500
+
+4
+
+8
+
+Attention Value
+
+Example 1: DAPE Bias (Layer 6)
+5.0
+
+10.0
+
+0
+
+Kerple Positional Bias
+
+Attention Value
+
+2
+
+500
+
+6
+
+Attention Value
+
+1
+
+4
+
+7.5
+
+8
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+DAPE Positional Bias
+
+Kerple Positional Bias
+
+Attention Value
+
+5.0
+
+6
+
+Example 1: Kerple Bias (Layer 6)
+
+0
+
+DAPE Positional Bias
+
+Example 1: Attention (Layer 6)
+7.5
+
+0
+5
+10
+15
+20
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+0
+
+Figure 8: Evaluation Length 512 Example 1: Part 2
+
+22
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Kerple Positional Bias
+
+4
+
+Attention Value
+
+Example 1: Kerple Bias (Layer 11)
+
+0
+
+2
+0
+2
+4
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+
+Example 1: DAPE Bias (Layer 11)
+0
+
+DAPE Positional Bias
+
+Example 1: Attention (Layer 11)
+6
+
+5
+10
+15
+
+6
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 1: Attention (Layer 12)
+
+5
+
+500
+
+6
+
+100
+
+Kerple Positional Bias
+
+2
+0
+2
+4
+6
+
+200
+
+300
+
+Relative Distance
+
+400
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+0.5
+1.0
+1.5
+2.0
+2.5
+3.0
+3.5
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+20
+
+500
+
+0
+
+100
+
+Example 1: Kerple Bias (Layer 12)
+
+0.0
+
+4
+
+Attention Value
+
+0
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 1: DAPE Bias (Layer 12)
+0.0
+
+DAPE Positional Bias
+
+0
+
+2.5
+5.0
+7.5
+10.0
+12.5
+15.0
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+0
+
+Figure 9: Evaluation Length 512 Example 1: Part 3
+
+23
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+4
+6
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 2: Attention (Layer 2)
+
+0
+
+Kerple Positional Bias
+
+5.0
+2.5
+0.0
+2.5
+5.0
+7.5
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+Example 2: Attention (Layer 3)
+
+Kerple Positional Bias
+
+0
+5
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+3
+4
+5
+0
+
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 2: Kerple Bias (Layer 3)
+
+1
+2
+3
+4
+
+Kerple Positional Bias
+
+0
+5
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 2: Kerple Bias (Layer 4)
+
+2
+3
+4
+
+0
+
+Kerple Positional Bias
+
+5.0
+2.5
+0.0
+2.5
+5.0
+7.5
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 2: DAPE Bias (Layer 2)
+
+0
+5
+10
+15
+20
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 2: DAPE Bias (Layer 3)
+
+5
+0
+5
+10
+15
+20
+25
+
+500
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 2: DAPE Bias (Layer 4)
+5
+0
+5
+10
+15
+20
+25
+
+0
+
+Example 2: Attention (Layer 5)
+
+7.5
+
+100
+
+5
+
+500
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+500
+
+25
+0
+
+5
+0
+
+20
+
+30
+
+0
+
+5
+
+15
+
+500
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+0
+
+Example 2: Attention (Layer 4)
+
+Attention Value
+
+2
+
+500
+
+10
+
+Attention Value
+
+Relative Distance
+Example 2: Kerple Bias (Layer 2)
+
+5
+
+10
+
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 2: Kerple Bias (Layer 5)
+
+500
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 2: DAPE Bias (Layer 5)
+5
+0
+5
+10
+15
+
+5
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+0
+
+500
+
+Example 2: Attention (Layer 6)
+
+0
+
+12.5
+
+Kerple Positional Bias
+
+10.0
+
+Attention Value
+
+400
+
+DAPE Positional Bias
+
+Attention Value
+
+5
+
+300
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+0
+
+10
+
+200
+
+1
+
+6
+
+500
+
+100
+
+7.5
+5.0
+2.5
+0.0
+2.5
+
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 2: Kerple Bias (Layer 6)
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+
+5.0
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+500
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 2: DAPE Bias (Layer 6)
+5.0
+
+DAPE Positional Bias
+
+Attention Value
+
+7.5
+
+5
+10
+
+30
+
+0
+
+10.0
+
+7.5
+
+3
+4
+
+8
+
+10.0
+
+2
+
+DAPE Positional Bias
+
+2
+
+1
+
+Example 2: DAPE Bias (Layer 1)
+0
+
+DAPE Positional Bias
+
+0
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+DAPE Positional Bias
+
+Kerple Positional Bias
+
+Attention Value
+
+2
+
+10
+
+Example 2: Kerple Bias (Layer 1)
+
+0
+
+DAPE Positional Bias
+
+Example 2: Attention (Layer 1)
+4
+
+2.5
+0.0
+2.5
+5.0
+7.5
+10.0
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+0
+
+Figure 10: Evaluation Length 512 Example 2: Part 1
+
+24
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Kerple Positional Bias
+
+5.0
+2.5
+0.0
+2.5
+5.0
+200
+
+300
+
+Relative Distance
+
+400
+
+3
+
+0
+
+500
+
+100
+
+Kerple Positional Bias
+
+7.5
+5.0
+2.5
+0.0
+2.5
+5.0
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 2: Kerple Bias (Layer 8)
+
+0
+
+10.0
+
+5
+10
+15
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+5
+
+0
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 2: Attention (Layer 9)
+
+100
+
+Kerple Positional Bias
+
+6
+4
+2
+0
+2
+4
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 2: Kerple Bias (Layer 9)
+
+0
+
+8
+
+300
+
+400
+
+500
+
+0.0
+2.5
+5.0
+7.5
+10.0
+12.5
+
+0
+
+500
+
+200
+
+Relative Distance
+
+2.5
+
+500
+
+2
+3
+4
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 2: DAPE Bias (Layer 9)
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+0
+
+0
+
+DAPE Positional Bias
+
+100
+
+100
+
+Example 2: DAPE Bias (Layer 8)
+
+6
+0
+
+2
+4
+6
+8
+
+0
+
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 2: Attention (Layer 10)
+
+500
+
+0
+
+0.0
+
+6
+
+0.5
+
+Kerple Positional Bias
+
+8
+4
+2
+0
+2
+4
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+Example 2: Attention (Layer 11)
+
+1.0
+1.5
+2.0
+2.5
+3.0
+
+0
+
+0
+
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 2: Kerple Bias (Layer 11)
+
+Kerple Positional Bias
+
+5.0
+2.5
+0.0
+2.5
+5.0
+
+1
+2
+3
+4
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+5
+0
+5
+10
+15
+20
+
+500
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+10.0
+7.5
+
+0
+
+Example 2: DAPE Bias (Layer 10)
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+4.0
+
+500
+
+500
+
+Example 2: Kerple Bias (Layer 10)
+
+3.5
+
+6
+
+Attention Value
+
+0
+
+500
+
+DAPE Positional Bias
+
+Attention Value
+
+2
+
+DAPE Positional Bias
+
+100
+
+Example 2: Attention (Layer 8)
+
+12.5
+
+Attention Value
+
+1
+
+Example 2: DAPE Bias (Layer 7)
+
+5
+
+4
+0
+
+Attention Value
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 2: DAPE Bias (Layer 11)
+0
+
+DAPE Positional Bias
+
+Attention Value
+
+7.5
+
+6
+
+Example 2: Kerple Bias (Layer 7)
+
+0
+
+DAPE Positional Bias
+
+Example 2: Attention (Layer 7)
+10.0
+
+5
+10
+15
+
+7.5
+100
+
+200
+
+300
+
+400
+
+Relative Distance
+Example 2: Attention (Layer 12)
+
+5
+
+500
+
+6
+
+0.0
+
+4
+
+0.5
+
+2
+0
+2
+4
+6
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+Example 2: Kerple Bias (Layer 12)
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1.0
+1.5
+2.0
+2.5
+3.0
+3.5
+
+8
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+20
+
+500
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Example 2: DAPE Bias (Layer 12)
+
+2
+0
+
+DAPE Positional Bias
+
+0
+
+Kerple Positional Bias
+
+Attention Value
+
+10.0
+
+2
+4
+6
+8
+10
+12
+14
+
+0
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+0
+
+Figure 11: Evaluation Length 512 Example 2: Part 2
+
+25
+
+100
+
+200
+
+300
+
+Relative Distance
+
+400
+
+500
+
+Visualization on length 2048
+
+1
+0
+1
+2
+
+0
+
+500
+
+1000
+
+1500
+
+3
+4
+
+Relative Distance
+
+0
+
+Kerple Positional Bias
+
+10.0
+7.5
+5.0
+2.5
+0.0
+2.5
+5.0
+
+Example 1: DAPE Bias (Layer 1)
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 1: Kerple Bias (Layer 2)
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+5
+6
+
+1500
+
+Relative Distance
+
+Example 1: Attention (Layer 3)
+
+0
+
+Kerple Positional Bias
+
+5
+0
+5
+10
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+Example 1: Attention (Layer 4)
+
+5
+0
+5
+
+1000
+
+1500
+
+Relative Distance
+Example 1: Kerple Bias (Layer 3)
+
+0
+
+10
+
+500
+
+1000
+
+1500
+
+2
+3
+4
+5
+6
+
+Relative Distance
+Example 1: Attention (Layer 5)
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 1: Kerple Bias (Layer 4)
+
+2
+3
+4
+5
+
+Kerple Positional Bias
+
+4
+2
+0
+2
+4
+
+500
+
+1000
+
+1500
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Example 1: DAPE Bias (Layer 3)
+0
+10
+20
+30
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Example 1: DAPE Bias (Layer 4)
+5
+
+Relative Distance
+Example 1: Kerple Bias (Layer 5)
+
+0
+5
+10
+15
+20
+25
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+5
+
+35
+
+2000
+
+6
+
+6
+
+15
+
+30
+
+0
+
+6
+
+10
+
+2000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+0
+
+8
+
+0
+
+40
+
+0
+
+1
+
+2000
+
+2000
+
+5
+
+0
+
+6
+
+10
+
+1500
+
+5
+
+2000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+0
+
+Kerple Positional Bias
+
+10
+
+500
+
+1
+
+7
+
+2000
+
+1000
+
+Relative Distance
+
+20
+
+0
+
+2000
+
+500
+
+Example 1: DAPE Bias (Layer 2)
+
+10
+
+DAPE Positional Bias
+
+1000
+
+30
+
+0
+
+DAPE Positional Bias
+
+500
+
+20
+
+2000
+
+7
+0
+
+10
+
+40
+
+0
+
+Example 1: Attention (Layer 2)
+
+Attention Value
+
+2
+
+2000
+
+12.5
+
+Attention Value
+
+1
+
+5
+
+3
+
+Attention Value
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+DAPE Positional Bias
+
+Kerple Positional Bias
+
+Attention Value
+
+2
+
+Attention Value
+
+Example 1: Kerple Bias (Layer 1)
+
+0
+
+DAPE Positional Bias
+
+Example 1: Attention (Layer 1)
+3
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Example 1: DAPE Bias (Layer 5)
+5
+
+DAPE Positional Bias
+
+I.2
+
+0
+5
+10
+15
+20
+25
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+0
+
+Figure 12: Evaluation Length 2048 Example 1: Part 1
+
+26
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+2.5
+0.0
+2.5
+5.0
+7.5
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 1: Attention (Layer 7)
+
+Kerple Positional Bias
+
+2
+0
+2
+4
+6
+1000
+
+1500
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 1: Kerple Bias (Layer 7)
+
+Relative Distance
+Example 1: Attention (Layer 8)
+
+2
+3
+4
+
+0
+5
+500
+
+1000
+
+1500
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 1: Kerple Bias (Layer 8)
+
+Relative Distance
+
+2
+3
+4
+5
+6
+0
+
+Example 1: Attention (Layer 9)
+
+7.5
+
+0
+
+Kerple Positional Bias
+
+5.0
+2.5
+0.0
+2.5
+5.0
+7.5
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 1: Attention (Layer 10)
+
+2000
+
+Kerple Positional Bias
+
+6
+4
+2
+0
+2
+4
+6
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+1000
+
+1500
+
+Relative Distance
+Example 1: Kerple Bias (Layer 9)
+
+2
+3
+4
+5
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 1: Kerple Bias (Layer 10)
+
+1500
+
+2000
+
+5
+10
+15
+
+0
+
+2
+3
+4
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Example 1: DAPE Bias (Layer 8)
+
+5
+0
+5
+10
+15
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+2
+0
+2
+4
+6
+8
+
+2000
+
+2000
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Example 1: DAPE Bias (Layer 10)
+5
+0
+5
+10
+15
+20
+0
+
+Figure 13: Evaluation Length 2048 Example 1: Part 2
+
+27
+
+500
+
+Example 1: DAPE Bias (Layer 9)
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+5
+
+1000
+
+Relative Distance
+
+0
+
+2000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+0
+
+8
+
+500
+
+1
+
+6
+
+500
+
+Example 1: DAPE Bias (Layer 7)
+
+5
+
+2000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+2000
+
+7.5
+10.0
+0
+
+7
+0
+
+5.0
+
+20
+
+0
+
+0
+
+5
+
+0.0
+2.5
+
+2000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+2000
+
+2.5
+
+12.5
+
+0
+
+DAPE Positional Bias
+
+500
+
+Kerple Positional Bias
+
+Attention Value
+
+5
+
+5
+0
+
+10
+
+Attention Value
+
+4
+
+5.0
+
+DAPE Positional Bias
+
+Attention Value
+
+4
+
+Attention Value
+
+3
+
+0
+
+6
+
+8
+
+2
+
+6
+
+2000
+
+8
+
+8
+
+1
+
+Example 1: DAPE Bias (Layer 6)
+
+7.5
+
+DAPE Positional Bias
+
+Attention Value
+
+5.0
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+DAPE Positional Bias
+
+Kerple Positional Bias
+
+7.5
+
+0
+
+Example 1: Kerple Bias (Layer 6)
+
+0
+
+DAPE Positional Bias
+
+Example 1: Attention (Layer 6)
+10.0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Kerple Positional Bias
+
+7.5
+5.0
+2.5
+0.0
+2.5
+5.0
+7.5
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+5
+
+0
+
+8
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 1: Attention (Layer 12)
+
+0
+
+2000
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 1: Kerple Bias (Layer 12)
+
+Kerple Positional Bias
+
+Attention Value
+
+4
+2
+0
+2
+4
+6
+8
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+1
+2
+3
+4
+5
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+10
+15
+
+2000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+6
+
+0
+5
+
+20
+
+6
+
+10.0
+
+2000
+
+Example 1: DAPE Bias (Layer 11)
+
+5
+
+0
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Example 1: DAPE Bias (Layer 12)
+
+5
+10
+15
+20
+
+0
+
+Figure 14: Evaluation Length 2048 Example 1: Part 3
+
+28
+
+500
+
+0
+
+DAPE Positional Bias
+
+Attention Value
+
+Example 1: Kerple Bias (Layer 11)
+
+0
+
+DAPE Positional Bias
+
+Example 1: Attention (Layer 11)
+
+10.0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+0
+2
+4
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+Kerple Positional Bias
+
+5.0
+2.5
+0.0
+
+Example 2: DAPE Bias (Layer 1)
+0
+
+1000
+
+1500
+
+Relative Distance
+Example 2: Kerple Bias (Layer 2)
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+5
+6
+
+Relative Distance
+
+Example 2: Attention (Layer 3)
+
+10.0
+
+0
+
+Kerple Positional Bias
+
+7.5
+5.0
+2.5
+0.0
+2.5
+5.0
+7.5
+10.0
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+Example 2: Attention (Layer 4)
+
+15
+
+Kerple Positional Bias
+
+5
+0
+5
+10
+
+1000
+
+1500
+
+Relative Distance
+Example 2: Kerple Bias (Layer 3)
+
+1000
+
+1500
+
+Relative Distance
+
+2
+3
+4
+5
+6
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 2: Kerple Bias (Layer 4)
+
+2
+3
+4
+5
+
+0
+
+Kerple Positional Bias
+
+7.5
+5.0
+2.5
+0.0
+2.5
+5.0
+7.5
+500
+
+1000
+
+1500
+
+Relative Distance
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 2: Kerple Bias (Layer 5)
+
+2
+3
+4
+5
+
+Example 2: Attention (Layer 6)
+
+0
+
+Kerple Positional Bias
+
+5.0
+2.5
+0.0
+2.5
+5.0
+7.5
+10.0
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 2: Kerple Bias (Layer 6)
+
+2000
+
+20
+30
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Example 2: DAPE Bias (Layer 4)
+
+10
+0
+10
+20
+30
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Example 2: DAPE Bias (Layer 5)
+5
+0
+5
+10
+15
+20
+
+2000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+5
+6
+
+1500
+
+25
+
+0
+
+7.5
+
+1000
+
+Relative Distance
+
+10
+
+2000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+2000
+
+500
+
+Example 2: DAPE Bias (Layer 3)
+
+6
+0
+
+15
+
+2000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+0
+
+Example 2: Attention (Layer 5)
+
+10.0
+
+10
+
+40
+
+0
+
+1
+
+2000
+
+0
+
+0
+
+DAPE Positional Bias
+
+500
+
+2000
+
+5
+
+0
+
+6
+0
+
+1500
+
+5
+
+2000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+0
+
+10
+
+500
+
+1
+
+7
+
+2000
+
+1000
+
+Relative Distance
+
+20
+
+0
+
+2000
+
+500
+
+Example 2: DAPE Bias (Layer 2)
+
+10
+
+DAPE Positional Bias
+
+1500
+
+30
+
+0
+
+DAPE Positional Bias
+
+1000
+
+20
+
+2000
+
+7
+500
+
+10
+
+40
+
+500
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+0
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+5
+0
+5
+10
+15
+
+0
+
+Figure 15: Evaluation Length 2048 Example 2: Part 1
+
+29
+
+500
+
+Example 2: DAPE Bias (Layer 6)
+
+DAPE Positional Bias
+
+Attention Value
+
+7.5
+
+0
+
+Attention Value
+
+4
+
+0
+
+5.0
+
+Attention Value
+
+3
+
+0
+
+Example 2: Attention (Layer 2)
+
+2.5
+
+Attention Value
+
+2
+
+2000
+
+10.0
+
+Attention Value
+
+1
+
+5
+
+12.5
+
+10.0
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+DAPE Positional Bias
+
+Kerple Positional Bias
+
+Attention Value
+
+2
+
+6
+
+Example 2: Kerple Bias (Layer 1)
+
+0
+
+DAPE Positional Bias
+
+Example 2: Attention (Layer 1)
+
+4
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+6
+
+1
+
+4
+2
+0
+2
+4
+1000
+
+1500
+
+Relative Distance
+Example 2: Attention (Layer 8)
+
+0
+
+0
+
+6
+
+1
+
+4
+2
+0
+2
+4
+
+1500
+
+Relative Distance
+Example 2: Kerple Bias (Layer 8)
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+2
+3
+4
+5
+6
+
+10
+15
+20
+
+2000
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Example 2: DAPE Bias (Layer 8)
+
+1500
+
+2000
+
+0
+
+0
+
+2
+0
+2
+4
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 2: Attention (Layer 10)
+
+0
+5
+10
+15
+
+4
+5
+
+1
+
+Kerple Positional Bias
+
+4
+
+2
+4
+6
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 2: Attention (Layer 11)
+
+1
+
+Kerple Positional Bias
+
+2
+
+4
+6
+
+1000
+
+1500
+
+Relative Distance
+Example 2: Kerple Bias (Layer 10)
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 2: Kerple Bias (Layer 11)
+
+3
+4
+5
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Example 2: DAPE Bias (Layer 9)
+2
+0
+2
+4
+6
+8
+10
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Example 2: DAPE Bias (Layer 10)
+
+5
+0
+5
+10
+15
+20
+25
+
+2000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+2
+
+0
+
+2000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+4
+
+0
+
+0
+
+500
+
+3
+
+4
+
+2
+
+0
+
+2
+
+5
+
+2000
+
+2000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+3
+
+0
+
+0
+
+1500
+
+2
+
+6
+
+2
+
+1000
+
+Relative Distance
+Example 2: Kerple Bias (Layer 9)
+
+1
+
+6
+
+2000
+
+500
+
+DAPE Positional Bias
+
+1000
+
+Relative Distance
+Example 2: Attention (Layer 9)
+
+DAPE Positional Bias
+
+500
+
+Kerple Positional Bias
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Example 2: DAPE Bias (Layer 11)
+0
+5
+10
+15
+20
+
+6
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 2: Attention (Layer 12)
+
+2000
+
+0
+
+0
+
+6
+
+Kerple Positional Bias
+
+4
+2
+0
+2
+4
+
+500
+
+1000
+
+1500
+
+Relative Distance
+Example 2: Kerple Bias (Layer 12)
+
+2000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Example 2: DAPE Bias (Layer 12)
+0.0
+2.5
+
+DAPE Positional Bias
+
+Attention Value
+
+1000
+
+DAPE Positional Bias
+
+0
+
+4
+
+8
+
+500
+
+5
+
+7
+
+6
+
+Attention Value
+
+4
+
+8
+
+8
+
+Attention Value
+
+3
+
+2000
+
+6
+
+Attention Value
+
+2
+
+Example 2: DAPE Bias (Layer 7)
+0
+
+DAPE Positional Bias
+
+500
+
+Kerple Positional Bias
+
+Attention Value
+
+0
+
+6
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+5
+
+6
+
+8
+
+Example 2: Kerple Bias (Layer 7)
+
+DAPE Positional Bias
+
+0
+
+Kerple Positional Bias
+
+Attention Value
+
+Example 2: Attention (Layer 7)
+8
+
+5.0
+7.5
+10.0
+12.5
+15.0
+17.5
+
+6
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+5
+
+0
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+20.0
+
+0
+
+Figure 16: Evaluation Length 2048 Example 2: Part 2
+
+30
+
+500
+
+1000
+
+1500
+
+Relative Distance
+
+2000
+
+Visualization on length 8192
+
+2
+1
+0
+1
+2
+3
+4
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 1: Attention (Layer 2)
+
+12
+
+1
+2
+3
+4
+5
+6
+7
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+0
+
+Kerple Positional Bias
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 1: Kerple Bias (Layer 2)
+
+4
+2
+0
+2
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 1: Attention (Layer 3)
+
+8
+
+Kerple Positional Bias
+
+Attention Value
+
+4
+2
+0
+2
+4
+
+2000
+
+4000
+
+6000
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 1: Kerple Bias (Layer 3)
+
+Relative Distance
+
+3
+4
+5
+6
+7
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 1: Kerple Bias (Layer 4)
+
+Kerple Positional Bias
+
+2.5
+0.0
+2.5
+5.0
+7.5
+10.0
+
+2
+3
+4
+5
+6
+7
+
+12.5
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8
+
+8000
+
+Example 1: Attention (Layer 5)
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 1: Kerple Bias (Layer 5)
+
+Kerple Positional Bias
+
+2.5
+0.0
+2.5
+5.0
+
+2
+3
+4
+5
+6
+7
+
+7.5
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+8
+
+15
+20
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Example 1: DAPE Bias (Layer 3)
+0
+10
+20
+30
+40
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Example 1: DAPE Bias (Layer 4)
+0
+10
+20
+30
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+5.0
+
+10
+
+40
+
+0
+
+0
+
+7.5
+
+0
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+5.0
+
+8000
+
+50
+
+0
+
+Example 1: Attention (Layer 4)
+
+6000
+
+5
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+2
+
+8000
+
+4000
+
+Relative Distance
+
+Example 1: DAPE Bias (Layer 2)
+
+8
+0
+
+2000
+
+25
+
+0
+
+7.5
+
+Attention Value
+
+6
+
+1
+
+6
+
+Attention Value
+
+4
+
+0
+
+6
+
+8
+
+2
+
+8000
+
+40
+
+5
+
+8
+0
+
+30
+
+0
+
+DAPE Positional Bias
+
+4
+
+20
+
+8000
+
+DAPE Positional Bias
+
+Attention Value
+
+6
+
+10
+
+50
+
+0
+
+10
+8
+
+Example 1: DAPE Bias (Layer 1)
+0
+
+DAPE Positional Bias
+
+Kerple Positional Bias
+
+Attention Value
+
+3
+
+0
+
+Example 1: Kerple Bias (Layer 1)
+
+0
+
+DAPE Positional Bias
+
+Example 1: Attention (Layer 1)
+
+4
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Example 1: DAPE Bias (Layer 5)
+
+5
+0
+
+DAPE Positional Bias
+
+I.3
+
+5
+10
+15
+20
+25
+30
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+0
+
+Figure 17: Evaluation Length 8192 Example 1: Part 1
+
+31
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Kerple Positional Bias
+
+5
+0
+5
+
+2
+3
+4
+5
+6
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+Example 1: Attention (Layer 7)
+
+10.0
+
+0
+
+Kerple Positional Bias
+
+7.5
+5.0
+2.5
+0.0
+2.5
+5.0
+
+2000
+
+4000
+
+6000
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+Relative Distance
+Example 1: Kerple Bias (Layer 7)
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+5
+
+0
+
+8000
+
+Example 1: Attention (Layer 8)
+
+15
+
+0
+
+Kerple Positional Bias
+
+10
+5
+0
+5
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 1: Kerple Bias (Layer 8)
+
+2
+4
+6
+
+4000
+
+6000
+
+Relative Distance
+
+Example 1: Attention (Layer 9)
+
+10.0
+
+0
+
+Kerple Positional Bias
+
+Attention Value
+
+7.5
+5.0
+2.5
+0.0
+2.5
+5.0
+7.5
+10.0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+Example 1: Attention (Layer 10)
+
+Kerple Positional Bias
+
+Attention Value
+
+5.0
+2.5
+0.0
+2.5
+5.0
+7.5
+10.0
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+6000
+
+3
+4
+5
+6
+
+Example 1: DAPE Bias (Layer 7)
+
+5
+
+15
+20
+25
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Example 1: DAPE Bias (Layer 8)
+
+5
+0
+5
+10
+15
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Example 1: DAPE Bias (Layer 9)
+2
+0
+2
+4
+6
+8
+10
+12
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 1: Kerple Bias (Layer 10)
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+5
+6
+
+8000
+
+10
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+0
+
+7.5
+
+4000
+
+Relative Distance
+Example 1: Kerple Bias (Layer 9)
+
+2
+
+8000
+
+10.0
+
+2000
+
+1
+
+7
+0
+
+6000
+
+20
+
+0
+
+8000
+
+4000
+
+Relative Distance
+
+30
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+2000
+
+0
+
+DAPE Positional Bias
+
+2000
+
+10
+
+5
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+0
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Example 1: DAPE Bias (Layer 10)
+0
+5
+10
+15
+20
+25
+30
+35
+
+0
+
+Figure 18: Evaluation Length 8192 Example 1: Part 2
+
+32
+
+2000
+
+5
+
+DAPE Positional Bias
+
+0
+
+5
+
+0
+
+8
+10
+
+0
+
+8000
+
+6
+0
+
+5
+
+15
+
+0
+
+8000
+
+DAPE Positional Bias
+
+0
+
+Attention Value
+
+1
+
+Example 1: DAPE Bias (Layer 6)
+
+7
+
+10
+
+Attention Value
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+DAPE Positional Bias
+
+Attention Value
+
+10
+
+7.5
+
+Example 1: Kerple Bias (Layer 6)
+
+0
+
+DAPE Positional Bias
+
+Example 1: Attention (Layer 6)
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Kerple Positional Bias
+
+2.5
+0.0
+2.5
+5.0
+7.5
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+5
+6
+
+Example 1: DAPE Bias (Layer 11)
+5
+
+7
+0
+
+10
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 1: Attention (Layer 12)
+
+0
+
+Kerple Positional Bias
+
+8
+6
+4
+2
+0
+2
+4
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 1: Kerple Bias (Layer 12)
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+10
+15
+20
+25
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+5
+6
+
+6
+
+0
+5
+
+30
+
+0
+
+8000
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Example 1: DAPE Bias (Layer 12)
+
+5
+0
+
+DAPE Positional Bias
+
+Attention Value
+
+5.0
+
+Attention Value
+
+Example 1: Kerple Bias (Layer 11)
+
+0
+
+DAPE Positional Bias
+
+Example 1: Attention (Layer 11)
+7.5
+
+5
+10
+15
+20
+25
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+0
+
+Figure 19: Evaluation Length 8192 Example 1: Part 3
+
+33
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+0
+2
+4
+6
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+1
+2
+3
+4
+5
+6
+7
+
+8000
+
+Example 2: Attention (Layer 2)
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+0
+
+Kerple Positional Bias
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 2: Kerple Bias (Layer 2)
+
+2.5
+0.0
+2.5
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+Example 2: Attention (Layer 3)
+
+Kerple Positional Bias
+
+5
+
+4000
+
+6000
+
+6000
+
+Relative Distance
+Example 2: Kerple Bias (Layer 3)
+
+Relative Distance
+
+3
+4
+5
+6
+7
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 2: Kerple Bias (Layer 4)
+
+Kerple Positional Bias
+
+5
+10
+
+2
+3
+4
+5
+6
+7
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 2: Attention (Layer 5)
+
+8
+
+8000
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 2: Kerple Bias (Layer 5)
+
+Kerple Positional Bias
+
+0
+5
+
+2
+3
+4
+5
+6
+7
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8
+
+8000
+
+Example 2: Attention (Layer 6)
+
+Kerple Positional Bias
+
+10
+5
+0
+5
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 2: Kerple Bias (Layer 6)
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Example 2: DAPE Bias (Layer 3)
+0
+10
+20
+30
+40
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Example 2: DAPE Bias (Layer 4)
+0
+10
+20
+30
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Example 2: DAPE Bias (Layer 5)
+5
+0
+5
+10
+15
+20
+25
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+5
+6
+7
+
+0
+
+20
+
+30
+
+0
+
+0
+
+15
+
+15
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+5
+
+10
+
+40
+
+0
+
+0
+
+10
+
+0
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+0
+
+8000
+
+50
+
+0
+
+0
+
+5
+
+6000
+
+5
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+2
+
+8000
+
+10
+
+Attention Value
+
+4000
+
+DAPE Positional Bias
+
+2000
+
+Example 2: Attention (Layer 4)
+
+Attention Value
+
+2000
+
+8
+0
+
+4000
+
+Relative Distance
+
+Example 2: DAPE Bias (Layer 2)
+
+DAPE Positional Bias
+
+Attention Value
+
+0
+
+2000
+
+25
+
+0
+
+10
+
+Attention Value
+
+6
+
+1
+
+5
+
+10
+
+4
+
+0
+
+10
+
+15
+
+2
+
+8000
+
+40
+
+5
+
+DAPE Positional Bias
+
+0
+
+30
+
+0
+
+8
+
+5.0
+
+20
+
+8000
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+0
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+5
+0
+5
+10
+15
+
+0
+
+Figure 20: Evaluation Length 8192 Example 2: Part 1
+
+34
+
+2000
+
+Example 2: DAPE Bias (Layer 6)
+
+10
+
+DAPE Positional Bias
+
+Attention Value
+
+5.0
+
+10
+
+50
+
+0
+
+10.0
+7.5
+
+Example 2: DAPE Bias (Layer 1)
+0
+
+DAPE Positional Bias
+
+Kerple Positional Bias
+
+Attention Value
+
+2
+
+0
+
+Example 2: Kerple Bias (Layer 1)
+
+0
+
+DAPE Positional Bias
+
+Example 2: Attention (Layer 1)
+4
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+10.0
+
+Kerple Positional Bias
+
+5.0
+2.5
+0.0
+2.5
+5.0
+4000
+
+6000
+
+4
+5
+
+8000
+
+4
+2
+0
+2
+4
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 2: Kerple Bias (Layer 8)
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+2
+4
+6
+
+6000
+
+Relative Distance
+Example 2: Attention (Layer 9)
+
+8000
+
+0
+
+8
+
+Kerple Positional Bias
+
+6
+4
+2
+0
+2
+4
+6
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+Example 2: Attention (Layer 10)
+
+Kerple Positional Bias
+
+5
+0
+5
+10
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+Example 2: Attention (Layer 11)
+
+10.0
+
+Kerple Positional Bias
+
+5.0
+2.5
+0.0
+2.5
+5.0
+7.5
+0
+
+2000
+
+4000
+
+6000
+
+4
+5
+6
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 2: Kerple Bias (Layer 10)
+
+Relative Distance
+Example 2: Attention (Layer 12)
+
+2
+3
+4
+5
+2000
+
+4000
+
+6000
+
+Kerple Positional Bias
+
+2
+0
+2
+4
+6
+
+Relative Distance
+Example 2: Kerple Bias (Layer 11)
+
+1
+2
+3
+4
+5
+6
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+15
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Example 2: DAPE Bias (Layer 9)
+2
+0
+2
+4
+6
+8
+10
+12
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Example 2: DAPE Bias (Layer 10)
+5
+0
+5
+10
+15
+20
+25
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Example 2: DAPE Bias (Layer 11)
+
+5
+0
+5
+10
+15
+20
+25
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+Example 2: Kerple Bias (Layer 12)
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+2
+3
+4
+5
+6
+
+0
+
+5
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+0
+
+4
+
+8000
+
+30
+
+0
+
+0
+
+6
+
+6000
+
+10
+
+0
+
+8000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+1
+
+8000
+
+4000
+
+Relative Distance
+
+0
+
+8000
+
+7
+
+10.0
+
+8
+
+Relative Distance
+Example 2: Kerple Bias (Layer 9)
+
+3
+
+0
+
+7.5
+
+6000
+
+2
+
+6
+
+8000
+
+4000
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+0
+
+10
+
+2000
+
+1
+
+7
+
+8000
+
+2000
+
+20
+
+0
+
+DAPE Positional Bias
+
+4000
+
+20
+
+Example 2: DAPE Bias (Layer 8)
+
+DAPE Positional Bias
+
+2000
+
+15
+
+0
+
+DAPE Positional Bias
+
+0
+
+10
+
+8000
+
+8
+
+6
+
+5
+
+25
+
+0
+
+Kerple Positional Bias
+
+Attention Value
+
+3
+
+0
+
+DAPE Positional Bias
+
+2000
+
+Relative Distance
+Example 2: Attention (Layer 8)
+
+6
+
+Attention Value
+
+2
+
+0
+
+8
+
+Attention Value
+
+1
+
+Example 2: DAPE Bias (Layer 7)
+
+5
+
+6
+0
+
+Attention Value
+
+Head-1
+Head-2
+Head-3
+Head-4
+Head-5
+Head-6
+Head-7
+Head-8
+Head-9
+Head-10
+Head-11
+Head-12
+
+0
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+0
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+Example 2: DAPE Bias (Layer 12)
+
+5
+10
+15
+20
+25
+
+0
+
+Figure 21: Evaluation Length 8192 Example 2: Part 2
+
+35
+
+2000
+
+0
+
+DAPE Positional Bias
+
+Attention Value
+
+7.5
+
+Attention Value
+
+Example 2: Kerple Bias (Layer 7)
+
+0
+
+DAPE Positional Bias
+
+Example 2: Attention (Layer 7)
+
+2000
+
+4000
+
+6000
+
+Relative Distance
+
+8000
+
+J
+
+Implementation
+
+In this section, we present the implementation of the proposed DAPE module in PyTorch [49].
+import t o r c h
+import t o r c h . nn a s nn
+class DAPE( nn . Module ) :
+def _ _ i n i t _ _ ( s e l f , head_number =12 , m l p _ w i d t h = 32 ) :
+"""
+DAPE attention bias module .
+Args:
+num_heads : number of attention heads.
+mlp_width : Width of MLP.
+"""
+super (DAPE , s e l f ) . _ _ i n i t _ _ ( )
+s e l f . mlp = nn . S e q u e n t i a l (
+nn . L i n e a r ( 2 * head_number , m l p _ w i d t h ) ,
+nn . LeaklyReLU ( ) ,
+nn . L i n e a r ( mlp_width , num_heads )
+)
+def f o r w a r d ( s e l f , a t t e n t i o n : t o r c h . T e n s o r , b i a s : t o r c h . T e n s o r ) :
+"""
+Args:
+attention : input sequence , which is q^T * k,
+shape [bsz , num_heads , seq_len , seq_len ]
+bias: bias matrix , which can be generated by Alibi , Kerple
+FIRE or other additive position encodings
+shape [1, num_heads , seq_len , seq_len ]
+Returns :
+attention with DAPE ,
+shape [bsz , num_heads , seq_len , seq_len ]
+"""
+b i a s _ t i l e = r e p e a t ( b i a s , ’1 h T T -> b h T T’ , b= a t t e n t i o n . s h a p e
+[0])
+# C o n c a t e n a t e a t t e n t i o n and b i a s
+a t t e n t i o n _ b i a s _ c o n c a t = t o r c h . c a t ( ( a t t e n t i o n , b i a s _ t i l e ) , dim = 1)
+# R e a r r a n g e t h e d i m e n s i o n s f o r MLP p r o c e s s i n g
+a t t e n t i o n _ b i a s _ c o n c a t = r e a r r a n g e ( a t t e n t i o n _ b i a s _ c o n c a t , ’b h T
+T -> b T T h’ )
+# Apply t h e MLP
+a t t e n t i o n _ b i a s _ c o n c a t = s e l f . mlp ( a t t e n t i o n _ b i a s _ c o n c a t )
+# Rearrange back t o o r i g i n a l dimensions
+a t t e n t i o n _ b i a s _ c o n c a t = r e a r r a n g e ( a t t e n t i o n _ b i a s _ c o n c a t , ’b T T
+h -> b h T T’ )
+return a t t e n t i o n + b i a s + a t t e n t i o n _ b i a s _ c o n c a t
+
+36
+
+
