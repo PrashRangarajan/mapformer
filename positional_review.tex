@@ -609,7 +609,7 @@ which augments $q,k$ to embed the bias in $GL$, and read as $\C^\times$ it sits 
 Mamba/GLA. $^{\S}$Scoped: LieRE reads its rotation directly off a known position and
 its generators need not commute; Algebraic PE is abelian for sequences and grids but
 not for $k$-ary trees; GRAPE's additive family is ``rank-1 (or low-rank)'' in its own
-abstract, and ``full'' applies only to its general edge potential. $^{\P}$MapEM evaluates the same
+abstract, and ``full'' applies only to its general edge potential. $^{\dagger}$xPos carries an exponential decay on the magnitude, so its magnitude increment is fixed negative as ALiBi's is; the \emph{phase} sign is omitted throughout for index-driven rows because a global phase sign is a basis convention, whereas a decay and a growth are different objects. $^{\parallel}$\textbf{MapPoPE is this work's construction, not a published mechanism}: it is the immediate consequence of imposing PoPE's constraint and MapFormer's together on disjoint coordinates ($\S$\ref{sec:unify}), included because the combination is otherwise unoccupied. Every other row is published. For the Sources list, MapEM is in the MapFormer paper and GRAPE-M and GRAPE-A/AP are the two families of the single GRAPE paper. $^{\P}$MapEM evaluates the same
 equation on the \emph{tensor product} of the content and position spaces rather
 than on $\C^{\nb}$; see $\S$\ref{sec:emtem}.}
 \begin{tabular}{llllllll}
@@ -619,12 +619,12 @@ mechanism & A1 factor & A2 locus & A3 driver & A4 algebra & A5 sign & A6 rank & 
 NoPE              & ---        & ---     & ---    & ---        & ---     & ---        & softmax \\
 RoPE              & phase      & acc.    & index  & $\C^\times$ & n/a    & n/a        & softmax \\
 ALiBi             & magnitude  & acc.    & index  & unipotent  & fixed $<0$ & n/a     & softmax \\
-xPos              & both       & acc.    & index  & $\C^\times$ & n/a    & n/a        & softmax \\
+xPos              & both       & acc.    & index  & $\C^\times$ & fixed $<0$$^{\dagger}$ & n/a & softmax \\
 PoPE              & magnitude  & \textbf{inst.} & content & ---  & $>0$    & full      & softmax \\
 \midrule
 MapFormer         & phase      & acc.    & content & $\C^\times$ & signed & \textbf{rank $r$} & softmax \\
 MapEM$^{\P}$      & phase      & acc.    & content & $\C^\times$ & signed & rank $r$ & softmax \\
-MapPoPE           & both       & inst.+acc. & content & $\C^\times$ & signed & rank $r$ & softmax \\
+MapPoPE$^{\parallel}$ & both  & inst.+acc. & content & $\C^\times$ & signed & rank $r$ & softmax \\
 Selective RoPE    & phase      & acc.    & content & $\C^\times$ & signed & full (or 8--16) & both \\
 CARoPE            & phase      & acc.    & content & $\C^\times$ & \textbf{$\in(0,1)$} & \textbf{1/head} & softmax \\
 \midrule
