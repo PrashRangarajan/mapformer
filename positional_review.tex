@@ -233,7 +233,9 @@ cumulative summation and reads it out linearly:
 and they differ in three numbers: the \textbf{state rank} $m$, the form of the
 increment $\varphi$, and its \textbf{temporal support} $K$.
 
-\begin{center}\small
+\begin{table}[htbp]\centering\small
+\caption{The generator family. Every content-dependent phase mechanism maintains a state by cumulative summation and reads it out linearly; they differ in three numbers.}
+\label{tab:gen}
 \begin{tabular}{lllll}
 \toprule
 mechanism & $m$ & $\varphi$ & $K$ & readout $A$ \\
@@ -244,7 +246,7 @@ CARoPE         & $H$    & $1/(\softplus(xW)+1) \in (0,1)$         & $1$ & geomet
 Selective RoPE & $H\nb$ & $\sigma(W_gx)\odot(\kappa * W_\omega x)$ & $4$ & $\tau I$ \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 \noindent RoPE is the $\varphi \equiv 1$ special case: $\theta_t = t\,\omega$ is a
 clock that advances by the same amount on every token. Everything else lets the
@@ -396,7 +398,9 @@ $\sum_{u\le t} + \sum_{u\le s}$, a joint scale carrying no information about
 separation. Perturbing the prefix $u\le t$ and asking whether the score moves --- a
 relative score must not:
 
-\begin{center}\small
+\begin{table}[htbp]\centering\small
+\caption{Only one of the four sign combinations is interval-relative. The prefix $u\le t$ is perturbed and the score must not move.}
+\label{tab:signs}
 \begin{tabular}{llr}
 \toprule
 $\operatorname{Re}G$ & $\operatorname{Im}G$ & relative prefix leak \\
@@ -407,7 +411,7 @@ aligned & aligned & $3.1$ \\
 aligned & opposed & $7.1$ \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 \noindent Exactly one of the four combinations is interval-relative, and it is the
 one \eqref{eq:unified} writes. With $\delta = \log\gamma < 0$ that slot \emph{is} the
@@ -432,7 +436,9 @@ Attention sees only the interval sum
 $\theta_s - \theta_t = \omega\sum_{t<u\le s}\Delta_u$. What that quantity
 \emph{is} depends entirely on whether the increments can cancel:
 
-\begin{center}\small
+\begin{table}[htbp]\centering\small
+\caption{Cancellation chooses what the interval sum measures. The two readings are mutually exclusive by construction.}
+\label{tab:clockmap}
 \begin{tabular}{@{}p{3.0cm}p{5.3cm}p{5.6cm}@{}}
 \toprule
  & $\Delta$ signed & $\Delta$ monotone \\
@@ -444,7 +450,7 @@ what collides & same place, different times & nothing --- every instant is disti
 the accumulator is & a \textbf{map} & a \textbf{clock} \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 \noindent These are mutually exclusive by construction, and each is \emph{correct}
 for one job. A cognitive map \textbf{needs} same-place-different-time to collide ---
@@ -525,7 +531,7 @@ mechanisms agree on all eight.
 
 \begin{sidewaystable}\small
 \centering
-\caption{Mechanisms that fit \eqref{eq:unified} or its unipotent extension.
+\caption{\textbf{The relational map.} Mechanisms that fit \eqref{eq:unified} or its unipotent extension.
 $^\ast$Jordan-RoPE's magnitude factor is a \emph{polynomial} in the lag,
 $d^re^{i\omega d}$: its generator couples a complex eigenvalue to a nilpotent in one
 defective block. $^\ddagger$FoX's bias $\sum\log f_\ell$ and GLA's weight
@@ -564,6 +570,7 @@ Mamba / Mamba-2, GLA & magnitude & acc.  & content & $\C^\times$ & $<0$   & full
 \textbf{Mamba-3}  & \textbf{both} & acc. & \textbf{content} & $\C^\times$ & \textbf{signed} & full & SSM \\
 \bottomrule
 \end{tabular}
+\label{tab:map}
 \end{sidewaystable}
 
 \noindent Every \emph{abelian} row above composes by parallel prefix sum --- the
@@ -575,7 +582,9 @@ for $k$-ary trees.)
 
 \subsection{What leaves the frame, and how}
 
-\begin{center}\small
+\begin{table}[htbp]\centering\small
+\caption{Mechanisms that leave the frame, and which of the three assumptions each gives up.}
+\label{tab:outofframe}
 \begin{tabular}{@{}p{0.26\textwidth}p{0.30\textwidth}p{0.38\textwidth}@{}}
 \toprule
 mechanism & assumption broken & consequence \\
@@ -592,7 +601,86 @@ TEM-t        & \emph{linearity} and \emph{commutativity}
   & $e_t = \sigma(e_{t-1}W_{a_t})$; see $\S$\ref{sec:emtem} \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
+
+\paragraph{Non-abelian transport: PaTH, DeltaNet, RWKV-7.} The interval operator
+becomes a cumulative \emph{product} of Householder-like reflections
+$I-\beta_t w_tw_t^{\!\top}$ rather than a sum of increments. PaTH proves this takes
+attention beyond $TC^0$ (on the assumption $TC^0 \neq NC^1$); DeltaNet contributes the
+chunkwise-parallel algorithm that makes the product trainable at scale; RWKV-7
+generalises the rule to vector-valued gating and shows it recognises \emph{all}
+regular languages with a constant number of layers. The price is that no $A(d)$ and no
+$S_t$ exist.
+
+\paragraph{Pair-dependence: CoPE.} Position stops being a property of a token. A gate
+is computed for every query--key \emph{pair},
+\[
+  g_{ij} = \sigma(q_i^{\!\top}k_j), \qquad p_{ij} = \sum_{k=j}^{i} g_{ik},
+\]
+so the distance from $i$ to $j$ counts only the tokens the query elects to count. The
+paper's own example states the idea most clearly: to measure position in
+\emph{sentences}, the gate need only fire on sentence separators. Position becomes
+query-dependent and denominated in task-relevant units, which is exactly why no
+per-token $\theta_t$ exists and why CoPE cannot be written in \eqref{eq:gen}. It
+solves selective copying, counting and Flip-Flop, on which standard encodings fail,
+and improves perplexity on language and code. It is also monotone ($\sigma>0$), so
+$\S$\ref{sec:clockmap} applies: CoPE builds a better \emph{clock}, one whose tick is
+chosen by content, and not a map.
+
+\paragraph{Broken path structure: MesaNet, Titans, TAPE.} These give up
+increment-accumulation itself. MesaNet solves a local least-squares problem to
+optimality at every timestep by conjugate gradient --- a prefix-global inverse rather
+than a running sum --- and reports lower perplexity than Mamba-2 and other modern RNNs
+at matched scale while remaining behind transformers on in-context recall, which is
+the primal/dual trade-off of $\S$\ref{sec:memory} showing up as a benchmark result.
+Titans replaces the linear state with a deep memory module trained at test time by
+gradient descent with momentum and weight decay, and scales past $2$M-token
+needle-in-a-haystack. TAPE keeps a positional \emph{tensor} and updates it across
+layers through attention and MLP blocks under permutation- and
+orthogonal-equivariance constraints, improving long-sequence perplexity and
+length-generalised addition. In none of the three is the operator applied to a stored
+trace a function of the interval, so the classification does not reach them.
+
+\paragraph{Broken linearity and commutativity: TEM-t.} Treated in
+$\S$\ref{sec:emtem}, where the two independent breaks are separated.
+
+
+\subsection{What the mechanisms report}
+
+The map says where each mechanism sits; it does not say how well any of them works.
+Their own headline results, for orientation. These are not commensurable --- different
+scales, data and benchmarks --- and are given to indicate what each line takes as
+evidence, not to rank them.
+
+\begin{table}[htbp]\centering\small
+\caption{Reported headline results, as stated by each source.}
+\label{tab:reported}
+\begin{tabular}{@{}p{3.1cm}p{11.2cm}@{}}
+\toprule
+mechanism & as reported \\
+\midrule
+RoPE & the default in most open large language models; the baseline every row below is measured against \\[2pt]
+CoPE & solves selective copying, counting and Flip-Flop, on which standard encodings fail; improves perplexity on language and code \\[2pt]
+FoX & outperforms the Transformer on long-context language modelling, length extrapolation and short-context downstream tasks \\[2pt]
+Selective RoPE & at $370$M, \textbf{NoPE attains the lowest average perplexity of the five arms} ($20.78$ against RoPE's $21.42$); the content-dependent phase passes RoPE on downstream accuracy only after two further components ($47.1$ against $46.5$, from a $45.8$ baseline). Solves parity with a single-layer Transformer \\[2pt]
+HGRN & Table~11: a \emph{data-dependent} phase is worse than a constant one; HGRN2 attributes the complex-recurrence gain to state expansion \\[2pt]
+Mamba-3 & at $1.5$B, $+0.6$ points average downstream accuracy over Gated DeltaNet, $+1.8$ with the MIMO variant; matches Mamba-2's perplexity at half the state size \\[2pt]
+LieRE & up to $15.1\%$ relative accuracy over absolute embeddings on video, $\ge 1.5\%$ over RoPE-style, at $0.68\%$ of a ViT-B's parameters \\[2pt]
+MesaNet & lower perplexity than Mamba-2 and other modern RNNs at matched scale; still behind transformers on in-context recall \\[2pt]
+Titans & scales past $2$M-token needle-in-a-haystack \\[2pt]
+MapFormer & $1.00/1.00/0.99$ on $2$D grid navigation (IID / OOD-d / OOD-s) against Mamba's $0.38/0.66/0.30$; in $5$D MapWM collapses to $0.75/0.50/0.35$, \emph{below} CoPE's $0.94/0.80/0.69$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent Two of these deserve emphasis because they cut against the direction of the
+field. \textbf{NoPE is not a straw man}: in Selective RoPE's own ablation it has the
+best perplexity of every arm tested, and Kazemnejad et al.\ showed a causal decoder
+learns an implicit position without any encoding at all. And \textbf{HGRN's ablation
+is a direct negative on content-dependent phase} for language, from inside the
+recurrent literature. Both belong beside the positive results, and both are consistent
+with $\S$\ref{sec:clockmap}: on text a clock is all that is wanted, and an index clock
+is already one.
 
 \subsection{Reading the map}
 
@@ -667,7 +755,9 @@ $e_t = W_{0\to t}e_0$, with $W_e$ orthogonal this is
 $e_0^\top W_{0\to t}^{\top}W_{t\to s}W_{0\to t}e_0$ --- \textbf{the interval operator
 conjugated by the prefix}. Conjugation is trivial exactly when the group is abelian:
 
-\begin{center}\small
+\begin{table}[htbp]\centering\small
+\caption{TEM-t's logit is interval-relative only when the transition group is abelian and there is no nonlinearity --- which is MapFormer's configuration.}
+\label{tab:tem}
 \begin{tabular}{lc}
 \toprule
 transition group & logit depends on the interval alone? \\
@@ -678,7 +768,7 @@ abelian, with ReLU                     & no \\
 general $SO(d)$, with ReLU             & no \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 \noindent \textbf{MapFormer is precisely the surviving row}: $SO(2)^{\nb}$ is abelian
 by construction and there is no nonlinearity on the path. TEM-t breaks both, and
@@ -718,7 +808,9 @@ explicit. This gives every mechanism two readings:
 \paragraph{The positional operator is the memory's transport kernel.} $A(d)$ is what
 happens to a stored trace as it ages $d$ steps, and $\S$\ref{sec:classification}
 says there are two things it can do:
-\begin{center}\small
+\begin{table}[htbp]\centering\small
+\caption{The two slots, read as a memory. $A(d)$ is the transport kernel applied to a stored trace as it ages.}
+\label{tab:memory}
 \begin{tabular}{@{}lll@{}}
 \toprule
 slot & positional reading & memory reading \\
@@ -727,7 +819,7 @@ $\operatorname{Re}G$ & magnitude / decay & \textbf{how fast the trace is forgott
 $\operatorname{Im}G$ & phase / rotation  & \textbf{how the trace is re-addressed as it ages} \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 \noindent It also identifies A8 with the primal/dual choice: \textbf{a positional
 mechanism admits a parallel prefix scan exactly when the memory admits a bounded
@@ -753,7 +845,7 @@ holds \emph{separate} representations for storage and for retrieval, so the two 
 be optimised independently --- fidelity for values, discriminability for keys --- and
 that the binding constraint on memory performance is addressing rather than capacity.
 
-Every mechanism in Table~1 acts on $q$ and $k$ and none of them touches $v$. Read
+Every mechanism in Table~\ref{tab:map} acts on $q$ and $k$ and none of them touches $v$. Read
 through the correspondence above that is not a convention: \textbf{a positional
 mechanism is an addressing rule}, and $A(d)$ says how the address of a trace changes
 as it ages. The two slots are then two ways for an address to move:
@@ -763,7 +855,7 @@ becomes unretrievable at a rate the content chooses. Nothing in the frame can al
 what was stored, only where it can be found.
 
 \paragraph{Why decay is compulsory on one side of the line and optional on the
-other.} A visible asymmetry in Table~1 is that every SSM row carries
+other.} A visible asymmetry in Table~\ref{tab:map} is that every SSM row carries
 $\operatorname{Re}G < 0$ while most softmax rows leave the magnitude slot empty.
 Schlag et al.\ (2021) supply the reason: an additive outer-product memory has a
 finite \emph{capacity}, and once the sequence length exceeds it the model enters an
@@ -813,7 +905,7 @@ A large and practically important literature varies exactly that, and it is disj
 from everything above: Position Interpolation, RoPE scaling laws, NTK-aware scaling,
 Dynamic NTK, NTK-by-parts, YaRN, LongRoPE and LongRoPE2 all rescale the frequency
 ladder so a model trained at one length runs at another. Every one of them is
-index-driven, so on Table~1 they occupy a single cell --- but they vary something the
+index-driven, so on Table~\ref{tab:map} they occupy a single cell --- but they vary something the
 eight axes do not name.
 
 \paragraph{The critical dimension.} The argument that organises that line is worth
@@ -870,7 +962,9 @@ trained in one batch.
 Six arms $\times$ $12$ seeds, one batch, $r=4$ throughout, \textbf{parameter count
 identical at $204{,}757$} --- the constraint adds nothing and does not touch the rank.
 
-\begin{center}\small
+\begin{table}[htbp]\centering\small
+\caption{The sign ablation. Six arms $\times$ $12$ seeds, one batch, identical parameter count ($204{,}757$).}
+\label{tab:sign}
 \begin{tabular}{llrrrr}
 \toprule
 arm & increment & $T{=}128$ & $T{=}512$ & $T{=}1024$ & final loss \\
@@ -884,7 +978,7 @@ CARoPE    & $1/(\softplus(\cdot)+1)$            & $0.900$ & $0.809$ & $0.645$ & 
 RoPE      & index                               & $0.799$ & $0.449$ & $0.345$ & $0.784$ \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 \noindent\textbf{At matched training loss, signed path integration beats an index code
 by $+0.123$ and $+0.195$ at $T=512$ and $T=1024$ ($12/12$ seeds); monotone path
@@ -896,7 +990,9 @@ The learned code shows why. The opposition score
 $\lVert\Delta(+x)+\Delta(-x)\rVert / \overline{\lVert\Delta\rVert}$ is $0$ when
 opposite actions cancel exactly and $2$ when they are identical:
 
-\begin{center}\small
+\begin{table}[htbp]\centering\small
+\caption{The learned action code. Opposition is $0$ when opposite actions cancel exactly and $2$ when they are identical.}
+\label{tab:opposition}
 \begin{tabular}{lrrr}
 \toprule
 arm & oppose$_x$ & oppose$_y$ & $|\cos(N,E)|$ \\
@@ -907,7 +1003,7 @@ softplus  & $1.905$ & $1.885$ & $0.723$ \\
 CARoPE    & $\mathbf{1.981}$ & $\mathbf{1.977}$ & $\mathbf{0.930}$ \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 \noindent CARoPE's published parameterisation reaches $1.98$ of a possible $2.00$,
 with its north and east axes all but collapsed onto one another. These models do not
@@ -931,7 +1027,9 @@ $2$D grid, a $2$-vector --- which makes $r=2$ sufficient \emph{by construction}.
 not sufficient in practice. Against $r=2$ at $8\times$ the training length ($T=1024$
 against a training length of $128$; $8$ seeds):
 
-\begin{center}\small
+\begin{table}[htbp]\centering\small
+\caption{The rank sweep against $r=2$, $8$ seeds. A step at $r=2$, flat from $r=4$ to $r=32$.}
+\label{tab:rank}
 \begin{tabular}{lrrr}
 \toprule
  & params added & $T{=}512$ & $T{=}1024$ \\
@@ -942,7 +1040,7 @@ $r=16$ & $+2{,}688$ & $+0.028$ & $+0.079$ \\
 $r=32$ & $+5{,}760$ & $+0.038$ & $+0.095$ \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 \noindent This is a \textbf{step at $r=2$, not a capacity slope}: flat from $r=4$ to
 $r=32$. The cause is conditioning, not capacity. Given four dimensions the model still
@@ -950,7 +1048,9 @@ places its actions in a $2$-plane ($100.0\%$ of spectral energy; $99.96\%$ even 
 $r=32$), vindicating the dimensional argument --- what fails is the \emph{basis} that
 $r=2$ is forced into:
 
-\begin{center}\small
+\begin{table}[htbp]\centering\small
+\caption{The learned basis at $r=2$ and $r=4$. The deficit is conditioning, not capacity.}
+\label{tab:basis}
 \begin{tabular}{lrrr}
 \toprule
  & opposition ($N{+}S\approx0$) & $|\cos(N,E)|$ & obs/action norm \\
@@ -959,7 +1059,7 @@ $r=2$ & $0.495$ & $0.783$ & $0.139$ \\
 $r=4$ & $\mathbf{0.092}$ & $\mathbf{0.175}$ & $0.042$ \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 \noindent At $r=2$ opposite actions fail to cancel by half the action scale and north
 and east are nearly parallel. The seed standard deviation also falls from $0.064$ to
@@ -976,7 +1076,9 @@ generator cannot be projected below rank $\approx16$ post hoc while $r=4$ trains
 Selective RoPE's three additions to MapFormer's generator, measured on the torus at
 $T=1024$ and on a parity task at $L=128$; increments against MapFormer at $r=2$.
 
-\begin{center}\small
+\begin{table}[htbp]\centering\small
+\caption{Selective RoPE's additions to MapFormer's generator, against MapFormer at $r=2$.}
+\label{tab:knobs}
 \begin{tabular}{lrll}
 \toprule
 constraint removed & params & parity $L{=}128$ & torus $T{=}1024$ \\
@@ -989,7 +1091,7 @@ all three                      & $+16{,}385$& $-0.009$ & $+0.048$ ($t\,1.36$) \\
 \emph{$r=2\to4$, constraint kept} & $\mathbf{+384}$ & --- & $\mathbf{+0.085}$ ($8/8$) \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 \noindent Two readings. First, \textbf{the two $\approx$8k-parameter knobs are
 statistically indistinguishable from each other} ($+0.018$ and $+0.028$, both inside
@@ -1036,7 +1138,9 @@ absolute displacement instead of the commanded turn restores it to $+0.488$.
 
 \subsection{Anchors}
 
-\begin{center}\small
+\begin{table}[htbp]\centering\small
+\caption{Anchors: what each ingredient costs and buys on the torus task.}
+\label{tab:anchors}
 \begin{tabular}{p{2.5cm}p{2.1cm}p{3.0cm}p{5.8cm}}
 \toprule
 mechanism & sets & parameter cost & measured effect \\
@@ -1047,7 +1151,7 @@ Bottleneck rank & state rank $\rho$ & $+384$ ($+0.19\%$) & $+0.085$ at $T{=}1024
 PoPE & magnitude $\mu$ & $+320$ & $+0.027$ \emph{with} path integration; both arms on the floor without it \\[2pt]
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 \subsection{Where the length dependence does not come from}
 
 Transposed to a content-dependent
@@ -1074,7 +1178,9 @@ four arms start from the same accumulator range at training length ($88$--$94$) 
 separate entirely by how fast it grows with sequence length,
 $\operatorname{range}(S) \sim T^{\alpha}$:
 
-\begin{center}\small
+\begin{table}[htbp]\centering\small
+\caption{The accumulator's growth law. All four arms start from the same range at training length and separate by exponent.}
+\label{tab:growth}
 \begin{tabular}{lrrrr}
 \toprule
 arm & $T{=}128$ & $T{=}1024$ & $\alpha$ & opposition score \\
@@ -1085,7 +1191,7 @@ signed, $r{=}2$   & $88.5$ & $320.5$ & $0.619$ & $0.495$ \\
 monotone, $r{=}4$ & $91.5$ & $649.8$ & $\mathbf{0.943}$ & $1.849$ \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 \noindent A signed, well-conditioned increment gives $\alpha \approx 0.52$: the
 accumulator performs a \textbf{diffusive random walk}. A monotone one gives
@@ -1138,7 +1244,9 @@ a reflection rather than a scalar.
 
 \subsection{What a task demands, and what supplies it}
 
-\begin{center}\small
+\begin{table}[htbp]\centering\small
+\caption{What a task demands of a positional code, and what supplies it.}
+\label{tab:capability}
 \begin{tabular}{@{}p{4.0cm}p{3.4cm}p{6.6cm}@{}}
 \toprule
 if the task needs \dots & it requires & and these supply it \\
@@ -1150,10 +1258,10 @@ if the task needs \dots & it requires & and these supply it \\
 \emph{path-dependent actions} (turn/forward) & non-abelian transport, \textbf{or} an allocentric recoding of the input & PaTH, DeltaNet, RWKV-7, TEM-t --- none evaluated on navigation. Recoding the action to absolute displacement restores $+0.488$ and keeps the scan \\[3pt]
 \emph{overwriting stale associations} & a delta rule & DeltaNet, PaTH, RWKV-7; forfeits the parallel scan \\[3pt]
 \emph{exact recall over a window} & the dual form; keep the items & softmax attention. A lossy summary is not a sufficient statistic, which is why hierarchy loses here and wins on compositional transfer \\[3pt]
-\emph{bounded state, linear time} & abelian transport & every row of Table~1; measured $2.6$--$3.3\times$ over a $16\times$ length increase \\
+\emph{bounded state, linear time} & abelian transport & every row of Table~\ref{tab:map}; measured $2.6$--$3.3\times$ over a $16\times$ length increase \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 \subsection{What follows for choosing a model}
 
@@ -1211,6 +1319,12 @@ bounds the accumulator at all. That is the gap worth building into.
   that OOD degradation follows.
 \item \textbf{Defective generators.} Jordan-RoPE occupies the cell; what polynomial
   factors in the lag are \emph{for} remains open, and no navigation evaluation exists.
+\item \textbf{NoPE.} A causal decoder learns an implicit position without any operator
+  at all, and in at least one controlled ablation it has the best perplexity of every
+  encoding tested (Table~\ref{tab:reported}). The frame classifies operators and has
+  nothing to say about the case where the right operator is the identity; when an
+  encoding helps on text, how much of the gain is over NoPE rather than over RoPE is
+  usually not reported.
 \item \textbf{Sign on language.} A monotone clock cannot represent a $-1$ action, and
   on navigation that costs everything. On text HGRN's own ablation finds a
   data-dependent phase worse than a constant one. Whether the sign matters there, and
