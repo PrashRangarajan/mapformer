@@ -40,6 +40,14 @@ Titans, TAPE, TEM-t, and the classical relative methods of Shaw, Transformer-XL 
 T5 --- escape by breaking one of the three assumptions, and it is possible to say
 which.
 
+The motivating question is not encoding for its own sake but relational
+representation: whether learning a structural ``where'' separately from a sensory
+``what'' is what buys transfer, as TEM argues and MapFormer inherits. Placed in the
+frame, MapFormer is that factorisation in attention with a parallel scan, and
+MapEM's Hadamard product is literally TEM's $g\otimes x$ on the tensor product of
+the two spaces. Measured on environments redrawn at evaluation, a structural code
+reaches $0.99$ where a parameter-matched index code sits on the $0.506$ floor.
+
 Two consequences do not follow from any single mechanism. The two slots answer
 \emph{different questions}: a signed accumulated phase measures net displacement and
 is a map, a monotone one measures elapsed path and is a clock, and the two are
@@ -120,6 +128,17 @@ opened on the \emph{additive} side, by DAPE (2024) and CoPE (2024), and everythi
 that has since filled the \emph{multiplicative} side arrived after the last survey
 that had a place to put it. The memory reading of $\S$\ref{sec:memory} and the
 navigation regime appear in none of the five.
+
+\paragraph{The question this is in service of.} The interest here is not
+positional encoding for its own sake. It is positional encoding as the mechanism by
+which a model learns a \emph{relational} representation --- a ``where'' --- and the
+claim under test is the one TEM makes and MapFormer inherits: that learning the
+where, and keeping it \emph{separated} from the ``what'', is what allows transfer to
+new environments and to new problems sharing the same relational structure. A
+sensory code is environment-specific and must be rebuilt every time; a structural
+code is not, and can be carried over. On that reading the axes below are not
+descriptive categories but the design space of the where, and
+$\S$\ref{sec:factorisation} states what the separation is measured to buy.
 
 \paragraph{What is claimed, and what is not.} Three claims, in descending order
 of how much of the evidence is ours.
@@ -861,6 +880,81 @@ interpreter overhead; the shape is the missing group law. TEM-t is 2022 and MapF
 2025, so on this axis the later contribution is the \emph{restriction} --- abelian and
 linear --- that buys the scan and the relative law.
 
+\subsection{Factorisation, and what the separation buys}
+\label{sec:factorisation}
+
+TEM's thesis is a factorisation: structural knowledge $g$ is environment-invariant,
+sensory input $x$ is environment-specific, and memory stores the conjunction
+$p = g \otimes x$. Transfer follows because $g$ survives a change of environment
+while $x$ does not.
+
+The results above say that MapFormer is that factorisation carried into attention
+with a parallel scan. The accumulated phase $\theta_t = \omega\sum\Delta_u$ is $g$:
+driven by the action stream, not the sensory stream, and identical in any
+environment with the same transition structure. Content is $x$. And the conjunction
+is exactly the WM/EM distinction --- additively in the score for MapFormer-WM, and
+for MapEM \emph{literally} the tensor product, since
+$(A_X \odot A_P)_{ts} = (q^x_t \otimes q^p_t)\cdot(k^x_s \otimes k^p_s)$. TEM's
+$g \otimes x$ and MapEM's Hadamard product are the same object; what MapFormer adds
+is that the interval operator composes by prefix sum, so the where can be built in
+$O(\log T)$ instead of recurrently.
+
+\paragraph{Why the measurements are transfer measurements.} This is easy to miss in
+the tables above and is the reason they are set up as they are. \textbf{Every
+evaluation here is on an environment the model has never seen}: the observation map
+is redrawn from a held-out seed, so the entire what-to-where binding is new, and
+only structure can carry over. Against a measured always-predict-blank floor of
+$0.506$:
+
+\begin{table}[htbp]\centering\small
+\caption{Transfer to a new environment with the same relational structure. In every row the sensory map is redrawn at evaluation, so nothing environment-specific survives; the gap is what the structural code carries.}
+\label{tab:transfer}
+\begin{tabular}{@{}p{4.6cm}p{3.4cm}p{3.0cm}p{3.2cm}@{}}
+\toprule
+task & structural code & index code & floor \\
+\midrule
+torus revisit, fresh map ($n{=}8$) & $\mathbf{0.994}$ / $0.987$ / $0.967$ & $0.530$ / $0.509$ & $0.506$ \\[2pt]
+blind continuation, $64^2$ ($n{=}5$) & $\mathbf{0.730 \pm 0.247}$ & $0.154 \pm 0.018$ & $0.063$ \\[2pt]
+blind continuation, $128^2$ ($n{=}3$) & $\mathbf{0.823 \pm 0.043}$ & $0.192 \pm 0.022$ & $0.063$ \\[2pt]
+compositional motif transfer ($n{=}8$) & $\mathbf{0.415 \pm 0.096}$ & $0.216 \pm 0.004$ & $\approx 0.072$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent An index code sits at or near the floor on a fresh map. It is not that it
+predicts badly --- it cannot locate itself, so it has nothing to bind an observation
+\emph{to}, and the map it built in the previous environment is worthless. A
+structural code arrives with the where already valid and needs only to rebind. That
+is the factorisation claim, measured.
+
+\paragraph{The separation is what is doing the work, not the architecture.} Two
+controls make this attributable. The path-integrated and index arms here are
+parameter-matched to within $0.4\%$ and differ only in whether the phase is driven
+by the action stream or the index, so the gap is the \emph{driver}, not capacity.
+And the blind-continuation result survives context destruction --- shuffling the
+explore-phase observations takes it from $0.918$ to $0.074$ --- so the model is
+using the conjunction it built in context and not a statistical regularity of the
+task.
+
+\paragraph{Two boundaries, both of which the factorisation predicts.} The separation
+buys nothing when the structural code cannot be \emph{formed}: under rotation-based
+actions the displacement depends on accumulated heading, a fixed per-token increment
+cannot represent it, and the measured effect falls from $+0.438$ to $+0.050$ --- an
+index code then does as well, because neither has a usable where. And it buys
+nothing when there is no structure to share: the effect is a threshold in map extent
+($-0.010$, $+0.015$, $+0.305$ for $32$, $128$, $512$ occupied cells), so on a small
+environment, where an episode revisits everything anyway, there is nothing for a
+structural code to generalise \emph{from}.
+
+\paragraph{What is not shown.} These are transfers to a new \emph{instance} of the
+same structure --- a redrawn observation map on the same torus, new motif instances
+in the same grammar. Transfer across a change of \emph{structure} --- a different
+topology, a different action space, or a graph learned in one environment reused in
+another --- is the claim TEM makes most strongly and is not tested here. So is
+\emph{faster} learning: everything above is final accuracy, and no sample-efficiency
+curve has been measured. Both are the obvious next experiments, and
+$\S$\ref{sec:predictions} lists what the frame predicts for them.
+
 \section{The memory reading: what the frame looks like from the other side}
 \label{sec:memory}
 
@@ -1563,7 +1657,9 @@ PaTH, DeltaNet, RWKV-7 & navigation with \textbf{rotation} actions & non-abelian
 MapFormer & \textbf{state tracking} ($A_5$, $S_5$), formal languages & a signed increment is a parity register --- measured $+0.316$ at $L{=}16$ --- and it keeps the parallel scan, which the delta-rule family forfeits & failing where DeltaNet succeeds, at matched budget \\[3pt]
 Mamba-3 & \textbf{cognitive-map} navigation & the only mechanism holding both slots with a signed rotation; should be the strongest non-attention arm & falling to Mamba-2/GLA's level, which would mean the rotation is not what navigation uses \\[3pt]
 LieRE & navigation with rotation actions & its generators need not commute, so it is the one \emph{positional} code that can express a heading-dependent displacement & needing a commuting special case to train at all \\[3pt]
-CoPE, CARoPE, GRAPE-AP & \textbf{navigation} & they are monotone, so $\S$\ref{sec:clockmap} predicts they fail on a map task specifically, not generally & matching a signed phase on the torus \\
+CoPE, CARoPE, GRAPE-AP & \textbf{navigation} & they are monotone, so $\S$\ref{sec:clockmap} predicts they fail on a map task specifically, not generally & matching a signed phase on the torus \\[3pt]
+MapFormer / MapEM & transfer across a change of \textbf{structure} --- new topology, new action space, a graph reused across environments & this is TEM's strongest claim and the one $\S$\ref{sec:factorisation} does \emph{not} test: everything measured here is a new instance of the same structure & the structural code failing to survive a topology change, which would confine the factorisation claim to re-instantiation \\[3pt]
+any structural code & \textbf{sample efficiency}, not final accuracy & if a where transfers, a new environment should need fewer episodes, not merely reach a higher ceiling. No learning curve has been measured here & equal sample efficiency with a higher asymptote, which would make the separation a capacity effect rather than a transfer one \\
 \bottomrule
 \end{tabular}
 \end{table}
