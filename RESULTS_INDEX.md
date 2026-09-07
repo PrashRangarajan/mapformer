@@ -1,115 +1,175 @@
-# Results index (regenerated 2026-08-18)
+# Results index (regenerated 2026-09-06)
 
-**48 void files live in `archive/void/`.** Nothing there is citable; each carries
-a banner naming the evidence that invalidated it. The DIAGNOSTICS that
-established those verdicts are kept HERE — they are current results.
+Entry point to the repository. `CLAUDE.md` is the chronological log; this file is
+the current state. **48 void files live in `archive/void/`** — nothing there is
+citable, and each carries a banner naming the evidence that invalidated it. The
+DIAGNOSTICS that established those verdicts are kept here, because they are current
+results.
+
+## The two documents
+
+| file | what it is |
+|---|---|
+| `positional_review.pdf` | **the presentable one.** 13pp review of the positional-encoding arena: the one-parameter-group classification, the log-polar unification, the relational map over eight axes, where MapEM / TEM-t / the fast-weight family sit, and the measurements. No corrections, no process. |
+| `mapformer_math.pdf` | the working record. Same content plus every correction, retraction and audit finding, kept so the same errors are not made twice. |
+| `papers/` | all 33 cited sources, read first-hand. `txt/` is tracked and greppable; `bash papers/fetch.sh` restores the PDFs. `papers/INDEX.md` records which claim each reading checks. |
 
 ---
 
 ## THE HEADLINE
 
-**Path integration is what makes in-context cognitive maps work, and it is not
-the positional-encoding scheme.**
+**Path integration is what makes in-context cognitive maps work, and it is not the
+positional-encoding scheme.**
 
-A 2x2 on **the paper's own task**, at the paper's own config, matched recipe,
-seeds and parameters (within 0.4%), against a **measured** always-predict-blank
-floor of **0.506** (`INDEX_BASELINE_PAPER_TASK.md`):
+A 2x2 on **the paper's own task**, matched recipe, seeds and parameters (within
+0.4%), against a **measured** always-predict-blank floor of **0.506**:
 
 | encoding | index position | path-integrated |
 |---|---|---|
-| **RoPE** | 0.514 +/- 0.004 | 0.989 +/- 0.011 (`Vanilla`) |
-| **PoPE** | 0.509 +/- 0.004 | **1.000 +/- 0.001** (`MapPoPE-Flat`) |
+| **RoPE** | 0.514 +/- 0.004 | 0.989 +/- 0.011 |
+| **PoPE** | 0.509 +/- 0.004 | **1.000 +/- 0.001** |
 
-Both index cells sit at the floor; both path-integrated cells solve it. The
-encoding moves the result ~0.005-0.011; path integration moves it ~0.48. It holds
-under the paper's own OOD-d / OOD-s protocol too (`PAPER_OOD_WITH_POPE.md`).
+Both index cells sit at the floor; both path-integrated cells solve it. Position
+moves the result ~0.46, the encoding ~0.003. It holds under the paper's own
+OOD-d / OOD-s protocol (`PAPER_OOD_WITH_POPE.md`, `INDEX_BASELINE_PAPER_TASK.md`).
 
-Four independent legs support it:
+Supported by: the paper's task and its OOD protocol; **Match-Query** (0.730 +/-
+0.247 n=5 vs index 0.154, chance 0.0625, no seed overlap, survives context
+destruction 0.918 -> 0.074); **family tree** (+0.115 over index, map-destroyed
+condition lands on the 0.163 hub floor); and an explained residual — index models
+exceed the floor only at recurrence interval 1-2, i.e. out-and-back retraces
+readable from the action tokens as content (`REVISIT_DISTANCE.md`).
 
-1. **The paper's task** — the 2x2 above, plus OOD.
-2. **Match-Query** (shortcut-gated, invented here) — 0.730 +/- 0.247 (n=5, 64^2)
-   and 0.823 +/- 0.043 (n=3, 128^2) vs index 0.154 / 0.192, chance 0.0625, no
-   seed overlap; survives context destruction (0.918 -> 0.074).
-   The decisive within-task control: MapPoPE-Hier (PoPE + path int.) 0.847 vs
-   PoPE-Flat (PoPE + index) 0.117 — same attention, opposite outcome.
-3. **Family tree** (non-commutative relational structure) — path integration
-   +0.115 over index; passes context destruction, with the map-destroyed
-   condition landing on the 0.163 hub floor to three decimals.
-4. **The residual is explained, not waved away** — index models exceed the floor
-   only at recurrence interval 1-2 (+0.05 to +0.07), i.e. out-and-back retraces
-   readable from the ACTION TOKENS AS CONTENT with no position code
-   (`REVISIT_DISTANCE.md`). The same +0.07 reappears at OOD-d.
-
-What changed on 2026-08-18: this claim used to rest almost entirely on
-Match-Query, a task invented here. It now rests on the paper's own benchmark.
+**Two boundaries.** The effect tracks **map extent**, not aliasing: at matched
+aliasing it is -0.010 / +0.015 / +0.305 for 32 / 128 / 512 occupied cells, a
+threshold rather than a gradient (`ALIASING_CONTROLLED.md`, `VISITS_TEST.md`). And
+it does not survive **rotation-based actions**: under turn/turn/forward it falls
+from +0.438 to +0.050, which allocentric recoding restores to +0.488
+(`KNOB_SWEEP_n8.md`, `ALLOCENTRIC_RECODING.md`).
 
 ---
 
-## Other results worth citing
+## What else is citable
 
-**MapPoPE-Flat is the strongest configuration measured on this benchmark.**
-1.000 / 0.995 / 0.996 (IID / OOD-d / OOD-s l=512) against the paper's reported
-MapWM 0.99/0.99/0.96 and MapEM-os 1.0/0.99/0.97. PoPE is not a better idea than
-RoPE in itself — it is inert without path integration (0.509) — but combined with
-it, it beats everything else here. `PAPER_OOD_WITH_POPE.md`
+**The sign of the increment is load-bearing, and it is worth more than any other
+ingredient per parameter.** At matched training loss, signed path integration beats
+an index code by +0.123 / +0.195 at T=512/1024 (12/12 seeds); a monotone increment
+beats an index code **nowhere**. The learned code shows why: opposition score 0.11
+signed against 1.85-1.98 monotone, where 2.0 means opposite actions are identical.
+CARoPE's published parameterisation reaches 1.98. Zero parameters.
+`SIGN_ABLATION.md`, `SIGN_PROBE.md`, pre-registered in `SIGN_ABLATION_PREREG.md`.
+*Scope: a replication of Sarrof / Grazzi / Selective RoPE §4.2 in a new regime.*
 
-**Level 1.5's correction is MEASUREMENT-DRIVEN, and now bounded.**
-+24.8pp over Vanilla on lm200 OOD T=512 (`LM200_CORRECTED_MULTISEED.md`, n=3);
-1.000 vs 0.993 on the clean paper task at 50 epochs with 16x lower training loss;
-but **no advantage on Match-Query** (0.876 vs 0.888), whose blind query phase
-gives the filter nothing to correct with. Not capacity — a control with MORE
-parameters scores below both. `LEVEL15_MEETS_GATED_*.md`
+**Use r=4, not the paper's r=2.** +0.085 at T=1024 (8/8 seeds, t=3.57) for 384
+parameters — a step at r=2, flat to r=32. The cause is a skewed basis, not missing
+capacity: at r=2 opposite actions fail to cancel by half the action scale and
+north/east are nearly parallel (|cos| 0.78 against 0.17 at r=4). It also cuts the
+seed sd from 0.064 to 0.012, which sets every detectable effect size downstream.
+`RANK_SWEEP.md`, `ACTION_GEOMETRY.md`, `PAPER_FIG4_REPRO.md`.
 
-**The parallel-scan claim holds.** 2.6-3.3x scaling vs 14.5x (MapEM-NC) and 120x
-(TEMFaithful) over a 16x length increase. `TIMING_BENCHMARK.md`
+**MapPoPE-Flat is the strongest configuration on this benchmark.** 1.000 / 0.995 /
+0.996 (IID / OOD-d / OOD-s, l=512). PoPE is inert without path integration (0.509)
+and beats everything else with it. `PAPER_OOD_WITH_POPE.md`.
 
-**Two of the paper's stated-but-unmeasured conjectures are refuted.**
-Separate q0/k0 (+0.358 against it on Match-Query, four tasks total) and the value
-of non-commutativity (+0.005-0.014 for 34x the cost).
+**The parallel-scan claim holds, and the reason is now mechanical.** 2.6-3.3x
+scaling against 14.5x (MapEM-NC) and 120x (TEMFaithful) over a 16x length increase.
+TEM's cost is the missing group law: its ReLU and its non-commuting per-action
+matrices each independently destroy interval-relativity, and MapFormer is exactly
+the surviving configuration. `TIMING_BENCHMARK.md`, `positional_review.pdf` §7.
 
-**CSCG's stitching negative control reproduces in MapFormer's attention.**
-Paired difference +0.131 +/- 0.024 (floor exactly 0) vs index -0.005 +/- 0.016;
-transitive retrieval 2.98x vs a 3.32x within-room yardstick. `STITCH_ATTENTION.md`
+**The loop composes with path integration where there is headroom.** On
+Match-Query, `r=4 + loop x4` is 0.986 +/- 0.020 with 8/8 seeds >= 0.941 at 204,757
+parameters — the best arm measured on that task, with a positive interaction of
++0.149. `MQ_RANK_2X2.md`, `LOOP_HEADROOM.md`.
+
+**Two of the paper's stated-but-unmeasured conjectures are refuted.** Separate
+q0/k0 (+0.358 against it on Match-Query, four tasks) and the value of
+non-commutativity (+0.005-0.014 for 34x the cost, below plain MapWM).
+
+**CSCG's stitching negative control reproduces in MapFormer's attention.** Paired
+difference +0.131 +/- 0.024 (floor exactly 0) against index -0.005 +/- 0.016.
+`STITCH_ATTENTION.md`.
+
+---
+
+## Live negatives — do not re-run these
+
+- **Level 1.5 / the InEKF is stabilisation, not inference.** At n=5 no individual
+  component is load-bearing (`L15_ABLATION.md`), a filter-free capacity control
+  ties it on lm200 (`EXTRAHEAD_CONTROL.md`), and — the sharpest test — its benefit
+  does **not** grow with the drift it exists to correct: +0.003 and -0.141 across
+  two recipes when stochastic transitions are added (`MQ_NOISE_2X2*.md`). The
+  earlier "measurement-driven" framing in this file is withdrawn.
+- **Refining theta across depth does nothing**, in the regime built for it: flat at
+  zero with no slope in noise, and the learned gate declines to fire
+  (`NOISE_REFINE.md`).
+- **Hierarchy** helps compositional transfer and long-horizon aggregation and costs
+  precise retrieval; an aggregate-task "win" was a training-length confound.
+  Oracle room-aligned pooling did not help; frame-reset made both metrics worse.
+- **Hex emergence** does not follow from architecture, correction stacking, or the
+  Sorscher conditions as implemented here.
+- **PC and Kalman are duals, not complements** — gradient descent finds the
+  degenerate joint optimum unless the two are fully isolated.
+- **MoR-style depth routing has nothing to route on here**: an oracle per-stratum
+  router buys +0.007 against a seed sd of 0.152.
+- **The octave prediction for PoPE wrapping is refuted** (+0.077/+0.095/+0.079,
+  flat in grid size); the length half holds 3/3. `POPE_WRAPPING.md`.
+- **The forget gate's +0.086 has no identified mechanism**: anti-correlated with
+  lambda, 5/8 seeds learn lambda<0, and the frozen-lambda control lands on Vanilla.
+  `FORGET_GATE.md`, `FORGET_CONTROL.md`.
 
 ---
 
 ## Standing rules (each bought by a failure)
 
-1. **n-gram on the ACTION STREAM ALONE, orders 1-5**, before any demonstration
-   task. A copy-previous baseline tests order 1 only and certified a task whose
-   order-3 shortcut was 0.971.
-2. **Context-destruction ablation on trained models.** hier-goal: 0.912 -> 0.913
-   (void). Match-Query: 0.918 -> 0.074 (passes). As of 2026-08-18, family tree
-   and compositional have also passed; three of the four citable results have
-   now been through this gate, where before only one had.
-3. **Never compare a fresh variant to a stored baseline.** Retrain every arm in
-   the same batch.
+1. **n-gram on the ACTION STREAM ALONE, orders 1-5**, before any demonstration task.
+2. **Context-destruction ablation on trained models.** hier-goal 0.912 -> 0.913
+   (void); Match-Query 0.918 -> 0.074 (passes).
+3. **Never compare a fresh variant to a stored baseline.** Retrain every arm in one
+   batch.
 4. **Report the measured chance rate**, and check which column it belongs to.
-   The index models read 0.80 on OOD-s and 0.27 on OOD-d while doing the SAME
-   thing — the blank floor moved with p_empty.
-5. **Verify the training budget before reading a weak number as a negative.**
-   Level15 on the paper task: 0.938 at 16 epochs, **1.000 at 50**. Map-Query
-   needed 8x its initial budget.
-6. **Three seeds is not a point estimate.** 0.888 +/- 0.140 (n=3) became
-   0.730 +/- 0.247 (n=5) on the same config.
-7. **A gate must CALL the task code, not reimplement it.** A validator that
-   duplicated the walk silently tested a different task from the trainer.
-8. **A retraction must be applied to the GENERATORS, not just recorded.**
-   `eval_paper_task.py` kept printing "the paper reports MapFormer-WM 0.955,
-   MapFormer-EM 0.999" into every report it produced for months after those
-   figures were retracted in CLAUDE.md — they appear in no table of the paper.
-   Fixed 2026-08-18. Grep the code for retracted numbers, not just the docs.
+5. **Verify the training budget before reading a weak number as a negative** — but
+   two budget points make a line, not a trend.
+6. **Three seeds is not a point estimate**, and this applies to your own fresh
+   numbers, not just other people's.
+7. **A gate must CALL the task code, not reimplement it.**
+8. **A retraction must be applied to the GENERATORS, not just recorded.** Grep the
+   code for retracted numbers, not only the docs.
+9. **Check whether accuracy is just the training loss.** r has been as strong as
+   -0.996; loss-match when |r| > 0.5 and report both.
+10. **Verify convergence and the LR schedule.** LinearLR from step one cannot escape
+    a plateau late; one arm moved 0.448 -> 0.990 on the same task.
+11. **"Null" requires power.** Report the MDE; say "unmeasured" otherwise. And check
+    whether the cell could have gone the other way — a baseline at 1.000 +/- 0.000
+    cannot show a deficit of any size.
+12. **Put the seeds on the comparison you are CLAIMING.**
+13. **Balance the GPU picker to the less-loaded device**, and do not interleave job
+    types against an alternating picker.
+14. **Do not infer held-out accuracy from training loss** (0.03 loss -> 0.674 acc).
+15. **Set pre-registered branch boundaries against the measured noise floor.**
+16. **Never edit a running bash script**; kill and relaunch.
+17. **Check a mechanism's PREMISE applies to the task before testing it.**
+18. **Check whether the knob is a RUNTIME argument** before specifying a sweep.
+19. **Split a hypothesis before testing it**, so a failed test kills only what it hits.
+21. **Read the CODE, not its COMMENT.**
+23. **Verify WHAT a probe measures, not just that it ran.**
+24. **Post-hoc truncation is not a sufficiency test.**
+25. **Check whether a "failure to reproduce" is the paper's own reported result.**
+26. **`pgrep -f` / `pkill -f` match the AUTHOR's shells too.** Filter by
+    `ps -o comm=` and require a real interpreter.
+27. **A failed `git add` stages NOTHING** — one bad pathspec kills the whole call,
+    and ` M` with a leading space in `git status --short` is UNSTAGED. Verify
+    `git show HEAD:<file>`, not the absence of a crash.
+28. **Case matters in verification greps.** A case-insensitive search for `rope`
+    matches `p-rope-rty`; one for `Undefined` misses LaTeX's `undefined`.
 
 Two method notes that are not rules but cost real time:
 
-- **`shuffle` and `resample` are not interchangeable.** Permuting slots also
-  destroys the walk's autocorrelation and puts the input off-manifold;
-  substituting a stream from an independent episode does not. On the paper task
-  resample was MORE destructive (0.178 vs 0.231); on family tree and
-  compositional it was LESS. Report both.
-- **An ablation landing BELOW the floor** means the model fails confidently
-  rather than hedging (NLL 3.7-5.6 against ln(21)=3.04 for uniform). Worth
-  checking with an on-manifold resample before blaming the manipulation.
+- **`shuffle` and `resample` are not interchangeable.** Permuting slots destroys the
+  walk's autocorrelation and puts the input off-manifold; substituting a stream from
+  an independent episode does not. Report both.
+- **An ablation landing BELOW the floor** means the model fails confidently rather
+  than hedging. Check with an on-manifold resample before blaming the manipulation.
 
 ---
 
@@ -140,12 +200,28 @@ Two method notes that are not rules but cost real time:
 - `TIMING_BENCHMARK.md`
 - `VOCAB_SWEEP_MULTISEED.md`
 
-**Reclassification note.** `LM200_CORRECTED_MULTISEED.md` was previously filed
-under DIAGNOSTICS, which made it read as a post-mortem rather than a current
-result. It is the corrected, fresh, multi-seed lm200 leaderboard under current
-code and it is citable: Level15 0.990 +/- 0.005 vs Vanilla 0.742 +/- 0.075.
+**Note on `LM200_CORRECTED_MULTISEED.md`.** It is the corrected, fresh,
+multi-seed lm200 leaderboard under current code (Level15 0.990 +/- 0.005 vs Vanilla
+0.742 +/- 0.075) and the numbers stand. Its *interpretation* does not: a
+filter-free capacity control ties it (`EXTRAHEAD_CONTROL.md`), so the gap is not
+evidence for the Kalman mechanism.
 Its one outstanding gap is that lm200 has never had a context-destruction
 ablation (rule 2).
+
+### Added since 2026-08-18
+
+- `SIGN_ABLATION.md`, `SIGN_PROBE.md`, `SIGN_ABLATION_PREREG.md`
+- `RANK_SWEEP.md`, `ACTION_GEOMETRY.md`, `PAPER_FIG4_REPRO.md`, `RANK_TRUNCATION.md`
+- `MQ_RANK_2X2.md`, `LOOP_HEADROOM.md`, `L15_LOOP_2X2.md`, `LOOP_SAMPLED.md`
+- `DXR_RANK_THRESHOLD.md`, `ND_GATES.md`
+- `SELECTIVE_ROPE.md`, `GATE_PROBE.md`, `CONV_KERNEL_PROBE.md` (per-knob rows are
+  attributable only up to initialisation — see the caveat in the review)
+- `FORGET_GATE.md`, `FORGET_CONTROL.md`, `LAMBDA_TRACE.md`
+- `POPE_WRAPPING.md`, `ALIASING_CONTROLLED.md`, `VISITS_TEST.md`
+- `L15_ABLATION.md`, `NOISE_REFINE.md`, `MQ_NOISE_2X2.md`, `MQ_NOISE_2X2_C2.md`
+- `RECIPE_POWER.md`, `LOOP_DEPTH_STRATA.md`, `ROPE_CANONICAL.md`
+- `MINIGRID_FULL_2X2X2.md`, `KNOB_SWEEP_n8.md`, `HABITAT_BUILD.md`
+- `papers/INDEX.md` — the source corpus and what each reading verifies
 
 ## DIAGNOSTICS — what invalidated things (10)
 
