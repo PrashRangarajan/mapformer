@@ -1548,9 +1548,9 @@ no two mechanisms below agree on all eight.
 \begin{sidewaystable}\small
 \centering
 \caption{Mechanisms that fit \eqref{eq:unified} or its unipotent extension.
-Every row was read first-hand
-(2026-09-06); the sources are stored under \texttt{papers/} and indexed in
-\texttt{papers/INDEX.md}. $^\ast$Jordan-RoPE's magnitude factor is a
+\textbf{Every row was read first-hand and every externally-checkable cell was
+checked against the source}, not against a summary of it; the sources are stored
+under \texttt{papers/} and indexed in \texttt{papers/INDEX.md}. $^\ast$Jordan-RoPE's magnitude factor is a
 \emph{polynomial} in the lag, $d^r e^{i\omega d}$, not an exponential: its
 generator couples a complex eigenvalue to a nilpotent in one defective block, so
 it is non-semisimple rather than unipotent. $^\ddagger$FoX's bias
@@ -1569,26 +1569,26 @@ general edge potential.}
 \toprule
 mechanism & A1 factor & A2 locus & A3 driver & A4 algebra & A5 sign & A6 rank & A7 host \\
 \midrule
-NoPE$^\dagger$              & ---        & ---     & ---    & ---        & ---     & ---        & softmax \\
-RoPE$^\dagger$              & phase      & acc.    & index  & $\C^\times$ & n/a    & n/a        & softmax \\
-ALiBi$^\dagger$             & magnitude  & acc.    & index  & unipotent  & fixed $<0$ & n/a     & softmax \\
-xPos$^\dagger$              & both       & acc.    & index  & $\C^\times$ & n/a    & n/a        & softmax \\
-PoPE$^\dagger$              & magnitude  & \textbf{inst.} & content & ---  & $>0$    & full      & softmax \\
+NoPE              & ---        & ---     & ---    & ---        & ---     & ---        & softmax \\
+RoPE              & phase      & acc.    & index  & $\C^\times$ & n/a    & n/a        & softmax \\
+ALiBi             & magnitude  & acc.    & index  & unipotent  & fixed $<0$ & n/a     & softmax \\
+xPos              & both       & acc.    & index  & $\C^\times$ & n/a    & n/a        & softmax \\
+PoPE              & magnitude  & \textbf{inst.} & content & ---  & $>0$    & full      & softmax \\
 \midrule
-\textbf{MapFormer}$^\dagger$ & phase     & acc.    & content & $\C^\times$ & \textbf{signed} & \textbf{rank $r$} & softmax \\
-MapPoPE$^\dagger$           & both       & inst.+acc. & content & $\C^\times$ & signed & rank $r$ & softmax \\
-Selective RoPE$^\dagger$    & phase      & acc.    & content & $\C^\times$ & signed & full (or 8--16) & both \\
-CARoPE$^\dagger$            & phase      & acc.    & content & $\C^\times$ & \textbf{$\in(0,1)$} & \textbf{1/head} & softmax \\
+\textbf{MapFormer} & phase     & acc.    & content & $\C^\times$ & \textbf{signed} & \textbf{rank $r$} & softmax \\
+MapPoPE           & both       & inst.+acc. & content & $\C^\times$ & signed & rank $r$ & softmax \\
+Selective RoPE    & phase      & acc.    & content & $\C^\times$ & signed & full (or 8--16) & both \\
+CARoPE            & phase      & acc.    & content & $\C^\times$ & \textbf{$\in(0,1)$} & \textbf{1/head} & softmax \\
 \midrule
-GRAPE-M$^\dagger$           & phase      & acc.    & \textbf{index} & $\C^\times$ & n/a & n/a  & softmax \\
-GRAPE-A / AP$^\dagger$      & magnitude  & acc.    & content & \textbf{unipotent} & \textbf{$\ge 0$} & 1--full$^{\S}$ & softmax \\
-FoX$^\dagger$               & magnitude  & acc.    & content & unipotent$^\ddagger$  & $<0$    & scalar/head & softmax \\
-Jordan-RoPE$^\dagger$       & both$^\ast$ & acc.   & index   & \textbf{non-ss.} & n/a & n/a & softmax \\
-LieRE$^\dagger$             & phase      & direct$^{\S}$ & \textbf{position} & $SO(d)$, non-ab. & n/a & \textbf{tile $b\!\times\!b$} & softmax \\
-Algebraic PE$^\dagger$      & phase      & acc.    & \textbf{structure} & $\C^\times$\,$^{\S}$ & n/a & n/a & softmax \\
+GRAPE-M           & phase      & acc.    & \textbf{index} & $\C^\times$ & n/a & n/a  & softmax \\
+GRAPE-A / AP      & magnitude  & acc.    & content & \textbf{unipotent} & \textbf{$\ge 0$} & 1--full$^{\S}$ & softmax \\
+FoX               & magnitude  & acc.    & content & unipotent$^\ddagger$  & $<0$    & scalar/head & softmax \\
+Jordan-RoPE       & both$^\ast$ & acc.   & index   & \textbf{non-ss.} & n/a & n/a & softmax \\
+LieRE             & phase      & direct$^{\S}$ & \textbf{position} & $SO(d)$, non-ab. & n/a & \textbf{tile $b\!\times\!b$} & softmax \\
+Algebraic PE      & phase      & acc.    & \textbf{structure} & $\C^\times$\,$^{\S}$ & n/a & n/a & softmax \\
 \midrule
-Mamba / Mamba-2, GLA$^\dagger$ & magnitude & acc.  & content & $\C^\times$ & $<0$   & full/scalar & SSM \\
-\textbf{Mamba-3}$^\dagger$  & \textbf{both} & acc. & \textbf{content} & $\C^\times$ & \textbf{signed} & full & SSM \\
+Mamba / Mamba-2, GLA & magnitude & acc.  & content & $\C^\times$ & $<0$   & full/scalar & SSM \\
+\textbf{Mamba-3}  & \textbf{both} & acc. & \textbf{content} & $\C^\times$ & \textbf{signed} & full & SSM \\
 \bottomrule
 \end{tabular}
 \end{sidewaystable}
@@ -1602,13 +1602,13 @@ up.
 \toprule
 mechanism & what breaks & consequence \\
 \midrule
-PaTH, DeltaNet, RWKV-7$^\dagger$ & the \emph{fixed basis} (A4 non-abelian)
+PaTH, DeltaNet, RWKV-7 & the \emph{fixed basis} (A4 non-abelian)
   & path-ordered product of $I+\text{rank-}1$; no $S_t$ \\
-CoPE$^\dagger$         & \emph{per-token factorisation} (A3 = pair)
+CoPE         & \emph{per-token factorisation} (A3 = pair)
   & $p_{ij}=\sum_{k=j}^{i}\sigma(q_i\!\cdot\!k_k)$; no $\theta_t$ \\
-MesaNet, Titans, TAPE$^\dagger$ & the \emph{path structure} (A8)
+MesaNet, Titans, TAPE & the \emph{path structure} (A8)
   & prefix-global inverse / deep memory / layerwise update \\
-TEM-t$^\dagger$        & \emph{linearity} and \emph{commutativity}
+TEM-t        & \emph{linearity} and \emph{commutativity}
   & $e_t = \sigma(e_{t-1}W_{a_t})$; see $\S$\ref{sec:emtem} \\
 \bottomrule
 \end{tabular}
