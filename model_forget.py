@@ -80,6 +80,9 @@ class ForgetGate(nn.Module):
                     f.write(f"{self._step} {float(self.lam.detach()):.6f} "
                             f"{float(g.detach().mean()):.6f}\n")
         log_gamma = -self.lam * g
+        # diagnostic stash only; no functional effect (see probe_accumulator.py,
+        # which asks whether this gate's own accumulator is bounded)
+        self.last_log_gamma = log_gamma.detach()
         L = torch.cumsum(log_gamma, dim=1).transpose(1, 2)          # (B, H, T)
         return L.unsqueeze(-1) - L.unsqueeze(-2)                    # (B, H, T, T)
 
