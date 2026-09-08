@@ -893,9 +893,9 @@ with a parallel scan. The accumulated phase $\theta_t = \omega\sum\Delta_u$ is $
 identical in any environment with the same transition structure, because it depends
 on the action stream and not on what was seen.
 
-\textbf{But that separation is learned, not built.} It is worth being exact here,
-because it is the difference between a factorisation the architecture guarantees and
-one it merely tends to find. MapFormer's increment is computed from \emph{every}
+\textbf{But that separation is learned, not built} --- the difference between a
+factorisation the architecture guarantees and one it merely tends to find.
+MapFormer's increment is computed from \emph{every}
 token embedding --- $\Delta_u = W_{\mathrm{out}}W_{\mathrm{in}}x_u$ with no gating by
 token type --- so the model has to \emph{discover} that $\Delta \approx 0$ on
 observations. It does: on a trained model actions move the phase about five times as
@@ -1442,26 +1442,14 @@ accumulator performs a \textbf{diffusive random walk}. A monotone one gives
 $\alpha \approx 0.94$: \textbf{ballistic drift}. The last column is the opposition score of
 $\S$\ref{sec:sign}; across the four arms $r(\text{opposition},\alpha) = +0.9995$.
 
-\paragraph{What $\alpha$ is worth, stated honestly.} It is an \emph{observable},
-not a knob (see $\S$\ref{sec:open}), and it is very nearly collinear with the
-opposition score: $r = +0.9995$ across these arms. Opposition is read straight off
-the learned action code, is simpler, and is easier to interpret, so \textbf{$\alpha$
-carries almost no information that opposition does not}, and nothing in this review
-rests on $\alpha$ that could not have rested on opposition.
-
-Its actual contribution is economy: it makes the sign result and the rank result
-\emph{one} finding instead of two, at two severities. That is explanatory value, not
-predictive value --- it does not tell anyone what to build. And its one candidate
-prospective use, predicting degradation at length, is precisely the link
-$\S$\ref{sec:open} records as unestablished.
-
-One narrow use survives, and it is the reason to keep measuring it. Opposition needs
-\emph{labelled opposite actions}; on text there are none, so it cannot be computed
-there at all. $\alpha$ needs only trajectories. So $\alpha$ is the form the
-cancellation measurement takes where the action code is not labelled --- which is
-the setting the whole content-dependent-phase literature actually works in. That
-measurement has not been made: the language trainer here saves metrics and no model
-checkpoints, so it needs a retrain.
+\paragraph{What $\alpha$ is worth.} It is an observable rather than a knob, and it
+is nearly collinear with the opposition score ($r = +0.9995$), which is read
+directly off the learned action code. So it carries little information opposition
+does not, and its contribution is economy: it makes the sign and rank results one
+finding at two severities rather than two. One use is its own --- opposition needs
+labelled opposite actions and cannot be computed on text at all, while $\alpha$
+needs only trajectories, so it is the form this measurement takes in the setting
+this literature works in. That measurement has not been made.
 
 \textbf{This is one mechanism for two separate results.} How completely opposite
 actions cancel sets whether the accumulator diffuses or drifts; that sets how fast it
@@ -1537,12 +1525,10 @@ CARoPE form (monotone) & $1.003$ & $0.992$ & $-0.011$ \\
 constrained rows are the control that attributes it to the \emph{choice} rather
 than to the two tasks' statistics.
 
-Read this as corroboration, not as the finding. \textbf{The result is the accuracy
-interaction above} --- forcing monotonicity costs $0.28$ on one task and nothing on
-the other. The $\alpha$ table says the same thing measured on the learned code
-instead of on held-out accuracy, which is worth having because the two could have
-disagreed. It is not independent evidence, and given $r(\text{opposition},\alpha) =
-0.9995$ an opposition table would have said it equally well.
+This is corroboration rather than the finding: the result is the accuracy
+interaction above, and the $\alpha$ table measures the same thing on the learned
+code instead of on held-out accuracy. Worth having because the two could have
+disagreed; not independent evidence.
 
 \paragraph{What supplies the clock, established by intervention.} The arm does not
 make every increment positive --- the negative fraction of $\Delta$ barely moves,
@@ -1898,10 +1884,10 @@ does not yet explain either. That is the gap worth building into.
   structure.
 
   \textbf{The obvious test of the growth law is malformed, and the real gap is
-  prior to it.} An earlier version of this section proposed varying $\alpha$
-  deliberately and checking that degradation follows. That cannot be done as
-  stated. $\alpha$ is not a parameter of any model here --- it is a statistic
-  fitted to a trained one --- and the two ways to move it both fail: interpolating
+  prior to it.} Varying $\alpha$ deliberately and checking that degradation follows
+  cannot be done: $\alpha$ is not a parameter of any model here --- it is a
+  statistic fitted to a trained one --- and the two ways to move it both fail.
+  Interpolating
   from a signed to a monotone increment moves $\alpha$ but destroys the map at the
   same time, so on a map task it isolates nothing beyond the sign ablation; and
   bounding the accumulator is either a no-op, since $\theta$ enters through
