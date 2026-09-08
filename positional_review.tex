@@ -1442,6 +1442,27 @@ accumulator performs a \textbf{diffusive random walk}. A monotone one gives
 $\alpha \approx 0.94$: \textbf{ballistic drift}. The last column is the opposition score of
 $\S$\ref{sec:sign}; across the four arms $r(\text{opposition},\alpha) = +0.9995$.
 
+\paragraph{What $\alpha$ is worth, stated honestly.} It is an \emph{observable},
+not a knob (see $\S$\ref{sec:open}), and it is very nearly collinear with the
+opposition score: $r = +0.9995$ across these arms. Opposition is read straight off
+the learned action code, is simpler, and is easier to interpret, so \textbf{$\alpha$
+carries almost no information that opposition does not}, and nothing in this review
+rests on $\alpha$ that could not have rested on opposition.
+
+Its actual contribution is economy: it makes the sign result and the rank result
+\emph{one} finding instead of two, at two severities. That is explanatory value, not
+predictive value --- it does not tell anyone what to build. And its one candidate
+prospective use, predicting degradation at length, is precisely the link
+$\S$\ref{sec:open} records as unestablished.
+
+One narrow use survives, and it is the reason to keep measuring it. Opposition needs
+\emph{labelled opposite actions}; on text there are none, so it cannot be computed
+there at all. $\alpha$ needs only trajectories. So $\alpha$ is the form the
+cancellation measurement takes where the action code is not labelled --- which is
+the setting the whole content-dependent-phase literature actually works in. That
+measurement has not been made: the language trainer here saves metrics and no model
+checkpoints, so it needs a retrain.
+
 \textbf{This is one mechanism for two separate results.} How completely opposite
 actions cancel sets whether the accumulator diffuses or drifts; that sets how fast it
 leaves the range it was trained on; and that co-varies with the rate of degradation
@@ -1456,7 +1477,7 @@ rests on is the spread to $0.94$ and the agreement with an independently measure
 quantity.
 
 
-\subsection{F3, continued: the crossover, and what $\alpha$ reads off}
+\subsection{F3, continued: the crossover}
 \label{sec:crossover}
 
 Every measurement above is on a task that wants a \emph{map}. That makes
@@ -1514,8 +1535,14 @@ CARoPE form (monotone) & $1.003$ & $0.992$ & $-0.011$ \\
 
 \noindent $n=12$ and $8$; the shift has a standard error of $0.009$. The
 constrained rows are the control that attributes it to the \emph{choice} rather
-than to the two tasks' statistics. So $\alpha$ is a diagnostic of what a task
-demanded, not merely a description of an architecture.
+than to the two tasks' statistics.
+
+Read this as corroboration, not as the finding. \textbf{The result is the accuracy
+interaction above} --- forcing monotonicity costs $0.28$ on one task and nothing on
+the other. The $\alpha$ table says the same thing measured on the learned code
+instead of on held-out accuracy, which is worth having because the two could have
+disagreed. It is not independent evidence, and given $r(\text{opposition},\alpha) =
+0.9995$ an opposition table would have said it equally well.
 
 \paragraph{What supplies the clock, established by intervention.} The arm does not
 make every increment positive --- the negative fraction of $\Delta$ barely moves,
@@ -1850,6 +1877,7 @@ refuted here. $\alpha$ unifies two results and reads off what a task demanded; i
 does not yet explain either. That is the gap worth building into.
 
 \section{Open questions}
+\label{sec:open}
 
 \begin{itemize}\itemsep3pt
 \item \textbf{The input-side rank.} $r=2$ is the worst setting and $r=4$ fixes it for
