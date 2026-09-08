@@ -76,8 +76,13 @@ with uncounted filler interleaved, so k is a contextual position (the answer sit
   pre-stated as decisive is confounded (a control changing only theta's scale
   collapses just as hard). Both recorded.
 
-Open: **Flip-Flop LM** (Liu et al. 2023) is this task at k=1 and is a published
-dataset; it is the external-validity check and has not been run.
+**The external check was run, and it is a null that our own data predicted.**
+Flip-Flop LM (Liu et al. 2023), 6 arms x 8 seeds: every contrast unmeasured
+(path-integrated minus index -1.23pp against an MDE of 3.99), all arms at 0.00%
+in-distribution error. Our per-offset curve said so in advance -- index is 0.99 at
+k=1 and only collapses from k=8, and **Flip-Flop only ever asks k=1**. The
+benchmark varies distance-to-write but never ORDINAL DEPTH, which is the property
+that separates a content-gated counter from an index. `FLIPFLOP_RESULTS.md`.
 
 ## What else is citable
 
@@ -100,6 +105,9 @@ seed sd from 0.064 to 0.012, which sets every detectable effect size downstream.
 **MapPoPE-Flat is the strongest configuration on this benchmark.** 1.000 / 0.995 /
 0.996 (IID / OOD-d / OOD-s, l=512). PoPE is inert without path integration (0.509)
 and beats everything else with it. `PAPER_OOD_WITH_POPE.md`.
+*Caveat found 2026-09-07: `MapFormerWM_PoPE` defaults to `bottleneck_r=2`, so every
+MapPoPE number here is at the rank this project independently shows is
+under-provisioned. r=4 has never been applied to it; a batch is running.*
 
 **The parallel-scan claim holds, and the reason is now mechanical.** 2.6-3.3x
 scaling against 14.5x (MapEM-NC) and 120x (TEMFaithful) over a 16x length increase.
@@ -144,6 +152,15 @@ difference +0.131 +/- 0.024 (floor exactly 0) against index -0.005 +/- 0.016.
   router buys +0.007 against a seed sd of 0.152.
 - **The octave prediction for PoPE wrapping is refuted** (+0.077/+0.095/+0.079,
   flat in grid size); the length half holds 3/3. `POPE_WRAPPING.md`.
+- **An explicit content gate separates what from where, verifiably, and buys
+  nothing.** `Delta = sigmoid(W_g x) * (W_out W_in x)` reaches a **4.16x**
+  action-vs-observation gate ratio (8/8 seeds, against a 1.35x floor set from
+  Selective RoPE's gate) -- and improves accuracy nowhere: +0.004 torus, -0.039
+  recency (both unmeasured), while fitting worse. MapFormer's linear bottleneck was
+  already separating adequately, which **corroborates the paper's design** rather
+  than improving it. The inference that produced this batch was mine and was wrong:
+  "the gate is load-bearing" does not imply "the model needs help building one".
+  `GATED_RESULTS.md`.
 - **The forget gate's +0.086 has no identified mechanism**: anti-correlated with
   lambda, 5/8 seeds learn lambda<0, and the frozen-lambda control lands on Vanilla.
   `FORGET_GATE.md`, `FORGET_CONTROL.md`.
