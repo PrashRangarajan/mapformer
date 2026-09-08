@@ -154,3 +154,28 @@ class MapFormerWM_Hourglass_PoPE_CoarseIdx(MapFormerWM_Hourglass_CoarseIdx):
         self.pre_layers = _swap(self.pre_layers, d, h)
         self.coarse_layers = _swap(self.coarse_layers, d, h)
         self.post_layers = _swap(self.post_layers, d, h)
+
+
+class MapFormerWM_PoPE_r4(MapFormerWM_PoPE):
+    """MapPoPE at rank 4.
+
+    Every MapPoPE result in this project was produced at the r=2 default, which is
+    the rank independently shown here to be under-provisioned: r=4 buys +0.085 at
+    T=1024 for 384 parameters (8/8 seeds), and r=2's learned code is skewed rather
+    than small (opposition 0.495, |cos(N,E)| 0.783). So the arm that currently
+    scores best on the paper task has never had the one upgrade known to be nearly
+    free.
+
+    Note the hazard this class sits next to: `MapFormerWM_Hourglass_PoPE` silently
+    reset the rank to 2 inside `_widen_to_d` until 2026-08-28, making r=2 and r=4
+    produce identical parameter counts. The flat path passes `bottleneck_r`
+    through correctly, and the rank is asserted at construction here rather than
+    assumed.
+    """
+    def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
+                 dropout=0.1, grid_size=64, bottleneck_r=2, **kw):
+        super().__init__(vocab_size, d_model, n_heads, n_layers, dropout,
+                         grid_size, bottleneck_r=4)
+        assert self.action_to_lie.w_in.out_features == 4, (
+            "rank did not survive construction: "
+            f"{self.action_to_lie.w_in.out_features}")

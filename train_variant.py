@@ -81,7 +81,7 @@ from mapformer.model_hourglass import (
 from mapformer.model_em_fixed import MapFormerEM_SingleP0
 from mapformer.model_mapformer_nc import MapFormerEM_NC_L, MapFormerEM_NC_NL
 from mapformer.model_pope import (
-    MapFormerWM_PoPE, MapFormerWM_RoPEIndex_PoPE, MapFormerWM_Hourglass_PoPE,
+    MapFormerWM_PoPE_r4, MapFormerWM_PoPE, MapFormerWM_RoPEIndex_PoPE, MapFormerWM_Hourglass_PoPE,
     MapFormerWM_Hourglass_PoPE_CoarseIdx,
 )
 from mapformer.hourglass_plain import PlainHourglass, PlainFlat
@@ -227,7 +227,8 @@ VARIANT_MAP = {
     "MapWM-Hier-CoarseIdx": MapFormerWM_Hourglass_CoarseIdx,  # coarse pos re-indexed (decoupled)
     "MapWM-Hier-CoarsePI": MapFormerWM_Hourglass_CoarsePI,   # coarse own path integration (decoupled)
     "PoPE-Flat": MapFormerWM_RoPEIndex_PoPE,            # index + PoPE (decoupled), flat
-    "MapPoPE-Flat": MapFormerWM_PoPE,                   # path-integration + PoPE, flat (combo)
+    "MapPoPE-Flat": MapFormerWM_PoPE,
+    "MapPoPE_r4": MapFormerWM_PoPE_r4,   # the untested upgrade to the best-measured arm                   # path-integration + PoPE, flat (combo)
     "MapPoPE-Hier": MapFormerWM_Hourglass_PoPE,
     "PoPE-Hier": MapFormerWM_Hourglass_PoPE_Index,   # the 8th cell: PoPE + index + hierarchy        # path-integration + PoPE + hierarchy
     "MapPoPE-Hier-CoarseIdx": MapFormerWM_Hourglass_PoPE_CoarseIdx,  # best-of-both
