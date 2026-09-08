@@ -19,8 +19,14 @@ ARMS = [("A", "Hourglass_k2", "published recipe: linear, 3e-4, 50ep"),
         ("D", "LoopedHourglass", "loop, cosine, 1e-3, 150ep (1/3 the params)")]
 
 
+REPO = "/home/prashr/mapformer"   # absolute: `python3 -m mapformer.X` runs from the
+                                  # PARENT dir, so relative paths resolve there and
+                                  # silently find nothing. This has cost four
+                                  # debugging rounds in this project.
+
+
 def final_loss(tag, seed):
-    f = f"runs/comp_headroom/logs/{tag}_s{seed}.log"
+    f = f"{REPO}/runs/comp_headroom/logs/{tag}_s{seed}.log"
     if not os.path.exists(f):
         return float("nan")
     v = [l for l in open(f) if "final_loss=" in l]
@@ -31,7 +37,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", nargs="+", type=int, default=list(range(8)))
     ap.add_argument("--lengths", nargs="+", type=int, default=[256, 512])
-    ap.add_argument("--n-traj", type=int, default=64)
+    ap.add_argument("--n-traj", type=int, default=200)   # MATCHES agg_comp_multiseed, so arm A is comparable to the published table
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--out", default="COMP_HEADROOM.md")
     a = ap.parse_args()
@@ -42,10 +48,10 @@ def main():
             res[(tag, T)] = []
         loss[tag] = []
         for s in a.seeds:
-            ck = f"runs/comp_headroom/{tag}_s{s}/{var}.pt"
+            ck = f"{REPO}/runs/comp_headroom/{tag}_s{s}/{var}.pt"
             if not os.path.exists(ck):
                 print(f"  missing {ck}", flush=True); continue
-            r = eval_ckpt(ck, a.lengths, a.n_traj, a.device)
+            _variant, r = eval_ckpt(ck, a.lengths, a.n_traj, a.device)  # returns (variant, results)
             for T in a.lengths:
                 res[(tag, T)].append(r[T]["cross_nb_acc"])
             loss[tag].append(final_loss(tag, s))
