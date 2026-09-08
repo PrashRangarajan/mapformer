@@ -33,6 +33,12 @@ def main():
     ap.add_argument("--n-batches", type=int, default=156)
     ap.add_argument("--batch-size", type=int, default=128)
     ap.add_argument("--lr", type=float, default=3e-4)
+    ap.add_argument("--schedule", default="linear", choices=["linear", "cosine"],
+                    help="DEFAULT IS linear, so existing calls are unchanged. "
+                         "linear = LinearLR(1.0->0.0) from step one, which decays "
+                         "with no warmup and cannot escape a plateau late (rule 10); "
+                         "cosine = 5%% warmup then cosine to 10%%. Every published "
+                         "compositional number predates this flag and used linear.")
     ap.add_argument("--n-layers", type=int, default=3)
     ap.add_argument("--d-model", type=int, default=128)
     ap.add_argument("--n-heads", type=int, default=2)
@@ -58,7 +64,17 @@ def main():
 
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.05)
     total = args.epochs * args.n_batches
-    sched = torch.optim.lr_scheduler.LinearLR(opt, 1.0, 0.0, total)
+    if args.schedule == "cosine":
+        import math as _m
+        _w = max(1, int(0.05 * total))
+        def _f(st):
+            if st < _w:
+                return (st + 1) / _w
+            p_ = (st - _w) / max(1, total - _w)
+            return 0.1 + 0.9 * 0.5 * (1.0 + _m.cos(_m.pi * min(p_, 1.0)))
+        sched = torch.optim.lr_scheduler.LambdaLR(opt, _f)
+    else:
+        sched = torch.optim.lr_scheduler.LinearLR(opt, 1.0, 0.0, total)
     crit = nn.CrossEntropyLoss()
 
     mask_idx = {"exact": 2, "motif": 3, "cross": 4}[args.target]
