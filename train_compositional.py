@@ -33,6 +33,18 @@ def main():
     ap.add_argument("--n-batches", type=int, default=156)
     ap.add_argument("--batch-size", type=int, default=128)
     ap.add_argument("--lr", type=float, default=3e-4)
+    ap.add_argument("--fast-attn", action="store_true",
+                    help="SDPA + TF32. MEASURED ON THIS TASK AND NOT RECOMMENDED: "
+                         "verify_comp_speedups.py gives 0.17s/20 passes either way "
+                         "-- no speedup at all, because at d=128, 3 blocks and "
+                         "n_steps=256 the model is overhead-dominated and attention "
+                         "is not the bottleneck -- while TF32 costs equivalence "
+                         "(max |logit diff| 6.0e-01, grad cosine 0.99995, against "
+                         "the 1.4e-06 / 1.0000000000 documented elsewhere). It buys "
+                         "only memory, 451 -> 261 MiB. Kept because the memory "
+                         "saving is real if concurrency is the constraint; off by "
+                         "default because on this task it is cost without benefit. "
+                         "Never valid for MapEM (Hadamard attention is not SDPA).")
     ap.add_argument("--schedule", default="linear", choices=["linear", "cosine"],
                     help="DEFAULT IS linear, so existing calls are unchanged. "
                          "linear = LinearLR(1.0->0.0) from step one, which decays "
@@ -48,6 +60,12 @@ def main():
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--output-dir", required=True)
     args = ap.parse_args()
+    if args.fast_attn:
+        import mapformer.model as _M
+        _M.USE_SDPA = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        print("[fast-attn] SDPA + TF32 enabled", flush=True)
 
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     out = Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
