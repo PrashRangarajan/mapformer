@@ -298,7 +298,7 @@ visible in the \emph{loss} instead: every constrained arm fits strictly worse on
 $12/12$ seeds at identical parameters.
 
 This is a replication in a new regime. The constraint and its
-consequence for parity are established (\Sthe companion review(ii)); what is new is
+consequence for parity are established (the companion review(ii)); what is new is
 navigation rather than formal languages, and an isolation in which $|\Delta|$ against
 $\Delta$ is a single operation at identical parameter count.
 
@@ -611,6 +611,94 @@ an anchor rather than as a new result. Note also that a token clock built inside
 this architecture ($0.189$, above) lands \emph{below} the index arms, which is
 what it is.
 
+\subsection{The external check, and why it does not discriminate}
+\label{sec:flipflop}
+
+The crossover is measured on a task we built, so it wants an anchor on a published
+one. Flip-Flop LM (Liu et al., 2023) is the natural choice --- it is the benchmark
+CoPE uses, and it is our recency task at $k=1$, with write instructions as the
+counted class and ignores as the filler. Six arms $\times$ eight seeds, one batch, at
+that literature's configuration for the task (4 layers, $d=256$, 4 heads). Chance is
+$0.500$; evaluation scores the final read only, which is what returns every n-gram
+order to chance.
+
+\begin{table}[htbp]\centering\small
+\caption{Flip-Flop LM, error \% (lower is better). Every contrast is unmeasured, and every arm solves the in-distribution split.}
+\label{tab:flipflop}
+\begin{tabular}{lrrr}
+\toprule
+arm & in-dist & OOD dense & OOD sparse \\
+\midrule
+signed, $r{=}4$ & $0.00$ & $6.69 \pm 3.12$ & $26.06$ \\
+softplus (monotone) & $0.00$ & $7.00 \pm 5.83$ & $8.84$ \\
+$|\Delta|$ (monotone) & $0.00$ & $8.09 \pm 3.20$ & $7.69$ \\
+RoPE (index) & $0.00$ & $8.59 \pm 4.54$ & $0.13$ \\
+plain, index & $0.00$ & $10.84 \pm 5.41$ & $0.00$ \\
+CARoPE form & $0.03$ & $12.16 \pm 5.76$ & $3.12$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent Path-integrated minus index is $-1.23$pp against an \textsc{mde} of
+$3.99$; monotone minus signed is $+2.40$ against $3.97$; no pairwise contrast clears
+its own \textsc{mde}.
+
+\textbf{This is not a failure to replicate, and our own data said so before the run.}
+$\S$\ref{sec:crossover} reports index accuracy \emph{by offset}: $k=1$ is
+$0.99$, and the collapse to $0.11$--$0.33$ begins at $k=8$. \textbf{Flip-Flop only
+ever asks $k=1$} --- the bit of the most recent write --- which is precisely the
+offset at which an index code already works. It varies the \emph{distance} to the
+governing write, through ignore density, and never the \emph{ordinal depth} of the
+query; ordinal depth is what separates a content-gated counter from an index. The
+benchmark is a weaker discriminator for this question than its reputation suggests,
+and that is why the graded-$k$ task was built rather than inherited.
+
+Two further points rather than one. The comparison is underpowered --- seed
+standard deviations of $3$--$6$pp against differences of $1$--$5$pp --- so
+\emph{unmeasured}, not null. And the OOD-sparse column is a shortcut, not a result:
+at $p_i = 0.10$ the last bit in the stream \emph{is} the governing write's bit
+$95$--$98\%$ of the time, so ``copy the previous bit'' nearly solves it. The index
+arms exploit that and the path-integrated arms do not. It is reported because it was
+gated in advance, not because it means anything.
+
+\subsection{N2: an explicit separator works, and buys nothing}
+\label{sec:gated}
+
+$\S$\ref{sec:borrow} argues from the crossover that MapFormer's separator --- a
+linear bottleneck, in which zero must be reached by cancellation --- should be
+improved by CoPE's sigmoid, for which zero is the resting state. Built as
+$\Delta = \sigma(W_g x + b)\,(W_{\mathrm{out}}W_{\mathrm{in}}x)$, per token and per
+head, at $258$ parameters, initialised open so the model starts as its ungated twin.
+Four arms $\times$ eight seeds on both the torus and the recency task.
+
+\textbf{The separator works, verifiably.} The learned gate closes to
+$0.244 \pm 0.043$ on observation tokens while holding $0.987 \pm 0.003$ on actions
+--- a ratio of $\mathbf{4.16\times}$, with all eight seeds above $3.3$. The floor was
+set in advance from an existing measurement rather than chosen: Selective RoPE's
+sigmoid gate reads $1.35\times$ on this same contrast and was judged \emph{not} to be
+suppression. A frozen-gate control reads exactly $1.00\times$, which is what licenses
+reading the rest.
+
+\textbf{And it improves nothing.} Against the ungated baseline: $+0.004$ and $+0.003$
+on the torus at $T=512/1024$, and $-0.039$ raw / $-0.016$ loss-matched on recency at
+$T=2048$ --- unmeasured everywhere, never positive on the task where the crossover's
+own intervention showed a gate is worth $+0.594$ when supplied by ablation. It also
+fits worse ($0.041$ against $0.012$).
+
+The frozen control is what makes this readable. The single detectable contrast in the
+batch is the gate over its \emph{frozen} twin ($+0.009$, $7/8$) --- and that is almost
+exactly the size of the frozen twin's own deficit against the ungated baseline. What
+the gate learns is to undo the constant rescale that having a gate imposes. Without
+that arm, ``$+0.009$ on $7/8$ seeds'' would have read as a win.
+
+\textbf{So MapFormer's bottleneck was already separating well enough}, and this
+corroborates its design rather than improving on it: a trained ungated model already
+moves the phase about five times more on actions than on observations, and the
+explicit gate reproduces that for $258$ parameters and a worse fit. The inference
+behind the experiment does not survive it --- that the gate is \emph{load-bearing},
+which the crossover's ablation established, does not imply that the model needs help
+building one.
+
 \subsection{Where MapPoPE lands}
 \label{sec:mappope}
 
@@ -660,6 +748,43 @@ The genuinely unoccupied configuration is a signed accumulated phase beside an
 \emph{accumulated} content-dependent magnitude in softmax attention, and
 $\S$\ref{sec:predictions} says what to build there.
 
+\paragraph{The rank upgrade does not transfer to it.} Every MapPoPE number above is
+at $r=2$, because that is the constructor's default --- including the figures that
+make it the strongest arm on the paper task. Since $\S$\ref{sec:rankmeas} shows $r=4$
+buys $+0.085$ at $T=1024$ on the MapWM family for $384$ parameters, the obvious move
+is to apply it. Measured, in one batch of four arms $\times$ eight seeds:
+
+\begin{table}[htbp]\centering\small
+\caption{The rank upgrade on MapPoPE, against the same upgrade on MapWM. Both lengths unmeasured, on 5 of 8 seeds.}
+\label{tab:mappoper4}
+\begin{tabular}{lrrl}
+\toprule
+contrast & raw & loss-matched & verdict \\
+\midrule
+$r{=}4 - r{=}2$ on MapPoPE, $T{=}512$ & $+0.009$ & $+0.006$ & unmeasured \\
+$r{=}4 - r{=}2$ on MapPoPE, $T{=}1024$ & $+0.019$ & $+0.015$ & unmeasured \\
+\emph{the same upgrade on MapWM}, $T{=}1024$ & $+0.085$ & --- & $8/8$, $t=3.57$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent A quarter of the effect, and it does not clear its own \textsc{mde}. There
+is a mechanism for that in the construction: PoPE sets $\nb = \hd = 64$ against
+MapWM's $32$, so it already carries twice the frequency channels and the $r=2$
+bottleneck binds correspondingly less. \textbf{The consequence runs against what
+motivated the test: ``use $r=4$'' is a recommendation for the MapWM family, where it
+was measured, and not a general one.}
+
+The same batch settles something it was not run for. \texttt{MapPoPE} against plain
+\texttt{MapWM} at equal rank, \emph{within one batch}, is $+0.058$ and $+0.144$ at
+$T=512/1024$ on $8/8$ seeds --- the cleanest confirmation yet that PoPE's magnitude
+pays on top of a path-integrated phase, which had previously only been supported
+across batches. But the ungated MapWM arm is the worst-converging in the set (final
+loss $0.089$, flat on $2/8$ seeds against MapPoPE's $6/8$), and loss-matched the
+contrast falls to $+0.024$ and $+0.082$ and stops clearing its \textsc{mde}. Real in
+direction; partly a convergence gap, and how much survives it is not resolved at
+$n=8$.
+
 
 \section{Predictions}
 \label{sec:predictions}
@@ -695,7 +820,14 @@ any structural code & \textbf{sample efficiency}, not final accuracy & if a wher
 If the goal is a cleaner separation of the structural code from the sensory one,
 the table says which mechanisms have a part worth taking and which do not.
 
-\textbf{Take CoPE's gate, but not its sign.} MapFormer's separator is a linear
+\textbf{Take CoPE's gate, but not its sign --- built, and it did not pay.} What
+follows is what the frame implied; $\S$\ref{sec:gated} reports what happened when it
+was built. The gate does separate, by a factor of four, and buys no accuracy on
+either task. The argument is kept because its premise is sound and its failure is
+informative --- the bottleneck was already adequate --- but read it as a hypothesis
+since refuted rather than as advice.
+
+ MapFormer's separator is a linear
 bottleneck: $\Delta$ must reach zero on observations by cancellation in
 $W_{\mathrm{out}}W_{\mathrm{in}}$, and nothing makes zero a natural output. CoPE's
 is a sigmoid, for which zero is the resting state, and its entire purpose is
@@ -814,12 +946,23 @@ is a map or a clock; the rank costs $384$ parameters and decides whether the map
 well conditioned. Both matter only where position must be reconstructed from the
 input, which is why they are invisible on text and why the measurements here are not.
 
-What we could not show is as much of the content. The growth exponent that unifies
-the two is nearly collinear with a simpler observable and its route to
-length-degradation is refuted rather than established. An explicit separator works
-and buys nothing, which corroborates the design it was meant to improve. And the
-transfer demonstrated here is to a new \emph{instance} of a structure, not to a new
-structure --- which is the claim the cognitive-map literature makes most strongly and
-the one still to test.
+What we could not show is as much of the content, and four negatives are worth
+stating together because each was a prediction of ours that failed.
+
+The growth exponent that unifies the sign and the rank is nearly collinear with a
+simpler observable, and its route to length-degradation is refuted rather than
+established. An explicit content gate separates action from observation tokens by a
+factor of four and improves accuracy nowhere, which corroborates the design it was
+meant to improve rather than beating it. The rank upgrade that is worth $+0.085$ on
+one family is worth a quarter of that, unmeasured, on the other --- so a
+recommendation we had stated generally holds only where it was measured. And the
+published external benchmark does not discriminate the mechanism at all, for a
+reason our own per-offset data gave in advance: it asks only the one offset at which
+an index code already works.
+
+The transfer demonstrated here is to a new \emph{instance} of a structure, not to a
+new structure, and every number is final accuracy rather than a learning curve.
+Those are the two things the factorisation claim of $\S$\ref{sec:factorisation}
+actually requires, and neither has been measured.
 
 \end{document}
