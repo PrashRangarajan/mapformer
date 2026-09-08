@@ -59,7 +59,7 @@ here, explain either.
 
 The axes referred to throughout --- A1 factor, A2 locus, A3 driver, A4 algebra, A5
 sign, A6 rank, A7 host --- are those of the companion review, and the relational map
-placing every mechanism on them is Table~1 there. This paper assumes that
+placing every mechanism on them is Table~4 there. This paper assumes that
 classification and tests two of its cells.
 
 Standard errors are over seeds; \textsc{mde} is $2.8\,\mathrm{sd}/\sqrt{n}$, and a
@@ -77,10 +77,16 @@ sensory input $x$ is environment-specific, and memory stores the conjunction
 $p = g \otimes x$. Transfer follows because $g$ survives a change of environment
 while $x$ does not.
 
-The results above say that MapFormer is that factorisation carried into attention
+MapFormer is that factorisation carried into attention
 with a parallel scan. The accumulated phase $\theta_t = \omega\sum\Delta_u$ is $g$:
 identical in any environment with the same transition structure, because it depends
-on the action stream and not on what was seen.
+on the action stream and not on what was seen. Content is $x$. And the conjunction
+is exactly the WM/EM distinction --- additively in the score for MapFormer-WM, and
+for MapEM \emph{literally} the tensor product, since
+$(A_X \odot A_P)_{ts} = (q^x_t \otimes q^p_t)\cdot(k^x_s \otimes k^p_s)$. TEM's
+$g \otimes x$ and MapEM's Hadamard product are the same object; what MapFormer adds
+is that the interval operator composes by prefix sum, so the where can be built in
+$O(\log T)$ instead of recurrently.
 
 \textbf{But that separation is learned, not built} --- the difference between a
 factorisation the architecture guarantees and one it merely tends to find.
@@ -112,16 +118,10 @@ pass, so the finding that $r=2$ learns a skewed basis and $r=4$ repairs it for $
 parameters is a finding about the \emph{separation} and not only about the geometry.
 An enforced split is therefore an oracle \emph{control} rather than a proposal: it
 upper-bounds what the learned separation can reach, and the gap measures what
-learning the split costs. If the two match, the design is vindicated with a number. Content is $x$. And the conjunction
-is exactly the WM/EM distinction --- additively in the score for MapFormer-WM, and
-for MapEM \emph{literally} the tensor product, since
-$(A_X \odot A_P)_{ts} = (q^x_t \otimes q^p_t)\cdot(k^x_s \otimes k^p_s)$. TEM's
-$g \otimes x$ and MapEM's Hadamard product are the same object; what MapFormer adds
-is that the interval operator composes by prefix sum, so the where can be built in
-$O(\log T)$ instead of recurrently.
+learning the split costs. If the two match, the design is vindicated with a number.
 
-\paragraph{Why the measurements are transfer measurements.} This is easy to miss in
-the tables above and is the reason they are set up as they are. \textbf{Every
+\paragraph{Why the measurements are transfer measurements.} This is easy to miss,
+and it is the reason the evaluations throughout are set up as they are. \textbf{Every
 evaluation here is on an environment the model has never seen}: the observation map
 is redrawn from a held-out seed, so the entire what-to-where binding is new, and
 only structure can carry over. Against a measured always-predict-blank floor of
@@ -180,9 +180,9 @@ $\S$\ref{sec:predictions} lists what the frame predicts for them.
 \section{Measurements}
 \label{sec:measured}
 
-The axes above are separable only where position must be reconstructed from the input
-rather than read off the index, which is why the measurements below are on
-navigation and algorithmic tasks rather than on text.
+The axes of the companion review are separable only where position must be
+reconstructed from the input rather than read off the index, which is why the
+measurements below are on navigation and algorithmic tasks rather than on text.
 
 \paragraph{Setup.} The primary task is \textbf{torus revisit prediction}: an agent
 takes actions on an $N\times N$ torus, observations are aliased across cells ($16$
@@ -197,12 +197,7 @@ always-predict-blank floor of $0.506$. Two further tasks appear where noted:
 model explores with observations revealed and then predicts the observation at each
 cell with observations withheld (chance $1/16 = 0.0625$).
 
-Standard errors are over seeds; \textsc{mde} is $2.8\,\mathrm{sd}/\sqrt{n}$, and a
-contrast inside its \textsc{mde} is reported as \emph{unmeasured} rather than as a
-null. Contrasts are paired per seed, and arms compared against one another were
-trained in one batch.
-
-\paragraph{What these measurements assert.} Three findings and one negative, each
+\paragraph{What these measurements assert.} Three findings and two negatives, each
 with the contrast that would have refuted it.
 
 \begin{itemize}\itemsep2pt
@@ -226,12 +221,19 @@ with the contrast that would have refuted it.
   separate mechanisms help at extrapolated length; $\alpha$ accounts for two and
   demonstrably not the others, and the imported long-context account is refuted
   outright ($\S$\ref{sec:localisation}). This is the gap, stated as one.
+\item \textbf{N2. An explicit what/where separator works and buys nothing.} Given
+  CoPE's gate on a signed increment, the model separates action from observation
+  tokens by a factor of four --- and gains no accuracy on either task
+  ($\S$\ref{sec:gated}). \emph{Refuted by} the gain that F3's ablation predicted,
+  which is what we expected and did not get.
 \end{itemize}
 
-\noindent The remaining subsections are supporting rather than load-bearing: what
+\noindent Three further subsections are supporting rather than load-bearing: what
 the neighbouring constraints are worth ($\S$\ref{sec:knobs}), why these axes are
 invisible on text ($\S$\ref{sec:navigation}), and a cost/benefit summary
-($\S$\ref{sec:anchors}).
+($\S$\ref{sec:anchors}). Two report on specific mechanisms rather than axes: the
+published external check ($\S$\ref{sec:flipflop}), which does not discriminate, and
+where MapPoPE lands ($\S$\ref{sec:mappope}).
 
 \subsection{F1: the sign is load-bearing, and free}
 \label{sec:sign}
@@ -702,7 +704,7 @@ building one.
 \subsection{Where MapPoPE lands}
 \label{sec:mappope}
 
-This review began from a concrete question --- MapFormer supplies a
+This line of work began from a concrete question --- MapFormer supplies a
 content-dependent \emph{phase}, PoPE a content-dependent \emph{magnitude}, and the
 coordinates are disjoint, so what does imposing both buy? --- and the frame exists
 to answer it in a way that generalises. The answer is mixed, and the shape of the
