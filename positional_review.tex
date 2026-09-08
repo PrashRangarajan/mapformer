@@ -1444,8 +1444,12 @@ $\S$\ref{sec:sign}; across the four arms $r(\text{opposition},\alpha) = +0.9995$
 
 \textbf{This is one mechanism for two separate results.} How completely opposite
 actions cancel sets whether the accumulator diffuses or drifts; that sets how fast it
-leaves the range it was trained on; and that sets the rate of degradation with
-length. A skewed rank-$2$ basis (opposition $0.495$) and a monotone increment
+leaves the range it was trained on; and that co-varies with the rate of degradation
+with length. The last link is the weak one and is stated as association rather than
+cause: $\theta$ enters through $\cos,\sin$, so a larger accumulator is not
+\emph{prima facie} out of distribution at all, and the standard account of why it
+would be --- untrained low-frequency channels --- is refuted here
+($\S$\ref{sec:localisation}). A skewed rank-$2$ basis (opposition $0.495$) and a monotone increment
 ($1.849$) are the same failure at different severities. The relation is correlational across four
 arms, and $\alpha\approx0.5$ for a signed walk is unsurprising in itself; what it
 rests on is the spread to $0.94$ and the agreement with an independently measured
@@ -1639,7 +1643,7 @@ if the task needs \dots & it requires & and these supply it \\
 \emph{order only} --- which token came first & any monotone clock & RoPE, ALiBi, CoPE, CARoPE, GRAPE-AP, every gated linear RNN \\[3pt]
 \emph{signed displacement} --- parity, net motion, state tracking & a signed increment & MapFormer, Selective RoPE, Mamba-3; DeltaNet/PaTH/RWKV-7 with $\beta>1$. \textbf{Not} CARoPE, GRAPE-AP or CoPE \\[3pt]
 \emph{absolute location in a bounded map} & signed \textbf{and} well-conditioned ($r\ge4$) & MapFormer at $r\ge4$; $r=2$ degrades because its basis is skewed, not because it lacks capacity \\[3pt]
-\emph{holding position far past the training length} & a diffusive accumulator, $\alpha\approx0.5$ & follows from cancellation (T2); nothing in Table~\ref{tab:map} bounds the accumulator explicitly, so this is the only route available \\[3pt]
+\emph{holding position far past the training length} & a diffusive accumulator, $\alpha\approx0.5$ & follows from cancellation (T2), though the route from $\alpha$ to degradation is association and not cause; nothing in Table~\ref{tab:map} bounds the accumulator, and the two obvious ways to are a no-op or break additivity \\[3pt]
 \emph{path-dependent actions} (turn/forward) & non-abelian transport, \textbf{or} an allocentric recoding of the input & PaTH, DeltaNet, RWKV-7, TEM-t --- none evaluated on navigation. Recoding the action to absolute displacement restores $+0.488$ and keeps the scan \\[3pt]
 \emph{overwriting stale associations} & a delta rule & DeltaNet, PaTH, RWKV-7; forfeits the parallel scan \\[3pt]
 \emph{contextual counting} --- the $k$-th most recent noun, sentence, or selected event & a \textbf{content-gated} monotone increment & CoPE, CARoPE, GRAPE-AP; and a signed MapFormer, which \emph{learns} the gate rather than being given it. \textbf{Not} any fixed index code: RoPE reaches $0.234$ where the gated arms reach $1.000$ \\[3pt]
@@ -1839,7 +1843,11 @@ the task.
 What the frame does not yet explain is the axis on which several mechanisms
 independently help: extrapolated length. The accumulator's growth law accounts for
 two of them and demonstrably not for the others --- and no mechanism in the table
-bounds the accumulator at all, including the one that was assumed to. That is the gap worth building into.
+bounds the accumulator at all, including the one that was assumed to. Nor is the
+growth law itself yet a cause: $\theta$ is periodic, so a larger accumulator is not
+obviously out of distribution, and the one published account of why it would be is
+refuted here. $\alpha$ unifies two results and reads off what a task demanded; it
+does not yet explain either. That is the gap worth building into.
 
 \section{Open questions}
 
@@ -1859,8 +1867,33 @@ bounds the accumulator at all, including the one that was assumed to. That is th
   help. $\S$\ref{sec:clockmap} proposes an account for the forget gate --- it
   restores the clock a signed phase gives up --- of which one prediction is now
   cheap to run, since $\S$\ref{sec:crossover} supplies a task with explicit recency
-  structure. The direct test of the growth law itself is to vary $\alpha$
-  deliberately and check that OOD degradation follows.
+  structure.
+
+  \textbf{The obvious test of the growth law is malformed, and the real gap is
+  prior to it.} An earlier version of this section proposed varying $\alpha$
+  deliberately and checking that degradation follows. That cannot be done as
+  stated. $\alpha$ is not a parameter of any model here --- it is a statistic
+  fitted to a trained one --- and the two ways to move it both fail: interpolating
+  from a signed to a monotone increment moves $\alpha$ but destroys the map at the
+  same time, so on a map task it isolates nothing beyond the sign ablation; and
+  bounding the accumulator is either a no-op, since $\theta$ enters through
+  $\cos,\sin$ and $\theta$ and $\theta+2\pi$ are already identical, or it breaks
+  additivity and with it the interval-relativity that the whole frame rests on.
+  Within this frame $\alpha$ appears not to be independently controllable: it is
+  set by the cancellation, and the only lever on the cancellation is A5 and A6.
+  That would make $\alpha$ a \emph{re-description} of those two axes rather than a
+  separate cause --- which is consistent with its covering exactly those two
+  mechanisms and none of the other four.
+
+  \textbf{The prior question is why a growing accumulator should cost anything at
+  all}, given that the code is periodic. The natural answer --- that low-frequency
+  channels reach phases never trained --- is the long-context literature's
+  critical-dimension account, and it was imported and \textbf{refuted}
+  ($\S$\ref{sec:localisation}): ablating those channels costs \emph{more} at
+  extrapolated length, not less. So $\alpha$'s association with OOD degradation is
+  established and its route is not. Until that is answered, $\alpha$
+  \emph{unifies} the sign and rank results and \emph{diagnoses} what a task
+  demanded, and it does not explain.
 \item \textbf{Defective generators.} Jordan-RoPE occupies the cell; what polynomial
   factors in the lag are \emph{for} remains open, and no navigation evaluation exists.
 \item \textbf{NoPE.} A causal decoder learns an implicit position without any operator

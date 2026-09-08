@@ -1975,6 +1975,35 @@ pure index clock) should reproduce much of it; and the gain should vanish on a t
 with no recency structure.
 \end{quote}
 
+\paragraph{The growth law is an association, not a cause --- and my proposed test
+of it was malformed (2026-09-07).} I wrote that the direct test is to ``vary
+$\alpha$ deliberately and check that OOD degradation follows''. It cannot be done as
+stated, and noticing why is worth more than the experiment would have been.
+
+$\alpha$ is not a parameter of any model here; it is a statistic fitted to a trained
+one, and nothing in the code is raised to it. The two ways to move it both fail.
+Interpolating signed $\to$ monotone ($\Delta_\lambda = \lambda\Delta +
+(1-\lambda)|\Delta|$) does move $\alpha$ from $0.52$ to $0.94$, but it destroys the
+map in the same stroke, so on a map task it isolates nothing the sign ablation did
+not already measure. Bounding the accumulator while keeping the sign is either a
+\emph{no-op} --- $\theta$ enters through $\cos,\sin$, so $\theta$ and $\theta+2\pi$
+are already identical --- or, if done by squashing, it stops $\theta_s-\theta_t$
+being the interval sum and destroys interval-relativity.
+
+So within this frame $\alpha$ may not be independently controllable: it is set by
+the cancellation, whose only levers are A5 and A6. That would make it a
+re-description of those two axes rather than a third cause, which is exactly
+consistent with its covering those two mechanisms and none of the other four.
+
+And there is a question prior to the experiment that I had skipped: \textbf{why
+should a growing accumulator cost anything at all, when the code is periodic?} The
+standard answer is the critical-dimension account --- low-frequency channels read at
+untrained phases --- which was imported and \textbf{refuted} here: ablating them
+costs MORE at extrapolated length, not less. So the association is established
+(r(opposition, $\alpha$) $= +0.9995$, and $\alpha$ tracks both the sign and rank
+effects) and the route is open. This is the same class of error as H1 in the
+recency pre-registration: a well-sounding test that could not have discriminated.
+
 \paragraph{Tested directly 2026-09-07, and it holds --- with two of my own
 hypotheses refuted.} Until this test every task measured here wanted a \emph{map},
 so ``signed wins'' and ``signed suits this task'' were not separable. On a k-back
