@@ -1,33 +1,44 @@
-- [Verify convergence, noise floor and power FIRST](feedback_convergence_first.md) — 4 retractions in a week, all one root cause. Run `experiment_audit.py` before interpreting any run dir. LinearLR-from-step-one prevents plateau escape (0.448→0.990 on the same task, sign inverted). Measure the noise floor with an inert twin (0.150). Check if accuracy is just loss (r=−0.996). MDE before calling anything a null. Seed the comparison you claim.
-- [Project state snapshot](project_state.md) — where the MapFormer experiments stand, what's in flight, what's resolved.
-- [User authoring style](user_style.md) — terseness, no emojis, honest reporting preferences for this project.
-- [Validate the task before spending GPU](feedback_validate_task_first.md) — 3 invalid setups in one session, all unchecked SETUP assumptions (stale baseline, training-length confound, greedy-solvable "planning" task). Run `validate_task.py` first: trivial-baseline, label stats, demand profile, and confounds run IN THE SAME BATCH. Also: beware motivated task design.
-- [Position effect: aliasing FALSIFIED (sign inverted); map-size THRESHOLD](project_miniworld_flip_negative.md) — at fixed grid 32, less aliasing gives a LARGER effect (+0.178/+0.310/+0.305 for 32/8/2 cells per token, endpoints converged, t=2.52). Withdrawn. What replaces it: a threshold between 128 and 512 occupied cells at matched aliasing (-0.010/+0.015/+0.305). 'Distinct cells visited' also falsified. Budget extension beat convergence-conditioning, which pointed the WRONG way. Structural: prior-visit ranges don't overlap across grid sizes, so map extent and visit statistics are near-inseparable in MiniWorld.
-- [Hierarchy helps only if a summary is a sufficient statistic](project_hierarchy_negative.md) — negative on retrieval, aggregation, multi-env transfer, AND hierarchical space. An aggregate-task "win" was RETRACTED: a training-length confound (flat trained @512 matches hier trained @256) plus a wrong mechanism (LocalOnly, zero pooling, also wins → it's bounded SPAN, not pooling). Also negative under a HARD MEMORY BUDGET (flat recency beats hierarchical coverage). Principle: hierarchy helps only when a lossy summary is a SUFFICIENT STATISTIC — exact-recall tasks force it to lose; our benchmark is exact-recall. Only other benefit: length-extrapolation from short training. Always run the training-length control + component ablation before claiming a length win.
-- [lm200 baselines are stuck (MAJOR, lm200-only)](feedback_lm200_stuck_baselines.md) — April lm200 checkpoints never converged (loss ~1.0); leaderboard ranked convergence not architecture. Fresh Level15 leads (0.996), reversing TEM/NoDrop/GSF/cascade "wins". CLEAN/NOISE reproduce exactly and are VALID — bug is landmark-RNG-specific. Retrain lm200 baselines before any landmark claim. Qualifies [multiple_fixes_match_tem] and [post_attn_dropout].
-- [PC-Kalman duality finding](feedback_pc_kalman_duality.md) — corrected framing that supersedes earlier "complementary" claim.
-- [Memory is shared via git](reference_shared_memory.md) — this dir lives in the repo at `.claude-memory/`; `git pull` before reading, push after writing.
-- [Action-noise framing](feedback_action_noise_framing.md) — defend against "this is artificial" by using stochastic-transition-MDP vocabulary; lead with non-circular wins.
-- [DoG kernel bug](feedback_dog_kernel_bug.md) — earlier hex tests vacuous due to unnormalised Gaussians cancelling at d=0; supersedes `DOG_RESULTS.md`.
-- [Post-attention dropout is harmful](feedback_post_attn_dropout.md) — Vaswani's default block dropout destroys rare-token retrieval; removing it gives most of the TEM lm200 gap. β/sharper-softmax was a red herring in our experiments.
-- [EM vs WM mechanism](feedback_em_vs_wm_mechanism.md) — EM multiplicative AND-gate wins when content channel is noisy; WM additive OR-gate wins when content is signal. Paper's "EM scales better" is along noisy-content axes; our regimes flip that.
-- [BC metrics are distinct](feedback_bc_metrics_distinct.md) — match-acc / closed-loop success / frozen-probe each measure different things; report side by side, don't collapse into "goal-directed performance."
-- [Multiple fixes ~match TEMFaithful](feedback_multiple_fixes_match_tem.md) — dropout removal and GSF each independently close ~14pp of the Level15 → TEMFaithful gap on lm200; TEMFaithful's lead is recoverable via different paths inside MapFormer.
-- [Minimal sweeps skip GSF, use NoDrop](feedback_minimal_sweep_skip_gsf.md) — GSF is accuracy-redundant with NoDrop but ~4x compute; only include GSF when the question is calibration / active inference / multi-modal posterior.
-- [Run one seed of everything first](feedback_seed_ordering.md) — outer loop seed, inner loop variant: lands a full low-confidence table fastest, then tighten error bars after.
-- [cd $REPO before Python heredocs](feedback_cwd_aggregator_bug.md) — run scripts cd to /home/prashr for module imports; relative paths in aggregator heredocs then resolve to wrong dir and silently return all `—`. Always cd "$REPO" before each `python3 -u <<PYEOF`.
-- [Backfill standard-transformer baselines](feedback_baselines_backfill.md) — within-family tables (LEVEL15BETA, VOCAB_SWEEP, NODROP, DROPOUT_ABLATION, GSF*, GOAL*, DOORKEY*, PROBE, DAGGER) all need RoPE column before submission. New cognitive-tier results already include RoPE.
-- [Scheduler and measurement traps](feedback_scheduler_and_measurement_traps.md) — fill-first GPU picker idles a device when jobs <= MAXPG (and interleaving job types re-creates it); never infer held-out accuracy from training loss (0.03 loss → 0.674 acc); wide pre-registered bands aren't pre-registration — set branches against the noise floor; never edit a running bash script.
-- [Looping beats the Kalman correction; refining theta is dead](project_loop_and_correction.md) — loop +0.205 vs Level15 +0.004 under action noise at fewer params; refine-theta flat at zero with the gate declining to fire; sampling the loop count flattens the count-vs-accuracy curve 0.178 → 0.001 (0.998 at ONE pass). Level15 = bounded state + token-type gate, not inference.
-- [Check the premise, prefer runtime knobs, split hypotheses](feedback_premise_before_test.md) — 16 runs replicating a known negative because the task had no drift and no observations; a 90-second eval-only sweep replaced a 12-run training sweep; retracted a whole claim when only half of it failed.
-- [Language numbers, theta without actions, what PoPE actually does](reference_language_and_pope.md) — enwik8 bpc table with power caveats (our effect is UNDERPOWERED, not null, and agrees with the paper once converted to bits/byte); RoPE is the Delta=1 special case of path integration; PoPE changes magnitude, not angle.
-- [Looped-transformer literature](reference_looped_transformer_lit.md) — Mixture-of-Recursions (arXiv 2507.10524, NeurIPS 2025) already owns "recursion substitutes for depth"; our index-arm result replicates it. Novelty, if any, is loop x path-integration and the floor effect. MoR is the principled LoopedSampled, but routes on TOKEN where our signal is LENGTH.
-- [Rank, and Selective RoPE](project_rank_and_selective_rope.md) — **use r=4**: +0.085 at T=1024 for +384 params (8/8 seeds), 21x cheaper than Selective RoPE's gate. r=2's code is SKEWED (|cos(N,E)|=0.78) not too small. Paper Fig 4: 3 of 4 claims reproduce; C3's failure is the paper's OWN and r=4 fixes it for free; C4 is inverted and may be an EM-only claim.
-- [Probes lie confidently](feedback_probe_verification.md) — five analysis bugs in one week that each printed a clean wrong verdict: read the code not its comment; verify what a probe measures; anchored edits eat files; truncation isn't a sufficiency test; check if a 'repro failure' is the paper's own result.
-- [Positional-encoding landscape and prior art](reference_positional_landscape.md) — the log-polar frame, and the fact that GRAPE (ICLR 2026) and Mamba-3 already publish the taxonomy, the closure argument and the content-dependent rotation. Only RANK and NAVIGATION are left. Read before claiming any theory contribution.
-- [Verify before relaying](feedback_verify_before_relaying.md) — a web summariser, two review agents, three of my own probes and one circular correlation all returned confident wrong answers in a single session. Run the one-command check yourself.
-- [Paper corpus is stored locally](reference_paper_corpus.md) — 28 positional-encoding papers at `papers/` (txt tracked, pdf gitignored, fetch.sh restores). All read first-hand 2026-09-06. Grep the corpus, don't re-search the web.
-- [A failed `git add` stages nothing, silently](feedback_git_add_silent_failure.md) — one bad pathspec killed the whole call; `2>/dev/null` hid the fatal, and ` M` (leading space) in `git status --short` is UNSTAGED, not staged. Verify `git show HEAD:<file>`, not the absence of a crash.
-- [The sign of the phase increment](project_sign_axis.md) — a monotone clock cannot represent a −1 action: opposition 0.11 signed vs 1.85–1.98 monotone, and at matched loss monotone path integration beats RoPE nowhere. The axis is Sarrof/Grazzi/SRoPE prior art, NOT ours. Two ceiling-trap lessons.
-- [Clock vs map: what cancellation chooses](project_clock_vs_map.md) — a signed increment measures net displacement (a map), a monotone one measures elapsed path (a clock); mutually exclusive, each correct for one job. Explains the sign and rank results via the accumulator's growth exponent (α 0.52 vs 0.94, r=+0.9995 with opposition). Does NOT explain the forget gate, PoPE or the InEKF — and "the wrap bounds the accumulator" is refuted.
-- [The two review documents and the paper corpus](reference_review_documents.md) — which is presentable, which holds the record, the 40-paper corpus, and the measured survey positioning (don't say "no survey covers this").
+## Project state and findings
+
+- [Project state snapshot](project_state.md) — **read first.** What is citable, what is retracted, what is open and ranked. The research goal is factorisation-and-transfer, not encoding for its own sake.
+- [Clock vs map: what cancellation chooses](project_clock_vs_map.md) — signed = net displacement (a map), monotone = elapsed path (a clock); mutually exclusive, each correct for one job. Tested by crossover. α is a re-description of opposition, not a third cause.
+- [The sign of the phase increment](project_sign_axis.md) — a monotone clock cannot represent a −1 action. Prior art is Sarrof/Grazzi/Selective RoPE; navigation and the isolation are ours.
+- [Rank, and Selective RoPE](project_rank_and_selective_rope.md) — use r=4 on the MapWM family (+0.085 for 384 params). r=2's code is SKEWED, not too small. Does NOT transfer to MapPoPE.
+- [Hierarchy helps only if a summary is a sufficient statistic](project_hierarchy_negative.md) — negative on retrieval and aggregation; the compositional claim survives a recipe re-measurement in size but is unpowered at n=8.
+- [Looping beats the Kalman correction; refining theta is dead](project_loop_and_correction.md) — the loop raises the FLOOR, and much of its win is convergence. Level15 = bounded state + token-type gate, not inference.
+- [Position effect: aliasing FALSIFIED; map-size THRESHOLD](project_miniworld_flip_negative.md) — less aliasing gives a LARGER effect; the real axis is a threshold between 128 and 512 occupied cells.
+
+## Reference
+
+- [The three documents and the paper corpus](reference_review_documents.md) — 21pp arena review / 17pp results paper / 38pp record, split 2026-09-08. Rules the documents are held to.
+- [Positional-encoding landscape and prior art](reference_positional_landscape.md) — the log-polar frame, and that GRAPE and Mamba-3 already publish the taxonomy and the content-dependent rotation. Read before claiming theory.
+- [Paper corpus is stored locally](reference_paper_corpus.md) — 40 papers at `papers/`, all read first-hand. Grep it, don't re-search the web.
+- [Language numbers, theta without actions, what PoPE actually does](reference_language_and_pope.md) — enwik8 with power caveats; RoPE is the Δ=1 special case; PoPE changes magnitude, not angle.
+- [Looped-transformer literature](reference_looped_transformer_lit.md) — Mixture-of-Recursions already owns "recursion substitutes for depth".
+- [Memory is shared via git](reference_shared_memory.md) — this dir mirrors to `.claude-memory/`; pull before reading, push after writing.
+
+## Method — measurement
+
+- [Verify convergence, noise floor and power FIRST](feedback_convergence_first.md) — four retractions in a week, one root cause. MDE before calling anything a null; measure the floor; check whether accuracy is just the loss.
+- [Validate the task before spending GPU](feedback_validate_task_first.md) — n-gram on the action stream, context-destruction, measured chance rate. Gate BEFORE training.
+- [Check the recipe before believing a ceiling](feedback_recipe_before_architecture.md) — a task stuck at 0.415 for months was undertrained; the recipe was worth more than any architecture effect on it.
+- [A borrowed benchmark usually doesn't test your axis](feedback_borrowed_benchmarks.md) — Flip-Flop and MQAR both returned nulls our own data predicted. Ask what it discriminates, and for whom, before running it.
+- [Check the premise, prefer runtime knobs, split hypotheses](feedback_premise_before_test.md) — 16 runs replicating a known negative; a 90-second eval-only sweep replaced a 12-run training sweep.
+- [Probes lie confidently](feedback_probe_verification.md) — five analysis bugs that each printed a clean wrong verdict. Verify what a probe measures, not just that it ran.
+- [Verify before relaying](feedback_verify_before_relaying.md) — agents, web summarisers and my own probes all returned confident wrong answers. Run the check yourself.
+- [The lm200 era is retracted](feedback_lm200_stuck_baselines.md) — a whole leaderboard ranked convergence, not architecture. Four derived findings died with it.
+
+## Method — operations
+
+- [Verify state before and after destructive commands](feedback_verify_before_destructive.md) — a failed `git add` stages nothing; a `rm -rf` destroyed a COMPLETED batch. Both times the terminal had already said otherwise.
+- [Relative paths in `python3 -m` resolve to the PARENT dir](feedback_cwd_and_module_paths.md) — fails silently, four debugging rounds. Use an absolute REPO constant inside modules.
+- [Scheduler and measurement traps](feedback_scheduler_and_measurement_traps.md) — fill-first GPU pickers idle a device; `pgrep -f` matches your own shell; never edit a running script.
+- [Run one seed of everything first](feedback_seed_ordering.md) — seed outer, variant inner: a full low-confidence table lands fastest.
+
+## Context
+
+- [User authoring style](user_style.md) — terseness, no emojis, honest reporting.
+- [Action-noise framing](feedback_action_noise_framing.md) — use stochastic-transition-MDP vocabulary; lead with non-circular wins.
+- [PC-Kalman duality](feedback_pc_kalman_duality.md) — forward and inverse models are duals, not complements; gradient descent finds the degenerate joint optimum.
+- [EM vs WM mechanism](feedback_em_vs_wm_mechanism.md) — multiplicative AND-gate vs additive OR-gate. The regime table built on it was retracted; the mechanism may still hold.
+- [Backfill standard-transformer baselines](feedback_baselines_backfill.md) — within-family tables need a RoPE column before submission.

@@ -1,6 +1,6 @@
 ---
 name: reference-paper-corpus
-description: 28 positional-encoding papers stored locally at papers/ with an INDEX; grep the corpus instead of re-searching the web.
+description: 40 positional-encoding papers stored locally at papers/ with an INDEX; grep the corpus instead of re-searching the web.
 metadata:
   type: reference
 ---

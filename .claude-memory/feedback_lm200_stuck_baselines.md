@@ -1,60 +1,49 @@
 ---
-name: feedback_lm200_stuck_baselines
-description: "LM200-ONLY training artifact — April lm200 baselines are stuck (loss ~1.0); clean/noise are FINE and reproduce exactly. The lm200 leaderboard ranked convergence, not architecture. Retrain lm200 baselines fresh before any landmark claim."
-metadata: 
-  node_type: memory
+name: The lm200 era is retracted — a whole leaderboard ranked convergence
+description: April lm200 checkpoints never converged, so the landmark leaderboard ranked training convergence rather than architecture. Four derived findings died with it. The lesson generalises past lm200.
+metadata:
   type: feedback
-  originSessionId: d17148dd-e54f-48b7-8a88-096f71aadfc5
 ---
 
-The stored lm200 checkpoints trained **April 22–24** (Vanilla, Level15,
-Level15EM, VanillaEM, RoPE, PC, Level1, CoPE, LSTM, MambaLike) are
-**stuck**: they converged to CE loss ~1.0 instead of ~0.005. Checkpoints
-trained **May 8+** (TEMFaithful, Level15GSF, Level15_SR, NoDrop,
-Vanilla_ExtraHead) converged normally. The reported lm200 "leaderboard"
-is monotonic with *training convergence*, not with architecture.
+**Everything measured on the lm200 (landmark) task before 2026-05-08 is void**, and
+so is every claim built on it. This file replaces four separate memories that each
+recorded one of those claims as a finding.
 
-**Scope is lm200 ONLY.** Clean and noise checkpoints retrain bit-identical
-to the stored ones (verified 2026-07-15, NOISE_CLEAN_REVALIDATION.md), so
-those results are VALID. Root cause: the landmark-cell-selection RNG
-(`rng.permutation(n_cells)[:n_landmarks]`) shifted between April and now;
-it only runs when n_landmarks>0, so only lm200's data changed. lm200
-training is basin-sensitive to the landmark layout — April's layout →
-bad basin, current → good basin. The earlier "noise degraded" worry was
-WRONG (April-vs-May noise loss gaps were genuine variant differences).
+## What happened
 
-**How discovered (2026-07-15):** the "Level15Cascade wins lm200 +10-25pp"
-result turned out to be the fresh cascade compared against a *stuck*
-April Level15 baseline. Retraining Level15 fresh under current code gives
-0.996 (loss 0.005); the old checkpoint was 0.80 (loss 1.01). A same-seed
-reproducibility test (3x each) is perfectly deterministic (0.996±0.000),
-so it is NOT nondeterminism — it is a systematic April-condition artifact
-(first-epoch loss differs 2.71552 vs 2.71538 → a data/RNG-order shift that
-dropped April Level15 into a bad optimization basin). Level15-WM code is
-byte-identical April vs now (only change: log_R_init_bias, default 0.0 =
-no-op for WM). So Level15 lm200 training is **basin-sensitive**.
+Stored lm200 checkpoints trained 2026-04-22..24 never converged (final CE ~1.0
+instead of ~0.005); ones trained 2026-05-08+ converged normally. The reported
+leaderboard was **monotone in final training loss**, not in architecture:
 
-**Corrected fresh (current code, seed 0) lm200 T=512 leaderboard:**
-Level15 0.996 > TEMFaithful 0.982 > NoDrop 0.915 > Level15EM 0.860 >
-Vanilla 0.835 > VanillaEM 0.807 > PC 0.721 > RoPE 0.513.
+| reported rank | acc | stored final loss |
+|---|---|---|
+| Vanilla | 0.716 | 1.22 (stuck) |
+| Level15 | 0.819 | 1.01 (stuck) |
+| NoDrop | 0.948 | 0.24 (partial) |
+| GSF | 0.956 | 0.0007 (converged) |
+| TEMFaithful | 0.969 | 0.0004 (converged) |
 
-**What this REVERSES (all artifacts of the stuck Level15 baseline):**
-- "TEMFaithful is the lm200 leader" — FALSE, fresh Level15 (0.996) beats
-  it (0.982). Supersedes [[feedback_multiple_fixes_match_tem]].
-- "NoDrop +13pp over Level15 on lm200" — FALSE, fresh Level15 > NoDrop.
-- "GSF/cascade match or beat Level15" — artifacts.
-- The Level15Cascade result entirely — no benefit; NoSlow ≡ Level15.
+Retrained under current code, **Level15 reaches 0.996 and beats TEMFaithful (0.982)**.
 
-**What SURVIVES (strengthened):** Level15 >> Vanilla on lm200 is real and
-larger than reported (0.996 vs 0.835, ~+16pp). Vanilla's code (model.py)
-is unchanged and reproduces stuck-ish both times — it genuinely can't
-localize landmarks (drift). Correction helps on either backbone
-(Level15 > Vanilla, Level15EM > VanillaEM).
+## The four claims that died
 
-**How to apply:** NEVER compare a freshly-trained variant against a
-stored baseline checkpoint. Retrain baselines under current code in the
-same batch. Any lm200 result where the winner is the more-recently-trained
-model is suspect. Re-validate all lm200 tables in RESULTS_PAPER.md /
-CLAUDE.md before submission. See also [[feedback_seed_ordering]] (this is
-why single-seed lm200 gaps kept inflating) and
-[[feedback_minimal_sweep_skip_gsf]].
+- "TEMFaithful is the lm200 leader" — reversed.
+- "Removing post-attention dropout buys +13pp on lm200" — the baseline was stuck.
+- "GSF (K=8 multi-modal Bayes) closes 95% of the TEM gap" — there was no gap.
+- "NoDrop and GSF are accuracy-substitutes but NLL-complements" — built on both.
+
+**Do not cite any of them.** The post-attention-dropout mechanism story (block
+dropout hurts rare-token retrieval) was plausible and may still be true; it has no
+surviving evidence here.
+
+## Scope, and why it is narrow
+
+Clean and noise checkpoints retrain **bit-identically**, so those results are valid.
+The root cause is the landmark-cell-selection RNG, which only runs when
+`n_landmarks > 0`; lm200 training is basin-sensitive to the resulting layout.
+
+## The general lesson
+
+A leaderboard whose ordering tracks final training loss is measuring optimisation.
+Check that correlation **before** reading the ranking — r(final loss, accuracy) has
+reached **-0.999** in this project. This is standing rule 9, and it was bought here.

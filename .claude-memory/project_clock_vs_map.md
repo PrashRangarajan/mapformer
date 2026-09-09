@@ -63,3 +63,33 @@ reproduce the gain; a content-INDEPENDENT constant should reproduce much of it; 
 gain should vanish where there is no recency structure.
 
 See [[project-sign-axis]], [[reference-positional-landscape]].
+
+## alpha is a RE-DESCRIPTION, not a third cause (added 2026-09-08)
+
+Two corrections, both from the user asking what alpha is actually for.
+
+**It is nearly collinear with the opposition score: r = +0.9995.** Opposition is
+read straight off the learned action code, is simpler and more interpretable, and
+alpha carries almost no information it does not. Nothing rests on alpha that could
+not have rested on opposition. Its contribution is **economy** — it makes the sign
+result and the rank result one finding at two severities rather than two.
+
+**And "vary alpha deliberately and check that degradation follows" is MALFORMED.**
+alpha is not a parameter of any model here; it is a statistic fitted to a trained
+one. Both ways to move it fail: interpolating signed -> monotone moves alpha but
+destroys the map in the same stroke, and bounding the accumulator is either a NO-OP
+(theta enters through cos/sin, so theta and theta+2pi are already identical) or it
+breaks additivity and with it interval-relativity. **Within this frame alpha may not
+be independently controllable at all** — it is set by the cancellation, whose only
+levers are the sign and rank axes.
+
+**The prior question, which I had skipped:** why should a growing accumulator cost
+anything when the code is periodic? The standard answer — low-frequency channels at
+untrained phases — was imported here and **refuted** (ablating them costs MORE at
+OOD). So alpha's association with length-degradation is established and its **route
+is not**.
+
+**One narrow use survives**: opposition needs labelled opposite actions and cannot
+be computed on text at all; alpha needs only trajectories. It is the form this
+measurement takes in the setting the literature actually works in. Not yet measured
+there — the language trainer saves no checkpoints.

@@ -204,3 +204,30 @@ compose exactly because the resources are independent: sharing costs +0.1% time,
 hierarchy costs 0% parameters. Caveat: the compute saving is length-dependent and
 NEGATIVE at short lengths (hierarchy is 12% slower at L=16, 2% at L=128).
 
+## Re-measured at the recipe that matters (2026-09-08) — survives, still unpowered
+
+The compositional claim (`MapWM-Hier - MapWM-FlatHG = +0.130`) was measured entirely
+under a recipe whose own effect is **+0.160** — bigger than the claim. See
+[[feedback-recipe-before-architecture]]. Both arms retrained in ONE batch at
+cosine/1e-3/150ep, 8 seeds, published evaluator:
+
+| | T=256 | T=512 |
+|---|---|---|
+| MapWM-Hier | 0.514 +/- 0.126 | 0.390 +/- 0.126 |
+| MapWM-FlatHG | 0.378 +/- 0.103 | 0.239 +/- 0.086 |
+| **hierarchy effect** | **+0.136** (7/8, MDE 0.173) | **+0.151** (7/8, MDE 0.155) |
+
+**The claim survives in size and direction** — +0.136 against the published +0.130,
+essentially unchanged, with both arms rising together. So it is not an artefact of
+undertraining.
+
+**And it has never been established.** Both contrasts land just inside their own
+MDE. That was equally true of the published number, which was cross-batch and
+carried no MDE — so this is the first honest power statement, not a downgrade.
+Reaching MDE < 0.136 needs about **n=13**; n=16 gives margin.
+
+**Cite it as directional, n=8, unmeasured — not as +0.130.**
+
+Note also `LoopedHourglass` is **NOT** parameter-matched to `Hourglass_k2` (209,256
+vs 605,800 — it shares one block where the scaffold has three), so that contrast is
+parameter-efficiency, not a route to a better number.
