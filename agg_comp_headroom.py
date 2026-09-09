@@ -13,10 +13,17 @@ import torch
 
 from mapformer.eval_compositional import eval_ckpt
 
-ARMS = [("A", "Hourglass_k2", "published recipe: linear, 3e-4, 50ep"),
-        ("B", "Hourglass_k2", "cosine, 1e-3, 50ep (budget held)"),
-        ("C", "Hourglass_k2", "cosine, 1e-3, 150ep"),
-        ("D", "LoopedHourglass", "loop, cosine, 1e-3, 150ep (1/3 the params)")]
+import os as _os
+if _os.environ.get("HIER_RECHECK"):
+    ARMS = [("Hourglass_k2", "Hourglass_k2", "MapWM-Hier, cosine/1e-3/150ep"),
+            ("HourglassFlat3", "HourglassFlat3", "MapWM-FlatHG, cosine/1e-3/150ep")]
+    _SUB = "hier_recheck"
+else:
+    ARMS = [("A", "Hourglass_k2", "published recipe: linear, 3e-4, 50ep"),
+            ("B", "Hourglass_k2", "cosine, 1e-3, 50ep (budget held)"),
+            ("C", "Hourglass_k2", "cosine, 1e-3, 150ep"),
+            ("D", "LoopedHourglass", "loop, cosine, 1e-3, 150ep (1/3 the params)")]
+    _SUB = "comp_headroom"
 
 
 REPO = "/home/prashr/mapformer"   # absolute: `python3 -m mapformer.X` runs from the
@@ -26,7 +33,7 @@ REPO = "/home/prashr/mapformer"   # absolute: `python3 -m mapformer.X` runs from
 
 
 def final_loss(tag, seed):
-    f = f"{REPO}/runs/comp_headroom/logs/{tag}_s{seed}.log"
+    f = f"{REPO}/runs/{_SUB}/logs/{tag}_s{seed}.log"
     if not os.path.exists(f):
         return float("nan")
     v = [l for l in open(f) if "final_loss=" in l]
@@ -48,7 +55,7 @@ def main():
             res[(tag, T)] = []
         loss[tag] = []
         for s in a.seeds:
-            ck = f"{REPO}/runs/comp_headroom/{tag}_s{s}/{var}.pt"
+            ck = f"{REPO}/runs/{_SUB}/{tag}_s{s}/{var}.pt"
             if not os.path.exists(ck):
                 print(f"  missing {ck}", flush=True); continue
             _variant, r = eval_ckpt(ck, a.lengths, a.n_traj, a.device)  # returns (variant, results)
