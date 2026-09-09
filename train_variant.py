@@ -124,6 +124,8 @@ VARIANT_MAP = {
     "VanillaNoDrop": MapFormerWM_VanillaNoDrop,
     "VanillaEM":  MapFormerEM,
     "VanillaEM_P0": MapFormerEM_SingleP0,
+    # shared origin AND r=4 -- both EM init fixes at once (MINIGRID_EM.md)
+    "VanillaEM_P0_r4": __import__("mapformer.model_em_fixed", fromlist=["x"]).MapFormerEM_SingleP0_r4,
     "MapEM_NC_L":  MapFormerEM_NC_L,     # paper B.2.2, linear Delta
     "MapEM_NC_NL": MapFormerEM_NC_NL,    # paper B.2.2, MLP Delta   # paper eq.3: single origin, A_P = P.P^T
     "Level1":     MapFormerWM_ParallelInEKF,

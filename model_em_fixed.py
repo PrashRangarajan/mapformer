@@ -96,3 +96,34 @@ class MapFormerEM_SingleP0(MapFormerEM):
         for layer in self.layers:
             x = layer(x, q_pos, k_pos, causal_mask)
         return self.out_proj(self.out_norm(x))
+
+
+def _single_p0_rank(r):
+    """Shared origin AND a wider bottleneck -- the combination that did not exist.
+
+    MINIGRID_EM.md measured EM's failure precisely: it MATCHES WM on 7 of 8 seeds
+    and collapses on one (0.666 against a pack at 0.810-0.834; worst-to-second-worst
+    gap 0.144 for EM_r4 against 0.007 for WM_r4). Two independent init pathologies
+    are candidates and they were never separable:
+
+      separate q0/k0  A_P is not peaked at zero displacement at init, so the
+                      AND-gate multiplies content by a random position mask and the
+                      gradient signal dies. Shared p0 is worth +0.358 on Match-Query.
+      r=2             a skewed action basis (|cos(N,E)| 0.78 against 0.17 at r=4).
+
+    `VanillaEM_P0` fixes only the first, `VanillaEM_r4` only the second. This fixes
+    both, which is what the 2x2 needs.
+    """
+    class _P(MapFormerEM_SingleP0):
+        def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
+                     dropout=0.1, grid_size=64, bottleneck_r=2, **kw):
+            super().__init__(vocab_size, d_model, n_heads, n_layers, dropout,
+                             grid_size, r)
+            assert self.action_to_lie.w_in.out_features == r, "rank lost in construction"
+            assert hasattr(self, "p0_pos") and not hasattr(self, "q0_pos"), "origin not shared"
+    _P.__name__ = f"MapFormerEM_SingleP0_r{r}"
+    _P.__doc__ = f"MapFormer-EM, shared origin (paper eq. 3), bottleneck rank r={r}."
+    return _P
+
+
+MapFormerEM_SingleP0_r4 = _single_p0_rank(4)
