@@ -2640,3 +2640,122 @@ The two-slot decomposition has now been stated independently three times: GRAPE
   table it contradicted, both added in the same commit), no methods section, and 15
   of 16 tables unnumbered. A document that grows by accretion needs an end-to-end
   read, not another append.
+
+## Session 2026-09-07/08 -- the crossover lands; two documents become three; four of my own predictions fail
+
+**Read `RESULTS_INDEX.md`, then `positional_review.pdf` (21pp, the arena review) and
+`axes_measured.pdf` (17pp, the results paper).** `mapformer_math.pdf` (38pp) keeps
+the record. The review/record split had collapsed (34pp vs 38pp) and was rebuilt.
+
+### The research goal, stated by the user and now the frame for both documents
+
+Not positional encoding for its own sake. **Positional encoding as the mechanism by
+which a model learns a relational "where", kept separate from the "what"** -- the TEM
+claim that factorisation is what buys transfer. Consequence, which had never been
+written down: **every evaluation in this project is already a transfer measurement**,
+because the observation map is redrawn at eval. A structural code reaches 0.99 across
+four tasks where a parameter-matched index code sits ON the 0.506 floor.
+
+MapEM's Hadamard product IS TEM's `g (x) x` -- the tensor-lift identity makes it
+exact. What MapFormer adds is that the interval operator composes by prefix sum.
+
+### The clock/map crossover -- the first result showing a mechanism has a MATCH
+
+`RECENCY_RESULTS.md`, `RECENCY_GATE_ABLATION.md`. Built a k-back retrieval task with
+uncounted filler tokens, so `k` is a CONTEXTUAL position (the answer sits 129.7 +/-
+10.3 tokens back). 6 arms x 8 seeds.
+
+- **Crossover**: forcing a monotone increment costs **-0.280 on the torus** (12/12)
+  and **-0.004 here** (inside MDE). Interaction ~ +0.28.
+- **alpha is diagnostic**: the UNCONSTRAINED arm learns 0.591 on the torus and 0.967
+  here (se 0.009) while every CONSTRAINED arm sits at ~1.0 on both -- the control.
+- **Mechanism by intervention, not correlation** (gate strength does NOT predict
+  accuracy, r=-0.34): magnitude-matched, a constant increment on content scores
+  0.783, on every token 0.189 -- **+0.594 at 8/8**.
+- **A fixed index code cannot count contextually**: +0.750 at 8/8, larger than the
+  navigation effect. This REPRODUCES CoPE; cited as an anchor, not a new result.
+
+**A confound I nearly published**: the condition I pre-registered as decisive
+(make the filler count) collapses to 0.086 -- but a control changing ONLY theta's
+scale collapses just as hard (0.110). The model is acutely sensitive to theta's
+magnitude. Only the magnitude-matched pair establishes anything.
+
+### alpha, downgraded twice by the user's questions
+
+1. **"Vary alpha and check degradation follows" is MALFORMED.** alpha is not a
+   parameter -- it is a statistic fitted to a trained model. Interpolating signed ->
+   monotone moves it but destroys the map in the same stroke; bounding the
+   accumulator is either a NO-OP (theta enters via cos/sin) or breaks additivity.
+   **Within this frame alpha may not be independently controllable at all.**
+2. **It is nearly collinear with the opposition score (r = +0.9995)**, which is
+   simpler and read straight off the weights. Its contribution is ECONOMY -- one
+   finding at two severities instead of two. One narrow use survives: opposition
+   needs labelled opposite actions and cannot be computed on text; alpha needs only
+   trajectories. Not yet measured there.
+
+And the prior question I had skipped: **why should a growing accumulator cost
+anything when the code is periodic?** The critical-dimension account was imported
+and refuted. The association is established; the route is not.
+
+### Four of my own predictions failed, and the failures were the useful part
+
+- **The gated variant** (`GATED_RESULTS.md`): built CoPE's gate on a signed
+  increment. It SEPARATES -- 4.16x action-vs-observation, 8/8, against a 1.35x floor
+  taken from Selective RoPE's gate -- and **buys nothing** (+0.004 torus, -0.039
+  recency). The frozen control earned its place: the only detectable contrast is over
+  the FROZEN twin, and it is the size of the frozen twin's own deficit, i.e. the gate
+  learns to undo the rescale that having a gate imposes. **MapFormer's bottleneck was
+  already separating adequately -- this corroborates the paper's design.** My
+  inference was wrong: "the gate is load-bearing" does not imply "the model needs
+  help building one".
+- **Flip-Flop** (`FLIPFLOP_RESULTS.md`): every contrast unmeasured. Our own
+  per-offset curve predicted it -- index is 0.99 at k=1 and Flip-Flop only ever asks
+  k=1. It varies distance-to-write, never ORDINAL DEPTH.
+- **MQAR** (`MQAR_RESULTS.md`): pre-registered a ceiling, got a FLOOR. Nothing learns
+  it at this scale; index arms fail identically (0.264/0.274 vs 0.273), so it is
+  capacity, not the positional mechanism. Stopped at 4 pilots. **My recommendation to
+  run it was wrong** for a reason in the source I used to justify it: MQAR
+  discriminates STATE SIZE among models worse than attention.
+- **MapPoPE at r=4** (`MAPPOPE_R4_RESULTS.md`): +0.019, unmeasured, against +0.085 on
+  the MapWM family. PoPE has n_blocks=64 vs 32, so the r=2 bottleneck binds less.
+  **"Use r=4" is a MapWM-family recommendation, not a general one.**
+
+### The recipe finding, and what it puts in question
+
+`COMP_HEADROOM.md`. The compositional task sat at 0.415 with 0.585 of headroom.
+Every published number on it used `LinearLR(1.0->0.0)` from step one at lr 3e-4 --
+the trainer had **no `--schedule` flag at all**.
+
+**C - A = +0.160, detectable, 7/8 -- larger than any architectural ingredient ever
+measured on that task, including hierarchy's own +0.13.** The 0.415 was a recipe
+limit, not a capability limit.
+
+P3 REFUTED and informatively: I pre-registered that the recipe would COMPRESS seed
+variance (it cut sd 3.5x on the torus) and that a mean gain with unchanged variance
+would mean something other than optimisation. **Variance roughly doubled.**
+
+**Consequence, re-measured** (`HIER_RECHECK.md`): the hierarchy claim survives in
+size (+0.136 vs the published +0.130, 7/8 seeds, both arms rising together) and
+**has never been powered** -- both contrasts land just inside their MDE, then and
+now. Cite as *directional, n=8, unmeasured*.
+
+### Process, each bought here
+
+- **I rm -rf'd a COMPLETED batch** -- the forget-gate clock test, 48/48,
+  `missing=0`, finished 40 minutes earlier. I read "no driver, no workers" as early
+  rather than done, having just printed "48 checkpoints". ~3.3 GPU-hours gone.
+  `safe_clear.sh` now refuses to delete a run dir whose completion marker exists.
+  **The test must be re-run**; the script and pre-registration are intact.
+- **`--fast-attn` does NOT speed up every task.** Measured on the compositional
+  trainer: 0.17s per 20 passes either way -- the model is overhead-dominated at
+  d=128 -- and TF32 costs equivalence there (logit diff 6.0e-01, grad cosine
+  0.99995, against the documented 1.4e-06 / 1.0000000000). It buys only memory.
+  `--data-workers` IS the lever (data generation is 62% of an iteration) but changes
+  the data STREAM, so it cannot be used in a batch carrying a reproduction control.
+- **Relative paths in `python3 -m mapformer.X` resolve to the PARENT dir** and fail
+  silently. Fourth occurrence. Use an absolute `REPO` constant inside modules.
+- **An aggregator that labels rows by checkpoint FILENAME collapses arms** that share
+  a variant at different recipes. Found before the batch finished, not after.
+- Two documents' worth of cross-references were rewritten as companion citations
+  during the split; one produced `\Sthe companion review`, a LaTeX ERROR rather than
+  a warning, which only a from-source build would have caught.
