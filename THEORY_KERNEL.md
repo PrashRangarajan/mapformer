@@ -95,12 +95,31 @@ theory's `E = 0`, sd **0.160**. Single `p_0` returns `rho = 1.000` on every seed
 3 of 8 seeds start with every head at `rho < 0` -- the kernel actively
 *down-weights* the same location.
 
-**Corollary, and the point of the whole section: `rho = 1` is not "correct".**
-It is correct for `delta = 0` and wrong for `delta != 0`. So the `q_0`/`k_0`
-choice is a *second* instance of the clock/map axis, living on the kernel instead
-of on the accumulator. It predicts a sign flip between task kinds, which is what
-the five measured cells show (`RECENCY_EM_RESULTS.md`): `+0.089 / +0.167 /
-+0.358 / collapse-removed` on four map tasks, **`-0.237` on the one clock task**.
+**CORRECTED 2026-09-10 by N5, the intervention this section asked for
+(`N5_RESULTS.md`). Two changes, one strengthening and one fatal.**
+
+*Strengthening:* the axis is **`|rho|`, not `rho`.** Setting `rho = -1` is as good
+as `rho = +1` (torus `+0.016`, MDE 0.034), because
+`kappa_minus = -kappa_plus` exactly and EM's score is `A_X (*) A_P` with `A_X`
+learned, so `A_X (*) (-kappa) = (-A_X) (*) kappa`. The kernel's sign is a gauge the
+content branch absorbs. What is load-bearing is whether `kappa` is a coherent
+matched filter at all: **`|rho|=1 - |rho|=0` is `+0.292` on the torus, 8/8 seeds,
+by a magnitude-matched intervention.** That is now the best-supported claim in this
+document. `zero` and `rand` tie (P4 unmeasured on both tasks), so `|rho|`
+summarises the kernel adequately -- the shape of an incoherent kernel does not
+matter beyond `kappa(0)`.
+
+*Fatal:* **the corollary this section was built on is REFUTED.** It said `rho = 1`
+is right for `delta = 0` and wrong for `delta != 0`, making the `q_0`/`k_0` choice
+a second clock/map axis with a predicted sign flip. N5 finds **no inversion**:
+coherence helps on BOTH tasks with the same sign, and the interaction is `+0.113`
+against an MDE of `0.195`. So the five-cell pattern below -- `+0.089 / +0.167 /
++0.358 / collapse-removed` on four map tasks and **`-0.237` on the one clock
+task** -- is real but **is NOT explained by coherence**. The surviving candidate
+(phase degrees of freedom, not coherence value) is stated at the end of
+`N5_RESULTS.md` and is deliberately NOT written into this document: it is
+third-generation, post-hoc, has no trainable control in its own batch, and I have
+been wrong about this mechanism twice already.
 
 The per-offset curve is the mechanism made visible: the coherent EM arm matches WM
 at `k <= 2` (where `delta ~ 0` and a zero-peaked kernel is right) and falls to
@@ -137,6 +156,11 @@ Measured: torus / MiniGrid / vocab sweep, `delta == 0` constant -> `EM - WM` =
 only nonzero one.
 
 ## 6. Every result, placed
+
+> **Status after N5 (2026-09-10).** Thm 2 holds in its `|rho|` form and is the only
+> part established by intervention. Thm 1 and Thm 3 remain retrodictions. The row
+> below reading "sign tracks task kind" is the REFUTED corollary and is kept only
+> so the refutation has something to point at.
 
 | result | axis | statement |
 |---|---|---|
