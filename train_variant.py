@@ -126,6 +126,14 @@ VARIANT_MAP = {
     "VanillaEM_P0": MapFormerEM_SingleP0,
     # shared origin AND r=4 -- both EM init fixes at once (MINIGRID_EM.md)
     "VanillaEM_P0_r4": __import__("mapformer.model_em_fixed", fromlist=["x"]).MapFormerEM_SingleP0_r4,
+    # N5 (THEORY_KERNEL.md): EM with the position kernel's coherence rho SET by
+    # construction and FROZEN. Magnitude-matched across the four conditions --
+    # k_0 is a per-block ROTATION of q_0, so sum_i a_i is identical and only the
+    # phases differ. rho = +1 / 0 / -1 / random.
+    "EMPhase_plus_r4":  __import__("mapformer.model_em_phase", fromlist=["x"]).MapFormerEM_Phase_plus_r4,
+    "EMPhase_zero_r4":  __import__("mapformer.model_em_phase", fromlist=["x"]).MapFormerEM_Phase_zero_r4,
+    "EMPhase_minus_r4": __import__("mapformer.model_em_phase", fromlist=["x"]).MapFormerEM_Phase_minus_r4,
+    "EMPhase_rand_r4":  __import__("mapformer.model_em_phase", fromlist=["x"]).MapFormerEM_Phase_rand_r4,
     "MapEM_NC_L":  MapFormerEM_NC_L,     # paper B.2.2, linear Delta
     "MapEM_NC_NL": MapFormerEM_NC_NL,    # paper B.2.2, MLP Delta   # paper eq.3: single origin, A_P = P.P^T
     "Level1":     MapFormerWM_ParallelInEKF,
