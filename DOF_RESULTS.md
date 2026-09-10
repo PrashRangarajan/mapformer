@@ -1,7 +1,7 @@
 # Phase degrees of freedom: real, reproducible, and an OPTIMISATION effect
 
-Pre-registration: `DOF_PREREG.md`. 4 arms x 8 seeds, one batch. **Recency half
-complete; torus half in flight** -- this file will be extended, not rewritten.
+Pre-registration: `DOF_PREREG.md`. 4 arms x 8 seeds, one batch. **COMPLETE**, 64 runs.
+The two halves require OPPOSITE analyses, which is the main finding.
 
 | arm | init `rho` | phase DOF | final loss | T=1024 | T=2048 |
 |---|---|---|---|---|---|
@@ -72,9 +72,71 @@ The defensible statement is the conditional one: *given equal fit, arm identity
 does not predict accuracy*. The unconditional differences are real, reproducible
 at 8/8, and matter to anyone choosing a parameterisation.
 
-## Still open
+## The torus half, and why it needs the opposite analysis
 
-The torus half is running. It is the control: if freedom is an optimisation effect
-on a task that must reshape the kernel, the map task -- where `phi = 0` is already
-correct -- should show a much smaller loss spread across the same four arms.
-D2 and D3 land with it.
+Every torus arm converges to essentially zero training loss -- **0.00018 to
+0.00028**, indistinguishable -- against 0.613-1.340 on recency. Where `phi = 0` is
+already the right kernel there is nothing to reshape, so freedom buys no fit.
+
+Consequently `r(final loss, acc at T=1024)` is **-0.160** on the torus against
+**-0.985** on recency. Loss-matching is mandatory on one half and meaningless on
+the other. Torus accuracy differences cannot be fit artifacts.
+
+| arm | phase DOF | T=128 | T=512 | **T=1024** |
+|---|---|---|---|---|
+| `AlignLock` | **0** | 1.000 | 0.994 +/- 0.006 | **0.963 +/- 0.022** |
+| `P0` | **0** | 1.000 | 0.993 +/- 0.008 | **0.962 +/- 0.024** |
+| `AlignFree` | `n_b` | 1.000 | 0.979 +/- 0.011 | 0.875 +/- 0.112 |
+| `sep` | `n_b` | 1.000 | 0.961 +/- 0.030 | 0.809 +/- 0.128 |
+
+| contrast (torus, T=1024) | delta | sd | MDE | seeds + | verdict |
+|---|---|---|---|---|---|
+| D2 `AlignFree - AlignLock` | -0.088 | 0.119 | 0.118 | 1/8 | unmeasured |
+| `sep - P0` | **-0.154** | 0.131 | 0.130 | **0/8** | **DETECTABLE** |
+
+D2 lands just inside its MDE, so as pre-registered it is reported as *unmeasured
+above 0.118* -- not as a null, and the direction (1/8 seeds positive) is against
+freedom. The full-form contrast IS detectable and has the opposite sign to
+recency's, so **the inversion is reproduced inside a single batch**:
+`sep - P0` is **+0.237 on recency (8/8)** and **-0.154 on the torus (0/8)**.
+
+## D3 -- the interaction, DETECTABLE
+
+    (AlignFree - AlignLock)_recency - (same)_torus = +0.236,  se 0.053,  MDE 0.148
+
+Phase freedom **helps by +0.148 on the clock task and costs 0.088 on the map
+task**. This is the claim the batch was built for, and it holds.
+
+## What the freed kernel actually does on the torus
+
+Locked arms hold `rho = 1.000 +/- 0.000` by construction. Freed arms **drift off
+the matched filter**: `AlignFree` ends at `rho = 0.363 +/- 0.198`, `sep` at
+`0.173 +/- 0.196`, and the between-arm ordering is monotone in accuracy
+(1.000 -> 0.963, 0.363 -> 0.875, 0.173 -> 0.809). The model spends its freedom
+moving away from the kernel the task wants, at no cost in training loss, and pays
+for it at OOD length.
+
+**But within the freed arms, `rho_final` does not predict which seed does better**
+(pooled r = +0.158, n=16, range -0.05..0.66). Same pattern as N4: the
+*manipulation* is causal, the *observed statistic* is not seed-level predictive.
+The between-arm ordering is four points and is confounded with the manipulation
+itself, so it illustrates the mechanism rather than testing it.
+
+## The claim, and where it sits
+
+**Kernel freedom is a trainability asset where the kernel must be reshaped, and a
+generalisation liability where it is already correct.**
+
+- **Clock task:** all of freedom's benefit is in FITTING. Loss 0.613 (free) vs
+  1.340 (locked); loss-matched, the accuracy contrast is zero. Optimisation --
+  outside `THEORY_KERNEL.md`, as Sec 7 anticipated.
+- **Map task:** every arm fits perfectly, so what remains is representational.
+  Freedom costs 0.088-0.154 of held-out accuracy at 8x training length, at
+  `r(loss,acc) = -0.16`. That part IS inside the frame.
+
+So the third mechanism survives, and it is the first of the three to be measured on
+both sides of the inversion within one batch. It is also two effects rather than
+one, split by task, and only the map-task half is a statement about representation.
+
+D5 (`AlignLock - P0` on recency, +0.120, MDE 0.134) remains unmeasured, so phase
+freedom and magnitude freedom are still not separated from each other.

@@ -116,10 +116,14 @@ coherence helps on BOTH tasks with the same sign, and the interaction is `+0.113
 against an MDE of `0.195`. So the five-cell pattern below -- `+0.089 / +0.167 /
 +0.358 / collapse-removed` on four map tasks and **`-0.237` on the one clock
 task** -- is real but **is NOT explained by coherence**. The surviving candidate
-(phase degrees of freedom, not coherence value) is stated at the end of
-`N5_RESULTS.md` and is deliberately NOT written into this document: it is
-third-generation, post-hoc, has no trainable control in its own batch, and I have
-been wrong about this mechanism twice already.
+(phase degrees of freedom, not coherence value) was pre-registered and TESTED --
+`DOF_PREREG.md`, `DOF_RESULTS.md`. It holds: the interaction is **+0.236 (se
+0.053, MDE 0.148, DETECTABLE)**, phase freedom helping +0.148 on the clock task and
+costing 0.088 on the map task, with the original contrast reproduced in-batch at
++0.237 / -0.154. The caveat that keeps it out of Thm 2 is different from the one
+written here before: it is not that it is untested, but that it is **two effects,
+not one** -- optimisation on the clock side, representation on the map side -- and
+only the map side belongs in this frame. See Sec 7.
 
 The per-offset curve is the mechanism made visible: the coherent EM arm matches WM
 at `k <= 2` (where `delta ~ 0` and a zero-peaked kernel is right) and falls to
@@ -189,7 +193,12 @@ of four).
   control that FAILED).
 - **Optimisation.** Everything above is about the function class. The compositional
   recipe finding (`+0.160`, larger than any architecture effect on that task) is
-  outside it entirely.
+  outside it entirely. **Measured instance added 2026-09-10** (`DOF_RESULTS.md`):
+  on the CLOCK task the entire origin-vector effect is optimisation --
+  `r(loss,acc) = -0.985` and every contrast vanishes loss-matched. On the MAP task
+  the same manipulation is representational (`r = -0.160`, all arms at ~2.5e-4
+  training loss), and freedom COSTS 0.088-0.154 at 8x training length. One
+  manipulation, two effects, split by task; only the second is in this frame.
 
 ## 8. What it predicts that has not been measured
 
