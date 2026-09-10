@@ -134,6 +134,11 @@ VARIANT_MAP = {
     "EMPhase_zero_r4":  __import__("mapformer.model_em_phase", fromlist=["x"]).MapFormerEM_Phase_zero_r4,
     "EMPhase_minus_r4": __import__("mapformer.model_em_phase", fromlist=["x"]).MapFormerEM_Phase_minus_r4,
     "EMPhase_rand_r4":  __import__("mapformer.model_em_phase", fromlist=["x"]).MapFormerEM_Phase_rand_r4,
+    # DOF test (DOF_PREREG.md): phase freedom at MATCHED initial coherence.
+    # AlignFree and AlignLock both start at rho = 1; only AlignLock cannot move
+    # its phases (k_0i = s_i * q_0i, per-block magnitudes still free).
+    "EMDoF_alignfree": __import__("mapformer.model_em_dof", fromlist=["x"]).MapFormerEM_AlignFree_r4,
+    "EMDoF_alignlock": __import__("mapformer.model_em_dof", fromlist=["x"]).MapFormerEM_AlignLock_r4,
     "MapEM_NC_L":  MapFormerEM_NC_L,     # paper B.2.2, linear Delta
     "MapEM_NC_NL": MapFormerEM_NC_NL,    # paper B.2.2, MLP Delta   # paper eq.3: single origin, A_P = P.P^T
     "Level1":     MapFormerWM_ParallelInEKF,
