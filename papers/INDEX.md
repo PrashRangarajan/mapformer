@@ -29,6 +29,16 @@ The cell was opened on the ADDITIVE side (DAPE and CoPE, both 2024); the
 multiplicative side filled in afterwards. Do not write "no survey covers this" —
 that was in the review and was wrong.
 
+### Neuroscience source — MapFormer's reference [11]
+
+| key | venue | what it actually claims |
+|---|---|---|
+| `tale_two_algorithms` | Whittington, Dorrell, Behrens, Ganguli, El-Gaby, *Neuron* 113(2):321-333, Jan 2025. doi 10.1016/j.neuron.2024.10.017, CC-BY | The EM/WM **solutions** are formally equivalent (same computation, "the same generalization behavior" once trained). The **algorithms are not** -- the paper predicts and measures a trade-off: at a fixed RNN-neuron budget **EM scales better**, because WM's recurrent state is `n_p*n_o` (relative position to *each* observation) where EM's is `n_p` with memories in a **separate synaptic memory network**. EM also *learns* faster ("fast memory binding" inductive bias), **except on N-back**. WM's compensating advantage is untested here: it holds the whole problem in activity slots simultaneously, so planning can be parallel. |
+
+Not on arXiv or bioRxiv and not fetchable by `fetch.sh` (Cell Press returns 403);
+the PDF was added by hand. See `TALE_OF_TWO_ALGORITHMS.md` for why its capacity
+result does **not** transfer to MapFormer's MapEM.
+
 ## Verification status
 
 Every row below was **read first-hand on 2026-09-06** unless marked otherwise.
