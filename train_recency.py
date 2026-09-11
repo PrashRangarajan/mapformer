@@ -128,6 +128,11 @@ def main():
     ap.add_argument("--schedule", default="cosine", choices=["linear", "cosine"],
                     help="cosine (DEFAULT) = 5%% warmup + cosine to 10%%. See the "
                          "module docstring for why linear is not the default here.")
+    ap.add_argument("--k-fixed", type=int, default=None,
+                    help="every query asks this k (train AND eval). SEARCH_PREREG.md S3.")
+    ap.add_argument("--k-curriculum", default=None,
+                    help="'K0,EVERY': draw k from 1..K0*2^(epoch//EVERY), capped at "
+                         "k_max. Eval always uses the full 1..k_max. SEARCH_PREREG.md S3.")
     ap.add_argument("--output-dir", required=True)
     args = ap.parse_args()
 
@@ -141,7 +146,8 @@ def main():
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     dev = torch.device(args.device)
     kw = dict(n_symbols=args.n_symbols, k_max=args.k_max,
-              p_query=args.p_query, min_gap=args.min_gap)
+              p_query=args.p_query, min_gap=args.min_gap, k_fixed=args.k_fixed)
+    curric = tuple(int(v) for v in args.k_curriculum.split(",")) if args.k_curriculum else None
     env = RecencyWorld(seed=args.seed, **kw)
     env_test = RecencyWorld(seed=10000, **kw)
 
@@ -175,6 +181,8 @@ def main():
     losses = []
     for ep in range(args.epochs):
         t0 = time.time(); run = 0.0
+        if curric is not None:
+            env.k_active = min(env.k_max, curric[0] * 2 ** (ep // curric[1]))
         for _ in range(args.n_batches):
             toks, sps, ans, _ = env.generate_batch(args.batch_size, args.T, rng)
             loss = _loss(model, env, toks, sps, ans, dev)
@@ -203,7 +211,8 @@ def main():
                 "vocab_size": env.unified_vocab_size, "d_model": args.d_model,
                 "n_heads": args.n_heads, "n_layers": args.n_layers,
                 "grid_size": args.grid_size, "k_max": args.k_max,
-                "n_symbols": args.n_symbols, "min_gap": env.min_gap},
+                "n_symbols": args.n_symbols, "min_gap": env.min_gap,
+                "k_fixed": args.k_fixed, "k_curriculum": args.k_curriculum},
                out / f"{args.variant}_recency.pt")
     json.dump(results, open(out / f"{args.variant}_recency.json", "w"), indent=2)
     print(f"DONE {args.variant} final_loss={losses[-1]:.4f}", flush=True)

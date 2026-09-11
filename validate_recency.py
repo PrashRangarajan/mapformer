@@ -71,13 +71,15 @@ def main():
     ap.add_argument("--episodes", type=int, default=200)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default="RECENCY_GATES.md")
+    ap.add_argument("--k-fixed", type=int, default=None)
     a = ap.parse_args()
 
     rows = []
     for min_gap in a.min_gaps:
         for T in a.lengths:
             env = RecencyWorld(n_symbols=a.n_symbols, k_max=a.k_max,
-                               p_query=a.p_query, min_gap=min_gap, seed=a.seed)
+                               p_query=a.p_query, min_gap=min_gap, seed=a.seed,
+                               k_fixed=a.k_fixed)
             rng = np.random.RandomState(a.seed + 1)
 
             answers, mostrecent_hit, oracle_hit = [], [], []

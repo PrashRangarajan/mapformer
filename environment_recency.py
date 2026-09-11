@@ -87,7 +87,7 @@ class RecencyWorld:
     def __init__(self, n_symbols: int = 16, k_max: int = 8,
                  p_query: float = 0.25, min_gap: Optional[int] = None,
                  n_filler: int = 8, p_filler: float = 0.5,
-                 seed: Optional[int] = None):
+                 seed: Optional[int] = None, k_fixed: Optional[int] = None):
         """`min_gap` = symbols that must be emitted between consecutive queries.
 
         DEFAULT IS k_max, and that is a structural guarantee rather than a tuned
@@ -119,6 +119,14 @@ class RecencyWorld:
         self.min_gap = min_gap
         self.n_filler = n_filler
         self.p_filler = p_filler
+        # SEARCH_PREREG.md S3. `k_active` (curriculum) narrows the DRAW to 1..k_active;
+        # `k_fixed` keeps the draw (so the rest of the stream is unchanged) and overrides
+        # its value. Vocab, min_gap and the query-token layout stay those of k_max. At the
+        # defaults (k_active = k_max, k_fixed None) the RNG calls are the original ones.
+        if k_fixed is not None and not 1 <= k_fixed <= k_max:
+            raise ValueError("k_fixed must lie in 1..k_max")
+        self.k_fixed = k_fixed
+        self.k_active = k_max
 
         # vocab: [content symbols][filler][query offsets q_1..q_kmax][MASK]
         # The answer is always a CONTENT symbol, so a trainer keeps slicing
@@ -157,7 +165,9 @@ class RecencyWorld:
                          and gap >= self.min_gap
                          and len(tokens) + 2 <= T)
             if can_query and rng.random() < self.p_query:
-                k = int(rng.randint(1, self.k_max + 1))
+                k = int(rng.randint(1, self.k_active + 1))
+                if self.k_fixed is not None:
+                    k = self.k_fixed
                 score_pos.append(len(tokens))
                 tokens.append(self.query_offset + (k - 1))
                 tokens.append(self.mask_tok)
