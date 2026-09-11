@@ -133,6 +133,9 @@ def main():
     ap.add_argument("--k-curriculum", default=None,
                     help="'K0,EVERY': draw k from 1..K0*2^(epoch//EVERY), capped at "
                          "k_max. Eval always uses the full 1..k_max. SEARCH_PREREG.md S3.")
+    ap.add_argument("--k-set", default=None,
+                    help="comma-separated offsets to draw k from, e.g. '1,4,16,64' (train AND "
+                         "eval). Varies the number of query tokens at fixed k_max. SPREAD_PREREG.md")
     ap.add_argument("--output-dir", required=True)
     args = ap.parse_args()
 
@@ -146,7 +149,8 @@ def main():
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     dev = torch.device(args.device)
     kw = dict(n_symbols=args.n_symbols, k_max=args.k_max,
-              p_query=args.p_query, min_gap=args.min_gap, k_fixed=args.k_fixed)
+              p_query=args.p_query, min_gap=args.min_gap, k_fixed=args.k_fixed,
+              k_set=[int(v) for v in args.k_set.split(",")] if args.k_set else None)
     curric = tuple(int(v) for v in args.k_curriculum.split(",")) if args.k_curriculum else None
     env = RecencyWorld(seed=args.seed, **kw)
     env_test = RecencyWorld(seed=10000, **kw)
@@ -212,7 +216,8 @@ def main():
                 "n_heads": args.n_heads, "n_layers": args.n_layers,
                 "grid_size": args.grid_size, "k_max": args.k_max,
                 "n_symbols": args.n_symbols, "min_gap": env.min_gap,
-                "k_fixed": args.k_fixed, "k_curriculum": args.k_curriculum},
+                "k_fixed": args.k_fixed, "k_curriculum": args.k_curriculum,
+                "k_set": args.k_set},
                out / f"{args.variant}_recency.pt")
     json.dump(results, open(out / f"{args.variant}_recency.json", "w"), indent=2)
     print(f"DONE {args.variant} final_loss={losses[-1]:.4f}", flush=True)

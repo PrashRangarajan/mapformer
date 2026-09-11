@@ -87,7 +87,8 @@ class RecencyWorld:
     def __init__(self, n_symbols: int = 16, k_max: int = 8,
                  p_query: float = 0.25, min_gap: Optional[int] = None,
                  n_filler: int = 8, p_filler: float = 0.5,
-                 seed: Optional[int] = None, k_fixed: Optional[int] = None):
+                 seed: Optional[int] = None, k_fixed: Optional[int] = None,
+                 k_set: Optional[list] = None):
         """`min_gap` = symbols that must be emitted between consecutive queries.
 
         DEFAULT IS k_max, and that is a structural guarantee rather than a tuned
@@ -127,6 +128,14 @@ class RecencyWorld:
             raise ValueError("k_fixed must lie in 1..k_max")
         self.k_fixed = k_fixed
         self.k_active = k_max
+        # SPREAD_PREREG.md: draw k from a SET of m distinct offsets instead of 1..k_max, so
+        # the number of query TOKENS the model must serve can be varied at a fixed k_max,
+        # vocabulary and min_gap. None = the original uniform draw, RNG calls unchanged.
+        if k_set is not None:
+            k_set = sorted(int(v) for v in k_set)
+            if not k_set or any(not 1 <= v <= k_max for v in k_set) or len(set(k_set)) != len(k_set):
+                raise ValueError("k_set must be distinct values in 1..k_max")
+        self.k_set = k_set
 
         # vocab: [content symbols][filler][query offsets q_1..q_kmax][MASK]
         # The answer is always a CONTENT symbol, so a trainer keeps slicing
@@ -166,6 +175,8 @@ class RecencyWorld:
                          and len(tokens) + 2 <= T)
             if can_query and rng.random() < self.p_query:
                 k = int(rng.randint(1, self.k_active + 1))
+                if self.k_set is not None:
+                    k = int(self.k_set[rng.randint(0, len(self.k_set))])
                 if self.k_fixed is not None:
                     k = self.k_fixed
                 score_pos.append(len(tokens))
