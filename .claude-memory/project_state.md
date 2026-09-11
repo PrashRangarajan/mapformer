@@ -60,9 +60,7 @@ MapFormer's design rather than improving it.
 
 ## In flight (2026-09-11)
 
-The **leakage test** (`NOLEAK_PREREG.md`, `run_noleak.sh` -> `runs/noleak/`). Do not edit
-`train_variant.py`, `train_recency.py`, `environment_recency.py` or `model_em_*.py` until
-`runs/noleak/.done` exists. Check `runs/noleak_repro/DETERMINISM.txt` before reading.
+Nothing. The leakage test landed (commit 4a804e8; see the block at the end of this note).
 
 ## Open, and ranked
 
