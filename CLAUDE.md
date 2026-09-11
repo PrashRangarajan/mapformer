@@ -1108,6 +1108,10 @@ paper: frame as Pareto-shift, NOT strict improvement.
 
 - **EM:** `A = softmax(A_X ⊙ A_P)` — multiplicative AND-gate.
 - **WM:** combined additively in the score — OR-gate.
+  **WRONG (audit 2026-09-10, verified in model.py:224-232):** MapWM rotates the
+  content-derived Q,K by the path angle, so its score is `Q^T R(dtheta) K` -- a position
+  kernel with per-pair amplitudes and phases set by content. It is not additive and
+  there is no OR-gate. See AUDIT_2026-09-10.md.
 
 | Regime | A_X | A_P | Winner | Observed |
 |---|---|---|---|---|
@@ -1697,7 +1701,7 @@ no regulariser and no objective change.
 **C4 does not reproduce and is INVERTED.** Hypothesis under test (`run_em_fig4.sh`,
 in flight at time of writing): Fig. 4 shows an **EM** model -- Sec 5.4 is explicitly
 about EM's "two separate pools of neurons ... specialized for either position or
-observation", which MapWM's additive attention lacks by construction. Pre-registered:
+observation", which MapWM's rotated-content attention lacks by construction (it has no position-only stream; NOT because it is additive -- it isn't). Pre-registered:
 EM >> 1 while WM < 1 means the caption is unscoped and our repro is complete; EM
 also < 1 means a real discrepancy, to be recorded as one.
 
@@ -2759,3 +2763,38 @@ now. Cite as *directional, n=8, unmeasured*.
 - Two documents' worth of cross-references were rewritten as companion citations
   during the split; one produced `\Sthe companion review`, a LaTeX ERROR rather than
   a warning, which only a from-source build would have caught.
+
+
+## Session 2026-09-09/10 -- Neuron [11] read; EM/WM kernel theory built, tested, and audited
+
+**Read `AUDIT_2026-09-10.md` first.** It supersedes the theory and five results files.
+
+- **[11] (Whittington et al., Neuron 2025) is now in the corpus** (`papers/txt/tale_two_algorithms.txt`,
+  added by hand). It claims the EM/WM *solutions* are equivalent and predicts an EM advantage in
+  capacity and learning speed, **except on N-back**. MapFormer's MapEM has no separate memory
+  network, so the capacity result does not transfer (`TALE_OF_TWO_ALGORITHMS.md`).
+- **EM on recency (a k-back task): EM - WM = -0.375 (0/8).** The first EM/WM difference in the
+  project. On the registered readout WM reaches loss < 0.5 on 8/8 seeds, single-`p_0` EM on 0/8.
+- **`THEORY_KERNEL.md`**: `A_P = kappa(dS)` gives three axes (argument / kernel / composition).
+  After audit: Thm 2's `|rho|` holds for a frozen low-amplitude kernel (+0.292, 8/8); **Thm 3 is
+  withdrawn** -- MapWM is NOT additive, and a single-`p_0` EM kernel solves recency exactly
+  (1423/1423) once the query token rewinds the count, so EM's deficit is LEARNABILITY.
+- **q0/k0**: three mechanisms proposed; the third (phase degrees of freedom) survives on recency,
+  +0.165 at n=24 and +0.173 on fresh seeds alone, as an effect on what training finds. The effect
+  it was invoked to explain (`sep - P0`) does NOT replicate at detectable size on fresh seeds
+  (+0.073, 9/16). Magnitude freedom null -- but that arm's scale barely moved beyond weight decay.
+
+### Rules bought
+
+27. **A same-seed rerun is determinism, not replication.** `DOF_RESULTS` D4 matched +0.237 to three
+    decimals because the checkpoints were bitwise identical (16/16); n=24 gave +0.128.
+28. **Check for a sign or scale GAUGE before registering a contrast.** N5's `rho = +1` vs `-1` had
+    expectation exactly zero, because `A_X` absorbs `kappa`'s sign.
+29. **Existence before mechanism.** Before explaining a deficit as a function-class limit,
+    construct a solution in that class. Recency took a 30-line construction and killed Thm 3's
+    corollary; no training run could have.
+30. **Report the registered primary readout even when the verdict is obvious.** REC_EM's was never
+    computed until the audit.
+31. **A parameterisation change is an optimiser change.** A scale initialised at 1.0 under Adam
+    moves ~50x slower in relative terms than a vector initialised at 0.02; weight decay alone
+    explained most of `AlignLock`'s "learned" magnitude.

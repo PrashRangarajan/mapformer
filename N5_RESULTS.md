@@ -1,5 +1,12 @@
 # N5: coherence is load-bearing, but it does NOT invert by task
 
+> **AUDIT 2026-09-10 -- read `AUDIT_2026-09-10.md` first.** P1 and P2 had expectation zero by the
+> sign gauge before any run; the `|rho|` axis was chosen after the data. Every frozen
+> arm's kernel sits at ~0.003 peak amplitude against 0.06-0.50 learned, so the
+> +0.292 and "freezing is catastrophic on recency" are confounded with amplitude.
+> Omitted here and detectable: recency `plus - zero` +0.191 (7/8, MDE 0.158). The
+> 2.02-2.64 loss range is of arm MEANS; per run `minus` reaches 0.789 / acc 0.776.
+
 4 arms x 2 tasks x 8 seeds, each task one batch. Pre-registration: `N5_PREREG.md`.
 Arms differ ONLY in the phases of the position kernel: `k_0` is a per-block
 rotation of `q_0`, so `sum_i a_i` is identical to 6 d.p. across conditions, and

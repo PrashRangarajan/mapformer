@@ -1,5 +1,12 @@
 # EM vs WM on recency (k-back): two of three pre-registered predictions REFUTED
 
+> **AUDIT 2026-09-10 -- read `AUDIT_2026-09-10.md` first.** The REGISTERED primary readout
+> (epochs to loss < 0.5 / < 0.1) was never reported here; it is now in the audit
+> (WM 8/8 and 7/8; EM-P0 0/8 and 0/8; EM-sep 1/8 and 0/8) and confirms P1. P2/P3 were
+> registered at T=2048 (-0.437 / -0.218, verdicts unchanged). P2's refutation is a
+> LEARNABILITY result: a single-`p_0` EM kernel represents recency exactly. WM loss
+> range is 0.008-0.380. The -0.237 is +0.128 at n=24 and +0.073 on fresh seeds.
+
 3 arms x 8 seeds, one batch, no `--fast-attn`. Pre-registration: `REC_EM_PREREG.md`.
 Config as `RECENCY_RESULTS.md` (`k_max=64`, `p_filler=0.5`, `min_gap=64`, train
 `T=1024`, 300 ep cosine, lr 1e-3, 1 layer, d=128). Chance **0.0625**, most-recent

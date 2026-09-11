@@ -1,5 +1,13 @@
 # "A tale of two algorithms" vs our EM/WM results
 
+> **AUDIT 2026-09-10 -- read `AUDIT_2026-09-10.md` first.** This file predates the recency batch
+> and is stale on its headline. N-back HAS been run: EM - WM = -0.375 (0/8). The
+> separate-`q0/k0` suspicion of App. A.4 is no longer "refuted four times" -- the
+> separate form wins on recency, directionally, and does not replicate at detectable
+> size on fresh seeds (+0.073, 9/16). And "WM = additive / sum / OR-like" is wrong:
+> MapWM rotates content Q,K, so its position kernel has per-pair phases set by
+> content.
+
 Source now in the corpus: `papers/pdf/09_Whittington_2025_Tale_of_Two_Algorithms.pdf`,
 extracted to `papers/txt/tale_two_algorithms.txt`. Whittington, Dorrell, Behrens,
 Ganguli & El-Gaby, *Neuron* 113(2):321-333, Jan 2025 -- MapFormer's reference **[11]**.
@@ -79,7 +87,7 @@ be one at the level we measured (generalization after training). What there is:
    `k0_p`/`q0_p`, which MapFormer itself flags as a suspicion, now refuted four times
    (+0.089 paper task, +0.167 compositional, +0.358 Match-Query, plus the MiniGrid
    collapse);
-2. two **failure modes** -- product (AND-gate, no fallback, collapses) vs sum (OR-like,
+2. [AUDIT 2026-09-10: the 'sum / OR-like' reading of WM is WRONG -- MapWM rotates content Q,K] two **failure modes** -- product (AND-gate, no fallback, collapses) vs sum (OR-like,
    degrades gracefully) -- which make one algorithm look different from the other
    precisely when something goes wrong, and every regime we measured was that regime;
 3. a **capacity claim that does not survive the RNN -> transformer translation**, because

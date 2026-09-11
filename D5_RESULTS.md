@@ -1,5 +1,13 @@
 # D5 at n=24: magnitude freedom buys NOTHING, and the headline effect was overestimated 1.9x
 
+> **AUDIT 2026-09-10 -- read `AUDIT_2026-09-10.md` first.** Omitted here: on fresh seeds 8-23 ALONE
+> the total `sep - P0` is +0.073 (9/16, MDE 0.130, unmeasured) -- by E4's own logic
+> the total effect does not replicate, while phase freedom does (+0.173, 13/16).
+> "Magnitude freedom buys nothing" should read "a parameter the optimiser barely moved
+> buys nothing": weight decay alone predicts s -> 0.674, measured median ~0.70. The
+> pooling licence cited in the pre-registration (same-seed reproduction) was void;
+> pooling itself is fine. 0.794 is the seeds 0-7 mean; n=24 gives 0.786.
+
 Pre-registration: `D5_PREREG.md`. `runs/dof/recency` extended with seeds 8-23;
 4 arms x 24 seeds.
 

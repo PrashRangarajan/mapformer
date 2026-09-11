@@ -1,5 +1,14 @@
 # Phase degrees of freedom: real, reproducible, and an OPTIMISATION effect
 
+> **AUDIT 2026-09-10 -- read `AUDIT_2026-09-10.md` first.** D4's "three-decimal reproduction" was the
+> same computation twice (16/16 bitwise-identical checkpoints). n=8 sizes are
+> superseded by `D5_RESULTS.md` (+0.237 -> +0.128, +0.148 -> +0.165, magnitude +0.120
+> -> -0.033), and the monotone loss ordering is false at n=24. D3 subtracts
+> in-distribution recency accuracy from OOD torus accuracy and is detectable only via
+> an unmeasured opposite-sign term (+0.253 with n=24 recency). "The third mechanism
+> survives" overstates: the sign flip reproduced, the mechanism on the torus did not
+> reach detectable size. AlignLock differs from AlignFree in optimiser dynamics too.
+
 Pre-registration: `DOF_PREREG.md`. 4 arms x 8 seeds, one batch. **COMPLETE**, 64 runs.
 The two halves require OPPOSITE analyses, which is the main finding.
 

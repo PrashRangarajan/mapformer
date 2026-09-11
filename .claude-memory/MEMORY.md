@@ -40,5 +40,5 @@
 - [User authoring style](user_style.md) — terseness, no emojis, honest reporting.
 - [Action-noise framing](feedback_action_noise_framing.md) — use stochastic-transition-MDP vocabulary; lead with non-circular wins.
 - [PC-Kalman duality](feedback_pc_kalman_duality.md) — forward and inverse models are duals, not complements; gradient descent finds the degenerate joint optimum.
-- [EM vs WM mechanism](feedback_em_vs_wm_mechanism.md) — multiplicative AND-gate vs additive OR-gate. The regime table built on it was retracted; the mechanism may still hold.
+- [EM vs WM mechanism](feedback_em_vs_wm_mechanism.md) — CORRECTED: MapWM is not additive (per-pair rotated-content kernel); EM's recency deficit is learnability, not expressivity.
 - [Backfill standard-transformer baselines](feedback_baselines_backfill.md) — within-family tables need a RoPE column before submission.

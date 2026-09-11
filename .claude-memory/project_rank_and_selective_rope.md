@@ -26,7 +26,7 @@ survives: project onto the top two singular directions.
   job for free: 0.779 -> 0.174, no regulariser.**
 - C4 ||v_obs||/||v_act|| = **0.57, INVERTED** vs the paper's >>1. Hypothesis being
   tested: Fig. 4 is an EM model (Sec 5.4 is explicitly about EM's separate pools),
-  and MapWM's additive attention has no such split. See run_em_fig4.sh.
+  and MapWM has no such split (it has no position-only stream -- NOT because it is additive; it isn't). See run_em_fig4.sh.
 
 **SELECTIVE ROPE IS THE SAME SLOT AND NO BETTER HERE (SELECTIVE_ROPE.md).** Its
 `temp*cumsum(conv1d(W_omega q))` and MapFormer's `omega*cumsum(W_out W_in x)` both

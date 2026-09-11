@@ -1,5 +1,15 @@
 # A kernel theory of positional encoding for cognitive maps
 
+> **AUDIT 2026-09-10 -- read `AUDIT_2026-09-10.md` first.** Two audits, verified. **Thm 3 is
+> withdrawn as stated**: MapWM is not additive (it rotates content Q,K, so its kernel
+> has per-pair phases), and its corollary fails because the retrieval offset is
+> chosen by the model -- a single-`p_0` EM kernel solves recency exactly (1423/1423)
+> once the query token rewinds the count. Thm 1 holds only for a scalar or fully
+> constrained accumulator. Thm 2's `|rho|` result stands, but only for a frozen
+> kernel ~100x below learned amplitude, and the sign "strengthening" was forced by a
+> gauge. n=8 sizes below are superseded (+0.237 -> +0.128, +0.148 -> +0.165). N2 is
+> withdrawn (ill-posed). Inline markers flag each affected passage.
+
 Written 2026-09-09, after the `runs/recency_em` batch refuted two of three
 pre-registered predictions (`RECENCY_EM_RESULTS.md`). It is a **retrodiction** of
 that batch and of six earlier results; Sec 8 lists what it predicts that has not
@@ -30,7 +40,7 @@ This is exhaustive for the family. There are exactly three design choices:
 |---|---|---|
 | **A. the argument** | what `Delta S` measures | signed vs monotone `Delta`; rank of the action->`Delta` map; index (`Delta == 1`) |
 | **B. the kernel** | the shape of `kappa` | phases `phi` (coherence); magnitudes `a` (PoPE); frequencies `omega` (RoPE schedule) |
-| **C. the composition** | how `kappa` meets content | product (`A_X (*) A_P`, EM) vs sum (WM) |
+| **C. the composition** | how `kappa` meets content | product (`A_X (*) A_P`, EM) vs sum (WM) -- **WRONG for WM (audit): MapWM rotates content Q,K; its kernel has per-pair phases** |
 
 ## 2. What a task requires: the retrieval offset
 
@@ -54,6 +64,10 @@ Two archetypes, and this project has both:
 
 ## 3. Theorem 1 (axis A) -- cancellation is exclusive, so the crossover is a
 contradiction rather than a trade-off
+
+> **Scope (audit):** true only for a scalar or fully constrained accumulator. The model's is
+> rank-`r` per head, so one subspace can cancel while another counts. And recency does not need
+> a clock at all: a signed accumulator with a rewinding query token solves it exactly.
 
 A map requires `sum_loop Delta = 0` for every closed action loop. A clock
 requires `S_t - S_s` strictly increasing in `t - s`, hence `> 0` on every
@@ -92,13 +106,13 @@ Define the **coherence**
 **Verified at the actual init of the recency batch** (`probe_ap_coherence.py`):
 measured `rho` over 16 head-values has mean **-0.059**, sd **0.147**, against the
 theory's `E = 0`, sd **0.160**. Single `p_0` returns `rho = 1.000` on every seed.
-3 of 8 seeds start with every head at `rho < 0` -- the kernel actively
+[WITHDRAWN by the audit -- contradicts the sign gauge] 3 of 8 seeds start with every head at `rho < 0` -- the kernel actively
 *down-weights* the same location.
 
 **CORRECTED 2026-09-10 by N5, the intervention this section asked for
 (`N5_RESULTS.md`). Two changes, one strengthening and one fatal.**
 
-*Strengthening:* the axis is **`|rho|`, not `rho`.** Setting `rho = -1` is as good
+*Strengthening -- DOWNGRADED by the audit (the sign result was forced by a gauge and is a noise estimate; `|rho|` was chosen after the data, for a frozen kernel ~100x below learned amplitude):* the axis is **`|rho|`, not `rho`.** Setting `rho = -1` is as good
 as `rho = +1` (torus `+0.016`, MDE 0.034), because
 `kappa_minus = -kappa_plus` exactly and EM's score is `A_X (*) A_P` with `A_X`
 learned, so `A_X (*) (-kappa) = (-A_X) (*) kappa`. The kernel's sign is a gauge the
@@ -130,6 +144,11 @@ at `k <= 2` (where `delta ~ 0` and a zero-peaked kernel is right) and falls to
 **0.37 at `k = 64`** (where it is exactly wrong).
 
 ## 5. Theorem 3 (axis C) -- the composition, and the constant-offset condition
+
+> **WITHDRAWN AS STATED (audit 2026-09-10).** MapWM's score is `Q_t^T R(dtheta) K_s`, not
+> `A_X + kappa`, so the gradient identity below describes no model in this repo on the WM side.
+> The corollary also fails: `delta` is chosen by the model, and a single-`p_0` EM kernel solves
+> recency exactly once `q_k` rewinds the count. Kept for the record.
 
 Write the score as `A_X (*) kappa` (EM) or `A_X + kappa` (WM). Then
 
@@ -168,7 +187,7 @@ only nonzero one.
 
 | result | axis | statement |
 |---|---|---|
-| signed beats monotone on navigation (+0.123/+0.195), nowhere on recency | A | Thm 1 |
+| signed beats INDEX on navigation (+0.123/+0.195, mislabelled 'monotone' before the audit; signed vs monotone is -0.215/-0.280); monotone costs nothing on recency | A | Thm 1 |
 | `alpha` collinear with opposition (`r = +0.9995`) | A | both measure homomorphism failure |
 | `r = 2` is a skewed basis, not too small a one | A | cancellation defect, Thm 1 |
 | index codes cannot count contextually (+0.750) | A | `Delta S = t - s`, but `delta = k(t)` is not a function of `t - s` |
@@ -204,7 +223,7 @@ of four).
 
 The only part that can earn the frame anything.
 
-**N1 -- fixed-`k` recency removes EM's handicap.** Thm 3's corollary says EM's
+**N1 -- NEEDS RESTATING (audit): it tests a dead corollary. With fixed `k` the rewind is a constant, so it now tests learnability of a simpler rewind.** Thm 3's corollary says EM's
 `-0.375` is caused by `delta` varying per query, not by `k` being large. Train on
 recency with `k` FIXED at 32 (so `delta` is constant, and large). Predicted:
 `EM - WM` returns to within MDE, while an index arm still fails. This isolates
@@ -212,7 +231,7 @@ recency with `k` FIXED at 32 (so `delta` is constant, and large). Predicted:
 one environment flag, 3 arms x 8 seeds.
 *Falsified if* EM still loses by more than its MDE at fixed `k`.
 
-**N2 -- coherence variance scales as `1/sqrt(2 n_b)`.** PoPE runs `n_b = 64`
+**N2 -- WITHDRAWN, ill-posed (`MapFormerWM_PoPE` has no `q_0`/`k_0`).** PoPE runs `n_b = 64`
 against MapWM's 32, so the separate-form lottery should be **tighter**:
 predicted sd(`rho`) 0.113 vs 0.160, hence fewer catastrophic seeds and fewer lucky
 ones. Computable on existing MapPoPE checkpoints with no training.
@@ -243,7 +262,7 @@ route to damage is unidentified.** `rho` at init does not predict which seed
 suffers.
 
 An unregistered observation from the same probe, worth more than N4 was:
-**`rho` does not converge toward 1 during training.** Mean `rho` drifts by 0.25-0.27
+**`rho` does not converge toward 1 during training.** Mean `rho` drifts by 0.25-0.27 (mean per-seed absolute change in head-averaged rho; signed shifts are -0.048 / -0.172)
 and ends up *more* negative than it started (recency -0.059 -> -0.107; MiniGrid
 -0.055 -> -0.227). The optimiser does not align `q_0` with `k_0` on either task.
 That is consistent with the chicken-and-egg argument in Sec 5 -- the gradient that

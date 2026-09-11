@@ -93,3 +93,10 @@ is not**.
 be computed on text at all; alpha needs only trajectories. It is the form this
 measurement takes in the setting the literature actually works in. Not yet measured
 there — the language trainer saves no checkpoints.
+
+
+**Audit 2026-09-10:** recency does NOT require a clock. A signed accumulator whose query token
+`q_k` carries Delta = -(k-1) makes the retrieval offset zero for every query, and a single-`p_0` EM
+kernel then solves it exactly (1423/1423; control without the rewind 0.086). The crossover's recency
+half shows a monotone increment is HARMLESS there, not that recency needs one. T1 holds only for a
+scalar or fully constrained accumulator. See AUDIT_2026-09-10.md.
