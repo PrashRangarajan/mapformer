@@ -146,6 +146,12 @@ VARIANT_MAP = {
     # (position pathway only; content branch random). WARM_PREREG.md.
     "EMWarm_freeze": __import__("mapformer.model_em_warm", fromlist=["x"]).MapFormerEM_Warm_freeze_r4,
     "EMWarm_train":  __import__("mapformer.model_em_warm", fromlist=["x"]).MapFormerEM_Warm_train_r4,
+    # Freeze-then-unfreeze (UNFREEZE_PREREG.md): rewind fate recorded per epoch.
+    "EMUnf_0": __import__("mapformer.model_em_unfreeze", fromlist=["x"]).MapFormerEM_Unf0_r4,
+    "EMUnf_5": __import__("mapformer.model_em_unfreeze", fromlist=["x"]).MapFormerEM_Unf5_r4,
+    "EMUnf_30": __import__("mapformer.model_em_unfreeze", fromlist=["x"]).MapFormerEM_Unf30_r4,
+    "EMUnf_100": __import__("mapformer.model_em_unfreeze", fromlist=["x"]).MapFormerEM_Unf100_r4,
+    "EMUnf_0_e8": __import__("mapformer.model_em_unfreeze", fromlist=["x"]).MapFormerEM_Unf0_e8_r4,
     "MapEM_NC_L":  MapFormerEM_NC_L,     # paper B.2.2, linear Delta
     "MapEM_NC_NL": MapFormerEM_NC_NL,    # paper B.2.2, MLP Delta   # paper eq.3: single origin, A_P = P.P^T
     "Level1":     MapFormerWM_ParallelInEKF,
