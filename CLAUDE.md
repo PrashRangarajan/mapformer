@@ -35,6 +35,11 @@ Outside this line: the forget-gate-as-clock batch still needs a re-run
 (`FORGET_CLOCK_PREREG.md`, `run_forget_clock.sh`). The three .tex documents were last
 touched 2026-09-08 and contain none of the EM/WM line.
 
+**Use the guards, don't re-derive them:** `GUARDS.md` -- `stats_guard` (paired MDE, rule 9,
+fresh-seed replication split), `ckpt_guard` (NaN-aware determinism check, loud checkpoint
+finder, manipulation-check asserts), `probe_rewind`. Tests: `python3 -m mapformer.test_guards`
+from /home/prashr (13 tests, ~2 s, each recomputes a committed number).
+
 **Rules bought by this line:** 27-33 (end of this file). Numbering note: `RESULTS_INDEX.md`
 uses 27-28 for two other rules.
 

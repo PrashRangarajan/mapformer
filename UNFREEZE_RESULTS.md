@@ -16,7 +16,9 @@
 >
 > (Effective slopes here are recomputed from the FINAL weights; the table below reads
 > `traj_slope[-1]`, recorded at the START of the last epoch -- one epoch earlier, hence
-> -0.055 vs -0.054, -0.142 vs -0.143, -0.602 vs -0.604.)
+> -0.055 vs -0.054, -0.142 vs -0.143, -0.602 vs -0.604. The "coordinate 0 only" column is
+> the recorded trajectory value at that same boundary; from the final weights it is -0.988
+> for the 8x arm, not -0.989. No verdict changes -- found by `test_guards.py`.)
 >
 > At 8x the latent pathway itself degrades to -0.866 and leakage takes it to -0.602: both
 > contribute, leakage the larger share. "The code holds; leakage does the damage" was too

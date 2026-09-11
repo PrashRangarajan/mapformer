@@ -76,6 +76,10 @@ def main():
                          "for, which mislabels every other use of it.")
     a = ap.parse_args()
     dev = torch.device(a.device)
+    # Fail loudly on a layout mismatch instead of printing dashes (hit twice in one week;
+    # see ckpt_guard.py / GUARDS.md). Warns on partial coverage, raises when nothing is found.
+    from mapformer.ckpt_guard import require_checkpoints
+    require_checkpoints(a.runs_dir, "noise_refine", a.variants, a.seeds, noises=a.noises)
 
     res = {}
     for p in a.noises:
