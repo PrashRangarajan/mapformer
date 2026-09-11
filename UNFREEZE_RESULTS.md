@@ -1,5 +1,25 @@
 # Freeze-then-unfreeze: the early window is refuted, and most of W4 was my install scale
 
+> **CORRECTED 2026-09-11 (same day, before the leakage test launched).** U4 below says
+> the effective slope can leave -1 through exactly two recorded channels. **That is
+> false.** The latent code has TWO coordinates (count, cycle) and every token's row trains;
+> the recorded "latent-code slope" reads coordinate 0 only. Coordinate-1 contamination of
+> the query rows and symbols drifting apart are further routes. Recomputed at the endpoint
+> with the complete latent pathway (Delta from both latent coordinates through the current
+> `w_in`/`w_out`):
+>
+> | arm | effective slope | latent pathway | coordinate 0 only |
+> |---|---|---|---|
+> | `EMUnf_0` | -0.055 | -0.074 | -0.095 |
+> | `EMUnf_0_e8` | -0.602 | **-0.866** (seeds -1.10..-0.43) | -0.989 |
+> | `EMUnf_30` | -0.142 | -0.192 | -0.445 |
+>
+> At 8x the latent pathway itself degrades to -0.866 and leakage takes it to -0.602: both
+> contribute, leakage the larger share. "The code holds; leakage does the damage" was too
+> strong. At 1/64 the full pathway is gone, which the coordinate-0 reading got right. U2
+> (timing from the full effective slope) and U3 (+0.298, 84% of the gap) are unaffected;
+> the "erosion tracks the learning rate" timing is a statement about coordinate 0.
+
 Pre-registration: `UNFREEZE_PREREG.md`. Single-`p0` EM with the recency rewind installed
 in its position pathway, released at different times or installed at a different weight
 scale. 5 arms x seeds 0-7, one batch. The rewind's state was recorded every epoch into
@@ -57,6 +77,8 @@ branch also sees a larger latent coordinate -- stands, but the mechanism data po
 directly at Adam eroding a small code.
 
 ## U4 -- how the rewind breaks, and why these two channels are the only ones
+
+> **The "only ones" claim is withdrawn -- see the correction at the top of this file.**
 
 The effective slope can leave -1 through exactly two routes. Changes to `w_out`, or to the
 latent columns of `w_in`, act identically on `q_k` and on the symbols, so they preserve

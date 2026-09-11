@@ -2827,7 +2827,10 @@ rewind breaks within 1-6 / 1-19 epochs on every seed. Installing the IDENTICAL D
 the weight scale takes the trainable twin from 0.642 to **0.941 (+0.298, 7/8)**, 84% of
 the gap; its latent code survives (-0.989). At the small scale the latent code erodes
 first, faster at higher lr -- Adam's ~lr-per-coordinate step against a 0.0156 code. At
-8x, leakage of content into Delta via `w_in` is the residual. **EM's recency deficit is a
+8x, leakage of content into Delta via `w_in` is the larger part of the residual -- CORRECTED
+same day: coordinate 0 of the code survives (-0.989) but the full latent pathway degrades to
+-0.866, so leakage is not the whole residual; the 'two channels are exhaustive' claim was false
+(the code has two coordinates). See the top of UNFREEZE_RESULTS.md. **EM's recency deficit is a
 SEARCH problem**: exists (1.000 frozen), largely holdable, never found (0/40).
 
 33. **Install a warm start at the scale training would use.** A solution stored in tiny
