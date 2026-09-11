@@ -70,7 +70,7 @@ r(loss, acc) is large — it has reached -0.999.
 
 
 ## 2026-09-10 -- EM/WM kernel theory, tested and audited
-Read AUDIT_2026-09-10.md. Citable: EM - WM = -0.375 on recency (a learnability result -- EM can
-represent the task); phase freedom +0.165 (n=24, replicates on fresh seeds); |rho| +0.292 for a frozen
+Read AUDIT_2026-09-10.md. Citable: EM - WM = -0.375 on recency (read as learnability: EM's position
+kernel can solve it; full-model warm-start untested); phase freedom +0.165 (n=24, replicates on fresh seeds); |rho| +0.292 for a frozen
 low-amplitude kernel. Withdrawn: Thm 3, its corollary, N2, the sign 'strengthening', the D4
 'reproduction'. Open: matched-optimiser control for AlignLock; map-side DOF at n=24; forget-gate rerun.
