@@ -36,7 +36,8 @@ is TEM's `g (x) x` conjunction.
 - **EM vs WM (2026-09-09..11)**: the only measured difference is recency, single-`p0` EM -
   WM = -0.375 (0/8). **It is a SEARCH problem.** The rewind solution exists (installed and
   frozen: 1.000, 8/8), can largely be held (installed trainable at 8x weight scale: 0.941),
-  and is never found from scratch (0/40). **Phase freedom** in `q0/k0` is real: +0.146 vs
+  and is found from scratch only per query token, wrapped, for ~half the k (SEARCH_RESULTS.md;
+  "0/40" withdrawn; one shared k=64 found 7/8). **Phase freedom** in `q0/k0` is real: +0.146 vs
   the matched MagOnly control (22/24; +0.113 on fresh seeds). It does not act through the
   rewind. See [[em-vs-wm-mechanism]].
 - Parallel scan 2.6-3.3x vs TEM's 120x, with a mechanical reason. Loop x path integration
@@ -64,8 +65,8 @@ Nothing. The leakage test landed (commit 4a804e8; see the block at the end of th
 
 ## Open, and ranked
 
-1. **Why EM never finds the rewind from scratch** -- first an init-gradient probe, then
-   fixed-k or curriculum recency. `EM_WM_STATE.md` Sec 6 lists the rest of the EM line
+1. **Why only ~half the per-token rewinds are found** (SEARCH answered "is it found": yes,
+   wrapped) -- k from a small set at fixed queries per token; per-epoch recording. `EM_WM_STATE.md` Sec 6 lists the rest of the EM line
    (what phase freedom does instead, which is eval-only; WM's per-pair phase spread; DOF
    torus at n=24).
 2. **The OOD-length axis is unexplained.** Four mechanisms help there, alpha covers two,
@@ -95,5 +96,9 @@ trained EM. See `EM_WM_STATE.md` for the rest.
 
 **Leakage test (2026-09-11, closes the EM/WM hold question):** with w_in's content columns held at zero, the
 8x-installed trainable rewind = 1.000 on 8/8 (0.991 at 2x length), equal to the frozen install; leak open 0.941.
-EM's recency deficit is ENTIRELY SEARCH -- exists (1.000), holdable (1.000), never found from scratch (0/40).
-Next question: why search fails (init-gradient probe, then fixed-k / curriculum recency). NOLEAK_RESULTS.md.
+EM's recency deficit is ENTIRELY SEARCH -- exists (1.000), holdable (1.000). NOLEAK_RESULTS.md.
+
+**SEARCH (2026-09-11, SEARCH_RESULTS.md):** found from scratch per token, wrapped (peak or trough);
+fixed k=64 found 7/8 (EM faster than WM, +0.191 at 2x length, exploratory); curriculum +0.127, only
+k<=32. Obstacle = spread over 64 per-token rewinds. Next: k from a small set at fixed queries per
+token; per-epoch per-token rewind recording. Rule 34 (CLAUDE.md): readouts must respect the model's symmetries.

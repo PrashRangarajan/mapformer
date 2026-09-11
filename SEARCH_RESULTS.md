@@ -1,8 +1,26 @@
 # SEARCH -- results (pre-registration: `SEARCH_PREREG.md`, commit 3a9e49a)
 
-**Status: S1 and S2 landed; S3 (training) in flight.** This file is filled in as each part lands.
+**Status: complete (S1, S2, S3 landed 2026-09-11).** Nothing in flight.
 
-## Headline so far
+## Headline
+
+1. **From-scratch EM DOES find the rewind: per query token, wrapped, for about half the k.**
+   The "0/40" came from a readout that cannot see a wrapped solution (details below).
+2. **The size of a rewind is not the obstacle.** When every query shares one k, EM finds a
+   63-symbol rewind on 7/8 seeds (k = 64, mean 0.985) and a 15-symbol one on 8/8. It gets there
+   faster than WM (median 54 against 99 epochs to loss < 0.5). At 2x length it beats WM,
+   **+0.191, 7/8, detectable** (exploratory). The linear ratio is +0.3 to +1.4 against a target
+   of -63 on every seed, so every found rewind is wrapped.
+3. **A k curriculum helps and does not close the gap:** +0.127 (MDE 0.116, 7/8), 0/8 seeds
+   >= 0.9, linear slope ~0. The whole gain is at k <= 32 (+0.300, +0.301, both detectable).
+   The query tokens introduced last (k 33-64, from epoch 120-150) gain nothing.
+4. **So the search problem is SPREAD, not size.** One k = one token that sees every query:
+   found. Sixty-four k = sixty-four independent tokens, each seeing 1/64 of the queries: each
+   finds its wrapped rewind or not. Account (untested): a token must find its rewind in the
+   window before the kernel sharpens. S2 shows the path is smooth at init and rugged after
+   training, and the curriculum helped only the tokens it introduced early.
+
+## Headline of S1 and S2
 
 **"EM never finds the rewind from scratch (0/40)" is wrong as stated.** It was read off a LINEAR
 slope statistic. The rewind is only defined modulo each block's period (`theta` enters through
@@ -118,6 +136,68 @@ It is consistent with S1's per-token, all-or-nothing successes. **This is an acc
 test.** The S2 readouts are two snapshots (init and end); nothing here has tracked when the
 barriers appear relative to when the gradient grows.
 
-## S3 -- training (in flight)
+## S3 -- training (4 arms x 8 seeds, one batch; `runs/search/S3_report.md`)
 
-Determinism re-check, fixed-k and curriculum arms: see below when landed.
+**Determinism re-check PASSES:** `P0_repro` s0 is bitwise identical to the stored
+`runs/dof/recency` P0 s0 (25/25 tensors, loss curves equal). The environment and trainer edits
+left the default task unchanged, and reuse of the stored P0 s0-7 as the curriculum comparator
+is licensed. (The first render of the report said "reuse NOT licensed". That was a string check
+matching "differing 0". It is fixed and the report regenerated.)
+
+| arm | acc T=1024 | >= 0.9 | >= 0.95 | acc T=2048 | final loss | epochs to loss < 0.5 (median, reached) |
+|---|---|---|---|---|---|---|
+| P0_fix64 (EM, k = 64) | 0.985 +/- 0.043 | 7/8 | 7/8 | 0.946 | 0.065 | 54 (8/8) |
+| P0_fix16 (EM, k = 16) | 0.994 +/- 0.018 | 8/8 | 7/8 | 0.966 | 0.015 | 25 (8/8) |
+| WM_fix64 (WM, k = 64) | 0.947 +/- 0.120 | 7/8 | 6/8 | 0.755 | 0.119 | 99 (7/8) |
+| P0_cur (EM, curriculum) | 0.727 +/- 0.038 | 0/8 | 0/8 | 0.668 | 1.045 | 11 (8/8) * |
+
+\* not comparable: the curriculum's first epochs ask only k <= 2.
+
+Registered verdicts:
+- **S3-P1 (positive control) MET**: WM_fix64 >= 0.95 on 6/8.
+- **S3-P2 REFUTED**: P0_fix16 8/8 as predicted, but P0_fix64 is >= 0.9 on **7/8** (<= 2 was
+  predicted). The size of the rewind does not make it unfindable. That also takes the weight
+  off H-rugged: trained standard-task P0 paths are rugged, yet a single k = 64 token gets through.
+- **S3-P3 MET, and the gain is detectable**: `P0_cur - P0` = +0.127 (sd 0.117, MDE 0.116, 7/8).
+  P0_cur is under 0.9 on 8/8 seeds and its linear slopes are -0.015..+0.009. The curriculum
+  helps. It does not find the linear rewind and does not close the gap.
+
+Exploratory contrasts (paired by seed, n=8):
+
+| contrast | delta | sd | MDE | seeds + | verdict |
+|---|---|---|---|---|---|
+| EM - WM, fixed k = 64, T=1024 | +0.038 | 0.135 | 0.133 | 3/8 | unmeasured |
+| EM - WM, fixed k = 64, T=2048 | **+0.191** | 0.152 | 0.150 | 7/8 | DETECTABLE |
+| P0_fix16 - P0_fix64 | +0.009 | 0.049 | 0.048 | 1/8 | unmeasured |
+| P0_cur - P0, k 1-16 | **+0.300** | 0.193 | 0.191 | 8/8 | DETECTABLE |
+| P0_cur - P0, k 17-32 | **+0.301** | 0.223 | 0.221 | 6/8 | DETECTABLE |
+| P0_cur - P0, k 33-48 | -0.080 | 0.177 | 0.175 | 4/8 | unmeasured |
+| P0_cur - P0, k 49-64 | -0.091 | 0.234 | 0.232 | 2/8 | unmeasured |
+
+The curriculum's k <= 32 tokens were introduced by epoch 90. The k 33-64 tokens came at
+epochs 120 and 150, and only those show no gain.
+
+Fixed-k mechanism, single query token (full table in `runs/search/S3_report.md`):
+- **P0_fix16**: peak-rewind on 8/8 seeds (sel - sel0 = +1.000 on every seed). Linear ratios
+  range from +0.97 to -15.04 against a target of -15. Two seeds found the linear rewind itself
+  (-15.04, -14.80); six found a wrapped one. Idealised wrapped score 0.87-1.00.
+- **P0_fix64**: peak-rewind on 6/8, trough-rewind on 1/8, none visible on 1/8 (s0, accuracy
+  1.000 by a route these argmax readouts do not capture). Linear ratios +0.32..+1.42 against
+  -63: **0/8 linear, 7/8 wrapped.** The idealised wrapped score is only -0.84..+0.86 even on the
+  peak-rewind seeds. That score assumes filler Delta = 0 and one shared symbol Delta, so the
+  models evidently compensate through filler. `sel - sel0` is the readout that measures the
+  retrieval itself.
+
+**Where this leaves the account.** The obstacle is neither representation (1.000 frozen),
+nor stability (1.000 held), nor the size of one rewind (7/8 at k = 64). It is that the
+standard task asks for 64 separate wrapped rewinds, one per query token, each trained by
+1/64 of the queries. Candidate mechanism (not tested): each token must find its rewind before
+the kernel sharpens and its landscape turns multi-modal (S2). Direct tests, cheapest first:
+(a) the standard task with k drawn from a small set spanning 1..64 (4 or 16 values), holding
+queries per token fixed. The account predicts that success tracks queries per token, not the
+largest k. (b) Record per-token rewind status and path ruggedness every epoch from scratch,
+to time the window.
+
+**Neuron [11] context.** [11] predicts EM learns faster except on N-back. Here EM learns a
+FIXED-offset k-back faster than WM (54 vs 99 epochs) and holds it at 2x length (+0.191). Its
+deficit appears only when the offset varies per query. Exploratory, n=8, one task.

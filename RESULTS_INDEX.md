@@ -100,7 +100,10 @@ recency needs one.
   on 0/8. Map tasks tie within 0.004. `RECENCY_EM_RESULTS.md`.
 - **It is a SEARCH problem.** Rewind installed and frozen: **1.000** on 8/8 seeds at T=1024
   and T=2048 (`WARM_RESULTS.md`). Installed trainable at 8x weight scale: **0.941**
-  (+0.298 over the 1/64 install, 7/8). Found from scratch: **0/40**
+  (+0.298 over the 1/64 install, 7/8). ~~Found from scratch: 0/40~~ **WITHDRAWN
+  (`SEARCH_RESULTS.md`): found from scratch per query token, wrapped modulo each block's
+  period, for ~half the k; one shared k = 64 is found on 7/8 seeds (0.985). The obstacle is
+  spread across 64 tokens, not rewind size.** Earlier sources:
   (`UNFREEZE_RESULTS.md`, `MAGONLY_RESULTS.md`).
 - **Phase freedom in `q0/k0` is real**: +0.146 against a matched-optimiser control
   (MDE 0.086, 22/24; fresh seeds +0.113, 14/16). It does not act through the rewind.

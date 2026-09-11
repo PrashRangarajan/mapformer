@@ -6,10 +6,22 @@
 > the entire accuracy residual; the latent pathway settles near -0.86 with or without it and
 > that costs nothing. At the 1/64 scale the rewind is erased with zero leakage (-0.008), so
 > the channels are separable. **EM's recency deficit is entirely a search problem**: the
-> solution exists (1.000), can be held (1.000), and is never found from scratch (0/40).
+> solution exists (1.000), can be held (1.000), and is never found from scratch (0/40)
+> [CORRECTED by SEARCH, next block: it IS found, per token and wrapped, for ~half the k].
 > Registered verdicts split: L1 accuracy half met / slope half not (-0.859 vs -0.95); L2
 > slope half met / accuracy half not (0.784 vs <= 0.75). A slope of -0.86 with perfect
 > accuracy means the slope statistic is not a sufficient summary of the rewind.
+
+> **SEARCH LANDED (2026-09-11) -- `SEARCH_RESULTS.md`. "Never found (0/40)" is WITHDRAWN.**
+> It came from a LINEAR slope, and the rewind only has to hold modulo each block's period. From
+> scratch, EM finds it per query token, wrapped: every solved large-k cell in all five EM arms
+> is a rewind of the query token (~40% to the kernel's peak with A_X > 0, ~55% to its trough
+> with A_X < 0), and failed cells never carry one. With ONE k, EM finds a 63-symbol rewind on
+> 7/8 seeds (0.985), faster than WM (54 vs 99 epochs), and beats WM at 2x length (+0.191, 7/8,
+> exploratory). A k curriculum gives +0.127 (detectable) without closing the gap, all of it at
+> k <= 32. **The search problem is spread across 64 per-token rewinds, not the size of any
+> one.** Phase freedom moves every head's kernel peak off zero (48/48) but does not change the
+> route or shorten the shift. It raises each token's success rate at every distance.
 
 **This is the single current account of the EM/WM line (2026-09-09..11).** It summarises;
 it does not replace the source files. Where a source file carries a CORRECTED or AUDIT block
@@ -212,7 +224,9 @@ Each is recorded in the file named. Do not revive any of them.
      model keeps 0.941; with the content -> Delta leak also closed it keeps **1.000 on 8/8
      (0.991 at 2x length)**, the frozen install's level. Leakage was the entire accuracy
      residual; the latent pathway's drift to ~-0.86 costs nothing (`NOLEAK_RESULTS.md`).
-   - *It is never found.* 0 of 40 from-scratch EM runs learn a rewind.
+   - *It is found per token, not as a code.* ~~0 of 40 from-scratch EM runs learn a rewind~~
+     (linear readout; WITHDRAWN). Each query token finds a wrapped rewind or not; ~45% of k in
+     P0, more with phase freedom. One shared k is found on 7/8 seeds (`SEARCH_RESULTS.md`).
 3. **Phase freedom in the origin vectors is real and does not work through the rewind.**
    Letting `k0`'s per-block phases move is worth +0.146 against a matched control (22/24;
    +0.113 on fresh seeds). It helps at large k, but the mechanism is unidentified. On this
@@ -230,7 +244,10 @@ Each is recorded in the file named. Do not revive any of them.
    accuracy terms yes -- leak closed gives 1.000 (8/8). Registered verdicts split (L1 accuracy
    half met, slope half not; L2 slope half met, accuracy half not). A slope near -0.86 with
    perfect accuracy shows the slope statistic is not a sufficient summary of the rewind.
-2. **Why does from-scratch search never find the rewind (0/40)?** This is now *the*
+2. **[LARGELY ANSWERED by SEARCH_RESULTS.md: found per token, wrapped; the obstacle is
+   spread across 64 tokens, not rewind size. Next: k from a small set at fixed queries per
+   token; per-epoch recording of per-token rewind status.]** Original text follows.
+   Why does from-scratch search never find the rewind (0/40)? This is now *the*
    question. Candidate from `UNFREEZE_RESULTS.md`: the rewind needs `Delta(q_k)` spread over
    a 64:1 range along one direction, and nothing in a random init points there. Cheapest
    decisive steps, in order:

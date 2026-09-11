@@ -1,7 +1,7 @@
 ## Project state and findings
 
 - [Project state snapshot](project_state.md) — **read first.** Citable, retracted, in flight, open. Goal: factorisation-and-transfer.
-- [EM vs WM mechanism](feedback_em_vs_wm_mechanism.md) — WM is NOT additive; EM's recency deficit is SEARCH (exists 1.000, never found 0/40).
+- [EM vs WM mechanism](feedback_em_vs_wm_mechanism.md) — WM is NOT additive; EM's recency deficit is SEARCH, spread over 64 per-token wrapped rewinds.
 - [Clock vs map: what cancellation chooses](project_clock_vs_map.md) — signed = map, monotone = clock; recency does NOT need a clock (rewind).
 - [The sign of the phase increment](project_sign_axis.md) — a monotone clock cannot represent a −1 action. Prior art: Sarrof/Grazzi/SRoPE.
 - [Rank, and Selective RoPE](project_rank_and_selective_rope.md) — use r=4 on MapWM (+0.085, 384 params); r=2 is SKEWED. Not for MapPoPE.

@@ -78,6 +78,9 @@ def main():
                     S, S0 = np.array(an["sel"][K - 1]), np.array(an["sel0"][K - 1])
                     r.update(sel_max=float(S.max()), sel0_max=float(S0.max()),
                              diff=float(S.max() - S0.max()))
+                    # exploratory, after S1: the trough route (argmin), invisible to sel
+                    M, M0 = np.array(an["selmin"][K - 1]), np.array(an["selmin0"][K - 1])
+                    r.update(tdiff=float(M.max() - M0.max()))
                 else:
                     r["slope"] = rewind_slope(delta_table(m), env)
                     r["wrapped_k"] = [wrapped_score(m, env, k) for k in range(1, 65)]
@@ -85,6 +88,7 @@ def main():
                     r["acc_k"] = an["acc"]
                     S, S0 = np.array(an["sel"]), np.array(an["sel0"])
                     r["diff_k"] = (S.max(1) - S0.max(1)).tolist()
+                    r["solved_k8"] = int(sum(a_ >= 0.9 for a_ in an["acc"][7:]))
             rows[(arm, s)] = r
             print(arm, s, {k: (round(x, 3) if isinstance(x, float) else x) for k, x in r.items()
                            if k not in ("wrapped_k", "acc_k", "diff_k")}, flush=True)
@@ -101,13 +105,18 @@ def main():
                  f"{np.mean([rows[(arm, s)]['final_loss'] for s in SEEDS]):.3f} | "
                  f"{np.median(er) if er else '-'} ({len(er)}/8) |")
     L += ["", "## Fixed-k mechanism readouts (single query token)\n",
-          "| arm | seed | acc | sel_max | sel0_max | sel - sel0 | wrapped score | linear ratio (target) |",
-          "|---|---|---|---|---|---|---|---|"]
+          "Registered: sel, sel - sel0, linear ratio. Added after S1 (exploratory): trough "
+          "selmin - selmin0, wrapped score, route.\n",
+          "| arm | seed | acc | sel_max | sel0_max | sel - sel0 | selmin - selmin0 | route | wrapped score | linear ratio (target) |",
+          "|---|---|---|---|---|---|---|---|---|---|"]
     for arm in ("P0_fix16", "P0_fix64"):
         for s in SEEDS:
             r = rows[(arm, s)]
+            route = ("peak-rewind" if r["diff"] >= 0.5 else "trough-rewind" if r["tdiff"] >= 0.5
+                     else "static" if r["sel0_max"] >= 0.5 else "none")
             L.append(f"| {arm} | {s} | {r['acc']:.3f} | {r['sel_max']:.3f} | {r['sel0_max']:.3f} | "
-                     f"{r['diff']:+.3f} | {r['wrapped']:+.3f} | {r['lin_ratio']:+.2f} ({r['lin_target']}) |")
+                     f"{r['diff']:+.3f} | {r['tdiff']:+.3f} | {route} | {r['wrapped']:+.3f} | "
+                     f"{r['lin_ratio']:+.2f} ({r['lin_target']}) |")
 
     fix = lambda arm, thr: sum(rows[(arm, s)]["acc"] >= thr for s in SEEDS)
     p1 = fix("WM_fix64", 0.95) >= 6
@@ -125,10 +134,13 @@ def main():
     c = paired(cur, stored, "P0_cur - P0 (stored)")
     sl = [rows[("P0_cur", s)]["slope"] for s in SEEDS]
     refuted = sum(cur[s] >= 0.95 for s in SEEDS) >= 6 and np.median(sl) <= -0.5
-    L += ["", table([c]),
+    ext = {r["seed"]: r for r in json.load(open(REPO / "_ANATOMY_EXT.json")) if r["arm"] == "VanillaEM_P0_r4"}
+    sc = {s: rows[("P0_cur", s)]["solved_k8"] for s in SEEDS}
+    sp = {s: int(sum(a_ >= 0.9 for a_ in ext[s]["acc"][7:])) for s in SEEDS}
+    L += ["", table([c, paired(sc, sp, "solved cells k>=8 (of 57): P0_cur - P0 (exploratory)")]),
           f"\nP0_cur linear slopes: {[round(x, 3) for x in sl]}",
           f"- **S3-P3** (curriculum does NOT close the gap): **{'REFUTED' if refuted else 'MET' if (c.verdict != 'DETECTABLE' or np.mean(list(cur.values())) < 0.9) else 'SPLIT'}**"
-          + ("" if "DETERMINISM" in det and "DIFFER" not in det.upper() else "  (reuse NOT licensed -- see determinism block)")]
+          + ("" if "DETERMINISM: bitwise identical" in det else "  (reuse NOT licensed -- see determinism block)")]
     txt = "\n".join(L)
     print(txt)
     (RUNS / "S3_report.md").write_text(txt + "\n")

@@ -1,6 +1,6 @@
 ---
 name: em-vs-wm-mechanism
-description: MapWM is NOT additive (per-pair content-set kernel); EM's kernel is shared. EM's recency deficit is SEARCH -- the solution exists and can be held, but is never found.
+description: MapWM is NOT additive (per-pair content-set kernel); EM's kernel is shared. EM's recency deficit is SEARCH -- exists, holdable, found per token (wrapped) for ~half the k.
 metadata:
   type: feedback
 ---
@@ -26,11 +26,15 @@ TALE_OF_TWO_ALGORITHMS.md. An adversarial audit caught it (AUDIT_2026-09-10.md).
   - **largely holdable**: installed trainable at 8x weight scale, EM keeps 0.941. At 1/64 scale
     Adam erodes the code (0.642). That erosion was ~84% of the gap once read as "the landscape
     rejects the solution".
-  - **never found**: 0/40 from-scratch EM runs learn a rewind.
-  So it is SEARCH. The open question is why search fails.
+  - **found per token, not as a code** (SEARCH_RESULTS.md, 2026-09-11): "0/40 never found" is
+    WITHDRAWN -- a linear readout that cannot see a rewind wrapped modulo 2 pi / omega. From
+    scratch, each query token finds a wrapped rewind (to kernel peak with A_X>0, or trough with
+    A_X<0) or not; ~half the k. One shared k=64 is found on 7/8 seeds, faster than WM.
+  So it is SEARCH, and the obstacle is spread over 64 per-token rewinds, not rewind size.
 - **Phase freedom** (letting `k0`'s per-block phases move) is +0.146 vs a matched-optimiser
-  control (22/24; +0.113 on fresh seeds). It helps without a rewind; the mechanism is
-  unidentified. Magnitude freedom and initial coherence are null.
+  control (22/24; +0.113 on fresh seeds). It moves every head's kernel peak off zero (48/48),
+  does not change the retrieval route or shorten the shift, and raises per-token rewind
+  success at every distance; why is unidentified. Magnitude freedom and initial coherence are null.
 - The early-window account (a random content gate dismantles the position code) is refuted: a
   late release is dismantled within 1-6 epochs.
 - Untested hypothesis only: the recency ordering WM > EM-sep > EM-P0 tracks phase freedom

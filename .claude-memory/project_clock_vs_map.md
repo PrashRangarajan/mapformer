@@ -108,7 +108,7 @@ full EM model with that rewind installed and frozen scores 1.000 on 8/8 seeds
 
 So the crossover's recency half says a monotone increment is **harmless** there
 (-0.004), not that recency **needs** one. The map half (-0.280 torus, 12/12) is
-unaffected. From scratch, no EM run finds the rewind (0/40). That is a search
+unaffected. From scratch, EM finds it per query token, wrapped, for ~half the k (the "0/40" was a linear readout; SEARCH_RESULTS.md). That is a search
 problem, and the frame says nothing about it -- see [[em-vs-wm-mechanism]] and
 `EM_WM_STATE.md`.
 

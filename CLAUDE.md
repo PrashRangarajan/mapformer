@@ -13,7 +13,9 @@ file has a CORRECTED or AUDIT block at the top, that block supersedes the body.
 - **MapWM is NOT additive.** It rotates content Q,K, so its position kernel has per-pair
   phases. EM's kernel is shared by all pairs. Thm 3 and its corollary are withdrawn.
 - **EM's recency deficit is a SEARCH problem.** Rewind installed and frozen: 1.000 (8/8).
-  Installed trainable at 8x weight scale: 0.941; with the leak also closed: 1.000 (8/8). Found from scratch: 0/40. The W4
+  Installed trainable at 8x weight scale: 0.941; with the leak also closed: 1.000 (8/8). ~~Found from scratch: 0/40~~
+  WITHDRAWN (`SEARCH_RESULTS.md`): found from scratch PER TOKEN, wrapped, for ~half the k; one shared
+  k=64 found on 7/8. The obstacle is spread over 64 per-token rewinds, not rewind size. The W4
   "landscape rejects it" reading and the early-window mechanism are both withdrawn
   (`UNFREEZE_RESULTS.md`).
 - **Phase freedom** in `q0/k0` is real: +0.146 (22/24) against the matched MagOnly control,
@@ -27,9 +29,15 @@ trainable rewind scores **1.000 on 8/8** (0.991 at 2x length) -- the frozen inst
 was the entire accuracy residual; at 1/64 the code is erased even with zero leak. EM's recency
 deficit is ENTIRELY SEARCH. Nothing is in flight.
 
-**Next, ranked** (`EM_WM_STATE.md` Sec 6): why from-scratch search never finds the rewind
-(an init-gradient probe, then fixed-k / curriculum recency); what phase freedom does
-instead (eval-only); WM's per-pair phase spread (eval-only); DOF torus at n=24.
+**SEARCH LANDED** (`SEARCH_RESULTS.md`, 2026-09-11): EM finds the rewind per query token,
+wrapped (peak or trough, A_X sign tracks it), never as a linear code. Fixed k=64: EM 0.985
+(7/8), faster than WM and +0.191 over it at 2x length (exploratory). Curriculum +0.127, all
+at k<=32. Phase freedom moves every kernel peak off zero but not the route.
+
+**Next, ranked**: k from a small set at fixed queries per token (does success track
+queries-per-token?); per-epoch per-token rewind recording (time the window); why a
+free-phase kernel raises per-token success; WM's per-pair phase spread (eval-only); DOF
+torus at n=24.
 Outside this line: the forget-gate-as-clock batch still needs a re-run
 (`FORGET_CLOCK_PREREG.md`, `run_forget_clock.sh`). The three .tex documents were last
 touched 2026-09-08 and contain none of the EM/WM line.
@@ -2881,3 +2889,21 @@ SEARCH problem**: exists (1.000 frozen), largely holdable, never found (0/40).
     weights tests whether Adam can erode it, not whether the landscape holds it. Rule 31
     applied to my own design; I found it while designing the follow-up, not before
     committing the first reading.
+
+### SEARCH (2026-09-11) -- the rewind WAS found; the readout could not see it
+
+`SEARCH_PREREG.md`, `SEARCH_RESULTS.md`. "EM never finds the rewind (0/40)" rested on a
+LINEAR slope of Delta(q_k) on k. theta enters through cos/sin, so a block's rewind only has to
+hold modulo 2 pi / omega_i, and gradient descent reaches the nearest such point. Eval-only
+anatomy (5 arms x 24 seeds): every solved large-k cell is a rewind of the query token, to the
+kernel's peak (A_X > 0) or trough (A_X < 0); failed cells never carry one. With one shared k,
+EM finds a 63-symbol rewind on 7/8 seeds (all wrapped, 0/8 linear), faster than WM, and holds
+it at 2x length (+0.191 over WM, exploratory). A k curriculum helps only the tokens it
+introduces early. The obstacle is spread over 64 per-token rewinds.
+
+34. **A readout that is not invariant to a symmetry of the model can report the ABSENCE of a
+    solution that is present.** The linear rewind slope ignored the periodicity of theta and
+    read 0.000 over 40 runs that had found wrapped rewinds for ~half their tokens. Before
+    reading "not found", ask what transformations leave the solution's FUNCTION unchanged
+    (here: shifts by 2 pi / omega per block; the sign gauge A_X -> -A_X, kappa -> -kappa) and
+    measure the function (does A_P select the answer?), not one representative of it.
