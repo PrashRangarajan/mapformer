@@ -139,6 +139,13 @@ VARIANT_MAP = {
     # its phases (k_0i = s_i * q_0i, per-block magnitudes still free).
     "EMDoF_alignfree": __import__("mapformer.model_em_dof", fromlist=["x"]).MapFormerEM_AlignFree_r4,
     "EMDoF_alignlock": __import__("mapformer.model_em_dof", fromlist=["x"]).MapFormerEM_AlignLock_r4,
+    # Tier-1 control (AUDIT_2026-09-10 finding 8): AlignFree's exact parameterisation
+    # and init, phases pinned to q0. AlignFree - MagOnly = phase freedom at matched optimiser.
+    "EMDoF_magonly": __import__("mapformer.model_em_magonly", fromlist=["x"]).MapFormerEM_MagOnly_r4,
+    # Tier-1 item 2: single-p0 EM warm-started at the constructed recency rewind
+    # (position pathway only; content branch random). WARM_PREREG.md.
+    "EMWarm_freeze": __import__("mapformer.model_em_warm", fromlist=["x"]).MapFormerEM_Warm_freeze_r4,
+    "EMWarm_train":  __import__("mapformer.model_em_warm", fromlist=["x"]).MapFormerEM_Warm_train_r4,
     "MapEM_NC_L":  MapFormerEM_NC_L,     # paper B.2.2, linear Delta
     "MapEM_NC_NL": MapFormerEM_NC_NL,    # paper B.2.2, MLP Delta   # paper eq.3: single origin, A_P = P.P^T
     "Level1":     MapFormerWM_ParallelInEKF,
