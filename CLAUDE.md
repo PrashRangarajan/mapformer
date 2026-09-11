@@ -2798,3 +2798,23 @@ now. Cite as *directional, n=8, unmeasured*.
 31. **A parameterisation change is an optimiser change.** A scale initialised at 1.0 under Adam
     moves ~50x slower in relative terms than a vector initialised at 0.02; weight decay alone
     explained most of `AlignLock`'s "learned" magnitude.
+
+### Tier 1, same session -- the EM recency deficit is a landscape property
+
+`MAGONLY_RESULTS.md`, `WARM_RESULTS.md`, both pre-registered.
+
+- **Phase freedom is real**: +0.146 (22/24) against `MagOnly`, a control that is the same
+  function as `AlignFree` at init with the same optimiser scale; +0.113 on fresh seeds.
+  The parameterisation confound was +0.018. Magnitude freedom null (-0.015).
+- **EM can represent recency exactly**: rewind installed and frozen -> **1.000 on 8/8**,
+  T=1024 and 2048. **Training dismantles it** when trainable (0.642, back to scratch),
+  early, while content is random -- weight decay excluded (factor 0.992 over the window).
+  From scratch, 0 of 40 EM runs finds a rewind.
+- **Phase freedom does NOT work through the rewind** -- mechanism unidentified.
+- Untested hypothesis: `d score / d A_P = A_X`, so a random content branch feeds the
+  position pathway noise gradients. Test: freeze the position pathway for N epochs, then
+  unfreeze.
+
+32. **Existence, then stability.** A solution that exists need not be an attractor. Warm-start
+    it twice -- frozen AND trainable. Here the frozen twin scored 1.000 and the trainable one
+    fell back to the from-scratch level from the same starting weights.

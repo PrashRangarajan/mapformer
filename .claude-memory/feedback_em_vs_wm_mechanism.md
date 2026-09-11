@@ -20,8 +20,9 @@ months. An adversarial audit caught it (AUDIT_2026-09-10.md).
 - Never describe WM as additive. The contrast is shared kernel (EM) vs per-pair kernel (WM).
 - Before calling an EM deficit a limit of the function class, check existence: a single-`p_0` EM
   kernel solves recency exactly (1423/1423) once the query token's own Delta rewinds the count.
-  EM - WM = -0.375 on recency is therefore most likely about what training finds -- kernel-level
-  construction only; the full-model warm-start that would settle it has not been run.
+  EM - WM = -0.375 on recency is about TRAINING, now shown at full-model level: rewind installed and
+  frozen -> 1.000 on 8/8; trainable -> dismantled early, back to scratch level; 0/40 scratch runs find it.
+  The correct position code exists but is not an attractor. See WARM_RESULTS.md.
 - The 2026-05-10 regime table was already retracted; do not revive it.
 - Untested hypothesis only: recency ordering WM > EM-sep > EM-P0 tracks phase freedom
   (per-pair > n_b global > none). See [[project-clock-vs-map]].

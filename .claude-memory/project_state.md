@@ -74,3 +74,8 @@ Read AUDIT_2026-09-10.md. Citable: EM - WM = -0.375 on recency (read as learnabi
 kernel can solve it; full-model warm-start untested); phase freedom +0.165 (n=24, replicates on fresh seeds); |rho| +0.292 for a frozen
 low-amplitude kernel. Withdrawn: Thm 3, its corollary, N2, the sign 'strengthening', the D4
 'reproduction'. Open: matched-optimiser control for AlignLock; map-side DOF at n=24; forget-gate rerun.
+
+**Tier 1 (2026-09-10, later):** phase freedom +0.146 survives a matched-optimiser control. Single-`p0`
+EM with the recency rewind installed+frozen = 1.000 (8/8); trainable, training dismantles it early and it
+falls to scratch level; 0/40 from-scratch EM runs find a rewind. EM's recency deficit is a LANDSCAPE
+property (solution exists, never found, not held). Next: freeze-then-unfreeze schedule. See WARM_RESULTS.md.

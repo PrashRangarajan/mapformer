@@ -9,6 +9,9 @@
 > kernel ~100x below learned amplitude, and the sign "strengthening" was forced by a
 > gauge. n=8 sizes below are superseded (+0.237 -> +0.128, +0.148 -> +0.165). N2 is
 > withdrawn (ill-posed). Inline markers flag each affected passage.
+> **Tier 1 (same day):** phase freedom survives a matched-optimiser control (+0.146, 22/24);
+> single-`p0` EM with the rewind installed and frozen solves recency 1.000 on 8/8 seeds, but
+> training dismantles the same rewind when it is trainable. See `WARM_RESULTS.md`.
 
 Written 2026-09-09, after the `runs/recency_em` batch refuted two of three
 pre-registered predictions (`RECENCY_EM_RESULTS.md`). It is a **retrodiction** of
