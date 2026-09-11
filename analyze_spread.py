@@ -55,6 +55,16 @@ def main():
             res = json.load(open(js))
             over = dict(k_set=kset) if kset else {}
             m, ck, env = load_model(pt, "VanillaEM_P0_r4", **over)
+            # the env here is built from the ARM definition, so check it against what the run
+            # actually trained on: a mismatched launch would otherwise be read silently.
+            stored = ck.config.get("k_set")
+            stored = [int(v) for v in stored.split(",")] if stored else None
+            if stored != kset:
+                raise AssertionError(f"{d}: checkpoint k_set {stored} != arm {arm}'s {kset}")
+            n_ep = len(ck.losses)
+            want_ep = 1200 if "e1200" in arm else 300
+            if n_ep != want_ep:
+                raise AssertionError(f"{d}: {n_ep} epochs trained, arm {arm} expects {want_ep}")
             an = anatomy(m, env, s, device=dev)
             trained = kset or list(range(1, 65))
             frac, ntok = rewind_fraction(an, trained)
