@@ -1,4 +1,7 @@
-# Results index (regenerated 2026-09-06)
+# Results index (regenerated 2026-09-06; EM/WM line added 2026-09-11)
+
+**For the EM/WM + position-kernel line (2026-09-09..11), read `EM_WM_STATE.md`** --
+its section is below, after the clock/map crossover.
 
 Entry point to the repository. `CLAUDE.md` is the chronological log; this file is
 the current state. **48 void files live in `archive/void/`** — nothing there is
@@ -84,6 +87,45 @@ k=1 and only collapses from k=8, and **Flip-Flop only ever asks k=1**. The
 benchmark varies distance-to-write but never ORDINAL DEPTH, which is the property
 that separates a content-gated counter from an index. `FLIPFLOP_RESULTS.md`.
 
+**Scope correction (audit 2026-09-10):** recency does not *require* a clock. A signed
+accumulator whose query token rewinds the count by k-1 makes the retrieval offset zero,
+and a single-`p0` EM kernel then solves the task exactly (`AUDIT_2026-09-10.md` #2). The
+crossover's recency half shows a monotone increment is HARMLESS there; it does not show
+recency needs one.
+
+## EM vs WM and the position-kernel theory (2026-09-09..11) -- read `EM_WM_STATE.md`
+
+- **The only EM/WM difference measured: recency (k-back), single-`p0` EM - WM = -0.375**
+  (MDE 0.154, 0/8). By the registered readout, WM gets below loss 0.5 on 8/8 seeds and EM
+  on 0/8. Map tasks tie within 0.004. `RECENCY_EM_RESULTS.md`.
+- **It is a SEARCH problem.** Rewind installed and frozen: **1.000** on 8/8 seeds at T=1024
+  and T=2048 (`WARM_RESULTS.md`). Installed trainable at 8x weight scale: **0.941**
+  (+0.298 over the 1/64 install, 7/8). Found from scratch: **0/40**
+  (`UNFREEZE_RESULTS.md`, `MAGONLY_RESULTS.md`).
+- **Phase freedom in `q0/k0` is real**: +0.146 against a matched-optimiser control
+  (MDE 0.086, 22/24; fresh seeds +0.113, 14/16). It does not act through the rewind.
+  Magnitude freedom (-0.015) and initial coherence (-0.004) are null.
+  `MAGONLY_RESULTS.md`, `D5_RESULTS.md`.
+- **MapWM is NOT additive** (it rotates content Q,K). Thm 3 and its corollary are
+  withdrawn. `|rho|` (+0.292, 8/8, torus) holds only for a frozen kernel ~100x below
+  learned amplitude; the kernel's sign is a gauge. `AUDIT_2026-09-10.md`, `N5_RESULTS.md`.
+- **In flight:** the leakage test, `NOLEAK_PREREG.md` -> `runs/noleak/`.
+
+| file | status |
+|---|---|
+| `EM_WM_STATE.md` | **current summary**. Start here |
+| `AUDIT_2026-09-10.md` | **current**. Supersedes the six files it names; its Tier-1 "sharpened" bullet is corrected in-file |
+| `THEORY_KERNEL.md` | theory as written; **Thm 3 and corollary withdrawn, Thm 1 scoped, Thm 2 scoped**. Read the top block |
+| `TALE_OF_TWO_ALGORITHMS.md` | **stale headline** (predates the recency batch); capacity argument stands |
+| `REC_EM_PREREG.md`, `RECENCY_EM_RESULTS.md` | verdicts stand; the n=8 `sep - P0` size is superseded by D5 |
+| `N5_PREREG.md`, `N5_RESULTS.md` | corollary refuted; `\|rho\|` scoped to a frozen low-amplitude kernel |
+| `DOF_PREREG.md`, `DOF_RESULTS.md` | recency half superseded by D5; torus half n=8, provisional; D4 was determinism |
+| `D5_PREREG.md`, `D5_RESULTS.md` | **current** n=24 sizes (read with the audit block) |
+| `MAGONLY_PREREG.md`, `MAGONLY_RESULTS.md` | **current** |
+| `WARM_PREREG.md`, `WARM_RESULTS.md` | W1-W3 current; **W4 reading withdrawn** (top block) |
+| `UNFREEZE_PREREG.md`, `UNFREEZE_RESULTS.md` | **current**; U4's exhaustiveness withdrawn (top block) |
+| `NOLEAK_PREREG.md` | **in flight**, no results |
+
 ## What else is citable
 
 **The sign of the increment is load-bearing, and it is worth more than any other
@@ -123,6 +165,10 @@ parameters — the best arm measured on that task, with a positive interaction o
 **Two of the paper's stated-but-unmeasured conjectures are refuted.** Separate
 q0/k0 (+0.358 against it on Match-Query, four tasks) and the value of
 non-commutativity (+0.005-0.014 for 34x the cost, below plain MapWM).
+*Correction 2026-09-10: on recency (k-back) the separate form is BETTER, +0.128 at n=24
+(`D5_RESULTS.md`). On fresh seeds alone that is +0.073 (9/16, MDE 0.130), unmeasured. So
+the sign depends on the task, and "refuted" holds only for the four map tasks
+(`AUDIT_2026-09-10.md` #3).*
 
 **CSCG's stitching negative control reproduces in MapFormer's attention.** Paired
 difference +0.131 +/- 0.024 (floor exactly 0) against index -0.005 +/- 0.016.
@@ -209,6 +255,19 @@ difference +0.131 +/- 0.024 (floor exactly 0) against index -0.005 +/- 0.016.
     `git show HEAD:<file>`, not the absence of a crash.
 28. **Case matters in verification greps.** A case-insensitive search for `rope`
     matches `p-rope-rty`; one for `Undefined` misses LaTeX's `undefined`.
+
+From the EM/WM line. These are numbered **27-33 in `CLAUDE.md`**, which collides with 27-28
+above; the labels here avoid the clash. Details in `EM_WM_STATE.md` Sec 7.
+
+- **C27. A same-seed rerun is determinism, not replication.** Report fresh seeds alone
+  beside any pooled estimate.
+- **C28. Check for a sign or scale GAUGE before registering a contrast.**
+- **C29. Existence before mechanism**: construct a solution in the class before calling a
+  deficit a class limit.
+- **C30. Report the registered primary readout** even when the verdict is obvious.
+- **C31. A parameterisation change is an optimiser change** (Adam's relative step size).
+- **C32. Existence, then stability**: warm-start frozen AND trainable.
+- **C33. Install a warm start at the scale training would use.**
 
 Two method notes that are not rules but cost real time:
 

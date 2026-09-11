@@ -14,6 +14,10 @@
 > | `EMUnf_0_e8` | -0.602 | **-0.866** (seeds -1.10..-0.43) | -0.989 |
 > | `EMUnf_30` | -0.142 | -0.192 | -0.445 |
 >
+> (Effective slopes here are recomputed from the FINAL weights; the table below reads
+> `traj_slope[-1]`, recorded at the START of the last epoch -- one epoch earlier, hence
+> -0.055 vs -0.054, -0.142 vs -0.143, -0.602 vs -0.604.)
+>
 > At 8x the latent pathway itself degrades to -0.866 and leakage takes it to -0.602: both
 > contribute, leakage the larger share. "The code holds; leakage does the damage" was too
 > strong. At 1/64 the full pathway is gone, which the coordinate-0 reading got right. U2

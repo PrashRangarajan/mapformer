@@ -1,6 +1,6 @@
 ---
 name: project-clock-vs-map
-description: Cancellation is not a quality axis — it chooses whether the accumulator is a map or a clock. Explains the sign result, the rank result, and probably the forget gate.
+description: Cancellation chooses whether the accumulator is a map or a clock. Explains sign and rank; recency does NOT need a clock (a rewind solves it); forget-gate account untested.
 metadata:
   type: project
 ---
@@ -22,7 +22,7 @@ text a monotone clock is the right object, which is why RoPE is the default ther
 why nothing went visibly wrong.
 
 **Do not say a signed increment is simply better.** That framing was in the documents
-and is wrong.
+and is wrong. **Nor say recency needs a clock** -- see the scope section at the end.
 
 ## The growth exponent is a readout of which question, not a score
 
@@ -95,8 +95,23 @@ measurement takes in the setting the literature actually works in. Not yet measu
 there — the language trainer saves no checkpoints.
 
 
-**Audit 2026-09-10:** recency does NOT require a clock. A signed accumulator whose query token
-`q_k` carries Delta = -(k-1) makes the retrieval offset zero for every query, and a single-`p_0` EM
-kernel then solves it exactly (1423/1423; control without the rewind 0.086). The crossover's recency
-half shows a monotone increment is HARMLESS there, not that recency needs one. T1 holds only for a
-scalar or fully constrained accumulator. See AUDIT_2026-09-10.md.
+## Scope, corrected by the 2026-09-10 audit: recency does NOT need a clock
+
+"Mutually exclusive" holds only for a scalar or fully constrained accumulator. The
+model's is rank-r per head, so one subspace can cancel while another counts
+(THEORY_KERNEL.md Thm 1, now scoped). And a clock is not the only way to do k-back.
+A **signed** accumulator solves it if the query token `q_k` carries Delta = -(k-1),
+which rewinds the count so the retrieval offset is zero for every query. A single-`p0`
+EM kernel then selects the answer exactly (1423/1423; without the rewind 0.0857). The
+full EM model with that rewind installed and frozen scores 1.000 on 8/8 seeds
+(WARM_RESULTS.md).
+
+So the crossover's recency half says a monotone increment is **harmless** there
+(-0.004), not that recency **needs** one. The map half (-0.280 torus, 12/12) is
+unaffected. From scratch, no EM run finds the rewind (0/40). That is a search
+problem, and the frame says nothing about it -- see [[em-vs-wm-mechanism]] and
+`EM_WM_STATE.md`.
+
+**Numbers to keep (restored after the 2026-09-11 consolidation dropped them):** growth exponent alpha of
+the UNCONSTRAINED arm is 0.591 on the torus and 0.967 on recency (se 0.009), constrained arms pinned
+at ~1.0 on both (`RECENCY_RESULTS.md`). Forcing monotone costs -0.280 on the torus, -0.004 on recency.

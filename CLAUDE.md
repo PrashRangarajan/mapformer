@@ -1,5 +1,45 @@
 # CLAUDE.md — Project Memory for MapFormer
 
+## START HERE (updated 2026-09-11)
+
+This file is a chronological log. Current state lives in three places:
+**`RESULTS_INDEX.md`** (everything citable), **`EM_WM_STATE.md`** (the EM/WM and
+position-kernel line, 2026-09-09..11), and `.claude-memory/project_state.md`. When a results
+file has a CORRECTED or AUDIT block at the top, that block supersedes the body.
+
+**Where the EM/WM line stands** (details and every number in `EM_WM_STATE.md`):
+- The one EM/WM difference measured so far is on recency (k-back): single-`p0` EM - WM = **-0.375**
+  (0/8). On map tasks the two tie to within 0.004.
+- **MapWM is NOT additive.** It rotates content Q,K, so its position kernel has per-pair
+  phases. EM's kernel is shared by all pairs. Thm 3 and its corollary are withdrawn.
+- **EM's recency deficit is a SEARCH problem.** Rewind installed and frozen: 1.000 (8/8).
+  Installed trainable at 8x weight scale: 0.941. Found from scratch: 0/40. The W4
+  "landscape rejects it" reading and the early-window mechanism are both withdrawn
+  (`UNFREEZE_RESULTS.md`).
+- **Phase freedom** in `q0/k0` is real: +0.146 (22/24) against the matched MagOnly control,
+  +0.113 on fresh seeds. It does NOT work through the rewind; mechanism unidentified.
+  Magnitude freedom and initial coherence are null.
+- `|rho|` (Thm 2) holds only for a frozen kernel at ~100x below learned amplitude. The
+  sign of the kernel is a gauge.
+
+**In flight:** the leakage test (`NOLEAK_PREREG.md`, `run_noleak.sh` -> `runs/noleak/`,
+2 arms x 8 seeds + a determinism re-check in `runs/noleak_repro/`). Do not edit
+`train_variant.py`, `train_recency.py`, `environment_recency.py` or `model_em_*.py` while
+it runs. It is done when `runs/noleak/.done` exists. Read `runs/noleak_repro/DETERMINISM.txt`
+first, then L1/L1b/L2 and the manipulation check exactly as registered.
+
+**Next, ranked** (`EM_WM_STATE.md` Sec 6): why from-scratch search never finds the rewind
+(an init-gradient probe, then fixed-k / curriculum recency); what phase freedom does
+instead (eval-only); WM's per-pair phase spread (eval-only); DOF torus at n=24.
+Outside this line: the forget-gate-as-clock batch still needs a re-run
+(`FORGET_CLOCK_PREREG.md`, `run_forget_clock.sh`). The three .tex documents were last
+touched 2026-09-08 and contain none of the EM/WM line.
+
+**Rules bought by this line:** 27-33 (end of this file). Numbering note: `RESULTS_INDEX.md`
+uses 27-28 for two other rules.
+
+---
+
 **Purpose of this file:** concise context for Claude when resuming work on this
 project in a fresh session. Read the README for the full picture; this file
 focuses on state + lessons learned + what to do next.
