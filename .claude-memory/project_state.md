@@ -94,3 +94,8 @@ see [[feedback-existence-before-mechanism]].
 **Kernel-theory numbers to keep (restored after consolidation):** Thm 2 |rho| effect +0.292 on the torus
 (8/8, MDE 0.063) -- for a FROZEN kernel ~100x below learned amplitude, so it is not a statement about
 trained EM. See `EM_WM_STATE.md` for the rest.
+
+**Leakage test (2026-09-11, closes the EM/WM hold question):** with w_in's content columns held at zero, the
+8x-installed trainable rewind = 1.000 on 8/8 (0.991 at 2x length), equal to the frozen install; leak open 0.941.
+EM's recency deficit is ENTIRELY SEARCH -- exists (1.000), holdable (1.000), never found from scratch (0/40).
+Next question: why search fails (init-gradient probe, then fixed-k / curriculum recency). NOLEAK_RESULTS.md.

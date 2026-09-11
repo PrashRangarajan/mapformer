@@ -38,3 +38,5 @@ TALE_OF_TWO_ALGORITHMS.md. An adversarial audit caught it (AUDIT_2026-09-10.md).
 - The 2026-05-10 regime table was already retracted; do not revive it.
 
 Full account: `EM_WM_STATE.md`. See [[project-clock-vs-map]], [[feedback-existence-before-mechanism]].
+- Settled 2026-09-11 (NOLEAK_RESULTS.md): installed at 8x scale with the content->Delta leak closed, trainable
+  EM holds the recency rewind at 1.000 (8/8). The deficit is search, not representation or stability.

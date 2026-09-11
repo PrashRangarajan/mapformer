@@ -13,7 +13,7 @@ file has a CORRECTED or AUDIT block at the top, that block supersedes the body.
 - **MapWM is NOT additive.** It rotates content Q,K, so its position kernel has per-pair
   phases. EM's kernel is shared by all pairs. Thm 3 and its corollary are withdrawn.
 - **EM's recency deficit is a SEARCH problem.** Rewind installed and frozen: 1.000 (8/8).
-  Installed trainable at 8x weight scale: 0.941. Found from scratch: 0/40. The W4
+  Installed trainable at 8x weight scale: 0.941; with the leak also closed: 1.000 (8/8). Found from scratch: 0/40. The W4
   "landscape rejects it" reading and the early-window mechanism are both withdrawn
   (`UNFREEZE_RESULTS.md`).
 - **Phase freedom** in `q0/k0` is real: +0.146 (22/24) against the matched MagOnly control,
@@ -22,11 +22,10 @@ file has a CORRECTED or AUDIT block at the top, that block supersedes the body.
 - `|rho|` (Thm 2) holds only for a frozen kernel at ~100x below learned amplitude. The
   sign of the kernel is a gauge.
 
-**In flight:** the leakage test (`NOLEAK_PREREG.md`, `run_noleak.sh` -> `runs/noleak/`,
-2 arms x 8 seeds + a determinism re-check in `runs/noleak_repro/`). Do not edit
-`train_variant.py`, `train_recency.py`, `environment_recency.py` or `model_em_*.py` while
-it runs. It is done when `runs/noleak/.done` exists. Read `runs/noleak_repro/DETERMINISM.txt`
-first, then L1/L1b/L2 and the manipulation check exactly as registered.
+**Leakage test LANDED** (`NOLEAK_RESULTS.md`): with the content -> Delta leak closed, the 8x-installed
+trainable rewind scores **1.000 on 8/8** (0.991 at 2x length) -- the frozen install's level. Leakage
+was the entire accuracy residual; at 1/64 the code is erased even with zero leak. EM's recency
+deficit is ENTIRELY SEARCH. Nothing is in flight.
 
 **Next, ranked** (`EM_WM_STATE.md` Sec 6): why from-scratch search never finds the rewind
 (an init-gradient probe, then fixed-k / curriculum recency); what phase freedom does

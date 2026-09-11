@@ -109,7 +109,9 @@ recency needs one.
 - **MapWM is NOT additive** (it rotates content Q,K). Thm 3 and its corollary are
   withdrawn. `|rho|` (+0.292, 8/8, torus) holds only for a frozen kernel ~100x below
   learned amplitude; the kernel's sign is a gauge. `AUDIT_2026-09-10.md`, `N5_RESULTS.md`.
-- **In flight:** the leakage test, `NOLEAK_PREREG.md` -> `runs/noleak/`.
+- **Leakage test (landed 2026-09-11):** with the content -> Delta leak closed, the 8x-installed
+  trainable rewind scores 1.000 (8/8), the frozen level; EM's recency deficit is entirely search.
+  `NOLEAK_RESULTS.md`.
 
 | file | status |
 |---|---|
@@ -124,7 +126,7 @@ recency needs one.
 | `MAGONLY_PREREG.md`, `MAGONLY_RESULTS.md` | **current** |
 | `WARM_PREREG.md`, `WARM_RESULTS.md` | W1-W3 current; **W4 reading withdrawn** (top block) |
 | `UNFREEZE_PREREG.md`, `UNFREEZE_RESULTS.md` | **current**; U4's exhaustiveness withdrawn (top block) |
-| `NOLEAK_PREREG.md` | **in flight**, no results |
+| `NOLEAK_PREREG.md`, `NOLEAK_RESULTS.md` | **current**. L1 accuracy half met (8/8 at 1.000), slope half not; L2 split; leakage is the whole accuracy residual |
 
 ## What else is citable
 

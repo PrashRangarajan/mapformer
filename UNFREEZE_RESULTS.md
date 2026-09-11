@@ -21,7 +21,9 @@
 > for the 8x arm, not -0.989. No verdict changes -- found by `test_guards.py`.)
 >
 > At 8x the latent pathway itself degrades to -0.866 and leakage takes it to -0.602: both
-> contribute, leakage the larger share. "The code holds; leakage does the damage" was too
+> contribute to the slope, leakage the larger share. (Later the same day `NOLEAK_RESULTS.md`
+> showed that in ACCURACY terms leakage is the whole residual: closing it gives 1.000 while the
+> pathway still sits near -0.86.) "The code holds; leakage does the damage" was too
 > strong. At 1/64 the full pathway is gone, which the coordinate-0 reading got right. U2
 > (timing from the full effective slope) and U3 (+0.298, 84% of the gap) are unaffected;
 > the "erosion tracks the learning rate" timing is a statement about coordinate 0.

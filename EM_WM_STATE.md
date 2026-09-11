@@ -1,5 +1,16 @@
 # EM vs WM and the position-kernel theory -- current state (2026-09-11)
 
+> **LEAKAGE TEST LANDED (2026-09-11) -- `NOLEAK_RESULTS.md`.** With `w_in`'s content columns
+> held at zero, the 8x-installed TRAINABLE rewind scores **1.000 on 8/8 seeds (0.991 at 2x
+> length)** -- identical to the frozen install, against 0.941 with the leak open. Leakage is
+> the entire accuracy residual; the latent pathway settles near -0.86 with or without it and
+> that costs nothing. At the 1/64 scale the rewind is erased with zero leakage (-0.008), so
+> the channels are separable. **EM's recency deficit is entirely a search problem**: the
+> solution exists (1.000), can be held (1.000), and is never found from scratch (0/40).
+> Registered verdicts split: L1 accuracy half met / slope half not (-0.859 vs -0.95); L2
+> slope half met / accuracy half not (0.784 vs <= 0.75). A slope of -0.86 with perfect
+> accuracy means the slope statistic is not a sufficient summary of the rewind.
+
 **This is the single current account of the EM/WM line (2026-09-09..11).** It summarises;
 it does not replace the source files. Where a source file carries a CORRECTED or AUDIT block
 at its top, that block supersedes the text beneath it. Where this file and a source disagree,
@@ -7,13 +18,11 @@ the source wins and this file is the bug. Every number here is copied from the f
 beside it.
 
 Reading order if you need the detail: `AUDIT_2026-09-10.md` -> `MAGONLY_RESULTS.md` ->
-`WARM_RESULTS.md` (top block) -> `UNFREEZE_RESULTS.md` (top block) -> `NOLEAK_PREREG.md`.
+`WARM_RESULTS.md` (top block) -> `UNFREEZE_RESULTS.md` (top block) -> `NOLEAK_RESULTS.md`.
 `THEORY_KERNEL.md` is the theory as first written, with inline withdrawal markers.
 
-**In flight:** the leakage test (`NOLEAK_PREREG.md`, driver `run_noleak.sh`, output
-`runs/noleak/` plus a determinism re-check in `runs/noleak_repro/`). No results yet. Done
-when `runs/noleak/.done` exists; `runs/noleak_repro/DETERMINISM.txt` must say
-`REUSE LICENSED` before any pairing with `runs/unfreeze/` is read.
+**Nothing is in flight.** The leakage test landed 2026-09-11 (top block, `NOLEAK_RESULTS.md`);
+its determinism re-check passed bitwise and its manipulation check held exactly.
 
 ---
 
@@ -129,7 +138,7 @@ T=128 train, readout T=1024. MDE = 2.8*sd/sqrt(n) on paired differences.
 | **Rewind probe** (post-hoc) | do from-scratch EM arms learn a rewind? | 40 from-scratch runs (5 parameterisations x 8 seeds) | 40 | pooled rewind slope 0.000 +/- 0.02 (exact rewind = -1); 1 of ~2,550 (head, block) pairs below -0.5; the position kernel alone picks the answer on 11-16% of queries | **no arm learns a rewind.** Phase freedom helps some other way | `MAGONLY_RESULTS.md`, `_REWIND_PROBE.json` |
 | **Warm-start** | can the full EM model hold the rewind? | `EMWarm_freeze` (position pathway installed + frozen), `EMWarm_train` (installed, all trainable) | 2x8 | freeze **1.000+/-0.000** at T=1024 and T=2048 (8/8, every k). train 0.642+/-0.266. W2 freeze - P0 +0.400 (MDE 0.125, 8/8). W3 freeze - WM +0.025 (MDE 0.071) unmeasured. W4 train - freeze -0.358 (MDE 0.263, 0/8) | **W1 confirmed**: the full model represents recency exactly. W4's "the landscape rejects the solution" reading is **withdrawn** (next row) | `WARM_RESULTS.md` (read its top block) |
 | **Freeze-then-unfreeze** | early window, or install scale? | `EMUnf_0/5/30/100` (released at step 0 / epoch 5/30/100, install 1/64), `EMUnf_0_e8` (step 0, install 1/8 = 8x) | 5x8 | T=1024: 0.642 / 0.609 / 0.835 (3/8 >= 0.95) / 0.605 / **0.941+/-0.063** (4/8 >= 0.95). **U3 e8 - e64 +0.298** (sd 0.272, MDE 0.270, 7/8), 84% of the gap to frozen. Slope first above -0.5: 9-17 epochs from step 0; **1-6 epochs after release at 30; 1-19 after release at 100**. At 8x, endpoint latent-pathway slope -0.866 (coord 0 alone -0.989), effective -0.602 | **early window refuted; install scale dominant.** U4's "two channels are exhaustive" withdrawn | `UNFREEZE_RESULTS.md` (read its top block) |
-| **Leakage test** (IN FLIGHT) | is content leaking into Delta through `w_in` the residual at 8x? | `EMNoLeak_e8`, `EMNoLeak_e64` (w_in content columns held at 0) against existing `EMUnf_0_e8`, `EMUnf_0`; + `EMUnf_0_e8` s0 determinism re-check | 2x8 new | -- | **L1**: e8 >= 0.95 on >= 7/8 seeds with slope <= -0.95 (lower prior stated before launch). **L1b**: e8 latent-pathway slope vs -0.866. **L2**: e64 still collapses (mean <= 0.75, `traj_latpath` above -0.5). **Manipulation check**: `traj_leak == 0` and `traj_slope == traj_latpath` at every epoch, or L1/L2 are not read | `NOLEAK_PREREG.md` |
+| **Leakage test** | is content leaking into Delta through `w_in` the residual at 8x? | `EMNoLeak_e8`, `EMNoLeak_e64` (w_in content columns held at 0) against existing `EMUnf_0_e8`, `EMUnf_0`; + determinism re-check (bitwise PASS) | 2x8 new | leak closed: **8x 1.000+/-0.000 (8/8), 0.991 at T=2048**; 1/64 0.784+/-0.281 (3/8). Leak open: 8x 0.941, 1/64 0.642. Latent pathway 8x -0.859 closed vs -0.866 open (L1b +0.007, MDE 0.309); 1/64 closed -0.008. Manipulation check exact (leak 0, identity 0) | **leakage is the entire accuracy residual; EM's recency deficit is entirely search.** L1: accuracy half met, slope half not (-0.859 vs -0.95). L2: rewind erased at 1/64 with zero leak (channels separable), accuracy 0.784 above the 0.75 collapse line | `NOLEAK_RESULTS.md` |
 
 ---
 
@@ -178,8 +187,9 @@ Each is recorded in the file named. Do not revive any of them.
   measured on coordinate 0 only (`UNFREEZE_RESULTS.md` top block).
 - **U4's "two recorded channels are exhaustive" / "at 8x the code holds; leakage does the
   damage."** The latent code has two coordinates and trainable per-token rows. The full
-  latent pathway degrades to -0.866 at 8x, so leakage is the larger share of the residual,
-  not all of it (`UNFREEZE_RESULTS.md` top block, `NOLEAK_PREREG.md` revision).
+  latent pathway degrades to -0.866 at 8x, so leakage is the larger share of the SLOPE
+  residual (`UNFREEZE_RESULTS.md` top block). In ACCURACY terms leakage is the whole residual:
+  closing it gives 1.000 while the pathway still sits near -0.86 (`NOLEAK_RESULTS.md`).
 - **"MapEM's separate q0/k0 is refuted four times" / an initialisation pathology.** On recency the
   separate form is better (directionally; not replicated at detectable size on fresh seeds).
   The sign depends on the task (`AUDIT` "Stale" list, `RECENCY_EM_RESULTS.md` P3).
@@ -198,10 +208,10 @@ Each is recorded in the file named. Do not revive any of them.
 2. **This is a SEARCH problem, not a capacity problem.** Three parts, each measured:
    - *The solution exists.* With the rewind installed and frozen, EM scores 1.000 on 8/8
      seeds at T=1024 and T=2048, matching WM.
-   - *It can largely be held.* Installed at a weight scale Adam does not erode (8x), the
-     trainable model keeps 0.941. The residual loss comes from content leaking into Delta
-     plus some degradation of the latent pathway itself. The leakage test (in flight)
-     separates the two.
+   - *It can be held.* Installed at a weight scale Adam does not erode (8x), the trainable
+     model keeps 0.941; with the content -> Delta leak also closed it keeps **1.000 on 8/8
+     (0.991 at 2x length)**, the frozen install's level. Leakage was the entire accuracy
+     residual; the latent pathway's drift to ~-0.86 costs nothing (`NOLEAK_RESULTS.md`).
    - *It is never found.* 0 of 40 from-scratch EM runs learn a rewind.
 3. **Phase freedom in the origin vectors is real and does not work through the rewind.**
    Letting `k0`'s per-block phases move is worth +0.146 against a matched control (22/24;
@@ -216,9 +226,10 @@ Each is recorded in the file named. Do not revive any of them.
 
 ## 6. Open questions, ranked, each with its cheapest decisive experiment
 
-1. **Is leakage the entire residual at 8x?** *Running* (`NOLEAK_PREREG.md`). No new work:
-   read L1/L1b/L2 and the manipulation check once `runs/noleak/.done` exists. The
-   determinism check must pass before pairing with the stored arms.
+1. ~~Is leakage the entire residual at 8x?~~ **RESOLVED 2026-09-11** (`NOLEAK_RESULTS.md`): in
+   accuracy terms yes -- leak closed gives 1.000 (8/8). Registered verdicts split (L1 accuracy
+   half met, slope half not; L2 slope half met, accuracy half not). A slope near -0.86 with
+   perfect accuracy shows the slope statistic is not a sufficient summary of the rewind.
 2. **Why does from-scratch search never find the rewind (0/40)?** This is now *the*
    question. Candidate from `UNFREEZE_RESULTS.md`: the rewind needs `Delta(q_k)` spread over
    a 64:1 range along one direction, and nothing in a random init points there. Cheapest
