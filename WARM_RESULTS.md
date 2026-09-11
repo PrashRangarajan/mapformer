@@ -1,5 +1,14 @@
 # Warm-start: EM can represent recency exactly -- and training dismantles the solution
 
+> **CORRECTED 2026-09-11 by `UNFREEZE_RESULTS.md`.** W4's reading below -- "training
+> dismantles the solution, a landscape property", with an early-window mechanism -- is
+> WITHDRAWN in its strong form. Installing the identical Delta at 8x the weight scale
+> raises the trainable twin from 0.642 to 0.941 (+0.298, 7/8), closing 84% of the gap:
+> most of W4 was Adam eroding a rewind I stored at a 0.0156-per-step weight scale. The
+> early-window mechanism is refuted outright -- released after the content branch has
+> trained, the rewind breaks within 1-6 epochs. W1 (1.000 frozen) and "0 of 40 from-scratch
+> runs find a rewind" are unaffected. The deficit is a SEARCH problem.
+
 Pre-registration: `WARM_PREREG.md`. Single-`p0` EM with the constructed recency
 rewind installed in its position pathway; content branch random. Seeds 0-7.
 Comparators: `VanillaEM_P0_r4` (from scratch) and `Vanilla_r4` (WM), same seeds,

@@ -11,7 +11,8 @@
 > withdrawn (ill-posed). Inline markers flag each affected passage.
 > **Tier 1 (same day):** phase freedom survives a matched-optimiser control (+0.146, 22/24);
 > single-`p0` EM with the rewind installed and frozen solves recency 1.000 on 8/8 seeds, but
-> training dismantles the same rewind when it is trainable. See `WARM_RESULTS.md`.
+> training dismantles the same rewind when it is trainable -- but ~84% of that was the
+> install's weight scale (`UNFREEZE_RESULTS.md`); the deficit is search, not stability.
 
 Written 2026-09-09, after the `runs/recency_em` batch refuted two of three
 pre-registered predictions (`RECENCY_EM_RESULTS.md`). It is a **retrodiction** of

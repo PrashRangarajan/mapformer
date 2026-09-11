@@ -2818,3 +2818,19 @@ now. Cite as *directional, n=8, unmeasured*.
 32. **Existence, then stability.** A solution that exists need not be an attractor. Warm-start
     it twice -- frozen AND trainable. Here the frozen twin scored 1.000 and the trainable one
     fell back to the from-scratch level from the same starting weights.
+
+### Freeze-then-unfreeze (2026-09-11) -- W4 was mostly my install scale
+
+`UNFREEZE_RESULTS.md`. The early-window hypothesis (a random content branch dismantles the
+installed rewind) is REFUTED: released at epoch 30 or 100, after content has trained, the
+rewind breaks within 1-6 / 1-19 epochs on every seed. Installing the IDENTICAL Delta at 8x
+the weight scale takes the trainable twin from 0.642 to **0.941 (+0.298, 7/8)**, 84% of
+the gap; its latent code survives (-0.989). At the small scale the latent code erodes
+first, faster at higher lr -- Adam's ~lr-per-coordinate step against a 0.0156 code. At
+8x, leakage of content into Delta via `w_in` is the residual. **EM's recency deficit is a
+SEARCH problem**: exists (1.000 frozen), largely holdable, never found (0/40).
+
+33. **Install a warm start at the scale training would use.** A solution stored in tiny
+    weights tests whether Adam can erode it, not whether the landscape holds it. Rule 31
+    applied to my own design; I found it while designing the follow-up, not before
+    committing the first reading.

@@ -22,7 +22,9 @@ months. An adversarial audit caught it (AUDIT_2026-09-10.md).
   kernel solves recency exactly (1423/1423) once the query token's own Delta rewinds the count.
   EM - WM = -0.375 on recency is about TRAINING, now shown at full-model level: rewind installed and
   frozen -> 1.000 on 8/8; trainable -> dismantled early, back to scratch level; 0/40 scratch runs find it.
-  The correct position code exists but is not an attractor. See WARM_RESULTS.md.
+  The correct position code exists and, installed at a robust weight scale, is largely held
+  (0.941); the earlier 'not an attractor' reading was ~84% an install-scale artefact. The deficit
+  is SEARCH. See UNFREEZE_RESULTS.md.
 - The 2026-05-10 regime table was already retracted; do not revive it.
 - Untested hypothesis only: recency ordering WM > EM-sep > EM-P0 tracks phase freedom
   (per-pair > n_b global > none). See [[project-clock-vs-map]].

@@ -79,3 +79,7 @@ low-amplitude kernel. Withdrawn: Thm 3, its corollary, N2, the sign 'strengtheni
 EM with the recency rewind installed+frozen = 1.000 (8/8); trainable, training dismantles it early and it
 falls to scratch level; 0/40 from-scratch EM runs find a rewind. EM's recency deficit is a LANDSCAPE
 property (solution exists, never found, not held). Next: freeze-then-unfreeze schedule. See WARM_RESULTS.md.
+
+**Unfreeze (2026-09-11):** the "training dismantles the rewind" reading was ~84% install scale (8x scale ->
+0.941 vs 0.642); early-window mechanism refuted. EM's recency deficit = SEARCH: solution exists, largely
+holdable at a robust scale, never found from scratch (0/40). Open: why search fails; w_in leakage channel.
