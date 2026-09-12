@@ -60,6 +60,14 @@
 > `m4 - m64` = **+0.665** (8/8). **The currency is queries per token, not the number of query
 > tokens** -- which also explains SPREAD's 4x-budget jump without a second mechanism.
 
+> **PAPERTASK RERUN LANDED (2026-09-12) -- `PAPERTASK_RESULTS.md`.** 50 epochs cosine, logs kept.
+> The extended-length EM advantage survives at ~2/3 size: floor-normalised EM - WM = +0.186
+> (l=1024) and **+0.287** (l=2048), both 8/8 DETECTABLE, against +0.352 / +0.430 at 16 epochs.
+> **Rule 9 finally runs on it: r = -0.461**, unlike the recency line's -0.98, so this is not a
+> loss gap. My convergence gate (IID >= 0.99) FAILED -- WM is 0.968 at 50 epochs against 0.969
+> at 16 -- so P1 is formally NOT READ, and the gate itself was mis-set (WM never reaches 0.99
+> on this task). MapPoPE - EM stays unmeasured at every length, as predicted.
+
 **This is the single current account of the EM/WM line (2026-09-09..11).** It summarises;
 it does not replace the source files. Where a source file carries a CORRECTED or AUDIT block
 at its top, that block supersedes the text beneath it. Where this file and a source disagree,

@@ -122,3 +122,9 @@ not separated (exposure was varied by the budget).
 (freedom), NEITHER detectable at n=8 -> attribution unresolved; needs n~36. Mechanism IS clean: the
 control keeps the rewind route (0.948) and only per-pair freedom abandons it (0.189). Do not say the
 kernel test 'fires' without this split.
+
+**PAPERTASK rerun (2026-09-12, PAPERTASK_RESULTS.md):** 50 ep cosine, logs kept. Extended-length EM-WM
+survives at ~2/3 size (floor-normalised +0.186 l=1024, +0.287 l=2048, both 8/8). Rule 9 r = -0.461 --
+NOT a loss gap, unlike the recency line. Convergence gate (IID>=0.99) FAILED: WM is 0.968 at 50 ep vs
+0.969 at 16, so the shortfall is systematic and the gate could never pass -- mis-set verdict cell.
+2a stays demoted on the LENGTH-axis and cross-task counterexamples, not on floor or budget.

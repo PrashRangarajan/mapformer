@@ -136,6 +136,16 @@ survive IID-matching (+0.0856). Four reasons they do not support the claim:
    +0.0035 and -0.016..-0.020 (ties/loses); vocab n=8 trimmed +0.0000; Match-Query EM below WM;
    compositional and family tree below MapWM-Flat.
 
+**UPDATED 2026-09-12 by the rerun (`PAPERTASK_RESULTS.md`).** Retrained at 50 epochs cosine with
+logs kept: the effect SURVIVES at about two thirds its size (floor-normalised EM - WM = +0.186 at
+l=1024 and **+0.287** at l=2048, both 8/8, detectable), and rule 9 now runs -- **r = -0.461**, far
+from the -0.98 of the recency line, so this contrast is NOT a loss gap. My registered convergence
+gate (IID >= 0.99) FAILED and so P1 is formally not read; but WM scores 0.968 at 50 epochs against
+0.969 at 16, so its shortfall is systematic and the gate could probably never have passed -- a
+mis-set verdict cell, recorded as such. Objections 1 and 2 above are now settled in the effect's
+favour; objections 3 (the axis is LENGTH) and 4 (counterexamples on other tasks) still stand, and
+they are what keep 2a demoted.
+
 Also: `runs/paper_task_n8/` and its 48 training logs are deleted, so rule 9 cannot be applied
 to the one load-bearing cell, and the batch ran 16 epochs on LinearLR -- the recipe rule 10
 exists to warn about.
