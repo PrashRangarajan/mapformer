@@ -110,3 +110,9 @@ origins = 0.880 vs single-p0 0.600 vs WM 0.975 (+0.280, 7/8, MDE 0.216; within M
 0.000 -> 1.448, per-token-rewind route 0.962 -> 0.185. Caveats: r(loss,acc) -0.983; +2,048 params not yet
 controlled (PAIRCONST queued, control has 128 MORE params). Probes must route on hasattr(m,'_origins') --
 two of them mis-measured this arm, one silently.
+
+**SPREAD2 (2026-09-12, SPREAD2_RESULTS.md):** exposure test off the ceiling (design check passes,
+m4_e60 = 0.913). Matched queries-per-token: m16_e240 - m4_e60 = +0.045 (MDE 0.166) -- m stops
+mattering. Fixed budget: 0.913 / 0.590 / 0.248 for m = 4/16/64, m4-m64 +0.665 (8/8). The currency is
+QUERIES PER TOKEN; the number of query tokens matters only through it. Budget and steps-per-token are
+not separated (exposure was varied by the budget).

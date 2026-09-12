@@ -36,6 +36,10 @@ wrapped (peak or trough, A_X sign tracks it), never as a linear code. Fixed k=64
 (7/8), faster than WM and +0.191 over it at 2x length (exploratory). Curriculum +0.127, all
 at k<=32. Phase freedom moves every kernel peak off zero but not the route.
 
+**SPREAD2 LANDED** (`SPREAD2_RESULTS.md`, 2026-09-12): the exposure half fires off the
+ceiling. At matched queries per token m stops mattering (+0.045, MDE 0.166); at fixed
+budget it is decisive (m4 - m64 +0.665, 8/8). The currency is queries per TOKEN.
+
 **PAIRORIGIN LANDED** (`PAIRORIGIN_RESULTS.md`, 2026-09-12): the decisive test of kernel
 sharing fires. EM with PER-PAIR origins scores 0.880 vs single-p0's 0.600 and WM's 0.975
 (+0.280, 7/8, MDE 0.216; within MDE of WM). Phase spread across pairs 0.000 -> 1.448 and

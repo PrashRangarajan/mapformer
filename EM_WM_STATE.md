@@ -46,6 +46,13 @@
 > confound is not yet controlled -- `PAIRCONST_PREREG.md` (constant-origin control, 128 MORE
 > params than EMPair) is queued and can withdraw this reading.
 
+> **SPREAD2 LANDED (2026-09-12) -- `SPREAD2_RESULTS.md`. The exposure half now fires, off the
+> ceiling.** Design check passes (`m4_e60` = 0.913, where SPREAD's cell was 1.000). At MATCHED
+> queries per token, m stops mattering: `m16_e240 - m4_e60` = **+0.045** (MDE 0.166, both arms
+> off ceiling). At a FIXED budget it is decisive: 0.913 / 0.590 / 0.248 for m = 4 / 16 / 64,
+> `m4 - m64` = **+0.665** (8/8). **The currency is queries per token, not the number of query
+> tokens** -- which also explains SPREAD's 4x-budget jump without a second mechanism.
+
 **This is the single current account of the EM/WM line (2026-09-09..11).** It summarises;
 it does not replace the source files. Where a source file carries a CORRECTED or AUDIT block
 at its top, that block supersedes the text beneath it. Where this file and a source disagree,
