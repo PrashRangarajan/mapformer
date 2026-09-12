@@ -97,7 +97,9 @@ recency needs one.
 
 - **The only EM/WM difference measured: recency (k-back), single-`p0` EM - WM = -0.375**
   (MDE 0.154, 0/8). By the registered readout, WM gets below loss 0.5 on 8/8 seeds and EM
-  on 0/8. Map tasks tie within 0.004. `RECENCY_EM_RESULTS.md`.
+  on 0/8. ~~Map tasks tie within 0.004~~ **FALSE at extended length** (`EM_WM_THEORY.md`):
+  on the paper task, one batch of 8, EM_P0 - WM = +0.035 / **+0.070** / **+0.085** at
+  l=512 / 1024 / 2048 (7/8, 8/8, 8/8; MDE 0.031-0.034). `RECENCY_EM_RESULTS.md`.
 - **It is a SEARCH problem.** Rewind installed and frozen: **1.000** on 8/8 seeds at T=1024
   and T=2048 (`WARM_RESULTS.md`). Installed trainable at 8x weight scale: **0.941**
   (+0.298 over the 1/64 install, 7/8). ~~Found from scratch: 0/40~~ **WITHDRAWN

@@ -67,7 +67,10 @@ The three-part account of EM's recency deficit is now complete, each part measur
 2. **Training holds it** when it is installed at a weight scale Adam does not erode AND
    the content -> Delta leak is closed -- **1.000 (8/8), 0.991 at 2x length**. With the
    leak open, 0.941. At the original 1/64 scale the code is eroded regardless (-0.008).
-3. **Training from scratch never finds it** -- 0 of 40 runs.
+3. ~~**Training from scratch never finds it** -- 0 of 40 runs.~~ **WITHDRAWN
+   (`SEARCH_RESULTS.md`)**: that came from a LINEAR slope, which cannot see a rewind that is
+   wrapped modulo each block's period. From scratch EM finds one PER QUERY TOKEN for about
+   half the k; with one shared k it is found on 7/8 seeds.
 
 **EM's recency deficit is entirely a search problem.** Nothing about EM's factorised
 "where"/"what" design prevents it from representing, or from keeping, the solution.

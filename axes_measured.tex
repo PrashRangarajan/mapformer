@@ -81,7 +81,8 @@ MapFormer is that factorisation carried into attention
 with a parallel scan. The accumulated phase $\theta_t = \omega\sum\Delta_u$ is $g$:
 identical in any environment with the same transition structure, because it depends
 on the action stream and not on what was seen. Content is $x$. And the conjunction
-is exactly the WM/EM distinction --- additively in the score for MapFormer-WM, and
+is exactly the WM/EM distinction --- for MapFormer-WM a kernel whose amplitudes and
+phases the pair's content sets (measured phase spread 2.003 rad across pairs), and
 for MapEM \emph{literally} the tensor product, since
 $(A_X \odot A_P)_{ts} = (q^x_t \otimes q^p_t)\cdot(k^x_s \otimes k^p_s)$. TEM's
 $g \otimes x$ and MapEM's Hadamard product are the same object; what MapFormer adds

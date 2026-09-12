@@ -23,6 +23,12 @@
 > one.** Phase freedom moves every head's kernel peak off zero (48/48) but does not change the
 > route or shorten the shift. It raises each token's success rate at every distance.
 
+> **THEORY SYNTHESIS (2026-09-11): `EM_WM_THEORY.md`.** Written over this file, the graveyard
+> audit and the literature read first-hand. Its claim: EM applies ONE kernel to every pair and
+> content can only rescale it; WM's kernel is reshaped per pair (measured: WM phase spread
+> 2.003 rad across pairs, EM exactly 0.000). EM therefore WINS at a structurally fixed offset
+> and loses only when the offset varies per query.
+
 **This is the single current account of the EM/WM line (2026-09-09..11).** It summarises;
 it does not replace the source files. Where a source file carries a CORRECTED or AUDIT block
 at its top, that block supersedes the text beneath it. Where this file and a source disagree,
@@ -33,8 +39,8 @@ Reading order if you need the detail: `AUDIT_2026-09-10.md` -> `MAGONLY_RESULTS.
 `WARM_RESULTS.md` (top block) -> `UNFREEZE_RESULTS.md` (top block) -> `NOLEAK_RESULTS.md`.
 `THEORY_KERNEL.md` is the theory as first written, with inline withdrawal markers.
 
-**Nothing is in flight.** The leakage test landed 2026-09-11 (top block, `NOLEAK_RESULTS.md`);
-its determinism re-check passed bitwise and its manipulation check held exactly.
+**In flight (2026-09-11): SPREAD** (`SPREAD_PREREG.md`, `runs/spread/`) -- does EM's per-token
+search limit track queries per token or the number of query tokens? Nothing else.
 
 ---
 
@@ -53,10 +59,16 @@ trained, their **learning dynamics** differ, and EM learns faster **"except on N
 MapEM has no separate memory network. Both MapFormers are WM models in the Neuron paper's
 sense.
 
-**What we had measured before this line.** EM - WM was +0.000 to +0.004 across four map
-cells (MiniGrid allocentric r=4 +0.0035; vocab sweep trimmed at n_obs=256 +0.0000 --
-`TALE_OF_TWO_ALGORITHMS.md`, `RECENCY_EM_RESULTS.md:38`). Our recency task is a k-back
-task, i.e. the one exception [11] names.
+**What we had measured before this line.** ~~EM - WM was +0.000 to +0.004 across four map
+cells~~ -- **incomplete (`EM_WM_THEORY.md`): on the paper task at extended length EM is AHEAD
+by +0.070 (l=1024) and +0.085 (l=2048), 8/8 seeds, one batch, MDE 0.034, computed from
+`PAPER_OOD_EXTENDED_n8.json`; no results file stated it.** The cells behind the tie
+(MiniGrid allocentric r=4 +0.0035; vocab sweep trimmed at n_obs=256 +0.0000 --
+`TALE_OF_TWO_ALGORITHMS.md`, `RECENCY_EM_RESULTS.md:38`). ~~Our recency task is a k-back
+task, i.e. the one exception [11] names.~~ **CORRECTED 2026-09-11: it is not.** [11]'s N-back
+is a FIXED N with no filler (`tale_two_algorithms.txt:1672-1674`), so it corresponds to our
+FIXED-k condition -- where EM is FASTER than WM (54 vs 99 epochs) and better at 2x length.
+Our varying-k task is a condition [11] never ran.
 
 **The architectural contrast, corrected** (`AUDIT_2026-09-10.md` finding 1, verified in
 `model.py:224-232`):

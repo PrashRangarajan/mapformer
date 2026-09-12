@@ -27,7 +27,7 @@ file has a CORRECTED or AUDIT block at the top, that block supersedes the body.
 **Leakage test LANDED** (`NOLEAK_RESULTS.md`): with the content -> Delta leak closed, the 8x-installed
 trainable rewind scores **1.000 on 8/8** (0.991 at 2x length) -- the frozen install's level. Leakage
 was the entire accuracy residual; at 1/64 the code is erased even with zero leak. EM's recency
-deficit is ENTIRELY SEARCH. Nothing is in flight.
+deficit is ENTIRELY SEARCH. **In flight: SPREAD** (`SPREAD_PREREG.md`, `runs/spread/`).
 
 **SEARCH LANDED** (`SEARCH_RESULTS.md`, 2026-09-11): EM finds the rewind per query token,
 wrapped (peak or trough, A_X sign tracks it), never as a linear code. Fixed k=64: EM 0.985
@@ -182,7 +182,8 @@ lags SHORTEN with grid size (47/43/38/33) and the fraction inside the horizon RI
    p_0) 0.987 +/- 0.012 (best seed 0.9995). Our EM = the paper's MapEM-os
    (both observation and structure; paper sec. C: "MapEM-os relying on both
    observation and structure to compute attention"). Checkpoints in
-   `runs/paper_task/`. NOTE: separate q0_pos/k0_pos is PAPER-FAITHFUL (App. A.4:
+   `runs/paper_task/`. NOTE: separate q0_pos/k0_pos is PAPER-FAITHFUL (App. A.7, line 1527 --
+   NOT A.4, corrected 2026-09-11:
    "our MapFormers use two separate initial vectors k0p and q0p ... we suspect
    this separation to be beneficial"). Single-p_0 is an ABLATION of that stated
    suspicion, and it refutes it (0.987 +/- 0.012 vs 0.898 +/- 0.108). Do NOT
@@ -1751,7 +1752,8 @@ r=4 does what the paper says needs an extra loss term**: |cos| 0.779 -> 0.174 wi
 no regulariser and no objective change.
 
 **C4 does not reproduce and is INVERTED.** Hypothesis under test (`run_em_fig4.sh`,
-in flight at time of writing): Fig. 4 shows an **EM** model -- Sec 5.4 is explicitly
+in flight at time of writing): Fig. 4 shows an **EM** model -- App. C.3 (NOT Sec 5.4,
+corrected 2026-09-11) is explicitly
 about EM's "two separate pools of neurons ... specialized for either position or
 observation", which MapWM's rotated-content attention lacks by construction (it has no position-only stream; NOT because it is additive -- it isn't). Pre-registered:
 EM >> 1 while WM < 1 means the caption is unscoped and our repro is complete; EM
@@ -2861,7 +2863,8 @@ now. Cite as *directional, n=8, unmeasured*.
 - **EM can represent recency exactly**: rewind installed and frozen -> **1.000 on 8/8**,
   T=1024 and 2048. **Training dismantles it** when trainable (0.642, back to scratch),
   early, while content is random -- weight decay excluded (factor 0.992 over the window).
-  From scratch, 0 of 40 EM runs finds a rewind.
+  From scratch, ~~0 of 40 EM runs finds a rewind~~ -- WITHDRAWN, see the SEARCH entry below:
+  the rewind IS found, per query token and wrapped, for about half the k.
 - **Phase freedom does NOT work through the rewind** -- mechanism unidentified.
 - Untested hypothesis: `d score / d A_P = A_X`, so a random content branch feeds the
   position pathway noise gradients. Test: freeze the position pathway for N epochs, then

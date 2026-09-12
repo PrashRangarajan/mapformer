@@ -113,7 +113,9 @@ which has 20× *fewer* parameters, so it is not a capacity artefact.
 **Two of the paper's own stated-but-unmeasured conjectures are refuted:**
 
 - *Separate `k0p`/`q0p` "would create sparser attention values"* (App. A.4, flagged
-  as a suspicion). Refuted on four tasks; the effect grows with how much the task
+  as a suspicion). Refuted on four MAP tasks; **on recency the sign REVERSES** (the separate
+  form is better) and the fresh-seed replication is unmeasured (+0.073, 9/16) -- see
+  `EM_WM_STATE.md`. The effect grows with how much the task
   leans on `A_P` — paper task +0.089, compositional +0.167, **Match-Query +0.358**
   (`MATCH_QUERY_EM.md`, 3/3 seeds, WM control reproduces to 3 d.p.).
 - *Non-commutative structure requires a non-commutative model* (App. B.2.2,
