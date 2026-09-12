@@ -52,6 +52,14 @@
 > mechanism: the control keeps the per-token rewind route (0.948, vs P0's 0.964) while EMPair
 > abandons it (0.189), so abandoning the rewind tracks PER-PAIR FREEDOM, not capacity. The
 > accuracy attribution is unresolved; the mechanism attribution is not.
+>
+> **RESOLVED 2026-09-12 at n=48 (`PAIRSPLIT_RESULTS.md`): freedom DOES buy accuracy.**
+> EMPair - EMPairConst = **+0.091** (MDE 0.066, 34/48), and it replicates on the fresh 40
+> seeds alone (+0.089, MDE 0.069). The decomposition is now total +0.191 = pathway +0.100
+> (unmeasured, P0 being extended to n=48) + freedom +0.091 (detectable). Note the n=8
+> figures were inflated on the OTHER two terms: total +0.280 -> +0.191, pathway +0.182 ->
+> +0.100. So: freedom changes the MECHANISM decisively and buys ~+0.09; extra pathway
+> capacity buys a similar amount and changes no mechanism.
 
 > **SPREAD2 LANDED (2026-09-12) -- `SPREAD2_RESULTS.md`. The exposure half now fires, off the
 > ceiling.** Design check passes (`m4_e60` = 0.913, where SPREAD's cell was 1.000). At MATCHED

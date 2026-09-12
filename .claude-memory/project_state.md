@@ -128,3 +128,8 @@ survives at ~2/3 size (floor-normalised +0.186 l=1024, +0.287 l=2048, both 8/8).
 NOT a loss gap, unlike the recency line. Convergence gate (IID>=0.99) FAILED: WM is 0.968 at 50 ep vs
 0.969 at 16, so the shortfall is systematic and the gate could never pass -- mis-set verdict cell.
 2a stays demoted on the LENGTH-axis and cross-task counterexamples, not on floor or budget.
+
+**PAIRSPLIT (2026-09-12, PAIRSPLIT_RESULTS.md):** at n=48 per-pair freedom DOES buy accuracy:
+EMPair - EMPairConst = +0.091 (MDE 0.066, 34/48; fresh 40 seeds alone +0.089, detectable). Total is
++0.191 (not the n=8 +0.280) = pathway +0.100 (unmeasured, P0 extending to n=48) + freedom +0.091.
+The n=8 batch inflated the total and the pathway term, not the freedom term -- 4th instance.
