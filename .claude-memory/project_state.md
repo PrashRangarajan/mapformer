@@ -116,3 +116,9 @@ m4_e60 = 0.913). Matched queries-per-token: m16_e240 - m4_e60 = +0.045 (MDE 0.16
 mattering. Fixed budget: 0.913 / 0.590 / 0.248 for m = 4/16/64, m4-m64 +0.665 (8/8). The currency is
 QUERIES PER TOKEN; the number of query tokens matters only through it. Budget and steps-per-token are
 not separated (exposure was varied by the budget).
+
+**PAIRCONST (2026-09-12, PAIRCONST_RESULTS.md):** capacity control for PAIRORIGIN. Constant-origin arm
+(128 MORE params) = 0.782, between P0 0.600 and EMPair 0.880. Accuracy splits +0.182 (pathway) / +0.098
+(freedom), NEITHER detectable at n=8 -> attribution unresolved; needs n~36. Mechanism IS clean: the
+control keeps the rewind route (0.948) and only per-pair freedom abandons it (0.189). Do not say the
+kernel test 'fires' without this split.

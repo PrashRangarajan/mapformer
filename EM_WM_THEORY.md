@@ -89,6 +89,13 @@ recovers most of the gap. Two caveats that keep this from being finished: r(loss
 (a statement about what training finds, which is the right frame given the existence
 construction), and the +2,048-parameter confound, whose control is queued.
 
+**QUALIFIED by the capacity control (`PAIRCONST_RESULTS.md`, 2026-09-12).** A constant-origin
+arm with 128 MORE parameters scores 0.782, between P0 and EMPair, so the accuracy gain splits
++0.182 (pathway) and +0.098 (freedom) with NEITHER detectable at n=8. The mechanism split is
+clean and goes the other way: the control KEEPS the per-token rewind route (0.948 against P0's
+0.964) while EMPair abandons it (0.189). Read 1d as: per-pair freedom changes WHAT THE MODEL
+DOES; how much of the accuracy it buys is unresolved.
+
 **This does not revive 2a.** It is evidence about the varying-offset case only.
 
 ---

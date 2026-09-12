@@ -44,7 +44,10 @@ budget it is decisive (m4 - m64 +0.665, 8/8). The currency is queries per TOKEN.
 sharing fires. EM with PER-PAIR origins scores 0.880 vs single-p0's 0.600 and WM's 0.975
 (+0.280, 7/8, MDE 0.216; within MDE of WM). Phase spread across pairs 0.000 -> 1.448 and
 the per-token-rewind route 0.962 -> 0.185: given per-pair freedom EM stops moving the
-query token. Capacity control (`PAIRCONST_PREREG.md`) queued -- it can withdraw this.
+query token. **PAIRCONST (control, same pathway reading a CONSTANT, 128 MORE params) lands at
+0.782, between the two**: the accuracy splits +0.182 / +0.098, neither detectable at n=8, so the
+accuracy attribution is UNRESOLVED. The mechanism attribution is clean -- the control keeps the
+per-token rewind route (0.948 vs P0's 0.964) and only EMPair abandons it (0.189).
 
 **Next, ranked**: k from a small set at fixed queries per token (does success track
 queries-per-token?); per-epoch per-token rewind recording (time the window); why a

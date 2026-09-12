@@ -44,7 +44,14 @@
 > Given per-pair freedom EM stops moving the query token and shapes the kernel instead.
 > CAVEAT: r(loss, acc) = -0.983, so this is about what training FINDS; and the +0.92% parameter
 > confound is not yet controlled -- `PAIRCONST_PREREG.md` (constant-origin control, 128 MORE
-> params than EMPair) is queued and can withdraw this reading.
+> params than EMPair) is queued and can withdraw this reading.>
+> **QUALIFIED 2026-09-12 by `PAIRCONST_RESULTS.md`.** The constant-origin control (same pathway,
+> 128 MORE parameters, origins identical for every token) scores 0.782 -- BETWEEN P0's 0.600 and
+> EMPair's 0.880. So the +0.280 splits: EMPair - EMPairConst = +0.098 (MDE 0.209) and
+> EMPairConst - P0 = +0.182 (MDE 0.188), **neither detectable at n=8**. What IS clean is the
+> mechanism: the control keeps the per-token rewind route (0.948, vs P0's 0.964) while EMPair
+> abandons it (0.189), so abandoning the rewind tracks PER-PAIR FREEDOM, not capacity. The
+> accuracy attribution is unresolved; the mechanism attribution is not.
 
 > **SPREAD2 LANDED (2026-09-12) -- `SPREAD2_RESULTS.md`. The exposure half now fires, off the
 > ceiling.** Design check passes (`m4_e60` = 0.913, where SPREAD's cell was 1.000). At MATCHED
