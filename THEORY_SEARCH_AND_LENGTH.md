@@ -83,6 +83,45 @@ killed Thm 3's corollary, now at finer grain.
 - **P1d (one batch).** Force blocks live (penalise amplitude variance, or fix |p0_i| equal) and
   the solved fraction should FALL. This is the causal test of "pruning is the strategy".
 
+## T1 RESULTS (2026-09-12, `probe_achievable.py`, 8 stored P0 seeds, eval-only)
+
+**The core claim is CONFIRMED, decisively. The pruning limb is REFUTED, with the sign inverted.**
+
+Best achievable weighted kernel `Q_k` (optimising `z` in the model's own rank-4 subspace against
+real episode samples, so filler noise is included) against what the model achieves. Under the
+sign gauge a trough is as good as a peak, so `|A|` is the readout:
+
+| cells (k >= 8) | n | **available Q** | achieved \|A\| | \|A\| >= 0.5 | trough | peak |
+|---|---|---|---|---|---|---|
+| SOLVED (acc >= 0.9) | 166 | **0.995** | 0.544 | 0.590 | 0.331 | 0.259 |
+| FAILED (acc <= 0.3) | 181 | **0.992** | 0.359 | 0.276 | 0.160 | 0.116 |
+
+- **Existence is not the constraint, for any token.** A near-perfect wrapped rewind is available
+  in the rank-4 subspace for essentially every k -- Q ~ 0.99 for failed tokens exactly as for
+  solved ones. The 64-congruences-in-4-unknowns system is solvable everywhere, because wrapping
+  plus slack leaves enough freedom. **So the deficit is SEARCH, per token, and this is now
+  established at per-token grain rather than inferred from SPREAD2.**
+- **Even the successes are far from the optimum**: 0.544 achieved against 0.995 available. The
+  model does not find the rewind; it finds a partial phase alignment and lets `A_X` gating carry
+  the rest. r(accuracy, \|A\|) = +0.355 over 431 cells -- real but loose, as it must be when
+  content gating shares the work.
+- The peak/trough split among achieved solutions (0.331 / 0.259 on solved cells) matches the
+  route table in `SEARCH_RESULTS.md` (~55% / ~40%), from an independent statistic.
+
+**P1a REFUTED.** I predicted pruning helps, because dead blocks remove congruences. Measured over
+8 seeds: r(dead-block fraction, tokens solved) = **-0.546**, the opposite sign. Dead fractions
+0.41-0.77 against 5-29 tokens solved; the seed with the most pruning (0.72) solved the fewest (5).
+Underpowered at n=8, but the direction is against the claim, so **"frequency pruning is the search
+strategy" is withdrawn.** The natural reading now is the reverse: pruning narrows the live
+spectrum, which broadens the kernel and costs discriminability, so it is a symptom of a model
+that is failing rather than a device that helps it succeed. That is a T2 quantity (resolution),
+which is a point of contact between the two theories and is not yet tested.
+
+**What survives of T1**: the Diophantine framing (which is what made the achievability test
+computable at all), the verdict that failures are search rather than existence, and the exposure
+currency from SPREAD2. **What does not**: pruning-as-strategy, and with it the idea that the
+model engineers its own solvability.
+
 ## What T1 already explains
 
 The per-token, all-or-nothing pattern; wrapped rather than linear solutions; exposure as the
