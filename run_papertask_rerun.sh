@@ -51,5 +51,8 @@ python3 -u -m mapformer.eval_paper_ood --runs-dir "$OUT" \
   --extended --n-batches 8 --batch-size 32 --device cuda:1 \
   --out "$REPO/PAPER_OOD_RERUN.md" > "$OUT/eval_ood.log" 2>&1
 echo "eval exit $?"
-touch "$OUT/.done"
+# The marker must certify the ARTIFACT, not the absence of a crash: this batch touched .done
+# after an eval that OOM'd, and the false marker released the next batch early.
+if [ -s "$REPO/PAPER_OOD_RERUN.json" ]; then touch "$OUT/.done"; else
+  echo "eval produced no json -- NOT touching .done"; exit 1; fi
 echo "batch finished $(date)"
