@@ -104,3 +104,9 @@ k<=32. Obstacle = spread over 64 per-token rewinds. Next: k from a small set at 
 token (**SPREAD LANDED**: at matched budget fewer offsets is better, m4-m64 +0.422 8/8; 4x
 budget takes the full task 0.578 -> 0.928; the exposure-matched cells hit the ceiling so that
 half is unresolved -- `SPREAD_RESULTS.md`); per-epoch per-token rewind recording. Rule 34 (CLAUDE.md): readouts must respect the model's symmetries.
+
+**PAIRORIGIN (2026-09-12, PAIRORIGIN_RESULTS.md):** the kernel-sharing test fires. EM with per-pair
+origins = 0.880 vs single-p0 0.600 vs WM 0.975 (+0.280, 7/8, MDE 0.216; within MDE of WM). Phase spread
+0.000 -> 1.448, per-token-rewind route 0.962 -> 0.185. Caveats: r(loss,acc) -0.983; +2,048 params not yet
+controlled (PAIRCONST queued, control has 128 MORE params). Probes must route on hasattr(m,'_origins') --
+two of them mis-measured this arm, one silently.

@@ -71,6 +71,26 @@ With `k` drawn per query and one query token per offset (`environment_recency.py
 1/64 of the queries.** This is the strongest thing in the line, and it does not depend on
 anything in 1a/1b -- with one shared k, the same shared kernel wins.
 
+### 1d. Per-pair origins recover the varying-offset deficit (2026-09-12)
+
+The one architectural test that varies SHARING alone, holding composition, rank, depth and the
+init function fixed (`PAIRORIGIN_RESULTS.md`, 3 arms x 8 seeds, one batch):
+
+| readout | single `p0` | **EMPair** | WM |
+|---|---|---|---|
+| accuracy (varying k) | 0.600 | **0.880** | 0.975 |
+| kernel phase spread across pairs | 0.000 | **1.448** | 1.966 |
+| solved cells via a per-token rewind | 0.962 | **0.185** | -- |
+
+`EMPair - P0` = **+0.280** (7/8, MDE 0.216); `EMPair - WM` = -0.095, inside MDE. So on the
+VARYING-offset side the sharing account is supported by intervention, not correlation: remove
+the sharing constraint and the model stops rewinding query tokens, reshapes the kernel, and
+recovers most of the gap. Two caveats that keep this from being finished: r(loss, acc) = -0.983
+(a statement about what training finds, which is the right frame given the existence
+construction), and the +2,048-parameter confound, whose control is queued.
+
+**This does not revive 2a.** It is evidence about the varying-offset case only.
+
 ---
 
 ## 2. What is NOT established
@@ -162,7 +182,7 @@ had. Where they overlap in wording, the withdrawal stands.
 | # | test | cost | status |
 |---|---|---|---|
 | P1 | Matched queries-per-token across m = 4/16/64 | done | **PARTLY ANSWERED** (`SPREAD_RESULTS.md`): at matched budget fewer offsets is better, +0.422 (8/8). The exposure-matched cells landed on the CEILING, so exposure-vs-token-count is still open; re-run with the budget set so the m4 arm lands near 0.8 |
-| P2 | EM with PER-PAIR origin vectors (`q0`,`k0` low-rank functions of content, Hadamard kept) | 1 arm x 8 | the decisive architectural test of 1a; unbuilt |
+| P2 | EM with PER-PAIR origin vectors, Hadamard composition kept | done | **CONFIRMED** (`PAIRORIGIN_RESULTS.md`): +0.280 over single-`p0` (7/8, MDE 0.216), within MDE of WM; phase spread 0.000 -> 1.448 and the per-token-rewind route 0.962 -> 0.185. Capacity control `PAIRCONST_PREREG.md` queued |
 | P3 | Port PaTH's MQRAR-N-back; run MapEM, MapWM, PaTH | published task | the only external benchmark that discriminates |
 | P4 | Remove the per-token handle: encode k as a count, not one token per offset | env flag | kernel account predicts EM degrades further; capacity account predicts nothing |
 | P5 | Vary `n_symbols` at fixed `k_max` | env flag | [11]'s task-size axis vs the kernel axis |

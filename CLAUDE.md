@@ -36,6 +36,12 @@ wrapped (peak or trough, A_X sign tracks it), never as a linear code. Fixed k=64
 (7/8), faster than WM and +0.191 over it at 2x length (exploratory). Curriculum +0.127, all
 at k<=32. Phase freedom moves every kernel peak off zero but not the route.
 
+**PAIRORIGIN LANDED** (`PAIRORIGIN_RESULTS.md`, 2026-09-12): the decisive test of kernel
+sharing fires. EM with PER-PAIR origins scores 0.880 vs single-p0's 0.600 and WM's 0.975
+(+0.280, 7/8, MDE 0.216; within MDE of WM). Phase spread across pairs 0.000 -> 1.448 and
+the per-token-rewind route 0.962 -> 0.185: given per-pair freedom EM stops moving the
+query token. Capacity control (`PAIRCONST_PREREG.md`) queued -- it can withdraw this.
+
 **Next, ranked**: k from a small set at fixed queries per token (does success track
 queries-per-token?); per-epoch per-token rewind recording (time the window); why a
 free-phase kernel raises per-token success; WM's per-pair phase spread (eval-only); DOF

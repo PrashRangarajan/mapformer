@@ -35,6 +35,17 @@
 > premise. v1's phase numbers (2.003) are VOID: three bugs in my own probe, listed in
 > `EM_WM_THEORY.md`.
 
+> **PAIRORIGIN LANDED (2026-09-12) -- `PAIRORIGIN_RESULTS.md`. The kernel-sharing claim's
+> decisive test FIRES.** Giving MapEM per-pair position origins (+2,048 params, identical
+> function at init) scores **0.880** against single-`p0`'s 0.600 and WM's 0.975:
+> **EMPair - P0 = +0.280 (7/8, MDE 0.216, DETECTABLE)**; EMPair - WM = -0.095, inside MDE.
+> One chain, measured: kernel phase spread across pairs **0.000 -> 1.448** (WM 1.966, null
+> 3.267), solved cells using a per-token rewind **0.962 -> 0.185**, accuracy 0.600 -> 0.880.
+> Given per-pair freedom EM stops moving the query token and shapes the kernel instead.
+> CAVEAT: r(loss, acc) = -0.983, so this is about what training FINDS; and the +0.92% parameter
+> confound is not yet controlled -- `PAIRCONST_PREREG.md` (constant-origin control, 128 MORE
+> params than EMPair) is queued and can withdraw this reading.
+
 **This is the single current account of the EM/WM line (2026-09-09..11).** It summarises;
 it does not replace the source files. Where a source file carries a CORRECTED or AUDIT block
 at its top, that block supersedes the text beneath it. Where this file and a source disagree,
