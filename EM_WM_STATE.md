@@ -45,8 +45,14 @@ Reading order if you need the detail: `AUDIT_2026-09-10.md` -> `MAGONLY_RESULTS.
 `WARM_RESULTS.md` (top block) -> `UNFREEZE_RESULTS.md` (top block) -> `NOLEAK_RESULTS.md`.
 `THEORY_KERNEL.md` is the theory as first written, with inline withdrawal markers.
 
-**In flight (2026-09-11): SPREAD** (`SPREAD_PREREG.md`, `runs/spread/`) -- does EM's per-token
-search limit track queries per token or the number of query tokens? Nothing else.
+**SPREAD LANDED (2026-09-11): `SPREAD_RESULTS.md`.** At a MATCHED budget, fewer distinct
+offsets is better, monotonically: m4 1.000 > m16 0.996 > m64 0.578, m4 - m64 = **+0.422**
+(8/8, DETECTABLE) -- the obstacle is per-token, as SEARCH concluded. The exposure half is
+HALF-VACUOUS: the first matched pair is +0.000 with MDE 0.000 because both arms sit at exactly
+1.000 (a cell that could not fire); only `m64_e1200 - m16_e300` = -0.068 (MDE 0.132) is
+informative, and it is unmeasured. **Unregistered and bigger than either: 4x budget moves the
+full 64-offset task 0.578 -> 0.928**, so the deficit is substantially step-efficiency. WM at
+1200 epochs was never run, and r(loss, acc) = -0.945 over the 40 runs. Nothing else in flight.
 
 ---
 

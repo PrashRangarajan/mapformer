@@ -78,8 +78,13 @@ class Ckpt:
     raw: dict = field(repr=False)
 
 
+# Widened 2026-09-11: k_fixed / k_curriculum / k_set are part of the recency checkpoint format
+# (SEARCH, SPREAD). They were missing, so `ck.config.get("k_set")` read None on a checkpoint that
+# recorded one -- which fired SPREAD's arm-vs-checkpoint guard against a batch that was correct.
+# An allow-list silently drops what it does not know: add keys here when the trainer saves them.
 _FLAT_CONFIG_KEYS = ("variant", "seed", "vocab_size", "d_model", "n_heads", "n_layers",
-                     "grid_size", "k_max", "n_symbols", "min_gap")
+                     "grid_size", "k_max", "n_symbols", "min_gap",
+                     "k_fixed", "k_curriculum", "k_set")
 
 
 def load_checkpoint(path: str | Path) -> Ckpt:

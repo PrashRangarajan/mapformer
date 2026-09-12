@@ -101,4 +101,6 @@ EM's recency deficit is ENTIRELY SEARCH -- exists (1.000), holdable (1.000). NOL
 **SEARCH (2026-09-11, SEARCH_RESULTS.md):** found from scratch per token, wrapped (peak or trough);
 fixed k=64 found 7/8 (EM faster than WM, +0.191 at 2x length, exploratory); curriculum +0.127, only
 k<=32. Obstacle = spread over 64 per-token rewinds. Next: k from a small set at fixed queries per
-token; per-epoch per-token rewind recording. Rule 34 (CLAUDE.md): readouts must respect the model's symmetries.
+token (**SPREAD LANDED**: at matched budget fewer offsets is better, m4-m64 +0.422 8/8; 4x
+budget takes the full task 0.578 -> 0.928; the exposure-matched cells hit the ceiling so that
+half is unresolved -- `SPREAD_RESULTS.md`); per-epoch per-token rewind recording. Rule 34 (CLAUDE.md): readouts must respect the model's symmetries.

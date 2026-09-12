@@ -27,7 +27,9 @@ file has a CORRECTED or AUDIT block at the top, that block supersedes the body.
 **Leakage test LANDED** (`NOLEAK_RESULTS.md`): with the content -> Delta leak closed, the 8x-installed
 trainable rewind scores **1.000 on 8/8** (0.991 at 2x length) -- the frozen install's level. Leakage
 was the entire accuracy residual; at 1/64 the code is erased even with zero leak. EM's recency
-deficit is ENTIRELY SEARCH. **In flight: SPREAD** (`SPREAD_PREREG.md`, `runs/spread/`).
+deficit is ENTIRELY SEARCH. **SPREAD LANDED** (`SPREAD_RESULTS.md`): at matched budget fewer
+offsets is better (m4 - m64 +0.422, 8/8); 4x budget takes the full task 0.578 -> 0.928; the
+exposure-matched half is a ceiling cell and uninformative.
 
 **SEARCH LANDED** (`SEARCH_RESULTS.md`, 2026-09-11): EM finds the rewind per query token,
 wrapped (peak or trough, A_X sign tracks it), never as a linear code. Fixed k=64: EM 0.985

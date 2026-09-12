@@ -62,6 +62,10 @@ With `k` drawn per query and one query token per offset (`environment_recency.py
 - With ONE shared k, a 63-symbol rewind is found on 7/8 seeds -- all wrapped, 0/8 linear -- and
   EM is FASTER than WM (54 vs 99 median epochs to loss < 0.5).
 - A k curriculum gives +0.127 (7/8) and closes nothing; its gain is confined to k <= 32.
+- **Budget alone moves the full task 0.578 -> 0.928** (4x epochs, 6/8 seeds ~1.000;
+  `SPREAD_RESULTS.md`), so the deficit is substantially step-efficiency -- what a per-token
+  search account predicts. Caveat: WM at that budget was never run, so the -0.375 headline
+  remains the fair SHARED-budget comparison.
 
 **So the deficit is a per-token search cost: 64 independent wrapped rewinds, each trained by
 1/64 of the queries.** This is the strongest thing in the line, and it does not depend on
@@ -143,7 +147,7 @@ had. Where they overlap in wording, the withdrawal stands.
 
 | # | test | cost | status |
 |---|---|---|---|
-| P1 | Matched queries-per-token across m = 4/16/64 (is the limit exposure or token count?) | 33 runs | **in flight**, `SPREAD_PREREG.md` |
+| P1 | Matched queries-per-token across m = 4/16/64 | done | **PARTLY ANSWERED** (`SPREAD_RESULTS.md`): at matched budget fewer offsets is better, +0.422 (8/8). The exposure-matched cells landed on the CEILING, so exposure-vs-token-count is still open; re-run with the budget set so the m4 arm lands near 0.8 |
 | P2 | EM with PER-PAIR origin vectors (`q0`,`k0` low-rank functions of content, Hadamard kept) | 1 arm x 8 | the decisive architectural test of 1a; unbuilt |
 | P3 | Port PaTH's MQRAR-N-back; run MapEM, MapWM, PaTH | published task | the only external benchmark that discriminates |
 | P4 | Remove the per-token handle: encode k as a count, not one token per offset | env flag | kernel account predicts EM degrades further; capacity account predicts nothing |
