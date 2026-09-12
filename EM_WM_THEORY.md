@@ -82,12 +82,26 @@ reproduce exactly (paired, one batch, parameter-matched within 0.16%):
 +0.035 (l=512, 7/8), +0.070 (l=1024, 8/8), +0.085 (l=2048, 8/8), MDE 0.031-0.034, and they
 survive IID-matching (+0.0856). Four reasons they do not support the claim:
 
-1. **The loser is near the floor.** At `pe=0.8` a constant predictor scores ~0.79 (l=2048) and
-   ~0.82 (l=1024); `BASELINE_TABLE.md:77-78` says so in its own header. WM's 0.854 is ~0.05
-   above floor, and the claimed effect is larger than WM's entire above-floor margin.
-2. **The best arm in that very batch is a PER-PAIR kernel.** `MapPoPE-Flat` (a `MapFormerWM`
-   subclass) beats EM_P0 at all six cells: +0.022 (l=1024) and +0.031 (l=2048), 7/8 seeds --
-   directional, both just inside their MDEs, but consistently the wrong way for the claim.
+1. ~~**The loser is near the floor.**~~ **ANSWERED, AND IT INVERTS (2026-09-12).** The floors
+   are now MEASURED per condition on exactly the scored events (`PAPER_TASK_FLOORS.md`):
+   0.522 IID, 0.216 OOD-d, 0.799 (l=512), 0.801 (l=1024), 0.802 (l=2048). Being near the floor
+   COMPRESSES the raw scale, so normalising by it makes the gap LARGER, not smaller. Fraction of
+   the available range used, mean over the same 8 seeds:
+
+   | condition | WM | EM_P0 | MapPoPE |
+   |---|---|---|---|
+   | OOD-s l=512 | 0.715 | 0.889 | 0.959 |
+   | ext-s l=1024 | 0.460 | 0.812 | 0.924 |
+   | ext-s l=2048 | **0.261** | **0.692** | 0.851 |
+
+   Paired, floor-normalised: EM - WM = **+0.174** (l=512, 7/8), **+0.352** (l=1024, 8/8),
+   **+0.430** (l=2048, 8/8), all DETECTABLE. So this objection does not demote the effect; it
+   was the one objection I could check cheaply and it came out against itself.
+2. **The best arm in that batch is a PER-PAIR kernel -- but the contrast is UNMEASURED.**
+   `MapPoPE-Flat` (a `MapFormerWM` subclass) is ahead of EM_P0 at all six cells, and
+   floor-normalised the gap is +0.070 / +0.112 / +0.159 at l=512/1024/2048 -- **7/8 seeds but
+   inside its MDE at every length**. It is a directional counterexample, not a detectable one,
+   and v2 overstated it by calling it a counterexample flatly.
 3. **The pattern is monotone in LENGTH, not in offset-fixedness** (+0.018 IID, +0.035, +0.070,
    +0.085). "Helps at OOD length" is this project's universal unexplained signature, shared by
    rank, the InEKF, the forget gate and PoPE. EM is a fifth instance of an unexplained axis.
