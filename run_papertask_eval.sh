@@ -9,8 +9,13 @@ cd /home/prashr
 busy(){ ps -u "$USER" -o comm=,args= | awk '$1=="python3" && /mapformer\.train_/' | wc -l; }
 free_mib(){ nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits | sed -n "$(( $1 + 1 ))p"; }
 
-echo "$(date +%H:%M) waiting for training to clear"
-while [ "$(busy)" -gt 0 ]; do sleep 60; done
+# Wait for the WHOLE chain, not merely for a momentary gap between batches: SPREAD2 and
+# PAIRCONST are queued behind each other, and a gap of a few seconds would let this eval start
+# into the next batch and OOM exactly as the first attempt did.
+drivers(){ ps -u "$USER" -o comm=,args= | awk '$1=="bash" && $2 !~ /^-/ && /run_(spread2|pairconst)\.sh$/' | wc -l; }
+echo "$(date +%H:%M) waiting for the SPREAD2 -> PAIRCONST chain to finish"
+while [ "$(drivers)" -gt 0 ] || [ "$(busy)" -gt 0 ]; do sleep 60; done
+sleep 30                     # let CUDA memory actually free
 for g in 1 0; do
   if [ "$(free_mib $g)" -gt 12000 ]; then GPU=$g; break; fi
 done
