@@ -72,7 +72,9 @@ batch. The fragility I had been attributing to EM's AND-gate is not exclusive to
   one task at l=128 on a 64x64 torus, and the paper's scaling is at l=16 with
   vocabularies to 10,000. But the test aimed at it, with the pathology removed, shows
   parity rather than an advantage.
-- **"EM is worse" remains dead.** Every prior EM deficit traced to an init pathology,
+- ~~**"EM is worse" remains dead.**~~ **REFUTED THE NEXT DAY** (`RECENCY_EM_RESULTS.md`): on
+  recency with k varying per query, single-`p0` EM - WM = **-0.375** (0/8) on the FIXED arms.
+  Original text: Every prior EM deficit traced to an init pathology,
   and with both fixes EM is equal-or-better everywhere measured.
 
 ## Caveats

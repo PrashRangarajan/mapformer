@@ -8,6 +8,7 @@
 > early-window mechanism is refuted outright -- released after the content branch has
 > trained, the rewind breaks within 1-6 epochs. W1 (1.000 frozen) and "0 of 40 from-scratch
 > runs find a rewind" are unaffected. The deficit is a SEARCH problem.
+> **CORRECTION 2026-09-11:** the "0 of 40" clause above is WITHDRAWN (`SEARCH_RESULTS.md`). It came from a LINEAR rewind slope, which cannot see a rewind that is wrapped modulo each block's period. From scratch the rewind IS found, per query token, for about half the k. W1 (1.000 frozen) is unaffected.
 
 Pre-registration: `WARM_PREREG.md`. Single-`p0` EM with the constructed recency
 rewind installed in its position pathway; content branch random. Seeds 0-7.
@@ -58,7 +59,7 @@ loss consequence is visible by epoch 10. Gradient dynamics did it.
 *Limit:* intermediate checkpoints were not saved, so "destroyed early" is inferred
 from the loss trajectory, not measured on the weights at epoch 10.
 
-## From scratch, the rewind is never found
+## From scratch, the rewind is never found  [WITHDRAWN 2026-09-11 (`SEARCH_RESULTS.md`): the rewind IS found from scratch, per query token and wrapped modulo each block's period, for about half the k; with one shared k it is found on 7/8 seeds. The linear slope behind '0/40' could not see a wrapped rewind.]
 
 `_REWIND_PROBE.json`: across all 40 from-scratch EM runs (5 parameterisations x 8
 seeds), the pooled rewind slope is 0.000 +/- 0.02, and 1 of ~2,550 (head, block)
@@ -70,7 +71,7 @@ The EM recency deficit (-0.375 against WM) is a property of the LOSS LANDSCAPE, 
 it has three parts, each now measured:
 
 1. **The solution exists in the architecture** (W1: 1.000, 8/8, both lengths).
-2. **Training from scratch never finds it** (no rewind in any of 40 runs).
+2. ~~**Training from scratch never finds it** (no rewind in any of 40 runs).~~  [WITHDRAWN 2026-09-11 (`SEARCH_RESULTS.md`): the rewind IS found from scratch, per query token and wrapped modulo each block's period, for about half the k; with one shared k it is found on 7/8 seeds. The linear slope behind '0/40' could not see a wrapped rewind.]
 3. **Training does not hold it when given it** (W4: installed rewind dismantled
    before the content branch can use it).
 

@@ -1,11 +1,12 @@
-## Per-pair phase spread of the position kernel (n=8 seeds, held-out episodes)
+## Per-pair phase spread of the position kernel (n=8 seeds; corrected 2026-09-11)
 
-Circular sd of the kernel phase across query-key pairs. 0 = one kernel for every pair; ~1.97 is R~0.14, i.e. near-uniform on the circle.
+Circular sd of the kernel phase across query-key pairs, 29056 pairs per model. 0 = one kernel for every pair. **The finite-sample uniform ('no structure') null at this N is 3.267**, so a value near 2.0 is CONCENTRATED, not near-uniform.
 
 | arm | circ sd of phase | amplitude-weighted | spread of per-offset mean phase |
 |---|---|---|---|
-| WM | 2.003 | 1.838 | 0.918 |
-| EM single p0 | 0.000 | 0.000 | 0.000 |  (|phase| mean 0.000, one phase per block, 64 blocks, identical for every pair)
-| EM separate q0/k0 | 0.000 | 0.000 | 0.000 |  (|phase| mean 1.603, one phase per block, 64 blocks, identical for every pair)
+| WM | 1.947 | 1.816 | 1.656 |
+| EM single p0 | 0.000 | 0.000 | 0.000 |  (64 blocks, one phase each; \|phase\| mean 0.000)
+| EM separate q0/k0 | 0.000 | 0.000 | 0.000 |  (64 blocks, one phase each; \|phase\| mean 1.603)
+| **WM, UNTRAINED (control)** | **2.722** | 2.603 | 2.032 |  (3 inits; the same architecture, random weights)
 
-EM's phases are pair-independent BY CONSTRUCTION (they come from q0/k0, not from the tokens), and its content branch A_X is never rotated, so content can only rescale the shared kernel, not reshape it. WM's are set per pair by content, and vary systematically with the query's offset. This is the measured form of the shared-vs-per-pair contrast.
+**What this does and does not show.** EM's phases are pair-independent (measured 0.000, not assumed): they come from q0/k0, and EM's content branch is never rotated, so content can only rescale the shared kernel. WM's are set per pair. **But the untrained control scores HIGHER than the trained model**, so the spread is a property of the parameterisation, not something training discovers or uses. This supports 'WM CAN reshape per pair' and REFUTES any claim that WM's advantage comes from doing so.

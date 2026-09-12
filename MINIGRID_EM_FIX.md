@@ -70,5 +70,6 @@ Every contrast is unmeasured at n=8 -- the gap and sd columns are descriptive, n
 tests, though the ordering `0.137 / 0.098 / 0.016 / 0.002` is unambiguous. One
 environment, one tokenization, flat models, 50 epochs. The paper's separate `q0/k0`
 is App. A.4's stated design ("we suspect this separation to be beneficial"); this is
-the fourth measurement in this project refuting that suspicion, after +0.089 on the
+the fourth measurement on a MAP task refuting that suspicion (on recency the sign REVERSES
+and the fresh-seed replication is unmeasured, +0.073 9/16 -- `EM_WM_STATE.md`), after +0.089 on the
 paper task, +0.167 compositional and +0.358 on Match-Query.

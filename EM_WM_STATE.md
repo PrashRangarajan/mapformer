@@ -23,11 +23,17 @@
 > one.** Phase freedom moves every head's kernel peak off zero (48/48) but does not change the
 > route or shorten the shift. It raises each token's success rate at every distance.
 
-> **THEORY SYNTHESIS (2026-09-11): `EM_WM_THEORY.md`.** Written over this file, the graveyard
-> audit and the literature read first-hand. Its claim: EM applies ONE kernel to every pair and
-> content can only rescale it; WM's kernel is reshaped per pair (measured: WM phase spread
-> 2.003 rad across pairs, EM exactly 0.000). EM therefore WINS at a structurally fixed offset
-> and loses only when the offset varies per query.
+> **THEORY SYNTHESIS (2026-09-11): `EM_WM_THEORY.md` -- now at v2, after adversarial review.**
+> ESTABLISHED: EM applies one kernel to every pair (measured phase spread across pairs 0.000,
+> and single-`p0` leaves 39 of 64 blocks dead); WM CAN reshape per pair (1.947) -- but an
+> UNTRAINED WM is MORE spread (2.722, null 3.267), so nothing shows WM's advantage comes from
+> reshaping. NOT ESTABLISHED, demoted from v1: "EM wins wherever the offset is fixed". Its
+> evidence is one 16-epoch batch at pe=0.8 where the loser sits ~0.05 above the blank floor, the
+> best arm in that batch is a PER-PAIR kernel (MapPoPE), the pattern is monotone in LENGTH
+> (this project's universal unexplained signature), and four other fixed-offset tasks tie or
+> reverse. The per-token search account (Sec 5) is unaffected -- it never needed the kernel
+> premise. v1's phase numbers (2.003) are VOID: three bugs in my own probe, listed in
+> `EM_WM_THEORY.md`.
 
 **This is the single current account of the EM/WM line (2026-09-09..11).** It summarises;
 it does not replace the source files. Where a source file carries a CORRECTED or AUDIT block

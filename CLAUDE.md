@@ -2886,7 +2886,9 @@ first, faster at higher lr -- Adam's ~lr-per-coordinate step against a 0.0156 co
 same day: coordinate 0 of the code survives (-0.989) but the full latent pathway degrades to
 -0.866, so leakage is not the whole residual; the 'two channels are exhaustive' claim was false
 (the code has two coordinates). See the top of UNFREEZE_RESULTS.md. **EM's recency deficit is a
-SEARCH problem**: exists (1.000 frozen), largely holdable, never found (0/40).
+SEARCH problem**: exists (1.000 frozen), largely holdable, and found from scratch only
+PER QUERY TOKEN (wrapped, ~half the k -- `SEARCH_RESULTS.md`; the '0/40' readout was blind
+to a wrapped rewind).
 
 33. **Install a warm start at the scale training would use.** A solution stored in tiny
     weights tests whether Adam can erode it, not whether the landscape holds it. Rule 31

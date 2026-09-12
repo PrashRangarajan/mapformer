@@ -113,10 +113,11 @@ content columns. Both were recorded.
 - **What remains of W4:** installed at a scale Adam does not erode, trainable EM mostly
   holds the rewind (0.941; 0.895 at 2x length), degraded by content leaking into Delta.
 - **Unaffected:** W1 (frozen install scores 1.000, so the full model represents recency),
-  and from scratch **0 of 40** EM runs find a rewind.
+  and from scratch ~~**0 of 40** EM runs find a rewind~~.  [WITHDRAWN 2026-09-11 (`SEARCH_RESULTS.md`): the rewind IS found from scratch, per query token and wrapped modulo each block's period, for about half the k; with one shared k it is found on 7/8 seeds. The linear slope behind '0/40' could not see a wrapped rewind.]
 
 EM's recency deficit is therefore best described as a **search** problem: the solution
-exists, can largely be held, and is never found from random initialisation.
+exists, can largely be held, and is found from random initialisation only PER QUERY TOKEN,
+(wrapped, ~half the k -- `SEARCH_RESULTS.md`).
 
 ## Open
 
