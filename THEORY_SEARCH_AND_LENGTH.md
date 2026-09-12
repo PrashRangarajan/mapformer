@@ -186,6 +186,48 @@ key count overtakes the cell count**, giving a breakdown length
 **Falsifier**: if errors are diffuse rather than alias-structured, or if the predicted collision
 rate does not order the arms correctly, T2 is wrong and the length axis remains open.
 
+## T2 RESULTS (2026-09-12, `probe_collisions.py`, VanillaEM_P0 paper-task, 4 seeds x 4 lengths)
+
+**Half confirmed, and the failing half kills the pigeonhole form of the theory.**
+
+`N_coll` = prior keys at a different cell that the model's OWN position kernel ranks at least as
+high as the correct key. No free parameters.
+
+| length (steps) | collision rate | accuracy | predicted from the rate alone | acc \| 0 coll | acc \| >=1 coll |
+|---|---|---|---|---|---|
+| 256 | 0.058 | 0.974 | 0.962 | 0.983 | 0.825 |
+| 512 | 0.085 | 0.974 | 0.957 | 0.989 | 0.817 |
+| 1024 | 0.132 | 0.954 | 0.948 | 0.981 | 0.777 |
+| 2048 | 0.174 | 0.933 | 0.941 | 0.964 | 0.786 |
+
+Pooled conditionals: **acc = 0.973 with no collision, 0.787 with any collision.**
+
+**CONFIRMED: collisions are the dominant identified mechanism.** Being outranked by even one
+distractor costs 0.19 of accuracy, and the collision rate triples from 256 to 2048 steps.
+
+**REFUTED: the pigeonhole/dose form.** There is no dose-response above one collision --
+1-2: 0.743, 3-8: 0.782, 9-32: 0.796, 33-128: 0.794, **129+: 0.797**. Having 129 competitors
+ranked above the answer is no worse than having one, and the 1-2 bin is if anything the worst.
+So the operative event is **the kernel failing to rank the correct key top at all**, a SWITCH,
+not the exhaustion of a pool of phase cells. (A plausible reading of the non-monotonicity, not
+tested: with one or two collisions the competitor is a genuine near-alias with a high kernel
+value; with hundreds the kernel is simply uninformative and `A_X` gating carries the retrieval,
+which it does at ~0.8.)
+
+**REFUTED: "length acts ONLY through collisions."** That was the registered decisive test.
+At matched collision status longer is still worse -- acc | 0 collisions drifts 0.983 -> 0.964 and
+acc | >=1 drifts 0.825 -> 0.786 -- and the collision rate alone accounts for **53%** of the
+0.041 total drop from 256 to 2048 steps. **About half the length axis is now mechanised; the
+other half is a residual that collisions do not explain.**
+
+**Untested: the cross-arm half.** Whether a weights-derived resolution (`delta`, `R(T)`) orders
+Vanilla / VanillaEM_P0 / MapPoPE by their breakdown length has not been run. That is the half
+that would turn T2 from a within-arm mechanism into an explanation of why five different
+mechanisms all help at length, and it is the obvious next step.
+
+**Scope:** one arm (EM, where the position kernel is a clean separate channel -- for WM there is
+no position-only score to compute this on), one task, 4 seeds, ~9k-20k scored events per length.
+
 ## What T2 would cost the existing account
 
 If T2 holds, `EM_WM_THEORY.md` 2a's third objection -- "the axis is LENGTH, not
