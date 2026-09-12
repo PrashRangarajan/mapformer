@@ -154,6 +154,7 @@ VARIANT_MAP = {
     "EMUnf_0_e8": __import__("mapformer.model_em_unfreeze", fromlist=["x"]).MapFormerEM_Unf0_e8_r4,
     # Leakage test (NOLEAK_PREREG.md): w_in content columns held at zero -> Delta from latent only.
     # PAIRORIGIN_PREREG.md: per-pair position origins, zero-init so it IS VanillaEM_P0_r4 at init
+    "EMPairConst_r4": __import__("mapformer.model_em_pairconst", fromlist=["x"]).MapFormerEM_PairConst_r4,
     "EMPair_r4": __import__("mapformer.model_em_pairorigin", fromlist=["x"]).MapFormerEM_PairOrigin_r4,
     "EMNoLeak_e8":  __import__("mapformer.model_em_noleak", fromlist=["x"]).MapFormerEM_NoLeak_e8_r4,
     "EMNoLeak_e64": __import__("mapformer.model_em_noleak", fromlist=["x"]).MapFormerEM_NoLeak_e64_r4,
