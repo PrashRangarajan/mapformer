@@ -20,7 +20,10 @@ SRC = {  # (variant, dir for seeds 0-7, dir for seeds 8+)
     "EMPair_r4": ("runs/pairorigin", "runs/pairsplit"),
     "EMPairConst_r4": ("runs/pairconst", "runs/pairsplit"),
 }
-P0 = ("VanillaEM_P0_r4", "runs/dof/recency", 24)
+import os as _os
+_P0N = 48 if all(_os.path.exists(f"/home/prashr/mapformer/runs/dof/recency/VanillaEM_P0_r4_s{_s}/VanillaEM_P0_r4_recency.json")
+                 for _s in range(48)) else 24
+P0 = ("VanillaEM_P0_r4", "runs/dof/recency", _P0N)   # 48 once run_p0_extend.sh has landed
 
 
 def load(variant, d0, d8, n):
@@ -49,9 +52,9 @@ def main():
                  f"{np.mean(list(Lo[v].values())):.3f} |")
 
     c1 = paired(A["EMPair_r4"], A["EMPairConst_r4"], "EMPair - EMPairConst (C1: freedom)")
-    c2 = paired({s: A["EMPairConst_r4"][s] for s in range(24)},
-                A[P0[0]], "EMPairConst - P0 (C2: pathway), n=24")
-    c3 = paired({s: A["EMPair_r4"][s] for s in range(24)}, A[P0[0]], "EMPair - P0, n=24")
+    c2 = paired({s: A["EMPairConst_r4"][s] for s in range(P0[2])},
+                A[P0[0]], f"EMPairConst - P0 (C2: pathway), n={P0[2]}")
+    c3 = paired({s: A["EMPair_r4"][s] for s in range(P0[2])}, A[P0[0]], f"EMPair - P0, n={P0[2]}")
     L += ["", "## Contrasts\n", table([c1, c2, c3]),
           "", "## Fresh-seed split on C1 (the registered guard)\n", replication_split(c1, first_k=8).report()]
 
@@ -67,7 +70,7 @@ def main():
           f"**{'CONFIRMED -- the gain is the pathway' if abs(c1.delta) < c1.mde else 'not confirmed'}**",
           f"- **S3 (the n=8 estimate was low: > +0.15)**: -> "
           f"**{'CONFIRMED' if c1.delta > 0.15 and c1.verdict == 'DETECTABLE' else 'not confirmed'}**",
-          f"- **C2 at n=24**: {c2.delta:+.3f} (MDE {c2.mde:.3f}) -> **{c2.verdict}**"]
+          f"- **C2 at n={P0[2]}**: {c2.delta:+.3f} (MDE {c2.mde:.3f}) -> **{c2.verdict}**"]
     det = REPO / "runs/pairsplit/DETERMINISM.txt"
     L += ["", "## Determinism re-check\n", "```",
           det.read_text().strip() if det.exists() else "MISSING", "```"]
