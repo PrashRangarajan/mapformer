@@ -123,8 +123,17 @@ def _wm_qk(lay, e, x, H, dh):
 
 @torch.no_grad()
 def pair_phases(pt, variant, seed, model=None):
+    """Route by where the origins COME FROM, not by the layer type.
+
+    Added 2026-09-12: EMPair (`model_em_pairorigin`) has an EM layer but PER-TOKEN origins.
+    Branching on the layer made this probe read its single `p0_pos` and report a phase spread
+    of exactly 0.000 for a model whose whole point is per-pair origins -- a wrong number, not
+    an error. Models exposing `_origins(x)` are now routed through it.
+    """
     m, ck, env = load_model(pt, variant) if model is None else model
     m.eval()
+    if hasattr(m, "_origins"):
+        return _episode_pairs(m, env, seed, lambda lay, e, x, H, dh: m._origins(e))
     is_wm = hasattr(m.layers[0], "q_proj")
     return _episode_pairs(m, env, seed, _wm_qk if is_wm else (lambda *a: None))
 

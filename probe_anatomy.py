@@ -39,19 +39,29 @@ OUT_JSON = REPO / "_ANATOMY.json"
 
 
 # ----------------------------------------------------------------------------- internals
-def origins(m):
-    """(q0, k0) WITH graph; k0 through a property where that is what forward() reads."""
+def origins(m, e=None):
+    """(q0, k0) WITH graph; k0 through a property where that is what forward() reads.
+
+    EMPair (`model_em_pairorigin`) has PER-TOKEN origins, so it exposes `_origins(x)` returning
+    (B, H, L, d_head). Callers pass the embeddings `e`; the probe then rotates those instead of
+    broadcasting one vector. Added 2026-09-12: without it `em_forward` reproduced the wrong
+    model, which its own assert caught (max diff 13.8) rather than reporting a wrong number.
+    """
+    if hasattr(m, "_origins") and e is not None:
+        return m._origins(e)
     if "p0_pos" in dict(m.named_parameters()):
         return m.p0_pos, m.p0_pos
     return m.q0_pos, m.k0_pos
 
 
-def ap_from_delta(m, delta):
+def ap_from_delta(m, delta, e=None):
     cos_a, sin_a = m.path_integrator(delta)
-    q0, k0 = origins(m)
+    q0, k0 = origins(m, e)
     B, L = delta.shape[:2]
-    qp = _apply_rope(q0[None, :, None, :].expand(B, -1, L, -1), cos_a, sin_a)
-    kp = _apply_rope(k0[None, :, None, :].expand(B, -1, L, -1), cos_a, sin_a)
+    if q0.dim() == 2:                                   # one vector, shared by every pair
+        q0 = q0[None, :, None, :].expand(B, -1, L, -1)
+        k0 = k0[None, :, None, :].expand(B, -1, L, -1)
+    qp, kp = _apply_rope(q0, cos_a, sin_a), _apply_rope(k0, cos_a, sin_a)
     return qp @ kp.transpose(-1, -2) / math.sqrt(q0.shape[-1])
 
 
@@ -61,7 +71,7 @@ def em_forward(m, x, delta=None):
     e = m.token_emb(x)
     if delta is None:
         delta = m.action_to_lie(e)
-    AP = ap_from_delta(m, delta)
+    AP = ap_from_delta(m, delta, e)
     lay = m.layers[0]
     H, dh = lay.n_heads, lay.d_head
     h = lay.norm1(e)
@@ -103,7 +113,7 @@ def anatomy(m, env, seed, episodes=256, T=1024, device="cpu"):
             checked = True
         d0 = o["delta"].clone()
         d0[query_mask(x, env)] = 0.0
-        AP0 = ap_from_delta(m, d0)
+        AP0 = ap_from_delta(m, d0, m.token_emb(x))
         lo = env.sym_offset
         for b in range(x.shape[0]):
             sympos = np.asarray(infos[b]["sym_positions"])
