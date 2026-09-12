@@ -28,16 +28,20 @@ instead**: the total fell +0.280 -> +0.191 and the pathway term +0.182 -> +0.100
 24. Fourth instance of the pattern, and worth noting that it landed on the terms I was NOT
 guarding.
 
-## What the decomposition now says
+## The decomposition, CLOSED at n=48 (P0 extended, determinism bitwise)
 
-At n=24-48, EM's per-pair advantage over single-`p0` decomposes as:
+| term | delta | MDE | seeds + | verdict | share |
+|---|---|---|---|---|---|
+| total, EMPair - P0 | **+0.215** | 0.068 | 42/48 | DETECTABLE | 100% |
+| pathway, EMPairConst - P0 | **+0.124** | 0.071 | 34/48 | **DETECTABLE** | 58% |
+| freedom, EMPair - EMPairConst | **+0.091** | 0.066 | 34/48 | **DETECTABLE** | 42% |
 
-    total +0.191  =  pathway +0.100 (unmeasured)  +  freedom +0.091 (DETECTABLE)
+**Both halves are real.** Adding 2,048 parameters to the position pathway is worth +0.124 on its
+own, changing no mechanism; making those parameters read the token -- per-pair freedom -- is
+worth a further +0.091 and changes the mechanism completely.
 
-So **roughly half the effect is content-dependent origins and half is the extra pathway**, with
-only the freedom half established. `run_p0_extend.sh` is extending P0 to n=48 so the pathway term
-can be read at the same power; until it lands, "the parameters buy nothing" remains unsupported
-and so does "the parameters buy half".
+The total has moved with n: +0.280 (n=8), +0.191 (n=24, P0 at 24 seeds), **+0.215 (n=48)**. Quote
+the n=48 figure; the n=8 one was inflated by 30%.
 
 ## Reading this with the mechanism result
 

@@ -56,7 +56,9 @@
 > **RESOLVED 2026-09-12 at n=48 (`PAIRSPLIT_RESULTS.md`): freedom DOES buy accuracy.**
 > EMPair - EMPairConst = **+0.091** (MDE 0.066, 34/48), and it replicates on the fresh 40
 > seeds alone (+0.089, MDE 0.069). The decomposition is now total +0.191 = pathway +0.100
-> (unmeasured, P0 being extended to n=48) + freedom +0.091 (detectable). Note the n=8
+> **+0.124 (DETECTABLE at n=48)** + freedom +0.091 (detectable) = total **+0.215**. BOTH halves
+> are real: the pathway alone is worth 58% and changes no mechanism; freedom adds 42% and
+> changes the mechanism completely. Note the n=8
 > figures were inflated on the OTHER two terms: total +0.280 -> +0.191, pathway +0.182 ->
 > +0.100. So: freedom changes the MECHANISM decisively and buys ~+0.09; extra pathway
 > capacity buys a similar amount and changes no mechanism.

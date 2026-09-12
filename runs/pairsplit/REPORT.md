@@ -6,15 +6,15 @@
 |---|---|---|---|
 | EMPair_r4 | 48 | **0.897 +/- 0.107** | 0.358 |
 | EMPairConst_r4 | 48 | **0.807 +/- 0.131** | 0.765 |
-| VanillaEM_P0_r4 | 24 | **0.687 +/- 0.127** | 1.143 |
+| VanillaEM_P0_r4 | 48 | **0.683 +/- 0.128** | 1.152 |
 
 ## Contrasts
 
 | contrast | delta | sd | MDE | seeds + | verdict |
 |---|---|---|---|---|---|
 | EMPair - EMPairConst (C1: freedom) | +0.091 | 0.164 | 0.066 | 34/48 | DETECTABLE |
-| EMPairConst - P0 (C2: pathway), n=24 | +0.100 | 0.197 | 0.113 | 14/24 | unmeasured |
-| EMPair - P0, n=24 | +0.191 | 0.175 | 0.100 | 20/24 | DETECTABLE |
+| EMPairConst - P0 (C2: pathway), n=48 | +0.124 | 0.176 | 0.071 | 34/48 | DETECTABLE |
+| EMPair - P0, n=48 | +0.215 | 0.168 | 0.068 | 42/48 | DETECTABLE |
 
 ## Fresh-seed split on C1 (the registered guard)
 
@@ -35,7 +35,7 @@ rule 9: r(final loss, acc) = -0.954 over 96 runs; acc = 1.036 -0.328*loss, resid
 - **S1 (freedom is real but small: detectable, 0.05-0.15)**: +0.091 (MDE 0.066) -> **CONFIRMED**
 - **S2 (freedom buys no accuracy)**: -> **not confirmed**
 - **S3 (the n=8 estimate was low: > +0.15)**: -> **not confirmed**
-- **C2 at n=24**: +0.100 (MDE 0.113) -> **unmeasured**
+- **C2 at n=48**: +0.124 (MDE 0.071) -> **DETECTABLE**
 
 ## Determinism re-check
 

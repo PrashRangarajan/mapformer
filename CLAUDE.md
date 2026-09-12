@@ -47,8 +47,8 @@ the per-token-rewind route 0.962 -> 0.185: given per-pair freedom EM stops movin
 query token. **PAIRCONST (control, same pathway reading a CONSTANT, 128 MORE params) lands at
 0.782, between the two**: the accuracy splits +0.182 / +0.098, neither detectable at n=8, so the
 accuracy attribution is UNRESOLVED **at n=8 -- RESOLVED at n=48 (`PAIRSPLIT_RESULTS.md`):
-freedom buys +0.091 (MDE 0.066, 34/48, replicating on fresh seeds), pathway +0.100 still
-unmeasured, total +0.191 not +0.280**. The mechanism attribution is clean -- the control keeps the
+freedom buys +0.091 (MDE 0.066, 34/48, replicating on fresh seeds) and pathway +0.124 (MDE
+0.071) -- BOTH detectable, total +0.215 not the n=8 +0.280**. The mechanism attribution is clean -- the control keeps the
 per-token rewind route (0.948 vs P0's 0.964) and only EMPair abandons it (0.189).
 
 **Next, ranked**: k from a small set at fixed queries per token (does success track

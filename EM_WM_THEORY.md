@@ -94,8 +94,8 @@ arm with 128 MORE parameters scores 0.782, between P0 and EMPair, so the accurac
 +0.182 (pathway) and +0.098 (freedom) with NEITHER detectable at n=8. The mechanism split is
 clean and goes the other way: the control KEEPS the per-token rewind route (0.948 against P0's
 0.964) while EMPair abandons it (0.189). **Resolved at n=48 (`PAIRSPLIT_RESULTS.md`): freedom
-buys +0.091 (MDE 0.066, detectable, replicating on fresh seeds alone), and the pathway buys a
-similar +0.100 (still unmeasured).** Read 1d as: per-pair freedom changes WHAT THE MODEL DOES
+buys +0.091 (MDE 0.066, detectable, replicating on fresh seeds alone), and the pathway buys
++0.124 (MDE 0.071, also detectable at n=48) -- total +0.215, split 42% freedom / 58% pathway.** Read 1d as: per-pair freedom changes WHAT THE MODEL DOES
 decisively and buys about half of a total that is itself smaller than the n=8 headline (+0.191,
 not +0.280).
 

@@ -131,5 +131,6 @@ NOT a loss gap, unlike the recency line. Convergence gate (IID>=0.99) FAILED: WM
 
 **PAIRSPLIT (2026-09-12, PAIRSPLIT_RESULTS.md):** at n=48 per-pair freedom DOES buy accuracy:
 EMPair - EMPairConst = +0.091 (MDE 0.066, 34/48; fresh 40 seeds alone +0.089, detectable). Total is
-+0.191 (not the n=8 +0.280) = pathway +0.100 (unmeasured, P0 extending to n=48) + freedom +0.091.
++0.215 at n=48 = pathway +0.124 + freedom +0.091, BOTH detectable (58% / 42%). The n=8 total (+0.280)
+was 30% inflated.
 The n=8 batch inflated the total and the pathway term, not the freedom term -- 4th instance.
