@@ -156,6 +156,10 @@ VARIANT_MAP = {
     # PAIRORIGIN_PREREG.md: per-pair position origins, zero-init so it IS VanillaEM_P0_r4 at init
     "EMPairConst_r4": __import__("mapformer.model_em_pairconst", fromlist=["x"]).MapFormerEM_PairConst_r4,
     "EMPair_r4": __import__("mapformer.model_em_pairorigin", fromlist=["x"]).MapFormerEM_PairOrigin_r4,
+    # MONOTONE_PREREG.md: the sign ablation on MapFormer-EM and on Selective RoPE's generator
+    "EM_P0_Abs_r4": __import__("mapformer.model_monotone", fromlist=["x"]).MapFormerEM_P0_Abs_r4,
+    "EM_P0_Signed_r4": __import__("mapformer.model_monotone", fromlist=["x"]).MapFormerEM_P0_Signed_r4,
+    "SRoPEGen_Abs": __import__("mapformer.model_monotone", fromlist=["x"]).MapFormerWM_SRoPEGen_Abs,
     "EMNoLeak_e8":  __import__("mapformer.model_em_noleak", fromlist=["x"]).MapFormerEM_NoLeak_e8_r4,
     "EMNoLeak_e64": __import__("mapformer.model_em_noleak", fromlist=["x"]).MapFormerEM_NoLeak_e64_r4,
     "MapEM_NC_L":  MapFormerEM_NC_L,     # paper B.2.2, linear Delta
