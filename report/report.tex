@@ -165,8 +165,8 @@ Table~\ref{tab:contrib} lists what is new here and what replicates prior work.
 \begin{table}[t]
 \centering
 \small
-\caption{Contributions and their standing. ``Ours'' means no paper in the local corpus
-(\texttt{papers/INDEX.md}) reports it; ``replication'' names the prior claim.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Contributions and their standing, one result per row. \emph{Standing}: ``ours'' = no paper in the local corpus (\texttt{papers/INDEX.md}) reports it; ``replication'' = a published claim repeated here. \emph{Prior work}: closest published claim. Path integration = MapFormer's position, a running sum of learned per-token phase increments; index code = position given by token index; monotone = increments forced non-negative; $r$ = rank of the token-to-increment bottleneck; loss-matched = compared at equal final training loss. Reading: the sign result (in navigation) and contextual counting replicate published claims; no corpus paper reports the others.}
 \label{tab:contrib}
 \begin{tabular}{@{}p{8.3cm}p{2.2cm}p{3.9cm}@{}}
 \toprule
@@ -256,7 +256,8 @@ entries are from the local corpus (\texttt{papers/INDEX.md}).
 \begin{table}[t]
 \centering
 \small
-\caption{Positional mechanisms by slot, driver and sign of the increment.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Positional mechanisms by slot, driver and sign of the increment. \emph{Slot}: which part of the rotary logit changes, phase (rotation angle) or magnitude. \emph{Sign}: sign of the per-token increment $\Delta$ accumulated into position; signed increments can cancel, $+1$ is a clock, ``--'' = no accumulated per-token phase. Reading: MapFormer, Selective RoPE and Mamba-3 accumulate a signed phase; RoPE, CARoPE and CoPE only count upward.}
 \label{tab:landscape}
 \begin{tabular}{@{}p{3.2cm}p{2.4cm}p{6.1cm}p{2.7cm}@{}}
 \toprule
@@ -332,9 +333,8 @@ episodes and, where there is an observation map, on a map drawn from a held-out 
 \begin{table}[t]
 \centering
 \small
-\caption{Main-text tasks. ``Floor'' is a measured no-model baseline on the scored events. Gate
-details are in Appendix~\ref{app:gates}. The compositional motif task and the family tree appear in
-Appendices~\ref{app:family} and~\ref{app:comp} only.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Main-text tasks. \emph{Chance / floor}: chance = one over the number of answers; ``floor'' is a measured no-model baseline on the scored events; multiple floors are for MiniGrid at $T=128$/512/1024 and MiniWorld at 16/64/256 observation types. \emph{Train / eval length}: sequence length in training / at evaluation. \emph{Gates passed}: $n$-grams on the action or answer stream alone sit at chance or floor; context destruction collapses trained models. Gate details are in Appendix~\ref{app:gates}. The compositional motif task and the family tree appear in Appendices~\ref{app:family} and~\ref{app:comp} only. Reading: every task evaluates on held-out episodes and, where there is an observation map, on a map drawn from a held-out seed.}
 \label{tab:tasks}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.7cm}>{\raggedright\arraybackslash}p{3.7cm}>{\raggedright\arraybackslash}p{2.9cm}>{\raggedright\arraybackslash}p{2.1cm}>{\raggedright\arraybackslash}p{2.6cm}@{}}
 \toprule
@@ -440,7 +440,8 @@ roughly doubles it (sd 0.070 to 0.126).
 \begin{table}[t]
 \centering
 \small
-\caption{Training recipes. ``Paper'' is the published MapFormer recipe.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Training recipes. ``Paper'' is the published MapFormer recipe. \emph{Recipe}: epochs $\times$ batches per epoch $\times$ batch size, schedule and peak learning rate (lr). Reading: the recipe matters on these tasks as much as any architectural ingredient.}
 \label{tab:recipes}
 \begin{tabular}{@{}lp{8.6cm}>{\raggedright\arraybackslash}p{3.4cm}@{}}
 \toprule
@@ -484,12 +485,8 @@ IID 0.969 at 16 epochs and 0.968 at 50 epochs. The floors at $p_{\mathrm{empty}}
 \begin{table}[t]
 \centering
 \small
-\caption{Reproduction of MapFormer Table~2 (2D columns). Paper v1 and v4 values as printed; ours
-are mean $\pm$ sd over seeds on a held-out map. Measured floors (always-blank): IID 0.522, OOD-d
-0.216, OOD-s ($l=512$) 0.799. OOD-s follows the paper's Appendix~B ($l=512$); the v4 Table~2 caption gives
-$l=256$, where ours are MapWM $0.978\pm0.018$ / $0.984\pm0.020$ and MapEM-os ($p_0$) $0.988\pm0.007$ /
-$0.988\pm0.012$ (16 / 50 epochs; floor 0.803). The 16-epoch and 50-epoch batches are each one batch of 8 seeds per
-arm.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Reproduction of MapFormer Table~2 (2D columns): accuracy predicting the observation at revisited cells of a held-out map. IID = training distribution; OOD-d = smaller map, denser observations; OOD-s = larger map, sparser observations ($p_{\mathrm{empty}}=0.8$), at episode length $l=512$ as in the paper's Appendix~B. MapWM = MapFormer-WM; MapEM-os ($p_0$) = MapFormer-EM with one shared origin $p_0$ instead of the paper's separate $q_0,k_0$. Paper v1 and v4 values as printed; ours are mean $\pm$ sd over 8 seeds per arm, the 16-epoch and 50-epoch budgets each one batch. Measured floors (always-blank): IID 0.522, OOD-d 0.216, OOD-s ($l=512$) 0.799. The v4 Table~2 caption gives OOD-s at $l=256$, where ours are MapWM $0.978\pm0.018$ / $0.984\pm0.020$ and MapEM-os ($p_0$) $0.988\pm0.007$ / $0.988\pm0.012$ (16 / 50 epochs; floor 0.803). Reading: consistent with version~1 within about one standard deviation, below version~4; WM's shortfall does not move with budget.}
 \label{tab:repro}
 \begin{tabular}{@{}llllll@{}}
 \toprule
@@ -519,8 +516,8 @@ crosses 1 and none is much larger. % src: PAPER_FIG4_REPRO.md (E5); PAPER_FIG4_E
 \begin{table}[t]
 \centering
 \small
-\caption{The four checkable claims of the navigation interpretability figure (v4 Fig.~9, v1 Fig.~4),
-torus, 8 seeds per arm, mean $\pm$ sd.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{The four checkable claims of the navigation interpretability figure (v4 Fig.~9, v1 Fig.~4), read from trained torus models; mean $\pm$ sd over 8 seeds per arm. $D_{\mathrm{act}}$, $D_{\mathrm{obs}}$ = learned phase increments of action and observation tokens; left, right, up = increments of those actions; $v_{\mathrm{obs}}$, $v_{\mathrm{act}}$ = attention value vectors. C1: actions move position more than observations; C2: opposite actions cancel; C3: orthogonal actions are not orthogonal (the paper's own limitation); C4: observations write content more than actions. MapEM has separate origins; $r$ = bottleneck rank. Reading: C1 reproduces; C2 holds in direction at $r=2$ with high variance; C3 reproduces at $r=2$ and is removed at $r=4$; C4 does not reproduce (below 1 in every cell).}
 \label{tab:fig4}
 \begin{tabular}{@{}lllllll@{}}
 \toprule
@@ -544,7 +541,8 @@ $L\approx1024$, and TEM's constant includes Python-loop overhead. % src: TIMING_
 \begin{table}[t]
 \centering
 \small
-\caption{Forward plus backward time (ms), batch 4, $d=128$, 2 layers, median of 15 repetitions.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Forward plus backward time (ms), batch 4, $d=128$, 2 layers, median of 15 repetitions, at sequence length $L$; growth = time at $L=2048$ over time at $L=128$. \arm{Vanilla} = MapFormer-WM (parallel prefix sum); \arm{VanillaEM\_P0} = MapFormer-EM, one origin; \arm{PlainFlat} = ordinary index-RoPE transformer; MapEM-NC-L = non-commutative MapEM (sequential product of generators); TEMFaithful = a faithful Tolman--Eichenbaum Machine. Not parameter-matched: only growth is compared; parallel models are overhead-dominated below $L\approx1024$. Reading: the parallel models grow 2.5--3.9$\times$, against 14.4$\times$ for MapEM-NC-L and 120.4$\times$ for TEM.}
 \label{tab:timing}
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
@@ -613,8 +611,8 @@ undertrained (Section~\ref{sec:c1-recipe}); it is the paper-recipe measurement.
 \begin{table}[t]
 \centering
 \small
-\caption{Paper task under the paper's recipe: fresh-map revisit accuracy, $n=8$ per arm, one batch,
-$T=128$, blank floor 0.506. Main effects are paired by seed. MapPoPE is at $r=2$.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Paper task under the paper's recipe (16 epochs, linear decay): accuracy predicting the observation at revisited cells of a held-out map, at the training length $T=128$; mean $\pm$ sd, $n=8$ per arm, one batch; blank floor 0.506. \emph{Encoding}: RoPE = rotation only; PoPE = content-dependent magnitude plus rotation. \emph{Position}: index = token index; path-integrated = running sum of learned per-token increments (MapFormer). \arm{Vanilla} = MapFormer-WM; \arm{VanillaEM\_P0} = MapFormer-EM, one origin; \arm{RoPE} = MapFormer with index rotation; \arm{PlainFlat} = ordinary index-RoPE transformer; MapPoPE is at $r=2$. Main effects are paired by seed over \arm{MapPoPE-Flat}, \arm{Vanilla}, \arm{RoPE}, \arm{PoPE-Flat}: position = path-integrated minus index, averaged over encodings; encoding = PoPE minus RoPE, averaged over position. \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$; inside it = unmeasured, not evidence of zero; $5/8$ = seeds with a positive difference. No sd or \mde\ was recorded for the position effect (per-arm sds at most 0.043). Index arms are undertrained under this recipe; the converged rerun is Table~\ref{tab:paper2x2-converged}. Reading: index models sit just above the floor and path-integrated models solve the task; the encoding effect is small, but measured where it is compressed.}
 \label{tab:paper2x2}
 \begin{tabular}{@{}lllc@{}}
 \toprule
@@ -721,8 +719,8 @@ replication. % src: ALGORITHMIC_RESULTS.md (C18)
 \begin{table}[t]
 \centering
 \small
-\caption{Parity: path-integrated minus index accuracy, trained at $L=16$, $n=8$ per arm, one batch,
-chance 0.5.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Parity (chance 0.5): accuracy of path-integrated \arm{Vanilla} (MapFormer-WM) minus index \arm{RoPE} (same architecture, position = token index), trained at $L=16$, evaluated at $L=16$--256; $n=8$ per arm, one batch. Difference = mean paired difference; \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$; seeds $+$ = seeds with a positive difference. Reading: path integration beats an index code detectably at every length on $8/8$ seeds, peaking at $L=32$; a replication.}
 \label{tab:parity}
 \begin{tabular}{@{}lccccc@{}}
 \toprule
@@ -804,12 +802,8 @@ marginal of 0.507), and the index arm stays at the floor under both.
 \begin{table}[t]
 \centering
 \small
-\caption{Torus knob sweep: held-out accuracy, $n=8$ per arm, path-integrated \arm{Vanilla} against
-index \arm{RoPE}, with each condition's measured floor. All arms trained 16 epochs; rotate and
-allocentric at 392 batches per epoch (matched supervised events, since only moves are scored), baseline and
-combined at 98. No sd or \mde\ was recorded for the effects; the per-arm sds are given. The combined
-condition's order-3 answer-stream gate reached 0.634 against a 0.536 marginal ($n=3$ gate), so its effect is
-approximate.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Torus knob sweep: accuracy predicting the observation at revisited cells of a held-out map, trained and evaluated at $T=128$. Rotate = turn and forward actions (displacement depends on heading); allocentric record = same dynamics, each action token the realised displacement; combined = rotation plus four other MiniGrid-like properties. Path-integrated = \arm{Vanilla} (MapFormer-WM); index = \arm{RoPE} (position = token index). Mean $\pm$ sd, $n=8$ per arm; effect = difference of means; floor = measured no-model baseline. All arms trained 16 epochs; rotate and allocentric at 392 batches per epoch (matched supervised events, since only moves are scored), baseline and combined at 98. No sd or \mde\ was recorded for the effects. The combined condition's order-3 answer-stream gate reached 0.634 against a 0.536 marginal ($n=3$ gate), so its effect is approximate. Reading: rotation removes most of the effect and the allocentric record restores it, with the index arm at the floor under both.}
 \label{tab:knob}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -877,8 +871,8 @@ compared across batches (Appendix~\ref{app:env}). % src: MINIGRID_EM.md (D8); MI
 \begin{table}[t]
 \centering
 \small
-\caption{Allocentric MiniGrid DoorKey-16x16, $T=1024$, $n=8$ per arm, one batch, floor 0.490.
-Parameters 613,576--614,664 across the five arms (training logs). EM arms are discussed in Section~\ref{sec:c4-map}.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Allocentric MiniGrid DoorKey-16x16 (actions recorded as realised displacement): held-out observation-prediction accuracy at $T=1024$, trained at $T=128$; $n=8$ per arm, one batch, floor 0.490. \arm{RoPE} = index position; \arm{Vanilla} = MapFormer-WM; \arm{VanillaEM} = MapFormer-EM, separate origins (discussed in Section~\ref{sec:c4-map}); \_r4 = bottleneck rank 4, else 2. Parameters 613,576--614,664 across the five arms (training logs). Contrast = arm minus \arm{RoPE}, paired by seed: delta (\mde, seeds with a positive difference); \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$; detectable = beyond it; unmeasured = within it, not evidence of zero. Reading: MapWM beats the index arm on every seed only at $r=4$, by a small amount.}
 \label{tab:minigrid-allo}
 \begin{tabular}{@{}lccl@{}}
 \toprule
@@ -923,8 +917,8 @@ equal fit''. % src: ALIASING_GATES.md, ALIASING_CONTROLLED.md verdict (D20); MIN
 \begin{table}[t]
 \centering
 \small
-\caption{MiniWorld at fixed grid 32 (about 512 occupied cells), $T=512$, non-blank accuracy,
-path-integrated minus index, paired by seed. Floors are the non-blank marginals.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{MiniWorld at fixed grid 32 (about 512 occupied cells), $T=512$, only the number of observation types $n_{\mathrm{obs}}$ varied: non-blank accuracy (scored cells whose answer is not blank) on a fresh map, path-integrated (MapFormer-WM) minus index, paired by seed. Floors are the non-blank marginals; $n$ = seeds per arm; sd = of paired differences; \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$; flat = converged. Rows 1--3 are the 400-epoch study (scripted verdict withheld: not all arms converged); row 4 extends $n_{\mathrm{obs}}=256$ to 800 epochs. Reading: the effect does not shrink as aliasing falls; this rests on the two converged cells, which differ in budget and $n$, untested against each other.}
 \label{tab:alias}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
@@ -955,8 +949,8 @@ floor of 0.150 was measured on mostly unconverged runs; both it and the paired \
 \begin{table}[t]
 \centering
 \small
-\caption{MiniWorld map extent at 2 cells per token (grid 8 at $n_{\mathrm{obs}}=16$ is 2 cells per
-token as well): path-integrated minus index, $n=3$ per row, post-hoc pooling. Exploratory.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{MiniWorld map extent at 2 cells per token (grid 8 at $n_{\mathrm{obs}}=16$ is 2 cells per token as well): non-blank accuracy on a fresh map, path-integrated minus index, paired by seed. $T$ = episode length; prior visits = mean earlier visits per scored cell; notes give index-arm accuracy and sd / \mde\ (minimum detectable effect) where recorded. $n=3$ per row, post-hoc pooling of runs at different budgets. Exploratory. Reading: flat at 32 and 128 occupied cells, large at 512; the threshold is a boundary to test, not a finding.}
 \label{tab:extent}
 \begin{tabular}{@{}cccccl@{}}
 \toprule
@@ -1014,8 +1008,8 @@ and $-0.729$ at $T=128$, 512 and 1024 over 72 runs. % src: SIGN_ABLATION.md, SIG
 \begin{table}[t]
 \centering
 \small
-\caption{Sign ablation on the torus: held-out accuracy (mean $\pm$ sd, $n=12$ per arm, one batch,
-floor 0.506) and final training loss.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Sign ablation, torus: accuracy predicting the observation at revisited cells of a held-out map, trained at $T=128$; mean $\pm$ sd, $n=12$ per arm, one batch, floor 0.506; final loss = arm mean. All but \arm{RoPE} are MapFormer-WM at $r=4$ with 204,757 parameters: \arm{Signed\_r4} = free-sign increment $\Delta$; \arm{Vanilla\_r4} = construction control; \arm{Abs\_r4} = $|\Delta|$; \arm{Pos\_r4} = softplus increment (GRAPE-style); \arm{CARoPE\_r4} = CARoPE's increment in $(0,1)$. \arm{RoPE} = index position. Reading: at training length the signed arm is at ceiling and the constraint's cost shows in the loss; accuracy contrasts are in Table~\ref{tab:sign-contrasts}.}
 \label{tab:sign}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -1035,8 +1029,8 @@ arm & $T=128$ & $T=512$ & $T=1024$ & final loss \\
 \begin{table}[t]
 \centering
 \small
-\caption{Sign ablation contrasts, loss-matched (raw in parentheses where recorded), paired by seed,
-$n=12$.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Sign ablation contrasts on the torus (arms as in Table~\ref{tab:sign}: \arm{Signed} free sign; \arm{Abs}, \arm{Pos}, \arm{CARoPE} non-negative; \arm{RoPE} index), first-named minus second, paired by seed, $n=12$, trained at $T=128$. Main value: loss-matched, i.e.\ compared at equal final training loss by a regression pooled over the six arms (verdicts depend on the pool); raw difference in parentheses where recorded. \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$; detectable = beyond it; unmeasured = within it, not evidence of zero. Rule 9, $r(\text{loss},\text{accuracy})$: $-0.978$, $-0.856$, $-0.729$ at the three lengths. Reading: at matched loss the monotone arm is worse than signed by 0.215 and 0.280 beyond training length and beats the index code nowhere; raw it stays above \arm{RoPE}, which trains to a much higher loss.}
 \label{tab:sign-contrasts}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lccc@{}}
@@ -1110,8 +1104,8 @@ branch ``accuracy rises with $r$'' fired. $r=1$ and $r=3$ were not run. % src: R
 \begin{table}[t]
 \centering
 \small
-\caption{Rank sweep on MapWM, torus, $n=8$ per arm, one batch, floor 0.506; parameters in the first
-column.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Rank sweep on MapFormer-WM, torus: accuracy predicting the observation at revisited cells of a held-out map, trained at $T=128$; only the bottleneck rank $r$ varies (parameters in the first column); mean $\pm$ sd, $n=8$ per arm, one batch, floor 0.506. Last column: minus $r=2$ at $T=1024$, paired by seed ($t$ statistic where recorded; seeds with a positive difference). Reading: $r=4$ adds $+0.085$ at $T=1024$ for 384 parameters and cuts seed sd from 0.064 to 0.012; the gain is a step.}
 \label{tab:rank}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -1177,8 +1171,8 @@ minus \arm{Signed}, the registered primary, is $-0.004$ raw (\mde\ $0.055$) and 
 \begin{table}[t]
 \centering
 \small
-\caption{Recency ($k_{\max}=64$, $p_{\mathrm{filler}}=0.5$): accuracy and final loss, $n=8$ per arm, one
-batch; chance 0.0625, most-recent floor 0.0771.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Recency: return the $k$-th most recent symbol ($k_{\max}=64$) past uncounted filler ($p_{\mathrm{filler}}=0.5$); retrieval accuracy on held-out episodes, trained at $T=1024$; mean $\pm$ sd, $n=8$ per arm, one batch; final loss = final training loss. Sign arms (MapFormer-WM, $r=4$) as in Table~\ref{tab:sign}: \arm{Signed\_r4} free sign, the others non-negative. \arm{RoPE}, \arm{PlainFlat} = index position. Chance 0.0625; most-recent floor 0.0771. Reading: index arms fail, path-integrated arms succeed, and the non-negative constraint's cost is unmeasured here.}
 \label{tab:recency}
 \begin{tabular}{@{}lccc@{}}
 \toprule
@@ -1222,8 +1216,8 @@ unconstrained MapFormer discovers such a gate is the new observation. % src: REC
 \begin{table}[t]
 \centering
 \small
-\caption{Recency gate ablation on \arm{Signed\_r4}, $T=1024$, $n=8$, eval-only interventions on $\Delta$.
-Index arms score 0.234.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Recency gate ablation: eval-only interventions on the increments $\Delta$ of trained \arm{Signed\_r4} (MapFormer-WM), $T=1024$, $n=8$; accuracy is the seed mean ($\pm$ sd where recorded). Content tokens are counted, filler is not. Chance 0.0625; index arms score 0.234. \texttt{scale\_match} is the control for \texttt{equalize}; the \texttt{uniform} pair is magnitude-matched and not pre-registered. Reading: a content gate is most of the counting mechanism ($+0.594$, $8/8$), and \texttt{equalize} is confounded.}
 \label{tab:gate-ablation}
 \begin{tabular}{@{}llc@{}}
 \toprule
@@ -1329,9 +1323,8 @@ better when the offset is fixed'': other fixed-offset tasks show no detectable d
 \begin{table}[t]
 \centering
 \small
-\caption{Paper task, extended OOD-s condition, 50-epoch rerun, $n=8$ per arm, one batch. Raw accuracy
-(floors 0.799--0.802 at $p_{\mathrm{empty}}=0.8$) and floor-normalised contrasts. The pre-registered
-convergence gate failed; exploratory.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Paper task, extended OOD-s condition (larger map, $p_{\mathrm{empty}}=0.8$) at episode length $l$, 50-epoch rerun, $n=8$ per arm, one batch: accuracy predicting the observation at revisited cells of a held-out map, mean $\pm$ sd (floors 0.799--0.802 at $p_{\mathrm{empty}}=0.8$). \arm{Vanilla} = MapFormer-WM; \arm{VanillaEM\_P0} = MapFormer-EM, one origin; \arm{MapPoPE-Flat} = PoPE magnitude with MapFormer's phase. Contrasts: floor-normalised (fraction of the range above floor), paired by seed; \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$. The pre-registered convergence gate failed; exploratory. Reading: MapEM degrades more slowly with length than MapWM.}
 \label{tab:papertask-em}
 \begin{tabular}{@{}lccc@{}}
 \toprule
@@ -1363,7 +1356,8 @@ MapEM is well above chance ($0.600$ against $0.0625$). % src: RECENCY_EM_RESULTS
 \begin{table}[t]
 \centering
 \small
-\caption{Varying-$k$ recency, $n=8$ per arm, one batch; chance 0.0625, most-recent floor 0.0771.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Varying-$k$ recency (return the $k$-th most recent symbol): retrieval accuracy on held-out episodes, trained at $T=1024$, mean $\pm$ sd, $n=8$ per arm, one batch. \arm{Vanilla\_r4} = MapFormer-WM; \arm{VanillaEM\_r4} = MapFormer-EM, separate origins; \arm{VanillaEM\_P0\_r4} = MapFormer-EM, one origin. Final loss = range over seeds; worst = worst seed at $T=1024$; last column = seeds reaching training loss $<0.5$ (median epoch). Chance 0.0625, most-recent floor 0.0771. Reading: at a shared budget single-origin MapEM trails MapWM by 0.375 at $T=1024$, separate-origin by 0.137.}
 \label{tab:recency-em}
 \begin{tabular}{@{}lccccc@{}}
 \toprule
@@ -1392,9 +1386,8 @@ tests it in the full one-layer model, one rung at a time.
 \begin{table}[t]
 \centering
 \small
-\caption{The existence and holdability ladder for single-origin MapEM on recency, $n=8$ per arm (seeds
-0--7). ``Install'' writes the rewind code into the position pathway; ``scale'' is the weight scale at
-which it is written; ``leak closed'' holds the content columns of $W_{\mathrm{in}}$ at zero.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{The existence and holdability ladder for single-origin MapEM on recency (retrieval accuracy, trained at $T=1024$), $n=8$ per arm (seeds 0--7). ``Install'' writes the rewind code (the query's increment undoes the count, so the retrieval offset is zero) into the position pathway, frozen or trainable; ``scale'' is the weight scale at which it is written; ``leak closed'' holds the content columns of $W_{\mathrm{in}}$ at zero. $T=2048$ values are means; the last column counts seeds at $\ge0.95$, the registered readout. Reading: the solution is represented exactly, and held at 8$\times$ scale with the leak closed.}
 \label{tab:ladder}
 \begin{tabular}{@{}lccc@{}}
 \toprule
@@ -1461,8 +1454,8 @@ nothing measurable. % src: SEARCH_RESULTS.md S3 (F14)
 \begin{table}[t]
 \centering
 \small
-\caption{Fixed offset, $n=8$ per arm, one batch. Epochs are the median to training loss below 0.5; $^{*}$not
-comparable, since the curriculum's first epochs ask only $k\le2$.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Recency with one fixed offset $k$ (the curriculum arm introduces $k$ gradually), $n=8$ per arm, one batch, trained at $T=1024$; MapEM = single-origin MapFormer-EM, MapWM = MapFormer-WM. Accuracy mean $\pm$ sd at $T=1024$, seeds $\ge0.9$ there, mean at $T=2048$, final training loss. Epochs are the median to training loss below 0.5 (seeds reaching it); $^{*}$not comparable, since the curriculum's first epochs ask only $k\le2$. Reading: with one shared offset MapEM finds the rewind on $7/8$ seeds, in a median 54 against MapWM's 99 epochs.}
 \label{tab:fixedk}
 \begin{tabular}{@{}lccccc@{}}
 \toprule
@@ -1491,8 +1484,8 @@ unregistered). % src: SPREAD2_RESULTS.md (F16); SPREAD_RESULTS.md (F15)
 \begin{table}[t]
 \centering
 \small
-\caption{Offsets drawn from a set of size $m$, 60-epoch base budget, single-origin MapEM, $n=8$ per arm,
-one batch. Primary accuracy is the mean over $k\in\{4,16,64\}$ at $T=1024$.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Recency with offsets $k$ drawn from a set of size $m$, 60-epoch base budget, single-origin MapFormer-EM, $n=8$ per arm, one batch, trained at $T=1024$. Queries per token = training queries naming each query token. Primary accuracy is the mean over $k\in\{4,16,64\}$ at $T=1024$, mean $\pm$ sd; final loss = final training loss. Reading: at a fixed budget fewer offsets is decisively better; at matched queries per token the difference is unmeasured (within its minimum detectable effect).}
 \label{tab:spread2}
 \begin{tabular}{@{}lrcc@{}}
 \toprule
@@ -1547,8 +1540,8 @@ function as single-origin MapEM (maximum logit difference 0). % src: PAIRORIGIN_
 \begin{table}[t]
 \centering
 \small
-\caption{Per-pair origins on recency, $T=1024$, $n=48$, paired by seed; seeds 0--7 reused under a bitwise
-determinism check, seeds 8--47 new. Rule 9: $r=-0.954$ over the 96 \arm{EMPair} and \arm{EMPairConst} runs.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Per-pair origins on recency, $T=1024$, $n=48$, paired by seed; seeds 0--7 reused under a bitwise determinism check, seeds 8--47 new. \arm{EMPair} = single-origin MapEM whose origins also read the token (per-pair kernel); \arm{EMPairConst} = the same pathway reading a constant (kernel still shared). Delta = mean paired accuracy difference; \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$; seeds $+$ = positive differences. Rule 9: $r=-0.954$ over the 96 \arm{EMPair} and \arm{EMPairConst} runs (contrasts of fit). Reading: all three terms are detectable, and the freedom term replicates on fresh seeds.}
 \label{tab:pairsplit}
 \begin{tabular}{@{}llccc@{}}
 \toprule
@@ -1579,9 +1572,8 @@ mechanism. This readout is eight seeds per arm and descriptive of those runs. % 
 \begin{table}[t]
 \centering
 \small
-\caption{Mechanism readouts, $n=8$ per arm, recency. Route: fraction of solved cells (accuracy $\ge0.9$,
-$k\ge8$) retrieved through the query token's own step, readout $\max(\mathrm{sel}-\mathrm{sel}_0,\
-\mathrm{selmin}-\mathrm{selmin}_0)\ge0.5$ in the best head.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Mechanism readouts on recency, $n=8$ per arm, descriptive. \arm{EMPair\_r4} = single-origin MapEM whose origins also read the token (per-pair kernel); \arm{EMPairConst\_r4} = the same pathway reading a constant (shared kernel). Phase spread = circular sd of the position kernel's phase across query--key pairs. A cell is one offset $k$ in one model; route = fraction of solved cells (accuracy $\ge0.9$, $k\ge8$) retrieved through the query token's own step, readout $\max(\mathrm{sel}-\mathrm{sel}_0,\ \mathrm{selmin}-\mathrm{selmin}_0)\ge0.5$ in the best head; solved cells are per seed. Reading: only per-pair freedom abandons the rewind route and spreads the phase.}
 \label{tab:pair-mech}
 \begin{tabular}{@{}lccc@{}}
 \toprule
@@ -1655,9 +1647,8 @@ eight seeds each, pooled from three launches of the same recipe (Table~\ref{tab:
 \begin{table}[t]
 \centering
 \small
-\caption{Loop and path integration on Match-Query $128^2$, query length 256, $n=8$ per arm (seeds 0--2 of all arms from one launch; seeds 3--7 of the two one-layer path-integrated
-arms from a second, and of the other three arms from a third), chance 0.0625. The contrasts below are paired by seed as originally analysed;
-same-seed retrains drift by 0.185 on this task, so the paired \mde s are not reliable (see text).}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Loop and path integration on Match-Query $128^2$ (explore with observations, then predict observations from actions alone), query length 256, $n=8$ per arm (seeds 0--2 of all arms from one launch; seeds 3--7 of the two one-layer path-integrated arms from a second, and of the other three arms from a third), chance 0.0625. Index = token-index position; path-integrated = MapFormer-WM; loop = one shared layer applied four times. Interaction = loop gain with path integration minus with index. \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$; unmeasured = within it. The paired contrasts are paired by seed as originally analysed; same-seed retrains drift by 0.185 on this task, so the paired \mde s are not reliable (see text). Unpaired: se = standard error, t = $t$ statistic. Reading: the loop's gain survives unpaired; the interaction is not re-established unpaired.}
 \label{tab:loop}
 \begin{tabular}{@{}lrccc@{}}
 \toprule
@@ -1794,9 +1785,8 @@ and $-0.141$. The $p=0$ contrasts have \mde\ above $0.26$, so the slope itself i
 \begin{table}[t]
 \centering
 \small
-\caption{\arm{Level15} minus \arm{Vanilla} on Match-Query with stochastic transitions, $n=8$ per arm, one
-batch per take. Take 1: 300 epochs, lr $3\times10^{-4}$. Take 2: 600 epochs, lr $10^{-3}$. Non-positional
-floor at $p=0.10$ about 0.15.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Explicit state correction under drift, Match-Query with stochastic transitions (in the explore phase the executed action is resampled with probability $p$, so the recorded path drifts from the true one): \arm{Level15} (MapFormer-WM plus a wrapped Kalman filter on the path integral) minus \arm{Vanilla} (MapFormer-WM), paired by seed, as delta (\mde, seeds with a positive difference); \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$; change with drift = $p=0.10$ minus $p=0$. $n=8$ per arm, one batch per take. Take 1: 300 epochs, lr $3\times10^{-4}$. Take 2: 600 epochs, lr $10^{-3}$. Arms are not converged at $p=0.10$. Non-positional floor at $p=0.10$ about 0.15. Reading: the prediction that the filter's benefit grows with drift was not supported in either take; the slope itself is unmeasured.}
 \label{tab:mqnoise}
 \begin{tabular}{@{}lccc@{}}
 \toprule
@@ -1832,8 +1822,8 @@ observations.
 \begin{table}[t]
 \centering
 \small
-\caption{Filter and loop on the clean torus, $n=12$ per arm, one batch, 300 epochs. Rule 9: $r=-0.956$,
-$-0.471$, $-0.326$ at the three lengths.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Filter and loop on the clean torus: accuracy predicting the observation at revisited cells of a held-out map, trained at $T=128$; mean over $n=12$ per arm, one batch, 300 epochs. \arm{Vanilla} = MapFormer-WM; \arm{Level15} = plus a wrapped Kalman filter; \arm{Looped} = one layer applied four times; \arm{Level15Looped} = both; \arm{LoopedSampled} = pass count drawn per batch. Blank floor 0.506. Rule 9, $r(\text{loss},\text{accuracy})$: $r=-0.956$, $-0.471$, $-0.326$ at the three lengths. Reading: beyond training length the filter alone is best, and the filter inside a loop is below it.}
 \label{tab:l15loop}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -1966,7 +1956,8 @@ the report. Each was run on the task code before training, except where stated.
 \begin{table}[h]
 \centering
 \small
-\caption{Shortcut gates and floors.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Shortcut gates and floors, run on the task code before training unless stated: scores of trivial predictors on the scored events, which must sit at chance or the floor. o1/o2/o3/o5 = $n$-gram predictors of those orders on the action or answer stream alone; marginal = always the most common answer; never-moved, most-recent, echo, repeat-previous and hub = task-specific trivial predictors (the hub floor is a hub-node baseline); oracle = a check that the task is solvable; label mass = share or number of scored events. MiniWorld: G2 = marginal, G4 = best non-blank action $n$-gram, G5 = label mass, G6 = revisit lag. Context destruction pass = trained models collapse when the required context is destroyed. Reading: every task used passes its shortcut gates (copy has no dynamic range; separation breaks at $n_{\mathrm{obs}}=4$).}
 \label{tab:gate-records}
 \begin{tabular}{@{}p{3.3cm}p{8.2cm}p{3.1cm}@{}}
 \toprule
@@ -2005,8 +1996,8 @@ fix at order 1 only had certified a stronger order-3 shortcut; gates are therefo
 \begin{table}[h]
 \centering
 \small
-\caption{Paper task: revisit accuracy by steps since the last visit to the cell (seed count not recorded;
-exploratory).}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Paper task, paper's recipe: revisit accuracy (predicting the observation at a revisited cell) by steps since the last visit to the cell. \arm{Vanilla} = MapFormer-WM; \arm{RoPE}, \arm{PlainFlat} = index position. Blank rate = per-bin floor; share = fraction of scored events. Seed count not recorded; exploratory. Reading: index models beat the blank rate only at interval 1--2, a retrace.}
 \label{tab:revisit}
 \begin{tabular}{@{}lccccccc@{}}
 \toprule
@@ -2052,8 +2043,8 @@ action-noise configurations; landmark configurations of the same period are not 
 \begin{table}[h]
 \centering
 \small
-\caption{April batch, torus, fresh map, $n=3$, 50 epochs linear decay; ``noise'' replaces 10\% of actions
-(stochastic transitions). Blank floor about 0.50. \arm{VanillaEM} is the separate-origin form.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{April batch, torus paper task, fresh map: accuracy predicting the observation at revisited cells, trained at $T=128$; mean $\pm$ sd, $n=3$, 50 epochs linear decay, no gates; exploratory. ``Noise'' replaces 10\% of actions during training (stochastic transitions), not at evaluation. Blank floor about 0.50. \arm{Vanilla} = MapFormer-WM; \arm{VanillaEM} = MapFormer-EM, separate-origin form; \arm{RoPE} = MapFormer's architecture with index position; LSTM = recurrent network; MambaLike = diagonal-$A$ approximation of Mamba. Reading: exploratory early baselines, kept for reference.}
 \label{tab:april}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -2116,7 +2107,8 @@ $T=128$, hub floor 0.1628), five arms were trained in one batch at $n=3$ (Table~
 \begin{table}[h]
 \centering
 \small
-\caption{Family tree, depth 5, $n=3$ per arm, one batch, 2 layers, 100 epochs. Exploratory.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Family tree, depth 5, $n=3$ per arm, one batch, 2 layers, 100 epochs; held-out accuracy, trained at $T=64$; hub floor 0.1628. \arm{Level15} = MapFormer-WM plus filter; \arm{MapWM-Flat} = MapFormer-WM; MapEM-NC-NL = non-commutative MapEM; \arm{Plain-Flat} = index transformer. Contrasts at $T=64$: delta (sd of paired differences, \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$, seeds with a positive difference); unmeasured = within the \mde. Exploratory. Reading: non-commutativity is real but small; path integration's gain is larger.}
 \label{tab:family}
 \begin{tabular}{@{}lcc@{}}
 \toprule
@@ -2169,8 +2161,8 @@ A same-seed retrain of the hierarchy recheck reproduced arm C digit for digit, a
 \begin{table}[h]
 \centering
 \small
-\caption{Compositional headroom, \arm{Hourglass\_k2}, $n=8$ per arm, one batch. D is a looped hourglass with
-209,256 parameters against 605,800.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Compositional headroom, \arm{Hourglass\_k2} (hierarchical MapFormer-WM), $n=8$ per arm, one batch. cross\_nb\_acc = held-out accuracy on cells whose motif was seen elsewhere but the cell was not (floor about 0.072); final loss = final training loss. A--C vary only the recipe; D is a looped hourglass with 209,256 parameters against 605,800. Contrasts paired by seed; \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$. Reading: the recipe change alone is detectable and larger than any architectural effect measured on this task.}
 \label{tab:comp-headroom}
 \begin{tabular}{@{}lcc@{}}
 \toprule
@@ -2266,8 +2258,8 @@ rows cannot be attributed to the knob; the rank sweep is unaffected by this conf
 \begin{table}[h]
 \centering
 \small
-\caption{Selective RoPE components against \arm{Vanilla}: parity at $L=128$ ($n=16$) and torus ($n=8$).
-Extra parameters are on parity. Confounded attribution (see text).}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Selective RoPE components added to MapFormer-WM, minus \arm{Vanilla}: parity at $L=128$ ($n=16$, trained at $L=16$) and torus ($n=8$, trained at $T=128$), paired by seed. Extra parameters are on parity. Cells: delta (\mde, seeds $+$) or (paired $t$, seeds $+$); \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$; unmeasured = within it. Confounded attribution (see text): each single-knob arm also replaces MapFormer's frequency readout. Reading: the full generator is not better on parity and marginally better on the torus at $T=512$.}
 \label{tab:srope}
 \begin{tabular}{@{}lrccc@{}}
 \toprule
@@ -2431,8 +2423,8 @@ what licenses the eight-arm pool below). % src: MONOTONE_RESULTS.md
 \begin{table}[h]
 \centering
 \small
-\caption{Experiment 1 (MapFormer-EM, recency) and Experiment 2 (Selective RoPE's generator) arms, $n=12$ per
-arm, one batch.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Experiment 1 (MapFormer-EM, recency) and Experiment 2 (Selective RoPE's generator) arms of the pre-registered MONOTONE batch, $n=12$ per arm, one batch: accuracy mean $\pm$ sd and final training loss; ``--'' = not evaluated. Recency = return the $k$-th most recent symbol, trained at $T=1024$ (chance 0.0625); torus = paper task, accuracy predicting the observation at revisited cells of a held-out map, trained at $T=128$ (floor 0.506). \_Abs = increments forced non-negative ($|\Delta|$), otherwise signed. \arm{VanillaEM\_P0\_r4} = single-origin MapFormer-EM; \arm{Signed\_r4} = MapFormer-WM; \arm{SRoPEGen} = Selective RoPE's generator (gate, causal convolution, no bottleneck). Reading: on recency the constraint costs single-origin MapEM a detectable amount and the WM-type generators little; on the torus it costs \arm{SRoPEGen} a large amount (Table~\ref{tab:monotone-contrasts}).}
 \label{tab:monotone-arms}
 \begin{tabular}{@{}llccccc@{}}
 \toprule
@@ -2455,7 +2447,8 @@ torus   & \arm{SRoPEGen\_Abs}    & $0.925\pm0.028$ & $0.638\pm0.029$ & $0.545\pm
 \centering
 \small
 \footnotesize
-\caption{MONOTONE contrasts, paired by seed, $n=12$. Registered contrasts first.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{MONOTONE contrasts: monotone (non-negative increments) minus signed accuracy, arms as in Table~\ref{tab:monotone-arms}, paired by seed, $n=12$, unless marked unpaired. P1--P3, Q1--Q3 = registered contrasts; rows under \emph{exploratory} were not registered; ``stored'' = from the earlier sign ablation. sd = of paired differences (se = standard error); \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$; detectable = beyond the \mde; unmeasured = within it, not evidence of zero; fractions = seeds with a positive difference. Loss-matched = compared at equal final training loss by pooled regression; Q1's two-arm pool had non-overlapping losses, and the eight-arm pool adds the six stored sign arms. Reading: MapEM's cost on recency is detectable, the registered interaction with MapWM's cost is unmeasured, and raw on the torus \arm{SRoPEGen} pays about MapWM's cost.}
 \label{tab:monotone-contrasts}
 \begin{tabular}{@{}lcccl@{}}
 \toprule

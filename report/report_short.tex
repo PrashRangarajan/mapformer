@@ -132,7 +132,8 @@ must sit at the chance or floor rate.
 \begin{table}[t]
 \centering
 \small
-\caption{Tasks. ``Floor'' is a measured no-model baseline on the scored events.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Tasks. \emph{Chance / floor}: chance = one over the number of answers; ``floor'' is a measured no-model baseline on the scored events; multiple floors are for MiniGrid at $T=128$/512/1024 and for MiniWorld at 16/64/256 observation types. \emph{Train / eval length}: sequence length in training / at evaluation. Reading: every task evaluates on held-out episodes and, where there is an observation map, on a map drawn from a held-out seed.}
 \label{tab:tasks}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{4.1cm}>{\raggedright\arraybackslash}p{4.6cm}>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}p{2.2cm}@{}}
 \toprule
@@ -174,7 +175,8 @@ is the larger factor on raw accuracy at every length.
 \begin{table}[t]
 \centering
 \small
-\caption{Paper task under the converged torus recipe: held-out map, 6 arms $\times$ 8 seeds in one batch, pre-registered. Top rows: accuracy mean $\pm$ sd. Bottom rows: main effects on accuracy, each averaged over the other factor and paired by seed, given as effect (\textsc{mde}, seeds with a positive difference). \emph{Position} is path-integrated minus index; \emph{encoding} is PoPE minus RoPE. Every main effect shown is detectable. Effects are on raw accuracy; why no loss-matched position effect is reported is explained in the text. Blank floor about 0.51 at $T=128$.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Paper task under the converged torus recipe: accuracy predicting the observation at revisited cells of a held-out map, trained at $T=128$, evaluated up to eight times that; 6 arms $\times$ 8 seeds in one batch, pre-registered. \emph{Enc.}: RoPE = rotation only; PoPE = content-dependent magnitude plus rotation. \emph{Position}: index = token index; path-int.\ = MapFormer's running sum of learned per-token increments, bottleneck rank $r$. \arm{Vanilla} = MapFormer-WM; \arm{RoPE} = MapFormer with index rotation. Top rows: accuracy mean $\pm$ sd. Bottom rows: main effects on accuracy, each averaged over the other factor and paired by seed, given as effect (\textsc{mde}, seeds with a positive difference); \emph{position} = path-integrated minus index; \emph{encoding} = PoPE minus RoPE; \textsc{mde} = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$. Every main effect shown is detectable (beyond its \textsc{mde}). Effects are on raw accuracy; why no loss-matched position effect is reported is explained in the text. Blank floor about 0.51 at $T=128$. Reading: path integration is the larger factor at every length; the encoding effect is detectably negative at training length and positive beyond it.}
 \label{tab:paper2x2}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lllccc@{}}
@@ -238,11 +240,8 @@ aliasing falls: in converged cells it is $+0.178$ at 32 cells per token ($n=5$, 
 \begin{table}[t]
 \centering
 \small
-\caption{Torus knob sweep: held-out accuracy, $n=8$ per arm, path-integrated \arm{Vanilla} against index
-\arm{RoPE}, with each condition's measured floor. All arms trained 16 epochs; rotate and allocentric at 392
-batches per epoch (matched supervised events), baseline and combined at 98. No sd or \mde\ was recorded for the
-effects. The combined condition's order-3 answer-stream gate reached 0.634 against a 0.536 marginal ($n=3$ gate),
-so its effect is approximate.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Torus knob sweep: accuracy predicting the observation at revisited cells of a held-out map, at $T=128$. Rotate = turn and forward actions (displacement depends on heading); allocentric record = same dynamics, each action token the realised displacement. Path-integrated = \arm{Vanilla} (MapFormer-WM); index = \arm{RoPE} (position = token index). Mean $\pm$ sd, $n=8$ per arm; effect = difference of means; floor = measured no-model baseline. All arms trained 16 epochs; rotate and allocentric at 392 batches per epoch (matched supervised events), baseline and combined at 98. No sd or \mde\ was recorded for the effects. The combined condition's order-3 answer-stream gate reached 0.634 against a 0.536 marginal ($n=3$ gate), so its effect is approximate. Reading: rotation removes most of the effect, and recording the realised displacement restores it.}
 \label{tab:knob}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -300,9 +299,8 @@ map task and small on a counting task.
 \begin{table}[t]
 \centering
 \small
-\caption{Cost of the monotone constraint (monotone minus signed), $T=1024$, paired by seed, $n=12$. The MapWM
-torus row is the stored sign ablation (six-arm loss-matching pool); all other rows are the pre-registered MONOTONE
-batch. Seeds are those with a positive difference.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Cost of the monotone constraint (increments forced non-negative, minus signed), $T=1024$, paired by seed, $n=12$. Torus = paper task (trained at $T=128$); recency = return the $k$-th most recent symbol past uncounted filler (trained at $T=1024$). The MapWM torus row is the stored sign ablation (six-arm loss-matching pool); all other rows are the pre-registered MONOTONE batch. Raw: delta (\mde, seeds with a positive difference); loss-matched = compared at equal final training loss by pooled regression. \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$; detectable = beyond it; unmeasured = within it, not evidence of zero; se = standard error. Reading: for the two WM-type generators the cost is large on the map task and small on the counting task, while single-origin MapEM pays more than MapWM on recency, a difference that is unmeasured.}
 \label{tab:monotone}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}llccl@{}}
@@ -372,9 +370,8 @@ Per-pair position origins add $+0.215$ over single-origin MapEM at $n=48$, split
 \begin{table}[t]
 \centering
 \small
-\caption{The existence and holdability ladder for single-origin MapEM on recency, $n=8$ per arm (seeds 0--7).
-``Install'' writes the rewind code into the position pathway; ``scale'' is the weight scale at which it is written;
-``leak closed'' holds the content columns of $W_{\mathrm{in}}$ at zero.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{The existence and holdability ladder for single-origin MapEM on recency (retrieval accuracy, trained at $T=1024$), $n=8$ per arm (seeds 0--7). ``Install'' writes the rewind code into the position pathway, frozen or trainable; ``scale'' is the weight scale at which it is written; ``leak closed'' holds the content columns of $W_{\mathrm{in}}$ at zero. $T=2048$ values are means; the last column counts seeds at $\ge0.95$, the registered readout. Reading: the solution is represented exactly, and held at eight times the scale with the leak closed.}
 \label{tab:ladder}
 \begin{tabular}{@{}lccc@{}}
 \toprule
@@ -451,8 +448,8 @@ unreliably.
 \begin{table}[t]
 \centering
 \small
-\caption{Headline contrasts for added machinery. Each row comes from its own batch, task and recipe; rows are not
-comparable with each other.}
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Headline contrasts for added machinery. Each row comes from its own batch, task and recipe; rows are not comparable with each other. \arm{Level15} = MapFormer-WM (\arm{Vanilla}) plus a wrapped Kalman filter; \arm{Gated\_r4} = per-token sigmoid gate on the increment; hourglass = hierarchical pooling; loop = one shared layer applied four times. Estimates: accuracy difference (\mde, seeds with a positive difference); \mde\ = minimum detectable effect, $2.8\,\mathrm{sd}/\sqrt{n}$; loss-matched = at equal final training loss; se = standard error. Powered negative = its \mde\ is smaller than the effect it dismisses; directional = consistent in sign but inside its \mde; take 1 / take 2 = two recipes. Reading: only recursion measurably adds more than a ceiling-level amount at training length, where the base model trains unreliably.}
 \label{tab:machinery}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lllll@{}}
