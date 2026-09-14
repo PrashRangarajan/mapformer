@@ -1,0 +1,242 @@
+{
+ "T128|r2|raw": {
+  "r=2 position main effect, raw": [
+   0.2427592467099916,
+   0.03772103090375788,
+   8,
+   "DETECTABLE"
+  ],
+  "r=2 encoding main effect, raw": [
+   -0.04851438519534056,
+   0.03789861297149346,
+   1,
+   "DETECTABLE"
+  ],
+  "r=2 interaction, raw": [
+   0.15401425974515742,
+   0.0755418841006919,
+   8,
+   "DETECTABLE"
+  ]
+ },
+ "T128|r2|loss-matched": {
+  "r=2 position main effect, loss-matched": [
+   -0.0035469362500163137,
+   0.013287608593696406,
+   3,
+   "unmeasured"
+  ],
+  "r=2 encoding main effect, loss-matched": [
+   -0.05469546347473152,
+   0.017378331617306186,
+   0,
+   "DETECTABLE"
+  ],
+  "r=2 interaction, loss-matched": [
+   0.11198034585628172,
+   0.04411943620784763,
+   8,
+   "DETECTABLE"
+  ]
+ },
+ "T128|r4|raw": {
+  "r=4 position main effect, raw": [
+   0.25766308620196987,
+   0.027041409194354608,
+   8,
+   "DETECTABLE"
+  ],
+  "r=4 encoding main effect, raw": [
+   -0.06288957924471196,
+   0.031123926461796646,
+   0,
+   "DETECTABLE"
+  ],
+  "r=4 interaction, raw": [
+   0.12526387164641464,
+   0.06236365494180398,
+   8,
+   "DETECTABLE"
+  ]
+ },
+ "T128|r4|loss-matched": {
+  "r=4 position main effect, loss-matched": [
+   -0.004276591977694533,
+   0.014935034261376639,
+   3,
+   "unmeasured"
+  ],
+  "r=4 encoding main effect, loss-matched": [
+   -0.05546973351575363,
+   0.01913210670993702,
+   0,
+   "DETECTABLE"
+  ],
+  "r=4 interaction, loss-matched": [
+   0.1104318057742375,
+   0.03837142398796906,
+   8,
+   "DETECTABLE"
+  ]
+ },
+ "T512|r2|raw": {
+  "r=2 position main effect, raw": [
+   0.38995569204631647,
+   0.07864681600975684,
+   8,
+   "DETECTABLE"
+  ],
+  "r=2 encoding main effect, raw": [
+   0.11365617202038655,
+   0.02988258032357742,
+   8,
+   "DETECTABLE"
+  ],
+  "r=2 interaction, raw": [
+   -0.1111351911507539,
+   0.11501434571150074,
+   1,
+   "unmeasured"
+  ]
+ },
+ "T512|r2|loss-matched": {
+  "r=2 position main effect, loss-matched": [
+   -5.220639076910713e-05,
+   0.048198851570711965,
+   3,
+   "unmeasured"
+  ],
+  "r=2 encoding main effect, loss-matched": [
+   0.10386888482828308,
+   0.05288277680509395,
+   8,
+   "DETECTABLE"
+  ],
+  "r=2 interaction, loss-matched": [
+   -0.17769283181520945,
+   0.09897982669348239,
+   0,
+   "DETECTABLE"
+  ]
+ },
+ "T512|r4|raw": {
+  "r=4 position main effect, raw": [
+   0.4291456501003789,
+   0.06144162022543368,
+   8,
+   "DETECTABLE"
+  ],
+  "r=4 encoding main effect, raw": [
+   0.08320342233224243,
+   0.03936572212017508,
+   8,
+   "DETECTABLE"
+  ],
+  "r=4 interaction, raw": [
+   -0.17204069052704218,
+   0.07393448181349677,
+   0,
+   "DETECTABLE"
+  ]
+ },
+ "T512|r4|loss-matched": {
+  "r=4 position main effect, loss-matched": [
+   0.014383250811666633,
+   0.05115762933027782,
+   4,
+   "unmeasured"
+  ],
+  "r=4 encoding main effect, loss-matched": [
+   0.0949522075421869,
+   0.04858944157174352,
+   8,
+   "DETECTABLE"
+  ],
+  "r=4 interaction, loss-matched": [
+   -0.19552618638740182,
+   0.09571052791435165,
+   0,
+   "DETECTABLE"
+  ]
+ },
+ "T1024|r2|raw": {
+  "r=2 position main effect, raw": [
+   0.35863471901024035,
+   0.10581357132887767,
+   8,
+   "DETECTABLE"
+  ],
+  "r=2 encoding main effect, raw": [
+   0.18875421130107634,
+   0.060863427254691696,
+   8,
+   "DETECTABLE"
+  ],
+  "r=2 interaction, raw": [
+   -0.08861887263725557,
+   0.18644439247049516,
+   4,
+   "unmeasured"
+  ]
+ },
+ "T1024|r2|loss-matched": {
+  "r=2 position main effect, loss-matched": [
+   -0.026530475149268845,
+   0.08529434052070478,
+   3,
+   "unmeasured"
+  ],
+  "r=2 encoding main effect, loss-matched": [
+   0.17908845225684117,
+   0.0822191677495036,
+   8,
+   "DETECTABLE"
+  ],
+  "r=2 interaction, loss-matched": [
+   -0.1543500711387631,
+   0.1754928259397486,
+   1,
+   "unmeasured"
+  ]
+ },
+ "T1024|r4|raw": {
+  "r=4 position main effect, raw": [
+   0.4440557506813855,
+   0.07421354701425678,
+   8,
+   "DETECTABLE"
+  ],
+  "r=4 encoding main effect, raw": [
+   0.12275551284828301,
+   0.06157509122207612,
+   8,
+   "DETECTABLE"
+  ],
+  "r=4 interaction, raw": [
+   -0.22061626954284227,
+   0.1166867638472027,
+   0,
+   "DETECTABLE"
+  ]
+ },
+ "T1024|r4|loss-matched": {
+  "r=4 position main effect, loss-matched": [
+   0.03444343079686585,
+   0.0712616777825708,
+   5,
+   "unmeasured"
+  ],
+  "r=4 encoding main effect, loss-matched": [
+   0.1343584141091574,
+   0.07212660014536211,
+   8,
+   "DETECTABLE"
+  ],
+  "r=4 interaction, loss-matched": [
+   -0.24381014743413063,
+   0.14251804625275077,
+   0,
+   "DETECTABLE"
+  ]
+ }
+}
