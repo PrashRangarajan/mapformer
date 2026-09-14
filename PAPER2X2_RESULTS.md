@@ -111,9 +111,16 @@ Vanilla_r4 s0: compared 24, differing 0, losses equal True
   unmeasured at T=512 and T=1024, and positive at T=128 (+0.154).
 - **The loss-matched position effect is uninformative here, not null.** Final losses of the two
   groups do not overlap: index arms 0.68-0.96, path-integrated arms 0.0000-0.38. The pooled
-  acc ~ loss fit is therefore identified by the position factor itself, and the residual removes
-  it by construction. This is the same degeneracy as MONOTONE's Q1. `SIGN_ABLATION.md`'s
-  loss-matched +0.123 / +0.195 used a pool that includes intermediate-loss monotone arms. The two
-  loss-matched readings should not be compared. The RAW contrast is the registered primary.
+  acc ~ loss fit can equate the groups only by extrapolating across a loss interval (0.38-0.68)
+  that no run occupies, and loss is itself a consequence of the position code. The residual
+  therefore cannot separate "no position effect at matched loss" from "the position code causes
+  the loss gap". This is related to MONOTONE's Q1, but it is not the same degeneracy: here the
+  path-integrated group has within-group loss spread. `SIGN_ABLATION.md`'s loss-matched +0.123 /
+  +0.195 is a different contrast (Signed_r4 - RoPE) in a pool that includes intermediate-loss
+  monotone arms. The two loss-matched readings should not be compared. The RAW contrast is the
+  registered primary.
+- **Same runs as the sign batch for two arms.** RoPE and Vanilla_r4 seeds 0-7 are bitwise
+  identical to `runs/sign/p0`, and their per-seed accuracies match exactly at all three lengths.
+  For those arms this batch is not independent of `SIGN_ABLATION.md`.
 - **Rank.** Both r=4 path-integrated arms converge on every seed (final loss <= 0.0005) and sit
   at 1.000 at training length. At r=2, Vanilla's final loss reaches 0.38 on its worst seed.

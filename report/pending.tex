@@ -13,25 +13,28 @@
 held-out map, 6 arms $\times$ 8 seeds in one batch, pre-registered (\texttt{PAPER2X2\_PREREG.md}). Accuracy
 mean $\pm$ sd. Main effects are paired by seed; cells give raw (\textsc{mde}) / loss-matched (\textsc{mde}).
 Loss-matched values pool all six arms per length; because index and path-integrated final losses do not
-overlap, they are uninformative (Section~\ref{sec:c1-recipe}). Blank floor 0.506.}
+overlap, the loss-matched position effect is uninformative (Section~\ref{sec:c1-recipe}). $n=8$ per arm;
+every raw main effect shown is detectable ($8/8$ for position); every loss-matched position effect is
+unmeasured and every loss-matched encoding effect detectable. Blank floor about 0.51 at $T=128$ (0.506
+measured on a different evaluator's events).}
 \label{tab:paper2x2-converged}
 \resizebox{\linewidth}{!}{%
-\begin{tabular}{@{}lllccc@{}}
+\begin{tabular}{@{}lllcccc@{}}
 \toprule
-arm & enc. & position & $T=128$ & $T=512$ & $T=1024$ \\
+arm & enc. & position & $T=128$ & $T=512$ & $T=1024$ & final loss (range) \\
 \midrule
-\texttt{RoPE}         & RoPE & index                  & $0.805\pm0.012$ & $0.470\pm0.093$ & $0.374\pm0.135$ \\
-\texttt{PoPE-Flat}    & PoPE & index                  & $0.679\pm0.058$ & $0.639\pm0.046$ & $0.607\pm0.033$ \\
-\texttt{Vanilla}      & RoPE & path-int., $r=2$       & $0.971\pm0.043$ & $0.915\pm0.052$ & $0.777\pm0.094$ \\
-\texttt{MapPoPE-Flat} & PoPE & path-int., $r=2$       & $0.999\pm0.001$ & $0.974\pm0.011$ & $0.921\pm0.023$ \\
-\texttt{Vanilla\_r4}  & RoPE & path-int., $r=4$       & $1.000\pm0.000$ & $0.985\pm0.006$ & $0.928\pm0.012$ \\
-\texttt{MapPoPE\_r4}  & PoPE & path-int., $r=4$       & $1.000\pm0.001$ & $0.982\pm0.018$ & $0.941\pm0.028$ \\
+\texttt{RoPE}         & RoPE & index                  & $0.805\pm0.012$ & $0.470\pm0.093$ & $0.374\pm0.135$ & $0.770$ ($0.676$--$0.831$) \\
+\texttt{PoPE-Flat}    & PoPE & index                  & $0.679\pm0.058$ & $0.639\pm0.046$ & $0.607\pm0.033$ & $0.815$ ($0.728$--$0.957$) \\
+\texttt{Vanilla}      & RoPE & path-int., $r=2$       & $0.971\pm0.043$ & $0.915\pm0.052$ & $0.777\pm0.094$ & $0.089$ ($0.002$--$0.384$) \\
+\texttt{MapPoPE-Flat} & PoPE & path-int., $r=2$       & $0.999\pm0.001$ & $0.974\pm0.011$ & $0.921\pm0.023$ & $0.006$ ($0.000$--$0.023$) \\
+\texttt{Vanilla\_r4}  & RoPE & path-int., $r=4$       & $1.000\pm0.000$ & $0.985\pm0.006$ & $0.928\pm0.012$ & $0.0002$ ($0.0000$--$0.0003$) \\
+\texttt{MapPoPE\_r4}  & PoPE & path-int., $r=4$       & $1.000\pm0.001$ & $0.982\pm0.018$ & $0.941\pm0.028$ & $0.0002$ ($0.0001$--$0.0005$) \\
 \midrule
-\multicolumn{3}{@{}l}{position, $r=2$} & $+0.243\,(0.038)$ / $-0.004\,(0.013)$ & $+0.390\,(0.079)$ / $-0.000\,(0.048)$ & $+0.359\,(0.106)$ / $-0.027\,(0.085)$ \\
-\multicolumn{3}{@{}l}{encoding, $r=2$} & $-0.049\,(0.038)$ / $-0.055\,(0.017)$ & $+0.114\,(0.030)$ / $+0.104\,(0.053)$ & $+0.189\,(0.061)$ / $+0.179\,(0.082)$ \\
-\multicolumn{3}{@{}l}{position, $r=4$} & $+0.258\,(0.027)$ / $-0.004\,(0.015)$ & $+0.429\,(0.061)$ / $+0.014\,(0.051)$ & $+0.444\,(0.074)$ / $+0.034\,(0.071)$ \\
-\multicolumn{3}{@{}l}{encoding, $r=4$} & $-0.063\,(0.031)$ / $-0.055\,(0.019)$ & $+0.083\,(0.039)$ / $+0.095\,(0.049)$ & $+0.123\,(0.062)$ / $+0.134\,(0.072)$ \\
-\multicolumn{3}{@{}l}{rule 9: $r$(final loss, acc)} & $-0.961$ & $-0.940$ & $-0.875$ \\
+\multicolumn{3}{@{}l}{position, $r=2$} & $+0.243\,(0.038)$ / $-0.004\,(0.013)$ & $+0.390\,(0.079)$ / $-0.000\,(0.048)$ & $+0.359\,(0.106)$ / $-0.027\,(0.085)$ & \\
+\multicolumn{3}{@{}l}{encoding, $r=2$} & $-0.049\,(0.038)$ / $-0.055\,(0.017)$ & $+0.114\,(0.030)$ / $+0.104\,(0.053)$ & $+0.189\,(0.061)$ / $+0.179\,(0.082)$ & \\
+\multicolumn{3}{@{}l}{position, $r=4$} & $+0.258\,(0.027)$ / $-0.004\,(0.015)$ & $+0.429\,(0.061)$ / $+0.014\,(0.051)$ & $+0.444\,(0.074)$ / $+0.034\,(0.071)$ & \\
+\multicolumn{3}{@{}l}{encoding, $r=4$} & $-0.063\,(0.031)$ / $-0.055\,(0.019)$ & $+0.083\,(0.039)$ / $+0.095\,(0.049)$ & $+0.123\,(0.062)$ / $+0.134\,(0.072)$ & \\
+\multicolumn{3}{@{}l}{rule 9: $r$(final loss, acc)} & $-0.961$ & $-0.940$ & $-0.875$ & \\
 \bottomrule
 \end{tabular}}
 \end{table}}

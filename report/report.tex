@@ -40,17 +40,19 @@
 MapFormer builds a sense of place by accumulating a content-dependent, signed phase and
 applying it as a rotation in attention. We report controlled measurements of what that
 accumulated ``where'' buys when the observation map is redrawn at test, so that every
-evaluation measures transfer to a new instance of a known structure. On the paper's task under a converged recipe, path integration is the larger factor at every
-length: it adds $+0.243$ at training length and $+0.359$ at eight times it ($n=8$, $8/8$ seeds),
-while the rotary encoding (PoPE against RoPE) is slightly negative at training length and adds a
-smaller, detectable amount beyond it. % src: PAPER2X2_RESULTS.md
+evaluation measures transfer to a new instance of a known structure. On the paper's task under a converged recipe, path integration is the larger factor on raw accuracy
+at every length: it adds $+0.243$ at training length and $+0.359$ at eight times it ($n=8$, $8/8$ seeds),
+while the rotary encoding (PoPE against RoPE) is detectably negative at training length, mostly because
+PoPE lowers the index code, and adds a smaller, detectable amount beyond it.
+% src: PAPER2X2_RESULTS.md
 Three conditions decide whether the phase pays.
 \begin{itemize}[leftmargin=1.2em]
 \item \textbf{Integrable input.} Under turn-and-forward actions the advantage over an index code
 falls from $+0.438$ to $+0.050$. Recording realised displacement restores it to $+0.488$ ($n=8$).
 % src: KNOB_SWEEP_n8.md (inventory D11)
 \item \textbf{Cancelling increments.} On the torus at eight times the training length, forcing
-MapWM's increment non-negative costs $0.363$ raw and $0.280$ at matched loss ($12/12$ seeds). At
+MapWM's increment non-negative costs $0.363$ raw and $0.280$ at matched loss ($12/12$ seeds; loss-matched in a six-arm pool, and
+loss-matched verdicts depend on the pool, Section~\ref{sec:c1-recipe}). At
 matched loss no measurable gain over an index code remains, although raw accuracy stays detectably
 above it; this extends a known result to navigation, and Selective RoPE's generator pays the same raw
 cost. On a counting task the raw cost is small for these two generators ($0.060$, unmeasured, and
@@ -139,8 +141,8 @@ own language experiment reports a perplexity gain but no BLiMP gain.
 
 \paragraph{The argument of this report.} On tasks where the observation map is redrawn at test, the
 transferable part of MapFormer is its accumulated, content-driven position phase. On MapFormer's own task
-it is the larger factor at every length measured, under both the paper's recipe and a converged one; the
-rotary encoding also matters beyond the training length (Section~\ref{sec:c1-paper}). That phase pays under three
+it is the larger factor on raw accuracy at training length under the paper's recipe and at every length
+under a converged one; the rotary encoding also matters beyond the training length (Section~\ref{sec:c1-paper}). That phase pays under three
 conditions, each supported by an intervention on its own task; that rank acts through conditioning is
 descriptive. The
 input must make a token's displacement fixed; the increment must be signed and well-conditioned so
@@ -170,9 +172,9 @@ Table~\ref{tab:contrib} lists what is new here and what replicates prior work.
 \toprule
 result & standing & prior work \\
 \midrule
-Path integration is the larger factor on MapFormer's own task at every length, under the paper's and a converged recipe (index and PoPE controls, context destruction); the encoding adds a smaller amount beyond training length & ours & MapFormer shows path integration solves its task \\
+Path integration is the larger factor on MapFormer's own task on raw accuracy: at training length under the paper's recipe, and at every length measured under a converged recipe (index and PoPE controls, context destruction); the encoding adds a smaller amount beyond training length & ours & MapFormer shows path integration solves its task \\
 Rotation-based actions remove the effect; recording realised displacement restores it; the MiniGrid flip needs $r=4$; the aliasing account fails on its converged cells (exploratory at the least aliased level) & ours & none evaluates navigation \\
-Monotone increments destroy the map in navigation (at matched loss, no gain over an index code remains), isolated as one operation; a second generator pays the same raw cost & replication in a new regime & Sarrof; Grazzi; Selective RoPE \S4.2 \\
+Monotone increments destroy the map in navigation (at matched loss in a six-arm pool, no gain over an index code remains; loss-matched verdicts depend on the pool), isolated as one operation; a second generator pays the same raw cost & replication in a new regime & Sarrof; Grazzi; Selective RoPE \S4.2 \\
 The rank-2 bottleneck learns a skewed basis; $r=4$ repairs it & ours & LieRE (different axis) \\
 Index codes cannot count contextually & replication & CoPE \\
 An unconstrained MapFormer counts through a content gate, by intervention & ours & CoPE's gate is the analogue \\
@@ -446,7 +448,7 @@ name & recipe & used in \\
 \midrule
 paper & 16 epochs $\times$ 98 batches $\times$ 128, linear decay from step one, lr $3\times10^{-4}$ & Tab.~\ref{tab:paper2x2}, knob sweep \\
 paper, 50 ep & 50 epochs, 5\% warmup + cosine to 10\% & reproduction rerun \\
-torus & 300 epochs $\times$ 98 batches $\times$ 128, 5\% warmup + cosine, lr $10^{-3}$ & sign, rank, gates, EM kernel on torus \\
+torus & 300 epochs $\times$ 98 batches $\times$ 128, 5\% warmup + cosine, lr $10^{-3}$ & sign, rank, gates, converged paper-task factorial, EM kernel on torus \\
 recency & 300 epochs $\times$ 48 batches $\times$ 16, cosine, lr $10^{-3}$, 1 layer & Claims 1, 3, 4 \\
 Match-Query & 300 epochs, 48 batches $\times$ 16, warmup + cosine, lr $3\times10^{-4}$ & Claims 1, 5 \\
 MiniGrid & 50 epochs $\times$ 156 batches, 3 layers, 25k cached trajectories & Claim 2 \\
@@ -573,12 +575,14 @@ $3/3$); both at $n=3$, exploratory (Appendix~\ref{app:family}). % src: N3_AUDIT.
 \label{sec:claim1}
 %======================================================================
 
-On four tasks with a redrawn map or held-out episodes, an index code sits at or near its floor
-while a path-integrated code solves the task, and on MapFormer's own task path integration is the larger
-factor at every length. Under a converged recipe the position main effect is $+0.243$ (\mde\ $0.038$,
+On four tasks with a redrawn map or held-out episodes, an index code falls well short of a path-integrated
+code, and on the paper task it sits near its floor under the paper's recipe; on MapFormer's own task path
+integration is the larger factor on raw accuracy at every length. Under a converged recipe the position main effect is $+0.243$ (\mde\ $0.038$,
 $8/8$) at training length and $+0.359$ (\mde\ $0.106$, $8/8$) at eight times it; the encoding main effect is
-$-0.049$ and $+0.189$ at the same lengths, both detectable. Under the paper's recipe, with the index arms on
-the floor, the two effects read $+0.461$ and $+0.003$. % src: PAPER2X2_RESULTS.md; INDEX_BASELINE_PAPER_TASK_n8.md (A3) On blind continuation, a path-integrated model scores $0.456$ against an
+$-0.049$ and $+0.189$ at the same lengths, both detectable. Under the paper's recipe, with the index arms near
+the floor, the two effects read $+0.461$ and $+0.003$.
+% src: PAPER2X2_RESULTS.md; INDEX_BASELINE_PAPER_TASK_n8.md (A3)
+On blind continuation, a path-integrated model scores $0.456$ against an
 index model's $0.108$ ($n=8$ each; paired estimate $+0.348$, but pairing is unreliable on that task); on
 parity it helps at every length on $8/8$ seeds; on recency
 it adds $+0.750$ (\mde\ $0.030$, $8/8$). Raw, the torus separation holds at every length under a converged recipe; whether it survives
@@ -594,13 +598,14 @@ or MapFormer's path integral), with parameters matched within 0.4\%. Index model
 0.506 blank floor on a fresh map; path-integrated models solve the task. The position main effect is
 $+0.461$; the encoding main effect is $+0.003$, inside an \mde\ of $0.029$ ($5/8$ seeds), which is
 small against the position effect. It is measured where index arms sit near the floor ($0.509$--$0.534$) and
-path-integrated arms near ceiling ($0.967$--$0.994$), where an encoding effect is compressed. Elsewhere the
-encoding does matter: in a separate torus batch (grid 64, torus recipe), PoPE's magnitude on top of path
-integration is detectable beyond training length ($+0.037$, \mde\ $0.032$, at $T=512$; $+0.101$, \mde\ $0.065$, at
+path-integrated arms near ceiling ($0.967$--$0.994$), where an encoding effect is compressed. Under the
+converged recipe the encoding main effect is itself detectable beyond training length
+(Table~\ref{tab:paper2x2-converged}); a separate torus batch (grid 64, torus recipe) agrees, with PoPE's
+magnitude on top of path integration detectable beyond training length ($+0.037$, \mde\ $0.032$, at $T=512$; $+0.101$, \mde\ $0.065$, at
 $T=1024$; Section~\ref{sec:length}), and on MiniGrid with commanded actions the encoding is the largest main
 effect ($+0.076$, no sd recorded; Section~\ref{sec:c2-minigrid}). The converged factorial (Table~\ref{tab:paper2x2-converged}) settles the paper-task comparison and is
-the headline measurement. No results file reports an sd or \mde\ for the position main effect; the
-per-arm sds in the table (at most 0.043) show it is far outside seed noise. This table was trained with the
+the headline measurement. No results file reports an sd or \mde\ for the paper-recipe position main effect of
+Table~\ref{tab:paper2x2}; its per-arm sds (at most 0.043) show it is far outside seed noise. That table was trained with the
 paper's recipe (16 epochs, linear decay from step one), under which index models are known to be
 undertrained (Section~\ref{sec:c1-recipe}); it is the paper-recipe measurement.
 % src: INDEX_BASELINE_PAPER_TASK_n8.md; BASELINE_TABLE.md headline (A3); PAPER_TASK_ABLATION.md floor; POPE_WRAPPING.md (E10); MINIGRID_FULL_2X2X2.md (D6)
@@ -636,20 +641,26 @@ recipe, with $r=4$ path-integrated arms added (\texttt{PAPER2X2\_PREREG.md}; 6 a
 one batch), is Table~\ref{tab:paper2x2-converged}. All three registered predictions held.
 \begin{itemize}
 \item \textbf{H1.} The position main effect at $r=2$ and training length is $+0.243$ (\mde\ $0.038$,
-$8/8$), above the pre-registered $+0.15$, so the headline stands. It is about half its size under the
-paper's recipe, because index RoPE rises from $0.530$ to $0.805$.
-\item \textbf{H2.} It grows beyond the training length, to $+0.390$ at $T=512$ and $+0.359$ at $T=1024$
-($r=2$), and $+0.429$ and $+0.444$ at $r=4$, all detectable on $8/8$ seeds.
-\item \textbf{H3.} The encoding main effect at training length is $-0.049$ (\mde\ $0.038$), inside the
-registered $0.05$ bound. That prediction concerned training length only. Beyond it the encoding is
-detectably positive: $+0.114$ and $+0.189$ at $r=2$, $+0.083$ and $+0.123$ at $r=4$. It remains
-smaller than the position effect at every length and rank.
+$8/8$), above the pre-registered $+0.15$, so the headline stands. Under the paper's recipe, in a different
+batch and evaluator, the same contrast was $+0.461$ (no \mde\ recorded); both index arms score higher under
+the converged recipe (\arm{RoPE} $0.530\to0.805$, \arm{PoPE-Flat} $0.509\to0.679$).
+\item \textbf{H2.} Registered at $r=2$, $T=128$ against $T=1024$: $+0.243\to+0.359$, both detectable, $8/8$.
+It is $+0.390$ at $T=512$ in between. At $r=4$ (not registered) it is $+0.258$, $+0.429$ and $+0.444$, $8/8$.
+\item \textbf{H3.} The encoding main effect at $r=2$ and training length is $-0.049$ (\mde\ $0.038$),
+inside the registered $0.05$ bound by $0.001$; the estimate is itself detectable against zero ($1/8$ seeds
+positive). The registered falsifier, a detectable encoding effect larger than the position effect at any
+length, did not fire. Beyond training length the encoding is detectably positive: $+0.114$ and $+0.189$ at
+$r=2$, $+0.083$ and $+0.123$ at $r=4$.
 \end{itemize}
-At $r=4$, PoPE helps the index code more than the path-integrated one beyond training length (interaction
-$-0.172$, \mde\ $0.074$, at $T=512$; $-0.221$, \mde\ $0.117$, at $T=1024$). Both $r=4$ path-integrated arms
-converge on every seed and score $1.000$ at training length, while $r=2$ \arm{Vanilla} reaches a final loss
-of $0.38$ on its worst seed. The RoPE and $r=4$ MapWM seed-0 checkpoints are bitwise identical to those of the
-sign-ablation batch, a determinism check that places both batches in one pipeline.
+Not registered: at $r=4$ the interaction is detectably negative beyond training length ($-0.172$, \mde\
+$0.074$, at $T=512$; $-0.221$, \mde\ $0.117$, at $T=1024$), where the path-integrated arms are near ceiling; at
+$r=2$ it is unmeasured there, and at training length it is detectably positive at both ranks ($+0.154$,
+$+0.125$). Both $r=4$ path-integrated arms converge on every seed and score $1.000$ at training length,
+while $r=2$ \arm{Vanilla} reaches a final loss of $0.38$ on its worst seed. Seed 0 of \arm{RoPE} and
+\arm{Vanilla\_r4} is bitwise identical to the sign-ablation batch (weights and loss curve), and seeds 0--7
+of both arms give identical accuracies there, so for these two arms the two tables are not independent (the
+sign ablation's \arm{RoPE} $0.799$ is seeds 0--11 of the same deterministic runs). This is a determinism
+check, not a replication.
 % src: PAPER2X2_RESULTS.md (registered verdicts, per-arm table, T=128/512/1024 contrasts, determinism check)
 
 \paragraph{The maps are used.} Destroying the context on trained models drops accuracy below the
@@ -661,17 +672,19 @@ $0.9873$ to between $0.2680$ and $0.3831$. Likelihood becomes worse than uniform
 actions resampled against 0.006--0.100 intact, where uniform is $\ln 21 = 3.04$. The models are
 overconfident, not hedging. EM retains more than WM under action resampling ($0.362$ against
 $0.178$, $3/3$); no mechanism is claimed. This shows the models use the action stream; that the task
-cannot be solved without it is what the index arms of Table~\ref{tab:paper2x2} show.
+is not solved without path integration is what the index arms of Tables~\ref{tab:paper2x2}
+and~\ref{tab:paper2x2-converged} show ($0.805$ at best, against $0.971$--$1.000$).
 % src: PAPER_TASK_ABLATION.md (A6)
 
 
 
-\paragraph{Why index models exceed the floor at all.} Binned by the number of steps since a cell was
-last visited, index models exceed the per-bucket blank rate only at interval 1--2, which is an
+\paragraph{Why index models exceed the floor at all.} Under the paper's recipe, binned by the number of
+steps since a cell was last visited, index models exceed the per-bucket blank rate only at interval 1--2, which is an
 out-and-back retrace: \arm{RoPE} $0.557$ and \arm{PlainFlat} $0.575$ against a blank rate of $0.504$.
 From interval 3 onwards they sit on the floor, while \arm{Vanilla} holds $0.881$ at intervals of 65
-or more. An index code learns only local retraces from action tokens used as content
-(Appendix~\ref{app:gates}, Table~\ref{tab:revisit}). The seed count of this analysis is not recorded;
+or more. Under the paper's recipe an index code learns only local retraces from action tokens used as content
+(Appendix~\ref{app:gates}, Table~\ref{tab:revisit}); under the converged recipe it reaches $0.805$
+(Table~\ref{tab:paper2x2-converged}), which retraces alone cannot produce. The seed count of this analysis is not recorded;
 it is exploratory. % src: REVISIT_DISTANCE.md (A7)
 
 \subsection{Blind continuation}
@@ -742,14 +755,20 @@ $0.0002$ (Table~\ref{tab:sign}). At that recipe, signed path integration minus R
 $-0.021$ (\mde\ $0.013$) at $T=128$, $+0.123$ (\mde\ $0.075$) at $T=512$ and $+0.195$ (\mde\ $0.107$) at
 $T=1024$, negative on $0/12$ seeds at the two longer lengths. % src: SIGN_ABLATION.md (E11)
 
-The converged factorial answers the objection on raw accuracy. A well-trained index model closes about
-half of the gap at training length, and the rest stays detectable ($+0.243$, $8/8$, Table~\ref{tab:paper2x2-converged}).
-Loss-matching cannot decide it. In the factorial's own pool the index arms' final losses ($0.68$--$0.96$) and
-the path-integrated arms' ($0.00$--$0.38$) do not overlap, so the fitted accuracy--loss line absorbs the
-position factor itself. There the loss-matched position effect is unmeasured at every length ($-0.004$,
-$-0.000$, $-0.027$ at $r=2$), which says nothing either way. In the sign ablation's pool, which includes
-intermediate-loss monotone arms, it is detectable beyond the training length.
-% src: PAPER2X2_RESULTS.md (Reading) Loss-matching at $T=128$, where
+The converged factorial answers the objection on raw accuracy. Trained under the converged recipe, the
+index arms score higher and the position main effect is $+0.243$ (\mde\ $0.038$, $8/8$,
+Table~\ref{tab:paper2x2-converged}), against $+0.461$ under the paper's recipe in a different batch and
+evaluator. Loss-matching cannot decide it. In the factorial's own pool the index arms' final losses
+($0.68$--$0.96$) and the path-integrated arms' ($0.00$--$0.38$) do not overlap, so the fit can equate the
+groups only by extrapolating across a loss interval that no run occupies, and loss is itself a consequence of
+the position code. There the loss-matched position effect is unmeasured at every length ($-0.004$, $-0.000$,
+$-0.027$ at $r=2$), which cannot separate ``no position effect at matched loss'' from ``the position code
+causes the loss gap''. In the sign ablation's batch, whose pool adds intermediate-loss monotone arms, the
+loss-matched signed-minus-\arm{RoPE} contrast ($r=4$, $n=12$, same \arm{RoPE} runs) is $-0.021$ at $T=128$
+and $+0.123$ and $+0.195$ beyond it; it is a different contrast and pool, and the two loss-matched readings
+are not comparable.
+% src: PAPER2X2_RESULTS.md (Reading); SIGN_ABLATION.md (E11)
+In the sign ablation's batch, loss-matching at $T=128$, where
 $r(\text{loss},\text{accuracy})=-0.978$, also partials out the very deficit the index code has, so the
 $T=128$ loss-matched value is not evidence that the index code maps. On Match-Query, under warmup and
 cosine decay at lr $3\times10^{-4}$ for 300 epochs, the index arm stays at $0.108$, because the blind query removes the retrace route, and on
@@ -1899,8 +1918,8 @@ was not run.
 \item \textbf{Out-of-distribution length.} Most accuracy effects are concentrated beyond the training length
 (Section~\ref{sec:length}), and no account of that concentration exists.
 \item \textbf{Recipe dependence of index baselines.} Under the paper's recipe the torus index arms are
-undertrained. Under the converged recipe the raw separation at training length halves but stays
-detectable. Loss-matched readings depend on the pool, and they are uninformative where arm losses do not
+undertrained. Under the converged recipe the raw position main effect at training length is $+0.243$
+(\mde\ $0.038$), against $+0.461$ in the paper-recipe batch (different evaluator); it stays detectable. Loss-matched readings depend on the pool, and they are uninformative where arm losses do not
 overlap (Section~\ref{sec:c1-recipe}).
 \item \textbf{Conditions established on different tasks.} The three conditions of the thesis were shown on
 different tasks; no single task shows them binding together, and they are not claimed to be sufficient.
@@ -1927,8 +1946,8 @@ accumulator was deleted before analysis and must be re-run; the forget gate's me
 %======================================================================
 
 On tasks that redraw the observation map, MapFormer's transferable where is its accumulated, content-driven
-phase. It is the larger factor at every length on MapFormer's own task, under the paper's recipe and a converged
-one; the rotary encoding adds a smaller amount beyond the training length. The phase pays when the input makes each token's
+phase. It is the larger factor on raw accuracy on MapFormer's own task, at training length under the paper's
+recipe and at all three lengths under a converged one; the rotary encoding adds a smaller amount beyond the training length. The phase pays when the input makes each token's
 displacement fixed, when increments are signed and well conditioned so that they cancel, and when training
 finds the solution. The first two conditions were supported by single-operation interventions (the action
 record, the absolute value, the rank), though that rank acts through conditioning is descriptive; the third by constructing the solution, holding it, and measuring where
