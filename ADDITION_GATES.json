@@ -1,0 +1,11 @@
+{
+ "ngram_o1": 0.16460264085950954,
+ "ngram_o2": 0.16456163372426802,
+ "ngram_o3": 0.16099401295825475,
+ "ngram_o4": 0.12193471664069548,
+ "ngram_o5": 0.09167145083244485,
+ "majority_digit": 0.1629418518822275,
+ "reference_no_carry_digit": 0.7587755269416878,
+ "reference_no_carry_exact": 0.133,
+ "chance_digit": 0.1
+}
