@@ -399,6 +399,17 @@ effect is $\mde = 2.8\,\mathrm{sd}/\sqrt{n}$ on the paired differences. A contra
 is \emph{detectable}; inside it, \emph{unmeasured}, never ``null''. A negative result is called
 \emph{powered} only when its \mde\ is smaller than the effect it is used to dismiss. Seed counts
 with a positive difference are given as, e.g., $8/8$.
+
+\emph{Worked example} (the position main effect of Table~\ref{tab:paper2x2-converged} at $r=2$, $T=128$). For each
+seed, the effect is $\tfrac12[(\arm{Vanilla}-\arm{RoPE}) + (\arm{MapPoPE-Flat}-\arm{PoPE-Flat})]$, with every arm
+scored on the same evaluation trajectories. Over the eight seeds this gives $0.293$, $0.218$, $0.240$, $0.258$,
+$0.245$, $0.223$, $0.288$ and $0.177$: mean $0.243$, standard deviation $0.038$. The standard error of that mean is
+$0.038/\sqrt8$, and the \mde\ multiplies it by 2.8, the factor that flags a true effect of that size at least 80\% of
+the time while flagging pure noise only 5\% of the time ($1.96+0.84$). Here $\mde = 2.8\times0.038/\sqrt8 = 0.038$;
+with eight seeds $2.8/\sqrt8\approx0.99$, so the \mde\ is close to the sd of the paired differences. The effect is
+about six times its \mde, so it is detectable. Because arms are paired by seed and share evaluation data, noise common
+to both arms cancels in the difference, which keeps the sd, and so the \mde, small.
+% src: _PAPER2X2_RAW.json (per-seed accuracies, eval_noise_refine, env-seed 10000); PAPER2X2_RESULTS.md
 \item \textbf{Seeds.} Results at $n\le3$ are exploratory whatever their verdict column says.
 \item \textbf{One batch.} Arms that are compared were trained in one batch with the same code. A
 same-seed retrain that reproduces a number bitwise is a determinism check, not a replication.
