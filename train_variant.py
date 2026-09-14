@@ -162,6 +162,7 @@ VARIANT_MAP = {
     "SRoPEGen_Abs": __import__("mapformer.model_monotone", fromlist=["x"]).MapFormerWM_SRoPEGen_Abs,
     # ADDITION_DESIGN.md: position-coupling oracle (RoPE over hand-assigned coupled IDs)
     "CoupledRoPE": __import__("mapformer.model_coupled_rope", fromlist=["x"]).MapFormerWM_CoupledRoPE,
+    "CoupledAPE": __import__("mapformer.model_coupled_ape", fromlist=["x"]).MapFormerWM_CoupledAPE,
     "EMNoLeak_e8":  __import__("mapformer.model_em_noleak", fromlist=["x"]).MapFormerEM_NoLeak_e8_r4,
     "EMNoLeak_e64": __import__("mapformer.model_em_noleak", fromlist=["x"]).MapFormerEM_NoLeak_e64_r4,
     "MapEM_NC_L":  MapFormerEM_NC_L,     # paper B.2.2, linear Delta

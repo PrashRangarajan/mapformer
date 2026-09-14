@@ -79,7 +79,7 @@ def main():
     sched = torch.optim.lr_scheduler.LambdaLR(
         opt, lambda st: (st + 1) / w if st < w else 0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * min((st - w) / max(1, total - w), 1.0))))
     rng = np.random.RandomState(a.seed)
-    rand_start = a.variant == "CoupledRoPE"
+    rand_start = bool(getattr(model, "wants_pos_ids", False))   # coupled oracles: random starting ID
     losses, curve = [], []
     for ep in range(a.epochs):
         t0 = time.time(); run = 0.0
