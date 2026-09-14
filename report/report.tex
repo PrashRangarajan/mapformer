@@ -758,16 +758,8 @@ $T=1024$, negative on $0/12$ seeds at the two longer lengths. % src: SIGN_ABLATI
 The converged factorial answers the objection on raw accuracy. Trained under the converged recipe, the
 index arms score higher and the position main effect is $+0.243$ (\mde\ $0.038$, $8/8$,
 Table~\ref{tab:paper2x2-converged}), against $+0.461$ under the paper's recipe in a different batch and
-evaluator. Loss-matching cannot decide it. In the factorial's own pool the index arms' final losses
-($0.68$--$0.96$) and the path-integrated arms' ($0.00$--$0.38$) do not overlap, so the fit can equate the
-groups only by extrapolating across a loss interval that no run occupies, and loss is itself a consequence of
-the position code. There the loss-matched position effect is unmeasured at every length ($-0.004$, $-0.000$,
-$-0.027$ at $r=2$), which cannot separate ``no position effect at matched loss'' from ``the position code
-causes the loss gap''. In the sign ablation's batch, whose pool adds intermediate-loss monotone arms, the
-loss-matched signed-minus-\arm{RoPE} contrast ($r=4$, $n=12$, same \arm{RoPE} runs) is $-0.021$ at $T=128$
-and $+0.123$ and $+0.195$ beyond it; it is a different contrast and pool, and the two loss-matched readings
-are not comparable.
-% src: PAPER2X2_RESULTS.md (Reading); SIGN_ABLATION.md (E11)
+evaluator. The position effect is reported on raw accuracy only, and not at matched loss. Matching would normally separate a model that represents the task better from one that merely trained further, but here index arms end training at loss $0.68$--$0.96$ and path-integrated arms at $0.00$--$0.38$, because an index code cannot fit the task; matching on loss would remove the very difference being measured. Whether path integration represents the map, rather than only fitting it, rests on the interventions of Sections~\ref{sec:claim2}--\ref{sec:claim4}. The encoding effect, whose arms do share a loss range, survives loss-matching at every length.
+% src: PAPER2X2_RESULTS.md (T=128/512/1024 contrasts, Reading)
 In the sign ablation's batch, loss-matching at $T=128$, where
 $r(\text{loss},\text{accuracy})=-0.978$, also partials out the very deficit the index code has, so the
 $T=128$ loss-matched value is not evidence that the index code maps. On Match-Query, under warmup and

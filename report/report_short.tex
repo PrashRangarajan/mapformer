@@ -174,11 +174,7 @@ is the larger factor on raw accuracy at every length.
 \begin{table}[t]
 \centering
 \small
-\caption{Paper task under the converged torus recipe: held-out map, 6 arms $\times$ 8 seeds in one batch,
-pre-registered. Accuracy mean $\pm$ sd. Main effects are paired by seed; cells give raw (\mde) / loss-matched
-(\mde), pooling all six arms per length. Every raw main effect shown is detectable ($8/8$ for position); every
-loss-matched position effect is unmeasured and every loss-matched encoding effect detectable. Blank floor about
-0.51 at $T=128$.}
+\caption{Paper task under the converged torus recipe: held-out map, 6 arms $\times$ 8 seeds in one batch, pre-registered. Top rows: accuracy mean $\pm$ sd. Bottom rows: main effects on accuracy, each averaged over the other factor and paired by seed, given as effect (\textsc{mde}, seeds with a positive difference). \emph{Position} is path-integrated minus index; \emph{encoding} is PoPE minus RoPE. Every main effect shown is detectable. Effects are on raw accuracy; why no loss-matched position effect is reported is explained in the text. Blank floor about 0.51 at $T=128$.}
 \label{tab:paper2x2}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lllccc@{}}
@@ -192,11 +188,10 @@ arm & enc. & position & $T=128$ & $T=512$ & $T=1024$ \\
 \arm{Vanilla\_r4}  & RoPE & path-int., $r=4$ & $1.000\pm0.000$ & $0.985\pm0.006$ & $0.928\pm0.012$ \\
 \arm{MapPoPE\_r4}  & PoPE & path-int., $r=4$ & $1.000\pm0.001$ & $0.982\pm0.018$ & $0.941\pm0.028$ \\
 \midrule
-\multicolumn{3}{@{}l}{position, $r=2$} & $+0.243\,(0.038)$ / $-0.004\,(0.013)$ & $+0.390\,(0.079)$ / $-0.000\,(0.048)$ & $+0.359\,(0.106)$ / $-0.027\,(0.085)$ \\
-\multicolumn{3}{@{}l}{encoding, $r=2$} & $-0.049\,(0.038)$ / $-0.055\,(0.017)$ & $+0.114\,(0.030)$ / $+0.104\,(0.053)$ & $+0.189\,(0.061)$ / $+0.179\,(0.082)$ \\
-\multicolumn{3}{@{}l}{position, $r=4$} & $+0.258\,(0.027)$ / $-0.004\,(0.015)$ & $+0.429\,(0.061)$ / $+0.014\,(0.051)$ & $+0.444\,(0.074)$ / $+0.034\,(0.071)$ \\
-\multicolumn{3}{@{}l}{encoding, $r=4$} & $-0.063\,(0.031)$ / $-0.055\,(0.019)$ & $+0.083\,(0.039)$ / $+0.095\,(0.049)$ & $+0.123\,(0.062)$ / $+0.134\,(0.072)$ \\
-\multicolumn{3}{@{}l}{rule 9: $r$(final loss, acc)} & $-0.961$ & $-0.940$ & $-0.875$ \\
+\multicolumn{3}{@{}l}{position, $r=2$} & $+0.243$ ($0.038$, $8/8$) & $+0.390$ ($0.079$, $8/8$) & $+0.359$ ($0.106$, $8/8$) \\
+\multicolumn{3}{@{}l}{encoding, $r=2$} & $-0.049$ ($0.038$, $1/8$) & $+0.114$ ($0.030$, $8/8$) & $+0.189$ ($0.061$, $8/8$) \\
+\multicolumn{3}{@{}l}{position, $r=4$} & $+0.258$ ($0.027$, $8/8$) & $+0.429$ ($0.061$, $8/8$) & $+0.444$ ($0.074$, $8/8$) \\
+\multicolumn{3}{@{}l}{encoding, $r=4$} & $-0.063$ ($0.031$, $0/8$) & $+0.083$ ($0.039$, $8/8$) & $+0.123$ ($0.062$, $8/8$) \\
 \bottomrule
 \end{tabular}}
 \end{table}
@@ -214,11 +209,7 @@ converged recipe (\arm{RoPE} $0.530\to0.805$, \arm{PoPE-Flat} $0.509\to0.679$). 
 the context on trained models ($n=3$, exploratory by $n$), \arm{Vanilla} falls from $0.9889$ intact to $0.1783$
 with actions resampled from another episode, below the blank floor.
 
-\paragraph{The main caveat: loss-matching cannot decide it.} The index arms' final losses ($0.68$--$0.96$) and
-the path-integrated arms' ($0.00$--$0.38$) do not overlap, so the fit can equate the groups only by extrapolating
-across a loss interval that no run occupies, and loss is itself a consequence of the position code. The
-loss-matched position effect is unmeasured at every length ($-0.004$, $-0.000$, $-0.027$ at $r=2$), which cannot
-separate ``no position effect at matched loss'' from ``the position code causes the loss gap''.
+\paragraph{Why the position effect is not loss-matched.} Accuracy tracks final training loss closely here ($r=-0.961$ at $T=128$), which would normally call for comparing arms at matched loss, to separate a model that represents the task better from one that merely trained further. For position that comparison does not exist: index arms end training at loss $0.68$--$0.96$ and path-integrated arms at $0.00$--$0.38$, because an index code cannot fit the task. Matching on loss would remove the very difference being measured, so the position effect is reported on raw accuracy only. Whether path integration represents the map, rather than only fitting it, is shown by the interventions of Sections~\ref{sec:claim2}--\ref{sec:claim4}, not by this table. The encoding effect, whose arms do share a loss range, survives loss-matching at every length (\texttt{PAPER2X2\_RESULTS.md}).
 
 \paragraph{Other tasks.} Match-Query withholds observations in the query phase, which closes the retrace route that
 lets an index model exceed the floor on the paper task. On the $128^2$ map, with eight seeds per arm pooled from
