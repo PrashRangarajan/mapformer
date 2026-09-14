@@ -1,72 +1,37 @@
-% pending.tex -- placeholders for content that does not exist yet.
-% Every macro here renders in red in the PDF. Replace the body of a macro when its
-% source lands; do not delete the macro call sites.
-%
-% Open items (2026-09-13):
-%   1. PAPER2X2 (PAPER2X2_PREREG.md): the paper-task 2x2 under the converged recipe,
-%      6 arms x 8 seeds, one batch. Training at the time of writing; no results.
-%
-% Resolved and therefore NOT pending (kept here for the record):
-%   - Paper section references: App. A.7 (separate q0p/k0p), Fig. 9 / App. C.1 of v4
-%     (Fig. 4 in v1), App. C.3 (two pools). Checked against papers/txt/mapformer.txt (v4).
-%   - MiniWorld map-extent endpoints: MINIWORLD_ENDPOINTS.md (sd and MDE now exist).
-
+% pending.tex -- formerly placeholders; all items are now resolved (2026-09-13).
+%   - PAPER2X2: PAPER2X2_RESULTS.md (table below).
+%   - Paper section references: App. A.7, Fig. 9 / App. C.1 of v4 (Fig. 4 in v1), App. C.3.
+%   - MiniWorld map-extent endpoints: MINIWORLD_ENDPOINTS.md.
 \newcommand{\PENDING}[1]{\textcolor{red}{\textbf{[PENDING:} #1\textbf{]}}}
 
-% ---------------------------------------------------------------------------
-% 1. The converged-recipe paper-task 2x2 table (Claim 1 headline).
-% ---------------------------------------------------------------------------
+% The converged-recipe paper-task factorial (Claim 1 headline). src: PAPER2X2_RESULTS.md
 \newcommand{\PaperTwoByTwoTable}{%
 \begin{table}[t]
 \centering
 \small
-\caption{\PENDING{PAPER2X2 results.} The paper-task position $\times$ encoding factorial under
-the converged torus recipe (300 epochs, 5\% warmup + cosine, lr $10^{-3}$), 6 arms $\times$ 8
-seeds in one batch, held-out map, $T=128/512/1024$. Pre-registration: \texttt{PAPER2X2\_PREREG.md}.
-Primary cell: $r=2$, $T=128$, raw. Main effects paired by seed, raw and loss-matched (one
-accuracy-on-final-loss fit pooled over all six arms per length), with rule-9 $r$ per length and
-per-arm final-loss mean and range.}
+\caption{Paper task under the converged torus recipe (300 epochs, 5\% warmup + cosine, lr $10^{-3}$):
+held-out map, 6 arms $\times$ 8 seeds in one batch, pre-registered (\texttt{PAPER2X2\_PREREG.md}). Accuracy
+mean $\pm$ sd. Main effects are paired by seed; cells give raw (\textsc{mde}) / loss-matched (\textsc{mde}).
+Loss-matched values pool all six arms per length; because index and path-integrated final losses do not
+overlap, they are uninformative (Section~\ref{sec:c1-recipe}). Blank floor 0.506.}
 \label{tab:paper2x2-converged}
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lllccc@{}}
 \toprule
-arm & encoding & position & $T=128$ & $T=512$ & $T=1024$ \\
+arm & enc. & position & $T=128$ & $T=512$ & $T=1024$ \\
 \midrule
-\texttt{RoPE}         & RoPE & index                & \PENDING{} & \PENDING{} & \PENDING{} \\
-\texttt{PoPE-Flat}    & PoPE & index                & \PENDING{} & \PENDING{} & \PENDING{} \\
-\texttt{Vanilla}      & RoPE & path-integrated, $r=2$ & \PENDING{} & \PENDING{} & \PENDING{} \\
-\texttt{MapPoPE-Flat} & PoPE & path-integrated, $r=2$ & \PENDING{} & \PENDING{} & \PENDING{} \\
-\texttt{Vanilla\_r4}  & RoPE & path-integrated, $r=4$ & \PENDING{} & \PENDING{} & \PENDING{} \\
-\texttt{MapPoPE\_r4}  & PoPE & path-integrated, $r=4$ & \PENDING{} & \PENDING{} & \PENDING{} \\
+\texttt{RoPE}         & RoPE & index                  & $0.805\pm0.012$ & $0.470\pm0.093$ & $0.374\pm0.135$ \\
+\texttt{PoPE-Flat}    & PoPE & index                  & $0.679\pm0.058$ & $0.639\pm0.046$ & $0.607\pm0.033$ \\
+\texttt{Vanilla}      & RoPE & path-int., $r=2$       & $0.971\pm0.043$ & $0.915\pm0.052$ & $0.777\pm0.094$ \\
+\texttt{MapPoPE-Flat} & PoPE & path-int., $r=2$       & $0.999\pm0.001$ & $0.974\pm0.011$ & $0.921\pm0.023$ \\
+\texttt{Vanilla\_r4}  & RoPE & path-int., $r=4$       & $1.000\pm0.000$ & $0.985\pm0.006$ & $0.928\pm0.012$ \\
+\texttt{MapPoPE\_r4}  & PoPE & path-int., $r=4$       & $1.000\pm0.001$ & $0.982\pm0.018$ & $0.941\pm0.028$ \\
 \midrule
-\multicolumn{3}{@{}l}{position main effect, $r=2$ (raw / loss-matched, \textsc{mde})} & \PENDING{} & \PENDING{} & \PENDING{} \\
-\multicolumn{3}{@{}l}{encoding main effect, $r=2$ (raw / loss-matched, \textsc{mde})} & \PENDING{} & \PENDING{} & \PENDING{} \\
-\multicolumn{3}{@{}l}{position main effect, $r=4$ (raw / loss-matched, \textsc{mde})} & \PENDING{} & \PENDING{} & \PENDING{} \\
-\multicolumn{3}{@{}l}{encoding main effect, $r=4$ (raw / loss-matched, \textsc{mde})} & \PENDING{} & \PENDING{} & \PENDING{} \\
-\multicolumn{3}{@{}l}{rule 9: $r$(final loss, accuracy)} & \PENDING{} & \PENDING{} & \PENDING{} \\
+\multicolumn{3}{@{}l}{position, $r=2$} & $+0.243\,(0.038)$ / $-0.004\,(0.013)$ & $+0.390\,(0.079)$ / $-0.000\,(0.048)$ & $+0.359\,(0.106)$ / $-0.027\,(0.085)$ \\
+\multicolumn{3}{@{}l}{encoding, $r=2$} & $-0.049\,(0.038)$ / $-0.055\,(0.017)$ & $+0.114\,(0.030)$ / $+0.104\,(0.053)$ & $+0.189\,(0.061)$ / $+0.179\,(0.082)$ \\
+\multicolumn{3}{@{}l}{position, $r=4$} & $+0.258\,(0.027)$ / $-0.004\,(0.015)$ & $+0.429\,(0.061)$ / $+0.014\,(0.051)$ & $+0.444\,(0.074)$ / $+0.034\,(0.071)$ \\
+\multicolumn{3}{@{}l}{encoding, $r=4$} & $-0.063\,(0.031)$ / $-0.055\,(0.019)$ & $+0.083\,(0.039)$ / $+0.095\,(0.049)$ & $+0.123\,(0.062)$ / $+0.134\,(0.072)$ \\
+\multicolumn{3}{@{}l}{rule 9: $r$(final loss, acc)} & $-0.961$ & $-0.940$ & $-0.875$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}}
-
-% ---------------------------------------------------------------------------
-% 2. The Claim 1 sentence that depends on the PAPER2X2 outcome. The three branches
-%    are copied from PAPER2X2_PREREG.md; exactly one will be kept.
-% ---------------------------------------------------------------------------
-\newcommand{\PaperTwoByTwoOutcome}{%
-\par\smallskip\noindent\fbox{\parbox{0.95\linewidth}{\textcolor{red}{%
-\textbf{[PENDING: PAPER2X2 outcome.]} Keep exactly one branch once
-\texttt{PAPER2X2\_PREREG.md}'s batch is analysed; do not edit the others into a hybrid.
-\begin{itemize}\itemsep1pt
-\item \emph{H1 detectable and $\ge +0.15$ at $r=2$, $T=128$:} ``Under the converged recipe the
-position main effect at training length is [value] ([MDE], [seeds]); the headline claim stands,
-and Table~\ref{tab:paper2x2-converged} replaces Table~\ref{tab:paper2x2} as the headline.''
-\item \emph{H1 detectable but $< +0.15$:} ``Under the converged recipe the position main effect
-at training length is [value] ([MDE]); the claim stands at reduced size, and most of the
-16-epoch gap at training length was recipe.''
-\item \emph{H1 not detectable:} ``Under the converged recipe the position main effect at
-training length is unmeasured ([value], [MDE]); the training-length form of the claim is
-withdrawn, and Claim~1 rests on out-of-distribution lengths and on the other tasks of
-Sections~\ref{sec:c1-blind}--\ref{sec:c1-beyond}.''
-\item \emph{H2} (position effect grows from $T=128$ to $T=1024$, both detectable): [held / not held].
-\item \emph{H3} ($|$encoding$|$ not detectably above $0.05$ at $r=2$, $T=128$; falsified if a
-detectable encoding effect exceeds the position effect at any length): [held / falsified].
-\end{itemize}}}}\par\smallskip}
