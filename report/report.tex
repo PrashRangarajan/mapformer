@@ -150,7 +150,7 @@ that it can cancel; and training must find the solution. Fully factorising where
 MapEM's shared kernel does, costs nothing measurable in what can be represented on the tasks tested.
 On a varying-offset recall task it detectably changes what training finds, and per-pair position
 freedom detectably raises accuracy on it. Explicit correction and gating add no measurable
-accuracy on these tasks at training length, and pooling at most a ceiling-level amount. All of this is transfer to a new instance of a known
+accuracy on these tasks at training length, and pooling's only detectable gain is ceiling-level (its larger gains are directional). All of this is transfer to a new instance of a known
 structure.
 
 The three conditions share one mechanism statement. Attention reads the interval sum of per-token
@@ -1954,7 +1954,7 @@ record, the absolute value, the rank), though that rank acts through conditionin
 from-scratch training finds it. A fully factorised where, MapEM's shared kernel, represents the one
 varying-offset task measured exactly but is found per query token, and giving the kernel per-pair freedom
 changes both the accuracy and the mechanism. Filtering and gating the where add no measurable
-accuracy at training length on these tasks, and pooling at most a ceiling-level amount; recursion does, in
+accuracy at training length on these tasks, and pooling's only detectable gain is ceiling-level (its larger gains are directional); recursion does, in
 association with more reliable optimisation (on the torus its gain vanishes at matched loss; Match-Query was not
 loss-matched). What remains
 open is why so many mechanisms help only beyond the training length, and whether any of this transfers across
