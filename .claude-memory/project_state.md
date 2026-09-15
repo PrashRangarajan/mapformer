@@ -13,6 +13,18 @@ is orientation, not a substitute. Updated 2026-09-15.
 
 ## LATEST (2026-09-12..15) -- read this block first; it supersedes "In flight" and "Open" below
 
+**DYCK-2 (2026-09-15, `DYCK_RESULTS_bs128.md`, n=8, paper recipe, prereg `DYCK_PREREG.md`):** ordering
+replicates (MapFormer-1L - RoPE-2L +0.37/+0.39 at L128 D12, 8/8), training cell replicates (0.985), OOD
+levels do NOT (MapWM 0.868 / MapEM 0.888 vs paper 0.94/0.95) and sit AT a no-stack n-gram floor (0.884).
+RoPE-2L matches the paper closely. Paper reports no floor; its baselines are below the n-gram. Batch size
+(unstated) untested; batch-32 follow-up not triggered by the registered slope rule.
+
+**DYCK-2 (2026-09-15, `DYCK_RESULTS_bs128.md`, n=8, paper recipe, prereg `DYCK_PREREG.md`):** ordering
+replicates (MapFormer-1L - RoPE-2L +0.37/+0.39 at L128 D12, 8/8), training cell replicates (0.985), OOD
+levels do NOT (MapWM 0.868 / MapEM 0.888 vs paper 0.94/0.95) and sit AT a no-stack n-gram floor (0.884).
+RoPE-2L matches the paper closely. Paper reports no floor; its baselines are below the n-gram. Batch size
+(unstated) untested; batch-32 follow-up not triggered by the registered slope rule.
+
 **Nothing is running.** Everything below is committed locally, and **not pushed** (last commit ffa7440 or later).
 
 **Report deliverables (`report/`).**
