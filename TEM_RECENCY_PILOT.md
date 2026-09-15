@@ -33,3 +33,42 @@ same-batch comparison follows only if the pilot shows TEM in range.
 **Parameter counts** are not matched: TEMRecency 376,307, TEMRecency_Query 740,851, MapEM 222,361.
 TEM's extra parameters are all in the per-token transition matrices. A TEM deficit therefore cannot
 be blamed on capacity; a TEM success could partly be capacity.
+
+## Results
+
+Same recipe as `MONOTONE_RESULTS.md` (chance 0.0625; most-recent floor 0.0771; ln 16 = 2.77).
+
+| arm | seed | acc T=1024 | acc T=2048 | final loss | first epoch with loss < 0.5 |
+|---|---|---|---|---|---|
+| `TEMRecency_Query_Installed` (rewind installed, frozen) | 0 | **1.000** | **1.000** | 0.000 | 8 |
+| `TEMRecency_Query` | 0 | 0.118 | 0.104 | 2.695 | never |
+| `TEMRecency_Query` | 1 | 0.119 | 0.099 | 2.700 | never |
+| `TEMRecency` (faithful, committing) | 0 | 0.094 | 0.091 | 2.729 | never |
+| `TEMRecency` | 1 | 0.099 | 0.107 | 2.735 | never |
+| *reference, other batch:* VanillaEM_P0_r4 / Signed_r4 (MapWM) | 0-11 | 0.641 / 0.994 | 0.543 / 0.898 | 1.262 / 0.032 | -- |
+
+## Reading (pilot; not a registered result)
+
+- **The exact solution is representable and trivially holdable in TEM's form.**
+  - With the rewind installed and frozen, TEM scores 1.000 at both lengths.
+  - The content-side weights learn to use it within 8 epochs.
+- **From scratch, TEM learns essentially nothing.**
+  - All four runs sit barely above chance (0.094-0.119).
+  - Training loss stays at 2.70-2.74 against 2.77 for uniform guessing.
+  - This is worse than MapEM (0.641), not comparable to it.
+- **This does NOT answer the bottleneck question.** TEM failing more completely than MapEM does not
+  show that a full per-query transform is harder to learn than a rank-4 one. From scratch, TEM must
+  learn the counter itself (a transition per token id) as well as the rewind. It never gets below
+  chance loss, which looks like a failure to start learning, not a failure at the rewind.
+- **The likely cause is untested.** The transitions start near the identity, so every structural code
+  is nearly the same, retrieval is uniform, and there may be little gradient to break the symmetry.
+  The installed arm rules out the readout and binding; it does not test the start.
+
+## Diagnostics before any registered TEM comparison
+
+1. **k_max = 1 or a fixed small k.** If TEM cannot learn "the most recent symbol" either, the problem
+   is the adaptation's optimisation, not recency.
+2. **Install only the counter** (symbol transition and filler identity), leave the query transforms
+   trainable. If TEM then learns the rewinds, the counter was the bottleneck. If it does not, the
+   per-query rewind search is.
+3. **A larger initialisation scale** for the transitions, which breaks the near-identity symmetry.
