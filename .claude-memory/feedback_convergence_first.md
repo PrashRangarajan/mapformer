@@ -33,3 +33,15 @@ retracted. Every one had the same root cause, rediscovered separately days apart
 
 See [[project_miniworld_flip_negative]] for the substantive outcome, KNOWN_BUGS.md for
 the silent bugs, CLAUDE.md standing rules 8–12.
+
+
+## Loss-matching needs overlapping losses (bought 2026-09-13/14)
+
+Twice in two days a loss-matched contrast removed the effect by construction.
+- **MONOTONE Q1:** a two-arm pool with non-overlapping losses (0.0003 vs 0.31).
+- **PAPER2X2 position:** index arms at 0.68-0.96, path-integrated arms at 0.00-0.38.
+
+When the manipulation itself causes the loss gap, the acc~loss fit is identified by the arm difference and the
+residual is uninformative, not null. **How to apply:** before registering a loss-matched verdict, check that loss
+varies within arms and overlaps across them. Otherwise the RAW contrast is primary and loss-matched is reported
+as "uninformative". A bigger pool with intermediate-loss arms changes the verdict, so state the pool.

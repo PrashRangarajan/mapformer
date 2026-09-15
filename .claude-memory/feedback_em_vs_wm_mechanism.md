@@ -44,3 +44,15 @@ TALE_OF_TWO_ALGORITHMS.md. An adversarial audit caught it (AUDIT_2026-09-10.md).
 Full account: `EM_WM_STATE.md`. See [[project-clock-vs-map]], [[feedback-existence-before-mechanism]].
 - Settled 2026-09-11 (NOLEAK_RESULTS.md): installed at 8x scale with the content->Delta leak closed, trainable
   EM holds the recency rewind at 1.000 (8/8). The deficit is search, not representation or stability.
+
+## COUNTER batch (2026-09-14, COUNTER_RESULTS.md) -- narrows WHY
+
+With an IDENTICAL installed symbol counter (fixed frequencies), n=4:
+- MapWM 1.000 (4/4, loss < 0.5 by epoch 13-15);
+- MapEM (rewind through rank-4) 0.740;
+- TEM (full orthogonal query transform) 0.337.
+
+So the deficit is **not** learning the counter, and **not** the rank-4 bottleneck (the unconstrained transform
+does worse). The surviving account: reaching the k-th item by **content phase inside the query-key comparison**
+(WM) is easy, and by **moving the query's position** (EM rewind, TEM transform) is hard. The "free per-block dial"
+explanation is dropped. Confounds: layers differ in more than offset placement; TEM retrieves by structure only.

@@ -9,7 +9,62 @@ Repo `/home/prashr/mapformer`, single author, pushes to `PrashRangarajan/mapform
 Memory mirrors to `.claude-memory/` in the repo. **`RESULTS_INDEX.md` is the maintained
 current-state file. `EM_WM_STATE.md` is the current account of the EM/WM + kernel-theory
 line. `CLAUDE.md` is the chronological log, with a START HERE block at the top.** This note
-is orientation, not a substitute. Updated 2026-09-11.
+is orientation, not a substitute. Updated 2026-09-15.
+
+## LATEST (2026-09-12..15) -- read this block first; it supersedes "In flight" and "Open" below
+
+**Nothing is running.** Everything below is committed locally, and **not pushed** (last commit ffa7440 or later).
+
+**Report deliverables (`report/`).**
+- `report.pdf`: 43 pages, paper-style, surviving results only, author Prashant Rangarajan.
+- `report_short.pdf`: 10 pages, MDEs and seed counts stripped.
+- Built from 6 inventories (`report/inventory/`), `STORY.md` ("three conditions" storyline) and two audits
+  (`VERIFY.md`, `VERIFY_2X2.md`) with fixes applied.
+- Every table caption is self-explanatory; the long report has a worked MDE example.
+- Open cleanup: some bib entries print internal notes ("not verified") in the reference list.
+
+**New results, one line each; the details are in the named files.**
+- **MONOTONE:** Selective RoPE's generator pays the same raw sign cost on the torus (-0.355 vs MapWM -0.363).
+  Monotone costs a little on recency (SRoPE -0.068 detectable, WM -0.060 unmeasured). Monotone EM pays -0.198
+  but keeps a forward, wrapped rewind route. Claim is now "large on a map task, small on a counting task".
+- **PAPER2X2** (converged paper-task 2x2, n=8): position +0.243 at training length, +0.359 at 8x, 8/8.
+  Encoding -0.049 then +0.189. Loss-matched position is uninformative, because loss clusters do not overlap.
+- **REVISIT_2X2** (eval-only): index RoPE's lead over index PoPE is at 5-16-step revisits. Beyond training length
+  RoPE fails at EVERY interval (positional collapse). PoPE is robust.
+- **TEM on recency** (`TEM_RECENCY_PILOT.md`, `TEM_RECENCY_DIAG.md`):
+  - installed rewind 1.000;
+  - from scratch at chance;
+  - k=1 learned from scratch;
+  - with the counter installed, rewinds are found only for k<=16.
+- **COUNTER batch** (n=4): with an IDENTICAL installed counter, MapWM = 1.000 (4/4), MapEM = 0.740, TEM = 0.337.
+  -> EM's deficit is NOT the counter and NOT the rank-4 bottleneck (TEM's full transform does worse). Where the
+  offset is expressed (content phase vs a position-side rewind) is the surviving account. The
+  "free per-block dial" explanation is dropped.
+- **Continuous navigation re-read:** every model is at the copy-last-observation baseline (1.66 cells). EM's
+  "flat error" means it does not break, not that it integrates better.
+- **Addition line** (`ADDITION_DESIGN.md` -> `ADDITION_PILOT*.md` -> `ADDITION_CHO_REPRO.md` -> `SAMEBLOCK_*`):
+  - Cho et al.'s block reproduces to 100 digits (0.938), not 200. The repo layer does not train at lr 1e-4.
+  - SAMEBLOCK control gate FAILED (role-format oracle 0.697 at 100).
+  - Signed MapFormer is the only learned code that learns 30-digit addition (3/3), with the predicted sign
+    pattern, but it holds only to ~33-38 digits.
+  - Monotone, RoPE and NoPE do not learn it.
+  - The pilot's 0.79-at-60 hint (repo layer) did not replicate in Cho's block.
+- **MINIWORLD_ENDPOINTS:** +0.305 (sd 0.048, MDE 0.077) and +0.015 (ceiling), both n=3.
+
+**Infrastructure added.**
+- `train_addition.py --compile --fast-data --amp`: validated at 2.3-2.9x; `environment_addition.batch_fast` is
+  row-exact.
+- `verify_addition_*.py`.
+- `model_cho_positions.py` (swappable position mechanisms in Cho's block).
+- `model_tem_recency.py`, `model_counter_installed.py`, `model_monotone.py`, `probe_revisit_2x2.py`.
+
+**Open decisions for the user.**
+1. Replicate the addition pilot's repo-layer setup at 3 seeds, to test whether the architecture made MapFormer
+   generalise.
+2. Dyck-2 (in paper v4, not in repo; the "Dyck infrastructure" note in `LANGUAGE_LANDSCAPE.md` is wrong).
+3. Eval-only length-vs-map-size split on the PAPERTASK checkpoints.
+4. Entangled-vs-factorised learning-speed / extrapolation test.
+5. Push to origin.
 
 ## The research goal (stated 2026-09-08, and it reframes everything)
 

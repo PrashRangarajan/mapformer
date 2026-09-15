@@ -45,3 +45,16 @@ command mid-task. This is documented twice in CLAUDE.md and I still did it. The 
 is not "split the pattern" — that only protects a script from itself. **Do not use
 `pkill -f` at all.** Filter by `ps -o comm=` and require a real interpreter, or just
 let the background job finish, which is what should have happened here (it already had).
+
+
+## CPU thread oversubscription and mid-line LaTeX comments (2026-09-14)
+
+- **CPU threads.** Ten concurrent GPU jobs with uncapped CPU threads gave load average 52 on 32 cores and ran 3x
+  slow. `export OMP_NUM_THREADS=2 MKL_NUM_THREADS=2` in every launcher fixed it: 24 -> 6 s/epoch.
+- **Mid-line `%`.** A scripted edit put `% src:` mid-line in report.tex and silently deleted two sentences from
+  the PDF. The build log showed nothing. **How to apply:** comments go on their own lines. After scripted .tex
+  edits, grep for text after `%` on the same line, and pdftotext the result.
+- **Row-exact verification.** A vectorised generator looked right and was wrong on 92/3200 rows (the carry
+  overwrote the top digit). Verify fast paths row-exact against the reference code before using them.
+- **Compile check.** For torch.compile, compare eager vs compiled loss curves on identical batches per arm before
+  a batch uses it (`verify_addition_compile.py`).

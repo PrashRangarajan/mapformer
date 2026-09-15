@@ -1,5 +1,27 @@
 # CLAUDE.md — Project Memory for MapFormer
 
+## LATEST, 2026-09-12..15 (read `.claude-memory/project_state.md` LATEST block; nothing running; not pushed)
+
+**Report.**
+- `report/report.pdf` (43 pp) and `report/report_short.pdf` (10 pp): surviving results, audited twice.
+
+**New results.**
+- **PAPER2X2:** position +0.243 at training length and +0.359 at 8x under a converged recipe.
+- **MONOTONE:** the sign cost transfers to Selective RoPE's generator. It is small, not zero, on recency.
+- **REVISIT_2X2:** index RoPE collapses beyond training length at every revisit interval.
+- **COUNTER:** with an identical installed counter MapWM 1.000, MapEM 0.740, TEM 0.337. EM's recency deficit is
+  neither the counter nor the rank-4 bottleneck.
+- **TEM diagnostics:** learns k=1; with the counter given, rewinds are found only for k<=16.
+- **Addition (SAMEBLOCK):** Cho et al.'s block reproduces to 100 digits. The control gate failed in the role
+  format. Signed MapFormer is the only learned code that learns 30-digit addition (3/3, predicted sign pattern)
+  but holds only to ~33-38 digits.
+
+**Rules bought.**
+- Loss-matching needs overlapping losses.
+- Never put a `%` comment mid-line in .tex.
+- Cap OMP threads for concurrent jobs.
+- Verify vectorised or compiled fast paths row-exact / loss-exact before a batch uses them.
+
 ## START HERE (updated 2026-09-11)
 
 This file is a chronological log. Current state lives in three places:
