@@ -18,12 +18,20 @@ replicates (MapFormer-1L - RoPE-2L +0.37/+0.39 at L128 D12, 8/8), training cell 
 levels do NOT (MapWM 0.868 / MapEM 0.888 vs paper 0.94/0.95) and sit AT a no-stack n-gram floor (0.884).
 RoPE-2L matches the paper closely. Paper reports no floor; its baselines are below the n-gram. Batch size
 (unstated) untested; batch-32 follow-up not triggered by the registered slope rule.
+PoPE amendment (`DYCK_RESULTS_POPE.md`): MapPoPE-1L best arm, 0.927 at L128 D12 (+0.058 over MapWM, 8/8;
++0.312 over PoPE-1L); PoPE alone ~ RoPE; no interaction (+0.009, MDE 0.074); MapPoPE at the floor +0.042 (MDE 0.046).
+PoPE amendment (`DYCK_RESULTS_POPE.md`): MapPoPE-1L best arm, 0.927 at L128 D12 (+0.058 over MapWM, 8/8;
++0.312 over PoPE-1L); PoPE alone ~ RoPE; no interaction (+0.009, MDE 0.074); MapPoPE at the floor +0.042 (MDE 0.046).
 
 **DYCK-2 (2026-09-15, `DYCK_RESULTS_bs128.md`, n=8, paper recipe, prereg `DYCK_PREREG.md`):** ordering
 replicates (MapFormer-1L - RoPE-2L +0.37/+0.39 at L128 D12, 8/8), training cell replicates (0.985), OOD
 levels do NOT (MapWM 0.868 / MapEM 0.888 vs paper 0.94/0.95) and sit AT a no-stack n-gram floor (0.884).
 RoPE-2L matches the paper closely. Paper reports no floor; its baselines are below the n-gram. Batch size
 (unstated) untested; batch-32 follow-up not triggered by the registered slope rule.
+PoPE amendment (`DYCK_RESULTS_POPE.md`): MapPoPE-1L best arm, 0.927 at L128 D12 (+0.058 over MapWM, 8/8;
++0.312 over PoPE-1L); PoPE alone ~ RoPE; no interaction (+0.009, MDE 0.074); MapPoPE at the floor +0.042 (MDE 0.046).
+PoPE amendment (`DYCK_RESULTS_POPE.md`): MapPoPE-1L best arm, 0.927 at L128 D12 (+0.058 over MapWM, 8/8;
++0.312 over PoPE-1L); PoPE alone ~ RoPE; no interaction (+0.009, MDE 0.074); MapPoPE at the floor +0.042 (MDE 0.046).
 
 **Nothing is running.** Everything below is committed locally, and **not pushed** (last commit ffa7440 or later).
 
