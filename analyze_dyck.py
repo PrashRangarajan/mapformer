@@ -129,10 +129,13 @@ def main():
     w("\n**R6 contrasts at L128 D12 (paired by seed)**\n")
     w("| contrast | paper | delta | sd | MDE | seeds + | verdict |"); w("|---|---|---|---|---|---|---|")
     for x, y, p in [("MapWM-1L_r2", "RoPE-2L", 0.44), ("MapWM-1L_r2", "RoPE-1L", 0.17),
-                    ("MapEM-1L_r2", "RoPE-2L", 0.45), ("MapEM-1L_r2", "MapWM-1L_r2", 0.01)]:
+                    ("MapEM-1L_r2", "RoPE-2L", 0.45), ("MapEM-1L_r2", "MapWM-1L_r2", 0.01),
+                    ("MapPoPE-1L_r2", "MapWM-1L_r2", None), ("PoPE-1L", "RoPE-1L", None),
+                    ("PoPE-2L", "RoPE-2L", None), ("MapPoPE-1L_r2", "PoPE-1L", None),
+                    ("MapPoPE-1L_r2", "PoPE-2L", None)]:
         if x in R and y in R:
             d, sd, mde, pos, n = contrast(R, x, y, "L128_D12")
-            w(f"| {x} - {y} | {p:+.2f} | {d:+.3f} | {sd:.3f} | {mde:.3f} | {pos}/{n} | "
+            w(f"| {x} - {y} | {('%+.2f' % p) if p is not None else '--'} | {d:+.3f} | {sd:.3f} | {mde:.3f} | {pos}/{n} | "
               f"{'DETECTABLE' if abs(d) > mde else 'unmeasured'} |")
     w("\n**R7 floor reading at L128 D12** (best n-gram %.3f)\n" % floor["L128_D12"])
     for arm in arms:
