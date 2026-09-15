@@ -71,3 +71,23 @@ Cheap follow-ups:
 1. **Evaluation-only, minutes:** evaluate the trained signed checkpoints at 32-58 digits to locate where they break.
 2. **Replicate the pilot-2 hint** (repo layer, lr 1e-3, signed and oracle, 3 seeds) to see whether the architecture
    is what made signed MapFormer generalise there.
+
+## Follow-up 1 (evaluation only, run after the results above): where signed MapFormer breaks
+
+Role format, the same checkpoints, 256 problems per length; cells are exact match (per-digit accuracy).
+
+| run | 30 | 31 | 32 | 33 | 35 | 38 | 40 | 45 | 50 |
+|---|---|---|---|---|---|---|---|---|---|
+| signed s0 | 1.00 (1.00) | 1.00 (1.00) | 1.00 (1.00) | 1.00 (1.00) | 0.98 (1.00) | 0.91 (1.00) | 0.63 (0.99) | 0.01 (0.90) | 0.00 (0.60) |
+| signed s1 | 1.00 (1.00) | 0.99 (1.00) | 0.96 (1.00) | 0.96 (1.00) | 0.89 (1.00) | 0.70 (0.99) | 0.29 (0.97) | 0.00 (0.88) | 0.00 (0.73) |
+| signed s2 | 1.00 (1.00) | 1.00 (1.00) | 1.00 (1.00) | 0.99 (1.00) | 0.48 (0.98) | 0.36 (0.98) | 0.25 (0.98) | 0.07 (0.96) | 0.00 (0.89) |
+| coupled s0-s2 | 1.00 (1.00) at every length, all three seeds | | | | | | | | |
+
+**Reading.**
+- **Signed MapFormer does generalise a little, not at all is wrong.** It holds 0.9 or better exact match up to
+  about 33-38 digits, depending on the seed, then falls to 0 by 45-50.
+- **It degrades gradually per digit.** Per-digit accuracy is still 0.88-0.96 at 45 digits, where exact match is
+  already near 0. The whole-number failure comes from small per-digit errors compounding.
+- **Scale of the generalisation.** Signed MapFormer reaches about 1.1-1.3x the training length. The oracle is
+  perfect through 50 digits on all seeds, and its role-format failures start between 60 and 100.
+- **The earlier wording "scores 0.000 at 60" is correct, but it hid this gradual profile.**
