@@ -95,3 +95,62 @@ class AdditionWorld:
         for i, (t, m, p) in enumerate(zip(seqs, tgts, poss)):
             T[i, :len(t)] = torch.tensor(t); M[i, :len(m)] = torch.from_numpy(m); P[i, :len(p)] = torch.tensor(p)
         return T, M, P, sums
+
+
+def batch_fast(env, batch_size, rng, dmax=None, n_digits=None, random_start=False, pad_to=None, return_operands=False):
+    """Vectorised `AdditionWorld.batch`: same task, format, sampling distribution and coupled IDs, built with array
+    operations instead of a Python loop per problem. It consumes the RNG differently, so for a given seed it draws
+    DIFFERENT problems than `batch`. `pad_to` right-pads every row to a fixed length (PAD tokens sit after the closing
+    '$', so under causal attention they cannot affect any scored position). Checked against `encode` row by row in
+    `verify_addition_fast.py`."""
+    B = batch_size
+    if n_digits is not None:
+        la = np.full(B, n_digits); lb = np.full(B, n_digits)
+    else:
+        la = rng.randint(1, dmax + 1, size=B); lb = rng.randint(1, dmax + 1, size=B)
+    N = int(max(la.max(), lb.max()))
+    sig = np.arange(N)[None, :]
+
+    def operand(l):
+        d = rng.randint(0, 10, size=(B, N))
+        top = rng.randint(1, 10, size=B)
+        rows = np.arange(B)
+        d[rows, l - 1] = np.where(l > 1, top, d[rows, l - 1])         # MSB non-zero unless a 1-digit number
+        return np.where(sig < l[:, None], d, 0)                        # digit of significance j, zero-padded
+
+    A, Bd = operand(la), operand(lb)
+    n = np.maximum(la, lb)
+    S = np.zeros((B, N + 1), dtype=np.int64); carry = np.zeros(B, dtype=np.int64)
+    for j in range(N):
+        t = A[:, j] + Bd[:, j] + carry
+        S[:, j] = t % 10; carry = t // 10
+    S[:, N] = carry          # rows with n < N already received their final carry at column n inside the loop
+    Lrow = 3 * n + 5
+    L = int(Lrow.max()) if pad_to is None else max(int(pad_to), int(Lrow.max()))
+    T = np.full((B, L), PAD, dtype=np.int64); P = np.zeros((B, L), dtype=np.int64); M = np.zeros((B, L), dtype=bool)
+    start = rng.randint(2, env.max_pos - n + 1) if random_start else np.full(B, 2)
+    rows = np.arange(B)[:, None]
+    jj = np.arange(N)[None, :]
+    valid = jj < n[:, None]
+    oa, ob, os_ = env._off("a"), env._off("b"), env._off("s")
+    idA = 1 + (n[:, None] - 1 - jj); idB = 2 + n[:, None] + (n[:, None] - 1 - jj)
+    pid = start[:, None] + n[:, None] - 1 - jj
+    for idx, dig, off in ((idA, A, oa), (idB, Bd, ob)):
+        r, c = np.nonzero(valid)
+        T[r, idx[r, c]] = off + dig[r, c]; P[r, idx[r, c]] = pid[r, c]
+    T[:, 0] = EOS
+    T[np.arange(B), 1 + n] = PLUS; P[np.arange(B), 1 + n] = start + n
+    T[np.arange(B), 2 + 2 * n] = EQ; P[np.arange(B), 2 + 2 * n] = start + n
+    js = np.arange(N + 1)[None, :]
+    vs = js <= n[:, None]
+    idS = 3 + 2 * n[:, None] + js
+    r, c = np.nonzero(vs)
+    T[r, idS[r, c]] = os_ + S[r, c]
+    P[r, idS[r, c]] = np.where(c < n[r], start[r] + n[r] - 1 - c, start[r] - 1)
+    T[np.arange(B), 4 + 3 * n] = EOS
+    first_sum = 3 + 2 * n
+    M[:] = (np.arange(L)[None, :] >= first_sum[:, None]) & (np.arange(L)[None, :] <= (4 + 3 * n)[:, None])
+    out = (torch.from_numpy(T), torch.from_numpy(M), torch.from_numpy(P), None)
+    if return_operands:
+        return out + (A, Bd, la, lb, start)
+    return out

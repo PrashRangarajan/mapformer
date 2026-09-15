@@ -12,7 +12,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from mapformer.environment_addition import AdditionWorld
+from mapformer.environment_addition import AdditionWorld, batch_fast
 from mapformer.train_variant import VARIANT_MAP
 
 
@@ -73,6 +73,8 @@ def main():
     ap.add_argument("--warmup-frac", type=float, default=0.05)
     ap.add_argument("--max-pos", type=int, default=512, help="coupled-ID range; Cho et al. use 202")
     ap.add_argument("--amp", action="store_true", help="bfloat16 autocast (all arms of a batch must share it)")
+    ap.add_argument("--fast-data", action="store_true", help="vectorised training batches (batch_fast); different problem stream, same distribution; evaluation sets unchanged")
+    ap.add_argument("--compile", action="store_true", help="torch.compile the training forward (fixed-length padded batches); evaluation runs eager")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--output-dir", required=True)
     a = ap.parse_args()
@@ -94,12 +96,17 @@ def main():
         opt, lambda st: (st + 1) / w if st < w else 0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * min((st - w) / max(1, total - w), 1.0))))
     rng = np.random.RandomState(a.seed)
     rand_start = bool(getattr(model, "wants_pos_ids", False))   # coupled oracles: random starting ID
+    train_model = torch.compile(model) if a.compile else model
+    pad_to = 3 * a.dmax + 5 if a.compile else None
     losses, curve = [], []
     for ep in range(a.epochs):
         t0 = time.time(); run = 0.0
         for _ in range(a.n_batches):
-            T, M, P, _ = env.batch(a.batch_size, rng, dmax=a.dmax, random_start=rand_start)
-            loss = loss_fn(model, T, M, P, dev)
+            if a.fast_data or a.compile:
+                T, M, P, _ = batch_fast(env, a.batch_size, rng, dmax=a.dmax, random_start=rand_start, pad_to=pad_to)
+            else:
+                T, M, P, _ = env.batch(a.batch_size, rng, dmax=a.dmax, random_start=rand_start)
+            loss = loss_fn(train_model, T, M, P, dev)
             opt.zero_grad(); loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step(); sched.step(); run += loss.item()
