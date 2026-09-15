@@ -164,6 +164,12 @@ VARIANT_MAP = {
     "CoupledRoPE": __import__("mapformer.model_coupled_rope", fromlist=["x"]).MapFormerWM_CoupledRoPE,
     "CoupledAPE": __import__("mapformer.model_coupled_ape", fromlist=["x"]).MapFormerWM_CoupledAPE,
     "ChoCoupledAPE": __import__("mapformer.model_cho_coupled", fromlist=["x"]).ChoCoupledAPE,
+    # SAMEBLOCK_PREREG.md: position mechanisms inside Cho et al.'s block
+    "ChoPos_coupled": __import__("mapformer.model_cho_positions", fromlist=["x"]).ChoPos_coupled,
+    "ChoPos_rope": __import__("mapformer.model_cho_positions", fromlist=["x"]).ChoPos_rope,
+    "ChoPos_nope": __import__("mapformer.model_cho_positions", fromlist=["x"]).ChoPos_nope,
+    "ChoPos_signed": __import__("mapformer.model_cho_positions", fromlist=["x"]).ChoPos_signed,
+    "ChoPos_abs": __import__("mapformer.model_cho_positions", fromlist=["x"]).ChoPos_abs,
     # TEM on recency (model_tem_recency.py): committing query and separate non-committing query
     "TEMRecency": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency,
     "TEMRecency_Query": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency_Query,

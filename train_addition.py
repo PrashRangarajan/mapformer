@@ -16,8 +16,15 @@ from mapformer.environment_addition import AdditionWorld
 from mapformer.train_variant import VARIANT_MAP
 
 
+AMP = False
+
+
 def run_model(model, T, P, dev):
     x = T[:, :-1].to(dev)
+    if AMP:
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            out = model(x, pos_ids=P[:, :-1].to(dev)) if getattr(model, "wants_pos_ids", False) else model(x)
+        return out.float()
     if getattr(model, "wants_pos_ids", False):
         return model(x, pos_ids=P[:, :-1].to(dev))
     return model(x)
@@ -65,14 +72,17 @@ def main():
     ap.add_argument("--weight-decay", type=float, default=0.05)
     ap.add_argument("--warmup-frac", type=float, default=0.05)
     ap.add_argument("--max-pos", type=int, default=512, help="coupled-ID range; Cho et al. use 202")
+    ap.add_argument("--amp", action="store_true", help="bfloat16 autocast (all arms of a batch must share it)")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--output-dir", required=True)
     a = ap.parse_args()
 
+    global AMP
+    AMP = a.amp
     torch.manual_seed(a.seed); np.random.seed(a.seed)
     dev = torch.device(a.device)
     env = AdditionWorld(a.fmt, max_pos=a.max_pos)
-    extra = {"max_pos": a.max_pos} if a.variant in ("CoupledAPE", "ChoCoupledAPE") else {}
+    extra = {"max_pos": a.max_pos} if (a.variant in ("CoupledAPE", "ChoCoupledAPE") or a.variant.startswith("ChoPos_")) else {}
     model = VARIANT_MAP[a.variant](vocab_size=env.vocab_size, d_model=a.d_model, n_heads=a.n_heads,
                                    n_layers=a.n_layers, grid_size=64, **extra).to(dev)
     n_params = sum(p.numel() for p in model.parameters())
