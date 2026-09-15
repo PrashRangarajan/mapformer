@@ -167,6 +167,8 @@ VARIANT_MAP = {
     "TEMRecency": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency,
     "TEMRecency_Query": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency_Query,
     "TEMRecency_Query_Installed": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency_Query_Installed,
+    "TEMRecency_Query_CounterInstalled": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency_Query_CounterInstalled,
+    "TEMRecency_Query_Init1": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency_Query_Init1,
     "EMNoLeak_e8":  __import__("mapformer.model_em_noleak", fromlist=["x"]).MapFormerEM_NoLeak_e8_r4,
     "EMNoLeak_e64": __import__("mapformer.model_em_noleak", fromlist=["x"]).MapFormerEM_NoLeak_e64_r4,
     "MapEM_NC_L":  MapFormerEM_NC_L,     # paper B.2.2, linear Delta

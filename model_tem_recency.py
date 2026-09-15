@@ -130,3 +130,32 @@ class TEMRecency_Query_Installed(TEMRecency_Query):
             self.A.copy_(A); self.Aq.copy_(Aq)
             self.g_init.copy_(torch.ones(self.d_g) / math.sqrt(2))    # equal energy in every block
         self.A.requires_grad_(False); self.Aq.requires_grad_(False); self.g_init.requires_grad_(False)
+
+
+def _install_counter(model, vocab_size, n_symbols=16):
+    """Write the symbol counter (symbols rotate g by omega; every other token is the identity) and freeze it."""
+    nb = model.d_g // 2
+    om = (math.pi / 2) * ((2 * math.pi / 512) / (math.pi / 2)) ** (torch.arange(nb) / (nb - 1))
+    J = torch.zeros(model.d_g, model.d_g)
+    for i in range(nb):
+        J[2 * i + 1, 2 * i] = om[i]; J[2 * i, 2 * i + 1] = -om[i]
+    A = torch.zeros(vocab_size, model.d_g, model.d_g); A[:n_symbols] = J
+    with torch.no_grad():
+        model.A.copy_(A); model.g_init.copy_(torch.ones(model.d_g) / math.sqrt(2))
+    model.A.requires_grad_(False); model.g_init.requires_grad_(False)
+
+
+class TEMRecency_Query_CounterInstalled(TEMRecency_Query):
+    """Diagnostic D2: counter installed and frozen; the per-query transforms (the rewinds) are learned."""
+
+    def __init__(self, vocab_size, d_model=128, **kw):
+        super().__init__(vocab_size, d_model=d_model, **kw)
+        _install_counter(self, vocab_size)
+
+
+class TEMRecency_Query_Init1(TEMRecency_Query):
+    """Diagnostic D3: transitions initialised at scale 1.0 instead of 0.05, so structural codes start distinct."""
+
+    def __init__(self, vocab_size, d_model=128, **kw):
+        kw["identity_init_scale"] = 1.0
+        super().__init__(vocab_size, d_model=d_model, **kw)
