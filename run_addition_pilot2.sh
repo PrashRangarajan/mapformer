@@ -2,6 +2,7 @@
 # ADDITION_PILOT2.md: faithful coupled-APE control, dmax 30, eval to 120 digits. One seed.
 set -u
 REPO=/home/prashr/mapformer; OUT=$REPO/runs/addition_pilot2; mkdir -p "$OUT/logs"; cd /home/prashr
+export OMP_NUM_THREADS=2 MKL_NUM_THREADS=2   # 10 concurrent runs on 32 cores: uncapped threads oversubscribed the CPU 3x
 MAXPG=5
 on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v g="cuda:$1" '$1=="python3" && /mapformer\.train_/ && index($0,g)' | wc -l; }
 busy(){ ps -u "$USER" -o comm=,args= | awk '$1=="python3" && /mapformer\.train_addition/' | wc -l; }
