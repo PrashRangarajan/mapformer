@@ -163,6 +163,10 @@ VARIANT_MAP = {
     # ADDITION_DESIGN.md: position-coupling oracle (RoPE over hand-assigned coupled IDs)
     "CoupledRoPE": __import__("mapformer.model_coupled_rope", fromlist=["x"]).MapFormerWM_CoupledRoPE,
     "CoupledAPE": __import__("mapformer.model_coupled_ape", fromlist=["x"]).MapFormerWM_CoupledAPE,
+    # TEM on recency (model_tem_recency.py): committing query and separate non-committing query
+    "TEMRecency": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency,
+    "TEMRecency_Query": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency_Query,
+    "TEMRecency_Query_Installed": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency_Query_Installed,
     "EMNoLeak_e8":  __import__("mapformer.model_em_noleak", fromlist=["x"]).MapFormerEM_NoLeak_e8_r4,
     "EMNoLeak_e64": __import__("mapformer.model_em_noleak", fromlist=["x"]).MapFormerEM_NoLeak_e64_r4,
     "MapEM_NC_L":  MapFormerEM_NC_L,     # paper B.2.2, linear Delta
