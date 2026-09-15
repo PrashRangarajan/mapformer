@@ -4,15 +4,15 @@ set -u
 REPO=/home/prashr/mapformer
 cd /home/prashr
 BS=${1:-128}
-OUT=$REPO/runs/dyck_bs$BS
+OUT=${OUT:-$REPO/runs/dyck_bs$BS}
 mkdir -p "$OUT/logs"
 MAXPG=6
-ARMS="MapWM:1:1:2 MapEM:1:1:2 RoPE:1:1:2 RoPE:2:2:2 CoPE:1:1:2 CoPE:2:2:2 MapWM:1:1:4 MapEM:1:1:4"
+ARMS=${ARMS:-"MapWM:1:1:2 MapEM:1:1:2 RoPE:1:1:2 RoPE:2:2:2 CoPE:1:1:2 CoPE:2:2:2 MapWM:1:1:4 MapEM:1:1:4"}
 
 busy(){ ps -u "$USER" -o comm=,args= | awk '$1=="python3" && /mapformer\.train_dyck/' | wc -l; }
 on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v g="cuda:$1" '$1=="python3" && /mapformer\.train_dyck/ && index($0,g)' | wc -l; }
 pick(){ local a b; a=$(on_gpu 0); b=$(on_gpu 1); if [ "$a" -le "$b" ]; then echo 0; else echo 1; fi; }
-nm(){ if [ "$1" = MapWM ] || [ "$1" = MapEM ]; then echo "$1-$2L_r$4"; else echo "$1-$2L"; fi; }
+nm(){ if [ "$1" = MapWM ] || [ "$1" = MapEM ] || [ "$1" = MapPoPE ]; then echo "$1-$2L_r$4"; else echo "$1-$2L"; fi; }
 
 for s in $(seq 0 7); do
   for arm in $ARMS; do
@@ -35,7 +35,7 @@ for s in $(seq 0 7); do for arm in $ARMS; do
 done; done
 echo "missing=$missing"
 [ "$missing" -gt 0 ] && exit 1
-python3 -u -m mapformer.analyze_dyck --runs-dir "$OUT" --out "$REPO/DYCK_RESULTS_bs$BS.md" > "$OUT/analyze.log" 2>&1
+python3 -u -m mapformer.analyze_dyck --runs-dir "$OUT" --out "${RES:-$REPO/DYCK_RESULTS_bs$BS.md}" > "$OUT/analyze.log" 2>&1
 echo "analysis exit $?"
-[ -s "$REPO/DYCK_RESULTS_bs$BS.md" ] && touch "$OUT/.done"
+[ -s "${RES:-$REPO/DYCK_RESULTS_bs$BS.md}" ] && touch "$OUT/.done"
 echo "batch finished $(date)"

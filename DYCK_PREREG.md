@@ -89,3 +89,13 @@ orthogonal directions (|cos| ~ 0). Report both cosines per seed.
 
 **Exploratory, cheap, not in the paper's figure**: MapWM-1L and MapEM-1L at r=4 (App. B.5 mentions
 r=4 for depth); read as exploratory whatever they show.
+
+## Amendment 1 (2026-09-15, after the main batch landed, before any full PoPE run)
+
+Added arms, same recipe, 8 seeds, same runs dir: PoPE-1L, PoPE-2L (index position + PoPE
+decoupling) and MapPoPE-1L r=2 (path integration + PoPE). The paper has no PoPE arm, so there is
+no replication target; these are read against the main batch. Registered contrasts at L128 D12,
+paired by seed: MapPoPE-1L - MapWM-1L (encoding on the path-integrated row), PoPE-1L - RoPE-1L and
+PoPE-2L - RoPE-2L (encoding on the index row), MapPoPE-1L - PoPE-1L (position under PoPE); plus
+the n-gram floor reading. A 500-step smoke run of MapPoPE-1L seed 0 had already scored 0.981 at
+L128 D12 before this was written.

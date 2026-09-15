@@ -19,6 +19,7 @@ from mapformer.environment_dyck import DyckWorld, f1_valid
 from mapformer.model import MapFormerWM, MapFormerEM
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_baselines_extra import CoPEBaseline
+from mapformer.model_pope import MapFormerWM_PoPE, MapFormerWM_RoPEIndex_PoPE
 
 LS, DS = [32, 64, 96, 128], [4, 6, 8, 12]
 
@@ -30,6 +31,8 @@ def build(arch, vocab, n_layers, n_heads, rank, base):
     if arch == "MapEM": return MapFormerEM(bottleneck_r=rank, **kw)
     if arch == "RoPE": return MapFormerWM_RoPE(**kw)
     if arch == "CoPE": return CoPEBaseline(max_pos=max(LS) + 1, **kw)
+    if arch == "PoPE": return MapFormerWM_RoPEIndex_PoPE(**kw)
+    if arch == "MapPoPE": return MapFormerWM_PoPE(bottleneck_r=rank, **kw)
     raise ValueError(arch)
 
 
@@ -58,7 +61,7 @@ def evaluate(model, world, dev, n_per_cell, seed):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--arch", required=True, choices=["MapWM", "MapEM", "RoPE", "CoPE"])
+    ap.add_argument("--arch", required=True, choices=["MapWM", "MapEM", "RoPE", "CoPE", "PoPE", "MapPoPE"])
     ap.add_argument("--n-layers", type=int, required=True)
     ap.add_argument("--n-heads", type=int, required=True)
     ap.add_argument("--rank", type=int, default=2)
@@ -80,7 +83,7 @@ def main():
     world = DyckWorld()
     model = build(a.arch, world.vocab_size, a.n_layers, a.n_heads, a.rank, a.base).to(dev)
     n_par = sum(p.numel() for p in model.parameters())
-    name = f"{a.arch}-{a.n_layers}L" + (f"_r{a.rank}" if a.arch in ("MapWM", "MapEM") else "")
+    name = f"{a.arch}-{a.n_layers}L" + (f"_r{a.rank}" if a.arch in ("MapWM", "MapEM", "MapPoPE") else "")
     print(f"{name} seed={a.seed} params={n_par:,} d_model={64 * a.n_heads}", flush=True)
 
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=a.weight_decay)

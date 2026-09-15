@@ -15,7 +15,7 @@ PAPER = {  # Fig 6, rows D4..D12, columns L32..L128
 FIG3A = {"CoPE-1L": [.92, .86, .85, .84], "CoPE-2L": [.96, .82, .79, .78]}   # D4 row
 FIG3B = {"CoPE-1L": [.92, .93, .93, .93], "CoPE-2L": [.96, .90, .85, .82]}   # L32 column
 ORDER = ["MapWM-1L_r2", "MapEM-1L_r2", "RoPE-1L", "RoPE-2L", "CoPE-1L", "CoPE-2L",
-         "MapWM-1L_r4", "MapEM-1L_r4"]
+         "MapWM-1L_r4", "MapEM-1L_r4", "PoPE-1L", "PoPE-2L", "MapPoPE-1L_r2"]
 
 
 def load(runs):
