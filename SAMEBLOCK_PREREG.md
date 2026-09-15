@@ -70,3 +70,24 @@ Primary readout: exact match at 100 digits, role format, paired by seed.
 
 For each signed and monotone checkpoint, the per-head cosine between mean role increments (sum against first
 operand, sum against second operand, first against second), as in `ADDITION_PILOT.md`.
+
+## Amendment 1 (2026-09-15, written while seed 0 was still training; no final evaluation had been read)
+
+The user asked for a shorter batch. After seed 0 finishes, the queue is trimmed by rules fixed here. The only
+information available when these rules were written was the seed-0 runs' in-training exact match at 30 digits.
+
+- **Seeds 1-2 always run** for `ChoPos_signed` and `ChoPos_coupled` (role).
+- **Other role arms** (`ChoPos_abs`, `ChoPos_rope`):
+  - if seed 0 passes G2 (exact match at 30 digits >= 0.9), seeds 1-2 run;
+  - if it fails G2, seed 1 only runs, to check the failure is not seed-specific. The arm is then reported
+    as "did not learn the task" if both seeds fail.
+- **`ChoPos_nope`** (role) stays at seed 0.
+- **`ChoPos_signed` (shared)** is dropped. P3 is answered only descriptively, from the pilots.
+- **Seeds 1-2 use the faster code** (`--compile`, which implies the vectorised generator) only if
+  `verify_addition_compile.py` shows, for every arm:
+  - median relative loss difference between eager and compiled training on identical batches below 0.01;
+  - final losses within 5% (or both below 1e-3);
+  - a speed-up of at least 1.2x.
+
+  Otherwise they use the seed-0 code. Whichever is used, seeds run on the new code are marked in the results,
+  and the P1/P2 contrasts remain paired within seed, so both arms of every pair share one code path.
