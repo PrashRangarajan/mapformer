@@ -33,3 +33,41 @@ recipe (arXiv:2405.20671, Appendix C, Table 1) first.
 - If it fails, the gap to the published result must be understood before any addition comparison is run.
 
 Evaluation lengths: 30, 60, 100, 150 and 200 digits.
+
+## Results (seed 0, 256 problems per length, trained on 1-30 digits)
+
+| run | final loss | 30 | 60 | 100 | 150 | 200 | per-digit at 200 |
+|---|---|---|---|---|---|---|---|
+| `ChoCoupledAPE` (their block) | 0.0000 | 1.000 | 1.000 | **0.938** | 0.590 | 0.023 | 0.979 |
+| `CoupledAPE` (this repo's layer, same recipe) | 1.7546 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.109 |
+
+(exact match by operand length)
+
+## Verdict on the pass condition: NOT MET
+
+`ChoCoupledAPE` reaches 0.023 exact match at 200 digits, not >= 0.9. But it generalises cleanly to 100 digits
+(0.938, 3.3x the training length) and partly to 150 (0.590). That is far beyond pilot 2's control (1.5x). It
+does not reach Cho et al.'s reported 95.65% at 200.
+
+## What the two runs show
+
+- **The architecture, not the recipe, was most of the pilot-2 gap for the oracle.** Their block at their
+  recipe generalises to 100 digits. This repo's WM layer at the same recipe does not train at all: loss is
+  still 1.75 after 50k steps, and its per-digit accuracy stays at chance. It did train at lr 1e-3 in pilot 2,
+  so the repo layer and lr 1e-4 do not work together.
+- **The remaining gap to 200 digits is unexplained,** with candidates untested:
+  - one seed against their median of 8;
+  - fresh sampling instead of their fixed 1M set;
+  - the sandwich-norm reading;
+  - how often the highest position-ID rows are trained;
+  - 256 evaluation problems against their 100k.
+
+  Per-digit accuracy at 200 is 0.979, so the model is close: 200 digits with 2% per-digit error rarely
+  come out exactly right.
+
+## Consequence for the MapFormer comparison
+
+MapFormer's arms use the repo's WM layer, which does not train under this recipe. A fair comparison needs
+every arm in the SAME block. The position mechanism (coupled APE, index RoPE, NoPE, signed or monotone
+path-integrated rotation) would be swapped inside the Cho block, the recipe that works would be used, and a
+readout length pre-registered where the control is known to pass: 100 digits, 0.938 here.
