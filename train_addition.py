@@ -62,20 +62,24 @@ def main():
     ap.add_argument("--d-model", type=int, default=256)
     ap.add_argument("--eval-digits", nargs="+", type=int, default=[8, 16, 24, 32, 48, 64])
     ap.add_argument("--eval-examples", type=int, default=512)
+    ap.add_argument("--weight-decay", type=float, default=0.05)
+    ap.add_argument("--warmup-frac", type=float, default=0.05)
+    ap.add_argument("--max-pos", type=int, default=512, help="coupled-ID range; Cho et al. use 202")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--output-dir", required=True)
     a = ap.parse_args()
 
     torch.manual_seed(a.seed); np.random.seed(a.seed)
     dev = torch.device(a.device)
-    env = AdditionWorld(a.fmt)
+    env = AdditionWorld(a.fmt, max_pos=a.max_pos)
+    extra = {"max_pos": a.max_pos} if a.variant in ("CoupledAPE", "ChoCoupledAPE") else {}
     model = VARIANT_MAP[a.variant](vocab_size=env.vocab_size, d_model=a.d_model, n_heads=a.n_heads,
-                                   n_layers=a.n_layers, grid_size=64).to(dev)
+                                   n_layers=a.n_layers, grid_size=64, **extra).to(dev)
     n_params = sum(p.numel() for p in model.parameters())
     print(f"{a.variant} fmt={a.fmt} seed={a.seed} params={n_params:,} L{a.n_layers} H{a.n_heads} d{a.d_model} "
           f"dmax={a.dmax}", flush=True)
-    opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=0.05)
-    total = a.epochs * a.n_batches; w = max(1, int(0.05 * total))
+    opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=a.weight_decay)
+    total = a.epochs * a.n_batches; w = max(1, int(a.warmup_frac * total))
     sched = torch.optim.lr_scheduler.LambdaLR(
         opt, lambda st: (st + 1) / w if st < w else 0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * min((st - w) / max(1, total - w), 1.0))))
     rng = np.random.RandomState(a.seed)

@@ -27,9 +27,10 @@ MAX_POS = 512
 
 
 class AdditionWorld:
-    def __init__(self, fmt: str = "shared"):
+    def __init__(self, fmt: str = "shared", max_pos: int = MAX_POS):
         assert fmt in ("shared", "role"), fmt
         self.fmt = fmt
+        self.max_pos = max_pos
         self.vocab_size = VOCAB
 
     def _off(self, role):
@@ -82,7 +83,9 @@ class AdditionWorld:
                 la, lb = int(rng.randint(1, dmax + 1)), int(rng.randint(1, dmax + 1))
             a, b = self.sample_operand(rng, la), self.sample_operand(rng, lb)
             n = max(la, lb)
-            start = int(rng.randint(1, MAX_POS - n - 2)) if random_start else 1
+            # start >= 2 so the sum's extra top digit (ID start-1) never collides with the BOS/PAD ID 0;
+            # the largest start keeps '+'/'=' (ID start+n) within max_pos. Evaluation uses start = 2.
+            start = int(rng.randint(2, self.max_pos - n + 1)) if random_start else 2
             t, m, p, s = self.encode(a, b, start)
             seqs.append(t); tgts.append(m); poss.append(p); sums.append(s)
         L = max(len(t) for t in seqs)

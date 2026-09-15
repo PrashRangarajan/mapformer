@@ -163,6 +163,7 @@ VARIANT_MAP = {
     # ADDITION_DESIGN.md: position-coupling oracle (RoPE over hand-assigned coupled IDs)
     "CoupledRoPE": __import__("mapformer.model_coupled_rope", fromlist=["x"]).MapFormerWM_CoupledRoPE,
     "CoupledAPE": __import__("mapformer.model_coupled_ape", fromlist=["x"]).MapFormerWM_CoupledAPE,
+    "ChoCoupledAPE": __import__("mapformer.model_cho_coupled", fromlist=["x"]).ChoCoupledAPE,
     # TEM on recency (model_tem_recency.py): committing query and separate non-committing query
     "TEMRecency": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency,
     "TEMRecency_Query": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency_Query,
