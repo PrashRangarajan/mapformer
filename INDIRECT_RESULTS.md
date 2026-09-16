@@ -1,36 +1,22 @@
-# Indirect Indexing (PoPE paper sec 5.1) with path integration -- `/home/prashr/mapformer/runs/indirect`
+# READING
 
-Pre-registration: `INDIRECT_PREREG.md`. Final-token accuracy on a 10k test split.
+**The paper's own contrast does not replicate; the 2x2 it does not run gives the clearer result.**
 
-## Arms
-
-| arm | position | encoding | test accuracy | paper | seeds | final loss | slope /1k |
-|---|---|---|---|---|---|---|---|
-| RoPE | index | RoPE | 0.066 +/- 0.021 | 0.112 +/- 0.025 | 3 | 3.188 | -0.0020 |
-| PoPE | index | PoPE | 0.344 +/- 0.398 | 0.948 +/- 0.029 | 3 | 1.918 | -0.0141 |
-| MapWM_r2 | path integration | RoPE | 0.091 +/- 0.001 | -- | 3 | 3.016 | -0.0023 |
-| MapPoPE_r2 | path integration | PoPE | 0.408 +/- 0.498 | -- | 3 | 1.857 | -0.0020 |
-
-## Floors (strategies needing no pointer arithmetic)
-
-- uniform over letters: 0.019
-- copy the source character: 0.045
-- a random letter of the string: 0.035
-- a neighbour of the source character: 0.044
-
-## Registered contrasts (paired by seed, MDE = 2.8 sd / sqrt(n))
-
-| contrast | delta | sd | MDE | seeds + | verdict |
-|---|---|---|---|---|---|
-| R2 path integration on the RoPE row: MapWM_r2 - RoPE | +0.025 | 0.021 | 0.034 | 3/3 | unmeasured |
-| R3 path integration on the PoPE row: MapPoPE_r2 - PoPE | +0.063 | 0.750 | 1.213 | 1/3 | unmeasured |
-| the paper's own contrast: PoPE - RoPE | +0.278 | 0.377 | 0.610 | 3/3 | unmeasured |
-| encoding, on the path-integrated row: MapPoPE_r2 - MapWM_r2 | +0.317 | 0.498 | 0.806 | 3/3 | unmeasured |
-| R4 interaction | +0.039 | 0.738 | 1.193 | 1/3 | unmeasured |
-
-## Registered verdicts
-
-- **R1 replication**: RoPE 0.066 (needs < 0.30), PoPE 0.344 (needs > 0.80) -> **DOES NOT REPLICATE**
-
-## Validation curves (accuracy every 5,000 steps, seed 0)
+- The task is BIMODAL: a run undergoes a late transition (lift-off between 40k and 80k steps, then
+  saturation) or sits flat at ~0.09 for all 100,000 steps. Seed means are therefore not the statistic;
+  SOLVE RATE is. Registered in amendment 1 before these seeds ran.
+- **Solve rate (accuracy > 0.5): MapPoPE 5/8, PoPE 1/8, MapWM 0/8, RoPE 0/8.** The paper's PoPE is
+  implicitly 3/3 and its RoPE 0/3; our RoPE matches, our PoPE does not (1/8, and the one solver ended
+  at 0.803 still climbing).
+- **Path integration is what makes the solution findable here.** MapPoPE - MapWM is the only
+  detectable mean contrast (+0.507, 8/8 seeds) and 5/8 vs 0/8 on solve rate (Fisher p = 0.026).
+  MapPoPE vs PoPE is 5/8 vs 1/8, Fisher p = 0.119 -- suggestive, not established at n=8.
+- Best single run in the batch: **MapPoPE 0.996**, above the paper's PoPE mean of 0.948. Four MapPoPE
+  seeds exceed 0.96. So the ceiling is reachable; what varies is whether training finds it.
+- MapWM - RoPE is +0.024 (8/8, MDE 0.020) DETECTABLE but it is a plateau-height difference
+  (0.092 vs 0.068), not a solution: no MapWM seed ever transitions.
+- **Why our PoPE under-solves is unresolved**, and two suspects are live: this is a reimplementation
+  (delta clamped to [-2pi, 0], LayerNorm rather than the paper's RMSNorm) and the budget binds --
+  the solving PoPE seed was still rising at 100k. Neither is tested here. Until one is, read this
+  batch as "path integration raises the solve rate of OUR PoPE", not as a claim about theirs.
 
