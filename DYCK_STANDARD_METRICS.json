@@ -1,0 +1,107 @@
+{
+ "n-gram baseline|L32D4": {
+  "hewitt": 0.5312166497446101,
+  "hewitt_sd": 0.0,
+  "setmatch_pos": 0.828369140625,
+  "setmatch_seq": 0.01953125,
+  "n": 1
+ },
+ "MapPoPE|L32D4": {
+  "hewitt": 0.9942430732771754,
+  "hewitt_sd": 0.0041751140683875905,
+  "setmatch_pos": 0.9824981689453125,
+  "setmatch_seq": 0.661376953125,
+  "n": 8
+ },
+ "MapFormer (MapWM)|L32D4": {
+  "hewitt": 0.9915129849687219,
+  "hewitt_sd": 0.003933242357481559,
+  "setmatch_pos": 0.9809951782226562,
+  "setmatch_seq": 0.671630859375,
+  "n": 8
+ },
+ "PoPE|L32D4": {
+  "hewitt": 0.6459103543311357,
+  "hewitt_sd": 0.002986848436272419,
+  "setmatch_pos": 0.8982467651367188,
+  "setmatch_seq": 0.0,
+  "n": 8
+ },
+ "RoPE|L32D4": {
+  "hewitt": 0.6265437153633684,
+  "hewitt_sd": 0.008266941938180278,
+  "setmatch_pos": 0.8942947387695312,
+  "setmatch_seq": 0.0,
+  "n": 8
+ },
+ "n-gram baseline|L128D4": {
+  "hewitt": 0.5114998421493158,
+  "hewitt_sd": 0.0,
+  "setmatch_pos": 0.8195953369140625,
+  "setmatch_seq": 0.0,
+  "n": 1
+ },
+ "MapPoPE|L128D4": {
+  "hewitt": 0.7929680808057045,
+  "hewitt_sd": 0.15321799283915202,
+  "setmatch_pos": 0.9066352844238281,
+  "setmatch_seq": 0.107666015625,
+  "n": 8
+ },
+ "MapFormer (MapWM)|L128D4": {
+  "hewitt": 0.7718221661550408,
+  "hewitt_sd": 0.14929068907540805,
+  "setmatch_pos": 0.8851795196533203,
+  "setmatch_seq": 0.06494140625,
+  "n": 8
+ },
+ "PoPE|L128D4": {
+  "hewitt": 0.5850399976426905,
+  "hewitt_sd": 0.0054264893491781105,
+  "setmatch_pos": 0.5272102355957031,
+  "setmatch_seq": 0.0,
+  "n": 8
+ },
+ "RoPE|L128D4": {
+  "hewitt": 0.5539834364132151,
+  "hewitt_sd": 0.035009116394025416,
+  "setmatch_pos": 0.4109058380126953,
+  "setmatch_seq": 0.0,
+  "n": 8
+ },
+ "n-gram baseline|L128D12": {
+  "hewitt": 0.507818825492695,
+  "hewitt_sd": 0.0,
+  "setmatch_pos": 0.784942626953125,
+  "setmatch_seq": 0.0,
+  "n": 1
+ },
+ "MapPoPE|L128D12": {
+  "hewitt": 0.7193476582178846,
+  "hewitt_sd": 0.0961753399287538,
+  "setmatch_pos": 0.9008750915527344,
+  "setmatch_seq": 0.041748046875,
+  "n": 8
+ },
+ "MapFormer (MapWM)|L128D12": {
+  "hewitt": 0.6383029287680984,
+  "hewitt_sd": 0.05441745037746052,
+  "setmatch_pos": 0.8398513793945312,
+  "setmatch_seq": 0.002685546875,
+  "n": 8
+ },
+ "PoPE|L128D12": {
+  "hewitt": 0.5513873427989893,
+  "hewitt_sd": 0.0024992371425372984,
+  "setmatch_pos": 0.45069122314453125,
+  "setmatch_seq": 0.0,
+  "n": 8
+ },
+ "RoPE|L128D12": {
+  "hewitt": 0.5349494298570789,
+  "hewitt_sd": 0.013354234070581528,
+  "setmatch_pos": 0.3768329620361328,
+  "setmatch_seq": 0.0,
+  "n": 8
+ }
+}
