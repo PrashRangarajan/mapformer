@@ -1,6 +1,6 @@
 """Analyse the Indirect Indexing 2x2 against INDIRECT_PREREG.md.
 Run from /home/prashr: python3 -m mapformer.analyze_indirect --runs-dir <dir> --out <md>"""
-import argparse, glob, json, math
+import argparse, glob, json, math, re
 import numpy as np
 
 from mapformer.environment_indirect import IndirectWorld, VOCAB, STOI, LETTERS
@@ -56,6 +56,39 @@ def main():
     for k in arms:
         v = acc[k]
         L.append(f"| {k} | {int((v > 0.5).sum())}/{len(v)} | " + ", ".join(f"{x:.3f}" for x in sorted(v)) + " |")
+    # lift-off step: first evaluation where validation accuracy exceeds 0.5 (parsed from the logs)
+    lift = {}
+    for k in arms:
+        rows = []
+        for sd in sorted(R[k]):
+            f = f"{a.runs_dir}/logs/{k}_s{sd}.log"
+            st = None
+            try:
+                for ln in open(f):
+                    m = re.search(r"step (\d+)/\d+ .*val ([0-9.]+)", ln)
+                    if m and float(m.group(2)) > 0.5:
+                        st = int(m.group(1)); break
+            except FileNotFoundError:
+                pass
+            rows.append(st)
+        lift[k] = rows
+    if any(any(x is not None for x in v) for v in lift.values()):
+        L += ["", "## Lift-off step (first evaluation above 0.5 accuracy; '--' = never)", "",
+              "| arm | per seed |", "|---|---|"]
+        for k in arms:
+            L.append(f"| {k} | " + ", ".join("--" if x is None else f"{x//1000}k" for x in lift[k]) + " |")
+    try:
+        from scipy.stats import fisher_exact
+        if len(arms) > 1:
+            L += ["", "## Solve-rate contrasts (Fisher exact)", "", "| contrast | rates | p |", "|---|---|---|"]
+            for i in range(len(arms)):
+                for j in range(i + 1, len(arms)):
+                    x, y = arms[i], arms[j]
+                    sx, sy = int((acc[x] > 0.5).sum()), int((acc[y] > 0.5).sum())
+                    p = fisher_exact([[sx, len(acc[x]) - sx], [sy, len(acc[y]) - sy]])[1]
+                    L.append(f"| {x} vs {y} | {sx}/{len(acc[x])} vs {sy}/{len(acc[y])} | {p:.4f} |")
+    except ImportError:
+        pass
     L += ["", "## Floors (strategies needing no pointer arithmetic)", ""]
     for k, v in floors().items():
         L.append(f"- {k}: {v:.3f}")
