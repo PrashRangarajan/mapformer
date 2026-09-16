@@ -51,6 +51,11 @@ def main():
         L.append(f"| {k} | {meta[k][0]} | {meta[k][1]} | {acc[k].mean():.3f} +/- {acc[k].std(ddof=1):.3f} | "
                  f"{'%.3f +/- %.3f' % p if p else '--'} | {len(js)} | "
                  f"{np.mean([j['final_loss'] for j in js]):.3f} | {np.median(sl):+.4f} |")
+    L += ["", "## Solve rate (the task is bimodal: a run either finds the solution or sits at ~0.09)", "",
+          "| arm | solved (acc > 0.5) | per-seed accuracies |", "|---|---|---|"]
+    for k in arms:
+        v = acc[k]
+        L.append(f"| {k} | {int((v > 0.5).sum())}/{len(v)} | " + ", ".join(f"{x:.3f}" for x in sorted(v)) + " |")
     L += ["", "## Floors (strategies needing no pointer arithmetic)", ""]
     for k, v in floors().items():
         L.append(f"- {k}: {v:.3f}")

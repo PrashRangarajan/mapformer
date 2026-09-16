@@ -58,3 +58,14 @@ arXiv:2511.19279) rather than the token's index. r=2, the MapFormer default.
 
 n=3 gives an MDE of 1.6 sd, so only large effects are detectable; anything smaller is reported as
 unmeasured (rule 11). Seeds follow the paper's count.
+
+## Amendment 1 (2026-09-15, after the 3-seed batch)
+
+The 3-seed batch shows the task is BIMODAL, not graded: a run either undergoes a late transition
+(MapPoPE seed 0 lifts off at ~40k steps and ends at 0.981; PoPE seed 2 lifts off at ~65k and is
+still rising at the budget end, 0.803) or sits flat at ~0.09 for all 100,000 steps. Seed means and
+their MDEs are therefore the wrong statistic. Registered addition: seeds 3-7 at the same budget for
+all four arms (8 total), and the primary statistic becomes the **solve rate** (fraction of seeds
+above 0.5), compared against the paper's implicit 3/3 for PoPE and 0/3 for RoPE. No change to the
+recipe. Also registered: PoPE seed 2's curve was still climbing at 100k, so the budget is a live
+suspect for the replication failure and is reported as such, not as evidence against PoPE.
