@@ -1,65 +1,105 @@
-# Dyck-2: which position encodings keep tracking a bracket stack on longer, deeper input
+# Dyck-2: which position encodings learn a bracket stack that survives longer, deeper input
 
-**Task.** Next-token prediction over four tokens: `(` `)` `[` `]`. The sequences are balanced and
-correctly nested, so at every position the legal next tokens are: either bracket may be *opened*
-(always), and the bracket most recently opened may be *closed* (when something is open). Scoring
-the exact next token is meaningless -- the sequences are sampled, so several continuations are
-genuinely possible -- so we score the predicted distribution against the legal set.
+**Task.** Next-token prediction over four tokens: `(` `)` `[` `]`. Sequences are balanced and
+correctly nested, so at each position you may always *open* either bracket, and may *close* the
+bracket most recently opened. Tracking which bracket that is -- the stack -- is the only part of
+the task that requires memory.
 
-**Training.** All models trained ONLY on length 32, max depth 4, then tested unchanged on longer and
-deeper sequences. Length = number of brackets. Depth = how many are open at once at the deepest
-point. 1 layer, 1 head of size 64, ~51k parameters each, identical recipe (560k sequences, AdamW,
-lr 1e-4, weight decay 0.01, cosine schedule), 8 seeds. Setup follows the MapFormer paper
-(arXiv:2511.19279 v4, Sec 5.3).
+**Setup.** Every model is trained ONLY on length 32, max depth 4, then tested unchanged on longer
+and deeper sequences. Length = number of brackets; depth = how many are open at once at the deepest
+point. Models are 1 layer / 1 head of size 64 (~51k parameters) unless marked 2 layers (2 heads,
+~400k); identical recipe throughout (560k sequences, AdamW, lr 1e-4, weight decay 0.01, cosine
+schedule), 8 seeds each. This follows the setup of the MapFormer paper (arXiv:2511.19279 v4, Sec 5.3).
+MapPoPE and MapFormer use *path integration* -- position is a running sum of learned per-token steps,
+so an opening bracket can step forward and a closing bracket step back. PoPE and RoPE use the token's
+*index* in the sequence. The *n-gram baseline* predicts from the last bracket alone, with no stack.
 
-**Two metrics, kept separate.** They measure different failures and neither implies the other.
-- **invalid mass** -- probability placed on brackets that are ungrammatical there. Lower is better;
-  a uniform guesser is ~0.25. This is the grammaticality/coverage half.
-- **stack accuracy** -- at positions where something is open, is P(legal closer) > P(illegal
-  closer)? **Chance is 0.500.** This is the only part of the task that requires tracking the stack;
-  the always-legal opening brackets cannot inflate it.
+**Metrics are the standard ones from the Dyck literature** (a single combined score is avoidable and
+misleading here -- see the note at the end).
 
-| | | trained on:<br>length 32, depth 4 | 4x longer:<br>length 128, depth 4 | 4x longer, 3x deeper:<br>length 128, depth 12 |
+## 1. Bracket-closing memory (Hewitt et al. 2020; Yao et al. 2021 use the same)
+
+"Let p_j be the probability that the model predicts the correct closing bracket given that j tokens
+separate it from its open bracket. We report mean_j p_j." Probability is renormalised over the
+closing brackets; opening brackets are never scored, since which bracket gets opened next is not
+predictable. **Chance is 0.500.**
+
+| model | trained on:<br>L 32, depth 4 | 4x longer:<br>L 128, depth 4 | 4x longer, 3x deeper:<br>L 128, depth 12 |
+|---|---|---|---|
+| **MapPoPE** (1 layer) | 0.994 | 0.793 | 0.719 |
+| **MapFormer / MapWM** (1 layer) | 0.992 | 0.772 | 0.638 |
+| PoPE (1 layer) | 0.646 | 0.585 | 0.551 |
+| RoPE (1 layer) | 0.627 | 0.554 | 0.535 |
+| PoPE (2 layers) | 0.919 | 0.623 | 0.578 |
+| RoPE (2 layers) | 0.914 | 0.623 | 0.574 |
+| *n-gram baseline, no stack* | 0.531 | 0.511 | 0.508 |
+
+## 2. Valid-set prediction, per sequence (Suzgun et al. 2019; Bhattamishra et al. 2020; Ebrahimi et al. 2020)
+
+The model must predict the exact SET of valid next brackets, and "an input is accurately recognized
+only if the model correctly predicts the set of all possible brackets at each position" -- one
+mistake anywhere fails the whole sequence. **Chance is 0.000.**
+
+| model | trained on:<br>L 32, depth 4 | 4x longer:<br>L 128, depth 4 | 4x longer, 3x deeper:<br>L 128, depth 12 |
+|---|---|---|---|
+| **MapPoPE** (1 layer) | 0.661 | 0.108 | 0.042 |
+| **MapFormer / MapWM** (1 layer) | 0.672 | 0.065 | 0.003 |
+| PoPE (1 layer) | 0.000 | 0.000 | 0.000 |
+| RoPE (1 layer) | 0.000 | 0.000 | 0.000 |
+| PoPE (2 layers) | 0.084 | 0.000 | 0.000 |
+| RoPE (2 layers) | 0.097 | 0.000 | 0.000 |
+| *n-gram baseline, no stack* | 0.020 | 0.000 | 0.000 |
+
+## 3. How far back the stack is still tracked (L 128, depth 12)
+
+Metric 1 split by distance: how many tokens back the bracket that must be closed was opened. If the
+previous token was an opening bracket it *is* the top of the stack, so no memory is needed -- and
+two thirds of positions are like that, which is why averages flatter everything. Chance 0.500.
+
+| model | d 1-2 (66% of positions) | d 3-8 (14%) | d 9-32 (13%) | d 33+ (6%) |
 |---|---|---|---|---|
-| **MapPoPE** | invalid mass<br>stack accuracy | 0.002<br>1.000 | 0.028<br>0.991 | **0.018**<br>**0.978** |
-| **MapFormer (MapWM)** | invalid mass<br>stack accuracy | 0.003<br>0.999 | 0.047<br>0.965 | 0.054<br>0.928 |
-| **PoPE** | invalid mass<br>stack accuracy | 0.078<br>0.940 | 0.217<br>0.904 | 0.195<br>0.864 |
-| **RoPE** | invalid mass<br>stack accuracy | 0.078<br>0.936 | 0.241<br>0.851 | 0.220<br>0.822 |
-| *n-gram baseline (no stack)* | invalid mass<br>stack accuracy | *0.125*<br>*0.797* | *0.130*<br>*0.791* | *0.116*<br>*0.770* |
+| **MapPoPE** (1 layer) | 0.997 | 0.996 | 0.971 | 0.730 |
+| **MapFormer / MapWM** (1 layer) | 0.942 | 0.906 | 0.799 | 0.611 |
+| PoPE (1 layer) | 0.801 | 0.740 | 0.645 | 0.569 |
+| RoPE (1 layer) | 0.693 | 0.641 | 0.570 | 0.539 |
+| PoPE (2 layers) | 0.900 | 0.767 | 0.694 | 0.638 |
+| RoPE (2 layers) | 0.834 | 0.683 | 0.602 | 0.592 |
+| *n-gram baseline, no stack* | 0.505 | 0.498 | 0.508 | 0.511 |
 
-Seed means, n=8; seed sd is <=0.006 on the training condition and <=0.036 elsewhere. MapPoPE and
-MapFormer use path integration (position is a running sum of learned per-token steps, so an opening
-bracket can step forward and a closing bracket step back); PoPE and RoPE use the token's index in
-the sequence. The *n-gram baseline* predicts from the last bracket alone, with no stack.
+## What the tables say
 
-**Stack accuracy averages over easy and hard positions -- split it by reach.** If the previous token
-was an opening bracket, it *is* the top of the stack, so no memory is needed; two thirds of
-positions are like that. The real measure is how far back the model can still find the top of the
-stack. At length 128, depth 12, by distance to the bracket that must be closed:
+1. **A single layer with path integration learns the stack; a single layer with index position does
+   not.** At the training distribution MapPoPE and MapFormer reach 0.99 bracket-closing memory
+   against 0.63-0.65 for 1-layer PoPE and RoPE. Index models need a second layer to learn it
+   (0.91-0.92), which matches the theory for standard transformers (Yao et al. 2021). This is the
+   MapFormer paper's central claim and it holds.
+2. **Nobody generalises "perfectly".** On longer, deeper input the best model retains 0.719
+   bracket-closing memory and solves 4% of sequences end to end; MapFormer retains 0.638 and 0.3%.
+   Index models are near chance (0.53-0.58) and solve none.
+3. **Adding PoPE's encoding to path integration helps** (MapPoPE over MapFormer on every metric and
+   at every distance); adding it to index position does not.
+4. **Every model has a reach horizon.** All are near-perfect when the matching bracket is within a
+   few tokens and degrade with distance; pushed to length 512, even MapPoPE reaches chance beyond
+   about 128 tokens of reach. They differ in where the horizon falls, not in having one.
 
-| | 1-2 (66% of positions) | 3-8 (14%) | 9-32 (13%) | 33+ (6%) |
-|---|---|---|---|---|
-| MapPoPE | 0.999 | 0.996 | 0.971 | **0.730** |
-| MapFormer (MapWM) | 0.988 | 0.906 | 0.799 | **0.611** |
-| PoPE | 0.961 | 0.740 | 0.645 | 0.569 |
-| RoPE | 0.937 | 0.641 | 0.570 | 0.539 |
-| *n-gram baseline* | *0.904* | *0.498* | *0.508* | *0.511* |
+## Notes and caveats
 
-**What this says.**
-1. On the training condition every model is near-perfect on both metrics: all four reach 0.94-1.00
-   stack accuracy. The differences are entirely out of distribution.
-2. Out of distribution, path integration keeps the stack (0.93-0.98) while index position loses it
-   (0.82-0.86) and also becomes ungrammatical, putting a fifth of its mass on illegal brackets.
-3. The n-gram is at chance (0.50) past distance 2, as something with no stack must be -- but it is
-   *more grammatical* than either index model out of distribution (0.116 vs 0.195-0.241 invalid
-   mass). The two metrics genuinely dissociate.
-4. Every model has a horizon. Push sequences to length 512 and even MapPoPE falls to chance beyond
-   about 128 tokens of reach; it just gets further than the others.
+- The MapFormer paper reports a different metric: the F1 valid-continuation score of Goodale et al.
+  (2025), designed to compare *many* formal languages, not to detect a stack. On Dyck-2 it gives
+  most of its range to the two always-legal opening brackets, so the stack-free n-gram scores 0.857
+  on it at the hardest condition -- above every index model (0.472-0.704). Our models reproduce the
+  paper's ordering on that metric but sit 0.05-0.08 below its published values; the paper does not
+  state its batch size, which is the untested suspect.
+- Aggregation matters as much as metric choice: the same RoPE predictions score 0.871 when averaged
+  over positions and 0.627 when averaged over distances, because the rare long-distance cases are
+  where it fails.
+- The set-prediction rows are not directly comparable to published numbers: those papers train with
+  per-symbol sigmoids against valid-set labels, while these models are trained with next-token
+  cross-entropy as MapFormer does, so they are not optimised for set prediction. A threshold-free
+  form of the criterion is used here (every valid bracket must outrank every invalid one).
+- Omitted: PathAtt (a paper baseline, not implemented here), CoPE (ours underperforms the paper's),
+  and MapEM, which tracks MapFormer/MapWM closely on every metric.
 
-**Caveats.** The paper reports a single combined F1 in which these two quantities are fused, and
-which we also computed: on that metric our path-integration models land 0.05-0.08 below the paper's
-published values at the hardest condition, so the ordering replicates but the levels do not (the
-paper leaves batch size unspecified; that is the untested suspect). That combined F1 tracks invalid
-mass almost perfectly and is nearly blind to stack accuracy -- the no-stack n-gram scores 0.857 on
-it, above every index model. MapPoPE and PoPE are not in the paper. Two of the paper's baselines are
-omitted: PathAtt (not implemented here) and CoPE (our implementation underperforms theirs).
+Sources: Hewitt et al. 2020 (arXiv:2010.07515); Yao et al. 2021 (ACL 2021); Suzgun et al. 2019
+(arXiv:1911.03329); Bhattamishra et al. 2020 (COLING); Ebrahimi et al. 2020 (arXiv:2010.04303);
+Goodale et al. 2025 (ACL 2025); MapFormer, Rambaud et al. (arXiv:2511.19279 v4).
