@@ -69,3 +69,24 @@ all four arms (8 total), and the primary statistic becomes the **solve rate** (f
 above 0.5), compared against the paper's implicit 3/3 for PoPE and 0/3 for RoPE. No change to the
 recipe. Also registered: PoPE seed 2's curve was still climbing at 100k, so the budget is a live
 suspect for the replication failure and is reported as such, not as evidence against PoPE.
+
+## Amendment 2 (2026-09-16) -- the budget test
+
+PoPE's one solving seed was still climbing at the 100,000-step budget end (0.803), so the budget is a
+live explanation for our 1/8 solve rate against the paper's implicit 3/3. Registered: rerun **PoPE
+and MapPoPE at 200,000 iterations**, 8 seeds each, everything else identical. The cosine schedule is
+stretched over the new budget (warmup stays 4,000), so this is a budget extension, not the same run
+continued -- the learning-rate trajectory differs and that is the intended manipulation.
+
+- **R5**: PoPE's solve rate at 200k. If it rises to >= 6/8 the replication failure was the budget; if
+  it stays <= 2/8 the budget is exonerated and the implementation differences (delta clamp, LayerNorm
+  vs RMSNorm) become the remaining suspects.
+- **R6**: MapPoPE's solve rate at 200k, against its 5/8 at 100k. Registered prediction: it rises or
+  holds; a drop would mean the 100k result was schedule-specific.
+- **R7**: the MapPoPE - PoPE solve-rate gap at 200k (Fisher exact), against 5/8 vs 1/8 (p = 0.119) at
+  100k. This is the contrast the amendment exists to power.
+- Also recorded per run: the step at which validation accuracy first exceeds 0.5 (lift-off step), so
+  "solves later" is separable from "never solves".
+- RoPE and MapWM are NOT rerun at 200k: neither has a seed above 0.09 and neither shows any upward
+  trend. Cross-budget comparisons against them are therefore unmatched and are not made; the
+  registered contrasts above are all within the 200k batch.
