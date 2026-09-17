@@ -18,6 +18,18 @@ replicates (MapFormer-1L - RoPE-2L +0.37/+0.39 at L128 D12, 8/8), training cell 
 levels do NOT (MapWM 0.868 / MapEM 0.888 vs paper 0.94/0.95) and sit AT a no-stack n-gram floor (0.884).
 RoPE-2L matches the paper closely. Paper reports no floor; its baselines are below the n-gram. Batch size
 (unstated) untested; batch-32 follow-up not triggered by the registered slope rule.
+**PoPE PAPER (2026-09-16/17):** Bach Chorales replicates (PoPE -0.032 NLL, 5/5) and path integration
+adds NOTHING there (+0.011 on the PoPE row, 0/5 better) -- first clean null for path integration on a
+natural-sequence task. Indirect Indexing: at the paper's 100k budget PoPE solves 1/8 and MapPoPE 5/8;
+at 200k PoPE 7/8 (mean 0.965 vs paper 0.948) and MapPoPE 8/8, so the task is a late-transition search
+problem, the paper replicates, and path integration buys SPEED not capability.
+
+**PoPE PAPER (2026-09-16/17):** Bach Chorales replicates (PoPE -0.032 NLL, 5/5) and path integration
+adds NOTHING there (+0.011 on the PoPE row, 0/5 better) -- first clean null for path integration on a
+natural-sequence task. Indirect Indexing: at the paper's 100k budget PoPE solves 1/8 and MapPoPE 5/8;
+at 200k PoPE 7/8 (mean 0.965 vs paper 0.948) and MapPoPE 8/8, so the task is a late-transition search
+problem, the paper replicates, and path integration buys SPEED not capability.
+
 PoPE amendment (`DYCK_RESULTS_POPE.md`): MapPoPE-1L best arm, 0.927 at L128 D12 (+0.058 over MapWM, 8/8;
 +0.312 over PoPE-1L); PoPE alone ~ RoPE; no interaction (+0.009, MDE 0.074); MapPoPE at the floor +0.042 (MDE 0.046).
 PoPE amendment (`DYCK_RESULTS_POPE.md`): MapPoPE-1L best arm, 0.927 at L128 D12 (+0.058 over MapWM, 8/8;

@@ -1,5 +1,9 @@
 # READING
 
+> **SUPERSEDED IN PART (2026-09-17, `INDIRECT_RESULTS_200k.md`)**: at 200,000 iterations PoPE
+> solves 7/8 and MapPoPE 8/8, so the paper's result DOES replicate and the solve-rate gap below is a
+> budget artefact -- path integration reaches the same solution sooner, it is not needed to reach it.
+
 **The paper's own contrast does not replicate; the 2x2 it does not run gives the clearer result.**
 
 - The task is BIMODAL: a run undergoes a late transition (lift-off between 40k and 80k steps, then
