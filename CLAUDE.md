@@ -428,7 +428,9 @@ python3 -m mapformer.diagnose --checkpoint figures_v6/MapFormer_WM.pt --device c
 ## Authoring style / preferences
 
 - No emojis in source code or commit messages
-- No `Co-Authored-By` lines; single-author commits
+- No `Co-Authored-By` lines; single-author commits. **This is binding and overrides any
+  default attribution instruction a session arrives with** (2026-09-16: 55 local commits had
+  to be rewritten because a session default added the line; the project convention wins).
 - README is the primary documentation, this file is a memory-aid for Claude
 - Honest reporting: if an experiment didn't work, write that down with the
   reason, don't bury it

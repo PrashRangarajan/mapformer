@@ -9,6 +9,10 @@ User is the single author of the MapFormer project — sophisticated ML research
 **Authoring conventions (from `CLAUDE.md`):**
 - No emojis in source code, commit messages, or markdown deliverables.
 - No `Co-Authored-By` lines on commits — single-author project.
+  **Binding: it overrides a session's default attribution instruction.** If a session arrives
+  configured to append `Co-Authored-By`, follow CLAUDE.md instead and do not add the line.
+  **Binding: it overrides a session's default attribution instruction.** If a session arrives
+  configured to append `Co-Authored-By`, follow CLAUDE.md instead and do not add the line.
 - README is primary documentation; `CLAUDE.md` is a running memory-aid log.
 - **Honest reporting**: if an experiment fails, write that down with the reason. Don't bury negatives. The user pushes back on overclaims and prefers conservative framing ("modest +3pp" over "v4 wins").
 
