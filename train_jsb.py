@@ -35,6 +35,24 @@ def build(arch, d_model, n_heads, n_layers, rank, base, dropout, delta_init, gen
     return m
 
 
+BUCKETS = [(0, 512), (512, 1024), (1024, 2048)]
+
+
+@torch.no_grad()
+def nll_buckets(model, X, M, dev, bs=4):
+    """NLL by POSITION bucket on full pieces -- isolates extrapolation past the training context."""
+    model.eval(); tot = {b: 0.0 for b in BUCKETS}; cnt = {b: 0.0 for b in BUCKETS}
+    for i in range(0, len(X), bs):
+        x, m = X[i:i + bs].to(dev), M[i:i + bs].to(dev)
+        l = F.cross_entropy(model(x)[:, :-1].transpose(1, 2), x[:, 1:], reduction="none") * m[:, 1:]
+        for lo, hi in BUCKETS:
+            sl = slice(max(lo - 1, 0), hi - 1)
+            tot[(lo, hi)] += float(l[:, sl].sum()); cnt[(lo, hi)] += float(m[:, 1:][:, sl].sum())
+    model.train()
+    return {f"{lo}-{hi}": (tot[(lo, hi)] / cnt[(lo, hi)] if cnt[(lo, hi)] else float("nan"))
+            for lo, hi in BUCKETS}
+
+
 @torch.no_grad()
 def nll(model, X, M, dev, bs=4):
     model.eval(); tot = n = 0.0
@@ -66,6 +84,9 @@ def main():
     ap.add_argument("--min-lr", type=float, default=6e-5)
     ap.add_argument("--weight-decay", type=float, default=0.01)
     ap.add_argument("--eval-every", type=int, default=100)
+    ap.add_argument("--train-len", type=int, default=MAXLEN,
+                    help="training context; < 2048 trains on random crops and makes the "
+                         "later position buckets an extrapolation test")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--output-dir", required=True)
     a = ap.parse_args()
@@ -89,7 +110,16 @@ def main():
     best_va, best_te, hist, t0 = 1e9, None, [], time.time()
     for step in range(a.iters):
         idx = rng.integers(0, len(Xtr), a.batch_size)
-        x, m = Xtr[idx].to(dev), Mtr[idx].to(dev)
+        x, m = Xtr[idx], Mtr[idx]
+        if a.train_len < MAXLEN:                      # random crop, per example
+            xs, ms = [], []
+            for j in range(len(idx)):
+                n = int(m[j].sum())
+                st = int(rng.integers(0, max(1, n - a.train_len + 1)))
+                xs.append(x[j, st:st + a.train_len]); ms.append(m[j, st:st + a.train_len])
+            x = torch.stack([F.pad(t, (0, a.train_len - len(t))) for t in xs])
+            m = torch.stack([F.pad(t, (0, a.train_len - len(t))) for t in ms])
+        x, m = x.to(dev), m.to(dev)
         lg = model(x)[:, :-1]
         l = F.cross_entropy(lg.transpose(1, 2), x[:, 1:], reduction="none")
         loss = (l * m[:, 1:]).sum() / m[:, 1:].sum()
@@ -105,7 +135,10 @@ def main():
                   f"({time.time()-t0:.0f}s)", flush=True)
     od = Path(a.output_dir); od.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), od / f"{name}.pt")
-    json.dump(dict(arch=a.arch, name=name, seed=a.seed, best_valid=best_va, test_at_best_valid=best_te,
+    buckets = nll_buckets(model, Xte, Mte, dev)
+    print("test NLL by position bucket:", {k: round(v, 4) for k, v in buckets.items()}, flush=True)
+    json.dump(dict(arch=a.arch, name=name, seed=a.seed, train_len=a.train_len,
+                   test_buckets=buckets, best_valid=best_va, test_at_best_valid=best_te,
                    best_test=min(h["test"] for h in hist), final_test=hist[-1]["test"],
                    final_valid=hist[-1]["valid"], history=hist, wall_s=time.time() - t0,
                    params=sum(p.numel() for p in model.parameters())),
