@@ -23,9 +23,11 @@ from mapformer.environment_indirect import IndirectWorld, VOCAB_SIZE, BLOCK
 from mapformer.model import MapFormerWM
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_pope import MapFormerWM_PoPE, MapFormerWM_RoPEIndex_PoPE, DELTA_MIN
+from mapformer.model_pope_t3 import MapFormerWM_PoPE_T3, MapFormerWM_PoPE_T3_Inert
 
 ARCH = {"RoPE": MapFormerWM_RoPE, "PoPE": MapFormerWM_RoPEIndex_PoPE,
-        "MapWM": MapFormerWM, "MapPoPE": MapFormerWM_PoPE}
+        "MapWM": MapFormerWM, "MapPoPE": MapFormerWM_PoPE,
+        "MapPoPE_T3": MapFormerWM_PoPE_T3, "MapPoPE_T3inert": MapFormerWM_PoPE_T3_Inert}
 
 
 def build(arch, d_model, n_heads, n_layers, rank, base, delta_init, gen):
@@ -81,7 +83,7 @@ def main():
     Xte, Yte = w.batch(10_000, np.random.default_rng(9012))
     model = build(a.arch, a.d_model, a.n_heads, a.n_layers, a.rank, a.base, a.delta_init, gen).to(dev)
     n_par = sum(p.numel() for p in model.parameters())
-    name = a.arch + (f"_r{a.rank}" if a.arch in ("MapWM", "MapPoPE") else "")
+    name = a.arch + (f"_r{a.rank}" if a.arch.startswith(("MapWM", "MapPoPE")) else "")
     print(f"{name} seed={a.seed} params={n_par:,} train={len(Xtr):,} chance={1/52:.4f}", flush=True)
 
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, betas=(0.9, 0.99), weight_decay=a.weight_decay)
