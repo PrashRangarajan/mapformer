@@ -99,7 +99,24 @@ improved with the smaller base, which is what that reading says should happen.
   If a bounded accumulator does not rescue it, this account is wrong.
 - **T2** MapPoPE should collapse on any task whose increments do not cancel, including Dyck-2 if the
   increments are forced monotone -- the `MONOTONE` machinery in this repo can do that.
-- **T3** The account says the fix for MapPoPE is a content-dependent PHASE, not fewer frequencies.
-  So allowing `delta_c` to depend on content (a per-token phase) should recover extrapolation, while
-  halving the frequency count should not. This is also the honest replacement for the
-  pair-frequency variant I declined to build for the earlier story.
+- **T3, restated after a correction.** MapPoPE's phase IS already content-dependent in one sense --
+  `phi_t = omega * S_t` with `S` a cumsum of content-driven increments -- so "the fix is a
+  content-dependent phase" as first written was wrong. The two senses must be separated:
+
+  1. **Path phase** (MapPoPE has it): a property of the POSITION. Every query at position t shares
+     the same `omega (S_t - S_s)`; it is content-dependent only through history.
+  2. **Pairwise phase** (MapWM has it, PoPE and MapPoPE do not): rotating the content vectors Q, K
+     makes the cosine argument `omega_p (S_t - S_s) + (angle q_p - angle k_p)`, so the CURRENT query
+     and key shift the peak, and the amplitude can be negative. Two queries at the SAME position can
+     want different offsets. `pope_delta` is `nn.Parameter(zeros(n_heads, d_head))` -- one constant
+     per head and frequency, shared by every token of every sequence.
+
+  Removing (2) is precisely PoPE's what/where decoupling, so the prediction is: make `delta_c`
+  depend on the token, `delta_c(x_t)` and `delta_c(x_s)`, which restores (2) while keeping (1). This
+  is the same phase freedom already measured on MapEM in this repo (`MAGONLY_RESULTS.md`, +0.146).
+
+  **The prediction has a cost attached, which is what makes it falsifiable**: restoring pairwise
+  phase partially re-entangles what and where, the thing PoPE exists to prevent. So it should
+  recover length extrapolation on music AND give back part of PoPE's pure-indexing advantage -- the
+  Indirect Indexing solve rate is where that would show. If it recovers extrapolation at NO cost to
+  indexing, this account is too simple and should be replaced.
