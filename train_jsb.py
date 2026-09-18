@@ -138,6 +138,7 @@ def main():
     buckets = nll_buckets(model, Xte, Mte, dev)
     print("test NLL by position bucket:", {k: round(v, 4) for k, v in buckets.items()}, flush=True)
     json.dump(dict(arch=a.arch, name=name, seed=a.seed, train_len=a.train_len,
+                   base=a.base, rank=a.rank, dropout=a.dropout,
                    test_buckets=buckets, best_valid=best_va, test_at_best_valid=best_te,
                    best_test=min(h["test"] for h in hist), final_test=hist[-1]["test"],
                    final_valid=hist[-1]["valid"], history=hist, wall_s=time.time() - t0,

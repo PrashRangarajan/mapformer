@@ -18,6 +18,24 @@ replicates (MapFormer-1L - RoPE-2L +0.37/+0.39 at L128 D12, 8/8), training cell 
 levels do NOT (MapWM 0.868 / MapEM 0.888 vs paper 0.94/0.95) and sit AT a no-stack n-gram floor (0.884).
 RoPE-2L matches the paper closely. Paper reports no floor; its baselines are below the n-gram. Batch size
 (unstated) untested; batch-32 follow-up not triggered by the registered slope rule.
+**MAPPOPE COLLAPSE: MECHANISM UNIDENTIFIED (2026-09-17).** Two pre-registered accounts refuted.
+Rank: collapse survives r=1/2/4 (4.08/4.62/4.63) and the rank effect is equal on the MapWM control
+row. Omega base: the predicted direction is INVERTED -- base 512 is best and 32768 worst on BOTH rows
+(MapPoPE 3.82 -> 5.22, MapWM 1.11 -> 1.87), so raising the base is not the extrapolation fix here that
+it is for index RoPE. MapPoPE never beats MapWM OOD at any rank or base (0/5 everywhere). Remaining
+suspect (one phase per ELEMENT vs per PAIR) needs a new variant; deliberately not built.
+Practical: for extrapolation on this task smaller rank and smaller base both help (MapWM r1 0.912,
+MapWM base512 1.109 vs default 1.397); the combination is untested.
+
+**MAPPOPE COLLAPSE: MECHANISM UNIDENTIFIED (2026-09-17).** Two pre-registered accounts refuted.
+Rank: collapse survives r=1/2/4 (4.08/4.62/4.63) and the rank effect is equal on the MapWM control
+row. Omega base: the predicted direction is INVERTED -- base 512 is best and 32768 worst on BOTH rows
+(MapPoPE 3.82 -> 5.22, MapWM 1.11 -> 1.87), so raising the base is not the extrapolation fix here that
+it is for index RoPE. MapPoPE never beats MapWM OOD at any rank or base (0/5 everywhere). Remaining
+suspect (one phase per ELEMENT vs per PAIR) needs a new variant; deliberately not built.
+Practical: for extrapolation on this task smaller rank and smaller base both help (MapWM r1 0.912,
+MapWM base512 1.109 vs default 1.397); the combination is untested.
+
 **JSB LENGTH EXTRAPOLATION (2026-09-17, `JSB_LENGTH_RESULTS.md`, n=5, train context 512):** the one
 PoPE-data condition where path integration wins -- MapWM - RoPE = -0.662 NLL at 2-4x beyond the
 context (5/5, MDE 0.335), growing with length. MapPoPE COLLAPSES there (4.62 vs MapWM 1.40); the

@@ -15,8 +15,8 @@ def main():
         for arm in ("MapPoPE_r2", "MapWM_r2"):
             for f in sorted(glob.glob(f"{REPO}/{d}/{arm}_s*/{arm}.json")):
                 j = json.load(open(f))
-                if j.get("base") != base or j.get("train_len") != 512:
-                    continue
+                if j.get("train_len") != 512 or j.get("base", base) != base:
+                    continue   # base was not recorded in the earliest runs; the directory carries it
                 R.setdefault((arm, base), {})[j["seed"]] = j["test_buckets"]
     bases = sorted({b for _, b in R})
     L = ["# Bach Chorales length extrapolation: omega-base sweep", "",
