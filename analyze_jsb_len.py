@@ -5,6 +5,12 @@ import numpy as np
 ORDER = ["RoPE", "PoPE", "MapWM_r2", "MapPoPE_r2"]
 META = {"RoPE": ("index", "RoPE"), "PoPE": ("index", "PoPE"),
         "MapWM_r2": ("path integration", "RoPE"), "MapPoPE_r2": ("path integration", "PoPE")}
+
+
+def meta(k):
+    if k in META:
+        return META[k]
+    return ("path integration r" + k.split("_r")[-1], "PoPE" if k.startswith("MapPoPE") else "RoPE")
 BUCK = ["0-512", "512-1024", "1024-2048"]
 
 
@@ -14,14 +20,14 @@ def main():
     R = {}
     for f in sorted(glob.glob(f"{a.runs_dir}/*_s*/*.json")):
         j = json.load(open(f)); R.setdefault(j["name"], {})[j["seed"]] = j
-    arms = [x for x in ORDER if x in R]
+    arms = [x for x in ORDER if x in R] + sorted(x for x in R if x not in ORDER)
     g = lambda k, b: np.array([R[k][s]["test_buckets"][b] for s in sorted(R[k])])
     L = [f"# Bach Chorales, length extrapolation -- `{a.runs_dir}`", "",
          "Pre-registration: `JSBLEN_PREREG.md`. Trained on 512-token crops; test NLL by position "
          "bucket on whole pieces. **Lower is better.** 0-512 is in distribution.", "",
          "| arm | position | encoding | 0-512 | 512-1024 | 1024-2048 |", "|---|---|---|---|---|---|"]
     for k in arms:
-        L.append(f"| {k} | {META[k][0]} | {META[k][1]} | " +
+        L.append(f"| {k} | {meta(k)[0]} | {meta(k)[1]} | " +
                  " | ".join(f"{g(k,b).mean():.4f} +/- {g(k,b).std(ddof=1):.4f}" for b in BUCK) + " |")
     L += ["", "## Paired contrasts per bucket (negative = better); MDE = 2.8 sd / sqrt(n)", "",
           "| contrast | " + " | ".join(BUCK) + " |", "|---|---|---|---|"]
@@ -30,7 +36,9 @@ def main():
         d = np.array([R[x][s]["test_buckets"][b] - R[y][s]["test_buckets"][b] for s in ss])
         sd = d.std(ddof=1)
         return d.mean(), 2.8 * sd / math.sqrt(len(d)), int((d < 0).sum()), len(d)
-    pairs = [("MapWM_r2", "RoPE", "R2 path integration, RoPE row"),
+    ranks = [(f"MapPoPE_r{r}", "MapPoPE_r2", f"rank {r} vs rank 2, PoPE row") for r in (1, 4) if f"MapPoPE_r{r}" in R]
+    ranks += [(f"MapWM_r{r}", "MapWM_r2", f"rank {r} vs rank 2, RoPE row") for r in (1, 4) if f"MapWM_r{r}" in R]
+    pairs = ranks + [("MapWM_r2", "RoPE", "R2 path integration, RoPE row"),
              ("MapPoPE_r2", "PoPE", "R2 path integration, PoPE row"),
              ("PoPE", "RoPE", "R3 encoding, index row"),
              ("MapPoPE_r2", "MapWM_r2", "R3 encoding, path-integrated row")]

@@ -36,3 +36,29 @@ Same 2x2, 5 seeds: {index, path integration} x {RoPE, PoPE}.
 At n=5 the MDE is 1.25 sd. The in-distribution effect size for reference was 0.032 NLL with seed sd
 0.010; extrapolation differences in this project are usually larger than in-distribution ones, so
 this is better powered than the JSB run was, but a small effect will still read as unmeasured.
+
+## Amendment 1 (2026-09-17) -- the rank test for MapPoPE's collapse
+
+MapPoPE is the best arm in distribution (0.5235) and blows up past the training context (1.954 at
+1-2x, 4.616 at 2-4x) while MapWM is the best arm out there (1.397). The full-context control shows
+no collapse, so it is extrapolation-specific. The proposed mechanism: PoPE carries one phase per
+ELEMENT (32 frequencies per head at d_model 256 / 8 heads) where RoPE-style rotation carries one per
+PAIR (16), and path integration makes that phase an unbounded content-driven cumulative sum -- more
+frequencies on an angle that grows without bound leaves the trained phase range sooner.
+
+**Registered test**: the rank of the content-to-increment map bounds how much of the embedding can
+drive the angle, so if this account is right the collapse should be DOSE-DEPENDENT in rank.
+Arms added, 5 seeds each, everything else identical: **MapPoPE at r=1 and r=4**, plus **MapWM at r=1
+and r=4 as the control row** (r=2 already run for both).
+
+- **A1** MapPoPE far-bucket (1024-2048) NLL ordered r1 < r2 < r4. Confirmed if r1 - r2 is negative
+  and detectable and r4 - r2 is positive and detectable.
+- **A2** The same ordering must NOT appear (or must be much weaker) on the MapWM control row; if
+  rank moves both rows equally the effect is about rank in general, not about PoPE's frequencies.
+- **A3** If r=1 does not reduce the collapse, the rank account is REFUTED and the remaining suspect
+  is the frequency count itself (32 vs 16), which rank cannot reach -- that would need a PoPE
+  variant with pair-wise frequencies, which is not built and is not run here.
+
+Note what this test cannot separate: rank bounds the SUBSPACE the increment lives in, not its
+MAGNITUDE. A null on A1 leaves both "the frequency count is what matters" and "the angle magnitude
+is what matters" alive; the latter would be tested by the omega base, which is untouched here.
