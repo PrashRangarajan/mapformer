@@ -62,3 +62,27 @@ and r=4 as the control row** (r=2 already run for both).
 Note what this test cannot separate: rank bounds the SUBSPACE the increment lives in, not its
 MAGNITUDE. A null on A1 leaves both "the frequency count is what matters" and "the angle magnitude
 is what matters" alive; the latter would be tested by the omega base, which is untouched here.
+
+## Amendment 2 (2026-09-17) -- the omega-base test for the MapPoPE collapse
+
+Rank is refuted (amendment 1): the collapse survives r=1, r=2 and r=4 unchanged, and the rank effect
+is equally present on the MapWM control row. The surviving suspect reachable by a knob is the ANGLE
+MAGNITUDE. `PathIntegrator` sets omega_i = omega_max * (1/base)^(i/(n_b-1)) with omega_max = 2*pi, so
+the base fixes how slow the slowest frequency is: a larger base spreads the schedule further and makes
+the low-frequency blocks accumulate phase more slowly, which is what keeps an unbounded cumulative
+angle inside its trained range for longer.
+
+All runs so far used base = 2048 (the sequence length). Registered: **base in {512, 8192, 32768}**,
+5 seeds, for **MapPoPE and MapWM both** (base 2048 already run for both), training context 512,
+everything else identical.
+
+- **B1** If angle magnitude drives the collapse, MapPoPE's far-bucket (1024-2048) NLL falls
+  MONOTONICALLY as the base grows, and 32768 is detectably better than 2048.
+- **B2** The control row must show a weaker effect. If MapWM moves by a similar amount, the base is
+  again a general extrapolation knob and explains nothing specific about MapPoPE -- the same
+  disconfirming logic that killed the rank account.
+- **B3** If MapPoPE stays at 4.1-4.6 at every base, angle magnitude is refuted too, and the only
+  remaining suspect is the FREQUENCY COUNT itself (one phase per element rather than per pair), which
+  no hyperparameter here can reach -- it needs a pair-frequency PoPE variant, and the honest outcome
+  is to say the mechanism is unidentified rather than build a variant to keep the story alive.
+- Also reported: whether any base makes MapPoPE beat MapWM out of distribution at all.
