@@ -18,6 +18,7 @@ from mapformer.environment_jsb import splits, VOCAB_SIZE, MAXLEN, PAD
 from mapformer.model import MapFormerWM
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_pope import MapFormerWM_PoPE, MapFormerWM_RoPEIndex_PoPE, DELTA_MIN
+from mapformer.model_centered import center_model, token_frequencies
 
 ARCH = {"RoPE": MapFormerWM_RoPE, "PoPE": MapFormerWM_RoPEIndex_PoPE,
         "MapWM": MapFormerWM, "MapPoPE": MapFormerWM_PoPE}
@@ -84,6 +85,9 @@ def main():
     ap.add_argument("--min-lr", type=float, default=6e-5)
     ap.add_argument("--weight-decay", type=float, default=0.01)
     ap.add_argument("--eval-every", type=int, default=100)
+    ap.add_argument("--center", action="store_true",
+                    help="THEORY_MAPPOPE T1: centre the increment so the accumulator is a "
+                         "mean-zero random walk instead of a clock")
     ap.add_argument("--train-len", type=int, default=MAXLEN,
                     help="training context; < 2048 trains on random crops and makes the "
                          "later position buckets an extrapolation test")
@@ -96,8 +100,12 @@ def main():
     S = splits()
     Xtr, Mtr = S["train"]; Xva, Mva = S["valid"]; Xte, Mte = S["test"]
     model = build(a.arch, a.d_model, a.n_heads, a.n_layers, a.rank, a.base,
-                  a.dropout, a.delta_init, gen).to(dev)
+                  a.dropout, a.delta_init, gen)
     name = a.arch + (f"_r{a.rank}" if a.arch in ("MapWM", "MapPoPE") else "")
+    if a.center:
+        model = center_model(model, token_frequencies(Xtr, Mtr, VOCAB_SIZE))
+        name += "_centered"
+    model = model.to(dev)
     print(f"{name} seed={a.seed} params={sum(p.numel() for p in model.parameters()):,} "
           f"train={len(Xtr)} valid={len(Xva)} test={len(Xte)}", flush=True)
 
@@ -138,7 +146,7 @@ def main():
     buckets = nll_buckets(model, Xte, Mte, dev)
     print("test NLL by position bucket:", {k: round(v, 4) for k, v in buckets.items()}, flush=True)
     json.dump(dict(arch=a.arch, name=name, seed=a.seed, train_len=a.train_len,
-                   base=a.base, rank=a.rank, dropout=a.dropout,
+                   base=a.base, rank=a.rank, dropout=a.dropout, centered=a.center,
                    test_buckets=buckets, best_valid=best_va, test_at_best_valid=best_te,
                    best_test=min(h["test"] for h in hist), final_test=hist[-1]["test"],
                    final_valid=hist[-1]["valid"], history=hist, wall_s=time.time() - t0,
