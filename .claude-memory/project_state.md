@@ -18,6 +18,18 @@ replicates (MapFormer-1L - RoPE-2L +0.37/+0.39 at L128 D12, 8/8), training cell 
 levels do NOT (MapWM 0.868 / MapEM 0.888 vs paper 0.94/0.95) and sit AT a no-stack n-gram floor (0.884).
 RoPE-2L matches the paper closely. Paper reports no floor; its baselines are below the n-gram. Batch size
 (unstated) untested; batch-32 follow-up not triggered by the registered slope rule.
+**JSB LENGTH EXTRAPOLATION (2026-09-17, `JSB_LENGTH_RESULTS.md`, n=5, train context 512):** the one
+PoPE-data condition where path integration wins -- MapWM - RoPE = -0.662 NLL at 2-4x beyond the
+context (5/5, MDE 0.335), growing with length. MapPoPE COLLAPSES there (4.62 vs MapWM 1.40); the
+full-context control shows no collapse, so it is extrapolation-specific. PoPE's encoding is itself a
+length win on the index row (-0.461).
+
+**JSB LENGTH EXTRAPOLATION (2026-09-17, `JSB_LENGTH_RESULTS.md`, n=5, train context 512):** the one
+PoPE-data condition where path integration wins -- MapWM - RoPE = -0.662 NLL at 2-4x beyond the
+context (5/5, MDE 0.335), growing with length. MapPoPE COLLAPSES there (4.62 vs MapWM 1.40); the
+full-context control shows no collapse, so it is extrapolation-specific. PoPE's encoding is itself a
+length win on the index row (-0.461).
+
 **PoPE PAPER (2026-09-16/17):** Bach Chorales replicates (PoPE -0.032 NLL, 5/5) and path integration
 adds NOTHING there (+0.011 on the PoPE row, 0/5 better) -- first clean null for path integration on a
 natural-sequence task. Indirect Indexing: at the paper's 100k budget PoPE solves 1/8 and MapPoPE 5/8;
