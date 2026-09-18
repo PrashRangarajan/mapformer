@@ -115,3 +115,22 @@ problem, and the frame says nothing about it -- see [[em-vs-wm-mechanism]] and
 **Numbers to keep (restored after the 2026-09-11 consolidation dropped them):** growth exponent alpha of
 the UNCONSTRAINED arm is 0.591 on the torus and 0.967 on recency (se 0.009), constrained arms pinned
 at ~1.0 on both (`RECENCY_RESULTS.md`). Forcing monotone costs -0.280 on the torus, -0.004 on recency.
+
+**NEW CONSEQUENCE (2026-09-18, `THEORY_MAPPOPE.md`, `T1_RESULTS.md`): PoPE-style decoupling is only
+safe on the MAP side.** PoPE removes the pairwise phase (its `delta_c` is a per-head constant and its
+amplitudes are non-negative), so its kernel is calibrated absolutely in `S_t - S_s` and content cannot
+compensate when that argument leaves the trained range. On a clock (music, alpha = 1.00) MapPoPE
+collapses beyond the training context (4.62 vs MapWM 1.40); on a bounded accumulator (Dyck-2, where
+opens and closes cancel) it is the best arm out of distribution. Centring the increment -- 3x smaller
+excursion -- recovers it to 0.911, a gain 5.7x larger than the same treatment gives MapWM, at a
+detectable in-distribution cost.
+
+**NEW CONSEQUENCE (2026-09-18, `THEORY_MAPPOPE.md`, `T1_RESULTS.md`): PoPE-style decoupling is only
+safe on the MAP side.** PoPE removes the pairwise phase (its `delta_c` is a per-head constant and its
+amplitudes are non-negative), so its kernel is calibrated absolutely in `S_t - S_s` and content cannot
+compensate when that argument leaves the trained range. On a clock (music, alpha = 1.00) MapPoPE
+collapses beyond the training context (4.62 vs MapWM 1.40); on a bounded accumulator (Dyck-2, where
+opens and closes cancel) it is the best arm out of distribution. Centring the increment -- 3x smaller
+excursion -- recovers it to 0.911, a gain 5.7x larger than the same treatment gives MapWM, at a
+detectable in-distribution cost.
+
