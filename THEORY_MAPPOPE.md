@@ -92,7 +92,15 @@ range and therefore produce confident wrong kernel values, while a narrow spread
 kernel decay toward zero out of range so attention falls back on content magnitudes. Both rows
 improved with the smaller base, which is what that reading says should happen.
 
-## Registered predictions, untested
+## Registered predictions -- T1 and T3 have now run (`T1_RESULTS.md`, `T3_RESULTS.md`)
+
+**Status: the conjunction account has interventional support on BOTH halves, and its trade-off
+corollary is withdrawn.** T1 (shrink the accumulator) rescued MapPoPE 5.7x more than MapWM.
+T3 (restore the pairwise phase, accumulator untouched, inert twin controlled) removed the collapse
+almost entirely: 4.616 -> 0.733 at 2-4x, better than MapWM's 1.397. But T3's predicted COST to
+pure indexing did not appear (5/8 vs 5/8 on Indirect Indexing), so the re-entanglement corollary
+is withdrawn -- a per-token additive phase is optional freedom, not forced entanglement.
+
 
 - **T1** Bounding the accumulator should rescue MapPoPE on music and should NOT help MapWM much.
   Two ways: wrap `S` into a fixed interval, or drive the increments to cancel (zero-mean penalty).
