@@ -39,3 +39,22 @@ what/where separation by leaving them there. Registered:
   runs, which says directly how much freedom the model chose to use. If it is near zero on Indirect
   Indexing and large on Bach, that supports "optional and used only where it pays" without needing
   a new run.
+
+## Amendment 1 (2026-09-19) -- rerun G1 and G2 at the correct initialisation
+
+G3 showed the zero initialisation of the phase heads is a bad prior: on Bach, forcing them to start
+at std 0.1 beats zero-init T3 in distribution (-0.041, 5/5) and at 2-4x (-0.116, 5/5). G1 (Dyck-2)
+and G2 (torus) were run at the zero start, so their verdicts -- no gain, small detectable cost -- are
+confounded with a bad prior and are re-run here with `MapPoPE_T3pi01` (phase heads at std 0.1,
+otherwise identical). 8 seeds each, same recipes. The existing inert twins remain the controls: the
+twin gates the phase to zero, so its initialisation is irrelevant and those runs are reusable.
+
+- **G1b** Dyck-2, T3pi01 - inert twin at L128 D12. Registered: still inside its MDE or negative.
+  The account says the phase pays only when the accumulator leaves its trained range, and Dyck's
+  cancels. **A detectable GAIN here weakens the boundary claim**, and would mean the earlier Dyck
+  cost was the bad prior rather than the absence of anything to absorb.
+- **G2b** torus, same contrast at l=512 / 1024 / 2048. Same registered expectation, same
+  falsification condition.
+- Reported for both: the learned phase magnitude at the end of training. If the model drives the
+  forced phase back toward zero on Dyck and the torus but keeps it on Bach, that is direct evidence
+  for the boundary independent of the accuracy contrast.

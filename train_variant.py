@@ -288,6 +288,7 @@ VARIANT_MAP = {
     "MapPoPE-Flat": MapFormerWM_PoPE,
     "MapPoPE_T3": _t3.MapFormerWM_PoPE_T3,          # THEORY_MAPPOPE T3: per-token phase
     "MapPoPE_T3inert": _t3.MapFormerWM_PoPE_T3_Inert,  # its parameter-matched inert twin
+    "MapPoPE_T3pi01": _t3.MapFormerWM_PoPE_T3_PI01,    # T3 with the phase forced at init 0.1
     "MapPoPE_r4": MapFormerWM_PoPE_r4,   # the untested upgrade to the best-measured arm                   # path-integration + PoPE, flat (combo)
     "MapPoPE-Hier": MapFormerWM_Hourglass_PoPE,
     "PoPE-Hier": MapFormerWM_Hourglass_PoPE_Index,   # the 8th cell: PoPE + index + hierarchy        # path-integration + PoPE + hierarchy

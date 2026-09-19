@@ -69,3 +69,21 @@ class MapFormerWM_PoPE_T3_Inert(MapFormerWM_PoPE_T3):
     def __init__(self, *a, **kw):
         kw["phase_gate"] = 0.0
         super().__init__(*a, **kw)
+
+
+class MapFormerWM_PoPE_T3_PI01(MapFormerWM_PoPE_T3):
+    """T3 with the phase heads initialised at std 0.1 rather than zero.
+
+    T3GEN_RESULTS.md G3: on Bach the zero initialisation is a BAD PRIOR -- forcing the phase to
+    start away from zero improves both in-distribution NLL (-0.041, 5/5) and extrapolation
+    (-0.116, 5/5). The Dyck-2 and torus verdicts in that same file used the zero start, so they
+    are re-run with this class.
+    """
+
+    def __init__(self, *a, phase_init=0.1, **kw):
+        super().__init__(*a, **kw)
+        for mod in self.modules():
+            for nm in ("dq", "dk"):
+                h = getattr(mod, nm, None)
+                if h is not None:
+                    nn.init.normal_(h.weight, 0.0, phase_init)
