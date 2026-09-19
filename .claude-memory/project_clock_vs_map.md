@@ -134,3 +134,15 @@ opens and closes cancel) it is the best arm out of distribution. Centring the in
 excursion -- recovers it to 0.911, a gain 5.7x larger than the same treatment gives MapWM, at a
 detectable in-distribution cost.
 
+**BOUNDARY CONFIRMED ON THREE TASKS (2026-09-19, `T3GEN_RESULTS.md`).** A per-token phase added to
+PoPE pays only where the accumulator is a CLOCK: Bach with a 512 context (4.616 -> 0.616 at 2-4x with
+a forced init) and nothing where it is bounded -- Dyck-2 -0.046 against its own inert twin
+(detectable), torus -0.021 at 8x with 9x the seed spread. Zero-initialising those phase heads is a
+BAD PRIOR: forcing the init to 0.1 improves both in-distribution and extrapolation, detectably.
+
+**BOUNDARY CONFIRMED ON THREE TASKS (2026-09-19, `T3GEN_RESULTS.md`).** A per-token phase added to
+PoPE pays only where the accumulator is a CLOCK: Bach with a 512 context (4.616 -> 0.616 at 2-4x with
+a forced init) and nothing where it is bounded -- Dyck-2 -0.046 against its own inert twin
+(detectable), torus -0.021 at 8x with 9x the seed spread. Zero-initialising those phase heads is a
+BAD PRIOR: forcing the init to 0.1 improves both in-distribution and extrapolation, detectably.
+
