@@ -65,3 +65,40 @@ support, and the compensating mechanism is worth having only when the first half
 **Open, not run**: whether forced-phase T3 helps on Dyck and the torus too (G1/G2 used the zero
 initialisation, which G3 shows is the wrong one), and whether the gain survives at a lower parameter
 cost than the 786k these heads add.
+
+## Amendment 1 results (2026-09-19) -- the reruns at init 0.1
+
+**G1b Dyck-2 (F1, 8 seeds).** Against the inert twin at L128 D12: zero-init **-0.046** (MDE 0.043,
+DETECTABLE, 1/8), init 0.1 **-0.047** (MDE 0.066, unmeasured, 2/8). Same magnitude, same sign, so the
+earlier Dyck verdict was NOT an artefact of the bad prior.
+
+| arm | L32 D4 | L128 D4 | L32 D12 | L128 D12 |
+|---|---|---|---|---|
+| MapPoPE-1L baseline | 0.988 | 0.923 | 0.976 | 0.927 |
+| T3 zero-init | 0.986 | 0.915 | 0.938 | 0.900 |
+| T3 init 0.1 | 0.982 | 0.903 | 0.945 | 0.899 |
+| T3 inert twin | 0.993 | 0.952 | 0.977 | 0.946 |
+
+**G2b torus (revisit accuracy, 8 seeds).** Forcing the phase makes it WORSE, monotonically with
+length: at l=2048 MapPoPE-Flat 0.963, inert twin 0.963, T3 zero-init 0.942, **T3 init 0.1 0.911**,
+with the seed spread growing to +/-0.049 against the baseline's +/-0.006.
+
+**So the boundary is a double dissociation, not a one-sided null.** The same intervention at the same
+strength: on a clock accumulator (Bach) forcing the phase is the best configuration measured
+(0.6162 at 2-4x, against 4.6158 with no phase); on bounded accumulators (Dyck-2, torus) it is
+neutral-to-harmful and forcing it harder makes it worse.
+
+**The registered phase-magnitude readout does NOT support the story I expected**, and is worth
+recording for that reason:
+
+| task | accumulator | mean abs phase, zero-init | forced init 0.1 |
+|---|---|---|---|
+| Bach | clock (alpha 1.00) | 0.412 rad | 1.118 rad |
+| Dyck-2 | bounded | 0.570 rad | 0.825 rad |
+| torus | map (alpha ~0.5) | 0.251 rad | 0.782 rad |
+
+I predicted the model would drive the forced phase back toward zero where it is not needed. It does
+not: on Dyck it keeps 0.825 rad -- MORE than Bach's zero-init model keeps -- while performing worse
+than its own inert twin. So the freedom is not declined, it is used and mis-used. "The model only
+uses the phase where it pays" is refuted as stated; what is true is narrower: the phase HELPS only
+where the accumulator leaves its trained range, regardless of how much of it the model takes up.

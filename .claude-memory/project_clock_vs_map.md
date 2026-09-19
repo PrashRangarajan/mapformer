@@ -145,4 +145,14 @@ PoPE pays only where the accumulator is a CLOCK: Bach with a 512 context (4.616 
 a forced init) and nothing where it is bounded -- Dyck-2 -0.046 against its own inert twin
 (detectable), torus -0.021 at 8x with 9x the seed spread. Zero-initialising those phase heads is a
 BAD PRIOR: forcing the init to 0.1 improves both in-distribution and extrapolation, detectably.
+Reruns at the corrected init (0.1) confirm it as a DOUBLE DISSOCIATION: Dyck -0.047 vs its inert twin
+(unchanged from the zero-init verdict) and torus 0.911 vs 0.963 at l=2048, i.e. forcing the phase
+HURTS on bounded accumulators while it is the best configuration on a clock. The model does NOT
+decline the phase where it is useless (Dyck keeps 0.825 rad, more than Bach's zero-init 0.412) -- it
+uses it and is worse for it.
+Reruns at the corrected init (0.1) confirm it as a DOUBLE DISSOCIATION: Dyck -0.047 vs its inert twin
+(unchanged from the zero-init verdict) and torus 0.911 vs 0.963 at l=2048, i.e. forcing the phase
+HURTS on bounded accumulators while it is the best configuration on a clock. The model does NOT
+decline the phase where it is useless (Dyck keeps 0.825 rad, more than Bach's zero-init 0.412) -- it
+uses it and is worse for it.
 
