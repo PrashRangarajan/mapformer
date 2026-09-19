@@ -26,10 +26,17 @@ ARCH = {"RoPE": MapFormerWM_RoPE, "PoPE": MapFormerWM_RoPEIndex_PoPE,
         "MapPoPE_T3": MapFormerWM_PoPE_T3, "MapPoPE_T3inert": MapFormerWM_PoPE_T3_Inert}
 
 
-def build(arch, d_model, n_heads, n_layers, rank, base, dropout, delta_init, gen):
+def build(arch, d_model, n_heads, n_layers, rank, base, dropout, delta_init, gen, phase_init=0.0):
     kw = dict(vocab_size=VOCAB_SIZE, d_model=d_model, n_heads=n_heads, n_layers=n_layers,
               dropout=dropout, grid_size=base)
     m = ARCH[arch](**kw) if arch in ("RoPE", "PoPE") else ARCH[arch](bottleneck_r=rank, **kw)
+    if phase_init > 0:      # T3 forced: the per-token phase cannot be declined
+        for mod in m.modules():
+            for nm in ("dq", "dk"):
+                h = getattr(mod, nm, None)
+                if h is not None:
+                    with torch.no_grad():
+                        h.weight.normal_(0.0, phase_init, generator=gen)
     if delta_init == "uniform":
         for mod in m.modules():
             if hasattr(mod, "pope_delta"):
@@ -87,6 +94,8 @@ def main():
     ap.add_argument("--min-lr", type=float, default=6e-5)
     ap.add_argument("--weight-decay", type=float, default=0.01)
     ap.add_argument("--eval-every", type=int, default=100)
+    ap.add_argument("--phase-init", type=float, default=0.0,
+                    help="T3 forced-phase test: std for non-zero init of the phase heads")
     ap.add_argument("--center", action="store_true",
                     help="THEORY_MAPPOPE T1: centre the increment so the accumulator is a "
                          "mean-zero random walk instead of a clock")
@@ -102,11 +111,13 @@ def main():
     S = splits()
     Xtr, Mtr = S["train"]; Xva, Mva = S["valid"]; Xte, Mte = S["test"]
     model = build(a.arch, a.d_model, a.n_heads, a.n_layers, a.rank, a.base,
-                  a.dropout, a.delta_init, gen)
+                  a.dropout, a.delta_init, gen, a.phase_init)
     name = a.arch + (f"_r{a.rank}" if a.arch.startswith(("MapWM", "MapPoPE")) else "")
     if a.center:
         model = center_model(model, token_frequencies(Xtr, Mtr, VOCAB_SIZE))
         name += "_centered"
+    if a.phase_init > 0:
+        name += f"_pi{a.phase_init:g}"
     model = model.to(dev)
     print(f"{name} seed={a.seed} params={sum(p.numel() for p in model.parameters()):,} "
           f"train={len(Xtr)} valid={len(Xva)} test={len(Xte)}", flush=True)
@@ -148,7 +159,7 @@ def main():
     buckets = nll_buckets(model, Xte, Mte, dev)
     print("test NLL by position bucket:", {k: round(v, 4) for k, v in buckets.items()}, flush=True)
     json.dump(dict(arch=a.arch, name=name, seed=a.seed, train_len=a.train_len,
-                   base=a.base, rank=a.rank, dropout=a.dropout, centered=a.center,
+                   base=a.base, rank=a.rank, dropout=a.dropout, centered=a.center, phase_init=a.phase_init,
                    test_buckets=buckets, best_valid=best_va, test_at_best_valid=best_te,
                    best_test=min(h["test"] for h in hist), final_test=hist[-1]["test"],
                    final_valid=hist[-1]["valid"], history=hist, wall_s=time.time() - t0,

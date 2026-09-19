@@ -113,6 +113,7 @@ from mapformer.model_looped import (MapFormerWM_Looped, MapFormerWM_RoPE_Looped,
                                     MapFormerWM_Level15Looped)
 from mapformer.model_fixed_omega import MapFormerWM_FixedOmega
 from mapformer.model_pope_index_hier import MapFormerWM_Hourglass_PoPE_Index
+from mapformer import model_pope_t3 as _t3
 from mapformer.model_baselines_extra import EXTRA_BASELINES
 from mapformer.model_tem import TEMRecurrent
 from mapformer.model_tem_faithful import TEMFaithful
@@ -285,6 +286,8 @@ VARIANT_MAP = {
     "MapWM-Hier-CoarsePI": MapFormerWM_Hourglass_CoarsePI,   # coarse own path integration (decoupled)
     "PoPE-Flat": MapFormerWM_RoPEIndex_PoPE,            # index + PoPE (decoupled), flat
     "MapPoPE-Flat": MapFormerWM_PoPE,
+    "MapPoPE_T3": _t3.MapFormerWM_PoPE_T3,          # THEORY_MAPPOPE T3: per-token phase
+    "MapPoPE_T3inert": _t3.MapFormerWM_PoPE_T3_Inert,  # its parameter-matched inert twin
     "MapPoPE_r4": MapFormerWM_PoPE_r4,   # the untested upgrade to the best-measured arm                   # path-integration + PoPE, flat (combo)
     "MapPoPE-Hier": MapFormerWM_Hourglass_PoPE,
     "PoPE-Hier": MapFormerWM_Hourglass_PoPE_Index,   # the 8th cell: PoPE + index + hierarchy        # path-integration + PoPE + hierarchy
