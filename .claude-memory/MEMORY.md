@@ -2,7 +2,7 @@
 
 - [Project state snapshot](project_state.md) — **read first.** LATEST block 2026-09-15: report, COUNTER, addition line, open decisions.
 - [EM vs WM mechanism](feedback_em_vs_wm_mechanism.md) — WM NOT additive; EM deficit is SEARCH; COUNTER batch: not counter, not bottleneck.
-- [Clock vs map: what cancellation chooses](project_clock_vs_map.md) — signed = map, monotone = clock; recency does NOT need a clock (rewind).
+- [Clock vs map: what cancellation chooses](project_clock_vs_map.md) — signed = map, monotone = clock (stands); the PoPE-decoupling corollary is WITHDRAWN (2026-09-20).
 - [The sign of the phase increment](project_sign_axis.md) — a monotone clock cannot represent a −1 action. Prior art: Sarrof/Grazzi/SRoPE.
 - [Rank, and Selective RoPE](project_rank_and_selective_rope.md) — use r=4 on MapWM (+0.085, 384 params); r=2 is SKEWED. Not for MapPoPE.
 - [Hierarchy helps only if a summary is a sufficient statistic](project_hierarchy_negative.md) — negative on retrieval; compositional claim unpowered.

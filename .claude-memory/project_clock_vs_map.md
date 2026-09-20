@@ -116,7 +116,7 @@ problem, and the frame says nothing about it -- see [[em-vs-wm-mechanism]] and
 the UNCONSTRAINED arm is 0.591 on the torus and 0.967 on recency (se 0.009), constrained arms pinned
 at ~1.0 on both (`RECENCY_RESULTS.md`). Forcing monotone costs -0.280 on the torus, -0.004 on recency.
 
-**NEW CONSEQUENCE (2026-09-18, `THEORY_MAPPOPE.md`, `T1_RESULTS.md`): PoPE-style decoupling is only
+**[WITHDRAWN 2026-09-20 -- fails within-task, see T2_RESULTS.md] NEW CONSEQUENCE (2026-09-18, `THEORY_MAPPOPE.md`, `T1_RESULTS.md`): PoPE-style decoupling is only
 safe on the MAP side.** PoPE removes the pairwise phase (its `delta_c` is a per-head constant and its
 amplitudes are non-negative), so its kernel is calibrated absolutely in `S_t - S_s` and content cannot
 compensate when that argument leaves the trained range. On a clock (music, alpha = 1.00) MapPoPE
@@ -125,13 +125,13 @@ opens and closes cancel) it is the best arm out of distribution. Centring the in
 excursion -- recovers it to 0.911, a gain 5.7x larger than the same treatment gives MapWM, at a
 detectable in-distribution cost.
 
-**BOUNDARY CONFIRMED ON THREE TASKS (2026-09-19, `T3GEN_RESULTS.md`).** A per-token phase added to
+**[WITHDRAWN 2026-09-20 -- the within-task test reverses neither half] BOUNDARY ACROSS THREE TASKS (2026-09-19, `T3GEN_RESULTS.md`).** A per-token phase added to
 PoPE pays only where the accumulator is a CLOCK: Bach with a 512 context (4.616 -> 0.616 at 2-4x with
 a forced init) and nothing where it is bounded -- Dyck-2 -0.046 against its own inert twin
 (detectable), torus -0.021 at 8x with 9x the seed spread. Zero-initialising those phase heads is a
 BAD PRIOR: forcing the init to 0.1 improves both in-distribution and extrapolation, detectably.
 
-**BOUNDARY CONFIRMED ON THREE TASKS (2026-09-19, `T3GEN_RESULTS.md`).** A per-token phase added to
+**[WITHDRAWN 2026-09-20 -- the within-task test reverses neither half] BOUNDARY ACROSS THREE TASKS (2026-09-19, `T3GEN_RESULTS.md`).** A per-token phase added to
 PoPE pays only where the accumulator is a CLOCK: Bach with a 512 context (4.616 -> 0.616 at 2-4x with
 a forced init) and nothing where it is bounded -- Dyck-2 -0.046 against its own inert twin
 (detectable), torus -0.021 at 8x with 9x the seed spread. Zero-initialising those phase heads is a
@@ -173,13 +173,15 @@ size, sequence length and excursion SIZE (Bach reaches range 551 at 4x, monotone
 The Bach interventions (T1, T3) stand; the generalisation from them does not.
 **T2b ALSO FAILS (2026-09-20): the phase does not pay on a clock either** -- on monotone Dyck it is
 -0.143 against its inert twin (0/8, detectable), three times the harm it does on signed Dyck. BOTH
-halves of the clock/map account fail within-task, so the account is WITHDRAWN as a cross-task rule.
+halves of the clock/map account fail within-task, so the PoPE-DECOUPLING / PER-TOKEN-PHASE corollary is WITHDRAWN as a cross-task rule. The older
+sign -> map/clock dichotomy and every alpha measurement in this file STAND.
 The Bach interventions (T1 5.7x, T3, decay) stand as facts about Bach at a 512 context. Live
 uncontrolled alternatives: excursion size (551 vs 24), model size (6L/8H vs 1L/1H), frequency count,
 local solvability.
 **T2b ALSO FAILS (2026-09-20): the phase does not pay on a clock either** -- on monotone Dyck it is
 -0.143 against its inert twin (0/8, detectable), three times the harm it does on signed Dyck. BOTH
-halves of the clock/map account fail within-task, so the account is WITHDRAWN as a cross-task rule.
+halves of the clock/map account fail within-task, so the PoPE-DECOUPLING / PER-TOKEN-PHASE corollary is WITHDRAWN as a cross-task rule. The older
+sign -> map/clock dichotomy and every alpha measurement in this file STAND.
 The Bach interventions (T1 5.7x, T3, decay) stand as facts about Bach at a 512 context. Live
 uncontrolled alternatives: excursion size (551 vs 24), model size (6L/8H vs 1L/1H), frequency count,
 local solvability.

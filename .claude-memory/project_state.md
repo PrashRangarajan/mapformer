@@ -18,7 +18,9 @@ replicates (MapFormer-1L - RoPE-2L +0.37/+0.39 at L128 D12, 8/8), training cell 
 levels do NOT (MapWM 0.868 / MapEM 0.888 vs paper 0.94/0.95) and sit AT a no-stack n-gram floor (0.884).
 RoPE-2L matches the paper closely. Paper reports no floor; its baselines are below the n-gram. Batch size
 (unstated) untested; batch-32 follow-up not triggered by the registered slope rule.
-**MAPPOPE COLLAPSE: MECHANISM UNIDENTIFIED (2026-09-17).** Two pre-registered accounts refuted.
+**MAPPOPE COLLAPSE (2026-09-17, partly superseded):** three repairs now work on Bach (centring,
+per-token phase, decay envelope); the MECHANISM remains unidentified -- the clock/map account that
+explained them was withdrawn 2026-09-20. Two pre-registered accounts refuted.
 Rank: collapse survives r=1/2/4 (4.08/4.62/4.63) and the rank effect is equal on the MapWM control
 row. Omega base: the predicted direction is INVERTED -- base 512 is best and 32768 worst on BOTH rows
 (MapPoPE 3.82 -> 5.22, MapWM 1.11 -> 1.87), so raising the base is not the extrapolation fix here that
@@ -27,7 +29,9 @@ suspect (one phase per ELEMENT vs per PAIR) needs a new variant; deliberately no
 Practical: for extrapolation on this task smaller rank and smaller base both help (MapWM r1 0.912,
 MapWM base512 1.109 vs default 1.397); the combination is untested.
 
-**MAPPOPE COLLAPSE: MECHANISM UNIDENTIFIED (2026-09-17).** Two pre-registered accounts refuted.
+**MAPPOPE COLLAPSE (2026-09-17, partly superseded):** three repairs now work on Bach (centring,
+per-token phase, decay envelope); the MECHANISM remains unidentified -- the clock/map account that
+explained them was withdrawn 2026-09-20. Two pre-registered accounts refuted.
 Rank: collapse survives r=1/2/4 (4.08/4.62/4.63) and the rank effect is equal on the MapWM control
 row. Omega base: the predicted direction is INVERTED -- base 512 is best and 32768 worst on BOTH rows
 (MapPoPE 3.82 -> 5.22, MapWM 1.11 -> 1.87), so raising the base is not the extrapolation fix here that
@@ -41,18 +45,6 @@ PoPE-data condition where path integration wins -- MapWM - RoPE = -0.662 NLL at 
 context (5/5, MDE 0.335), growing with length. MapPoPE COLLAPSES there (4.62 vs MapWM 1.40); the
 full-context control shows no collapse, so it is extrapolation-specific. PoPE's encoding is itself a
 length win on the index row (-0.461).
-
-**JSB LENGTH EXTRAPOLATION (2026-09-17, `JSB_LENGTH_RESULTS.md`, n=5, train context 512):** the one
-PoPE-data condition where path integration wins -- MapWM - RoPE = -0.662 NLL at 2-4x beyond the
-context (5/5, MDE 0.335), growing with length. MapPoPE COLLAPSES there (4.62 vs MapWM 1.40); the
-full-context control shows no collapse, so it is extrapolation-specific. PoPE's encoding is itself a
-length win on the index row (-0.461).
-
-**PoPE PAPER (2026-09-16/17):** Bach Chorales replicates (PoPE -0.032 NLL, 5/5) and path integration
-adds NOTHING there (+0.011 on the PoPE row, 0/5 better) -- first clean null for path integration on a
-natural-sequence task. Indirect Indexing: at the paper's 100k budget PoPE solves 1/8 and MapPoPE 5/8;
-at 200k PoPE 7/8 (mean 0.965 vs paper 0.948) and MapPoPE 8/8, so the task is a late-transition search
-problem, the paper replicates, and path integration buys SPEED not capability.
 
 **PoPE PAPER (2026-09-16/17):** Bach Chorales replicates (PoPE -0.032 NLL, 5/5) and path integration
 adds NOTHING there (+0.011 on the PoPE row, 0/5 better) -- first clean null for path integration on a

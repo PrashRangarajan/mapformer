@@ -493,7 +493,7 @@ with, not separated from, more reliable training.
 generator knob by knob, the forget gate, hierarchy compute, the correction ablation).
 
 %======================================================================
-\section{Claim 6: the two position mechanisms anti-compose unless the kernel can compensate}
+\section{Claim 6: on Bach beyond its training context, the two position mechanisms anti-compose}
 %======================================================================
 
 Two published mechanisms were crossed on their own tasks: MapFormer's path integration (position is a
@@ -529,8 +529,7 @@ MapWM in absolute NLL (80\% of its gap against 47\% of MapWM's), and restoring a
 per-token phase --- accumulator untouched, parameter-matched inert twin flat --- removes the collapse. Across tasks the same phase is neutral to harmful where the accumulator is bounded (Dyck-2 $-0.046$
 against its inert twin; torus $0.911$ against $0.963$ at $l=2048$). That pattern does NOT survive a
 within-task test: forcing Dyck's accumulator into a clock leaves PoPE helping more and the phase
-hurting more, both against registered predictions, so the explanation is withdrawn and the three
-interventions stand only as facts about this dataset.
+hurting more, both against registered predictions, so the explanation is withdrawn and the two interventions stand only as facts about this dataset.
 
 %======================================================================
 \section{Limitations}
