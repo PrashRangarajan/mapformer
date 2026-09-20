@@ -1,0 +1,2 @@
+CHECK 1 same function at init: max|logit diff| 0.000e+00 -> PASS
+CHECK 2 origin pathway moved: min over 16 tensors 3.272e-01, max 8.408e-01 -> PASS

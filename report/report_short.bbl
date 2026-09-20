@@ -1,0 +1,111 @@
+\begin{thebibliography}{14}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Bae et~al.(2025)Bae, Kim, Bayat, Kim, Ha, Schuster, Fisch,
+  Harutyunyan, Ji, Courville, and Yun]{bae2025mor}
+Sangmin Bae, Yujin Kim, Reza Bayat, Sungnyun Kim, Jiyoun Ha, Tal Schuster, Adam
+  Fisch, Hrayr Harutyunyan, Ziwei Ji, Aaron Courville, and Se-Young Yun.
+\newblock {Mixture-of-Recursions}: Learning dynamic recursive depths for
+  adaptive token-level computation.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2025.
+\newblock Not in the local corpus. Identifier and venue from project notes;
+  title and author first names not verified against the paper.
+
+\bibitem[Golovneva et~al.(2024)Golovneva, Wang, Weston, and
+  Sukhbaatar]{golovneva2024cope}
+Olga Golovneva, Tianlu Wang, Jason Weston, and Sainbayar Sukhbaatar.
+\newblock Contextual position encoding: Learning to count what's important,
+  2024.
+\newblock Identifier from papers/txt/cope.txt; some repository results files
+  cite 2405.11582 instead.
+
+\bibitem[Grazzi et~al.(2025)Grazzi, Siems, Zela, Franke, Hutter, and
+  Pontil]{grazzi2025unlocking}
+Riccardo Grazzi, Julien Siems, Arber Zela, J{\"o}rg K.~H. Franke, Frank Hutter,
+  and Massimiliano Pontil.
+\newblock Unlocking state-tracking in linear {RNN}s through negative
+  eigenvalues.
+\newblock In \emph{International Conference on Learning Representations}, 2025.
+
+\bibitem[Lahoti et~al.(2026)Lahoti, Li, Chen, Wang, Bick, Kolter, Dao, and
+  Gu]{lahoti2026mamba3}
+Aakash Lahoti, Kevin~Y. Li, Berlin Chen, Caitlin Wang, Aviv Bick, J.~Zico
+  Kolter, Tri Dao, and Albert Gu.
+\newblock {Mamba-3}: Improved sequence modeling using state space principles,
+  2026.
+
+\bibitem[Movahedi et~al.(2026)Movahedi, Carstensen, Afzal, Hutter, Orvieto, and
+  Cevher]{movahedi2026srope}
+Sajad Movahedi, Timur Carstensen, Arshia Afzal, Frank Hutter, Antonio Orvieto,
+  and Volkan Cevher.
+\newblock Selective rotary position embedding.
+\newblock In \emph{International Conference on Learning Representations}, 2026.
+
+\bibitem[Puranik(2026)]{puranik2026group}
+Alok Puranik.
+\newblock Using group theory to explore the space of positional encodings for
+  attention.
+\newblock Jane Street Blog, April 2026.
+\newblock Blog post, no arXiv identifier; stored as
+  papers/txt/puranik\_janestreet.txt.
+
+\bibitem[Rambaud et~al.(2025)Rambaud, Mascarenhas, and
+  Lakretz]{rambaud2025mapformer}
+Victor Rambaud, Salvador Mascarenhas, and Yair Lakretz.
+\newblock {MapFormers}: Self-supervised learning of cognitive maps with
+  input-dependent positional encoding, 2025.
+\newblock v4, 10 May 2026, is the version cited; numbers marked v1 are from the
+  November 2025 version.
+
+\bibitem[Sarrof et~al.(2024)Sarrof, Veitsman, and Hahn]{sarrof2024expressive}
+Yash Sarrof, Yana Veitsman, and Michael Hahn.
+\newblock The expressive capacity of state space models: A formal language
+  perspective, 2024.
+
+\bibitem[Su et~al.(2021)Su, Lu, Pan, Murtadha, Wen, and Liu]{su2021roformer}
+Jianlin Su, Yu~Lu, Shengfeng Pan, Ahmed Murtadha, Bo~Wen, and Yunfeng Liu.
+\newblock {RoFormer}: Enhanced transformer with rotary position embedding,
+  2021.
+
+\bibitem[Veisi et~al.(2025)Veisi, Fartoot, and Amirzadeh]{veisi2025carope}
+Ali Veisi, Delaram Fartoot, and Hamidreza Amirzadeh.
+\newblock Context-aware rotary position embedding, 2025.
+
+\bibitem[Vetcha(2026)]{vetcha2026infinite}
+Nitin Vetcha.
+\newblock Towards infinite length extrapolation: A unified approach, 2026.
+
+\bibitem[Whittington et~al.(2020)Whittington, Muller, Mark, Chen, Barry,
+  Burgess, and Behrens]{whittington2020tem}
+James C.~R. Whittington, Timothy~H. Muller, Shirley Mark, Guifen Chen, Caswell
+  Barry, Neil Burgess, and Timothy E.~J. Behrens.
+\newblock The {T}olman-{E}ichenbaum machine: Unifying space and relational
+  memory through generalization in the hippocampal formation.
+\newblock \emph{Cell}, 183:\penalty0 1249--1263, 2020.
+\newblock Not in the local corpus. Journal, volume and pages as cited in
+  papers/txt/tale\_two\_algorithms.txt and papers/txt/kv\_brain.txt; MapFormer
+  cites the 2019 bioRxiv version.
+
+\bibitem[Whittington et~al.(2025)Whittington, Dorrell, Behrens, Ganguli, and
+  El-Gaby]{whittington2025tale}
+James C.~R. Whittington, William Dorrell, Timothy E.~J. Behrens, Surya Ganguli,
+  and Mohamady El-Gaby.
+\newblock A tale of two algorithms: Structured slots explain prefrontal
+  sequence memory and are unified with hippocampal cognitive maps.
+\newblock \emph{Neuron}, 113\penalty0 (2):\penalty0 321--333, 2025.
+\newblock \doi{10.1016/j.neuron.2024.10.017}.
+\newblock MapFormer's reference [11]; stored as
+  papers/txt/tale\_two\_algorithms.txt.
+
+\bibitem[Zhang et~al.(2026)Zhang, Chen, Liu, Qin, Yuan, Xu, Yuan, Gu, and
+  Yao]{zhang2026grape}
+Yifan Zhang, Zixiang Chen, Yifeng Liu, Zhen Qin, Huizhuo Yuan, Kangping Xu,
+  Yang Yuan, Quanquan Gu, and Andrew Chi-Chih Yao.
+\newblock Group representational position encoding.
+\newblock In \emph{International Conference on Learning Representations}, 2026.
+
+\end{thebibliography}

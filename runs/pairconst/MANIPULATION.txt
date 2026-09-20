@@ -1,0 +1,6 @@
+compare  A=/home/prashr/mapformer/runs/pairconst/EMPair_r4_s0/EMPair_r4_recency.pt
+         B=/home/prashr/mapformer/runs/pairorigin/EMPair_r4_s0/EMPair_r4_recency.pt
+  tensors compared 29, differing 0, only-in-A 0, only-in-B 0
+  loss curves bitwise equal
+  => DETERMINISM: bitwise identical. This is the same computation run twice. It licenses pairing with / reusing the stored arm; it is NOT a replication and says nothing about effect-size stability (rule 27).
+origin spread across tokens: EMPairConst 0.000e+00 (must be 0), EMPair 1.166e-01 (must be > 0) -> PASS

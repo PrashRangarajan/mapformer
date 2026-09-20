@@ -1,0 +1,5 @@
+compare  A=/home/prashr/mapformer/runs/spread/repro_s0/VanillaEM_P0_r4_recency.pt
+         B=/home/prashr/mapformer/runs/dof/recency/VanillaEM_P0_r4_s0/VanillaEM_P0_r4_recency.pt
+  tensors compared 25, differing 0, only-in-A 0, only-in-B 0
+  loss curves bitwise equal
+  => DETERMINISM: bitwise identical. This is the same computation run twice. It licenses pairing with / reusing the stored arm; it is NOT a replication and says nothing about effect-size stability (rule 27).

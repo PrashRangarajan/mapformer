@@ -39,7 +39,7 @@ ARMS = [("MapPoPE-1L", "MapPoPE-1L_r2", "MapPoPE", 1, 1), ("MapWM-1L", "MapWM-1L
         ("RoPE-2L", "RoPE-2L", "RoPE", 2, 2), ("CoPE-1L", "CoPE-1L", "CoPE", 1, 1),
         ("CoPE-2L", "CoPE-2L", "CoPE", 2, 2)]
 N = 512
-BUCK = [("1-2", 1, 2), ("3-8", 3, 8), ("9-32", 9, 32), ("33+", 33, 10 ** 6)]
+BUCK = [("0-2", 0, 2), ("3-8", 3, 8), ("9-32", 9, 32), ("33+", 33, 10 ** 6)]
 
 
 def cell_data(w, L, D):

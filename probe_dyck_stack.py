@@ -27,7 +27,7 @@ ARMS = [("MapPoPE_decay-1L_r2", "MapPoPE_decay", 1, 1), ("PoPE_decay-1L", "PoPE_
         ("MapPoPE-1L_r2", "MapPoPE", 1, 1), ("MapWM-1L_r2", "MapWM", 1, 1),
         ("MapEM-1L_r2", "MapEM", 1, 1), ("PoPE-1L", "PoPE", 1, 1),
         ("RoPE-1L", "RoPE", 1, 1), ("RoPE-2L", "RoPE", 2, 2)]
-BUCKETS = ["1-2", "3-8", "9-32", "33+"]
+BUCKETS = ["0-2", "3-8", "9-32", "33+"]
 
 
 def strict_f1(P, valid):
@@ -70,7 +70,7 @@ def main():
         dist = top_distance(inp, tgt, L)
         depth_pos = valid[..., CLOSE_P] | valid[..., CLOSE_B]
         prev_open = (inp == OPEN_P) | (inp == OPEN_B)
-        bmask = {"1-2": dist <= 2, "3-8": (dist > 2) & (dist <= 8),
+        bmask = {"0-2": dist <= 2, "3-8": (dist > 2) & (dist <= 8),
                  "9-32": (dist > 8) & (dist <= 32), "33+": dist > 32}
         corr = torch.where(valid[..., CLOSE_P], CLOSE_P, CLOSE_B)
         wrng = torch.where(valid[..., CLOSE_P], CLOSE_B, CLOSE_P)

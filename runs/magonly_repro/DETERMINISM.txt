@@ -1,0 +1,3 @@
+EMDoF_alignfree s0 bitwise identical to stored: True
+VanillaEM_P0_r4 s0 bitwise identical to stored: True
+REUSE LICENSED

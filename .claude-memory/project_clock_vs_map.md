@@ -151,7 +151,8 @@ uses it and is worse for it.
 `DYCK_DECAY_RESULTS.md`).** The same ALiBi-style envelope (48 params) drives index PoPE to the no-stack
 n-gram level beyond distance 8 on Dyck (0.499 at d 9-32) and IMPROVES path-integrated MapPoPE there
 (0.778 at d 33+, best Dyck arm at F1 0.956). Reason, measured: the accumulated distance |S_t - S_s|
-correlates 0.862 with stack-DEPTH difference and only 0.238 with token distance, so decaying over it
+correlates 0.755 with stack-DEPTH difference and only 0.278 with token distance (8 seeds,
+`probe_dyck_metric.py`); the crossed arm that would isolate the metric is NOT run, so decaying over it
 means "prefer keys at similar depth". On a clock accumulator (Bach) it degenerates to recency, which is
 why decay and path integration looked interchangeable there.
 

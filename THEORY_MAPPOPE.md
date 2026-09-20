@@ -25,12 +25,15 @@ content can scale channels but cannot shift a peak or cancel a term.
 
 ## What the accumulator does on music (measured)
 
-On the 512-context checkpoints, over full 2048-token test pieces:
+On the 512-context checkpoints, over full 2048-token test pieces (recomputed 2026-09-19 from
+`analyze_t1.py` over all seeds; the first version of this table used two pieces from one seed and had
+the two RANGES the wrong way round -- MapPoPE's excursion is the smaller of the two. The exponents,
+and the clock conclusion that rests on them, are unchanged):
 
 | arm | frequencies per head | alpha (range(S) ~ T^alpha) | range(S) at 512 -> 2048 |
 |---|---|---|---|
-| MapWM | 16 | **1.005** | 151 -> 599 (4.0x) |
-| MapPoPE | 32 | **1.003** | 163 -> 651 (4.0x) |
+| MapWM | 16 | **1.003** | 166 -> 660 (3.98x) |
+| MapPoPE | 32 | **1.003** | 138 -> 551 (3.99x) |
 
 alpha = 1 means the accumulator is a **CLOCK**: increments do not cancel, so `S` grows linearly with
 position and `S_t - S_s` for distant pairs leaves the trained range in proportion to the length.
@@ -42,7 +45,7 @@ thing the diagnostic rules out, and it kills the obvious story ("MapPoPE's angle
 Scale `omega` at evaluation to compress the accumulated phase back toward its trained range -- the
 path-integration analogue of linear position interpolation. Test NLL by bucket, 5 seeds:
 
-| arm | scale | 0-512 | 512-1024 | 1024-2048 |
+| arm | scale | 0-512 | 512-1024 | 1024-2048 |   <!-- recomputed in THEORY_NUMBERS.md, identical -->
 |---|---|---|---|---|
 | MapWM | 1.00 | 0.538 | 0.783 | **1.397** |
 | MapWM | 0.25 | 2.883 | 3.020 | 2.839 |

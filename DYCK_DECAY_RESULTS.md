@@ -33,13 +33,14 @@ tracking. It does -- on the INDEX row only. On the path-integrated row it IMPROV
 
 ## Why the same envelope helps one row and guts the other
 
-The envelope decays in whatever metric the position variable defines. Measured on the trained
-MapPoPE + decay models, the distance it actually uses, $|S_t - S_s|$, correlates with
+The envelope decays in whatever metric the position variable defines. Measured on the trained MapPoPE + decay models by `probe_dyck_metric.py` (8 seeds; the first
+version of these numbers, 0.238 / 0.862, came from an inline script over 4 seeds and one head), the
+distance it actually uses, $|S_t - S_s|$, correlates with
 
 | against | r |
 |---|---|
-| token distance $|t-s|$ | **0.238** |
-| stack-depth difference | **0.862** |
+| token distance $|t-s|$ | **0.278 +/- 0.109** |
+| stack-depth difference | **0.755 +/- 0.251** |
 
 **This is consistent with, not a measurement of, the cause.** The two arms differ in the position
 mechanism AND in the decay metric at once (`model_pope_decay.py` hard-codes `|t-s|` for the index

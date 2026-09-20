@@ -1,0 +1,17 @@
+{
+  "train": {
+    "acc": 1.0,
+    "err_pct": 0.0,
+    "n": 400
+  },
+  "ood_dense": {
+    "acc": 0.8025,
+    "err_pct": 19.75,
+    "n": 400
+  },
+  "ood_sparse": {
+    "acc": 1.0,
+    "err_pct": 0.0,
+    "n": 400
+  }
+}
