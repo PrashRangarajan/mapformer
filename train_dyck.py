@@ -22,6 +22,8 @@ from mapformer.model_baselines_extra import CoPEBaseline
 from mapformer.model_pope import MapFormerWM_PoPE, MapFormerWM_RoPEIndex_PoPE
 from mapformer.model_pope_t3 import (MapFormerWM_PoPE_T3, MapFormerWM_PoPE_T3_Inert,
                                      MapFormerWM_PoPE_T3_PI01)
+from mapformer.model_pope_decay import (MapFormerWM_PoPE_Decay,
+                                        MapFormerWM_RoPEIndex_PoPE_Decay)
 
 LS, DS = [32, 64, 96, 128], [4, 6, 8, 12]
 
@@ -38,6 +40,8 @@ def build(arch, vocab, n_layers, n_heads, rank, base):
     if arch == "MapPoPE_T3": return MapFormerWM_PoPE_T3(bottleneck_r=rank, **kw)
     if arch == "MapPoPE_T3inert": return MapFormerWM_PoPE_T3_Inert(bottleneck_r=rank, **kw)
     if arch == "MapPoPE_T3pi01": return MapFormerWM_PoPE_T3_PI01(bottleneck_r=rank, **kw)
+    if arch == "MapPoPE_decay": return MapFormerWM_PoPE_Decay(bottleneck_r=rank, **kw)
+    if arch == "PoPE_decay": return MapFormerWM_RoPEIndex_PoPE_Decay(**kw)
     raise ValueError(arch)
 
 
@@ -66,7 +70,8 @@ def evaluate(model, world, dev, n_per_cell, seed):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--arch", required=True, choices=["MapWM", "MapEM", "RoPE", "CoPE", "PoPE", "MapPoPE", "MapPoPE_T3", "MapPoPE_T3inert", "MapPoPE_T3pi01"])
+    ap.add_argument("--arch", required=True, choices=["MapWM", "MapEM", "RoPE", "CoPE", "PoPE", "MapPoPE", "MapPoPE_T3", "MapPoPE_T3inert", "MapPoPE_T3pi01",
+                         "MapPoPE_decay", "PoPE_decay"])
     ap.add_argument("--n-layers", type=int, required=True)
     ap.add_argument("--n-heads", type=int, required=True)
     ap.add_argument("--rank", type=int, default=2)

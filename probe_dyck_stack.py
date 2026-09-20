@@ -23,7 +23,8 @@ from mapformer.environment_dyck import DyckWorld, f1_valid, CLOSE_P, CLOSE_B, OP
 from mapformer.validate_dyck import ngram_fit, ngram_probs
 from mapformer.train_dyck import build
 
-ARMS = [("MapPoPE-1L_r2", "MapPoPE", 1, 1), ("MapWM-1L_r2", "MapWM", 1, 1),
+ARMS = [("MapPoPE_decay-1L_r2", "MapPoPE_decay", 1, 1), ("PoPE_decay-1L", "PoPE_decay", 1, 1),
+        ("MapPoPE-1L_r2", "MapPoPE", 1, 1), ("MapWM-1L_r2", "MapWM", 1, 1),
         ("MapEM-1L_r2", "MapEM", 1, 1), ("PoPE-1L", "PoPE", 1, 1),
         ("RoPE-1L", "RoPE", 1, 1), ("RoPE-2L", "RoPE", 2, 2)]
 BUCKETS = ["1-2", "3-8", "9-32", "33+"]
