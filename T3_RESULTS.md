@@ -50,7 +50,10 @@ training starts as exactly PoPE. The accumulator is untouched: same clock, same 
   what and where and therefore cost PoPE's pure-indexing advantage. It costs nothing measurable.
   Registered consequence: **the account is too simple** and the trade-off claim is withdrawn.
 
-**Post-hoc, and labelled as such**: the prediction assumed the freedom is FORCED. It is optional --
+**Post-hoc, and labelled as such** -- and SUBSEQUENTLY REFUTED (2026-09-19, `T3GEN_RESULTS.md` G3:
+forcing the phase helps monotonically instead of costing anything, and on Dyck the model keeps MORE
+phase than the Bach model while doing worse; the reading below is wrong): the prediction assumed the
+freedom is FORCED. It is optional --
 `delta` is ADDITIVE and zero-initialised, the magnitude channel that carries content is untouched, so
 a model that needs a pure positional kernel can simply leave the phase heads near zero and does. That
 reading was not predicted and is not evidence; it is a hypothesis, and it has an obvious test:

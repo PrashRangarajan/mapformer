@@ -71,13 +71,15 @@ Stack them and you keep PoPE's uncompensatable kernel while handing it a positio
 itself learned, content-driven and, on data without cancellation, unbounded. The failure is a
 conflict of requirements, not an implementation defect.
 
-## Why this predicts everything we measured
+## Why this RETRODICTS what we measured
+
+(Every row was known when the table was written; the registered predictions are T1-T3 below it.)
 
 | condition | accumulator | MapPoPE result |
 |---|---|---|
 | Dyck-2, length 32 -> 128 | BOUNDED: opens +, closes -, cancel; depth <= 12 | best arm, 0.927 at the hardest cell |
-| Indirect Indexing, fixed 56-token sequences | no extension at all | best arm, 8/8 solve rate |
-| Bach Chorales, in distribution | clock, but inside its trained range | best arm, 0.5235 |
+| Indirect Indexing, fixed 56-token sequences | no extension at all | TIE: 8/8 vs PoPE's 7/8, Fisher p = 1.0 |
+| Bach Chorales, in distribution (512-crop runs) | clock, inside its trained range | best at 0.5235 but AT the MDE boundary, and it INVERTS at full context (worse than PoPE, 5/5) |
 | Bach Chorales, 2-4x beyond context | clock, 4x out of range | collapse, 4.616 vs MapWM's 1.397 |
 
 The dividing line is not the task or the encoding but whether the accumulator's argument stays in
@@ -99,7 +101,10 @@ corollary is withdrawn.** T1 (shrink the accumulator) rescued MapPoPE 5.7x more 
 T3 (restore the pairwise phase, accumulator untouched, inert twin controlled) removed the collapse
 almost entirely: 4.616 -> 0.733 at 2-4x, better than MapWM's 1.397. But T3's predicted COST to
 pure indexing did not appear (5/8 vs 5/8 on Indirect Indexing), so the re-entanglement corollary
-is withdrawn -- a per-token additive phase is optional freedom, not forced entanglement.
+is withdrawn. (The replacement reading offered there -- "optional freedom, not forced entanglement"
+-- was ITSELF refuted by `T3GEN_RESULTS.md` G3: forcing the phase away from zero HELPS monotonically
+on Bach, and on Dyck the model keeps 0.825 rad while doing worse than its own inert twin. The model
+does not decline the freedom where it is useless.)
 
 
 - **T1** Bounding the accumulator should rescue MapPoPE on music and should NOT help MapWM much.
@@ -128,3 +133,13 @@ is withdrawn -- a per-token additive phase is optional freedom, not forced entan
   recover length extrapolation on music AND give back part of PoPE's pure-indexing advantage -- the
   Indirect Indexing solve rate is where that would show. If it recovers extrapolation at NO cost to
   indexing, this account is too simple and should be replaced.
+
+## T2 status (2026-09-19): registered and NOT run
+
+T2 -- force monotone increments on Dyck with the repo's `MONOTONE` machinery and check that MapPoPE
+then collapses -- is the only registered test that moves alpha WITHIN a task. It has not been run.
+Until it is, the clock/map boundary is a BETWEEN-TASK association: Bach, Dyck and the torus differ in
+accumulator, but also in dataset, model size (6 layers / 8 heads against 1 / 1) and metric. The
+interventions that have run (T1 centring, T3 phase, the decay envelope) each manipulate one factor
+within one task and support the account's two halves; none establishes that alpha itself is the axis
+across tasks.
