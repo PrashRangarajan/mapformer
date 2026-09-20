@@ -2061,7 +2061,17 @@ per-token component, leaving the accumulator untouched, takes MapPoPE to $0.733$
 inert twin flat ($-0.167$, \mde\ $0.828$); forcing that phase away from zero at initialisation improves it
 further to $0.616$, better than MapWM at every bucket. % src: T1_RESULTS.md, T3_RESULTS.md, T3GEN_RESULTS.md
 
-\paragraph{The boundary is a double dissociation.} The same per-token phase pays only where the accumulator
+\paragraph{The boundary does not survive a within-task test (2026-09-20).} Forcing Dyck's
+accumulator from a map into a clock --- monotone increments, $\alpha$ $0.6\to1.05$ verified, same
+task, same recipe --- reproduces neither half of the account: PoPE's encoding helps \emph{more} on the
+clock ($+0.159$ against $+0.058$), and the per-token phase hurts \emph{more} ($-0.143$ against
+$-0.046$, 0/8 seeds, detectable), where the registered predictions were the opposite in both cases.
+The three Bach interventions below stand as measured; the generalisation from them to a clock/map
+rule across tasks is withdrawn, and the excursion's absolute size (551 against 24), model size,
+frequency count and local solvability are all uncontrolled alternatives.
+% src: T2_RESULTS.md
+
+\paragraph{The between-task pattern, which prompted that test.} The same per-token phase pays only where the accumulator
 leaves its trained range. On bounded accumulators it is neutral to harmful: Dyck-2 $-0.046$ against its own inert twin (\mde\ $0.043$; the forced-initialisation arm gives $-0.047$ but is unmeasured), and the torus $0.911$ against $0.963$ at $l=2048$ with a seed spread eight times the baseline's --- a ceiling condition, where only the forced-initialisation cell is detectable.
 Forcing the phase harder helps on music and hurts on the torus; on Dyck the two initialisations are indistinguishable. % src: T3GEN_RESULTS.md
 

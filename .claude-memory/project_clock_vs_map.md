@@ -171,4 +171,16 @@ Forcing monotone increments on Dyck turns its accumulator from a map into a cloc
 clock/map boundary is NOT established within a task; the three-task pattern is confounded with model
 size, sequence length and excursion SIZE (Bach reaches range 551 at 4x, monotone Dyck only 24).
 The Bach interventions (T1, T3) stand; the generalisation from them does not.
+**T2b ALSO FAILS (2026-09-20): the phase does not pay on a clock either** -- on monotone Dyck it is
+-0.143 against its inert twin (0/8, detectable), three times the harm it does on signed Dyck. BOTH
+halves of the clock/map account fail within-task, so the account is WITHDRAWN as a cross-task rule.
+The Bach interventions (T1 5.7x, T3, decay) stand as facts about Bach at a 512 context. Live
+uncontrolled alternatives: excursion size (551 vs 24), model size (6L/8H vs 1L/1H), frequency count,
+local solvability.
+**T2b ALSO FAILS (2026-09-20): the phase does not pay on a clock either** -- on monotone Dyck it is
+-0.143 against its inert twin (0/8, detectable), three times the harm it does on signed Dyck. BOTH
+halves of the clock/map account fail within-task, so the account is WITHDRAWN as a cross-task rule.
+The Bach interventions (T1 5.7x, T3, decay) stand as facts about Bach at a 512 context. Live
+uncontrolled alternatives: excursion size (551 vs 24), model size (6L/8H vs 1L/1H), frequency count,
+local solvability.
 

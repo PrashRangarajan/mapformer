@@ -58,3 +58,46 @@ within-task test of that generalisation failed, in the opposite direction.
 second half predicts it should, since the accumulator is now a clock. If it does, the boundary
 survives in the narrower form "the phase pays on clocks" even though "PoPE collapses on clocks" is
 dead. If it does not, both halves are Bach-specific.
+
+## T2b (amendment 1): the other half fails too -- the phase does NOT pay on a clock
+
+Same task, same recipe, 8 seeds; both arms have monotone increments, so Dyck's accumulator is a
+clock (alpha 1.04, verified above). They differ only in whether the per-token phase is live.
+
+| arm | L32 D4 | L128 D12 |
+|---|---|---|
+| MapPoPE monotone | 0.961 | 0.836 |
+| MapPoPE monotone + per-token phase | 0.961 | **0.732** |
+| MapPoPE monotone + inert twin (phase gated off) | 0.968 | **0.875** |
+
+**phase - inert twin at L128 D12 = -0.143 (MDE 0.079, 0/8 seeds positive), DETECTABLE.** The
+registered prediction was positive and detectable. It is refuted with the opposite sign established,
+and the damage is THREE TIMES what the same contrast showed on the signed version of this task
+(-0.046). Making the accumulator a clock did not make the phase useful here; it made it more harmful.
+
+## Verdict on the account
+
+Both halves now fail their within-task tests, by the criteria registered before each run:
+
+| claim | within-task test | result |
+|---|---|---|
+| PoPE's kernel collapses when the accumulator is a clock | T2 | FAILS: PoPE helps more (+0.159 vs +0.058) |
+| a per-token phase pays when the accumulator is a clock | T2b | FAILS: phase hurts more (-0.143 vs -0.046) |
+
+By T2b's registered falsification clause, **the honest position is that the clock/map account is
+Bach-specific**. What remains true is narrower and entirely within that setting: on Bach at a
+512-token context, shrinking the accumulator's excursion helps MapPoPE 5.7x more than MapWM (T1),
+restoring a per-token phase removes the collapse with a parameter-matched twin flat (T3), and a decay
+envelope does the same for 48 parameters (DECAY). Those three interventions stand. The alpha-based
+explanation that tied them to Dyck and the torus does not.
+
+**What differs between Bach and monotone Dyck, and is now the live suspect list**: the absolute
+excursion (range 551 at 4x context against 24), model size (6 layers / 8 heads against 1 / 1), the
+frequency count (32 per head against 16), and how much of each task is solvable locally. None is
+controlled by anything run here.
+
+**Process note.** This is the fourth prediction of mine to fail in this line (the trade-off corollary,
+the optional-freedom reading, E1 on Dyck decay, and now both halves of the boundary). The pattern is
+consistent: each failure came from generalising a within-task intervention to a cross-task rule, and
+each was caught only by running the within-task version. The interventions have held up every time;
+the generalisations have not.

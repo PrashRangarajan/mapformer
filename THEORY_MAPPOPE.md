@@ -137,7 +137,23 @@ does not decline the freedom where it is useless.)
   Indirect Indexing solve rate is where that would show. If it recovers extrapolation at NO cost to
   indexing, this account is too simple and should be replaced.
 
-## T2 status (2026-09-19): RUN, and it FAILS -- see `T2_RESULTS.md`
+## STATUS 2026-09-20: the cross-task account is WITHDRAWN -- see `T2_RESULTS.md`
+
+Both halves were tested within one task, by forcing Dyck's accumulator from a map into a clock
+(alpha 0.6 -> 1.05, verified), and both failed against their registered predictions:
+
+- **T2**: PoPE's encoding does not collapse on a clock -- it helps MORE (+0.159 against +0.058).
+- **T2b**: the per-token phase does not pay on a clock -- it hurts MORE (-0.143 against -0.046,
+  0/8 seeds, detectable).
+
+So the clock/map boundary is not reproduced by any within-task manipulation, and the account below
+should be read as a description of BACH at a 512-token context, not as a rule. The three
+interventions (T1 centring, T3 phase, the decay envelope) stand as measured facts about that
+setting; the alpha-based generalisation tying them to Dyck and the torus is withdrawn. Live
+alternatives, none controlled: excursion SIZE (551 against 24), model depth and width, frequency
+count, and how locally solvable each task is.
+
+### Earlier status note, kept
 
 Forcing monotone increments on Dyck moves alpha from ~0.6 to ~1.05 within the task, and PoPE's
 encoding then helps MORE (+0.159) than it did on the map accumulator (+0.058). The registered
