@@ -15,7 +15,8 @@ import torch
 
 from mapformer.model import MapFormerWM
 from mapformer.model_pope import MapFormerWM_PoPE
-from mapformer.model_pope_t3 import MapFormerWM_PoPE_T3_PI01, MapFormerWM_PoPE_T3_Inert
+from mapformer.model_pope_t3 import (MapFormerWM_PoPE_T3, MapFormerWM_PoPE_T3_PI01,
+                                     MapFormerWM_PoPE_T3_Inert)
 from mapformer.model_sign import SignConstrainedActionToLie
 
 
@@ -43,3 +44,7 @@ MapFormerWM_PoPE_Abs = _monotone(MapFormerWM_PoPE, "MapFormerWM_PoPE_Abs")
 # T2b: does the per-token phase pay once Dyck's accumulator is a clock? (T2_RESULTS.md closing test)
 MapFormerWM_PoPE_T3_PI01_Abs = _monotone(MapFormerWM_PoPE_T3_PI01, "MapFormerWM_PoPE_T3_PI01_Abs")
 MapFormerWM_PoPE_T3_Inert_Abs = _monotone(MapFormerWM_PoPE_T3_Inert, "MapFormerWM_PoPE_T3_Inert_Abs")
+
+# T2c: the missing initialisation control -- phase live but ZERO-initialised, so "phase - inert twin"
+# is not bundled with a 0.1-scale perturbation of the starting function (audit, 2026-09-20).
+MapFormerWM_PoPE_T3_Zero_Abs = _monotone(MapFormerWM_PoPE_T3, "MapFormerWM_PoPE_T3_Zero_Abs")

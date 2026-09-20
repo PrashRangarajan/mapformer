@@ -12,8 +12,9 @@
 - **Solve rate (accuracy > 0.5): MapPoPE 5/8, PoPE 1/8, MapWM 0/8, RoPE 0/8.** The paper's PoPE is
   implicitly 3/3 and its RoPE 0/3; our RoPE matches, our PoPE does not (1/8, and the one solver ended
   at 0.803 still climbing).
-- **Path integration is what makes the solution findable here.** MapPoPE - MapWM is the only
-  detectable mean contrast (+0.507, 8/8 seeds) and 5/8 vs 0/8 on solve rate (Fisher p = 0.026).
+- **Path integration is what makes the solution findable here.** MapPoPE - MapWM is the largest
+  detectable mean contrast (+0.507, 8/8 seeds; MapWM - RoPE, +0.024, is also detectable but is a
+  plateau-height difference rather than a solution) and 5/8 vs 0/8 on solve rate (Fisher p = 0.026).
   MapPoPE vs PoPE is 5/8 vs 1/8, Fisher p = 0.119 -- suggestive, not established at n=8.
 - Best single run in the batch: **MapPoPE 0.996**, above the paper's PoPE mean of 0.948. Four MapPoPE
   seeds exceed 0.96. So the ceiling is reachable; what varies is whether training finds it.

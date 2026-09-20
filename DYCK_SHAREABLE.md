@@ -52,19 +52,19 @@ mistake anywhere fails the whole sequence. **Chance is 0.000.**
 
 ## 3. How far back the stack is still tracked (L 128, depth 12)
 
-Metric 1 split by distance: how many tokens back the bracket that must be closed was opened. If the
+Closer accuracy (the 0/1 form of metric 1) split by distance: how many tokens back the bracket that must be closed was opened. If the
 previous token was an opening bracket it *is* the top of the stack, so no memory is needed -- and
 two thirds of positions are like that, which is why averages flatter everything. Chance 0.500.
 
-| model | d 1-2 (66% of positions) | d 3-8 (14%) | d 9-32 (13%) | d 33+ (6%) |
+| model | d 0-2 (66% of positions) | d 3-8 (14%) | d 9-32 (13%) | d 33+ (6%) |
 |---|---|---|---|---|
-| **MapPoPE** (1 layer) | 0.997 | 0.996 | 0.971 | 0.730 |
-| **MapFormer / MapWM** (1 layer) | 0.942 | 0.906 | 0.799 | 0.611 |
-| PoPE (1 layer) | 0.801 | 0.740 | 0.645 | 0.569 |
-| RoPE (1 layer) | 0.693 | 0.641 | 0.570 | 0.539 |
-| PoPE (2 layers) | 0.900 | 0.767 | 0.694 | 0.638 |
-| RoPE (2 layers) | 0.834 | 0.683 | 0.602 | 0.592 |
-| *n-gram baseline, no stack* | 0.505 | 0.498 | 0.508 | 0.511 |
+| **MapPoPE** (1 layer) | 0.999 | 0.996 | 0.971 | 0.730 |
+| **MapFormer / MapWM** (1 layer) | 0.988 | 0.906 | 0.799 | 0.611 |
+| PoPE (1 layer) | 0.961 | 0.740 | 0.645 | 0.569 |
+| RoPE (1 layer) | 0.937 | 0.641 | 0.570 | 0.539 |
+| PoPE (2 layers) | 0.980 | 0.767 | 0.694 | 0.638 |
+| RoPE (2 layers) | 0.967 | 0.683 | 0.602 | 0.592 |
+| *n-gram baseline, no stack* | 0.904 | 0.498 | 0.508 | 0.511 |
 
 ## What the tables say
 

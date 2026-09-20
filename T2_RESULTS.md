@@ -5,12 +5,17 @@ increments against the signed baselines from the same recipe.
 
 ## M (manipulation check): PASSES cleanly
 
-| arm | alpha on Dyck | range(S), L32 -> L128 |
-|---|---|---|
-| MapWM signed | 0.578 | 0.59 -> 1.36 (2.29x) |
-| MapPoPE signed | 0.618 | 0.77 -> 2.19 (2.84x) |
-| **MapWM monotone** | **1.056** | 5.78 -> 24.45 (4.23x) |
-| **MapPoPE monotone** | **1.044** | 4.91 -> 21.03 (4.28x) |
+Recomputed 2026-09-20 by `probe_dyck_alpha.py` (committed after an audit found these numbers had no
+script and did not reproduce under another convention). The first version of this table quoted point
+values with no spread; the signed arms' exponent is very noisy across seeds, so only the DIRECTION
+is a stable claim:
+
+| arm | alpha (mean +/- sd, 8 seeds) | per-seed range | range(S) L32 -> L128 |
+|---|---|---|---|
+| MapWM signed | 0.609 +/- 0.121 | 0.45 - 0.86 | 0.51 -> 1.28 (2.53x) |
+| MapPoPE signed | 0.784 +/- 0.189 | 0.58 - 1.01 | 0.66 -> 2.39 (3.65x) |
+| **MapWM monotone** | **1.017 +/- 0.004** | 1.01 - 1.03 | 7.64 -> 31.25 (4.09x) |
+| **MapPoPE monotone** | **1.017 +/- 0.012** | 1.01 - 1.04 | 5.02 -> 20.59 (4.10x) |
 
 Constraining the increment turns Dyck's accumulator from a map (alpha ~0.6, the diffusive code that
 cancels) into a clock (alpha ~1.05, growing with token count), exactly as intended, within one task.
@@ -127,3 +132,30 @@ the optional-freedom reading, E1 on Dyck decay, and now both halves of the bound
 consistent: each failure came from generalising a within-task intervention to a cross-task rule, and
 each was caught only by running the within-task version. The interventions have held up every time;
 the generalisations have not.
+
+## T2c (2026-09-20): the initialisation control the audit asked for
+
+T2b's live arm started its phase heads at 0.1 while the twin is zero-initialised with the gate off, so
+"phase - inert twin" bundled the mechanism with a 0.1-scale perturbation of the starting function.
+The separating arm -- gate ON, zero init -- was run: 8 seeds, same recipe.
+
+| contrast at L128 D12 | value |
+|---|---|
+| phase (init 0.1) - inert twin | **-0.143** (MDE 0.079, 0/8) DETECTABLE |
+| **phase (zero init) - inert twin** | **-0.063** (MDE 0.045, 0/8) DETECTABLE |
+| phase (init 0.1) - plain monotone | -0.104 (MDE 0.177, 2/8) unmeasured |
+| phase (zero init) - plain monotone | -0.023 (MDE 0.180, 2/8) unmeasured |
+| inert twin - plain monotone | +0.039 (MDE 0.156, 5/8) unmeasured |
+
+**The confound inflated the effect and did not create it**: with the initialisation matched, the phase
+still hurts detectably on a clock accumulator, where positive was registered. Two caveats the audit
+raised and this table shows: the magnitude depends on which control is used (-0.063 to -0.143), and
+the "three times the signed version's -0.046" comparison in the text is against a number T3GEN itself
+reports as unmeasured, so it should be read as a direction rather than a ratio.
+
+## Batch provenance
+
+T2's primary contrast is CROSS-BATCH: the signed baselines are `runs/dyck_bs128` (2026-09-15), the
+monotone arms `runs/dyck_t2` (2026-09-19/20). The T2b and T2c arms are same-batch with their twin.
+Only new classes were added to `train_dyck.py` between those dates; the environment, data seeding and
+evaluation paths are unchanged.

@@ -4,9 +4,9 @@ Eval-only on the checkpoints of `/home/prashr/mapformer/runs/dyck_bs128`; 512 se
 
 ## L = 32, depth = 4
 
-Share of depth>0 positions by distance: 1-2 0.74, 3-8 0.17, 9-32 0.09, 33+ 0.00
+Share of depth>0 positions by distance: 0-2 0.74, 3-8 0.17, 9-32 0.09, 33+ 0.00
 
-| predictor | paper F1 | strict-F1 | closer acc | d 1-2 | d 3-8 | d 9-32 | d 33+ | acc d>=9 | after a close |
+| predictor | paper F1 | strict-F1 | closer acc | d 0-2 | d 3-8 | d 9-32 | d 33+ | acc d>=9 | after a close |
 |---|---|---|---|---|---|---|---|
 | n-gram k=1 | 0.807 | 0.683 | 0.797 | 0.898 | 0.510 | 0.489 | -- | 0.489 | 0.500 |
 | n-gram k=3 | 0.850 | 0.773 | 0.874 | 1.000 | 0.511 | 0.510 | -- | 0.510 | 0.691 |
@@ -19,9 +19,9 @@ Share of depth>0 positions by distance: 1-2 0.74, 3-8 0.17, 9-32 0.09, 33+ 0.00
 
 ## L = 128, depth = 12
 
-Share of depth>0 positions by distance: 1-2 0.66, 3-8 0.14, 9-32 0.13, 33+ 0.06
+Share of depth>0 positions by distance: 0-2 0.66, 3-8 0.14, 9-32 0.13, 33+ 0.06
 
-| predictor | paper F1 | strict-F1 | closer acc | d 1-2 | d 3-8 | d 9-32 | d 33+ | acc d>=9 | after a close |
+| predictor | paper F1 | strict-F1 | closer acc | d 0-2 | d 3-8 | d 9-32 | d 33+ | acc d>=9 | after a close |
 |---|---|---|---|---|---|---|---|
 | n-gram k=1 | 0.857 | 0.701 | 0.770 | 0.904 | 0.498 | 0.508 | 0.511 | 0.509 | 0.504 |
 | n-gram k=3 | 0.886 | 0.772 | 0.832 | 1.000 | 0.495 | 0.502 | 0.500 | 0.501 | 0.638 |

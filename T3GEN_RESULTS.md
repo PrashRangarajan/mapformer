@@ -31,7 +31,7 @@ so `S_t - S_s` never leaves its trained range, and the freedom that rescued musi
 | MapPoPE_T3 inert twin | 1.000 | 0.993 | 0.991 | 0.979 | 0.962 |
 
 Same verdict, second bounded accumulator: no gain, a slight cost at long evaluation, and a seed
-spread 8-9x the baseline's (0.046 vs 0.005) -- the phase mostly adds variance here. The inert twin
+spread 9.4x the baseline's (0.0461 vs 0.0049) -- the phase mostly adds variance here. The inert twin
 tracks the baseline to three decimals at every length, so this is the phase, not the parameters.
 
 ## G3 -- forced phase on Bach (5 seeds). Test NLL, lower is better

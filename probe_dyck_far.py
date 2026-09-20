@@ -13,7 +13,7 @@ w=DyckWorld(); L,D=512,12
 inp,tgt,valid,_=w.batch(256,L,D,np.random.default_rng(7))
 dist=top_distance(inp,tgt,L); dp=valid[...,CLOSE_P]|valid[...,CLOSE_B]
 corr=torch.where(valid[...,CLOSE_P],CLOSE_P,CLOSE_B); wrg=torch.where(valid[...,CLOSE_P],CLOSE_B,CLOSE_P)
-B={"1-2":dist<=2,"3-8":(dist>2)&(dist<=8),"9-32":(dist>8)&(dist<=32),"33-64":(dist>32)&(dist<=64),
+B={"0-2":dist<=2,"3-8":(dist>2)&(dist<=8),"9-32":(dist>8)&(dist<=32),"33-64":(dist>32)&(dist<=64),
    "65-128":(dist>64)&(dist<=128),"129-256":(dist>128)&(dist<=256),"257+":dist>256}
 out=[]
 print("share: "+", ".join(f"{k} {float((m&dp).sum()/dp.sum()):.3f}" for k,m in B.items()))
