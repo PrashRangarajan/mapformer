@@ -20,7 +20,10 @@ learnable scalar per head on ALiBi's geometric spread.
   yes, and the cheapest one in the literature is enough.
 - **D3 partially fails**: both arms cost in distribution -- +0.018 (PoPE) and +0.026 (MapPoPE), 0/5
   seeds better, detectable. That is the expected trade (a decay envelope buys far-field reliability
-  with near-field sharpness) and it is larger than the per-token phase's +0.036... see below.
+  with near-field sharpness). CORRECTED 2026-09-19: the original text said this was "larger than the
+  per-token phase's +0.036"; 0.026 < 0.036, so the envelope's in-distribution cost is SMALLER than
+  the phase's, not larger. Also unreported at first: the decay arm is detectably worse than the phase
+  arm in the 512-1024 bucket as well (+0.0231, MDE 0.0140, 0/5), not only in distribution.
 - **D4, the comparison that matters**: MapPoPE + decay reaches 0.6223 against the per-token phase's
   0.6162 -- statistically the same repair, for **48 parameters instead of 786k**. The phase keeps a
   small edge in distribution (0.5182 vs 0.5498).
@@ -40,7 +43,25 @@ an attention kernel trusted at distances it was never calibrated on. Path integr
 (4.616 vs 1.597) because its position variable is learned as well as extrapolated, but it is not a
 different disease.
 
-**Practical ranking for a length-extrapolating model with PoPE**: decay envelope first (48
-parameters, works on either position mechanism), per-token phase if the last 0.03 NLL in distribution
+**Practical ranking for a length-extrapolating model with PoPE** -- AMENDED 2026-09-19, see
+`DYCK_DECAY_RESULTS.md`: "works on either position mechanism" is FALSE on a task whose dependencies
+are not local. On Dyck-2 the same envelope drives the index row to the no-stack n-gram level beyond
+distance 8, in distribution as well as out. The ranking below holds for locally-structured data only.
+Decay envelope first (48 parameters), per-token phase if the last 0.03 NLL in distribution
 matters, and bounding the accumulator only if neither is available -- centring cost 0.13 in
 distribution, four times the phase's cost, for a worse far-field number (0.911).
+
+## D5 (registered, reported late 2026-09-19): the learned decay rates
+
+Mean over seeds and layers, per head, against the ALiBi initialisation `2^-1 .. 2^-8`:
+
+| head | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| init | 0.500 | 0.250 | 0.125 | 0.063 | 0.031 | 0.016 | 0.008 | 0.004 |
+| PoPE + decay | 0.498 | 0.264 | 0.135 | 0.070 | 0.036 | 0.019 | 0.009 | 0.0045 |
+| MapPoPE + decay | 0.494 | 0.261 | 0.135 | 0.070 | 0.037 | 0.019 | 0.009 | 0.0044 |
+
+Every head KEPT its decay (the widest reaches ~222 tokens on pieces up to 2048), so the winning
+configuration on Bach is a local model. On this task, repairing the collapse and becoming local are
+the same operation -- which is a fact about chorales as much as about positional encoding, and is why
+the Dyck follow-up was run.
