@@ -15,6 +15,7 @@ import torch
 import torch.nn.functional as F
 
 from mapformer.environment_jsb import splits, VOCAB_SIZE, MAXLEN, PAD
+from mapformer.environment_jsb import SIL
 from mapformer.model import MapFormerWM
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_pope import MapFormerWM_PoPE, MapFormerWM_RoPEIndex_PoPE, DELTA_MIN
@@ -97,6 +98,10 @@ def main():
     ap.add_argument("--min-lr", type=float, default=6e-5)
     ap.add_argument("--weight-decay", type=float, default=0.01)
     ap.add_argument("--eval-every", type=int, default=100)
+    ap.add_argument("--augment", type=int, default=0,
+                    help="pitch-transposition augmentation: random shift in [-k, +k] semitones "
+                         "applied to TRAINING batches only. The PoPE paper uses k=3 on MAESTRO "
+                         "and no augmentation on JSB; ids 38..83 leave room for k<=6.")
     ap.add_argument("--phase-init", type=float, default=0.0,
                     help="T3 forced-phase test: std for non-zero init of the phase heads")
     ap.add_argument("--center", action="store_true",
@@ -121,6 +126,8 @@ def main():
         name += "_centered"
     if a.phase_init > 0:
         name += f"_pi{a.phase_init:g}"
+    if a.augment:
+        name += f"_aug{a.augment}"
     model = model.to(dev)
     print(f"{name} seed={a.seed} params={sum(p.numel() for p in model.parameters()):,} "
           f"train={len(Xtr)} valid={len(Xva)} test={len(Xte)}", flush=True)
@@ -143,6 +150,10 @@ def main():
                 xs.append(x[j, st:st + a.train_len]); ms.append(m[j, st:st + a.train_len])
             x = torch.stack([F.pad(t, (0, a.train_len - len(t))) for t in xs])
             m = torch.stack([F.pad(t, (0, a.train_len - len(t))) for t in ms])
+        if a.augment:
+            k = int(rng.integers(-a.augment, a.augment + 1))
+            pitched = m & (x != PAD) & (x != SIL)
+            x = torch.where(pitched, (x + k).clamp(2, VOCAB_SIZE - 1), x)
         x, m = x.to(dev), m.to(dev)
         lg = model(x)[:, :-1]
         l = F.cross_entropy(lg.transpose(1, 2), x[:, 1:], reduction="none")
@@ -163,6 +174,7 @@ def main():
     print("test NLL by position bucket:", {k: round(v, 4) for k, v in buckets.items()}, flush=True)
     json.dump(dict(arch=a.arch, name=name, seed=a.seed, train_len=a.train_len,
                    base=a.base, rank=a.rank, dropout=a.dropout, centered=a.center, phase_init=a.phase_init,
+                   augment=a.augment,
                    test_buckets=buckets, best_valid=best_va, test_at_best_valid=best_te,
                    best_test=min(h["test"] for h in hist), final_test=hist[-1]["test"],
                    final_valid=hist[-1]["valid"], history=hist, wall_s=time.time() - t0,
