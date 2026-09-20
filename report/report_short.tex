@@ -493,6 +493,43 @@ with, not separated from, more reliable training.
 generator knob by knob, the forget gate, hierarchy compute, the correction ablation).
 
 %======================================================================
+\section{Claim 6: the two position mechanisms anti-compose unless the kernel can compensate}
+%======================================================================
+
+Two published mechanisms were crossed on their own tasks: MapFormer's path integration (position is a
+cumulative sum of learned per-token increments) and PoPE's decoupling (content in the magnitude, position in
+the phase, with a constant phase offset). Each replicates: on Dyck-2 a one-layer path-integrated model
+learns the bracket stack where a one-layer index model does not, and on Bach Chorales PoPE beats RoPE by
+$-0.032$ NLL (5/5 seeds; paper $-0.019$). In distribution path integration adds nothing to PoPE (0/5 seeds
+better). Beyond the training context the ordering inverts and the naive combination collapses.
+
+\begin{table}[h]\centering\footnotesize
+\caption{Bach Chorales trained on 512-token crops, test NLL by position bucket (lower is better, 5 seeds).
+MapPoPE is the best arm in distribution and by far the worst outside it. Adding a per-token phase offset
+to its kernel --- the freedom PoPE removes and rotating $Q,K$ provides --- fixes it.}
+\begin{tabular}{lccc}
+\toprule
+arm & $0$--$512$ (trained) & $512$--$1024$ & $1024$--$2048$ \\
+\midrule
+RoPE (index) & 0.5512 & 0.8116 & 2.0587 \\
+PoPE (index) & 0.5403 & 0.6749 & 1.5973 \\
+MapWM (path integration) & 0.5382 & 0.7835 & 1.3969 \\
+MapPoPE (both) & 0.5235 & 1.9536 & 4.6158 \\
+\textbf{MapPoPE + per-token phase} & \textbf{0.5182} & \textbf{0.5629} & \textbf{0.6162} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The mechanism is not the accumulator: its growth exponent is $\alpha\approx1.00$ in both path-integrated
+arms, and they respond oppositely to compressing it at evaluation ($-1.70$ nats for MapPoPE, $+1.44$ for
+MapWM). It is that PoPE's kernel has non-negative amplitudes and a constant phase, so when the accumulated
+argument leaves the range training calibrated, content cannot shift the peak to compensate. Two
+interventions confirm it: bounding the accumulator helps MapPoPE $5.7\times$ more than MapWM, and restoring a
+per-token phase --- accumulator untouched, parameter-matched inert twin flat --- removes the collapse. The
+boundary is a double dissociation: the same phase is neutral to harmful where the accumulator is bounded
+(Dyck-2 $-0.047$ against its inert twin; torus $0.911$ against $0.963$ at $l=2048$).
+
+%======================================================================
 \section{Limitations}
 \label{sec:limits}
 %======================================================================
