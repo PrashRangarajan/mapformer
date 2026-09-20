@@ -243,3 +243,18 @@ EMPair - EMPairConst = +0.091 (MDE 0.066, 34/48; fresh 40 seeds alone +0.089, de
 +0.215 at n=48 = pathway +0.124 + freedom +0.091, BOTH detectable (58% / 42%). The n=8 total (+0.280)
 was 30% inflated.
 The n=8 batch inflated the total and the pathway term, not the freedom term -- 4th instance.
+
+**JSB IS OVERFITTING-LIMITED (2026-09-20, `AUG_RESULTS.md`).** Pitch transposition (+/-3) gains 0.107
+NLL for PoPE and 0.090 for MapPoPE (5/5 each) against the 0.032 that separates PoPE from RoPE -- so
+every in-distribution encoding effect measured on this dataset sits under a ceiling 3x its size.
+Ordering unchanged; the PoPE-over-MapPoPE gap WIDENS to +0.028 (detectable). Best-validation step
+moves from 1000/1500 to 3000, i.e. the runs become budget-limited. Augmented PoPE reaches 0.3936
+against the paper's published 0.4889.
+
+**JSB IS OVERFITTING-LIMITED (2026-09-20, `AUG_RESULTS.md`).** Pitch transposition (+/-3) gains 0.107
+NLL for PoPE and 0.090 for MapPoPE (5/5 each) against the 0.032 that separates PoPE from RoPE -- so
+every in-distribution encoding effect measured on this dataset sits under a ceiling 3x its size.
+Ordering unchanged; the PoPE-over-MapPoPE gap WIDENS to +0.028 (detectable). Best-validation step
+moves from 1000/1500 to 3000, i.e. the runs become budget-limited. Augmented PoPE reaches 0.3936
+against the paper's published 0.4889.
+

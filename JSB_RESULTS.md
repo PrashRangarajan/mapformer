@@ -1,5 +1,11 @@
 # READING
 
+> **CONTEXT ADDED 2026-09-20 (`AUG_RESULTS.md`)**: these runs are overfitting-limited. Pitch
+> transposition -- the augmentation PoPE's own paper applies to MAESTRO but not to JSB -- gains 0.107
+> NLL for PoPE and 0.090 for MapPoPE, 5/5 seeds, against the 0.032 that separates PoPE from RoPE here.
+> The ordering below is unchanged (and the PoPE-over-MapPoPE gap widens to 0.028 under augmentation),
+> but every effect on this page sits under a ceiling worth three times its size.
+
 **The paper's result replicates, and path integration does not help.** First clean test of path
 integration on a natural-sequence task with real content, and the registered prediction was
 deliberately left open.

@@ -2002,7 +2002,13 @@ adequate budget the two tie (Fisher $p=1.0$), and the $\sim$15k-step lift-off di
 $n=7$. Out of distribution neither encoding generalises past the trained shift range (chance at
 $|k|\in[16,30]$). % src: INDIRECT_RESULTS.md, INDIRECT_RESULTS_200k.md, INDIRECT_OOD.md
 
-\paragraph{Bach Chorales replicates, and path integration adds nothing in distribution.} PoPE beats RoPE by
+\paragraph{Bach Chorales replicates, and path integration adds nothing in distribution --- under a
+ceiling worth three times the effect.} Pitch transposition (the augmentation PoPE's paper applies to
+MAESTRO and not to JSB) gains $0.107$ NLL for PoPE and $0.090$ for MapPoPE, 5/5 seeds, against the
+$0.032$ separating PoPE from RoPE; the ordering is unchanged and the PoPE-over-MapPoPE gap widens to
+$0.028$. % src: AUG_RESULTS.md
+
+\paragraph{The replication itself.} PoPE beats RoPE by
 $-0.032$ NLL (5/5 seeds; paper $-0.019$), with levels within $0.025$ of published. Path integration is
 unmeasured on both rows ($-0.005$ on the RoPE row at 3/5 seeds, $+0.011$ on the PoPE row at 0/5). This is the
 first clean null for path integration on a natural-sequence task, and it was registered with no predicted
