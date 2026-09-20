@@ -19,11 +19,14 @@ from mapformer.model import MapFormerWM
 from mapformer.model_baseline_rope import MapFormerWM_RoPE
 from mapformer.model_pope import MapFormerWM_PoPE, MapFormerWM_RoPEIndex_PoPE, DELTA_MIN
 from mapformer.model_pope_t3 import MapFormerWM_PoPE_T3, MapFormerWM_PoPE_T3_Inert
+from mapformer.model_pope_decay import (MapFormerWM_PoPE_Decay,
+                                        MapFormerWM_RoPEIndex_PoPE_Decay)
 from mapformer.model_centered import center_model, token_frequencies
 
 ARCH = {"RoPE": MapFormerWM_RoPE, "PoPE": MapFormerWM_RoPEIndex_PoPE,
         "MapWM": MapFormerWM, "MapPoPE": MapFormerWM_PoPE,
-        "MapPoPE_T3": MapFormerWM_PoPE_T3, "MapPoPE_T3inert": MapFormerWM_PoPE_T3_Inert}
+        "MapPoPE_T3": MapFormerWM_PoPE_T3, "MapPoPE_T3inert": MapFormerWM_PoPE_T3_Inert,
+        "MapPoPE_decay": MapFormerWM_PoPE_Decay, "PoPE_decay": MapFormerWM_RoPEIndex_PoPE_Decay}
 
 
 def build(arch, d_model, n_heads, n_layers, rank, base, dropout, delta_init, gen, phase_init=0.0):
