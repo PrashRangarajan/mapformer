@@ -86,7 +86,9 @@ with the seed spread growing to +/-0.049 against the baseline's +/-0.006.
 **So the boundary is a double dissociation, not a one-sided null.** The same intervention at the same
 strength: on a clock accumulator (Bach) forcing the phase is the best configuration measured
 (0.6162 at 2-4x, against 4.6158 with no phase); on bounded accumulators (Dyck-2, torus) it is
-neutral-to-harmful and forcing it harder makes it worse.
+neutral-to-harmful. CORRECTED 2026-09-19 after audit: "forcing it harder makes it worse" holds on the
+TORUS only (0.942 zero-init -> 0.911 forced); on Dyck the two initialisations are -0.046 and -0.047
+against the inert twin, which this file's own amendment calls the same magnitude.
 
 **The registered phase-magnitude readout does NOT support the story I expected**, and is worth
 recording for that reason:
