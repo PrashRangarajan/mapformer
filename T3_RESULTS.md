@@ -37,6 +37,10 @@ training starts as exactly PoPE. The accumulator is untouched: same clock, same 
 - **B2 clean**: the inert twin is 6/8, so the extra parameters are not making the search harder;
   if anything they help slightly, and not detectably.
 
+> **Scope (2026-09-20)**: the measurement in this file stands. The cross-task account it was read
+> as supporting does not -- both halves fail a within-task test on Dyck (`T2_RESULTS.md`), so
+> treat this as a fact about Bach at a 512-token context.
+
 ## What this does to the account
 
 **The collapse is explained; the corollary is withdrawn.**

@@ -26,7 +26,29 @@ F1, 8 seeds:
 | MapWM monotone | 0.957 | 0.663 | 0.888 | 0.677 |
 | MapPoPE monotone | 0.961 | 0.834 | 0.929 | 0.836 |
 
-PoPE's encoding is worth **+0.058** on the signed (map) accumulator and **+0.159** on the monotone
+**The registered floor readout, reported late (2026-09-20).** `T2_PREREG.md` asked whether either
+monotone arm clears the no-stack n-gram floor, which is 0.904 / 0.896 / 0.903 / **0.884** for these
+cells. Neither does at the primary cell: MapWM monotone 0.677 and MapPoPE monotone 0.836 are both
+BELOW a stack-free lookup table, and in T2b all three arms are at or below it. On F1 most of the
+residual range there is the always-legal opening brackets, so the F1 contrasts below are computed in
+a region that metric cannot read. **Both verdicts were therefore re-read on the chance-anchored
+metric** (closer accuracy, chance 0.500), which has real dynamic range there:
+
+| arm | closer acc | acc at distance >= 9 |
+|---|---|---|
+| MapWM signed | 0.928 | 0.738 |
+| MapPoPE signed | 0.978 | 0.892 |
+| MapWM monotone | 0.800 | 0.561 |
+| MapPoPE monotone | 0.921 | 0.737 |
+| MapPoPE monotone + phase | 0.835 | 0.622 |
+| MapPoPE monotone + inert twin | 0.932 | 0.765 |
+
+T2 difference of differences: **+0.070** (MDE 0.110) over all positions and **+0.021** (MDE 0.122)
+at distance >= 9 -- same sign as on F1, still where a negative was registered, still unmeasured.
+T2b phase minus inert twin: **-0.097** (MDE 0.041, 0/8) and **-0.142** (MDE 0.069, 0/8) -- detectable
+on both readings. **The floor problem is real and does not change either verdict.**
+
+On F1, PoPE's encoding is worth **+0.058** on the signed (map) accumulator and **+0.159** on the monotone
 (clock) one. The registered difference of differences is therefore **+0.100** where a NEGATIVE value
 was predicted -- and it is unmeasured (MDE 0.244, negative on 3/8 seeds). So the claim tested is not
 supported, and the observed direction is the opposite one.
@@ -47,7 +69,8 @@ One quantity that separates Bach from monotone Dyck, and that T2 does not contro
 excursion. Bach's accumulator range reaches 551 at 4x the training context; monotone Dyck's reaches
 24 at 4x. If what matters is how far outside its trained band the kernel's argument goes, rather than
 the growth exponent, then a clock with a small absolute excursion should behave like a map -- which
-is what this batch shows. That is a hypothesis this run suggests and does not test.
+is consistent with this batch, post hoc and at one condition. That is a hypothesis this run suggests
+and does not test.
 
 **Status of the account after T2**: the two interventions on Bach (T1 centring, T3 phase) still stand
 -- each manipulates one factor within one task and moves the result as the account says. What no
@@ -84,8 +107,11 @@ Both halves now fail their within-task tests, by the criteria registered before 
 | PoPE's kernel collapses when the accumulator is a clock | T2 | FAILS: PoPE helps more (+0.159 vs +0.058) |
 | a per-token phase pays when the accumulator is a clock | T2b | FAILS: phase hurts more (-0.143 vs -0.046) |
 
-By T2b's registered falsification clause, **the honest position is that the clock/map account is
-Bach-specific**. What remains true is narrower and entirely within that setting: on Bach at a
+By T2b's registered falsification clause the account fails its within-task test. The precise reading,
+narrower than that clause's own wording: **the boundary is not reproduced within a task at 1 layer /
+1 head, and its second half is detectably reversed there.** "Bach-specific" would be a positive
+localisation these data cannot support -- two failures on one task at one scale show that the
+accumulator's exponent alone does not carry the effect, not that the effect is a property of Bach. What remains true is narrower and entirely within that setting: on Bach at a
 512-token context, shrinking the accumulator's excursion helps MapPoPE 5.7x more than MapWM (T1),
 restoring a per-token phase removes the collapse with a parameter-matched twin flat (T3), and a decay
 envelope does the same for 48 parameters (DECAY). Those three interventions stand. The alpha-based

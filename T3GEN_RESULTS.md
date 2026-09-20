@@ -1,4 +1,9 @@
-# T3 generality and the forced-phase test -- the account's boundary holds, my post-hoc reading dies
+# T3 generality and the forced-phase test: the phase pays on Bach, not on Dyck or the torus
+
+> **SUPERSEDED AS A CROSS-TASK CLAIM (2026-09-20, `T2_RESULTS.md`).** The "boundary holds" reading
+> below was written when the only clock in the comparison was Bach -- the other clock candidate,
+> recency, was voided for ceiling. Forcing Dyck's accumulator into a clock reverses neither half:
+> the phase still hurts there, detectably. Read what follows as a three-task association, not a rule.
 
 Pre-registration: `T3GEN_PREREG.md`. Three batches, all with the parameter-matched inert twin where
 applicable.
@@ -50,7 +55,8 @@ it also beats MapWM everywhere (MapWM: 0.538 / 0.784 / 1.397).
 
 ## What survives
 
-**The account's boundary is now tested on three tasks and holds.** A per-token phase pays exactly
+**The account's boundary is tested on three tasks and holds ACROSS them** (superseded -- it does not
+hold within a task; see the banner): A per-token phase pays exactly
 where the accumulator leaves the range training calibrated -- music, a clock with alpha = 1.00 -- and
 does nothing, or slightly hurts, where the accumulator is bounded: Dyck-2 (cancelling increments) and
 the torus (a map, alpha ~0.5). That is the prediction registered before these runs, and it is the
@@ -83,7 +89,8 @@ earlier Dyck verdict was NOT an artefact of the bad prior.
 length: at l=2048 MapPoPE-Flat 0.963, inert twin 0.963, T3 zero-init 0.942, **T3 init 0.1 0.911**,
 with the seed spread growing to +/-0.049 against the baseline's +/-0.006.
 
-**So the boundary is a double dissociation, not a one-sided null.** The same intervention at the same
+**So across these three tasks it looks like a double dissociation** (one clock, two bounded tasks --
+the "pays on clocks" half rests on a single task): The same intervention at the same
 strength: on a clock accumulator (Bach) forcing the phase is the best configuration measured
 (0.6162 at 2-4x, against 4.6158 with no phase); on bounded accumulators (Dyck-2, torus) it is
 neutral-to-harmful. CORRECTED 2026-09-19 after audit: "forcing it harder makes it worse" holds on the

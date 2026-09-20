@@ -88,8 +88,8 @@ conflict of requirements, not an implementation defect.
 The dividing line is not the task or the encoding but whether the accumulator's argument stays in
 the range training calibrated. This is the clock/map axis this project already measured
 (`project_clock_vs_map` in memory): signed increments that cancel give a bounded MAP, monotone ones
-give an unbounded CLOCK. The new consequence is that **PoPE-style decoupling is only safe on the map
-side.**
+give an unbounded CLOCK. The consequence drawn at the time -- **PoPE-style decoupling is only safe on the map side** -- is
+WITHDRAWN as a rule; see the status block, it fails within a task.
 
 It also retro-explains the inverted omega-base result (`JSB_LENGTH_RESULTS_BASE.md`): a wide
 frequency spread (base 32768) adds very slow channels that stay coherent far outside the trained
@@ -142,12 +142,12 @@ does not decline the freedom where it is useless.)
 Both halves were tested within one task, by forcing Dyck's accumulator from a map into a clock
 (alpha 0.6 -> 1.05, verified), and both failed against their registered predictions:
 
-- **T2**: PoPE's encoding does not collapse on a clock -- it helps MORE (+0.159 against +0.058).
+- **T2**: PoPE's encoding does not collapse on a clock -- it helps MORE (+0.159 against +0.058;
+  MDE 0.244, so this is the registered negative failing to appear, not an established reversal).
 - **T2b**: the per-token phase does not pay on a clock -- it hurts MORE (-0.143 against -0.046,
   0/8 seeds, detectable).
 
-So the clock/map boundary is not reproduced by any within-task manipulation, and the account below
-should be read as a description of BACH at a 512-token context, not as a rule. The three
+So the clock/map boundary is not reproduced by any within-task manipulation, and the account ABOVE should be read as a description of BACH at a 512-token context, not as a rule. The three
 interventions (T1 centring, T3 phase, the decay envelope) stand as measured facts about that
 setting; the alpha-based generalisation tying them to Dyck and the torus is withdrawn. Live
 alternatives, none controlled: excursion SIZE (551 against 24), model depth and width, frequency

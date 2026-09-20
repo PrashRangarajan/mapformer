@@ -28,6 +28,10 @@ learnable scalar per head on ALiBi's geometric spread.
   0.6162 -- statistically the same repair, for **48 parameters instead of 786k**. The phase keeps a
   small edge in distribution (0.5182 vs 0.5498).
 
+> **Scope (2026-09-20)**: the measurement in this file stands. The cross-task account it was read
+> as supporting does not -- both halves fail a within-task test on Dyck (`T2_RESULTS.md`), so
+> treat this as a fact about Bach at a 512-token context.
+
 ## What this does to the account
 
 The two repairs work through DIFFERENT mechanisms and reach the same place. The phase lets content

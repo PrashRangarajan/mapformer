@@ -31,6 +31,10 @@ integration alone at long range.
    than path integration alone -- consistent with the account, which says PoPE gives up the pairwise
    phase and gets a cleaner kernel in exchange, not a free win.
 
+> **Scope (2026-09-20)**: the measurement in this file stands. The cross-task account it was read
+> as supporting does not -- both halves fail a within-task test on Dyck (`T2_RESULTS.md`), so
+> treat this as a fact about Bach at a 512-token context.
+
 ## Where this leaves the theory
 
 The conjunction account stands: the collapse needs BOTH an out-of-range accumulator and the absence
