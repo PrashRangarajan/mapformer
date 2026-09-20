@@ -137,7 +137,16 @@ does not decline the freedom where it is useless.)
   Indirect Indexing solve rate is where that would show. If it recovers extrapolation at NO cost to
   indexing, this account is too simple and should be replaced.
 
-## T2 status (2026-09-19): registered and NOT run
+## T2 status (2026-09-19): RUN, and it FAILS -- see `T2_RESULTS.md`
+
+Forcing monotone increments on Dyck moves alpha from ~0.6 to ~1.05 within the task, and PoPE's
+encoding then helps MORE (+0.159) than it did on the map accumulator (+0.058). The registered
+difference of differences is +0.100 where negative was predicted. **The clock/map boundary is
+therefore not established within a task.** The Bach interventions below stand on their own; the
+generalisation from them across tasks does not, and is confounded with model size, sequence
+length and the absolute size of the excursion (Bach 551 at 4x, monotone Dyck 24).
+
+### Original note, kept
 
 T2 -- force monotone increments on Dyck with the repo's `MONOTONE` machinery and check that MapPoPE
 then collapses -- is the only registered test that moves alpha WITHIN a task. It has not been run.

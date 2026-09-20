@@ -156,3 +156,19 @@ correlates 0.755 with stack-DEPTH difference and only 0.278 with token distance 
 means "prefer keys at similar depth". On a clock accumulator (Bach) it degenerates to recency, which is
 why decay and path integration looked interchangeable there.
 
+**T2 FAILS (2026-09-19, `T2_RESULTS.md`) -- the within-task test does not reproduce the boundary.**
+Forcing monotone increments on Dyck turns its accumulator from a map into a clock (alpha 0.58/0.62 ->
+1.06/1.04, range 4.2x instead of 2.3x) and PoPE's encoding then helps MORE, not less (+0.159 against
++0.058 signed; difference of differences +0.100 where negative was predicted, unmeasured). So the
+clock/map boundary is NOT established within a task; the three-task pattern is confounded with model
+size, sequence length and excursion SIZE (Bach reaches range 551 at 4x, monotone Dyck only 24).
+The Bach interventions (T1, T3) stand; the generalisation from them does not.
+
+**T2 FAILS (2026-09-19, `T2_RESULTS.md`) -- the within-task test does not reproduce the boundary.**
+Forcing monotone increments on Dyck turns its accumulator from a map into a clock (alpha 0.58/0.62 ->
+1.06/1.04, range 4.2x instead of 2.3x) and PoPE's encoding then helps MORE, not less (+0.159 against
++0.058 signed; difference of differences +0.100 where negative was predicted, unmeasured). So the
+clock/map boundary is NOT established within a task; the three-task pattern is confounded with model
+size, sequence length and excursion SIZE (Bach reaches range 551 at 4x, monotone Dyck only 24).
+The Bach interventions (T1, T3) stand; the generalisation from them does not.
+
