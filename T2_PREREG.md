@@ -37,3 +37,24 @@ sequences at L=32 D=4). Signed baselines in hand from the same recipe: MapWM-1L 
   something else those tasks differ in -- dataset, model size or metric.
 - Also reported: alpha per arm, the per-distance closer accuracy (does the monotone pair lose the far
   buckets specifically?), and whether either monotone arm clears the no-stack n-gram floor at all.
+
+## Amendment 1 (2026-09-20) -- T2b: does the phase pay once Dyck's accumulator IS a clock?
+
+T2 falsified its own prediction: making Dyck's accumulator a clock (alpha 0.6 -> 1.05, verified) did
+not make PoPE collapse; its encoding helped MORE (+0.159 against +0.058). That kills the claim
+"PoPE collapses on clocks". The account's OTHER half -- "a per-token phase pays on clocks" -- is
+separable and untested here, and this amendment tests it inside the same task.
+
+Arms, 8 seeds, same recipe: `MapPoPE_abs_T3` (monotone increments + per-token phase, forced init 0.1)
+and `MapPoPE_abs_T3inert` (identical parameters, phase gated to zero). Baseline in hand:
+`MapPoPE_abs` 0.836 at L128 D12. On SIGNED Dyck the same phase contrast was -0.046 / -0.047 against
+its inert twin, i.e. harmful on a map accumulator.
+
+- **T2b** phase - inert twin at L128 D12. **Registered prediction: POSITIVE and detectable.** If the
+  phase pays here, where it did not on the signed version of the same task at the same size and
+  recipe, the boundary survives in the narrow form "the compensating phase pays on clocks", with the
+  strong form ("PoPE collapses on clocks") already dead.
+- **Falsification**: a null or negative result means BOTH halves of the account are Bach-specific,
+  and the honest position becomes that the whole clock/map story is an association across three tasks
+  that no within-task manipulation reproduces.
+- Reported: the same contrast at the training cell (should be small), and the learned phase magnitude.
