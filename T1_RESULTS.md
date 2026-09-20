@@ -44,3 +44,10 @@ extrapolation WITHOUT the in-distribution cost that centring imposes -- and shou
 PoPE's pure-indexing advantage instead. That double-sided prediction is what would separate the
 account from caveat 2's sceptical reading.
 
+## Batch provenance (audit note, 2026-09-19)
+
+The contrasts here pair by seed index ACROSS run directories built on different days, not within one
+batch -- the repo's standing rule 3 asks for one batch. Mitigating: the arms share code (only new
+classes were added between the runs; the data and evaluation paths are byte-identical), the data
+stream is seeded identically, and the primary readings lean on a parameter-matched inert twin
+trained INSIDE the new batch. Unmitigated for the decay arms, which have no same-batch baseline.

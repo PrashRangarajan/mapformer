@@ -76,7 +76,7 @@ two thirds of positions are like that, which is why averages flatter everything.
 2. **Nobody generalises "perfectly".** On longer, deeper input the best model retains 0.719
    bracket-closing memory and solves 4% of sequences end to end; MapFormer retains 0.638 and 0.3%.
    Index models are near chance (0.53-0.58) and solve none.
-3. **Adding PoPE's encoding to path integration helps** (MapPoPE over MapFormer on every metric and
+3. **Adding PoPE's encoding to path integration helps** (MapPoPE over MapFormer on most metrics and
    at every distance); adding it to index position does not.
 4. **Every model has a reach horizon.** All are near-perfect when the matching bracket is within a
    few tokens and degrade with distance; pushed to length 512, even MapPoPE reaches chance beyond
@@ -88,7 +88,7 @@ two thirds of positions are like that, which is why averages flatter everything.
   (2025), designed to compare *many* formal languages, not to detect a stack. On Dyck-2 it gives
   most of its range to the two always-legal opening brackets, so the stack-free n-gram scores 0.857
   on it at the hardest condition -- above every index model (0.472-0.704). Our models reproduce the
-  paper's ordering on that metric but sit 0.05-0.08 below its published values; the paper does not
+  paper's ordering on that metric but sit 0.015-0.112 below its published values, cell by cell; the paper does not
   state its batch size, which is the untested suspect.
 - Aggregation matters as much as metric choice: the same RoPE predictions score 0.871 when averaged
   over positions and 0.627 when averaged over distances, because the rare long-distance cases are

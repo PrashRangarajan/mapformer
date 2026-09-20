@@ -35,3 +35,10 @@ better on both knobs: MapWM at base 512 reaches 1.109 at 2-4x and MapWM at r=1 (
 0.912, against 1.397 for the r=2 / base-2048 default and 2.059 for index RoPE. The two have not been
 combined -- r=1 at base 512 is untested and is not claimed.
 
+## Batch provenance (audit note, 2026-09-19)
+
+The contrasts here pair by seed index ACROSS run directories built on different days, not within one
+batch -- the repo's standing rule 3 asks for one batch. Mitigating: the arms share code (only new
+classes were added between the runs; the data and evaluation paths are byte-identical), the data
+stream is seeded identically, and the primary readings lean on a parameter-matched inert twin
+trained INSIDE the new batch. Unmitigated for the decay arms, which have no same-batch baseline.

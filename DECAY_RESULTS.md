@@ -65,3 +65,11 @@ Every head KEPT its decay (the widest reaches ~222 tokens on pieces up to 2048),
 configuration on Bach is a local model. On this task, repairing the collapse and becoming local are
 the same operation -- which is a fact about chorales as much as about positional encoding, and is why
 the Dyck follow-up was run.
+
+## Batch provenance (audit note, 2026-09-19)
+
+The contrasts here pair by seed index ACROSS run directories built on different days, not within one
+batch -- the repo's standing rule 3 asks for one batch. Mitigating: the arms share code (only new
+classes were added between the runs; the data and evaluation paths are byte-identical), the data
+stream is seeded identically, and the primary readings lean on a parameter-matched inert twin
+trained INSIDE the new batch. Unmitigated for the decay arms, which have no same-batch baseline.

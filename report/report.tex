@@ -1968,7 +1968,7 @@ RoPE-1L & 0.627 & 0.535 & 0.000 & 0.000 \\
 Three things follow. First, the paper's real claim survives and sharpens: a \emph{one-layer} path-integrated
 model learns the stack at the training distribution ($0.98$--$0.99$) where one-layer index models do not
 ($0.63$--$0.65$), and index models need a second layer to learn it, exactly as the transformer theory predicts
---- a distinction the F1 metric hides by scoring RoPE-1L at $0.912$. Second, ``perfect OOD generalisation''
+--- a distinction the F1 metric hides by scoring RoPE-1L at $0.912$ (the $0.910$ of Table~\ref{tab:dyck} is the same arm on the larger 1024-sequence evaluation). Second, ``perfect OOD generalisation''
 survives no standard metric: under the published per-sequence criterion MapWM falls from $0.672$ to $0.003$.
 Third, only under the paper's own F1 does the stack-free n-gram outscore every index model.
 % src: DYCK_LITERATURE_METRICS.md, DYCK_STACK_PROBE.md
@@ -2004,7 +2004,7 @@ $|k|\in[16,30]$). % src: INDIRECT_RESULTS.md, INDIRECT_RESULTS_200k.md, INDIRECT
 
 \paragraph{Bach Chorales replicates, and path integration adds nothing in distribution.} PoPE beats RoPE by
 $-0.032$ NLL (5/5 seeds; paper $-0.019$), with levels within $0.025$ of published. Path integration is
-unmeasured on both rows ($-0.005$ on the RoPE row, $+0.011$ on the PoPE row, 0/5 seeds better). This is the
+unmeasured on both rows ($-0.005$ on the RoPE row at 3/5 seeds, $+0.011$ on the PoPE row at 0/5). This is the
 first clean null for path integration on a natural-sequence task, and it was registered with no predicted
 direction. % src: JSB_RESULTS.md
 
@@ -2063,7 +2063,7 @@ further to $0.616$, better than MapWM at every bucket. % src: T1_RESULTS.md, T3_
 
 \paragraph{The boundary is a double dissociation.} The same per-token phase pays only where the accumulator
 leaves its trained range. On bounded accumulators it is neutral to harmful: Dyck-2 $-0.046$ against its own inert twin (\mde\ $0.043$; the forced-initialisation arm gives $-0.047$ but is unmeasured), and the torus $0.911$ against $0.963$ at $l=2048$ with a seed spread eight times the baseline's --- a ceiling condition, where only the forced-initialisation cell is detectable.
-Forcing the phase harder helps on music and hurts on both bounded tasks. % src: T3GEN_RESULTS.md
+Forcing the phase harder helps on music and hurts on the torus; on Dyck the two initialisations are indistinguishable. % src: T3GEN_RESULTS.md
 
 \paragraph{What is withdrawn.} Three of our own accounts died here and are recorded rather than removed:
 that the collapse is a rank or frequency-magnitude effect (refuted by the two sweeps above); that restoring a

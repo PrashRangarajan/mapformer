@@ -64,3 +64,11 @@ not, a per-token additive phase really is free on these tasks.
 **Power caveat on Part B**: at n=8 the solve-rate comparison is weak -- even the original
 5/8-vs-1/8 gap was only p = 0.119. A moderate cost would not be visible here. "No cost observed" is
 the honest claim, not "no cost exists".
+
+## Batch provenance (audit note, 2026-09-19)
+
+The contrasts here pair by seed index ACROSS run directories built on different days, not within one
+batch -- the repo's standing rule 3 asks for one batch. Mitigating: the arms share code (only new
+classes were added between the runs; the data and evaluation paths are byte-identical), the data
+stream is seeded identically, and the primary readings lean on a parameter-matched inert twin
+trained INSIDE the new batch. Unmitigated for the decay arms, which have no same-batch baseline.
