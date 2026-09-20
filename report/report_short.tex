@@ -498,9 +498,9 @@ generator knob by knob, the forget gate, hierarchy compute, the correction ablat
 
 Two published mechanisms were crossed on their own tasks: MapFormer's path integration (position is a
 cumulative sum of learned per-token increments) and PoPE's decoupling (content in the magnitude, position in
-the phase, with a constant phase offset). Each replicates: on Dyck-2 a one-layer path-integrated model
-learns the bracket stack where a one-layer index model does not, and on Bach Chorales PoPE beats RoPE by
-$-0.032$ NLL (5/5 seeds; paper $-0.019$). In distribution path integration adds nothing to PoPE (0/5 seeds
+the phase, with a constant phase offset). Each replicates in ordering, not in level: on Dyck-2 a one-layer path-integrated model learns the
+bracket stack where a one-layer index model does not, though every published MapFormer cell comes out
+$0.05$--$0.11$ low; and on Bach Chorales PoPE beats RoPE by $-0.032$ NLL (5/5 seeds; paper $-0.019$). In distribution path integration adds nothing to PoPE (0/5 seeds
 better). Beyond the training context the ordering inverts and the naive combination collapses.
 
 \begin{table}[h]\centering\footnotesize
@@ -524,7 +524,8 @@ The mechanism is not the accumulator: its growth exponent is $\alpha\approx1.00$
 arms, and they respond oppositely to compressing it at evaluation ($-1.70$ nats for MapPoPE, $+1.44$ for
 MapWM). It is that PoPE's kernel has non-negative amplitudes and a constant phase, so when the accumulated
 argument leaves the range training calibrated, content cannot shift the peak to compensate. Two
-interventions confirm it: bounding the accumulator helps MapPoPE $5.7\times$ more than MapWM, and restoring a
+interventions confirm it: shrinking the accumulator's excursion helps MapPoPE $5.7\times$ more than
+MapWM in absolute NLL (80\% of its gap against 47\% of MapWM's), and restoring a
 per-token phase --- accumulator untouched, parameter-matched inert twin flat --- removes the collapse. The
 boundary is a double dissociation: the same phase is neutral to harmful where the accumulator is bounded
 (Dyck-2 $-0.047$ against its inert twin; torus $0.911$ against $0.963$ at $l=2048$).

@@ -1973,10 +1973,13 @@ survives no standard metric: under the published per-sequence criterion MapWM fa
 Third, only under the paper's own F1 does the stack-free n-gram outscore every index model.
 % src: DYCK_LITERATURE_METRICS.md, DYCK_STACK_PROBE.md
 
+\paragraph{The floor verdict, stated.} On the paper's own metric at the hardest cell, neither headline MapFormer beats the stack-free n-gram: MapWM is $-0.016$ under it and MapEM $+0.003$ over it, and MapPoPE's $+0.042$ has \mde\ $0.046$, i.e. formally at the floor. Only the standard metrics of Table~\ref{tab:dyck-std} separate the models from a lookup table.
+% src: DYCK_RESULTS_POPE.md R7
+
 \paragraph{Reach, not capability.} Splitting closer accuracy by how far back the bracket to be closed was
 opened shows each model has a horizon rather than an ability: at $L=128$, $D=12$ all arms are near-perfect
 within two tokens, and at distance $33+$ MapPoPE is at $0.730$, MapWM $0.611$, RoPE $0.539$ and the n-gram
-$0.511$. Pushed to $L=512$ every model reaches chance beyond roughly 128 tokens of reach.
+$0.511$. Pushed to $L=512$ every model reaches chance beyond roughly 128 tokens of reach (\texttt{DYCK\_FAR\_PROBE.md}; that evaluation was run but uncommitted when this section was first written, and is committed now).
 % src: DYCK_STACK_PROBE.md
 
 %======================================================================
@@ -2008,8 +2011,7 @@ direction. % src: JSB_RESULTS.md
 \paragraph{Beyond the training context the ordering inverts, and the naive combination collapses.}
 Training on 512-token crops and scoring whole pieces by position bucket (Table~\ref{tab:jsb-len}), path
 integration wins and the win grows with distance ($-0.662$ at $2$--$4\times$, 5/5 seeds), PoPE's decoupling is
-itself a length win on the index row ($-0.461$), and \emph{MapPoPE---best of all arms in distribution---is
-the worst by far outside it}.
+itself a length win on the index row ($-0.461$), and \emph{MapPoPE---best of all arms in distribution in these 512-crop runs, though at the \mde\ boundary, and worse than PoPE on 5/5 seeds at full context---is the worst by far outside it}.
 
 \begin{table}[h]\centering\footnotesize
 \caption{Bach Chorales trained on 512-token crops; test NLL by position bucket, lower is better, 5 seeds.
@@ -2023,6 +2025,8 @@ PoPE & index, PoPE & 0.5403 & 0.6749 & 1.5973 \\
 MapWM & path int., RoPE & 0.5382 & 0.7835 & 1.3969 \\
 MapPoPE & path int., PoPE & 0.5235 & 1.9536 & 4.6158 \\
 \textbf{MapPoPE + per-token phase} & path int., PoPE${}^{+}$ & \textbf{0.5182} & \textbf{0.5629} & \textbf{0.6162} \\
+MapPoPE + decay envelope & path int., PoPE & 0.5498 & 0.5860 & 0.6223 \\
+PoPE + decay envelope & index, PoPE & 0.5580 & 0.5965 & 0.6262 \\
 \bottomrule
 \end{tabular}
 \label{tab:jsb-len}
@@ -2043,21 +2047,22 @@ MapWM's robustness is not that its argument stays in range but that content carr
 freedom which compression destroys. % src: THEORY_MAPPOPE.md
 
 \paragraph{Two reparameterisations fail to explain it.} Rank: the collapse survives $r=1$, $2$ and $4$
-($4.08$, $4.62$, $4.63$) and the rank effect is equally present on the MapWM control row. The $\omega$ base:
+($4.08$, $4.62$, $4.63$) and the rank effect is equally present on the MapWM control row --- where its
+direction is $r1 < r2 < r4$ ($0.912$, $1.397$, $1.660$ at $2$--$4\times$), inverting this project's
+torus-derived ``use $r=4$'' recommendation and recorded as an unresolved task-dependent conflict. The $\omega$ base:
 the predicted direction inverts --- base 512 is best and 32768 worst on \emph{both} rows --- so raising the
 base, the standard fix for index RoPE, is not the fix here. MapPoPE never beats MapWM out of distribution at
 any rank or base (0/5 seeds in every cell). % src: JSB_LENGTH_RESULTS_RANK.md, JSB_LENGTH_RESULTS_BASE.md
 
-\paragraph{Two interventions do.} Centring the increment, so the accumulator becomes a random walk rather
-than a clock, takes MapPoPE from $4.616$ to $0.911$ and MapWM from $1.397$ to $0.741$ --- a gain $5.7\times$
+\paragraph{Two interventions do.} Centring the increment, which shrinks the accumulator's excursion
+(\,$\alpha$ $1.00\to0.89$, range $3\times$ smaller --- not the random walk it was designed to be), takes MapPoPE from $4.616$ to $0.911$ and MapWM from $1.397$ to $0.741$ --- a gain $5.7\times$
 larger for the arm that cannot compensate, which was the registered discriminator. Giving $\delta$ a
 per-token component, leaving the accumulator untouched, takes MapPoPE to $0.733$ with a parameter-matched
 inert twin flat ($-0.167$, \mde\ $0.828$); forcing that phase away from zero at initialisation improves it
 further to $0.616$, better than MapWM at every bucket. % src: T1_RESULTS.md, T3_RESULTS.md, T3GEN_RESULTS.md
 
 \paragraph{The boundary is a double dissociation.} The same per-token phase pays only where the accumulator
-leaves its trained range. On bounded accumulators it is neutral to harmful: Dyck-2 $-0.047$ against its own
-inert twin, and the torus $0.911$ against $0.963$ at $l=2048$ with a seed spread eight times the baseline's.
+leaves its trained range. On bounded accumulators it is neutral to harmful: Dyck-2 $-0.046$ against its own inert twin (\mde\ $0.043$; the forced-initialisation arm gives $-0.047$ but is unmeasured), and the torus $0.911$ against $0.963$ at $l=2048$ with a seed spread eight times the baseline's --- a ceiling condition, where only the forced-initialisation cell is detectable.
 Forcing the phase harder helps on music and hurts on both bounded tasks. % src: T3GEN_RESULTS.md
 
 \paragraph{What is withdrawn.} Three of our own accounts died here and are recorded rather than removed:

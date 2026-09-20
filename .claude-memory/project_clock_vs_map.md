@@ -125,15 +125,6 @@ opens and closes cancel) it is the best arm out of distribution. Centring the in
 excursion -- recovers it to 0.911, a gain 5.7x larger than the same treatment gives MapWM, at a
 detectable in-distribution cost.
 
-**NEW CONSEQUENCE (2026-09-18, `THEORY_MAPPOPE.md`, `T1_RESULTS.md`): PoPE-style decoupling is only
-safe on the MAP side.** PoPE removes the pairwise phase (its `delta_c` is a per-head constant and its
-amplitudes are non-negative), so its kernel is calibrated absolutely in `S_t - S_s` and content cannot
-compensate when that argument leaves the trained range. On a clock (music, alpha = 1.00) MapPoPE
-collapses beyond the training context (4.62 vs MapWM 1.40); on a bounded accumulator (Dyck-2, where
-opens and closes cancel) it is the best arm out of distribution. Centring the increment -- 3x smaller
-excursion -- recovers it to 0.911, a gain 5.7x larger than the same treatment gives MapWM, at a
-detectable in-distribution cost.
-
 **BOUNDARY CONFIRMED ON THREE TASKS (2026-09-19, `T3GEN_RESULTS.md`).** A per-token phase added to
 PoPE pays only where the accumulator is a CLOCK: Bach with a 512 context (4.616 -> 0.616 at 2-4x with
 a forced init) and nothing where it is bounded -- Dyck-2 -0.046 against its own inert twin
@@ -155,14 +146,6 @@ Reruns at the corrected init (0.1) confirm it as a DOUBLE DISSOCIATION: Dyck -0.
 HURTS on bounded accumulators while it is the best configuration on a clock. The model does NOT
 decline the phase where it is useless (Dyck keeps 0.825 rad, more than Bach's zero-init 0.412) -- it
 uses it and is worse for it.
-
-**A DECAY ENVELOPE IS A PROXIMITY PRIOR IN THE POSITION VARIABLE'S OWN METRIC (2026-09-19,
-`DYCK_DECAY_RESULTS.md`).** The same ALiBi-style envelope (48 params) drives index PoPE to the no-stack
-n-gram level beyond distance 8 on Dyck (0.499 at d 9-32) and IMPROVES path-integrated MapPoPE there
-(0.778 at d 33+, best Dyck arm at F1 0.956). Reason, measured: the accumulated distance |S_t - S_s|
-correlates 0.862 with stack-DEPTH difference and only 0.238 with token distance, so decaying over it
-means "prefer keys at similar depth". On a clock accumulator (Bach) it degenerates to recency, which is
-why decay and path integration looked interchangeable there.
 
 **A DECAY ENVELOPE IS A PROXIMITY PRIOR IN THE POSITION VARIABLE'S OWN METRIC (2026-09-19,
 `DYCK_DECAY_RESULTS.md`).** The same ALiBi-style envelope (48 params) drives index PoPE to the no-stack

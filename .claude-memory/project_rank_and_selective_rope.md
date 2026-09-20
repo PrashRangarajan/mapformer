@@ -60,10 +60,3 @@ context, the ordering INVERTS -- MapWM r=1 is the best arm at every position buc
 torus needs a well-conditioned 2-D displacement basis, serialised music has no displacement to
 represent and a wider bottleneck mainly lets more content drive the phase. Unresolved.
 
-**CONFLICT (2026-09-17, `JSB_LENGTH_RESULTS_RANK.md`):** on Bach Chorales trained at a 512-token
-context, the ordering INVERTS -- MapWM r=1 is the best arm at every position bucket (0.912 NLL at
-2-4x beyond the context) against r=2's 1.397 and r=4's 1.660, detectable and growing with length.
-"Use r=4" remains a torus-navigation result; it is not a general rule. Suspected difference: the
-torus needs a well-conditioned 2-D displacement basis, serialised music has no displacement to
-represent and a wider bottleneck mainly lets more content drive the phase. Unresolved.
-
