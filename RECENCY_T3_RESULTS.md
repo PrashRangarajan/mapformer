@@ -31,3 +31,11 @@ baseline lands near 0.8. Not run here.
 **Also recorded**: `run_recency_t3.sh` reported `missing=24` at the end. That was the completeness
 check looking for `{variant}.json` while the trainer writes `{variant}_recency.json`; all 24 runs
 existed. The check was wrong, not the batch.
+
+## R3 (registered, reported 2026-09-20): the parameters alone help at long evaluation
+
+Inert twin - MapPoPE-Flat: +0.0003 (T=1024) and +0.0037 (T=2048), unmeasured; but **+0.0087 at
+T=4096 (MDE 0.0068, 8/8) and +0.0107 at T=8192 (MDE 0.0136, 7/8)**. R3 registered that this would be
+unmeasured, with the clause "if the parameters alone help, R1 is uninterpretable". They do help at
+4096, so the control arm is not flat -- a second and independent reason this batch cannot test the
+phase, on top of the ceiling.
