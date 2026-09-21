@@ -5,6 +5,29 @@ metadata:
   type: project
 ---
 
+## IN FLIGHT 2026-09-21 -- code modelling (the Dyck -> real-code transfer test)
+
+`run_code.sh`, 4 arms x 3 seeds in `runs/code`, ~3 h/wave, marker `.code_done`.
+Progress lives in `*_s{N}.partial.json`; the `.log` files stay EMPTY (Python buffers
+stdout under nohup). Full detail in CLAUDE.md's IN FLIGHT block.
+
+Question: MapPoPE beats both components ONLY on Dyck-2. Dyck's position variable is
+signed (`(` +1, `)` -1); real code nests, so the win should transfer if it is about
+bracket structure. Registered in `CODE_PREREG.md` with F1 as the killer: MapPoPE <= PoPE
+at every depth stratum means the account dies. **This is the same Dyck -> elsewhere
+generalisation that failed four times in the T2 line.**
+
+Two things already banked regardless of the outcome:
+- **The floor repeats the Dyck trap.** A stack-free n-gram scores 0.858 overall on this
+  task and always-`)` scores 0.696, so overall accuracy/bpc is floor-dominated; the
+  primary readout was registered instead at depth 5-8 / distance 33-128 (floor 0.272),
+  and 6 of 18 cells were marked uninformative before any run. Per-cell floor must be the
+  BETTER of n-gram and constant -- they cross, and at the primary cell local context
+  actively misleads (n-gram 0.272 < constant).
+- **Rule 20 closed**: `train_hourglass_enwik8.py` now saves checkpoints (`--save-ckpt`)
+  and takes `--data-val`; both opt-in, enwik8 runs unchanged.
+
+
 Repo `/home/prashr/mapformer`, single author, pushes to `PrashRangarajan/mapformer`.
 Memory mirrors to `.claude-memory/` in the repo. **`RESULTS_INDEX.md` (STALE since 2026-09-11 -- it predates the 09-12..15 and 09-15..20 lines; use the LATEST blocks instead)
 current-state file. `EM_WM_STATE.md` is the current account of the EM/WM + kernel-theory
