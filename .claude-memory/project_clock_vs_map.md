@@ -186,3 +186,19 @@ The Bach interventions (T1 5.7x, T3, decay) stand as facts about Bach at a 512 c
 uncontrolled alternatives: excursion size (551 vs 24), model size (6L/8H vs 1L/1H), frequency count,
 local solvability.
 
+**THE ONE POSITIVE RESULT (2026-09-20, `CROSS_RESULTS.md`): a decay envelope is a proximity prior in
+whatever metric it is given, and path integration makes a model insensitive to that choice.** 2x2 on
+Dyck, closer accuracy at distance >= 9 (chance 0.5): index phase 0.503 with a token-distance envelope
+against 0.784 with a learned-state envelope (+0.281, 8/8, DETECTABLE); path-integrated phase 0.873 vs
+0.906 (-0.033, unmeasured). The index/state arm learns a positional metric with NO phase role, purely
+through a distance bias, and that recovers most of the retrieval an index model otherwise loses.
+Untested on Bach, where a clock accumulator makes the two metrics nearly coincide.
+
+**THE ONE POSITIVE RESULT (2026-09-20, `CROSS_RESULTS.md`): a decay envelope is a proximity prior in
+whatever metric it is given, and path integration makes a model insensitive to that choice.** 2x2 on
+Dyck, closer accuracy at distance >= 9 (chance 0.5): index phase 0.503 with a token-distance envelope
+against 0.784 with a learned-state envelope (+0.281, 8/8, DETECTABLE); path-integrated phase 0.873 vs
+0.906 (-0.033, unmeasured). The index/state arm learns a positional metric with NO phase role, purely
+through a distance bias, and that recovers most of the retrieval an index model otherwise loses.
+Untested on Bach, where a clock accumulator makes the two metrics nearly coincide.
+
