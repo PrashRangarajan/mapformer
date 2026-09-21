@@ -164,3 +164,18 @@ class MapFormerWM_RoPEIndex_PoPE_Decay_StateMetric(MapFormerWM_RoPEIndex_PoPE_De
             layer._dist = dist
             x = layer(x, cos_a, sin_a, m)
         return self.out_proj(self.out_norm(x))
+
+
+class MapFormerWM_RoPEIndex_PoPE_Decay_FrozenMetric(MapFormerWM_RoPEIndex_PoPE_Decay_StateMetric):
+    """The control for the crossed index arm (audit, 2026-09-20).
+
+    Identical parameters to the learned-state arm, and the envelope still decays over a STATE
+    distance -- but the increment map is frozen at initialisation, so the metric is a fixed random
+    projection rather than something training shapes. Separates three things the crossed arm bundles:
+    the extra 256 parameters, having any non-token metric at all, and LEARNING that metric.
+    """
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        for p in self.metric_map.parameters():
+            p.requires_grad_(False)

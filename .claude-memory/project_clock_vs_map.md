@@ -209,4 +209,16 @@ Bach amendment: the same crossing there moves nothing (index row +0.005, path ro
 unmeasured) because on a clock accumulator the learned-state distance and token distance are THE SAME
 METRIC -- measured r = 1.000 +/- 0.000 across 5 seeds, against Dyck's 0.278. So clock/map survives in
 one narrow, measured role: it predicts WHEN the metric choice can matter at all.
+AUDIT REVISION (2026-09-20): every number reproduces, but two conclusions were withdrawn. "Path
+integration confers insensitivity" is a NULL (at d 33+ its metric effect is +0.154, 69% of the index
+row's, unmeasured only because the MDE is bigger); the index-row +0.281 is COLLINEAR with a
+convergence gap (r = -0.995, non-overlapping training losses) and the arm carries +256 parameters, so
+a frozen-metric control is running. What survives: on Dyck an index model'"'"'s envelope destroys
+long-range retrieval over token distance and does not over a learned state, confounds pending.
+AUDIT REVISION (2026-09-20): every number reproduces, but two conclusions were withdrawn. "Path
+integration confers insensitivity" is a NULL (at d 33+ its metric effect is +0.154, 69% of the index
+row's, unmeasured only because the MDE is bigger); the index-row +0.281 is COLLINEAR with a
+convergence gap (r = -0.995, non-overlapping training losses) and the arm carries +256 parameters, so
+a frozen-metric control is running. What survives: on Dyck an index model'"'"'s envelope destroys
+long-range retrieval over token distance and does not over a learned state, confounds pending.
 
