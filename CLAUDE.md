@@ -1,5 +1,58 @@
 # CLAUDE.md — Project Memory for MapFormer
 
+## LATEST, 2026-09-15..20 -- the Dyck-2 and PoPE-paper line (read `.claude-memory/project_state.md`)
+
+**Nothing running. Not pushed. ~110 commits ahead of origin.**
+
+**Replications.**
+- **Dyck-2** (`DYCK_RESULTS_bs128.md`, `DYCK_RESULTS_POPE.md`, n=8): the ORDERING replicates
+  (MapFormer-1L - RoPE-2L +0.37/+0.39 at L128 D12, 8/8; paper +0.44), the LEVELS do not (every
+  published MapFormer cell 0.015-0.112 low). MapPoPE-1L is the best arm (0.927).
+- **Indirect Indexing** (PoPE paper, `INDIRECT_RESULTS_200k.md`): replicates at 200k iterations
+  (7/8 solve, mean 0.965 vs paper 0.948). At their 100k budget it does NOT (1/8) -- the task is a
+  late-transition search problem. Path integration buys SPEED, not capability (8/8 vs 7/8, p=1.0).
+- **Bach Chorales** (PoPE paper, `JSB_RESULTS.md`): replicates (-0.032 NLL, 5/5; paper -0.019).
+  Path integration adds NOTHING in their setup (+0.011 on the PoPE row, 0/5).
+
+**The main new result.** Beyond the training context (512-token crops, `JSB_LENGTH_RESULTS.md`)
+path integration wins (-0.662 vs RoPE at 2-4x) and **the naive combination collapses**: MapPoPE is
+best in distribution (0.5235) and worst outside it (4.6158, against plain RoPE's 2.059). Three
+repairs work, all on Bach: centring the accumulator (0.911), a per-token phase (0.616 forced),
+and a 48-parameter ALiBi-style decay envelope (0.622). The envelope also repairs PoPE alone
+(1.597 -> 0.626).
+
+**Two methodological results that outlast the rest.**
+- **The Dyck F1 metric has a 0.88 no-stack floor** (`DYCK_LITERATURE_METRICS.md`): an n-gram scores
+  0.857 at the hardest cell, above every index model. Use the literature's metrics -- Hewitt's
+  distance-stratified closing accuracy (chance 0.5) and the Suzgun/Bhattamishra set criterion.
+- **JSB is overfitting-limited by 3x** (`AUG_RESULTS.md`): pitch transposition, which PoPE's own
+  paper uses on MAESTRO but not JSB, is worth 0.107 NLL against the 0.032 separating PoPE from RoPE.
+  Augmented PoPE reaches 0.3936 against their published 0.4889.
+
+**What was WITHDRAWN (read before reusing any of it).** A mechanistic account -- out-of-range
+accumulator plus a kernel that cannot compensate -- explained all three repairs and made correct
+predictions inside Bach, then **both halves failed within-task** when Dyck's accumulator was forced
+into a clock (`T2_RESULTS.md`): PoPE helped MORE (+0.159 vs +0.058) and the phase hurt MORE
+(-0.143, 0/8, detectable). Four of my predictions failed in this line, each one a generalisation
+from a within-task intervention to a cross-task rule. **The interventions replicated every time;
+the generalisations never did.**
+
+**The one positive claim, at its current strength** (`CROSS_RESULTS.md`): a decay envelope can
+destroy long-range retrieval, and two separable things decide how much -- **how steeply it suppresses
+distant tokens (explains ~half, +0.136 of +0.281, 8/8) and what it treats as distance (explains the
+rest, +0.145 at matched strength, 8/8)**. A FROZEN state metric is indistinguishable from simply
+weakening the envelope. The residual is confounded with convergence (losses order with accuracy,
+r=-0.987, non-overlapping) and that cannot be broken in this design.
+
+**Rules bought.**
+- Report the task's measured FLOOR beside every headline -- two batches here were read below it.
+- A registered readout must be reported even when the verdict looks obvious (floor, lambda, R3 were
+  all registered and initially skipped).
+- Commit the script for every number: four separate figures had none and two did not reproduce.
+- An effect measured against a control that trains better is not attributable; check loss overlap
+  BEFORE the batch, not after.
+- A second driver copy of a launcher is a duplicate-launch hazard; kill extras before they race.
+
 ## LATEST, 2026-09-12..15 (read `.claude-memory/project_state.md` LATEST block; nothing running; not pushed)
 
 **Report.**
