@@ -119,6 +119,8 @@ def main():
     ap.add_argument("--which", default="best", choices=["best", "final", "both"])
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--seq-len", type=int, default=512)
+    ap.add_argument("--pattern", default="*",
+                    help="restrict to checkpoints whose stem matches, e.g. '*_s0.*'")
     ap.add_argument("--check-alignment", action="store_true",
                     help="verify logits[t] predicts data[i+t+1] against +/-1 shifts")
     ap.add_argument("--out", default=os.path.join(_REPO, "CODE_DELIMS.json"))
@@ -133,7 +135,7 @@ def main():
     wanted = ["best", "final"] if args.which == "both" else [args.which]
 
     out = {}
-    for ck in sorted(Path(args.runs_dir).glob("*.pt")):
+    for ck in sorted(Path(args.runs_dir).glob(f"{args.pattern}.pt")):
         stem = ck.name.replace(".pt", "")
         base, _, kindk = stem.rpartition(".")
         if kindk not in wanted:

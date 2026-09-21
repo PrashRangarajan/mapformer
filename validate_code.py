@@ -38,6 +38,36 @@ DEPTH_BINS = [(1, 1), (2, 2), (3, 4), (5, 8), (9, 10 ** 9)]
 DIST_BINS = [(0, 2), (3, 8), (9, 32), (33, 128), (129, 10 ** 9)]
 
 
+def fit_ngram(tdata, tpos, tkind, order):
+    """Backoff n-gram over the `order` bytes preceding a closer -> which closer.
+
+    Shared with eval_code_long.py so the floor is never computed twice by two
+    implementations that can drift apart.
+    """
+    tables = [defaultdict(Counter) for _ in range(order + 1)]
+    ctxs = np.stack([tdata[np.clip(tpos - o, 0, None)] for o in range(order, 0, -1)], axis=1)
+    for c, k in zip(ctxs, tkind):
+        key = tuple(int(x) for x in c)
+        for o in range(order, -1, -1):
+            tables[o][key[order - o:]][int(k)] += 1
+    return tables
+
+
+def predict_ngram(tables, data, pos, order):
+    ctx = np.stack([data[np.clip(pos - o, 0, None)] for o in range(order, 0, -1)], axis=1)
+    preds = np.empty(len(pos), dtype=np.int64)
+    for i, c in enumerate(ctx):
+        key = tuple(int(x) for x in c)
+        for o in range(order, -1, -1):
+            t = tables[o].get(key[order - o:])
+            if t:
+                preds[i] = max(t, key=t.get)
+                break
+        else:
+            preds[i] = 0
+    return preds
+
+
 def bin_of(v, bins):
     for i, (lo, hi) in enumerate(bins):
         if lo <= v <= hi:
@@ -156,23 +186,8 @@ def main():
     tdata, tpos, tkind, topen, tdepth = load(dd, "train")
     best = {}
     for order in range(1, args.max_order + 1):
-        tables = [defaultdict(Counter) for _ in range(order + 1)]
-        ctxs = np.stack([tdata[np.clip(tpos - o, 0, None)] for o in range(order, 0, -1)], axis=1)
-        for c, k in zip(ctxs, tkind):
-            key = tuple(int(x) for x in c)
-            for o in range(order, -1, -1):
-                tables[o][key[order - o:]][int(k)] += 1
-        vctx = np.stack([data[np.clip(pos - o, 0, None)] for o in range(order, 0, -1)], axis=1)
-        preds = np.empty(len(pos), dtype=np.int64)
-        for i, c in enumerate(vctx):
-            key = tuple(int(x) for x in c)
-            for o in range(order, -1, -1):
-                t = tables[o].get(key[order - o:])
-                if t:
-                    preds[i] = max(t, key=t.get)
-                    break
-            else:
-                preds[i] = 0
+        tables = fit_ngram(tdata, tpos, tkind, order)
+        preds = predict_ngram(tables, data, pos, order)
         acc = float((preds == kind).mean())
         best[order] = (acc, preds)
         say(f"- order {order}: overall **{acc:.3f}**")
