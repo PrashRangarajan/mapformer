@@ -2,14 +2,26 @@
 
 ## LATEST, 2026-09-15..20 -- the Dyck-2 and PoPE-paper line (read `.claude-memory/project_state.md`)
 
-**Nothing running. Not pushed. ~110 commits ahead of origin.**
+**Nothing running. Not pushed.**
+
+**Run directories** (none are named in the results files for the Bach line): Dyck `runs/dyck_bs128`,
+`runs/dyck_t2` (monotone), `runs/dyck_cross` (metric crossing), `runs/dyck_decay`, `runs/dyck_lam`
+(matched strength), `runs/dyck_t3`; Indirect `runs/indirect`, `runs/indirect_200k`, `runs/indirect_t3`;
+Bach `runs/jsb` (full context), `runs/jsb_len512` (512 crops), `runs/jsb_centered` (T1),
+`runs/jsb_t3` + `runs/jsb_forced` (T3), `runs/jsb_decay`, `runs/jsb_cross`, `runs/jsb_aug`,
+`runs/jsb_base{512,8192,32768}`; torus `runs/torus_t3`; recency `runs/recency_t3`.
+
+**Also read, not linked above**: `RECENCY_T3_RESULTS.md` (the recency-as-clock batch is VOID for
+ceiling -- do not re-run it blind), `TORUS_T3_RESULTS.md`, `INDIRECT_OOD.md`, `DYCK_FAR_PROBE.md`,
+`DYCK_DECAY_PROBE.md`, `T3GEN_RESULTS.md`, `DYCK_GATES.md` (the floor's source).
+`DYCK_T3_RESULTS.md` is an EMPTY artefact of a mis-set analysis script -- ignore it.
 
 **Replications.**
 - **Dyck-2** (`DYCK_RESULTS_bs128.md`, `DYCK_RESULTS_POPE.md`, n=8): the ORDERING replicates
-  (MapFormer-1L - RoPE-2L +0.37/+0.39 at L128 D12, 8/8; paper +0.44), the LEVELS do not (every
+  (MapFormer-1L - RoPE-2L +0.370 WM / +0.390 EM at L128 D12, 8/8; paper +0.44 / +0.45), the LEVELS do not (every
   published MapFormer cell 0.015-0.112 low). MapPoPE-1L is the best arm (0.927).
 - **Indirect Indexing** (PoPE paper, `INDIRECT_RESULTS_200k.md`): replicates at 200k iterations
-  (7/8 solve, mean 0.965 vs paper 0.948). At their 100k budget it does NOT (1/8) -- the task is a
+  (7/8 solve; 0.965 is the mean AMONG SOLVERS against the paper's all-run 0.948). At their 100k budget it does NOT (1/8) -- the task is a
   late-transition search problem. Path integration buys SPEED, not capability (8/8 vs 7/8, p=1.0).
 - **Bach Chorales** (PoPE paper, `JSB_RESULTS.md`): replicates (-0.032 NLL, 5/5; paper -0.019).
   Path integration adds NOTHING in their setup (+0.011 on the PoPE row, 0/5).
@@ -33,7 +45,7 @@ and a 48-parameter ALiBi-style decay envelope (0.622). The envelope also repairs
 accumulator plus a kernel that cannot compensate -- explained all three repairs and made correct
 predictions inside Bach, then **both halves failed within-task** when Dyck's accumulator was forced
 into a clock (`T2_RESULTS.md`): PoPE helped MORE (+0.159 vs +0.058) and the phase hurt MORE
-(-0.143, 0/8, detectable). Four of my predictions failed in this line, each one a generalisation
+(-0.063 to -0.143 depending on the control, both detectable; T2c matches the initialisation). Four of my predictions failed in this line, each one a generalisation
 from a within-task intervention to a cross-task rule. **The interventions replicated every time;
 the generalisations never did.**
 
@@ -42,7 +54,7 @@ destroy long-range retrieval, and two separable things decide how much -- **how 
 distant tokens (explains ~half, +0.136 of +0.281, 8/8) and what it treats as distance (explains the
 rest, +0.145 at matched strength, 8/8)**. A FROZEN state metric is indistinguishable from simply
 weakening the envelope. The residual is confounded with convergence (losses order with accuracy,
-r=-0.987, non-overlapping) and that cannot be broken in this design.
+r=-0.995, non-overlapping) and that cannot be broken in this design.
 
 **Rules bought.**
 - Report the task's measured FLOOR beside every headline -- two batches here were read below it.

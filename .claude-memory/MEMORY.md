@@ -1,6 +1,6 @@
 ## Project state and findings
 
-- [Project state snapshot](project_state.md) — **read first.** LATEST block 2026-09-15: report, COUNTER, addition line, open decisions.
+- [Project state snapshot](project_state.md) — **read first.** LATEST 2026-09-15..20: Dyck-2 and the PoPE-paper line, three replications, one withdrawn account.
 - [EM vs WM mechanism](feedback_em_vs_wm_mechanism.md) — WM NOT additive; EM deficit is SEARCH; COUNTER batch: not counter, not bottleneck.
 - [Clock vs map: what cancellation chooses](project_clock_vs_map.md) — signed = map, monotone = clock (stands); the PoPE-decoupling corollary is WITHDRAWN (2026-09-20).
 - [The sign of the phase increment](project_sign_axis.md) — a monotone clock cannot represent a −1 action. Prior art: Sarrof/Grazzi/SRoPE.

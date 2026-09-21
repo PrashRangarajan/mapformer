@@ -6,7 +6,7 @@ metadata:
 ---
 
 Repo `/home/prashr/mapformer`, single author, pushes to `PrashRangarajan/mapformer`.
-Memory mirrors to `.claude-memory/` in the repo. **`RESULTS_INDEX.md` is the maintained
+Memory mirrors to `.claude-memory/` in the repo. **`RESULTS_INDEX.md` (STALE since 2026-09-11 -- it predates the 09-12..15 and 09-15..20 lines; use the LATEST blocks instead)
 current-state file. `EM_WM_STATE.md` is the current account of the EM/WM + kernel-theory
 line. `CLAUDE.md` is the chronological log, with a START HERE block at the top.** This note
 is orientation, not a substitute. Updated 2026-09-15.

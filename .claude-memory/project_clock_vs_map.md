@@ -152,7 +152,7 @@ uses it and is worse for it.
 n-gram level beyond distance 8 on Dyck (0.499 at d 9-32) and IMPROVES path-integrated MapPoPE there
 (0.778 at d 33+, best Dyck arm at F1 0.956). Reason, measured: the accumulated distance |S_t - S_s|
 correlates 0.755 with stack-DEPTH difference and only 0.278 with token distance (8 seeds,
-`probe_dyck_metric.py`); the crossed arm that would isolate the metric is NOT run, so decaying over it
+`probe_dyck_metric.py`); the crossed arm has since been RUN (CROSS_RESULTS.md), so decaying over it
 means "prefer keys at similar depth". On a clock accumulator (Bach) it degenerates to recency, which is
 why decay and path integration looked interchangeable there.
 
@@ -186,16 +186,18 @@ The Bach interventions (T1 5.7x, T3, decay) stand as facts about Bach at a 512 c
 uncontrolled alternatives: excursion size (551 vs 24), model size (6L/8H vs 1L/1H), frequency count,
 local solvability.
 
-**THE ONE POSITIVE RESULT (2026-09-20, `CROSS_RESULTS.md`): a decay envelope is a proximity prior in
-whatever metric it is given, and path integration makes a model insensitive to that choice.** 2x2 on
+**[SECOND HALF WITHDRAWN 2026-09-20 -- 'insensitive' is a NULL; see the audit revision below]
+THE POSITIVE RESULT (`CROSS_RESULTS.md`): a decay envelope is a proximity prior in whatever metric it
+is given.** 2x2 on
 Dyck, closer accuracy at distance >= 9 (chance 0.5): index phase 0.503 with a token-distance envelope
 against 0.784 with a learned-state envelope (+0.281, 8/8, DETECTABLE); path-integrated phase 0.873 vs
 0.906 (-0.033, unmeasured). The index/state arm learns a positional metric with NO phase role, purely
 through a distance bias, and that recovers most of the retrieval an index model otherwise loses.
 Untested on Bach, where a clock accumulator makes the two metrics nearly coincide.
 
-**THE ONE POSITIVE RESULT (2026-09-20, `CROSS_RESULTS.md`): a decay envelope is a proximity prior in
-whatever metric it is given, and path integration makes a model insensitive to that choice.** 2x2 on
+**[SECOND HALF WITHDRAWN 2026-09-20 -- 'insensitive' is a NULL; see the audit revision below]
+THE POSITIVE RESULT (`CROSS_RESULTS.md`): a decay envelope is a proximity prior in whatever metric it
+is given.** 2x2 on
 Dyck, closer accuracy at distance >= 9 (chance 0.5): index phase 0.503 with a token-distance envelope
 against 0.784 with a learned-state envelope (+0.281, 8/8, DETECTABLE); path-integrated phase 0.873 vs
 0.906 (-0.033, unmeasured). The index/state arm learns a positional metric with NO phase role, purely
@@ -213,13 +215,13 @@ AUDIT REVISION (2026-09-20): every number reproduces, but two conclusions were w
 integration confers insensitivity" is a NULL (at d 33+ its metric effect is +0.154, 69% of the index
 row's, unmeasured only because the MDE is bigger); the index-row +0.281 is COLLINEAR with a
 convergence gap (r = -0.995, non-overlapping training losses) and the arm carries +256 parameters, so
-a frozen-metric control is running. What survives: on Dyck an index model'"'"'s envelope destroys
+a frozen-metric control was run: 0.681, indistinguishable from simply weakening the envelope. What survives: on Dyck an index model's envelope destroys
 long-range retrieval over token distance and does not over a learned state, confounds pending.
 AUDIT REVISION (2026-09-20): every number reproduces, but two conclusions were withdrawn. "Path
 integration confers insensitivity" is a NULL (at d 33+ its metric effect is +0.154, 69% of the index
 row's, unmeasured only because the MDE is bigger); the index-row +0.281 is COLLINEAR with a
 convergence gap (r = -0.995, non-overlapping training losses) and the arm carries +256 parameters, so
-a frozen-metric control is running. What survives: on Dyck an index model'"'"'s envelope destroys
+a frozen-metric control was run: 0.681, indistinguishable from simply weakening the envelope. What survives: on Dyck an index model's envelope destroys
 long-range retrieval over token distance and does not over a learned state, confounds pending.
 MATCHED-STRENGTH CONTROL (2026-09-20): the +0.281 SPLITS. Weakening the token envelope to the state
 arm's effective penalty (26 -> 2 logits at token distance 64) recovers +0.136 (8/8, DET); at matched
