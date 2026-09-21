@@ -201,4 +201,12 @@ against 0.784 with a learned-state envelope (+0.281, 8/8, DETECTABLE); path-inte
 0.906 (-0.033, unmeasured). The index/state arm learns a positional metric with NO phase role, purely
 through a distance bias, and that recovers most of the retrieval an index model otherwise loses.
 Untested on Bach, where a clock accumulator makes the two metrics nearly coincide.
+Bach amendment: the same crossing there moves nothing (index row +0.005, path row +0.011, both
+unmeasured) because on a clock accumulator the learned-state distance and token distance are THE SAME
+METRIC -- measured r = 1.000 +/- 0.000 across 5 seeds, against Dyck's 0.278. So clock/map survives in
+one narrow, measured role: it predicts WHEN the metric choice can matter at all.
+Bach amendment: the same crossing there moves nothing (index row +0.005, path row +0.011, both
+unmeasured) because on a clock accumulator the learned-state distance and token distance are THE SAME
+METRIC -- measured r = 1.000 +/- 0.000 across 5 seeds, against Dyck's 0.278. So clock/map survives in
+one narrow, measured role: it predicts WHEN the metric choice can matter at all.
 

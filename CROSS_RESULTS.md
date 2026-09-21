@@ -42,3 +42,35 @@ than inferred from a confounded contrast. Scope: one task, one model size (1 lay
 envelope family (ALiBi-style linear-in-distance), 8 seeds. It has not been tested on Bach, where the
 accumulator is a clock and the metric and token distance nearly coincide -- which is the obvious next
 test and would say whether "the metric is what matters" survives where the two metrics agree.
+
+## Amendment 1: the same crossing on Bach, where the two metrics coincide
+
+5 seeds, 512-crop setup, test NLL by position bucket (lower is better).
+
+| | decay over TOKEN distance | decay over LEARNED STATE |
+|---|---|---|
+| **index phase** | 0.6262 | 0.6314 |
+| **path-integrated phase** | 0.6332 | 0.6223 |
+
+- **X1 CONFIRMED.** Swapping the envelope's metric moves the index row by **+0.005** (MDE 0.019) and
+  the path row by **+0.011** (MDE 0.014) at 2-4x beyond the training context. Both unmeasured, and
+  both an order of magnitude smaller than Dyck's +0.281.
+- **The registered explanation is now measured rather than inferred.** On Bach the learned-state
+  distance and token distance correlate at **r = 1.000 +/- 0.000** across 5 seeds; on Dyck the same
+  quantity correlates 0.278 with token distance and 0.755 with stack depth. The metrics do not merely
+  behave alike on Bach, they are the same metric to three decimals, so there is nothing for the swap
+  to change. That is exactly why the result is uninformative about the claim and was registered as
+  the weak outcome in advance.
+- **X3 does not fire**: neither swap hurts detectably, so nothing here contradicts the Dyck result.
+
+## Where the claim stands after both tasks
+
+**A decay envelope is a proximity prior in whatever metric it is given.** The claim is supported where
+the metrics differ (Dyck: +0.281 on the index row, 8/8, detectable) and untestable where they
+coincide (Bach: r = 1.000, swap worth +0.005). The clock/map distinction earns a narrow, measured
+role here that it did not earn as a rule about kernels: **it predicts WHEN the choice of metric can
+matter at all** -- a clock accumulator is a token counter, so its state metric and token distance are
+the same thing, while a map accumulator encodes something else and the choice becomes load-bearing.
+
+That is a smaller claim than the one withdrawn on 2026-09-20, and unlike it, it now has a crossed
+design behind it on one task and a measured null-by-construction on the other.
