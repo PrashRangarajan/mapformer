@@ -35,7 +35,7 @@ from mapformer.model_dyck_monotone import (MapFormerWM_Abs, MapFormerWM_PoPE_Abs
 LS, DS = [32, 64, 96, 128], [4, 6, 8, 12]
 
 
-def build(arch, vocab, n_layers, n_heads, rank, base):
+def build(arch, vocab, n_layers, n_heads, rank, base, lam_init=None):
     d = 64 * n_heads
     kw = dict(vocab_size=vocab, d_model=d, n_heads=n_heads, n_layers=n_layers, grid_size=base)
     if arch == "MapWM": return MapFormerWM(bottleneck_r=rank, **kw)
@@ -47,6 +47,8 @@ def build(arch, vocab, n_layers, n_heads, rank, base):
     if arch == "MapPoPE_T3": return MapFormerWM_PoPE_T3(bottleneck_r=rank, **kw)
     if arch == "MapPoPE_T3inert": return MapFormerWM_PoPE_T3_Inert(bottleneck_r=rank, **kw)
     if arch == "MapPoPE_T3pi01": return MapFormerWM_PoPE_T3_PI01(bottleneck_r=rank, **kw)
+    if lam_init is not None:
+        kw["lam_init"] = lam_init
     if arch == "MapPoPE_decay": return MapFormerWM_PoPE_Decay(bottleneck_r=rank, **kw)
     if arch == "PoPE_decay": return MapFormerWM_RoPEIndex_PoPE_Decay(**kw)
     if arch == "MapPoPE_decay_idxmetric": return MapFormerWM_PoPE_Decay_IdxMetric(bottleneck_r=rank, **kw)
@@ -92,6 +94,9 @@ def main():
     ap.add_argument("--n-heads", type=int, required=True)
     ap.add_argument("--rank", type=int, default=2)
     ap.add_argument("--base", type=int, default=32)
+    ap.add_argument("--lam-init", type=float, default=None,
+                    help="decay arms: override the ALiBi geometric init with a constant, to match "
+                         "the EFFECTIVE penalty of another arm at a given token distance")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--n-sequences", type=int, default=560_000)
     ap.add_argument("--batch-size", type=int, default=128)
@@ -107,9 +112,11 @@ def main():
     torch.manual_seed(a.seed)
     rng = np.random.default_rng(a.seed)
     world = DyckWorld()
-    model = build(a.arch, world.vocab_size, a.n_layers, a.n_heads, a.rank, a.base).to(dev)
+    model = build(a.arch, world.vocab_size, a.n_layers, a.n_heads, a.rank, a.base, a.lam_init).to(dev)
     n_par = sum(p.numel() for p in model.parameters())
     name = f"{a.arch}-{a.n_layers}L" + (f"_r{a.rank}" if a.arch.startswith(("MapWM", "MapEM", "MapPoPE")) else "")
+    if a.lam_init is not None:
+        name += f"_lam{a.lam_init:g}"
     print(f"{name} seed={a.seed} params={n_par:,} d_model={64 * a.n_heads}", flush=True)
 
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=a.weight_decay)
