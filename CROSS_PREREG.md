@@ -36,3 +36,26 @@ index arm a learned increment map is added that feeds the METRIC ONLY -- the att
 
 **Stakes**: C1 is the only positive theoretical claim to come out of this line that has not yet been
 tested. If it fails, the line is entirely eliminative.
+
+## Amendment 1 (2026-09-20): the same crossing on Bach, where the two metrics nearly coincide
+
+The Dyck crossing fired: swapping the envelope's metric moves the INDEX row by +0.281 (8/8,
+detectable) and the path-integrated row not at all. Dyck is the favourable case for the claim,
+because its accumulator is a map encoding stack depth, so the learned state and token distance mean
+genuinely different things (they correlate 0.755 vs 0.278 with depth and token distance).
+
+Bach is the unfavourable case: its accumulator is a clock (alpha = 1.00), so a learned state is close
+to a token count and the two metrics nearly agree. Same 2x2, 5 seeds, the 512-crop setup that
+produced the existing decay results. Two cells exist (`PoPE_decay` 0.6262, `MapPoPE_decay` 0.6223 at
+2-4x); two are new.
+
+- **X1 (registered prediction)**: swapping the metric should do LITTLE on either row, because on a
+  clock the two metrics nearly coincide -- unlike Dyck. Specifically, the index-row swap should be far
+  smaller than Dyck's +0.281.
+- **X2**: if instead the index row gains substantially here too, then the learned state is doing
+  something beyond counting even when its growth exponent says it is a clock, and "the metric is what
+  matters" is a stronger claim than the coincidence argument allows.
+- **X3 (falsifier for the coincidence argument)**: if swapping the metric HURTS either row detectably
+  on Bach, the metric claim does not transfer and the Dyck result is task-specific.
+- Reported alongside: the correlation between the learned state distance and token distance on Bach,
+  which is the quantity the coincidence argument rests on and has never been measured there.
