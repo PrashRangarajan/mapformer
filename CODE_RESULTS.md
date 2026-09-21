@@ -120,6 +120,36 @@ All 12 runs trained in one batch. Contrasts, MDEs and sign counts in
 - MapPoPE and PoPE final training losses OVERLAP, so a loss-matched residual
   would be permissible here; it is not needed given r.
 
+
+## The advantage is NOT a stack effect (`probe_code_depth0.py`, registered before running)
+
+Partitioning every predicted byte in the far bucket by the nesting depth at that
+byte, reconstructed from genuine bracket pairs (so brackets inside strings and
+comments never count):
+
+| MapPoPE - PoPE, bpc at 1024-2048 | effect | verdict |
+|---|---|---|
+| all far positions | -0.1016 (MDE 0.0521) | DETECTABLE 3/3 |
+| **depth 0 -- NO open bracket** | **-0.0998 (MDE 0.0510)** | DETECTABLE 3/3 |
+| depth >=1 | -0.1047 (MDE 0.0560) | DETECTABLE 3/3 |
+| depth >=3 | -0.0936 (MDE 0.0120) | DETECTABLE 3/3 |
+
+Flat across depth; **98% of the advantage survives where no bracket is open at
+all** (depth 0 is 1,919,002 of 2,993,152 scored bytes). Same for the encoding
+gap: MapPoPE - MapWM is -3.70 at depth 0 and -3.99 at depth >=1.
+
+**THE EXPERIMENT'S RATIONALE IS NOT SUPPORTED.** The reason for running a code
+corpus was that Dyck's positional variable is signed push/pop and real code
+nests, so MapPoPE's Dyck win should transfer. Three measurements say otherwise:
+1. the direct test of nesting (in-distribution bracket accuracy) is a CEILING;
+2. the accumulator learns **alpha = 1.000** -- a clock, not the signed map
+   (alpha 0.609) MapWM learns on Dyck (`probe_code_accum.py`);
+3. the advantage is **depth-independent**, surviving in full at depth 0.
+
+What remains is a pure CONTEXT-LENGTH effect. It is real and detectable, but no
+code corpus was needed to find it, and the nesting account gets no support here.
+Fifth failed Dyck -> elsewhere generalisation in this line.
+
 ## Caveats that must travel with these numbers
 
 - **n=3.** Small for this project. The MapPoPE-over-PoPE margin clears its MDE
