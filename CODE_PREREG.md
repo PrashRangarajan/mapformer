@@ -115,3 +115,72 @@ itself establishes shape and convergence only and will not be read as a result.
 - Any gate regressing (`validate_code.py` exits non-zero).
 - Arms not converged: loss still falling steeply at 36k, checked before reading.
 - Any arm trained from different code than the others, or in a different batch.
+
+---
+
+# Amendment 1 (2026-09-21): the in-distribution test is a CEILING; the OOD readout
+
+Written after seeing the seed-0 in-distribution table and BEFORE computing any
+out-of-distribution number.
+
+## What happened
+
+Every arm solves the registered primary cell: RoPE 1.000, MapWM 0.996, PoPE 0.965,
+MapPoPE 0.959, against a floor of 0.272. **13 of 17 cells are at or above 0.98 for every
+arm**, and overall closer accuracy is 0.997-0.998. The in-distribution readout is a
+ceiling and shows ~0 by construction.
+
+**The verdict on P2/F1 is "uninformative", NOT "MapPoPE loses".** MapPoPE is numerically
+last at the primary cell; that is a ceiling difference and is not reported as F1 firing.
+Rule 11 covers exactly this: conditioning into a ceiling shows nothing either way.
+
+## The design error this exposes
+
+MapPoPE's Dyck-2 win was measured by training on L32/D4 and testing at **L128/D12** --
+out of distribution on both length and depth. This batch trained at seq 512 and tested at
+seq 512, i.e. in the one regime the Dyck result gives no reason to expect a difference.
+The surviving signal agrees: the ONLY cells with any spread are the longest-distance ones
+(d2-2/x129+ spread 0.073, the largest in the table).
+
+## Why the OOD test is decisive rather than a salvage attempt
+
+The two existing results **contradict each other** and code breaks the tie:
+- **Dyck-2**: MapPoPE is the BEST arm out of distribution (0.719 at L128/D12).
+- **Bach at a 512 crop**: MapPoPE is best in distribution and **COLLAPSES** out of it
+  (4.616 at 2-4x, against plain RoPE's 2.059).
+`JSB_LENGTH_RESULTS.md` flags this contradiction explicitly and attributes it to scale
+and to Dyck's explicit push/pop structure. Real code has push/pop structure AND natural-
+sequence scale, so it discriminates between those two explanations.
+
+## The OOD readout, fixed now
+
+Same checkpoints, evaluated at crop length **2048** (4x the training context; verified all
+four arms run at 2048 with zero missing or unexpected state-dict keys). Two axes, reported
+separately because they are different claims:
+
+- **O-A, position.** Val bpc by absolute position bucket **0-512 / 512-1024 / 1024-2048**.
+  This mirrors `JSB_LENGTH_RESULTS.md` exactly so the two tasks are directly comparable.
+- **O-B, bracket distance.** Closer-identity accuracy by distance to the matching opener,
+  with new bins **129-512 / 513-1024 / 1025+**. Distances above 512 were NEVER seen in
+  training by any arm.
+
+**The floor must be re-measured on these bins**, not carried over -- the no-stack n-gram
+is refit and rescored at each new distance bin, and a cell whose floor exceeds 0.95 is
+uninformative here as before.
+
+## Predictions
+
+- **O1.** Path-integrated arms degrade less across position buckets than index arms
+  (the JSB shape: MapWM - RoPE = -0.662 at 2-4x).
+- **O2, the tie-breaker.** MapPoPE beyond the training context is either best (Dyck) or
+  collapsed (Bach). Registering both as live; the outcome discriminates the two accounts.
+- **O3.** Closer accuracy at bracket distance > 512 has headroom, i.e. at least one arm
+  is below 0.95 there.
+
+## Falsifiers
+
+- **F5, ends the arm.** If every arm is still at ceiling at 2048 on BOTH axes, this corpus
+  at this scale cannot discriminate positional encodings and the code line is closed with
+  a negative. Report it as a property of the task, not of any model.
+- **F6.** If the O-B floor at distance > 512 is itself above 0.95, that bin is
+  uninformative and O3 cannot be read from it.
