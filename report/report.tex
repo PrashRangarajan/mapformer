@@ -2067,6 +2067,23 @@ per-token component, leaving the accumulator untouched, takes MapPoPE to $0.733$
 inert twin flat ($-0.167$, \mde\ $0.828$); forcing that phase away from zero at initialisation improves it
 further to $0.616$, better than MapWM at every bucket. % src: T1_RESULTS.md, T3_RESULTS.md, T3GEN_RESULTS.md
 
+\paragraph{A decay envelope repairs it for 48 parameters, and its damage has two separable causes.}
+An \textsc{ALiBi}-style envelope (\texttt{scores} $-= \mathrm{softplus}(\lambda_h)\cdot d$, one scalar
+per head) removes the collapse as well as the per-token phase does: $0.6223$ against the phase's
+$0.6162$ at $2$--$4\times$, for 48 parameters rather than 786k. It repairs the index row too
+($1.597\to0.626$), so much of the pathology is the generic long-context problem rather than something
+specific to a learned accumulator. But the envelope needs a notion of distance, and on Dyck-2 the
+choice is decisive: decaying over token distance drives an index model's long-range bracket matching
+to chance ($0.503$), decaying over the model's own learned state does not ($0.784$), a gap of $+0.281$
+on 8/8 seeds. Two controls split that gap. Weakening the token envelope to the same effective penalty
+(26 logits at distance 64, against 2) recovers $+0.136$ (8/8), so roughly half the damage is simply
+over-applied locality; at matched strength the learned-state metric is still $+0.145$ ahead (8/8),
+so the metric is not reducible to steepness. A \emph{frozen} state metric is indistinguishable from
+weakening the envelope. Caveat: final training loss orders with accuracy across these arms
+($r=-0.987$) and the losses do not overlap, so the residual cannot be loss-matched.
+% src: DECAY_RESULTS.md, DYCK_DECAY_RESULTS.md, CROSS_RESULTS.md
+
+\paragraph{The account that explained the repairs is withdrawn.}
 \paragraph{The boundary does not survive a within-task test (2026-09-20).} Forcing Dyck's
 accumulator from a map into a clock --- monotone increments, $\alpha$ $0.6\to1.05$ verified, same
 task, same recipe --- reproduces neither half of the account: PoPE's encoding helps \emph{more} on the clock ($+0.159$ against $+0.058$; \mde\ $0.244$, so the

@@ -1,0 +1,113 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldcontentsline\contentsline
+\gdef\contentsline#1#2#3#4{\oldcontentsline{#1}{#2}{#3}}
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\contentsline\oldcontentsline
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{whittington2020tem}
+\citation{rambaud2025mapformer}
+\citation{zhang2026grape}
+\citation{puranik2026group}
+\citation{vetcha2026infinite}
+\citation{lahoti2026mamba3}
+\citation{movahedi2026srope}
+\citation{sarrof2024expressive}
+\citation{grazzi2025unlocking}
+\citation{golovneva2024cope}
+\citation{whittington2025tale}
+\citation{bae2025mor}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{1}{1}{Introduction}{section.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{What is already known.}{1}{section*.1}\protected@file@percent }
+\citation{su2021roformer}
+\@writefile{toc}{\contentsline {paragraph}{The argument.}{2}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Setup}{2}{section.2}\protected@file@percent }
+\newlabel{sec:setup}{{2}{2}{Setup}{section.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{The accumulator.}{2}{section*.3}\protected@file@percent }
+\newlabel{eq:accum}{{1}{2}{The accumulator}{equation.2.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{WM and EM.}{2}{section*.4}\protected@file@percent }
+\newlabel{eq:kernel}{{2}{2}{WM and EM}{equation.2.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Tasks.}{2}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Statistics.}{2}{section*.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Tasks. \emph  {Chance / floor}: chance = one over the number of answers; ``floor'' is a measured no-model baseline on the scored events; multiple floors are for MiniGrid at $T=128$/512/1024 and for MiniWorld at 16/64/256 observation types. \emph  {Train / eval length}: sequence length in training / at evaluation. Reading: every task evaluates on held-out episodes and, where there is an observation map, on a map drawn from a held-out seed.\relax }}{3}{table.caption.6}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{tab:tasks}{{1}{3}{Tasks. \emph {Chance / floor}: chance = one over the number of answers; ``floor'' is a measured no-model baseline on the scored events; multiple floors are for MiniGrid at $T=128$/512/1024 and for MiniWorld at 16/64/256 observation types. \emph {Train / eval length}: sequence length in training / at evaluation. Reading: every task evaluates on held-out episodes and, where there is an observation map, on a map drawn from a held-out seed.\relax }{table.caption.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Claim 1: the accumulated phase carries transfer}{3}{section.3}\protected@file@percent }
+\newlabel{sec:claim1}{{3}{3}{Claim 1: the accumulated phase carries transfer}{section.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{The paper task.}{3}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Why the position effect is not loss-matched.}{3}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Other tasks.}{3}{section*.11}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Paper task under the converged torus recipe: accuracy predicting the observation at revisited cells of a held-out map, trained at $T=128$, evaluated up to eight times that; 6 arms $\times $ 8 seeds in one batch, pre-registered. \emph  {Enc.}: RoPE = rotation only; PoPE = content-dependent magnitude plus rotation. \emph  {Position}: index = token index; path-int.\ = MapFormer's running sum of learned per-token increments, bottleneck rank $r$. \texttt  {Vanilla} = MapFormer-WM; \texttt  {RoPE} = MapFormer with index rotation. Top rows: accuracy mean $\pm $ sd. Bottom rows: main effects on accuracy, each averaged over the other factor and paired by seed; \emph  {position} = path-integrated minus index; \emph  {encoding} = PoPE minus RoPE. Every main effect shown is detectable. Effects are on raw accuracy; why no loss-matched position effect is reported is explained in the text. Blank floor about 0.51 at $T=128$. Reading: path integration is the larger factor at every length; the encoding effect is detectably negative at training length and positive beyond it.\relax }}{4}{table.caption.8}\protected@file@percent }
+\newlabel{tab:paper2x2}{{2}{4}{Paper task under the converged torus recipe: accuracy predicting the observation at revisited cells of a held-out map, trained at $T=128$, evaluated up to eight times that; 6 arms $\times $ 8 seeds in one batch, pre-registered. \emph {Enc.}: RoPE = rotation only; PoPE = content-dependent magnitude plus rotation. \emph {Position}: index = token index; path-int.\ = MapFormer's running sum of learned per-token increments, bottleneck rank $r$. \arm {Vanilla} = MapFormer-WM; \arm {RoPE} = MapFormer with index rotation. Top rows: accuracy mean $\pm $ sd. Bottom rows: main effects on accuracy, each averaged over the other factor and paired by seed; \emph {position} = path-integrated minus index; \emph {encoding} = PoPE minus RoPE. Every main effect shown is detectable. Effects are on raw accuracy; why no loss-matched position effect is reported is explained in the text. Blank floor about 0.51 at $T=128$. Reading: path integration is the larger factor at every length; the encoding effect is detectably negative at training length and positive beyond it.\relax }{table.caption.8}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Claim 2: the environment must make displacement a function of the token}{4}{section.4}\protected@file@percent }
+\newlabel{sec:claim2}{{4}{4}{Claim 2: the environment must make displacement a function of the token}{section.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{Rotation and allocentric recording.}{4}{section*.13}\protected@file@percent }
+\citation{veisi2025carope}
+\citation{sarrof2024expressive}
+\citation{grazzi2025unlocking}
+\citation{movahedi2026srope}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Torus knob sweep: accuracy predicting the observation at revisited cells of a held-out map, at $T=128$. Rotate = turn and forward actions (displacement depends on heading); allocentric record = same dynamics, each action token the realised displacement. Path-integrated = \texttt  {Vanilla} (MapFormer-WM); index = \texttt  {RoPE} (position = token index). Mean $\pm $ sd, $n=8$ per arm; effect = difference of means; floor = measured no-model baseline. All arms trained 16 epochs; rotate and allocentric at 392 batches per epoch (matched supervised events), baseline and combined at 98. No uncertainty was recorded for the effects. The combined condition's order-3 answer-stream gate reached 0.634 against a 0.536 marginal ($n=3$ gate), so its effect is approximate. Reading: rotation removes most of the effect, and recording the realised displacement restores it.\relax }}{5}{table.caption.12}\protected@file@percent }
+\newlabel{tab:knob}{{3}{5}{Torus knob sweep: accuracy predicting the observation at revisited cells of a held-out map, at $T=128$. Rotate = turn and forward actions (displacement depends on heading); allocentric record = same dynamics, each action token the realised displacement. Path-integrated = \arm {Vanilla} (MapFormer-WM); index = \arm {RoPE} (position = token index). Mean $\pm $ sd, $n=8$ per arm; effect = difference of means; floor = measured no-model baseline. All arms trained 16 epochs; rotate and allocentric at 392 batches per epoch (matched supervised events), baseline and combined at 98. No uncertainty was recorded for the effects. The combined condition's order-3 answer-stream gate reached 0.634 against a 0.536 marginal ($n=3$ gate), so its effect is approximate. Reading: rotation removes most of the effect, and recording the realised displacement restores it.\relax }{table.caption.12}{}}
+\@writefile{toc}{\contentsline {paragraph}{MiniGrid.}{5}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Caveats.}{5}{section*.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Claim 3: the increment must cancel, and cancel cleanly}{5}{section.5}\protected@file@percent }
+\newlabel{sec:claim3}{{5}{5}{Claim 3: the increment must cancel, and cancel cleanly}{section.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Sign.}{5}{section*.17}\protected@file@percent }
+\citation{whittington2025tale}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Cost of the monotone constraint (increments forced non-negative, minus signed), $T=1024$, paired by seed, $n=12$. Torus = paper task (trained at $T=128$); recency = return the $k$-th most recent symbol past uncounted filler (trained at $T=1024$). The MapWM torus row is the stored sign ablation (six-arm loss-matching pool); all other rows are the pre-registered MONOTONE batch. Raw = difference in accuracy; loss-matched = compared at equal final training loss by pooled regression; unmeasured is not evidence of zero. Reading: for the two WM-type generators the cost is large on the map task and small on the counting task, while single-origin MapEM pays more than MapWM on recency, a difference that is unmeasured.\relax }}{6}{table.caption.16}\protected@file@percent }
+\newlabel{tab:monotone}{{4}{6}{Cost of the monotone constraint (increments forced non-negative, minus signed), $T=1024$, paired by seed, $n=12$. Torus = paper task (trained at $T=128$); recency = return the $k$-th most recent symbol past uncounted filler (trained at $T=1024$). The MapWM torus row is the stored sign ablation (six-arm loss-matching pool); all other rows are the pre-registered MONOTONE batch. Raw = difference in accuracy; loss-matched = compared at equal final training loss by pooled regression; unmeasured is not evidence of zero. Reading: for the two WM-type generators the cost is large on the map task and small on the counting task, while single-origin MapEM pays more than MapWM on recency, a difference that is unmeasured.\relax }{table.caption.16}{}}
+\@writefile{toc}{\contentsline {paragraph}{Rank.}{6}{section*.18}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The main caveat.}{6}{section*.19}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Claim 4: a shared kernel is representable but harder to find}{6}{section.6}\protected@file@percent }
+\newlabel{sec:claim4}{{6}{6}{Claim 4: a shared kernel is representable but harder to find}{section.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{The gap.}{6}{section*.21}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces The existence and holdability ladder for single-origin MapEM on recency (retrieval accuracy, trained at $T=1024$), $n=8$ per arm (seeds 0--7). ``Install'' writes the rewind code into the position pathway, frozen or trainable; ``scale'' is the weight scale at which it is written; ``leak closed'' holds the content columns of $W_{\mathrm  {in}}$ at zero. $T=2048$ values are means. Reading: the solution is represented exactly, and held at eight times the scale with the leak closed.\relax }}{7}{table.caption.20}\protected@file@percent }
+\newlabel{tab:ladder}{{5}{7}{The existence and holdability ladder for single-origin MapEM on recency (retrieval accuracy, trained at $T=1024$), $n=8$ per arm (seeds 0--7). ``Install'' writes the rewind code into the position pathway, frozen or trainable; ``scale'' is the weight scale at which it is written; ``leak closed'' holds the content columns of $W_{\mathrm {in}}$ at zero. $T=2048$ values are means. Reading: the solution is represented exactly, and held at eight times the scale with the leak closed.\relax }{table.caption.20}{}}
+\@writefile{toc}{\contentsline {paragraph}{Existence and holdability.}{7}{section*.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Search.}{7}{section*.23}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Per-pair origins.}{7}{section*.24}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The main caveat.}{7}{section*.25}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Claim 5: what added machinery buys}{7}{section.7}\protected@file@percent }
+\newlabel{sec:claim5}{{7}{7}{Claim 5: what added machinery buys}{section.7}{}}
+\citation{bae2025mor}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Headline contrasts for added machinery. Each row comes from its own batch, task and recipe; rows are not comparable with each other. \texttt  {Level15} = MapFormer-WM (\texttt  {Vanilla}) plus a wrapped Kalman filter; \texttt  {Gated\_r4} = per-token sigmoid gate on the increment; hourglass = hierarchical pooling; loop = one shared layer applied four times. Estimates: accuracy difference, raw unless marked; loss-matched = at equal final training loss. Powered negative = the design could have detected the effect it dismisses; directional = consistent in sign but not detectable; take 1 / take 2 = two recipes. Reading: only recursion measurably adds more than a ceiling-level amount at training length, where the base model trains unreliably.\relax }}{8}{table.caption.26}\protected@file@percent }
+\newlabel{tab:machinery}{{6}{8}{Headline contrasts for added machinery. Each row comes from its own batch, task and recipe; rows are not comparable with each other. \arm {Level15} = MapFormer-WM (\arm {Vanilla}) plus a wrapped Kalman filter; \arm {Gated\_r4} = per-token sigmoid gate on the increment; hourglass = hierarchical pooling; loop = one shared layer applied four times. Estimates: accuracy difference, raw unless marked; loss-matched = at equal final training loss. Powered negative = the design could have detected the effect it dismisses; directional = consistent in sign but not detectable; take 1 / take 2 = two recipes. Reading: only recursion measurably adds more than a ceiling-level amount at training length, where the base model trains unreliably.\relax }{table.caption.26}{}}
+\@writefile{toc}{\contentsline {paragraph}{State correction.}{8}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Gate and hierarchy.}{8}{section*.28}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Recursion.}{8}{section*.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The main caveat.}{8}{section*.30}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Claim 6: on Bach beyond its training context, the two position mechanisms anti-compose}{8}{section.8}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Bach Chorales trained on 512-token crops, test NLL by position bucket (lower is better, 5 seeds). MapPoPE is the best arm in distribution and by far the worst outside it. Adding a per-token phase offset to its kernel --- the freedom PoPE removes and rotating $Q,K$ provides --- fixes it.\relax }}{9}{table.caption.31}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Limitations}{9}{section.9}\protected@file@percent }
+\newlabel{sec:limits}{{9}{9}{Limitations}{section.9}{}}
+\bibstyle{plainnat}
+\bibdata{refs}
+\bibcite{bae2025mor}{{1}{2025}{{Bae et~al.}}{{Bae, Kim, Bayat, Kim, Ha, Schuster, Fisch, Harutyunyan, Ji, Courville, and Yun}}}
+\bibcite{golovneva2024cope}{{2}{2024}{{Golovneva et~al.}}{{Golovneva, Wang, Weston, and Sukhbaatar}}}
+\bibcite{grazzi2025unlocking}{{3}{2025}{{Grazzi et~al.}}{{Grazzi, Siems, Zela, Franke, Hutter, and Pontil}}}
+\bibcite{lahoti2026mamba3}{{4}{2026}{{Lahoti et~al.}}{{Lahoti, Li, Chen, Wang, Bick, Kolter, Dao, and Gu}}}
+\bibcite{movahedi2026srope}{{5}{2026}{{Movahedi et~al.}}{{Movahedi, Carstensen, Afzal, Hutter, Orvieto, and Cevher}}}
+\bibcite{puranik2026group}{{6}{2026}{{Puranik}}{{}}}
+\bibcite{rambaud2025mapformer}{{7}{2025}{{Rambaud et~al.}}{{Rambaud, Mascarenhas, and Lakretz}}}
+\bibcite{sarrof2024expressive}{{8}{2024}{{Sarrof et~al.}}{{Sarrof, Veitsman, and Hahn}}}
+\bibcite{su2021roformer}{{9}{2021}{{Su et~al.}}{{Su, Lu, Pan, Murtadha, Wen, and Liu}}}
+\bibcite{veisi2025carope}{{10}{2025}{{Veisi et~al.}}{{Veisi, Fartoot, and Amirzadeh}}}
+\bibcite{vetcha2026infinite}{{11}{2026}{{Vetcha}}{{}}}
+\bibcite{whittington2020tem}{{12}{2020}{{Whittington et~al.}}{{Whittington, Muller, Mark, Chen, Barry, Burgess, and Behrens}}}
+\@writefile{toc}{\contentsline {section}{\numberline {10}Conclusion}{10}{section.10}\protected@file@percent }
+\newlabel{sec:conclusion}{{10}{10}{Conclusion}{section.10}{}}
+\bibcite{whittington2025tale}{{13}{2025}{{Whittington et~al.}}{{Whittington, Dorrell, Behrens, Ganguli, and El-Gaby}}}
+\bibcite{zhang2026grape}{{14}{2026}{{Zhang et~al.}}{{Zhang, Chen, Liu, Qin, Yuan, Xu, Yuan, Gu, and Yao}}}
+\gdef \@abspage@last{11}

@@ -520,6 +520,8 @@ MapPoPE (both) & 0.5235 & 1.9536 & 4.6158 \\
 \end{tabular}
 \end{table}
 
+A 48-parameter decay envelope repairs it as well as the phase does (0.622 against 0.616), and on Dyck the envelope's notion of distance is decisive: over token distance an index model's long-range matching falls to chance, over a learned state it does not ($+0.281$, 8/8) --- about half of which is over-applied locality and the rest the metric itself, confounded with convergence.
+
 The mechanism is not the accumulator: its growth exponent is $\alpha\approx1.00$ in both path-integrated
 arms, and they respond oppositely to compressing it at evaluation ($-1.70$ nats for MapPoPE, $+1.44$ for
 MapWM). It is that PoPE's kernel has non-negative amplitudes and a constant phase, so when the accumulated
