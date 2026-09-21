@@ -184,3 +184,58 @@ uninformative here as before.
   a negative. Report it as a property of the task, not of any model.
 - **F6.** If the O-B floor at distance > 512 is itself above 0.95, that bin is
   uninformative and O3 cannot be read from it.
+
+---
+
+# Amendment 2 (2026-09-21): the two controls the OOD result needs
+
+Registered before either batch was read. The OOD result (`CODE_RESULTS_OOD.md`)
+is length-only extrapolation against an UNREPAIRED baseline, and both of those
+are objections it has to answer.
+
+## C1 -- "can't you just train at 2048?"  (`runs/code2048`)
+
+Same corpus, same tokens per step (batch 4 x 2048 = 16 x 512), trained AND
+tested at 2048. 4 arms, seed 0 (pilot; extended only if informative).
+
+- **C1a.** If every arm ceilings at 2048 the way they did at 512, then the code
+  OOD result is an artifact of the train/test mismatch and **the framing is
+  retracted**: what was measured is the cost of extrapolating, not a capability.
+- **C1b.** If MapPoPE still leads when every arm has SEEN the length, the
+  advantage is not mismatch-only.
+
+Note the honest prior: in distribution at 512, MapPoPE is nominally THIRD of
+four and every sign is against it (MapPoPE - PoPE +0.0049, 0/3 seeds). C1a is
+the more likely outcome.
+
+## C2 -- the repaired baseline  (`runs/code_decay`)
+
+All four arms plus a 48-parameter ALiBi-style decay envelope
+(`scores -= softplus(lambda_h) * distance`, one scalar per head, geometric init),
+trained at 512 and tested at 2048 exactly as before. 4 arms x 3 seeds.
+
+`DECAY_RESULTS.md` showed this envelope repairing precisely this blow-up on
+Bach (PoPE 1.597 -> 0.626). Nobody deploys naive RoPE at 4x its training
+context, so **MapPoPE beating unrepaired RoPE is a weak claim**; the question is
+whether it survives against arms given the cheap standard fix.
+
+- **C2a, the decisive one.** MapPoPE-Decay - RoPE-Decay and
+  MapPoPE-Decay - PoPE-Decay at 1024-2048. If MapPoPE is no longer ahead once
+  the baselines are repaired, the OOD claim reduces to "path integration is a
+  worse way to buy what ALiBi buys for 48 parameters".
+- **C2b.** Does the envelope repair the RoPE-encoding collapse on code as it did
+  on Bach (RoPE 4.46 and MapWM 4.58 -> ?).
+- **C2c.** In-distribution cost of the envelope, which on Bach was +0.018 to
+  +0.026 and is expected here too.
+
+**Inert-twin check, run before launch and passed**: all four decay arms loaded
+with their base arm's weights and lambda driven to ~0 reproduce the base model
+to **maxdiff 0.00e+00**, with `lam_raw` the only added parameter. So any
+difference measured is the envelope and not an incidental change in the
+subclass.
+
+## What would make either batch void
+
+- Arms not converged, or trained in different batches from their comparators.
+- An OOM killing a run mid-batch (the 2048 arms need 13.5-14.7 GiB each, so one
+  per 24 GiB card; the 512 decay arms share the remainder).

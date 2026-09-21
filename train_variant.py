@@ -120,6 +120,10 @@ from mapformer.model_tem_faithful import TEMFaithful
 from mapformer.model_tem_t import TEM_T
 
 
+from .model_code_decay import MapFormerWM_RoPE_Decay, MapFormerWM_Decay
+from .model_pope_decay import (MapFormerWM_PoPE_Decay,
+                               MapFormerWM_RoPEIndex_PoPE_Decay)
+
 VARIANT_MAP = {
     "Vanilla":    MapFormerWM,
     "VanillaNoDrop": MapFormerWM_VanillaNoDrop,
@@ -317,6 +321,14 @@ VARIANT_MAP = {
     "TEM_T":       TEM_T,
     **ABLATIONS,
     **EXTRA_BASELINES,
+    # --- decay-envelope arms (2026-09-21, the repaired-baseline control for the
+    # code OOD result). ALiBi-style scores -= softplus(lambda_h)*distance, one
+    # scalar per head. Comparing MapPoPE against UNREPAIRED RoPE past the
+    # training context is a comparison against a baseline nobody deploys.
+    "RoPE-Decay":    MapFormerWM_RoPE_Decay,
+    "MapWM-Decay":   MapFormerWM_Decay,
+    "PoPE-Decay":    MapFormerWM_RoPEIndex_PoPE_Decay,
+    "MapPoPE-Decay": MapFormerWM_PoPE_Decay,
 }
 
 
