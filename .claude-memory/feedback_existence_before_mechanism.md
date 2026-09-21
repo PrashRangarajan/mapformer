@@ -43,3 +43,11 @@ exactly once the query token rewinds the count. No training run could have shown
     explains, and that batch's pre-registration had predicted the opposite sign.
 
 Related: [[feedback-convergence-first]], [[feedback-probe-verification]], [[em-vs-wm-mechanism]].
+
+
+**WITHIN-TASK BEFORE CROSS-TASK (2026-09-20).** In the Dyck/PoPE line four predictions failed, and
+every one was a GENERALISATION from a within-task intervention to a cross-task rule; the
+interventions themselves replicated each time. The pattern: an account built on three tasks that
+differ in accumulator AND dataset AND model size is confounded, and the only test that settles it is
+one that moves the proposed factor WITHIN a task (here, forcing monotone increments on Dyck: it
+reversed neither half of the account). Run that test before writing the rule, not after.

@@ -35,30 +35,6 @@ train_indirect, analyze_indirect, eval_indirect_ood, environment_jsb, train_jsb,
 analyze_jsb_len, analyze_jsb_base, analyze_t1, model_centered, model_pope_t3, model_pope_decay,
 model_dyck_monotone, probe_theory_numbers, make_dyck_table, dyck_standard_metrics.
 
-## LATEST (2026-09-15..20) -- Dyck-2 and the PoPE-paper line
-
-**Nothing running, not pushed.** Full detail in CLAUDE.md's LATEST block; the citable files are
-`DYCK_RESULTS_bs128.md`, `DYCK_RESULTS_POPE.md`, `DYCK_LITERATURE_METRICS.md`, `DYCK_STACK_PROBE.md`,
-`INDIRECT_RESULTS_200k.md`, `JSB_RESULTS.md`, `JSB_LENGTH_RESULTS.md`, `AUG_RESULTS.md`,
-`T1_RESULTS.md`, `T3_RESULTS.md`, `T2_RESULTS.md`, `DECAY_RESULTS.md`, `DYCK_DECAY_RESULTS.md`,
-`CROSS_RESULTS.md`, plus `THEORY_MAPPOPE.md` (account, withdrawn as a cross-task rule).
-
-- Dyck-2 ordering replicates, levels do not; MapPoPE-1L best (0.927). The paper's F1 has a 0.88
-  no-stack floor -- use Hewitt/Yao closing accuracy and the Suzgun set criterion instead.
-- Both PoPE-paper results replicate (Indirect Indexing at 200k, Bach at their recipe). Path
-  integration adds nothing in distribution on either.
-- Beyond the training context the naive combination COLLAPSES (4.616 vs RoPE 2.059); three repairs
-  work; the account explaining them is WITHDRAWN after both halves failed within-task on Dyck.
-- JSB is overfitting-limited by 3x: augmentation beats every positional effect measured on it.
-- Surviving positive claim: a decay envelope's damage splits into steepness (~half) and metric
-  (the rest, confounded with convergence).
-
-New code: environment_dyck, train_dyck, analyze_dyck, validate_dyck, probe_dyck_stack,
-probe_dyck_far, probe_dyck_metric, probe_dyck_alpha, eval_dyck_literature, environment_indirect,
-train_indirect, analyze_indirect, eval_indirect_ood, environment_jsb, train_jsb, analyze_jsb,
-analyze_jsb_len, analyze_jsb_base, analyze_t1, model_centered, model_pope_t3, model_pope_decay,
-model_dyck_monotone, probe_theory_numbers, make_dyck_table, dyck_standard_metrics.
-
 ## LATEST (2026-09-12..15) -- read this block first; it supersedes "In flight" and "Open" below
 
 **DYCK-2 (2026-09-15, `DYCK_RESULTS_bs128.md`, n=8, paper recipe, prereg `DYCK_PREREG.md`):** ordering
@@ -291,13 +267,6 @@ EMPair - EMPairConst = +0.091 (MDE 0.066, 34/48; fresh 40 seeds alone +0.089, de
 +0.215 at n=48 = pathway +0.124 + freedom +0.091, BOTH detectable (58% / 42%). The n=8 total (+0.280)
 was 30% inflated.
 The n=8 batch inflated the total and the pathway term, not the freedom term -- 4th instance.
-
-**JSB IS OVERFITTING-LIMITED (2026-09-20, `AUG_RESULTS.md`).** Pitch transposition (+/-3) gains 0.107
-NLL for PoPE and 0.090 for MapPoPE (5/5 each) against the 0.032 that separates PoPE from RoPE -- so
-every in-distribution encoding effect measured on this dataset sits under a ceiling 3x its size.
-Ordering unchanged; the PoPE-over-MapPoPE gap WIDENS to +0.028 (detectable). Best-validation step
-moves from 1000/1500 to 3000, i.e. the runs become budget-limited. Augmented PoPE reaches 0.3936
-against the paper's published 0.4889.
 
 **JSB IS OVERFITTING-LIMITED (2026-09-20, `AUG_RESULTS.md`).** Pitch transposition (+/-3) gains 0.107
 NLL for PoPE and 0.090 for MapPoPE (5/5 each) against the 0.032 that separates PoPE from RoPE -- so

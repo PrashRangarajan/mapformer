@@ -56,3 +56,12 @@ it appeared to null an established effect. See [[verify_before_relaying]].
   discriminator required a deficit at training length, where the baseline is
   1.000 +/- 0.000 — a ceiling with 0.054 of headroom against an MDE of 0.057. When a
   verdict branch fires, check whether its cell COULD have gone the other way.
+
+
+**COMMIT THE SCRIPT FOR EVERY NUMBER (2026-09-20).** Four separate figures in the Dyck/PoPE line had
+no committed script -- an alpha table, two correlations and an omega-compression table. Two did not
+reproduce under an auditor's convention, and the project's one surviving positive claim had no
+analysis script at all until `analyze_cross.py`. A number computed in an inline shell heredoc is
+gone the moment the session ends. Also: a REGISTERED readout must be reported even when the verdict
+looks obvious -- a floor check, a learned-rate readout and a control contrast were each registered,
+skipped, and each turned out to matter.

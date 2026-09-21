@@ -525,8 +525,8 @@ A 48-parameter decay envelope repairs it as well as the phase does (0.622 agains
 The mechanism is not the accumulator: its growth exponent is $\alpha\approx1.00$ in both path-integrated
 arms, and they respond oppositely to compressing it at evaluation ($-1.70$ nats for MapPoPE, $+1.44$ for
 MapWM). It is that PoPE's kernel has non-negative amplitudes and a constant phase, so when the accumulated
-argument leaves the range training calibrated, content cannot shift the peak to compensate. Two
-interventions confirm it: shrinking the accumulator's excursion helps MapPoPE $5.7\times$ more than
+argument leaves the range training calibrated, content cannot shift the peak to compensate. Two interventions confirm it ON BACH AT A 512-TOKEN CONTEXT (a within-task test on Dyck reverses
+neither, so this is not a general mechanism): shrinking the accumulator's excursion helps MapPoPE $5.7\times$ more than
 MapWM in absolute NLL (80\% of its gap against 47\% of MapWM's), and restoring a
 per-token phase --- accumulator untouched, parameter-matched inert twin flat --- removes the collapse. Across tasks the same phase is neutral to harmful where the accumulator is bounded (Dyck-2 $-0.046$
 against its inert twin; torus $0.911$ against $0.963$ at $l=2048$). That pattern does NOT survive a

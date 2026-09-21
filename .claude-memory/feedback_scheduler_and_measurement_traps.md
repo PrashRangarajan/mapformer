@@ -58,3 +58,9 @@ let the background job finish, which is what should have happened here (it alrea
   overwrote the top digit). Verify fast paths row-exact against the reference code before using them.
 - **Compile check.** For torch.compile, compare eager vs compiled loss curves on identical batches per arm before
   a batch uses it (`verify_addition_compile.py`).
+
+
+**DUPLICATE DRIVERS (2026-09-20).** A launcher whose log you cannot find may already be running. I
+started the same batch three times; three drivers raced on the same seeds, and only a `ps` check
+before they collided prevented duplicated runs. Check `ps` for the driver by name before relaunching,
+and kill extras by PID (never `pkill -f`, which matches your own shell).

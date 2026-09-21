@@ -57,10 +57,3 @@ and 0.091 (MapPoPE) F1 at L128 D12 -- a monotone code cannot represent push/pop,
 formal language as well as on navigation. This half of T2 stands independently of the PoPE corollary
 that T2 withdrew.
 
-**REPLICATED ON A THIRD TASK (2026-09-20, `T2_RESULTS.md` manipulation check).** Constraining the
-increment to be non-negative on Dyck-2 moves the accumulator from a map to a clock within one task
-(alpha 0.578/0.618 -> 1.056/1.044, range growth 2.3x -> 4.2x over L32->L128) and costs 0.191 (MapWM)
-and 0.091 (MapPoPE) F1 at L128 D12 -- a monotone code cannot represent push/pop, now shown on a
-formal language as well as on navigation. This half of T2 stands independently of the PoPE corollary
-that T2 withdrew.
-

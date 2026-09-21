@@ -13,7 +13,7 @@ from mapformer.environment_dyck import DyckWorld, OPEN_P, OPEN_B
 from mapformer.train_dyck import build
 
 
-def main(n=16, L=128, D=12, dev="cuda:0"):
+def main(n=16, L=128, D=12, dev="cuda:0", runs_dir="/home/prashr/mapformer/runs/dyck_decay"):
     w = DyckWorld(); inp, tgt, valid, _ = w.batch(n, L, D, np.random.default_rng(5))
     dep = np.zeros(inp.shape, dtype=int)
     for i in range(n):
@@ -21,7 +21,7 @@ def main(n=16, L=128, D=12, dev="cuda:0"):
         for t in range(L):
             dep[i, t] = d; d += 1 if tgt[i, t].item() in (OPEN_P, OPEN_B) else -1
     rows = []
-    for pt in sorted(glob.glob("/home/prashr/mapformer/runs/dyck_decay/MapPoPE_decay-1L_r2_s*/*.pt")):
+    for pt in sorted(glob.glob(runs_dir + "/MapPoPE_decay-1L_r2_s*/*.pt")):
         m = build("MapPoPE_decay", 5, 1, 1, 2, 32).to(dev).eval()
         m.load_state_dict(torch.load(pt, map_location=dev, weights_only=False))
         with torch.no_grad():

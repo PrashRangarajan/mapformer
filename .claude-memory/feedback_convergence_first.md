@@ -45,3 +45,11 @@ When the manipulation itself causes the loss gap, the acc~loss fit is identified
 residual is uninformative, not null. **How to apply:** before registering a loss-matched verdict, check that loss
 varies within arms and overlaps across them. Otherwise the RAW contrast is primary and loss-matched is reported
 as "uninformative". A bigger pool with intermediate-loss arms changes the verdict, so state the pool.
+
+
+**FLOOR AND CONTROL-CONVERGENCE (2026-09-20, the Dyck/PoPE line).** Two further traps, each paid for:
+(1) Report the task's measured FLOOR beside every headline -- two batches here were read entirely
+below a no-stack n-gram floor before an audit caught it, and one conclusion drawn from sub-floor F1
+had to be withdrawn. (2) An effect measured against a control that TRAINS BETTER is not attributable:
+check loss OVERLAP before the batch, not after. In `CROSS_RESULTS.md` accuracy tracks final loss at
+r = -0.95 to -0.99 with non-overlapping losses, so the surviving effect cannot be loss-matched at all.

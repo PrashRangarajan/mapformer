@@ -89,7 +89,9 @@ def main():
                 Ps = [ngram_probs(ngram_fit(world, k, np.random.default_rng(100 + k)), k, inp)]
             else:
                 arch, nl, nh = spec; Ps = []
-                for pt in sorted(glob.glob(f"{a.runs_dir}/{name}_s*/{name}.pt")):
+                # the run dir and the checkpoint name differ for non-Map arms run with --rank
+            pats = [f"{a.runs_dir}/{name}_s*/{name}.pt", f"{a.runs_dir}/{name}_r2_s*/{name}.pt"]
+            for pt in sorted(p for q in pats for p in glob.glob(q)):
                     m = build(arch, 5, nl, nh, 2, 32).cuda().eval()
                     m.load_state_dict(torch.load(pt, map_location="cuda"))
                     with torch.no_grad():
