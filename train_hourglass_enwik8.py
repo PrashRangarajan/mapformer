@@ -134,6 +134,12 @@ def main():
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--eval-every", type=int, default=500)
     ap.add_argument("--data", default=os.path.join(_REPO, "data", "enwik8"))
+    ap.add_argument("--data-val", default="")   # separate val stream; enwik8 leaves empty
+    ap.add_argument("--save-ckpt", action="store_true",
+                    help="save final and best-val checkpoints. Off by default so "
+                         "existing enwik8 runs are byte-identical; rule 20 (this "
+                         "trainer saved no checkpoints, which blocked every "
+                         "post-hoc diagnostic on a trained language model).")
     ap.add_argument("--out", default=os.path.join(_REPO, "hourglass_enwik8"))
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--shorten", type=int, default=2)
@@ -149,8 +155,15 @@ def main():
 
     raw = np.fromfile(args.data, dtype=np.uint8)
     data = torch.from_numpy(raw.copy())
-    train_data = data[:90_000_000]
-    val_data = data[90_000_000:95_000_000]
+    if args.data_val:
+        # Corpus with its own held-out file (the code corpus is split BY FILE,
+        # so a byte-offset split would leak: Python boilerplate repeats within a
+        # file). enwik8 keeps the original hardcoded offsets untouched.
+        train_data = data
+        val_data = torch.from_numpy(np.fromfile(args.data_val, dtype=np.uint8).copy())
+    else:
+        train_data = data[:90_000_000]
+        val_data = data[90_000_000:95_000_000]
 
     device = args.device
     model = build(args.model, shorten=args.shorten, dim=args.dim,
@@ -169,6 +182,12 @@ def main():
     log = {"model": args.model, "params": n_params, "flop_proxy": flop,
            "seq_len": args.seq_len, "batch_size": args.batch_size,
            "curve": []}
+
+    cfg = {"model": args.model, "shorten": args.shorten, "dim": args.dim,
+           "heads": args.heads, "n_layers": args.n_layers,
+           "grid_size": args.seq_len, "bottleneck_r": args.bottleneck_r}
+    best_val = float("inf")
+    ckpt_base = outdir / f"{args.model}{args.tag}"
 
     t0 = time.time()
     model.train()
@@ -191,8 +210,18 @@ def main():
                   f"wall={wall:.0f}s ({it/wall:.1f} it/s)")
             with open(outdir / f"{args.model}{args.tag}.partial.json", "w") as f:
                 json.dump(log, f, indent=2)
+            if args.save_ckpt and val_bpc < best_val:
+                best_val = val_bpc
+                torch.save({"cfg": cfg, "iter": it, "val_bpc": val_bpc,
+                            "state_dict": model.state_dict()},
+                           f"{ckpt_base}.best.pt")
 
     log["wall_total_s"] = time.time() - t0
+    log["best_val_bpc"] = best_val if best_val < float("inf") else None
+    if args.save_ckpt:
+        torch.save({"cfg": cfg, "iter": args.iters,
+                    "val_bpc": log["curve"][-1]["val_bpc"],
+                    "state_dict": model.state_dict()}, f"{ckpt_base}.final.pt")
     with open(outdir / f"{args.model}{args.tag}.json", "w") as f:
         json.dump(log, f, indent=2)
     print(f"DONE {args.model} val_bpc={log['curve'][-1]['val_bpc']:.4f} "
