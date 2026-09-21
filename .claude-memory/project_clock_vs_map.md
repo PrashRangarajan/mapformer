@@ -221,4 +221,14 @@ row's, unmeasured only because the MDE is bigger); the index-row +0.281 is COLLI
 convergence gap (r = -0.995, non-overlapping training losses) and the arm carries +256 parameters, so
 a frozen-metric control is running. What survives: on Dyck an index model'"'"'s envelope destroys
 long-range retrieval over token distance and does not over a learned state, confounds pending.
+MATCHED-STRENGTH CONTROL (2026-09-20): the +0.281 SPLITS. Weakening the token envelope to the state
+arm's effective penalty (26 -> 2 logits at token distance 64) recovers +0.136 (8/8, DET); at matched
+strength the learned-state metric is still +0.145 ahead (0/8, DET). A FROZEN state metric is not
+distinguishable from just weakening the envelope (-0.054, unmeasured). Training losses still order
+with accuracy and do not overlap, so the residual is confounded with convergence.
+MATCHED-STRENGTH CONTROL (2026-09-20): the +0.281 SPLITS. Weakening the token envelope to the state
+arm's effective penalty (26 -> 2 logits at token distance 64) recovers +0.136 (8/8, DET); at matched
+strength the learned-state metric is still +0.145 ahead (0/8, DET). A FROZEN state metric is not
+distinguishable from just weakening the envelope (-0.054, unmeasured). Training losses still order
+with accuracy and do not overlap, so the residual is confounded with convergence.
 

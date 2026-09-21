@@ -141,3 +141,46 @@ difference across tasks and should be dropped for the within-task statement; the
 0.998 when measured on the arm that actually uses the metric, and the convention was not stated.
 This file is also cross-batch (runs/dyck_cross is 22 h after runs/dyck_decay) with no provenance note;
 code for the pre-existing arms is byte-identical across those batches.
+
+## The matched-strength control (2026-09-20): both factors are real, and they split the effect
+
+The diagnostic that prompted this: the three index arms apply very different penalties in TOKEN terms
+at token distance 64 -- 26.1 logits (token metric), 5.4 (frozen state), 2.2 (learned state). So the
+state metric may simply be a WEAKER locality prior rather than a better-aimed one. The control
+weakens the token-metric envelope until its penalty matches (lambda 0.034 and 0.084), 8 seeds each.
+
+| arm | acc at d >= 9 | F1 | final train loss |
+|---|---|---|---|
+| token metric, full strength | 0.503 | 0.878 | 1.0823 |
+| token metric, lambda 0.084 (matched to frozen) | 0.626 | 0.731 | 1.0420 |
+| token metric, lambda 0.034 (matched to learned) | 0.640 | 0.656 | 1.0325 |
+| frozen state metric | 0.681 | 0.785 | 1.0131 |
+| learned state metric | **0.784** | 0.817 | 0.9732 |
+
+- **Envelope STRENGTH explains about half.** Weakening the token envelope to the learned arm's
+  effective penalty lifts it from 0.503 to 0.640: **+0.136 of the original +0.281** (MDE 0.005, 8/8,
+  detectable). Over-applying locality was a real and large part of the damage.
+- **The METRIC explains the rest, and it survives matching.** At matched strength the learned-state
+  arm is still **+0.145 ahead** (MDE 0.049, 0/8 seeds for the token arm, detectable). So the ruler's
+  meaning is not reducible to its steepness.
+- **The frozen metric is NOT distinguishable from simply weakening the envelope**: matched-strength
+  token 0.626 against frozen state 0.681, -0.054 (MDE 0.124), unmeasured. Combined with the earlier
+  learned-minus-frozen +0.103 (6/8, unmeasured), the ordering that the data support is
+  *learned state > (frozen state ~ matched-strength token) > full-strength token*, with the first
+  gap detectable against the matched-strength arm and not against the frozen one.
+- **The convergence confound is NOT removed.** Final training losses still order exactly with
+  accuracy (1.082 / 1.042 / 1.033 / 1.013 / 0.973) and do not overlap, so loss-matching remains
+  impossible and "the learned-metric arm simply trains better" survives as an alternative reading of
+  the residual +0.145.
+
+## The claim, at the strength the evidence now supports
+
+A decay envelope can destroy long-range retrieval on a task that needs it, and **two separable things
+determine how much: how steeply it suppresses distant tokens, and what it treats as distance.**
+Steepness accounts for roughly half the damage here and is the duller, older lesson. The metric
+accounts for the rest and survives strength-matching -- but that residual is confounded with training
+loss in a way this design cannot break, so it is an association, not an established mechanism.
+
+Path integration's role is narrower than the original title claimed: it supplies a metric that is
+both weaker in token terms and better aimed, and it makes the model's long-range retrieval robust to
+the envelope in a way an index code is not -- but "insensitive to the metric" is withdrawn (finding 1).
