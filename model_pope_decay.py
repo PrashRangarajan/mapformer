@@ -109,3 +109,58 @@ class MapFormerWM_RoPEIndex_PoPE_Decay(MapFormerWM_RoPEIndex_PoPE):
             layer._dist = dist
             x = layer(x, cos_a, sin_a, m)
         return self.out_proj(self.out_norm(x))
+
+
+# ---------------------------------------------------------------------------
+# The crossed arms (2026-09-20): position mechanism x decay METRIC.
+# DYCK_DECAY_RESULTS.md observed that the same envelope helps the path-integrated row and guts the
+# index row, and proposed that a decay envelope is a proximity prior in whatever metric the position
+# variable defines. That contrast varied position AND metric together. These two arms cross them.
+# ---------------------------------------------------------------------------
+
+class MapFormerWM_PoPE_Decay_IdxMetric(MapFormerWM_PoPE_Decay):
+    """Path-integrated PHASE, but the envelope decays over TOKEN distance |t - s|."""
+
+    def forward(self, tokens):
+        B, L = tokens.shape
+        x = self.token_emb(tokens)
+        delta = self.action_to_lie(x)
+        cos_a, sin_a = self.path_integrator(delta)
+        t = torch.arange(L, device=tokens.device, dtype=x.dtype)
+        dist = (t.view(-1, 1) - t.view(1, -1)).abs()[None, None]
+        m = torch.triu(torch.ones(L, L, device=tokens.device, dtype=torch.bool), 1)
+        for layer in self.layers:
+            layer._dist = dist
+            x = layer(x, cos_a, sin_a, m)
+        return self.out_proj(self.out_norm(x))
+
+
+class MapFormerWM_RoPEIndex_PoPE_Decay_StateMetric(MapFormerWM_RoPEIndex_PoPE_Decay):
+    """INDEX phase, but the envelope decays over a learned state distance |S_t - S_s|.
+
+    The index PoPE class deletes the increment map, so one is added back here and used ONLY to
+    supply the decay metric -- the attention phase stays `t * theta_c`. Its increments are learned
+    through the envelope alone.
+    """
+
+    def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1, dropout=0.1,
+                 grid_size=64, base=10000.0, lam_init=None, bottleneck_r=2, **kw):
+        super().__init__(vocab_size, d_model, n_heads, n_layers, dropout, grid_size, base, lam_init)
+        from .model import ActionToLieAlgebra
+        self.metric_map = ActionToLieAlgebra(d_model, n_heads, self.d_head, bottleneck_r)
+
+    def forward(self, tokens):
+        B, L = tokens.shape
+        x = self.token_emb(tokens)
+        ang = torch.outer(torch.arange(L, device=tokens.device, dtype=x.dtype), self.theta_c)
+        cos_a = ang.cos()[None, None].expand(B, self.n_heads, L, -1)
+        sin_a = ang.sin()[None, None].expand(B, self.n_heads, L, -1)
+        d = self.metric_map(x)                                        # (B, L, H, d_head)
+        S = d.mean(-1).cumsum(1).transpose(1, 2)                      # (B, H, L)
+        step = d.mean(-1).abs().mean(dim=(1,), keepdim=True).transpose(1, 2).clamp_min(1e-6)
+        dist = (S.unsqueeze(-1) - S.unsqueeze(-2)).abs() / step.unsqueeze(-1)
+        m = torch.triu(torch.ones(L, L, device=tokens.device, dtype=torch.bool), 1)
+        for layer in self.layers:
+            layer._dist = dist
+            x = layer(x, cos_a, sin_a, m)
+        return self.out_proj(self.out_norm(x))
