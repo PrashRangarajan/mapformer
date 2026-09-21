@@ -1,52 +1,56 @@
 # CLAUDE.md — Project Memory for MapFormer
 
-## IN FLIGHT, 2026-09-21 -- code modelling: does MapPoPE's Dyck-2 win survive on real Python?
+## LANDED, 2026-09-21 -- code modelling: MapPoPE beats BOTH components past the training context
 
-**RUNNING.** Driver `run_code.sh` (setsid), 4 arms x 3 seeds, `runs/code`, ~3 h per wave,
-marker `runs/code/.code_done`. Progress is in `*_s{N}.partial.json`, NOT the `.log` files --
-Python buffers stdout under nohup so the logs stay empty until exit. Kill by
-`ps -u $USER -o comm=,args= | awk '$1=="python3" && /train_hourglass_enwik8/'` -- never `pkill -f`.
+**Nothing running.** `CODE_RESULTS.md` (narrative + corrections), `CODE_RESULTS_OOD.md`
+(MDEs), `CODE_GATES.md` (floors), `CODE_PREREG.md` + Amendment 1. Runs `runs/code`,
+4 arms x 3 seeds, one batch. Corpus `build_code_corpus.py` -> 100.1 MB of local Python,
+split BY FILE, brackets from CPython's own tokenizer.
 
-**Why this arm exists.** Dyck-2 is the ONLY place MapPoPE beats both its components
-(+0.058 over MapWM, 8/8; +0.312 over PoPE-1L, 8/8). Proposed reason: Dyck's positional
-variable is SIGNED (`(` +1, `)` -1) and a monotone clock cannot represent that
-(`SIGN_ABLATION.md`). Real code nests, so the win should survive if it is about bracket
-structure and not about the synthetic sampler. **This is the same Dyck -> elsewhere
-generalisation that failed four times in the T2 line**, and is registered as such.
+**IN DISTRIBUTION IS A CEILING -- the headline finding is about the TASK.** Every arm
+solves the registered primary cell (0.959-1.000 against a 0.272 floor); 13 of 17 strata
+sit above 0.98 for all four arms; overall closer accuracy 0.997-0.998. A 9-layer model on
+90 MB of Python solves bracket matching inside a 512-byte window whatever its positional
+encoding. MapPoPE is numerically LAST there and that is a ceiling difference, NOT the
+falsifier firing.
 
-**Pre-registration `CODE_PREREG.md`** (committed before any GPU): primary readout is
-closer-identity accuracy at **depth 5-8 / distance 33-128**; P2 is MapPoPE > PoPE there;
-**F1 kills the account** if MapPoPE <= PoPE at every depth stratum.
+**BEYOND THE TRAINING CONTEXT (eval at 2048 = 4x, eval-only, no retraining) the arms
+separate and MapPoPE wins.** All detectable, 3/3 seeds:
+- **MapPoPE - PoPE = -0.102 bpc at 2-4x** (MDE 0.052) and **MapPoPE - MapWM = -3.804**
+  (MDE 0.382). **MapPoPE beats both its components** -- the composition claim
+  `ENWIK8_SEEDS.md` had the seeds on the wrong comparison to test, now firing on PoPE's
+  own headline axis (their Fig 2 length-extrapolation claim).
+- **PoPE - RoPE = -3.585**: the ENCODING is what survives the context. RoPE-encoding arms
+  blow up (4.46 / 4.58 bpc), PoPE-encoding arms do not (0.88 / 0.78).
+- **Both RoPE-encoding arms fall BELOW the no-stack floor** at distance 513-1024:
+  RoPE 0.550, MapWM 0.650, floor 0.675.
+- Rule 9 clean: r(final train bpc, OOD bpc) = **-0.097** over 12 runs, so this is not a
+  convergence gap. Unusual here -- that r is normally near -0.99.
 
-**Corpus** `build_code_corpus.py` -> `data/code_{train,val,test}.bin` + `_brackets.npz`.
-100.1 MB of local Python (stdlib + site-packages, no download), **split BY FILE** -- a
-byte-offset split leaks, Python boilerplate repeats. Annotations come from CPython's own
-tokenizer, so brackets inside strings/comments/f-strings are excluded.
+**NOT established**: MapPoPE - PoPE at 1-2x (-0.0404, 3/3 but MDE 0.0429); MapPoPE - PoPE
+on CLOSER ACCURACY (-0.005/-0.027/-0.005, sign AGAINST, unmeasured) -- the bpc win is not
+corroborated by the stack-sensitive metric. All 12 runs are BUDGET-LIMITED (negative val
+slope at 36k), so the ordering is not settled.
 
-**Gates `CODE_GATES.md` / `.json` (all pass; `validate_code.py` exits non-zero on failure).**
-- G2 caught a real bug pre-GPU: `str.splitlines()` breaks on FORM FEED (`\x0c`), common in
-  Python source, which CPython's tokenizer does not treat as a line break -- every line
-  number after one was off by one, 188/84,466 val annotations wrong. Fixed.
-- **THE FLOOR, and it is the Dyck trap again.** No-stack n-gram **0.858 overall**,
-  majority class (always `)`) **0.696**. Overall accuracy and bpc are floor-dominated and
-  are registered as NOT the headline. **6 of 18 cells have floor > 0.95 and are
-  uninformative in advance**; depth 9+ is unmeasurable (0.3% of positions).
-  Per-cell floor is the BETTER of the n-gram and the constant `)` -- they CROSS, and at
-  the primary cell the n-gram (0.272) falls BELOW the constant, i.e. local context
-  actively misleads there.
+**An n=1 claim I made and CORRECTED at n=3**: "MapWM extrapolates worse than plain RoPE"
+(seed 0: 4.81 vs 4.34). At n=3 MapWM - RoPE is **-1.064 DETECTABLE at 512-1024** (it
+HELPS) and unmeasured at 1024-2048. One seed, inverted sign. Same failure mode this
+project has logged repeatedly; it is why n=1 is never read.
 
-**Tooling.** `eval_code_delims.py` carries its own correctness checks: an assert that every
-scored byte IS the closer it is labelled, and an alignment check scoring the same logits
-against the byte before/at/after the target (verified: CE 6.78 at shift 0 vs 33.5/30.3 at
-+/-1). `analyze_code.py` computes the contrasts, MDEs, rule 9 and the loss-overlap test.
+**Gates caught a real bug pre-GPU** (`validate_code.py`, exits non-zero): `str.splitlines()`
+breaks on FORM FEED (`\x0c`), common in Python source and not a line break to CPython's
+tokenizer, so every line number after one was off by one -- 188/84,466 val annotations
+wrong. Also: the per-cell floor must be the BETTER of the n-gram and the constant `)`,
+because they CROSS; at the primary cell the n-gram (0.272) falls BELOW the constant.
 
-**Rule 20 is CLOSED**: `train_hourglass_enwik8.py` now takes `--save-ckpt` and `--data-val`,
-both opt-in so every existing enwik8 run stays reproducible. It had saved no checkpoints
-since 2026-09-01, which blocked every post-hoc diagnostic on a trained language model.
+**Rule 20 CLOSED**: `train_hourglass_enwik8.py` now has `--save-ckpt` and `--data-val`,
+both opt-in so every enwik8 run stays reproducible. `eval_code_delims.py` /
+`eval_code_long.py` carry their own alignment check (CE 3.66 at shift 0 vs 51/46 at +/-1).
 
-**Early, not a result** (iter ~1-2k, different best-val steps, not comparable): RoPE has
-better bpc (1.306 vs 1.634) and WORSE primary-cell accuracy (0.553 vs 0.867) than PoPE --
-the aggregate and the stack-sensitive readout pointing opposite ways, as in `CROSS_RESULTS`.
+**Next, ranked**: n=8 on the OOD contrast (the -0.102 is the size that dissolves here);
+extend the budget, since all 12 runs are still descending; add the 48-parameter decay
+envelope to the RoPE-encoding arms, which is the repair that fixed exactly this blow-up
+on Bach (`DECAY_RESULTS.md`).
 
 ## LATEST, 2026-09-15..20 -- the Dyck-2 and PoPE-paper line (read `.claude-memory/project_state.md`)
 
