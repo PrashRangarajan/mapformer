@@ -1,5 +1,22 @@
 # CLAUDE.md — Project Memory for MapFormer
 
+## 2026-09-22 -- PoPE ablation: the non-negativity account is DEAD (`ABLATE_RESULTS.md`)
+
+`runs/code_ablate`, 4 arms x 3 seeds, one batch. **Their Table 5 does not replicate**:
+removing softplus is FREE here (-0.0002, unmeasured) while ReLU is the only detectable
+in-distribution cost (+0.0101, 0/3) -- their ordering inverted on the arm they emphasise.
+
+**F2 fired.** The account that PoPE's non-negative magnitudes bound the logit, and that
+this is why PoPE-encoding arms survive past their context, is REFUTED: **NoSigma has
+signed magnitudes exactly like RoPE and does not blow up** (extrapolation penalty -0.0234
+against RoPE's +3.5885). All OOD contrasts unmeasured at n=3.
+
+**Surviving HYPOTHESIS (untested, seventh in a line where six failed)**: what matters is a
+**content-independent, SHARED kernel**, not a bounded one. PoPE's phase is purely
+positional and content only scales each channel, so the kernel shape is identical for every
+query-key pair even without softplus; RoPE rotates content, so its phase offset is
+per-pair. Test: keep softplus, make the PHASE content-dependent -- should blow up.
+
 ## LANDED then RETRACTED, 2026-09-21 -- code modelling
 
 **RETRACTED BY ITS OWN CONTROL.** Trained AND tested at 2048 (`runs/code2048`, all 4 arms,
