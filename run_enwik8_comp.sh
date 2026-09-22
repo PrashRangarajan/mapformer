@@ -21,15 +21,24 @@ launch(){
     --out "$OUT" --tag "_s${seed}" >> "$OUT/${arm}_s${seed}.log" 2>&1 &
   sleep 20
 }
+# Power is matched per CONTRAST, not uniform across arms. MapPoPE-PoPE is the
+# binding contrast and needs n=12 (effect -0.0020 at paired sd 0.0023). The
+# MapPoPE-MapWM contrast has a ~3x larger effect (-0.0056) and needs n~1.3, so
+# n=8 there is still 2.5x over-powered while saving four runs. Unequal n is fine
+# because every contrast is paired on its own common seeds.
 i=0
 for seed in $(seq 0 11); do
-  for arm in "${ARMS[@]}"; do launch "$arm" "$seed" $((i % 2)); i=$((i+1)); done
+  for arm in "${ARMS[@]}"; do
+    [ "$arm" = "Vanilla" ] && [ "$seed" -ge 8 ] && continue
+    launch "$arm" "$seed" $((i % 2)); i=$((i+1));
+  done
   # RoPE reproduction control on seeds 0-2 only (stored: 1.3864 / 1.3837 / 1.3840)
   if [ "$seed" -lt 3 ]; then launch RoPE "$seed" $((i % 2)); i=$((i+1)); fi
 done
 while [ "$(busy)" -gt 0 ]; do sleep 60; done
 missing=0
 for seed in $(seq 0 11); do for arm in "${ARMS[@]}"; do
+  [ "$arm" = "Vanilla" ] && [ "$seed" -ge 8 ] && continue
   [ -f "$OUT/${arm}_s${seed}.json" ] || { echo "MISSING ${arm}_s${seed}"; missing=$((missing+1)); }
 done; done
 echo "missing=$missing"; [ "$missing" -eq 0 ] && touch "$OUT/.done"

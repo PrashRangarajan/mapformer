@@ -82,3 +82,21 @@ dwarfed MapPoPE - PoPE (-0.102).
 - Runs not converged; all existing enwik8 36k runs are budget-limited (negative
   val slope at 36k), which is carried over here and must be stated beside the
   result. A budget-limited null is weaker than a converged one.
+
+## Amendment (before the batch started): power matched PER CONTRAST
+
+`MapPoPE - MapWM` was going to run at n=12 alongside the binding contrast. At the
+observed paired sd of 0.0023 its n=1 effect estimate (-0.0056) needs **n ~ 1.3**,
+against **n ~ 10.4** for `MapPoPE - PoPE` (-0.0020). MapWM is therefore cut to
+**n=8**, still 2.5x over-powered for its own contrast, saving four runs. n=12 on
+the binding contrast is unchanged, and the fixed stopping rule stands.
+
+Unequal n across arms is sound here because every contrast is paired on its own
+common seeds; it would only be a problem for an unpaired between-arm comparison,
+which this batch does not make.
+
+**Also recorded**: composition is currently established NOWHERE. On Dyck under
+the project's required metric (A2, not F1) the position component contrast is
+`MapPoPE - MapWM = +0.081 (MDE 0.112, 6/8)` -- **unmeasured**; only the encoding
+component clears (+0.168, 8/8). The earlier "+0.058 detectable" was an F1 number.
+So this batch is the only live test of the composition claim.
