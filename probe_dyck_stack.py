@@ -90,15 +90,16 @@ def main():
             else:
                 arch, nl, nh = spec; Ps = []
                 # the run dir and the checkpoint name differ for non-Map arms run with --rank
-            pats = [f"{a.runs_dir}/{name}_s*/{name}.pt", f"{a.runs_dir}/{name}_r2_s*/{name}.pt"]
-            for pt in sorted(p for q in pats for p in glob.glob(q)):
+                pats = [f"{a.runs_dir}/{name}_s*/{name}.pt",
+                        f"{a.runs_dir}/{name}_r2_s*/{name}.pt"]
+                for pt in sorted(p for q in pats for p in glob.glob(q)):
                     m = build(arch, 5, nl, nh, 2, 32).cuda().eval()
                     m.load_state_dict(torch.load(pt, map_location="cuda"))
                     with torch.no_grad():
                         Ps.append(torch.cat([m(inp[i:i + 128].cuda()).float().softmax(-1).cpu()
                                              for i in range(0, a.n, 128)]))
-                if not Ps:
-                    continue
+            if not Ps:
+                continue
             acc = [P.gather(-1, corr.unsqueeze(-1)).squeeze(-1) >
                    P.gather(-1, wrng.unsqueeze(-1)).squeeze(-1) for P in Ps]
             def mean(m):
