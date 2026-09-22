@@ -3,6 +3,14 @@
 # C1 retraction. Seed 0 already exists in runs/code2048. 13.5-14.7 GiB each, so
 # one per 24 GiB card.
 set -u
+
+# SINGLE-INSTANCE GUARD. Killing a supervisor does NOT kill its children: `kill`
+# takes the parent and the launcher keeps running, so the next supervisor starts
+# a SECOND copy. On 2026-09-22 that produced 16 launches for 12 runs in
+# run_ablate.sh -- both copies passed the same "does the .json exist yet" test and
+# both launched. A two-sided guard needs both sides; this is the other side.
+exec 9>"/tmp/.mapformer_$(basename "$0" .sh).lock"
+flock -n 9 || { echo "another instance of $(basename "$0") is already running -- exiting"; exit 0; }
 REPO=/home/prashr/mapformer
 OUT=$REPO/runs/code2048
 cd /home/prashr
