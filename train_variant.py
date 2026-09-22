@@ -120,6 +120,7 @@ from mapformer.model_tem_faithful import TEMFaithful
 from mapformer.model_tem_t import TEM_T
 
 
+from .model_pope_ablate import (PoPE_Full, PoPE_NoSigma, PoPE_ReLU, PoPE_NoDelta)
 from .model_code_decay import MapFormerWM_RoPE_Decay, MapFormerWM_Decay
 from .model_pope_decay import (MapFormerWM_PoPE_Decay,
                                MapFormerWM_RoPEIndex_PoPE_Decay)
@@ -325,6 +326,13 @@ VARIANT_MAP = {
     # code OOD result). ALiBi-style scores -= softplus(lambda_h)*distance, one
     # scalar per head. Comparing MapPoPE against UNREPAIRED RoPE past the
     # training context is a comparison against a baseline nobody deploys.
+    # PoPE component ablation -- the paper's Table 5, plus the extrapolation
+    # test that table cannot do. ReLU is the discriminating arm: non-negative
+    # (hence bounded) but in-distribution it behaves like NoSigma.
+    "PoPE-Full":     PoPE_Full,
+    "PoPE-NoSigma":  PoPE_NoSigma,
+    "PoPE-ReLU":     PoPE_ReLU,
+    "PoPE-NoDelta":  PoPE_NoDelta,
     "RoPE-Decay":    MapFormerWM_RoPE_Decay,
     "MapWM-Decay":   MapFormerWM_Decay,
     "PoPE-Decay":    MapFormerWM_RoPEIndex_PoPE_Decay,
