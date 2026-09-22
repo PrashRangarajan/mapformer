@@ -35,14 +35,23 @@ from mapformer.model_dyck_monotone import (MapFormerWM_Abs, MapFormerWM_PoPE_Abs
 LS, DS = [32, 64, 96, 128], [4, 6, 8, 12]
 
 
-def build(arch, vocab, n_layers, n_heads, rank, base, lam_init=None):
+def build(arch, vocab, n_layers, n_heads, rank, base, lam_init=None, rope_base=None):
     d = 64 * n_heads
     kw = dict(vocab_size=vocab, d_model=d, n_heads=n_heads, n_layers=n_layers, grid_size=base)
+    # The INDEX classes take their rotary ladder from `base` (default 10000.0) and
+    # ignore grid_size for it, while the path-integrated arms derive theirs from
+    # grid_size. On Dyck that leaves the path arms with a slowest wavelength of
+    # 143-284 tokens against the index arms' 47,000 -- a 200-300x mismatch riding
+    # on the axis being attributed to path integration, and never controlled.
+    # rope_base=None keeps the historical 10000 so every stored arm is unaffected.
+    ikw = dict(kw)
+    if rope_base is not None:
+        ikw["base"] = float(rope_base)
     if arch == "MapWM": return MapFormerWM(bottleneck_r=rank, **kw)
     if arch == "MapEM": return MapFormerEM(bottleneck_r=rank, **kw)
-    if arch == "RoPE": return MapFormerWM_RoPE(**kw)
+    if arch == "RoPE": return MapFormerWM_RoPE(**ikw)
     if arch == "CoPE": return CoPEBaseline(max_pos=max(LS) + 1, **kw)
-    if arch == "PoPE": return MapFormerWM_RoPEIndex_PoPE(**kw)
+    if arch == "PoPE": return MapFormerWM_RoPEIndex_PoPE(**ikw)
     if arch == "MapPoPE": return MapFormerWM_PoPE(bottleneck_r=rank, **kw)
     if arch == "MapPoPE_T3": return MapFormerWM_PoPE_T3(bottleneck_r=rank, **kw)
     if arch == "MapPoPE_T3inert": return MapFormerWM_PoPE_T3_Inert(bottleneck_r=rank, **kw)
@@ -94,6 +103,9 @@ def main():
     ap.add_argument("--n-heads", type=int, required=True)
     ap.add_argument("--rank", type=int, default=2)
     ap.add_argument("--base", type=int, default=32)
+    ap.add_argument("--rope-base", type=float, default=None,
+                    help="rotary base for the INDEX arms only. None keeps the "
+                         "historical 10000.0 so stored arms are unaffected.")
     ap.add_argument("--lam-init", type=float, default=None,
                     help="decay arms: override the ALiBi geometric init with a constant, to match "
                          "the EFFECTIVE penalty of another arm at a given token distance")
@@ -112,9 +124,12 @@ def main():
     torch.manual_seed(a.seed)
     rng = np.random.default_rng(a.seed)
     world = DyckWorld()
-    model = build(a.arch, world.vocab_size, a.n_layers, a.n_heads, a.rank, a.base, a.lam_init).to(dev)
+    model = build(a.arch, world.vocab_size, a.n_layers, a.n_heads, a.rank, a.base, a.lam_init,
+                  rope_base=a.rope_base).to(dev)
     n_par = sum(p.numel() for p in model.parameters())
     name = f"{a.arch}-{a.n_layers}L" + (f"_r{a.rank}" if a.arch.startswith(("MapWM", "MapEM", "MapPoPE")) else "")
+    if a.rope_base is not None:
+        name += f"_b{int(a.rope_base)}"
     if a.lam_init is not None:
         name += f"_lam{a.lam_init:g}"
     print(f"{name} seed={a.seed} params={n_par:,} d_model={64 * a.n_heads}", flush=True)
@@ -145,7 +160,7 @@ def main():
     slope = float(np.polyfit(np.arange(len(tail)) * 50, tail, 1)[0] * 1000)  # per 1k steps
     grid = evaluate(model, world, dev, a.n_eval, seed=424242)
     out = dict(arch=a.arch, name=name, n_layers=a.n_layers, n_heads=a.n_heads, rank=a.rank,
-               base=a.base, seed=a.seed, params=n_par, steps=total, batch_size=a.batch_size,
+               base=a.base, rope_base=a.rope_base, seed=a.seed, params=n_par, steps=total, batch_size=a.batch_size,
                lr=a.lr, weight_decay=a.weight_decay, loss_curve=curve,
                final_loss=float(np.mean(tail)), final_slope_per_1k=slope, grid=grid,
                wall_s=time.time() - t0)
