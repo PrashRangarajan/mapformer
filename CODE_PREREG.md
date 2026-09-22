@@ -239,3 +239,34 @@ subclass.
 - Arms not converged, or trained in different batches from their comparators.
 - An OOM killing a run mid-batch (the 2048 arms need 13.5-14.7 GiB each, so one
   per 24 GiB card; the 512 decay arms share the remainder).
+
+---
+
+# Amendment 3 (2026-09-22): power the C1 retraction
+
+C1 fired its C1a branch at n=1 and the code OOD framing was retracted on that
+basis. A retraction resting on one seed deserves the same power bar as the claim
+it removed, so seeds 1-2 are added for all four arms at 2048 (seed 0 already
+exists; 8 incremental runs, one per card at 13.5-14.7 GiB).
+
+**Registered readout**: val bpc at 2048, and the 2x2 encoding / position main
+effects with MDE = 2.8*sd/sqrt(3).
+
+- **C1a-confirmed** (expected): the ENCODING main effect at matched training
+  length is within its MDE, against **-3.694** when extrapolating from 512. The
+  retraction stands and becomes a positive, citable result: *at matched training
+  length the four positional encodings are indistinguishable on code.*
+- **C1b** (would partially un-retract): the encoding effect is detectable at
+  2048 and of the same sign as the extrapolation result. Then something survives
+  matched training and the retraction was too broad.
+- **Seed-0 ordering is NOT a registered readout.** RoPE 0.6997 < PoPE 0.7035 <
+  MapPoPE 0.7077 < MapWM 0.7111 spans 0.0114 at n=1; whether that ordering is
+  real is a separate question this batch is not powered for, and it will be
+  reported as unmeasured unless it clears its MDE.
+
+Efficiency note, measured: 1024 x bs8 is 1.6x faster per run (50.6k vs 31.1k
+tok/s) but would need 12 fresh runs plus its own baseline instead of 8
+incremental ones, so total cost is the same and 2048 is the cleaner choice.
+Gradient checkpointing cuts memory 5.3x (14.70 -> 2.79 GiB) for 29% compute, but
+the card is compute-bound at one run, so the extra concurrency it allows does
+not convert into throughput. Neither is adopted.
