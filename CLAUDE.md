@@ -1,8 +1,34 @@
 # CLAUDE.md — Project Memory for MapFormer
 
-## LANDED, 2026-09-21 -- code modelling: MapPoPE beats BOTH components past the training context
+## LANDED then RETRACTED, 2026-09-21 -- code modelling
 
-**Nothing running.** `CODE_RESULTS.md` (narrative + corrections), `CODE_RESULTS_OOD.md`
+**RETRACTED BY ITS OWN CONTROL.** Trained AND tested at 2048 (`runs/code2048`, all 4 arms,
+seed 0): RoPE **0.6997**, PoPE 0.7035, MapPoPE 0.7077, MapWM 0.7111 -- spread 0.0114, **RoPE
+BEST, MapWM last**. The -3.694 encoding effect and the -0.102 composition result were the cost
+of extrapolating past a 512 context, not a capability difference. CODE_PREREG Amendment 2 fixed
+this branch (C1a) in advance. **Do not cite the OOD numbers as an encoding result.**
+
+Also corrected in the audit: "position main effect zero" was bucket-specific (it is DETECTABLE
+and HELPING at 512-1024, -0.552, 3/3); the code 2x2 is NOT additive (3 detectable interactions,
+all against composition); alpha=1.000 was a rounded mean (MapPoPE s2 = 0.864) and Dyck's MapPoPE
+has alpha 0.784 with a per-seed max of 1.01, so alpha ~ 1 does not preclude a Dyck win.
+
+**The Dyck 2x2 I quoted used F1, which this file forbids as a headline.** Under Hewitt
+distance-averaged closing accuracy the position main effect HALVES (+0.306 -> **+0.136**), the
+encoding effect is +0.049, and the interaction becomes **+0.065** -- the same size as the
+encoding effect, not the +0.009 F1 reported. F1 inflates position 2.3x.
+
+**UNCONTROLLED CONFOUND in every position claim in this line.** The index classes default to
+`base=10000.0` while path arms derive their ladder from `grid_size`, and `build()` never passes
+`base`. On Dyck the path arms' slowest wavelength is 143-284 tokens against the index arms'
+47,000 (34% of index channels never complete a cycle in the eval window). No RoPE arm has ever
+been trained at base 32 or 512. ~20 GPU-min to settle.
+
+**Dyck has NO 2-layer path-integrated arm** anywhere in `runs/dyck_*`, so the depth-matched 2x2
+has never been run -- and RoPE-2L already reaches MapWM-1L at the hardest distance bucket
+(0.592 vs 0.611). Dyck's position effect may be largely depth-substitution at 1 layer.
+
+`CODE_RESULTS.md` (narrative + corrections), `CODE_RESULTS_OOD.md`
 (MDEs), `CODE_GATES.md` (floors), `CODE_PREREG.md` + Amendment 1. Runs `runs/code`,
 4 arms x 3 seeds, one batch. Corpus `build_code_corpus.py` -> 100.1 MB of local Python,
 split BY FILE, brackets from CPython's own tokenizer.

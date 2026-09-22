@@ -1,4 +1,46 @@
-# Code modelling: MapPoPE beats both components BEYOND the training context
+# Code modelling: the out-of-distribution result is RETRACTED
+
+> **RETRACTED 2026-09-21 by its own registered control (C1).** Trained AND tested
+> at 2048 (matched tokens/step, `runs/code2048`, seed 0, all four arms complete):
+>
+> | arm | position | encoding | val bpc @2048 |
+> |---|---|---|---|
+> | **RoPE** | index | RoPE | **0.6997** |
+> | PoPE | index | PoPE | 0.7035 |
+> | MapPoPE | path-int | PoPE | 0.7077 |
+> | MapWM | path-int | RoPE | 0.7111 |
+>
+> Spread **0.0114**, RoPE BEST, MapWM last. `CODE_PREREG.md` Amendment 2 fixed
+> this branch in advance: "if every arm ceilings at 2048 the way they did at 512,
+> the code OOD result is an artifact of the train/test mismatch and **the framing
+> is retracted**." It is. The -3.694 encoding effect and the -0.102
+> "MapPoPE beats both components" both live entirely inside the extrapolation
+> artifact. **Train the arms at the length you test them at and the result is gone.**
+>
+> The measurements below are not wrong -- they are the cost of extrapolating past
+> a short training context, which is a real (and well-known) phenomenon with cheap
+> standard fixes. They are NOT evidence that one encoding models code better.
+>
+> Process failure worth recording: this batch finished with a `.done` marker and
+> four complete JSONs, and I reported "the two path-integrated arms haven't
+> started" after reading two `.partial.json` files. An agent audit found it.
+> **Check the completion marker, not the partial files.**
+
+## Further corrections found in the same audit
+
+- **"Position main effect is zero" was bucket-specific.** By bucket: 0-512
+  +0.0061 (MDE 0.0067, unmeasured); **512-1024 -0.5523 (MDE 0.2127, 3/3)
+  DETECTABLE, path integration HELPS**; 1024-2048 +0.0080 (MDE 0.2606,
+  unmeasured -- MDE 33x the effect). Only the last cell was quoted. Rule 11:
+  "unmeasured", never "zero".
+- **The code 2x2 is NOT additive.** Detectable interactions in three cells, all
+  against composition: bpc 512-1024 +1.024 (0/3), acc 129-512 -0.090 (0/3),
+  acc 513-1024 -0.106 (0/3).
+- **alpha = 1.000 was a rounded mean.** Per seed: MapWM 1.016/1.004/0.999,
+  MapPoPE 1.014/1.013/**0.864**. And Dyck's MapPoPE -- the best Dyck arm -- has
+  alpha 0.784 +/- 0.189 with a per-seed max of 1.01, so alpha ~ 1 does NOT
+  preclude winning on Dyck. The clock/map reading of alpha was over-stated.
+
 
 > **n=3 seeds, complete.** MDEs in `CODE_RESULTS_OOD.md`. Two claims from the
 > n=1 read did NOT survive the extra seeds and are corrected in place below.
