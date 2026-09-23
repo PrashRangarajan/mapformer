@@ -533,6 +533,11 @@ def main():
             "grid_size": grid_size, "n_obs_types": args.n_obs_types,
             "p_empty": 0.5, "env": args.env, "n_dims": args.n_dims,
             "n_landmarks": args.n_landmarks,
+            # training recipe, so a checkpoint records the length it was trained at
+            # (added 2026-09-23; older checkpoints lack these keys -- read with .get)
+            "n_steps": args.n_steps, "batch_size": args.batch_size,
+            "epochs": args.epochs, "lr": args.lr, "schedule": args.schedule,
+            "n_batches": args.n_batches,
         },
     }, ckpt_path)
     print(f"Saved: {ckpt_path}")

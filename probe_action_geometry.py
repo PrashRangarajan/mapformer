@@ -43,21 +43,25 @@ def latents(m, env, dev):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--runs-dir", default="mapformer/runs/rank_sweep/p0")
+    # No defaults for --runs-dir / --out (audit 2026-09-23): the old default read the
+    # T=128 rank-sweep checkpoints silently and overwrote the committed ACTION_GEOMETRY.md.
+    ap.add_argument("--runs-dir", required=True, help="directory holding <arm>_s<seed>/")
     ap.add_argument("--arms", nargs="+",
                     default=["Vanilla", "Vanilla_r4", "Vanilla_r8", "Vanilla_r32"])
     ap.add_argument("--device", default="cuda:0")
-    ap.add_argument("--out", default="ACTION_GEOMETRY.md")
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--seeds", nargs="+", type=int, default=list(range(8)))
     a = ap.parse_args()
     dev = torch.device(a.device)
 
-    rows = {}
+    rows, per_seed = {}, []
     for arm in a.arms:
         opp, dim2, orth, obsnorm = [], [], [], []
-        for s in range(8):
+        for s in a.seeds:
             cp = Path(a.runs_dir) / f"{arm}_s{s}" / f"{arm}.pt"
             if not cp.exists():
-                continue
+                raise SystemExit(f"missing checkpoint {cp}")   # was a silent skip
+            n_opp = len(opp)
             blob = torch.load(cp, map_location="cpu", weights_only=False)
             c = blob["config"]
             m = VARIANT_MAP[arm](vocab_size=c["vocab_size"], d_model=c["d_model"],
@@ -87,6 +91,9 @@ def main():
             dim2.append(float((sv[:2] ** 2).sum() / max((sv ** 2).sum(), 1e-12)))
             obsnorm.append(float(np.linalg.norm(O, axis=1).mean() /
                                  max(np.linalg.norm(A, axis=1).mean(), 1e-9)))
+            # per seed: r=2 is BIMODAL across seeds (audit 2026-09-23), so means hide it
+            per_seed.append((arm, s, float(np.mean(opp[n_opp:])), orth[-1] if orth else float("nan"),
+                             obsnorm[-1]))
             del m; torch.cuda.empty_cache()
         if opp:
             rows[arm] = (np.mean(opp), np.mean(dim2), np.mean(orth), np.mean(obsnorm))
@@ -129,6 +136,9 @@ def main():
     o += ["Inference only, 8 seeds. `opposition` and `|cos|` are scale-free; "
           "`2-plane energy` is 1.0 by construction at r=2, so only r>2 rows are "
           "informative on that column."]
+    o += ["", "## Per seed", "", "| arm | seed | opposition | |cos(N,E)| | obs/action norm |",
+          "|---|---|---|---|---|"]
+    o += [f"| {arm} | {s} | {op:.4f} | {c:.4f} | {on:.4f} |" for arm, s, op, c, on in per_seed]
     Path(a.out).write_text("\n".join(o) + "\n")
     print("\n".join(o))
 
