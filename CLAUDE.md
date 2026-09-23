@@ -1,5 +1,24 @@
 # CLAUDE.md — Project Memory for MapFormer
 
+## 2026-09-23 -- Dyck depth ladder: the last positive result SURVIVES; C1 closes as a REVERSAL
+
+**Dyck (`DYCK_LADDER_RESULTS.md`, 128 runs, fixed width n_heads=2/d=128, only depth varies).**
+At L32 D12 (training length, real headroom) the position main effect is **+0.290 / +0.209 /
++0.159 / +0.168 at 1-4 layers, 8/8 at every depth**. The index arms STOP CLIMBING at ~0.76-0.78
+while path arms hold ~0.92-0.95. **F2 fired: path integration buys something depth does not.**
+The earlier "depth substitutes, 4.4x drop" was CONFOUNDED WITH WIDTH (old 1L arms were d=64,
+2L were d=128) and is withdrawn. Does NOT extrapolate: gone at L128 D12 from 3L up.
+**This is the one converged, matched-length, floor-reported positive result in the language line.**
+
+**Code C1 closed at n=3**: at matched training length the encoding effect is -0.0030 (MDE
+0.0046) against -3.694 extrapolating, and the claim REVERSES -- position +0.0055 and MapPoPE -
+PoPE +0.0033, both DETECTABLE AGAINST path integration. Agrees with C2 (`CODE_DECAY_RESULTS.md`).
+
+**The dividing line in the whole project is matched vs mismatched length.** Both positive
+results that survive (navigation +0.461 at T=128->128; Dyck at L32) are matched-length. Every
+"helps at OOD length" claim with a matched-length control has died; rank, InEKF, forget gate and
+PoPE-wrapping (all train T=128, test T=512/1024) have NEVER had one.
+
 ## 2026-09-22 -- PoPE ablation: bound account DEAD; the "non-replication" was mostly my error
 
 `ABLATE_RESULTS.md`, `runs/code_ablate`, 4 arms x 3 seeds, one batch.
