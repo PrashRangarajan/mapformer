@@ -1,21 +1,36 @@
 # CLAUDE.md — Project Memory for MapFormer
 
-## 2026-09-22 -- PoPE ablation: the non-negativity account is DEAD (`ABLATE_RESULTS.md`)
+## 2026-09-22 -- PoPE ablation: bound account DEAD; the "non-replication" was mostly my error
 
-`runs/code_ablate`, 4 arms x 3 seeds, one batch. **Their Table 5 does not replicate**:
-removing softplus is FREE here (-0.0002, unmeasured) while ReLU is the only detectable
-in-distribution cost (+0.0101, 0/3) -- their ordering inverted on the arm they emphasise.
+`ABLATE_RESULTS.md`, `runs/code_ablate`, 4 arms x 3 seeds, one batch.
 
-**F2 fired.** The account that PoPE's non-negative magnitudes bound the logit, and that
-this is why PoPE-encoding arms survive past their context, is REFUTED: **NoSigma has
-signed magnitudes exactly like RoPE and does not blow up** (extrapolation penalty -0.0234
-against RoPE's +3.5885). All OOD contrasts unmeasured at n=3.
+**F2 fired as registered: the non-negativity account is REFUTED.** NoSigma has signed
+magnitudes exactly like RoPE and does NOT blow up (extrapolation penalty -0.0108 against
+RoPE's +3.5885). Non-negativity is not what buys extrapolation.
 
-**Surviving HYPOTHESIS (untested, seventh in a line where six failed)**: what matters is a
-**content-independent, SHARED kernel**, not a bounded one. PoPE's phase is purely
-positional and content only scales each channel, so the kernel shape is identical for every
-query-key pair even without softplus; RoPE rotates content, so its phase offset is
-per-pair. Test: keep softplus, make the PHASE content-dependent -- should blow up.
+**CORRECTED: "their Table 5 does not replicate" was WRONG**, for two reasons of mine.
+(a) `PoPE-NoSigma_s2.best.pt` was a STALE iter-15000 checkpoint written by a duplicate
+launch 55 min after the run finished -- it produced the whole "anomalous seed" story.
+(b) The in-distribution readout used the trainer's 40 val windows (~5% of the file).
+On the full val file: **Full < NoDelta ~ NoSigma < ReLU** against their
+**Full < NoDelta < ReLU ~ NoSigma** -- three of four cells agree, and the NoSigma cell is
+**UNMEASURED** (our MDE 0.388% relative vs their 0.366% effect), not refuted.
+
+**Our PoPE implementation is FAITHFUL** -- verified against the authors' released code to
+1.7e-06 max logit difference. Note their release has **no sigma switch at all**, so their
+Table 5 sigma rows are not reproducible from it, and "without sigma()" is our inference.
+
+**Why the fourth cell differs: there is no gain to decompose.** PoPE - RoPE on this corpus
+is **+0.0034 bpc with PoPE WORSE** (MDE 0.0101, 1/3). Their table decomposes a 0.22-ppl
+PoPE-over-RoPE gain that does not exist here.
+
+**Three facts that stand alone**: delta is nearly inert (**80.7%** of `pope_delta` sits in
+the `clamp(-2pi,0)` dead zone with exactly zero gradient and freezes; max effective |delta|
+0.60 rad = 9.6% of range) -- their code has the same clamp and init; ReLU kills ~50% of
+magnitude channels; and the **batch-to-batch floor is 0.0021 bpc mean / 0.0028 max** for
+the same arch and seeds in different batches, which EXCEEDS the NoDelta effect.
+
+**Nothing is converged** (-0.0021 to -0.0034 bpc/1k at 36k, constant LR, no decay, no wd).
 
 ## LANDED then RETRACTED, 2026-09-21 -- code modelling
 

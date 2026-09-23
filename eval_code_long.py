@@ -119,6 +119,22 @@ def main():
                       bottleneck_r=cfg["bottleneck_r"]).to(args.device)
         miss = model.load_state_dict(blob["state_dict"], strict=False)
         assert not miss.missing_keys and not miss.unexpected_keys, miss
+        # A .best.pt can be STALE: a duplicate launch of the same arm writes its
+        # own early best over a finished run's checkpoint, and the architecture
+        # still matches so nothing above catches it. On 2026-09-22 that put an
+        # iteration-15000 model into the PoPE-NoSigma_s2 cell and it was read as
+        # instability. Cross-check the checkpoint against the run's own JSON.
+        jf = ck.parent / (base + ".json")
+        if jf.exists():
+            rec = json.load(open(jf))
+            want = rec.get("best_val_bpc") if ck.name.endswith(".best.pt") else \
+                   rec["curve"][-1]["val_bpc"]
+            got = blob.get("val_bpc")
+            if want is not None and got is not None and abs(want - got) > 1e-9:
+                raise SystemExit(
+                    f"STALE CHECKPOINT {ck.name}: val_bpc {got:.4f} but the run's "
+                    f"JSON says {want:.4f} (iter {blob.get('iter')}). Refusing to "
+                    f"score a checkpoint that is not the run it claims to be.")
         model.eval()
         bpc, got, dis, spos = run(model, data, pos, kind, open_pos,
                                   args.device, args.seq_len)
