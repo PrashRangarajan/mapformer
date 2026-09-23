@@ -34,7 +34,10 @@ established.
 speedup only 1.25x. Keep fp32.
 
 **In flight / next, none launched:**
-- **Rank at matched length** -- audited GO, owned by the main session (`runs/rank_matched`,
+- **Rank at matched length LANDED 2026-09-23: BUDGET-LIMITED.** Neither arm converged at T=1024
+  (flat 4/8 r=2, 0/8 r=4); loss-matched r4-r2 +0.002 (MDE 0.115), raw +0.157 (MDE 0.203).
+  The gap is training speed. `RANK_MATCHED_RESULTS.md`. Next: 900-epoch pilot. Design record:
+  audited GO, owned by the main session (`runs/rank_matched`,
   `RANK_MATCHED_PREREG.md`). r=2 vs r=4 trained and tested at T=1024, 8 seeds, `--n-steps 1024
   --batch-size 16`, else the `run_rank_sweep.sh` recipe. Audit: 94% of the old +0.085 is
   short-gap revisits late in the sequence (robustness signature); wrap revisits below floor for

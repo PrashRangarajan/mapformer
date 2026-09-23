@@ -56,7 +56,14 @@ additive digit angles. MapFormer has only (C) -- its angle is computed once from
 before attention (the "placement" axis `mapformer_math.tex` calls uncompared) -- so MapWM should
 fail even with perfect digit arithmetic. Next test, not run: train on even shifts, test on odd.
 
-**Rank at matched length -- DESIGNED AND AUDITED (GO), NOT LAUNCHED.** The main session owns it
+**Rank at matched length -- LANDED 2026-09-23 15:23: BUDGET-LIMITED, no branch fires**
+(`RANK_MATCHED_RESULTS.md`, `analyze_rank_matched.py`). Trained at T=1024 neither arm converges
+(flat r=2 4/8, r=4 0/8; losses 0.2-1.25 vs <=0.09 at T=128). Raw r4-r2 +0.157 at T=1024, MDE 0.203;
+r(log loss, acc) -0.985 within r=2 and **loss-matched r4-r2 = +0.002** -- the gap is training
+speed, not capability. r=4 trains faster in BOTH batches. Geometry prediction (r=2 cleaner at
+T=1024) not supported (opposition 0.495 -> 0.667). Next: 900-epoch pilot, then 8 seeds.
+
+Design record (was: DESIGNED AND AUDITED (GO)). The main session owns it
 (`runs/rank_matched`, `RANK_MATCHED_PREREG.md`, a stratified readout script, the probe fixes);
 do not edit `run_rank_sweep.sh`, `train_variant.py`, `probe_action_geometry.py` or `RANK_*` from
 another session.
