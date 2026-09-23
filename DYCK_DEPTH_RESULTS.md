@@ -1,3 +1,23 @@
+> **CORRECTION 2026-09-23 (audit).** This file, and every summary built on it, quoted
+> the position effect at **L128 D12 -- the cell where it is SMALLEST**. The full A2
+> position main effect by cell, recomputed from `DYCK_DEPTH_RESULTS.json`:
+>
+> | cell | 1 layer | 2 layers |
+> |---|---|---|
+> | **L32 D4 (the TRAINING cell)** | **+0.357** (MDE 0.005, 8/8) | **+0.081** (MDE 0.003, 8/8) |
+> | L32 D12 (depth x3, length matched) | +0.343 (MDE 0.027, 8/8) | **+0.209** (MDE 0.010, 8/8) |
+> | L128 D4 | +0.213 (MDE 0.099, 8/8) | +0.080 (MDE 0.068, 7/8) |
+> | L128 D12 (quoted everywhere) | +0.136 (MDE 0.051, 8/8) | +0.048 (MDE 0.042, 7/8) |
+>
+> **Dyck's position effect is LARGEST IN DISTRIBUTION and SHRINKS with length.** It is a
+> depth/stack effect that degrades under extrapolation, not a length-extrapolation effect.
+>
+> **And F1 does not merely inflate it -- F1 INVERTS ITS SHAPE.** Same checkpoints, same
+> sequences, 1 layer, training cell -> L128 D12: **A2 falls 2.6x (+0.357 -> +0.136)
+> while F1 rises 4.1x (+0.075 -> +0.306)**. The "path integration helps out of
+> distribution" signature on Dyck is manufactured by the metric out of data whose
+> chance-anchored reading says the opposite.
+
 # READING
 
 **E2: the frequency-ladder confound is DEAD.** F3 does not fire -- giving the index
