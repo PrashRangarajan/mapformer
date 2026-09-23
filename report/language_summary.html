@@ -1,0 +1,419 @@
+<title>Position Codes on Language</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F5F6F3; --surface:#FFFFFF; --surface-2:#EFF2EE;
+  --ink:#13201D; --ink-2:#33443F; --muted:#5D6C68; --faint:#8A9793;
+  --rule:#DCE2DE; --rule-strong:#C2CCC7;
+  --accent:#0E5A55; --accent-2:#0B4743; --accent-soft:#DCEAE7;
+  --ok:#2E6A4C; --ok-soft:#DCEDE2;
+  --warn:#8A6520; --warn-soft:#F2E8D2;
+  --bad:#9B3E2C; --bad-soft:#F4E0DA;
+  --shadow:0 1px 2px rgba(19,32,29,.05), 0 8px 24px -16px rgba(19,32,29,.22);
+  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1312; --surface:#161C1B; --surface-2:#1B2322;
+    --ink:#E7ECE9; --ink-2:#C4CFCB; --muted:#94A39F; --faint:#71807C;
+    --rule:#27302E; --rule-strong:#35403D;
+    --accent:#68C4B8; --accent-2:#8AD6CC; --accent-soft:#17332F;
+    --ok:#6FBE92; --ok-soft:#16281F;
+    --warn:#D6AE63; --warn-soft:#2A2113;
+    --bad:#D98C76; --bad-soft:#2C1912;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1312; --surface:#161C1B; --surface-2:#1B2322;
+  --ink:#E7ECE9; --ink-2:#C4CFCB; --muted:#94A39F; --faint:#71807C;
+  --rule:#27302E; --rule-strong:#35403D;
+  --accent:#68C4B8; --accent-2:#8AD6CC; --accent-soft:#17332F;
+  --ok:#6FBE92; --ok-soft:#16281F;
+  --warn:#D6AE63; --warn-soft:#2A2113;
+  --bad:#D98C76; --bad-soft:#2C1912;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:var(--sans); font-size:16px; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums;
+}
+.wrap{max-width:940px; margin:0 auto; padding:0 24px 96px}
+
+/* ---- masthead ---- */
+header.mast{padding:72px 0 0}
+.eyebrow{
+  font-family:var(--mono); font-size:11.5px; font-weight:500;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--accent);
+  display:flex; align-items:center; gap:10px; margin-bottom:22px;
+}
+.eyebrow::after{content:""; flex:1; height:1px; background:var(--rule-strong)}
+h1{
+  font-family:var(--serif); font-weight:400;
+  font-size:clamp(42px,7.2vw,76px); line-height:1.02;
+  letter-spacing:-.015em; margin:0 0 20px; text-wrap:balance;
+}
+h1 em{font-style:italic; color:var(--accent)}
+.standfirst{
+  font-size:19px; line-height:1.55; color:var(--ink-2);
+  max-width:63ch; margin:0 0 30px;
+}
+.standfirst strong{color:var(--ink); font-weight:600}
+.metastrip{
+  display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--rule);
+  border-bottom:1px solid var(--rule); margin-bottom:56px;
+}
+.metastrip div{
+  flex:1 1 150px; padding:14px 18px 14px 0; border-right:1px solid var(--rule);
+}
+.metastrip div:last-child{border-right:0}
+.metastrip dt{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--faint); margin-bottom:4px;
+}
+.metastrip dd{margin:0; font-size:14.5px; color:var(--ink-2); line-height:1.4}
+
+/* ---- reading key ---- */
+.key{
+  background:var(--surface); border:1px solid var(--rule); border-radius:3px;
+  padding:26px 28px; margin:0 0 60px; box-shadow:var(--shadow);
+}
+.key h2{margin-top:0}
+.keygrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px 26px; margin-top:18px}
+.keyitem{display:flex; gap:11px; align-items:flex-start; font-size:14px; line-height:1.45; color:var(--muted)}
+
+/* ---- chips ---- */
+.chip{
+  display:inline-block; font-family:var(--mono); font-size:10px; font-weight:600;
+  letter-spacing:.1em; text-transform:uppercase; padding:3px 8px 2px;
+  border-radius:2px; white-space:nowrap; line-height:1.5; flex:none;
+  border:1px solid transparent;
+}
+.chip.ok{background:var(--ok-soft); color:var(--ok); border-color:var(--ok)}
+.chip.det{background:var(--accent-soft); color:var(--accent); border-color:var(--accent)}
+.chip.warn{background:var(--warn-soft); color:var(--warn); border-color:var(--warn)}
+.chip.bad{background:var(--bad-soft); color:var(--bad); border-color:var(--bad)}
+.chip.plain{background:var(--surface-2); color:var(--muted); border-color:var(--rule-strong)}
+
+/* ---- sections ---- */
+section{margin:0 0 66px; scroll-margin-top:20px}
+h2{
+  font-family:var(--serif); font-weight:400; font-size:34px; line-height:1.14;
+  letter-spacing:-.01em; margin:0 0 6px; text-wrap:balance;
+}
+h3{
+  font-family:var(--mono); font-size:11.5px; font-weight:600; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--faint); margin:34px 0 12px;
+}
+.sectmeta{
+  font-family:var(--mono); font-size:12.5px; color:var(--muted);
+  margin:0 0 22px; padding-bottom:18px; border-bottom:1px solid var(--rule);
+}
+p{margin:0 0 15px; max-width:68ch}
+.lede{font-size:17px; color:var(--ink-2)}
+strong{font-weight:600}
+code,.num{font-family:var(--mono); font-size:.9em}
+.num{font-weight:500}
+
+/* ---- verdict line ---- */
+.verdict{
+  display:flex; gap:14px; align-items:flex-start;
+  background:var(--surface); border:1px solid var(--rule);
+  border-left:3px solid var(--accent);
+  padding:16px 20px; margin:0 0 24px; border-radius:2px;
+}
+.verdict.v-ok{border-left-color:var(--ok)}
+.verdict.v-warn{border-left-color:var(--warn)}
+.verdict.v-bad{border-left-color:var(--bad)}
+.verdict p{margin:0; font-size:15.5px; line-height:1.5}
+
+/* ---- tables ---- */
+.tablewrap{overflow-x:auto; margin:0 0 10px; border:1px solid var(--rule); border-radius:3px; background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:14px; min-width:520px}
+th,td{padding:9px 14px; text-align:right; border-bottom:1px solid var(--rule); white-space:nowrap}
+th:first-child,td:first-child{text-align:left; white-space:normal; min-width:170px}
+thead th{
+  font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.07em;
+  text-transform:uppercase; color:var(--faint); vertical-align:bottom;
+  background:var(--surface-2); border-bottom:1px solid var(--rule-strong);
+  line-height:1.35; white-space:normal;
+}
+tbody td{font-family:var(--mono); font-weight:400; color:var(--ink-2)}
+tbody td:first-child{font-family:var(--sans); color:var(--ink)}
+tbody tr:last-child td{border-bottom:0}
+td.best{color:var(--accent); font-weight:600}
+tr.hero td{background:var(--accent-soft)}
+tr.hero td:first-child{font-weight:600}
+tr.floor td{color:var(--muted); font-style:italic; background:var(--surface-2)}
+tr.floor td:first-child{font-family:var(--sans)}
+tr.rule-top td{border-top:1px solid var(--rule-strong)}
+.caption{
+  font-size:13px; color:var(--muted); margin:10px 0 26px; max-width:68ch; line-height:1.5;
+}
+.caption b{color:var(--ink-2); font-weight:600}
+
+/* ---- findings list ---- */
+ul.findings{list-style:none; padding:0; margin:20px 0 0}
+ul.findings li{
+  padding:0 0 15px 0; margin-bottom:15px; border-bottom:1px dotted var(--rule);
+  font-size:15px; line-height:1.55; max-width:70ch;
+}
+ul.findings li:last-child{border-bottom:0; margin-bottom:0}
+ul.findings .chip{margin-right:9px; position:relative; top:-1px}
+
+/* ---- withdrawn block ---- */
+.withdrawn{
+  background:var(--bad-soft); border:1px solid var(--bad);
+  border-radius:3px; padding:26px 28px;
+}
+.withdrawn h2{margin-top:0; color:var(--bad)}
+.withdrawn p{color:var(--ink-2)}
+
+/* ---- files ---- */
+.files{
+  border-top:1px solid var(--rule-strong); padding-top:26px; margin-top:20px;
+}
+.filegrid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:8px 28px; font-family:var(--mono); font-size:12.5px; color:var(--muted);
+}
+.filegrid span{padding:5px 0; border-bottom:1px solid var(--rule); display:flex; justify-content:space-between; gap:14px}
+.filegrid b{color:var(--ink-2); font-weight:500}
+
+footer{
+  margin-top:70px; padding-top:22px; border-top:1px solid var(--rule);
+  font-family:var(--mono); font-size:12px; color:var(--faint);
+  display:flex; flex-wrap:wrap; gap:8px 22px; justify-content:space-between;
+}
+@media(max-width:620px){
+  header.mast{padding-top:46px}
+  .wrap{padding:0 17px 64px}
+  .metastrip div{border-right:0; border-bottom:1px solid var(--rule); flex-basis:100%}
+  .metastrip div:last-child{border-bottom:0}
+  .key,.withdrawn{padding:20px}
+}
+
+/* ---- short version ---- */
+.short{background:var(--surface); border:1px solid var(--rule); border-top:3px solid var(--accent);
+  border-radius:3px; padding:26px 30px 22px; margin:0 0 60px; box-shadow:var(--shadow)}
+.short h2{font-size:26px; margin:0 0 14px}
+.short ol{margin:0; padding-left:1.25em}
+.short li{margin:0 0 12px; font-size:16px; line-height:1.55; max-width:70ch}
+.short li:last-child{margin-bottom:0}
+.terms{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px 28px; margin:18px 0 8px}
+.term{border-left:2px solid var(--rule-strong); padding:2px 0 2px 14px}
+.term b{display:block; font-family:var(--mono); font-size:12px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--accent); margin-bottom:4px}
+.term span{font-size:14.5px; color:var(--ink-2); line-height:1.5}
+</style><div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">MapFormer &times; PoPE &mdash; positional encodings on language</div>
+  <h1>Position codes<br>on <em>language</em></h1>
+  <p class="standfirst">Two recent papers change how a transformer represents <em>where</em> a token is. <strong>MapFormer</strong> replaces the token&rsquo;s index with a learned running sum, built for navigation; <strong>PoPE</strong> separates what a token is from where it is. This week tested both on language-like data &mdash; bracket languages, real code, text and music. <strong>The clearest result: on a language whose structure runs backwards as well as forwards, path integration gives a lasting advantage that extra depth cannot buy.</strong></p>
+  <dl class="metastrip">
+    <div><dt>Tasks</dt><dd>Dyck-2, real Python, enwik8, Indirect Indexing, Bach Chorales</dd></div>
+    <div><dt>Standard</dt><dd>3&ndash;8 seeds, all arms in one batch, effect must clear 2.8&middot;sd/&radic;n</dd></div>
+    <div><dt>Every result</dt><dd>reported beside the score of a model with no memory</dd></div>
+    <div><dt>As of</dt><dd>23 Sep 2026</dd></div>
+  </dl>
+</header>
+
+<div class="short">
+  <h2>The short version</h2>
+  <ol>
+    <li><strong>Path integration beats ordinary positions on Dyck-2, and depth doesn&rsquo;t close the gap.</strong> +0.17 at four layers, 8/8 seeds, at the training length. Standard models plateau around 0.77; path-integrated ones hold at 0.92&ndash;0.95.</li>
+    <li><strong>PoPE&rsquo;s encoding also improves MapFormer.</strong> The combined model beats MapFormer on every task where PoPE helps and is never worse &mdash; so when a task needs path integration, add PoPE on top. On text, code and music, plain PoPE still wins.</li>
+    <li><strong>Three published results replicate</strong>: MapFormer on Dyck-2, and PoPE on both Indirect Indexing and Bach Chorales.</li>
+    <li><strong>A 48-parameter fix matches a 786k-parameter one.</strong> A simple distance penalty in attention repairs long-context failures on Bach and, added to plain RoPE, gives the best of all eight models tested on code.</li>
+    <li><strong>A simple data trick beats PoPE&rsquo;s published Bach score</strong> by a wide margin &mdash; 0.394 against their 0.489.</li>
+    <li><strong>The metric the MapFormer paper uses on Dyck is unreliable.</strong> A model with no memory scores 0.88 on it, and it reports the effect running in the opposite direction to what it actually does.</li>
+  </ol>
+</div>
+
+<div class="key">
+  <h2 style="font-size:24px">What was being tested</h2>
+  <div class="terms">
+    <div class="term"><b>Index position (RoPE)</b><span>The standard method. Each token gets its position number <em>t</em>, which rotates its query and key.</span></div>
+    <div class="term"><b>Path integration (MapFormer)</b><span>Position is a running sum of a small learned step per token. A step can be negative, so position can move <em>backwards</em>. Ordinary position is the special case where every step is +1.</span></div>
+    <div class="term"><b>PoPE</b><span>Keeps the index, but lets a token&rsquo;s content set only the <em>strength</em> of each frequency, never its timing.</span></div>
+    <div class="term"><b>The 2&times;2</b><span>Those axes cross into four models &mdash; RoPE, PoPE, MapWM and MapPoPE &mdash; so each axis&rsquo;s effect can be measured on its own.</span></div>
+  </div>
+  <div class="keygrid" style="margin-top:22px">
+    <div class="keyitem"><span class="chip ok">Replicates</span><span>Reproduces a published result.</span></div>
+    <div class="keyitem"><span class="chip det">Detectable</span><span>Clears its minimum detectable effect, consistent sign.</span></div>
+    <div class="keyitem"><span class="chip warn">Caveat</span><span>Real, but with a limit worth knowing.</span></div>
+    <div class="keyitem"><span class="chip ok">Method</span><span>A finding about how to measure, not which model wins.</span></div>
+  </div>
+</div>
+
+<!-- ============ HEADLINE ============ -->
+<section>
+  <h2>The main result: path integration on Dyck-2</h2>
+  <p class="sectmeta">bracket language &middot; width fixed, depth varied &middot; 4 models &times; 8 seeds &times; 4 depths, one batch</p>
+  <p>Dyck-2 is the language of balanced brackets, <code>(</code> <code>)</code> <code>[</code> <code>]</code>. To predict which closer is legal, a model must track a stack whose depth goes up on every opener and down on every closer &mdash; a signed quantity, which is exactly what a running sum represents and a token counter cannot. The natural objection is that a deeper standard transformer can learn to track the stack through attention alone. So width was held fixed and only depth varied:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>layers</th><th>standard models<br>RoPE / PoPE</th><th>path-integrated<br>MapWM / MapPoPE</th><th>advantage of<br>path integration</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>0.657 / 0.667</td><td>0.915 / 0.988</td><td class="best">+0.290</td></tr>
+        <tr><td>2</td><td>0.740 / 0.765</td><td>0.937 / 0.987</td><td class="best">+0.209</td></tr>
+        <tr><td>3</td><td>0.760 / 0.777</td><td>0.934 / 0.920</td><td class="best">+0.159</td></tr>
+        <tr class="hero"><td>4</td><td>0.755 / 0.781</td><td>0.923 / 0.949</td><td class="best">+0.168</td></tr>
+        <tr class="floor"><td>no memory at all</td><td colspan="2">~0.51</td><td>&mdash;</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="caption">Closing-bracket accuracy (Hewitt et al. 2020, chance 0.500) at the training length and three times the training depth; 2 heads, d=128 throughout. <b>Every row is 8/8 seeds and clears its minimum detectable effect.</b></p>
+  <ul class="findings">
+    <li><span class="chip det">8/8 seeds</span><strong>Depth closes about 40% of the gap, then stops.</strong> Standard models stop improving after two or three layers; three and four layers are indistinguishable (+0.159 vs +0.168). Path integration buys something extra depth does not.</li>
+    <li><span class="chip det">8/8 seeds</span><strong>It is measured the right way.</strong> Training length, fixed width, all models in one batch, every run converged, reported beside a no-memory floor &mdash; the conditions under which effects in this area most often turn out to be artifacts.</li>
+    <li><span class="chip warn">Scope</span><strong>It is a stack-tracking effect, not a long-context one.</strong> At four times the training length the advantage disappears from three layers up.</li>
+  </ul>
+  <p style="margin-top:22px">It agrees with MapFormer&rsquo;s own navigation result, which is also measured at the training length: path integration beats a matched index model by <strong class="num">+0.461</strong> (n=8), reaching 0.99 where the index model sits on a 0.506 floor. The two tasks share the property that makes a signed running sum useful &mdash; position that can move backwards.</p>
+</section>
+
+<!-- ============ REPLICATIONS ============ -->
+<section>
+  <h2>Three replications</h2>
+  <p class="sectmeta">published results reproduced from scratch</p>
+  <ul class="findings">
+    <li><span class="chip ok">Replicates</span><strong>MapFormer on Dyck-2</strong>, on the paper&rsquo;s own metric: MapFormer beats a two-layer RoPE by +0.370 (paper +0.44), 8/8. The ordering replicates; the paper&rsquo;s absolute scores come in 0.015&ndash;0.112 lower here.</li>
+    <li><span class="chip ok">Replicates</span><strong>PoPE on Indirect Indexing</strong> &mdash; a pointer-arithmetic task &mdash; at 200k training steps, where it solves the task on 7 of 8 seeds. At their stated 100k it does not (1/8): training sits on a plateau and then drops suddenly at a point that varies from 65k to 157k steps between seeds, so the budget decides the outcome.</li>
+    <li><span class="chip ok">Replicates</span><strong>PoPE on Bach Chorales</strong>: PoPE beats RoPE by 0.032 NLL, 5/5, against their published 0.019.</li>
+  </ul>
+  <p style="margin-top:18px">Our PoPE implementation was also checked directly against the authors&rsquo; released code and matches to <strong class="num">1.7&times;10<sup>&minus;6</sup></strong>, so the comparisons above test PoPE as published.</p>
+</section>
+
+<!-- ============ OTHER POSITIVES ============ -->
+<section>
+  <h2>Other positive findings</h2>
+  <p class="sectmeta">cheap fixes that outperformed elaborate ones</p>
+
+  <h3>A 48-parameter fix for long contexts</h3>
+  <p>Models trained on short sequences often break when run on longer ones. A distance penalty in attention &mdash; one learnable number per head, 48 in total &mdash; repairs this on Bach Chorales as well as a 786k-parameter alternative does:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>model, tested at 2&ndash;4&times; its training length</th><th>without the fix</th><th>with the 48-parameter fix</th></tr></thead>
+      <tbody>
+        <tr><td>PoPE</td><td>1.597</td><td class="best">0.626</td></tr>
+        <tr><td>MapPoPE</td><td>4.616</td><td class="best">0.622</td></tr>
+        <tr class="rule-top"><td><em>786k-parameter alternative, for comparison</em></td><td>&mdash;</td><td>0.616</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="caption">Test NLL, lower is better, 5/5 seeds for each repair. On real code the same fix improved all four models on every seed, even at the training length, and <b>plain RoPE plus the fix was the best of all eight code models tested</b> &mdash; better than any of the more elaborate designs.</p>
+
+  <h3>A simple data trick beats the published Bach score</h3>
+  <ul class="findings">
+    <li><span class="chip det">5/5 seeds</span><strong>Transposing the music by a few semitones during training</strong> &mdash; which PoPE&rsquo;s paper applies to its other music dataset but not to Bach &mdash; improves PoPE by 0.107 NLL, over three times the 0.032 gap that separates PoPE from RoPE. Augmented PoPE reaches <strong class="num">0.394</strong> against their published <strong class="num">0.489</strong>.</li>
+  </ul>
+
+  <h3>Path integration trains faster on pointer arithmetic</h3>
+  <ul class="findings">
+    <li><span class="chip warn">Directional</span><strong>On Indirect Indexing the path-integrated model tends to reach the solution sooner</strong> &mdash; earlier on 6 of 7 paired seeds, median 70k steps against 100k &mdash; though the size of the speed-up is not statistically established. Given enough steps both reach the same end point, so this is about how fast it learns, not how well.</li>
+    <li><span class="chip warn">Caveat</span><strong>It is also three times more robust to extra padding</strong> (0.430 vs 0.149 when examples are padded to a longer block, 6/7 seeds). Likely a robustness effect rather than a capability one, and not yet controlled.</li>
+  </ul>
+</section>
+
+<!-- ============ COMBINATION ============ -->
+<section>
+  <h2>How the two ideas combine</h2>
+  <p class="sectmeta">adding PoPE&rsquo;s encoding to path integration, and the other way round</p>
+  <p>MapPoPE puts PoPE&rsquo;s way of using the angle on top of MapFormer&rsquo;s path-integrated position. Measured task by task, PoPE&rsquo;s encoding carries over: wherever it helps an ordinary model, it also helps a path-integrated one.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>task</th><th>PoPE &minus; RoPE<br><em>encoding on the index</em></th><th>MapPoPE &minus; MapWM<br><em>encoding on path integration</em></th></tr></thead>
+      <tbody>
+        <tr><td>Bach Chorales</td><td class="best">&minus;0.032 (5/5)</td><td class="best">&minus;0.017 (5/5)</td></tr>
+        <tr><td>Dyck-2, 1 layer</td><td class="best">+0.010 (8/8)</td><td class="best">+0.073 (7/8)</td></tr>
+        <tr><td>Dyck-2, 2 layers</td><td class="best">+0.026 (8/8)</td><td class="best">+0.050 (8/8)</td></tr>
+        <tr><td>Dyck-2, 3&ndash;4 layers</td><td class="best">+0.017 / +0.026</td><td>&minus;0.013 / +0.025 &nbsp;<em>unmeasured</em></td></tr>
+        <tr><td>real code, trained and tested at 2048</td><td>&minus;0.001 &nbsp;<em>unmeasured</em></td><td class="best">&minus;0.005 (3/3)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="caption">Highlighted = detectable and in PoPE&rsquo;s favour. Lower is better for Bach and code; higher for Dyck. On Bach the gain is about half as large on the path-integrated model; on Dyck at shallow depth and on code it is larger &mdash; though whether it is <em>genuinely</em> larger is not yet statistically established. On Dyck it fades by three to four layers, where the path-integrated models become noisier.</p>
+
+  <p>That is not the same as MapPoPE being the best model. The full ordering, task by task:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>task</th><th>kind of position</th><th>best &rarr; worst</th></tr></thead>
+      <tbody>
+        <tr><td>Dyck-2</td><td>signed &mdash; moves backwards</td><td><strong>MapPoPE</strong> &ge; MapWM &gt; PoPE &gt; RoPE</td></tr>
+        <tr><td>Bach Chorales</td><td>a clock &mdash; only counts</td><td><strong>PoPE</strong> &gt; MapPoPE &gt; MapWM &asymp; RoPE</td></tr>
+        <tr><td>real code, matched length</td><td>a clock &mdash; only counts</td><td><strong>PoPE</strong> &asymp; RoPE &gt; MapPoPE &gt; MapWM</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="findings">
+    <li><span class="chip det">Detectable</span><strong>Adding PoPE&rsquo;s encoding to path integration is a good idea.</strong> Detectably better on three tasks, never detectably worse on any. If a task calls for MapFormer, use MapPoPE.</li>
+    <li><span class="chip det">Detectable</span><strong>Adding path integration to PoPE is not, on clock-like tasks.</strong> Where position only counts tokens, plain PoPE wins: a learned counter is slightly but consistently worse than the exact one the index provides for free.</li>
+    <li><span class="chip ok">In practice</span><strong>The two ideas are not symmetric partners.</strong> PoPE&rsquo;s encoding is a fairly general improvement to <em>how</em> an angle is used. Path integration is a specialist tool for <em>where</em> the angle comes from &mdash; worth it when position is genuinely signed, as in navigation and bracket structure, and not otherwise.</li>
+  </ul>
+</section>
+
+<!-- ============ METHOD ============ -->
+<section>
+  <h2>What this says about measurement</h2>
+  <p class="sectmeta">findings that apply beyond these models</p>
+
+  <h3>The Dyck metric in the MapFormer paper runs the effect backwards</h3>
+  <p>The paper scores Dyck-2 with F1 valid continuation. On that scale a model with no memory at all scores <strong class="num">0.884</strong>, higher than most real models, because two-thirds of positions only need the previous token. And on the same trained models it reverses the shape of the effect:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>metric</th><th>training length</th><th>4&times; length</th><th>says the effect</th></tr></thead>
+      <tbody>
+        <tr><td>closing accuracy, chance 0.5</td><td>+0.357</td><td>+0.136</td><td><strong>falls 2.6&times;</strong></td></tr>
+        <tr><td>F1 (the paper&rsquo;s metric)</td><td>+0.075</td><td>+0.306</td><td><strong>rises 4.1&times;</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="caption">F1 heavily penalises probability placed on illegal tokens, and ordinary models place more there as sequences grow &mdash; so F1&rsquo;s gap widens for a reason unrelated to tracking the stack. <b>The paper&rsquo;s &ldquo;helps out of distribution&rdquo; pattern on Dyck is produced by the metric.</b></p>
+
+  <ul class="findings">
+    <li><span class="chip ok">Method</span><strong>Train at the length you test at.</strong> Every claim here that one design is <em>better</em> and held up was measured at the training length. Testing past the training length measures something different &mdash; how gracefully a model degrades on lengths it never saw. That is worth having, as the 48-parameter fix shows, but it is not the same as being a better model. Many published positional-encoding comparisons are measured the second way.</li>
+    <li><span class="chip ok">Method</span><strong>Averaged metrics favour the more local model.</strong> Six cases, always the same direction. Bits per byte, F1 and any average over all positions are dominated by easy tokens, so when they disagree with a metric conditioned on the hard case, the average picks the model better at local prediction.</li>
+    <li><span class="chip ok">Method</span><strong>A task&rsquo;s floor predicts, before any training, whether an experiment can work.</strong> On real Python a no-memory model already gets 0.858 of brackets right and 99.7% of brackets close within 8 levels, so a stack test on code could never discriminate &mdash; and it did not.</li>
+    <li><span class="chip ok">Method</span><strong>PoPE&rsquo;s advantage over RoPE appears on its own dataset and not elsewhere tested</strong>, and that dataset is limited by overfitting &mdash; the augmentation result above is 3&times; the effect it is used to demonstrate.</li>
+  </ul>
+</section>
+
+<!-- ============ NEXT ============ -->
+<section>
+  <h2>Next</h2>
+  <p class="sectmeta">ranked by how much each could change the picture</p>
+  <ul class="findings">
+    <li><span class="chip plain">Next</span><strong>Check earlier navigation results at their training length.</strong> Four were measured only by extrapolating, and the lesson above says that is where to look first.</li>
+    <li><span class="chip plain">Next</span><strong>MAESTRO</strong>, ~200 hours of piano, large enough to avoid overfitting &mdash; the direct test of whether PoPE&rsquo;s gain survives without that ceiling. About two days.</li>
+    <li><span class="chip plain">Next</span><strong>Pointer arithmetic that generalises.</strong> Both models currently memorise Indirect Indexing shift by shift; the design analysis suggests a specific architectural change that should let it be done as arithmetic.</li>
+  </ul>
+</section>
+
+<!-- ============ FAILS, BRIEFLY ============ -->
+<section>
+  <h2 style="font-size:28px">What didn&rsquo;t hold up</h2>
+  <p class="sectmeta">kept here so none of it gets re-cited</p>
+  <ul class="findings">
+    <li><span class="chip bad">Retracted</span><strong>A large advantage on real code at long lengths</strong> disappeared once models were trained at the length they were tested at &mdash; the source of the &ldquo;train at the length you test at&rdquo; lesson above.</li>
+    <li><span class="chip bad">Refuted</span><strong>Three proposed explanations</strong> &mdash; that it works on code because code nests, that PoPE extrapolates because its magnitudes can&rsquo;t go negative, and a clock-versus-map theory of when each design helps &mdash; each failed its own registered test.</li>
+    <li><span class="chip bad">Retracted</span><strong>&ldquo;Extra depth replaces path integration&rdquo;</strong> came from a comparison that changed width along with depth; the fixed-width result above supersedes it.</li>
+  </ul>
+  <p class="caption" style="margin-top:18px">A consistent pattern across the week: controlled interventions reproduced every time; proposed explanations of <em>why</em> did not. The results on this page are the interventions.</p>
+</section>
+
+<footer>
+  <span>Every comparison: all arms trained in one batch &middot; floors measured, never assumed</span>
+  <span>Source: MapFormer arXiv:2511.19279 v4 &middot; PoPE arXiv:2509.10534 v3</span>
+</footer>
+
+</div>

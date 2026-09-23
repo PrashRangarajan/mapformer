@@ -1,5 +1,107 @@
 # CLAUDE.md — Project Memory for MapFormer
 
+## 2026-09-23 (later) -- shared report, bf16, MAESTRO plan, the PoPE/MapFormer asymmetry, rank at matched length
+
+**THE SHARED REPORT.** The user shares **https://claude.ai/artifact/LVfYeHhjs1KjwMpg3Pxggc**
+(version 5, "Position Codes on Language"). Source: **`report/language_summary.html`** (copied out
+of the session scratchpad, byte-identical to what was published). To edit: change that file and
+republish with the Artifact tool passing **`url=` that link** -- a publish without `url` makes a
+NEW link and breaks the one the user has shared. User's stated structure: **positive results
+first, failures briefly at the end**, minimal context needed, every term defined.
+
+**The frame for everything: robustness is not capability.** Testing past the training length
+measures graceful degradation on unseen lengths, not whether a design is better. Every "helps at
+OOD length" claim that got a matched-length control died (code -3.694 -> reversal). The
+48-parameter decay envelope buys that robustness cheaply -- RoPE + envelope was the best of all
+eight code arms. **Practical rule: train at the target length if you can; if not, add a decay
+envelope rather than choosing an encoding for how it extrapolates.**
+
+**PoPE's encoding carries over to path integration; path integration does not carry over to
+PoPE.** Encoding effect on the index row (PoPE - RoPE) vs the path row (MapPoPE - MapWM),
+re-derived from `DYCK_LADDER_RESULTS.json` (Hewitt A2, L32 D12), `runs/code2048/*.json`
+(trainer best_val_bpc) and `JSB_RESULTS.md`:
+
+| task | PoPE - RoPE | MapPoPE - MapWM |
+|---|---|---|
+| Bach (NLL, lower better) | -0.032 (5/5) | -0.0165 (5/5, MDE 0.0111) |
+| Dyck 1L (acc, higher better) | +0.010 (8/8) | +0.073 (7/8, MDE 0.070) |
+| Dyck 2L | +0.026 (8/8) | +0.050 (8/8, MDE 0.019) |
+| Dyck 3L / 4L | +0.017 / +0.026 (7/8, 7/8) | -0.013 / +0.025, unmeasured |
+| code, trained+tested 2048 (bpc) | -0.0008, unmeasured (MDE 0.0075) | **-0.0052 (3/3, MDE 0.0036)** |
+
+MapPoPE is never detectably worse than MapWM. Whether the path-row effect is genuinely LARGER is
+the interaction and is NOT established. But the orderings: Dyck MapPoPE >= MapWM > PoPE > RoPE;
+Bach PoPE > MapPoPE > MapWM ~ RoPE; code PoPE ~ RoPE > MapPoPE > MapWM. On clock-like tasks
+MapPoPE - PoPE is +0.0033 bpc on code (MDE 0.0031, 0/3 better, detectable) and +0.0111 NLL on
+Bach (0/5 better, MDE 0.0116, just inside). **Rule: adding PoPE's encoding to path integration
+is good; adding path integration to PoPE on a clock task is not.**
+
+**bf16 autocast NOT licensed** (`BF16_RESULTS.md`, `check_bf16.py`, criteria registered first).
+Mean speedup only 1.25x; every per-arm loss diff < 0.02, but the MapWM - RoPE gap moved
+**0.0117** (threshold 0.005, target effect 0.015); PoPE moved 0.0044, MapPoPE 0.0010. MapPoPE
+also cumsums, so "the cumsum is the precision-sensitive part" is NOT established (n=1 per
+cell). Keep fp32.
+
+**MAESTRO planned, not run** (`MAESTRO_PLAN.md`): PoPE's recipe (d=384/8h/6L, 16x2048,
+60k iters, REMI vocab 328, transposition +/-3); batch 16 OOMs on 24 GB -> accumulate 4x4;
+~2B tokens and ~9-11 h per run, ~110k tok/s total (compute-bound); PoPE vs RoPE n=5 ~2 days,
+2x2 n=3 ~2.5 days, n=5 ~4 days. Published effect 0.015 NLL; n=3 is likely underpowered.
+miditok is not installed. Motivation: Bach is the only natural-sequence dataset here with a
+detectable PoPE gain and it is overfitting-limited 3x.
+
+**Indirect Indexing by arithmetic** (`INDIRECT_ARITHMETIC.md`, `hand_indirect.py`, committed
+0b07396): a hand-built two-hop construction scores 1.000, including shifts 16-30 never used.
+Needs (A) position as a VALUE, (B) the second hop's rotation set from retrieved content, (C)
+additive digit angles. MapFormer has only (C) -- its angle is computed once from token identity
+before attention (the "placement" axis `mapformer_math.tex` calls uncompared) -- so MapWM should
+fail even with perfect digit arithmetic. Next test, not run: train on even shifts, test on odd.
+
+**Rank at matched length -- DESIGNED AND AUDITED (GO), NOT LAUNCHED.** The main session owns it
+(`runs/rank_matched`, `RANK_MATCHED_PREREG.md`, a stratified readout script, the probe fixes);
+do not edit `run_rank_sweep.sh`, `train_variant.py`, `probe_action_geometry.py` or `RANK_*` from
+another session.
+- Why: RANK_SWEEP's "use r=4" is **100% out-of-distribution** -- T=128 accuracy r=2 0.993 /
+  r=4 1.000, advantage only at T=512 (+0.038) and T=1024 (+0.085), trained at T=128.
+- Design: `Vanilla` (r=2) vs `Vanilla_r4`, trained AND tested at T=1024, 8 seeds, one batch.
+  `run_rank_sweep.sh` recipe (`--epochs 300 --lr 1e-3 --n-batches 98 --n-layers 1 --n-heads 2
+  --d-model 128 --n-landmarks 0 --schedule cosine --data-workers 3`) with only `--n-steps 1024
+  --batch-size 16`. Eval `eval_noise_refine --lengths 512 1024 2048 --noises 0.0 --n-trials 100`.
+  Secondary: action-geometry skew on the T=1024-trained r=2. Smoke: 204,373 / 204,757 params,
+  ~2.4 s/epoch, ~15 min/run.
+- **Audit verdict GO**: nothing confounds r=2 vs r=4 inside the batch; tokens/step 32,752 vs
+  32,640 (+0.34%), 29,400 steps both, 8x fewer independent trajectories. Training at T=1024
+  changes the task composition: wrap-only revisits 0.000 -> 0.077 of scored targets, lag p90
+  24 -> 298. Blank-constant floor 0.512 at eval T=1024.
+- **Audit findings on the OLD T=128 checkpoints** (eval-only, overall matches RANK_SWEEP.json
+  exactly): **94% of the +0.085 at T=1024 comes from short-gap (<128 step) revisits late in the
+  sequence** (r=2 0.903 vs r=4 0.999, 83% of scored targets); lag >= 128 0.563 vs 0.625;
+  torus-wrap revisits (7.2%) 0.416 vs 0.413, **BELOW the 0.512 floor for both**. The lag is
+  in-distribution, the absolute position is not -- a robustness signature.
+- Also: old T=128 training losses **did not overlap** (r=2 0.0011-0.0874, r=4 <= 0.0006, verified
+  from the logs) and r=4 NLL is lower 8/8, so "both at ceiling in distribution" was true only in
+  accuracy. r=2's action geometry is bimodal across seeds and does not predict T=1024 accuracy
+  within the arm (r = -0.35 / +0.30): "the skew is the mechanism" holds only at arm-mean level.
+- Registered expectation to carry into the prereg: **R1 (robustness, the likelier) = r4 - r2
+  within MDE at matched T=1024.** A ceiling at matched length IS informative here, because the
+  claim is specifically that r=2 is worse at long lengths. Readouts must include NLL and loss
+  overlap, not accuracy alone.
+
+**Rules bought today.**
+- **Killing a supervisor does not kill its children.** The launcher survived as an orphan and the
+  next supervisor started a second copy: 16 launches for 12 runs, ~10 GPU-hours. Every driver now
+  takes a `flock -n` single-instance lock.
+- **A blind `cuda:$((i%2))` round-robin collides** when runs finish out of order: two 2048-context
+  runs (13.5-14.7 GiB) landed on one 24 GiB card and OOM-died. Pick a card by ACTUAL occupancy
+  (`run_code2048_fill.sh`).
+- **A checkpoint can be stale without anything failing.** A duplicate launch overwrote a finished
+  run's best.pt with an iter-15000 one; it loaded cleanly and was misread as instability.
+  `eval_code_long.py` now refuses a checkpoint whose stored val_bpc disagrees with its run JSON.
+- **Check the `.done` marker, not partial files.** C1 was reported unfinished when complete; C2
+  sat complete and unread for a day.
+- **A pre-launch audit is cheaper than a post-hoc retraction.** The Dyck width confound, the
+  frequency-ladder confound and the OOM picker were design bugs caught only after GPU time; the
+  rank audit above found the loss non-overlap and the stratum structure before any.
+
 ## 2026-09-23 -- Dyck depth ladder: the last positive result SURVIVES; C1 closes as a REVERSAL
 
 **Dyck (`DYCK_LADDER_RESULTS.md`, 128 runs, fixed width n_heads=2/d=128, only depth varies).**
