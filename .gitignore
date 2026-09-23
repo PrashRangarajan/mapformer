@@ -76,3 +76,6 @@ runs/lap_probe/
 # paper PDFs: 69 MB, restore with `bash papers/fetch.sh`
 papers/pdf/
 papers/_fetch.out
+
+# driver single-instance locks (flock)
+.run_*.lock
