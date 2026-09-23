@@ -129,67 +129,66 @@
 \contentsline {paragraph}{Two reparameterisations fail to explain it.}{33}{section*.118}%
 \contentsline {paragraph}{Two interventions do.}{33}{section*.119}%
 \contentsline {paragraph}{A decay envelope repairs it for 48 parameters, and its damage has two separable causes.}{33}{section*.120}%
-\contentsline {paragraph}{The account that explained the repairs is withdrawn.}{33}{section*.121}%
-\contentsline {paragraph}{The boundary does not survive a within-task test (2026-09-20).}{33}{section*.122}%
-\contentsline {paragraph}{The between-task pattern, which prompted that test.}{34}{section*.123}%
-\contentsline {paragraph}{What is withdrawn.}{34}{section*.124}%
+\contentsline {paragraph}{The boundary does not survive a within-task test (2026-09-20).}{33}{section*.121}%
+\contentsline {paragraph}{The between-task pattern, which prompted that test.}{34}{section*.122}%
+\contentsline {paragraph}{What is withdrawn.}{34}{section*.123}%
 \contentsline {section}{\numberline {14}Limitations}{34}{section.14}%
 \contentsline {section}{\numberline {15}Conclusion}{35}{section.15}%
 \contentsline {section}{\numberline {A}Gates and floors}{36}{appendix.A}%
-\contentsline {paragraph}{Gate records.}{36}{section*.125}%
-\contentsline {paragraph}{Excluded task families.}{36}{section*.127}%
-\contentsline {paragraph}{Why index models exceed the paper-task floor.}{36}{section*.128}%
-\contentsline {paragraph}{Match-Query at scale and at length.}{37}{section*.130}%
-\contentsline {paragraph}{Noisy Match-Query context destruction.}{37}{section*.131}%
-\contentsline {paragraph}{The MiniWorld noise floor.}{37}{section*.132}%
+\contentsline {paragraph}{Gate records.}{36}{section*.124}%
+\contentsline {paragraph}{Excluded task families.}{36}{section*.126}%
+\contentsline {paragraph}{Why index models exceed the paper-task floor.}{36}{section*.127}%
+\contentsline {paragraph}{Match-Query at scale and at length.}{37}{section*.129}%
+\contentsline {paragraph}{Noisy Match-Query context destruction.}{37}{section*.130}%
+\contentsline {paragraph}{The MiniWorld noise floor.}{37}{section*.131}%
 \contentsline {section}{\numberline {B}Early baselines and TEM}{37}{appendix.B}%
-\contentsline {paragraph}{Length.}{37}{section*.134}%
-\contentsline {paragraph}{TEM.}{38}{section*.135}%
-\contentsline {paragraph}{Stitching, ported from CSCG (exploratory).}{38}{section*.136}%
-\contentsline {paragraph}{First paper-task pass.}{38}{section*.137}%
+\contentsline {paragraph}{Length.}{37}{section*.133}%
+\contentsline {paragraph}{TEM.}{38}{section*.134}%
+\contentsline {paragraph}{Stitching, ported from CSCG (exploratory).}{38}{section*.135}%
+\contentsline {paragraph}{First paper-task pass.}{38}{section*.136}%
 \contentsline {section}{\numberline {C}Family tree and non-commutativity}{38}{appendix.C}%
 \contentsline {section}{\numberline {D}Compositional task and hierarchy}{39}{appendix.D}%
-\contentsline {paragraph}{Task.}{39}{section*.139}%
-\contentsline {paragraph}{Old recipe.}{39}{section*.140}%
-\contentsline {paragraph}{Recipe versus architecture.}{39}{section*.141}%
-\contentsline {paragraph}{Structure-aligned pooling does not help.}{39}{section*.143}%
-\contentsline {paragraph}{Which lever pays depends on structure.}{39}{section*.144}%
-\contentsline {paragraph}{Parity at $L=16$.}{39}{section*.145}%
+\contentsline {paragraph}{Task.}{39}{section*.138}%
+\contentsline {paragraph}{Old recipe.}{39}{section*.139}%
+\contentsline {paragraph}{Recipe versus architecture.}{39}{section*.140}%
+\contentsline {paragraph}{Structure-aligned pooling does not help.}{39}{section*.142}%
+\contentsline {paragraph}{Which lever pays depends on structure.}{39}{section*.143}%
+\contentsline {paragraph}{Parity at $L=16$.}{39}{section*.144}%
 \contentsline {section}{\numberline {E}MiniGrid and MiniWorld: supplementary}{39}{appendix.E}%
-\contentsline {paragraph}{The other four torus knobs.}{39}{section*.146}%
-\contentsline {paragraph}{Frequency learning (exploratory).}{40}{section*.147}%
-\contentsline {paragraph}{Allocentric MiniGrid, full factorial at $n=3$.}{40}{section*.148}%
-\contentsline {paragraph}{Twelve headings, per seed.}{40}{section*.149}%
-\contentsline {paragraph}{Habitat measurements.}{40}{section*.150}%
-\contentsline {paragraph}{MiniWorld with a fixed map.}{40}{section*.151}%
-\contentsline {paragraph}{Environments.}{40}{section*.152}%
+\contentsline {paragraph}{The other four torus knobs.}{39}{section*.145}%
+\contentsline {paragraph}{Frequency learning (exploratory).}{40}{section*.146}%
+\contentsline {paragraph}{Allocentric MiniGrid, full factorial at $n=3$.}{40}{section*.147}%
+\contentsline {paragraph}{Twelve headings, per seed.}{40}{section*.148}%
+\contentsline {paragraph}{Habitat measurements.}{40}{section*.149}%
+\contentsline {paragraph}{MiniWorld with a fixed map.}{40}{section*.150}%
+\contentsline {paragraph}{Environments.}{40}{section*.151}%
 \contentsline {section}{\numberline {F}Rank and generator probes}{40}{appendix.F}%
-\contentsline {paragraph}{Truncation is not a sufficiency test.}{40}{section*.153}%
-\contentsline {paragraph}{Selective RoPE's generator, knob by knob.}{40}{section*.154}%
-\contentsline {paragraph}{The gate is not a token suppressor.}{40}{section*.156}%
-\contentsline {paragraph}{PoPE on top of path integration, by grid.}{40}{section*.157}%
-\contentsline {paragraph}{Drift from a skewed basis.}{41}{section*.158}%
-\contentsline {paragraph}{The forget gate over training.}{41}{section*.159}%
+\contentsline {paragraph}{Truncation is not a sufficiency test.}{40}{section*.152}%
+\contentsline {paragraph}{Selective RoPE's generator, knob by knob.}{40}{section*.153}%
+\contentsline {paragraph}{The gate is not a token suppressor.}{40}{section*.155}%
+\contentsline {paragraph}{PoPE on top of path integration, by grid.}{40}{section*.156}%
+\contentsline {paragraph}{Drift from a skewed basis.}{41}{section*.157}%
+\contentsline {paragraph}{The forget gate over training.}{41}{section*.158}%
 \contentsline {section}{\numberline {G}EM kernel: supplementary}{41}{appendix.G}%
-\contentsline {paragraph}{Kernel coherence set by construction.}{41}{section*.160}%
-\contentsline {paragraph}{Phase degrees of freedom on the torus.}{41}{section*.161}%
-\contentsline {paragraph}{Recency, $n=24$.}{41}{section*.162}%
-\contentsline {paragraph}{The start and end of search.}{41}{section*.163}%
-\contentsline {paragraph}{The 300-epoch offset-set batch.}{41}{section*.164}%
-\contentsline {paragraph}{Kernel value at zero displacement.}{42}{section*.165}%
+\contentsline {paragraph}{Kernel coherence set by construction.}{41}{section*.159}%
+\contentsline {paragraph}{Phase degrees of freedom on the torus.}{41}{section*.160}%
+\contentsline {paragraph}{Recency, $n=24$.}{41}{section*.161}%
+\contentsline {paragraph}{The start and end of search.}{41}{section*.162}%
+\contentsline {paragraph}{The 300-epoch offset-set batch.}{41}{section*.163}%
+\contentsline {paragraph}{Kernel value at zero displacement.}{42}{section*.164}%
 \contentsline {section}{\numberline {H}State correction: supplementary}{42}{appendix.H}%
-\contentsline {paragraph}{Refining the phase on the depth axis.}{42}{section*.166}%
-\contentsline {paragraph}{Landmarks.}{42}{section*.167}%
-\contentsline {paragraph}{Paper task and Match-Query at $n=3$.}{42}{section*.168}%
+\contentsline {paragraph}{Refining the phase on the depth axis.}{42}{section*.165}%
+\contentsline {paragraph}{Landmarks.}{42}{section*.166}%
+\contentsline {paragraph}{Paper task and Match-Query at $n=3$.}{42}{section*.167}%
 \contentsline {section}{\numberline {I}Loops: supplementary}{42}{appendix.I}%
-\contentsline {paragraph}{Per-token recursion depth.}{42}{section*.169}%
-\contentsline {paragraph}{Recursion buys an index model horizon (exploratory).}{42}{section*.170}%
-\contentsline {paragraph}{Sampling the loop count.}{42}{section*.171}%
+\contentsline {paragraph}{Per-token recursion depth.}{42}{section*.168}%
+\contentsline {paragraph}{Recursion buys an index model horizon (exploratory).}{42}{section*.169}%
+\contentsline {paragraph}{Sampling the loop count.}{42}{section*.170}%
 \contentsline {section}{\numberline {J}Language and borrowed benchmarks}{42}{appendix.J}%
-\contentsline {paragraph}{MapFormer v4 on language.}{42}{section*.172}%
-\contentsline {paragraph}{enwik8.}{43}{section*.173}%
-\contentsline {paragraph}{Flip-Flop.}{43}{section*.174}%
-\contentsline {paragraph}{MQAR.}{43}{section*.175}%
+\contentsline {paragraph}{MapFormer v4 on language.}{42}{section*.171}%
+\contentsline {paragraph}{enwik8.}{43}{section*.172}%
+\contentsline {paragraph}{Flip-Flop.}{43}{section*.173}%
+\contentsline {paragraph}{MQAR.}{43}{section*.174}%
 \contentsline {section}{\numberline {K}The MONOTONE batch}{43}{appendix.K}%
-\contentsline {paragraph}{Registered verdicts.}{43}{section*.178}%
-\contentsline {paragraph}{Route (P4).}{43}{section*.179}%
+\contentsline {paragraph}{Registered verdicts.}{43}{section*.177}%
+\contentsline {paragraph}{Route (P4).}{43}{section*.178}%
