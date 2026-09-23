@@ -64,3 +64,18 @@ let the background job finish, which is what should have happened here (it alrea
 started the same batch three times; three drivers raced on the same seeds, and only a `ps` check
 before they collided prevented duplicated runs. Check `ps` for the driver by name before relaunching,
 and kill extras by PID (never `pkill -f`, which matches your own shell).
+
+
+## Orphans, blind round-robin, stale checkpoints, unread .done (2026-09-21..23, code batches)
+
+- **Killing a supervisor does not kill its children.** The launcher survived as an orphan and the next
+  supervisor started a second copy: 16 launches for 12 runs, ~10 GPU-hours lost. **How to apply:** every
+  driver takes `exec 9>/tmp/.mapformer_<name>.lock; flock -n 9 || exit 0` (see `run_code2048_fill.sh`).
+- **`cuda:$((i%2))` is not a scheduler.** Runs finish out of order, the counter desynchronises from which
+  card is free, and two 13.5-14.7 GiB runs landed on one 24 GiB card and OOM-died. Pick by ACTUAL per-card
+  occupancy (`gpu_busy` over `ps comm=,args=` in `run_code2048_fill.sh`). Rule 13 again, reintroduced by me.
+- **A checkpoint can be stale and load cleanly.** A duplicate launch overwrote a finished run's best.pt with
+  an iter-15000 one; it was read as "an anomalous unstable seed". Evaluators must cross-check the stored
+  val metric against the run JSON and refuse on mismatch (`eval_code_long.py` does).
+- **Check the `.done` marker before calling a batch unfinished.** C1 was reported unfinished when done; C2
+  sat complete and unread for a day.

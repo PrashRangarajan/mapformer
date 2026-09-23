@@ -1,9 +1,20 @@
 ---
 name: project-rank-and-selective-rope
-description: r=2 is under-provisioned (r=4 buys +0.085 for 384 params); Selective RoPE occupies the same slot and is no better; the paper's Fig 4 reproduces 3 of 4.
+description: r=4 beats r=2 by +0.085 at T=1024 -- but ONLY out of distribution (trained T=128); matched-length test audited GO, not yet run. Selective RoPE occupies the same slot and is no better; Fig 4 reproduces 3 of 4.
 metadata:
   type: project
 ---
+
+**CAVEAT FIRST (2026-09-23): the r=4 win is 100% an out-of-distribution effect.** At the training length
+(T=128) r=2 0.993 vs r=4 1.000; the gap appears only at T=512 (+0.038) and T=1024 (+0.085). A pre-launch
+audit of the stored checkpoints found 94% of the +0.085 comes from short-gap (<128 step) revisits late in
+the sequence (r=2 0.903 vs r=4 0.999) -- in-distribution lag, out-of-distribution absolute position, the
+robustness signature that died under a matched-length control on code. Also: old training losses did NOT
+overlap (r=2 0.0011-0.0874, r=4 <= 0.0006) and r=2's geometry does not predict accuracy within the arm
+(r = -0.35/+0.30), so "skew is the mechanism" holds only at arm-mean level. **The matched-length test
+(train AND test at T=1024, `runs/rank_matched`, `RANK_MATCHED_PREREG.md`) is audited GO and not yet run;
+registered expectation R1: r4 - r2 within MDE.** Until it lands, "use r=4" is a robustness recommendation
+for extrapolating navigation models, not a capability claim.
 
 **r=4 IS THE DEFAULT TO USE (2026-09-04, RANK_SWEEP.md).** Torus, 8 seeds, one
 batch: against r=2 at T=1024, r4 **+0.085** (t 3.57, 8/8, sign p=0.008), r8 +0.091,

@@ -5,7 +5,51 @@ metadata:
   type: project
 ---
 
-## LANDED 2026-09-21 -- code modelling (the Dyck -> real-code transfer test)
+## LATEST 2026-09-23 -- read this block first (full detail: CLAUDE.md's two 2026-09-23 blocks)
+
+**Shared report.** https://claude.ai/artifact/LVfYeHhjs1KjwMpg3Pxggc (v5), source
+`report/language_summary.html`. Edit that file and republish with `url=` that link, never a new
+publish. Structure the user asked for: positive results first, failures briefly at the end.
+
+**The dividing line: matched vs mismatched length (robustness is not capability).** The two
+positive results that survive are matched-length: navigation +0.461 (T=128 -> 128) and the Dyck
+depth ladder (`DYCK_LADDER_RESULTS.md`: position +0.290/+0.209/+0.159/+0.168 at 1-4 layers, 8/8,
+fixed width, index arms plateau ~0.76-0.78, path arms ~0.92-0.95). Every OOD-length claim that got
+a matched-length control died: code C1 closed at n=3 as a REVERSAL (encoding -0.0030, MDE 0.0046,
+against -3.694 extrapolating). Rank, InEKF, forget gate and PoPE-wrapping have never had one.
+Practical rule: train at the target length; if you cannot, add the 48-parameter decay envelope
+(RoPE + envelope was the best code arm) rather than choosing an encoding for extrapolation.
+
+**PoPE ablation (2026-09-22, `ABLATE_RESULTS.md`)**: the non-negativity account is refuted; our
+PoPE matches the authors' code to 1.7e-06; PoPE - RoPE on code/enwik8 is ~0 or worse, so their
+Table 5 decomposes a gain that does not exist here.
+
+**PoPE/MapFormer asymmetry**: PoPE's encoding helps the path row wherever it helps at all
+(MapPoPE - MapWM: Bach -0.0165, Dyck 1-2L +0.073/+0.050, code -0.0052, all detectable; never
+detectably worse). Adding path integration to PoPE on clock tasks hurts (code +0.0033,
+detectable; Bach +0.0111, just inside MDE). Interaction (is the path-row effect larger?) NOT
+established.
+
+**bf16 NOT licensed** (`BF16_RESULTS.md`): MapWM - RoPE gap moved 0.0117 vs 0.005 threshold,
+speedup only 1.25x. Keep fp32.
+
+**In flight / next, none launched:**
+- **Rank at matched length** -- audited GO, owned by the main session (`runs/rank_matched`,
+  `RANK_MATCHED_PREREG.md`). r=2 vs r=4 trained and tested at T=1024, 8 seeds, `--n-steps 1024
+  --batch-size 16`, else the `run_rank_sweep.sh` recipe. Audit: 94% of the old +0.085 is
+  short-gap revisits late in the sequence (robustness signature); wrap revisits below floor for
+  both; old training losses did not overlap. Registered expectation R1: r4 - r2 within MDE.
+- **MAESTRO** (`MAESTRO_PLAN.md`): PoPE vs RoPE n=5 ~2 days, 2x2 n=3 ~2.5 d, n=5 ~4 d; miditok
+  missing; effect 0.015 NLL, n=3 likely underpowered.
+- **Indirect Indexing even/odd shift split** (`INDIRECT_ARITHMETIC.md`): needs a model with
+  position-in-values and per-layer content-set rotation; MapWM predicted to fail by construction.
+- Old navigation OOD claims (rank, InEKF, forget gate, PoPE-wrapping) need matched-length controls.
+
+## LANDED then RETRACTED 2026-09-21 -- code modelling (the Dyck -> real-code transfer test)
+
+> **RETRACTED by its own matched-length control** (`runs/code2048`, n=3): the OOD bpc wins below
+> were the cost of extrapolating past a 512 context. At matched length the encoding effect is
+> -0.0030 (MDE 0.0046) and the composition claim REVERSES. Do not cite the OOD numbers.
 
 Full detail in CLAUDE.md's LANDED block; numbers in `CODE_RESULTS.md` / `CODE_RESULTS_OOD.md`.
 
