@@ -26,6 +26,33 @@
 > started" after reading two `.partial.json` files. An agent audit found it.
 > **Check the completion marker, not the partial files.**
 
+
+## C1 CLOSED at the registered n=3 (2026-09-23) -- the retraction becomes a reversal
+
+All four arms trained AND tested at 2048, 3 seeds each, one batch (two runs were
+lost to CUDA OOM from a blind round-robin GPU picker and re-run with an
+occupancy-aware one).
+
+| arm | s0 | s1 | s2 | mean |
+|---|---|---|---|---|
+| RoPE | 0.6997 | 0.7113 | 0.7069 | 0.7060 |
+| **PoPE** | 0.7035 | 0.7058 | 0.7063 | **0.7052** |
+| MapPoPE | 0.7077 | 0.7103 | 0.7074 | 0.7085 |
+| MapWM | 0.7111 | 0.7149 | 0.7150 | 0.7137 |
+
+| contrast | at matched length | when extrapolating 512 -> 2048 |
+|---|---|---|
+| ENCODING main | -0.0030 (MDE 0.0046, 2/3) **unmeasured** | -3.694 DETECTABLE |
+| POSITION main | **+0.0055 (MDE 0.0033, 0/3) DETECTABLE -- against** | -- |
+| MapPoPE - PoPE | **+0.0033 (MDE 0.0031, 0/3) DETECTABLE -- against** | -0.102 DETECTABLE |
+
+**C1a is confirmed at the registered power.** The encoding effect is ~1,200x
+smaller at matched length and inside its MDE. And the retracted claim does not
+merely vanish -- it REVERSES: at matched training length path integration is
+detectably WORSE on code, and MapPoPE is detectably behind PoPE. This agrees with
+C2 (`CODE_DECAY_RESULTS.md`), where both axes are detectably worse with the
+baselines repaired. Two independent matched-length batches, same verdict.
+
 ## Further corrections found in the same audit
 
 - **"Position main effect is zero" was bucket-specific.** By bucket: 0-512
