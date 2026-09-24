@@ -101,6 +101,7 @@ from mapformer.model_gated import (MapFormerWM_Gated_r4,
 from mapformer.model_sign import (MapFormerWM_Abs_r4, MapFormerWM_Pos_r4,
                                   MapFormerWM_CARoPE_r4, MapFormerWM_Signed_r4,
                                   MapFormerWM_Abs_r2)
+from mapformer.model_rank_perhead import MapFormerWM_PerHead
 from mapformer.model_rank import (MapFormerWM_r3, MapFormerWM_r4,
                                   MapFormerWM_r5, MapFormerWM_r7,
                                   MapFormerWM_r8, MapFormerWM_r16,
@@ -201,6 +202,7 @@ VARIANT_MAP = {
     "Looped_r4": __import__("mapformer.model_rank", fromlist=["x"]).MapFormerWM_Looped_r4,
     "Vanilla_r3": MapFormerWM_r3,
     "Vanilla_r4": MapFormerWM_r4,
+    "Vanilla_r2ph": MapFormerWM_PerHead,   # paper-faithful per-head r=2
     # --- the sign ablation (A5): may the phase increment be negative? ---
     # Signed_r4 is the RNG/construction-path control for the three constrained
     # arms; it is mathematically identical to Vanilla_r4 but builds
