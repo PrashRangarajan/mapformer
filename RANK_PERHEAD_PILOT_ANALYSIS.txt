@@ -1,0 +1,20 @@
+== run classes at 900 epochs ==
+  Vanilla_r2ph  s0  STALLED    tail loss 1.0491  last10%/prev10% 0.991
+  Vanilla_r2ph  s1  SOLVED     tail loss 0.0067
+  Vanilla       s0  STALLED    tail loss 0.5871  last10%/prev10% 0.981
+  Vanilla       s1  DESCENDING tail loss 0.0511  last10%/prev10% 0.653
+  Vanilla_r4    s0  SOLVED     tail loss 0.0091
+  Vanilla_r4    s1  SOLVED     tail loss 0.0029
+
+== reproduction: our r=2 seed 0 retrained vs stored ==
+  max |per-epoch loss diff| over 900 epochs: 0.00e+00
+
+== T=1024 / 512 / 2048 accuracy ==
+  T=512: per-head r2 0.661 1.000 | our r2 0.896 1.000 | our r4 1.000 1.000
+  T=1024: per-head r2 0.656 1.000 | our r2 0.849 0.998 | our r4 1.000 1.000
+  T=2048: per-head r2 0.585 1.000 | our r2 0.712 0.947 | our r4 0.998 1.000
+
+== T=1024 strata (per-head | our r2 | our r4), per seed ==
+  plain_lag<128   s0: 0.670 | 0.921 | 1.000  s1: 1.000 | 1.000 | 1.000
+  plain_lag>=128  s0: 0.623 | 0.483 | 1.000  s1: 1.000 | 0.992 | 1.000
+  wrap            s0: 0.541 | 0.490 | 1.000  s1: 1.000 | 0.982 | 1.000
