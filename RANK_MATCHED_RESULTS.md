@@ -1,5 +1,28 @@
 # Rank at matched length -- results (2026-09-23/24)
 
+## Continuation, 900 + 900 epochs with a warm restart (`runs/rank_matched_e900c`, Amendment 3) -- UNREADABLE as registered
+
+Full output `RANK_MATCHED_e900c_ANALYSIS.txt`. Four r=2 runs DESCENDING (cap 2), so no branch
+fires, and by Amendment 3 there is no further automatic extension.
+
+| arm | SOLVED | STALLED | DESCENDING |
+|---|---|---|---|
+| r=2 | 1 | 3 | 4 |
+| r=4 | 7 | 0 | 1 (s3, knocked out by the restart and still recovering) |
+
+Reported, not read: T=1024 accuracy 0.905 vs 0.996 (+0.091, 7/8, permutation p 0.0011, 95% CI
+[+0.055, +0.120]); SOLVED 1/8 vs 7/8 (Fisher p 0.010); wrap-only revisits 0.546 vs 0.951 (5/8
+r=2 runs below the 0.507 floor). The r=2 "DESCENDING" runs are re-descending from the
+restart, not closing on the solution: four of them end the second cycle at or above the loss
+they ended the first (0.308 -> 0.357, 0.321 -> 0.392, 0.177 -> 0.184, 0.404 -> 0.376).
+
+Read together with the warm-start stability test (`RANK_PROJ_RESULTS.md`, verdict S1 STABLE):
+r=2 can represent the solution, holds it and re-finds it after a kick when started inside it,
+and does not find it from scratch -- a search deficit.
+
+---
+
+
 ## 900-epoch batch (`runs/rank_matched_e900`, 8 seeds; seeds 0-1 are the pilot) -- UNREADABLE as registered
 
 Full output: `RANK_MATCHED_e900_ANALYSIS.txt` (`python3 -m mapformer.analyze_rank_matched --tag _e900`).
