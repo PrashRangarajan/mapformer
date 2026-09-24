@@ -1,3 +1,12 @@
+> **CORRECTED 2026-09-24 (audit).** L32 D12 is NOT the training cell: training is L32 **D4**
+> (`train_dyck.py`, the paper's recipe), so D12 is matched in LENGTH but 3x the training
+> nesting DEPTH -- an extrapolation in depth. At the training cell L32 D4 the position effect
+> is +0.293 / +0.081 / +0.048 / +0.019 at 1-4 layers (8/8 each; index RoPE 0.979 at 4L): real
+> but shrinking to a ceiling with depth. The large depth-resistant effect below exists only at
+> unseen depth. The convergence line uses an arm-median final slope, not the SOLVED/STALLED
+> classes, and the index arms' losses are still falling. Read "training length" below as
+> "training length, 3x training depth".
+
 # READING -- the last standing positive result SURVIVES depth
 
 Pre-registration `DYCK_LADDER_PREREG.md`. All arms converged (no median slope below
