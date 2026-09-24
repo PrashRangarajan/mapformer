@@ -187,3 +187,8 @@ buys nothing and the paired MDE is kept only for continuity.
 
 One run is DESCENDING, so by the rule above the 8-seed batch is NOT launched at 900
 epochs; the next budget or design is decided with the user.
+
+**Decision (user, 2026-09-23 ~20:50):** run the 8-seed batch at **900 epochs** anyway
+(options offered: 1800 epochs, 900 epochs, warm-start stability test). The readout rules
+are unchanged, so the batch is UNREADABLE if more than 2 runs in an arm end DESCENDING.
+Pilot runs are reused as seeds 0-1 (the driver checks their epochs, length and code md5).
