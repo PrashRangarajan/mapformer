@@ -444,6 +444,15 @@ def main():
                              "seeds. 25000 is a sensible default.")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--output-dir", type=str, required=True)
+    parser.add_argument("--init-from", type=str, default=None,
+                        help="start from this checkpoint's model weights (a continuation). The "
+                             "optimizer and LR schedule start FRESH: a warm restart, not an "
+                             "exact resume (no optimizer-state loading is implemented).")
+    parser.add_argument("--data-seed-offset", type=int, default=0,
+                        help="offset the --data-workers stream seed (0 = unchanged); a "
+                             "continuation uses 1 so it sees fresh walks on the same map")
+    parser.add_argument("--save-full-state", action="store_true",
+                        help="also save optimizer and scheduler state (opt-in)")
     args = parser.parse_args()
 
     torch.manual_seed(args.seed); np.random.seed(args.seed)
@@ -504,6 +513,12 @@ def main():
         n_layers=args.n_layers, grid_size=grid_size,
     )
 
+    init_blob = None
+    if args.init_from:
+        init_blob = torch.load(args.init_from, map_location="cpu", weights_only=False)
+        assert init_blob.get("variant") == args.variant, (init_blob.get("variant"), args.variant)
+        model.load_state_dict(init_blob["model_state_dict"])      # strict
+        print(f"init-from {args.init_from} ({len(init_blob.get('losses', []))} prior epochs)")
     print(f"{args.variant} seed={args.seed} n_landmarks={args.n_landmarks} "
           f"p_noise={args.p_action_noise}")
     print(f"params={sum(p.numel() for p in model.parameters()):,}")
@@ -518,7 +533,17 @@ def main():
         aux_coef=args.aux_coef,
         schedule=args.schedule,
         data_workers=args.data_workers,
+        data_seed_offset=args.data_seed_offset,
+        return_state=args.save_full_state,
     )
+    opt_state = None
+    if args.save_full_state:
+        losses, _opt, _sch = losses
+        opt_state = {"optimizer_state_dict": _opt.state_dict(),
+                     "scheduler_state_dict": _sch.state_dict()}
+    losses_prior = None
+    if init_blob is not None:
+        losses_prior = list(init_blob.get("losses_prior") or []) + list(init_blob.get("losses", []))
 
     ckpt_path = out / f"{args.variant}.pt"
     torch.save({
@@ -538,7 +563,11 @@ def main():
             "n_steps": args.n_steps, "batch_size": args.batch_size,
             "epochs": args.epochs, "lr": args.lr, "schedule": args.schedule,
             "n_batches": args.n_batches,
+            "init_from": args.init_from, "data_seed_offset": args.data_seed_offset,
         },
+        # continuation history (None for a from-scratch run) and opt-in optimizer state
+        "losses_prior": losses_prior,
+        **(opt_state or {}),
     }, ckpt_path)
     print(f"Saved: {ckpt_path}")
 

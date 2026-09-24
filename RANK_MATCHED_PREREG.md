@@ -192,3 +192,28 @@ epochs; the next budget or design is decided with the user.
 (options offered: 1800 epochs, 900 epochs, warm-start stability test). The readout rules
 are unchanged, so the batch is UNREADABLE if more than 2 runs in an arm end DESCENDING.
 Pilot runs are reused as seeds 0-1 (the driver checks their epochs, length and code md5).
+
+## Amendment 3 (2026-09-24 ~01:10, after the 900-epoch batch landed UNREADABLE)
+
+The 900-epoch batch ended with four r=2 runs DESCENDING (`RANK_MATCHED_RESULTS.md`). The
+user's pre-stated fallback: continue for 900 more epochs. Design, fixed before launch:
+
+- **All 16 runs, both arms**, `runs/rank_matched_e900c`, each initialised from its own
+  `runs/rank_matched_e900` checkpoint (`--init-from`), then trained with the SAME recipe
+  for 900 epochs: 5% warmup to lr 1e-3, cosine to 1e-4, fresh AdamW state (the first
+  cycle did not save optimizer state), same seed and so the same training map, and a
+  FRESH walk stream (`--data-seed-offset 1`). Full state is saved this time.
+  `EPOCHS=900 TAG=_e900c INIT_TAG=_e900 bash run_rank_matched.sh`.
+- **This is "900 + 900 with a warm restart", not 1800 epochs.** A cosine schedule's shape
+  depends on its total length from step one, so no continuation reproduces an 1800-epoch
+  run. The restart matters: a smoke test from a SOLVED r=4 checkpoint (400 epochs x 5
+  batches, the same schedule shape) went 0.004 -> 0.27 as the LR returned to peak, then
+  back to 0.013. Solved runs are perturbed and must re-descend; stalled runs get a second
+  high-LR phase, which is what gives a plateaued search a chance to escape. Both arms are
+  treated identically.
+- **Readouts and branches: Amendment 2, unchanged**, with run classes computed on the
+  continuation's own 900 epochs.
+- If this batch is also UNREADABLE, stop and report; no further automatic extension.
+- Code: `train.py` / `train_variant.py` gained opt-in `--init-from`, `--data-seed-offset`
+  and `--save-full-state`. Default path verified bit-identical to the pre-edit trainer
+  (same 3-batch run: loss 2.7280158201853433 both, max parameter difference 0.0).

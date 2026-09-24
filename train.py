@@ -39,6 +39,8 @@ def train(
     aux_coef: float = 0.0,
     schedule: str = "linear",
     data_workers: int = 0,
+    data_seed_offset: int = 0,
+    return_state: bool = False,
 ) -> list[float]:
     """Full training loop with observation-only loss.
 
@@ -91,7 +93,9 @@ def train(
         from .data_parallel import ParallelBatchGenerator
         gen = ParallelBatchGenerator(
             env, batch_size, n_steps, n_workers=data_workers,
-            base_seed=torch.initial_seed() % (2 ** 31),
+            # data_seed_offset (default 0 = unchanged) gives a continuation run a FRESH
+            # stream while keeping the seed, and so the training map, the same
+            base_seed=(torch.initial_seed() + data_seed_offset) % (2 ** 31),
             p_transition_noise=p_transition_noise,
             want_locations=wants_positions)
 
@@ -180,4 +184,6 @@ def train(
     if gen is not None:
         gen.close()
 
+    if return_state:
+        return losses, optimizer, scheduler
     return losses
