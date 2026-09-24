@@ -34,9 +34,10 @@ established.
 speedup only 1.25x. Keep fp32.
 
 **In flight / next, none launched:**
-- **Rank at matched length LANDED 2026-09-23: BUDGET-LIMITED.** Neither arm converged at T=1024
-  (flat 4/8 r=2, 0/8 r=4); loss-matched r4-r2 +0.002 (MDE 0.115), raw +0.157 (MDE 0.203).
-  The gap is training speed. `RANK_MATCHED_RESULTS.md`. Next: 900-epoch pilot. Design record:
+- **Rank at matched length: 300-epoch batch UNREADABLE** (Amendment 2 classes: r=2 0 solved/4 stalled/
+  4 descending, r=4 3/0/5). "Gap is training speed" WITHDRAWN (loss-matching is uninformative at
+  matched length). r=2 can represent the solution (rank-2 projection of r=4: 0.9995) -> learnability.
+  900-epoch pilot running. `RANK_MATCHED_RESULTS.md`. Design record:
   audited GO, owned by the main session (`runs/rank_matched`,
   `RANK_MATCHED_PREREG.md`). r=2 vs r=4 trained and tested at T=1024, 8 seeds, `--n-steps 1024
   --batch-size 16`, else the `run_rank_sweep.sh` recipe. Audit: 94% of the old +0.085 is

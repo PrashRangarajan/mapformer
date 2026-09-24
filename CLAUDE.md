@@ -56,12 +56,16 @@ additive digit angles. MapFormer has only (C) -- its angle is computed once from
 before attention (the "placement" axis `mapformer_math.tex` calls uncompared) -- so MapWM should
 fail even with perfect digit arithmetic. Next test, not run: train on even shifts, test on odd.
 
-**Rank at matched length -- LANDED 2026-09-23 15:23: BUDGET-LIMITED, no branch fires**
-(`RANK_MATCHED_RESULTS.md`, `analyze_rank_matched.py`). Trained at T=1024 neither arm converges
-(flat r=2 4/8, r=4 0/8; losses 0.2-1.25 vs <=0.09 at T=128). Raw r4-r2 +0.157 at T=1024, MDE 0.203;
-r(log loss, acc) -0.985 within r=2 and **loss-matched r4-r2 = +0.002** -- the gap is training
-speed, not capability. r=4 trains faster in BOTH batches. Geometry prediction (r=2 cleaner at
-T=1024) not supported (opposition 0.495 -> 0.667). Next: 900-epoch pilot, then 8 seeds.
+**Rank at matched length -- 300-epoch batch UNREADABLE; CORRECTED same day after review**
+(`RANK_MATCHED_RESULTS.md`, `analyze_rank_matched.py`, prereg Amendment 2). Trained at T=1024 more
+than 2 runs per arm were still descending (r=2: 0 solved / 4 stalled at loss 1.06-1.25 / 4 descending;
+r=4: 3 / 0 / 5). **WITHDRAWN: "the r=4 gap is training speed" (loss-matched +0.002).** At matched
+length train and test are the same task, so loss-matching cannot separate faster training from a
+better solution. **r=2 CAN represent the solution**: a rank-2 projection of trained r=4 scores 0.9995
+(s6) / 0.990 (s2) (`probe_rank_projection.py`), so the question is learnability, not capacity.
+Exploratory: r=2's accuracy falls with revisit distance within each run, r=4's does not (8/8).
+The registered 'flat' check was INVERTED (called stuck runs flat, failed a solved one) -- replaced.
+900-epoch pilot (seeds 0-1) running; read by Amendment 2's mechanical rule.
 
 Design record (was: DESIGNED AND AUDITED (GO)). The main session owns it
 (`runs/rank_matched`, `RANK_MATCHED_PREREG.md`, a stratified readout script, the probe fixes);
@@ -108,6 +112,16 @@ another session.
 - **A pre-launch audit is cheaper than a post-hoc retraction.** The Dyck width confound, the
   frequency-ladder confound and the OOM picker were design bugs caught only after GPU time; the
   rank audit above found the loss non-overlap and the stratum structure before any.
+- **At matched length, loss-matching is uninformative.** Train and test are the same task, so
+  held-out accuracy is ~a function of training loss for ANY solution; a zero loss-matched residual
+  cannot tell "trains faster" from "is better". Rule 9's residual only means something when
+  the eval differs from training (a length or a map the loss never saw).
+- **Validate a convergence criterion on runs whose status you know before it gates anything.**
+  The registered "last 30 epochs within 5%" check passed the four STUCK r=2 runs and failed a
+  SOLVED r=4 one (loss 0.0015); it would have scored the converged T=128 batch 1/8 and 0/8.
+  Plateaus are flat too: separate SOLVED (loss threshold) from STALLED (flat but high).
+- **Replace a running driver script atomically** (write a new file, `mv` over it): bash keeps
+  reading the old inode through fd 255, so the running copy is untouched. In-place edits are not.
 
 ## 2026-09-23 -- Dyck depth ladder: the last positive result SURVIVES; C1 closes as a REVERSAL
 

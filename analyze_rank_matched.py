@@ -1,62 +1,148 @@
-"""Registered readouts for RANK_MATCHED_PREREG.md, from the committed JSONs and checkpoints."""
-import json
+"""Readouts for RANK_MATCHED_PREREG.md (Amendment 2), from committed JSONs and checkpoints.
+
+    python3 -m mapformer.analyze_rank_matched                 # 300-epoch batch
+    python3 -m mapformer.analyze_rank_matched --tag _e900     # 900-epoch batch
+    python3 -m mapformer.analyze_rank_matched --tag _e900 --classify-only --seeds 0 1   # pilot
+"""
+import argparse, itertools, json
 import numpy as np
 import torch
+from scipy.stats import fisher_exact
 
 REPO = "/home/prashr/mapformer"
-V2, V4, SEEDS = "Vanilla", "Vanilla_r4", list(range(8))
-M = json.load(open(f"{REPO}/RANK_MATCHED.json"))
-S = json.load(open(f"{REPO}/RANK_MATCHED_STRATA.json"))
-O = json.load(open(f"{REPO}/RANK_SWEEP_STRATA.json"))
+V2, V4 = "Vanilla", "Vanilla_r4"
+STRATA = ("all", "plain_lag<128", "plain_lag>=128", "wrap")
+SOLVED_LOSS, STALL_TOL = 0.05, 0.05
 
 
-def pair(a, b, label):
-    a, b = np.array(a, float), np.array(b, float); d = b - a
-    sd = d.std(ddof=1); mde = 2.8 * sd / np.sqrt(len(d))
-    tag = "DETECTABLE" if abs(d.mean()) > mde else "unmeasured"
-    print(f"  {label:34s} r2 {a.mean():.3f}  r4 {b.mean():.3f}  d {d.mean():+.3f}  MDE {mde:.3f}  "
-          f"{(d > 0).sum()}/{len(d)} positive  {tag}")
-    return d
+def classify(losses):
+    """SOLVED / STALLED / DESCENDING from per-epoch loss (Amendment 2)."""
+    l = np.asarray(losses, float); E = len(l)
+    k5, k10 = max(1, round(0.05 * E)), max(1, round(0.10 * E))
+    tail = l[-k5:].mean()
+    if tail < SOLVED_LOSS:
+        return "SOLVED", tail, None
+    last, prev = l[-k10:].mean(), l[-2 * k10:-k10].mean()
+    ratio = last / prev
+    return ("STALLED" if abs(ratio - 1) < STALL_TOL else "DESCENDING"), tail, ratio
 
 
-def get(J, v, T, k="acc"):
-    return [dict((x[0], x) for x in J[f"0.0|{v}|{T}"])[s][1 if k == "acc" else 2] for s in SEEDS]
+def paired(a, b):
+    d = np.asarray(b, float) - np.asarray(a, float)
+    return d.mean(), 2.8 * d.std(ddof=1) / np.sqrt(len(d)), int((d > 0).sum())
 
 
-print("== overall (eval_noise_refine), trained at T=1024 ==")
-for T in (512, 1024, 2048):
-    pair(get(M, V2, T), get(M, V4, T), f"acc T={T}" + ("  [PRIMARY]" if T == 1024 else ""))
-    pair(get(M, V2, T, "nll"), get(M, V4, T, "nll"), f"NLL T={T} (negative = r4 better)")
+def perm(a, b, shift=0.0):
+    """Exact two-sample permutation p (two-sided) for mean(b) - mean(a) - shift."""
+    a, b = np.asarray(a, float), np.asarray(b, float) - shift
+    x = np.concatenate([a, b]); n = len(b); obs = b.mean() - a.mean()
+    tot = x.sum(); cnt = hits = 0
+    for idx in itertools.combinations(range(len(x)), n):
+        sb = x[list(idx)].sum(); d = sb / n - (tot - sb) / (len(x) - n)
+        hits += abs(d) >= abs(obs) - 1e-12; cnt += 1
+    return hits / cnt
 
-for name, J in (("NEW trained T=1024", S), ("OLD trained T=128", O)):
-    print(f"\n== strata, {name} ==")
+
+def perm_ci(a, b, lo=-0.6, hi=0.6, step=0.005):
+    ok = [s for s in np.arange(lo, hi + 1e-9, step) if perm(a, b, s) >= 0.05]
+    return (min(ok), max(ok)) if ok else (None, None)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tag", default="")
+    ap.add_argument("--seeds", nargs="+", type=int, default=list(range(8)))
+    ap.add_argument("--classify-only", action="store_true",
+                    help="pilot mode: training-loss classes only, reads no evaluation")
+    a = ap.parse_args()
+    S = a.seeds
+    runs = f"{REPO}/runs/rank_matched{a.tag}/p0"
+
+    print(f"== run classes (Amendment 2), runs/rank_matched{a.tag} ==")
+    C, loss = {}, {}
+    for v in (V2, V4):
+        for s in S:
+            b = torch.load(f"{runs}/{v}_s{s}/{v}.pt", map_location="cpu", weights_only=False)
+            assert b["config"].get("n_steps") == 1024, b["config"]
+            C[(v, s)] = classify(b["losses"]); loss[(v, s)] = float(b["losses"][-1])
+            cls, tail, ratio = C[(v, s)]
+            print(f"  {v:11s} s{s}  epochs {len(b['losses'])}  tail loss {tail:.4f}  "
+                  f"last10%/prev10% {'' if ratio is None else f'{ratio:.3f}'}  {cls}")
+    for v in (V2, V4):
+        n = {k: sum(C[(v, s)][0] == k for s in S) for k in ("SOLVED", "STALLED", "DESCENDING")}
+        print(f"  {v:11s} {n}")
+    if a.classify_only:
+        desc = [k for k, c in C.items() if c[0] == "DESCENDING"]
+        print("PILOT RULE:", "no run DESCENDING -> launch seeds 2-7 at this budget" if not desc
+              else f"{len(desc)} run(s) DESCENDING {desc} -> do NOT launch; decide next budget with the user")
+        return
+
+    M = json.load(open(f"{REPO}/RANK_MATCHED{a.tag}.json"))
+    ST = json.load(open(f"{REPO}/RANK_MATCHED{a.tag}_STRATA.json"))
+    acc = lambda v, T: [dict((x[0], x) for x in M[f"0.0|{v}|{T}"])[s][1] for s in S]
+    nll = lambda v, T: [dict((x[0], x) for x in M[f"0.0|{v}|{T}"])[s][2] for s in S]
+
+    a2, a4 = acc(V2, 1024), acc(V4, 1024)
+    print("\n== primary: T=1024 overall accuracy ==")
+    d, mde, npos = paired(a2, a4)
+    p = perm(a2, a4); lo, hi = perm_ci(a2, a4)
+    print(f"  r2 {np.mean(a2):.3f}  r4 {np.mean(a4):.3f}  d {d:+.3f}  paired MDE {mde:.3f} ({npos}/{len(S)})"
+          f"  exact permutation p {p:.4f}  95% CI [{lo:+.3f}, {hi:+.3f}]")
+    s2 = sum(C[(V2, s)][0] == "SOLVED" for s in S); s4 = sum(C[(V4, s)][0] == "SOLVED" for s in S)
+    pf = fisher_exact([[s4, len(S) - s4], [s2, len(S) - s2]])[1]
+    print(f"== co-primary: SOLVED  r2 {s2}/{len(S)}  r4 {s4}/{len(S)}  Fisher p {pf:.4f}")
+    sa2 = [x for x, s in zip(a2, S) if C[(V2, s)][0] == "SOLVED"]
+    sa4 = [x for x, s in zip(a4, S) if C[(V4, s)][0] == "SOLVED"]
+    print(f"  accuracy among SOLVED: r2 {np.mean(sa2) if sa2 else float('nan'):.3f} (n={len(sa2)})"
+          f"  r4 {np.mean(sa4) if sa4 else float('nan'):.3f} (n={len(sa4)})")
+    ndesc = {v: sum(C[(v, s)][0] == "DESCENDING" for s in S) for v in (V2, V4)}
+    ci_excl = lo is not None and not (lo <= 0.085 <= hi)
+    if max(ndesc.values()) > 2:
+        verdict = f"UNREADABLE ({ndesc} DESCENDING; more than 2 in an arm)"
+    elif (p < 0.05 and d > 0) or (pf < 0.05 and s4 > s2):
+        verdict = "R2 -- learnability deficit at r=2"
+    elif (p < 0.05 and d < 0) or (pf < 0.05 and s2 > s4):
+        verdict = "R3 -- reversal"
+    elif ci_excl:
+        verdict = "R1 -- no difference at matched length; +0.085 excluded"
+    else:
+        verdict = "UNMEASURED -- no difference found, +0.085 not excluded"
+    print(f"== BRANCH: {verdict}")
+
+    print("\n== secondary: other lengths (paired MDE for continuity) ==")
+    for T in (512, 1024, 2048):
+        for name, f in (("acc", acc), ("NLL", nll)):
+            x2, x4 = f(V2, T), f(V4, T); d, mde, npos = paired(x2, x4)
+            print(f"  {name} T={T:4d}  r2 {np.mean(x2):.3f}  r4 {np.mean(x4):.3f}  d {d:+.3f}  "
+                  f"MDE {mde:.3f}  {npos}/{len(S)} r4>r2  perm p {perm(x2, x4):.4f}")
+
+    print("\n== secondary: strata (accuracy and NLL; floor = best constant) ==")
     for T in (1024, 2048):
-        for k in ("all", "plain_lag<128", "plain_lag>=128", "wrap"):
-            a = [J[f"{V2}|{s}|{T}"][k]["acc"] for s in SEEDS]
-            b = [J[f"{V4}|{s}|{T}"][k]["acc"] for s in SEEDS]
-            fl = np.mean([J[f"{V2}|{s}|{T}"][k]["floor"] for s in SEEDS])
-            pair(a, b, f"T={T} {k} (floor {fl:.3f})")
+        for k in STRATA:
+            g = lambda v, q: [ST[f"{v}|{s}|{T}"][k][q] for s in S]
+            fl = g(V2, "floor")
+            below = sum(x < f for x, f in zip(g(V2, "acc"), fl)), sum(x < f for x, f in zip(g(V4, "acc"), fl))
+            da, ma, _ = paired(g(V2, "acc"), g(V4, "acc")); dn, mn, _ = paired(g(V2, "nll"), g(V4, "nll"))
+            print(f"  T={T} {k:15s} floor {np.mean(fl):.3f}  acc r2 {np.mean(g(V2, 'acc')):.3f} r4 "
+                  f"{np.mean(g(V4, 'acc')):.3f} d {da:+.3f} (MDE {ma:.3f})  NLL d {dn:+.3f} (MDE {mn:.3f})"
+                  f"  runs below floor r2 {below[0]}/{len(S)} r4 {below[1]}/{len(S)}")
+    print("\n== exploratory: within-run stratum profile at T=1024 (stratum acc - own gap<128 acc) ==")
+    for k in ("plain_lag>=128", "wrap"):
+        pr = lambda v: [ST[f"{v}|{s}|1024"][k]["acc"] - ST[f"{v}|{s}|1024"]["plain_lag<128"]["acc"] for s in S]
+        d, mde, npos = paired(pr(V2), pr(V4))
+        print(f"  {k:15s} r2 {np.mean(pr(V2)):+.3f}  r4 {np.mean(pr(V4)):+.3f}  d {d:+.3f}  MDE {mde:.3f}  {npos}/{len(S)}")
 
-print("\n== per seed, T=1024 overall acc and training loss ==")
-L = {}
-for v in (V2, V4):
-    for s in SEEDS:
-        b = torch.load(f"{REPO}/runs/rank_matched/p0/{v}_s{s}/{v}.pt", map_location="cpu", weights_only=False)
-        l = np.array(b["losses"], float); assert b["config"]["n_steps"] == 1024
-        flat = abs(l[270:].mean() - l[240:270].mean()) <= 0.05 * l[240:270].mean()
-        L[(v, s)] = (l[-1], flat, l[270:].mean() / l[240:270].mean())
-    acc = get(M, v, 1024)
-    print(f"  {v:11s} acc  " + " ".join(f"{x:.3f}" for x in acc))
-    print(f"  {v:11s} loss " + " ".join(f"{L[(v, s)][0]:.4f}" for s in SEEDS)
-          + f"   flat {sum(L[(v, s)][1] for s in SEEDS)}/8"
-          + "   last30/prev30 " + " ".join(f"{L[(v, s)][2]:.2f}" for s in SEEDS))
-l2 = [L[(V2, s)][0] for s in SEEDS]; l4 = [L[(V4, s)][0] for s in SEEDS]
-print(f"  loss ranges: r2 {min(l2):.4f}-{max(l2):.4f}  r4 {min(l4):.4f}-{max(l4):.4f}  "
-      f"overlap: {max(min(l2), min(l4)) <= min(max(l2), max(l4))}")
-x = np.log([*l2, *l4]); y = np.array([*get(M, V2, 1024), *get(M, V4, 1024)])
-print(f"  r(log final loss, T=1024 acc): pooled {np.corrcoef(x, y)[0, 1]:+.3f}  "
-      f"r2 {np.corrcoef(x[:8], y[:8])[0, 1]:+.3f}  r4 {np.corrcoef(x[8:], y[8:])[0, 1]:+.3f}")
-# loss-matched residual: regress acc on log loss pooled, compare arm means of residuals
-beta = np.polyfit(x, y, 1); res = y - np.polyval(beta, x)
-d = res[8:] - res[:8]
-print(f"  loss-matched r4-r2: {d.mean():+.3f}  MDE {2.8 * d.std(ddof=1) / np.sqrt(8):.3f}  (slope {beta[0]:+.3f}/log-loss)")
+    print("\n== losses (descriptive: at matched length loss-matching cannot separate speed from solution) ==")
+    l2 = [loss[(V2, s)] for s in S]; l4 = [loss[(V4, s)] for s in S]
+    print(f"  final loss r2 {min(l2):.4f}-{max(l2):.4f}  r4 {min(l4):.4f}-{max(l4):.4f}  "
+          f"r4 lower on {sum(y < x for x, y in zip(l2, l4))}/{len(S)} seeds")
+    x = np.log(np.array([*l2, *l4])); y = np.array([*a2, *a4]); arm = np.r_[np.zeros(len(S)), np.ones(len(S))]
+    for nm, sl in (("r2", slice(0, len(S))), ("r4", slice(len(S), None))):
+        print(f"  within {nm}: r(log loss, acc) {np.corrcoef(x[sl], y[sl])[0, 1]:+.3f}  "
+              f"slope {np.polyfit(x[sl], y[sl], 1)[0]:+.3f}")
+    X = np.c_[np.ones_like(x), arm, x]; beta, *_ = np.linalg.lstsq(X, y, rcond=None)
+    print(f"  ANCOVA acc ~ arm + log loss: arm coefficient {beta[1]:+.3f}, loss slope {beta[2]:+.3f}")
+
+
+if __name__ == "__main__":
+    main()
