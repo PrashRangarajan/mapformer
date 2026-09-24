@@ -1,0 +1,62 @@
+--- a/train.py	2026-09-24 02:17:21.769500778 -0700
++++ b/train.py	2026-09-24 02:18:35.591194583 -0700
+@@ -89,12 +89,22 @@
+     # parallel run therefore will not reproduce a stored serial checkpoint.
+     wants_positions = hasattr(model, "_batch_positions")
+     gen = None
++    if data_seed_offset and data_workers <= 0:
++        # The serial path draws from the global numpy RNG seeded by --seed, so an offset
++        # would be silently IGNORED and a continuation would replay its parent's walks.
++        raise ValueError("data_seed_offset requires data_workers > 0 (the serial data "
++                         "path has no stream seed to offset)")
+     if data_workers > 0:
+         from .data_parallel import ParallelBatchGenerator
+         gen = ParallelBatchGenerator(
+             env, batch_size, n_steps, n_workers=data_workers,
+             # data_seed_offset (default 0 = unchanged) gives a continuation run a FRESH
+-            # stream while keeping the seed, and so the training map, the same
++            # stream while keeping the seed, and so the training map, the same.
++            # NOTE: batch seeds are base_seed*1_000_003 + i, so offset k makes seed s's
++            # walk stream IDENTICAL to seed s+k's offset-0 stream (verified: continuation
++            # s0 replays original s1's walks, on s0's map). Harmless for within-seed
++            # arm pairing; use a large offset (e.g. 10**6) if cross-batch independence
++            # of walks matters. Not changed here: it would change running batches' md5.
+             base_seed=(torch.initial_seed() + data_seed_offset) % (2 ** 31),
+             p_transition_noise=p_transition_noise,
+             want_locations=wants_positions)
+--- a/train_variant.py	2026-09-24 02:17:21.821501970 -0700
++++ b/train_variant.py	2026-09-24 02:19:24.560317746 -0700
+@@ -517,6 +517,21 @@
+     if args.init_from:
+         init_blob = torch.load(args.init_from, map_location="cpu", weights_only=False)
+         assert init_blob.get("variant") == args.variant, (init_blob.get("variant"), args.variant)
++        # The training MAP is seeded by --seed, so a parent trained on another seed (or at
++        # another grid / vocabulary / length) would silently continue on a different task.
++        ic = init_blob.get("config", {})
++        mism = {k: (ic.get(k), v) for k, v in (("grid_size", grid_size),
++                                               ("n_obs_types", args.n_obs_types),
++                                               ("n_landmarks", args.n_landmarks),
++                                               ("n_steps", args.n_steps))
++                if ic.get(k) is not None and ic.get(k) != v}
++        if init_blob.get("seed") is not None and init_blob.get("seed") != args.seed:
++            mism["seed"] = (init_blob.get("seed"), args.seed)
++        if mism:
++            raise SystemExit(f"--init-from config mismatch (parent, this run): {mism}")
++        if ic.get("projected_from"):
++            print(f"NOTE: parent is a projection of {ic['projected_from']}; its 'losses' are "
++                  f"the SOURCE model's curve, so losses_prior below is not this arm's history")
+         model.load_state_dict(init_blob["model_state_dict"])      # strict
+         print(f"init-from {args.init_from} ({len(init_blob.get('losses', []))} prior epochs)")
+     print(f"{args.variant} seed={args.seed} n_landmarks={args.n_landmarks} "
+@@ -564,6 +579,11 @@
+             "epochs": args.epochs, "lr": args.lr, "schedule": args.schedule,
+             "n_batches": args.n_batches,
+             "init_from": args.init_from, "data_seed_offset": args.data_seed_offset,
++            # EVERY CLI argument (added by audit). The keys above omit the environment
++            # knobs -- p_action_noise, p_transition_noise, action_mode, obs_mode, boundary,
++            # action_record, n_headings, heading_noise, score_moves_only -- so no evaluator
++            # could rebuild the training environment from the checkpoint alone.
++            "args": dict(vars(args)),
+         },
+         # continuation history (None for a from-scratch run) and opt-in optimizer state
+         "losses_prior": losses_prior,

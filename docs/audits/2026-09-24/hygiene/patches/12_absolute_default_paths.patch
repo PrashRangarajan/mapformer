@@ -1,0 +1,590 @@
+diff -ru a12/ablate_match_noise.py b12/ablate_match_noise.py
+--- a12/ablate_match_noise.py	2026-09-24 02:22:35.332690772 -0700
++++ b12/ablate_match_noise.py	2026-09-24 02:22:36.756723400 -0700
+@@ -66,7 +66,7 @@
+ 
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--runs-dir", default="mapformer/runs/mq_noise_c2")
++    ap.add_argument("--runs-dir", default="/home/prashr/mapformer/runs/mq_noise_c2")
+     ap.add_argument("--variants", nargs="+", default=["Vanilla", "Looped"])
+     ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2, 3])
+     ap.add_argument("--size", type=int, default=128)
+@@ -76,7 +76,7 @@
+     ap.add_argument("--n-batches", type=int, default=6)
+     ap.add_argument("--batch-size", type=int, default=6)
+     ap.add_argument("--device", default="cuda:0")
+-    ap.add_argument("--out", default="MATCH_QUERY_NOISE_ABLATION.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/MATCH_QUERY_NOISE_ABLATION.md")
+     a = ap.parse_args()
+ 
+     env = MatchQueryGridWorld(size=a.size, n_obs_types=a.n_obs, seed=10000)
+diff -ru a12/agg_clock.py b12/agg_clock.py
+--- a12/agg_clock.py	2026-09-24 02:22:35.424692880 -0700
++++ b12/agg_clock.py	2026-09-24 02:22:36.816724776 -0700
+@@ -28,7 +28,7 @@
+     ap.add_argument("--seeds", nargs="+", type=int, required=True)
+     ap.add_argument("--variants", nargs="+", required=True)
+     ap.add_argument("--lengths", nargs="+", type=int, required=True)
+-    ap.add_argument("--out", default="HIERGOAL_MULTISEED.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/HIERGOAL_MULTISEED.md")
+     args = ap.parse_args()
+ 
+     acc = {v: {t: [] for t in args.lengths} for v in args.variants}
+diff -ru a12/agg_comp_headroom.py b12/agg_comp_headroom.py
+--- a12/agg_comp_headroom.py	2026-09-24 02:22:35.676698653 -0700
++++ b12/agg_comp_headroom.py	2026-09-24 02:22:36.920727159 -0700
+@@ -46,7 +46,7 @@
+     ap.add_argument("--lengths", nargs="+", type=int, default=[256, 512])
+     ap.add_argument("--n-traj", type=int, default=200)   # MATCHES agg_comp_multiseed, so arm A is comparable to the published table
+     ap.add_argument("--device", default="cuda:0")
+-    ap.add_argument("--out", default="COMP_HEADROOM.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/COMP_HEADROOM.md")
+     a = ap.parse_args()
+ 
+     res, loss = {}, {}
+diff -ru a12/agg_comp_multiseed.py b12/agg_comp_multiseed.py
+--- a12/agg_comp_multiseed.py	2026-09-24 02:22:34.488671433 -0700
++++ b12/agg_comp_multiseed.py	2026-09-24 02:22:37.040729908 -0700
+@@ -57,7 +57,7 @@
+     ap.add_argument("--n-traj", type=int, default=200)
+     ap.add_argument("--batch", type=int, default=16)
+     ap.add_argument("--device", default="cuda:0")
+-    ap.add_argument("--out", default="COMPOSITIONAL_MULTISEED.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/COMPOSITIONAL_MULTISEED.md")
+     args = ap.parse_args()
+ 
+     # raw[variant][T][metric] = list over seeds
+diff -ru a12/agg_hiergoal.py b12/agg_hiergoal.py
+--- a12/agg_hiergoal.py	2026-09-24 02:22:35.276689486 -0700
++++ b12/agg_hiergoal.py	2026-09-24 02:22:37.096731192 -0700
+@@ -28,7 +28,7 @@
+     ap.add_argument("--seeds", nargs="+", type=int, required=True)
+     ap.add_argument("--variants", nargs="+", required=True)
+     ap.add_argument("--lengths", nargs="+", type=int, required=True)
+-    ap.add_argument("--out", default="HIERGOAL_MULTISEED.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/HIERGOAL_MULTISEED.md")
+     args = ap.parse_args()
+ 
+     acc = {v: {t: [] for t in args.lengths} for v in args.variants}
+diff -ru a12/audit_planner_tasks.py b12/audit_planner_tasks.py
+--- a12/audit_planner_tasks.py	2026-09-24 02:22:34.528672347 -0700
++++ b12/audit_planner_tasks.py	2026-09-24 02:22:37.196733483 -0700
+@@ -111,7 +111,7 @@
+                              "rooms_maze", "maze_varying"])
+     ap.add_argument("--n-episodes", type=int, default=300)
+     ap.add_argument("--seed", type=int, default=0)
+-    ap.add_argument("--out", default="PLANNER_TASK_AUDIT.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/PLANNER_TASK_AUDIT.md")
+     args = ap.parse_args()
+ 
+     rows = []
+diff -ru a12/bench_compute.py b12/bench_compute.py
+--- a12/bench_compute.py	2026-09-24 02:22:36.236711485 -0700
++++ b12/bench_compute.py	2026-09-24 02:22:37.308736049 -0700
+@@ -41,7 +41,7 @@
+     ap.add_argument("--lengths", nargs="+", type=int, default=[16, 128, 512, 2048])
+     ap.add_argument("--batch-size", type=int, default=64)
+     ap.add_argument("--device", default="cuda:0")
+-    ap.add_argument("--out", default="LOOP_HIER_COMPUTE.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/LOOP_HIER_COMPUTE.md")
+     a = ap.parse_args()
+     dev = torch.device(a.device)
+ 
+diff -ru a12/clone_transfer_test.py b12/clone_transfer_test.py
+--- a12/clone_transfer_test.py	2026-09-24 02:22:34.580673538 -0700
++++ b12/clone_transfer_test.py	2026-09-24 02:22:37.448739257 -0700
+@@ -164,7 +164,7 @@
+                    help="env seed for the OOD test (fresh obs_map)")
+     p.add_argument("--T", type=int, default=128)
+     p.add_argument("--n-trials", type=int, default=200)
+-    p.add_argument("--output", default="CLONE_TRANSFER_TEST.md")
++    p.add_argument("--output", default="/home/prashr/mapformer/CLONE_TRANSFER_TEST.md")
+     p.add_argument("--device", default="cuda")
+     args = p.parse_args()
+ 
+diff -ru a12/eval_goal_closedloop.py b12/eval_goal_closedloop.py
+--- a12/eval_goal_closedloop.py	2026-09-24 02:22:34.624674546 -0700
++++ b12/eval_goal_closedloop.py	2026-09-24 02:22:37.572742099 -0700
+@@ -104,7 +104,7 @@
+ 
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--output-md", default="GOAL_CLOSEDLOOP_RESULTS.md")
++    ap.add_argument("--output-md", default="/home/prashr/mapformer/GOAL_CLOSEDLOOP_RESULTS.md")
+     ap.add_argument("--n-episodes", type=int, default=200)
+     args = ap.parse_args()
+ 
+diff -ru a12/eval_hier_goal_closedloop.py b12/eval_hier_goal_closedloop.py
+--- a12/eval_hier_goal_closedloop.py	2026-09-24 02:22:35.736700028 -0700
++++ b12/eval_hier_goal_closedloop.py	2026-09-24 02:22:37.728745673 -0700
+@@ -111,7 +111,7 @@
+     ap.add_argument("--T-navigate", type=int, default=96)
+     ap.add_argument("--n-trials", type=int, default=200)
+     ap.add_argument("--device", default="cuda:0")
+-    ap.add_argument("--out", default="HIERGOAL_CLOSEDLOOP.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/HIERGOAL_CLOSEDLOOP.md")
+     args = ap.parse_args()
+ 
+     env = HierGoalGridWorld(size=64, room_size=8, seed=10000)
+diff -ru a12/eval_long_t.py b12/eval_long_t.py
+--- a12/eval_long_t.py	2026-09-24 02:22:35.476694071 -0700
++++ b12/eval_long_t.py	2026-09-24 02:22:37.832748056 -0700
+@@ -78,7 +78,7 @@
+ 
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--output-md", default="LONGT_EVAL_RESULTS.md")
++    ap.add_argument("--output-md", default="/home/prashr/mapformer/LONGT_EVAL_RESULTS.md")
+     ap.add_argument("--T-values", nargs="+", type=int, default=[512, 1024, 2048, 4096])
+     ap.add_argument("--n-trials", type=int, default=50)
+     args = ap.parse_args()
+diff -ru a12/eval_match_longq.py b12/eval_match_longq.py
+--- a12/eval_match_longq.py	2026-09-24 02:22:36.152709560 -0700
++++ b12/eval_match_longq.py	2026-09-24 02:22:37.936750440 -0700
+@@ -12,12 +12,12 @@
+ from mapformer.train_match_query import evaluate
+ 
+ ap = argparse.ArgumentParser()
+-ap.add_argument("--runs-dir", default="mapformer/runs/match_query")
++ap.add_argument("--runs-dir", default="/home/prashr/mapformer/runs/match_query")
+ ap.add_argument("--variants", nargs="+", default=["Vanilla", "PlainFlat"])
+ ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])
+ ap.add_argument("--lengths", nargs="+", type=int, default=[256, 512, 1024, 2048])
+ ap.add_argument("--size", type=int, default=64); ap.add_argument("--n-obs", type=int, default=16)
+-ap.add_argument("--device", default="cuda:0"); ap.add_argument("--out", default="MATCH_QUERY_LONGQ.md")
++ap.add_argument("--device", default="cuda:0"); ap.add_argument("--out", default="/home/prashr/mapformer/MATCH_QUERY_LONGQ.md")
+ a = ap.parse_args()
+ env = MatchQueryGridWorld(size=a.size, n_obs_types=a.n_obs, seed=10000)
+ res = {v: {L: [] for L in a.lengths} for v in a.variants}
+diff -ru a12/eval_ood_grid.py b12/eval_ood_grid.py
+--- a12/eval_ood_grid.py	2026-09-24 02:22:35.908703970 -0700
++++ b12/eval_ood_grid.py	2026-09-24 02:22:38.000751906 -0700
+@@ -96,7 +96,7 @@
+ 
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--output-md", default="OOD_GRID_RESULTS.md")
++    ap.add_argument("--output-md", default="/home/prashr/mapformer/OOD_GRID_RESULTS.md")
+     ap.add_argument("--n-trials", type=int, default=30)
+     ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])
+     args = ap.parse_args()
+diff -ru a12/held_out_obs_eval.py b12/held_out_obs_eval.py
+--- a12/held_out_obs_eval.py	2026-09-24 02:22:34.676675740 -0700
++++ b12/held_out_obs_eval.py	2026-09-24 02:22:38.100754197 -0700
+@@ -217,7 +217,7 @@
+                         default="both",
+                         help="restriction mode: blanking, reassignment, or both")
+     parser.add_argument("--device", default="cuda")
+-    parser.add_argument("--output", default="HELD_OUT_OBS.md")
++    parser.add_argument("--output", default="/home/prashr/mapformer/HELD_OUT_OBS.md")
+     args = parser.parse_args()
+ 
+     runs = Path(args.runs_dir)
+diff -ru a12/hippocampal_analysis.py b12/hippocampal_analysis.py
+--- a12/hippocampal_analysis.py	2026-09-24 02:22:35.952704978 -0700
++++ b12/hippocampal_analysis.py	2026-09-24 02:22:38.228757130 -0700
+@@ -406,7 +406,7 @@
+     p.add_argument("--n-trials", type=int, default=30)
+     p.add_argument("--test-seed", type=int, default=12345,
+                    help="env seed for evaluation (fresh map)")
+-    p.add_argument("--output-md", default="HIPPOCAMPAL_ANALYSIS.md")
++    p.add_argument("--output-md", default="/home/prashr/mapformer/HIPPOCAMPAL_ANALYSIS.md")
+     p.add_argument("--output-figures", default="paper_figures")
+     p.add_argument("--device", default="cuda")
+     args = p.parse_args()
+diff -ru a12/hippocampal_hidden_eval.py b12/hippocampal_hidden_eval.py
+--- a12/hippocampal_hidden_eval.py	2026-09-24 02:22:34.776678031 -0700
++++ b12/hippocampal_hidden_eval.py	2026-09-24 02:22:38.320759239 -0700
+@@ -166,7 +166,7 @@
+     p.add_argument("--top-k", type=int, default=8,
+                    help="show top-k hidden dims by grid score per variant")
+     p.add_argument("--device", default="cuda")
+-    p.add_argument("--output-md", default="HIPPOCAMPAL_HIDDEN.md")
++    p.add_argument("--output-md", default="/home/prashr/mapformer/HIPPOCAMPAL_HIDDEN.md")
+     p.add_argument("--output-figures", default="paper_figures")
+     args = p.parse_args()
+ 
+diff -ru a12/length_diagnostic.py b12/length_diagnostic.py
+--- a12/length_diagnostic.py	2026-09-24 02:22:35.528695262 -0700
++++ b12/length_diagnostic.py	2026-09-24 02:22:38.444762078 -0700
+@@ -92,7 +92,7 @@
+     p.add_argument("--seed", type=int, default=0)
+     p.add_argument("--test-seed", type=int, default=12345)
+     p.add_argument("--n-trials", type=int, default=5)
+-    p.add_argument("--output-md", default="LENGTH_DIAGNOSTIC.md")
++    p.add_argument("--output-md", default="/home/prashr/mapformer/LENGTH_DIAGNOSTIC.md")
+     p.add_argument("--output-figs", default="paper_figures")
+     args = p.parse_args()
+ 
+diff -ru a12/long_sequence_eval.py b12/long_sequence_eval.py
+--- a12/long_sequence_eval.py	2026-09-24 02:22:36.192710477 -0700
++++ b12/long_sequence_eval.py	2026-09-24 02:22:38.520763821 -0700
+@@ -97,7 +97,7 @@
+     parser.add_argument("--n-trials-128", type=int, default=200)
+     parser.add_argument("--n-trials-long", type=int, default=50,
+                         help="trials at T>=2048 (slower)")
+-    parser.add_argument("--output", default="LONG_SEQ_RESULTS.md")
++    parser.add_argument("--output", default="/home/prashr/mapformer/LONG_SEQ_RESULTS.md")
+     args = parser.parse_args()
+ 
+     n_lm = 200 if args.config == "lm200" else 0
+diff -ru a12/loop_depth_strata.py b12/loop_depth_strata.py
+--- a12/loop_depth_strata.py	2026-09-24 02:22:36.596719735 -0700
++++ b12/loop_depth_strata.py	2026-09-24 02:22:38.644766663 -0700
+@@ -62,7 +62,7 @@
+ 
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--runs-dir", default="mapformer/runs/loop_headroom/PI_loop")
++    ap.add_argument("--runs-dir", default="/home/prashr/mapformer/runs/loop_headroom/PI_loop")
+     ap.add_argument("--variant", default="Looped")
+     ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2, 3, 4, 5, 6, 7])
+     ap.add_argument("--loops", nargs="+", type=int, default=[1, 2, 3, 4, 5, 6, 8])
+@@ -74,7 +74,7 @@
+     ap.add_argument("--size", type=int, default=128)
+     ap.add_argument("--n-obs", type=int, default=16)
+     ap.add_argument("--device", default="cuda:0")
+-    ap.add_argument("--out", default="LOOP_DEPTH_STRATA.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/LOOP_DEPTH_STRATA.md")
+     a = ap.parse_args()
+ 
+     env = MatchQueryGridWorld(size=a.size, n_obs_types=a.n_obs, seed=10000)
+diff -ru a12/make_per_visit_figure.py b12/make_per_visit_figure.py
+--- a12/make_per_visit_figure.py	2026-09-24 02:22:34.724676840 -0700
++++ b12/make_per_visit_figure.py	2026-09-24 02:22:38.804770328 -0700
+@@ -204,8 +204,8 @@
+ 
+ def main():
+     p = argparse.ArgumentParser()
+-    p.add_argument("--clean", default="PER_VISIT_clean.md")
+-    p.add_argument("--lm200", default="PER_VISIT_lm200.md")
++    p.add_argument("--clean", default="/home/prashr/mapformer/PER_VISIT_clean.md")
++    p.add_argument("--lm200", default="/home/prashr/mapformer/PER_VISIT_lm200.md")
+     p.add_argument("--output-dir", default="paper_figures")
+     args = p.parse_args()
+ 
+diff -ru a12/per_visit_eval.py b12/per_visit_eval.py
+--- a12/per_visit_eval.py	2026-09-24 02:22:36.000706078 -0700
++++ b12/per_visit_eval.py	2026-09-24 02:22:38.880772070 -0700
+@@ -141,7 +141,7 @@
+     p.add_argument("--max-visits", type=int, default=8,
+                    help="bin visit counts above this into 'over_max'")
+     p.add_argument("--device", default="cuda")
+-    p.add_argument("--output", default="PER_VISIT.md")
++    p.add_argument("--output", default="/home/prashr/mapformer/PER_VISIT.md")
+     args = p.parse_args()
+ 
+     runs = Path(args.runs_dir)
+diff -ru a12/probe_gate.py b12/probe_gate.py
+--- a12/probe_gate.py	2026-09-24 02:22:36.288712677 -0700
++++ b12/probe_gate.py	2026-09-24 02:22:39.008775001 -0700
+@@ -62,7 +62,7 @@
+ def main():
+     ap = argparse.ArgumentParser()
+     ap.add_argument("--device", default="cuda:0")
+-    ap.add_argument("--out", default="GATE_PROBE.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/GATE_PROBE.md")
+     a = ap.parse_args()
+     dev = torch.device(a.device)
+ 
+diff -ru a12/probe_goal_linear.py b12/probe_goal_linear.py
+--- a12/probe_goal_linear.py	2026-09-24 02:22:36.048707177 -0700
++++ b12/probe_goal_linear.py	2026-09-24 02:22:39.136777936 -0700
+@@ -128,7 +128,7 @@
+ 
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--output-md", default="PROBE_GOAL_RESULTS.md")
++    ap.add_argument("--output-md", default="/home/prashr/mapformer/PROBE_GOAL_RESULTS.md")
+     ap.add_argument("--n-train", type=int, default=400)
+     ap.add_argument("--n-eval", type=int, default=200)
+     args = ap.parse_args()
+diff -ru a12/probe_gsf_modes.py b12/probe_gsf_modes.py
+--- a12/probe_gsf_modes.py	2026-09-24 02:22:35.068684722 -0700
++++ b12/probe_gsf_modes.py	2026-09-24 02:22:39.240780317 -0700
+@@ -26,7 +26,7 @@
+ 
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--output-md", default="GSF_MODES_DIAGNOSTIC.md")
++    ap.add_argument("--output-md", default="/home/prashr/mapformer/GSF_MODES_DIAGNOSTIC.md")
+     ap.add_argument("--n-trials", type=int, default=50)
+     ap.add_argument("--T", type=int, default=512)
+     args = ap.parse_args()
+diff -ru a12/probe_hex_emergence.py b12/probe_hex_emergence.py
+--- a12/probe_hex_emergence.py	2026-09-24 02:22:34.908681056 -0700
++++ b12/probe_hex_emergence.py	2026-09-24 02:22:39.360783069 -0700
+@@ -148,7 +148,7 @@
+ 
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--output-md", default="HEX_EMERGENCE_RESULTS.md")
++    ap.add_argument("--output-md", default="/home/prashr/mapformer/HEX_EMERGENCE_RESULTS.md")
+     ap.add_argument("--n-trajectories", type=int, default=100)
+     ap.add_argument("--T", type=int, default=256)
+     args = ap.parse_args()
+diff -ru a12/probe_lap_theta.py b12/probe_lap_theta.py
+--- a12/probe_lap_theta.py	2026-09-24 02:22:35.580696454 -0700
++++ b12/probe_lap_theta.py	2026-09-24 02:22:39.460785360 -0700
+@@ -45,7 +45,7 @@
+     ap = argparse.ArgumentParser()
+     ap.add_argument("--checkpoints", nargs="+", required=True)
+     ap.add_argument("--device", default="cuda:1")
+-    ap.add_argument("--out", default="LAP_THETA_PROBE.json")
++    ap.add_argument("--out", default="/home/prashr/mapformer/LAP_THETA_PROBE.json")
+     a = ap.parse_args()
+     rows = [probe(c, a.device) for c in a.checkpoints]
+     for r in rows: print(r)
+diff -ru a12/probe_paper_fig4.py b12/probe_paper_fig4.py
+--- a12/probe_paper_fig4.py	2026-09-24 02:22:36.344713959 -0700
++++ b12/probe_paper_fig4.py	2026-09-24 02:22:39.568787833 -0700
+@@ -29,10 +29,10 @@
+ 
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--runs-dir", default="mapformer/runs/rank_sweep/p0")
++    ap.add_argument("--runs-dir", default="/home/prashr/mapformer/runs/rank_sweep/p0")
+     ap.add_argument("--arms", nargs="+", default=["Vanilla", "Vanilla_r4"])
+     ap.add_argument("--device", default="cuda:0")
+-    ap.add_argument("--out", default="PAPER_FIG4_REPRO.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/PAPER_FIG4_REPRO.md")
+     a = ap.parse_args()
+     dev = torch.device(a.device)
+ 
+diff -ru a12/probe_rank_learned.py b12/probe_rank_learned.py
+--- a12/probe_rank_learned.py	2026-09-24 02:22:34.824679131 -0700
++++ b12/probe_rank_learned.py	2026-09-24 02:22:39.704790950 -0700
+@@ -41,8 +41,8 @@
+ 
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--runs-dir", default="mapformer/runs/selective/torus/p0")
+-    ap.add_argument("--out", default="LEARNED_RANK.md")
++    ap.add_argument("--runs-dir", default="/home/prashr/mapformer/runs/selective/torus/p0")
++    ap.add_argument("--out", default="/home/prashr/mapformer/LEARNED_RANK.md")
+     a = ap.parse_args()
+ 
+     o = ["# Does an unconstrained angle map rediscover the rank-2 bottleneck?", "",
+diff -ru a12/probe_rank_truncate.py b12/probe_rank_truncate.py
+--- a12/probe_rank_truncate.py	2026-09-24 02:22:35.232688481 -0700
++++ b12/probe_rank_truncate.py	2026-09-24 02:22:39.784792784 -0700
+@@ -45,12 +45,12 @@
+ def main():
+     ap = argparse.ArgumentParser()
+     ap.add_argument("--arm", default="NoBottleneck")
+-    ap.add_argument("--runs-dir", default="mapformer/runs/selective/torus/p0")
++    ap.add_argument("--runs-dir", default="/home/prashr/mapformer/runs/selective/torus/p0")
+     ap.add_argument("--ranks", nargs="+", type=int, default=[1, 2, 3, 4, 8, 16, 64])
+     ap.add_argument("--lengths", nargs="+", type=int, default=[128, 512])
+     ap.add_argument("--n-trials", type=int, default=60)
+     ap.add_argument("--device", default="cuda:0")
+-    ap.add_argument("--out", default="RANK_TRUNCATION.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/RANK_TRUNCATION.md")
+     a = ap.parse_args()
+     dev = torch.device(a.device)
+ 
+diff -ru a12/probe_recency_accumulator.py b12/probe_recency_accumulator.py
+--- a12/probe_recency_accumulator.py	2026-09-24 02:22:35.784701128 -0700
++++ b12/probe_recency_accumulator.py	2026-09-24 02:22:39.892795258 -0700
+@@ -81,7 +81,7 @@
+     ap.add_argument("--variants", nargs="+",
+                     default=["Signed_r4", "Abs_r4", "Pos_r4", "CARoPE_r4"])
+     ap.add_argument("--device", default="cuda:0")
+-    ap.add_argument("--out", default="RECENCY_H2.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/RECENCY_H2.md")
+     a = ap.parse_args()
+     dev = torch.device(a.device)
+ 
+diff -ru a12/probe_sr.py b12/probe_sr.py
+--- a12/probe_sr.py	2026-09-24 02:22:36.452716435 -0700
++++ b12/probe_sr.py	2026-09-24 02:22:39.948796543 -0700
+@@ -200,7 +200,7 @@
+ 
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--output-md", default="SR_PROBE_RESULTS.md")
++    ap.add_argument("--output-md", default="/home/prashr/mapformer/SR_PROBE_RESULTS.md")
+     ap.add_argument("--n-train-trajs", type=int, default=100)
+     ap.add_argument("--n-eval-episodes", type=int, default=100)
+     ap.add_argument("--T-explore", type=int, default=64)
+diff -ru a12/probe_vector_nav.py b12/probe_vector_nav.py
+--- a12/probe_vector_nav.py	2026-09-24 02:22:34.968682431 -0700
++++ b12/probe_vector_nav.py	2026-09-24 02:22:40.052798925 -0700
+@@ -167,7 +167,7 @@
+ 
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--output-md", default="VECTOR_NAV_RESULTS.md")
++    ap.add_argument("--output-md", default="/home/prashr/mapformer/VECTOR_NAV_RESULTS.md")
+     ap.add_argument("--n-train-trajs", type=int, default=100)
+     ap.add_argument("--n-eval-trajs", type=int, default=50)
+     ap.add_argument("--n-landmarks-per-traj", type=int, default=5)
+diff -ru a12/probe_vector_nav_v2.py b12/probe_vector_nav_v2.py
+--- a12/probe_vector_nav_v2.py	2026-09-24 02:22:34.864680048 -0700
++++ b12/probe_vector_nav_v2.py	2026-09-24 02:22:40.160801400 -0700
+@@ -158,7 +158,7 @@
+ 
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--output-md", default="VECTOR_NAV_V2_RESULTS.md")
++    ap.add_argument("--output-md", default="/home/prashr/mapformer/VECTOR_NAV_V2_RESULTS.md")
+     ap.add_argument("--n-train-trajs", type=int, default=100)
+     ap.add_argument("--n-eval-trajs", type=int, default=50)
+     ap.add_argument("--pairs-per-traj", type=int, default=50)
+diff -ru a12/probe_visits_per_cell.py b12/probe_visits_per_cell.py
+--- a12/probe_visits_per_cell.py	2026-09-24 02:22:36.684721751 -0700
++++ b12/probe_visits_per_cell.py	2026-09-24 02:22:40.280804150 -0700
+@@ -68,7 +68,7 @@
+               f"{r['median_prior']:>7.0f} {r['frac_exactly_1']:>6.2f} "
+               f"{r['frac_le_2']:>6.2f} {r['frac_ge_5']:>6.2f}")
+     import json
+-    json.dump(rows, open("VISITS_PER_CELL.json", "w"), indent=2)
++    json.dump(rows, open("/home/prashr/mapformer/VISITS_PER_CELL.json", "w"), indent=2)
+     print("\nwrote VISITS_PER_CELL.json")
+ 
+ 
+diff -ru a12/rescale_eval.py b12/rescale_eval.py
+--- a12/rescale_eval.py	2026-09-24 02:22:35.380691872 -0700
++++ b12/rescale_eval.py	2026-09-24 02:22:40.336805433 -0700
+@@ -128,7 +128,7 @@
+     p.add_argument("--T", type=int, default=128)
+     p.add_argument("--n-trials", type=int, default=30)
+     p.add_argument("--device", default="cuda")
+-    p.add_argument("--output", default="OMEGA_RESCALE.md")
++    p.add_argument("--output", default="/home/prashr/mapformer/OMEGA_RESCALE.md")
+     args = p.parse_args()
+ 
+     runs = Path(args.runs_dir)
+diff -ru a12/r_t_distribution_test.py b12/r_t_distribution_test.py
+--- a12/r_t_distribution_test.py	2026-09-24 02:22:35.828702136 -0700
++++ b12/r_t_distribution_test.py	2026-09-24 02:22:40.432807632 -0700
+@@ -109,7 +109,7 @@
+     p.add_argument("--T", type=int, default=512)
+     p.add_argument("--n-trials", type=int, default=30)
+     p.add_argument("--test-seed", type=int, default=12345)
+-    p.add_argument("--output", default="R_T_DISTRIBUTION.md")
++    p.add_argument("--output", default="/home/prashr/mapformer/R_T_DISTRIBUTION.md")
+     p.add_argument("--device", default="cuda")
+     args = p.parse_args()
+ 
+diff -ru a12/validate_algorithmic.py b12/validate_algorithmic.py
+--- a12/validate_algorithmic.py	2026-09-24 02:22:36.500717535 -0700
++++ b12/validate_algorithmic.py	2026-09-24 02:22:40.548810290 -0700
+@@ -44,7 +44,7 @@
+     ap.add_argument("--n-episodes", type=int, default=400)
+     ap.add_argument("--n-symbols", type=int, default=8)
+     ap.add_argument("--seed", type=int, default=0)
+-    ap.add_argument("--out", default="ALGORITHMIC_GATES.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/ALGORITHMIC_GATES.md")
+     a = ap.parse_args()
+ 
+     rows = []
+diff -ru a12/validate_compositional_match_query.py b12/validate_compositional_match_query.py
+--- a12/validate_compositional_match_query.py	2026-09-24 02:22:35.016683530 -0700
++++ b12/validate_compositional_match_query.py	2026-09-24 02:22:40.600811480 -0700
+@@ -99,7 +99,7 @@
+     ap.add_argument("--n-obs", type=int, default=16)
+     ap.add_argument("--n-templates", type=int, default=4)
+     ap.add_argument("--seed", type=int, default=0)
+-    ap.add_argument("--out", default="COMPOSITIONAL_MATCH_QUERY_GATES.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/COMPOSITIONAL_MATCH_QUERY_GATES.md")
+     args = ap.parse_args()
+ 
+     all_rows = []
+diff -ru a12/validate_cscg_tasks.py b12/validate_cscg_tasks.py
+--- a12/validate_cscg_tasks.py	2026-09-24 02:22:36.108708552 -0700
++++ b12/validate_cscg_tasks.py	2026-09-24 02:22:40.708813957 -0700
+@@ -50,7 +50,7 @@
+     ap = argparse.ArgumentParser()
+     ap.add_argument("--n-episodes", type=int, default=500)
+     ap.add_argument("--seed", type=int, default=0)
+-    ap.add_argument("--out", default="CSCG_TASK_GATES.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/CSCG_TASK_GATES.md")
+     a = ap.parse_args()
+     rng = np.random.RandomState(a.seed)
+     lines = ["# CSCG-derived tasks -- pre-flight gates (CPU, no training)", ""]
+diff -ru a12/validate_family_tree.py b12/validate_family_tree.py
+--- a12/validate_family_tree.py	2026-09-24 02:22:35.872703144 -0700
++++ b12/validate_family_tree.py	2026-09-24 02:22:40.756815057 -0700
+@@ -61,7 +61,7 @@
+     ap.add_argument("--n-steps", type=int, default=128)
+     ap.add_argument("--n-episodes", type=int, default=600)
+     ap.add_argument("--seed", type=int, default=0)
+-    ap.add_argument("--out", default="FAMILY_TREE_GATES.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/FAMILY_TREE_GATES.md")
+     args = ap.parse_args()
+ 
+     env = FamilyTreeWorld(depth=args.depth, n_obs_types=args.n_obs, seed=10000)
+diff -ru a12/validate_lap.py b12/validate_lap.py
+--- a12/validate_lap.py	2026-09-24 02:22:35.168687013 -0700
++++ b12/validate_lap.py	2026-09-24 02:22:40.832816797 -0700
+@@ -96,7 +96,7 @@
+     ap.add_argument("--n-episodes", type=int, default=2000)
+     ap.add_argument("--n-laps", type=int, default=4)
+     ap.add_argument("--seed", type=int, default=0)
+-    ap.add_argument("--out", default="LAP_GATES.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/LAP_GATES.md")
+     args = ap.parse_args()
+ 
+     rows = [gates(fl, args.n_episodes, args.n_laps, args.seed) for fl in (True, False)]
+diff -ru a12/validate_map_query.py b12/validate_map_query.py
+--- a12/validate_map_query.py	2026-09-24 02:22:35.632697645 -0700
++++ b12/validate_map_query.py	2026-09-24 02:22:40.924818905 -0700
+@@ -69,7 +69,7 @@
+     ap.add_argument("--n-episodes", type=int, default=400)
+     ap.add_argument("--n-queries", type=int, default=8)
+     ap.add_argument("--seed", type=int, default=0)
+-    ap.add_argument("--out", default="MAP_QUERY_GATES.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/MAP_QUERY_GATES.md")
+     args = ap.parse_args()
+ 
+     S = args.sizes[0]
+diff -ru a12/validate_match_query.py b12/validate_match_query.py
+--- a12/validate_match_query.py	2026-09-24 02:22:36.552718727 -0700
++++ b12/validate_match_query.py	2026-09-24 02:22:40.992820464 -0700
+@@ -44,7 +44,7 @@
+                          "this probability, so the recorded action stream drifts "
+                          "from true position. Every gate below is re-run on the "
+                          "noisy task rather than assumed to carry over.")
+-    ap.add_argument("--out", default="MATCH_QUERY_GATES.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/MATCH_QUERY_GATES.md")
+     args = ap.parse_args()
+ 
+     rows = []
+diff -ru a12/validate_miniworld.py b12/validate_miniworld.py
+--- a12/validate_miniworld.py	2026-09-24 02:22:36.400715244 -0700
++++ b12/validate_miniworld.py	2026-09-24 02:22:41.100822938 -0700
+@@ -248,7 +248,7 @@
+                          "classes) -- n-gram must stay at chance: exact relative "
+                          "displacement gives only RELATIVE position, and the fresh "
+                          "obs_map is uncorrelated with the action prefix")
+-    ap.add_argument("--out", default="MINIWORLD_GATES.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/MINIWORLD_GATES.md")
+     args = ap.parse_args()
+ 
+     results = []
+diff -ru a12/validate_recency.py b12/validate_recency.py
+--- a12/validate_recency.py	2026-09-24 02:22:35.116685822 -0700
++++ b12/validate_recency.py	2026-09-24 02:22:41.212825503 -0700
+@@ -70,7 +70,7 @@
+     ap.add_argument("--lengths", nargs="+", type=int, default=[256, 512, 1024])
+     ap.add_argument("--episodes", type=int, default=200)
+     ap.add_argument("--seed", type=int, default=0)
+-    ap.add_argument("--out", default="RECENCY_GATES.md")
++    ap.add_argument("--out", default="/home/prashr/mapformer/RECENCY_GATES.md")
+     ap.add_argument("--k-fixed", type=int, default=None)
+     ap.add_argument("--k-set", default=None)
+     a = ap.parse_args()
+diff -ru a12/zero_shot_eval.py b12/zero_shot_eval.py
+--- a12/zero_shot_eval.py	2026-09-24 02:22:36.648720926 -0700
++++ b12/zero_shot_eval.py	2026-09-24 02:22:41.320827980 -0700
+@@ -236,7 +236,7 @@
+                         default=[0, 50, 100, 200],
+                         help="n_landmarks values to test (only used with --include-lm-sweep)")
+     parser.add_argument("--device", default="cuda")
+-    parser.add_argument("--output", default="ZERO_SHOT_TRANSFER.md")
++    parser.add_argument("--output", default="/home/prashr/mapformer/ZERO_SHOT_TRANSFER.md")
+     args = parser.parse_args()
+ 
+     runs = Path(args.runs_dir)

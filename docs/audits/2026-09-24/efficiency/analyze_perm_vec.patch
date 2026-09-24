@@ -1,0 +1,38 @@
+--- /home/prashr/mapformer/analyze_rank_matched.py	2026-09-23 19:38:46.502830729 -0700
++++ proposed/analyze_rank_matched.py	2026-09-24 02:09:58.659310642 -0700
+@@ -32,15 +32,29 @@
+     return d.mean(), 2.8 * d.std(ddof=1) / np.sqrt(len(d)), int((d > 0).sum())
+ 
+ 
++_COMBOS = {}
++
++
++def _combos(N, n):
++    """All C(N, n) index subsets, in itertools order, built once per (N, n)."""
++    if (N, n) not in _COMBOS:
++        _COMBOS[(N, n)] = np.array(list(itertools.combinations(range(N), n)), dtype=np.intp)
++    return _COMBOS[(N, n)]
++
++
+ def perm(a, b, shift=0.0):
+-    """Exact two-sample permutation p (two-sided) for mean(b) - mean(a) - shift."""
++    """Exact two-sample permutation p (two-sided) for mean(b) - mean(a) - shift.
++
++    Vectorised (audit 2026-09-24): one gather + row sums over all C(N, n) subsets
++    instead of a Python loop. Each row sum reduces the same 8 values along a
++    contiguous axis, as x[list(idx)].sum() did, so every d -- and the p-value --
++    is identical (verify_perm.py checks it on the committed JSONs)."""
+     a, b = np.asarray(a, float), np.asarray(b, float) - shift
+     x = np.concatenate([a, b]); n = len(b); obs = b.mean() - a.mean()
+-    tot = x.sum(); cnt = hits = 0
+-    for idx in itertools.combinations(range(len(x)), n):
+-        sb = x[list(idx)].sum(); d = sb / n - (tot - sb) / (len(x) - n)
+-        hits += abs(d) >= abs(obs) - 1e-12; cnt += 1
+-    return hits / cnt
++    tot = x.sum()
++    sb = x[_combos(len(x), n)].sum(axis=1)
++    d = sb / n - (tot - sb) / (len(x) - n)
++    return int((np.abs(d) >= abs(obs) - 1e-12).sum()) / len(sb)
+ 
+ 
+ def perm_ci(a, b, lo=-0.6, hi=0.6, step=0.005):

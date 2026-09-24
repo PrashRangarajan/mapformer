@@ -1,0 +1,16 @@
+--- a/build_rank_proj.py	2026-09-24 02:17:21.897503717 -0700
++++ b/build_rank_proj.py	2026-09-24 02:18:43.843383879 -0700
+@@ -42,7 +42,12 @@
+         rel = float((D - D2).norm() / D.norm()); top2 = float((S[:2] ** 2).sum() / (S ** 2).sum())
+         out = f"{a.out}/p0/Vanilla_s{s}"; os.makedirs(out, exist_ok=True)
+         cfg = dict(c); cfg.update({"projected_from": src, "proj_top2_energy": top2, "proj_delta_rel_err": rel})
+-        torch.save({"model_state_dict": m.state_dict(), "losses": list(b["losses"]),
++        # "losses" is EMPTY on purpose: this r=2 model was never trained. Copying the r=4
++        # source's curve here made the projected checkpoint (and, via --init-from, the
++        # trained arm's losses_prior) carry an r=4 run's history under variant "Vanilla",
++        # which classify()/experiment_audit/compare_checkpoints would read as r=2's own.
++        torch.save({"model_state_dict": m.state_dict(), "losses": [],
++                    "source_losses": list(b["losses"]),
+                     "variant": "Vanilla", "seed": s, "config": cfg}, f"{out}/Vanilla.pt")
+         print(f"s{s}: latent sv {[round(float(x), 3) for x in S]} top2 energy {top2:.5f} "
+               f"Delta rel err {rel:.4f} -> {out}/Vanilla.pt", flush=True)

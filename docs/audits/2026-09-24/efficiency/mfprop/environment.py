@@ -1,0 +1,566 @@
+"""
+2D Grid environment for MapFormer training and evaluation.
+
+Matches the setup in Rambaud et al. (2025):
+- TORUS grid (wrapping boundaries, not clamped)
+- Directed walks: sample direction + k steps (1 <= k <= 10)
+- p_empty fraction of cells are empty (blank token B)
+- Returns INTERLEAVED token sequence s = (a1, o1, a2, o2, ..., aT, oT)
+  with a unified vocabulary: [actions 0..3] [obs 4..4+K-1] [blank 4+K]
+  (plus L landmark tokens if n_landmarks > 0)
+
+Landmark extension:
+  n_landmarks > 0 reserves that many unique token IDs, one per chosen cell.
+  Each landmark cell emits its unique token (unambiguous position signal).
+  Selected landmark cells OVERRIDE whatever regular obs / blank was there.
+  This is the regime where Kalman/PC corrections have sharp measurements.
+"""
+
+import torch
+import numpy as np
+from typing import Optional
+
+
+# ---------------------------------------------------------------------------
+# Bit-exact vectorised walk for the DEFAULT configuration (audit 2026-09-24).
+#
+# generate_trajectory draws, from the global legacy RandomState and in this order,
+# x0 = randint(0,size), y0 = randint(0,size), then per segment a = randint(0,
+# n_actions), k = randint(1,11) until sum(k) >= n_steps. Legacy randint (stream
+# frozen by NumPy's compatibility policy, NEP 19) takes each bounded integer by
+# masked rejection on 32-bit MT19937 words: val = next_uint32() & mask, repeated
+# while val > high-1-low. So a trajectory is a deterministic PARSE of the raw word
+# stream. We read a block of raw words, parse it with a loop over SEGMENTS (~n/5.5
+# iterations of pure-int work, not n iterations with torch .item() and tensor
+# setitem calls), rewind the RNG and advance it by exactly the words consumed, and
+# vectorise everything per step. Output AND the RNG state afterwards are
+# byte-identical to the per-step loop (verify_fastgen.py: 75/75 configs), so the
+# serial training stream, the --data-workers stream and every evaluator's
+# trajectories are unchanged. Measured 23x per B=16 x 1024 batch, 8-16x per single
+# trajectory. Anything outside the default configuration keeps the loop.
+# Set FAST_WALK = False to force the loop everywhere.
+# ---------------------------------------------------------------------------
+FAST_WALK = True
+_DELTA_ARR = np.array([[-1, 0], [1, 0], [0, -1], [0, 1]], dtype=np.int64)  # == ACTION_DELTAS
+
+
+def _gen_mask(rng: int) -> int:
+    """numpy's gen_mask: the smallest all-ones bit mask >= rng."""
+    m = rng
+    for s in (1, 2, 4, 8, 16):
+        m |= m >> s
+    return m
+
+
+def _next_accept(w: np.ndarray, rng: int) -> list:
+    """nxt[i] = smallest j >= i whose masked word is accepted (<= rng), len(w) if none."""
+    n = len(w)
+    idx = np.where((w & _gen_mask(rng)) <= rng, np.arange(n), n)
+    return np.minimum.accumulate(idx[::-1])[::-1].tolist()
+
+
+def _parse_walks(size, n_actions, batch_size, n_steps, start, n_words):
+    """Parse raw MT19937 words into (x0, y0, actions, run lengths) per trajectory.
+    Returns (list, words consumed), or None if the block ran out."""
+    w = np.random.mtrand._rand._bit_generator.random_raw(n_words).astype(np.int64)
+    n, wl = len(w), w.tolist()
+    rs, ra, rk = size - 1, n_actions - 1, 9          # randint(0,size), (0,n_actions), (1,11)
+    ms, ma, mk = _gen_mask(rs), _gen_mask(ra), _gen_mask(rk)
+    ns = _next_accept(w, rs) if ms != rs else None    # None: that draw never rejects
+    na = _next_accept(w, ra) if ma != ra else None
+    nk = _next_accept(w, rk)
+    out, p = [], 0
+    for _ in range(batch_size):
+        if start is None:
+            q = ns[p] if ns is not None else p
+            if q >= n:
+                return None
+            x0 = wl[q] & ms; p = q + 1
+            q = ns[p] if ns is not None else p
+            if q >= n:
+                return None
+            y0 = wl[q] & ms; p = q + 1
+        else:
+            x0, y0 = start
+        acts, ks, t = [], [], 0
+        while t < n_steps:
+            q = na[p] if na is not None else p
+            if q >= n:
+                return None
+            a = wl[q] & ma; p = q + 1
+            if p >= n:
+                return None
+            q = nk[p]
+            if q >= n:
+                return None
+            k = 1 + (wl[q] & mk); p = q + 1
+            acts.append(a); ks.append(k); t += k
+        ks[-1] -= t - n_steps                          # the last run is cut at n_steps
+        out.append((x0, y0, acts, ks))
+    return out, p
+
+
+def _fast_walk_batch(env, batch_size, n_steps, start=None):
+    state = np.random.get_state()
+    n_words = batch_size * (n_steps + 64) + 16         # ~2x the expected consumption
+    while True:
+        r = _parse_walks(env.size, env.n_actions, batch_size, n_steps, start, n_words)
+        np.random.set_state(state)                     # rewind ...
+        if r is not None:
+            break
+        n_words *= 2
+    walks, used = r
+    if used:
+        np.random.mtrand._rand._bit_generator.random_raw(used)   # ... advance exactly
+    size = env.size
+    x0 = np.array([w[0] for w in walks], dtype=np.int64)
+    y0 = np.array([w[1] for w in walks], dtype=np.int64)
+    acts = np.fromiter((a for w in walks for a in w[2]), dtype=np.int64)
+    ks = np.fromiter((k for w in walks for k in w[3]), dtype=np.int64)
+    a_step = np.repeat(acts, ks).reshape(batch_size, n_steps)    # commanded == executed
+    d = _DELTA_ARR[a_step]
+    xs = (x0[:, None] + np.cumsum(d[..., 0], axis=1)) % size     # int floor-mod, as Python's %
+    ys = (y0[:, None] + np.cumsum(d[..., 1], axis=1)) % size
+    tok = np.empty((batch_size, 2 * n_steps), dtype=np.int64)
+    tok[:, 0::2] = a_step + env.action_offset
+    tok[:, 1::2] = env.obs_map.numpy()[xs, ys] + env.obs_offset
+    # revisit = this post-step cell occurred at an EARLIER step of the same walk (the
+    # start cell is never added to `seen`; on a torus every step moves, so
+    # score_moves_only cannot bite)
+    cell = xs * size + ys + (np.arange(batch_size, dtype=np.int64) * size * size)[:, None]
+    first = np.unique(cell.ravel(), return_index=True)[1]
+    is_first = np.zeros(batch_size * n_steps, dtype=bool)
+    is_first[first] = True
+    rev = np.zeros((batch_size, 2 * n_steps), dtype=bool)
+    rev[:, 1::2] = ~is_first.reshape(batch_size, n_steps)
+    obs_mask = np.zeros((batch_size, 2 * n_steps), dtype=bool)
+    obs_mask[:, 1::2] = True
+    xl, yl = xs.tolist(), ys.tolist()
+    locs = [list(zip(xl[b], yl[b])) for b in range(batch_size)]
+    env.visited_locations = list(locs[-1])
+    env.last_x, env.last_y = xl[-1][-1], yl[-1][-1]
+    return torch.from_numpy(tok), torch.from_numpy(obs_mask), torch.from_numpy(rev), locs
+
+
+class GridWorld:
+    """2D torus grid world matching the paper's forced-navigation task.
+
+    Actions: 0=North, 1=South, 2=West, 3=East (in unified vocab: indices 0..3)
+    Observations: K object types + 1 blank (in unified vocab: indices 4..4+K)
+
+    The grid is a TORUS: movements wrap around edges.
+    """
+
+    N_ACTIONS = 4
+    ACTION_DELTAS = {0: (-1, 0), 1: (1, 0), 2: (0, -1), 3: (0, 1)}
+
+    def __init__(
+        self,
+        size: int = 64,
+        n_obs_types: int = 16,
+        p_empty: float = 0.5,
+        n_landmarks: int = 0,
+        seed: Optional[int] = None,
+        action_mode: str = "translate",
+        obs_mode: str = "allo",
+        boundary: str = "torus",
+        score_moves_only: bool = False,
+        action_record: str = "commanded",
+        n_headings: int = 4,
+        heading_noise: float = 0.0,
+    ):
+        """Three knobs isolate what differs between this torus and MiniGrid.
+
+        `MINIGRID_2X2X2.md` and `FREQ_CONTROL.md` establish that path
+        integration is worth +0.461 on this torus and **-0.060** on
+        MiniGrid-DoorKey-16x16 -- the sign of a large effect flips between
+        environments. But the two differ in FIVE ways at once (observation
+        frame, action space, map size, aliasing, boundaries), so which one is
+        responsible is unknown. Size and aliasing are already parameters; these
+        add the other three, so they can be turned one at a time.
+
+        action_mode  "translate" 4 actions, fixed displacements N/S/W/E (default,
+                                 the paper's setting -- unchanged behaviour)
+                     "rotate"    3 actions, turn-left / turn-right / forward, as
+                                 in MiniGrid. Displacement depends on accumulated
+                                 heading, which is exactly the assumption
+                                 MapFormer's cumsum-of-fixed-deltas makes and
+                                 which MiniGrid violates.
+        obs_mode     "allo"      observation is the cell you occupy (default)
+                     "ego"       observation is the cell one step AHEAD in the
+                                 current heading, as in MiniGrid's egocentric
+                                 view. In translate mode heading is taken from
+                                 the last commanded action, so the two knobs stay
+                                 independent.
+        boundary     "torus"     wraps (default)
+                     "wall"      a move into the boundary is a NO-OP: the action
+                                 is still recorded but the position does not
+                                 change, matching MiniGrid's bump semantics.
+
+        Every default reproduces the previous behaviour exactly.
+        """
+        assert action_mode in ("translate", "rotate"), action_mode
+        assert obs_mode in ("allo", "ego"), obs_mode
+        assert boundary in ("torus", "wall"), boundary
+        self.action_mode = action_mode
+        self.obs_mode = obs_mode
+        self.boundary = boundary
+        # score_moves_only: skip steps where the OBSERVED CELL did not change.
+        # Default False leaves every existing configuration untouched (in
+        # translate+torus the agent moves on every step, so it is a no-op there
+        # anyway). Needed for rotate mode, where turns do not translate: a run of
+        # "turn left" emits the same observation repeatedly, and predicting "the
+        # same as last time" then solves 93% of scored events (KNOB_SWEEP.md).
+        # That is not a cognitive-map test, it is a copy test.
+        self.score_moves_only = score_moves_only
+        # action_record: what the token stream RECORDS, independent of what the
+        # agent does. Dynamics are identical either way -- same trajectory, same
+        # observations -- only the action token changes.
+        #
+        #   "commanded"    the action as issued. In rotate mode that is
+        #                  turn-left / turn-right / forward (default).
+        #   "allocentric"  the ABSOLUTE displacement that resulted: one of the
+        #                  four compass directions, or STAY when the step
+        #                  produced no displacement (i.e. a turn, or a wall bump).
+        #
+        # This is the decisive test of why rotate collapses the position effect
+        # (+0.478 -> +0.049, KNOB_SWEEP.md). MapFormer path-integrates by
+        # cumsumming a fixed per-token delta, which cannot represent a
+        # displacement that depends on accumulated heading. Under allocentric
+        # recording the displacement IS the token, so the cumsum form is
+        # well-specified again. If the position effect recovers, the
+        # mis-specification account is confirmed and the remedy is stated.
+        assert action_record in ("commanded", "allocentric"), action_record
+        self.action_record = action_record
+        # n_headings / heading_noise generalise rotate mode toward Habitat.
+        #
+        # ALLOCENTRIC_RECODING.md showed that recording the absolute displacement
+        # instead of turn/forward fully restores MapFormer (+0.049 -> +0.485).
+        # But there the displacement was one of FOUR compass symbols. Habitat
+        # turns 30 degrees, giving TWELVE headings, moves a real-valued 0.25 m,
+        # and under the realistic setting has actuation noise, so the executed
+        # rotation differs from the commanded one. The stated open limit was
+        # whether the recovery survives when displacement is not drawn from a
+        # small exact set.
+        #
+        #   n_headings     how many headings a turn steps through (4 = the
+        #                  original; 12 = Habitat's 30-degree turns).
+        #                  Position becomes REAL-VALUED for n_headings > 4, and
+        #                  the observation is read at the containing cell.
+        #   heading_noise  radians of Gaussian noise added to each executed turn,
+        #                  so the true heading drifts continuously off the
+        #                  quantised record. This is what makes the allocentric
+        #                  token an APPROXIMATION rather than the exact
+        #                  displacement -- the Habitat actuation-noise case.
+        assert n_headings >= 4 and n_headings % 4 == 0, n_headings
+        self.n_headings = n_headings
+        self.heading_noise = heading_noise
+        self.continuous = (n_headings != 4) or (heading_noise > 0.0)
+        self.size = size
+        self.n_obs_types = n_obs_types
+        self.p_empty = p_empty
+        self.n_landmarks = n_landmarks
+
+        # Unified vocabulary layout:
+        # [0..3]               = actions (N, S, W, E)
+        # [4..4+K-1]           = K regular obs types
+        # [4+K]                = blank token B
+        # [4+K+1..4+K+L]       = L unique landmark tokens (one per landmark cell)
+        # rotate mode uses 3 actions (turn-left, turn-right, forward); the
+        # vocabulary keeps 4 action slots either way so a checkpoint trained in
+        # one mode still loads in the other and the comparison is not confounded
+        # by a vocabulary-size difference.
+        self.n_actions = 3 if action_mode == "rotate" else self.N_ACTIONS
+        self.action_offset = 0
+        self.obs_offset = self.N_ACTIONS  # = 4
+        self.unified_blank = self.N_ACTIONS + n_obs_types  # = 4 + K
+        self.first_landmark_rel = n_obs_types + 1  # relative to obs vocab
+        self.first_landmark_unified = self.N_ACTIONS + self.first_landmark_rel  # = 4+K+1
+
+        self.obs_vocab_size = n_obs_types + 1 + n_landmarks
+        self.unified_vocab_size = self.N_ACTIONS + self.obs_vocab_size
+        # STAY is appended at the end so every existing token id is unchanged
+        # and checkpoints from other configurations still load.
+        self.stay_token = self.unified_vocab_size
+        if action_record == "allocentric":
+            # one token per displacement direction beyond the 4 already in the
+            # action block, plus STAY
+            self.unified_vocab_size += 1 + max(0, n_headings - self.N_ACTIONS)
+            self.dir_token_base = self.stay_token + 1
+
+        self.blank_token = n_obs_types
+
+        rng = np.random.RandomState(seed)
+
+        # Assign regular observations: each cell is empty with prob p_empty
+        obs_map = np.full((size, size), self.blank_token, dtype=np.int64)
+        is_occupied = rng.random((size, size)) >= p_empty
+        obs_map[is_occupied] = rng.randint(0, n_obs_types, is_occupied.sum())
+
+        # Override with landmarks: pick n_landmarks random cells and assign
+        # each a unique landmark token. Landmarks win over regular obs / blank.
+        if n_landmarks > 0:
+            n_cells = size * size
+            assert n_landmarks <= n_cells, \
+                f"n_landmarks ({n_landmarks}) exceeds n_cells ({n_cells})"
+            cell_indices = rng.permutation(n_cells)[:n_landmarks]
+            self.landmark_cells = []
+            for idx, ci in enumerate(cell_indices):
+                i, j = int(ci // size), int(ci % size)
+                # Landmark relative to obs vocab:
+                #   blank = n_obs_types, landmarks are n_obs_types+1 ... n_obs_types+L
+                lm_rel = self.first_landmark_rel + idx
+                obs_map[i, j] = lm_rel
+                self.landmark_cells.append((i, j, idx))  # (x, y, landmark_idx)
+        else:
+            self.landmark_cells = []
+
+        self.obs_map = torch.from_numpy(obs_map).long()
+
+        # Convenience: boolean mask per cell indicating landmark-ness
+        lm_mask = np.zeros((size, size), dtype=bool)
+        for x, y, _ in self.landmark_cells:
+            lm_mask[x, y] = True
+        self.is_landmark_cell = torch.from_numpy(lm_mask)
+
+        self.visited_locations: list[tuple[int, int]] = []
+        self.last_x = size // 2
+        self.last_y = size // 2
+
+    def _fast_walk_ok(self, p_transition_noise: float) -> bool:
+        """The vectorised walk applies only where it is proven byte-identical."""
+        return (FAST_WALK
+                # a subclass that overrides the walk (environment_topology.py) keeps it
+                and type(self).generate_trajectory is GridWorld.generate_trajectory
+                and self.action_mode == "translate" and self.obs_mode == "allo"
+                and self.boundary == "torus" and self.action_record == "commanded"
+                and not self.continuous and p_transition_noise == 0.0
+                and self.size >= 2 and self.n_actions == 4)
+
+    def generate_trajectory(
+        self, n_steps: int = 128, start: Optional[tuple[int, int]] = None,
+        p_transition_noise: float = 0.0,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Generate a directed-walk trajectory as an interleaved token sequence.
+
+        Args:
+            p_transition_noise: per-step probability that the *executed* action
+                differs from the commanded action. The token sequence records
+                the COMMANDED action; the position update uses a random
+                replacement action with this probability. This models a
+                stochastic-transition MDP — distinct from train.py's
+                ``p_action_noise`` (which corrupts action *records* post-hoc).
+
+        Returns:
+            tokens: (2*n_steps,) interleaved [a1, o1, a2, o2, ...] in unified vocab
+            obs_mask: (2*n_steps,) bool, True at observation positions (odd indices)
+            revisit_mask: (2*n_steps,) bool, True at obs positions for REVISITED cells.
+                First visit: False. Revisit: True. Action positions: False.
+                This is the paper's prediction target — "predict observation each
+                time it comes back to a previously visited location."
+        """
+        if self._fast_walk_ok(p_transition_noise):
+            tok, om, rev, _ = _fast_walk_batch(self, 1, n_steps, start)
+            return tok[0], om[0], rev[0]
+
+        if start is not None:
+            x, y = start
+        else:
+            x = np.random.randint(0, self.size)
+            y = np.random.randint(0, self.size)
+
+        tokens = []
+        self.visited_locations = []
+        is_revisit = []  # per-step revisit flag
+        seen = set()
+
+        # Heading is only meaningful for the rotate/ego knobs. It MUST NOT be
+        # drawn in the default configuration: consuming one extra value from the
+        # global RNG shifts every subsequent draw, which silently changes the
+        # default trajectory stream and would invalidate any comparison against
+        # an existing checkpoint. Verified byte-identical to the pre-knob code.
+        if self.action_mode == "rotate" or self.obs_mode == "ego":
+            heading = (float(np.random.random() * 2.0 * np.pi) if self.continuous
+                       else int(np.random.randint(0, self.N_ACTIONS)))
+        else:
+            heading = 0
+
+        def _step(x, y, heading, a_exec):
+            """Apply one executed action. Returns (x, y, heading)."""
+            if self.action_mode == "rotate":
+                # 0 = turn left, 1 = turn right, 2 = forward. Displacement
+                # depends on the ACCUMULATED heading, which is precisely what a
+                # cumsum of per-token fixed deltas cannot represent.
+                if self.continuous:
+                    # heading is a real angle in radians; a turn steps by
+                    # 2*pi/n_headings plus optional actuation noise
+                    step = 2.0 * np.pi / self.n_headings
+                    if a_exec in (0, 1):
+                        d = -step if a_exec == 0 else step
+                        if self.heading_noise > 0.0:
+                            d += np.random.normal(0.0, self.heading_noise)
+                        return x, y, (heading + d) % (2.0 * np.pi)
+                    dx, dy = np.cos(heading), np.sin(heading)
+                    nx, ny = x + dx, y + dy
+                    if self.boundary == "wall":
+                        if not (0 <= nx < self.size and 0 <= ny < self.size):
+                            return x, y, heading
+                        return nx, ny, heading
+                    return nx % self.size, ny % self.size, heading
+                if a_exec == 0:
+                    return x, y, (heading - 1) % self.N_ACTIONS
+                if a_exec == 1:
+                    return x, y, (heading + 1) % self.N_ACTIONS
+                dx, dy = self.ACTION_DELTAS[heading]
+            else:
+                dx, dy = self.ACTION_DELTAS[a_exec]
+                heading = a_exec                    # for ego view in translate mode
+            nx, ny = x + dx, y + dy
+            if self.boundary == "wall":
+                # bumping a wall is a NO-OP, as in MiniGrid: the action is still
+                # recorded, the position does not change.
+                if not (0 <= nx < self.size and 0 <= ny < self.size):
+                    return x, y, heading
+                return nx, ny, heading
+            return nx % self.size, ny % self.size, heading
+
+        prev_obs_cell = None
+        t = 0
+        while t < n_steps:
+            a = np.random.randint(0, self.n_actions)
+            k = np.random.randint(1, 11)
+
+            for _ in range(k):
+                if t >= n_steps:
+                    break
+
+                # Stochastic-transition MDP: commanded action is `a`, executed
+                # may differ. We RECORD the commanded action but APPLY the
+                # (possibly different) executed one. This is mathematically
+                # equivalent to action-record corruption for a uniform policy
+                # but corresponds to a different real-world failure mode (env
+                # stochasticity vs sensor/log corruption).
+                a_exec = a
+                if p_transition_noise > 0.0 and np.random.random() < p_transition_noise:
+                    a_exec = np.random.randint(0, self.n_actions)
+
+                px, py = x, y
+                x, y, heading = _step(x, y, heading, a_exec)
+
+                if self.action_record == "allocentric":
+                    # record the displacement that actually happened
+                    d = ((x - px) % self.size, (y - py) % self.size)
+                    d = (d[0] - self.size if d[0] > self.size / 2 else d[0],
+                         d[1] - self.size if d[1] > self.size / 2 else d[1])
+                    if self.continuous:
+                        # QUANTISE the real-valued displacement into n_headings
+                        # direction bins. This is the approximation Habitat would
+                        # force: the true displacement is continuous, the token
+                        # is not, and the residual is what the path integrator
+                        # must tolerate.
+                        if abs(d[0]) < 1e-9 and abs(d[1]) < 1e-9:
+                            tokens.append(self.stay_token)
+                        else:
+                            ang = np.arctan2(d[1], d[0]) % (2.0 * np.pi)
+                            b = int(round(ang / (2.0 * np.pi / self.n_headings))) \
+                                % self.n_headings
+                            # direction bins 0..N_ACTIONS-1 reuse the existing
+                            # compass action slots; the rest are appended after
+                            # STAY. The offset must SUBTRACT N_ACTIONS or bin 11
+                            # lands at id 33 in a 30-token vocabulary -- an
+                            # out-of-range embedding lookup, which surfaces as
+                            # CUBLAS_STATUS_ALLOC_FAILED rather than an
+                            # IndexError and reads exactly like CUDA OOM.
+                            tokens.append((b - self.N_ACTIONS) + self.dir_token_base
+                                          if b >= self.N_ACTIONS
+                                          else b + self.action_offset)
+                    else:
+                        rec = next((k for k, v in self.ACTION_DELTAS.items()
+                                    if v == d), None)
+                        tokens.append(self.stay_token if rec is None
+                                      else rec + self.action_offset)
+                else:
+                    tokens.append(a + self.action_offset)   # COMMANDED action recorded
+                if self.obs_mode == "ego":
+                    # the cell one step AHEAD in the current heading
+                    hx, hy = self.ACTION_DELTAS[heading]
+                    ox, oy = x + hx, y + hy
+                    if self.boundary == "wall":
+                        ox, oy = min(max(ox, 0), self.size - 1), min(max(oy, 0), self.size - 1)
+                    else:
+                        ox, oy = ox % self.size, oy % self.size
+                else:
+                    ox, oy = x, y
+                obs_idx = self.obs_map[int(ox) % self.size,
+                                       int(oy) % self.size].item()
+                tokens.append(obs_idx + self.obs_offset)
+
+                # Revisit is keyed on whatever DETERMINES the observation: the
+                # agent's cell in allo mode, the OBSERVED cell in ego mode. An
+                # earlier version keyed rotate mode on (x, y, heading), which was
+                # wrong -- in allo mode the observation is obs_map[x, y]
+                # regardless of heading, so heading in the key manufactured
+                # spurious first-visits and spurious revisits, and combined with
+                # spinning it produced the 0.932 order-1 shortcut that voided the
+                # rotate condition.
+                key = (int(ox) % self.size, int(oy) % self.size)
+                moved = key != prev_obs_cell
+                prev_obs_cell = key
+                self.visited_locations.append((x, y))
+                is_revisit.append((key in seen) and (moved or not self.score_moves_only))
+                seen.add(key)
+                t += 1
+
+        self.last_x = x
+        self.last_y = y
+
+        tokens = torch.tensor(tokens, dtype=torch.long)
+        obs_mask = torch.zeros(2 * n_steps, dtype=torch.bool)
+        obs_mask[1::2] = True
+
+        # revisit_mask aligned with obs positions
+        revisit_mask = torch.zeros(2 * n_steps, dtype=torch.bool)
+        for step_idx, rev in enumerate(is_revisit):
+            if rev:
+                revisit_mask[2 * step_idx + 1] = True  # obs position at step step_idx
+
+        return tokens, obs_mask, revisit_mask
+
+    def generate_batch(
+        self, batch_size: int, n_steps: int = 128,
+        p_transition_noise: float = 0.0,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, list[list[tuple[int, int]]]]:
+        """Generate a batch of interleaved trajectories.
+
+        Args:
+            p_transition_noise: forwarded to generate_trajectory; see there.
+
+        Returns:
+            tokens: (batch_size, 2*n_steps)
+            obs_mask: (batch_size, 2*n_steps)
+            revisit_mask: (batch_size, 2*n_steps)
+            all_locations: list of location lists for each trajectory
+        """
+        if self._fast_walk_ok(p_transition_noise):
+            return _fast_walk_batch(self, batch_size, n_steps)
+
+        all_tokens = []
+        all_masks = []
+        all_revisit = []
+        all_locations = []
+
+        for _ in range(batch_size):
+            tok, mask, rev = self.generate_trajectory(
+                n_steps, p_transition_noise=p_transition_noise,
+            )
+            all_tokens.append(tok)
+            all_masks.append(mask)
+            all_revisit.append(rev)
+            all_locations.append(list(self.visited_locations))
+
+        return (
+            torch.stack(all_tokens),
+            torch.stack(all_masks),
+            torch.stack(all_revisit),
+            all_locations,
+        )

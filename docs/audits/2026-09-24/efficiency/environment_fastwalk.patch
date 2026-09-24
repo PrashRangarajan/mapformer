@@ -1,0 +1,168 @@
+--- /home/prashr/mapformer/environment.py	2026-08-23 18:00:29.759246996 -0700
++++ proposed/environment.py	2026-09-24 02:05:38.777303072 -0700
+@@ -21,6 +21,127 @@
+ from typing import Optional
+ 
+ 
++# ---------------------------------------------------------------------------
++# Bit-exact vectorised walk for the DEFAULT configuration (audit 2026-09-24).
++#
++# generate_trajectory draws, from the global legacy RandomState and in this order,
++# x0 = randint(0,size), y0 = randint(0,size), then per segment a = randint(0,
++# n_actions), k = randint(1,11) until sum(k) >= n_steps. Legacy randint (stream
++# frozen by NumPy's compatibility policy, NEP 19) takes each bounded integer by
++# masked rejection on 32-bit MT19937 words: val = next_uint32() & mask, repeated
++# while val > high-1-low. So a trajectory is a deterministic PARSE of the raw word
++# stream. We read a block of raw words, parse it with a loop over SEGMENTS (~n/5.5
++# iterations of pure-int work, not n iterations with torch .item() and tensor
++# setitem calls), rewind the RNG and advance it by exactly the words consumed, and
++# vectorise everything per step. Output AND the RNG state afterwards are
++# byte-identical to the per-step loop (verify_fastgen.py: 75/75 configs), so the
++# serial training stream, the --data-workers stream and every evaluator's
++# trajectories are unchanged. Measured 23x per B=16 x 1024 batch, 8-16x per single
++# trajectory. Anything outside the default configuration keeps the loop.
++# Set FAST_WALK = False to force the loop everywhere.
++# ---------------------------------------------------------------------------
++FAST_WALK = True
++_DELTA_ARR = np.array([[-1, 0], [1, 0], [0, -1], [0, 1]], dtype=np.int64)  # == ACTION_DELTAS
++
++
++def _gen_mask(rng: int) -> int:
++    """numpy's gen_mask: the smallest all-ones bit mask >= rng."""
++    m = rng
++    for s in (1, 2, 4, 8, 16):
++        m |= m >> s
++    return m
++
++
++def _next_accept(w: np.ndarray, rng: int) -> list:
++    """nxt[i] = smallest j >= i whose masked word is accepted (<= rng), len(w) if none."""
++    n = len(w)
++    idx = np.where((w & _gen_mask(rng)) <= rng, np.arange(n), n)
++    return np.minimum.accumulate(idx[::-1])[::-1].tolist()
++
++
++def _parse_walks(size, n_actions, batch_size, n_steps, start, n_words):
++    """Parse raw MT19937 words into (x0, y0, actions, run lengths) per trajectory.
++    Returns (list, words consumed), or None if the block ran out."""
++    w = np.random.mtrand._rand._bit_generator.random_raw(n_words).astype(np.int64)
++    n, wl = len(w), w.tolist()
++    rs, ra, rk = size - 1, n_actions - 1, 9          # randint(0,size), (0,n_actions), (1,11)
++    ms, ma, mk = _gen_mask(rs), _gen_mask(ra), _gen_mask(rk)
++    ns = _next_accept(w, rs) if ms != rs else None    # None: that draw never rejects
++    na = _next_accept(w, ra) if ma != ra else None
++    nk = _next_accept(w, rk)
++    out, p = [], 0
++    for _ in range(batch_size):
++        if start is None:
++            q = ns[p] if ns is not None else p
++            if q >= n:
++                return None
++            x0 = wl[q] & ms; p = q + 1
++            q = ns[p] if ns is not None else p
++            if q >= n:
++                return None
++            y0 = wl[q] & ms; p = q + 1
++        else:
++            x0, y0 = start
++        acts, ks, t = [], [], 0
++        while t < n_steps:
++            q = na[p] if na is not None else p
++            if q >= n:
++                return None
++            a = wl[q] & ma; p = q + 1
++            if p >= n:
++                return None
++            q = nk[p]
++            if q >= n:
++                return None
++            k = 1 + (wl[q] & mk); p = q + 1
++            acts.append(a); ks.append(k); t += k
++        ks[-1] -= t - n_steps                          # the last run is cut at n_steps
++        out.append((x0, y0, acts, ks))
++    return out, p
++
++
++def _fast_walk_batch(env, batch_size, n_steps, start=None):
++    state = np.random.get_state()
++    n_words = batch_size * (n_steps + 64) + 16         # ~2x the expected consumption
++    while True:
++        r = _parse_walks(env.size, env.n_actions, batch_size, n_steps, start, n_words)
++        np.random.set_state(state)                     # rewind ...
++        if r is not None:
++            break
++        n_words *= 2
++    walks, used = r
++    if used:
++        np.random.mtrand._rand._bit_generator.random_raw(used)   # ... advance exactly
++    size = env.size
++    x0 = np.array([w[0] for w in walks], dtype=np.int64)
++    y0 = np.array([w[1] for w in walks], dtype=np.int64)
++    acts = np.fromiter((a for w in walks for a in w[2]), dtype=np.int64)
++    ks = np.fromiter((k for w in walks for k in w[3]), dtype=np.int64)
++    a_step = np.repeat(acts, ks).reshape(batch_size, n_steps)    # commanded == executed
++    d = _DELTA_ARR[a_step]
++    xs = (x0[:, None] + np.cumsum(d[..., 0], axis=1)) % size     # int floor-mod, as Python's %
++    ys = (y0[:, None] + np.cumsum(d[..., 1], axis=1)) % size
++    tok = np.empty((batch_size, 2 * n_steps), dtype=np.int64)
++    tok[:, 0::2] = a_step + env.action_offset
++    tok[:, 1::2] = env.obs_map.numpy()[xs, ys] + env.obs_offset
++    # revisit = this post-step cell occurred at an EARLIER step of the same walk (the
++    # start cell is never added to `seen`; on a torus every step moves, so
++    # score_moves_only cannot bite)
++    cell = xs * size + ys + (np.arange(batch_size, dtype=np.int64) * size * size)[:, None]
++    first = np.unique(cell.ravel(), return_index=True)[1]
++    is_first = np.zeros(batch_size * n_steps, dtype=bool)
++    is_first[first] = True
++    rev = np.zeros((batch_size, 2 * n_steps), dtype=bool)
++    rev[:, 1::2] = ~is_first.reshape(batch_size, n_steps)
++    obs_mask = np.zeros((batch_size, 2 * n_steps), dtype=bool)
++    obs_mask[:, 1::2] = True
++    xl, yl = xs.tolist(), ys.tolist()
++    locs = [list(zip(xl[b], yl[b])) for b in range(batch_size)]
++    env.visited_locations = list(locs[-1])
++    env.last_x, env.last_y = xl[-1][-1], yl[-1][-1]
++    return torch.from_numpy(tok), torch.from_numpy(obs_mask), torch.from_numpy(rev), locs
++
++
+ class GridWorld:
+     """2D torus grid world matching the paper's forced-navigation task.
+ 
+@@ -206,6 +327,16 @@
+         self.last_x = size // 2
+         self.last_y = size // 2
+ 
++    def _fast_walk_ok(self, p_transition_noise: float) -> bool:
++        """The vectorised walk applies only where it is proven byte-identical."""
++        return (FAST_WALK
++                # a subclass that overrides the walk (environment_topology.py) keeps it
++                and type(self).generate_trajectory is GridWorld.generate_trajectory
++                and self.action_mode == "translate" and self.obs_mode == "allo"
++                and self.boundary == "torus" and self.action_record == "commanded"
++                and not self.continuous and p_transition_noise == 0.0
++                and self.size >= 2 and self.n_actions == 4)
++
+     def generate_trajectory(
+         self, n_steps: int = 128, start: Optional[tuple[int, int]] = None,
+         p_transition_noise: float = 0.0,
+@@ -228,6 +359,10 @@
+                 This is the paper's prediction target — "predict observation each
+                 time it comes back to a previously visited location."
+         """
++        if self._fast_walk_ok(p_transition_noise):
++            tok, om, rev, _ = _fast_walk_batch(self, 1, n_steps, start)
++            return tok[0], om[0], rev[0]
++
+         if start is not None:
+             x, y = start
+         else:
+@@ -406,6 +541,9 @@
+             revisit_mask: (batch_size, 2*n_steps)
+             all_locations: list of location lists for each trajectory
+         """
++        if self._fast_walk_ok(p_transition_noise):
++            return _fast_walk_batch(self, batch_size, n_steps)
++
+         all_tokens = []
+         all_masks = []
+         all_revisit = []

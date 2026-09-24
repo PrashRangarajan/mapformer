@@ -1,0 +1,39 @@
+--- a/eval_noise_refine.py	2026-09-24 02:17:21.989505827 -0700
++++ b/eval_noise_refine.py	2026-09-24 02:19:24.560317746 -0700
+@@ -66,7 +66,9 @@
+     ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])
+     ap.add_argument("--lengths", nargs="+", type=int, default=[128, 512])
+     ap.add_argument("--n-trials", type=int, default=120)
+-    ap.add_argument("--grid-size", type=int, default=64)
++    ap.add_argument("--grid-size", type=int, default=None,
++                    help="default: the checkpoint's own config grid_size (was a fixed 64, "
++                         "which silently evaluated any other-grid model on a 64 torus)")
+     ap.add_argument("--env-seed", type=int, default=10000)
+     ap.add_argument("--device", default="cuda:0")
+     ap.add_argument("--out", required=True)
+@@ -96,8 +98,24 @@
+                                    grid_size=cfg["grid_size"])
+                 m.load_state_dict(blob["model_state_dict"]); m = m.to(dev).eval()
+                 # held-out map, and evaluated under the SAME noise it trained on
+-                env = GridWorld(size=a.grid_size, n_obs_types=cfg.get("n_obs_types", 16),
++                gs = a.grid_size if a.grid_size is not None else cfg["grid_size"]
++                if gs != cfg["grid_size"]:
++                    print(f"[eval_noise_refine] NOTE {v} s{s}: trained on grid {cfg['grid_size']}, "
++                          f"evaluated on {gs}", flush=True)
++                # the env knobs are not rebuilt from cfg: refuse a non-default torus rather
++                # than evaluate it on the default one
++                A = cfg.get("args", {})          # present on checkpoints saved after the audit
++                for k, dflt in (("n_landmarks", 0), ("env", "torus"), ("action_mode", "translate"),
++                                ("obs_mode", "allo"), ("boundary", "torus"),
++                                ("action_record", "commanded"), ("p_transition_noise", 0.0)):
++                    if cfg.get(k, A.get(k, dflt)) != dflt:
++                        raise SystemExit(f"{ck}: trained with {k}={cfg.get(k, A.get(k))!r}; this "
++                                         f"evaluator only rebuilds the default torus")
++                env = GridWorld(size=gs, n_obs_types=cfg.get("n_obs_types", 16),
+                                 p_empty=cfg.get("p_empty", 0.5), seed=a.env_seed)
++                if "p_action_noise" in A and abs(A["p_action_noise"] - p) > 1e-12:
++                    raise SystemExit(f"{ck}: directory tag says p={p}, checkpoint trained at "
++                                     f"p_action_noise={A['p_action_noise']}")
+                 for T in a.lengths:
+                     acc, nl = evaluate(m, env, T, a.n_trials, p, dev, seed=1234 + s)
+                     res.setdefault((p, v, T), []).append((s, acc, nl))

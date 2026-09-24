@@ -1,0 +1,598 @@
+#!/usr/bin/env python3
+"""Unified training script — trains any variant (main models + ablations + baselines).
+
+Usage:
+  python3 -m mapformer.train_variant \
+      --variant Level15 --seed 0 --n-landmarks 0 --p-action-noise 0.0 \
+      --output-dir runs/level15_clean_s0
+
+Supported variants:
+  Vanilla              — plain MapFormer-WM (no correction)
+  VanillaEM            — MapFormer-EM (Hadamard product attention)
+  Level1               — parallel InEKF (constant K* from DARE)
+  Level15              — constant learnable Π, per-token R_t (on MapFormer-WM)
+  Level15EM            — Level 1.5 InEKF on MapFormer-EM backbone
+  Level2               — full heteroscedastic (Möbius scan), slow
+  PC                   — predictive coding
+  Grid                 — multi-orientation path integration (hex-capable)
+  Grid_Free            — Grid with learnable orientation angles
+  GridL15PC            — Grid + Level 1.5 InEKF + PC aux loss (combined)
+  GridL15PC_Free       — GridL15PC with learnable orientations
+  L15_ConstR, L15_NoMeas, L15_NoCorr, L15_DARE — Level 1.5 ablations
+  RoPE                 — standard transformer with fixed RoPE (baseline)
+"""
+
+import argparse
+import sys
+import torch
+import numpy as np
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from mapformer.environment import GridWorld
+from mapformer.train import train
+from mapformer.model import MapFormerWM, MapFormerEM
+from mapformer.model_inekf_parallel import MapFormerWM_ParallelInEKF
+from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
+from mapformer.model_inekf_level15_beta import MapFormerWM_Level15Beta
+from mapformer.model_inekf_gsf import MapFormerWM_Level15GSF
+from mapformer.model_inekf_gsf_nodrop import MapFormerWM_Level15GSF_NoDrop, MapFormerWM_Level15GSF_NoDrop_K16
+from mapformer.model_inekf_gsf_modeomega import (
+    MapFormerWM_Level15GSF_ModeOmega,
+    MapFormerWM_Level15GSF_NoDrop_ModeOmega,
+)
+from mapformer.model_inekf_level15_nodrop import MapFormerWM_Level15NoDrop
+from mapformer.model_vanilla_nodrop import MapFormerWM_VanillaNoDrop
+from mapformer.model_inekf_level15_perscale import MapFormerWM_Level15_PerScaleOmega
+from mapformer.model_inekf_level15_sr import MapFormerWM_Level15_SR
+from mapformer.model_inekf_level15_em_perscale import MapFormerEM_Level15_PerScaleOmega
+from mapformer.model_inekf_level15_hopfield import MapFormerWM_Level15_Hopfield
+from mapformer.model_inekf_level15_hopfield_nomainap import MapFormerWM_Level15_Hopfield_NoMainAP
+from mapformer.model_inekf_level15_extrahead import MapFormerWM_Level15_ExtraHead
+from mapformer.model_vanilla_extrahead import MapFormerWM_Vanilla_ExtraHead
+from mapformer.model_tem_scaling import TEMFaithful_dg32, TEMFaithful_dg128, TEMFaithful_dg256
+from mapformer.model_tem_ffn import TEMFaithful_FFN
+from mapformer.model_inekf_level15_em import MapFormerEM_Level15InEKF, MapFormerEM_Level15InEKF_b5
+from mapformer.model_grid import MapFormerWM_Grid, MapFormerWM_Grid_Free
+from mapformer.model_grid_l15_pc import (
+    MapFormerWM_GridL15PC,
+    MapFormerWM_GridL15PC_Free,
+)
+from mapformer.model_level15_pc import MapFormerWM_Level15PC
+from mapformer.model_level15_pc_v2 import MapFormerWM_Level15PC_NoBypass
+from mapformer.model_level15_pc_v3 import MapFormerWM_Level15PC_v3
+from mapformer.model_level15_pc_v4 import MapFormerWM_Level15PC_v4
+from mapformer.model_level15_dog import MapFormerWM_Level15_DoG
+from mapformer.model_inekf_cascade import MapFormerWM_Level15Cascade, MapFormerWM_Level15CascadeNoSlow
+from mapformer.model_hier_attn import (MapFormerWM_HierAttn,
+    MapFormerWM_HierAttn_CoarseOnly, MapFormerWM_HierAttn_LocalOnly)
+from mapformer.model_bounded_mem import MapFormerWM_BoundedFlat, MapFormerWM_BoundedHier
+from mapformer.model_recursive import MapFormerWM_Recursive
+from mapformer.model_spacetime_hier import MapFormerWM_SpaceTimeHier
+from mapformer.model_hourglass import (
+    MapFormerWM_Hourglass_k2, MapFormerWM_Hourglass_k4,
+    MapFormerWM_Hourglass_k2_deep, MapFormerWM_HourglassFlat3,
+    MapFormerWM_Hourglass_MotifSeg,
+    MapFormerWM_LoopedHourglass, MapFormerWM_LoopedHourglassFlat,
+    MapFormerWM_Hourglass_MotifSeg_FR, MapFormerWM_FrameResetFlat,
+    MapFormerWM_Hourglass_CoarseIdx, MapFormerWM_Hourglass_CoarsePI,
+)
+from mapformer.model_em_fixed import MapFormerEM_SingleP0
+from mapformer.model_mapformer_nc import MapFormerEM_NC_L, MapFormerEM_NC_NL
+from mapformer.model_pope import (
+    MapFormerWM_PoPE_r4, MapFormerWM_PoPE, MapFormerWM_RoPEIndex_PoPE, MapFormerWM_Hourglass_PoPE,
+    MapFormerWM_Hourglass_PoPE_CoarseIdx,
+)
+from mapformer.hourglass_plain import PlainHourglass, PlainFlat
+from mapformer.model_baseline_nope import MapFormerWM_NoPE
+from mapformer.model_srope_components import (MapFormerWM_ConvDelta, MapFormerWM_GateDelta,
+    MapFormerWM_GateDeltaControl)
+from mapformer.model_route_attn import (MapFormerWM_RouteAttn,
+    MapFormerWM_RouteAttn_K4, MapFormerWM_RouteAttn_NoBias)
+from mapformer.model_inekf_level2 import MapFormerWM_Level2InEKF
+from mapformer.model_predictive_coding import MapFormerWM_PredictiveCoding
+from mapformer.model_ablations import ABLATIONS
+from mapformer.model_baseline_rope import MapFormerWM_RoPE
+from mapformer.model_rope_canonical import MapFormerWM_RoPE_Canonical
+from mapformer.model_gated import (MapFormerWM_Gated_r4,
+                                   MapFormerWM_Gated_r2,
+                                   MapFormerWM_Gated_r4_frozen)
+from mapformer.model_sign import (MapFormerWM_Abs_r4, MapFormerWM_Pos_r4,
+                                  MapFormerWM_CARoPE_r4, MapFormerWM_Signed_r4,
+                                  MapFormerWM_Abs_r2)
+from mapformer.model_rank import (MapFormerWM_r3, MapFormerWM_r4,
+                                  MapFormerWM_r5, MapFormerWM_r7,
+                                  MapFormerWM_r8, MapFormerWM_r16,
+                                  MapFormerWM_r32)
+from mapformer.model_rank import MapFormerEM_r4, MapFormerEM_r8
+from mapformer.model_selective import (MapFormerWM_SRoPEGen, MapFormerWM_NoBottleneck,
+                                      MapFormerWM_ConvAngle, MapFormerWM_GateAngle)
+from mapformer.model_looped import (MapFormerWM_Looped, MapFormerWM_RoPE_Looped,
+                                    MapFormerWM_LoopedRefine, MapFormerWM_LoopedSampled,
+                                    MapFormerWM_Level15Looped)
+from mapformer.model_fixed_omega import MapFormerWM_FixedOmega
+from mapformer.model_pope_index_hier import MapFormerWM_Hourglass_PoPE_Index
+from mapformer import model_pope_t3 as _t3
+from mapformer.model_baselines_extra import EXTRA_BASELINES
+from mapformer.model_tem import TEMRecurrent
+from mapformer.model_tem_faithful import TEMFaithful
+from mapformer.model_tem_t import TEM_T
+
+
+from .model_pope_ablate import (PoPE_Full, PoPE_NoSigma, PoPE_ReLU, PoPE_NoDelta)
+from .model_code_decay import MapFormerWM_RoPE_Decay, MapFormerWM_Decay
+from .model_pope_decay import (MapFormerWM_PoPE_Decay,
+                               MapFormerWM_RoPEIndex_PoPE_Decay)
+
+VARIANT_MAP = {
+    "Vanilla":    MapFormerWM,
+    "VanillaNoDrop": MapFormerWM_VanillaNoDrop,
+    "VanillaEM":  MapFormerEM,
+    "VanillaEM_P0": MapFormerEM_SingleP0,
+    # shared origin AND r=4 -- both EM init fixes at once (MINIGRID_EM.md)
+    "VanillaEM_P0_r4": __import__("mapformer.model_em_fixed", fromlist=["x"]).MapFormerEM_SingleP0_r4,
+    # N5 (THEORY_KERNEL.md): EM with the position kernel's coherence rho SET by
+    # construction and FROZEN. Magnitude-matched across the four conditions --
+    # k_0 is a per-block ROTATION of q_0, so sum_i a_i is identical and only the
+    # phases differ. rho = +1 / 0 / -1 / random.
+    "EMPhase_plus_r4":  __import__("mapformer.model_em_phase", fromlist=["x"]).MapFormerEM_Phase_plus_r4,
+    "EMPhase_zero_r4":  __import__("mapformer.model_em_phase", fromlist=["x"]).MapFormerEM_Phase_zero_r4,
+    "EMPhase_minus_r4": __import__("mapformer.model_em_phase", fromlist=["x"]).MapFormerEM_Phase_minus_r4,
+    "EMPhase_rand_r4":  __import__("mapformer.model_em_phase", fromlist=["x"]).MapFormerEM_Phase_rand_r4,
+    # DOF test (DOF_PREREG.md): phase freedom at MATCHED initial coherence.
+    # AlignFree and AlignLock both start at rho = 1; only AlignLock cannot move
+    # its phases (k_0i = s_i * q_0i, per-block magnitudes still free).
+    "EMDoF_alignfree": __import__("mapformer.model_em_dof", fromlist=["x"]).MapFormerEM_AlignFree_r4,
+    "EMDoF_alignlock": __import__("mapformer.model_em_dof", fromlist=["x"]).MapFormerEM_AlignLock_r4,
+    # Tier-1 control (AUDIT_2026-09-10 finding 8): AlignFree's exact parameterisation
+    # and init, phases pinned to q0. AlignFree - MagOnly = phase freedom at matched optimiser.
+    "EMDoF_magonly": __import__("mapformer.model_em_magonly", fromlist=["x"]).MapFormerEM_MagOnly_r4,
+    # Tier-1 item 2: single-p0 EM warm-started at the constructed recency rewind
+    # (position pathway only; content branch random). WARM_PREREG.md.
+    "EMWarm_freeze": __import__("mapformer.model_em_warm", fromlist=["x"]).MapFormerEM_Warm_freeze_r4,
+    "EMWarm_train":  __import__("mapformer.model_em_warm", fromlist=["x"]).MapFormerEM_Warm_train_r4,
+    # Freeze-then-unfreeze (UNFREEZE_PREREG.md): rewind fate recorded per epoch.
+    "EMUnf_0": __import__("mapformer.model_em_unfreeze", fromlist=["x"]).MapFormerEM_Unf0_r4,
+    "EMUnf_5": __import__("mapformer.model_em_unfreeze", fromlist=["x"]).MapFormerEM_Unf5_r4,
+    "EMUnf_30": __import__("mapformer.model_em_unfreeze", fromlist=["x"]).MapFormerEM_Unf30_r4,
+    "EMUnf_100": __import__("mapformer.model_em_unfreeze", fromlist=["x"]).MapFormerEM_Unf100_r4,
+    "EMUnf_0_e8": __import__("mapformer.model_em_unfreeze", fromlist=["x"]).MapFormerEM_Unf0_e8_r4,
+    # Leakage test (NOLEAK_PREREG.md): w_in content columns held at zero -> Delta from latent only.
+    # PAIRORIGIN_PREREG.md: per-pair position origins, zero-init so it IS VanillaEM_P0_r4 at init
+    "EMPairConst_r4": __import__("mapformer.model_em_pairconst", fromlist=["x"]).MapFormerEM_PairConst_r4,
+    "EMPair_r4": __import__("mapformer.model_em_pairorigin", fromlist=["x"]).MapFormerEM_PairOrigin_r4,
+    # MONOTONE_PREREG.md: the sign ablation on MapFormer-EM and on Selective RoPE's generator
+    "EM_P0_Abs_r4": __import__("mapformer.model_monotone", fromlist=["x"]).MapFormerEM_P0_Abs_r4,
+    "EM_P0_Signed_r4": __import__("mapformer.model_monotone", fromlist=["x"]).MapFormerEM_P0_Signed_r4,
+    "SRoPEGen_Abs": __import__("mapformer.model_monotone", fromlist=["x"]).MapFormerWM_SRoPEGen_Abs,
+    # ADDITION_DESIGN.md: position-coupling oracle (RoPE over hand-assigned coupled IDs)
+    "CoupledRoPE": __import__("mapformer.model_coupled_rope", fromlist=["x"]).MapFormerWM_CoupledRoPE,
+    "CoupledAPE": __import__("mapformer.model_coupled_ape", fromlist=["x"]).MapFormerWM_CoupledAPE,
+    "ChoCoupledAPE": __import__("mapformer.model_cho_coupled", fromlist=["x"]).ChoCoupledAPE,
+    # SAMEBLOCK_PREREG.md: position mechanisms inside Cho et al.'s block
+    "ChoPos_coupled": __import__("mapformer.model_cho_positions", fromlist=["x"]).ChoPos_coupled,
+    "ChoPos_rope": __import__("mapformer.model_cho_positions", fromlist=["x"]).ChoPos_rope,
+    "ChoPos_nope": __import__("mapformer.model_cho_positions", fromlist=["x"]).ChoPos_nope,
+    "ChoPos_signed": __import__("mapformer.model_cho_positions", fromlist=["x"]).ChoPos_signed,
+    "ChoPos_abs": __import__("mapformer.model_cho_positions", fromlist=["x"]).ChoPos_abs,
+    # TEM on recency (model_tem_recency.py): committing query and separate non-committing query
+    "TEMRecency": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency,
+    "TEMRecency_Query": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency_Query,
+    "TEMRecency_Query_Installed": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency_Query_Installed,
+    "TEMRecency_Query_CounterInstalled": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency_Query_CounterInstalled,
+    "TEMRecency_Query_Init1": __import__("mapformer.model_tem_recency", fromlist=["x"]).TEMRecency_Query_Init1,
+    # COUNTER_BATCH.md: identical installed symbol counter in WM and EM
+    "WM_Counter": __import__("mapformer.model_counter_installed", fromlist=["x"]).MapFormerWM_Counter,
+    "EM_Counter": __import__("mapformer.model_counter_installed", fromlist=["x"]).MapFormerEM_Counter,
+    "EMNoLeak_e8":  __import__("mapformer.model_em_noleak", fromlist=["x"]).MapFormerEM_NoLeak_e8_r4,
+    "EMNoLeak_e64": __import__("mapformer.model_em_noleak", fromlist=["x"]).MapFormerEM_NoLeak_e64_r4,
+    "MapEM_NC_L":  MapFormerEM_NC_L,     # paper B.2.2, linear Delta
+    "MapEM_NC_NL": MapFormerEM_NC_NL,    # paper B.2.2, MLP Delta   # paper eq.3: single origin, A_P = P.P^T
+    "Level1":     MapFormerWM_ParallelInEKF,
+    "Level15":    MapFormerWM_Level15InEKF,
+    "Level15Looped": MapFormerWM_Level15Looped,
+    "LoopedHourglass": MapFormerWM_LoopedHourglass,
+    "SRoPEGen": MapFormerWM_SRoPEGen,
+    "RoPE_Canonical": MapFormerWM_RoPE_Canonical,
+    "Forget": __import__("mapformer.model_forget", fromlist=["x"]).MapFormerWM_Forget,
+    "Forget_Frozen": __import__("mapformer.model_forget", fromlist=["x"]).MapFormerWM_ForgetFrozen,
+    "Forget_r4": __import__("mapformer.model_forget", fromlist=["x"]).MapFormerWM_Forget_r4,
+    "Looped_r4": __import__("mapformer.model_rank", fromlist=["x"]).MapFormerWM_Looped_r4,
+    "Vanilla_r3": MapFormerWM_r3,
+    "Vanilla_r4": MapFormerWM_r4,
+    # --- the sign ablation (A5): may the phase increment be negative? ---
+    # Signed_r4 is the RNG/construction-path control for the three constrained
+    # arms; it is mathematically identical to Vanilla_r4 but builds
+    # action_to_lie twice, exactly as they do.
+    "Signed_r4": MapFormerWM_Signed_r4,
+    # CoPE's selection on MapFormer's signed increment; see model_gated.py
+    "Gated_r4": MapFormerWM_Gated_r4,
+    "Gated_r2": MapFormerWM_Gated_r2,
+    "Gated_r4_frozen": MapFormerWM_Gated_r4_frozen,
+    "Abs_r4": MapFormerWM_Abs_r4,
+    "Pos_r4": MapFormerWM_Pos_r4,
+    "CARoPE_r4": MapFormerWM_CARoPE_r4,
+    "Abs_r2": MapFormerWM_Abs_r2,
+    "Vanilla_r5": MapFormerWM_r5,
+    "Vanilla_r7": MapFormerWM_r7,
+    "Vanilla_r8": MapFormerWM_r8,
+    "Vanilla_r16": MapFormerWM_r16,
+    "Vanilla_r32": MapFormerWM_r32,
+    "VanillaEM_r4": MapFormerEM_r4,
+    "VanillaEM_r8": MapFormerEM_r8,
+    "NoBottleneck": MapFormerWM_NoBottleneck,
+    "ConvAngle": MapFormerWM_ConvAngle,
+    "GateAngle": MapFormerWM_GateAngle,
+    "LoopedHourglassFlat": MapFormerWM_LoopedHourglassFlat,
+    "Level15Beta": MapFormerWM_Level15Beta,
+    "Level15GSF": MapFormerWM_Level15GSF,
+    "Level15GSF_NoDrop": MapFormerWM_Level15GSF_NoDrop,
+    "Level15GSF_NoDrop_K16": MapFormerWM_Level15GSF_NoDrop_K16,
+    "Level15GSF_ModeOmega": MapFormerWM_Level15GSF_ModeOmega,
+    "Level15GSF_NoDrop_ModeOmega": MapFormerWM_Level15GSF_NoDrop_ModeOmega,
+    "Level15NoDrop": MapFormerWM_Level15NoDrop,
+    "Level15_PerScaleOmega": MapFormerWM_Level15_PerScaleOmega,
+    "Level15_SR": MapFormerWM_Level15_SR,
+    "Level15EM_PerScaleOmega": MapFormerEM_Level15_PerScaleOmega,
+    "Level15_Hopfield": MapFormerWM_Level15_Hopfield,
+    "Level15_Hopfield_NoMainAP": MapFormerWM_Level15_Hopfield_NoMainAP,
+    "Level15_ExtraHead": MapFormerWM_Level15_ExtraHead,
+    "Vanilla_ExtraHead": MapFormerWM_Vanilla_ExtraHead,
+    "Level15EM":  MapFormerEM_Level15InEKF,
+    "Level15EM_b5": MapFormerEM_Level15InEKF_b5,
+    "Grid":       MapFormerWM_Grid,
+    "Grid_Free":  MapFormerWM_Grid_Free,
+    "GridL15PC":  MapFormerWM_GridL15PC,
+    "GridL15PC_Free": MapFormerWM_GridL15PC_Free,
+    "Level15PC":  MapFormerWM_Level15PC,
+    "Level15PC_NoBypass": MapFormerWM_Level15PC_NoBypass,
+    "Level15PC_v3": MapFormerWM_Level15PC_v3,
+    "Level15PC_v4": MapFormerWM_Level15PC_v4,
+    "Level15_DoG": MapFormerWM_Level15_DoG,
+    "Level15Cascade": MapFormerWM_Level15Cascade,
+    "Level15CascadeNoSlow": MapFormerWM_Level15CascadeNoSlow,
+    "HierAttn": MapFormerWM_HierAttn,
+    "BoundedFlat": MapFormerWM_BoundedFlat,
+    "BoundedHier": MapFormerWM_BoundedHier,
+    "Recursive": MapFormerWM_Recursive,
+    "SpaceTimeHier": MapFormerWM_SpaceTimeHier,
+    "Hourglass_k2": MapFormerWM_Hourglass_k2,
+    "Hourglass_k4": MapFormerWM_Hourglass_k4,
+    "Hourglass_k2_deep": MapFormerWM_Hourglass_k2_deep,
+    "HourglassFlat3": MapFormerWM_HourglassFlat3,
+    "Hourglass_MotifSeg": MapFormerWM_Hourglass_MotifSeg,   # Phase 2 (H3), oracle seg
+    "Hourglass_MotifSeg_FR": MapFormerWM_Hourglass_MotifSeg_FR,  # v2: + frame reset
+    "FrameResetFlat": MapFormerWM_FrameResetFlat,          # flat + reset (isolating control)
+    "Hourglass_CoarseIdx": MapFormerWM_Hourglass_CoarseIdx,  # coarse position re-indexed (not pooled)
+    "Hourglass_CoarsePI": MapFormerWM_Hourglass_CoarsePI,   # coarse OWN path integration (disconnected)
+    "PoPE": MapFormerWM_RoPEIndex_PoPE,                     # index position + PoPE decoupling (paper)
+    "MapPoPE": MapFormerWM_PoPE,                            # path-integration + PoPE (the combo)
+    "MapPoPE_Hier": MapFormerWM_Hourglass_PoPE,            # combo + hourglass hierarchy
+    "MapPoPE_CoarseIdx": MapFormerWM_Hourglass_PoPE_CoarseIdx,  # PoPE + index coarse (best-of-both)
+    "PlainHourglass": PlainHourglass,
+    "PlainFlat": PlainFlat,
+    "NoPE": MapFormerWM_NoPE,
+    "ConvDelta": MapFormerWM_ConvDelta,   # SRoPE conv1d before the cumsum
+    "GateDelta": MapFormerWM_GateDelta,
+    "GateDeltaCtl": MapFormerWM_GateDeltaControl,  # capacity control: same params, gate disabled   # SRoPE sigmoid gate on Delta          # null hypothesis: no position rotation at all
+    # Clear backbone-structure aliases (non-breaking: old keys above still work,
+    # so existing checkpoints and the other server's names keep resolving).
+    #   backbone: MapWM / MapEM / Plain    structure: Flat / Hier(=hourglass)
+    "MapWM-Flat":   MapFormerWM,               # == Vanilla
+    "MapEM-Flat":   MapFormerEM,               # == VanillaEM
+    "MapEM-Flat-P0": MapFormerEM_SingleP0,     # paper-faithful eq.3
+    "MapWM-Hier":   MapFormerWM_Hourglass_k2,  # == Hourglass_k2
+    "MapWM-FlatHG": MapFormerWM_HourglassFlat3,# == HourglassFlat3 (hourglass-matched flat control)
+    "MapWM-MotifSeg": MapFormerWM_Hourglass_MotifSeg,  # == Hourglass_MotifSeg (oracle room seg)
+    "MapWM-MotifSeg-FR": MapFormerWM_Hourglass_MotifSeg_FR,  # v2: MotifSeg + frame reset
+    "MapWM-Flat-FR": MapFormerWM_FrameResetFlat,       # flat MapFormer + frame reset (control)
+    "MapWM-Hier-CoarseIdx": MapFormerWM_Hourglass_CoarseIdx,  # coarse pos re-indexed (decoupled)
+    "MapWM-Hier-CoarsePI": MapFormerWM_Hourglass_CoarsePI,   # coarse own path integration (decoupled)
+    "PoPE-Flat": MapFormerWM_RoPEIndex_PoPE,            # index + PoPE (decoupled), flat
+    "MapPoPE-Flat": MapFormerWM_PoPE,
+    "MapPoPE_T3": _t3.MapFormerWM_PoPE_T3,          # THEORY_MAPPOPE T3: per-token phase
+    "MapPoPE_T3inert": _t3.MapFormerWM_PoPE_T3_Inert,  # its parameter-matched inert twin
+    "MapPoPE_T3pi01": _t3.MapFormerWM_PoPE_T3_PI01,    # T3 with the phase forced at init 0.1
+    "MapPoPE_r4": MapFormerWM_PoPE_r4,   # the untested upgrade to the best-measured arm                   # path-integration + PoPE, flat (combo)
+    "MapPoPE-Hier": MapFormerWM_Hourglass_PoPE,
+    "PoPE-Hier": MapFormerWM_Hourglass_PoPE_Index,   # the 8th cell: PoPE + index + hierarchy        # path-integration + PoPE + hierarchy
+    "MapPoPE-Hier-CoarseIdx": MapFormerWM_Hourglass_PoPE_CoarseIdx,  # best-of-both
+    "Plain-Hier":   PlainHourglass,
+    "Plain-Flat":   PlainFlat,
+    "RouteAttn": MapFormerWM_RouteAttn,
+    "RouteAttn_K4": MapFormerWM_RouteAttn_K4,
+    "RouteAttn_NoBias": MapFormerWM_RouteAttn_NoBias,
+    "HierAttn_CoarseOnly": MapFormerWM_HierAttn_CoarseOnly,
+    "HierAttn_LocalOnly": MapFormerWM_HierAttn_LocalOnly,
+    "Level2":     MapFormerWM_Level2InEKF,
+    "PC":         MapFormerWM_PredictiveCoding,
+    "RoPE":       MapFormerWM_RoPE,
+    "Looped":     MapFormerWM_Looped,        # 1 shared block x4, path-integrated
+    "LoopedRefine": MapFormerWM_LoopedRefine,  # ...+ theta refined each pass
+    "LoopedSampled": MapFormerWM_LoopedSampled,  # ...loop count sampled in training
+    "RoPELooped": MapFormerWM_RoPE_Looped,   # 1 shared block x4, index
+    "Vanilla_FixedOmega": MapFormerWM_FixedOmega,  # frequency control
+    "TEM":        TEMRecurrent,
+    "TEMFaithful": TEMFaithful,
+    "TEMFaithful_dg32": TEMFaithful_dg32,
+    "TEMFaithful_dg128": TEMFaithful_dg128,
+    "TEMFaithful_dg256": TEMFaithful_dg256,
+    "TEMFaithful_FFN": TEMFaithful_FFN,
+    "TEM_T":       TEM_T,
+    **ABLATIONS,
+    **EXTRA_BASELINES,
+    # --- decay-envelope arms (2026-09-21, the repaired-baseline control for the
+    # code OOD result). ALiBi-style scores -= softplus(lambda_h)*distance, one
+    # scalar per head. Comparing MapPoPE against UNREPAIRED RoPE past the
+    # training context is a comparison against a baseline nobody deploys.
+    # PoPE component ablation -- the paper's Table 5, plus the extrapolation
+    # test that table cannot do. ReLU is the discriminating arm: non-negative
+    # (hence bounded) but in-distribution it behaves like NoSigma.
+    "PoPE-Full":     PoPE_Full,
+    "PoPE-NoSigma":  PoPE_NoSigma,
+    "PoPE-ReLU":     PoPE_ReLU,
+    "PoPE-NoDelta":  PoPE_NoDelta,
+    "RoPE-Decay":    MapFormerWM_RoPE_Decay,
+    "MapWM-Decay":   MapFormerWM_Decay,
+    "PoPE-Decay":    MapFormerWM_RoPEIndex_PoPE_Decay,
+    "MapPoPE-Decay": MapFormerWM_PoPE_Decay,
+}
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--variant", required=True, choices=list(VARIANT_MAP.keys()))
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--n-landmarks", type=int, default=0)
+    parser.add_argument("--grid-size", type=int, default=64,
+                        help="Torus grid size. Only used when --env torus.")
+    parser.add_argument("--n-obs-types", type=int, default=16,
+                        help="Number of distinct observation token types "
+                             "(K in paper). Default 16 matches paper config; "
+                             "increasing pushes toward paper's vocab-scaling "
+                             "axis where MapFormer-EM was claimed to dominate.")
+    parser.add_argument("--p-action-noise", type=float, default=0.0,
+                        help="Post-hoc corruption of action TOKENS (records). "
+                             "Trajectory rolls forward with the original "
+                             "actions; only the model's view is corrupted.")
+    parser.add_argument("--p-transition-noise", type=float, default=0.0,
+                        help="Stochastic-transition MDP: at each step the "
+                             "executed action differs from the commanded one "
+                             "with this probability. Token sequence records "
+                             "the commanded action; position update uses "
+                             "the executed one. Mathematically equivalent to "
+                             "p_action_noise for uniform policies but maps "
+                             "to a different real-world failure mode.")
+    parser.add_argument("--aux-coef", type=float, default=0.0,
+                        help="Coefficient for auxiliary prediction-error loss "
+                             "(used by PC and GridL15PC variants).")
+    parser.add_argument("--epochs", type=int, default=50)
+    parser.add_argument("--data-workers", type=int, default=0,
+                        help="Parallel trajectory-generation workers. 0 "
+                             "(default) uses the serial path and is "
+                             "byte-identical to every existing checkpoint. "
+                             ">0 is ~3.4x faster at 6 workers but draws a "
+                             "DIFFERENT sample from the same generator, so "
+                             "runs are reproducible among themselves and NOT "
+                             "against stored serial checkpoints (rule 3).")
+    parser.add_argument("--schedule", default="linear", choices=["linear", "cosine"],
+                        help="cosine = 5%% warmup + cosine to 10%%. The linear "
+                             "default decays from step one and can trap a run on a "
+                             "plateau (standing rule 10). Use cosine for new work.")
+    parser.add_argument("--n-batches", type=int, default=156)
+    parser.add_argument("--batch-size", type=int, default=128)
+    parser.add_argument("--n-steps", type=int, default=128)
+    parser.add_argument("--lr", type=float, default=3e-4)
+    parser.add_argument("--n-layers", type=int, default=1)
+    parser.add_argument("--d-model", type=int, default=128,
+                        help="Override d_model. For Grid hexagonal config "
+                             "(11 modules x 3 orientations) need d_model=132.")
+    parser.add_argument("--n-heads", type=int, default=2)
+    parser.add_argument("--n-dims", type=int, default=2,
+                        help="Dimensionality of the torus. Only used when "
+                             "--env nd. D=2 reproduces the paper's task shape "
+                             "with 4 actions; D actions are +/- e_i, so the "
+                             "vocabulary grows as 2D + n_obs_types + 1.")
+    parser.add_argument("--env", type=str, default="torus",
+                        choices=["torus", "nd", "minigrid_empty", "minigrid_doorkey",
+                                 "minigrid_doorkey16", "minigrid_multiroom",
+                                 "minigrid_memory",
+                                 "minigrid_keycorridor", "minigrid_obstructedmaze"],
+                        help="Which environment to train on. 'torus' is the "
+                             "paper-default 64x64 random-walk grid; "
+                             "'minigrid_*' use real MiniGrid envs via "
+                             "MiniGridWorld adapter.")
+    # Knobs isolating what differs between this torus and MiniGrid. Defaults
+    # reproduce the paper setting byte-for-byte; see environment.py.
+    parser.add_argument("--action-mode", type=str, default="translate",
+                        choices=["translate", "rotate"])
+    parser.add_argument("--obs-mode", type=str, default="allo",
+                        choices=["allo", "ego"])
+    parser.add_argument("--boundary", type=str, default="torus",
+                        choices=["torus", "wall"])
+    parser.add_argument("--action-record", type=str, default="commanded",
+                        choices=["commanded", "allocentric"],
+                        help="what the token stream records; 'allocentric' logs "
+                             "the absolute displacement (or STAY) instead of the "
+                             "commanded turn/forward")
+    parser.add_argument("--n-headings", type=int, default=4,
+                        help="rotate mode: how many headings a turn steps "
+                             "through. 4 = original; 12 = Habitat's 30-degree "
+                             "turns, which makes position real-valued.")
+    parser.add_argument("--heading-noise", type=float, default=0.0,
+                        help="radians of Gaussian noise on each executed turn, "
+                             "so the true heading drifts off the quantised "
+                             "allocentric record (Habitat actuation noise)")
+    parser.add_argument("--score-moves-only", action="store_true",
+                        help="skip steps where the observed cell did not change; "
+                             "required in rotate mode, where turns otherwise emit "
+                             "a repeated observation solvable by copying")
+    parser.add_argument("--minigrid-tokenization", type=str, default="obj_color",
+                        choices=["obj_only", "obj_color", "full"])
+    parser.add_argument("--minigrid-allocentric", action="store_true",
+                        help="Record the REALIZED per-step grid displacement "
+                             "(world-fixed vector) instead of the commanded "
+                             "turn/forward action. The fair, input-matched "
+                             "comparison for path integration on rotation "
+                             "actions. Uses a distinct cached buffer.")
+    parser.add_argument("--minigrid-cached-buffer", type=int, default=0,
+                        help="If > 0, use MiniGridWorld_Cached with this "
+                             "buffer size instead of live gym.step on every "
+                             "batch. ~30x speedup; one-time build cost ~7 min "
+                             "for 25K buffer; cached to disk for reuse across "
+                             "seeds. 25000 is a sensible default.")
+    parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--output-dir", type=str, required=True)
+    parser.add_argument("--init-from", type=str, default=None,
+                        help="start from this checkpoint's model weights (a continuation). The "
+                             "optimizer and LR schedule start FRESH: a warm restart, not an "
+                             "exact resume (no optimizer-state loading is implemented).")
+    parser.add_argument("--data-seed-offset", type=int, default=0,
+                        help="offset the --data-workers stream seed (0 = unchanged); a "
+                             "continuation uses 1 so it sees fresh walks on the same map")
+    parser.add_argument("--save-full-state", action="store_true",
+                        help="also save optimizer and scheduler state (opt-in)")
+    parser.add_argument("--fast-attn", action="store_true",
+                        help="SDPA (memory-efficient kernel) for MapWM-family attention, "
+                             "WITHOUT TF32. Never materialises the [B,H,T,T] score tensor. "
+                             "Not bit-identical to the explicit path (different dropout RNG, "
+                             "different accumulation order): every arm of a batch must share "
+                             "the setting, and it cannot continue an explicit-path run "
+                             "bit-exactly. Not valid for MapEM (Hadamard scores).")
+    parser.add_argument("--deterministic", action="store_true",
+                        help="torch.use_deterministic_algorithms(True, warn_only=True): "
+                             "required for run-to-run bitwise reproducibility under "
+                             "--fast-attn, whose default backward is non-deterministic")
+    args = parser.parse_args()
+    if args.fast_attn:
+        import mapformer.model as _M
+        _M.USE_SDPA = True
+        # TF32 is deliberately NOT enabled: it is what cost equivalence on the
+        # compositional trainer (logit diff 6e-01); SDPA alone agrees to ~1e-6
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
+    if args.deterministic:
+        torch.use_deterministic_algorithms(True, warn_only=True)
+
+    torch.manual_seed(args.seed); np.random.seed(args.seed)
+
+    out = Path(args.output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    if args.env == "nd":
+        # D-dimensional torus for the rank-threshold test. Deliberately a
+        # SEPARATE class from GridWorld -- see environment_nd.py.
+        from mapformer.environment_nd import GridWorldND
+        env = GridWorldND(dims=args.n_dims, size=args.grid_size,
+                          n_obs_types=args.n_obs_types, p_empty=0.5,
+                          seed=args.seed)
+        grid_size = args.grid_size
+    elif args.env == "torus":
+        env = GridWorld(
+            size=args.grid_size, n_obs_types=args.n_obs_types, p_empty=0.5,
+            n_landmarks=args.n_landmarks, seed=args.seed,
+            action_mode=args.action_mode, obs_mode=args.obs_mode,
+            boundary=args.boundary, score_moves_only=args.score_moves_only,
+            action_record=args.action_record,
+            n_headings=args.n_headings, heading_noise=args.heading_noise,
+        )
+        grid_size = args.grid_size
+    else:
+        from mapformer.minigrid_env import MiniGridWorld, MiniGridWorld_Cached
+        env_name = {
+            "minigrid_empty":           "MiniGrid-Empty-8x8-v0",
+            "minigrid_doorkey":         "MiniGrid-DoorKey-8x8-v0",
+            "minigrid_doorkey16":       "MiniGrid-DoorKey-16x16-v0",
+            "minigrid_multiroom":       "MiniGrid-MultiRoom-N4-S5-v0",
+            "minigrid_memory":          "MiniGrid-MemoryS13-v0",
+            "minigrid_keycorridor":     "MiniGrid-KeyCorridorS3R3-v0",
+            "minigrid_obstructedmaze":  "MiniGrid-ObstructedMaze-1Dl-v0",
+        }[args.env]
+        if args.minigrid_cached_buffer > 0:
+            env = MiniGridWorld_Cached(
+                env_name=env_name,
+                tokenization=args.minigrid_tokenization,
+                seed=args.seed,
+                buffer_size=args.minigrid_cached_buffer,
+                allocentric=args.minigrid_allocentric,
+            )
+        else:
+            env = MiniGridWorld(
+                env_name=env_name,
+                tokenization=args.minigrid_tokenization,
+                seed=args.seed,
+                allocentric=args.minigrid_allocentric,
+            )
+        grid_size = env.size  # MiniGrid envs vary in grid size
+
+    cls = VARIANT_MAP[args.variant]
+    model = cls(
+        vocab_size=env.unified_vocab_size,
+        d_model=args.d_model, n_heads=args.n_heads,
+        n_layers=args.n_layers, grid_size=grid_size,
+    )
+
+    init_blob = None
+    if args.init_from:
+        init_blob = torch.load(args.init_from, map_location="cpu", weights_only=False)
+        assert init_blob.get("variant") == args.variant, (init_blob.get("variant"), args.variant)
+        model.load_state_dict(init_blob["model_state_dict"])      # strict
+        print(f"init-from {args.init_from} ({len(init_blob.get('losses', []))} prior epochs)")
+    print(f"{args.variant} seed={args.seed} n_landmarks={args.n_landmarks} "
+          f"p_noise={args.p_action_noise}")
+    print(f"params={sum(p.numel() for p in model.parameters()):,}")
+
+    losses = train(
+        model, env,
+        n_epochs=args.epochs, lr=args.lr,
+        batch_size=args.batch_size, n_steps=args.n_steps,
+        n_batches=args.n_batches, device=args.device,
+        p_action_noise=args.p_action_noise,
+        p_transition_noise=args.p_transition_noise,
+        aux_coef=args.aux_coef,
+        schedule=args.schedule,
+        data_workers=args.data_workers,
+        data_seed_offset=args.data_seed_offset,
+        return_state=args.save_full_state,
+    )
+    opt_state = None
+    if args.save_full_state:
+        losses, _opt, _sch = losses
+        opt_state = {"optimizer_state_dict": _opt.state_dict(),
+                     "scheduler_state_dict": _sch.state_dict()}
+    losses_prior = None
+    if init_blob is not None:
+        losses_prior = list(init_blob.get("losses_prior") or []) + list(init_blob.get("losses", []))
+
+    ckpt_path = out / f"{args.variant}.pt"
+    torch.save({
+        "model_state_dict": model.state_dict(),
+        "losses": losses,
+        "variant": args.variant,
+        "seed": args.seed,
+        "config": {
+            "vocab_size": env.unified_vocab_size,
+            "d_model": args.d_model, "n_heads": args.n_heads,
+            "n_layers": args.n_layers,
+            "grid_size": grid_size, "n_obs_types": args.n_obs_types,
+            "p_empty": 0.5, "env": args.env, "n_dims": args.n_dims,
+            "n_landmarks": args.n_landmarks,
+            # training recipe, so a checkpoint records the length it was trained at
+            # (added 2026-09-23; older checkpoints lack these keys -- read with .get)
+            "n_steps": args.n_steps, "batch_size": args.batch_size,
+            "epochs": args.epochs, "lr": args.lr, "schedule": args.schedule,
+            "n_batches": args.n_batches,
+            "init_from": args.init_from, "data_seed_offset": args.data_seed_offset,
+            # numerics path (added by the 2026-09-24 audit; absent key = explicit path)
+            "fast_attn": args.fast_attn, "deterministic": args.deterministic,
+        },
+        # continuation history (None for a from-scratch run) and opt-in optimizer state
+        "losses_prior": losses_prior,
+        **(opt_state or {}),
+    }, ckpt_path)
+    print(f"Saved: {ckpt_path}")
+
+
+if __name__ == "__main__":
+    main()

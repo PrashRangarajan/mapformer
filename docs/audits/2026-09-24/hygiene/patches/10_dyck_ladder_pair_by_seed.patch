@@ -1,0 +1,32 @@
+--- a/analyze_dyck_ladder.py	2026-09-24 02:17:22.329513630 -0700
++++ b/analyze_dyck_ladder.py	2026-09-24 02:21:32.755256724 -0700
+@@ -16,11 +16,18 @@
+ def main():
+     w = DyckWorld()
+     data = {c: cell_data(w, *c) for c in CELLS}
+-    R = {}
++    R = {}; SEEDS = {}
+     for L in (1, 2, 3, 4):
+         for arch in ARCH:
+             nm = f"{arch}-{L}L" + ("_r2" if arch.startswith("Map") else "")
+-            pts = sorted(glob.glob(f"{RUNS}/{nm}_s*/{nm}.pt"))
++            # sort by SEED, not by string ('_s10' < '_s2'), and keep the seed with each
++            # row: arms are paired by list position below, so a missing seed in one arm
++            # would silently pair different seeds (or fail on a length mismatch).
++            pts = sorted(glob.glob(f"{RUNS}/{nm}_s*/{nm}.pt"),
++                         key=lambda p: int(p.rsplit("_s", 1)[1].split("/")[0]))
++            seeds = [int(p.rsplit("_s", 1)[1].split("/")[0]) for p in pts]
++            SEEDS.setdefault("ref", seeds)
++            assert seeds == SEEDS["ref"], f"{nm}: seeds {seeds} != {SEEDS['ref']}"
+             for pt in pts:
+                 m = build(arch, 5, L, 2, 2, 32).cuda().eval()
+                 m.load_state_dict(torch.load(pt, map_location="cuda"))
+@@ -49,7 +56,7 @@
+         for L in (1, 2, 3, 4):
+             r, p, mw, mp = (v(a, L, c) for a in ("RoPE", "PoPE", "MapWM", "MapPoPE"))
+             pos = ((mw - r) + (mp - p)) / 2; enc = ((p - r) + (mp - mw)) / 2; it = (mp - p) - (mw - r)
+-            fmt = lambda d: f"{d.mean():+.3f} ({mde(d):.3f}, {int((d>0).sum())}/8)" + ("**" if abs(d.mean()) > mde(d) else "")
++            fmt = lambda d: f"{d.mean():+.3f} ({mde(d):.3f}, {int((d>0).sum())}/{len(d)})" + ("**" if abs(d.mean()) > mde(d) else "")
+             say(f"| {L}L | {r.mean():.3f} | {p.mean():.3f} | {mw.mean():.3f} | {mp.mean():.3f} | {fmt(pos)} | {fmt(enc)} | {fmt(it)} |")
+         say("\n`**` = clears MDE. Cells show mean (MDE, seeds positive).\n")
+     say("## Convergence\n")

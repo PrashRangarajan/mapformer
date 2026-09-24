@@ -1,0 +1,45 @@
+--- a/analyze_rank_matched.py	2026-09-24 02:17:22.373514641 -0700
++++ b/analyze_rank_matched.py	2026-09-24 02:21:44.571527538 -0700
+@@ -33,19 +33,19 @@
+ 
+ 
+ def perm(a, b, shift=0.0):
+-    """Exact two-sample permutation p (two-sided) for mean(b) - mean(a) - shift."""
+-    a, b = np.asarray(a, float), np.asarray(b, float) - shift
+-    x = np.concatenate([a, b]); n = len(b); obs = b.mean() - a.mean()
+-    tot = x.sum(); cnt = hits = 0
+-    for idx in itertools.combinations(range(len(x)), n):
+-        sb = x[list(idx)].sum(); d = sb / n - (tot - sb) / (len(x) - n)
+-        hits += abs(d) >= abs(obs) - 1e-12; cnt += 1
+-    return hits / cnt
++    """Exact two-sample permutation p (two-sided) for mean(b) - mean(a) - shift.
++    Delegates to stats_core (vectorised, identical p: verified on RANK_MATCHED_e900.json
++    at T=512/1024/2048 and at shifts 0.05/0.055/0.15/0.155)."""
++    from mapformer.stats_core import perm2_p
++    return perm2_p(a, b, shift)["p"]
+ 
+ 
+-def perm_ci(a, b, lo=-0.6, hi=0.6, step=0.005):
+-    ok = [s for s in np.arange(lo, hi + 1e-9, step) if perm(a, b, s) >= 0.05]
+-    return (min(ok), max(ok)) if ok else (None, None)
++def perm_ci(a, b, lo=None, hi=None, step=0.005):
++    """Test-inversion 95% CI. The old fixed [-0.6, 0.6] grid clipped silently and took
++    >2 min per call under load (241 x 12,870 python iterations); this walks outward
++    from the observed difference."""
++    from mapformer.stats_core import perm2_ci
++    return perm2_ci(a, b, level=0.95, step=step)
+ 
+ 
+ def main():
+@@ -66,8 +66,10 @@
+             assert b["config"].get("n_steps") == 1024, b["config"]
+             C[(v, s)] = classify(b["losses"]); loss[(v, s)] = float(b["losses"][-1])
+             cls, tail, ratio = C[(v, s)]
++            rising = ratio is not None and cls == "DESCENDING" and ratio > 1
+             print(f"  {v:11s} s{s}  epochs {len(b['losses'])}  tail loss {tail:.4f}  "
+-                  f"last10%/prev10% {'' if ratio is None else f'{ratio:.3f}'}  {cls}")
++                  f"last10%/prev10% {'' if ratio is None else f'{ratio:.3f}'}  {cls}"
++                  + ("  (loss RISING: the registered rule files this under DESCENDING)" if rising else ""))
+     for v in (V2, V4):
+         n = {k: sum(C[(v, s)][0] == k for s in S) for k in ("SOLVED", "STALLED", "DESCENDING")}
+         print(f"  {v:11s} {n}")

@@ -1,0 +1,32 @@
+--- a/run_rank_proj.sh	2026-09-24 02:17:21.941504725 -0700
++++ b/run_rank_proj.sh	2026-09-24 02:18:54.799635188 -0700
+@@ -23,7 +23,15 @@
+ # 2. TRAINABLE: the continuation's exact recipe from the projected weights
+ for SEED in $SEEDS; do
+   OUT="$R/p0/Vanilla_s${SEED}"; mkdir -p "$OUT"
+-  [ -f "$OUT/Vanilla.pt" ] && { echo "skip s$SEED (done)" >> "$LOG"; continue; }
++  if [ -f "$OUT/Vanilla.pt" ]; then
++    # reuse only a checkpoint trained from THIS projection at THIS budget (run_rank_matched's matches())
++    python3 - "$OUT/Vanilla.pt" "$P/p0/Vanilla_s${SEED}/Vanilla.pt" <<'PY' || fail "stale checkpoint $OUT/Vanilla.pt"
++import sys, torch
++c = torch.load(sys.argv[1], map_location="cpu", weights_only=False)["config"]
++sys.exit(0 if c.get("epochs") == 900 and c.get("n_steps") == 1024 and c.get("init_from") == sys.argv[2] else 1)
++PY
++    echo "skip s$SEED (done, config matches)" >> "$LOG"; continue
++  fi
+   G=""; while [ -z "$G" ]; do G=$(pick); [ -z "$G" ] && sleep 30; done
+   echo "$(date +%H:%M:%S) Vanilla(proj) s$SEED -> cuda:$G" >> "$LOG"
+   OMP_NUM_THREADS=4 setsid nohup python3 -u -m mapformer.train_variant --variant Vanilla --seed "$SEED" \
+@@ -45,6 +53,11 @@
+ python3 -u -m mapformer.probe_action_geometry --runs-dir "$R/p0" --arms Vanilla --seeds $SEEDS --device cuda:1 \
+   --out "$REPO/RANK_PROJ_TRAIN_GEOMETRY.md" >> "$LOG" 2>&1 || fail geometry
+ # 3. the comparison needs the continuation's control arm
+-until [ -f "$REPO/.rank_matched_e900c_done" ]; do sleep 120; done
++# ...and must not wait forever if that driver FAILED or ABORTED (its fail() sets no marker)
++until [ -f "$REPO/.rank_matched_e900c_done" ]; do
++  grep -qE "FAILED|ABORT|REFUSED|not all checkpoints" "$REPO/rank_matched_e900c.log" 2>/dev/null \
++    && fail "rank_matched_e900c driver failed -- see rank_matched_e900c.log"
++  sleep 120
++done
+ python3 -u -m mapformer.analyze_rank_proj > "$REPO/RANK_PROJ_ANALYSIS.txt" 2>&1 || fail analyze
+ touch "$REPO/.rank_proj_done"; echo "$(date) DONE" >> "$LOG"

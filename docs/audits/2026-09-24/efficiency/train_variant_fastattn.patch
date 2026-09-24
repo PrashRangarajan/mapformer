@@ -1,0 +1,39 @@
+--- /home/prashr/mapformer/train_variant.py	2026-09-24 00:46:46.155113318 -0700
++++ proposed/train_variant.py	2026-09-24 02:07:32.059925786 -0700
+@@ -453,7 +453,27 @@
+                              "continuation uses 1 so it sees fresh walks on the same map")
+     parser.add_argument("--save-full-state", action="store_true",
+                         help="also save optimizer and scheduler state (opt-in)")
++    parser.add_argument("--fast-attn", action="store_true",
++                        help="SDPA (memory-efficient kernel) for MapWM-family attention, "
++                             "WITHOUT TF32. Never materialises the [B,H,T,T] score tensor. "
++                             "Not bit-identical to the explicit path (different dropout RNG, "
++                             "different accumulation order): every arm of a batch must share "
++                             "the setting, and it cannot continue an explicit-path run "
++                             "bit-exactly. Not valid for MapEM (Hadamard scores).")
++    parser.add_argument("--deterministic", action="store_true",
++                        help="torch.use_deterministic_algorithms(True, warn_only=True): "
++                             "required for run-to-run bitwise reproducibility under "
++                             "--fast-attn, whose default backward is non-deterministic")
+     args = parser.parse_args()
++    if args.fast_attn:
++        import mapformer.model as _M
++        _M.USE_SDPA = True
++        # TF32 is deliberately NOT enabled: it is what cost equivalence on the
++        # compositional trainer (logit diff 6e-01); SDPA alone agrees to ~1e-6
++        torch.backends.cuda.matmul.allow_tf32 = False
++        torch.backends.cudnn.allow_tf32 = False
++    if args.deterministic:
++        torch.use_deterministic_algorithms(True, warn_only=True)
+ 
+     torch.manual_seed(args.seed); np.random.seed(args.seed)
+ 
+@@ -564,6 +584,8 @@
+             "epochs": args.epochs, "lr": args.lr, "schedule": args.schedule,
+             "n_batches": args.n_batches,
+             "init_from": args.init_from, "data_seed_offset": args.data_seed_offset,
++            # numerics path (added by the 2026-09-24 audit; absent key = explicit path)
++            "fast_attn": args.fast_attn, "deterministic": args.deterministic,
+         },
+         # continuation history (None for a from-scratch run) and opt-in optimizer state
+         "losses_prior": losses_prior,
