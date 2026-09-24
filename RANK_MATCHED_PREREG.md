@@ -173,3 +173,17 @@ buys nothing and the paired MDE is kept only for continuity.
    test could have detected the old +0.085 (its 95% interval for the difference excludes
    +0.085). The old OOD effect was then robustness to unseen length.
 5. **Unmeasured** otherwise: no difference found, and none as large as +0.085 ruled out.
+
+### Pilot outcome (2026-09-23 20:43; training loss only, no evaluation run)
+
+`python3 -m mapformer.analyze_rank_matched --tag _e900 --seeds 0 1 --classify-only`:
+
+| run | tail loss (final 5%) | last 10% / previous 10% | class |
+|---|---|---|---|
+| r=2 s0 | 0.5871 | 0.981 | STALLED |
+| r=2 s1 | 0.0511 | 0.653 | DESCENDING |
+| r=4 s0 | 0.0091 | -- | SOLVED |
+| r=4 s1 | 0.0029 | -- | SOLVED |
+
+One run is DESCENDING, so by the rule above the 8-seed batch is NOT launched at 900
+epochs; the next budget or design is decided with the user.
