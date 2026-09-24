@@ -6,9 +6,12 @@ exec 9>"$REPO/.run_rank_matched.lock"
 flock -n 9 || { echo "another instance of $(basename "$0") is already running -- exiting"; exit 0; }
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 cd "$REPO/.."
-R="$REPO/runs/rank_matched"; mkdir -p "$R/p0"
-LOG="$REPO/rank_matched.log"; echo "start $(date)" >> "$LOG"
-ARMS="Vanilla Vanilla_r4"; SEEDS="0 1 2 3 4 5 6 7"
+# Overridable for the budget extension (Amendment 1): EPOCHS, TAG (run dir + output suffix),
+# SEEDS, and PILOT=1 to stop after training (a pilot reads loss curves only, no eval).
+EPOCHS="${EPOCHS:-300}"; TAG="${TAG:-}"; PILOT="${PILOT:-0}"
+R="$REPO/runs/rank_matched${TAG}"; mkdir -p "$R/p0"
+LOG="$REPO/rank_matched${TAG}.log"; echo "start $(date) epochs=$EPOCHS pilot=$PILOT" >> "$LOG"
+ARMS="Vanilla Vanilla_r4"; SEEDS="${SEEDS:-0 1 2 3 4 5 6 7}"
 MAXPG=5
 # count REAL trainers on a device (ps comm=python3; never pgrep -f, which matches shells)
 ntrain(){ ps -u "$USER" -o comm=,args= | awk -v d="--device cuda:$1" '$1=="python3" && /mapformer\.train_variant/ && index($0,d)' | wc -l; }
@@ -25,7 +28,7 @@ for SEED in $SEEDS; do
     G=""; while [ -z "$G" ]; do G=$(pick); [ -z "$G" ] && sleep 30; done
     echo "$(date +%H:%M:%S) $V s$SEED -> cuda:$G" >> "$LOG"
     OMP_NUM_THREADS=4 setsid nohup python3 -u -m mapformer.train_variant --variant "$V" --seed "$SEED" \
-      --epochs 300 --lr 1e-3 --n-batches 98 --batch-size 16 --n-steps 1024 \
+      --epochs "$EPOCHS" --lr 1e-3 --n-batches 98 --batch-size 16 --n-steps 1024 \
       --n-layers 1 --n-heads 2 --d-model 128 --n-landmarks 0 --schedule cosine \
       --data-workers 3 --device "cuda:$G" --output-dir "$OUT" \
       > "$R/${V}_s${SEED}.log" 2>&1 &
@@ -40,16 +43,17 @@ done; done
 echo "$(date +%H:%M) missing=$missing" >> "$LOG"
 [ "$missing" -eq 0 ] || { echo "not all checkpoints present -- evaluation NOT run" >> "$LOG"; exit 1; }
 touch "$R/.train_done"
+[ "$PILOT" = 1 ] && { touch "$REPO/.rank_matched${TAG}_done"; echo "$(date) PILOT DONE (no eval)" >> "$LOG"; exit 0; }
 python3 -u -m mapformer.eval_noise_refine --runs-dir "$R" --variants $ARMS --noises 0.0 \
   --seeds $SEEDS --lengths 512 1024 2048 --n-trials 100 --device cuda:0 \
   --title "Rank at matched length: trained AND tested at T=1024" \
-  --out "$REPO/RANK_MATCHED.md" >> "$LOG" 2>&1
+  --out "$REPO/RANK_MATCHED${TAG}.md" >> "$LOG" 2>&1
 python3 -u -m mapformer.eval_rank_strata --runs-dir "$R" --variants $ARMS --seeds $SEEDS \
   --lengths 1024 2048 --n-trials 100 --device cuda:0 \
-  --check-json "$REPO/RANK_MATCHED.json" --out "$REPO/RANK_MATCHED_STRATA.json" >> "$LOG" 2>&1
-python3 -u -m mapformer.eval_rank_strata --runs-dir "$REPO/runs/rank_sweep" --variants $ARMS --seeds $SEEDS \
+  --check-json "$REPO/RANK_MATCHED${TAG}.json" --out "$REPO/RANK_MATCHED${TAG}_STRATA.json" >> "$LOG" 2>&1
+[ -f "$REPO/RANK_SWEEP_STRATA.json" ] || python3 -u -m mapformer.eval_rank_strata --runs-dir "$REPO/runs/rank_sweep" --variants $ARMS --seeds $SEEDS \
   --lengths 1024 2048 --n-trials 100 --device cuda:1 \
   --check-json "$REPO/RANK_SWEEP.json" --out "$REPO/RANK_SWEEP_STRATA.json" >> "$LOG" 2>&1
 python3 -u -m mapformer.probe_action_geometry --runs-dir "$R/p0" --arms $ARMS --device cuda:0 \
-  --out "$REPO/RANK_MATCHED_GEOMETRY.md" >> "$LOG" 2>&1
-touch "$REPO/.rank_matched_done"; echo "$(date) DONE" >> "$LOG"
+  --out "$REPO/RANK_MATCHED${TAG}_GEOMETRY.md" >> "$LOG" 2>&1
+touch "$REPO/.rank_matched${TAG}_done"; echo "$(date) DONE" >> "$LOG"

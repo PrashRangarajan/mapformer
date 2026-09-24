@@ -95,3 +95,20 @@ overall number dilutes.
 moves must cancel over far longer stretches, r=2's action code gets cleaner --
 opposition falls toward r=4's. Read per seed (`probe_action_geometry --runs-dir
 runs/rank_matched/p0`), never as a mean alone.
+
+## Amendment 1 (2026-09-23, after the 300-epoch batch landed budget-limited)
+
+The 300-epoch batch failed the convergence check (flat r=2 4/8, r=4 0/8;
+`RANK_MATCHED_RESULTS.md`), so no branch was read. The only change is the budget.
+
+**Pilot**: seeds 0 and 1, both arms, **900 epochs** (3x), everything else identical,
+`runs/rank_matched_e900`, `EPOCHS=900 TAG=_e900 SEEDS="0 1" PILOT=1 bash run_rank_matched.sh`.
+The pilot is read on TRAINING LOSS CURVES ONLY -- no evaluation, so it cannot steer the
+readout. Seeds 0 and 1 are the first two in the default order, not chosen by result.
+
+**Decision rule**: if all 4 pilot runs are flat (the registered 5% criterion, epochs
+871-900 vs 841-870), run the remaining seeds 2-7 at 900 epochs into the same directory
+(the pilot runs are kept as seeds 0-1; same seed and code give the same run), then
+evaluate with every readout and branch above unchanged. If any pilot run is not flat,
+report and choose a longer budget before spending the 8-seed batch. A run that is flat
+at a loss above 0.1 is reported as a possible plateau (rule 10), not silently accepted.
