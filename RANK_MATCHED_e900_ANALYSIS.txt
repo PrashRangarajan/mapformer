@@ -1,0 +1,53 @@
+== run classes (Amendment 2), runs/rank_matched_e900 ==
+  Vanilla     s0  epochs 900  tail loss 0.5871  last10%/prev10% 0.981  STALLED
+  Vanilla     s1  epochs 900  tail loss 0.0511  last10%/prev10% 0.653  DESCENDING
+  Vanilla     s2  epochs 900  tail loss 0.3080  last10%/prev10% 0.908  DESCENDING
+  Vanilla     s3  epochs 900  tail loss 0.3215  last10%/prev10% 0.923  DESCENDING
+  Vanilla     s4  epochs 900  tail loss 0.1765  last10%/prev10% 0.908  DESCENDING
+  Vanilla     s5  epochs 900  tail loss 0.4044  last10%/prev10% 0.961  STALLED
+  Vanilla     s6  epochs 900  tail loss 0.6754  last10%/prev10% 0.980  STALLED
+  Vanilla     s7  epochs 900  tail loss 0.6047  last10%/prev10% 0.983  STALLED
+  Vanilla_r4  s0  epochs 900  tail loss 0.0091  last10%/prev10%   SOLVED
+  Vanilla_r4  s1  epochs 900  tail loss 0.0029  last10%/prev10%   SOLVED
+  Vanilla_r4  s2  epochs 900  tail loss 0.0041  last10%/prev10%   SOLVED
+  Vanilla_r4  s3  epochs 900  tail loss 0.0029  last10%/prev10%   SOLVED
+  Vanilla_r4  s4  epochs 900  tail loss 0.0033  last10%/prev10%   SOLVED
+  Vanilla_r4  s5  epochs 900  tail loss 0.0091  last10%/prev10%   SOLVED
+  Vanilla_r4  s6  epochs 900  tail loss 0.0028  last10%/prev10%   SOLVED
+  Vanilla_r4  s7  epochs 900  tail loss 0.0113  last10%/prev10%   SOLVED
+  Vanilla     {'SOLVED': 0, 'STALLED': 4, 'DESCENDING': 4}
+  Vanilla_r4  {'SOLVED': 8, 'STALLED': 0, 'DESCENDING': 0}
+
+== primary: T=1024 overall accuracy ==
+  r2 0.894  r4 0.997  d +0.103  paired MDE 0.070 (8/8)  exact permutation p 0.0003  95% CI [+0.050, +0.155]
+== co-primary: SOLVED  r2 0/8  r4 8/8  Fisher p 0.0002
+  accuracy among SOLVED: r2 nan (n=0)  r4 0.997 (n=8)
+== BRANCH: UNREADABLE ({'Vanilla': 4, 'Vanilla_r4': 0} DESCENDING; more than 2 in an arm)
+
+== secondary: other lengths (paired MDE for continuity) ==
+  acc T= 512  r2 0.934  r4 1.000  d +0.066  MDE 0.065  8/8 r4>r2  perm p 0.0003
+  NLL T= 512  r2 0.209  r4 0.000  d -0.208  MDE 0.185  0/8 r4>r2  perm p 0.0003
+  acc T=1024  r2 0.894  r4 0.997  d +0.103  MDE 0.070  8/8 r4>r2  perm p 0.0003
+  NLL T=1024  r2 0.363  r4 0.023  d -0.340  MDE 0.231  0/8 r4>r2  perm p 0.0003
+  acc T=2048  r2 0.819  r4 0.980  d +0.162  MDE 0.090  8/8 r4>r2  perm p 0.0003
+  NLL T=2048  r2 0.699  r4 0.158  d -0.541  MDE 0.509  1/8 r4>r2  perm p 0.0092
+
+== secondary: strata (accuracy and NLL; floor = best constant) ==
+  T=1024 all             floor 0.506  acc r2 0.894 r4 0.997 d +0.103 (MDE 0.070)  NLL d -0.340 (MDE 0.231)  runs below floor r2 0/8 r4 0/8
+  T=1024 plain_lag<128   floor 0.506  acc r2 0.950 r4 1.000 d +0.050 (MDE 0.059)  NLL d -0.143 (MDE 0.151)  runs below floor r2 0/8 r4 0/8
+  T=1024 plain_lag>=128  floor 0.500  acc r2 0.671 r4 0.988 d +0.317 (MDE 0.174)  NLL d -1.109 (MDE 0.725)  runs below floor r2 2/8 r4 0/8
+  T=1024 wrap            floor 0.507  acc r2 0.557 r4 0.970 d +0.413 (MDE 0.183)  NLL d -1.517 (MDE 0.856)  runs below floor r2 5/8 r4 0/8
+  T=2048 all             floor 0.508  acc r2 0.819 r4 0.980 d +0.162 (MDE 0.090)  NLL d -0.541 (MDE 0.509)  runs below floor r2 0/8 r4 0/8
+  T=2048 plain_lag<128   floor 0.509  acc r2 0.932 r4 0.999 d +0.066 (MDE 0.069)  NLL d -0.220 (MDE 0.236)  runs below floor r2 0/8 r4 0/8
+  T=2048 plain_lag>=128  floor 0.508  acc r2 0.614 r4 0.967 d +0.353 (MDE 0.160)  NLL d -1.184 (MDE 0.958)  runs below floor r2 2/8 r4 0/8
+  T=2048 wrap            floor 0.507  acc r2 0.510 r4 0.918 d +0.408 (MDE 0.198)  NLL d -1.353 (MDE 1.685)  runs below floor r2 7/8 r4 1/8
+
+== exploratory: within-run stratum profile at T=1024 (stratum acc - own gap<128 acc) ==
+  plain_lag>=128  r2 -0.279  r4 -0.012  d +0.267  MDE 0.136  8/8
+  wrap            r2 -0.392  r4 -0.029  d +0.363  MDE 0.165  8/8
+
+== losses (descriptive: at matched length loss-matching cannot separate speed from solution) ==
+  final loss r2 0.0596-0.6744  r4 0.0004-0.0100  r4 lower on 8/8 seeds
+  within r2: r(log loss, acc) -0.900  slope -0.079
+  within r4: r(log loss, acc) -0.439  slope -0.004
+  ANCOVA acc ~ arm + log loss: arm coefficient -0.049, loss slope -0.031

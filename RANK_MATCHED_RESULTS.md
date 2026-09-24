@@ -1,4 +1,42 @@
-# Rank at matched length -- results, 300-epoch batch (2026-09-23)
+# Rank at matched length -- results (2026-09-23/24)
+
+## 900-epoch batch (`runs/rank_matched_e900`, 8 seeds; seeds 0-1 are the pilot) -- UNREADABLE as registered
+
+Full output: `RANK_MATCHED_e900_ANALYSIS.txt` (`python3 -m mapformer.analyze_rank_matched --tag _e900`).
+
+**Registered verdict: UNREADABLE.** Four r=2 runs were still DESCENDING at the end of the
+budget (the cap is 2 per arm), so no branch fires. Run classes:
+
+| arm | SOLVED | STALLED | DESCENDING | final loss |
+|---|---|---|---|---|
+| r=2 | 0 | 4 (0.40-0.68) | 4 (0.05-0.32) | 0.060 - 0.674 |
+| r=4 | **8** | 0 | 0 | 0.0004 - 0.010 |
+
+Descriptive, because the verdict is unreadable (the registered tests, reported not read):
+
+| readout | r=2 | r=4 | r4 - r2 | test |
+|---|---|---|---|---|
+| acc T=1024 [primary] | 0.894 | 0.997 | +0.103 (8/8) | permutation p 0.0003, 95% CI [+0.050, +0.155] |
+| SOLVED runs [co-primary] | 0/8 | 8/8 | | Fisher p 0.0002 |
+| acc T=512 | 0.934 | 1.000 | +0.066 (8/8) | p 0.0003 |
+| acc T=2048 | 0.819 | 0.980 | +0.162 (8/8) | p 0.0003 |
+| gap >= 128 (floor 0.500) | 0.671 | 0.988 | +0.317 | 2/8 r=2 runs below floor |
+| wrap-only (floor 0.507) | 0.557 | 0.970 | +0.413 | 5/8 r=2 runs below floor |
+
+What this does and does not say. Within 900 epochs at T=1024, **r=4 found the solution on
+every seed and r=2 on none**; four r=2 runs had stopped improving at loss 0.40-0.68. Even
+if all four descending r=2 runs went on to solve, r=2 would be at 4/8 against 8/8 (Fisher
+p 0.077), so the co-primary cannot be settled without them. r=2 can represent the solution
+(rank-2 projection, below), so whatever the continuation shows is about LEARNABILITY.
+The exploratory within-run profile sharpens: r=2 loses 0.279 (gap >= 128) and 0.392 (wrap)
+relative to its own short-gap accuracy, r=4 0.012 / 0.029 (8/8 each). Geometry: r=2
+opposition 1.095 (opposite actions do not cancel) against r=4's 0.048.
+
+Next (the user's fallback, Amendment 3): both arms continue for 900 more epochs.
+
+---
+
+# 300-epoch batch (2026-09-23)
 
 Pre-registration: `RANK_MATCHED_PREREG.md` (Amendment 2 governs how this is read). Runs
 `runs/rank_matched` (2 arms x 8 seeds, one batch). Numbers: `RANK_MATCHED.json`,
