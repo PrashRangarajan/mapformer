@@ -1,8 +1,8 @@
 ---
-name: Backfill standard-transformer baselines for paper submission
+name: feedback-baselines-backfill
 description: This session's headline results compare within the MapFormer family; for the cognitive-map narrative we need every meaningful table to also include RoPE / LSTM / MambaLike. Track which tables still need backfilling.
-type: project
-originSessionId: continued-2026-05-10
+metadata:
+  type: project
 ---
 
 **Discovered 2026-05-10.** Many recent results tables compare only within the

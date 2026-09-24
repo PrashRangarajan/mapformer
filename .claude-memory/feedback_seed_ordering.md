@@ -1,8 +1,8 @@
 ---
-name: Run one seed of everything first
+name: feedback-seed-ordering
 description: For multi-variant multi-seed sweeps, complete seed 0 across all variants before starting seed 1, so an initial low-confidence table lands as fast as possible.
-type: feedback
-originSessionId: be30e775-ba9b-48e1-a763-b2488b550411
+metadata:
+  type: feedback
 ---
 When designing run scripts for multi-variant × multi-seed sweeps, **outer loop is seed, inner loop is variant** — finish seed 0 across all variants before any variant gets seed 1, and finish seed 1 across all variants before any variant gets seed 2.
 

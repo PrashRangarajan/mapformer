@@ -1,6 +1,6 @@
 ---
 name: project-sign-axis
-description: A monotone phase increment cannot represent a -1 action; measured, and it costs MapFormer its entire advantage over RoPE. Also: the sign axis is NOT ours.
+description: A monotone phase increment cannot represent a -1 action; beyond the training length it costs MapFormer its advantage over RoPE (at training length the cost is in the loss). The sign axis is NOT ours.
 metadata:
   type: project
 ---
@@ -26,6 +26,11 @@ batch, r=4, identical parameter count 204,757):
 | CARoPE | `1/(softplus+1)` | 0.900 | 0.809 | 0.645 | 0.293 |
 | RoPE | index | 0.799 | 0.449 | 0.345 | 0.784 |
 
+**SCOPE (2026-09-24): the accuracy cost is extrapolation-only.** Trained T=128; at T=128 the
+monotone arms score 0.90-0.98 against index 0.80, and the training-length evidence is the LOSS (12/12
+worse). No arm has been trained and tested at matched length (a trained-at-T=1024 `Abs_r4` is the
+direct test; `Vanilla_r4` there solves 8/8). Treat the headline below as robustness until then.
+
 **The headline: at matched training loss, monotone path integration beats RoPE
 NOWHERE** (-0.028 at T=128, unmeasured beyond), while signed beats it +0.123/+0.195
 at T=512/1024 on 12/12 seeds. Take the sign away and content-dependent phase is
@@ -48,7 +53,7 @@ parameterisation reaches 1.98 of 2.00 and collapses its N/E axes (|cos| 0.93 vs
    constraint causes, and r(loss,acc) = -0.978 there. Ceiling on accuracy does not
    mean no effect — look at what the model could not fit.
 
-See [[reference-positional-landscape]], [[reference-paper-corpus]].
+See [[reference-positional-landscape]], [[reference-review-documents]].
 
 **REPLICATED ON A THIRD TASK (2026-09-20, `T2_RESULTS.md` manipulation check).** Constraining the
 increment to be non-negative on Dyck-2 moves the accumulator from a map to a clock within one task

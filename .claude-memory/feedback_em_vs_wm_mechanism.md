@@ -1,5 +1,5 @@
 ---
-name: em-vs-wm-mechanism
+name: feedback-em-vs-wm-mechanism
 description: MapWM is NOT additive (per-pair content-set kernel); EM's kernel is shared. EM's recency deficit is SEARCH -- exists, holdable, found per token (wrapped) for ~half the k.
 metadata:
   type: feedback
@@ -20,7 +20,9 @@ TALE_OF_TWO_ALGORITHMS.md. An adversarial audit caught it (AUDIT_2026-09-10.md).
 **How to apply:**
 - Never describe WM as additive. The contrast is a shared kernel (EM) vs a per-pair kernel (WM).
 - The only EM/WM difference measured is recency (k-back): single-`p0` EM - WM = -0.375 (0/8).
-  Map tasks tie within 0.004. Do not call it a function-class limit:
+  Map tasks tie within 0.004 at training length only: on the paper task at extended length EM_P0 - WM
+  = +0.035 / +0.070 / +0.085 at l=512/1024/2048 (OOD, `EM_WM_THEORY.md`). Do not call the recency
+  deficit a function-class limit:
   - **exists**: a query token whose Delta rewinds the count makes the retrieval offset zero.
     With that rewind installed and frozen, EM scores 1.000 on 8/8 seeds.
   - **largely holdable**: installed trainable at 8x weight scale, EM keeps 0.941. At 1/64 scale

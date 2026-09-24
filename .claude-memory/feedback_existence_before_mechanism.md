@@ -42,7 +42,7 @@ exactly once the query token rewinds the count. No training run could have shown
 11. **Say when a theory is a retrodiction.** THEORY_KERNEL.md was written after the batch it
     explains, and that batch's pre-registration had predicted the opposite sign.
 
-Related: [[feedback-convergence-first]], [[feedback-probe-verification]], [[em-vs-wm-mechanism]].
+Related: [[feedback-convergence-first]], [[feedback-probe-verification]], [[feedback-em-vs-wm-mechanism]].
 
 
 **WITHIN-TASK BEFORE CROSS-TASK (2026-09-20).** In the Dyck/PoPE line four predictions failed, and

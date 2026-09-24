@@ -1,11 +1,8 @@
 ---
-name: project_hierarchy_negative
-description: "Hierarchy does not help MapFormer — both a Kalman cascade (on theta) and a two-scale attention (on retrieval) are clean negatives, for different mechanistic reasons."
-metadata: 
-  node_type: memory
+name: project-hierarchy-negative
+description: Hierarchy does not help MapFormer — both a Kalman cascade (on theta) and a two-scale attention (on retrieval) are clean negatives, for different mechanistic reasons.
+metadata:
   type: project
-  originSessionId: d17148dd-e54f-48b7-8a88-096f71aadfc5
-  modified: 2026-07-21T04:16:43.472Z
 ---
 
 Two hierarchy extensions to MapFormer were built and tested (2026-07);
@@ -18,7 +15,7 @@ both are honest negatives:
    no-op in training. Reason: Level 1.5's theta estimate is already good —
    no exploitable residual structure for a second correction. (The apparent
    win was the stuck-baseline artifact, see
-   [[feedback_lm200_stuck_baselines]].)
+   [[feedback-convergence-first]].)
 
 2. **Two-scale attention (`model_hier_attn.py::MapFormerWM_HierAttn`)** —
    local causal window (W=128) + coarse attention over mean-pooled chunk
@@ -120,13 +117,13 @@ task-validity failures in sequence:
 Stopped here by pre-commitment rather than iterating environments until
 hierarchy wins (that would be p-hacking with environments). A bump-token fix
 is principled but belongs to a different question: "can MapFormer navigate
-mazes at all?" See [[feedback_validate_task_first]].
+mazes at all?" See [[feedback-validate-task-first]].
 
 **Method lesson:** always run the training-length control before claiming a
 length-generalization win, and ablate components before claiming a mechanism.
 Both confounds fired here. Also: MEASURE the task's information-demand profile
 (e.g. revisit-lag distribution) before assuming a memory mechanism is needed.
-See [[feedback_seed_ordering]].
+See [[feedback-seed-ordering]].
 
 Untested variants (lower priority): omega-band-structured heads (structures
 attention range by frequency band, no token pooling — avoids the HierAttn
@@ -150,6 +147,9 @@ mechanism stacked onto MapFormer here was null or environment-contingent. On
 Match-Query 128^2 at n=8: loop on path integration +0.414 (MDE 0.277, 7/8), loop on
 index +0.099 (MDE 0.045, 8/8), **2x2 interaction +0.315 (MDE 0.281) -- super-additive**.
 Best arm 0.870 vs 0.456 (path-int alone) and 0.207 (index+loop).
+**[CORRECTED 2026-08-31, `REFINE_RESULTS.md`]** same-seed retrains on Match-Query drift 0.185 per
+seed, so PAIRED estimates (+0.414, the +0.315 interaction) are unreliable there and every MQ contrast
+is read UNPAIRED. What survives: the loop main effect, unpaired +0.346 (t 3.75).
 
 **Why it showed here and not on the torus: HEADROOM.** 1-layer path integration
 already scores 0.948 on the torus, so the +0.046 null there was uninterpretable, not
@@ -158,7 +158,8 @@ informative. Always check the baseline is off its ceiling before reading a null.
 The loop MATCHES three real layers (Q4 +0.099, underpowered) at a third of the
 parameters -- an earlier "beats depth by +0.273" was an n=3 artifact. Its most robust
 contribution is STABILITY: 8/8 seeds >= 0.77 (sd 0.099) against 1-layer 0.11-0.80 and
-3-layer 0.14-1.00. It raises the floor, not the ceiling.
+3-layer 0.14-1.00. It raises the floor, not the ceiling. **[RETRACTED, `REFINE_RESULTS.md`: one lucky
+batch; pooled over 16 draws the loop arm is 0.803 +/- 0.200 with 1/16 failures.]**
 
 **~~THE SUFFICIENT-STATISTIC PRINCIPLE IS NOT PREDICTIVE~~ -- RETRACTED SAME DAY, see the entry below. (2026-09-03, HIER_PARITY.md).**
 Tested at its single most favourable case and it produced a tight null. Parity is a
@@ -208,7 +209,7 @@ NEGATIVE at short lengths (hierarchy is 12% slower at L=16, 2% at L=128).
 
 The compositional claim (`MapWM-Hier - MapWM-FlatHG = +0.130`) was measured entirely
 under a recipe whose own effect is **+0.160** — bigger than the claim. See
-[[feedback-recipe-before-architecture]]. Both arms retrained in ONE batch at
+[[feedback-convergence-first]]. Both arms retrained in ONE batch at
 cosine/1e-3/150ep, 8 seeds, published evaluator:
 
 | | T=256 | T=512 |

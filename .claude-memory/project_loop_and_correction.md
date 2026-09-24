@@ -1,6 +1,6 @@
 ---
 name: project-loop-and-correction
-description: Looping substitutes for depth and beats the Kalman correction under noise; refining theta does nothing. What Level 1.5 is actually made of.
+description: Looping substitutes for depth and beats the Kalman correction under noise; refining theta does nothing; Level 1.5 has no load-bearing component; PC and Kalman are duals.
 metadata:
   type: project
 ---
@@ -12,8 +12,8 @@ slope was pre-registered). Learned gate, on the ACTION-NOISE run this null comes
 max 0.320, 7/9 positive** -- sign largely CONSISTENT. (0.083 / 4-of-8-positive is
 the premise-invalid Match-Query run and was long mis-cited for this one.) Still tiny --
 the optimiser DECLINED to refine, and the gate was verified escapable first. That
-plus the sequence-axis finding makes "the Kalman win is stabilisation and
-token-type gating, NOT inference" a two-axis result.
+plus the sequence-axis finding makes "the Kalman win is stabilisation, NOT
+inference" a two-axis result (the "and token-type gating" half died at n=5, below).
 
 **THE CONTROL ARM WON.** At training length vs Vanilla: loop +0.138 (t=12.1) at
 p=0.10 and **+0.205 (t=8.8)** at p=0.25; Level15 gives +0.023 and +0.004 on the
@@ -32,15 +32,14 @@ at ONE pass vs 0.821 for the fixed model. 4x cheaper inference for free, and it 
 NOT the pre-registered question. The OOD gain (+0.092) is t=1.67 at n=5, i.e. not
 established, and does not transfer to noise.
 
-**WHAT LEVEL 1.5 IS MADE OF** (single seed; n=5 replication was running as of
-2026-09-01, marker `.l15_ablation_done`, results to `L15_ABLATION.md`):
+**[SUPERSEDED at n=5 -- next paragraph] WHAT LEVEL 1.5 IS MADE OF** (single seed, 2026-09-01):
 Level15 1.000/0.993 · DARE 1.000/0.992 · **NoMeas 0.904/0.831 (the wrap alone)** ·
 NoCorr 0.940/0.833 (≈vanilla) · **ConstR 0.795/0.672 (no gate — WORSE than nothing)**.
 So it does NOT reduce to clamping theta, the per-token gate is load-bearing, and
 DARE≈Level15 means the principled Kalman gain is irrelevant. Clean config only —
 the lm200 column is under the July retraction.
 
-See [[feedback_premise_before_test]], [[project_hierarchy_negative]].
+See [[feedback-validate-task-first]], [[project-hierarchy-negative]].
 
 **Level 1.5's decomposition RESOLVED at n=5 (2026-09-01, L15_ABLATION.md): there
 isn't one.** The named parts each come out at no measurable cost when removed
@@ -155,4 +154,19 @@ two claims apart: the interaction does not generalise, the practical stacking do
 **The path-integrated row is far noisier than the index row** (sd 0.077-0.146 vs
 0.004-0.021) -- whatever makes training bimodal in this project rides on the
 path-integration machinery, and the index arms are near-perfectly reproducible.
+
+## PC and Kalman are duals, not complements (2026-04-29; the old "complementary" framing is wrong)
+
+PC's forward map `g(theta) -> o` and the InEKF's measurement model `h(o) -> theta` are the same
+posterior over theta written from opposite sides. On a shared theta_hat they target the same fixed
+point, and descent finds the trivial joint minimum `g o h ~ identity` via `R -> 0`, so
+`theta_hat ~ h(x_t)` (the autoencoder bypass seen in Level15PC at log_R ~ -3 against the -5 clamp).
+**Why:** the aux_coef sweep was monotone (0.0 -> 0.79, 0.1 -> 0.72, 0.3 -> 0.55 on lm200 OOD -- lm200
+itself is under the July retraction, so read the direction only); stop-gradient fixes (NoBypass,
+v3's tighter clamp) closed the direct route but PC still leaked via the shared `action_to_lie`
+(|theta_hat| ~3840 at T=512, `archive_stale/LENGTH_DIAGNOSTIC.md`). Only v4 (detach theta_hat AND the target
+embedding) avoids collapse, and then PC has zero gradient into the model. v4's "+3.4pp win" is gone:
+the `aux_coef=0` control is byte-identical to Level15 on every clean seed (`V4_CONTROL_RESULTS.md`),
+so neither PC nor RNG drift explains anything. **How to apply:** in any writeup, never "complementary"
+or "stack"; frame as duals whose coupling creates a degenerate optimum.
 

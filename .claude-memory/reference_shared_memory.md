@@ -1,7 +1,8 @@
 ---
-name: Memory is shared across chats via git
+name: reference-shared-memory
 description: This memory directory lives in the repo at .claude-memory/. The standard ~/.claude/projects/.../memory/ path is a symlink. Pull before reading, push after writing.
-type: reference
+metadata:
+  type: reference
 ---
 
 This memory directory has been migrated into the git repo at `<repo>/.claude-memory/`. The standard Claude Code path
@@ -12,9 +13,10 @@ This memory directory has been migrated into the git repo at `<repo>/.claude-mem
 **How to apply:**
 - Treat memory like any other tracked artifact: `git pull` before relying on it, `git add .claude-memory/` + commit + push after writing.
 - If two chats might be active at once, push memory updates promptly so the other chat sees them on its next pull.
-- On a new machine, run `bash .claude-memory/setup_symlink.sh` once to create the symlink. After that, normal Claude Code memory writes go to the repo automatically.
-- If you encounter a `MEMORY.md` that disagrees with the repo's `RESULTS_PAPER.md` or `CLAUDE.md`, trust the latter — they have stricter freshness guarantees.
+- On a new machine, create the symlink once by hand: `ln -s <repo>/.claude-memory ~/.claude/projects/-home-<user>-<repo>/memory` (there is no setup script; an earlier note named one that does not exist). After that, memory writes go to the repo.
+- Edit `.claude-memory/` directly; the symlink makes it one directory, not a mirror.
+- If memory disagrees with `CLAUDE.md` or a results file's CORRECTED/AUDIT block, trust those.
 
 **Caveats:**
 - No concurrency control. If two chats edit the same memory file simultaneously, last writer wins. Mitigate by keeping memory edits small and pushing immediately.
-- The symlink is local to each machine — it's not in git. The bootstrap script `.claude-memory/setup_symlink.sh` handles initial setup per machine.
+- The symlink is local to each machine; it is not in git.

@@ -52,12 +52,12 @@ restricted to a fixed maximal torus of GL(d).
 and CARoPE are constrained non-negative, as a side-effect of using a softplus or
 gate rather than by design. A monotone clock cannot represent a -1 action, so the
 prediction is: invisible on language, decisive on navigation. Two-arm ablation on
-existing machinery. See [[project_rank_and_selective_rope]].
+existing machinery. See [[project-rank-and-selective-rope]].
 
 
 ## Verified 2026-09-06 — the frame has a published proof, and three claims changed
 
-All 28 sources are now read first-hand and stored (see [[reference-paper-corpus]]).
+All 28 sources are now read first-hand and stored (see [[reference-review-documents]]).
 
 **The frame is Puranik's** (Jane Street Blog, 22 Apr 2026, `papers/txt/puranik_janestreet.txt`):
 linear + translation-invariant + continuous ⇒ `A(d)=exp(dM)` a one-parameter group,

@@ -1,5 +1,5 @@
 ---
-name: A borrowed benchmark usually does not test your axis — predict its result first
+name: feedback-borrowed-benchmarks
 description: Flip-Flop and MQAR were both run as external anchors and both returned nulls that our own data predicted in advance. Check what a benchmark DISCRIMINATES before running it.
 metadata:
   type: feedback

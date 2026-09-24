@@ -19,9 +19,11 @@ result (+0.363, horizon 9-16 -> 17-32, indistinguishable from 4 real layers at a
 quarter of the parameters) REPLICATES a known result on a new task. Say so.
 
 What has no counterpart on their side, and is where any novelty claim belongs:
-- loop x PATH INTEGRATION composing super-additively on Match-Query (interaction
-  +0.315, MDE 0.281) -- see [[project-loop-and-correction]]
-- the loop's benefit being to the FLOOR (reliability/convergence), not the ceiling
+- loop x PATH INTEGRATION on Match-Query (see [[project-loop-and-correction]]). CORRECTED: the
+  +0.315 "super-additive" interaction and the "raises the FLOOR, 8/8 >= 0.77" reading are paired /
+  one-batch statistics that `REFINE_RESULTS.md` showed unreliable (same-seed drift 0.185; pooled loop
+  arm 0.803 +/- 0.200, 1/16 failures). What survives is the loop main effect, unpaired +0.346 (t 3.75),
+  and on parity the two stack additively (`FRONTIER_ALGORITHMIC.md`).
 
 **MoR is the principled version of our LoopedSampled**, which samples ONE global
 count per training batch; MoR learns a per-token router. But two things say the

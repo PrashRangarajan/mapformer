@@ -1,28 +1,43 @@
 ---
 name: project-rank-and-selective-rope
-description: r=4 beats r=2 by +0.085 at T=1024 -- but ONLY out of distribution (trained T=128); matched-length test audited GO, not yet run. Selective RoPE occupies the same slot and is no better; Fig 4 reproduces 3 of 4.
+description: Rank is OPEN. r=4's +0.085 is OOD-only; at matched length r=4 solves 8/8 vs r=2 0/8 (unreadable) and a rank-2 projection of r=4 scores 0.995, so the gap is search. Our bottleneck is shared across heads, the paper's per head.
 metadata:
   type: project
 ---
 
-**CAVEAT FIRST (2026-09-23): the r=4 win is 100% an out-of-distribution effect.** At the training length
-(T=128) r=2 0.993 vs r=4 1.000; the gap appears only at T=512 (+0.038) and T=1024 (+0.085). A pre-launch
-audit of the stored checkpoints found 94% of the +0.085 comes from short-gap (<128 step) revisits late in
-the sequence (r=2 0.903 vs r=4 0.999) -- in-distribution lag, out-of-distribution absolute position, the
-robustness signature that died under a matched-length control on code. Also: old training losses did NOT
-overlap (r=2 0.0011-0.0874, r=4 <= 0.0006) and r=2's geometry does not predict accuracy within the arm
-(r = -0.35/+0.30), so "skew is the mechanism" holds only at arm-mean level. **The matched-length test
-(train AND test at T=1024, `runs/rank_matched`, `RANK_MATCHED_PREREG.md`) is audited GO and not yet run;
-registered expectation R1: r4 - r2 within MDE.** Until it lands, "use r=4" is a robustness recommendation
-for extrapolating navigation models, not a capability claim.
+**STATE, 2026-09-24 (supersedes the older paragraphs below where they conflict).**
+- **The old win is out of distribution only.** Trained T=128: r=2 0.993 vs r=4 1.000 at T=128; the
+  gap appears at T=512 (+0.038) and T=1024 (+0.085, `RANK_SWEEP.md`). 94% of the +0.085 is short-gap
+  (<128 step) revisits late in the sequence (r=2 0.903 vs r=4 0.999): in-distribution lag, unseen
+  absolute position. Old losses did not overlap (r=2 0.0011-0.0874, r=4 <= 0.0006).
+- **Matched length** (`RANK_MATCHED_RESULTS.md`, `runs/rank_matched_e900`, trained and tested at
+  T=1024, 900 ep, 8 seeds): r=4 SOLVED 8/8, r=2 0/8 (4 stalled at loss 0.40-0.68, 4 descending at
+  0.05-0.32); acc 0.997 vs 0.894, +0.103 (perm p 0.0003); Fisher p 0.0002 on solved counts.
+  **Registered verdict UNREADABLE** (more than 2 runs per arm still descending). Continuation of both
+  arms for 900 more epochs (Amendment 3, `runs/rank_matched_e900c`) is running.
+- **r=2 can represent the solution.** Projecting each solved r=4 onto the top two directions of its
+  action latent (top-2 energy >= 0.9995) and freezing it scores **0.995 at T=1024 on 8/8 seeds**
+  (0.957 at T=2048; `RANK_PROJ_FROZEN.md`, untracked at the time of writing). So the gap is SEARCH,
+  not capacity -- and not a skewed basis: within r=2, skew does not predict accuracy (r = -0.35/+0.30),
+  so "skew is the mechanism" is withdrawn. The warm-start stability test (`RANK_PROJ_PREREG.md`,
+  `runs/rank_proj_train`) asks whether a trainable r=2 HOLDS the projected solution.
+- **Our bottleneck differs from the paper's.** Ours shares one r-dim latent across heads; the paper's
+  `W_in` is per head (`R^{d x nh x r}`, `papers/txt/mapformer.txt` ~l.1512). At 2 heads our r=2 has half
+  the paper's latent dims, so "use r=4" may only restore the paper's capacity. A per-head r=2 arm is
+  the follow-up. Say so wherever r is compared with the paper.
+- **Scope:** MapWM family only (MapPoPE r=4 +0.019, unmeasured, `MAPPOPE_R4_RESULTS.md`); on Bach at a
+  512 context the order INVERTS (r=1 best, below). Until the continuation lands, "use r=4" is a
+  robustness recommendation for extrapolating navigation models, not a capability claim.
 
-**r=4 IS THE DEFAULT TO USE (2026-09-04, RANK_SWEEP.md).** Torus, 8 seeds, one
+The paragraphs below are the 2026-09-04..17 record; read them through the block above.
+
+**[OOD-only -- see the top block] r=4 IS THE DEFAULT TO USE (2026-09-04, RANK_SWEEP.md).** Torus, 8 seeds, one
 batch: against r=2 at T=1024, r4 **+0.085** (t 3.57, 8/8, sign p=0.008), r8 +0.091,
 r16 +0.079, r32 +0.095. A **STEP at r=2, not a slope** -- flat from r=4 up. Costs
 +384 params (+0.19%) and also cuts seed sd 0.064 -> 0.012 at T=1024, which matters
 because sd sets every MDE in this project.
 
-**WHY: the r=2 code is SKEWED, not too small** (ACTION_GEOMETRY.md). Given 4 dims
+**[WITHDRAWN as the mechanism, 2026-09-24 -- see the top block] WHY: the r=2 code is SKEWED, not too small** (ACTION_GEOMETRY.md). Given 4 dims
 the model puts its actions in a 2-plane anyway (100.0% of energy; 99.96% at r=32),
 so the paper's dimensional argument is right about what is EXPRESSIBLE. But at r=2
 opposite actions fail to cancel by 0.495 of the action scale and |cos(N,E)| = 0.783
@@ -36,7 +51,7 @@ survives: project onto the top two singular directions.
   (their caption proposes bounded-energy constraints as the fix). **r=4 does that
   job for free: 0.779 -> 0.174, no regulariser.**
 - C4 ||v_obs||/||v_act|| = **0.57, INVERTED** vs the paper's >>1. Hypothesis being
-  tested: Fig. 4 is an EM model (Sec 5.4 is explicitly about EM's separate pools),
+  tested: Fig. 4 is an EM model (App. C.3 is explicitly about EM's separate pools),
   and MapWM has no such split (it has no position-only stream -- NOT because it is additive; it isn't). See run_em_fig4.sh.
 
 **SELECTIVE ROPE IS THE SAME SLOT AND NO BETTER HERE (SELECTIVE_ROPE.md).** Its
@@ -62,7 +77,7 @@ between tasks survives as an observation about the arms as built. RANK_SWEEP is
 unaffected -- its arms differ only in `bottleneck_r`.
 
 **Prior art, 2026-09-06:** the r=4 result stands but the FRAME around it does not
--- see [[reference_positional_landscape]]. Rank is one of only two things left.
+-- see [[reference-positional-landscape]]. Rank is one of only two things left.
 
 **CONFLICT (2026-09-17, `JSB_LENGTH_RESULTS_RANK.md`):** on Bach Chorales trained at a 512-token
 context, the ordering INVERTS -- MapWM r=1 is the best arm at every position bucket (0.912 NLL at

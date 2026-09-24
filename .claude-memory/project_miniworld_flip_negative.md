@@ -1,11 +1,8 @@
 ---
 name: project-miniworld-flip-negative
 description: The allocentric-recoding flip does NOT extend to continuous-3D MiniWorld; falsifies the MiniWorld->Habitat premise.
-metadata: 
-  node_type: memory
+metadata:
   type: project
-  originSessionId: 11c678ec-9c7c-4954-8b14-36979f03e955
-  modified: 2026-08-26T21:29:57.307Z
 ---
 
 The MiniGrid allocentric flip (position effect −0.02 raw → +0.02 recoded) does
@@ -34,7 +31,7 @@ attention near-SOLVED the task (RoPE 0.977, PoPE 0.938) while path-int lagged
 (0.32–0.45); position effect went MORE negative (allo −0.174 → oracle −0.571).
 So token fidelity modulates magnitude, NOT sign; the forensics R²-correlation was
 confounded. Consistent with the standing finding that attention path-integrates and
-the SO(2) code is an inductive bias, not privileged info [[project_hierarchy_negative]].
+the SO(2) code is an inductive bias, not privileged info [[project-hierarchy-negative]].
 **FINAL (2026-08-28), superseding an intermediate "crossover CONFIRMED" note that
 was itself withdrawn.** Once BOTH arms are trained to a flat loss (400 epochs, 5%
 warmup + cosine — the default LinearLR-from-step-one prevented convergence):
@@ -43,7 +40,7 @@ warmup + cosine — the default LinearLR-from-step-one prevented convergence):
 |---|---|---|
 | MiniWorld grid 8 | 2 | **−0.010** (n=3, 6/6 flat) — no effect, both solve it |
 | MiniWorld grid 32 | 32 | **+0.173** (n=3, 6/6 flat) — above the 0.150 noise floor |
-| Torus 64×64 | 128 | +0.461 (n=8, index arms at the chance floor) |
+| Torus 64×64 | 128 | +0.461 (n=8, index arms at the chance floor) -- NOT converged: 16-epoch recipe; converged it is +0.243 (`PAPER2X2_RESULTS.md`) |
 
 **THERE IS NO CROSSOVER.** The −0.529 at grid 8 that anchored it was Vanilla failing
 to train (0.448 at 100ep/linear → 0.990 at 400ep/cosine). Index never actually beat
@@ -103,4 +100,4 @@ statistics are near-inseparable here at any episode length. Measured counts are
 threshold-like between 128 and 512. It is NOT observation aliasing (falsified, sign
 inverted), NOT distinct-cells-visited (falsified twice), and NOT visits-per-cell
 (no effect at fixed map extent). Caveat: prior visits were only varied 1.3-1.6x at
-fixed extent, and the two factors cannot be crossed in MiniWorld. See [[feedback_convergence_first]].
+fixed extent, and the two factors cannot be crossed in MiniWorld. See [[feedback-convergence-first]].

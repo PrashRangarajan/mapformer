@@ -109,7 +109,7 @@ full EM model with that rewind installed and frozen scores 1.000 on 8/8 seeds
 So the crossover's recency half says a monotone increment is **harmless** there
 (-0.004), not that recency **needs** one. The map half (-0.280 torus, 12/12) is
 unaffected. From scratch, EM finds it per query token, wrapped, for ~half the k (the "0/40" was a linear readout; SEARCH_RESULTS.md). That is a search
-problem, and the frame says nothing about it -- see [[em-vs-wm-mechanism]] and
+problem, and the frame says nothing about it -- see [[feedback-em-vs-wm-mechanism]] and
 `EM_WM_STATE.md`.
 
 **Numbers to keep (restored after the 2026-09-11 consolidation dropped them):** growth exponent alpha of
@@ -130,17 +130,6 @@ PoPE pays only where the accumulator is a CLOCK: Bach with a 512 context (4.616 
 a forced init) and nothing where it is bounded -- Dyck-2 -0.046 against its own inert twin
 (detectable), torus -0.021 at 8x with 9x the seed spread. Zero-initialising those phase heads is a
 BAD PRIOR: forcing the init to 0.1 improves both in-distribution and extrapolation, detectably.
-
-**[WITHDRAWN 2026-09-20 -- the within-task test reverses neither half] BOUNDARY ACROSS THREE TASKS (2026-09-19, `T3GEN_RESULTS.md`).** A per-token phase added to
-PoPE pays only where the accumulator is a CLOCK: Bach with a 512 context (4.616 -> 0.616 at 2-4x with
-a forced init) and nothing where it is bounded -- Dyck-2 -0.046 against its own inert twin
-(detectable), torus -0.021 at 8x with 9x the seed spread. Zero-initialising those phase heads is a
-BAD PRIOR: forcing the init to 0.1 improves both in-distribution and extrapolation, detectably.
-Reruns at the corrected init (0.1) confirm it as a DOUBLE DISSOCIATION: Dyck -0.047 vs its inert twin
-(unchanged from the zero-init verdict) and torus 0.911 vs 0.963 at l=2048, i.e. forcing the phase
-HURTS on bounded accumulators while it is the best configuration on a clock. The model does NOT
-decline the phase where it is useless (Dyck keeps 0.825 rad, more than Bach's zero-init 0.412) -- it
-uses it and is worse for it.
 Reruns at the corrected init (0.1) confirm it as a DOUBLE DISSOCIATION: Dyck -0.047 vs its inert twin
 (unchanged from the zero-init verdict) and torus 0.911 vs 0.963 at l=2048, i.e. forcing the phase
 HURTS on bounded accumulators while it is the best configuration on a clock. The model does NOT
@@ -162,51 +151,21 @@ Forcing monotone increments on Dyck turns its accumulator from a map into a cloc
 +0.058 signed; difference of differences +0.100 where negative was predicted, unmeasured). So the
 clock/map boundary is NOT established within a task; the three-task pattern is confounded with model
 size, sequence length and excursion SIZE (Bach reaches range 551 at 4x, monotone Dyck only 24).
-The Bach interventions (T1, T3) stand; the generalisation from them does not.
-
-**T2 FAILS (2026-09-19, `T2_RESULTS.md`) -- the within-task test does not reproduce the boundary.**
-Forcing monotone increments on Dyck turns its accumulator from a map into a clock (alpha 0.58/0.62 ->
-1.06/1.04, range 4.2x instead of 2.3x) and PoPE's encoding then helps MORE, not less (+0.159 against
-+0.058 signed; difference of differences +0.100 where negative was predicted, unmeasured). So the
-clock/map boundary is NOT established within a task; the three-task pattern is confounded with model
-size, sequence length and excursion SIZE (Bach reaches range 551 at 4x, monotone Dyck only 24).
-The Bach interventions (T1, T3) stand; the generalisation from them does not.
 **T2b ALSO FAILS (2026-09-20): the phase does not pay on a clock either** -- on monotone Dyck it is
 -0.143 against its inert twin (0/8, detectable), three times the harm it does on signed Dyck. BOTH
-halves of the clock/map account fail within-task, so the PoPE-DECOUPLING / PER-TOKEN-PHASE corollary is WITHDRAWN as a cross-task rule. The older
-sign -> map/clock dichotomy and every alpha measurement in this file STAND.
-The Bach interventions (T1 5.7x, T3, decay) stand as facts about Bach at a 512 context. Live
-uncontrolled alternatives: excursion size (551 vs 24), model size (6L/8H vs 1L/1H), frequency count,
-local solvability.
-**T2b ALSO FAILS (2026-09-20): the phase does not pay on a clock either** -- on monotone Dyck it is
--0.143 against its inert twin (0/8, detectable), three times the harm it does on signed Dyck. BOTH
-halves of the clock/map account fail within-task, so the PoPE-DECOUPLING / PER-TOKEN-PHASE corollary is WITHDRAWN as a cross-task rule. The older
-sign -> map/clock dichotomy and every alpha measurement in this file STAND.
-The Bach interventions (T1 5.7x, T3, decay) stand as facts about Bach at a 512 context. Live
-uncontrolled alternatives: excursion size (551 vs 24), model size (6L/8H vs 1L/1H), frequency count,
-local solvability.
+halves of the clock/map account fail within-task, so the PoPE-DECOUPLING / PER-TOKEN-PHASE corollary
+is WITHDRAWN as a cross-task rule. The older sign -> map/clock dichotomy and every alpha measurement in
+this file STAND. The Bach interventions (T1 5.7x, T3, decay) stand as facts about Bach at a 512
+context. Live uncontrolled alternatives: excursion size (551 vs 24), model size (6L/8H vs 1L/1H),
+frequency count, local solvability.
 
 **[SECOND HALF WITHDRAWN 2026-09-20 -- 'insensitive' is a NULL; see the audit revision below]
 THE POSITIVE RESULT (`CROSS_RESULTS.md`): a decay envelope is a proximity prior in whatever metric it
-is given.** 2x2 on
-Dyck, closer accuracy at distance >= 9 (chance 0.5): index phase 0.503 with a token-distance envelope
-against 0.784 with a learned-state envelope (+0.281, 8/8, DETECTABLE); path-integrated phase 0.873 vs
-0.906 (-0.033, unmeasured). The index/state arm learns a positional metric with NO phase role, purely
-through a distance bias, and that recovers most of the retrieval an index model otherwise loses.
-Untested on Bach, where a clock accumulator makes the two metrics nearly coincide.
-
-**[SECOND HALF WITHDRAWN 2026-09-20 -- 'insensitive' is a NULL; see the audit revision below]
-THE POSITIVE RESULT (`CROSS_RESULTS.md`): a decay envelope is a proximity prior in whatever metric it
-is given.** 2x2 on
-Dyck, closer accuracy at distance >= 9 (chance 0.5): index phase 0.503 with a token-distance envelope
-against 0.784 with a learned-state envelope (+0.281, 8/8, DETECTABLE); path-integrated phase 0.873 vs
-0.906 (-0.033, unmeasured). The index/state arm learns a positional metric with NO phase role, purely
-through a distance bias, and that recovers most of the retrieval an index model otherwise loses.
-Untested on Bach, where a clock accumulator makes the two metrics nearly coincide.
-Bach amendment: the same crossing there moves nothing (index row +0.005, path row +0.011, both
-unmeasured) because on a clock accumulator the learned-state distance and token distance are THE SAME
-METRIC -- measured r = 1.000 +/- 0.000 across 5 seeds, against Dyck's 0.278. So clock/map survives in
-one narrow, measured role: it predicts WHEN the metric choice can matter at all.
+is given.** 2x2 on Dyck, closer accuracy at distance >= 9 (chance 0.5): index phase 0.503 with a
+token-distance envelope against 0.784 with a learned-state envelope (+0.281, 8/8, DETECTABLE);
+path-integrated phase 0.873 vs 0.906 (-0.033, unmeasured). The index/state arm learns a positional
+metric with NO phase role, purely through a distance bias, and that recovers most of the retrieval an
+index model otherwise loses.
 Bach amendment: the same crossing there moves nothing (index row +0.005, path row +0.011, both
 unmeasured) because on a clock accumulator the learned-state distance and token distance are THE SAME
 METRIC -- measured r = 1.000 +/- 0.000 across 5 seeds, against Dyck's 0.278. So clock/map survives in
@@ -215,22 +174,11 @@ AUDIT REVISION (2026-09-20): every number reproduces, but two conclusions were w
 integration confers insensitivity" is a NULL (at d 33+ its metric effect is +0.154, 69% of the index
 row's, unmeasured only because the MDE is bigger); the index-row +0.281 is COLLINEAR with a
 convergence gap (r = -0.995, non-overlapping training losses) and the arm carries +256 parameters, so
-a frozen-metric control was run: 0.681, indistinguishable from simply weakening the envelope. What survives: on Dyck an index model's envelope destroys
-long-range retrieval over token distance and does not over a learned state, confounds pending.
-AUDIT REVISION (2026-09-20): every number reproduces, but two conclusions were withdrawn. "Path
-integration confers insensitivity" is a NULL (at d 33+ its metric effect is +0.154, 69% of the index
-row's, unmeasured only because the MDE is bigger); the index-row +0.281 is COLLINEAR with a
-convergence gap (r = -0.995, non-overlapping training losses) and the arm carries +256 parameters, so
-a frozen-metric control was run: 0.681, indistinguishable from simply weakening the envelope. What survives: on Dyck an index model's envelope destroys
-long-range retrieval over token distance and does not over a learned state, confounds pending.
+a frozen-metric control was run: 0.681, indistinguishable from simply weakening the envelope. What
+survives: on Dyck an index model's envelope destroys long-range retrieval over token distance and does
+not over a learned state, confounds pending.
 MATCHED-STRENGTH CONTROL (2026-09-20): the +0.281 SPLITS. Weakening the token envelope to the state
 arm's effective penalty (26 -> 2 logits at token distance 64) recovers +0.136 (8/8, DET); at matched
-strength the learned-state metric is still +0.145 ahead (0/8, DET). A FROZEN state metric is not
+strength the learned-state metric is still +0.145 ahead (0/8 seeds favour the token arm, DET). A FROZEN state metric is not
 distinguishable from just weakening the envelope (-0.054, unmeasured). Training losses still order
 with accuracy and do not overlap, so the residual is confounded with convergence.
-MATCHED-STRENGTH CONTROL (2026-09-20): the +0.281 SPLITS. Weakening the token envelope to the state
-arm's effective penalty (26 -> 2 logits at token distance 64) recovers +0.136 (8/8, DET); at matched
-strength the learned-state metric is still +0.145 ahead (0/8, DET). A FROZEN state metric is not
-distinguishable from just weakening the envelope (-0.054, unmeasured). Training losses still order
-with accuracy and do not overlap, so the residual is confounded with convergence.
-
