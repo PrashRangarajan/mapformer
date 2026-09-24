@@ -193,7 +193,7 @@ epochs; the next budget or design is decided with the user.
 are unchanged, so the batch is UNREADABLE if more than 2 runs in an arm end DESCENDING.
 Pilot runs are reused as seeds 0-1 (the driver checks their epochs, length and code md5).
 
-## Amendment 3 (2026-09-24 ~01:10, after the 900-epoch batch landed UNREADABLE)
+## Amendment 3 (2026-09-24 ~00:50, after the 900-epoch batch landed UNREADABLE)
 
 The 900-epoch batch ended with four r=2 runs DESCENDING (`RANK_MATCHED_RESULTS.md`). The
 user's pre-stated fallback: continue for 900 more epochs. Design, fixed before launch:
