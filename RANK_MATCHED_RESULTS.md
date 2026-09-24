@@ -12,13 +12,35 @@ fires, and by Amendment 3 there is no further automatic extension.
 
 Reported, not read: T=1024 accuracy 0.905 vs 0.996 (+0.091, 7/8, permutation p 0.0011, 95% CI
 [+0.055, +0.120]); SOLVED 1/8 vs 7/8 (Fisher p 0.010); wrap-only revisits 0.546 vs 0.951 (5/8
-r=2 runs below the 0.507 floor). The r=2 "DESCENDING" runs are re-descending from the
-restart, not closing on the solution: four of them end the second cycle at or above the loss
-they ended the first (0.308 -> 0.357, 0.321 -> 0.392, 0.177 -> 0.184, 0.404 -> 0.376).
+r=2 runs below the 0.507 floor).
+
+Final loss (mean of the last 5% of epochs), end of cycle 1 -> end of cycle 2:
+
+| arm | s0 | s1 | s2 | s3 | s4 | s5 | s6 | s7 |
+|---|---|---|---|---|---|---|---|---|
+| r=2 | 0.587->0.517 | 0.051->0.007 | 0.308->0.357 | 0.321->0.392 | 0.177->0.184 | 0.404->0.376 | 0.675->0.456 | 0.605->0.581 |
+| r=4 | 0.009->0.020 | 0.003->0.021 | 0.004->0.022 | 0.003->0.120 | 0.003->0.020 | 0.009->0.019 | 0.003->0.022 | 0.011->0.018 |
+
+The restart costs every run more than 900 epochs recover -- all 8 r=4 runs end cycle 2 above
+their cycle-1 loss -- so "ended above cycle 1" does not tell the arms apart. For r=2, the
+four runs the 900-epoch batch called STALLED all IMPROVED in cycle 2, and three of the four it
+called DESCENDING got worse: under a warm restart the classes measure recovery from the kick,
+not whether a run is done. (CORRECTED after review: an earlier version said four r=2 runs
+ended above; it is three, and the comparison does not discriminate.)
 
 Read together with the warm-start stability test (`RANK_PROJ_RESULTS.md`, verdict S1 STABLE):
-r=2 can represent the solution, holds it and re-finds it after a kick when started inside it,
-and does not find it from scratch -- a search deficit.
+r=2 can represent the solution and holds it under this recipe when started inside it, and does
+not find it from scratch -- a search deficit. From-scratch r=2 stalls in non-cancelling codes
+(opposition 0.87-1.78 on 7/8 seeds); the stability test never visits that region, so whether
+r=2 could LEAVE it is untested.
+
+**Which r=2.** Our bottleneck is shared across heads; the paper's is per head (main text
+~l.276-294: `W_in in R^{d x r}`, `W_out in R^{r x nb}` per head; A.7 l.1517: `W_in in
+R^{d x nh x r}`). At two heads the nesting is our r=2 (2 latent dims, 384 params) inside the
+paper's r=2 (4 dims, block-diagonal `W_out`, 640) inside our r=4 (4 dims, 768). This batch
+compares our halved deviation with something close to the paper's design, not "the paper's
+r=2 vs r=4". Also unseparated: `nn.Linear` initialises `w_out` at bound 1/sqrt(r), so Adam's
+relative step on it is ~1.4x smaller at r=2 (rule 15).
 
 ---
 

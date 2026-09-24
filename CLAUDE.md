@@ -76,12 +76,15 @@ too: Dyck's surviving effect is at 3x the training nesting depth.
 
 **Open, not citable:** rank. r=4 +0.085 at T=1024 is out-of-distribution only (trained T=128,
 `RANK_SWEEP.md`); MapWM-family only (MapPoPE r=4 +0.019, `MAPPOPE_R4_RESULTS.md`). At matched
-length (T=1024, 900 ep) r=4 solves 8/8, r=2 0/8, registered verdict UNREADABLE
-(`RANK_MATCHED_RESULTS.md`). A rank-2 projection of each solved r=4 model scores 0.995 at
-T=1024 (8/8 seeds, `RANK_PROJ_FROZEN.md`): r=2 can REPRESENT the solution, so the gap is
-SEARCH, not capacity or a skewed basis. **Our bottleneck is shared across heads; the paper's is
+length (T=1024) r=4 solves 8/8 vs r=2 0/8 at 900 ep and 7/8 vs 1/8 after a 900-ep warm-restart
+continuation; both registered verdicts UNREADABLE (`RANK_MATCHED_RESULTS.md`). A rank-2
+projection of each solved r=4 model scores 0.9955 mean (min 0.981) at T=1024, and trained from
+there r=2 holds it 7/8 like the r=4 control (S1 STABLE, `RANK_PROJ_RESULTS.md`): exists, stable,
+not found -- a SEARCH deficit. From-scratch r=2 stalls in non-cancelling codes (the skew is
+the symptom); whether it could leave them is untested. **Our bottleneck is shared across heads; the paper's is
 per head** (`W_in in R^{d x nh x r}`, mapformer.txt ~l.1512), so our r=2 has half the paper's
-latent dims at 2 heads and "use r=4" may only restore the paper's capacity. Follow-ups in
+latent dims at 2 heads (ours r=2 < paper r=2 < ours r=4) and "use r=4" may only restore the
+paper's latent-dimension count. `w_out` init scales 1/sqrt(r) -- unseparated from dimension. Follow-ups in
 `project_state.md`.
 
 **Live negatives -- do not re-run:** Level 1.5 / InEKF is stabilisation, not inference (no

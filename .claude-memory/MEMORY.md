@@ -3,7 +3,7 @@ Rules and conventions live in CLAUDE.md (rules 1-28); these files hold the why a
 ## State and findings
 - [Project state](project_state.md) -- **read first.** Live state only: running, queued, pending decisions.
 - [Robustness is not capability](project_robustness_vs_capability.md) -- matched length AND depth decide; OOD-only effects are robustness.
-- [Rank, and Selective RoPE](project_rank_and_selective_rope.md) -- rank OPEN: r=4 8/8 vs r=2 0/8 at T=1024, unreadable; gap is search.
+- [Rank, and Selective RoPE](project_rank_and_selective_rope.md) -- r=2 deficit is search (solution exists, is stable, not found); our bottleneck is shared, the paper's per-head.
 - [PoPE/MapFormer asymmetry](project_mappope_asymmetry.md) -- PoPE's encoding helps the path row; path integration hurts PoPE on clocks.
 - [EM vs WM mechanism](feedback_em_vs_wm_mechanism.md) -- WM is not additive; EM's recency deficit is search.
 - [Clock vs map](project_clock_vs_map.md) -- signed = map, monotone = clock; the PoPE-decoupling corollary is withdrawn.

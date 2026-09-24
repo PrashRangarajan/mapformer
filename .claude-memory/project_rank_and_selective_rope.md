@@ -1,6 +1,6 @@
 ---
 name: project-rank-and-selective-rope
-description: Rank is OPEN. r=4's +0.085 is OOD-only; at matched length r=4 solves 8/8 vs r=2 0/8 (unreadable) and a rank-2 projection of r=4 scores 0.995, so the gap is search. Our bottleneck is shared across heads, the paper's per head.
+description: r=4's +0.085 is OOD-only. At matched length r=2's deficit is SEARCH -- a rank-2 solution exists (0.9955), is held under training (S1 STABLE 7/8), and is not found from scratch (1/8 after 1800 ep). Our bottleneck is shared across heads, the paper's per head.
 metadata:
   type: project
 ---
@@ -13,21 +13,28 @@ metadata:
 - **Matched length** (`RANK_MATCHED_RESULTS.md`, `runs/rank_matched_e900`, trained and tested at
   T=1024, 900 ep, 8 seeds): r=4 SOLVED 8/8, r=2 0/8 (4 stalled at loss 0.40-0.68, 4 descending at
   0.05-0.32); acc 0.997 vs 0.894, +0.103 (perm p 0.0003); Fisher p 0.0002 on solved counts.
-  **Registered verdict UNREADABLE** (more than 2 runs per arm still descending). Continuation of both
-  arms for 900 more epochs (Amendment 3, `runs/rank_matched_e900c`) is running.
+  **Registered verdict UNREADABLE** (more than 2 runs per arm still descending). The 900-epoch
+  warm-restart continuation (`runs/rank_matched_e900c`): r=4 7/8 solved, r=2 1/8, UNREADABLE again;
+  by Amendment 3 no further extension. Under a restart the classes measure recovery from the kick:
+  the four r=2 runs called STALLED at 900 all improved in cycle 2.
 - **r=2 can represent the solution.** Projecting each solved r=4 onto the top two directions of its
   action latent (top-2 energy >= 0.9995) and freezing it scores **0.995 at T=1024 on 8/8 seeds**
   (0.957 at T=2048; `RANK_PROJ_FROZEN.md`, untracked at the time of writing). So the gap is SEARCH,
   not capacity -- and not a skewed basis: within r=2, skew does not predict accuracy (r = -0.35/+0.30),
-  so "skew is the mechanism" is withdrawn. The warm-start stability test (`RANK_PROJ_PREREG.md`,
-  `runs/rank_proj_train`) asks whether a trainable r=2 HOLDS the projected solution.
+  so "skew is the mechanism" is withdrawn (skew is the SYMPTOM: from-scratch r=2 stalls at opposition
+  0.87-1.78 on 7/8 seeds). **Warm-start stability test, S1 STABLE** (`RANK_PROJ_RESULTS.md`): r=2 started
+  from the projection and trained with the continuation recipe solves 7/8 = the r=4 control's 7/8; its
+  code stays cancelling through the restart kick (reviewed with snapshots). Exists, stable, not found =
+  search. Untested: whether r=2 can LEAVE the non-cancelling configurations it stalls in.
 - **Our bottleneck differs from the paper's.** Ours shares one r-dim latent across heads; the paper's
   `W_in` is per head (`R^{d x nh x r}`, `papers/txt/mapformer.txt` ~l.1512). At 2 heads our r=2 has half
-  the paper's latent dims, so "use r=4" may only restore the paper's capacity. A per-head r=2 arm is
-  the follow-up. Say so wherever r is compared with the paper.
+  the paper's latent dims (ours r=2 < paper r=2 < ours r=4: 2 / 4 / 4 dims, 384 / 640 / 768 params), so
+  "use r=4" may only restore the paper's latent-dimension count. Also unseparated: `w_out`'s init bound
+  1/sqrt(r) makes Adam's relative step ~1.4x smaller at r=2. Next: per-head r=2 + r=2 with r=4's init
+  scale, one batch (reviewer's plan, ~10 GPU-h). Say so wherever r is compared with the paper.
 - **Scope:** MapWM family only (MapPoPE r=4 +0.019, unmeasured, `MAPPOPE_R4_RESULTS.md`); on Bach at a
   512 context the order INVERTS (r=1 best, below). Until the continuation lands, "use r=4" is a
-  robustness recommendation for extrapolating navigation models, not a capability claim.
+  recommendation about what training FINDS at our shared-bottleneck r=2, not about capacity.
 
 The paragraphs below are the 2026-09-04..17 record; read them through the block above.
 
