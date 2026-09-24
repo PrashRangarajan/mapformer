@@ -112,3 +112,64 @@ readout. Seeds 0 and 1 are the first two in the default order, not chosen by res
 evaluate with every readout and branch above unchanged. If any pilot run is not flat,
 report and choose a longer budget before spending the 8-seed batch. A run that is flat
 at a loss above 0.1 is reported as a possible plateau (rule 10), not silently accepted.
+
+## Amendment 2 (2026-09-23 19:45, before the pilot finished; pilot at epoch ~240/900, no pilot output read beyond the progress line)
+
+A review of the 300-epoch batch (`RANK_MATCHED_RESULTS.md`, top block) found the
+registered "flat" criterion inverted at both ends: the four r=2 runs it called flat are
+the four stuck at loss 1.06-1.25, while r=4 seed 6, at loss 0.0015 and accuracy 1.000,
+fails it (ratio 0.31). Under it the T=128 batch everyone treats as converged would score
+1/8 and 0/8. It also loosens with budget (a fixed 30-epoch window). It is REPLACED, for
+the pilot and the 8-seed batch, before either is read.
+
+It also found that loss-matching cannot separate faster training from a better solution
+in a matched-length design (train and test are the same task), and that **r=2 can
+represent the solution**: projecting trained T=1024 r=4 checkpoints onto their top two
+latent directions and loading them into an r=2 model scores 0.9995 (seed 6) and 0.990
+(seed 2). So no outcome of this batch can be a CAPACITY claim; R2 below is worded as
+learnability.
+
+### Run classification (per run, from its per-epoch training loss, budget E epochs)
+
+- **SOLVED**: mean loss over the final 5% of epochs < 0.05. The threshold is taken from
+  the 300-epoch batch, which is not being read here: every run below 0.05 there has
+  T=1024 accuracy >= 0.97, every run above 0.15 has <= 0.94.
+- **STALLED**: not solved, and the mean loss over the final 10% of epochs is within 5%
+  of the mean over the 10% before it. A search failure: the run is done, it did not
+  find the solution.
+- **DESCENDING**: neither. The run was stopped by the budget.
+
+### Pilot rule (mechanical, symmetric in the arms)
+
+If no pilot run is DESCENDING, launch seeds 2-7 at 900 epochs into `runs/rank_matched_e900`
+(pilot runs kept as seeds 0-1; code md5s recorded in `runs/rank_matched_e900/code_md5.txt`
+and checked at continuation), then evaluate. If any pilot run is DESCENDING, the 8-seed
+batch is NOT launched at 900; the choice of the next budget or design (longer budget, or
+warm-starting from the T=128 checkpoints) is taken with the user, and is made on the same
+symmetric criterion -- both arms non-descending -- never on which arm is ahead.
+
+### Readouts for the 8-seed batch (replacing the primary tests above)
+
+Seeds are bimodal (some train, some do not) and uncorrelated across arms, so pairing
+buys nothing and the paired MDE is kept only for continuity.
+
+- **Primary**: T=1024 overall accuracy, r4 - r2, **exact two-sample permutation test**
+  over the 16 runs (all C(16,8) = 12,870 relabellings), two-sided.
+- **Co-primary**: number of SOLVED runs per arm, **Fisher's exact test**, two-sided.
+- **Secondary**: accuracy among SOLVED runs; per-stratum accuracy AND NLL at T=1024;
+  T=512 and T=2048 (the latter an extrapolation readout); the within-run stratum profile
+  (each run's wrap and gap>=128 accuracy minus its own gap<128 accuracy), exploratory.
+- Loss is reported, and an ANCOVA (accuracy ~ arm + log final loss) replaces the pooled
+  residual; it is descriptive only, for the reason above.
+
+### Branches, in order of precedence
+
+1. **Unreadable** if more than 2 runs in either arm are DESCENDING.
+2. **R2 -- learnability deficit at r=2**: permutation p < 0.05 with r4 > r2, or Fisher
+   p < 0.05 with r4 solving more. Reads: "trained at length, r=2 finds the solution less
+   often or less well, although it can represent it."
+3. **R3 -- reversal**: the same tests with the sign reversed.
+4. **R1 -- no difference at matched length**: neither test significant AND the permutation
+   test could have detected the old +0.085 (its 95% interval for the difference excludes
+   +0.085). The old OOD effect was then robustness to unseen length.
+5. **Unmeasured** otherwise: no difference found, and none as large as +0.085 ruled out.
