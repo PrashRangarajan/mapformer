@@ -156,7 +156,7 @@ monotone one measures elapsed path and is a clock; for a scalar accumulator they
 mutually exclusive by construction (a rank-$r$ accumulator can cancel in one subspace
 and count in another). The consequence is that a monotone increment is not a defect
 --- it is correct on language, and on navigation it costs accuracy past the training
-length (at the training length a monotone arm still beats an index code). This is
+length (in raw accuracy at the training length a monotone arm still beats an index code). This is
 tested by crossover in the companion paper: on a $k$-back recency task that counts
 symbols the cost of forcing monotonicity falls from $0.28$ to nothing measurable, and
 an architecture free to choose adopts a different accumulator per task. Two limits:
@@ -1083,8 +1083,8 @@ a signed increment makes the interval sum a \emph{net displacement}, invariant t
 route and blind to elapsed time, and a monotone one makes it a \emph{path length},
 injective in time and blind to place. Neither dominates. On navigation past the
 training length the signed form wins outright (at matched training loss the monotone
-one does not beat a plain index clock anywhere beyond it; at the training length it
-does); on language the monotone form is the correct object, and the
+one does not beat a plain index clock anywhere; in raw accuracy at the training length
+it does); on language the monotone form is the correct object, and the
 signed one would be discarding the very distinction position exists to make.
 
 \paragraph{(T3) Compressing the memory makes decay compulsory; rewriting it forfeits
