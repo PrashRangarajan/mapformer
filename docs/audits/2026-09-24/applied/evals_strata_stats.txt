@@ -1,0 +1,22 @@
+== HEAD code (ref) vs vectorised strata + stats_core analyses (new_A2)
+IDENTICAL RANK_MATCHED_e900.json
+IDENTICAL RANK_MATCHED_e900.md
+IDENTICAL RANK_MATCHED_e900_STRATA.json
+IDENTICAL RANK_MATCHED_e900_GEOMETRY.md
+IDENTICAL RANK_PERHEAD_PILOT_GEOMETRY.md
+IDENTICAL RANK_PROJ_TRAIN.json
+IDENTICAL RANK_PROJ_TRAIN.md
+IDENTICAL RANK_PROJ_TRAIN_STRATA.json
+IDENTICAL RANK_MATCHED_e900_ANALYSIS.txt
+IDENTICAL RANK_MATCHED_e900c_ANALYSIS.txt
+IDENTICAL RANK_PROJ_ANALYSIS.txt
+IDENTICAL RANK_PERHEAD_PILOT_ANALYSIS.txt
+time strata_e900: 61.21 s -> 10.64 s
+time strata_proj: 11.86 s -> 3.33 s
+time arm_e900: 8.70 s -> 1.84 s
+== further committed strata files regenerated with the vectorised evaluator
+IDENTICAL RANK_SWEEP_STRATA.json (vs committed)
+IDENTICAL RANK_MATCHED_e900c_STRATA.json (vs committed)
+IDENTICAL RANK_MATCHED_STRATA.json (vs committed)
+== --classify-only (pilot mode), e900 seeds 0 1 and e900c: HEAD vs repo
+IDENTICAL

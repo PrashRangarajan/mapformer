@@ -1,0 +1,6 @@
+78 committed contrasts
+p-values: 846/846 identical (16.6s)
+row sums: 192318/192318 bitwise equal (sampled every 97th relabelling, 241 shifts x 6 contrasts)
+RANK_MATCHED_e900.json CI HEAD (np.float64(0.0500000000000006), np.float64(0.1550000000000007)) (6.77s)  repo (np.float64(0.0500000000000006), np.float64(0.1550000000000007)) clipped=False (0.076s)  IDENTICAL  | unclipped walk from d0: [+0.0529, +0.1529]
+RANK_MATCHED_e900c.json CI HEAD (np.float64(0.055000000000000604), np.float64(0.12000000000000066)) (6.64s)  repo (np.float64(0.055000000000000604), np.float64(0.12000000000000066)) clipped=False (0.076s)  IDENTICAL  | unclipped walk from d0: [+0.0558, +0.1208]
+RANK_MATCHED.json CI HEAD (np.float64(0.015000000000000568), np.float64(0.3000000000000008)) (6.68s)  repo (np.float64(0.015000000000000568), np.float64(0.3000000000000008)) clipped=False (0.076s)  IDENTICAL  | unclipped walk from d0: [+0.0167, +0.3017]

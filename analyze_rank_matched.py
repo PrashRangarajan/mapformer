@@ -4,10 +4,11 @@
     python3 -m mapformer.analyze_rank_matched --tag _e900     # 900-epoch batch
     python3 -m mapformer.analyze_rank_matched --tag _e900 --classify-only --seeds 0 1   # pilot
 """
-import argparse, itertools, json
+import argparse, json
 import numpy as np
 import torch
-from scipy.stats import fisher_exact
+
+from mapformer.stats_core import classify_run, fisher_solved, perm2_ci, perm2_p
 
 REPO = "/home/prashr/mapformer"
 V2, V4 = "Vanilla", "Vanilla_r4"
@@ -16,15 +17,10 @@ SOLVED_LOSS, STALL_TOL = 0.05, 0.05
 
 
 def classify(losses):
-    """SOLVED / STALLED / DESCENDING from per-epoch loss (Amendment 2)."""
-    l = np.asarray(losses, float); E = len(l)
-    k5, k10 = max(1, round(0.05 * E)), max(1, round(0.10 * E))
-    tail = l[-k5:].mean()
-    if tail < SOLVED_LOSS:
-        return "SOLVED", tail, None
-    last, prev = l[-k10:].mean(), l[-2 * k10:-k10].mean()
-    ratio = last / prev
-    return ("STALLED" if abs(ratio - 1) < STALL_TOL else "DESCENDING"), tail, ratio
+    """SOLVED / STALLED / DESCENDING from per-epoch loss (Amendment 2): the REGISTERED
+    label, from stats_core.classify_run (which also flags a RISING run; see main())."""
+    r = classify_run(losses, SOLVED_LOSS, STALL_TOL)
+    return r["registered"], r["tail"], r["ratio"]
 
 
 def paired(a, b):
@@ -33,19 +29,19 @@ def paired(a, b):
 
 
 def perm(a, b, shift=0.0):
-    """Exact two-sample permutation p (two-sided) for mean(b) - mean(a) - shift."""
-    a, b = np.asarray(a, float), np.asarray(b, float) - shift
-    x = np.concatenate([a, b]); n = len(b); obs = b.mean() - a.mean()
-    tot = x.sum(); cnt = hits = 0
-    for idx in itertools.combinations(range(len(x)), n):
-        sb = x[list(idx)].sum(); d = sb / n - (tot - sb) / (len(x) - n)
-        hits += abs(d) >= abs(obs) - 1e-12; cnt += 1
-    return hits / cnt
+    """Exact two-sample permutation p (two-sided) for mean(b) - mean(a) - shift.
+    Delegates to stats_core.perm2_p (vectorised, audit 2026-09-24): the same arithmetic on
+    the same C(N, n) relabellings as the per-combination loop it replaced, so the p-values
+    and the committed *_ANALYSIS.txt files reproduce byte for byte."""
+    return perm2_p(a, b, shift)["p"]
 
 
 def perm_ci(a, b, lo=-0.6, hi=0.6, step=0.005):
-    ok = [s for s in np.arange(lo, hi + 1e-9, step) if perm(a, b, s) >= 0.05]
-    return (min(ok), max(ok)) if ok else (None, None)
+    """95% test-inversion CI on the registered fixed grid [lo, hi] (kept so committed
+    readouts reproduce). Returns (lo, hi, clipped): `clipped` means an END of the grid was
+    accepted, so the true interval extends past it -- main() then says so."""
+    r = perm2_ci(a, b, level=0.95, step=step, grid=(lo, hi))
+    return r["lo"], r["hi"], r["clipped"]
 
 
 def main():
@@ -71,6 +67,13 @@ def main():
     for v in (V2, V4):
         n = {k: sum(C[(v, s)][0] == k for s in S) for k in ("SOLVED", "STALLED", "DESCENDING")}
         print(f"  {v:11s} {n}")
+    # Added 2026-09-24 (audit B5): the registered rule files a run whose loss went UP by >5%
+    # under DESCENDING, which counts toward "unreadable". Printed as an extra line only.
+    rising = [(v, s, C[(v, s)][2]) for v in (V2, V4) for s in S
+              if C[(v, s)][0] == "DESCENDING" and C[(v, s)][2] > 1]
+    if rising:
+        print("  note: loss RISING (final 10% above the 10% before; the registered rule files "
+              "these under DESCENDING): " + ", ".join(f"{v} s{s} ({r:.3f})" for v, s, r in rising))
     if a.classify_only:
         desc = [k for k, c in C.items() if c[0] == "DESCENDING"]
         print("PILOT RULE:", "no run DESCENDING -> launch seeds 2-7 at this budget" if not desc
@@ -85,11 +88,14 @@ def main():
     a2, a4 = acc(V2, 1024), acc(V4, 1024)
     print("\n== primary: T=1024 overall accuracy ==")
     d, mde, npos = paired(a2, a4)
-    p = perm(a2, a4); lo, hi = perm_ci(a2, a4)
+    p = perm(a2, a4); lo, hi, clipped = perm_ci(a2, a4)
     print(f"  r2 {np.mean(a2):.3f}  r4 {np.mean(a4):.3f}  d {d:+.3f}  paired MDE {mde:.3f} ({npos}/{len(S)})"
           f"  exact permutation p {p:.4f}  95% CI [{lo:+.3f}, {hi:+.3f}]")
+    if clipped:
+        print("  WARNING: the CI reaches an end of its fixed [-0.6, +0.6] grid -- the interval is "
+              "CLIPPED there (stats_core.perm2_ci(grid=None) gives the unclipped one)")
     s2 = sum(C[(V2, s)][0] == "SOLVED" for s in S); s4 = sum(C[(V4, s)][0] == "SOLVED" for s in S)
-    pf = fisher_exact([[s4, len(S) - s4], [s2, len(S) - s2]])[1]
+    pf = fisher_solved(s2, len(S), s4, len(S))
     print(f"== co-primary: SOLVED  r2 {s2}/{len(S)}  r4 {s4}/{len(S)}  Fisher p {pf:.4f}")
     sa2 = [x for x, s in zip(a2, S) if C[(V2, s)][0] == "SOLVED"]
     sa4 = [x for x, s in zip(a4, S) if C[(V4, s)][0] == "SOLVED"]

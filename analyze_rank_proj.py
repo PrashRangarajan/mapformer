@@ -2,9 +2,8 @@
 import json
 import numpy as np
 import torch
-from scipy.stats import fisher_exact
-
-from mapformer.analyze_rank_matched import classify, perm
+from mapformer.analyze_rank_matched import classify, perm   # both delegate to stats_core
+from mapformer.stats_core import fisher_solved
 
 REPO = "/home/prashr/mapformer"; S = list(range(8))
 
@@ -44,7 +43,7 @@ def main():
             print(f"    s{s} {x['cls']:10s} tail {x['tail']:.4f}  peak {x['peak']:.3f} @ep{x['peak_ep']}"
                   f"  back below 0.05 @ep{x['recover_ep']}")
     st = sum(T[s]["cls"] == "SOLVED" for s in S); sc = sum(C[s]["cls"] == "SOLVED" for s in S)
-    pf = fisher_exact([[st, 8 - st], [sc, 8 - sc]])[1]
+    pf = fisher_solved(sc, 8, st, 8)
     print(f"\n== primary: SOLVED trainable {st}/8 vs control {sc}/8, Fisher p {pf:.4f}")
     if sc < 6:
         verdict = "UNINFORMATIVE -- the control does not re-solve; run the gentle version"
