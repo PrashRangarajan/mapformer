@@ -42,7 +42,7 @@ REPO="$(cd "$(dirname "$0")" && pwd)"; cd "$REPO/.."
 R="$REPO/runs/hier_parity"; mkdir -p "$R"
 LOG="$REPO/hier_parity.log"; echo "hier-parity start $(date)" > "$LOG"
 A="train_algo""rithmic"; MAXPG=5
-on_gpu(){ pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:$1" || true; }
+on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:$1" || true; }
 for SEED in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
   for SPEC in "RoPE 3" "PlainHourglass 1" "HourglassFlat3 1" "Hourglass_k2 1"; do
     set -- $SPEC; V="$1"; NL="$2"

@@ -48,8 +48,8 @@ ARMS="RoPE Vanilla ConvAngle NoBottleneck GateAngle SRoPEGen"
 MAXPG=5
 slot(){ P="$1"
   while :; do
-    N0=$(pgrep -u "$USER" -af "$P" 2>/dev/null | grep -c -- "--device cuda:0" || true)
-    N1=$(pgrep -u "$USER" -af "$P" 2>/dev/null | grep -c -- "--device cuda:1" || true)
+    N0=$(ps -u "$USER" -o comm=,args= | awk -v p="$P" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:0" || true)
+    N1=$(ps -u "$USER" -o comm=,args= | awk -v p="$P" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:1" || true)
     if [ "$N0" -le "$N1" ] && [ "$N0" -lt "$MAXPG" ]; then echo 0; return; fi
     if [ "$N1" -lt "$N0" ] && [ "$N1" -lt "$MAXPG" ]; then echo 1; return; fi
     if [ "$N0" -lt "$MAXPG" ]; then echo 0; return; fi

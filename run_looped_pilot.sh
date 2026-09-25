@@ -50,11 +50,11 @@ echo "$(date +%H:%M) waiting for the aliasing follow-up to finish" >> "$LOG"
 until [ -f "$REPO/.alias_followup_done" ]; do sleep 180; done
 # and for its arms to actually exit
 B="train_mini""world"
-while [ "$(pgrep -u "$USER" -f "$B" | wc -l)" -gt 0 ]; do sleep 120; done
+while [ "$(ps -u "$USER" -o comm=,args= | awk -v p="$B" '$1=="python3" && index($0,p)' | wc -l)" -gt 0 ]; do sleep 120; done
 echo "$(date +%H:%M) GPUs clear; starting" >> "$LOG"
 
 MAXPG=3
-on_gpu(){ pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:$1" || true; }
+on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:$1" || true; }
 launch(){   # variant seed n_layers label
   V="$1"; SEED="$2"; NL="$3"; LBL="$4"
   D="$R/$LBL/${V}_s${SEED}"; mkdir -p "$D"

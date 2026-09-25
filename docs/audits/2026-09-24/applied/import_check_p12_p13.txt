@@ -1,0 +1,2 @@
+46 imported; failed: ['eval_match_longq:SystemExit']
+HEAD worktree gives the identical outcome (diff empty); eval_match_longq exits at import in both

@@ -40,7 +40,7 @@ REPO="$(cd "$(dirname "$0")" && pwd)"; cd "$REPO/.."
 R="$REPO/runs/em_fig4"; mkdir -p "$R/p0"
 LOG="$REPO/em_fig4.log"; echo "em-fig4 start $(date)" > "$LOG"
 MAXPG=5; A="train_var""iant"
-busy_gpu(){ pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:$1" || true; }
+busy_gpu(){ ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:$1" || true; }
 for SEED in 0 1 2 3 4 5 6 7; do
   for V in VanillaEM VanillaEM_r4; do
     OUT="$R/p0/${V}_s${SEED}"; mkdir -p "$OUT"

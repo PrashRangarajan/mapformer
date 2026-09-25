@@ -59,12 +59,12 @@ A="train_match_""query"
 echo "$(date +%H:%M) waiting for the visits test" >> "$LOG"
 until [ -f "$REPO/.visits_test_done" ]; do sleep 180; done
 for P in "train_mini""world" "train_var""iant" "$A"; do
-  while [ "$(pgrep -u "$USER" -f "$P" | wc -l)" -gt 0 ]; do sleep 120; done
+  while [ "$(ps -u "$USER" -o comm=,args= | awk -v p="$P" '$1=="python3" && index($0,p)' | wc -l)" -gt 0 ]; do sleep 120; done
 done
 echo "$(date +%H:%M) GPUs clear" >> "$LOG"
 
 MAXPG=3
-on_gpu(){ pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:$1" || true; }
+on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:$1" || true; }
 launch(){   # variant n_layers seed label
   V="$1"; NL="$2"; SEED="$3"; LBL="$4"
   OUT="$R/$LBL/s$SEED"; mkdir -p "$OUT"

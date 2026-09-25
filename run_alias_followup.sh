@@ -44,7 +44,7 @@ T=512; NBUF=24000; NB=180; BS=24; DM=256; NL=4; NH=4; NW=24; ETRIALS=128
 MAXPG=6        # ~2.1 GiB/job with fast-attn -> 12.6 GiB of 24 GiB
 A="train_mini""world"
 
-on_gpu(){ pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:$1" || true; }
+on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:$1" || true; }
 free_slots(){ echo $(( (MAXPG - $(on_gpu 0)) + (MAXPG - $(on_gpu 1)) )); }
 
 launch(){    # variant seed n_obs grid epochs outdir
@@ -69,7 +69,7 @@ launch(){    # variant seed n_obs grid epochs outdir
 
 # ---- wait for the previous wave to clear -----------------------------------
 echo "$(date +%H:%M) waiting for the n16 wave to finish" >> "$LOG"
-while [ "$(pgrep -u "$USER" -f "$A" | wc -l)" -gt 0 ]; do sleep 120; done
+while [ "$(ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | wc -l)" -gt 0 ]; do sleep 120; done
 echo "$(date +%H:%M) GPUs clear" >> "$LOG"
 
 # ---- disk guard -------------------------------------------------------------

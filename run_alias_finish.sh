@@ -27,7 +27,7 @@ A="train_mini""world"      # split so pgrep cannot match this script's own cmdli
 
 # count MY training arms on a given GPU, whoever launched them (the previous
 # wave's arms are still running and must be counted against the slot budget)
-on_gpu(){ pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:$1" || true; }
+on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:$1" || true; }
 
 launch(){
   local V="$1" SEED="$2" NOBS="$3" OUT="$4"

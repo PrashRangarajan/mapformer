@@ -50,7 +50,7 @@ R="$REPO/runs/algorithmic"; mkdir -p "$R"
 LOG="$REPO/algorithmic.log"; echo "algorithmic start $(date)" > "$LOG"
 EP=300; NB=50; BS=128; LTR=16; DM=128; NH=2; LR=1e-3
 A="train_algo""rithmic"; MAXPG=5
-on_gpu(){ pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:$1" || true; }
+on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:$1" || true; }
 launch(){ V="$1"; TASK="$2"; SEED="$3"
   OUT="$R/$TASK/${V}_s${SEED}"; mkdir -p "$OUT"
   [ -f "$OUT/${V}_${TASK}.json" ] && { echo "skip $TASK $V s$SEED" >> "$LOG"; return; }

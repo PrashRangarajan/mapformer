@@ -35,8 +35,8 @@ R="$REPO/runs/l15_loop_2x2"
 LOG="$REPO/l15_loop_supp.log"; echo "supplement start $(date)" > "$LOG"
 EP=300; NB=98; BS=128; T=128; DM=128; NH=2
 A="train_var""iant"; CAP=7
-on_gpu(){ pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:$1" || true; }
-in_flight(){ pgrep -u "$USER" -af "$A" 2>/dev/null \
+on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:$1" || true; }
+in_flight(){ ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' \
              | grep -q -- "--variant $1 --seed $2 "; }
 
 launch(){ V="$1"; SEED="$2"
@@ -71,7 +71,7 @@ done
 wait
 
 # wait for the main script's own children too, so the count below is final
-while [ "$(pgrep -u "$USER" -f "$A" | wc -l)" -gt 0 ]; do sleep 60; done
+while [ "$(ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | wc -l)" -gt 0 ]; do sleep 60; done
 
 N=$(find "$R" -name '*.pt' | wc -l)
 echo "$(date +%H:%M) all training stopped; $N/60 checkpoints" >> "$LOG"

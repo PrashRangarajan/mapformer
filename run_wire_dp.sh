@@ -7,7 +7,7 @@ REPO="$(cd "$(dirname "$0")" && pwd)"; cd "$REPO/.."
 LOG="$REPO/wire_dp.log"; echo "waiting for the 2x2 batch $(date)" > "$LOG"
 A="train_var""iant"
 until [ -f "$REPO/.l15_loop_supp_done" ]; do sleep 120; done
-while [ "$(pgrep -u "$USER" -f "$A" | wc -l)" -gt 0 ]; do sleep 60; done
+while [ "$(ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | wc -l)" -gt 0 ]; do sleep 60; done
 echo "$(date +%H:%M) batch clear; wiring" >> "$LOG"
 python3 -u -m mapformer.wire_data_parallel \
   --reference "/tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/dp_ref/serial_reference.json" --device cuda:0 >> "$LOG" 2>&1

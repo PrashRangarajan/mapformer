@@ -52,7 +52,7 @@ R="$REPO/runs/recipe_power"; mkdir -p "$R"
 LOG="$REPO/recipe_power.log"; echo "recipe power start $(date)" > "$LOG"
 NB=98; BS=128; T=128; DM=128; NH=2; DW=3
 A="train_var""iant"; MAXPG=5      # 10 jobs x (1 main + 3 data workers) ~= 32 cores
-on_gpu(){ pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:$1" || true; }
+on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:$1" || true; }
 launch(){ V="$1"; SEED="$2"; EP="$3"; LR="$4"; C="$5"
   OUT="$R/$C/p0/${V}_s${SEED}"; mkdir -p "$OUT"
   [ -f "$OUT/${V}.pt" ] && { echo "skip $C $V s$SEED" >> "$LOG"; return; }

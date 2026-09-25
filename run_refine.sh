@@ -38,9 +38,9 @@ R="$REPO/runs/refine"; mkdir -p "$R"
 LOG="$REPO/refine.log"; echo "refine start $(date)" > "$LOG"
 EP=300; NB=48; BS=16; SZ=128; NOBS=16; TE=512; TQ=256; DM=128; NH=2
 A="train_match_""query"
-while [ "$(pgrep -u "$USER" -f "$A" | wc -l)" -gt 0 ]; do sleep 60; done
+while [ "$(ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | wc -l)" -gt 0 ]; do sleep 60; done
 MAXPG=3
-on_gpu(){ pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:$1" || true; }
+on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:$1" || true; }
 launch(){ V="$1"; SEED="$2"
   OUT="$R/$V/s$SEED"; mkdir -p "$OUT"
   [ -f "$OUT/${V}.pt" ] && { echo "skip $V s$SEED" >> "$LOG"; return; }

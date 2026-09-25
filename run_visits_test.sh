@@ -56,8 +56,8 @@ A="train_mini""world"
 echo "$(date +%H:%M) waiting for the looped pilot to finish" >> "$LOG"
 until [ -f "$REPO/.looped_pilot_done" ]; do sleep 180; done
 B2="train_var""iant"
-while [ "$(pgrep -u "$USER" -f "$A" | wc -l)" -gt 0 ] || \
-      [ "$(pgrep -u "$USER" -f "$B2" | wc -l)" -gt 0 ]; do sleep 120; done
+while [ "$(ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | wc -l)" -gt 0 ] || \
+      [ "$(ps -u "$USER" -o comm=,args= | awk -v p="$B2" '$1=="python3" && index($0,p)' | wc -l)" -gt 0 ]; do sleep 120; done
 echo "$(date +%H:%M) GPUs clear" >> "$LOG"
 
 FREE_MB=$(df -Pm "$REPO" | awk 'NR==2{print $4}')
@@ -73,7 +73,7 @@ python3 -u -m mapformer.prebuild_buffers --grid-size 16 --n-obs 64 --seeds 0 1 2
   --n-workers $NW --oracle >> "$LOG" 2>&1
 
 MAXPG=4
-on_gpu(){ pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:$1" || true; }
+on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:$1" || true; }
 launch(){   # variant seed grid n_obs T outdir
   V="$1"; SEED="$2"; G="$3"; NOBS="$4"; TT="$5"; OUT="$6"
   mkdir -p "$OUT"

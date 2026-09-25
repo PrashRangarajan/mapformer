@@ -94,9 +94,12 @@ def main():
     ap.add_argument("--force", action="store_true")
     a = ap.parse_args()
 
-    live = subprocess.run(["pgrep", "-u", os.environ.get("USER", ""), "-f",
-                           "train_var" "iant"], capture_output=True, text=True)
-    n = len([x for x in live.stdout.split() if x])
+    # ps comm= is the executable, so shells that merely MENTION the pattern cannot match
+    # (pgrep -f counted the author's own shells -- CLAUDE.md "pgrep self-match").
+    live = subprocess.run(["ps", "-u", os.environ.get("USER", ""), "-o", "comm=,args="],
+                          capture_output=True, text=True)
+    n = sum(1 for ln in live.stdout.splitlines()
+            if ln.split(None, 1)[:1] == ["python3"] and "mapformer.train_variant" in ln)
     if n and not a.force:
         print(f"REFUSING: {n} train_variant processes are still running. Editing a "
               f"module mid-batch makes later runs a different code path.")

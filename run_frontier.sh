@@ -29,7 +29,7 @@ LOG="$REPO/frontier.log"; echo "frontier queued $(date)" > "$LOG"
 echo "$(date +%H:%M) waiting for the algorithmic batch" >> "$LOG"
 until [ -f "$REPO/.algorithmic_done" ]; do sleep 60; done
 C="train_algo""rithmic"
-while [ "$(pgrep -u "$USER" -f "$C" | wc -l)" -gt 0 ]; do sleep 30; done
+while [ "$(ps -u "$USER" -o comm=,args= | awk -v p="$C" '$1=="python3" && index($0,p)' | wc -l)" -gt 0 ]; do sleep 30; done
 
 python3 -u -m mapformer.decide_frontier >> "$LOG" 2>&1
 VENUE=$(grep -oP "^VENUE=\K\w+" "$LOG" | tail -1)
@@ -38,8 +38,8 @@ echo "$(date +%H:%M) venue = ${VENUE:-unset}" >> "$LOG"
 MAXPG=5
 gpu_for(){ P="$1"
   while :; do
-    N0=$(pgrep -u "$USER" -af "$P" 2>/dev/null | grep -c -- "--device cuda:0" || true)
-    N1=$(pgrep -u "$USER" -af "$P" 2>/dev/null | grep -c -- "--device cuda:1" || true)
+    N0=$(ps -u "$USER" -o comm=,args= | awk -v p="$P" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:0" || true)
+    N1=$(ps -u "$USER" -o comm=,args= | awk -v p="$P" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:1" || true)
     if [ "$N0" -le "$N1" ] && [ "$N0" -lt "$MAXPG" ]; then echo 0; return; fi
     if [ "$N1" -lt "$N0" ] && [ "$N1" -lt "$MAXPG" ]; then echo 1; return; fi
     if [ "$N0" -lt "$MAXPG" ]; then echo 0; return; fi

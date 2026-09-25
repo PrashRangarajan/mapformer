@@ -101,8 +101,8 @@ for SEED in 0 1 2 3 4 5 6 7; do
     OUT="$R/p0/${V}_s${SEED}"; mkdir -p "$OUT"
     [ -f "$OUT/${V}.pt" ] && continue
     while :; do
-      N0=$(pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:0" || true)
-      N1=$(pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:1" || true)
+      N0=$(ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:0" || true)
+      N1=$(ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:1" || true)
       if [ "$N0" -le "$N1" ] && [ "$N0" -lt "$MAXPG" ]; then G=0; break; fi
       if [ "$N1" -lt "$MAXPG" ]; then G=1; break; fi
       if [ "$N0" -lt "$MAXPG" ]; then G=0; break; fi

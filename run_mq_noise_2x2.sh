@@ -60,7 +60,7 @@ SIZE=128; NOBS=16; TE=512; TQ=256; NB=48; BS=16; DM=128; NH=2
 
 echo "$(date +%H:%M) waiting for the recipe batch" >> "$LOG"
 until [ -f "$REPO/.recipe_power_done" ]; do sleep 120; done
-while [ "$(pgrep -u "$USER" -f "$A" | wc -l)" -gt 0 ]; do sleep 60; done
+while [ "$(ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | wc -l)" -gt 0 ]; do sleep 60; done
 
 EP=300; LR=3e-4
 if [ -f "$REPO/RECIPE_CHOICE.json" ]; then
@@ -72,7 +72,7 @@ else
   echo "$(date +%H:%M) NO RECIPE_CHOICE.json -- falling back to lr 3e-4, 300 ep" >> "$LOG"
 fi
 
-on_gpu(){ pgrep -u "$USER" -af "$B" 2>/dev/null | grep -c -- "--device cuda:$1" || true; }
+on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v p="$B" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:$1" || true; }
 launch(){ V="$1"; SEED="$2"; P="$3"; TAG="$4"
   OUT="$R/$TAG/${V}_s${SEED}"; mkdir -p "$OUT"
   [ -f "$OUT/${V}_matchquery.pt" ] && { echo "skip $TAG $V s$SEED" >> "$LOG"; return; }

@@ -50,7 +50,7 @@ LOG="$REPO/noise_refine.log"; echo "noise-refine start $(date)" > "$LOG"
 EP=300; NB=98; BS=128; T=128; DM=128; NH=2
 A="train_var""iant"
 MAXPG=3
-on_gpu(){ pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:$1" || true; }
+on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:$1" || true; }
 launch(){ V="$1"; SEED="$2"; P="$3"; TAG="$4"
   OUT="$R/$TAG/${V}_s${SEED}"; mkdir -p "$OUT"
   [ -f "$OUT/${V}.pt" ] && { echo "skip $V $TAG s$SEED" >> "$LOG"; return; }

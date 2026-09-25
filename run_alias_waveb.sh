@@ -25,11 +25,11 @@ LOG="$REPO/alias_waveb.log"; echo "wave B start $(date)" > "$LOG"
 T=512; NBUF=24000; NB=180; BS=24; DM=256; NL=4; NH=4; NW=24; ETRIALS=128
 MAXPG=6
 A="train_mini""world"
-on_gpu(){ pgrep -u "$USER" -af "$A" 2>/dev/null | grep -c -- "--device cuda:$1" || true; }
+on_gpu(){ ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | grep -c -- "--device cuda:$1" || true; }
 
 # wait for wave A to finish
 echo "$(date +%H:%M) waiting for wave A" >> "$LOG"
-while [ "$(pgrep -u "$USER" -f "$A" | wc -l)" -gt 0 ]; do sleep 120; done
+while [ "$(ps -u "$USER" -o comm=,args= | awk -v p="$A" '$1=="python3" && index($0,p)' | wc -l)" -gt 0 ]; do sleep 120; done
 echo "$(date +%H:%M) wave A clear" >> "$LOG"
 
 # ---- the gate: did fast-attn reproduce the reference effect? ----------------
