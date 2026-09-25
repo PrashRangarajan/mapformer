@@ -1,5 +1,19 @@
 # MapFormer + Parallel Invariant EKF: Cognitive Maps with Calibrated State Correction
 
+> **CURRENT STATE (2026-09-25) -- read this first.** This README still describes the project's
+> April-May framing (InEKF / Gaussian Sum Filter corrections on MapFormer), and that framing is
+> SUPERSEDED. What is citable now is in [RESULTS_INDEX.md](RESULTS_INDEX.md) and the
+> "Citable results" table of [CLAUDE.md](CLAUDE.md); the write-up is
+> [report/report.pdf](report/report.pdf) (short version `report/report_short.pdf`).
+> In brief: Level 1.5 / the InEKF is stabilisation, not inference -- no component is load-bearing,
+> a filter-free capacity control ties it, and its benefit does not grow with drift
+> (`L15_ABLATION.md`, `EXTRAHEAD_CONTROL.md`, `MQ_NOISE_2X2*.md`); its gain is past the training
+> length only and has never had a matched-length control. The wrap does NOT bound the accumulator
+> (`ACCUMULATOR.md`). The GSF / NoDrop "recommendations" below rest on the retracted lm200 tables.
+> The surviving positive results are path integration on the torus at training length (+0.243,
+> `PAPER2X2_RESULTS.md`), Match-Query below, and the rank of the content-to-angle map deciding
+> whether training finds the torus solution (`RANK_MI_RESULTS.md`).
+
 > ### ⚠ RETRACTION IN PROGRESS — lm200 results (2026-07-16)
 >
 > The stored **lm200** checkpoints trained 2026-04-22..24 (Vanilla, Level15,
@@ -112,7 +126,7 @@ which has 20× *fewer* parameters, so it is not a capacity artefact.
 
 **Two of the paper's own stated-but-unmeasured conjectures are refuted:**
 
-- *Separate `k0p`/`q0p` "would create sparser attention values"* (App. A.4, flagged
+- *Separate `k0p`/`q0p` "would create sparser attention values"* (App. A.7, flagged
   as a suspicion). Refuted on four MAP tasks; **on recency the sign REVERSES** (the separate
   form is better) and the fresh-seed replication is unmeasured (+0.073, 9/16) -- see
   `EM_WM_STATE.md`. The effect grows with how much the task
@@ -129,6 +143,7 @@ gates and controls; neither contradicts the paper's main claims, which replicate
 
 ### Cognitive-map necessity (six independent cognitive demands)
 
+(Rows 1, 2 and 5 are VOID and rows 4 and 6 unverified: see the status audit above.)
 Standard transformer (RoPE) collapses across every cognitive demand we
 tested; MapFormer family with correction wins all of them. Numbers are
 held-out accuracy at the hardest condition for each demand:
@@ -246,7 +261,7 @@ recommended variants:
 
 | Class                                   | File                              | Description |
 | --------------------------------------- | --------------------------------- | ----------- |
-| `MapFormerWM_Level15GSF_NoDrop`         | `model_inekf_gsf_nodrop.py`       | **Recommended for landmarks / sparse-cue tasks.** K=8 Gaussian Sum Filter + post-attention residual dropout removed. |
+| `MapFormerWM_Level15GSF_NoDrop`         | `model_inekf_gsf_nodrop.py`       | (Superseded: this recommendation rests on the retracted lm200 tables.) K=8 Gaussian Sum Filter + post-attention residual dropout removed. |
 | `MapFormerWM_Level15GSF_NoDrop_K16`     | `model_inekf_gsf_nodrop.py`       | **Recommended for cross-scale and cross-topology.** Same as above but K=16. More chains → more diverse initial-position hypotheses → better scale-OOD. |
 
 The full model table (paper-faithful, Level1/1.5/2, PC variants, ablations,
@@ -276,8 +291,9 @@ d_t       = (1 − K_t)·d_{t−1} + K_t·ν_t      # affine scan, parallel-scan
 θ̂_t       = θ_path_t + d_t                   # corrected angle
 ```
 
-The wrap on innovation is what keeps `θ̂` bounded at OOD sequence length —
-the key mechanism for length extrapolation.
+~~The wrap on innovation is what keeps `θ̂` bounded at OOD sequence length —
+the key mechanism for length extrapolation.~~ REFUTED (`ACCUMULATOR.md`): the wrap bounds the
+innovation, not the angle -- range(θ̂) 285.6 vs range(θ_path) 283.9.
 
 Gaussian Sum Filter extends this with K parallel chains differing in
 their initial position hypothesis, weighted by cumulative log-likelihood.
@@ -298,7 +314,7 @@ Do not regress these (each was a debugging session):
    (Paper eq. 17 has a sign typo.)
 5. **EM attention is Hadamard `softmax(A_X ⊙ A_P)·V`**, not additive.
 6. **MapEM uses separate learnable `q₀ᵖ` and `k₀ᵖ`**, both rotated by the
-   path-integrated angle. This is paper-faithful — App. A.4: *"our MapFormers
+   path-integrated angle. This is paper-faithful — App. A.7: *"our MapFormers
    use two separate initial vectors k0p and q0p ... we suspect this separation
    to be beneficial"*. That suspicion is stated but never measured in the paper.
    We measured it: collapsing to a single `p₀` (`VanillaEM_P0`) gives held-out
@@ -306,6 +322,8 @@ Do not regress these (each was a debugging session):
    form, whose worst seed collapses to 0.778. Keep BOTH — the separate version
    is the paper's architecture, single-`p₀` is our ablation of it.
 7. **Low-rank Δ projection** `W_Δ = W_Δ^out · W_Δ^in` with bottleneck `r=2`.
+   Deviation: ours shares one r-dimensional latent across heads; the paper's is per head
+   (nh × r latent dims), so at 2 heads our r=2 has half the paper's latent dimensions.
 8. **InEKF measurement head is content-only.** Adding `(cos θ̂, sin θ̂)`
    creates a degenerate optimum.
 9. **Wrap innovations modulo 2π** via `atan2(sin(z−θ̂), cos(z−θ̂))`.
@@ -368,6 +386,9 @@ mapformer/
 ```
 
 ## Honest framing
+
+(Superseded 2026-09-25: items 1-3 below rest on the retracted lm200 era and on a Kalman reading
+the ablations withdrew; see the banner at the top.)
 
 MapFormer (the paper) already solves the aliased 2D-torus next-token
 prediction task it introduces. **We are not beating the paper on the
