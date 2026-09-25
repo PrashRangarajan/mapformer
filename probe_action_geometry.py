@@ -41,6 +41,21 @@ def latents(m, env, dev):
     return m.action_to_lie.w_in(x).detach().cpu().numpy()  # (V, r)
 
 
+@torch.no_grad()
+def angle_increments(m, env, dev):
+    """The per-head angle increments the path integrator actually cumsums, for every token id:
+    Delta = W_out W_in x (shared bottleneck) or Delta_h = W_out^h W_in^h x (per-head,
+    model_rank_perhead). Returns (V, n_heads, n_blocks). omega is NOT applied.
+
+    Why (added 2026-09-24): with a per-head bottleneck the LATENT W_in x concatenates every
+    head's r-vector, and a head whose W_out^h is ~0 still carries an arbitrary latent that
+    moves nothing -- so latent opposition / |cos| can call a working code broken. In delta
+    space a dead head contributes ~0 to every norm."""
+    ids = torch.arange(env.unified_vocab_size, device=dev)
+    x = m.token_emb(ids)[None]                            # (1, V, d)
+    return m.action_to_lie(x)[0].detach().cpu().numpy()   # (V, H, nb)
+
+
 def main():
     ap = argparse.ArgumentParser()
     # No defaults for --runs-dir / --out (audit 2026-09-23): the old default read the
@@ -51,6 +66,11 @@ def main():
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--out", required=True)
     ap.add_argument("--seeds", nargs="+", type=int, default=list(range(8)))
+    ap.add_argument("--space", choices=["latent", "delta"], default="latent",
+                    help="latent (default; every committed *_GEOMETRY.md): the r-dim code W_in x. "
+                         "delta: the per-head angle increments W_out^h W_in^h x (W_out W_in x for "
+                         "the shared bottleneck), concatenated over heads -- the right space for "
+                         "Vanilla_r2ph, where a head with ~0 W_out^h carries an arbitrary latent")
     a = ap.parse_args()
     dev = torch.device(a.device)
 
@@ -70,7 +90,14 @@ def main():
             m.load_state_dict(blob["model_state_dict"])
             env = GridWorld(size=c["grid_size"], n_obs_types=c.get("n_obs_types", 16),
                             p_empty=c.get("p_empty", 0.5), seed=1)
-            Z = latents(m, env, dev)
+            if a.space == "delta":
+                D3 = angle_increments(m, env, dev)                                  # (V, H, nb)
+                Z = D3.reshape(D3.shape[0], -1)                           # heads concatenated
+                Ah = D3[env.action_offset:env.action_offset + env.N_ACTIONS]   # (4, H, nb)
+                hn = np.linalg.norm(Ah, axis=2).mean(0)                   # mean action |Delta_h|
+                head_share = hn / max(hn.sum(), 1e-12)
+            else:
+                Z = latents(m, env, dev)
             A = Z[env.action_offset:env.action_offset + env.N_ACTIONS]   # (4, r)
             O = Z[env.obs_offset:]                                       # observations
             # ACTION_DELTAS order: pair each action with its opposite by delta
@@ -93,20 +120,29 @@ def main():
                                  max(np.linalg.norm(A, axis=1).mean(), 1e-9)))
             # per seed: r=2 is BIMODAL across seeds (audit 2026-09-23), so means hide it
             per_seed.append((arm, s, float(np.mean(opp[n_opp:])), orth[-1] if orth else float("nan"),
-                             obsnorm[-1]))
+                             obsnorm[-1]) + ((tuple(head_share),) if a.space == "delta" else ()))
             del m; torch.cuda.empty_cache()
         if opp:
             rows[arm] = (np.mean(opp), np.mean(dim2), np.mean(orth), np.mean(obsnorm))
 
-    o = ["# Does a wider bottleneck destroy the action geometry?", "",
-         "The paper's justification for r=2 is that `Delta_in` IS the 2D movement",
-         "vector, so the latent can be read directly. At r>2 that is not guaranteed.",
-         "Three basis-invariant structural tests on the trained latents, plus the",
-         "check that observations must not move the agent.", "",
-         "| arm | r | opposition <br><sub>|N+S|/scale, 0 is perfect</sub> | 2-plane energy <br><sub>1.0 = spans a plane</sub> | |cos(N,E)| <br><sub>0 = orthogonal</sub> | obs norm / action norm <br><sub>0 = no movement</sub> |",
-         "|---|---|---|---|---|---|"]
+    if a.space == "delta":
+        o = ["# Action geometry in DELTA space (the angle increments the path integrator cumsums)", "",
+             "`--space delta`: the same basis-invariant tests on Delta = W_out W_in x (per head,",
+             "Delta_h = W_out^h W_in^h x, for Vanilla_r2ph), all heads concatenated, omega not",
+             "applied. Unlike the latent, a head whose W_out^h is ~0 contributes ~0 here. The",
+             "2-plane energy is no longer 1.0 by construction at r=2 per head (4 latent dims).", ""]
+    else:
+        o = ["# Does a wider bottleneck destroy the action geometry?", "",
+             "The paper's justification for r=2 is that `Delta_in` IS the 2D movement",
+             "vector, so the latent can be read directly. At r>2 that is not guaranteed.",
+             "Three basis-invariant structural tests on the trained latents, plus the",
+             "check that observations must not move the agent.", ""]
+    o += ["| arm | r | opposition <br><sub>|N+S|/scale, 0 is perfect</sub> | 2-plane energy <br><sub>1.0 = spans a plane</sub> | |cos(N,E)| <br><sub>0 = orthogonal</sub> | obs norm / action norm <br><sub>0 = no movement</sub> |",
+          "|---|---|---|---|---|---|"]
     R = {"Vanilla": 2, "Vanilla_r4": 4, "Vanilla_r8": 8, "Vanilla_r16": 16,
          "Vanilla_r32": 32}
+    if a.space == "delta":
+        R["Vanilla_r2ph"] = "2/head"
     for arm in a.arms:
         if arm not in rows:
             continue
@@ -114,7 +150,10 @@ def main():
         o.append(f"| {arm} | {R.get(arm,'?')} | {op:.4f} | {d2:.4f} | {ort:.4f} | {on:.4f} |")
     o.append("")
     o += ["## Verdict", ""]
-    if "Vanilla" in rows and "Vanilla_r4" in rows:
+    if a.space == "delta":
+        o += ["None: delta space is descriptive only. The registered geometry readout is the "
+              "latent one (`--space latent`, the default).", ""]
+    if a.space == "latent" and "Vanilla" in rows and "Vanilla_r4" in rows:
         b, w = rows["Vanilla"], rows["Vanilla_r4"]
         keeps = (w[1] > 0.95) and (w[0] < b[0] * 2 + 0.05) and (w[2] < b[2] + 0.15)
         if keeps:
@@ -133,12 +172,25 @@ def main():
                   f"|cos| is {w[2]:.3f} against {b[2]:.3f}. The +0.085 accuracy gain "
                   f"is bought at a real interpretability cost, and r=2 should be "
                   f"kept wherever the displacement reading matters.", ""]
-    o += ["Inference only, 8 seeds. `opposition` and `|cos|` are scale-free; "
-          "`2-plane energy` is 1.0 by construction at r=2, so only r>2 rows are "
-          "informative on that column."]
-    o += ["", "## Per seed", "", "| arm | seed | opposition | |cos(N,E)| | obs/action norm |",
-          "|---|---|---|---|---|"]
-    o += [f"| {arm} | {s} | {op:.4f} | {c:.4f} | {on:.4f} |" for arm, s, op, c, on in per_seed]
+    if a.space == "delta":
+        o += [f"Inference only, {len(a.seeds)} seed(s). `opposition` and `|cos|` are scale-free. "
+              "With the SHARED bottleneck Delta = W_out z lies in an r-dim subspace, so "
+              "`2-plane energy` is 1.0 by construction at shared r=2; per-head r=2 spans up "
+              "to 4 dims. The last per-seed column is each head's share of the mean action "
+              "|Delta_h| (a head near 0 moves nothing)."]
+    else:
+        o += ["Inference only, 8 seeds. `opposition` and `|cos|` are scale-free; "
+              "`2-plane energy` is 1.0 by construction at r=2, so only r>2 rows are "
+              "informative on that column."]
+    if a.space == "delta":
+        o += ["", "## Per seed", "", "| arm | seed | opposition | |cos(N,E)| | obs/action norm | "
+              "action |Delta_h| share by head |", "|---|---|---|---|---|---|"]
+        o += [f"| {arm} | {s} | {op:.4f} | {c:.4f} | {on:.4f} | " + " / ".join(f"{x:.3f}" for x in hs) + " |"
+              for arm, s, op, c, on, hs in per_seed]
+    else:
+        o += ["", "## Per seed", "", "| arm | seed | opposition | |cos(N,E)| | obs/action norm |",
+              "|---|---|---|---|---|"]
+        o += [f"| {arm} | {s} | {op:.4f} | {c:.4f} | {on:.4f} |" for arm, s, op, c, on in per_seed]
     Path(a.out).write_text("\n".join(o) + "\n")
     print("\n".join(o))
 

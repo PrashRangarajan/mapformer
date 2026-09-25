@@ -1,0 +1,2 @@
+IDENTICAL default (--space latent) vs committed RANK_MATCHED_e900_GEOMETRY.md
+IDENTICAL default (--space latent) vs committed RANK_PERHEAD_PILOT_GEOMETRY.md
