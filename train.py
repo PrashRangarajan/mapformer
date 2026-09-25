@@ -99,11 +99,22 @@ def train(
             p_transition_noise=p_transition_noise,
             want_locations=wants_positions)
 
+    # SYNC-FREE STEP (audit 2026-09-24). The old loop forced three host<->device
+    # syncs per step (`if target_mask.sum() == 0`, boolean-mask indexing, which
+    # calls nonzero(), and `loss.item()`) plus two pageable H2D copies that may
+    # synchronise. Each sync drains the GPU queue and leaves it idle while Python
+    # fetches and launches the next step. Everything below is BITWISE-identical to
+    # the old loop: the skip test and the row indices are computed on the CPU copy
+    # of revisit_mask (the same values), flat-index gather/scatter visits the same
+    # rows in the same row-major order as boolean indexing, and the epoch loss is
+    # accumulated in float64 in the same order as the old Python-float `+=`, then
+    # read once per epoch.
+    pin = str(device).startswith("cuda") and torch.cuda.is_available()
     losses = []
     for epoch in range(n_epochs):
         t0 = time.time()
         model.train()
-        epoch_loss = 0.0
+        epoch_loss_t = torch.zeros((), dtype=torch.float64, device=device)
 
         for _ in range(n_batches):
             # tokens: (B, 2*n_steps) interleaved [a1, o1, a2, o2, ...]
@@ -115,8 +126,15 @@ def train(
                 tokens, obs_mask, revisit_mask, all_locations = env.generate_batch(
                     batch_size, n_steps, p_transition_noise=p_transition_noise,
                 )
-            tokens = tokens.to(device)
-            revisit_mask = revisit_mask.to(device)
+            # CPU-side scoring rows: same mask, same row-major order as logits[mask]
+            tgt_cpu = revisit_mask[:, 1:]
+            flat_idx = torch.nonzero(tgt_cpu.reshape(-1)).squeeze(1)
+            if pin:
+                tokens = tokens.pin_memory().to(device, non_blocking=True)
+                flat_idx = flat_idx.pin_memory().to(device, non_blocking=True)
+            else:
+                tokens = tokens.to(device)
+                flat_idx = flat_idx.to(device)
 
             # Stash ground-truth positions on the model for variants whose
             # auxiliary loss needs them (e.g., DoG aux on Level15_DoG).
@@ -146,16 +164,18 @@ def train(
             target_tokens = tokens[:, 1:]
             # Paper: "predict observation each time it comes back to a previously
             # visited location" — loss only on REVISITS, not first visits
-            target_mask = revisit_mask[:, 1:]
 
             logits = model(input_tokens)
 
-            # Skip batches with no revisits (rare at start of training)
-            if target_mask.sum() == 0:
+            # Skip batches with no revisits (rare at start of training). Decided on
+            # the CPU mask -- no device sync. The forward above still runs, as before,
+            # so the dropout RNG stream is consumed identically.
+            if flat_idx.numel() == 0:
                 continue
 
-            logits_masked = logits[target_mask]
-            targets_masked = target_tokens[target_mask]
+            V = logits.shape[-1]
+            logits_masked = logits.reshape(-1, V)[flat_idx]
+            targets_masked = target_tokens.reshape(-1)[flat_idx]
 
             loss = criterion(logits_masked, targets_masked)
             if has_aux:
@@ -170,8 +190,11 @@ def train(
             optimizer.step()
             scheduler.step()
 
-            epoch_loss += loss.item()
+            # float32 -> float64 is exact, and float64 adds in the same order as the
+            # old `epoch_loss += loss.item()`, so the logged loss is bit-identical
+            epoch_loss_t += loss.detach().to(torch.float64)
 
+        epoch_loss = float(epoch_loss_t)          # the one sync per epoch
         avg_loss = epoch_loss / n_batches
         losses.append(avg_loss)
 

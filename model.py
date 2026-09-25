@@ -25,6 +25,16 @@ from .lie_groups import build_block_diagonal_rotations_fast
 # False so results produced before 2026-08-29 reproduce bit-identically.
 USE_SDPA = False
 
+# Bit-exact fold of the 1/sqrt(d_head) scale into Q when it is a power of two
+# (audit 2026-09-24). Gate it on the target GPU with verify_gpu_bitexact.py before
+# relying on it; set False to restore the old op sequence exactly.
+_POW2_SCALE_FOLD = True
+
+
+def _is_pow2(x: float) -> bool:
+    m, _ = math.frexp(x)
+    return x > 0 and m == 0.5
+
 
 def _apply_rope(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tensor:
     """Apply rotary position encoding using cos/sin angles (eq. 16).
@@ -242,8 +252,20 @@ class WMTransformerLayer(nn.Module):
                 dropout_p=self.dropout.p if self.training else 0.0)
         else:
             scale = math.sqrt(self.d_head)
-            scores = torch.matmul(Q, K.transpose(-1, -2)) / scale
-            scores = scores.masked_fill(causal_mask.unsqueeze(0).unsqueeze(0), float('-inf'))
+            if _POW2_SCALE_FOLD and _is_pow2(scale):
+                # Audit 2026-09-24: for d_head in {4, 16, 64, 256} the scale is a
+                # power of two, and scaling by 2^-k commutes EXACTLY with every
+                # rounding in the GEMM (forward and both backward GEMMs), so
+                # (Q/scale) @ K^T is bit-identical to (Q @ K^T)/scale while
+                # skipping one full read+write pass over the [B,H,T,T] tensor in
+                # the forward AND one in the backward. masked_fill_ is in place:
+                # the matmul's backward needs only Q and K, never its output, so
+                # this saves a [B,H,T,T] allocation without changing any value.
+                scores = torch.matmul(Q / scale, K.transpose(-1, -2))
+                scores = scores.masked_fill_(causal_mask.unsqueeze(0).unsqueeze(0), float('-inf'))
+            else:
+                scores = torch.matmul(Q, K.transpose(-1, -2)) / scale
+                scores = scores.masked_fill(causal_mask.unsqueeze(0).unsqueeze(0), float('-inf'))
 
             attn = F.softmax(scores, dim=-1)
             attn = self.dropout(attn)
