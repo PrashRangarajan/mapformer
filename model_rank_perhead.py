@@ -61,3 +61,46 @@ class MapFormerWM_r4MatchedInit(MapFormerWM):
         from mapformer.model import ActionToLieAlgebra
         super().__init__(vocab_size, d_model, n_heads, n_layers, dropout, grid_size, 2)
         self.action_to_lie = ActionToLieAlgebra(d_model, n_heads, self.n_blocks, 4)
+
+
+# ------------------------------------------------------------------ rank-separation arms
+# RANK_SEP_PREREG.md. Both are built, like Vanilla_r2ph and Vanilla_r4mi, from our r=2's base
+# at the same seed, so every non-bottleneck weight is shared across all five rank arms.
+
+from mapformer.model import ActionToLieAlgebra as _Lie
+
+
+class ActionToLieAlgebraBlockDiag(_Lie):
+    """A shared-latent bottleneck whose W_out is masked BLOCK-DIAGONAL: head h reads only latent
+    dims [h*r, (h+1)*r). Built with exactly the draws of the unmasked module, then masked, so its
+    W_in and its diagonal blocks equal C's (Vanilla_r4mi) at the same seed. The mask is applied in
+    forward; masked entries get zero gradient and stay exactly zero under AdamW."""
+
+    def __init__(self, d_model, n_heads, n_blocks, per_head_r):
+        super().__init__(d_model, n_heads, n_blocks, n_heads * per_head_r)
+        m = torch.zeros(n_heads * n_blocks, n_heads * per_head_r)
+        for h in range(n_heads):
+            m[h * n_blocks:(h + 1) * n_blocks, h * per_head_r:(h + 1) * per_head_r] = 1.0
+        self.register_buffer("mask", m)
+        with torch.no_grad():
+            self.w_out.weight.mul_(m)
+
+    def forward(self, x):
+        B, T, _ = x.shape
+        delta = torch.nn.functional.linear(self.w_in(x), self.w_out.weight * self.mask)
+        return delta.view(B, T, self.n_heads, self.n_blocks)
+
+
+class MapFormerWM_r4MIBlockDiag(MapFormerWM):
+    """C_bd: C (shared r=4 from r=2's base) with cross-head W_out blocks zeroed and held at zero.
+    Equivalently a per-head r=2 whose W_in is C's and whose W_out starts at C's scale (bound 0.5)."""
+
+    def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
+                 dropout=0.1, grid_size=64, bottleneck_r=2, **kw):
+        super().__init__(vocab_size, d_model, n_heads, n_layers, dropout, grid_size, 2)
+        self.action_to_lie = ActionToLieAlgebraBlockDiag(d_model, n_heads, self.n_blocks, 2)
+
+
+class MapFormerWM_PerHead4(MapFormerWM_PerHead):
+    """D: per-head r=4 (8 latent dims, 4 per head, block-diagonal), from r=2's base."""
+    PER_HEAD_R = 4
