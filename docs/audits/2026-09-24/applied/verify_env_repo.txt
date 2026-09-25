@@ -1,0 +1,3 @@
+131/131 patched-repo-vs-HEAD checks passed
+generate_batch B=16 T=1024: HEAD 69.6 ms  patched 3.45 ms  (20x)
+generate_batch B=128 T=128: HEAD 69.8 ms  patched 3.66 ms  (19x)
