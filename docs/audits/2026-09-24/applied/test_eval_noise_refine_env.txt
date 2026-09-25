@@ -1,0 +1,11 @@
+--- wall-trained checkpoint (must refuse)
+<tmp>/wall/p0/Vanilla_s0/Vanilla.pt: trained with boundary='wall'; this evaluator only rebuilds the default torus
+--- landmark-trained checkpoint (must refuse)
+<tmp>/lm/p0/Vanilla_s0/Vanilla.pt: trained with n_landmarks=5; this evaluator only rebuilds the default torus
+--- grid-32 checkpoint, default now evaluates on its own grid 32 (HEAD: a 64 torus)
+p=0.00 Vanilla        s0 T=  32  acc 0.0000  nll 2.978
+    with --grid-size 64:
+[eval_noise_refine] NOTE Vanilla s0: trained on grid 32, evaluated on 64
+p=0.00 Vanilla        s0 T=  32  acc 0.2500  nll 2.891
+--- trained at p_action_noise 0.25 but found under the p0.1 tag (must refuse)
+<tmp>/noise/p01/Vanilla_s0/Vanilla.pt: directory tag says p=0.1, checkpoint trained at p_action_noise=0.25
