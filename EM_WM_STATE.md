@@ -1,5 +1,14 @@
 # EM vs WM and the position-kernel theory -- current state (2026-09-11)
 
+> **CORRECTED 2026-09-25 (experiment audit).** Three statements in the body below were withdrawn
+> in this file's own blocks but are restated without a flag further down:
+> - Sec 5 item 1, "On every map task they tie to within 0.004": struck in Sec 3 -- on the paper task
+>   at extended length EM is AHEAD by +0.070 / +0.085 (l=1024 / 2048, 8/8, OOD).
+> - "Why training never finds the solution" (the frame's limits), the Rewind-probe row "no arm
+>   learns a rewind", and the withdrawn-list reason "No from-scratch arm learns one": all rest on
+>   the linear rewind slope that `SEARCH_RESULTS.md` withdrew -- EM DOES find the rewind, per query
+>   token and wrapped, for about half the k (see the SEARCH block below).
+
 > **LEAKAGE TEST LANDED (2026-09-11) -- `NOLEAK_RESULTS.md`.** With `w_in`'s content columns
 > held at zero, the 8x-installed TRAINABLE rewind scores **1.000 on 8/8 seeds (0.991 at 2x
 > length)** -- identical to the frozen install, against 0.941 with the leak open. Leakage is

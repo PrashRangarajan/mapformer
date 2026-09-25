@@ -1,5 +1,19 @@
 # STORY: what the results report argues, and how it is organised
 
+> **CORRECTED 2026-09-25 (experiment audit; `report/VERIFY.md` E2/E3).** This editor's document
+> predates `PAPER2X2_RESULTS.md` and was not updated; `report/report.tex` is the current text.
+> - "The loop's contribution is mostly to the floor (8/8 seeds >= 0.77)", the paired loop effect
+>   +0.414, the interaction +0.315 and C13's +0.149 are single-batch or paired statistics on a task
+>   whose same-seed retrains drift 0.185 per seed (`REFINE_RESULTS.md`). Only the unpaired loop main
+>   effect +0.346 (t 3.75; loop pooled 0.803 +/- 0.200, 1/16 failures) survives.
+> - "Encoding +0.003 ... a POWERED NEGATIVE" and "the torus separation at a converged recipe is an
+>   OOD-length effect" are superseded by `PAPER2X2_RESULTS.md`: position **+0.243** raw at T=128
+>   (8/8, index RoPE 0.805), encoding DETECTABLE at every length (-0.049 / +0.114 / +0.189).
+> - Rank (E1, +0.085 at T=1024) is a T=128-trained, 8x-extrapolation number. At matched length and
+>   matched initialisation our shared r=2 solves 0/8 within 900 epochs, the paper's per-head r=2
+>   2/8 and shared r=4 8/8, while a rank-2 solution exists (0.9955) and is held under training:
+>   a search deficit (`RANK_MI_RESULTS.md`, `RANK_PROJ_RESULTS.md`).
+
 Editor's decision document, written 2026-09-13 from the six inventories (`report/inventory/A-F`),
 the brief, and the framing documents. The inventories win on facts. Where a number is quoted, the
 inventory ID and the primary file are named. Where two sources disagreed, the primary file was

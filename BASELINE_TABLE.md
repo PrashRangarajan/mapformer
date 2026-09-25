@@ -1,5 +1,17 @@
 # Baseline table — every model on every task, with provenance
 
+> **CORRECTED 2026-09-25 (experiment audit, `docs/audits/2026-09-24/experiments/PROPAGATION.md`).**
+> - The torus row of "THE RESULT THE TABLE NOW SHOWS" (position **+0.461**, encoding **+0.003**) is
+>   the 16-epoch LinearLR recipe, under which the index arms never leave the 0.506 floor. Under the
+>   converged recipe (`PAPER2X2_RESULTS.md`, 300 ep cosine, lr 1e-3, n=8) position is **+0.243**
+>   (MDE 0.038, 8/8) with index RoPE at **0.805**, and the encoding main effect is DETECTABLE at every
+>   length (-0.049 / +0.114 / +0.189 at T=128 / 512 / 1024). "The encoding does not move it" and
+>   "index arms on the floor" are superseded. The knob-sweep effects in this file (+0.438, +0.050,
+>   +0.488) are the same 16-epoch recipe with the index arm on the floor.
+> - "Cite the hierarchy gap as 0.415 vs 0.285 (+0.130)": that task was recipe-limited
+>   (`COMP_HEADROOM.md`: warmup + cosine +0.160, 7/8) and the hierarchy contrast, re-measured under
+>   the better recipe, is +0.136 and UNDERPOWERED (`HIER_RECHECK.md`). Cite as directional only.
+
 A jumping-off reference. **Read the provenance line under each table before
 comparing across tables.** Numbers from different training batches are not
 directly comparable (standing rule 3), and the lm200 leaderboard is what happens

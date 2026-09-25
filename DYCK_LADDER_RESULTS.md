@@ -5,7 +5,8 @@
 > but shrinking to a ceiling with depth. The large depth-resistant effect below exists only at
 > unseen depth. The convergence line uses an arm-median final slope, not the SOLVED/STALLED
 > classes, and the index arms' losses are still falling. Read "training length" below as
-> "training length, 3x training depth".
+> "training length, 3x training depth", and "an in-distribution stack effect" ("It does NOT
+> extrapolate in length") as "matched length, 3x the training depth" (theory audit S1.2).
 
 # READING -- the last standing positive result SURVIVES depth
 
