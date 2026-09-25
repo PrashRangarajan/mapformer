@@ -43,3 +43,21 @@ class MapFormerWM_PerHead(MapFormerWM):
         # replaced AFTER the base is built, so the base's RNG draws match Vanilla's exactly
         self.action_to_lie = ActionToLieAlgebraPerHead(d_model, n_heads, self.n_blocks,
                                                        self.PER_HEAD_R)
+
+
+class MapFormerWM_r4MatchedInit(MapFormerWM):
+    """Our SHARED r=4, built from our r=2's base at the same seed (RANK_MI_PREREG.md).
+
+    The stored r=4 (`Vanilla_r4`) draws its wider W_in inside the base constructor, which
+    shifts the random draws of EVERY later weight, so at seed s it shares no initial weights
+    with our r=2. Here the base is built exactly as `Vanilla` (r=2) and the r=4 bottleneck is
+    created afterwards: every non-bottleneck weight equals our r=2's (and the per-head r=2's)
+    at that seed; only the bottleneck differs. W_out keeps nn.Linear's default (bound
+    1/sqrt(4)), as in the stored r=4.
+    """
+
+    def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=1,
+                 dropout=0.1, grid_size=64, bottleneck_r=2, **kw):
+        from mapformer.model import ActionToLieAlgebra
+        super().__init__(vocab_size, d_model, n_heads, n_layers, dropout, grid_size, 2)
+        self.action_to_lie = ActionToLieAlgebra(d_model, n_heads, self.n_blocks, 4)
