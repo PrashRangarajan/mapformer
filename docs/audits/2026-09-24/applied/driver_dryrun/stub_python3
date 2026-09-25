@@ -1,0 +1,35 @@
+#!/bin/bash
+# STUB python3 for dry-running the batch drivers: no training, no GPU work.
+REAL=/usr/bin/python3
+CALLS="${STUB_CALLS:?}"
+if [ "${1:-}" = "-" ] || [ "${1:-}" = "-c" ]; then exec $REAL "$@"; fi
+args=("$@"); mod=""; out=""; odir=""; var=""; ep=""; ns=""; bs=""; init=""; dev=""
+for ((i = 0; i < ${#args[@]}; i++)); do
+  case "${args[$i]}" in
+    -m) mod="${args[$((i+1))]}";; --out) out="${args[$((i+1))]}";; --output-dir) odir="${args[$((i+1))]}";;
+    --variant) var="${args[$((i+1))]}";; --epochs) ep="${args[$((i+1))]}";; --n-steps) ns="${args[$((i+1))]}";;
+    --batch-size) bs="${args[$((i+1))]}";; --init-from) init="${args[$((i+1))]}";; --device) dev="${args[$((i+1))]}";;
+  esac
+done
+short="${mod#mapformer.}"
+if [ -n "${STUB_FAIL:-}" ] && [ "$short" = "$STUB_FAIL" ]; then echo "$(date +%T) $short FAILS (stub)" >> "$CALLS"; exit 1; fi
+case "$mod" in
+  mapformer.train_variant)
+    # how many trainers share my device right now (me included)?
+    # other trainers on my device (excluding me, $$, and this command-substitution subshell), plus me
+    n=$(( $(ps -u "$USER" -o pid=,ppid=,comm=,args= | awk -v d="--device $dev" -v a="$$" \
+            '$3=="python3" && /mapformer[.]train_/ && index($0, d) && $1 != a && $2 != a' | wc -l) + 1 ))
+    echo "$(date +%T) START $var -> $odir on $dev (trainers on $dev incl. me: $n)" >> "$CALLS"
+    sleep "${STUB_TRAIN_S:-4}"
+    $REAL - "$odir/$var.pt" "$var" "$ep" "$ns" "$bs" "$init" <<'PY'
+import sys, torch
+p, v, e, n, b, init = sys.argv[1:7]
+torch.save({"variant": v, "losses": [0.01] * int(e), "model_state_dict": {},
+            "config": {"epochs": int(e), "n_steps": int(n), "batch_size": int(b), "init_from": init or None}}, p)
+PY
+    echo "$(date +%T) END   $var -> $odir" >> "$CALLS";;
+  mapformer.eval_noise_refine) touch "$out" "${out%.md}.json"; echo "$(date +%T) $short -> $(basename $out)" >> "$CALLS";;
+  mapformer.eval_rank_strata|mapformer.probe_action_geometry) touch "$out"; echo "$(date +%T) $short -> $(basename $out)" >> "$CALLS";;
+  mapformer.analyze_*) echo "stub analysis"; echo "$(date +%T) $short" >> "$CALLS";;
+  *) exec $REAL "$@";;
+esac

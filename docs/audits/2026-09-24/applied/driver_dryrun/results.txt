@@ -1,0 +1,71 @@
+
+=== 1. run_rank_matched.sh TAG=_dry EPOCHS=3 SEEDS='0 1 2' (6 jobs, default MAXPG=2)
+exit 0
+18:21:41 START Vanilla -> <fake>/runs/rank_matched_dry/p0/Vanilla_s0 on cuda:0 (trainers on cuda:0 incl. me: 1)
+18:21:42 START Vanilla_r4 -> <fake>/runs/rank_matched_dry/p0/Vanilla_r4_s0 on cuda:1 (trainers on cuda:1 incl. me: 1)
+18:21:44 START Vanilla -> <fake>/runs/rank_matched_dry/p0/Vanilla_s1 on cuda:0 (trainers on cuda:0 incl. me: 2)
+18:21:45 START Vanilla_r4 -> <fake>/runs/rank_matched_dry/p0/Vanilla_r4_s1 on cuda:1 (trainers on cuda:1 incl. me: 2)
+18:21:47 START Vanilla -> <fake>/runs/rank_matched_dry/p0/Vanilla_s2 on cuda:0 (trainers on cuda:0 incl. me: 2)
+18:21:48 START Vanilla_r4 -> <fake>/runs/rank_matched_dry/p0/Vanilla_r4_s2 on cuda:1 (trainers on cuda:1 incl. me: 2)
+18:21:53 eval_noise_refine -> RANK_MATCHED_dry.md
+18:21:53 eval_rank_strata -> RANK_MATCHED_dry_STRATA.json
+18:21:53 eval_rank_strata -> RANK_SWEEP_STRATA.json
+18:21:53 probe_action_geometry -> RANK_MATCHED_dry_GEOMETRY.md
+18:21:53 analyze_rank_matched
+max trainers on one device at any launch: 2
+.rank_matched_dry_done
+RANK_MATCHED_dry_ANALYSIS.txt
+RANK_MATCHED_dry_GEOMETRY.md
+RANK_MATCHED_dry.json
+RANK_MATCHED_dry.md
+RANK_MATCHED_dry_STRATA.json
+
+=== 2. same again: every checkpoint reused (matches() reads the config), evals rerun, marker reset then set
+exit 0
+launches: 0
+skip lines in log (cumulative): 6
+.rank_matched_dry_done
+
+=== 3. a reused checkpoint at another budget (EPOCHS=4) must ABORT, no marker
+exit 1
+ABORT: <fake>/runs/rank_matched_dry/p0/Vanilla_s0/Vanilla.pt exists but not at epochs=4 n_steps=1024 bs=16 init=
+markers: 0
+
+=== 4. training code changed since code_md5.txt must ABORT
+exit 1
+2026-09-24 18:22:01 ABORT: training code changed since <fake>/runs/rank_matched_dry/code_md5.txt
+
+=== 5. a failing evaluator: drv_fail, no marker
+exit 1
+2026-09-24 18:22:08 FAILED: eval_rank_strata -- done marker NOT set
+markers: 0
+
+=== 6. lock held by another driver: REFUSED
+exit 1
+2026-09-24 18:22:08 REFUSED: <drv_test>/fake/mapformer/.run_rank_matched.lock is held by another driver
+
+=== 7. run_rank_perhead_pilot.sh
+exit 0
+18:22:09 START Vanilla_r2ph -> <fake>/runs/rank_perhead_pilot/p0/Vanilla_r2ph_s0 on cuda:0 (trainers on cuda:0 incl. me: 1)
+18:22:10 START Vanilla_r2ph -> <fake>/runs/rank_perhead_pilot/p0/Vanilla_r2ph_s1 on cuda:1 (trainers on cuda:1 incl. me: 1)
+18:22:11 START Vanilla -> <fake>/runs/rank_perhead_pilot/p0/Vanilla_s0 on cuda:0 (trainers on cuda:0 incl. me: 2)
+18:22:16 eval_noise_refine -> RANK_PERHEAD_PILOT.md
+18:22:16 eval_rank_strata -> RANK_PERHEAD_PILOT_STRATA.json
+18:22:16 probe_action_geometry -> RANK_PERHEAD_PILOT_GEOMETRY.md
+18:22:16 analyze_rank_perhead
+.rank_perhead_pilot_done
+
+=== 8. run_rank_proj.sh with the e900c control FAILED in its latest invocation: must fail, not wait forever
+exit 1
+launches: 8
+2026-09-24 18:22:31 FAILED: rank_matched_e900c driver failed -- see <fake>/rank_matched_e900c.log -- done marker NOT set
+
+=== 9. an OLD failure followed by a clean new invocation: keeps waiting (timeout 8 s, exit 124 expected), then finishes once the marker appears
+exit 124 (124 = still waiting, as it should)
+exit 0
+2026-09-24 18:22:51 DONE <fake>/.rank_proj_done
+
+=== 10. a reused proj checkpoint trained from ANOTHER init must fail (patch 05)
+exit 1
+2026-09-24 18:22:57 FAILED: stale checkpoint <fake>/runs/rank_proj_train/p0/Vanilla_s3/Vanilla.pt -- done marker NOT set
+rank_proj markers: 0
