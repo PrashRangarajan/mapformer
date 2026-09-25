@@ -1,0 +1,4 @@
+check_not_stale: 95/95 code checkpoints pass; raised on 0
+stale copy: caught -> STALE CHECKPOINT <tmp>/PoPE-NoSigma_s2.best.pt: val_bpc 0.9962 (iter 15000) but the run's JSON says 0.9156. Refusing to score a checkpoint that is not its run.
+[ckpt_guard] WARNING no run JSON beside PoPE-NoSigma_s2.best.pt; staleness not checked
+strict load_state_dict: 24/24 (arm, seed, grid_size) loads succeeded

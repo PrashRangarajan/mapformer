@@ -22,6 +22,7 @@ import numpy as np
 import torch
 
 from .train_hourglass_enwik8 import build
+from .ckpt_guard import check_not_stale
 
 _REPO = os.path.dirname(os.path.abspath(__file__))
 LENS = [128, 256, 512, 1024, 2048]
@@ -46,13 +47,15 @@ def main(n=16, dev="cuda:0"):
         for seed in (0, 1, 2):
             ck = os.path.join(_REPO, "runs", "code", f"{arm}_s{seed}.best.pt")
             if not os.path.exists(ck):
+                print(f"MISSING {ck} -- this arm will have fewer seeds", flush=True)
                 continue
             blob = torch.load(ck, map_location="cpu", weights_only=False)
+            check_not_stale(ck, blob)
             c = blob["cfg"]
             m = build(c["model"], shorten=c["shorten"], dim=c["dim"], heads=c["heads"],
                       n_layers=c["n_layers"], grid_size=2048,
                       bottleneck_r=c["bottleneck_r"]).to(dev)
-            m.load_state_dict(blob["state_dict"], strict=False); m.eval()
+            m.load_state_dict(blob["state_dict"]); m.eval()   # strict
             rs = [accum(m, data, T, n, dev) for T in LENS]
             a = np.polyfit(np.log(LENS), np.log(np.maximum(rs, 1e-12)), 1)[0]
             print(f"{arm+'_s'+str(seed):<22}{a:>8.3f}"

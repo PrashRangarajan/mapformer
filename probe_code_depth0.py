@@ -25,6 +25,7 @@ import torch
 import torch.nn.functional as F
 
 from .train_hourglass_enwik8 import build
+from .ckpt_guard import check_not_stale
 
 _REPO = os.path.dirname(os.path.abspath(__file__))
 LN2 = 0.6931471805599453
@@ -80,13 +81,15 @@ def main(T=2048, dev="cuda:0"):
         for seed in (0, 1, 2):
             ck = os.path.join(_REPO, "runs", "code", f"{arm}_s{seed}.best.pt")
             if not os.path.exists(ck):
+                print(f"MISSING {ck} -- this arm will have fewer seeds", flush=True)
                 continue
             blob = torch.load(ck, map_location="cpu", weights_only=False)
+            check_not_stale(ck, blob)
             c = blob["cfg"]
             m = build(c["model"], shorten=c["shorten"], dim=c["dim"], heads=c["heads"],
                       n_layers=c["n_layers"], grid_size=T,
                       bottleneck_r=c["bottleneck_r"]).to(dev)
-            m.load_state_dict(blob["state_dict"], strict=False); m.eval()
+            m.load_state_dict(blob["state_dict"]); m.eval()   # strict
             nll, hit = per_token_nll(m, data, T, dev)
             sel = hit & far
             for key, mask in (("all", sel), ("d0", sel & (depth == 0)),

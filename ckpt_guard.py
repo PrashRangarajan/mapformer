@@ -427,3 +427,31 @@ def assert_same_function_at_init(model_a: torch.nn.Module, model_b: torch.nn.Mod
     if not ok:
         raise AssertionError(f"not the same function at init: max |diff| {d:.3e} (atol {atol})")
     return d
+
+
+# ============================================================================ stale checkpoints
+def check_not_stale(ck: str | Path, blob: dict | None = None) -> None:
+    """Refuse a train_hourglass_enwik8 checkpoint that is not the run it claims to be.
+
+    A duplicate launch writes its own early `.best.pt` over a finished run's (2026-09-22:
+    runs/code_ablate/PoPE-NoSigma_s2.best.pt, iteration 15000, val_bpc 0.9962 against the
+    run JSON's 0.9156 -- still on disk at the 2026-09-24 audit). eval_code_long.py had this
+    check inline; eval_code_delims.py, probe_code_depth0.py and probe_code_accum.py did not.
+    Raises if the run's JSON exists and disagrees; warns (does not pass silently) if the
+    JSON is missing."""
+    import json
+    ck = Path(ck)
+    if blob is None:
+        blob = torch.load(ck, map_location="cpu", weights_only=False, mmap=True)
+    base = ck.name.replace(".best.pt", "").replace(".final.pt", "")
+    jf = ck.parent / (base + ".json")
+    if not jf.exists():
+        print(f"[ckpt_guard] WARNING no run JSON beside {ck.name}; staleness not checked")
+        return
+    rec = json.load(open(jf))
+    want = rec.get("best_val_bpc") if ck.name.endswith(".best.pt") else rec["curve"][-1]["val_bpc"]
+    got = blob.get("val_bpc")
+    if want is not None and got is not None and abs(want - got) > 1e-9:
+        raise CheckpointLayoutError(
+            f"STALE CHECKPOINT {ck}: val_bpc {got:.4f} (iter {blob.get('iter')}) but the run's "
+            f"JSON says {want:.4f}. Refusing to score a checkpoint that is not its run.")

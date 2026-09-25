@@ -141,6 +141,8 @@ def main():
         if kindk not in wanted:
             continue
         blob = torch.load(ck, map_location="cpu", weights_only=False)
+        from mapformer.ckpt_guard import check_not_stale
+        check_not_stale(ck, blob)
         cfg = blob["cfg"]
         model = build(cfg["model"], shorten=cfg["shorten"], dim=cfg["dim"],
                       heads=cfg["heads"], n_layers=cfg["n_layers"],
