@@ -43,30 +43,65 @@ def kinds(tok, deltas, size):
     return out
 
 
+_DELTA_ARR = np.array([[-1, 0], [1, 0], [0, -1], [0, 1]], dtype=np.int64)  # == ACTION_DELTAS
+
+
+def kinds_vec(tok, size):
+    """Vectorised kinds(): (unwrapped position is new, lag since last visit to the wrapped
+    cell, or t + 10**9 when never visited) for every step, as two arrays."""
+    a = tok[0::2].numpy()
+    u = np.cumsum(_DELTA_ARR[a], 0)                           # unwrapped position after step t
+    n = len(a)
+    off = n + 1                                               # |u| <= n: make keys non-negative
+    ku = (u[:, 0] + off) * (2 * off + 1) + (u[:, 1] + off)
+    new_u = np.zeros(n, dtype=bool)
+    new_u[np.unique(ku, return_index=True)[1]] = True         # first occurrence = not seen before
+    kw = (u[:, 0] % size) * size + (u[:, 1] % size)
+    order = np.argsort(kw, kind="stable")                     # time order within each cell
+    prev = np.full(n, -10**9, dtype=np.int64)
+    same = kw[order[1:]] == kw[order[:-1]]
+    prev[order[1:][same]] = order[:-1][same]
+    return new_u, np.arange(n) - prev
+
+
 @torch.no_grad()
 def evaluate(m, env, T, n_trials, seed, dev):
+    """Same trajectories, same B=1 forward and same outputs as the per-target loop it
+    replaces (audit 2026-09-24): hits and counts are integers; NLL is summed in float64
+    in the SAME ORDER (np.cumsum is a strict left-to-right accumulate), so the JSON is
+    byte-identical. ~20-40 us of Python per scored target becomes a few array ops."""
     np.random.seed(seed)
-    acc = {k: [0, 0, 0.0] for k in STRATA}          # hits, n, summed nll
-    freq = {k: {} for k in STRATA}                    # target counts -> constant floor
+    hits = {k: 0 for k in STRATA}; cnt = {k: 0 for k in STRATA}
+    nls = {k: [] for k in STRATA}; tg = {k: [] for k in STRATA}
     for _ in range(n_trials):
         tok, _o, rev = env.generate_trajectory(T)
         lp = F.log_softmax(m(tok[None, :-1].to(dev)).float(), -1)[0].cpu()
         tgt = tok[1:]; msk = rev[1:]
-        if msk.sum() == 0:
+        idx = torch.nonzero(msk).flatten()
+        if idx.numel() == 0:
             continue
-        pred = lp.argmax(-1); c = kinds(tok, env.ACTION_DELTAS, env.size)
-        for i in torch.nonzero(msk).flatten().tolist():
-            wrapped, lag = c[i // 2]                 # target i is the obs of step i//2
-            k = "wrap" if wrapped else ("plain_lag<128" if lag < 128 else "plain_lag>=128")
-            hit = int(pred[i] == tgt[i]); nl = float(-lp[i, tgt[i]])
-            for kk in ("all", k):
-                acc[kk][0] += hit; acc[kk][1] += 1; acc[kk][2] += nl
-                y = int(tgt[i]); freq[kk][y] = freq[kk].get(y, 0) + 1
-    # floor = best CONSTANT prediction within the stratum (model-independent;
-    # it is the always-blank rate wherever blank is the commonest target)
-    return {k: {"acc": h / n if n else None, "nll": s / n if n else None, "n": n,
-                "floor": max(freq[k].values()) / n if n else None}
-            for k, (h, n, s) in acc.items()}
+        t_i = tgt[idx]
+        hit = (lp.argmax(-1)[idx] == t_i).numpy()
+        nl = (-lp[idx, t_i]).double().numpy()
+        new_u, lag = kinds_vec(tok, env.size)
+        st = (idx // 2).numpy()                               # target i is the obs of step i//2
+        wrap = new_u[st]; short = lag[st] < 128
+        t_np = t_i.numpy()
+        for k, sel in (("all", np.ones(len(st), dtype=bool)), ("wrap", wrap),
+                       ("plain_lag<128", ~wrap & short), ("plain_lag>=128", ~wrap & ~short)):
+            hits[k] += int(hit[sel].sum()); cnt[k] += int(sel.sum())
+            nls[k].append(nl[sel]); tg[k].append(t_np[sel])
+    out = {}
+    for k in STRATA:
+        n = cnt[k]
+        # a leading 0.0 reproduces Python's `0.0 + x` exactly, signed zeros included
+        s = float(np.cumsum(np.concatenate([np.zeros(1)] + nls[k]))[-1])
+        fl = int(np.bincount(np.concatenate(tg[k])).max()) if n else 0
+        # floor = best CONSTANT prediction within the stratum (model-independent;
+        # it is the always-blank rate wherever blank is the commonest target)
+        out[k] = {"acc": hits[k] / n if n else None, "nll": s / n if n else None, "n": n,
+                  "floor": fl / n if n else None}
+    return out
 
 
 def main():
