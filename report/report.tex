@@ -883,8 +883,8 @@ make a fixed per-token increment misspecified. % src: MINIGRID_FULL_2X2X2.md, BA
 
 \paragraph{Allocentric actions.} With actions recorded as realised grid displacement
 (Table~\ref{tab:minigrid-allo}; one batch, $n=8$, 50 epochs), MapWM at $r=4$ beats the index arm on
-every seed: \arm{Vanilla\_r4} minus \arm{RoPE} is $+0.034$ (\mde\ $0.014$, $8/8$) at $T=1024$. At the
-paper's $r=2$ the contrast is $-0.010$ (\mde\ $0.056$, $4/8$), unmeasured. The effect is small, on a
+every seed: \arm{Vanilla\_r4} minus \arm{RoPE} is $+0.034$ (\mde\ $0.014$, $8/8$) at $T=1024$. At our
+shared $r=2$ the contrast is $-0.010$ (\mde\ $0.056$, $4/8$), unmeasured. The effect is small, on a
 benchmark where every arm is far above the floor; the claim is the sign conditioned on $r=4$, not its
 size. An earlier three-seed factorial found the same sign flip at $r=2$ with effects of about 0.02,
 compared across batches (Appendix~\ref{app:env}). % src: MINIGRID_EM.md (D8); MINIGRID_ALLOCENTRIC_2X2X2.md (D7)
