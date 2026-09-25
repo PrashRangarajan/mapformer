@@ -116,6 +116,15 @@ def main():
     ap.add_argument("--weight-decay", type=float, default=0.01)
     ap.add_argument("--warmup-frac", type=float, default=0.05)
     ap.add_argument("--n-eval", type=int, default=1024)
+    # Training distribution (DYCK_MDEPTH_PREREG.md). Defaults = the paper's L32 D4, and at the
+    # defaults the sampler call and its RNG stream are unchanged, so every stored run reproduces.
+    ap.add_argument("--train-L", type=int, default=32)
+    ap.add_argument("--train-D", type=int, default=4,
+                    help="the depth every training sequence must reach exactly (DyckWorld.sample)")
+    ap.add_argument("--train-D-set", default=None,
+                    help="comma list, e.g. 4,5,6,7,8,9,10,11,12: each training BATCH draws its D "
+                         "uniformly from the set, from a separate RNG (seed + 7,000,003); "
+                         "overrides --train-D")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--output-dir", required=True)
     a = ap.parse_args()
@@ -132,6 +141,16 @@ def main():
         name += f"_b{int(a.rope_base)}"
     if a.lam_init is not None:
         name += f"_lam{a.lam_init:g}"
+    dset = [int(x) for x in a.train_D_set.split(",")] if a.train_D_set else None
+    for D_ in (dset or [a.train_D]):
+        assert a.train_L % 2 == 0 and a.train_L >= 2 * D_ >= 2, (a.train_L, D_)
+    # a non-default training distribution is recorded in the checkpoint NAME, so no aggregator
+    # can pool it with a default-trained run of the same arm (rule: label by content, not dir)
+    if dset:
+        name += f"_tL{a.train_L}Dset{min(dset)}-{max(dset)}"
+    elif (a.train_L, a.train_D) != (32, 4):
+        name += f"_tL{a.train_L}D{a.train_D}"
+    drng = np.random.default_rng(a.seed + 7_000_003) if dset else None
     print(f"{name} seed={a.seed} params={n_par:,} d_model={64 * a.n_heads}", flush=True)
 
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=a.weight_decay)
@@ -142,8 +161,12 @@ def main():
     sched = torch.optim.lr_scheduler.LambdaLR(opt, f)
 
     curve, run, t0 = [], [], time.time()
+    ent_sum, d_count = 0.0, {}
     for step in range(total):
-        inp, tgt, _, _ = world.batch(a.batch_size, 32, 4, rng)
+        D_step = int(drng.choice(dset)) if dset else a.train_D
+        d_count[D_step] = d_count.get(D_step, 0) + 1
+        inp, tgt, _, ent = world.batch(a.batch_size, a.train_L, D_step, rng)
+        ent_sum += float(ent.mean())
         logits = model(inp.to(dev))
         loss = F.cross_entropy(logits.transpose(1, 2), tgt.to(dev))
         opt.zero_grad(set_to_none=True)
@@ -163,12 +186,16 @@ def main():
                base=a.base, rope_base=a.rope_base, seed=a.seed, params=n_par, steps=total, batch_size=a.batch_size,
                lr=a.lr, weight_decay=a.weight_decay, loss_curve=curve,
                final_loss=float(np.mean(tail)), final_slope_per_1k=slope, grid=grid,
-               wall_s=time.time() - t0)
+               wall_s=time.time() - t0,
+               train_L=a.train_L, train_D=None if dset else a.train_D, train_D_set=dset,
+               train_D_counts={str(k): v for k, v in sorted(d_count.items())},
+               train_ce_floor=ent_sum / total, n_sequences=a.n_sequences)
     od = Path(a.output_dir); od.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), od / f"{name}.pt")
     json.dump(out, open(od / f"{name}.json", "w"), indent=1)
     g = grid
-    print(f"final loss {out['final_loss']:.4f} (floor {g['L32_D4']['CE_floor']:.4f}) slope/1k {slope:+.4f}")
+    print(f"final loss {out['final_loss']:.4f} (training-distribution floor {out['train_ce_floor']:.4f}; "
+          f"L32D4 floor {g['L32_D4']['CE_floor']:.4f}) slope/1k {slope:+.4f}")
     print("F1 L32D4 %.3f  L128D4 %.3f  L32D12 %.3f  L128D12 %.3f" % tuple(
         g[k]["F1"] for k in ["L32_D4", "L128_D4", "L32_D12", "L128_D12"]), flush=True)
 
