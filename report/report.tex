@@ -29,7 +29,7 @@
 
 \title{When a Learned Path Integrator Makes a Map:\\
 \large Controlled Measurements on MapFormer}
-\date{Results report, 13 September 2026}
+\date{Results report, 13 September 2026; corrected 25 September 2026}
 \author{Prashant Rangarajan}
 
 \begin{document}
@@ -56,24 +56,29 @@ loss-matched verdicts depend on the pool, Section~\ref{sec:c1-recipe}). At
 matched loss no measurable gain over an index code remains, although raw accuracy stays detectably
 above it; this extends a known result to navigation, and Selective RoPE's generator pays the same raw
 cost. On a counting task the raw cost is small for these two generators ($0.060$, unmeasured, and
-$0.068$), but single-origin MapEM pays $0.198$. The paper's rank-2 bottleneck learns a skewed basis,
-and rank 4 repairs it for 384 parameters.
-% src: SIGN_ABLATION.md (E11); MONOTONE_RESULTS.md P1, P2, Q2; RANK_SWEEP.md (E1)
+$0.068$), but single-origin MapEM pays $0.198$.
+% src: SIGN_ABLATION.md (E11); MONOTONE_RESULTS.md P1, P2, Q2
 \item \textbf{Findable solutions.} MapEM, whose shared position kernel is TEM's conjunction of
 where and what, represents a varying-offset recall task exactly yet, with a single shared origin,
 trails MapWM by $0.375$ from scratch at a shared budget ($n=8$; $0.137$ with the paper's separate
 origins). On that task, constructions place the gap in search rather than representation, and
 training finds the solution per query token. In a separate batch, per-pair position origins add
 $0.215$ over single-origin MapEM ($n=48$): $0.124$ from added pathway capacity with the kernel still
-shared, and $0.091$ from per-pair freedom, both detectable.
-% src: RECENCY_EM_RESULTS.md (F1); WARM_RESULTS.md (F9); SEARCH_RESULTS.md (F12); PAIRSPLIT_RESULTS.md (F19)
+shared, and $0.091$ from per-pair freedom, both detectable. The paper's rank-2 bottleneck shows the
+same pattern on the torus: trained and tested at $T=1024$ from matched initial weights, our shared $r=2$
+finds the solution on $0/8$ seeds within 900 epochs, the paper's per-head $r=2$ on $2/8$ and $r=4$ on
+$8/8$, although a rank-2 solution exists and is held under training.
+% src: RECENCY_EM_RESULTS.md (F1); WARM_RESULTS.md (F9); SEARCH_RESULTS.md (F12); PAIRSPLIT_RESULTS.md (F19); RANK_MI_RESULTS.md; RANK_PROJ_RESULTS.md
 \end{itemize}
 Explicit state correction gives no measurable benefit on a drifting task built for it and helps
 only beyond the training length; an explicit token gate adds no measurable accuracy, and hierarchical
 pooling's only detectable gain is a ceiling-level $0.012$ (its larger gains, up to $+0.151$ on compositional transfer, are directional). % src: HIER_PARITY.md (C20); HIER_RECHECK.md (C05)
  Weight-shared recursion does add accuracy where the base model
 trains unreliably (on Match-Query, in an unpaired analysis); on the torus its gain vanishes at matched
-loss. Transfer across a change of structure, and language modelling, are not tested.
+loss. Transfer across a change of structure is not tested, and the sequence-modelling results (Dyck-2,
+Bach, Indirect Indexing, enwik8) are replications and length effects at small scale, not language-model
+quality. \emph{Corrected 25 September 2026}: rank was described as a skewed basis that $r=4$ repairs; it
+is a search deficit (Section~\ref{sec:c3-rank}).
 % src: MQ_NOISE_2X2.md, MQ_NOISE_2X2_C2.md; L15_ABLATION.md; GATED_RESULTS.md; HIER_PARITY.md; REFINE_RESULTS.md; L15_LOOP_2X2.md
 \end{abstract}
 
@@ -143,10 +148,10 @@ own language experiment reports a perplexity gain but no BLiMP gain.
 transferable part of MapFormer is its accumulated, content-driven position phase. On MapFormer's own task
 it is the larger factor on raw accuracy at training length under the paper's recipe and at every length
 under a converged one; the rotary encoding also matters beyond the training length (Section~\ref{sec:c1-paper}). That phase pays under three
-conditions, each supported by an intervention on its own task; that rank acts through conditioning is
-descriptive. The
-input must make a token's displacement fixed; the increment must be signed and well-conditioned so
-that it can cancel; and training must find the solution. Fully factorising where from what, as
+conditions, each supported by an intervention on its own task. The
+input must make a token's displacement fixed; the increment must be signed so
+that it can cancel; and training must find the solution, which at rank 2 per head it usually does not on
+the torus although the solution exists. Fully factorising where from what, as
 MapEM's shared kernel does, costs nothing measurable in what can be represented on the tasks tested.
 On a varying-offset recall task it detectably changes what training finds, and per-pair position
 freedom detectably raises accuracy on it. Explicit correction and gating add no measurable
@@ -175,12 +180,12 @@ result & standing & prior work \\
 Path integration is the larger factor on MapFormer's own task on raw accuracy: at training length under the paper's recipe, and at every length measured under a converged recipe (index and PoPE controls, context destruction); the encoding adds a smaller amount beyond training length & ours & MapFormer shows path integration solves its task \\
 Rotation-based actions remove the effect; recording realised displacement restores it; the MiniGrid flip needs $r=4$; the aliasing account fails on its converged cells (exploratory at the least aliased level) & ours & none evaluates navigation \\
 Monotone increments destroy the map in navigation (at matched loss in a six-arm pool, no gain over an index code remains; loss-matched verdicts depend on the pool), isolated as one operation; a second generator pays the same raw cost & replication in a new regime & Sarrof; Grazzi; Selective RoPE \S4.2 \\
-The rank-2 bottleneck learns a skewed basis; $r=4$ repairs it & ours & LieRE (different axis) \\
+At rank 2 per head (ours shared, and the paper's per-head design) training rarely finds a torus solution that exists and is held at rank 2; $r=4$ finds it on every seed & ours & LieRE (different axis) \\
 Index codes cannot count contextually & replication & CoPE \\
 An unconstrained MapFormer counts through a content gate, by intervention & ours & CoPE's gate is the analogue \\
 Shared versus per-pair position kernel: existence, holdability, per-token search, per-pair decomposition & ours & \citet{whittington2025tale} and TEM are the frame \\
 State correction shows no detectable scaling with drift; an explicit gate separates and buys no measurable accuracy; hierarchy directional & ours & -- \\
-Recursion adds accuracy to path integration on one task (unpaired), with a super-additive paired estimate; recursion's torus gain is convergence & ours & recursion for depth: Mixture-of-Recursions \\
+Recursion adds accuracy to path integration on one task (unpaired; the super-additive paired estimate is single-batch and withdrawn); recursion's torus gain is convergence & ours & recursion for depth: Mixture-of-Recursions \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -246,7 +251,8 @@ additive combination of a content and a position score; its position kernel is p
 the \emph{argument} (what $\Delta S$ measures: signed or monotone increments, the rank $r$, or the
 index); the \emph{kernel} (the shape of $\kappa$: phases, magnitudes, frequencies); and the
 \emph{composition} (one shared $\kappa$ multiplying content, or a per-pair kernel). Claims~2 and~3
-are about the argument, Claim~4 about composition.
+are about the argument, Claim~4 about composition and about whether training finds the argument's
+solution (the rank).
 
 \subsection{Where the mechanisms sit}
 
@@ -405,12 +411,15 @@ seed, the effect is $\tfrac12[(\arm{Vanilla}-\arm{RoPE}) + (\arm{MapPoPE-Flat}-\
 scored on the same evaluation trajectories. Over the eight seeds this gives $0.293$, $0.218$, $0.240$, $0.258$,
 $0.245$, $0.223$, $0.288$ and $0.177$: mean $0.243$, standard deviation $0.038$. The standard error of that mean is
 $0.038/\sqrt8$, and the \mde\ multiplies it by 2.8, the factor that flags a true effect of that size at least 80\% of
-the time while flagging pure noise only 5\% of the time ($1.96+0.84$). Here $\mde = 2.8\times0.038/\sqrt8 = 0.038$;
+the time while flagging pure noise only 5\% of the time ($1.96+0.84$; a normal approximation --- with the $t$
+distribution the false-positive rate of this rule is 2.7\% at $n=8$ but 10.7\% at $n=3$ and 6.8\% at $n=4$, and
+80\% power needs a multiplier of 3.26 at $n=8$). Here $\mde = 2.8\times0.038/\sqrt8 = 0.038$;
 with eight seeds $2.8/\sqrt8\approx0.99$, so the \mde\ is close to the sd of the paired differences. The effect is
 about six times its \mde, so it is detectable. Because arms are paired by seed and share evaluation data, noise common
 to both arms cancels in the difference, which keeps the sd, and so the \mde, small.
 % src: _PAPER2X2_RAW.json (per-seed accuracies, eval_noise_refine, env-seed 10000); PAPER2X2_RESULTS.md
-\item \textbf{Seeds.} Results at $n\le3$ are exploratory whatever their verdict column says.
+\item \textbf{Seeds.} Results at $n\le3$ are exploratory whatever their verdict column says: at $n=3$ the
+\mde\ rule is a 10.7\% false-positive test.
 \item \textbf{One batch.} Arms that are compared were trained in one batch with the same code. A
 same-seed retrain that reproduces a number bitwise is a determinism check, not a replication.
 \item \textbf{Fresh-seed replication.} Where a batch was extended, the new seeds are reported alone
@@ -986,23 +995,25 @@ the agent. Displacement there is continuous in magnitude as well as direction, w
 here models. % src: HABITAT_BUILD.md (D13)
 
 %======================================================================
-\section{Claim 3: the increment must cancel, and cancel cleanly}
+\section{Claim 3: the increment must cancel}
 \label{sec:claim3}
 %======================================================================
 
-For the interval sum to measure net displacement, opposite actions must produce cancelling increments,
-and the basis they live in must be well conditioned. Forcing the increment non-negative costs MapWM $0.363$
+For the interval sum to measure net displacement, opposite actions must produce cancelling increments.
+Forcing the increment non-negative costs MapWM $0.363$
 raw (\mde\ $0.025$) and $0.280$ at matched loss (\mde\ $0.061$) on the torus at $T=1024$ ($12/12$), and at
 matched loss leaves no measurable gain over an index code (raw, the monotone arm stays ahead of it, $+0.213$,
-\mde\ $0.097$); Selective RoPE's generator pays the same raw cost ($-0.355$ against MapWM's $-0.363$). The
-paper's $r=2$ bottleneck learns a skewed basis, and $r=4$ adds $+0.085$ at $T=1024$ ($8/8$) for 384
-parameters. The value of both depends on the task: on a counting task the same sign constraint costs
+\mde\ $0.097$); Selective RoPE's generator pays the same raw cost ($-0.355$ against MapWM's $-0.363$). All of
+this is beyond the training length: at $T=128$ the monotone arms score $0.90$--$0.98$ against the index
+code's $0.80$, and no monotone arm has been trained at the length where the cost appears. The rank of the
+bottleneck, which an earlier version placed here as ``cancel cleanly'', is a search effect and is in
+Claim~4 (Section~\ref{sec:c3-rank}). The value of the sign depends on the task: on a counting task the same sign constraint costs
 MapWM an unmeasured $-0.060$ and Selective RoPE's generator a small, detectable $-0.068$ (both raw); for that
 generator, its raw torus cost minus its recency cost is detectable ($-0.287$). In the same batch single-origin
 MapEM pays $-0.198$ raw on the counting task (\mde\ $0.155$), detectable ($-0.043$ at matched loss, \mde\ $0.051$,
 unmeasured), and the difference between MapEM's and MapWM's costs is unmeasured ($-0.138$, \mde\ $0.181$). For
 the two WM-type generators the constraint's cost is large on a map task and small on a counting task.
-% src: SIGN_ABLATION.md (E11); MONOTONE_RESULTS.md; RANK_SWEEP.md (E1)
+% src: SIGN_ABLATION.md (E11); MONOTONE_RESULTS.md
 
 \subsection{Sign}
 \label{sec:c3-sign}
@@ -1101,74 +1112,6 @@ arms, the loss-matched cost is $-0.188$ (\mde\ $0.059$, $0/12$). % src: MONOTONE
 \citet{movahedi2026srope}. CARoPE, GRAPE's additive path and CoPE are non-negative. What is new here is
 the navigation regime and the one-operation isolation at identical parameter count.
 
-\subsection{Rank}
-\label{sec:c3-rank}
-
-\paragraph{The sweep.} Only $r$ varies across five arms, eight seeds each, one batch, torus recipe
-(Table~\ref{tab:rank}, Figure~\ref{fig:rank}). Against $r=2$, $r=4$ adds $+0.085$ at $T=1024$ (t
-$3.57$, $8/8$) and $+0.038$ at $T=512$. The gain is a step: $r=8$, 16 and 32 give $+0.091$, $+0.079$ and
-$+0.095$ at $T=1024$, all $8/8$. $r=4$ also cuts the $T=1024$ seed sd from $0.064$ to $0.012$, which
-matters because sd sets every \mde. It costs 384 parameters; Selective RoPE's gate arm (sigmoid gate plus a readout swap) reached a
-similar $+0.086$ at $T=1024$ for $8{,}193$ parameters, an effect that cannot be attributed to the gate (Appendix~\ref{app:rank}). The pre-registered
-branch ``accuracy rises with $r$'' fired. $r=1$ and $r=3$ were not run. % src: RANK_SWEEP.md (E1); SELECTIVE_ROPE.md (E15)
-
-\begin{table}[t]
-\centering
-\small
-\captionsetup{font=footnotesize,skip=4pt}
-\caption{Rank sweep on MapFormer-WM, torus: accuracy predicting the observation at revisited cells of a held-out map, trained at $T=128$; only the bottleneck rank $r$ varies (parameters in the first column); mean $\pm$ sd, $n=8$ per arm, one batch, floor 0.506. Last column: minus $r=2$ at $T=1024$, paired by seed ($t$ statistic where recorded; seeds with a positive difference). Reading: $r=4$ adds $+0.085$ at $T=1024$ for 384 parameters and cuts seed sd from 0.064 to 0.012; the gain is a step.}
-\label{tab:rank}
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-arm (parameters) & $T=128$ & $T=512$ & $T=1024$ & vs $r=2$ at $T=1024$ \\
-\midrule
-$r=2$ (204,373)  & $0.993\pm0.017$ & $0.944\pm0.028$ & $0.834\pm0.064$ & -- \\
-$r=4$ (204,757)  & $1.000\pm0.000$ & $0.982\pm0.005$ & $0.919\pm0.012$ & $+0.085$ (t $3.57$, $8/8$) \\
-$r=8$ (205,525)  & $1.000\pm0.000$ & $0.981\pm0.018$ & $0.925\pm0.033$ & $+0.091$ ($8/8$) \\
-$r=16$ (207,061) & $1.000\pm0.000$ & $0.972\pm0.015$ & $0.913\pm0.018$ & $+0.079$ ($8/8$) \\
-$r=32$ (210,133) & $1.000\pm0.000$ & $0.982\pm0.010$ & $0.928\pm0.021$ & $+0.095$ ($8/8$) \\
-\bottomrule
-\end{tabular}
-% src: RANK_SWEEP.md (E1)
-\end{table}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.66\linewidth]{figures/rank_sweep.pdf}
-\caption{Per-seed held-out accuracy for Table~\ref{tab:rank}; lines join arm means. Generated by
-\texttt{figures/make\_rank\_sweep.py} from \texttt{RANK\_SWEEP.json}.}
-\label{fig:rank}
-\end{figure}
-
-\paragraph{What $r=2$ learns.} Given more than two dimensions, the model still places its actions in a
-two-dimensional plane (plane energy $1.0000$ at $r=4$ and $0.9996$ at $r=32$), so the learned codes are
-two-dimensional, as the paper's argument expects ($r=1$ was not run). What fails at $r=2$ is the basis: opposite actions fail to cancel by half
-the action scale (opposition $0.4950$ against $0.0922$ at $r=4$), and north and east are nearly parallel
-($|\cos| = 0.7833$ against $0.1754$). This is a description of the learned codes on eight seeds; the
-causal route from skew to accuracy is not tested. The paper's own reported limitation, non-orthogonal
-actions ($0.779$ in Table~\ref{tab:fig4}), falls to $0.174$ at $r=4$ with no regulariser.
-% src: ACTION_GEOMETRY.md (E2); PAPER_FIG4_REPRO.md (E5)
-
-\paragraph{Scope.} The rank result is conditional.
-\begin{itemize}
-\item \textbf{MapPoPE.} $r=4$ against $r=2$ on MapPoPE is $+0.019$ at $T=1024$ ($5/8$; loss-matched
-$+0.015$), unmeasured. PoPE has 64 frequency channels per head to MapWM's 32, which may explain it; that reason
-is untested. ``Use $r=4$'' is a MapWM-family recommendation. % src: MAPPOPE_R4_RESULTS.md (E8)
-\item \textbf{Match-Query.} Rank alone adds $+0.005$ (\mde\ $0.091$), unmeasured; with a four-pass loop
-it adds $+0.154$ (\mde\ $0.084$, $8/8$), paired on a task where pairing is unreliable (Section~\ref{sec:c5-loop}). % src: MQ_RANK_2X2.md (C13)
-\item \textbf{MiniGrid.} The allocentric path-integration gain exists only at $r=4$
-(Section~\ref{sec:c2-minigrid}). % src: MINIGRID_EM.md (D8)
-\end{itemize}
-
-\paragraph{Not packing geometry.} If $r=2$'s deficit were a packing effect of $D$ displacement axes into
-$r$ dimensions, it should grow with $D$, which was proposed as an account of the paper's 5D collapse.
-On a $D$-dimensional torus ($D=2,3,5$; eight seeds; gates at chance) $r=2$ posts its best score at $D=5$
-($0.896\pm0.076$) and its deficit against the best higher rank is $+0.110$, $+0.153$ and $+0.055$ at
-$D=2$, 3 and 5 at $T=512$, not growing with $D$. Two of three pre-registered falsifiers fired and the
-account is withdrawn; the paper's own 5D run used $r=D$ (App.~D.1). That the gap is an optimisation effect rests on
-one independent detectable cell, $r=D+2$ minus $r=D$ at $D=5$ ($+0.073$, t $3.35$, $8/8$), and is exploratory.
-% src: DXR_RANK_THRESHOLD.md, ND_GATES.md (E7, D26); mapformer_math.tex (r=D+2 minus r=D table); papers/txt/mapformer.txt App. D.1 (r=D)
-
 \subsection{The task sets the value}
 \label{sec:c3-task}
 
@@ -1259,8 +1202,10 @@ shows that for MapWM a monotone increment is cheap there, not that it is require
 
 Across four torus arms from two batches, $\alpha$ is $0.518$ (\arm{Signed\_r4}), $0.524$
 (\arm{Vanilla\_r4}), $0.619$ ($r=2$) and $0.943$ (\arm{Abs\_r4}), and $r(\text{opposition},\alpha)=+0.9995$.
-Sign and rank are then one finding at two severities: the monotone code cannot cancel at all, the $r=2$
-code cancels badly. This is exploratory (four points, correlational), and $\alpha$ is a statistic fitted
+Sign and rank then line up as one description at two severities: the monotone code cannot cancel at
+all, the $r=2$ code cancels badly on average. For rank this is a description of arm means, not a
+mechanism: within $r=2$ opposition does not predict accuracy, and the deficit is search
+(Section~\ref{sec:c3-rank}). This is exploratory (four points, correlational), and $\alpha$ is a statistic fitted
 to trained models, nearly collinear with the simpler opposition score, not a parameter that can be
 varied. Two analyses give different torus exponents for \arm{Signed\_r4} ($0.518$ here, $0.591$ in the
 recency comparison); each is quoted only beside its own comparison. % src: LOCALISATION.md P3 (E13); RECENCY_H2.md (E25)
@@ -1272,7 +1217,7 @@ costs more: ablating the 32 lowest-frequency of its 64 channels (2 heads $\times
 $-0.139\pm0.092$ at $T=1024$ (Section~\ref{sec:length}). % src: LOCALISATION.md P2 (E13)
 
 %======================================================================
-\section{Claim 4: a shared kernel is representable but harder to find}
+\section{Claim 4: representable but harder to find --- the shared kernel and the rank-2 bottleneck}
 \label{sec:claim4}
 %======================================================================
 
@@ -1288,7 +1233,10 @@ $n=48$, split between pathway capacity ($+0.124$) and per-pair freedom ($+0.091$
 changes the mechanism (per-token rewind share $0.948\to0.189$). Every recency contrast in this section is a
 contrast of fit, with $r(\text{loss},\text{accuracy})$ between $-0.936$ and $-0.987$; the
 ``search, not representation'' reading rests on the existence and holding constructions, not on
-loss-matching.
+loss-matching. The same pattern holds for MapWM's rank-2 bottleneck on the torus
+(Section~\ref{sec:c3-rank}): trained and tested at $T=1024$, a rank-2 solution exists and is held under
+training, yet our shared $r=2$ finds it on $0/8$ seeds within 900 epochs, the paper's per-head $r=2$ on
+$2/8$, and $r=4$ on $8/8$.
 % src: RECENCY_EM_RESULTS.md (F1); WARM_RESULTS.md (F9); NOLEAK_RESULTS.md (F11); SEARCH_RESULTS.md (F12, F14);
 % src: SPREAD2_RESULTS.md (F16); PAIRSPLIT_RESULTS.md (F19); PAIRCONST_RESULTS.md (F18); D5_RESULTS.md, MONOTONE_RESULTS.md (r range)
 
@@ -1614,6 +1562,115 @@ head peaks away from zero offset ($48/48$), but the peak-rewind share barely mov
 $0.425$). Its gain is detectable at $k$ 1--16 ($+0.124$, \mde\ $0.084$) and 17--32 ($+0.263$, \mde\ $0.110$),
 unmeasured beyond. The mechanism is unidentified. % src: MAGONLY_RESULTS.md (F8); D5_RESULTS.md (F7); SEARCH_RESULTS.md S1 (F12)
 
+\subsection{Rank: the same pattern in MapWM's bottleneck}
+\label{sec:c3-rank}
+
+\paragraph{The sweep.} Only $r$ varies across five arms, eight seeds each, one batch, torus recipe, trained at
+$T=128$ (Table~\ref{tab:rank}, Figure~\ref{fig:rank}). Against $r=2$, $r=4$ adds $+0.085$ at $T=1024$ (t
+$3.57$, $8/8$) and $+0.038$ at $T=512$. The gain is a step: $r=8$, 16 and 32 give $+0.091$, $+0.079$ and
+$+0.095$ at $T=1024$, all $8/8$. $r=4$ also cuts the $T=1024$ seed sd from $0.064$ to $0.012$, which
+matters because sd sets every \mde. It costs 384 parameters; Selective RoPE's gate arm (sigmoid gate plus a readout swap) reached a
+similar $+0.086$ at $T=1024$ for $8{,}193$ parameters, an effect that cannot be attributed to the gate (Appendix~\ref{app:rank}). The pre-registered
+branch ``accuracy rises with $r$'' fired. $r=1$ and $r=3$ were not run. Every accuracy effect in the sweep is
+beyond the training length: at $T=128$ both arms are at ceiling, and 94\% of the $T=1024$ gain comes from
+short-gap revisits that occur later in the sequence than training reached. % src: RANK_SWEEP.md (E1); SELECTIVE_ROPE.md (E15); RANK_MATCHED_PREREG.md (strata)
+
+\begin{table}[t]
+\centering
+\small
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Rank sweep on MapFormer-WM, torus: accuracy predicting the observation at revisited cells of a held-out map, trained at $T=128$; only the bottleneck rank $r$ varies (parameters in the first column); mean $\pm$ sd, $n=8$ per arm, one batch, floor 0.506. Last column: minus $r=2$ at $T=1024$, paired by seed ($t$ statistic where recorded; seeds with a positive difference). Reading: $r=4$ adds $+0.085$ at $T=1024$ for 384 parameters and cuts seed sd from 0.064 to 0.012; the gain is a step.}
+\label{tab:rank}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+arm (parameters) & $T=128$ & $T=512$ & $T=1024$ & vs $r=2$ at $T=1024$ \\
+\midrule
+$r=2$ (204,373)  & $0.993\pm0.017$ & $0.944\pm0.028$ & $0.834\pm0.064$ & -- \\
+$r=4$ (204,757)  & $1.000\pm0.000$ & $0.982\pm0.005$ & $0.919\pm0.012$ & $+0.085$ (t $3.57$, $8/8$) \\
+$r=8$ (205,525)  & $1.000\pm0.000$ & $0.981\pm0.018$ & $0.925\pm0.033$ & $+0.091$ ($8/8$) \\
+$r=16$ (207,061) & $1.000\pm0.000$ & $0.972\pm0.015$ & $0.913\pm0.018$ & $+0.079$ ($8/8$) \\
+$r=32$ (210,133) & $1.000\pm0.000$ & $0.982\pm0.010$ & $0.928\pm0.021$ & $+0.095$ ($8/8$) \\
+\bottomrule
+\end{tabular}
+% src: RANK_SWEEP.md (E1)
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.66\linewidth]{figures/rank_sweep.pdf}
+\caption{Per-seed held-out accuracy for Table~\ref{tab:rank}; lines join arm means. Generated by
+\texttt{figures/make\_rank\_sweep.py} from \texttt{RANK\_SWEEP.json}.}
+\label{fig:rank}
+\end{figure}
+
+\paragraph{What $r=2$ learns.} Given more than two dimensions, the model still places its actions in a
+two-dimensional plane (plane energy $1.0000$ at $r=4$ and $0.9996$ at $r=32$), so the learned codes are
+two-dimensional, as the paper's argument expects ($r=1$ was not run). On average the $r=2$ basis is skewed: opposite actions fail to cancel by half
+the action scale (opposition $0.4950$ against $0.0922$ at $r=4$), and north and east are nearly parallel
+($|\cos| = 0.7833$ against $0.1754$). This describes arm means only: the $r=2$ codes are bimodal across
+seeds, and within $r=2$ neither opposition nor $|\cos|$ predicts accuracy at $T=1024$ ($r=-0.35$ and
+$+0.30$), so the skew is not the cause (an earlier version of this report said the rank acts through
+conditioning). The paper's own reported limitation, non-orthogonal
+actions ($0.779$ in Table~\ref{tab:fig4}), falls to $0.174$ at $r=4$ with no regulariser.
+% src: ACTION_GEOMETRY.md (E2); PAPER_FIG4_REPRO.md (E5); RANK_MATCHED_PREREG.md (within-r=2 correlations)
+
+\paragraph{At matched length it is search.} Trained and tested at $T=1024$ for 900 epochs, with every arm
+built from the same initial weights (Table~\ref{tab:rank-mi}), our shared $r=2$ solves $0/8$ seeds, the
+paper's per-head $r=2$ $2/8$ and a shared $r=4$ $8/8$ (Fisher $p=0.0002$ and $0.007$ against $r=4$; accuracy
+$+0.104$ and $+0.112$, permutation $p=0.0005$ and $0.007$). The per-head arm and $r=4$ have the same four
+latent dimensions, so what decides the outcome is the rank of each head's content-to-angle map. The
+solution exists at rank 2 and is held: projecting each solved $r=4$ model onto rank 2 scores $0.9955$
+frozen ($8/8$ seeds $\ge0.95$), and trained onward from there it stays solved on $7/8$ seeds, as does an
+$r=4$ control restarted the same way, while $r=2$ trained from scratch reaches $1/8$ after $900+900$ epochs.
+This is the pattern of the shared kernel above: representable and holdable, rarely found. \textbf{Which
+$r=2$}: this implementation shares one $r$-dimensional latent across heads, while the paper's bottleneck is
+per head ($W_{\mathrm{in}}\in\R^{d\times n_h\times r}$), so at two heads our $r=2$ has half the paper's
+latent dimensions. The per-head arm is the paper's design, and it has the search problem too: ``use $r=4$''
+is advice about MapFormer's design, not about this reimplementation.
+% src: RANK_MI_RESULTS.md, RANK_MI_ANALYSIS.txt; RANK_PROJ_RESULTS.md (S1 STABLE); RANK_MATCHED_RESULTS.md (continuation)
+
+\begin{table}[t]
+\centering
+\small
+\captionsetup{font=footnotesize,skip=4pt}
+\caption{Rank at matched length and matched initialisation: torus, trained and tested at $T=1024$, 900 epochs, $n=8$ per arm, one batch, every arm built from the $r=2$ arm's initial weights at the same seed. Solved = mean training loss over the final 5\% of epochs below 0.05; runs still descending count as not solved. Floor 0.506. Reading: the per-head rank, not the number of latent dimensions, lines up with whether training finds the solution; a rank-2 solution exists (0.9955 frozen) and is held.}
+\label{tab:rank-mi}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+arm & latent dims & rank per head & solved & accuracy $T=1024$ \\
+\midrule
+our shared $r=2$ & 2 & 2 & $0/8$ & $0.894\pm0.070$ \\
+the paper's per-head $r=2$ & 4 & 2 & $2/8$ & $0.885\pm0.131$ \\
+shared $r=4$ & 4 & 4 & $8/8$ & $0.998\pm0.005$ \\
+\bottomrule
+\end{tabular}
+% src: RANK_MI_RESULTS.md
+\end{table}
+
+\paragraph{Scope.} The rank result is conditional.
+\begin{itemize}
+\item \textbf{Budget and initialisation.} ``Within 900 epochs'' at $T=1024$, one task, one width ($d=128$, two
+heads), one recipe. $r=4$'s $W_{\mathrm{out}}$ starts at a smaller scale (bound $0.5$ against $0.707$), which
+is not separated from its rank.
+\item \textbf{MapPoPE.} $r=4$ against $r=2$ on MapPoPE is $+0.019$ at $T=1024$ ($5/8$; loss-matched
+$+0.015$), unmeasured. PoPE has 64 frequency channels per head to MapWM's 32, which may explain it; that reason
+is untested. ``Use $r=4$'' is a MapWM-family recommendation. % src: MAPPOPE_R4_RESULTS.md (E8)
+\item \textbf{Match-Query.} Rank alone adds $+0.005$ (\mde\ $0.091$), unmeasured; with a four-pass loop
+it adds $+0.154$ (\mde\ $0.084$, $8/8$), paired on a task where pairing is unreliable (Section~\ref{sec:c5-loop}). % src: MQ_RANK_2X2.md (C13)
+\item \textbf{MiniGrid.} The allocentric path-integration gain exists only at $r=4$
+(Section~\ref{sec:c2-minigrid}). % src: MINIGRID_EM.md (D8)
+\end{itemize}
+
+\paragraph{Not packing geometry.} If $r=2$'s deficit were a packing effect of $D$ displacement axes into
+$r$ dimensions, it should grow with $D$, which was proposed as an account of the paper's 5D collapse.
+On a $D$-dimensional torus ($D=2,3,5$; eight seeds; gates at chance) $r=2$ posts its best score at $D=5$
+($0.896\pm0.076$) and its deficit against the best higher rank is $+0.110$, $+0.153$ and $+0.055$ at
+$D=2$, 3 and 5 at $T=512$, not growing with $D$. Two of three pre-registered falsifiers fired and the
+account is withdrawn; the paper's own 5D run used $r=D$ (App.~D.1). That the gap is an optimisation effect rests on
+one independent detectable cell, $r=D+2$ minus $r=D$ at $D=5$ ($+0.073$, t $3.35$, $8/8$), and is exploratory;
+on the torus the matched-length construction above supports it directly.
+% src: DXR_RANK_THRESHOLD.md, ND_GATES.md (E7, D26); mapformer_math.tex (r=D+2 minus r=D table); papers/txt/mapformer.txt App. D.1 (r=D)
+
 \subsection{Relation to the two-algorithms account}
 \label{sec:c4-tale}
 
@@ -1626,7 +1683,8 @@ reached loss below 0.5 in a median 54 against 99 epochs (descriptive), not to va
 
 \paragraph{Scope of Claim 4.} One varying-offset task. Contrasts of fit throughout. Holdability at a pinned
 point in weight space. MapWM at the larger budget not run. On map tasks no detectable MapEM cost was found,
-so the claim is scoped to varying-offset retrieval.
+so the MapEM claim is scoped to varying-offset retrieval. The rank claim is scoped to the torus at $T=1024$,
+one width, one recipe, within 900 epochs.
 
 %======================================================================
 \section{Claim 5: what added machinery buys}
@@ -1640,8 +1698,9 @@ $L=16$, \mde\ $0.002$, $16/16$, from $0.988$ to $1.000$), and recursion does so 
 On Match-Query, where seed-paired contrasts are unreliable, a four-pass loop on a path-integrated model
 survives an unpaired analysis ($+0.346$, se $0.092$, t $3.75$, looped arm pooled over two batches, $n=16$
 against $8$); the paired estimates are $+0.414$ on the path-integrated model and $+0.099$ on an index model,
-with a paired interaction of $+0.315$ (\mde\ $0.281$) that has not been re-checked unpaired. With $r=4$ the
-looped model scores $0.986\pm0.020$ in its batch. No loss-matched analysis exists on Match-Query, so that gain
+and the paired interaction of $+0.315$ (\mde\ $0.281$) is a single-batch statistic on a task whose same-seed
+retrains drift $0.185$, so it is withdrawn. With $r=4$ the looped model scores $0.986\pm0.020$ in its
+(single) batch. No loss-matched analysis exists on Match-Query, so that gain
 is associated with, not separated from, more reliable training. On the torus the loop's training-length gain
 is $+0.052$ raw but $+0.006$ at matched loss. An explicit what/where gate separates action from observation tokens by a
 factor of $4.16$ and changes torus accuracy at $T=512$ by $+0.004$ (\mde\ $0.008$). State correction is
@@ -1682,10 +1741,10 @@ path-integrated, 3 layers       & 601,174 & 0.771 & 0.263 & 0.14 \\
 A retrain of the looped arm with the same seeds did not reproduce it (mean per-seed drift $0.185$), so these
 contrasts are read unpaired. The loop effect survives: pooled over the two batches the looped arm scores
 $0.803\pm0.200$ with one failure in 16 draws, and the loop on the path-integrated model minus no loop is $+0.346$ (se $0.092$, t $3.75$). The
-super-additive interaction ($+0.315$) is a paired estimate and has not been re-established unpaired. Unpaired,
+super-additive interaction ($+0.315$) is a paired, single-batch estimate and is withdrawn. Unpaired,
 the loop against three real layers is $+0.032$ (se $0.105$, t $0.30$): not distinguishable from them, at a
 third of the parameters. An earlier reading that the looped arm never fails (every seed at least $0.77$) came from
-one batch and is retracted. With the rank repair (Section~\ref{sec:c3-rank}), $r=4$ plus the loop scores
+one batch and is retracted. With $r=4$ (Section~\ref{sec:c3-rank}), $r=4$ plus the loop scores
 $0.986\pm0.020$ (worst seed $0.941$) at 204,757 parameters, the best arm in its batch; rank adds $+0.154$ (\mde\
 $0.084$, $8/8$) with the loop and $+0.005$ (\mde\ $0.091$) without it, a paired interaction of $+0.149$ (\mde\
 $0.112$), subject to the same pairing caveat. % src: LOOP_HEADROOM.md (C12); REFINE_RESULTS.md; MQ_RANK_2X2.md (C13)
@@ -1693,7 +1752,7 @@ $0.112$), subject to the same pairing caveat. % src: LOOP_HEADROOM.md (C12); REF
 \paragraph{On parity the composition is additive.} Sixteen seeds per arm, four depth settings in each
 position code: the loop minus one layer is $+0.056$ (\mde\ $0.014$, $16/16$) for the index code and
 $+0.070$ (\mde\ $0.056$, $14/16$) for path integration at $L=128$; the difference, $+0.014$, is not
-detectable. The super-additive (paired) estimate is specific to Match-Query. For the index code the loop also beats three
+detectable. (The paired super-additive estimate on Match-Query is single-batch and withdrawn.) For the index code the loop also beats three
 real layers ($+0.010$, \mde\ $0.003$, $16/16$). % src: FRONTIER_ALGORITHMIC.md (C19)
 
 \paragraph{On the torus the gain is convergence.} In a twelve-seed batch on the torus, the looped model
@@ -1705,7 +1764,7 @@ training length (Table~\ref{tab:l15loop}) is a separate matter (Appendix~\ref{ap
 % src: L15_LOOP_2X2.md (C24, B2); RECIPE_POWER.md (C25)
 
 \paragraph{Prior art.} That recursion substitutes for depth is the premise of Mixture-of-Recursions
-\citep{bae2025mor}. What this report adds is the interaction with path integration on one task, and the
+\citep{bae2025mor}. What this report adds is the unpaired loop gain with path integration on one task, and the
 decomposition of the torus gain into convergence. A per-position oracle router on Match-Query would add
 at most $+0.007$ against a seed sd of $0.152$ (Appendix~\ref{app:loops}). % src: LOOP_DEPTH_STRATA.md (C14)
 
@@ -1860,14 +1919,18 @@ exploratory; Appendix~\ref{app:correction}), which withdraws the Kalman reading 
 \label{sec:length}
 %======================================================================
 
-Nearly every effect in this report is concentrated beyond the training length. Rank adds $+0.038$ at
-$T=512$ and $+0.085$ at $T=1024$; the sign's accuracy effect is unmeasured at $T=128$ and detectable at
+Nearly every effect in this report is concentrated beyond the training length. Trained at $T=128$, rank adds $+0.038$ at
+$T=512$ and $+0.085$ at $T=1024$ (trained at $T=1024$ it becomes a search effect, Section~\ref{sec:c3-rank}); the sign's accuracy effect is unmeasured at $T=128$ and detectable at
 $T=512$ and $1024$; the filter helps only beyond training length; the forget gate adds $+0.022$ raw at
 $T=512$ and $+0.081$ at $T=1024$; PoPE's magnitude on top of path integration adds $+0.007$, $+0.037$ and
 $+0.101$ at $T=128$, 512 and 1024 (grid 64, raw; the last two detectable, \mde\ $0.032$ and $0.065$); and MapEM degrades
 more slowly than MapWM with length on the paper task (Section~\ref{sec:c4-map}; exploratory, convergence gate
-failed). No account covers these.
-% src: RANK_SWEEP.md (E1); SIGN_ABLATION.md (E11); L15_ABLATION.md (B1); FORGET_GATE.md (E19); POPE_WRAPPING.md (E10); PAPERTASK_RESULTS.md (F20)
+failed). No account covers these. Where a matched-length control has been run, the out-of-distribution
+benefit did not survive as such: on a separate code-modelling line, trained and tested at 2048 the encoding
+effect is $-0.0030$ (\mde\ $0.0046$) against $-3.694$ bpc extrapolating from a 512 context
+(\texttt{CODE\_RESULTS.md}), and on the torus rank's matched-length effect is on search. The sign, the
+filter, the forget gate, PoPE's wrapping and rotation/allocentric recording have no matched-length control.
+% src: CODE_RESULTS.md; RANK_MI_RESULTS.md; RANK_SWEEP.md (E1); SIGN_ABLATION.md (E11); L15_ABLATION.md (B1); FORGET_GATE.md (E19); POPE_WRAPPING.md (E10); PAPERTASK_RESULTS.md (F20)
 
 \paragraph{What the accumulator exponent covers.} The growth exponent $\alpha$ tracks sign and rank
 (Section~\ref{sec:c3-alpha}). It does not detectably change under the forget gate ($-0.051$, \mde\ $0.092$),
@@ -2010,9 +2073,9 @@ $0.028$. % src: AUG_RESULTS.md
 
 \paragraph{The replication itself.} PoPE beats RoPE by
 $-0.032$ NLL (5/5 seeds; paper $-0.019$), with levels within $0.025$ of published. Path integration is
-unmeasured on both rows ($-0.005$ on the RoPE row at 3/5 seeds, $+0.011$ on the PoPE row at 0/5). This is the
-first clean null for path integration on a natural-sequence task, and it was registered with no predicted
-direction. % src: JSB_RESULTS.md
+unmeasured on both rows ($-0.005$ on the RoPE row at 3/5 seeds, $+0.011$ on the PoPE row at 0/5). This is a
+clean null for path integration on a natural-sequence task (MapFormer v4's BLiMP null and HGRN's Table~11
+come earlier), and it was registered with no predicted direction. % src: JSB_RESULTS.md
 
 \paragraph{Beyond the training context the ordering inverts, and the naive combination collapses.}
 Training on 512-token crops and scoring whole pieces by position bucket (Table~\ref{tab:jsb-len}), path
@@ -2101,9 +2164,10 @@ Forcing the phase harder helps on music and hurts on the torus; on Dyck the two 
 that the collapse is a rank or frequency-magnitude effect (refuted by the two sweeps above); that restoring a
 content-dependent phase must cost pure-indexing accuracy by re-entangling what and where (Indirect Indexing
 is 5/8 with and without it); and that a model declines the freedom where it is useless (on Dyck it keeps
-$0.825$ rad, more than the music model's $0.412$, and is worse for it). What survives is narrower: the
-collapse needs both an out-of-range accumulator and a kernel that cannot compensate, and each half now has an
-intervention behind it.
+$0.825$ rad, more than the music model's $0.412$, and is worse for it). The account that replaced them ---
+the collapse needs both an out-of-range accumulator and a kernel that cannot compensate --- is itself
+withdrawn: both halves failed the within-task test above (\texttt{T2\_RESULTS.md}), and non-negativity was
+never isolated on Bach. What survives is the three Bach interventions, as measured.
 
 %======================================================================
 \section{Limitations}
@@ -2115,13 +2179,16 @@ intervention behind it.
 observation map within one topology and action space. The TEM claim that motivates the work is about
 carrying structural knowledge across structures; nothing here tests it, and sample efficiency (learning
 curves) is not measured either.
-\item \textbf{No language result.} The language experiments are underpowered or single-seed
-(Appendix~\ref{app:lang}), and published work reports negatives for content-dependent phase on language
+\item \textbf{Language modelling only at small scale.} The sequence results here are replications and
+length effects (Dyck-2, Bach, Indirect Indexing); the enwik8 experiments are underpowered or single-seed
+(Appendix~\ref{app:lang}); and published work reports negatives for content-dependent phase on language
 (HGRN, HGRN2) alongside MapFormer v4's own mixed result.
 \item \textbf{One varying-offset task.} Claim~4 rests on $k$-back recency. MapWM at the larger budget
 was not run.
 \item \textbf{Out-of-distribution length.} Most accuracy effects are concentrated beyond the training length
-(Section~\ref{sec:length}), and no account of that concentration exists.
+(Section~\ref{sec:length}), and no account of that concentration exists. The sign ablation, the filter,
+the forget gate, PoPE's wrapping and rotation/allocentric recording have never had a matched-length control;
+where one was run (code, rank) the extrapolation effect did not survive as such.
 \item \textbf{Recipe dependence of index baselines.} Under the paper's recipe the torus index arms are
 undertrained. Under the converged recipe the raw position main effect at training length is $+0.243$
 (\mde\ $0.038$), against $+0.461$ in the paper-recipe batch (different evaluator); it stays detectable. Loss-matched readings depend on the pool, and they are uninformative where arm losses do not
@@ -2129,14 +2196,17 @@ overlap (Section~\ref{sec:c1-recipe}).
 \item \textbf{Conditions established on different tasks.} The three conditions of the thesis were shown on
 different tasks; no single task shows them binding together, and they are not claimed to be sufficient.
 \item \textbf{Boundaries at $n=3$.} The MiniWorld map-extent threshold, the 12-heading budget curve, the
-family-tree non-commutativity result and several appendix results are exploratory.
+family-tree non-commutativity result and several appendix results are exploratory. At $n=3$ the
+detectability criterion is a 10.7\% false-positive test (Section~\ref{sec:stats}).
+\item \textbf{Our bottleneck is shared across heads; the paper's is per head.} At two heads our $r=2$
+has half the paper's latent dimensions; the matched-length rank test includes the paper's per-head design.
 \item \textbf{Holdability at a pinned point.} The held rewind was shown with the content columns of
 $W_{\mathrm{in}}$ fixed at zero.
 \item \textbf{Simulator realism.} Allocentric recoding needs a known heading, and the one realistic simulator
 measured (Habitat) moves the agent by a different amount than commanded on 69--91\% of forward steps.
 \item \textbf{Match-Query reproducibility.} Match-Query does not reproduce across batches or same-seed retrains,
 so its seed-paired contrasts are unreliable; the loop effect is cited unpaired and the paired interactions are
-not re-established.
+withdrawn.
 \item \textbf{Borrowed benchmarks do not discriminate this axis.} On Flip-Flop (as defined by
 \citet{golovneva2024cope}) every contrast is unmeasured, which the per-offset recency curve predicts:
 Flip-Flop asks only for the most recent write, where index codes score $0.99$. MQAR
@@ -2153,10 +2223,11 @@ accumulator was deleted before analysis and must be re-run; the forget gate's me
 On tasks that redraw the observation map, MapFormer's transferable where is its accumulated, content-driven
 phase. It is the larger factor on raw accuracy on MapFormer's own task, at training length under the paper's
 recipe and at all three lengths under a converged one; the rotary encoding adds a smaller amount beyond the training length. The phase pays when the input makes each token's
-displacement fixed, when increments are signed and well conditioned so that they cancel, and when training
+displacement fixed, when increments are signed so that they cancel, and when training
 finds the solution. The first two conditions were supported by single-operation interventions (the action
-record, the absolute value, the rank), though that rank acts through conditioning is descriptive; the third by constructing the solution, holding it, and measuring where
-from-scratch training finds it. A fully factorised where, MapEM's shared kernel, represents the one
+record, the absolute value); the third by constructing the solution, holding it, and measuring where
+from-scratch training finds it --- for MapEM's shared kernel on recency, and for the rank-2 bottleneck on
+the torus, where the paper's own per-head $r=2$ usually fails to find a solution that exists. A fully factorised where, MapEM's shared kernel, represents the one
 varying-offset task measured exactly but is found per query token, and giving the kernel per-pair freedom
 changes both the accuracy and the mechanism. Filtering and gating the where add no measurable
 accuracy at training length on these tasks, and pooling's only detectable gain is ceiling-level (its larger gains are directional); recursion does, in
@@ -2164,6 +2235,10 @@ association with more reliable optimisation (on the torus its gain vanishes at m
 loss-matched). What remains
 open is why so many mechanisms help only beyond the training length, and whether any of this transfers across
 a change of structure.
+
+\emph{Corrected 25 September 2026.} Earlier versions placed rank under cancellation (``signed and well
+conditioned''), attributed it to a skewed basis, cited a paired super-additive loop interaction, and kept a
+two-part account of the Bach collapse; all four are corrected above.
 
 \clearpage
 \appendix
