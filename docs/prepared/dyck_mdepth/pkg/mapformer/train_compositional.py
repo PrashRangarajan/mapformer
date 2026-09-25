@@ -1,0 +1,139 @@
+"""
+Train a variant on the compositional-motif task.
+
+Loss target options (--target):
+  motif : CE at motif-revisit positions (motif-cell seen before, any copy) —
+          the compositional objective; rewards learning motif structure.
+  cross : CE at cross-instance positions only (motif seen, exact cell NOT).
+  exact : CE at exact-revisit positions (paper-standard fine target).
+
+Model is built from train_variant.VARIANT_MAP so any registered variant works
+(Vanilla, VanillaEM, Hourglass_k2, HourglassFlat3, ...).
+"""
+import argparse
+import json
+import time
+from pathlib import Path
+
+import numpy as np
+import torch
+import torch.nn as nn
+
+from mapformer.environment_compositional import CompositionalGridWorld
+from mapformer.train_variant import VARIANT_MAP
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--variant", required=True, choices=list(VARIANT_MAP.keys()))
+    ap.add_argument("--target", default="motif", choices=["motif", "cross", "exact"])
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--n-steps", type=int, default=256)
+    ap.add_argument("--epochs", type=int, default=50)
+    ap.add_argument("--n-batches", type=int, default=156)
+    ap.add_argument("--batch-size", type=int, default=128)
+    ap.add_argument("--lr", type=float, default=3e-4)
+    ap.add_argument("--fast-attn", action="store_true",
+                    help="SDPA + TF32. MEASURED ON THIS TASK AND NOT RECOMMENDED: "
+                         "verify_comp_speedups.py gives 0.17s/20 passes either way "
+                         "-- no speedup at all, because at d=128, 3 blocks and "
+                         "n_steps=256 the model is overhead-dominated and attention "
+                         "is not the bottleneck -- while TF32 costs equivalence "
+                         "(max |logit diff| 6.0e-01, grad cosine 0.99995, against "
+                         "the 1.4e-06 / 1.0000000000 documented elsewhere). It buys "
+                         "only memory, 451 -> 261 MiB. Kept because the memory "
+                         "saving is real if concurrency is the constraint; off by "
+                         "default because on this task it is cost without benefit. "
+                         "Never valid for MapEM (Hadamard attention is not SDPA).")
+    ap.add_argument("--schedule", default="linear", choices=["linear", "cosine"],
+                    help="DEFAULT IS linear, so existing calls are unchanged. "
+                         "linear = LinearLR(1.0->0.0) from step one, which decays "
+                         "with no warmup and cannot escape a plateau late (rule 10); "
+                         "cosine = 5%% warmup then cosine to 10%%. Every published "
+                         "compositional number predates this flag and used linear.")
+    ap.add_argument("--n-layers", type=int, default=3)
+    ap.add_argument("--d-model", type=int, default=128)
+    ap.add_argument("--n-heads", type=int, default=2)
+    ap.add_argument("--room-size", type=int, default=8)
+    ap.add_argument("--n-templates", type=int, default=4)
+    ap.add_argument("--grid-size", type=int, default=64)
+    ap.add_argument("--device", default="cuda:0")
+    ap.add_argument("--output-dir", required=True)
+    args = ap.parse_args()
+    if args.fast_attn:
+        import mapformer.model as _M
+        _M.USE_SDPA = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        print("[fast-attn] SDPA + TF32 enabled", flush=True)
+
+    torch.manual_seed(args.seed); np.random.seed(args.seed)
+    out = Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
+
+    env = CompositionalGridWorld(size=args.grid_size, room_size=args.room_size,
+                                 n_templates=args.n_templates, seed=args.seed)
+    model = VARIANT_MAP[args.variant](
+        vocab_size=env.unified_vocab_size, d_model=args.d_model,
+        n_heads=args.n_heads, n_layers=args.n_layers, grid_size=args.grid_size,
+    ).to(args.device)
+    n_params = sum(p.numel() for p in model.parameters())
+    print(f"{args.variant} target={args.target} params={n_params:,} "
+          f"n_steps={args.n_steps} seed={args.seed}")
+
+    opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.05)
+    total = args.epochs * args.n_batches
+    if args.schedule == "cosine":
+        import math as _m
+        _w = max(1, int(0.05 * total))
+        def _f(st):
+            if st < _w:
+                return (st + 1) / _w
+            p_ = (st - _w) / max(1, total - _w)
+            return 0.1 + 0.9 * 0.5 * (1.0 + _m.cos(_m.pi * min(p_, 1.0)))
+        sched = torch.optim.lr_scheduler.LambdaLR(opt, _f)
+    else:
+        sched = torch.optim.lr_scheduler.LinearLR(opt, 1.0, 0.0, total)
+    crit = nn.CrossEntropyLoss()
+
+    mask_idx = {"exact": 2, "motif": 3, "cross": 4}[args.target]
+    # Models that segment on oracle room boundaries (Hourglass_MotifSeg) read a
+    # per-token segment id off the model each batch; derived from meta.new_room.
+    wants_seg = getattr(model, "wants_seg_id", False)
+    losses = []
+    for ep in range(args.epochs):
+        t0 = time.time(); model.train(); ep_loss = 0.0; nb = 0
+        for _ in range(args.n_batches):
+            batch = env.generate_batch(args.batch_size, args.n_steps)
+            tokens = batch[0].to(args.device)
+            if wants_seg:
+                nr = torch.tensor(batch[5]["new_room"], dtype=torch.long, device=args.device)
+                seg = (torch.cumsum(nr, dim=1) - 1).repeat_interleave(2, dim=1)  # per-token
+                model._batch_seg_id = seg[:, :-1]        # align to inp = tokens[:, :-1]
+            target_mask_full = batch[mask_idx].to(args.device)
+            inp = tokens[:, :-1]; tgt = tokens[:, 1:]
+            tmask = target_mask_full[:, 1:]
+            if tmask.sum() == 0:
+                continue
+            logits = model(inp)
+            loss = crit(logits[tmask], tgt[tmask])
+            opt.zero_grad(); loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            opt.step(); sched.step()
+            ep_loss += loss.item(); nb += 1
+        avg = ep_loss / max(nb, 1); losses.append(avg)
+        if (ep + 1) % 5 == 0:
+            print(f"  ep {ep+1:3d}/{args.epochs} loss={avg:.4f} "
+                  f"lr={sched.get_last_lr()[0]:.2e} {time.time()-t0:.1f}s")
+
+    ckpt = out / f"{args.variant}.pt"
+    torch.save({"model_state": model.state_dict(), "variant": args.variant,
+                "target": args.target, "n_layers": args.n_layers,
+                "d_model": args.d_model, "n_heads": args.n_heads,
+                "vocab_size": env.unified_vocab_size, "losses": losses}, ckpt)
+    with open(out / f"{args.variant}_loss.json", "w") as f:
+        json.dump(losses, f)
+    print(f"DONE {args.variant} final_loss={losses[-1]:.4f} -> {ckpt}")
+
+
+if __name__ == "__main__":
+    main()
