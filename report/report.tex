@@ -64,10 +64,11 @@ trails MapWM by $0.375$ from scratch at a shared budget ($n=8$; $0.137$ with the
 origins). On that task, constructions place the gap in search rather than representation, and
 training finds the solution per query token. In a separate batch, per-pair position origins add
 $0.215$ over single-origin MapEM ($n=48$): $0.124$ from added pathway capacity with the kernel still
-shared, and $0.091$ from per-pair freedom, both detectable. The paper's rank-2 bottleneck shows the
+shared, and $0.091$ from per-pair freedom, both detectable. The rank-2 bottleneck shows the
 same pattern on the torus: trained and tested at $T=1024$ from matched initial weights, our shared $r=2$
-finds the solution on $0/8$ seeds within 900 epochs, the paper's per-head $r=2$ on $2/8$ and $r=4$ on
-$8/8$, although a rank-2 solution exists and is held under training.
+finds the solution on $0/8$ seeds within 900 epochs, a per-head $r=2$ on $2/8$ and a shared $r=4$ on
+$8/8$, although a rank-2 solution exists and is held under training; which of per-head rank, cross-head
+sharing and $W_{\mathrm{out}}$'s scale is responsible is not separated.
 % src: RECENCY_EM_RESULTS.md (F1); WARM_RESULTS.md (F9); SEARCH_RESULTS.md (F12); PAIRSPLIT_RESULTS.md (F19); RANK_MI_RESULTS.md; RANK_PROJ_RESULTS.md
 \end{itemize}
 Explicit state correction gives no measurable benefit on a drifting task built for it and helps
@@ -180,7 +181,7 @@ result & standing & prior work \\
 Path integration is the larger factor on MapFormer's own task on raw accuracy: at training length under the paper's recipe, and at every length measured under a converged recipe (index and PoPE controls, context destruction); the encoding adds a smaller amount beyond training length & ours & MapFormer shows path integration solves its task \\
 Rotation-based actions remove the effect; recording realised displacement restores it; the MiniGrid flip needs $r=4$; the aliasing account fails on its converged cells (exploratory at the least aliased level) & ours & none evaluates navigation \\
 Monotone increments destroy the map in navigation (at matched loss in a six-arm pool, no gain over an index code remains; loss-matched verdicts depend on the pool), isolated as one operation; a second generator pays the same raw cost & replication in a new regime & Sarrof; Grazzi; Selective RoPE \S4.2 \\
-At rank 2 per head (ours shared, and the paper's per-head design) training rarely finds a torus solution that exists and is held at rank 2; $r=4$ finds it on every seed & ours & LieRE (different axis) \\
+At rank 2 per head (ours shared, and a per-head reading of the paper's design) training rarely finds a torus solution that exists and is held at rank 2; $r=4$ finds it on every seed & ours & LieRE (different axis) \\
 Index codes cannot count contextually & replication & CoPE \\
 An unconstrained MapFormer counts through a content gate, by intervention & ours & CoPE's gate is the analogue \\
 Shared versus per-pair position kernel: existence, holdability, per-token search, per-pair decomposition & ours & \citet{whittington2025tale} and TEM are the frame \\
@@ -1235,8 +1236,8 @@ contrast of fit, with $r(\text{loss},\text{accuracy})$ between $-0.936$ and $-0.
 ``search, not representation'' reading rests on the existence and holding constructions, not on
 loss-matching. The same pattern holds for MapWM's rank-2 bottleneck on the torus
 (Section~\ref{sec:c3-rank}): trained and tested at $T=1024$, a rank-2 solution exists and is held under
-training, yet our shared $r=2$ finds it on $0/8$ seeds within 900 epochs, the paper's per-head $r=2$ on
-$2/8$, and $r=4$ on $8/8$.
+training, yet our shared $r=2$ finds it on $0/8$ seeds within 900 epochs, a per-head $r=2$ on
+$2/8$, and a shared $r=4$ on $8/8$.
 % src: RECENCY_EM_RESULTS.md (F1); WARM_RESULTS.md (F9); NOLEAK_RESULTS.md (F11); SEARCH_RESULTS.md (F12, F14);
 % src: SPREAD2_RESULTS.md (F16); PAIRSPLIT_RESULTS.md (F19); PAIRCONST_RESULTS.md (F18); D5_RESULTS.md, MONOTONE_RESULTS.md (r range)
 
@@ -1615,32 +1616,37 @@ actions ($0.779$ in Table~\ref{tab:fig4}), falls to $0.174$ at $r=4$ with no reg
 % src: ACTION_GEOMETRY.md (E2); PAPER_FIG4_REPRO.md (E5); RANK_MATCHED_PREREG.md (within-r=2 correlations)
 
 \paragraph{At matched length it is search.} Trained and tested at $T=1024$ for 900 epochs, with every arm
-built from the same initial weights (Table~\ref{tab:rank-mi}), our shared $r=2$ solves $0/8$ seeds, the
-paper's per-head $r=2$ $2/8$ and a shared $r=4$ $8/8$ (Fisher $p=0.0002$ and $0.007$ against $r=4$; accuracy
-$+0.104$ and $+0.112$, permutation $p=0.0005$ and $0.007$). The per-head arm and $r=4$ have the same four
-latent dimensions, so what decides the outcome is the rank of each head's content-to-angle map. The
+built from the same initial weights (Table~\ref{tab:rank-mi}), our shared $r=2$ solves $0/8$ seeds, a
+per-head $r=2$ $2/8$ and a shared $r=4$ $8/8$ (Fisher $p=0.0002$ and $0.007$ against $r=4$; accuracy
+$+0.104$ and $+0.112$, permutation $p=0.0005$ and $0.007$), so $r=4$'s advantage is not its initial draws.
+The per-head arm and $r=4$ have the same four latent dimensions and identical initial $W_{\mathrm{in}}$, but
+differ in three ways at once: the rank of each head's content-to-angle map, whether the heads read a shared
+latent (perfectly confounded with it at two heads), and $W_{\mathrm{out}}$'s per-entry scale. Which is
+responsible is not separated; the initial scale of the angle increments is matched. The two $r=2$ arms are
+not distinguishable ($2/8$ against $0/8$, Fisher $p=0.47$; accuracy 95\% CI $[-0.123,+0.100]$): unmeasured. The
 solution exists at rank 2 and is held: projecting each solved $r=4$ model onto rank 2 scores $0.9955$
 frozen ($8/8$ seeds $\ge0.95$), and trained onward from there it stays solved on $7/8$ seeds, as does an
 $r=4$ control restarted the same way, while $r=2$ trained from scratch reaches $1/8$ after $900+900$ epochs.
 This is the pattern of the shared kernel above: representable and holdable, rarely found. \textbf{Which
-$r=2$}: this implementation shares one $r$-dimensional latent across heads, while the paper's bottleneck is
+$r=2$}: this implementation shares one $r$-dimensional latent across heads, while the paper's $W_{\mathrm{in}}$ is
 per head ($W_{\mathrm{in}}\in\R^{d\times n_h\times r}$), so at two heads our $r=2$ has half the paper's
-latent dimensions. The per-head arm is the paper's design, and it has the search problem too: ``use $r=4$''
-is advice about MapFormer's design, not about this reimplementation.
+latent dimensions. The paper does not state $W_{\mathrm{out}}$'s shape: the per-head arm is its literal
+reading, and with a full $W_{\mathrm{out}}$ the paper's $r=2$ at two heads is our shared $r=4$. Existence and
+holding were measured for our shared $r=2$; for the per-head arm they are inferred.
 % src: RANK_MI_RESULTS.md, RANK_MI_ANALYSIS.txt; RANK_PROJ_RESULTS.md (S1 STABLE); RANK_MATCHED_RESULTS.md (continuation)
 
 \begin{table}[t]
 \centering
 \small
 \captionsetup{font=footnotesize,skip=4pt}
-\caption{Rank at matched length and matched initialisation: torus, trained and tested at $T=1024$, 900 epochs, $n=8$ per arm, one batch, every arm built from the $r=2$ arm's initial weights at the same seed. Solved = mean training loss over the final 5\% of epochs below 0.05; runs still descending count as not solved. Floor 0.506. Reading: the per-head rank, not the number of latent dimensions, lines up with whether training finds the solution; a rank-2 solution exists (0.9955 frozen) and is held.}
+\caption{Rank at matched length and matched initialisation: torus, trained and tested at $T=1024$, 900 epochs, $n=8$ per arm, one batch, every arm built from the $r=2$ arm's initial weights at the same seed. Solved = mean training loss over the final 5\% of epochs below 0.05; runs still descending count as not solved. Floor 0.506. Reading: at the same four latent dimensions and identical initial $W_{\mathrm{in}}$, the shared $r=4$ finds the solution and the per-head $r=2$ rarely does; per-head rank, cross-head sharing and $W_{\mathrm{out}}$'s per-entry scale differ together between them and are not separated. A rank-2 solution exists (0.9955 frozen) and is held (measured for the shared $r=2$).}
 \label{tab:rank-mi}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 arm & latent dims & rank per head & solved & accuracy $T=1024$ \\
 \midrule
 our shared $r=2$ & 2 & 2 & $0/8$ & $0.894\pm0.070$ \\
-the paper's per-head $r=2$ & 4 & 2 & $2/8$ & $0.885\pm0.131$ \\
+per-head $r=2$ (the paper, read literally) & 4 & 2 & $2/8$ & $0.885\pm0.131$ \\
 shared $r=4$ & 4 & 4 & $8/8$ & $0.998\pm0.005$ \\
 \bottomrule
 \end{tabular}
@@ -1650,8 +1656,8 @@ shared $r=4$ & 4 & 4 & $8/8$ & $0.998\pm0.005$ \\
 \paragraph{Scope.} The rank result is conditional.
 \begin{itemize}
 \item \textbf{Budget and initialisation.} ``Within 900 epochs'' at $T=1024$, one task, one width ($d=128$, two
-heads), one recipe. $r=4$'s $W_{\mathrm{out}}$ starts at a smaller scale (bound $0.5$ against $0.707$), which
-is not separated from its rank.
+heads), one recipe. $r=4$'s $W_{\mathrm{out}}$ starts at a smaller per-entry scale (bound $0.5$ against $0.707$; the initial
+angle-increment scale is matched), which is not separated from its rank or from cross-head sharing.
 \item \textbf{MapPoPE.} $r=4$ against $r=2$ on MapPoPE is $+0.019$ at $T=1024$ ($5/8$; loss-matched
 $+0.015$), unmeasured. PoPE has 64 frequency channels per head to MapWM's 32, which may explain it; that reason
 is untested. ``Use $r=4$'' is a MapWM-family recommendation. % src: MAPPOPE_R4_RESULTS.md (E8)
@@ -2198,8 +2204,10 @@ different tasks; no single task shows them binding together, and they are not cl
 \item \textbf{Boundaries at $n=3$.} The MiniWorld map-extent threshold, the 12-heading budget curve, the
 family-tree non-commutativity result and several appendix results are exploratory. At $n=3$ the
 detectability criterion is a 10.7\% false-positive test (Section~\ref{sec:stats}).
-\item \textbf{Our bottleneck is shared across heads; the paper's is per head.} At two heads our $r=2$
-has half the paper's latent dimensions; the matched-length rank test includes the paper's per-head design.
+\item \textbf{Our bottleneck is shared across heads; the paper's $W_{\mathrm{in}}$ is per head.} At two heads
+our $r=2$ has half the paper's latent dimensions. The paper does not state $W_{\mathrm{out}}$'s shape; the
+matched-length rank test includes its literal per-head reading, and with a full $W_{\mathrm{out}}$ the paper's
+$r=2$ at two heads is our $r=4$.
 \item \textbf{Holdability at a pinned point.} The held rewind was shown with the content columns of
 $W_{\mathrm{in}}$ fixed at zero.
 \item \textbf{Simulator realism.} Allocentric recoding needs a known heading, and the one realistic simulator
@@ -2227,7 +2235,7 @@ displacement fixed, when increments are signed so that they cancel, and when tra
 finds the solution. The first two conditions were supported by single-operation interventions (the action
 record, the absolute value); the third by constructing the solution, holding it, and measuring where
 from-scratch training finds it --- for MapEM's shared kernel on recency, and for the rank-2 bottleneck on
-the torus, where the paper's own per-head $r=2$ usually fails to find a solution that exists. A fully factorised where, MapEM's shared kernel, represents the one
+the torus, where our shared and a per-head $r=2$ usually fail to find a solution that exists. A fully factorised where, MapEM's shared kernel, represents the one
 varying-offset task measured exactly but is found per query token, and giving the kernel per-pair freedom
 changes both the accuracy and the mechanism. Filtering and gating the where add no measurable
 accuracy at training length on these tasks, and pooling's only detectable gain is ceiling-level (its larger gains are directional); recursion does, in

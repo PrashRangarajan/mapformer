@@ -95,7 +95,7 @@
 \contentsline {paragraph}{Where there is headroom.}{28}{section*.86}%
 \contentsline {paragraph}{On parity the composition is additive.}{28}{section*.88}%
 \contentsline {paragraph}{On the torus the gain is convergence.}{28}{section*.89}%
-\contentsline {paragraph}{Prior art.}{28}{section*.90}%
+\contentsline {paragraph}{Prior art.}{29}{section*.90}%
 \contentsline {subsection}{\numberline {9.2}Gates and alternative generators}{29}{subsection.9.2}%
 \contentsline {paragraph}{An explicit what/where gate.}{29}{section*.91}%
 \contentsline {paragraph}{Selective RoPE's generator.}{29}{section*.92}%
@@ -104,11 +104,11 @@
 \contentsline {paragraph}{Compositional transfer.}{29}{section*.94}%
 \contentsline {paragraph}{Parity at length.}{29}{section*.95}%
 \contentsline {paragraph}{On MiniGrid it compensates.}{29}{section*.96}%
-\contentsline {paragraph}{Compute.}{29}{section*.97}%
+\contentsline {paragraph}{Compute.}{30}{section*.97}%
 \contentsline {section}{\numberline {10}Explicit state correction: no measurable benefit}{30}{section.10}%
 \contentsline {paragraph}{The prediction and the result.}{30}{section*.98}%
 \contentsline {paragraph}{What the filter does do.}{30}{section*.100}%
-\contentsline {paragraph}{Scope.}{30}{section*.102}%
+\contentsline {paragraph}{Scope.}{31}{section*.102}%
 \contentsline {section}{\numberline {11}The length axis: an open problem}{31}{section.11}%
 \contentsline {paragraph}{What the accumulator exponent covers.}{31}{section*.103}%
 \contentsline {paragraph}{A refuted import.}{31}{section*.104}%

@@ -44,8 +44,8 @@ $+0.488$. Increments must cancel: on the torus at eight times the training lengt
 costs $0.363$ raw and $0.280$ at matched loss (loss-matched verdicts depend on the pool), extending a known result
 to navigation (at the training length monotone arms still beat an index code). Solutions must be findable:
 single-origin MapEM represents a varying-offset recall task exactly yet trails MapWM by $0.375$ from scratch at a
-shared budget, and at rank 2 per head --- the paper's design --- training rarely finds a torus solution that
-exists at rank 2 ($0/8$ and $2/8$ seeds against $8/8$ at $r=4$). Explicit correction and gating add no measurable accuracy
+shared budget, and at rank 2 per head (our shared bottleneck, or a per-head one read literally from the paper)
+training rarely finds a torus solution that exists at rank 2 ($0/8$ and $2/8$ seeds against $8/8$ at a shared $r=4$). Explicit correction and gating add no measurable accuracy
 at training length, pooling's only detectable gain is ceiling-level (its larger gains are directional); recursion adds accuracy where the base model trains
 unreliably (on Match-Query, in an unpaired analysis). Transfer across a change of structure is not tested.
 \emph{Corrected 25 September 2026}: rank was described as a skewed basis that $r=4$ repairs; it is a search
@@ -421,12 +421,17 @@ at $T=1024$ (eight times the training length), detectable, and $+0.038$ at $T=51
 $+0.091$, $+0.079$ and $+0.095$, a step. On average the $r=2$ basis is skewed (opposition $0.4950$ against $0.0922$
 at $r=4$; $|\cos| = 0.7833$ against $0.1754$), but within $r=2$ neither measure predicts accuracy, so the skew is not
 the cause. Trained and tested at $T=1024$ for 900 epochs from matched initial weights, our shared $r=2$ solves $0/8$
-seeds, the paper's per-head $r=2$ $2/8$ and a shared $r=4$ $8/8$ (Fisher $p=0.0002$ and $0.007$); a rank-2
+seeds, a per-head $r=2$ $2/8$ and a shared $r=4$ $8/8$ (Fisher $p=0.0002$ and $0.007$), so $r=4$'s advantage is not
+its initial draws; the two $r=2$ arms are not distinguishable ($p=0.47$). A rank-2
 projection of each solved $r=4$ model scores $0.9955$ frozen and stays solved when trained onward ($7/8$, as does
-an $r=4$ control). The rank-2 solution exists and is held; training rarely finds it. This implementation shares its
-bottleneck across heads where the paper's is per head, so our $r=2$ has half the paper's latent dimensions; the
-paper's own per-head $r=2$ fails too. Scope: one task and width, within 900 epochs, and $r=4$'s smaller initial
-$W_{\mathrm{out}}$ is not separated from its rank. On MapPoPE, $r=4$ against $r=2$ is $+0.019$ at $T=1024$,
+an $r=4$ control). The rank-2 solution exists and is held (measured for our shared $r=2$, inferred for the per-head
+one); training rarely finds it. Against the per-head $r=2$, $r=4$ has the same four latent dimensions and identical
+initial $W_{\mathrm{in}}$, but per-head rank, cross-head sharing (confounded with it at two heads) and
+$W_{\mathrm{out}}$'s per-entry scale are not separated; the initial angle-increment scale is matched. This
+implementation shares its bottleneck across heads where the paper's $W_{\mathrm{in}}$ is per head, so our $r=2$ has
+half the paper's latent dimensions; the paper does not state $W_{\mathrm{out}}$'s shape, the per-head arm is its
+literal reading, and with a full $W_{\mathrm{out}}$ the paper's $r=2$ at two heads is our $r=4$. Scope: two heads,
+one task, length and width, within 900 epochs. On MapPoPE, $r=4$ against $r=2$ is $+0.019$ at $T=1024$,
 unmeasured, so ``use $r=4$'' is a MapWM-family recommendation.
 
 \paragraph{The main caveat.} Every recency contrast in this section is a contrast of fit, with
@@ -571,8 +576,9 @@ content-dependent phase on language.
 12-heading budget curve and several appendix results are exploratory (at $n=3$ the detectability rule is a
 10.7\% false-positive test); Match-Query does not reproduce across batches or same-seed retrains, so its paired
 interactions are withdrawn.
-\item \textbf{Our bottleneck is shared across heads; the paper's is per head.} The matched-length rank test
-includes the paper's per-head design.
+\item \textbf{Our bottleneck is shared across heads; the paper's $W_{\mathrm{in}}$ is per head.} The paper does
+not state $W_{\mathrm{out}}$'s shape; the matched-length rank test includes its literal per-head reading, and with a
+full $W_{\mathrm{out}}$ the paper's $r=2$ at two heads is our $r=4$.
 \end{itemize}
 
 %======================================================================
@@ -587,7 +593,7 @@ phase pays when the input makes each token's displacement fixed, when increments
 and when training finds the solution. The first two conditions were supported by single-operation interventions
 (the action record, the absolute value); the third by constructing the solution, holding it, and measuring where
 from-scratch training finds it --- for MapEM's shared kernel on recency, and for the rank-2 bottleneck on the torus,
-where the paper's own per-head $r=2$ usually fails to find a solution that exists.
+where our shared and a per-head $r=2$ usually fail to find a solution that exists.
 A fully factorised where, MapEM's shared kernel, represents the one varying-offset task measured exactly but is found
 per query token, and giving the kernel per-pair freedom changes both the accuracy and the mechanism. Filtering and
 gating the where add no measurable accuracy at training length on these tasks, and pooling's only detectable gain is ceiling-level (its larger gains are

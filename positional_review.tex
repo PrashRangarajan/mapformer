@@ -170,8 +170,9 @@ positional-encoding literature for language does not treat as design constraints
 the \emph{sign} of the increment and its \emph{input-side rank} --- are worth more per
 parameter than anything else measured here. They do not dominate the choice of
 positional \emph{encoding}: under a converged recipe the encoding main effect on the
-torus is $+0.189$ at $8\times$ the training length, larger than rank's $+0.085$. The
-rank decides whether training \emph{finds} the solution, not whether it exists.
+torus is $+0.189$ at $8\times$ the training length, larger than rank's $+0.085$. At
+rank $2$ training rarely \emph{finds} the solution, although it exists; which property
+of the bottleneck is responsible is not separated.
 
 \emph{Not claimed}: the taxonomy and the closure argument (C1's caveat above); the
 content-dependent rotation, which MapFormer, Selective RoPE and Mamba-3 arrived at
@@ -1104,7 +1105,7 @@ if the task needs \dots & it requires & and these supply it \\
 \midrule
 \emph{order only} --- which token came first & any monotone clock & RoPE, ALiBi, CoPE, CARoPE, GRAPE-AP, every gated linear RNN \\[3pt]
 \emph{signed displacement} --- parity, net motion, state tracking & a signed increment & MapFormer, Selective RoPE, Mamba-3; DeltaNet/PaTH/RWKV-7 with $\beta>1$. \textbf{Not} CARoPE, GRAPE-AP or CoPE \\[3pt]
-\emph{absolute location in a bounded map} & signed, \textbf{and} rank $r\ge4$ per head to be found reliably & MapFormer at $r\ge4$. At $r=2$ (ours shared, or the paper's per head) training usually fails to find the torus solution within budget --- $0/8$ and $2/8$ against $8/8$ at $T{=}1024$ --- though a rank-$2$ solution exists: search, not capacity \\[3pt]
+\emph{absolute location in a bounded map} & signed, \textbf{and} a shared $r\ge4$ to be found reliably (two heads tested) & MapFormer at $r\ge4$. At $r=2$ (ours shared, or per head) training usually fails to find the torus solution within budget --- $0/8$ and $2/8$ against $8/8$ at $T{=}1024$ --- though a rank-$2$ solution exists: search, not capacity \\[3pt]
 \emph{holding position far past the training length} & a diffusive accumulator, $\alpha\approx0.5$ & follows from cancellation (T2), though the route from $\alpha$ to degradation is association and not cause; nothing in Table~\ref{tab:map} bounds the accumulator, and the two obvious ways to are a no-op or break additivity \\[3pt]
 \emph{path-dependent actions} (turn/forward) & non-abelian transport, \textbf{or} an allocentric recoding of the input & PaTH, DeltaNet, RWKV-7, TEM-t --- none evaluated on navigation. Recoding the action to absolute displacement restores $+0.488$ and keeps the scan \\[3pt]
 \emph{overwriting stale associations} & a delta rule & DeltaNet, PaTH, RWKV-7; forfeits the parallel scan \\[3pt]
@@ -1183,12 +1184,15 @@ $r=2$ fails by a skewed basis. See the corrected abstract.
 
 \begin{itemize}\itemsep3pt
 \item \textbf{The input-side rank.} Trained and tested at $T=1024$ from matched
-  initial weights, our shared $r=2$ solves $0/8$ seeds within $900$ epochs, the
-  paper's per-head $r=2$ $2/8$ and $r=4$ $8/8$, while a rank-$2$ projection of a solved
-  $r=4$ model scores $0.995$ and holds under training: a search deficit, in the paper's
-  own design. Nothing yet explains why training finds the rank-$2$ solution so rarely
-  when it occupies a $2$-plane either way, and $r=4$'s smaller initial $W_{\mathrm{out}}$
-  is not separated from its rank.
+  initial weights, our shared $r=2$ solves $0/8$ seeds within $900$ epochs, a
+  per-head $r=2$ $2/8$ and a shared $r=4$ $8/8$, while a rank-$2$ projection of a solved
+  $r=4$ model scores $0.995$ and holds under training: a search deficit (measured for
+  our shared $r=2$, inferred for the per-head one). The paper states a per-head
+  $W_{\mathrm{in}}$ but not $W_{\mathrm{out}}$'s shape: the per-head arm is its literal
+  reading, and with a full $W_{\mathrm{out}}$ its $r=2$ at two heads is our $r=4$.
+  Nothing yet explains why training finds the rank-$2$ solution so rarely
+  when it occupies a $2$-plane either way, and against the per-head arm, per-head
+  rank, cross-head sharing and $W_{\mathrm{out}}$'s per-entry scale are not separated.
 \item \textbf{The OOD-length axis, still the largest gap.} The accumulator's growth
   exponent co-varies with the sign and rank results together (the companion paper),
   and it predicts that bounding the accumulator should help at length. The obvious

@@ -38,11 +38,13 @@ increment beats an index code by $0.12$--$0.20$ at matched loss on $12/12$ seeds
 monotone one beats it nowhere; at the training length the monotone arms still beat the
 index code, so the accuracy cost is an extrapolation effect. On a $k$-back recency task
 the cost of monotonicity vanishes, and the same unconstrained architecture learns a
-different accumulator for each task. The \textbf{input-side rank} of the
-content-to-phase map decides whether training \emph{finds} the solution, not whether
-it exists: trained and tested at $T=1024$ for $900$ epochs from matched initial
-weights, our shared $r=2$ solves $0/8$ seeds, the paper's per-head $r=2$ $2/8$ and
-$r=4$ $8/8$, while a rank-$2$ solution exists ($0.9955$) and holds under training.
+different accumulator for each task. At \textbf{input-side rank} $2$ of the
+content-to-phase map, training rarely \emph{finds} the solution, although it
+exists: trained and tested at $T=1024$ for $900$ epochs from matched initial
+weights, our shared $r=2$ solves $0/8$ seeds, a per-head $r=2$ $2/8$ and a shared
+$r=4$ $8/8$, while a rank-$2$ solution exists ($0.9955$) and holds under training
+(measured for our shared $r=2$). Which of per-head rank, cross-head sharing and
+$W_{\mathrm{out}}$'s scale is responsible is not separated.
 
 Both are measured on grid navigation and algorithmic tasks rather than on text,
 because they are separable only where position must be reconstructed from the input
@@ -129,8 +131,8 @@ action tokens and RoPE is the $\Delta\equiv1$ special case.
 This has a consequence for $\S$\ref{sec:rankmeas} worth stating: \textbf{the
 bottleneck is the separator}. The rank $r$ is not merely the dimension of a
 displacement code, it is the channel through which the what/where distinction has to
-pass, so the finding that the per-head rank decides whether training finds the torus
-solution ($\S$\ref{sec:rankmeas}) may be a finding about the \emph{separation} and not
+pass, so the finding that training rarely finds the torus solution through a
+rank-$2$ bottleneck ($\S$\ref{sec:rankmeas}) may be a finding about the \emph{separation} and not
 only about the geometry.
 An enforced split is therefore an oracle \emph{control} rather than a proposal: it
 upper-bounds what the learned separation can reach, and the gap measures what
@@ -233,9 +235,10 @@ with the contrast that would have refuted it.
   task.
 \item \textbf{F2. Rank $r=2$ fails by search, not capacity.} Trained at $T=128$,
   $r=4$ buys $+0.085$ at $8\times$ that length for $384$ parameters and is flat to
-  $r=32$. Trained and tested at $T=1024$ from matched initial weights, the rank per
-  head decides whether training finds the solution within $900$ epochs ($0/8$, $2/8$,
-  $8/8$), while a rank-$2$ solution exists and holds ($\S$\ref{sec:rankmeas}).
+  $r=32$. Trained and tested at $T=1024$ from matched initial weights, training finds
+  the solution within $900$ epochs on $0/8$ seeds at our shared $r=2$, $2/8$ at a
+  per-head $r=2$ and $8/8$ at a shared $r=4$, while a rank-$2$ solution exists and holds
+  ($\S$\ref{sec:rankmeas}); what separates the per-head $r=2$ from $r=4$ is not isolated.
   \emph{Refuted by} a capacity slope, by the deficit growing with world dimension ---
   which was tested, and it does not --- or by the projected rank-$2$ solution failing
   to hold under training, which was tested, and it holds.
@@ -390,20 +393,25 @@ $T=1024$ ($r=-0.35$ and $+0.30$).
 
 \textbf{At matched length it is search.} Trained and tested at $T=1024$ for $900$
 epochs, every arm built from the same initial weights, $8$ seeds: our shared $r=2$
-solves $0/8$ (accuracy $0.894$), the paper's per-head $r=2$ $2/8$ ($0.885$) and a
-shared $r=4$ $8/8$ ($0.998$); Fisher $p=0.0002$ and $0.007$ against $r=4$. The
-per-head arm and $r=4$ have the same four latent dimensions, so what separates them is
-the rank of each head's content-to-angle map. The solution is not out of reach at
+solves $0/8$ (accuracy $0.894$), a per-head $r=2$ $2/8$ ($0.885$) and a
+shared $r=4$ $8/8$ ($0.998$); Fisher $p=0.0002$ and $0.007$ against $r=4$, so $r=4$'s
+advantage is not its initial draws. The per-head arm and $r=4$ have the same four
+latent dimensions and identical initial $W_{\mathrm{in}}$, but differ in three ways at
+once --- the rank of each head's content-to-angle map, whether the heads read a shared
+latent (perfectly confounded with it at two heads), and $W_{\mathrm{out}}$'s per-entry
+scale --- and which is responsible is not separated; the initial scale of the angle
+increments is matched. The two $r=2$ arms are not distinguishable ($2/8$ against
+$0/8$, Fisher $p=0.47$): unmeasured. The solution is not out of reach at
 rank~$2$: projecting each solved $r=4$ model onto rank $2$ scores $0.9955$ frozen, and
 trained onward from there it stays solved ($7/8$, against $7/8$ for the $r=4$ control)
 while from-scratch $r=2$ reaches $1/8$ after $1800$ epochs. The representation exists
-and is held; training from scratch does not find it --- the same pattern as EM's
-recency deficit. Scope: one task, one width, one recipe, budget-scoped (runs still
-descending count as unsolved), and $r=4$'s smaller initial $W_{\mathrm{out}}$ (bound
-$0.5$ against $0.707$) is not separated from its rank. \textbf{Which $r=2$}: our
-bottleneck is shared across heads and the paper's is per head, so at two heads our
-$r=2$ has half the paper's latent dimensions; the per-head arm above is the paper's
-design, and it fails too. The seed standard deviation also falls from $0.064$ to
+and is held (measured for our shared $r=2$; for the per-head arm it is inferred); training from scratch does not find it --- the same pattern as EM's
+recency deficit. Scope: two heads, one task, one length, one width, one recipe, budget-scoped (runs
+still descending count as unsolved). \textbf{Which $r=2$}: our bottleneck is shared
+across heads and the paper's $W_{\mathrm{in}}$ is per head, so at two heads our $r=2$
+has half the paper's latent dimensions. The paper does not state $W_{\mathrm{out}}$'s
+shape: the per-head arm above is its literal reading, and with a full
+$W_{\mathrm{out}}$ the paper's $r=2$ at two heads is our shared $r=4$. The seed standard deviation also falls from $0.064$ to
 $0.012$ at $T=1024$ in the $T=128$-trained sweep, which matters because it sets every
 detectable effect size.
 
@@ -977,8 +985,9 @@ above.
 
 \textbf{And keep the bottleneck.} Since $W_{\mathrm{in}}$ \emph{is} the
 identification mechanism, its rank is the channel the whole distinction passes
-through, and its rank per head decides whether training finds the torus solution at
-all ($\S$\ref{sec:rankmeas}); $r=4$ costs $384$ parameters.
+through, and at rank $2$ training rarely finds the torus solution within budget
+($\S$\ref{sec:rankmeas}); a shared $r=4$, which finds it on $8/8$ seeds, costs $384$
+parameters.
 
 \subsection{Combinations worth building}
 
@@ -1013,10 +1022,11 @@ Two properties of the content-to-phase map, neither applied as a design constrai
 the positional-encoding literature for language and neither tested on navigation
 before, are measured here. The sign costs nothing and decides whether the accumulator
 measures net displacement or elapsed path; its accuracy cost appears past the training
-length. The rank per head decides whether training finds the torus solution --- $0/8$,
-$2/8$ and $8/8$ seeds for our shared $r=2$, the paper's per-head $r=2$ and $r=4$,
+length. Through a rank-$2$ bottleneck training rarely finds the torus solution ---
+$0/8$, $2/8$ and $8/8$ seeds for our shared $r=2$, a per-head $r=2$ and a shared $r=4$,
 trained and tested at $T=1024$ --- although a rank-$2$ solution exists and is held, so
-the deficit is one of search. Neither dominates the choice of encoding: under the
+the deficit is one of search; which property of the bottleneck is responsible is not
+separated. Neither dominates the choice of encoding: under the
 converged recipe the encoding main effect on the torus is $+0.189$ at $T=1024$, larger
 than rank's $+0.085$. Both matter only where position must be reconstructed from the
 input, which is why they are invisible on text and why the measurements here are not.
