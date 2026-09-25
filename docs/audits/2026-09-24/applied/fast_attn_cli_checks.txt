@@ -1,0 +1,15 @@
+time_explicit wall 30.5 s; epoch-5 time: 
+time_fast wall 24.9 s; epoch-5 time: 
+time_fast_det wall 28.3 s; epoch-5 time: 
+time_det wall 31.2 s; epoch-5 time: 
+rep_fast_a wall 20.8 s; epoch-5 time: 
+rep_fastdet_a wall 21.2 s; epoch-5 time: 
+rep_fast_b wall 20.8 s; epoch-5 time: 
+rep_fastdet_b wall 20.9 s; epoch-5 time: 
+VanillaEM --fast-attn exit 1: --fast-attn changes nothing for VanillaEM: it has no plain model.WMTransformerLayer (its attention: own class)
+--fast-attn run-to-run                               DIFFERENT   final losses 2.071453 / 2.071460
+--fast-attn --deterministic run-to-run               BITWISE IDENTICAL   final losses 2.071464 / 2.071464
+explicit vs explicit --deterministic (5 x 98)        BITWISE IDENTICAL   final losses 1.221522 / 1.221522
+explicit vs --fast-attn (5 x 98; expected to differ) DIFFERENT   final losses 1.221522 / 1.005274
+config keys: {'fast_attn': True, 'deterministic': True} args has them: True True
+DONE

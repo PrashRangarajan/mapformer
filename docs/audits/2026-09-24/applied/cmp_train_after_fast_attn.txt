@@ -1,0 +1,12 @@
+rank_dw3           BIT-IDENTICAL  losses ==  params ==  optim ==  losses_prior ==  final loss 2.0642197132110596 / 2.0642197132110596  n_params 204757
+rank_r2_dw3        BIT-IDENTICAL  losses ==  params ==  optim -  losses_prior ==  final loss 2.065177881717682 / 2.065177881717682  n_params 204373
+rank_serial        BIT-IDENTICAL  losses ==  params ==  optim -  losses_prior ==  final loss 2.0608436107635497 / 2.0608436107635497  n_params 204373
+torus_dw3          BIT-IDENTICAL  losses ==  params ==  optim -  losses_prior ==  final loss 2.080086553096771 / 2.080086553096771  n_params 204373
+torus_serial       BIT-IDENTICAL  losses ==  params ==  optim -  losses_prior ==  final loss 2.0610249400138856 / 2.0610249400138856  n_params 204373
+perhead_dw3        BIT-IDENTICAL  losses ==  params ==  optim -  losses_prior ==  final loss 2.0651519656181336 / 2.0651519656181336  n_params 204629
+em_serial          BIT-IDENTICAL  losses ==  params ==  optim -  losses_prior ==  final loss 2.062946689128876 / 2.062946689128876  n_params 204629
+dhead48_serial     BIT-IDENTICAL  losses ==  params ==  optim -  losses_prior ==  final loss 2.1325608849525453 / 2.1325608849525453  n_params 116421
+dog_noise_serial   BIT-IDENTICAL  losses ==  params ==  optim -  losses_prior ==  final loss 2.07387797832489 / 2.07387797832489  n_params 353301
+looped_dw3         BIT-IDENTICAL  losses ==  params ==  optim -  losses_prior ==  final loss 2.063733381032944 / 2.063733381032944  n_params 204373
+cont               BIT-IDENTICAL  losses ==  params ==  optim ==  losses_prior ==  final loss 2.0559674978256224 / 2.0559674978256224  n_params 204757
+DONE

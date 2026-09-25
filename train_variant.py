@@ -455,7 +455,40 @@ def main():
                              "continuation uses 1 so it sees fresh walks on the same map")
     parser.add_argument("--save-full-state", action="store_true",
                         help="also save optimizer and scheduler state (opt-in)")
+    parser.add_argument("--fast-attn", action="store_true",
+                        help="opt-in, NEW SERIES ONLY: F.scaled_dot_product_attention in "
+                             "model.WMTransformerLayer (the MapWM family), TF32 explicitly OFF, "
+                             "never materialising the [B,H,T,T] scores. Not bit-identical to the "
+                             "default explicit path (different dropout RNG and summation order): "
+                             "every arm of a batch must share it and it cannot continue an "
+                             "explicit-path run bit-exactly. Measured 2026-09-24, one RTX 4090, "
+                             "Vanilla B16 T1024 lr 1e-3 (FAST_ATTN_RANK.md): 2.0 -> 0.9 s/epoch "
+                             "(2.2x) through this CLI with --data-workers 3, 1.97 -> 1.28 s "
+                             "(1.54x) with serial data; peak memory 2.19 -> 0.47 GiB; max |logit| "
+                             "diff 1.1e-06 on identical weights. Its backward is NOT run-to-run "
+                             "reproducible without --deterministic. Refused for variants with no "
+                             "plain WMTransformerLayer (e.g. MapEM).")
+    parser.add_argument("--deterministic", action="store_true",
+                        help="torch.use_deterministic_algorithms(True) (STRICT, not warn_only: "
+                             "measured, warn_only leaves SDPA's backward non-deterministic) and "
+                             "CUBLAS_WORKSPACE_CONFIG=:4096:8 if unset. Makes --fast-attn "
+                             "training run-to-run bitwise reproducible, at 1.6 s/epoch (1.25x over "
+                             "explicit). On the default explicit path it changed nothing (bitwise "
+                             "equal over 5 x 98 batches). An op with no deterministic "
+                             "implementation then raises instead of warning.")
     args = parser.parse_args()
+    if args.deterministic:
+        import os
+        # must precede the first cuBLAS handle; harmless where cuBLAS no longer needs it
+        os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+        torch.use_deterministic_algorithms(True)
+    if args.fast_attn:
+        import mapformer.model as _M
+        _M.USE_SDPA = True
+        # TF32 stays OFF: it is what cost equivalence on the compositional trainer (logit
+        # diff 6e-01); SDPA alone agrees with the explicit path to ~1e-6
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
 
     torch.manual_seed(args.seed); np.random.seed(args.seed)
 
@@ -514,6 +547,18 @@ def main():
         d_model=args.d_model, n_heads=args.n_heads,
         n_layers=args.n_layers, grid_size=grid_size,
     )
+
+    if args.fast_attn:
+        from mapformer.model import WMTransformerLayer as _WML
+        plain = [mod for mod in model.modules() if type(mod).forward is _WML.forward]
+        other = [type(mod).__name__ for mod in model.modules()
+                 if isinstance(mod, _WML) and type(mod).forward is not _WML.forward]
+        if not plain:
+            raise SystemExit(f"--fast-attn changes nothing for {args.variant}: it has no plain "
+                             f"model.WMTransformerLayer (its attention: {sorted(set(other)) or 'own class'})")
+        if other:
+            print(f"NOTE --fast-attn: {len(plain)} layer(s) use SDPA; {sorted(set(other))} keep "
+                  f"their own attention")
 
     init_blob = None
     if args.init_from:
@@ -594,6 +639,8 @@ def main():
             # boundary, action_record, n_headings, heading_noise, score_moves_only), so no
             # evaluator could rebuild the training environment from the checkpoint alone.
             "args": dict(vars(args)),
+            # numerics path (added 2026-09-24; an absent key means the explicit path)
+            "fast_attn": args.fast_attn, "deterministic": args.deterministic,
         },
         # continuation history (None for a from-scratch run) and opt-in optimizer state
         "losses_prior": losses_prior,

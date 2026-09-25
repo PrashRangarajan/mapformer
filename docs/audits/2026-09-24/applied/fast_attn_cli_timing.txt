@@ -1,0 +1,4 @@
+explicit:  Epoch 5/10 | Loss: 1.1016 | LR: 5.87e-04 | 2.0s; Epoch 10/10 | Loss: 0.7547 | LR: 1.00e-04 | 2.0s;  peak-mem n/a
+fast:  Epoch 5/10 | Loss: 1.1229 | LR: 5.87e-04 | 0.9s; Epoch 10/10 | Loss: 0.7920 | LR: 1.00e-04 | 0.9s;  peak-mem n/a
+fast_det:  Epoch 5/10 | Loss: 1.2312 | LR: 5.87e-04 | 1.6s; Epoch 10/10 | Loss: 0.7116 | LR: 1.00e-04 | 1.6s;  peak-mem n/a
+DONE

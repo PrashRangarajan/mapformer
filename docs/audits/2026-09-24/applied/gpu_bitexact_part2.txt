@@ -1,0 +1,13 @@
+torch 2.10.0+cu128  NVIDIA GeForce RTX 4090  matmul.allow_tf32=False  CUBLAS_WORKSPACE_CONFIG=None
+== Part 2: seconds per 98-batch epoch and peak GiB (Vanilla, B16 T1024) ==
+  original (HEAD)                     10.18 s/epoch   peak  2.18 GiB   loss 2.10532
+  proposed bit-exact                   1.97 s/epoch   peak  2.19 GiB   loss 2.10532
+  proposed + SDPA                      1.28 s/epoch   peak  0.47 GiB   loss 2.10556
+  proposed + SDPA + det(warn_only)     1.11 s/epoch   peak  0.47 GiB   loss 2.10554   warnings: ['Memory Efficient attention defaults to a non-deterministic algorithm. To explicitly enable']
+  proposed + SDPA + det(strict)        1.58 s/epoch   peak  0.47 GiB   loss 2.10559
+  SDPA speed-up vs proposed explicit: 1.54x; vs HEAD: 7.95x
+  max |logit| diff SDPA vs explicit (eval, same weights, B16 T1024): 1.073e-06 (max |logit| 1.78)
+  SDPA run-to-run (deterministic=None): NOT reproducible  losses [2.335507321357727] / [2.3355533123016357]
+  SDPA run-to-run (deterministic=warn): NOT reproducible  losses [2.3354753971099855] / [2.335551309585571]
+  SDPA run-to-run (deterministic=strict): BITWISE REPRODUCIBLE  losses [2.335518455505371] / [2.335518455505371]
+  explicit path, deterministic=strict vs default: BITWISE EQUAL
