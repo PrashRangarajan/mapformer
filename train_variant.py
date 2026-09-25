@@ -519,6 +519,29 @@ def main():
     if args.init_from:
         init_blob = torch.load(args.init_from, map_location="cpu", weights_only=False)
         assert init_blob.get("variant") == args.variant, (init_blob.get("variant"), args.variant)
+        # The training MAP is seeded by --seed, so a parent trained on another seed (or grid /
+        # vocabulary / environment) would silently continue on a different task (audit
+        # 2026-09-24, hygiene 03). Keys absent from an older parent are not checked.
+        ic = init_blob.get("config", {}); ia = ic.get("args") or {}
+        mine = {"seed": args.seed, "grid_size": grid_size, "n_obs_types": args.n_obs_types,
+                "n_landmarks": args.n_landmarks, "vocab_size": env.unified_vocab_size,
+                "env": args.env, "action_mode": args.action_mode, "obs_mode": args.obs_mode,
+                "boundary": args.boundary, "action_record": args.action_record,
+                "n_headings": args.n_headings, "heading_noise": args.heading_noise,
+                "score_moves_only": args.score_moves_only,
+                "p_transition_noise": args.p_transition_noise}
+        theirs = {"seed": init_blob.get("seed"), **{k: ic.get(k, ia.get(k)) for k in mine if k != "seed"}}
+        mism = {k: (theirs[k], v) for k, v in mine.items() if theirs[k] is not None and theirs[k] != v}
+        if mism:
+            raise SystemExit(f"--init-from config mismatch (parent, this run): {mism}")
+        if ic.get("n_steps") is not None and ic.get("n_steps") != args.n_steps:
+            print(f"NOTE: --init-from parent trained at n_steps={ic.get('n_steps')}, this run "
+                  f"at {args.n_steps} (allowed: a length change can be deliberate)")
+        if ic.get("projected_from"):
+            print(f"NOTE: parent is a projection of {ic['projected_from']}; its 'losses' are the "
+                  f"SOURCE model's curve unless it was built after 2026-09-24 (build_rank_proj "
+                  f"now saves them as 'source_losses'), so losses_prior below may not be this "
+                  f"arm's history")
         model.load_state_dict(init_blob["model_state_dict"])      # strict
         print(f"init-from {args.init_from} ({len(init_blob.get('losses', []))} prior epochs)")
     print(f"{args.variant} seed={args.seed} n_landmarks={args.n_landmarks} "
@@ -566,6 +589,11 @@ def main():
             "epochs": args.epochs, "lr": args.lr, "schedule": args.schedule,
             "n_batches": args.n_batches,
             "init_from": args.init_from, "data_seed_offset": args.data_seed_offset,
+            # EVERY CLI argument (audit 2026-09-24, hygiene 03): the keys above omit the
+            # environment knobs (p_action_noise, p_transition_noise, action_mode, obs_mode,
+            # boundary, action_record, n_headings, heading_noise, score_moves_only), so no
+            # evaluator could rebuild the training environment from the checkpoint alone.
+            "args": dict(vars(args)),
         },
         # continuation history (None for a from-scratch run) and opt-in optimizer state
         "losses_prior": losses_prior,

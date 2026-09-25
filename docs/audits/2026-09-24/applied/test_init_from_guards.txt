@@ -1,0 +1,30 @@
+--- 1 parent (seed 0, CPU, tiny)
+exit 0
+Saved: <tmp>/parent/Vanilla.pt
+--- 2 --data-seed-offset 1 with --data-workers 0 (must fail loudly)
+ValueError: data_seed_offset requires data_workers > 0 (the serial data path has no stream seed to offset)
+exit 1  (no checkpoint written)
+--- 3 --init-from a seed-0 parent at --seed 1 (must refuse)
+--init-from config mismatch (parent, this run): {'seed': (0, 1)}
+exit 1
+--- 4 --init-from at another grid (must refuse; the strict load would NOT catch it: no grid-shaped weights)
+--init-from config mismatch (parent, this run): {'grid_size': (64, 32)}
+exit 1
+--- 5 --init-from with another n_obs_types (must refuse before the strict load)
+--init-from config mismatch (parent, this run): {'n_obs_types': (16, 32), 'vocab_size': (21, 37)}
+exit 1
+--- 6 --init-from with another boundary (refused from the parent's saved args)
+--init-from config mismatch (parent, this run): {'boundary': ('torus', 'wall')}
+exit 1
+--- 7 --init-from matching parent at another n_steps (allowed, with a NOTE)
+NOTE: --init-from parent trained at n_steps=16, this run at 32 (allowed: a length change can be deliberate)
+init-from <tmp>/parent/Vanilla.pt (1 prior epochs)
+Saved: <tmp>/ok/Vanilla.pt
+exit 0
+--- 8 --init-from a committed projection (runs/rank_proj s3, seed 3), 1 tiny epoch at its own n_steps
+NOTE: --init-from parent trained at n_steps=1024, this run at 16 (allowed: a length change can be deliberate)
+NOTE: parent is a projection of /home/prashr/mapformer/runs/rank_matched_e900/p0/Vanilla_r4_s3/Vanilla_r4.pt; its 'losses' are the SOURCE model's curve unless it was built after 2026-09-24 (build_rank_proj now saves them as 'sourc
+init-from /home/prashr/mapformer/runs/rank_proj/p0/Vanilla_s3/Vanilla.pt (900 prior epochs)
+exit 0
+--- 9 checkpoint config now carries every CLI arg
+['action_mode', 'action_record', 'aux_coef', 'batch_size', 'boundary', 'd_model', 'data_seed_offset', 'data_workers'] ... 35 args; {'boundary': 'torus', 'action_mode': 'translate', 'p_transition_noise': 0.0, 'data_workers': 0}

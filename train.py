@@ -89,12 +89,23 @@ def train(
     # parallel run therefore will not reproduce a stored serial checkpoint.
     wants_positions = hasattr(model, "_batch_positions")
     gen = None
+    if data_seed_offset and data_workers <= 0:
+        # The serial path draws from the global numpy RNG seeded by --seed, so an offset
+        # would be silently IGNORED and a continuation would replay its parent's walks.
+        raise ValueError("data_seed_offset requires data_workers > 0 (the serial data "
+                         "path has no stream seed to offset)")
     if data_workers > 0:
         from .data_parallel import ParallelBatchGenerator
         gen = ParallelBatchGenerator(
             env, batch_size, n_steps, n_workers=data_workers,
             # data_seed_offset (default 0 = unchanged) gives a continuation run a FRESH
-            # stream while keeping the seed, and so the training map, the same
+            # stream while keeping the seed, and so the training map, the same.
+            # NOTE: batch seeds are base_seed*1_000_003 + i, so offset k makes seed s's
+            # walk stream IDENTICAL to seed s+k's offset-0 stream (verified: continuation
+            # s0 replays original s1's walks, on s0's map). Harmless for within-seed
+            # arm pairing; use a large offset (e.g. 10**6) if cross-batch independence
+            # of walks matters. Kept as is so the committed continuations (rank_matched_e900c,
+            # rank_proj_train, both offset 1) stay reproducible.
             base_seed=(torch.initial_seed() + data_seed_offset) % (2 ** 31),
             p_transition_noise=p_transition_noise,
             want_locations=wants_positions)
