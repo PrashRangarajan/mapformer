@@ -62,8 +62,15 @@ from typing import Mapping, Sequence, Union
 import numpy as np
 
 REPO = Path("/home/prashr/mapformer")
-MDE_K = 2.8                 # z_{.975} + z_{.80} ~ 1.96 + 0.84
+MDE_K = 2.8                 # z_{.975} + z_{.80} ~ 1.96 + 0.84 -- the LARGE-SAMPLE value.
+# |delta| > MDE is the test |t| > 2.8, whose two-sided alpha is 0.107 at n=3, 0.068 at
+# n=4, 0.049 at n=5, 0.027 at n=8 (t with n-1 df). The exact 80%-power multiplier is
+# t_{.975,n-1} + t_{.80,n-1}: 5.36 / 3.72 / 3.26 at n=3 / 5 / 8. Both are reported beside
+# the house verdict (Contrast.p_t, .mde_t, .p_signflip, .row_full(); audit 2026-09-24,
+# hygiene A1); the verdict itself is UNCHANGED so every committed table reproduces. The
+# statistics live in stats_core (one implementation); these are thin wrappers.
 MEDIATOR_R = 0.98           # |r(loss, acc)| above this -> the mediator warning
+from mapformer.stats_core import SMALL_N   # below this no distribution-free paired test reaches p < .05
 
 Values = Union[Mapping[int, float], Sequence[float], np.ndarray]
 
@@ -72,6 +79,19 @@ Values = Union[Mapping[int, float], Sequence[float], np.ndarray]
 def mde(sd: float, n: int) -> float:
     """Minimum detectable effect of a paired mean, ~80% power at alpha .05."""
     return MDE_K * sd / math.sqrt(n)
+
+
+def mde_t(sd: float, n: int, alpha: float = 0.05, power: float = 0.80) -> float:
+    """Small-sample MDE: (t_{1-alpha/2,n-1} + t_{power,n-1}) * sd / sqrt(n)."""
+    from mapformer.stats_core import mde as _mde
+    return _mde(sd, n, exact_t=True, alpha=alpha, power=power)
+
+
+def signflip_p(d) -> float:
+    """Exact two-sided sign-flip (paired permutation) p for mean(d) = 0 (Monte Carlo above
+    20 seeds). Valid for bimodal seeds. Minimum achievable p is 2 / 2**n (0.25 at n=3)."""
+    from mapformer.stats_core import signflip_p as _sf
+    return _sf(list(d))["p"]
 
 
 def verdict(delta: float, mde_: float) -> str:
@@ -123,6 +143,40 @@ class Contrast:
     def t(self) -> float:
         return self.delta / (self.sd / math.sqrt(self.n)) if self.sd > 0 else float("inf")
 
+    @property
+    def p_t(self) -> float:
+        """Two-sided paired t-test p (n-1 df). sd = 0: 0 if delta != 0, else 1."""
+        if self.sd == 0:
+            return 0.0 if self.delta != 0 else 1.0
+        from scipy.stats import t as _t
+        return float(2 * _t.sf(abs(self.t), self.n - 1))
+
+    @property
+    def p_signflip(self) -> float:
+        """Exact sign-flip p on the per-seed differences (nan if they were not kept)."""
+        return signflip_p(self.diffs_by_seed.values()) if self.diffs_by_seed else float("nan")
+
+    @property
+    def mde_t(self) -> float:
+        return mde_t(self.sd, self.n)
+
+    @property
+    def small_n_note(self) -> str:
+        """Why the house verdict needs care here, or '' ."""
+        notes = []
+        if self.n < SMALL_N:
+            notes.append(f"n<{SMALL_N}: no exact test can reach .05")
+        if self.sd == 0:
+            notes.append("sd=0: MDE 0, any nonzero delta reads DETECTABLE")
+        return "; ".join(notes)
+
+    def row_full(self) -> str:
+        """House row plus the small-sample numbers: exact-t MDE, t-test p, sign-flip p.
+        Use with TABLE_HEADER_FULL. The house columns are exactly row()'s."""
+        note = f" ({self.small_n_note})" if self.small_n_note else ""
+        return (self.row()[:-1] + f"| {self.mde_t:.3f} | {self.p_t:.3f} | "
+                f"{self.p_signflip:.3f}{note} |")
+
     def row(self) -> str:
         """Markdown row in the house column order: contrast | delta | sd | MDE | seeds + | verdict."""
         return (f"| {self.label} | {self.delta:+.3f} | {self.sd:.3f} | {self.mde:.3f} | "
@@ -134,6 +188,8 @@ class Contrast:
 
 
 TABLE_HEADER = "| contrast | delta | sd | MDE | seeds + | verdict |\n|---|---|---|---|---|---|"
+TABLE_HEADER_FULL = ("| contrast | delta | sd | MDE | seeds + | verdict | MDE (exact t) | t-test p "
+                     "| sign-flip p |\n|---|---|---|---|---|---|---|---|---|")
 
 
 def table(contrasts: Sequence[Contrast]) -> str:
