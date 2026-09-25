@@ -1,5 +1,14 @@
 # Indirect Indexing CAN be solved by arithmetic -- existence shown by hand
 
+> **CORRECTED 2026-09-25 (theory audit S3.11).** "MapWM should fail this task by construction"
+> below is too strong. Position can reach the hidden state -- and so the values -- implicitly:
+> NoPE's Theorem 1 (`papers/txt/nope.txt`) constructs absolute positions from a causal first
+> layer, and trained MapPoPE solves the task in distribution (8/8 at 200k iterations,
+> `INDIRECT_RESULTS_200k.md`). The defensible statement is narrower: standard RoPE and MapFormer
+> **cannot generalise across shifts through their positional operator**, because that operator
+> puts position only in the query-key rotation and MapFormer computes its angle once, before any
+> attention. What the model does through its hidden state is not ruled out.
+
 `hand_indirect.py`. No training: a two-hop attention construction with hand-set weights
 and **no per-shift parameters anywhere**, run on examples from the task's own
 generator (`environment_indirect.IndirectWorld`, block widened only so long strings fit).
@@ -49,8 +58,9 @@ offset is right at most 4.8% of the time -- even with a perfect clock.
 - **Neither standard RoPE nor MapFormer has (A) or (B).** Both put position only in the
   query-key rotation, never in values; and MapFormer computes its angle once from token
   identity before any attention runs (`mapformer_math.tex`: "the one axis on which the two
-  designs remain uncompared"). So MapWM should fail this task by construction EVEN WITH
-  perfect digit arithmetic -- path integration alone is not enough; placement is.
+  designs remain uncompared"). So MapWM cannot generalise across shifts through its positional
+  operator, EVEN WITH perfect digit arithmetic (not "fails by construction": see the banner) --
+  path integration alone is not enough; placement is.
 - **(C) is exactly what path integration provides** -- digit tokens as additive angles.
   It is the one ingredient here that MapFormer's mechanism supplies natively.
 - **It does NOT show a trained model will FIND this solution.** This project has seen
