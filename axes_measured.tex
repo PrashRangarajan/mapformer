@@ -26,25 +26,30 @@
 \noindent
 A companion to \emph{Positional Mechanisms in Attention}, which classifies the space
 of positional operators and finds two live slots. This paper measures what two
-properties of those slots are worth --- properties that no paper in the literature
-varies deliberately.
+properties of those slots are worth --- properties that are not applied as design
+constraints in the positional-encoding literature for language, and that no one has
+tested on navigation.
 
 The \textbf{sign} of the phase increment costs nothing and decides what the
 accumulator measures: signed increments cancel, so the interval sum is net
 displacement and the code is a map; monotone ones cannot, so it is elapsed path and
-the code is a clock. On a map task a signed increment beats an index code by
-$0.12$--$0.20$ at matched loss on $12/12$ seeds and a monotone one beats it nowhere;
-on a task built to want a clock the ordering inverts, and the same unconstrained
-architecture learns a different accumulator for each. The \textbf{input-side rank}
-of the content-to-phase map is a step rather than a slope: $r=2$ learns a badly
-conditioned basis --- opposite actions fail to cancel by half the action scale --- and
-$r=4$ repairs it for $384$ parameters.
+the code is a clock. On a map task, at $4$--$8\times$ the training length, a signed
+increment beats an index code by $0.12$--$0.20$ at matched loss on $12/12$ seeds and a
+monotone one beats it nowhere; at the training length the monotone arms still beat the
+index code, so the accuracy cost is an extrapolation effect. On a $k$-back recency task
+the cost of monotonicity vanishes, and the same unconstrained architecture learns a
+different accumulator for each task. The \textbf{input-side rank} of the
+content-to-phase map decides whether training \emph{finds} the solution, not whether
+it exists: trained and tested at $T=1024$ for $900$ epochs from matched initial
+weights, our shared $r=2$ solves $0/8$ seeds, the paper's per-head $r=2$ $2/8$ and
+$r=4$ $8/8$, while a rank-$2$ solution exists ($0.9955$) and holds under training.
 
 Both are measured on grid navigation and algorithmic tasks rather than on text,
 because they are separable only where position must be reconstructed from the input
 rather than read off the index. Every evaluation is on an environment redrawn at test
-time, which makes them transfer measurements: a structural code reaches $0.99$ where
-a parameter-matched index code sits on the $0.506$ blank floor.
+time, which makes them transfer measurements: at the training length a structural code
+reaches $0.97$--$1.00$ where a parameter-matched index code reaches $0.81$ (floor
+$0.506$), and the gap grows with length.
 
 We also report what did not work. An explicit content gate separates action from
 observation tokens by a factor of four and improves accuracy nowhere; a published
@@ -52,6 +57,14 @@ external benchmark does not discriminate the mechanism, for a reason our own
 per-offset data predicted; and the growth exponent that unifies the sign and rank
 results is nearly collinear with a simpler observable and does not, on the evidence
 here, explain either.
+
+\smallskip\noindent\emph{Corrected 2026-09-25.} Earlier versions quoted a torus
+position effect of $+0.461$ with the index code on the blank floor (a $16$-epoch
+recipe; converged it is $+0.243$ with the index code at $0.805$), explained the rank
+result by a badly conditioned $r=2$ basis (within $r=2$ the skew does not predict
+accuracy; the matched-length result above replaces it), and called recency a task
+``built to want a clock'' on which the ordering ``inverts'' (a signed rewind solves it
+exactly, and nothing inverts).
 \end{abstract}
 
 \section{What is measured, and how}
@@ -116,8 +129,9 @@ action tokens and RoPE is the $\Delta\equiv1$ special case.
 This has a consequence for $\S$\ref{sec:rankmeas} worth stating: \textbf{the
 bottleneck is the separator}. The rank $r$ is not merely the dimension of a
 displacement code, it is the channel through which the what/where distinction has to
-pass, so the finding that $r=2$ learns a skewed basis and $r=4$ repairs it for $384$
-parameters is a finding about the \emph{separation} and not only about the geometry.
+pass, so the finding that the per-head rank decides whether training finds the torus
+solution ($\S$\ref{sec:rankmeas}) may be a finding about the \emph{separation} and not
+only about the geometry.
 An enforced split is therefore an oracle \emph{control} rather than a proposal: it
 upper-bounds what the learned separation can reach, and the gap measures what
 learning the split costs. If the two match, the design is vindicated with a number.
@@ -130,13 +144,13 @@ only structure can carry over. Against a measured always-predict-blank floor of
 $0.506$:
 
 \begin{table}[htbp]\centering\small
-\caption{Transfer to a new environment with the same relational structure. In every row the sensory map is redrawn at evaluation, so nothing environment-specific survives; the gap is what the structural code carries.}
+\caption{Transfer to a new environment with the same relational structure. In every row the sensory map is redrawn at evaluation, so nothing environment-specific survives; the gap is what the structural code carries. Torus: $T{=}128$ (the training length), converged recipe; structural = MapPoPE / MapFormer, index = RoPE / PoPE. The compositional row is at the old linear-decay recipe, which limits it (warmup and cosine lift the structural arm to $0.514$), and its structural arm is hierarchical while the index arm is flat.}
 \label{tab:transfer}
 \begin{tabular}{@{}p{4.6cm}p{3.4cm}p{3.0cm}p{3.2cm}@{}}
 \toprule
 task & structural code & index code & floor \\
 \midrule
-torus revisit, fresh map ($n{=}8$) & $\mathbf{0.994}$ / $0.987$ / $0.967$ & $0.530$ / $0.509$ & $0.506$ \\[2pt]
+torus revisit, fresh map ($n{=}8$) & $\mathbf{0.999}$ / $0.971$ & $0.805$ / $0.679$ & $0.506$ \\[2pt]
 blind continuation, $64^2$ ($n{=}5$) & $\mathbf{0.730 \pm 0.247}$ & $0.154 \pm 0.018$ & $0.063$ \\[2pt]
 blind continuation, $128^2$ ($n{=}3$) & $\mathbf{0.823 \pm 0.043}$ & $0.192 \pm 0.022$ & $0.063$ \\[2pt]
 compositional motif transfer ($n{=}8$) & $\mathbf{0.415 \pm 0.096}$ & $0.216 \pm 0.004$ & $\approx 0.072$ \\
@@ -144,9 +158,12 @@ compositional motif transfer ($n{=}8$) & $\mathbf{0.415 \pm 0.096}$ & $0.216 \pm
 \end{tabular}
 \end{table}
 
-\noindent An index code sits at or near the floor on a fresh map. It is not that it
-predicts badly --- it cannot locate itself, so it has nothing to bind an observation
-\emph{to}, and the map it built in the previous environment is worthless. A
+\noindent On the torus an index code is well above the floor at the training length
+once trained to convergence ($0.805$) but trails the structural code by $0.17$--$0.19$,
+and falls to $0.374$ at $8\times$ the training length where the structural code holds
+$0.78$--$0.92$. (Earlier versions of this table gave $0.530$ / $0.509$, from a
+$16$-epoch recipe under which the index code never left the floor; it does not
+support ``cannot locate itself''.) On blind continuation it sits near chance. A
 structural code arrives with the where already valid and needs only to rebind. That
 is the factorisation claim, measured.
 
@@ -162,8 +179,9 @@ task.
 \paragraph{Two boundaries, both of which the factorisation predicts.} The separation
 buys nothing when the structural code cannot be \emph{formed}: under rotation-based
 actions the displacement depends on accumulated heading, a fixed per-token increment
-cannot represent it, and the measured effect falls from $+0.438$ to $+0.050$ --- an
-index code then does as well, because neither has a usable where. And it buys
+cannot represent it, and the measured effect falls from $+0.438$ to $+0.050$ (at a
+$16$-epoch recipe with the index arm on the floor) --- an index code then does as well,
+because neither has a usable where. And it buys
 nothing when there is no structure to share: the effect is a threshold in map extent
 ($-0.010$, $+0.015$, $+0.305$ for $32$, $128$, $512$ occupied cells), so on a small
 environment, where an episode revisits everything anyway, there is nothing for a
@@ -192,7 +210,9 @@ types over $N^2$ cells, half of them blank), the token stream interleaves action
 observations, and the model predicts the observation at \emph{revisited} cells only.
 Unless stated otherwise: $N=64$, one layer, two heads, $d_{\mathrm{model}}=128$,
 $\nb=32$, trained at sequence length $128$ for $300$ epochs with warmup and cosine
-decay at $\mathrm{lr}=10^{-3}$, and evaluated on a held-out observation map.
+decay at $\mathrm{lr}=10^{-3}$ (the rotation-action and allocentric numbers are the
+exception: a $16$-epoch linear-decay recipe), and evaluated on a held-out observation
+map.
 ``Accuracy'' is next-token accuracy at revisited positions, against a measured
 always-predict-blank floor of $0.506$. Two further tasks appear where noted:
 \textbf{parity} at sequence length $L$, and \textbf{blind continuation}, in which the
@@ -204,20 +224,27 @@ with the contrast that would have refuted it.
 
 \begin{itemize}\itemsep2pt
 \item \textbf{F1. The sign of the increment is load-bearing where the task needs a
-  map, and free.} At matched loss and identical parameter count, a signed increment
-  beats an index code by $0.12$--$0.20$ ($12/12$ seeds); a monotone one beats it
-  nowhere ($\S$\ref{sec:sign}). \emph{Refuted by} a monotone arm matching the
-  signed arm on the map task.
-\item \textbf{F2. Rank $r=2$ fails by conditioning, not capacity.} $r=4$ buys
-  $+0.085$ for $384$ parameters and is flat to $r=32$; the learned code at $r=2$ is
-  skewed rather than small ($\S$\ref{sec:rankmeas}). \emph{Refuted by} a capacity
-  slope, or by the deficit growing with world dimension --- which was tested, and
-  it does not.
-\item \textbf{F3. One quantity accounts for F1 and F2, and it reads off the
+  map past the training length, and free.} At matched loss and identical parameter
+  count, at $4$--$8\times$ the training length, a signed increment beats an index code
+  by $0.12$--$0.20$ ($12/12$ seeds); a monotone one beats it nowhere
+  ($\S$\ref{sec:sign}). At the training length the monotone arms score $0.90$--$0.98$
+  against the index code's $0.80$; no arm has been trained at the length where the
+  cost appears. \emph{Refuted by} a monotone arm matching the signed arm on the map
+  task.
+\item \textbf{F2. Rank $r=2$ fails by search, not capacity.} Trained at $T=128$,
+  $r=4$ buys $+0.085$ at $8\times$ that length for $384$ parameters and is flat to
+  $r=32$. Trained and tested at $T=1024$ from matched initial weights, the rank per
+  head decides whether training finds the solution within $900$ epochs ($0/8$, $2/8$,
+  $8/8$), while a rank-$2$ solution exists and holds ($\S$\ref{sec:rankmeas}).
+  \emph{Refuted by} a capacity slope, by the deficit growing with world dimension ---
+  which was tested, and it does not --- or by the projected rank-$2$ solution failing
+  to hold under training, which was tested, and it holds.
+\item \textbf{F3. One observable co-varies with F1 and F2, and it reads off the
   task.} The accumulator's growth exponent $\alpha$ correlates with cancellation at
-  $r = +0.9995$ across arms ($\S$\ref{sec:growth}), and an unconstrained
-  architecture moves it from $0.591$ to $0.967$ between a map task and a clock task
-  while every constrained arm stays fixed ($\S$\ref{sec:crossover}).
+  $r = +0.9995$ across arms ($\S$\ref{sec:growth}) --- an association, not an
+  explanation --- and an unconstrained architecture moves it from $0.591$ to $0.967$
+  between the torus and the recency task while every constrained arm stays fixed
+  ($\S$\ref{sec:crossover}).
   \emph{Refuted by} the free arm learning the same accumulator on both.
 \item \textbf{N1. The axis on which most mechanisms help is not explained.} Four
   separate mechanisms help at extrapolated length; $\alpha$ accounts for two and
@@ -269,8 +296,14 @@ integration beats an index code by $+0.123$ and $+0.195$ at $T=512$ and $T=1024$
 ($12/12$ seeds), while monotone path integration beats it nowhere} --- $-0.028$ at
 $T=128$ and unmeasured beyond. Note also that the index arm sits at or below the
 measured always-predict-blank floor of $0.506$ at both OOD lengths, so its raw
-margins are not interpretable as skill. The entire measured value of a content-dependent phase over a plain index
-clock, on this task, requires the increment to be signed.
+margins are not interpretable as skill. Past the training length, the entire measured
+value of a content-dependent phase over a plain index clock, on this task, requires
+the increment to be signed. At $T=128$ the loss-matched contrast is uninformative ---
+it makes even the signed arm lose to the index code ($-0.021$, detectable), because
+every path-integrated arm fits far better --- and raw, every monotone arm beats the
+index code ($0.90$--$0.98$ against $0.80$). So the accuracy cost of monotonicity is
+an extrapolation effect; a monotone arm trained and tested at $T=1024$ has not been
+run.
 
 The learned code shows why. The opposition score
 $\lVert\Delta(+x)+\Delta(-x)\rVert / \overline{\lVert\Delta\rVert}$ is $0$ when
@@ -306,7 +339,7 @@ consequence for parity are established (the companion review(ii)); what is new i
 navigation rather than formal languages, and an isolation in which $|\Delta|$ against
 $\Delta$ is a single operation at identical parameter count.
 
-\subsection{F2: rank $r=2$ fails by conditioning, not capacity}
+\subsection{F2: rank $r=2$ fails by search, not capacity}
 \label{sec:rankmeas}
 
 The bottleneck $r$ is meant to be the dimensionality of the action space --- for a
@@ -330,13 +363,14 @@ $r=32$ & $+5{,}760$ & $+0.038$ & $+0.095$ \\
 \end{table}
 
 \noindent This is a \textbf{step at $r=2$, not a capacity slope}: flat from $r=4$ to
-$r=32$. The cause is conditioning, not capacity. Given four dimensions the model still
-places its actions in a $2$-plane ($100.0\%$ of spectral energy; $99.96\%$ even at
-$r=32$), vindicating the dimensional argument --- what fails is the \emph{basis} that
-$r=2$ is forced into:
+$r=32$. It is also an extrapolation number: both arms are at ceiling at the training
+length, and $94\%$ of the $+0.085$ comes from short-gap revisits that occur later in
+the sequence than training reached. Given four dimensions the model still places its
+actions in a $2$-plane ($100.0\%$ of spectral energy; $99.96\%$ even at $r=32$),
+vindicating the dimensional argument, and the arm means differ in the basis:
 
 \begin{table}[htbp]\centering\small
-\caption{The learned basis at $r=2$ and $r=4$. The deficit is conditioning, not capacity.}
+\caption{The learned basis at $r=2$ and $r=4$ (arm means, trained at $T=128$). Descriptive: within $r=2$ neither column predicts accuracy.}
 \label{tab:basis}
 \begin{tabular}{lrrr}
 \toprule
@@ -348,9 +382,30 @@ $r=4$ & $\mathbf{0.092}$ & $\mathbf{0.175}$ & $0.042$ \\
 \end{tabular}
 \end{table}
 
-\noindent At $r=2$ opposite actions fail to cancel by half the action scale and north
-and east are nearly parallel. The seed standard deviation also falls from $0.064$ to
-$0.012$ at $T=1024$, which matters because it sets every detectable effect size.
+\noindent On average, at $r=2$ opposite actions fail to cancel by half the action scale
+and north and east are nearly parallel. An earlier version read this as the cause
+(``conditioning, not capacity''); it does not survive. The $r=2$ codes are bimodal
+across seeds, and within $r=2$ neither opposition nor $|\cos|$ predicts accuracy at
+$T=1024$ ($r=-0.35$ and $+0.30$).
+
+\textbf{At matched length it is search.} Trained and tested at $T=1024$ for $900$
+epochs, every arm built from the same initial weights, $8$ seeds: our shared $r=2$
+solves $0/8$ (accuracy $0.894$), the paper's per-head $r=2$ $2/8$ ($0.885$) and a
+shared $r=4$ $8/8$ ($0.998$); Fisher $p=0.0002$ and $0.007$ against $r=4$. The
+per-head arm and $r=4$ have the same four latent dimensions, so what separates them is
+the rank of each head's content-to-angle map. The solution is not out of reach at
+rank~$2$: projecting each solved $r=4$ model onto rank $2$ scores $0.9955$ frozen, and
+trained onward from there it stays solved ($7/8$, against $7/8$ for the $r=4$ control)
+while from-scratch $r=2$ reaches $1/8$ after $1800$ epochs. The representation exists
+and is held; training from scratch does not find it --- the same pattern as EM's
+recency deficit. Scope: one task, one width, one recipe, budget-scoped (runs still
+descending count as unsolved), and $r=4$'s smaller initial $W_{\mathrm{out}}$ (bound
+$0.5$ against $0.707$) is not separated from its rank. \textbf{Which $r=2$}: our
+bottleneck is shared across heads and the paper's is per head, so at two heads our
+$r=2$ has half the paper's latent dimensions; the per-head arm above is the paper's
+design, and it fails too. The seed standard deviation also falls from $0.064$ to
+$0.012$ at $T=1024$ in the $T=128$-trained sweep, which matters because it sets every
+detectable effect size.
 
 Two further observations. The deficit does \emph{not} grow with the dimensionality of
 the world: at $D=5$, $r=2$ is unimpaired ($0.896$, its best of three conditions), so
@@ -405,9 +460,9 @@ $1.54\times$ on parity where it hurts.
 \subsection{Supporting: why these axes are invisible on text}
 \label{sec:navigation}
 
-Every paper in the companion review evaluates on language, recall, state tracking, or ---
-for LieRE and Algebraic PE --- images, video and trees. None runs grid navigation, and
-it is the regime in which these axes are distinguishable at all.
+Every other paper in the companion review evaluates on language, recall, state tracking,
+or --- for LieRE and Algebraic PE --- images, video and trees. Only MapFormer runs grid
+navigation, and it is the regime in which these axes are distinguishable at all.
 
 The basic separation is large. On a task where the model explores with observations
 revealed and then continues blind, predicting the observation at each cell, path
@@ -415,12 +470,14 @@ integration scores $0.730 \pm 0.247$ ($n=5$, $64^2$) against $0.154 \pm 0.018$ f
 index code, chance $0.0625$, with no seed overlap. The axis is path integration and not
 the encoding: PoPE with path integration scores $0.847$ against $0.117$ for PoPE with
 an index (both $n=3$; only the MapWM pair was extended to $n=5$, and it fell $0.158$
-when it was, so read the ratio and not the values). On the standard revisit task, re-derived from the per-seed data
-($n=8$, held-out map), the position main effect is $+0.461$ (8/8 seeds, MDE
-$0.027$) and the encoding main effect is $+0.003$, which is below its own MDE of
-$0.029$ at 5/8 seeds. No ratio is quoted: with a denominator that close to zero the
-quotient is not a stable quantity. The defensible statement is that one factor
-moves the result by roughly half and the other does not move it measurably.
+when it was, so read the ratio and not the values). On the standard revisit task under
+the converged recipe ($n=8$, held-out map, one batch), the position main effect is
+$+0.243$ at the training length (8/8 seeds, MDE $0.038$; index RoPE $0.805$,
+path-integrated $0.971$) and $+0.359$ at $8\times$ it. The encoding main effect is
+\emph{not} negligible: $-0.049$ at the training length and $+0.114$ / $+0.189$ at
+$T=512$ / $1024$, all detectable. Earlier versions quoted $+0.461$ and $+0.003$ from a
+$16$-epoch recipe under which both index arms sat on the floor; that is where the
+encoding looked inert.
 
 Two boundaries are worth stating. The effect is not a property of navigation as such
 but of \emph{map extent}: at matched observation aliasing it is $-0.010$, $+0.015$ and
@@ -430,7 +487,9 @@ replicated point, though the $0.290$ jump is roughly twice the measured noise fl
 it does not survive rotation-based action spaces: under turn/turn/forward, where
 displacement depends on accumulated heading, the effect falls from $+0.438$ to $+0.050$,
 which is the companion review's commutativity limitation made concrete. Recording the
-absolute displacement instead of the commanded turn restores it to $+0.488$.
+absolute displacement instead of the commanded turn restores it to $+0.488$. All three
+numbers are from the $16$-epoch recipe with the index arm on the floor, and have not
+been rerun under the converged one.
 
 \subsection{Supporting: what each ingredient costs and buys}
 \label{sec:anchors}
@@ -442,10 +501,10 @@ absolute displacement instead of the commanded turn restores it to $+0.488$.
 \toprule
 mechanism & sets & parameter cost & measured effect \\
 \midrule
-Path integration & phase $\theta$ & $+448$ ($+0.23\%$) & $+0.078$ parity ($16/16$); $+0.461$ torus \\[2pt]
+Path integration & phase $\theta$ & $+448$ ($+0.23\%$) & $+0.078$ parity ($16/16$); $+0.243$ torus at $T{=}128$ \\[2pt]
 \textbf{Signed} increment & sign of $\Delta$ & $\mathbf{0}$ & largest per parameter; removing it costs $-0.215$/$-0.280$ at $T{=}512/1024$ \\[2pt]
-Bottleneck rank & state rank $\rho$ & $+384$ ($+0.19\%$) & $+0.085$ at $T{=}1024$ for $r{=}2\to4$ ($8/8$); flat to $r{=}32$ \\[2pt]
-PoPE & magnitude $\mu$ & $+320$ & $+0.027$ \emph{with} path integration; both arms on the floor without it \\[2pt]
+Bottleneck rank & state rank $\rho$ & $+384$ ($+0.19\%$) & $+0.085$ at $T{=}1024$ for $r{=}2\to4$ trained at $128$ ($8/8$); trained at $1024$, solved $8/8$ against $0/8$ \\[2pt]
+PoPE & magnitude $\mu$ & $+320$ & $+0.028$ \emph{with} path integration, $-0.126$ on the index row ($T{=}128$, converged) \\[2pt]
 \bottomrule
 \end{tabular}
 \end{table}
@@ -470,7 +529,7 @@ $0.42$--$0.57$ --- but the plainer reading wins: the low-frequency channels carr
 position at map scale, and coarse position matters more when the walk covers more of
 the map.
 
-\subsection{F3: one quantity accounts for both}
+\subsection{F3: one observable co-varies with both}
 \label{sec:growth} All
 four arms start from the same accumulator range at training length ($88$--$94$) and
 separate entirely by how fast it grows with sequence length,
@@ -491,7 +550,7 @@ monotone, $r{=}4$ & $91.5$ & $649.8$ & $\mathbf{0.943}$ & $1.849$ \\
 \end{tabular}
 \end{table}
 
-\noindent A signed, well-conditioned increment gives $\alpha \approx 0.52$: the
+\noindent A signed, cancelling increment gives $\alpha \approx 0.52$: the
 accumulator performs a \textbf{diffusive random walk}. A monotone one gives
 $\alpha \approx 0.94$: \textbf{ballistic drift}. The last column is the opposition score of
 $\S$\ref{sec:sign}; across the four arms $r(\text{opposition},\alpha) = +0.9995$.
@@ -505,15 +564,17 @@ labelled opposite actions and cannot be computed on text at all, while $\alpha$
 needs only trajectories, so it is the form this measurement takes in the setting
 this literature works in. That measurement has not been made.
 
-\textbf{This is one mechanism for two separate results.} How completely opposite
-actions cancel sets whether the accumulator diffuses or drifts; that sets how fast it
-leaves the range it was trained on; and that co-varies with the rate of degradation
-with length. The last link is the weak one and is stated as association rather than
+\textbf{This is one observable across two separate results, not a mechanism.} How
+completely opposite actions cancel sets whether the accumulator diffuses or drifts;
+that sets how fast it leaves the range it was trained on; and that co-varies with the
+rate of degradation with length. The last link is the weak one and is stated as association rather than
 cause: $\theta$ enters through $\cos,\sin$, so a larger accumulator is not
 \emph{prima facie} out of distribution at all, and the standard account of why it
 would be --- untrained low-frequency channels --- is refuted here
-($\S$\ref{sec:localisation}). A skewed rank-$2$ basis (opposition $0.495$) and a monotone increment
-($1.849$) are the same failure at different severities. The relation is correlational across four
+($\S$\ref{sec:localisation}). A rank-$2$ code (opposition $0.495$, an arm mean) and a
+monotone increment ($1.849$) lie on the same line, but within $r=2$ opposition does not
+predict accuracy and the rank deficit is one of search ($\S$\ref{sec:rankmeas}), so for
+rank this is description, not mechanism. The relation is correlational across four
 arms, and $\alpha\approx0.5$ for a signed walk is unsurprising in itself; what it
 rests on is the spread to $0.94$ and the agreement with an independently measured
 quantity.
@@ -525,7 +586,10 @@ quantity.
 Every measurement above is on a task that wants a \emph{map}. That makes
 ``a signed increment is better'' and ``a signed increment suits this task''
 indistinguishable, and it is the obvious objection to the companion review. The
-test is a task whose answer depends on elapsed count rather than net displacement.
+test is a task that counts symbols rather than net displacement. (It does not
+\emph{require} a clock: a signed rewind of the query token solves it exactly, and a
+hand-built kernel selects the answer $1423/1423$. What it tests is whether giving up
+cancellation costs anything there.)
 
 \textbf{The task.} A stream of symbols carries interleaved queries; a query names
 an offset $k$ and the model must retrieve the $k$-th most recent \emph{content}
@@ -541,11 +605,11 @@ $T=1024$; chance $0.0625$, shortcut gates at chance, and doubling the budget mov
 the weakest arm by $-0.009$.
 
 \begin{table}[htbp]\centering\small
-\caption{The crossover. The cost of constraining the increment to be monotone, paired per seed, on a task that wants a map and one that wants a clock.}
+\caption{The crossover. The cost of constraining the increment to be monotone, paired per seed, on the torus and on the recency task. Both are extrapolation readouts, at different ratios: the torus at $8\times$ the training length ($T{=}1024$, trained at $128$), recency at $2\times$ ($T{=}2048$, trained at $1024$, because $T{=}1024$ is at ceiling).}
 \label{tab:crossover}
 \begin{tabular}{lrrl}
 \toprule
- & torus (a map) & recency (a clock) & \\
+ & torus (a map) & recency (counting) & \\
 \midrule
 monotone $-$ signed, raw & $-0.280$ & $-0.004$ & \\
 monotone $-$ signed, loss-matched & $-0.215$ & $+0.026$ & both inside MDE \\
@@ -555,8 +619,9 @@ seeds & 12/12 negative & 4/8 & \\
 \end{table}
 
 \noindent Giving up cancellation costs a fifth to a quarter of accuracy on the map
-task and \textbf{nothing measurable} on the clock task: an interaction of about
-$+0.28$. The accumulator says the same thing more sharply. The unconstrained arm
+task and \textbf{nothing measurable} on the recency task: an interaction of about
+$+0.28$ --- a difference, not an inversion, and one confounded with the extrapolation
+ratio until the torus arms are read at $2\times$. The accumulator says the same thing more sharply. The unconstrained arm
 may adopt either code, and adopts a different one per task, while every arm that
 \emph{cannot} choose sits at the same exponent on both:
 
@@ -743,7 +808,8 @@ A combination inherits its components' failure modes, not only their strengths.
 
 \textbf{It fills a cell in the table without supplying what that cell promises.}
 MapPoPE reads as ``both slots'' in the companion review, and the companion review
-says a system needing map \emph{and} clock must spend both. But PoPE's magnitude is
+says a system needing map \emph{and} clock must spend both (true of a scalar
+accumulator; a rank-$r$ one can cancel in one subspace and count in another). But PoPE's magnitude is
 \emph{instantaneous} --- read off the current token, not accumulated --- so it adds
 no second accumulator, and measured, it does not move the growth exponent at all
 ($\alpha = 0.689$ against a baseline $0.710$, inside its \textsc{mde}). MapPoPE is
@@ -755,8 +821,8 @@ $\S$\ref{sec:predictions} says what to build there.
 \paragraph{The rank upgrade does not transfer to it.} Every MapPoPE number above is
 at $r=2$, because that is the constructor's default --- including the figures that
 make it the strongest arm on the paper task. Since $\S$\ref{sec:rankmeas} shows $r=4$
-buys $+0.085$ at $T=1024$ on the MapWM family for $384$ parameters, the obvious move
-is to apply it. Measured, in one batch of four arms $\times$ eight seeds:
+buys $+0.085$ at $T=1024$ (trained at $128$) on the MapWM family for $384$ parameters,
+the obvious move is to apply it. Measured, in one batch of four arms $\times$ eight seeds:
 
 \begin{table}[htbp]\centering\small
 \caption{The rank upgrade on MapPoPE, against the same upgrade on MapWM. Both lengths unmeasured, on 5 of 8 seeds.}
@@ -911,8 +977,8 @@ above.
 
 \textbf{And keep the bottleneck.} Since $W_{\mathrm{in}}$ \emph{is} the
 identification mechanism, its rank is the channel the whole distinction passes
-through, which is why $r=2$'s skewed basis is a fact about the separation and $r=4$
-repairs it for $384$ parameters ($\S$\ref{sec:rankmeas}).
+through, and its rank per head decides whether training finds the torus solution at
+all ($\S$\ref{sec:rankmeas}); $r=4$ costs $384$ parameters.
 
 \subsection{Combinations worth building}
 
@@ -923,11 +989,11 @@ repairs it for $384$ parameters ($\S$\ref{sec:rankmeas}).
 \toprule
 combination & what it fixes & the evidence pointing at it & refuted by \\
 \midrule
-\textbf{signed accumulated phase $+$ accumulated content-dependent magnitude} (MapFormer $+$ a forget gate), in softmax attention & the empty cell: a map \emph{and} a clock at once. Mamba-3 holds it in an SSM; nothing holds it in softmax attention & the forget gate's own accumulator is ballistic ($\alpha = +0.956$) beside the phase's $0.6$, so the clock is already there and unexploited; and it explains why the gate needs a \emph{live} $\lambda$ but not decay & no gain on a task needing both, i.e. recency-dependent navigation, which does not yet exist \\[3pt]
+\textbf{signed accumulated phase $+$ accumulated content-dependent magnitude} (MapFormer $+$ a forget gate), in softmax attention & the empty cell: a map \emph{and} a clock at once. Mamba-3 holds it in an SSM; nothing holds it in softmax attention & the forget gate's own accumulator is ballistic ($\alpha = +0.956$) beside the phase's $0.6$, so the clock is already there and unexploited; and it would explain why the gate needs a \emph{live} $\lambda$ but not decay (untested: the batch that would test it was deleted before analysis) & no gain on a task needing both, i.e. recency-dependent navigation, which does not yet exist \\[3pt]
 MapPoPE $+$ a forget gate & its actual deficit: it reads as both slots and supplies one answer ($\S$\ref{sec:mappope}) & $\alpha$ unchanged by PoPE ($0.689$ vs $0.710$), so the second accumulator is genuinely absent & $\alpha$ still unmoved, which would mean the magnitude slot cannot host a clock at all \\[3pt]
 explicit content gate $+$ signed phase --- as an oracle \textbf{control}, not a proposal & measures what learning the what/where split costs, against a design whose stated purpose is to learn it & on contextual counting an \emph{unconstrained} signed arm learns the gate by itself, and a constant increment on the gated class recovers $0.783$ of $1.000$ ($\S$\ref{sec:crossover}) & the explicit gate not beating the learned one, which would mean the learning is free \\[3pt]
 signed phase $+$ non-abelian transport & rotation action spaces, without the allocentric recoding that needs known heading & recoding restores $+0.488$, so the information is sufficient; the question is whether the mechanism can carry it & the parallel-scan loss costing more than the accuracy gained \\[3pt]
-rank $r{=}4$ $+$ weight sharing across depth & reliability rather than peak accuracy & measured together: $0.986 \pm 0.020$ with $8/8$ seeds above $0.941$, against $0.416$ for either alone --- the one super-additive pair found here & --- (this one is measured; it is listed because it is the template the others are proposed on) \\
+rank $r{=}4$ $+$ weight sharing across depth & reliability rather than peak accuracy & measured together in one batch: $0.986 \pm 0.020$ with $8/8$ seeds above $0.941$, against $0.833$ for the loop alone, $0.421$ for $r{=}4$ alone and $0.416$ for neither. The paired interaction ($+0.149$) is not reliable: same-seed retrains on this task drift $0.185$ per seed & --- (measured in one batch; listed because it is the template the others are proposed on) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -943,12 +1009,22 @@ same question.
 
 \section{Conclusion}
 
-Two properties of the content-to-phase map, neither varied deliberately anywhere in
-the literature, account for more of the variance on these tasks than the choice of
-positional encoding does. The sign costs nothing and decides whether the accumulator
-is a map or a clock; the rank costs $384$ parameters and decides whether the map is
-well conditioned. Both matter only where position must be reconstructed from the
+Two properties of the content-to-phase map, neither applied as a design constraint in
+the positional-encoding literature for language and neither tested on navigation
+before, are measured here. The sign costs nothing and decides whether the accumulator
+measures net displacement or elapsed path; its accuracy cost appears past the training
+length. The rank per head decides whether training finds the torus solution --- $0/8$,
+$2/8$ and $8/8$ seeds for our shared $r=2$, the paper's per-head $r=2$ and $r=4$,
+trained and tested at $T=1024$ --- although a rank-$2$ solution exists and is held, so
+the deficit is one of search. Neither dominates the choice of encoding: under the
+converged recipe the encoding main effect on the torus is $+0.189$ at $T=1024$, larger
+than rank's $+0.085$. Both matter only where position must be reconstructed from the
 input, which is why they are invisible on text and why the measurements here are not.
+
+\emph{Corrected 2026-09-25:} this paragraph previously said the two properties ``account
+for more of the variance than the choice of positional encoding'', and that the rank
+``decides whether the map is well conditioned''. Both rested on superseded numbers (the
+$16$-epoch torus recipe and the $r=2$ basis reading).
 
 What we could not show is as much of the content, and four negatives are worth
 stating together because each was a prediction of ours that failed.
@@ -957,8 +1033,9 @@ The growth exponent that unifies the sign and the rank is nearly collinear with 
 simpler observable, and its route to length-degradation is refuted rather than
 established. An explicit content gate separates action from observation tokens by a
 factor of four and improves accuracy nowhere, which corroborates the design it was
-meant to improve rather than beating it. The rank upgrade that is worth $+0.085$ on
-one family is worth a quarter of that, unmeasured, on the other --- so a
+meant to improve rather than beating it. The rank upgrade that is worth $+0.085$ at
+$8\times$ the training length on one family is worth a quarter of that, unmeasured,
+on the other --- so a
 recommendation we had stated generally holds only where it was measured. And the
 published external benchmark does not discriminate the mechanism at all, for a
 reason our own per-offset data gave in advance: it asks only the one offset at which
