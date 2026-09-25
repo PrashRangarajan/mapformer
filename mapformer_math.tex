@@ -42,17 +42,19 @@ inclusion removing a constraint rather than adding a mechanism, so every
 comparison between them asks whether a constraint is worth keeping and none of
 them is about expressivity. For MapFormer the reduction is an identity: all $64$
 of its phase channels are linear readouts of a single \emph{two}-dimensional
-accumulator.
+accumulator (in this implementation, whose bottleneck is shared across heads; in the
+paper's per-head design each head reads its own two-dimensional accumulator).
 
 \medskip
-\noindent\textbf{Rank is the axis that binds, and it binds twice.} Confining the
-phase to an $r$-dimensional subtorus forces the $N^D$ positions of a $D$-torus
-apart by no more than $\sim N^{-\max(D/r,\,1)}$, so \emph{geometry} sets a hard
-threshold at $r = D$ and says nothing above it; the measured cost of $r=2$ in two
-dimensions is therefore not geometric but an \emph{optimisation} failure, and the
-two are separable exactly this way. $\S$2.5 states both, with the correction that
-the first version of the geometric argument --- an appeal to a kernel --- was
-wrong and was falsified by its own gate.
+\noindent\textbf{Rank is the axis that binds, and it binds through optimisation,
+not geometry.} Confining the phase to an $r$-dimensional subtorus forces the $N^D$
+positions of a $D$-torus apart by no more than $\sim N^{-\max(D/r,\,1)}$; the bound is
+correct as algebra but does not account for trained models ($r=2$ is unimpaired at
+$D=5$). The measured cost of $r=2$ in two dimensions is a \emph{search} failure:
+trained and tested at $T=1024$, $r=2$ usually fails to find a solution that a rank-$2$
+projection of a solved $r=4$ model shows exists and holds under training. $\S$2.5
+states both, with the correction that the first version of the geometric argument
+--- an appeal to a kernel --- was wrong and was falsified by its own gate.
 
 \medskip
 \noindent\textbf{The asymmetry between the two factors matters.} MapFormer adds a
@@ -67,6 +69,20 @@ sub-additivity seen on text ($\S$4).
 a published equation or from canonical RoPE, that is stated at the point of
 departure. Empirical claims carry their seed counts and minimum detectable
 effects; several are recorded here only to be marked unsupported.
+
+\smallskip\noindent\emph{Corrected 2026-09-25.} This record predates three lines of
+work, and where its body disagrees with them they win. (i) The EM/WM audit
+(\texttt{AUDIT\_2026-09-10.md}): MapWM rotates content $Q,K$ and is \emph{not}
+additive, Thm~3 is withdrawn, and the sign of the separate-$q_0/k_0$ effect depends
+on the task. (ii) The PoPE line: the accumulator-plus-kernel account of the MapPoPE
+collapse and its PoPE-decoupling corollary are withdrawn (\texttt{T2\_RESULTS.md}),
+``PoPE's Table~5 does not replicate'' is withdrawn (\texttt{ABLATE\_RESULTS.md}), and
+``PoPE is inert with an index phase'' was a $16$-epoch artefact
+(\texttt{PAPER2X2\_RESULTS.md}). (iii) Rank at matched length
+(\texttt{RANK\_MI\_RESULTS.md}, \texttt{RANK\_PROJ\_RESULTS.md}): the rank deficit is
+search, not a skewed basis; and the torus numbers $+0.461$ / $+0.003$ quoted below
+are the $16$-epoch recipe, converged $+0.243$ with the encoding detectable at every
+length.
 \end{abstract}
 
 \section{The shared frame}
@@ -543,12 +559,32 @@ that explained the $2$D gap as well would have been explaining it twice.
 \subsubsection*{(ii) Optimisation: $\rho = D$ is expressible but not reachable}
 
 In $2$D, $r=2$ is exactly sufficient by (i) and is what the paper prescribes ($r$
-is the dimensionality of the action space, App.~A.7). It nonetheless costs $0.085$
-accuracy at $T=1024$ against $r=4$ ($8/8$ seeds, $t=3.57$), and the code it learns
-is skewed: opposite actions fail to cancel by half the action scale ($0.495$) and
-the two axes are close to parallel ($|\cos| = 0.783$), against $0.092$ and $0.175$
-at $r=4$. Yet the $r=4$ latents still place $100.0\%$ of their spectral energy in a
-$2$-plane, and $r=8,16,32$ are flat within noise of $r=4$.
+is the dimensionality of the action space, App.~A.7) --- \emph{per head}: the paper's
+$W_{\mathrm{in}}\in\R^{d\times n_h\times r}$, while this implementation shares one
+$r$-dimensional latent across heads, so at two heads our $r=2$ has half the paper's
+latent dimensions. Trained at $T=128$, it nonetheless costs $0.085$ accuracy at
+$T=1024$ ($8\times$ the training length) against $r=4$ ($8/8$ seeds, $t=3.57$), and on
+average the code it learns is skewed: opposite actions fail to cancel by half the
+action scale ($0.495$) and the two axes are close to parallel ($|\cos| = 0.783$),
+against $0.092$ and $0.175$ at $r=4$. Yet the $r=4$ latents still place $100.0\%$ of
+their spectral energy in a $2$-plane, and $r=8,16,32$ are flat within noise of $r=4$.
+Within $r=2$ the skew does not predict accuracy ($r=-0.35$ and $+0.30$ for the two
+metrics), so it describes the arm and is not the cause.
+
+\begin{quote}\small
+\textbf{Tested at matched length (2026-09-24), and the heading above holds.} Trained
+and tested at $T=1024$ for $900$ epochs, every arm built from the same initial
+weights, $8$ seeds: our shared $r=2$ solves $0/8$ (accuracy $0.894$), the paper's
+per-head $r=2$ $2/8$ ($0.885$), a shared $r=4$ $8/8$ ($0.998$); Fisher $p=0.0002$ and
+$0.007$ against $r=4$. The per-head arm and $r=4$ have the same four latent
+dimensions, so what decides it is the rank of each head's content-to-angle map. A
+rank-$2$ projection of each solved $r=4$ model scores $0.9955$ frozen, and trained
+onward it stays solved ($7/8$, as does the $r=4$ control). The solution is
+expressible and stable at rank $2$ and training from scratch does not find it.
+Budget-scoped (within $900$ epochs), one task and width, and $r=4$'s smaller initial
+$W_{\mathrm{out}}$ (bound $0.5$ against $0.707$) is not separated from its rank
+(\texttt{RANK\_MI\_RESULTS.md}, \texttt{RANK\_PROJ\_RESULTS.md}).
+\end{quote}
 
 \textbf{The extra rank carries no signal; it is slack that lets gradient descent
 reach an exact group homomorphism it otherwise misses.} The representation is
@@ -789,8 +825,11 @@ retracted in this project on a pre-registered test, and the algebra here is
 deliberately silent about it. What the algebra does explain is the observed
 sensitivity to how the position channel is initialised: on Match-Query, a single
 $p_0$ beats the paper-faithful separate $q^p_0, k^p_0$ by $+0.358$ ($3/3$ seeds,
-the separate form collapsing to $0.107$ on one), because with no additive fallback a
-mis-set position factor multiplies the whole score rather than being outvoted.
+the separate form collapsing to $0.107$ on one). \emph{Withdrawn (audit
+2026-09-10):} the reason given here --- ``with no additive fallback a mis-set position
+factor multiplies the whole score rather than being outvoted'' --- read MapWM as
+additive, which it is not, and the sign of the effect depends on the task (on
+$k$-back recency the separate form is ahead, $+0.128$ at $n=24$).
 
 \paragraph{TEM-t is MapFormer with the two structural conditions removed --- and it
 came first.} TEM-t (Whittington et al., arXiv:2112.04035) generates position
@@ -920,7 +959,10 @@ Same $\hd$ real degrees of freedom of content either way, reallocated.
 That makes the composition result mechanical rather than fortunate. Doubling the
 frequency resolution is worth nothing when the phase is an index clock read over a
 window shorter than its shortest period --- which is why PoPE alone sits on the
-floor ($0.509$ against $0.506$). It is worth something when the phase encodes a
+floor ($0.509$ against $0.506$). \emph{Corrected 2026-09-25: that was a $16$-epoch
+recipe. Converged, PoPE with an index phase reaches $0.679$ against index RoPE's
+$0.805$ at the training length and beats it beyond ($0.639$ / $0.607$ against $0.470$
+/ $0.374$ at $T=512/1024$), so ``inert'' is withdrawn} (\texttt{PAPER2X2\_RESULTS.md}). It is worth something when the phase encodes a
 \emph{wrapped, multi-dimensional} quantity that must be decoded jointly across
 frequencies, which is exactly the residue problem of $\S$\ref{sec:rank}. Hence
 $0.994$ with path integration, and hence a prediction: \textbf{PoPE's gain should
@@ -1168,8 +1210,8 @@ instantaneous, so a constraint on it removes degrees of freedom without creating
 code, whereas a constraint on $G$ propagates over the whole sequence. That would
 predict that constraints pay on the accumulated coordinates and not the
 instantaneous ones --- consistent with low rank helping on $\operatorname{Im}G$
-($\S$\ref{sec:rank}) and with PoPE being inert alone ($\S$4), but it has not been
-tested as a claim in its own right.
+($\S$\ref{sec:rank}) (PoPE's apparent inertness alone was a $16$-epoch artefact,
+$\S$4), but it has not been tested as a claim in its own right.
 
 \section{MapPoPE: the conjunction}
 
@@ -1228,8 +1270,12 @@ models differ by $320$ parameters rather than by a factor.
 $\{$RoPE, PoPE$\}\times\{$index, path-integrated$\}$, both PoPE cells are wide and
 both RoPE cells narrow, so the width confound is \emph{constant along the encoding
 factor}. The position main effect and the interaction are therefore clean; only the
-encoding main effect carries it --- and that is the small one ($+0.003$ on the torus
-against $+0.461$ for position, both paired $n{=}8$ main effects on the held-out map).
+encoding main effect carries it --- and under the $16$-epoch recipe that was the small
+one ($+0.003$ on the torus against $+0.461$ for position, both paired $n{=}8$ main
+effects on the held-out map). Under the converged recipe it is not: $-0.049$ /
+$+0.114$ / $+0.189$ at $T=128/512/1024$, all detectable, against position $+0.243$
+at $T=128$ (\texttt{PAPER2X2\_RESULTS.md}), so the width confound bears on a
+measurable effect.
 \footnote{\textsc{Corrected 2026-09-06.} \texttt{BASELINE\_TABLE.md}, \texttt{CLAUDE.md}
 and \texttt{MINIGRID\_2X2X2.md} all printed $+0.011$ in this cell, with a ``$40\times$''
 ratio derived from it. That $+0.011$ is \texttt{MapPoPE-Flat} $-$ \texttt{MapWM-Flat},
@@ -1237,7 +1283,8 @@ the path-integrated \emph{row} alone at $n{=}3$ --- not the encoding main effect
 the ratio inherited the mismatch. All three files now carry the $n{=}8$ figure.} There is also a direct empirical check: if
 the extra frequencies were doing the work, PoPE with an index phase should beat
 RoPE with an index phase. It does not ($0.509$ vs $0.530$, both on the $0.506$
-floor). The missing control is a \emph{narrow} PoPE at $\nb = \hd/2$ with each
+floor, $16$-epoch recipe; converged, $0.679$ against $0.805$ at the training length,
+though PoPE leads beyond it). The missing control is a \emph{narrow} PoPE at $\nb = \hd/2$ with each
 angle repeated across its pair, which would isolate the parameterisation from the
 width; it has not been run.
 \end{quote}
@@ -1250,10 +1297,11 @@ the index-phase PoPE baseline also runs at $\nb = \hd$.
 \eqref{eq:mappope} predicts the observed pattern.
 
 \begin{itemize}
-\item \textbf{PoPE alone is inert where position carries the signal.} On the torus
-  navigation task, PoPE with an index phase scores $0.509$ against a measured
-  floor of $0.506$. A better magnitude parameterisation is worth nothing when the
-  phase encodes no spatial information.
+\item \textbf{PoPE alone is inert where position carries the signal ---
+  WITHDRAWN.} Under the $16$-epoch recipe PoPE with an index phase scored $0.509$
+  against a floor of $0.506$. Converged it reaches $0.679$, below index RoPE's
+  $0.805$ at the training length and above it past it ($0.607$ against $0.374$ at
+  $T=1024$): not inert, and the sign depends on the length.
 \item \textbf{PoPE plus path integration is the strongest configuration measured.}
   $0.994$ on the same task. Once the phase carries genuine position, sharpening the
   content channel pays.
@@ -1497,9 +1545,11 @@ and both are empirical rather than structural:
   MapFormer's $r$ is an inductive bias about the dimensionality of the action space.
   Mamba-3's $\theta(t)$ is a per-channel projection with no such bottleneck. The measured result --- $r=2$ is the worst setting, $r=4$ buys
   $+0.085$ at $8\times$ training length ($T=1024$ against a training length of $128$;
-  at $4\times$ it is $+0.038$) for $384$ parameters, $8/8$ seeds, and the
-  cause is a skewed basis rather than missing capacity --- is a claim about a
-  constraint nobody else imposes.
+  at $4\times$ it is $+0.038$) for $384$ parameters, $8/8$ seeds, and trained at
+  $T=1024$ the rank per head decides whether training finds the solution at all
+  ($0/8$ shared $r=2$, $2/8$ the paper's per-head $r=2$, $8/8$ $r=4$) while a rank-$2$
+  solution exists --- is a claim about a constraint that nobody else sweeps above the
+  world dimension (MapFormer itself ablates $r\in\{1,2\}$).
 \item \textbf{The navigation regime.} The papers above evaluate on language,
   recall, state tracking, and --- for LieRE and Algebraic Positional Encodings ---
   image, video and tree-transduction benchmarks. None runs grid navigation, and the one result this
@@ -1621,8 +1671,10 @@ Gershman's review (TMLR 2025) categorises the entire modern linear family by
 \textbf{zero} times in it (checked case-sensitively; a case-insensitive grep for
 \texttt{rope} matches \texttt{p\underline{rope}rty} and reported $17$ false hits).
 The hybrid quadratic-linear transformers of Irie et al.\ (2025) use RoPE only as an
-off-the-shelf component inside the attention half. Mamba-3 is the first design to
-claim both slots deliberately, and it arrives from the memory side.
+off-the-shelf component inside the attention half. Mamba-3 claims both slots
+deliberately, arriving from the memory side; Selective RoPE had paired an
+input-dependent rotation with decay gates four months earlier (``recall needs
+rotation and decay'').
 \end{quote}
 
 \subsection{The readout, and the critical dimension}
@@ -1678,18 +1730,21 @@ monotone, $r{=}4$ & $91.5$ & $649.8$ & $\mathbf{0.943}$ & $1.849$ \\
 \end{tabular}
 \end{center}
 
-\noindent A signed, well-conditioned increment gives $\alpha \approx 0.52$: the
+\noindent A signed, cancelling increment gives $\alpha \approx 0.52$: the
 accumulator performs a \textbf{diffusive random walk}. A monotone one gives
 $\alpha \approx 0.94$: \textbf{ballistic drift}. The last column is the opposition
 score $\lVert\Delta(+x)+\Delta(-x)\rVert/\overline{\lVert\Delta\rVert}$, measured in a
 different batch for a different purpose; across the four arms
 $r(\text{opposition},\alpha) = +0.9995$.
 
-\textbf{This is one mechanism for two separate results.} How completely opposite
-actions cancel sets whether the accumulator diffuses or drifts; that sets how fast it
-leaves the range it was trained on; and that sets the rate of degradation with
-length. A skewed rank-$2$ basis (opposition $0.495$) and a monotone increment
-($1.849$) are the same failure at different severities. Four points, correlational
+\textbf{This is one observable for two separate results, not a mechanism.} How
+completely opposite actions cancel sets whether the accumulator diffuses or drifts;
+that sets how fast it leaves the range it was trained on; and that \emph{co-varies}
+with the rate of degradation with length --- the growth law is an association, not a
+cause (see ``The growth law is an association'' below). A rank-$2$ code (opposition
+$0.495$, an arm mean) and a monotone increment ($1.849$) lie on one line, but within
+$r=2$ opposition does not predict accuracy and the rank deficit is search
+($\S$\ref{sec:rank}). Four points, correlational
 across arms; $\alpha\approx0.5$ for a signed walk is expected in itself, and what
 carries the result is the spread to $0.94$ and the cross-batch agreement with a
 quantity measured for another reason.
@@ -1701,7 +1756,10 @@ Selective RoPE, CARoPE, FoX, Mamba or GRAPE. The 2023 length-extrapolation surve
 (arXiv:2312.17044) mentions CoPE and Mamba twice each and none of the rest. The
 content-dependent half of the arena, the memory reading above and the navigation regime
 are in neither; the frequency-allocation line is in neither this note nor the
-positional review. The partitions are close to complementary.
+positional review. The partitions are close to complementary. One survey does have
+the category: Liu et al.'s long-context survey (arXiv:2503.17407, March 2025)
+carries ``content-aware position embedding'', with CoPE and DAPE as its members ---
+the additive side, and before the multiplicative mechanisms arrived.
 
 \section{The relational map}
 \label{sec:map}
@@ -1859,8 +1917,10 @@ $8\times8$ --- the same shape of result as our step at $r=2$, on the other side 
 the map. What remains unstudied is the \emph{input-side bottleneck}: how many
 dimensions of content may steer the angle. That is the column where this project
 has a measurement --- $r=2$ is the worst setting, $r=4$ buys $+0.085$ at $8\times$
-training length for $384$ parameters, and the cause is a skewed basis rather than
-missing capacity.
+training length for $384$ parameters, and at matched length the deficit is one of
+search rather than a skewed basis or missing capacity: a rank-$2$ solution exists
+and holds, and training finds it on $0/8$ seeds (ours) and $2/8$ (the paper's
+per-head $r=2$) against $8/8$ at $r=4$.
 
 \emph{(iii) A7 is nearly free.} Selective RoPE runs in both hosts and Mamba-3
 crosses over by state-space duality, so ``softmax versus SSM'' separates
@@ -1930,8 +1990,9 @@ the accumulator is & a \textbf{map} & a \textbf{clock} \\
 \end{tabular}
 \end{center}
 
-\noindent These are mutually exclusive by construction, and each is \emph{correct}
-for one job. A cognitive map \textbf{needs} same-place-different-time to collide ---
+\noindent For a scalar accumulator these are mutually exclusive by construction (a
+rank-$r$ accumulator can cancel in one subspace and count in another; audit
+2026-09-10), and each is \emph{correct} for one job. A cognitive map \textbf{needs} same-place-different-time to collide ---
 that collision is exactly what revisit prediction asks for. Language needs the
 opposite: a code that made token $5$ and token $15$ interchangeable because some
 ``backward'' token intervened would be broken, not economical.
@@ -1949,8 +2010,9 @@ $\alpha\approx1$ means the accumulator is measuring elapsed time, which is unbou
 so the code must eventually leave any range it was trained on. $\alpha\approx0.5$
 means it is measuring a random-walk position. The ideal for a bounded map would be
 $\alpha = 0$ --- position on a torus is bounded --- and nothing here achieves it,
-because every mechanism accumulates without wrapping. That is a design gap, not a
-property of the frame.
+because every mechanism accumulates without wrapping. It is not a design gap either
+(corrected, see below): wrapping is a no-op, since $\theta$ enters only through
+$\cos,\sin$, and any other bound breaks additivity.
 
 \paragraph{What MapFormer gave up to get the map.} A signed $\Delta$ makes two
 visits to the same cell positionally identical. That is the point, and it also means
@@ -1962,7 +2024,8 @@ that information from somewhere else.
 mechanism-unidentified.} It adds a second, content-dependent, \emph{monotone}
 accumulator in the magnitude slot --- measured at $\alpha = +0.956$, ballistic,
 beside the phase accumulator's $0.6$ --- so it restores the clock that the signed
-phase gave up. Every otherwise-puzzling detail follows: it needs a \emph{live}
+phase gave up. It would account for every otherwise-puzzling detail (untested; the
+batch registered to test it was deleted before analysis): it needs a \emph{live}
 $\lambda$ (frozen at zero it lands on the baseline, $-0.016$, unmeasured) but not
 \emph{decay}; $5$ of $8$ seeds learn $\lambda<0$, and those gain most
 ($r(\lambda,\text{gain}) = -0.516$). A negative $\lambda$ still gives a monotone
@@ -2027,6 +2090,13 @@ eight seeds in one batch:
   a new one.
 \end{itemize}
 
+\textbf{Scope (audit 2026-09-10 \#2, recorded 2026-09-25).} The recency task does not
+\emph{need} a clock: a signed rewind of the query token solves it exactly (a hand-set
+kernel selects the answer $1423/1423$). So the crossover shows that cancellation can
+be given up there at no cost, not that the task demands a clock, and nothing
+inverts. The two costs are also read at different extrapolation ratios: the torus at
+$8\times$ the training length, recency at $2\times$.
+
 \textbf{Refuted, both mine, both recorded before the batch or immediately after.}
 (i) I predicted an index code would do WELL on a clock task; a \emph{contextual}
 clock is precisely what a fixed index cannot encode, and the sign inverted.
@@ -2044,8 +2114,10 @@ nothing. The magnitude-matched pair was added afterwards.
 
 \noindent Read this way the frame's two slots are not two knobs but \textbf{two
 answers}: a signed phase is a map, a monotone accumulated magnitude is a clock, and a
-system that needs both must spend both slots. Mamba-3 claiming both deliberately is
-then the natural endpoint rather than a curiosity, and the empty diagonal of
+system with a scalar accumulator that needs both must spend both slots (a rank-$r$
+phase can in principle cancel in one subspace and count in another). Selective RoPE
+and Mamba-3, which both pair a data-dependent rotation with decay, are then the
+natural endpoint rather than a curiosity, and the empty diagonal of
 $\S$\ref{sec:map} --- content-dependent phase \emph{and} content-dependent magnitude,
 in softmax attention --- is the cell worth building.
 
@@ -2058,11 +2130,11 @@ if the task needs \dots & it requires & and these supply it \\
 \midrule
 \emph{order only} --- which token came first & any monotone clock & RoPE, ALiBi, CoPE, CARoPE, GRAPE-AP, every gated linear RNN \\[3pt]
 \emph{signed displacement} --- parity, net motion, state tracking & a signed increment & MapFormer, Selective RoPE, Mamba-3; DeltaNet/PaTH/RWKV-7 with $\beta>1$. \textbf{Not} CARoPE, GRAPE-AP or CoPE \\[3pt]
-\emph{absolute location in a bounded map} & signed \textbf{and} well-conditioned ($r\ge4$) & MapFormer at $r\ge4$; $r=2$ degrades because its basis is skewed, not because it lacks capacity \\[3pt]
-\emph{holding position far past the training length} & a diffusive accumulator, $\alpha\approx0.5$ & follows from cancellation (T2); or bound the accumulator explicitly, which is what a wrapped filter does \\[3pt]
+\emph{absolute location in a bounded map} & signed, \textbf{and} rank $r\ge4$ per head to be found reliably & MapFormer at $r\ge4$. At $r=2$ (ours shared or the paper's per head) training usually fails to find the torus solution within budget, though a rank-$2$ solution exists: search, not a skewed basis or capacity \\[3pt]
+\emph{holding position far past the training length} & a diffusive accumulator, $\alpha\approx0.5$ & follows from cancellation (T2), as an association; a wrapped filter does \emph{not} bound the accumulator (it wraps the innovation: range $285.6$ against $283.9$) \\[3pt]
 \emph{path-dependent actions} (turn/forward) & non-abelian transport, \textbf{or} an allocentric recoding of the input & PaTH, DeltaNet, RWKV-7, TEM-t --- none evaluated on navigation. Recoding the action to absolute displacement restores $+0.488$ and keeps the scan \\[3pt]
 \emph{overwriting stale associations} & a delta rule & DeltaNet, PaTH, RWKV-7; forfeits the parallel scan \\[3pt]
-\emph{exact recall over a window} & the dual form; keep the items & softmax attention. A lossy summary is not a sufficient statistic, which is why hierarchy loses here and wins on compositional transfer \\[3pt]
+\emph{exact recall over a window} & the dual form; keep the items & softmax attention. A lossy summary is not a sufficient statistic, which is why hierarchy loses here; on compositional transfer it is ahead in direction only (unpowered at $n=8$) \\[3pt]
 \emph{bounded state, linear time} & abelian transport & every row of Table~1; measured $2.6$--$3.3\times$ over a $16\times$ length increase \\
 \bottomrule
 \end{tabular}
@@ -2076,12 +2148,13 @@ side: CARoPE, GRAPE-AP and CoPE are all monotone and none cites the state-tracki
 literature that proves the limitation. The one place it surfaces on text is parity
 and formal-language state tracking, where it has been both proved and fixed.
 
-\emph{On navigation and any task with a metric structure, the sign and the
-conditioning of the increment are the whole game.} They are worth more per parameter
+\emph{On navigation and any task with a metric structure, the sign and the rank
+of the increment matter most per parameter.} They are worth more per parameter
 than anything else measured here --- the sign costs nothing at all, and $r=2\to4$
-costs $384$ parameters --- and they dominate the choice of positional encoding by two
-orders of magnitude ($+0.461$ for path integration against $+0.003$ for the
-encoding).
+costs $384$ parameters. They do not dominate the choice of positional encoding: the
+``two orders of magnitude'' once written here ($+0.461$ against $+0.003$) was a
+$16$-epoch recipe, and converged the encoding main effect is $+0.189$ at
+$T=1024$, larger than rank's $+0.085$.
 
 \emph{Where the environment breaks the assumption, fix the environment.} No abelian
 mechanism can represent turn/forward dynamics, and the non-abelian ones pay the scan
@@ -2091,8 +2164,8 @@ wherever heading is known, which is every simulator.
 
 \emph{The two literatures are complementary, and the empty cells are informative.}
 The fast-weight line owns the magnitude slot and never touches the phase; the
-positional line owns the phase and treats decay as a side-condition. Mamba-3 is the
-first design to claim both. A mechanism that needs a bounded state \emph{and}
+positional line owns the phase and treats decay as a side-condition. Selective RoPE
+and then Mamba-3 claim both. A mechanism that needs a bounded state \emph{and}
 signed transport \emph{and} rewritability does not currently exist, and T1 says the
 last two cannot both be had with a parallel scan.
 
@@ -2110,7 +2183,7 @@ against MapFormer at $r=2$; \textsc{mde} is $2.8\,\mathrm{sd}/\sqrt{n}$.
 \begin{center}\small
 \begin{tabular}{lrll}
 \toprule
-constraint removed & params & parity $L{=}128$ & torus $T{=}1024$ \\
+constraint removed & params & parity $L{=}128$ & torus $T{=}1024$ (trained $128$) \\
 \midrule
 $K=1 \to 4$ (causal conv)      & $+193$    & $-0.020$ detectable & $-0.064$ ($t\,{-}1.99$) \\
 $m = r \to H\nb$ (full rank)   & $+7{,}873$ & $-0.020$ detectable & $+0.058$ ($7/8$) \\
@@ -2404,8 +2477,10 @@ in revisit rate is a real confound and is the reason the primary contrast is
 
 Everything above concerns the \emph{generator}. Selective RoPE also differs in
 \emph{placement}: it derives the angle per head and per layer from that layer's own
-queries, whereas MapFormer computes $\theta$ once from the token embeddings and
-shares it across all layers and heads. The arms here swap the generator only, and
+($\ell_2$-normalised) input --- their ablation moved it there from the queries, see
+the scope box under Selective RoPE in $\S$2 --- whereas MapFormer computes $\theta$ once from the token
+embeddings and reuses it in every layer. ($\theta$ is per head in both; in this
+implementation only MapFormer's $r$-dimensional latent is shared across heads.) The arms here swap the generator only, and
 at one layer the distinction is nearly vacuous, since $q = W_Q\,\mathrm{LN}(x)$ is
 itself a learned linear map of the token. At depth it is real, and it is the sole
 axis on which the two designs remain uncompared.
@@ -2423,9 +2498,9 @@ question.
 \toprule
 mechanism & sets & parameter cost & measured effect \\
 \midrule
-Path integration & phase $\theta$ & $+448$ on $199{,}042$ ($+0.23\%$) & $+0.078$ parity ($16/16$); $+0.461$ torus \\[2pt]
-PoPE             & magnitude $\mu$ & $\hd/2 \to \hd$ widening, $+320$ & $+0.027$ \emph{with} path int. Without it, both arms are on the floor --- see note \\[2pt]
-Bottleneck rank  & state rank $\rho$ & $+384$ on $204{,}373$ ($+0.19\%$) & $+0.085$ torus $T{=}1024$ for $r{=}2\to4$ ($8/8$); flat to $r{=}32$ \\[2pt]
+Path integration & phase $\theta$ & $+448$ on $199{,}042$ ($+0.23\%$) & $+0.078$ parity ($16/16$); $+0.461$ torus ($16$-epoch recipe; converged $+0.243$ at $T{=}128$) \\[2pt]
+PoPE             & magnitude $\mu$ & $\hd/2 \to \hd$ widening, $+320$ & $+0.027$ \emph{with} path int. Without it, both arms were on the floor at $16$ epochs --- see note \\[2pt]
+Bottleneck rank  & state rank $\rho$ & $+384$ on $204{,}373$ ($+0.19\%$) & $+0.085$ torus $T{=}1024$ for $r{=}2\to4$ trained at $128$ ($8/8$); flat to $r{=}32$; trained at $1024$, solved $8/8$ against $0/8$ \\[2pt]
 Recursion        & block reuse & $0$ & $+0.056$ parity ($16/16$); matches or beats $3\times$ params \\[2pt]
 Hierarchy        & token count & $0$ if weight-shared & length-dependent: $\approx 0$ at $L=16$, $+0.060$ at $L=512$ ($23/24$ seeds); $-22.8\%$ time \emph{at $L=2048$}, but see note (iv) \\[2pt]
 InEKF            & $\theta \to \hat\theta$ & $+49{,}600$ on $204{,}373$ ($+24\%$) & no individual \emph{component} is load-bearing; the whole filter is $+0.06$ to $+0.13$, at OOD length only \\[2pt]
@@ -2447,7 +2522,9 @@ percentages are not commensurable, and the InEKF has never been run on parity.
 (iii) PoPE without path integration is a difference between two models sitting on
 the measured floor of $0.506$ ($0.509$ vs $0.530$), with a seed spread wider than
 the gap --- it is a floor artifact, not an effect, and is omitted from the column
-for that reason.
+for that reason. \emph{Corrected 2026-09-25:} the floor was the $16$-epoch recipe;
+converged, PoPE on the index row is $-0.126$ at $T=128$ and ahead past it
+(\texttt{PAPER2X2\_RESULTS.md}).
 (iv) \emph{Corrected on audit:} an earlier version of this note claimed the
 $-22.8\%$ bundled the shared block's saving with the pooling's. It does not.
 \texttt{LOOP\_HIER\_COMPUTE.md} isolates both axes at exact parameter parity at
