@@ -1,0 +1,30 @@
+== runs/rank_matched_e900 (train_variant layout): HEAD printed 'no (json, pt) pairs found' and exited 0; now:
+=== experiment audit: mapformer/runs/rank_matched_e900 (T=512) ===
+no (json, pt) pairs with key 512 found; 16 checkpoints with loss curves -- running check [1] only
+
+[1] CONVERGENCE -- is the comparison measuring capability or time-to-solve?
+    Vanilla            n= 8  flat 7/8  loss 0.060-0.674   <-- NOT ALL FLAT   windowed: {'SOLVED': 0, 'STALLED': 4, 'DESCENDING': 4, 'RISING': 0}
+    Vanilla_r4         n= 8  flat 8/8  loss 0.000-0.010   windowed: {'SOLVED': 8, 'STALLED': 0, 'DESCENDING': 0, 'RISING': 0}
+    => NOT all arms converged. Any effect here may be time-to-solve. Try warmup+cosine and a longer budget BEFORE interpreting.
+exit 2
+
+== runs/dyck_ladder (plain state_dict checkpoints):
+=== experiment audit: /home/prashr/mapformer/runs/dyck_ladder (T=512) ===
+no (json, pt) pairs with key 512 found; 0 checkpoints with loss curves -- running check [1] only
+dyck exit 2
+
+== runs/mw_grid_sweep (MiniWorld layout): diff HEAD -> new (only the windowed suffix is added)
+5,10c5,10
+<     ConvDelta_oracle   n=10  flat 0/10  loss 0.057-1.223   <-- NOT ALL FLAT
+<     GateDeltaCtl_oracle n= 9  flat 1/9  loss 0.076-0.860   <-- NOT ALL FLAT
+<     GateDelta_oracle   n=10  flat 3/10  loss 0.000-1.054   <-- NOT ALL FLAT
+<     NoPE_oracle        n= 4  flat 3/4  loss 1.662-1.730   <-- NOT ALL FLAT
+<     RoPE_oracle        n= 9  flat 0/9  loss 0.467-0.842   <-- NOT ALL FLAT
+<     Vanilla_oracle     n= 9  flat 0/9  loss 0.129-0.850   <-- NOT ALL FLAT
+---
+>     ConvDelta_oracle   n=10  flat 0/10  loss 0.057-1.223   <-- NOT ALL FLAT   windowed: {'SOLVED': 0, 'STALLED': 4, 'DESCENDING': 6, 'RISING': 0}
+>     GateDeltaCtl_oracle n= 9  flat 1/9  loss 0.076-0.860   <-- NOT ALL FLAT   windowed: {'SOLVED': 0, 'STALLED': 4, 'DESCENDING': 5, 'RISING': 0}
+>     GateDelta_oracle   n=10  flat 3/10  loss 0.000-1.054   <-- NOT ALL FLAT   windowed: {'SOLVED': 3, 'STALLED': 4, 'DESCENDING': 3, 'RISING': 0}
+>     NoPE_oracle        n= 4  flat 3/4  loss 1.662-1.730   <-- NOT ALL FLAT   windowed: {'SOLVED': 0, 'STALLED': 4, 'DESCENDING': 0, 'RISING': 0}
+>     RoPE_oracle        n= 9  flat 0/9  loss 0.467-0.842   <-- NOT ALL FLAT   windowed: {'SOLVED': 0, 'STALLED': 7, 'DESCENDING': 2, 'RISING': 0}
+>     Vanilla_oracle     n= 9  flat 0/9  loss 0.129-0.850   <-- NOT ALL FLAT   windowed: {'SOLVED': 0, 'STALLED': 4, 'DESCENDING': 5, 'RISING': 0}

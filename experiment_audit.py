@@ -64,10 +64,20 @@ def _load(runs_dir, length):
             tail = L[int(0.9 * len(L)):]
             slope = (tail[-1] - tail[0]) / max(1, len(tail) - 1)
             out[(base, cell, seed)] = dict(acc=r[str(length)]["nb_acc"],
-                                           loss=L[-1], slope=slope)
+                                           loss=L[-1], slope=slope, cls=_registered_class(L))
         except Exception as e:
             print(f"  [warn] unreadable {js}: {type(e).__name__}")
     return out
+
+
+def _registered_class(L, solved=0.05, tol=0.05):
+    """RANK_MATCHED_PREREG Amendment 2: SOLVED (final-5% mean < 0.05), STALLED (final-10%
+    mean within 5% of the 10% before), else DESCENDING. Windowed MEANS, relative. The
+    endpoint slope above compares two single noisy epochs with an ABSOLUTE threshold that
+    tightens as the budget grows; on runs/rank_matched_e900 it calls 7/8 r=2 runs flat
+    where this rule calls 4 of them DESCENDING (audit 2026-09-24)."""
+    from mapformer.stats_core import classify_run   # the one implementation of the rule
+    return classify_run(L, solved, tol)["cls"]
 
 
 def check_convergence(D):
@@ -79,8 +89,9 @@ def check_convergence(D):
         flat = sum(1 for d in ds if abs(d["slope"]) < FLAT_SLOPE)
         lo = min(d["loss"] for d in ds); hi = max(d["loss"] for d in ds)
         warn = "" if flat == len(ds) else "   <-- NOT ALL FLAT"
+        cls = {k: sum(d.get("cls") == k for d in ds) for k in ("SOLVED", "STALLED", "DESCENDING", "RISING")}
         print(f"    {v:18s} n={len(ds):2d}  flat {flat}/{len(ds)}  "
-              f"loss {lo:.3f}-{hi:.3f}{warn}")
+              f"loss {lo:.3f}-{hi:.3f}{warn}   windowed: {cls}")
     allflat = all(abs(d["slope"]) < FLAT_SLOPE for d in D.values())
     print("    => " + ("all arms converged; capability comparison is meaningful."
                        if allflat else
@@ -174,7 +185,30 @@ def main():
     print(f"=== experiment audit: {args.runs_dir} (T={args.length}) ===")
     D = _load(args.runs_dir, args.length)
     if not D:
-        print("no (json, pt) pairs found"); return
+        # This audit reads MiniWorld-style <run>.json (with "nb_acc") beside <run>.pt. The
+        # train_variant layout (p0/<V>_s<S>/<V>.pt, eval JSON elsewhere) and the Dyck/code
+        # layouts have no such pairs, and the audit used to print one line and exit 0 --
+        # so "run experiment_audit before interpreting any run directory" silently did
+        # nothing on every non-MiniWorld batch. Run the convergence check on the
+        # checkpoints alone, then FAIL so a driver cannot mistake this for a pass.
+        import torch
+        pts = glob.glob(os.path.join(args.runs_dir, "**", "*.pt"), recursive=True)
+        C = {}
+        for pt in pts:
+            try:
+                L = torch.load(pt, map_location="cpu", weights_only=False).get("losses") or []
+            except Exception as e:
+                print(f"  [warn] unreadable {pt}: {type(e).__name__}"); continue
+            if len(L) >= 10:
+                tail = L[int(0.9 * len(L)):]
+                C[(os.path.basename(pt)[:-3], "-", pt)] = dict(
+                    acc=float("nan"), loss=L[-1], slope=(tail[-1] - tail[0]) / max(1, len(tail) - 1),
+                    cls=_registered_class(L))
+        print(f"no (json, pt) pairs with key {args.length!r} found; {len(C)} checkpoints with "
+              f"loss curves -- running check [1] only")
+        if C:
+            check_convergence(C)
+        raise SystemExit(2)
     print(f"loaded {len(D)} arm-runs")
     check_convergence(D)
     check_loss_readout(D)
