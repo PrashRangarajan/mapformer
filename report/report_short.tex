@@ -26,7 +26,7 @@
 
 \title{When a Learned Path Integrator Makes a Map:\\
 \large Controlled Measurements on MapFormer (short version)}
-\date{Short version of the results report of 13 September 2026}
+\date{Short version of the results report of 13 September 2026; corrected 25 September 2026}
 \author{Prashant Rangarajan}
 
 \begin{document}
@@ -42,10 +42,14 @@ times it, $n=8$). It pays under three conditions. Input must be integrable: unde
 advantage over an index code falls from $+0.438$ to $+0.050$, and recording realised displacement restores it to
 $+0.488$. Increments must cancel: on the torus at eight times the training length, forcing them non-negative
 costs $0.363$ raw and $0.280$ at matched loss (loss-matched verdicts depend on the pool), extending a known result
-to navigation. Solutions must be findable: single-origin MapEM represents a varying-offset recall task exactly yet
-trails MapWM by $0.375$ from scratch at a shared budget. Explicit correction and gating add no measurable accuracy
+to navigation (at the training length monotone arms still beat an index code). Solutions must be findable:
+single-origin MapEM represents a varying-offset recall task exactly yet trails MapWM by $0.375$ from scratch at a
+shared budget, and at rank 2 per head --- the paper's design --- training rarely finds a torus solution that
+exists at rank 2 ($0/8$ and $2/8$ seeds against $8/8$ at $r=4$). Explicit correction and gating add no measurable accuracy
 at training length, pooling's only detectable gain is ceiling-level (its larger gains are directional); recursion adds accuracy where the base model trains
 unreliably (on Match-Query, in an unpaired analysis). Transfer across a change of structure is not tested.
+\emph{Corrected 25 September 2026}: rank was described as a skewed basis that $r=4$ repairs; it is a search
+deficit.
 \end{abstract}
 
 %======================================================================
@@ -80,15 +84,15 @@ premise of Mixture-of-Recursions \citep{bae2025mor}.
 
 \paragraph{The argument.} On tasks where the observation map is redrawn at test, the transferable part of
 MapFormer is its accumulated, content-driven position phase. That phase pays under three conditions, each
-supported by an intervention on its own task; that rank acts through conditioning is descriptive. The input must
-make a token's displacement fixed; the increment must be signed and well-conditioned so that it can cancel; and
-training must find the solution. The conditions are not claimed to be sufficient, they are not an exhaustive
+supported by an intervention on its own task. The input must make a token's displacement fixed; the increment
+must be signed so that it can cancel; and training must find the solution, which at rank 2 per head it usually
+does not on the torus although the solution exists. The conditions are not claimed to be sufficient, they are not an exhaustive
 list, and no single task shows all three binding at once. The report makes five claims:
 \begin{enumerate}[leftmargin=1.6em]
 \item The accumulated phase carries transfer (Section~\ref{sec:claim1}).
 \item The environment must make displacement a function of the token (Section~\ref{sec:claim2}).
-\item The increment must cancel, and cancel cleanly (Section~\ref{sec:claim3}).
-\item A shared kernel is representable but harder to find (Section~\ref{sec:claim4}).
+\item The increment must cancel (Section~\ref{sec:claim3}).
+\item Representable but harder to find: the shared kernel and the rank-2 bottleneck (Section~\ref{sec:claim4}).
 \item What added machinery buys: only recursion measurably adds more than a ceiling-level amount of accuracy at
 training length on the tasks tested (Section~\ref{sec:claim5}).
 \end{enumerate}
@@ -106,7 +110,9 @@ S_t = \sum_{u\le t} \Delta_u,\qquad
 \theta_t = \omega \odot S_t ,
 \label{eq:accum}
 \end{equation}
-with $\nb$ frequency blocks and learned angular velocities $\omega$. The paper uses $r=2$. Index RoPE
+with $\nb$ frequency blocks and learned angular velocities $\omega$. The paper uses $r=2$ per head; this
+implementation shares one bottleneck across heads, so at two heads its $r=2$ has half the paper's latent
+dimensions. Index RoPE
 \citep{su2021roformer} is the special case $\Delta_t\equiv 1$. The attention between positions $t$ and $s$ depends
 on $S_t-S_s$, the interval sum of the increments between them.
 
@@ -279,16 +285,17 @@ final losses do not overlap at $n_{\mathrm{obs}}=64$ and $256$, so that study me
 map extent, Habitat).
 
 %======================================================================
-\section{Claim 3: the increment must cancel, and cancel cleanly}
+\section{Claim 3: the increment must cancel}
 \label{sec:claim3}
 %======================================================================
 
-For the interval sum to measure net displacement, opposite actions must produce cancelling increments, and the
-basis they live in must be well conditioned. Forcing the increment non-negative costs MapWM $0.363$ raw and
+For the interval sum to measure net displacement, opposite actions must produce cancelling increments. Forcing the increment non-negative costs MapWM $0.363$ raw and
 $0.280$ at matched loss on the torus at $T=1024$, both detectable, and at matched loss leaves no measurable gain over
 an index code (raw, the monotone arm stays ahead of it, $+0.213$); Selective RoPE's generator pays the same raw cost.
-The paper's $r=2$ bottleneck learns a skewed basis, and $r=4$ adds $+0.085$ at $T=1024$ for 384 parameters. For the two WM-type generators the constraint's cost is large on a
-map task and small on a counting task.
+All of this is beyond the training length: at $T=128$ the monotone arms score $0.90$--$0.98$ against the index
+code's $0.80$, and no monotone arm has been trained at the length where the cost appears. For the two WM-type
+generators the constraint's cost is large on a map task and small on a counting task. (Rank, which an earlier
+version placed here as ``cancel cleanly'', is a search effect and is in Claim~4.)
 
 \begin{table}[t]
 \centering
@@ -332,24 +339,15 @@ axis and the parity theorem are due to \citet{sarrof2024expressive} and \citet{g
 carried into content-dependent rotation in attention by \citet{movahedi2026srope}; what is new here is the
 navigation regime and the one-operation isolation at identical parameter count.
 
-\paragraph{Rank.} Only $r$ varies across five arms, eight seeds each, one batch, torus recipe. Against $r=2$, $r=4$
-adds $+0.085$ at $T=1024$, detectable, and $+0.038$ at $T=512$. The gain is a step: $r=8$, 16 and 32 give
-$+0.091$, $+0.079$ and $+0.095$ at $T=1024$. $r=4$ also cuts the $T=1024$ seed sd from $0.064$ to
-$0.012$, at a cost of 384 parameters; $r=1$ and $r=3$ were not run. What fails at $r=2$ is the basis: opposite
-actions fail to cancel by half the action scale (opposition $0.4950$ against $0.0922$ at $r=4$), and north and east
-are nearly parallel ($|\cos| = 0.7833$ against $0.1754$). This is a description of the learned codes on eight
-seeds; the causal route from skew to accuracy is not tested. The result is conditional: on MapPoPE, $r=4$ against
-$r=2$ is $+0.019$ at $T=1024$, unmeasured, so ``use $r=4$'' is a MapWM-family recommendation.
-
 \paragraph{The main caveat.} Loss-matched verdicts depend on the pool. The registered loss-matched form for
 Selective RoPE's generator was falsified as registered: its two-arm pool had non-overlapping final losses, so the
 fit absorbed the effect by construction and returned $-0.056$, unmeasured.
 
 \noindent\emph{Full report: report.pdf, Section 7 and Appendices F, K} (per-arm sign and recency tables, the
-counting gate, the accumulator exponent, packing geometry).
+counting gate, the accumulator exponent); rank and packing geometry are in Section 8.
 
 %======================================================================
-\section{Claim 4: a shared kernel is representable but harder to find}
+\section{Claim 4: representable but harder to find --- the shared kernel and the rank-2 bottleneck}
 \label{sec:claim4}
 %======================================================================
 
@@ -418,6 +416,19 @@ the gap to MapWM. On descriptive $n=8$ readouts, the control keeps the per-token
 single-origin MapEM's $0.964$) and zero phase spread; only per-pair freedom abandons the route ($0.189$) and spreads
 the kernel phase across pairs ($1.448$).
 
+\paragraph{Rank: the same pattern in MapWM's bottleneck.} Trained at $T=128$, $r=4$ adds $+0.085$ over $r=2$
+at $T=1024$ (eight times the training length), detectable, and $+0.038$ at $T=512$; $r=8$, 16 and 32 give
+$+0.091$, $+0.079$ and $+0.095$, a step. On average the $r=2$ basis is skewed (opposition $0.4950$ against $0.0922$
+at $r=4$; $|\cos| = 0.7833$ against $0.1754$), but within $r=2$ neither measure predicts accuracy, so the skew is not
+the cause. Trained and tested at $T=1024$ for 900 epochs from matched initial weights, our shared $r=2$ solves $0/8$
+seeds, the paper's per-head $r=2$ $2/8$ and a shared $r=4$ $8/8$ (Fisher $p=0.0002$ and $0.007$); a rank-2
+projection of each solved $r=4$ model scores $0.9955$ frozen and stays solved when trained onward ($7/8$, as does
+an $r=4$ control). The rank-2 solution exists and is held; training rarely finds it. This implementation shares its
+bottleneck across heads where the paper's is per head, so our $r=2$ has half the paper's latent dimensions; the
+paper's own per-head $r=2$ fails too. Scope: one task and width, within 900 epochs, and $r=4$'s smaller initial
+$W_{\mathrm{out}}$ is not separated from its rank. On MapPoPE, $r=4$ against $r=2$ is $+0.019$ at $T=1024$,
+unmeasured, so ``use $r=4$'' is a MapWM-family recommendation.
+
 \paragraph{The main caveat.} Every recency contrast in this section is a contrast of fit, with
 $r(\text{loss},\text{accuracy})$ between $-0.936$ and $-0.987$; the ``search, not representation'' reading rests on
 the existence and holding constructions, not on loss-matching. ``Holds'' is shown on one task, at $n=8$, with the
@@ -480,9 +491,10 @@ $n=8$, unmeasured; on the same task the recipe change alone is $+0.160$, detecta
 
 \paragraph{Recursion.} On Match-Query, where seed-paired contrasts are unreliable, a four-pass loop on a
 path-integrated model survives an unpaired analysis ($+0.346$, looped arm pooled over two batches, $n=16$
-against $8$); the paired interaction with path integration, $+0.315$, detectable, has not been re-checked unpaired.
+against $8$); the paired interaction with path integration, $+0.315$, is a single-batch statistic on a task whose
+same-seed retrains drift $0.185$, and is withdrawn.
 Unpaired, the loop against three real layers is $+0.032$: not distinguishable from them, at a third of the parameters. With $r=4$ the looped model scores $0.986\pm0.020$ in its
-batch. On the torus the loop's training-length gain is $+0.052$ raw but $+0.006$ at matched loss, with
+(single) batch. On the torus the loop's training-length gain is $+0.052$ raw but $+0.006$ at matched loss, with
 $r(\text{loss},\text{accuracy})=-0.956$ at that length. That recursion substitutes for depth is the premise of
 Mixture-of-Recursions \citep{bae2025mor}.
 
@@ -522,11 +534,13 @@ MapPoPE (both) & 0.5235 & 1.9536 & 4.6158 \\
 
 A 48-parameter decay envelope repairs it as well as the phase does (0.622 against 0.616), and on Dyck the envelope's notion of distance is decisive: over token distance an index model's long-range matching falls to chance, over a learned state it does not ($+0.281$, 8/8) --- about half of which is over-applied locality and the rest the metric itself, confounded with convergence.
 
-The mechanism is not the accumulator: its growth exponent is $\alpha\approx1.00$ in both path-integrated
-arms, and they respond oppositely to compressing it at evaluation ($-1.70$ nats for MapPoPE, $+1.44$ for
-MapWM). It is that PoPE's kernel has non-negative amplitudes and a constant phase, so when the accumulated
-argument leaves the range training calibrated, content cannot shift the peak to compensate. Two interventions confirm it ON BACH AT A 512-TOKEN CONTEXT (a within-task test on Dyck reverses
-neither, so this is not a general mechanism): shrinking the accumulator's excursion helps MapPoPE $5.7\times$ more than
+The accumulator does not distinguish the arms: its growth exponent is $\alpha\approx1.00$ in both
+path-integrated arms, and they respond oppositely to compressing it at evaluation ($-1.70$ nats for MapPoPE,
+$+1.44$ for MapWM). An account we proposed --- that PoPE's kernel has non-negative amplitudes and a constant
+phase, so when the accumulated argument leaves the range training calibrated, content cannot shift the peak to
+compensate --- is withdrawn: non-negativity was never isolated on Bach, on code PoPE without its non-negativity
+extrapolates as well as with it, and a within-task test on Dyck reverses both halves. Two interventions stand as facts
+ON BACH AT A 512-TOKEN CONTEXT: shrinking the accumulator's excursion helps MapPoPE $5.7\times$ more than
 MapWM in absolute NLL (80\% of its gap against 47\% of MapWM's), and restoring a
 per-token phase --- accumulator untouched, parameter-matched inert twin flat --- removes the collapse. Across tasks the same phase is neutral to harmful where the accumulator is bounded (Dyck-2 $-0.046$
 against its inert twin; torus $0.911$ against $0.963$ at $l=2048$). That pattern does NOT survive a
@@ -545,15 +559,20 @@ across structures; nothing here tests it, and sample efficiency is not measured 
 \item \textbf{One varying-offset task.} Claim~4 rests on $k$-back recency. MapWM at the larger budget was not run.
 \item \textbf{Out-of-distribution length.} Most accuracy effects are concentrated beyond the training length (rank,
 sign, the filter, the forget gate, PoPE's magnitude), and no account of that concentration exists (full report,
-Section~11).
+Section~11). The sign, the filter, the forget gate and PoPE's wrapping have never had a matched-length control;
+where one was run (code, rank) the extrapolation effect did not survive as such.
 \item \textbf{Loss-matched readings depend on the pool}, and they are uninformative where arm losses do not overlap.
 \item \textbf{Conditions established on different tasks.} The three conditions were shown on different tasks; no
 single task shows them binding together, and they are not claimed to be sufficient.
-\item \textbf{No language result.} The language experiments are underpowered or single-seed, and published work
-reports negatives for content-dependent phase on language.
+\item \textbf{Language modelling only at small scale.} The sequence results are replications and length effects;
+the enwik8 experiments are underpowered or single-seed, and published work reports negatives for
+content-dependent phase on language.
 \item \textbf{Boundaries at $n=3$, and Match-Query reproducibility.} The MiniWorld map-extent threshold, the
-12-heading budget curve and several appendix results are exploratory; Match-Query does not reproduce across batches
-or same-seed retrains, so its paired interactions are not re-established.
+12-heading budget curve and several appendix results are exploratory (at $n=3$ the detectability rule is a
+10.7\% false-positive test); Match-Query does not reproduce across batches or same-seed retrains, so its paired
+interactions are withdrawn.
+\item \textbf{Our bottleneck is shared across heads; the paper's is per head.} The matched-length rank test
+includes the paper's per-head design.
 \end{itemize}
 
 %======================================================================
@@ -564,16 +583,21 @@ or same-seed retrains, so its paired interactions are not re-established.
 On tasks that redraw the observation map, MapFormer's transferable where is its accumulated, content-driven phase.
 It is the larger factor on raw accuracy on MapFormer's own task, at training length under the paper's recipe and at
 all three lengths under a converged one; the rotary encoding adds a smaller amount beyond the training length. The
-phase pays when the input makes each token's displacement fixed, when increments are signed and well conditioned so
-that they cancel, and when training finds the solution. The first two conditions were supported by single-operation
-interventions (the action record, the absolute value, the rank), though that rank acts through conditioning is
-descriptive; the third by constructing the solution, holding it, and measuring where from-scratch training finds it.
+phase pays when the input makes each token's displacement fixed, when increments are signed so that they cancel,
+and when training finds the solution. The first two conditions were supported by single-operation interventions
+(the action record, the absolute value); the third by constructing the solution, holding it, and measuring where
+from-scratch training finds it --- for MapEM's shared kernel on recency, and for the rank-2 bottleneck on the torus,
+where the paper's own per-head $r=2$ usually fails to find a solution that exists.
 A fully factorised where, MapEM's shared kernel, represents the one varying-offset task measured exactly but is found
 per query token, and giving the kernel per-pair freedom changes both the accuracy and the mechanism. Filtering and
 gating the where add no measurable accuracy at training length on these tasks, and pooling's only detectable gain is ceiling-level (its larger gains are
 directional); recursion does, in association with more reliable optimisation (on the torus its gain vanishes at matched loss; Match-Query was
 not loss-matched). What remains open is why so many mechanisms
 help only beyond the training length, and whether any of this transfers across a change of structure.
+
+\emph{Corrected 25 September 2026.} Earlier versions placed rank under cancellation and attributed it to a skewed
+basis, cited the paired loop interaction, and stated the Bach kernel account as a mechanism; all three are
+corrected above.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
