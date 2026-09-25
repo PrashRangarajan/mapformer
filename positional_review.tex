@@ -42,9 +42,9 @@ which.
 
 Two consequences do not follow from any single mechanism. The two slots answer
 \emph{different questions}: a signed accumulated phase measures net displacement and
-is a map, a monotone one measures elapsed path and is a clock, and the two are
-mutually exclusive --- so the monotone increments of CARoPE, GRAPE-AP and CoPE are
-correct on language and disqualifying on navigation. That the distinction is invisible
+is a map, a monotone one measures elapsed path and is a clock, and for a scalar
+accumulator the two are mutually exclusive --- so the monotone increments of CARoPE,
+GRAPE-AP and CoPE suit language and, past the training length, cost navigation. That the distinction is invisible
 on text is not incidental: in one content-dependent mechanism's own ablation, NoPE
 attains the lowest perplexity of every encoding tested. And the frame has a second
 reading, in which the positional operator is an associative memory's transport
@@ -55,6 +55,14 @@ The review closes with what the frame implies for choosing a mechanism for a giv
 task. The measurements that test its two central claims --- the sign and the
 input-side rank of the content-to-phase map, and the map/clock crossover --- are
 reported in a companion paper, \emph{What the Axes Are Worth}.
+
+\smallskip\noindent\emph{Corrected 2026-09-25.} Earlier versions said sign and rank are
+varied deliberately by no one (the sign is settled in the state-tracking literature,
+and MapFormer ablates $r\in\{1,2\}$), that they dominate the choice of encoding (under
+a converged recipe the encoding effect is larger than rank's), that $r=2$ fails by a
+badly conditioned basis (it is a search deficit: a rank-$2$ solution exists), and that
+the ordering ``inverts'' on a clock task (the recency task does not need a clock, and
+nothing inverts).
 \end{abstract}
 
 \section{Introduction}
@@ -82,12 +90,14 @@ breaking one of the three assumptions, and it is usually possible to say which.
 \paragraph{What the frame buys.} Two things a list of mechanisms does not.
 First, the two slots turn out to answer \emph{different questions} rather than to be
 two settings of one dial: a signed accumulated phase measures net displacement and is
-a map, while a monotone one measures elapsed path and is a clock, and the two are
-mutually exclusive by construction ($\S$\ref{sec:clockmap}). Second, the frame makes
-visible two axes on which the mechanisms genuinely differ and which nobody varies
-deliberately --- the \emph{sign} of the increment and the \emph{input-side rank} of
-the content-to-phase map --- and both are invisible on the tasks the literature
-evaluates.
+a map, while a monotone one measures elapsed path and is a clock, and for a scalar
+accumulator the two are mutually exclusive by construction ($\S$\ref{sec:clockmap}).
+Second, the frame makes visible two axes on which the mechanisms genuinely differ and
+which the positional-encoding literature for language does not treat as design
+constraints --- the \emph{sign} of the increment and the \emph{input-side rank} of
+the content-to-phase map. The sign is settled in the state-tracking literature and
+MapFormer ablates the rank at $r\in\{1,2\}$, but neither has been tested on
+navigation, and both are invisible on the tasks the literature evaluates.
 
 \paragraph{Scope, and what this review is not.} It covers positional mechanisms as
 operators on the attention logit: how position enters, what algebra it lives in, and
@@ -104,7 +114,7 @@ long-context scaling; the length-extrapolation survey (arXiv:2312.17044); and th
 infinite-extrapolation framework of Vetcha (arXiv:2601.06113) --- contain no
 content-dependent \emph{phase} mechanism at all: between them, zero occurrences of
 MapFormer, Selective RoPE, CARoPE, FoX, GRAPE or Mamba-3, and CoPE and Mamba twice
-each. The fourth, Zhu et al.'s long-context survey (arXiv:2503.17407, March
+each. The fourth, Liu et al.'s long-context survey (arXiv:2503.17407, March
 2025), \emph{does} carry a category for it, ``content-aware position embedding'',
 with two members: CoPE and DAPE. That category is the closest existing treatment of
 this material, and it predates almost all of it --- CARoPE by four months, Selective
@@ -114,7 +124,7 @@ So the gap is not that nobody noticed content-dependence. It is that the cell wa
 opened on the \emph{additive} side, by DAPE (2024) and CoPE (2024), and everything
 that has since filled the \emph{multiplicative} side arrived after the last survey
 that had a place to put it. The memory reading of $\S$\ref{sec:memory} and the
-navigation regime appear in none of the five.
+navigation regime appear in none of the four.
 
 \paragraph{The question this is in service of.} The interest here is not
 positional encoding for its own sake. It is positional encoding as the mechanism by
@@ -142,18 +152,26 @@ occupying the same two slots from the other side ($\S$\ref{sec:memory}).
 
 \textbf{C2 (conceptual, and tested).} The two slots answer \emph{different
 questions}. A signed accumulated phase measures net displacement and is a map; a
-monotone one measures elapsed path and is a clock; they are mutually exclusive by
-construction. The consequence is that a monotone increment is not a defect --- it is
-correct on language and disqualifying on navigation. This is falsifiable and is
-tested by crossover in the companion paper: on a task built to want a clock the
-cost of forcing monotonicity falls from $0.28$ to nothing measurable, and an
-architecture free to choose adopts a different accumulator per task. Had the cost
-been the same on both, the claim would be withdrawn.
+monotone one measures elapsed path and is a clock; for a scalar accumulator they are
+mutually exclusive by construction (a rank-$r$ accumulator can cancel in one subspace
+and count in another). The consequence is that a monotone increment is not a defect
+--- it is correct on language, and on navigation it costs accuracy past the training
+length (at the training length a monotone arm still beats an index code). This is
+tested by crossover in the companion paper: on a $k$-back recency task that counts
+symbols the cost of forcing monotonicity falls from $0.28$ to nothing measurable, and
+an architecture free to choose adopts a different accumulator per task. Two limits:
+the recency task does not \emph{need} a clock --- a signed rewind solves it exactly
+--- so nothing inverts, and the two costs are read at different extrapolation ratios
+($8\times$ and $2\times$). Had the cost been the same on both, the claim would be
+withdrawn.
 
-\textbf{C3 (empirical).} Two properties of the content-to-phase map that no paper
-in this literature varies deliberately --- the \emph{sign} of the increment and its
-\emph{input-side rank} --- are worth more per parameter than anything else measured
-here, and both dominate the choice of positional \emph{encoding}.
+\textbf{C3 (empirical).} Two properties of the content-to-phase map that the
+positional-encoding literature for language does not treat as design constraints ---
+the \emph{sign} of the increment and its \emph{input-side rank} --- are worth more per
+parameter than anything else measured here. They do not dominate the choice of
+positional \emph{encoding}: under a converged recipe the encoding main effect on the
+torus is $+0.189$ at $8\times$ the training length, larger than rank's $+0.085$. The
+rank decides whether training \emph{finds} the solution, not whether it exists.
 
 \emph{Not claimed}: the taxonomy and the closure argument (C1's caveat above); the
 content-dependent rotation, which MapFormer, Selective RoPE and Mamba-3 arrived at
@@ -375,7 +393,7 @@ $\varphi(x) = Bx$. The affine part matters: RoPE's constant $\varphi$ has $B=0$,
 the linear rank alone would read $0$. Then $\rho = 1$ for RoPE, $r$ for MapFormer,
 and generically $H\nb$ for Selective RoPE.
 
-Two thresholds bracket the useful range. Below, a packing argument: if $N^D$
+Two thresholds were proposed to bracket the useful range. Below, a packing argument: if $N^D$
 positions are carried by a $\rho$-dimensional code, the minimum separation of
 distinct positions falls at worst like
 \begin{equation}
@@ -384,9 +402,12 @@ distinct positions falls at worst like
 \end{equation}
 saturating at the lattice's own spacing once $\rho \ge D$. This is an upper bound
 and is not tight: measured exponents track it at $D\le3$ and run steeper at $D=5$
-($-2.99$ against a predicted $-2.50$). Above, once $\rho \ge D$ the bound says
-nothing further, and what remains is a question about conditioning rather than
-capacity --- see the companion paper.
+($-2.99$ against a predicted $-2.50$). It does not account for trained models: at
+$D=5$, $r=2$ is unimpaired ($0.896$, its best of three conditions), so as an account of
+MapFormer v4's Table~6 the packing argument is withdrawn. Above, once $\rho \ge D$ the
+bound says nothing further, and what remains is a question about search rather than
+capacity: on the torus a rank-$2$ solution exists and holds under training, and
+training from scratch usually fails to find it --- see the companion paper.
 
 \subsection{What $K>1$ costs}
 \label{sec:group}
@@ -508,7 +529,7 @@ $\theta_s - \theta_t = \omega\sum_{t<u\le s}\Delta_u$. What that quantity
 \emph{is} depends entirely on whether the increments can cancel:
 
 \begin{table}[htbp]\centering\small
-\caption{Cancellation chooses what the interval sum measures. The two readings are mutually exclusive by construction.}
+\caption{Cancellation chooses what the interval sum measures. For a scalar accumulator the two readings are mutually exclusive by construction.}
 \label{tab:clockmap}
 \begin{tabular}{@{}p{3.0cm}p{5.3cm}p{5.6cm}@{}}
 \toprule
@@ -523,8 +544,9 @@ the accumulator is & a \textbf{map} & a \textbf{clock} \\
 \end{tabular}
 \end{table}
 
-\noindent These are mutually exclusive by construction, and each is \emph{correct}
-for one job. A cognitive map \textbf{needs} same-place-different-time to collide ---
+\noindent For a scalar accumulator these are mutually exclusive by construction (a
+rank-$r$ accumulator can cancel in one subspace and count in another), and each is
+\emph{correct} for one job. A cognitive map \textbf{needs} same-place-different-time to collide ---
 that collision is exactly what revisit prediction asks for. Language needs the
 opposite: a code that made token $5$ and token $15$ interchangeable because some
 ``backward'' token intervened would be broken, not economical.
@@ -542,8 +564,9 @@ $\alpha\approx1$ means the accumulator is measuring elapsed time, which is unbou
 so the code must eventually leave any range it was trained on. $\alpha\approx0.5$
 means it is measuring a random-walk position. The ideal for a bounded map would be
 $\alpha = 0$ --- position on a torus is bounded --- and nothing here achieves it,
-because every mechanism accumulates without wrapping. That is a design gap, not a
-property of the frame.
+because every mechanism accumulates without wrapping. It is not a design gap either:
+wrapping the accumulator is a no-op, since $\theta$ enters only through $\cos,\sin$,
+and any other bound breaks additivity ($\S$\ref{sec:open}).
 
 \paragraph{What MapFormer gave up to get the map.} A signed $\Delta$ makes two
 visits to the same cell positionally identical. That is the point, and it also means
@@ -557,7 +580,8 @@ the companion paper; ``unmeasured'' there has the specific sense of a contrast
 inside its minimum detectable effect.) It adds a second, content-dependent, \emph{monotone}
 accumulator in the magnitude slot --- measured at $\alpha = +0.956$, ballistic,
 beside the phase accumulator's $0.6$ --- so it restores the clock that the signed
-phase gave up. Every otherwise-puzzling detail follows: it needs a \emph{live}
+phase gave up. It would account for every otherwise-puzzling detail (untested: the
+batch registered to test it was deleted before analysis): it needs a \emph{live}
 $\lambda$ (frozen at zero it lands on the baseline, $-0.016$, unmeasured) but not
 \emph{decay}; $5$ of $8$ seeds learn $\lambda<0$, and those gain most
 ($r(\lambda,\text{gain}) = -0.516$). A negative $\lambda$ still gives a monotone
@@ -570,19 +594,25 @@ pure index clock) should reproduce much of it; and the gain should vanish on a t
 with no recency structure.
 \end{quote}
 
-\paragraph{This is now tested directly, and it holds.} Until recently the
-dichotomy rested on the construction above plus a correlation across four arms
+\paragraph{This is now tested by crossover, and the reading narrows.} Until recently
+the dichotomy rested on the construction above plus a correlation across four arms
 (the companion paper); every task measured here wanted a \emph{map}, so
-``signed wins'' and ``signed suits this task'' were not separable. On a task built
-to want a \emph{clock}, the ordering inverts as predicted: constraining the
-increment to be monotone costs $0.215$--$0.280$ on the torus and nothing
-measurable there, and the same unconstrained architecture learns
-$\alpha = 0.591$ on one and $0.967$ on the other. the companion paper.
+``signed wins'' and ``signed suits this task'' were not separable. On a $k$-back
+recency task that counts symbols, constraining the increment to be monotone costs
+$0.215$--$0.280$ on the torus and nothing measurable there, and the same unconstrained
+architecture learns $\alpha = 0.591$ on one and $0.967$ on the other (the companion
+paper). Nothing inverts, and the recency task does not need a clock --- a signed
+rewind of the query token solves it exactly --- so what is shown is that cancellation
+can be given up there at no cost, not that the task demands a clock. The two costs are
+also read at different extrapolation ratios ($8\times$ on the torus, $2\times$ on
+recency).
 
 \noindent Read this way the frame's two slots are not two knobs but \textbf{two
 answers}: a signed phase is a map, a monotone accumulated magnitude is a clock, and a
-system that needs both must spend both slots. Mamba-3 claiming both deliberately is
-then the natural endpoint rather than a curiosity. In softmax attention the
+system with a scalar accumulator that needs both must spend both slots (a rank-$r$
+phase can in principle cancel in one subspace and count in another). Selective RoPE
+and Mamba-3, which both pair a data-dependent rotation with decay, are then the
+natural endpoint rather than a curiosity. In softmax attention the
 combination is so far only partial: MapPoPE pairs a content-dependent phase with a
 content-dependent magnitude that is \emph{instantaneous}, so it supplies no clock at
 all. A content-dependent phase alongside an \emph{accumulated} content-dependent
@@ -614,7 +644,7 @@ mechanisms agree on all eight.
 
 \begin{sidewaystable}\small
 \centering
-\caption{\textbf{The relational map.} Mechanisms that fit \eqref{eq:unified} or its unipotent extension. \textbf{Bold} marks a value held by at most three of the eighteen rows --- what distinguishes that mechanism from the field --- and nothing else; no row is emphasised as a whole. Note what this does \emph{not} bold: \texttt{signed} is held by five rows and is not rare. The claim of the companion paper is that nobody varies it \emph{deliberately}, which is a different statement.
+\caption{\textbf{The relational map.} Mechanisms that fit \eqref{eq:unified} or its unipotent extension. \textbf{Bold} marks a value held by at most three of the eighteen rows --- what distinguishes that mechanism from the field --- and nothing else; no row is emphasised as a whole. Note what this does \emph{not} bold: \texttt{signed} is held by five rows and is not rare. The claim of the companion paper is narrower: that the positional-encoding literature for language does not treat it as a design constraint, and nobody has tested it on navigation.
 $^\ast$Jordan-RoPE's magnitude factor is a \emph{polynomial} in the lag,
 $d^re^{i\omega d}$: its generator couples a complex eigenvalue to a nilpotent in one
 defective block. $^\ddagger$FoX's bias $\sum\log f_\ell$ and GLA's weight
@@ -800,8 +830,9 @@ rank-like for reasons of their own: PaTH's Householder factors are $I + $rank-$1
 definition, and CARoPE emits one scalar per head, putting its content-to-angle map
 \emph{below} MapFormer's $r$ rather than above it. The nearest deliberate study is
 LieRE's generator tile-size sweep, which varies density on the \emph{output} side and
-peaks in the interior at $8\times8$. What no one sweeps is the \emph{input-side}
-bottleneck: how many dimensions of content may steer the angle.
+peaks in the interior at $8\times8$. What no one sweeps above the world dimension
+is the \emph{input-side} bottleneck --- how many dimensions of content may steer the
+angle; MapFormer ablates only $r\in\{1,2\}$.
 
 \emph{(iv) A7 is nearly free.} Selective RoPE runs in both hosts and Mamba-3 crosses
 over by state-space duality, so ``softmax versus SSM'' separates implementations
@@ -833,10 +864,13 @@ $G$ valued in $\C^{d_xd_p}$.
 That is sharper than ``an AND-gate rather than an OR-gate'', and it says what the lift
 costs: a rank-one tensor $q^x\otimes q^p$ can express content-\emph{and}-position but
 not content-\emph{or}-position, and there is no fallback channel when either factor is
-uninformative. It predicts the observed sensitivity to how the position channel is
-initialised --- a single shared $p_0$ beats separate $q^p_0, k^p_0$ by $+0.358$ on a
-matching task ($3/3$ seeds) --- because with no additive fallback a mis-set position
-factor multiplies the whole score instead of being outvoted.
+uninformative. Sensitivity to how the position channel is initialised is observed, but
+its sign depends on the task: a single shared $p_0$ beats separate $q^p_0, k^p_0$ by
+$+0.358$ on a matching task ($3/3$ seeds), while on $k$-back recency the separate form
+is ahead ($+0.128$, $n=24$; $+0.073$ on fresh seeds, unmeasured). An earlier account ---
+that a mis-set position factor multiplies the whole score instead of being outvoted
+by an additive channel --- rested on reading MapWM as additive, which it is not, and is
+withdrawn.
 
 \paragraph{TEM-t is the same machine with two conditions removed.} TEM-t
 (Whittington et al., 2022) generates position recurrently,
@@ -927,9 +961,10 @@ review (TMLR 2025) categorises the whole modern family by \emph{decay type} ---
 RetNet a constant scalar, Mamba-2 a scalar, GLA a rate per row of the fast weight
 --- and the words ``rotary'', ``RoPE'' and ``positional'' do not occur in it. The
 positional-encoding literature owns $\operatorname{Im}G$ and treats decay as a
-side-condition. Mamba-3 is the first design to claim both deliberately, and it
-arrives from the memory side, stating the crossing as a proposition on
-``data-dependent RoPE equivalence''. The hybrid quadratic-linear transformers of
+side-condition. Mamba-3 claims both deliberately, arriving from the memory side and
+stating the crossing as a proposition on ``data-dependent RoPE equivalence''; Selective
+RoPE had paired an input-dependent rotation with decay gates four months earlier
+(``recall needs rotation and decay''). The hybrid quadratic-linear transformers of
 Irie et al.\ (2025) use RoPE, but only as an off-the-shelf component inside the
 attention half rather than as a design axis.
 
@@ -1015,7 +1050,11 @@ The boundary
 separates them, and beyond the training length the channels past it enter phase
 intervals never seen in training. For LLaMA-2 ($\hd = 128$, $L_0 = 4096$) that is
 $36$ of $128$ dimensions. This is a mechanism for length-extrapolation failure that
-is about \emph{which channels were trained}, not about capacity or precision.
+is about \emph{which channels were trained}, not about capacity or precision. Its
+transposition to a one-layer path-integrated model, with the accumulator in place of
+the index, is refuted in the companion paper: ablating the low-frequency channels
+costs \emph{more} at extrapolated length, not less. That says nothing against the
+account for index-driven RoPE, which is where it was made.
 
 
 
@@ -1042,9 +1081,10 @@ growth exponent is set by how completely opposite actions cancel, but the
 exponent is a symptom and the substance is $\S$\ref{sec:clockmap}:
 a signed increment makes the interval sum a \emph{net displacement}, invariant to
 route and blind to elapsed time, and a monotone one makes it a \emph{path length},
-injective in time and blind to place. Neither dominates. On navigation the signed
-form wins outright (at matched training loss the monotone one does not beat a plain
-index clock anywhere); on language the monotone form is the correct object, and the
+injective in time and blind to place. Neither dominates. On navigation past the
+training length the signed form wins outright (at matched training loss the monotone
+one does not beat a plain index clock anywhere beyond it; at the training length it
+does); on language the monotone form is the correct object, and the
 signed one would be discarding the very distinction position exists to make.
 
 \paragraph{(T3) Compressing the memory makes decay compulsory; rewriting it forfeits
@@ -1064,12 +1104,12 @@ if the task needs \dots & it requires & and these supply it \\
 \midrule
 \emph{order only} --- which token came first & any monotone clock & RoPE, ALiBi, CoPE, CARoPE, GRAPE-AP, every gated linear RNN \\[3pt]
 \emph{signed displacement} --- parity, net motion, state tracking & a signed increment & MapFormer, Selective RoPE, Mamba-3; DeltaNet/PaTH/RWKV-7 with $\beta>1$. \textbf{Not} CARoPE, GRAPE-AP or CoPE \\[3pt]
-\emph{absolute location in a bounded map} & signed \textbf{and} well-conditioned ($r\ge4$) & MapFormer at $r\ge4$; $r=2$ degrades because its basis is skewed, not because it lacks capacity \\[3pt]
+\emph{absolute location in a bounded map} & signed, \textbf{and} rank $r\ge4$ per head to be found reliably & MapFormer at $r\ge4$. At $r=2$ (ours shared, or the paper's per head) training usually fails to find the torus solution within budget --- $0/8$ and $2/8$ against $8/8$ at $T{=}1024$ --- though a rank-$2$ solution exists: search, not capacity \\[3pt]
 \emph{holding position far past the training length} & a diffusive accumulator, $\alpha\approx0.5$ & follows from cancellation (T2), though the route from $\alpha$ to degradation is association and not cause; nothing in Table~\ref{tab:map} bounds the accumulator, and the two obvious ways to are a no-op or break additivity \\[3pt]
 \emph{path-dependent actions} (turn/forward) & non-abelian transport, \textbf{or} an allocentric recoding of the input & PaTH, DeltaNet, RWKV-7, TEM-t --- none evaluated on navigation. Recoding the action to absolute displacement restores $+0.488$ and keeps the scan \\[3pt]
 \emph{overwriting stale associations} & a delta rule & DeltaNet, PaTH, RWKV-7; forfeits the parallel scan \\[3pt]
 \emph{contextual counting} --- the $k$-th most recent noun, sentence, or selected event & a \textbf{content-gated} monotone increment & CoPE, CARoPE, GRAPE-AP; and a signed MapFormer, which \emph{learns} the gate rather than being given it. \textbf{Not} any fixed index code: RoPE reaches $0.234$ where the gated arms reach $1.000$ \\[3pt]
-\emph{exact recall over a window} & the dual form; keep the items & softmax attention. A lossy summary is not a sufficient statistic, which is why hierarchy loses here and wins on compositional transfer \\[3pt]
+\emph{exact recall over a window} & the dual form; keep the items & softmax attention. A lossy summary is not a sufficient statistic, which is why hierarchy loses here; on compositional transfer it is ahead in direction only (unpowered at $n=8$) \\[3pt]
 \emph{bounded state, linear time} & abelian transport & every row of Table~\ref{tab:map}; measured $2.6$--$3.3\times$ over a $16\times$ length increase \\
 \bottomrule
 \end{tabular}
@@ -1085,10 +1125,11 @@ recent item of some selected class --- is a clock a fixed index cannot supply, a
 the gap there ($+0.750$, the companion paper) is larger than anything measured
 on navigation. It is also the demand CoPE was built for.
 
-\emph{On navigation and any task with a metric structure, the sign and the
-conditioning of the increment are the whole game.} They are worth more per parameter than anything
-else measured here, and both dominate the choice of positional \emph{encoding}
-(the companion paper).
+\emph{On navigation and any task with a metric structure, the sign and the rank
+of the increment matter most per parameter.} They are worth more per parameter than
+anything else measured here, but they are not the whole game: under a converged
+recipe the choice of positional \emph{encoding} moves the torus result by $+0.189$ at
+$8\times$ the training length, more than rank's $+0.085$ (the companion paper).
 
 \emph{One combination is ruled out rather than merely absent.} A mechanism with a
 bounded recurrent state, signed transport \emph{and} rewritable memory does not exist,
@@ -1108,15 +1149,16 @@ give up per-token factorisation and with it any $\theta_t$ at all; and MesaNet,
 Titans and TAPE give up the accumulation structure itself.
 
 The two parts are not two knobs. A signed accumulated phase is a map and a monotone
-one is a clock, and a system that needs both must spend both slots. That is why the
-monotone increments of CARoPE, GRAPE-AP and CoPE are correct on language and fail on
-navigation, and why the sign of the increment --- which costs nothing, and which no
-paper in the positional-encoding literature varies deliberately --- is worth more
-than any other ingredient measured here. The dichotomy is not only an
-interpretation: on a task whose answer depends on elapsed count rather than net
-displacement the cost of forcing a monotone increment falls from $0.28$ to nothing
-measurable, and an architecture free to choose picks a different accumulator for
-each task (the companion paper). The corollary for practice is that a
+one is a clock, and a system with a scalar accumulator that needs both must spend both
+slots. That is why the monotone increments of CARoPE, GRAPE-AP and CoPE are correct on
+language and, past the training length, fail on navigation, and why the sign of the
+increment --- which costs nothing, and which the positional-encoding literature for
+language does not treat as a design constraint --- is worth more per parameter than
+any other ingredient measured here. The dichotomy is not only an interpretation: on a
+$k$-back recency task that counts symbols the cost of forcing a monotone increment
+falls from $0.28$ to nothing measurable, and an architecture free to choose picks a
+different accumulator for each task (the companion paper) --- though that task does
+not need a clock, and the two costs are read at different extrapolation ratios. The corollary for practice is that a
 mechanism does not have a quality, it has a match: what to spend on is decided by
 the task.
 
@@ -1125,21 +1167,30 @@ independently help: extrapolated length. The accumulator's growth law accounts f
 two of them and demonstrably not for the others --- and no mechanism in the table
 bounds the accumulator at all, including the one that was assumed to. Nor is the
 growth law itself yet a cause: $\theta$ is periodic, so a larger accumulator is not
-obviously out of distribution, and the one published account of why it would be is
-refuted here. $\alpha$ unifies two results and reads off what a task demanded; it
-does not yet explain either. That is the gap worth building into.
+obviously out of distribution, and the one published account of why it would be,
+transposed to a one-layer path-integrated model, is refuted here. $\alpha$ unifies two
+results and reads off what a task demanded; it does not yet explain either. That is
+the gap worth building into.
+
+\emph{Corrected 2026-09-25:} this section previously said sign and rank are varied
+deliberately by no one, that the ordering inverts on a clock task, and (in
+$\S$\ref{sec:capability}) that sign and rank dominate the choice of encoding and that
+$r=2$ fails by a skewed basis. See the corrected abstract.
 
 
 \section{Open questions}
 \label{sec:open}
 
 \begin{itemize}\itemsep3pt
-\item \textbf{The input-side rank.} $r=2$ is the worst setting and $r=4$ fixes it for
-  $384$ parameters, but nothing explains why the optimiser finds a skewed basis at
-  $r=2$ and a well-conditioned one at $r=4$ when the learned solution occupies a
-  $2$-plane either way.
+\item \textbf{The input-side rank.} Trained and tested at $T=1024$ from matched
+  initial weights, our shared $r=2$ solves $0/8$ seeds within $900$ epochs, the
+  paper's per-head $r=2$ $2/8$ and $r=4$ $8/8$, while a rank-$2$ projection of a solved
+  $r=4$ model scores $0.995$ and holds under training: a search deficit, in the paper's
+  own design. Nothing yet explains why training finds the rank-$2$ solution so rarely
+  when it occupies a $2$-plane either way, and $r=4$'s smaller initial $W_{\mathrm{out}}$
+  is not separated from its rank.
 \item \textbf{The OOD-length axis, still the largest gap.} The accumulator's growth
-  exponent accounts for the sign and rank results together (the companion paper),
+  exponent co-varies with the sign and rank results together (the companion paper),
   and it predicts that bounding the accumulator should help at length. The obvious
   candidate for something that bounds it --- the wrapped innovation of an
   InEKF-style correction --- does not: it wraps the innovation and not the state,
@@ -1170,9 +1221,9 @@ does not yet explain either. That is the gap worth building into.
   \textbf{The prior question is why a growing accumulator should cost anything at
   all}, given that the code is periodic. The natural answer --- that low-frequency
   channels reach phases never trained --- is the long-context literature's
-  critical-dimension account, and it was imported and \textbf{refuted}
-  (the companion paper): ablating those channels costs \emph{more} at
-  extrapolated length, not less. So $\alpha$'s association with OOD degradation is
+  critical-dimension account, and its transposition to a one-layer path-integrated
+  model was \textbf{refuted} (the companion paper): ablating those channels costs
+  \emph{more} at extrapolated length, not less. So $\alpha$'s association with OOD degradation is
   established and its route is not. Until that is answered, $\alpha$
   \emph{unifies} the sign and rank results and \emph{diagnoses} what a task
   demanded, and it does not explain.
@@ -1185,13 +1236,15 @@ does not yet explain either. That is the gap worth building into.
   encoding helps on text, how much of the gain is over NoPE rather than over RoPE is
   usually not reported.
 \item \textbf{Sign on language.} A monotone clock cannot represent a $-1$ action, and
-  on navigation that costs everything. On text HGRN's own ablation finds a
+  on navigation that costs $0.2$--$0.3$ past the training length (at the training
+  length a monotone arm still beats an index code). On text HGRN's own ablation finds a
   data-dependent phase worse than a constant one. Whether the sign matters there, and
   for what, is untested --- and the companion paper sharpens rather than settles
-  it: on a symbolic clock task the sign is free to be given up at no cost, which is
+  it: on a symbolic counting task the sign is free to be given up at no cost, which is
   consistent with text needing a clock, but the arms there are trained from scratch
-  on one synthetic stream. The published dataset that would settle it is
-  Flip-Flop LM, which is that task at $k=1$.
+  on one synthetic stream. Flip-Flop LM, which is that task at $k=1$, was run and
+  cannot settle it: it asks only the offset at which an index code already works
+  (the companion paper).
 \item \textbf{Non-commuting action spaces.} Rotation-based actions defeat a fixed
   per-token increment. Allocentric recoding sidesteps it wherever heading is known;
   the non-abelian mechanisms (PaTH, DeltaNet, RWKV-7) address it directly and have
@@ -1235,7 +1288,7 @@ Transformer-XL & 1901.02860 & & \\
 MesaNet, Titans & 2506.05233, 2501.00663 & & \\
 \midrule
 \multicolumn{2}{@{}l}{\emph{surveys checked}} & & \\
-Li (position encoding) & 2608.10021 & Zhu et al. (long context) & 2503.17407 \\
+Li (position encoding) & 2608.10021 & Liu et al. (long context) & 2503.17407 \\
 Length extrapolation & 2312.17044 & Vetcha & 2601.06113 \\
 \midrule
 \multicolumn{4}{@{}l}{\emph{the memory reading}} \\
