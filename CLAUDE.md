@@ -76,12 +76,14 @@ too: Dyck's surviving effect is at 3x the training nesting depth.
 
 **Rank (torus, T=1024, budget-scoped).** r=4's old +0.085 is out-of-distribution only
 (`RANK_SWEEP.md`). At matched length AND matched initialisation (`RANK_MI_RESULTS.md`): within
-900 epochs our shared r=2 solves 0/8, the paper's per-head r=2 2/8, shared r=4 8/8 (C-A Fisher
-p 0.0002, C-B 0.007; accuracy 0.894 / 0.885 / 0.998). B and C both have 4 latent dims, so what
-decides it is the RANK PER HEAD of the content-to-angle map. A rank-2 solution exists (0.9955)
-and is held under training (S1 STABLE, `RANK_PROJ_RESULTS.md`): rank 2 is a SEARCH deficit, and
-it is the paper's own design. Unseparated: r=4's W_out init is smaller (bound 0.5 vs 0.707).
-MapWM family only (MapPoPE r=4 +0.019, `MAPPOPE_R4_RESULTS.md`).
+900 epochs our shared r=2 solves 0/8, a per-head r=2 2/8, shared r=4 8/8 (C-A Fisher p 0.0002,
+C-B 0.007). r=4's advantage is not its initial draws. Versus the per-head r=2 (same 4 latent dims,
+identical W_in) it holds, but per-head rank, cross-head sharing and W_out's per-entry scale are
+UNSEPARATED (initial angle scale is matched). B-A unmeasured. Our shared r=2 can represent and
+hold the solution (`RANK_PROJ_RESULTS.md`): a search deficit. The paper states a per-head W_in but
+not W_out's shape: the per-head r=2 is its literal reading; with a full W_out its r=2 IS our r=4.
+Scope: n_heads=2, one length, one recipe. Separating arms: C_bd (C with block-diagonal W_out,
+frozen off-blocks) and per-head r=4. MapPoPE r=4 +0.019 is an OOD, unmatched-init number.
 
 **Live negatives -- do not re-run:** Level 1.5 / InEKF is stabilisation, not inference (no
 component load-bearing, capacity control ties, benefit does not grow with drift:

@@ -1,6 +1,6 @@
 ---
 name: project-rank-and-selective-rope
-description: Rank per head decides search. At T=1024 x 900 ep, matched init: our shared r=2 0/8 solved, the paper's per-head r=2 2/8, r=4 8/8. A rank-2 solution exists and is held -- a search deficit in the paper's own design.
+description: At T=1024 x 900 ep, matched init, shared r=4 finds the torus solution 8/8, our shared r=2 0/8, a per-head r=2 2/8. Our shared r=2 can hold it (search deficit). Which of per-head rank, sharing or W_out scale matters is unseparated.
 metadata:
   type: project
 ---
@@ -9,8 +9,9 @@ metadata:
 - **RESOLVED at matched initialisation** (`RANK_MI_RESULTS.md`, 2026-09-24 22:47): every arm built
   from our r=2's initial weights; within 900 epochs at T=1024 our shared r=2 solves 0/8, the paper's
   per-head r=2 2/8, shared r=4 8/8 (C-A Fisher p 0.0002, C-B 0.007; acc 0.894 / 0.885 / 0.998). B and
-  C have the same 4 latent dims, so the per-head rank of the content->angle map decides it. The stored
-  r=4's 8/8 was not an init artifact. Unseparated: r=4's W_out init bound 0.5 vs 0.707 (rule 15).
+  C have the same 4 latent dims and identical initial W_in; per-head rank, cross-head sharing and W_out
+  per-entry scale are UNSEPARATED (corrected after review; initial angle scale is matched, 0.335/0.343/0.344).
+  The stored r=4's 8/8 was not an init artifact. B-A unmeasured. Separating arms: C_bd, per-head r=4.
   Reproduction of stored r=2 seed 3: bit-exact over 900 epochs.
 - **The old win is out of distribution only.** Trained T=128: r=2 0.993 vs r=4 1.000 at T=128; the
   gap appears at T=512 (+0.038) and T=1024 (+0.085, `RANK_SWEEP.md`). 94% of the +0.085 is short-gap

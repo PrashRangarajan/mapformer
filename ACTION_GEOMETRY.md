@@ -3,8 +3,8 @@
 > cause: within r=2 skew does not predict accuracy, and a rank-2 solution exists and is held
 > under training (`RANK_PROJ_RESULTS.md`). At matched length AND matched initialisation
 > (`RANK_MI_RESULTS.md`), within 900 epochs at T=1024: our shared r=2 0/8 solved, the paper's
-> per-head r=2 2/8, shared r=4 8/8 -- the per-head rank decides whether training FINDS the
-> solution. The skew is a symptom of the search failure. Our bottleneck is shared across heads;
+> per-head r=2 2/8, shared r=4 8/8 (which of per-head rank, cross-head sharing or W_out scale
+> matters is unseparated). The skew is a symptom of the search failure. Our bottleneck is shared across heads;
 > the paper's is per head.
 
 # Does a wider bottleneck destroy the action geometry?

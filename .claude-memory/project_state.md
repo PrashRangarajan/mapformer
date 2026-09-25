@@ -13,9 +13,10 @@ Nothing.
 
 ## Last results (all committed)
 - **Rank line resolved, budget-scoped** (`RANK_MI_RESULTS.md`): T=1024 torus, 900 epochs, matched init --
-  our shared r=2 0/8 solved, the paper's per-head r=2 2/8, shared r=4 8/8. Per-head rank decides search.
+  our shared r=2 0/8 solved, a per-head r=2 2/8, shared r=4 8/8; which of per-head rank, sharing or
+  W_out scale matters is unseparated (review 2026-09-25).
   A rank-2 solution exists and is held (`RANK_PROJ_RESULTS.md`, S1 STABLE). Continuations were UNREADABLE
-  (`RANK_MATCHED_RESULTS.md`). Open: r=4's smaller W_out init is unseparated (a rank-2 arm at bound 0.5).
+  (`RANK_MATCHED_RESULTS.md`). Separating arms designed: C_bd and per-head r=4 (`RANK_MI_RESULTS.md`).
 - **Audits of 2026-09-24** (`docs/audits/2026-09-24/`): CLAUDE.md cut 183 KB -> 21 KB (log in `docs/LOG.md`);
   code fixes applied in 17 commits 7aff4b2..ac3f338, default path verified bit-identical; opt-in
   `--fast-attn` (2.2x, not reproducible) and `--fast-attn --deterministic` (1.25x, bitwise); drivers use
