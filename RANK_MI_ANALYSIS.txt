@@ -1,0 +1,25 @@
+== run classes (registered labels; SOLVED = final-5% loss < 0.05) ==
+  A Vanilla       SOLVED 0/8  s0:STAL(0.587) s1:DESC(0.051) s2:DESC(0.308) s3:DESC(0.321) s4:DESC(0.177) s5:STAL(0.404) s6:STAL(0.675) s7:STAL(0.605)
+  B Vanilla_r2ph  SOLVED 2/8  s0:STAL(1.049) s1:SOLV(0.007) s2:SOLV(0.003) s3:STAL(0.910) s4:DESC(0.194) s5:DESC(0.211) s6:DESC(0.248) s7:STAL(0.539)
+  C Vanilla_r4mi  SOLVED 8/8  s0:SOLV(0.004) s1:SOLV(0.003) s2:SOLV(0.003) s3:SOLV(0.003) s4:SOLV(0.002) s5:SOLV(0.004) s6:SOLV(0.004) s7:SOLV(0.010)
+  reference: stored r=4 (unmatched init) SOLVED 8/8
+
+== reproduction: A seed 3 retrained vs stored ==
+  max |per-epoch loss diff| over 900 epochs: 0.00e+00
+
+== co-primaries at T=1024 ==
+  A Vanilla       acc 0.894 +/- 0.070  per seed 0.849 0.998 0.917 0.917 0.947 0.907 0.773 0.842
+  B Vanilla_r2ph  acc 0.885 +/- 0.131  per seed 0.656 1.000 1.000 0.723 0.959 0.949 0.943 0.851
+  C Vanilla_r4mi  acc 0.998 +/- 0.005  per seed 1.000 1.000 1.000 1.000 1.000 0.994 1.000 0.987
+  C - A: SOLVED 8/8 vs 0/8 Fisher p 0.0002 | acc +0.104 perm p 0.0005 CI [+0.052, +0.155]
+  B - A: SOLVED 2/8 vs 0/8 Fisher p 0.4667 | acc -0.009 perm p 0.8733 CI [-0.123, +0.100]
+  C - B: SOLVED 8/8 vs 2/8 Fisher p 0.0070 | acc +0.112 perm p 0.0070 CI [+0.021, +0.206]
+
+== branches ==
+  Q1 (init confound): C > A: the r=4 advantage SURVIVES matched initialisation
+  Q2 (paper's design): C > B: the paper's per-head r=2 has the search problem too; 'use r=4' applies to MapFormer's design
+
+== secondary: other lengths ==
+  T=512: A 0.934  B 0.910  C 1.000
+  T=2048: A 0.819  B 0.832  C 0.973
+  T=1024 strata: plain_lag<128: A 0.950 B 0.919 C 1.000  plain_lag>=128: A 0.671 B 0.784 C 0.995  wrap: A 0.557 B 0.644 C 0.977

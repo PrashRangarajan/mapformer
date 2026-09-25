@@ -74,18 +74,14 @@ too: Dyck's surviving effect is at 3x the training nesting depth.
 | Metric/data findings | Dyck F1 has a 0.88 no-stack floor (use Hewitt closing accuracy); Bach overfitting-limited 3x (transposition 0.107 NLL) | `DYCK_LITERATURE_METRICS.md`, `AUG_RESULTS.md` |
 | Hierarchy on text is efficiency only | 1.4537 vs 1.4506 bpc at param parity; 1.23x throughput, -14% memory | `ENWIK8_HIERARCHY.md` |
 
-**Open, not citable:** rank. r=4 +0.085 at T=1024 is out-of-distribution only (trained T=128,
-`RANK_SWEEP.md`); MapWM-family only (MapPoPE r=4 +0.019, `MAPPOPE_R4_RESULTS.md`). At matched
-length (T=1024) r=4 solves 8/8 vs r=2 0/8 at 900 ep and 7/8 vs 1/8 after a 900-ep warm-restart
-continuation; both registered verdicts UNREADABLE (`RANK_MATCHED_RESULTS.md`). A rank-2
-projection of each solved r=4 model scores 0.9955 mean (min 0.981) at T=1024, and trained from
-there r=2 holds it 7/8 like the r=4 control (S1 STABLE, `RANK_PROJ_RESULTS.md`): exists, stable,
-not found -- a SEARCH deficit. From-scratch r=2 stalls in non-cancelling codes (the skew is
-the symptom); whether it could leave them is untested. **Our bottleneck is shared across heads; the paper's is
-per head** (`W_in in R^{d x nh x r}`, mapformer.txt ~l.1512), so our r=2 has half the paper's
-latent dims at 2 heads (ours r=2 < paper r=2 < ours r=4) and "use r=4" may only restore the
-paper's latent-dimension count. `w_out` init scales 1/sqrt(r) -- unseparated from dimension. Follow-ups in
-`project_state.md`.
+**Rank (torus, T=1024, budget-scoped).** r=4's old +0.085 is out-of-distribution only
+(`RANK_SWEEP.md`). At matched length AND matched initialisation (`RANK_MI_RESULTS.md`): within
+900 epochs our shared r=2 solves 0/8, the paper's per-head r=2 2/8, shared r=4 8/8 (C-A Fisher
+p 0.0002, C-B 0.007; accuracy 0.894 / 0.885 / 0.998). B and C both have 4 latent dims, so what
+decides it is the RANK PER HEAD of the content-to-angle map. A rank-2 solution exists (0.9955)
+and is held under training (S1 STABLE, `RANK_PROJ_RESULTS.md`): rank 2 is a SEARCH deficit, and
+it is the paper's own design. Unseparated: r=4's W_out init is smaller (bound 0.5 vs 0.707).
+MapWM family only (MapPoPE r=4 +0.019, `MAPPOPE_R4_RESULTS.md`).
 
 **Live negatives -- do not re-run:** Level 1.5 / InEKF is stabilisation, not inference (no
 component load-bearing, capacity control ties, benefit does not grow with drift:
