@@ -141,7 +141,7 @@ def main():
     p.add_argument("--max-visits", type=int, default=8,
                    help="bin visit counts above this into 'over_max'")
     p.add_argument("--device", default="cuda")
-    p.add_argument("--output", default="PER_VISIT.md")
+    p.add_argument("--output", default="/home/prashr/mapformer/PER_VISIT.md")
     args = p.parse_args()
 
     runs = Path(args.runs_dir)

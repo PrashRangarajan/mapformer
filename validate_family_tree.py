@@ -61,7 +61,7 @@ def main():
     ap.add_argument("--n-steps", type=int, default=128)
     ap.add_argument("--n-episodes", type=int, default=600)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="FAMILY_TREE_GATES.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/FAMILY_TREE_GATES.md")
     args = ap.parse_args()
 
     env = FamilyTreeWorld(depth=args.depth, n_obs_types=args.n_obs, seed=10000)

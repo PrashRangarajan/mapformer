@@ -81,7 +81,7 @@ def main():
     ap.add_argument("--variants", nargs="+",
                     default=["Signed_r4", "Abs_r4", "Pos_r4", "CARoPE_r4"])
     ap.add_argument("--device", default="cuda:0")
-    ap.add_argument("--out", default="RECENCY_H2.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/RECENCY_H2.md")
     a = ap.parse_args()
     dev = torch.device(a.device)
 

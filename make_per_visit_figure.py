@@ -204,8 +204,8 @@ def fig6_one_shot_bar(clean, lm200, out_path):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--clean", default="PER_VISIT_clean.md")
-    p.add_argument("--lm200", default="PER_VISIT_lm200.md")
+    p.add_argument("--clean", default="/home/prashr/mapformer/PER_VISIT_clean.md")
+    p.add_argument("--lm200", default="/home/prashr/mapformer/PER_VISIT_lm200.md")
     p.add_argument("--output-dir", default="paper_figures")
     args = p.parse_args()
 

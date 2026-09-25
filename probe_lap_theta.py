@@ -45,7 +45,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--checkpoints", nargs="+", required=True)
     ap.add_argument("--device", default="cuda:1")
-    ap.add_argument("--out", default="LAP_THETA_PROBE.json")
+    ap.add_argument("--out", default="/home/prashr/mapformer/LAP_THETA_PROBE.json")
     a = ap.parse_args()
     rows = [probe(c, a.device) for c in a.checkpoints]
     for r in rows: print(r)

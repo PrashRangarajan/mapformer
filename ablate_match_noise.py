@@ -66,7 +66,7 @@ def run(model, env, TE, TQ, n_batches, bs, dev, seed, p_noise, mode):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--runs-dir", default="mapformer/runs/mq_noise_c2")
+    ap.add_argument("--runs-dir", default="/home/prashr/mapformer/runs/mq_noise_c2")
     ap.add_argument("--variants", nargs="+", default=["Vanilla", "Looped"])
     ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2, 3])
     ap.add_argument("--size", type=int, default=128)
@@ -76,7 +76,7 @@ def main():
     ap.add_argument("--n-batches", type=int, default=6)
     ap.add_argument("--batch-size", type=int, default=6)
     ap.add_argument("--device", default="cuda:0")
-    ap.add_argument("--out", default="MATCH_QUERY_NOISE_ABLATION.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/MATCH_QUERY_NOISE_ABLATION.md")
     a = ap.parse_args()
 
     env = MatchQueryGridWorld(size=a.size, n_obs_types=a.n_obs, seed=10000)

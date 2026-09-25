@@ -99,7 +99,7 @@ def main():
     ap.add_argument("--n-obs", type=int, default=16)
     ap.add_argument("--n-templates", type=int, default=4)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="COMPOSITIONAL_MATCH_QUERY_GATES.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/COMPOSITIONAL_MATCH_QUERY_GATES.md")
     args = ap.parse_args()
 
     all_rows = []

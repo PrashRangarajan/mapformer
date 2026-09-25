@@ -96,7 +96,7 @@ def eval_revisit(model, env, T, n_trials, seed):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--output-md", default="OOD_GRID_RESULTS.md")
+    ap.add_argument("--output-md", default="/home/prashr/mapformer/OOD_GRID_RESULTS.md")
     ap.add_argument("--n-trials", type=int, default=30)
     ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])
     args = ap.parse_args()

@@ -44,7 +44,7 @@ def main():
     ap.add_argument("--n-episodes", type=int, default=400)
     ap.add_argument("--n-symbols", type=int, default=8)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="ALGORITHMIC_GATES.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/ALGORITHMIC_GATES.md")
     a = ap.parse_args()
 
     rows = []

@@ -111,7 +111,7 @@ def main():
                              "rooms_maze", "maze_varying"])
     ap.add_argument("--n-episodes", type=int, default=300)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="PLANNER_TASK_AUDIT.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/PLANNER_TASK_AUDIT.md")
     args = ap.parse_args()
 
     rows = []

@@ -236,7 +236,7 @@ def main():
                         default=[0, 50, 100, 200],
                         help="n_landmarks values to test (only used with --include-lm-sweep)")
     parser.add_argument("--device", default="cuda")
-    parser.add_argument("--output", default="ZERO_SHOT_TRANSFER.md")
+    parser.add_argument("--output", default="/home/prashr/mapformer/ZERO_SHOT_TRANSFER.md")
     args = parser.parse_args()
 
     runs = Path(args.runs_dir)

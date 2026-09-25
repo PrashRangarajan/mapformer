@@ -69,7 +69,7 @@ def main():
     ap.add_argument("--n-episodes", type=int, default=400)
     ap.add_argument("--n-queries", type=int, default=8)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="MAP_QUERY_GATES.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/MAP_QUERY_GATES.md")
     args = ap.parse_args()
 
     S = args.sizes[0]

@@ -70,7 +70,7 @@ def main():
     ap.add_argument("--lengths", nargs="+", type=int, default=[256, 512, 1024])
     ap.add_argument("--episodes", type=int, default=200)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="RECENCY_GATES.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/RECENCY_GATES.md")
     ap.add_argument("--k-fixed", type=int, default=None)
     ap.add_argument("--k-set", default=None)
     a = ap.parse_args()

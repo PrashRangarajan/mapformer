@@ -26,7 +26,7 @@ from mapformer.model_inekf_gsf import MapFormerWM_Level15GSF
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--output-md", default="GSF_MODES_DIAGNOSTIC.md")
+    ap.add_argument("--output-md", default="/home/prashr/mapformer/GSF_MODES_DIAGNOSTIC.md")
     ap.add_argument("--n-trials", type=int, default=50)
     ap.add_argument("--T", type=int, default=512)
     args = ap.parse_args()

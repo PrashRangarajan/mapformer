@@ -44,7 +44,7 @@ def main():
                          "this probability, so the recorded action stream drifts "
                          "from true position. Every gate below is re-run on the "
                          "noisy task rather than assumed to carry over.")
-    ap.add_argument("--out", default="MATCH_QUERY_GATES.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/MATCH_QUERY_GATES.md")
     args = ap.parse_args()
 
     rows = []

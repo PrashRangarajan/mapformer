@@ -166,7 +166,7 @@ def main():
     p.add_argument("--top-k", type=int, default=8,
                    help="show top-k hidden dims by grid score per variant")
     p.add_argument("--device", default="cuda")
-    p.add_argument("--output-md", default="HIPPOCAMPAL_HIDDEN.md")
+    p.add_argument("--output-md", default="/home/prashr/mapformer/HIPPOCAMPAL_HIDDEN.md")
     p.add_argument("--output-figures", default="paper_figures")
     args = p.parse_args()
 

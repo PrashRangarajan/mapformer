@@ -28,7 +28,7 @@ def main():
     ap.add_argument("--seeds", nargs="+", type=int, required=True)
     ap.add_argument("--variants", nargs="+", required=True)
     ap.add_argument("--lengths", nargs="+", type=int, required=True)
-    ap.add_argument("--out", default="HIERGOAL_MULTISEED.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/HIERGOAL_MULTISEED.md")
     args = ap.parse_args()
 
     acc = {v: {t: [] for t in args.lengths} for v in args.variants}

@@ -41,7 +41,7 @@ def main():
     ap.add_argument("--lengths", nargs="+", type=int, default=[16, 128, 512, 2048])
     ap.add_argument("--batch-size", type=int, default=64)
     ap.add_argument("--device", default="cuda:0")
-    ap.add_argument("--out", default="LOOP_HIER_COMPUTE.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/LOOP_HIER_COMPUTE.md")
     a = ap.parse_args()
     dev = torch.device(a.device)
 

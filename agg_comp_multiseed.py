@@ -57,7 +57,7 @@ def main():
     ap.add_argument("--n-traj", type=int, default=200)
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--device", default="cuda:0")
-    ap.add_argument("--out", default="COMPOSITIONAL_MULTISEED.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/COMPOSITIONAL_MULTISEED.md")
     args = ap.parse_args()
 
     # raw[variant][T][metric] = list over seeds

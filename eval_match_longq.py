@@ -12,12 +12,12 @@ from mapformer.train_variant import VARIANT_MAP
 from mapformer.train_match_query import evaluate
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--runs-dir", default="mapformer/runs/match_query")
+ap.add_argument("--runs-dir", default="/home/prashr/mapformer/runs/match_query")
 ap.add_argument("--variants", nargs="+", default=["Vanilla", "PlainFlat"])
 ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])
 ap.add_argument("--lengths", nargs="+", type=int, default=[256, 512, 1024, 2048])
 ap.add_argument("--size", type=int, default=64); ap.add_argument("--n-obs", type=int, default=16)
-ap.add_argument("--device", default="cuda:0"); ap.add_argument("--out", default="MATCH_QUERY_LONGQ.md")
+ap.add_argument("--device", default="cuda:0"); ap.add_argument("--out", default="/home/prashr/mapformer/MATCH_QUERY_LONGQ.md")
 a = ap.parse_args()
 env = MatchQueryGridWorld(size=a.size, n_obs_types=a.n_obs, seed=10000)
 res = {v: {L: [] for L in a.lengths} for v in a.variants}

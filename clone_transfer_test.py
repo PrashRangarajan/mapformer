@@ -164,7 +164,7 @@ def main():
                    help="env seed for the OOD test (fresh obs_map)")
     p.add_argument("--T", type=int, default=128)
     p.add_argument("--n-trials", type=int, default=200)
-    p.add_argument("--output", default="CLONE_TRANSFER_TEST.md")
+    p.add_argument("--output", default="/home/prashr/mapformer/CLONE_TRANSFER_TEST.md")
     p.add_argument("--device", default="cuda")
     args = p.parse_args()
 

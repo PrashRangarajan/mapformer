@@ -104,7 +104,7 @@ def build(variant, ckpt):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--output-md", default="GOAL_CLOSEDLOOP_RESULTS.md")
+    ap.add_argument("--output-md", default="/home/prashr/mapformer/GOAL_CLOSEDLOOP_RESULTS.md")
     ap.add_argument("--n-episodes", type=int, default=200)
     args = ap.parse_args()
 

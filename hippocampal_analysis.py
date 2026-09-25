@@ -406,7 +406,7 @@ def main():
     p.add_argument("--n-trials", type=int, default=30)
     p.add_argument("--test-seed", type=int, default=12345,
                    help="env seed for evaluation (fresh map)")
-    p.add_argument("--output-md", default="HIPPOCAMPAL_ANALYSIS.md")
+    p.add_argument("--output-md", default="/home/prashr/mapformer/HIPPOCAMPAL_ANALYSIS.md")
     p.add_argument("--output-figures", default="paper_figures")
     p.add_argument("--device", default="cuda")
     args = p.parse_args()

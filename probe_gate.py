@@ -62,7 +62,7 @@ def parity_gate(cp, dev, n=24, L=64):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--device", default="cuda:0")
-    ap.add_argument("--out", default="GATE_PROBE.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/GATE_PROBE.md")
     a = ap.parse_args()
     dev = torch.device(a.device)
 

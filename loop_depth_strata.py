@@ -62,7 +62,7 @@ def by_stratum(model, env, T_explore, T_query, n_batches, batch_size, device,
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--runs-dir", default="mapformer/runs/loop_headroom/PI_loop")
+    ap.add_argument("--runs-dir", default="/home/prashr/mapformer/runs/loop_headroom/PI_loop")
     ap.add_argument("--variant", default="Looped")
     ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2, 3, 4, 5, 6, 7])
     ap.add_argument("--loops", nargs="+", type=int, default=[1, 2, 3, 4, 5, 6, 8])
@@ -74,7 +74,7 @@ def main():
     ap.add_argument("--size", type=int, default=128)
     ap.add_argument("--n-obs", type=int, default=16)
     ap.add_argument("--device", default="cuda:0")
-    ap.add_argument("--out", default="LOOP_DEPTH_STRATA.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/LOOP_DEPTH_STRATA.md")
     a = ap.parse_args()
 
     env = MatchQueryGridWorld(size=a.size, n_obs_types=a.n_obs, seed=10000)

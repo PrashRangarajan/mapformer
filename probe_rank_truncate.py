@@ -45,12 +45,12 @@ def truncate(W, k):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--arm", default="NoBottleneck")
-    ap.add_argument("--runs-dir", default="mapformer/runs/selective/torus/p0")
+    ap.add_argument("--runs-dir", default="/home/prashr/mapformer/runs/selective/torus/p0")
     ap.add_argument("--ranks", nargs="+", type=int, default=[1, 2, 3, 4, 8, 16, 64])
     ap.add_argument("--lengths", nargs="+", type=int, default=[128, 512])
     ap.add_argument("--n-trials", type=int, default=60)
     ap.add_argument("--device", default="cuda:0")
-    ap.add_argument("--out", default="RANK_TRUNCATION.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/RANK_TRUNCATION.md")
     a = ap.parse_args()
     dev = torch.device(a.device)
 

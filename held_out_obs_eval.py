@@ -217,7 +217,7 @@ def main():
                         default="both",
                         help="restriction mode: blanking, reassignment, or both")
     parser.add_argument("--device", default="cuda")
-    parser.add_argument("--output", default="HELD_OUT_OBS.md")
+    parser.add_argument("--output", default="/home/prashr/mapformer/HELD_OUT_OBS.md")
     args = parser.parse_args()
 
     runs = Path(args.runs_dir)

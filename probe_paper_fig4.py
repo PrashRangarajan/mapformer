@@ -29,10 +29,10 @@ from mapformer.train_variant import VARIANT_MAP
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--runs-dir", default="mapformer/runs/rank_sweep/p0")
+    ap.add_argument("--runs-dir", default="/home/prashr/mapformer/runs/rank_sweep/p0")
     ap.add_argument("--arms", nargs="+", default=["Vanilla", "Vanilla_r4"])
     ap.add_argument("--device", default="cuda:0")
-    ap.add_argument("--out", default="PAPER_FIG4_REPRO.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/PAPER_FIG4_REPRO.md")
     a = ap.parse_args()
     dev = torch.device(a.device)
 

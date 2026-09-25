@@ -200,7 +200,7 @@ def sr_closed_loop_episode(model, env, sr_head, T_explore, T_navigate,
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--output-md", default="SR_PROBE_RESULTS.md")
+    ap.add_argument("--output-md", default="/home/prashr/mapformer/SR_PROBE_RESULTS.md")
     ap.add_argument("--n-train-trajs", type=int, default=100)
     ap.add_argument("--n-eval-episodes", type=int, default=100)
     ap.add_argument("--T-explore", type=int, default=64)

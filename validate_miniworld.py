@@ -248,7 +248,7 @@ def main():
                          "classes) -- n-gram must stay at chance: exact relative "
                          "displacement gives only RELATIVE position, and the fresh "
                          "obs_map is uncorrelated with the action prefix")
-    ap.add_argument("--out", default="MINIWORLD_GATES.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/MINIWORLD_GATES.md")
     args = ap.parse_args()
 
     results = []

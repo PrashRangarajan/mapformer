@@ -111,7 +111,7 @@ def main():
     ap.add_argument("--T-navigate", type=int, default=96)
     ap.add_argument("--n-trials", type=int, default=200)
     ap.add_argument("--device", default="cuda:0")
-    ap.add_argument("--out", default="HIERGOAL_CLOSEDLOOP.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/HIERGOAL_CLOSEDLOOP.md")
     args = ap.parse_args()
 
     env = HierGoalGridWorld(size=64, room_size=8, seed=10000)

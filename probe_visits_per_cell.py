@@ -68,7 +68,7 @@ def main():
               f"{r['median_prior']:>7.0f} {r['frac_exactly_1']:>6.2f} "
               f"{r['frac_le_2']:>6.2f} {r['frac_ge_5']:>6.2f}")
     import json
-    json.dump(rows, open("VISITS_PER_CELL.json", "w"), indent=2)
+    json.dump(rows, open("/home/prashr/mapformer/VISITS_PER_CELL.json", "w"), indent=2)
     print("\nwrote VISITS_PER_CELL.json")
 
 

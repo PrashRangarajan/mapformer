@@ -46,7 +46,7 @@ def main():
     ap.add_argument("--lengths", nargs="+", type=int, default=[256, 512])
     ap.add_argument("--n-traj", type=int, default=200)   # MATCHES agg_comp_multiseed, so arm A is comparable to the published table
     ap.add_argument("--device", default="cuda:0")
-    ap.add_argument("--out", default="COMP_HEADROOM.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/COMP_HEADROOM.md")
     a = ap.parse_args()
 
     res, loss = {}, {}

@@ -41,8 +41,8 @@ def spectrum(W):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--runs-dir", default="mapformer/runs/selective/torus/p0")
-    ap.add_argument("--out", default="LEARNED_RANK.md")
+    ap.add_argument("--runs-dir", default="/home/prashr/mapformer/runs/selective/torus/p0")
+    ap.add_argument("--out", default="/home/prashr/mapformer/LEARNED_RANK.md")
     a = ap.parse_args()
 
     o = ["# Does an unconstrained angle map rediscover the rank-2 bottleneck?", "",

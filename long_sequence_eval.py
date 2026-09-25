@@ -97,7 +97,7 @@ def main():
     parser.add_argument("--n-trials-128", type=int, default=200)
     parser.add_argument("--n-trials-long", type=int, default=50,
                         help="trials at T>=2048 (slower)")
-    parser.add_argument("--output", default="LONG_SEQ_RESULTS.md")
+    parser.add_argument("--output", default="/home/prashr/mapformer/LONG_SEQ_RESULTS.md")
     args = parser.parse_args()
 
     n_lm = 200 if args.config == "lm200" else 0

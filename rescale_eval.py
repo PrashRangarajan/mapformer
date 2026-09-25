@@ -128,7 +128,7 @@ def main():
     p.add_argument("--T", type=int, default=128)
     p.add_argument("--n-trials", type=int, default=30)
     p.add_argument("--device", default="cuda")
-    p.add_argument("--output", default="OMEGA_RESCALE.md")
+    p.add_argument("--output", default="/home/prashr/mapformer/OMEGA_RESCALE.md")
     args = p.parse_args()
 
     runs = Path(args.runs_dir)

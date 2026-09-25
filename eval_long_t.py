@@ -78,7 +78,7 @@ def eval_revisit(model, env, T, n_trials, seed):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--output-md", default="LONGT_EVAL_RESULTS.md")
+    ap.add_argument("--output-md", default="/home/prashr/mapformer/LONGT_EVAL_RESULTS.md")
     ap.add_argument("--T-values", nargs="+", type=int, default=[512, 1024, 2048, 4096])
     ap.add_argument("--n-trials", type=int, default=50)
     args = ap.parse_args()

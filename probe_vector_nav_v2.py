@@ -158,7 +158,7 @@ def evaluate(head, feats, targets, device="cuda"):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--output-md", default="VECTOR_NAV_V2_RESULTS.md")
+    ap.add_argument("--output-md", default="/home/prashr/mapformer/VECTOR_NAV_V2_RESULTS.md")
     ap.add_argument("--n-train-trajs", type=int, default=100)
     ap.add_argument("--n-eval-trajs", type=int, default=50)
     ap.add_argument("--pairs-per-traj", type=int, default=50)

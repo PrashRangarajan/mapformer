@@ -50,7 +50,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n-episodes", type=int, default=500)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="CSCG_TASK_GATES.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/CSCG_TASK_GATES.md")
     a = ap.parse_args()
     rng = np.random.RandomState(a.seed)
     lines = ["# CSCG-derived tasks -- pre-flight gates (CPU, no training)", ""]

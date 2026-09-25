@@ -128,7 +128,7 @@ def evaluate_probe(head, model, env, n_episodes, T_explore, T_navigate, device="
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--output-md", default="PROBE_GOAL_RESULTS.md")
+    ap.add_argument("--output-md", default="/home/prashr/mapformer/PROBE_GOAL_RESULTS.md")
     ap.add_argument("--n-train", type=int, default=400)
     ap.add_argument("--n-eval", type=int, default=200)
     args = ap.parse_args()

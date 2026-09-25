@@ -96,7 +96,7 @@ def main():
     ap.add_argument("--n-episodes", type=int, default=2000)
     ap.add_argument("--n-laps", type=int, default=4)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="LAP_GATES.md")
+    ap.add_argument("--out", default="/home/prashr/mapformer/LAP_GATES.md")
     args = ap.parse_args()
 
     rows = [gates(fl, args.n_episodes, args.n_laps, args.seed) for fl in (True, False)]

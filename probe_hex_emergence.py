@@ -148,7 +148,7 @@ def compute_unit_stats(rate_maps, counts):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--output-md", default="HEX_EMERGENCE_RESULTS.md")
+    ap.add_argument("--output-md", default="/home/prashr/mapformer/HEX_EMERGENCE_RESULTS.md")
     ap.add_argument("--n-trajectories", type=int, default=100)
     ap.add_argument("--T", type=int, default=256)
     args = ap.parse_args()

@@ -92,7 +92,7 @@ def main():
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--test-seed", type=int, default=12345)
     p.add_argument("--n-trials", type=int, default=5)
-    p.add_argument("--output-md", default="LENGTH_DIAGNOSTIC.md")
+    p.add_argument("--output-md", default="/home/prashr/mapformer/LENGTH_DIAGNOSTIC.md")
     p.add_argument("--output-figs", default="paper_figures")
     args = p.parse_args()
 

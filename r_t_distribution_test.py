@@ -109,7 +109,7 @@ def main():
     p.add_argument("--T", type=int, default=512)
     p.add_argument("--n-trials", type=int, default=30)
     p.add_argument("--test-seed", type=int, default=12345)
-    p.add_argument("--output", default="R_T_DISTRIBUTION.md")
+    p.add_argument("--output", default="/home/prashr/mapformer/R_T_DISTRIBUTION.md")
     p.add_argument("--device", default="cuda")
     args = p.parse_args()
 
