@@ -1,4 +1,4 @@
-# Results index (regenerated 2026-09-24)
+# Results index (regenerated 2026-09-24; rank, documents and statistics updated 2026-09-25)
 
 A catalogue with statuses, not a narrative. **`CLAUDE.md` is the authority** for conventions, the
 standing rules (numbered 1-28 there; this file keeps no rule list of its own), the withdrawn list and
@@ -10,7 +10,13 @@ every number below was re-read from the file named beside it.
 SOLID = holds as stated at its scope; NEEDS CONTROL = real measurement, but the claim outruns it
 (usually: read only past the training length or depth, or at a superseded recipe); UNDERPOWERED =
 inside a t-based MDE or n <= 4. "OOD" = read past the training length or depth, i.e. robustness until a
-matched control exists (CLAUDE.md rule 10).
+matched control exists (CLAUDE.md rule 10). The house "DETECTABLE" (|mean| > 2.8 sd/sqrt(n), i.e. |t| > 2.8)
+is a 10.7% false-positive test at n=3 (2.7% at n=8), so an n < 8 DETECTABLE is read with its t-test p
+(CLAUDE.md rule 5; e.g. code C1 MapPoPE - PoPE +0.0033 has p ~0.1).
+
+Documents: `positional_review.pdf` (review), `axes_measured.pdf` (results paper), `mapformer_math.pdf`
+(record), `report/report.pdf` and `report/report_short.pdf`; all brought into line with this index on
+2026-09-25.
 
 ## Citable results
 
@@ -18,12 +24,13 @@ matched control exists (CLAUDE.md rule 10).
 |---|---|---|---|---|---|
 | Path integration helps on the paper's torus task, at training length | position **+0.243** (MDE 0.038, 8/8); index RoPE 0.805, path 0.971; +0.359 at 8x (OOD). The often-quoted +0.461 is the 16-epoch recipe (index arm on the floor) | 8 | blank floor 0.506 | SOLID at this budget; the index arm was still slowly descending, so its ceiling is unmeasured | `PAPER2X2_RESULTS.md` |
 | ...and is necessary for in-context maps (Match-Query) | 0.730 +/- 0.247 vs index 0.154; context destruction 0.918 -> 0.074 | 5 | chance 0.0625 | SOLID; its index control is PlainFlat, never the architecture-matched RoPE arm | `MATCH_QUERY_SCALE.md`, `MATCH_QUERY_RESULTS.md` |
+| Rank per head of the content-to-angle map decides whether training FINDS the solution (torus, trained and tested at T=1024, 900 ep, matched initialisation) | SOLVED within 900 ep: our shared r=2 **0/8**, the paper's per-head r=2 **2/8**, shared r=4 **8/8** (Fisher p 0.0002 / 0.007); accuracy 0.894 / 0.885 / 0.998. A rank-2 projection of each solved r=4 scores 0.9955 frozen and is held under training (7/8 vs the r=4 control's 7/8): a SEARCH deficit, in the paper's own design | 8 | constant floor 0.506 (wrap-only 0.507) | SOLID, budget-scoped (within 900 epochs); r=4's smaller `W_out` init (bound 0.5 vs 0.707) is unseparated; one task, one width; MapWM family only | `RANK_MI_RESULTS.md`, `RANK_PROJ_RESULTS.md`, `RANK_MATCHED_RESULTS.md` |
 | Dyck-2 depth ladder at the training cell (L32 D4), width fixed | position +0.293 / +0.081 / +0.048 / +0.019 at 1-4 layers (8/8); index RoPE 0.979 at 4L | 8 | chance 0.5 | SOLID (matched length and depth) | `DYCK_LADDER_RESULTS.md` |
 | Index code cannot count contextually (reproduces CoPE) | +0.750 at T=1024 (8/8) | 8 | chance 0.0625 | SOLID (matched length) | `RECENCY_RESULTS.md` |
 | Loop on path integration (Match-Query) | loop main effect **unpaired** +0.346 (t 3.75); loop arm pooled 0.803 +/- 0.200, 1/16 failures | 8 / 16 | chance 0.0625 | SOLID for the main effect. The paired interaction +0.315 and "r=4 + loop x4 0.986, 8/8 >= 0.941" are paired / one-batch statistics on a task whose same-seed retrains drift 0.185: CONTRADICTED (see Withdrawn) | `REFINE_RESULTS.md`, `LOOP_HEADROOM.md`, `MQ_RANK_2X2.md` |
 | EM's recency deficit is search | EM - WM -0.375 (0/8, MDE 0.154); installed rewind frozen 1.000 (8/8); per-pair origins +0.215 = pathway +0.124 + freedom +0.091 (n=48) | 8 / 48 | chance 0.0625 | SOLID as a fixed-budget learnability result | `RECENCY_EM_RESULTS.md`, `WARM_RESULTS.md`, `SEARCH_RESULTS.md`, `PAIRSPLIT_RESULTS.md`; `EM_WM_STATE.md` Sec 3-4 gives the status of every EM/WM file |
 | Phase freedom in q0/k0 | +0.146 vs a matched-optimiser control (22/24); fresh seeds +0.113 | 24 | -- | SOLID; mechanism unidentified | `MAGONLY_RESULTS.md`, `D5_RESULTS.md` |
-| Paper replications | MapFormer v4 Dyck-2: ordering MapWM-1L - RoPE-2L +0.370 (8/8, F1); levels do not replicate and sit at the F1 floor 0.884. PoPE's Indirect Indexing at 200k iters 7/8 (1/8 at their 100k). PoPE's Bach: PoPE - RoPE -0.032 NLL (5/5) | 8 / 8 / 5 | F1 no-stack 0.884 | SOLID | `DYCK_RESULTS_bs128.md`, `INDIRECT_RESULTS_200k.md`, `JSB_RESULTS.md` |
+| Paper replications | MapFormer v4 Dyck-2: ordering MapWM-1L - RoPE-2L +0.370 (8/8, F1; on Hewitt closing accuracy +0.064, 0.638 vs 0.574 at L128 D12, same direction); levels do not replicate and sit at the F1 floor 0.884. PoPE's Indirect Indexing at 200k iters 7/8 (1/8 at their 100k). PoPE's Bach: PoPE - RoPE -0.032 NLL (5/5) | 8 / 8 / 5 | F1 no-stack 0.884 | SOLID | `DYCK_RESULTS_bs128.md`, `INDIRECT_RESULTS_200k.md`, `JSB_RESULTS.md` |
 | Our PoPE is faithful; non-negativity is not what extrapolates | 1.7e-06 max logit difference vs the authors' code; NoSigma penalty -0.0108 vs RoPE +3.5885; 80.7% of `pope_delta` frozen in its clamp | 3 | batch floor 0.0021 / 0.0028 bpc | SOLID as corrected (the NoSigma Table-5 cell is unmeasured) | `ABLATE_RESULTS.md` |
 | PoPE's encoding helps the path row (Bach) | MapPoPE - MapWM -0.0165 NLL (5/5, MDE 0.0111) | 5 | -- | SOLID on Bach. Dyck 2L +0.050 is depth-OOD (~0 at L32 D4); code -0.0052 and MapPoPE - PoPE +0.0033 are UNDERPOWERED | `JSB_RESULTS.md`, `.claude-memory/project_mappope_asymmetry.md` |
 | Code: the OOD encoding "win" is extrapolation cost | at matched 2048 the encoding effect is -0.0030 (MDE 0.0046) against -3.694 extrapolating from 512 | 3 | no-memory brackets 0.858 | SOLID as a retraction | `CODE_RESULTS.md`, `CODE_GATES.md` |
@@ -38,7 +45,7 @@ matched control exists (CLAUDE.md rule 10).
 
 | claim | key number | what is missing | file |
 |---|---|---|---|
-| Dyck ladder at L32 D12 | +0.290 / +0.209 / +0.159 / +0.168 at 1-4L (8/8); index plateaus 0.76-0.78 | matched LENGTH but **3x the training depth**: a matched-depth control, and an index-arm budget extension ("stop climbing" rests on a slope rule read after LR decay). The results file still calls D12 "the training length" and has no banner | `DYCK_LADDER_RESULTS.md` |
+| Dyck ladder at L32 D12 | +0.290 / +0.209 / +0.159 / +0.168 at 1-4L (8/8); index plateaus 0.76-0.78 | matched LENGTH but **3x the training depth**: a matched-depth control, and an index-arm budget extension ("stop climbing" rests on a slope rule read after LR decay). The results file now carries a correction banner (2026-09-24) | `DYCK_LADDER_RESULTS.md` |
 | Sign of the increment (a replication of Sarrof / Grazzi / Selective RoPE in navigation) | signed beats index +0.123 / +0.195 at T=512/1024 (12/12); monotone does not; opposition 0.11 vs 1.85-1.98 | the accuracy cost is extrapolation-only (at T=128 monotone 0.90-0.98 vs index 0.80; loss 12/12 worse). Needs a monotone arm trained and tested at T=1024 | `SIGN_ABLATION.md`, `SIGN_PROBE.md` |
 | Clock/map crossover | monotone costs -0.280 on the torus, -0.004 on recency; magnitude-matched content increment +0.594 (8/8) | both halves are extrapolation readouts at different ratios | `RECENCY_RESULTS.md`, `RECENCY_GATE_ABLATION.md` |
 | Map extent is a threshold | -0.010 / +0.015 / +0.305 at 32 / 128 / 512 occupied cells, matched aliasing | the index arms behind +0.305 and +0.015 were still DESCENDING under a flat-slope "converged" label | `ALIASING_CONTROLLED.md`, `VISITS_TEST.md` |
@@ -47,13 +54,14 @@ matched control exists (CLAUDE.md rule 10).
 
 ## Open: underpowered, OOD-only or unfinished
 
-- **Rank.** r=4 +0.085 at T=1024 is OOD only (trained T=128; 94% from short-gap revisits late in the
-  sequence; `RANK_SWEEP.md`); MapWM family only (MapPoPE r=4 +0.019, `MAPPOPE_R4_RESULTS.md`); on Bach
-  the order inverts (r=1 best, `JSB_LENGTH_RESULTS_RANK.md`). At matched length (T=1024, 900 ep) r=4
-  solves 8/8 and r=2 0/8, +0.103, verdict UNREADABLE (`RANK_MATCHED_RESULTS.md`). A rank-2 projection
-  of each solved r=4 scores 0.995 at T=1024 on 8/8 seeds (`RANK_PROJ_FROZEN.md`, untracked): the gap is
-  search, not capacity or a skewed basis. Our bottleneck is shared across heads, the paper's per head.
-  Running: the continuation (`runs/rank_matched_e900c`) and the stability test (`RANK_PROJ_PREREG.md`).
+- **Rank, the old numbers.** r=4 +0.085 at T=1024 when trained at T=128 is OOD only (94% from
+  short-gap revisits late in the sequence; `RANK_SWEEP.md`); on Bach the order inverts (r=1 best,
+  `JSB_LENGTH_RESULTS_RANK.md`). The matched-length result is now citable (table above). The
+  registered matched-length verdicts of `RANK_MATCHED_RESULTS.md` (900 ep, and 900 + 900 with a warm
+  restart) are UNREADABLE (four r=2 runs still descending); `RANK_MI_RESULTS.md` is the readable test.
+  "r=2 loses because its basis is skewed" is withdrawn: within r=2 skew does not predict accuracy, and a
+  rank-2 solution exists. Our bottleneck is shared across heads, the paper's is per head (2 heads: our
+  r=2 has 2 latent dims, the paper's 4).
 - **Level 1.5 / InEKF**: loss-matched +0.062 / +0.124 at T=512/1024, OOD only; no matched-length arm
   (`L15_ABLATION.md`).
 - **Forget gate** +0.086 at r=2, T=1024, OOD only, mechanism unidentified; the forget-clock batch was
@@ -94,8 +102,8 @@ CLAUDE.md, "Withdrawn -- do not cite", plus `archive/void/` (54 files, each bann
 Contradicted by the 2026-09-24 audit and **not yet on CLAUDE.md's withdrawn list**:
 - Loop x path integration "super-additive" (paired interaction +0.315), "`r=4 + loop x4` 0.986,
   8/8 >= 0.941" and "the loop raises the floor, 8/8 >= 0.77": paired or one-batch statistics on a task
-  whose same-seed retrains drift 0.185 per seed (`REFINE_RESULTS.md`). CLAUDE.md's citable table
-  still lists the first two.
+  whose same-seed retrains drift 0.185 per seed (`REFINE_RESULTS.md`). CLAUDE.md's loop row now marks
+  the interaction and "never fails" withdrawn and the 0.986 as one batch.
 - "The encoding moves the torus result ~0.003 / PoPE is inert without path integration (0.509)":
   16-epoch recipe. Converged, the encoding main effect is detectable at every length (-0.049 / +0.114
   / +0.189, `PAPER2X2_RESULTS.md`).
@@ -116,7 +124,7 @@ Contradicted by the 2026-09-24 audit and **not yet on CLAUDE.md's withdrawn list
 
 ## Catalogue of results files, by line
 
-Top-level `*.md` only (430 files). `*` = a CORRECTED / RETRACTED / WITHDRAWN / SUPERSEDED / VOID /
+Top-level `*.md` only (444 files). `*` = a CORRECTED / RETRACTED / WITHDRAWN / SUPERSEDED / VOID /
 STALE marker in the first 12 lines (a correction block further down also supersedes the body).
 Files starting with `_` are raw per-seed dumps; names ending `_PREREG` are pre-registrations and
 `_GATES` task gates.
@@ -125,9 +133,9 @@ Files starting with `_` are raw per-seed dumps; names ending `_PREREG` are pre-r
 
 `ALLOCENTRIC_RECODING`, `AUDIT_HEADLINE`, `BASELINE_TABLE`, `CLOCK_SCAN`, `DETAILED_RESULTS`, `DRIFT_PROBE`, `FREQ_CONTROL`, `GENERALIZATION_REPORT`, `H12_BUDGET_CURVE`, `HORIZON_L1d128e16`, `HORIZON_L1d128e50`, `HORIZON_L2d128e16`, `HORIZON_L2d256e16`, `HORIZON_L4d128e16`, `HORIZON_L4d256e16`, `HORIZON_RESULTS`, `HORIZON_TASK_DISTANCES`, `INDEX_BASELINE_PAPER_TASK`, `INDEX_BASELINE_PAPER_TASK_n8`, `KNOB_SWEEP`, `KNOB_SWEEP_n8`, `LONG_SEQ_clean`, `N3_AUDIT`, `NOISE_CLEAN_REVALIDATION`, `OMEGA_RESCALE_clean`, `OOD_GRID_RESULTS`, `PAPER2X2_PREREG`, `PAPER2X2_RESULTS`, `PAPERTASK_PREREG`, `PAPERTASK_RESULTS`, `PAPER_OOD_EXTENDED`, `PAPER_OOD_EXTENDED_n8`, `PAPER_OOD_PROTOCOL`, `PAPER_OOD_RERUN`, `PAPER_OOD_WITH_POPE`, `PAPER_TASK_ABLATION`, `PAPER_TASK_ACCURACY`*, `PAPER_TASK_FLOORS`, `PAPER_VALIDATION`, `PERSCALE_OMEGA_RESULTS`, `PER_VISIT_clean`, `RECIPE_POWER`, `REVISIT_2X2`, `REVISIT_DISTANCE`, `ROPE_CANONICAL`, `ROPE_CONVERGE`, `TIMING_BENCHMARK`, `TOPOLOGY_RESULTS`, `ZERO_SHOT_TRANSFER_clean`, `ZERO_SHOT_TRANSFER_clean_brokeninit`, `_PAPER2X2_RAW`, `_RECIPE_C0`, `_RECIPE_C1`, `_RECIPE_C2`
 
-**Rank, generator and accumulator** (31)
+**Rank, generator and accumulator** (44)
 
-`ACCUMULATOR`, `ACTION_GEOMETRY`, `CONV_KERNEL_PROBE`, `DXR_PRELIM`, `DXR_RANK_THRESHOLD`, `GATE_PROBE`, `LEARNED_RANK`, `LOCALISATION`, `LOCALISATION_PREREG`, `LOCALISATION_RANK`, `MAPPOPE_R4`, `MAPPOPE_R4_PREREG`, `MAPPOPE_R4_RESULTS`, `ND_GATES`, `PAPER_FIG4_EM`, `PAPER_FIG4_REPRO`, `RANK_MATCHED`, `RANK_MATCHED_GEOMETRY`, `RANK_MATCHED_PREREG`, `RANK_MATCHED_RESULTS`, `RANK_MATCHED_e900`, `RANK_MATCHED_e900_GEOMETRY`, `RANK_PROJ_FROZEN`, `RANK_PROJ_PREREG`, `RANK_SWEEP`, `RANK_TRUNCATION`, `SELECTIVE_ROPE`, `THEORY_NARRATIVE`*, `THEORY_NUMBERS`, `THEORY_SEARCH_AND_LENGTH`, `_SELECTIVE_TORUS`
+`ACCUMULATOR`, `ACTION_GEOMETRY`, `CONV_KERNEL_PROBE`, `DXR_PRELIM`, `DXR_RANK_THRESHOLD`, `FAST_ATTN_RANK`, `GATE_PROBE`, `LEARNED_RANK`, `LOCALISATION`, `LOCALISATION_PREREG`, `LOCALISATION_RANK`, `MAPPOPE_R4`, `MAPPOPE_R4_PREREG`, `MAPPOPE_R4_RESULTS`, `ND_GATES`, `PAPER_FIG4_EM`, `PAPER_FIG4_REPRO`, `RANK_MATCHED`, `RANK_MATCHED_GEOMETRY`, `RANK_MATCHED_PREREG`, `RANK_MATCHED_RESULTS`, `RANK_MATCHED_e900`, `RANK_MATCHED_e900_GEOMETRY`, `RANK_MATCHED_e900c`, `RANK_MATCHED_e900c_GEOMETRY`, `RANK_MI`, `RANK_MI_GEOMETRY`, `RANK_MI_PREREG`, `RANK_MI_RESULTS`, `RANK_PERHEAD_PILOT`, `RANK_PERHEAD_PILOT_GEOMETRY`, `RANK_PERHEAD_PILOT_RESULTS`, `RANK_PERHEAD_PREREG`, `RANK_PROJ_FROZEN`, `RANK_PROJ_PREREG`, `RANK_PROJ_RESULTS`, `RANK_PROJ_TRAIN`, `RANK_PROJ_TRAIN_GEOMETRY`, `RANK_SWEEP`, `RANK_TRUNCATION`, `SELECTIVE_ROPE`, `THEORY_NARRATIVE`*, `THEORY_NUMBERS`, `THEORY_SEARCH_AND_LENGTH`, `_SELECTIVE_TORUS`
 
 **Sign, clock/map and recency** (32)
 
