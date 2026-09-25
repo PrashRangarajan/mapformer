@@ -1,6 +1,7 @@
 # Guards: the methodological lessons as tested code
 
-Three modules plus a test file. They exist because every retraction of 2026-08-26..09-11
+Three modules plus a test file (and, since 2026-09-24, `stats_core` and the operational guards
+in the last six rows). They exist because every retraction of 2026-08-26..09-11
 came from skipping one of these checks, not from getting the arithmetic wrong.
 Run the tests with `python3 -m mapformer.test_guards` from `/home/prashr`
 (CPU only, about 2 s). Every test recomputes a number that is already committed.
@@ -17,6 +18,12 @@ Run the tests with `python3 -m mapformer.test_guards` from `/home/prashr`
 | `ckpt_guard.assert_no_rng_consumed` | Checks torch (CPU and CUDA), numpy global, python `random`, and any generators you pass | v4 RNG control, unfreeze recording |
 | `ckpt_guard.assert_same_function_at_init` | A new arm must equal its comparator at init | MAGONLY M4, NOLEAK |
 | `probe_rewind` | Rewind slope, pooled and per (head, block). A_P selection over symbol keys. For warm starts, the full latent-pathway slope (both coordinates) | AUDIT finding 2, UNFREEZE correction |
+| `stats_guard.Contrast.row_full` / `.p_t` / `.p_signflip` / `.mde_t` / `mde_t()` / `signflip_p()` + `TABLE_HEADER_FULL` | The house verdict \|d\| > 2.8 sd/sqrt(n) is \|t\| > 2.8: alpha 0.107 at n=3, 0.027 at n=8; the exact 80%-power multiplier is 5.36 / 3.26. These report the exact-t MDE, t-test p, sign-flip p and an n<6 / sd=0 note BESIDE the unchanged verdict | audit 2026-09-24 A1 |
+| `stats_core` | The one implementation of: exact-t MDE (`mde`, `mde_multiplier`, `verdict_alpha`), `paired_p`, `signflip_p`, vectorised exact two-sample permutation `perm2_p` / `perm2_ci` (fixed grid reproduces the committed rank readouts; `grid=None` cannot clip), `fisher_solved`, Amendment-2 `classify_run` with RISING split out, `bimodality`, `report` | audit 2026-09-24 A1, B5 |
+| `ckpt_guard.check_not_stale` | Refuses a train_hourglass checkpoint whose val_bpc disagrees with its run JSON (a duplicate launch's early `.best.pt`); warns if the JSON is missing. Called by the code readers | 2026-09-22 stale NoSigma s2 |
+| `experiment_audit` | Exits 2 (not 0) on a layout it cannot read, after a convergence check on the checkpoints alone; prints the registered windowed classes beside the slope rule | audit 2026-09-24 A2 |
+| `safe_clear.sh` | Refuses a run dir with any completion marker (repo marker naming it or a prefix of it, any `.*done*` inside) or a live python3 naming it. Fails CLOSED | rm of a finished batch; audit A3 |
+| `lib_driver.sh` | Driver helpers: comm-matched trainer count, least-loaded picker (2 jobs/GPU), flock, md5 guard, setsid launch, wait-for-batch, marker only after the artifacts exist | rules 13, 20-24 |
 
 ## Usage
 
@@ -40,7 +47,18 @@ assert_moved(before, model, ["layers.0.q_content.weight"])   # else the freeze c
 assert_no_rng_consumed(model._record, 0)
 ```
 
+```python
+from mapformer.stats_guard import paired, TABLE_HEADER_FULL
+c = paired(acc_b, acc_a, "b - a")
+print(TABLE_HEADER_FULL); print(c.row_full())   # house columns + exact-t MDE, t-test p, sign-flip p
+from mapformer.stats_core import perm2_p, perm2_ci, classify_run, report
+perm2_p(a, b)["p"]; perm2_ci(a, b, step=0.005)      # unclipped CI; grid=(-0.6, 0.6) = the registered one
+classify_run(losses)["registered"]                  # SOLVED / STALLED / DESCENDING (cls adds RISING)
+```
+
 ```bash
+python3 -m mapformer.experiment_audit --runs-dir mapformer/runs/rank_matched_e900   # exit 2 + windowed classes
+bash mapformer/safe_clear.sh mapformer/runs/<dir>                                  # refuses completed batches
 python3 -m mapformer.probe_rewind --runs-dir runs/dof/recency --arms VanillaEM_P0_r4 --seeds 0-7
 python3 -m mapformer.probe_rewind --ckpt runs/warm/EMWarm_freeze_s0/EMWarm_freeze_recency.pt
 ```
