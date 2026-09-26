@@ -1,9 +1,17 @@
 ---
 name: project-rank-and-selective-rope
-description: At T=1024 x 900 ep, matched init, shared r=4 finds the torus solution 8/8, our shared r=2 0/8, a per-head r=2 2/8. Our shared r=2 can hold it (search deficit). Which of per-head rank, sharing or W_out scale matters is unseparated.
+description: It is the PER-HEAD rank of the content-to-angle map: rank 2 per head solves the T=1024 torus on 0-2/8 seeds, rank 4 on 8/8. Sharing and W_out scale are unmeasured. A rank-2 solution exists and is held: a search deficit.
 metadata:
   type: project
 ---
+
+**RESOLVED 2026-09-25 (`RANK_SEP_RESULTS.md`): it is the PER-HEAD rank.** Five arms from our r=2's
+initial weights, differing only in the bottleneck; SOLVED within 900 ep at T=1024: per-head rank 2 ->
+0/8 (shared r=2), 2/8 (per-head r=2), 2/8 (block-diagonal r=4); per-head rank 4 -> 8/8 (shared r=4),
+8/8 (per-head r=4). Total latent size does not track it. Separated: per-head rank FIRES (D-C_bd, both
+block-diagonal, Fisher/perm p 0.0070); SHARING unmeasured (D-C); W_out per-entry scale unmeasured
+(C_bd-B); initial angle scale excluded (A and B fail at normal scale). Supersedes the "unseparated"
+caveat below. Still SEARCH, not capacity (the projection exists and is held).
 
 **STATE, 2026-09-24 (supersedes the older paragraphs below where they conflict).**
 - **RESOLVED at matched initialisation** (`RANK_MI_RESULTS.md`, 2026-09-24 22:47): every arm built

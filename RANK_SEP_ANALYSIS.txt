@@ -1,0 +1,16 @@
+== run classes (SOLVED = final-5% loss < 0.05) ==
+  A     Vanilla         SOLVED 0/8  acc 0.894  s0:STAL(0.587) s1:DESC(0.051) s2:DESC(0.308) s3:DESC(0.321) s4:DESC(0.177) s5:STAL(0.404) s6:STAL(0.675) s7:STAL(0.605)
+  B     Vanilla_r2ph    SOLVED 2/8  acc 0.885  s0:STAL(1.049) s1:SOLV(0.007) s2:SOLV(0.003) s3:STAL(0.910) s4:DESC(0.194) s5:DESC(0.211) s6:DESC(0.248) s7:STAL(0.539)
+  C     Vanilla_r4mi    SOLVED 8/8  acc 0.998  s0:SOLV(0.004) s1:SOLV(0.003) s2:SOLV(0.003) s3:SOLV(0.003) s4:SOLV(0.002) s5:SOLV(0.004) s6:SOLV(0.004) s7:SOLV(0.010)
+  C_bd  Vanilla_r4mibd  SOLVED 2/8  acc 0.948  s0:STAL(0.482) s1:DESC(0.302) s2:SOLV(0.010) s3:DESC(0.234) s4:DESC(0.202) s5:DESC(0.310) s6:SOLV(0.010) s7:DESC(0.166)
+  D     Vanilla_r4ph    SOLVED 8/8  acc 0.999  s0:SOLV(0.004) s1:SOLV(0.010) s2:SOLV(0.004) s3:SOLV(0.004) s4:SOLV(0.002) s5:SOLV(0.008) s6:SOLV(0.005) s7:SOLV(0.003)
+
+== reproduction C s0: max |per-epoch loss diff| 0.00e+00 over 900 epochs
+
+== contrasts (hi - lo) ==
+  cross-head reading C - C_bd: SOLVED 8/8 vs 2/8 Fisher p 0.0070 | acc +0.049 perm p 0.0070 | Holm 0.0280 | FIRES
+  W_out scale        C_bd - B: SOLVED 2/8 vs 2/8 Fisher p 1.0000 | acc +0.063 perm p 0.2444 | Holm 0.4889 | UNMEASURED
+  sharing            D - C: SOLVED 8/8 vs 8/8 Fisher p 1.0000 | acc +0.001 perm p 0.5897 | Holm 0.5897 | UNMEASURED
+  per-head rank      D - C_bd: SOLVED 8/8 vs 2/8 Fisher p 0.0070 | acc +0.051 perm p 0.0070 | Holm 0.0280 | FIRES
+
+== READING: the rank of each head's content-to-angle map

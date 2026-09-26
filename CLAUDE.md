@@ -50,8 +50,9 @@ replication in a new regime).
 
 **The dividing line is matched vs mismatched length.** Every "helps past the training length"
 claim that got a matched-length control died. InEKF, forget gate, PoPE-wrapping, sign and
-rotate/allocentric have never had one: robustness, not capability, until they do. Depth counts
-too: Dyck's surviving effect is at 3x the training nesting depth.
+rotate/allocentric have never had one: robustness, not capability, until they do. Depth counts too:
+Dyck's +0.168 at 4 layers was depth extrapolation and CLOSED at matched depth (`DYCK_MDEPTH_RESULTS.md`);
+what survives there is depth-substitution (1 layer of path integration ~ 3 layers of attention).
 
 | result | numbers | file |
 |---|---|---|
@@ -59,7 +60,7 @@ too: Dyck's surviving effect is at 3x the training nesting depth.
 | ...and is necessary for in-context maps (Match-Query) | 0.730 +/- 0.247 (n=5) vs index 0.154, chance 0.0625; context destruction 0.918 -> 0.074 | `MATCH_QUERY_SCALE.md` |
 | Boundary: map extent, a threshold | -0.010 / +0.015 / +0.305 at 32 / 128 / 512 occupied cells, matched aliasing | `ALIASING_CONTROLLED.md`, `VISITS_TEST.md` |
 | Boundary: rotation actions; allocentric recoding fixes it | +0.050 -> +0.488 (8/8); 12 headings +0.26..+0.38 | `ALLOCENTRIC_RECODING.md`, `H12_BUDGET_CURVE.md` |
-| Dyck depth ladder (width fixed). **Training is L32 D4; D12 is 3x the training depth** | at the TRAINING cell L32 D4: +0.293 / +0.081 / +0.048 / +0.019 at 1-4 layers (8/8; index 0.979 at 4L). At L32 D12 (depth-OOD): +0.290 / +0.209 / +0.159 / +0.168, index plateaus 0.76-0.78. Matched length, NOT matched depth | `DYCK_LADDER_RESULTS.md` |
+| Dyck: path integration is worth ~3 layers of attention, at matched depth | trained AND tested at L32 D12 (`DYCK_MDEPTH_RESULTS.md`): position main +0.353 / +0.130 / +0.045 / +0.024 at 1-4 layers (8/8 each, A2f, floor 0.594). At 4 layers and 3x budget every arm is at ceiling (index 0.997-0.998, path 1.000; effect +0.002): **the ladder's +0.168 at 4L was depth extrapolation, trained at D4**. Mixture training (D in 4..12) keeps +0.110 at D12. Settled in the same batch: index base 32 vs 10000 within MDE at 4L; the 1x ladder budget limits the index arms (+0.021) | `DYCK_MDEPTH_RESULTS.md`, `DYCK_LADDER_RESULTS.md` |
 | Sign of the increment (replicates Sarrof / Grazzi / SRoPE in a new regime) | at T=512/1024 (trained 128): signed beats index +0.123 / +0.195 (12/12), monotone does not; opposition 0.11 vs 1.85-1.98. **At training length monotone scores 0.90-0.98 vs index 0.80: the accuracy cost is extrapolation-only; no matched-length control** | `SIGN_ABLATION.md` |
 | Clock/map crossover | monotone costs -0.280 torus, -0.004 recency; magnitude-matched content increment +0.594 (8/8) | `RECENCY_RESULTS.md`, `RECENCY_GATE_ABLATION.md` |
 | A shared block looped x4 helps path integration (Match-Query) | loop vs no loop **+0.346 unpaired** (t 3.75; loop pooled over two batches 0.803 +/- 0.200, 1/16 failures); matches 3 real layers at 1/3 the params. Runs do NOT reproduce across batches (per-seed drift 0.185), so the paired +0.315 interaction and "never fails" are single-batch and withdrawn; r=4 + loop x4 0.986 (8/8 >= 0.941) is one batch | `REFINE_RESULTS.md`, `LOOP_HEADROOM.md`, `MQ_RANK_2X2.md` |
@@ -74,16 +75,23 @@ too: Dyck's surviving effect is at 3x the training nesting depth.
 | Metric/data findings | Dyck F1 has a 0.88 no-stack floor (use Hewitt closing accuracy); Bach overfitting-limited 3x (transposition 0.107 NLL) | `DYCK_LITERATURE_METRICS.md`, `AUG_RESULTS.md` |
 | Hierarchy on text is efficiency only | 1.4537 vs 1.4506 bpc at param parity; 1.23x throughput, -14% memory | `ENWIK8_HIERARCHY.md` |
 
-**Rank (torus, T=1024, budget-scoped).** r=4's old +0.085 is out-of-distribution only
-(`RANK_SWEEP.md`). At matched length AND matched initialisation (`RANK_MI_RESULTS.md`): within
-900 epochs our shared r=2 solves 0/8, a per-head r=2 2/8, shared r=4 8/8 (C-A Fisher p 0.0002,
-C-B 0.007). r=4's advantage is not its initial draws. Versus the per-head r=2 (same 4 latent dims,
-identical W_in) it holds, but per-head rank, cross-head sharing and W_out's per-entry scale are
-UNSEPARATED (initial angle scale is matched). B-A unmeasured. Our shared r=2 can represent and
-hold the solution (`RANK_PROJ_RESULTS.md`): a search deficit. The paper states a per-head W_in but
-not W_out's shape: the per-head r=2 is its literal reading; with a full W_out its r=2 IS our r=4.
-Scope: n_heads=2, one length, one recipe. Separating arms: C_bd (C with block-diagonal W_out,
-frozen off-blocks) and per-head r=4. MapPoPE r=4 +0.019 is an OOD, unmatched-init number.
+**Rank: it is the PER-HEAD rank of the content-to-angle map** (torus, T=1024, budget-scoped;
+`RANK_SEP_RESULTS.md`, `RANK_MI_RESULTS.md`, `RANK_PROJ_RESULTS.md`). Five arms, all built from our
+r=2's initial weights at each seed, differing only in the bottleneck; SOLVED within 900 epochs:
+
+| per-head rank | arms | solved |
+|---|---|---|
+| 2 | our shared r=2, per-head r=2, block-diagonal r=4 | 0/8, 2/8, 2/8 |
+| 4 | shared r=4, per-head r=4 | 8/8, 8/8 |
+
+Separated: per-head rank FIRES (D - C_bd, both block-diagonal, Fisher and permutation p 0.0070);
+sharing one latent vs per-head latents UNMEASURED (D - C); `W_out` per-entry scale UNMEASURED
+(C_bd - B). Initial angle scale does not explain it (A and B fail at normal scale). A rank-2 solution
+EXISTS (0.9955) and is HELD under training, so this is SEARCH, not capacity. r=4's old +0.085 was
+out-of-distribution only (`RANK_SWEEP.md`). The paper states a per-head `W_in` but not `W_out`'s
+shape: at 2 heads its r=2 read literally is the per-head r=2 (2/8); with a full `W_out` it is our
+r=4 (8/8). Scope: n_heads=2, one length, one recipe. MapPoPE r=4 +0.019 is an OOD, unmatched-init
+number.
 
 **Live negatives -- do not re-run:** Level 1.5 / InEKF is stabilisation, not inference (no
 component load-bearing, capacity control ties, benefit does not grow with drift:
@@ -110,7 +118,8 @@ Habitat porting (`HABITAT_BUILD.md`); bf16 autocast (`BF16_RESULTS.md`, keep fp3
 - Packing geometry as the account of v4 Table 6 (r=2 is best at D=5). `DXR_RANK_THRESHOLD.md`
 - "The r=4 gap is training speed"; "r=2 loses because its basis is skewed" (within r=2 skew does not predict accuracy; a rank-2 solution exists). `RANK_MATCHED_RESULTS.md`, `RANK_PROJ_FROZEN.md`
 - Navigation "+0.461, index on the floor" as the torus headline (16-epoch recipe; converged +0.243). `PAPER2X2_RESULTS.md`
-- Dyck "in distribution / training length" (it is 3x the training depth). `DYCK_LADDER_RESULTS.md`
+- Dyck: the 4-layer +0.168 as a capability result, and "depth closes 40% of the gap then stops" (index arms keep climbing and hit ceiling at matched depth). `DYCK_MDEPTH_RESULTS.md`
+- "Per-head rank, cross-head sharing and W_out scale are unseparated" (separated 2026-09-25: it is per-head rank). `RANK_SEP_RESULTS.md`
 - "Nobody varies sign or rank deliberately" (Grazzi varies sign; MapFormer ablates r) and "Mamba-3 is the first to claim both slots" (Selective RoPE, earlier). `papers/txt/`
 - "PoPE's Table 5 does not replicate" (stale checkpoint + 5% val; NoSigma cell unmeasured). `ABLATE_RESULTS.md`
 - Dyck "depth substitutes, 4.4x" (width confound); Dyck F1 as a headline (inflates position 2.3x). `DYCK_LADDER_RESULTS.md`, `DYCK_LITERATURE_METRICS.md`

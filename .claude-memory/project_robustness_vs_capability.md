@@ -40,3 +40,11 @@ depths it never saw; handling them is a robustness property worth having, not "a
   suggestive, not established.
 - Related: [[project-mappope-asymmetry]], [[project-rank-and-selective-rope]],
   [[feedback-validate-task-first]].
+
+**2026-09-25, the sharpest instance yet.** Dyck's +0.168 at 4 layers was the language line's last
+positive result. Trained at the depth it was tested at (`DYCK_MDEPTH_RESULTS.md`) it CLOSES: every
+4-layer arm reaches ceiling (index 0.997-0.998, path 1.000, floor 0.594) and the effect is +0.002.
+So "matched length" was not enough -- the training DISTRIBUTION has to match on every axis the task
+varies (here nesting depth). What survives at matched depth is depth-substitution: +0.353 at 1 layer
+falling to +0.024 at 4. Mixture training over depths 4..12 keeps +0.110, so varying the axis in
+training preserves the effect; fixing it at the test value removes it.
