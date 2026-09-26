@@ -218,21 +218,21 @@ footer{
 <header class="mast">
   <div class="eyebrow">MapFormer &times; PoPE &mdash; positional encodings on language</div>
   <h1>Position codes<br>on <em>language</em></h1>
-  <p class="standfirst">Two recent papers change how a transformer represents <em>where</em> a token is. <strong>MapFormer</strong> replaces the token&rsquo;s index with a learned running sum, built for navigation; <strong>PoPE</strong> separates what a token is from where it is. This work tested both on language-like data &mdash; bracket languages, real code, text and music &mdash; and re-checked MapFormer&rsquo;s navigation results at the length they were trained on. <strong>The clearest results: on bracket languages path integration keeps an advantage that extra depth cannot buy when brackets nest deeper than in training; PoPE&rsquo;s encoding improves MapFormer; and MapFormer&rsquo;s low-rank bottleneck is what makes its navigation solution hard to find.</strong></p>
+  <p class="standfirst">Two recent papers change how a transformer represents <em>where</em> a token is. <strong>MapFormer</strong> replaces the token&rsquo;s index with a learned running sum, built for navigation; <strong>PoPE</strong> separates what a token is from where it is. This work tested both on language-like data &mdash; bracket languages, real code, text and music &mdash; and re-checked MapFormer&rsquo;s navigation results at the length they were trained on. <strong>The clearest results: on bracket languages one layer of path integration is worth about three layers of ordinary attention; PoPE&rsquo;s encoding improves MapFormer; and what makes MapFormer&rsquo;s navigation solution hard to find is the rank of each attention head&rsquo;s position map.</strong></p>
   <dl class="metastrip">
     <div><dt>Tasks</dt><dd>Dyck-2, real Python, enwik8, Indirect Indexing, Bach Chorales; torus navigation</dd></div>
     <div><dt>Standard</dt><dd>3&ndash;8 seeds, all arms in one batch; newer results tested with exact permutation and Fisher tests</dd></div>
     <div><dt>Every result</dt><dd>reported beside the score of a model with no memory</dd></div>
-    <div><dt>As of</dt><dd>25 Sep 2026</dd></div>
+    <div><dt>As of</dt><dd>26 Sep 2026</dd></div>
   </dl>
 </header>
 
 <div class="short">
   <h2>The short version</h2>
   <ol>
-    <li><strong>Path integration beats ordinary positions on Dyck-2 when brackets nest deeper than in training, and depth doesn&rsquo;t close that gap.</strong> +0.17 at four layers, 8/8 seeds, at the training length but three times the training depth; standard models plateau around 0.77 there. At the training depth itself, extra layers do close most of it (+0.29 at one layer, +0.02 at four).</li>
+    <li><strong>On Dyck-2, one layer of path integration is worth about three layers of ordinary attention.</strong> Trained and tested on the same bracket depth: +0.35 at one layer, +0.13 at two, +0.05 at three, +0.02 at four (8/8 seeds each). It buys parameter efficiency, not something depth cannot reach &mdash; given four layers and enough training, ordinary models get there too.</li>
     <li><strong>PoPE&rsquo;s encoding also improves MapFormer.</strong> At the training length the combined model beats MapFormer on every task where PoPE helps and is never detectably worse &mdash; so when a task needs path integration, add PoPE on top. Where position only counts tokens, plain PoPE (music) or plain RoPE (code) is better.</li>
-    <li><strong>MapFormer&rsquo;s low-rank bottleneck limits it.</strong> Trained and tested on long navigation walks, a rank-4 bottleneck finds the solution on 8 of 8 seeds and rank-2 versions on 0 to 2 of 8 &mdash; though rank 2 can represent and hold that solution. It is a problem of finding it.</li>
+    <li><strong>MapFormer&rsquo;s bottleneck limits it, and the deciding number is per attention head.</strong> On long navigation walks, every version giving each head a rank-2 position map finds the solution on 0 to 2 of 8 seeds; every rank-4 version on 8 of 8 &mdash; though rank 2 can represent and hold that solution. It is a problem of finding it.</li>
     <li><strong>Three published results replicate</strong>: MapFormer on Dyck-2, and PoPE on both Indirect Indexing and Bach Chorales.</li>
     <li><strong>A 48-parameter fix matches a 786k-parameter one.</strong> A simple distance penalty in attention repairs long-context failures on Bach, and improved every model on real code.</li>
     <li><strong>A simple data trick beats PoPE&rsquo;s published Bach score</strong> by a wide margin &mdash; 0.394 against their 0.489.</li>
@@ -258,26 +258,27 @@ footer{
 
 <!-- ============ HEADLINE ============ -->
 <section>
-  <h2>Path integration on Dyck-2, at unseen nesting depth</h2>
-  <p class="sectmeta">bracket language &middot; width fixed, depth varied &middot; 4 models &times; 8 seeds &times; 4 depths, one batch</p>
-  <p>Dyck-2 is the language of balanced brackets, <code>(</code> <code>)</code> <code>[</code> <code>]</code>. To predict which closer is legal, a model must track a stack whose depth goes up on every opener and down on every closer &mdash; a signed quantity, which is exactly what a running sum represents and a token counter cannot. The natural objection is that a deeper standard transformer can learn to track the stack through attention alone. So width was held fixed and only depth varied:</p>
+  <h2>Path integration on Dyck-2: worth about three layers</h2>
+  <p class="sectmeta">bracket language &middot; trained and tested at the same nesting depth &middot; width fixed &middot; 8 seeds per cell, one batch of 210 runs</p>
+  <p>Dyck-2 is the language of balanced brackets, <code>(</code> <code>)</code> <code>[</code> <code>]</code>. To predict which closer is legal, a model must track a stack whose depth goes up on every opener and down on every closer &mdash; a signed quantity, which is exactly what a running sum represents and a token counter cannot. The natural objection is that a deeper standard transformer can learn to track the stack through attention alone. So width was held fixed and only the number of layers varied, with the models trained on the same bracket depth they were tested on:</p>
   <div class="tablewrap">
     <table>
       <thead><tr><th>layers</th><th>standard models<br>RoPE / PoPE</th><th>path-integrated<br>MapWM / MapPoPE</th><th>advantage of<br>path integration</th></tr></thead>
       <tbody>
-        <tr><td>1</td><td>0.657 / 0.667</td><td>0.915 / 0.988</td><td class="best">+0.290</td></tr>
-        <tr><td>2</td><td>0.740 / 0.765</td><td>0.937 / 0.987</td><td class="best">+0.209</td></tr>
-        <tr><td>3</td><td>0.760 / 0.777</td><td>0.934 / 0.920</td><td class="best">+0.159</td></tr>
-        <tr class="hero"><td>4</td><td>0.755 / 0.781</td><td>0.923 / 0.949</td><td class="best">+0.168</td></tr>
-        <tr class="floor"><td>no memory at all</td><td colspan="2">~0.51</td><td>&mdash;</td></tr>
+        <tr><td>1</td><td>0.648 / 0.640</td><td>0.996 / 0.998</td><td class="best">+0.353</td></tr>
+        <tr><td>2</td><td>0.889 / 0.850</td><td>1.000 / 1.000</td><td class="best">+0.130</td></tr>
+        <tr><td>3</td><td>0.964 / 0.946</td><td>1.000 / 1.000</td><td class="best">+0.045</td></tr>
+        <tr><td>4</td><td>0.982 / 0.971</td><td>1.000 / 1.000</td><td class="best">+0.024</td></tr>
+        <tr class="hero"><td>4, with 3&times; the training budget</td><td>0.998 / 0.997</td><td>1.000 / 1.000</td><td>+0.002</td></tr>
+        <tr class="floor"><td>no memory at all</td><td colspan="2">0.594</td><td>&mdash;</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="caption">Closing-bracket accuracy (Hewitt et al. 2020, chance 0.500) at the training length (32) and three times the training depth (12 against 4); 2 heads, d=128 throughout. <b>Every row is 8/8 seeds and clears its minimum detectable effect.</b> At the training depth itself the advantage is +0.293, +0.081, +0.048 and +0.019 at one to four layers (8/8 each; a standard model reaches 0.979 at four layers).</p>
+  <p class="caption">Closing-bracket accuracy over positions where a closer is possible (after Hewitt et al. 2020; chance 0.500, a perfect predictor 1.000); 2 heads, d=128 throughout. <b>Every row is 8/8 seeds.</b> The first four rows share one training budget; the last gives every model three times as much, at which point the standard models reach the ceiling too and the advantage disappears.</p>
   <ul class="findings">
-    <li><span class="chip det">8/8 seeds</span><strong>Depth closes about 40% of the gap, then stops.</strong> Standard models stop improving after two or three layers; three and four layers are indistinguishable (+0.159 vs +0.168). Path integration buys something extra depth does not.</li>
-    <li><span class="chip warn">Scope</span><strong>It is an effect at unseen nesting depth.</strong> Length, width and batch are matched and a no-memory floor is reported, but the headline depth is three times the training depth. At the training depth, depth nearly closes the gap &mdash; so what path integration buys here is robustness to deeper nesting than it was trained on.</li>
-    <li><span class="chip warn">Scope</span><strong>It is a stack-tracking effect, not a long-context one.</strong> At four times the training length the advantage disappears from three layers up.</li>
+    <li><span class="chip det">8/8 seeds</span><strong>Depth substitutes for it, roughly three layers to one.</strong> A one-layer path-integrated model matches a three-to-four-layer standard one. The advantage shrinks steadily with depth and vanishes at four layers once the standard models are trained long enough &mdash; so this is parameter efficiency, not a capability only path integration has.</li>
+    <li><span class="chip bad">Corrected</span><strong>An earlier version of this page reported +0.168 at four layers.</strong> That came from models trained on bracket depth 4 and tested at depth 12. Retrained at the depth they are tested on, the four-layer gap closes &mdash; it was extrapolation to unseen nesting depth, not a depth-proof advantage. The same batch also settled two side worries: the frequency setting of the standard models makes no difference, and their apparent plateau was partly just training budget.</li>
+    <li><span class="chip det">8/8 seeds</span><strong>Varying depth during training keeps the advantage.</strong> Training on a mixture of depths 4 to 12 leaves +0.110 at depth 12 with four layers. What removes the effect is training at one fixed depth with enough layers and budget &mdash; not depth-matching as such.</li>
   </ul>
   <p style="margin-top:22px">It agrees in direction with MapFormer&rsquo;s own navigation result, measured at the training length: with a converged training recipe, path integration beats a matched index model by <strong class="num">+0.243</strong> (8/8; 0.971 against 0.805, floor 0.506). The two tasks share the property that makes a signed running sum useful &mdash; position that can move backwards.</p>
 </section>
@@ -374,16 +375,18 @@ footer{
       <tbody>
         <tr><td>our shared rank 2</td><td>2</td><td>0 / 8</td><td>0.894</td></tr>
         <tr><td>per-head rank 2 (literal reading of the paper)</td><td>2</td><td>2 / 8</td><td>0.885</td></tr>
+        <tr><td>rank 4, heads kept separate</td><td>2</td><td>2 / 8</td><td>0.948</td></tr>
         <tr class="hero"><td>shared rank 4</td><td>4</td><td class="best">8 / 8</td><td class="best">0.998</td></tr>
+        <tr class="hero"><td>per-head rank 4</td><td>4</td><td class="best">8 / 8</td><td class="best">0.999</td></tr>
         <tr class="floor"><td>no memory at all</td><td colspan="2">&mdash;</td><td>0.506</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="caption">Within 900 epochs; &ldquo;finds the solution&rdquo; = final training loss below 0.05. Rank 4 against either rank 2: Fisher p = 0.0002 and 0.007, permutation p = 0.0005 and 0.007.</p>
+  <p class="caption">Within 900 epochs; &ldquo;finds the solution&rdquo; = final training loss below 0.05. All five differ only in this bottleneck &mdash; every other starting weight is identical at each seed. The split follows the third column exactly, and the total size of the bottleneck does not track it: rows 2 and 4 are the same size and land on opposite sides.</p>
   <ul class="findings">
-    <li><span class="chip det">8/8 vs 2/8</span><strong>Rank 4 wins at the same total size.</strong> The per-head version has the same four latent dimensions in total as rank 4 and identical starting inputs, yet solves 2 of 8. What is responsible &mdash; how many dimensions drive each head&rsquo;s angle, whether the heads share them, or the output layer&rsquo;s scale &mdash; is not yet separated. The paper states a per-head input layer but not the output layer&rsquo;s shape; read literally its rank 2 is the per-head row, but with a full output layer it would be the rank-4 row.</li>
+    <li><span class="chip det">8/8 vs 2/8</span><strong>What decides it is the rank per attention head.</strong> Two further versions separate the candidates: whether the heads share one set of dimensions makes no measurable difference, and neither does the output layer&rsquo;s scale. Only the number of dimensions driving each individual head&rsquo;s angle does (p = 0.007). The paper states a per-head input layer but not the output layer&rsquo;s shape; read literally its rank 2 is a 2-of-8 row, but with a full output layer it would be an 8-of-8 row.</li>
     <li><span class="chip det">Existence</span><strong>Rank 2 can represent and hold the solution &mdash; it just rarely finds it.</strong> Squeezing a trained rank-4 model to rank 2 keeps 0.995 accuracy; trained further from there, rank 2 keeps it on 7 of 8 seeds, like rank 4. So the problem is search, not capacity.</li>
-    <li><span class="chip warn">Scope</span><strong>One task, one length, two heads, a fixed budget.</strong> Rank 2 was shown to hold the solution for our shared version; for the per-head version that is inferred.</li>
+    <li><span class="chip warn">Scope</span><strong>One task, one length, two heads, a fixed budget.</strong> Rank 2 was shown to hold the solution for our shared version; for the per-head versions that is inferred. Rank 3 per head is untested.</li>
   </ul>
 </section>
 
@@ -419,7 +422,7 @@ footer{
   <h2>Next</h2>
   <p class="sectmeta">ranked by how much each could change the picture</p>
   <ul class="findings">
-    <li><span class="chip plain">Next</span><strong>Dyck at the training depth, and the remaining navigation checks.</strong> The Dyck advantage and three earlier navigation results (sign, a correction filter, a forget gate) have only been measured past what training covered; rank has now been checked and held.</li>
+    <li><span class="chip plain">Next</span><strong>The remaining navigation checks.</strong> Three earlier results (sign, a correction filter, a forget gate) have still only been measured past what training covered. Dyck and rank have now both been checked; Dyck's four-layer claim did not survive, rank's did.</li>
     <li><span class="chip plain">Next</span><strong>MAESTRO</strong>, ~200 hours of piano, large enough to avoid overfitting &mdash; the direct test of whether PoPE&rsquo;s gain survives without that ceiling. About two days.</li>
     <li><span class="chip plain">Next</span><strong>Pointer arithmetic that generalises.</strong> Both models currently memorise Indirect Indexing shift by shift; the design analysis suggests a specific architectural change that should let it be done as arithmetic.</li>
   </ul>
