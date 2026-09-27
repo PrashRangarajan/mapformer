@@ -257,3 +257,20 @@ class MapFormerWM_Level15Looped(MapFormerWM_Level15InEKF):
         for _ in range(self.n_loops):
             x = block(x, cos_a, sin_a, m)
         return self.out_proj(self.out_norm(x))
+
+
+class MapFormerWM_L4(MapFormerWM):
+    """Depth/compute control for the loop (LOOP_RANK_PREREG.md): 4 REAL layers at r=2.
+
+    Same 4 passes per step as `Looped`, but 3.9x the parameters (799,189 vs 204,373). It is a
+    distinct variant name only so it does not collide with 1-layer `Vanilla` in one run dir; it
+    does NOT silently override --n-layers (the Hourglass trap, CLAUDE.md rule 17) -- it REQUIRES
+    n_layers=4 and raises otherwise, so the checkpoint config always records the truth.
+    """
+
+    def __init__(self, vocab_size, d_model=128, n_heads=2, n_layers=4,
+                 dropout=0.1, grid_size=64, bottleneck_r=2, **kw):
+        if n_layers != 4:
+            raise ValueError(f"Vanilla_L4 is the 4-layer control; got n_layers={n_layers}. "
+                             "Pass --n-layers 4.")
+        super().__init__(vocab_size, d_model, n_heads, 4, dropout, grid_size, bottleneck_r)

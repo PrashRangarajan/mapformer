@@ -109,6 +109,7 @@ from mapformer.model_rank import (MapFormerWM_r3, MapFormerWM_r4,
 from mapformer.model_rank import MapFormerEM_r4, MapFormerEM_r8
 from mapformer.model_selective import (MapFormerWM_SRoPEGen, MapFormerWM_NoBottleneck,
                                       MapFormerWM_ConvAngle, MapFormerWM_GateAngle)
+from mapformer.model_looped import MapFormerWM_L4
 from mapformer.model_looped import (MapFormerWM_Looped, MapFormerWM_RoPE_Looped,
                                     MapFormerWM_LoopedRefine, MapFormerWM_LoopedSampled,
                                     MapFormerWM_Level15Looped)
@@ -314,6 +315,7 @@ VARIANT_MAP = {
     "PC":         MapFormerWM_PredictiveCoding,
     "RoPE":       MapFormerWM_RoPE,
     "Looped":     MapFormerWM_Looped,        # 1 shared block x4, path-integrated
+    "Vanilla_L4": MapFormerWM_L4,            # 4 real layers, r=2 (loop depth control)
     "LoopedRefine": MapFormerWM_LoopedRefine,  # ...+ theta refined each pass
     "LoopedSampled": MapFormerWM_LoopedSampled,  # ...loop count sampled in training
     "RoPELooped": MapFormerWM_RoPE_Looped,   # 1 shared block x4, index
