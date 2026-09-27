@@ -37,11 +37,12 @@ replication in a new regime).
 | what | where |
 |---|---|
 | live state (running, next) | `.claude-memory/project_state.md` -- read first |
-| catalogue of every results file | `RESULTS_INDEX.md` (last regenerated 2026-09-11: missing Dyck/Bach/code/rank-matched; the tables below are current) |
+| orientation for a fresh session (thesis, what survives, what is open, what is stale) | `docs/WHERE_THINGS_STAND.md` -- read second |
+| catalogue of every results file | `RESULTS_INDEX.md` (regenerated 2026-09-24, corrected 2026-09-25: catalogue says 444 top-level `*.md`, there are 455; its Dyck and rank rows are stale; the tables below are current). Regenerate with `docs/tools/catalog_results_index.py` |
 | EM/WM and position-kernel line | `EM_WM_STATE.md`, `AUDIT_2026-09-10.md` |
 | guards | `GUARDS.md`; `python3 -m mapformer.test_guards` from `/home/prashr`; `python3 -m mapformer.experiment_audit --runs-dir D --control TWIN --control-of ARM` before reading any run dir |
 | void / stale results | `archive/void/` (bannered), `archive_stale/`; code bugs `KNOWN_BUGS.md` |
-| documents | `positional_review.pdf` (review), `axes_measured.pdf` (results paper), `mapformer_math.pdf` (record), `report/report.pdf`, `report/report_short.pdf`; corpus `papers/INDEX.md` (40 papers, read first-hand -- grep, don't re-search) |
+| documents | `positional_review.pdf` (review), `axes_measured.pdf` (results paper), `mapformer_math.pdf` (record), `report/report.pdf`, `report/report_short.pdf` -- **all five last corrected 2026-09-25, BEFORE the Dyck matched-depth and rank-separation batches: stale, per-file list in `docs/WHERE_THINGS_STAND.md`**; corpus `papers/INDEX.md` (40 papers, read first-hand -- grep, don't re-search) |
 | shared report | https://claude.ai/artifact/LVfYeHhjs1KjwMpg3Pxggc, source `report/language_summary.html`; republish WITH `url=` or the user's link breaks |
 | run dirs of the Dyck / Bach / Indirect line | `docs/LOG.md`, block 2026-09-15..20 (`DYCK_T3_RESULTS.md` is an empty artefact) |
 | model aliases | `train_variant.py::VARIANT_MAP`: MapWM-Flat=Vanilla, MapEM-Flat=VanillaEM, MapWM-Hier=Hourglass_k2, MapWM-FlatHG=HourglassFlat3; Plain-* use index RoPE |
@@ -57,9 +58,9 @@ what survives there is depth-substitution (1 layer of path integration ~ 3 layer
 | result | numbers | file |
 |---|---|---|
 | Path integration helps on the paper's torus task, at training length | converged recipe: position **+0.243** (MDE 0.038, 8/8), index RoPE 0.805, path 0.971; grows to +0.359 at 8x. The often-quoted +0.461 is the 16-epoch recipe, where the index arm never left the 0.506 floor | `PAPER2X2_RESULTS.md` (not `BASELINE_TABLE.md`'s +0.461) |
-| ...and is necessary for in-context maps (Match-Query) | 0.730 +/- 0.247 (n=5) vs index 0.154, chance 0.0625; context destruction 0.918 -> 0.074 | `MATCH_QUERY_SCALE.md` |
+| ...and is necessary for in-context maps (Match-Query) | 0.730 +/- 0.247 (n=5) vs index 0.154, chance 0.0625; context destruction 0.918 -> 0.074 | `MATCH_QUERY_SCALE.md`; the destruction pair is in `MATCH_QUERY_RESULTS.md` |
 | Boundary: map extent, a threshold | -0.010 / +0.015 / +0.305 at 32 / 128 / 512 occupied cells, matched aliasing | `ALIASING_CONTROLLED.md`, `VISITS_TEST.md` |
-| Boundary: rotation actions; allocentric recoding fixes it | +0.050 -> +0.488 (8/8); 12 headings +0.26..+0.38 | `ALLOCENTRIC_RECODING.md`, `H12_BUDGET_CURVE.md` |
+| Boundary: rotation actions; allocentric recoding fixes it | +0.050 -> +0.488 (8/8); 12 headings +0.26..+0.38 | `KNOB_SWEEP_n8.md` (the 8/8 pair), `H12_BUDGET_CURVE.md`; `ALLOCENTRIC_RECODING.md` is the n=3 mechanism run (+0.049 -> +0.485) |
 | Dyck: path integration is worth ~3 layers of attention, at matched depth | trained AND tested at L32 D12 (`DYCK_MDEPTH_RESULTS.md`): position main +0.353 / +0.130 / +0.045 / +0.024 at 1-4 layers (8/8 each, A2f, floor 0.594). At 4 layers and 3x budget every arm is at ceiling (index 0.997-0.998, path 1.000; effect +0.002): **the ladder's +0.168 at 4L was depth extrapolation, trained at D4**. Mixture training (D in 4..12) keeps +0.110 at D12. Settled in the same batch: index base 32 vs 10000 within MDE at 4L; the 1x ladder budget limits the index arms (+0.021) | `DYCK_MDEPTH_RESULTS.md`, `DYCK_LADDER_RESULTS.md` |
 | Sign of the increment (replicates Sarrof / Grazzi / SRoPE in a new regime) | at T=512/1024 (trained 128): signed beats index +0.123 / +0.195 (12/12), monotone does not; opposition 0.11 vs 1.85-1.98. **At training length monotone scores 0.90-0.98 vs index 0.80: the accuracy cost is extrapolation-only; no matched-length control** | `SIGN_ABLATION.md` |
 | Clock/map crossover | monotone costs -0.280 torus, -0.004 recency; magnitude-matched content increment +0.594 (8/8) | `RECENCY_RESULTS.md`, `RECENCY_GATE_ABLATION.md` |
@@ -97,7 +98,7 @@ number.
 registered verdict UNMEASURED). At T=1024/900 ep: r=2 + loop x4 (bit-identical params and init to
 r=2) solves 2/8 with accuracy 0.973; r=2 at 4 real layers 5/8 and 0.990; plain r=2 0/8 and 0.894;
 r=4 8/8 and 0.998. Both aids fire on accuracy (perm p 0.0034 / 0.0012); only depth fires on solved
-count (Fisher 0.026). Final losses form three regimes (r=2 0.05-0.68, the aids 0.03-0.13, r=4
+count (Fisher 0.026). Final losses form three regimes (r=2 0.05-0.68, the aids 0.011-0.13, r=4
 0.002-0.010): extra search leaves r=2's regime but never enters r=4's. The registered 0.05 cutoff
 falls inside the aids' spread -- at 0.08+ H1's condition would have been met, so the verdict is
 uncertain rather than negative. Depth (4x params) beats the matched-parameter loop, so this is NOT

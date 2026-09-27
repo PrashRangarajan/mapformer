@@ -2,6 +2,9 @@ Rules and conventions live in CLAUDE.md (rules 1-28); these files hold the why a
 
 ## State and findings
 - [Project state](project_state.md) -- **read first.** Live state only: running, queued, pending decisions.
+- `docs/WHERE_THINGS_STAND.md` -- **read second.** One-page orientation: the thesis (most effects here
+  are robustness, not capability, and close at matched distribution), what survives with its numbers,
+  what is open ranked with costs, and the per-file list of what the documents still get wrong.
 - [Robustness is not capability](project_robustness_vs_capability.md) -- matched length AND depth decide; OOD-only effects are robustness.
 - [Rank, and Selective RoPE](project_rank_and_selective_rope.md) -- per-head rank decides it: rank 2 per head 0-2/8, rank 4 8/8; sharing and scale unmeasured.
 - [PoPE/MapFormer asymmetry](project_mappope_asymmetry.md) -- PoPE's encoding helps the path row; path integration hurts PoPE on clocks.

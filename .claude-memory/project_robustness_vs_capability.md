@@ -13,7 +13,8 @@ metadata:
   left the 0.506 floor. Dyck ladder (`DYCK_LADDER_RESULTS.md`, fixed width): training is L32 **D4**,
   where the position effect is +0.293 / +0.081 / +0.048 / +0.019 at 1-4 layers (index 0.979 at 4L);
   the +0.290 / +0.209 / +0.159 / +0.168 at L32 D12 is matched LENGTH but **3x the training nesting
-  depth** -- an extrapolation in the variable the claim is about, and owed a matched-depth control.
+  depth** -- an extrapolation in the variable the claim is about. **That control ran (2026-09-25)
+  and the effect CLOSED: see the last block of this file. Do not quote +0.168.**
 - **Every "helps at OOD length" claim that got a matched-length control died.** Code: -3.694 bpc
   extrapolating from 512 became -0.0030 (unmeasured) at matched 2048, and the composition claim
   reversed (`CODE_RESULTS.md`, `CODE_DECAY_RESULTS.md`, `runs/code2048`). The MapFormer paper's Dyck
@@ -25,6 +26,9 @@ metadata:
   T=1024 (perm p 0.0003) -- registered verdict UNREADABLE (4 r=2 runs still descending;
   `RANK_MATCHED_RESULTS.md`). A rank-2 projection of each solved r=4 scores 0.995 at T=1024 on 8/8
   seeds (`RANK_PROJ_FROZEN.md`), so r=2 can REPRESENT the solution: the gap is search, not capacity.
+  **Settled since** (`RANK_SEP_RESULTS.md`, `LOOP_RANK_RESULTS.md`): the factor is per-head rank,
+  and search aids move rank 2 a long way without reaching rank 4's regime. This is the one place
+  where a matched-distribution control did NOT kill the effect -- see [[project-rank-and-selective-rope]].
 - **Never had a matched control:** InEKF / Level15, forget gate, PoPE-wrapping, rotate/allocentric.
   All trained T=128 and read at T=512/1024 (allocentric also at the 16-epoch recipe).
 

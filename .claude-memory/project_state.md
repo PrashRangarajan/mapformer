@@ -1,39 +1,59 @@
 ---
 name: project-state
-description: LIVE STATE ONLY -- what is running, what the user must decide, the last results. History is docs/LOG.md; citable and withdrawn claims are in CLAUDE.md.
+description: LIVE STATE ONLY -- what is running, what the user must decide, the last results. History is docs/LOG.md; citable and withdrawn claims are in CLAUDE.md; orientation is docs/WHERE_THINGS_STAND.md.
 metadata:
   type: project
 ---
 
-Written 2026-09-24 ~23:00. Goes stale fast: check `git log`, `.done` markers and results files first.
-Not pushed (`main` well ahead of `origin/main`).
+Written 2026-09-27 ~15:30, at the end of a long session, as a hand-off. Goes stale fast: check
+`git log`, `.done` markers and the results files first. New here? Read
+`docs/WHERE_THINGS_STAND.md` next -- thesis, what survives, what is open, what is stale.
 
 ## Running
-Nothing.
+**Nothing.** No `mapformer` python3 process; both 4090s idle (22 / 49 MiB). Working tree clean
+apart from `runs/rank_mi/p0/` (absolute symlinks, deliberately untracked) and
+`runs/rank_matched_e900/.code_md5.now`. `main` is well ahead of `origin/main`; **not pushed**.
 
 ## Last results (all committed)
-- **Dyck CLOSES at matched depth** (`DYCK_MDEPTH_RESULTS.md`, 210 runs, 2026-09-25): trained at L32 D12,
-  all 4-layer arms at ceiling (index 0.997-0.998, path 1.000, floor 0.594), effect +0.002. The ladder's
-  +0.168 was depth extrapolation from D4. Survives: depth-substitution (+0.353 1L -> +0.024 4L) and
-  mixture training over D 4..12 (+0.110). Closed in the same batch: the RoPE base confound at 4L; the
-  1x ladder budget limits index arms (+0.021).
-- **Rank resolves to PER-HEAD rank** (`RANK_SEP_RESULTS.md`): rank 2 per head 0/8, 2/8, 2/8; rank 4 per
-  head 8/8, 8/8. Sharing (D-C) and W_out scale (C_bd-B) unmeasured; initial angle scale excluded.
-  Supersedes the "unseparated" caveat in `RANK_MI_RESULTS.md`.
-- Shared report at v8 (Dyck headline replaced by depth-substitution; rank section updated).
-- Earlier: the 2026-09-24 audits and code fixes (`docs/audits/2026-09-24/`), CLAUDE.md 183 KB -> 23 KB.
+- **H1: search aids partly recover rank 2, registered verdict UNMEASURED** (`LOOP_RANK_RESULTS.md`,
+  2026-09-27). At T=1024, 900 ep, 8 seeds: r=2 + loop x4 (bit-identical params/init to r=2) solves
+  2/8, acc 0.973; r=2 at 4 real layers 5/8, 0.990; plain r=2 0/8, 0.894; r=4 8/8, 0.998. Both aids
+  fire on accuracy, only depth on solved count. Three loss regimes; nothing at rank 2 reaches r=4's.
+  The registered 0.05 cutoff sits inside the new arms' spread (at 0.08+ H1 passes), so uncertain,
+  not negative. Depth with 4x params beats the matched-param loop: NOT "search at constant capacity".
+- **Rank resolves to PER-HEAD rank** (`RANK_SEP_RESULTS.md`, 2026-09-25): per-head rank 2 -> 0/8,
+  2/8, 2/8; per-head rank 4 -> 8/8, 8/8. Decisive contrast D - C_bd (both block-diagonal), Fisher
+  and permutation p 0.0070. Sharing (D-C) and `W_out` per-entry scale (C_bd-B) UNMEASURED; initial
+  angle scale excluded. Supersedes the "unseparated" caveat in `RANK_MI_RESULTS.md`.
+- **Dyck CLOSES at matched depth** (`DYCK_MDEPTH_RESULTS.md`, 210 runs, 2026-09-25): trained AND
+  tested at L32 D12, every 4-layer arm at ceiling (index 0.997-0.998, path 1.000, floor 0.594),
+  effect +0.002. The ladder's +0.168 was depth EXTRAPOLATION from D4. Survives: depth-substitution
+  (+0.353 / +0.130 / +0.045 / +0.024 at 1-4 layers) and mixture training over D 4..12 (+0.110 at
+  D12). Closed in the same batch: the RoPE base confound at 4L; the 1x ladder budget WAS limiting
+  the index arms (+0.021).
+- Shared report at v8. The 2026-09-24 audits and code fixes are in `docs/audits/2026-09-24/`; the
+  review scripts behind them, and behind the rank line, in `docs/audits/2026-09-24/rank_review*/`
+  and `docs/audits/2026-09-25/rank_mi_review/` (rescued from a scratchpad 2026-09-27).
 
 ## Waiting on the user
-1. The .tex documents and RESULTS_INDEX still carry the OLD Dyck framing (+0.168 at 3x depth as the
-   language line's positive result) and the "unseparated" rank caveat. Both are now superseded -- a
-   correction pass like 2026-09-25's is needed.
-2. Experiments, cheapest first: code checkpoints rescored on the full val file (eval-only, 1-2 GPU-h; settles
-   the code "reversal", p ~0.1); Dyck control at matched nesting depth (~3 GPU-h); sign at matched length
-   (10-20 GPU-h); rank-2 at r=4's W_out init scale (~2 h).
+1. **The documents rewrite.** The five `.tex` files and `RESULTS_INDEX.md` were corrected
+   2026-09-25, BEFORE the two batches above, so they still carry the old Dyck framing (+0.168 at 3x
+   depth as the language line's positive result) and the "unseparated" rank caveat. Per-file list
+   in `docs/WHERE_THINGS_STAND.md`; use `docs/prepared/tex_edits_2026-09-25/rep.py`.
+2. **Which experiment next.** Ranked with costs in `docs/WHERE_THINGS_STAND.md`. Cheapest first:
+   code checkpoints rescored on the full val file (eval-only, 1-2 GPU-h); rank 3 per head (~4 h);
+   a longer budget for the H1 arms, several of which were still descending (~6 h); the H3
+   cancellation-knob dose-response (~10 h); sign at matched length (10-20 GPU-h).
 
 ## Known loose ends
-- md5 guards abort resuming any pre-2026-09-24 series (training files changed bit-identically); regenerate
-  `code_md5.txt` deliberately to resume.
-- `analyze_dyck_depth.py` pairs arms by list position (same bug fixed in the ladder); committed numbers fine.
-- Eight results files sit in /home/prashr, outside the repo (`MINIWORLD_GATES.md` exists only there).
+- md5 guards abort resuming any pre-2026-09-24 series (training files changed bit-identically);
+  regenerate `code_md5.txt` deliberately to resume.
+- `runs/rank_mi/p0` reuses ten arms by ABSOLUTE symlink into `runs/rank_matched_e900` and
+  `runs/rank_perhead_pilot`. Deleting either breaks the rank_mi batch. Not committed for that reason.
+- `analyze_dyck_depth.py` pairs arms by list position (same bug fixed in the ladder); committed
+  numbers fine.
 - Jobs per GPU not re-measured with `--fast-attn`.
+- `/home/prashr/*.md` (outside the repo, rule 25 damage) is now accounted for: `MINIWORLD_GATES.md`
+  is byte-identical to the repo's `MINIWORLD_GATES_FIXED.md`; `HEX_EMERGENCE_RESULTS.md` is a
+  smaller-sample variant of a void'd file; `MODEOMEGA_{FINEGRAINED,LESION}.md` were archived to
+  `archive/void/`. Nothing there is unique any more.
