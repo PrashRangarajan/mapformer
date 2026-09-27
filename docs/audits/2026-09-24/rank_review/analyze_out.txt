@@ -1,0 +1,36 @@
+== overall (eval_noise_refine), trained at T=1024 ==
+  acc T=512                          r2 0.759  r4 0.899  d +0.141  MDE 0.211  7/8 positive  unmeasured
+  NLL T=512 (negative = r4 better)   r2 0.667  r4 0.259  d -0.408  MDE 0.626  1/8 positive  unmeasured
+  acc T=1024  [PRIMARY]              r2 0.741  r4 0.898  d +0.157  MDE 0.203  7/8 positive  unmeasured
+  NLL T=1024 (negative = r4 better)  r2 0.758  r4 0.272  d -0.486  MDE 0.602  1/8 positive  unmeasured
+  acc T=2048                         r2 0.700  r4 0.875  d +0.176  MDE 0.184  7/8 positive  unmeasured
+  NLL T=2048 (negative = r4 better)  r2 0.986  r4 0.500  d -0.486  MDE 0.582  2/8 positive  unmeasured
+
+== strata, NEW trained T=1024 ==
+  T=1024 all (floor 0.506)           r2 0.741  r4 0.898  d +0.157  MDE 0.203  7/8 positive  unmeasured
+  T=1024 plain_lag<128 (floor 0.506) r2 0.765  r4 0.899  d +0.134  MDE 0.211  7/8 positive  unmeasured
+  T=1024 plain_lag>=128 (floor 0.500) r2 0.674  r4 0.897  d +0.224  MDE 0.219  7/8 positive  DETECTABLE
+  T=1024 wrap (floor 0.507)          r2 0.563  r4 0.882  d +0.319  MDE 0.169  8/8 positive  DETECTABLE
+  T=2048 all (floor 0.508)           r2 0.700  r4 0.875  d +0.176  MDE 0.184  7/8 positive  unmeasured
+  T=2048 plain_lag<128 (floor 0.509) r2 0.763  r4 0.898  d +0.135  MDE 0.206  7/8 positive  unmeasured
+  T=2048 plain_lag>=128 (floor 0.508) r2 0.620  r4 0.873  d +0.253  MDE 0.192  7/8 positive  DETECTABLE
+  T=2048 wrap (floor 0.507)          r2 0.508  r4 0.793  d +0.284  MDE 0.197  8/8 positive  DETECTABLE
+
+== strata, OLD trained T=128 ==
+  T=1024 all (floor 0.506)           r2 0.834  r4 0.919  d +0.085  MDE 0.067  8/8 positive  DETECTABLE
+  T=1024 plain_lag<128 (floor 0.506) r2 0.903  r4 0.999  d +0.096  MDE 0.078  8/8 positive  DETECTABLE
+  T=1024 plain_lag>=128 (floor 0.500) r2 0.563  r4 0.625  d +0.062  MDE 0.143  4/8 positive  unmeasured
+  T=1024 wrap (floor 0.507)          r2 0.416  r4 0.413  d -0.003  MDE 0.100  4/8 positive  unmeasured
+  T=2048 all (floor 0.508)           r2 0.704  r4 0.824  d +0.120  MDE 0.093  7/8 positive  DETECTABLE
+  T=2048 plain_lag<128 (floor 0.509) r2 0.806  r4 0.994  d +0.188  MDE 0.114  8/8 positive  DETECTABLE
+  T=2048 plain_lag>=128 (floor 0.508) r2 0.503  r4 0.532  d +0.028  MDE 0.122  5/8 positive  unmeasured
+  T=2048 wrap (floor 0.507)          r2 0.435  r4 0.351  d -0.084  MDE 0.132  2/8 positive  unmeasured
+
+== per seed, T=1024 overall acc and training loss ==
+  Vanilla     acc  0.635 0.749 0.879 0.639 0.937 0.848 0.591 0.649
+  Vanilla     loss 1.0925 0.7212 0.3630 1.0587 0.2090 0.4323 1.2522 1.1636   flat 4/8   last30/prev30 0.98 0.93 0.93 0.98 0.93 0.92 0.99 0.99
+  Vanilla_r4  acc  0.908 0.973 1.000 0.715 0.657 1.000 1.000 0.928
+  Vanilla_r4  loss 0.1699 0.0487 0.0224 0.6707 0.8793 0.0122 0.0015 0.1491   flat 0/8   last30/prev30 0.43 0.78 0.71 0.94 0.89 0.64 0.31 0.61
+  loss ranges: r2 0.2090-1.2522  r4 0.0015-0.8793  overlap: True
+  r(log final loss, T=1024 acc): pooled -0.845  r2 -0.985  r4 -0.836
+  loss-matched r4-r2: +0.002  MDE 0.115  (slope -0.066/log-loss)

@@ -10,6 +10,8 @@ figures_*/
 *.pt
 *.pth
 *.ckpt
+# quarantined checkpoints: *.pt does not match *.pt.stale (a 110 MB one sat unignored)
+*.pt.stale
 *.log
 .DS_Store
 

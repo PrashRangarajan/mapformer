@@ -1,0 +1,21 @@
+== snapshots, trainable r=2 from projection, seed 6 ==
+s6 ep   0 trainloss~nan      opp 0.034 |cos| 0.012 obs/act 0.017 oppDelta 0.032 relDeltaVsStart  wrapErr 0.256 |D| [7.42 7.37 7.13 7.36] | acc all 1.000 nll 0.000 <128 1.000 >=128 0.999 wrap 1.000
+s6 ep  25 trainloss~0.100    opp 0.033 |cos| 0.010 obs/act 0.017 oppDelta 0.030 relDeltaVsStart 0.046 wrapErr 0.310 |D| [7.37 7.31 7.06 7.27] | acc all 0.953 nll 0.177 <128 0.998 >=128 0.839 wrap 0.653
+s6 ep  50 trainloss~0.277    opp 0.035 |cos| 0.055 obs/act 0.013 oppDelta 0.033 relDeltaVsStart 0.160 wrapErr 0.330 |D| [6.88 6.84 6.55 6.78] | acc all 0.897 nll 0.388 <128 0.989 >=128 0.486 wrap 0.446
+s6 ep  75 trainloss~0.192    opp 0.029 |cos| 0.073 obs/act 0.012 oppDelta 0.027 relDeltaVsStart 0.234 wrapErr 0.335 |D| [6.58 6.59 6.07 6.24] | acc all 0.914 nll 0.327 <128 0.996 >=128 0.613 wrap 0.450
+s6 ep 100 trainloss~0.237    opp 0.024 |cos| 0.099 obs/act 0.012 oppDelta 0.022 relDeltaVsStart 0.312 wrapErr 0.306 |D| [6.27 6.26 5.66 5.8 ] | acc all 0.953 nll 0.165 <128 0.999 >=128 0.860 wrap 0.620
+s6 ep 125 trainloss~0.254    opp 0.020 |cos| 0.127 obs/act 0.011 oppDelta 0.018 relDeltaVsStart 0.370 wrapErr 0.325 |D| [5.96 5.99 5.41 5.5 ] | acc all 0.934 nll 0.212 <128 0.998 >=128 0.753 wrap 0.525
+s6 ep 150 trainloss~0.271    opp 0.019 |cos| 0.100 obs/act 0.009 oppDelta 0.018 relDeltaVsStart 0.405 wrapErr 0.274 |D| [5.28 5.31 5.58 5.68] | acc all 0.965 nll 0.118 <128 0.999 >=128 0.895 wrap 0.718
+s6 ep 175 trainloss~0.270    opp 0.015 |cos| 0.125 obs/act 0.009 oppDelta 0.015 relDeltaVsStart 0.420 wrapErr 0.274 |D| [5.17 5.2  5.74 5.82] | acc all 0.917 nll 0.289 <128 0.996 >=128 0.596 wrap 0.499
+s6 ep 200 trainloss~0.247    opp 0.018 |cos| 0.115 obs/act 0.006 oppDelta 0.017 relDeltaVsStart 0.432 wrapErr 0.299 |D| [5.04 5.1  5.41 5.49] | acc all 0.928 nll 0.224 <128 0.999 >=128 0.662 wrap 0.529
+s6 ep 225 trainloss~0.250    opp 0.016 |cos| 0.132 obs/act 0.006 oppDelta 0.016 relDeltaVsStart 0.459 wrapErr 0.277 |D| [5.09 5.1  5.24 5.32] | acc all 0.893 nll 0.387 <128 0.983 >=128 0.446 wrap 0.497
+s6 ep 250 trainloss~0.253    opp 0.016 |cos| 0.060 obs/act 0.004 oppDelta 0.016 relDeltaVsStart 0.463 wrapErr 0.255 |D| [5.08 5.13 5.11 5.18] | acc all 0.909 nll 0.308 <128 0.997 >=128 0.508 wrap 0.485
+s6 ep 275 trainloss~0.218    opp 0.010 |cos| 0.040 obs/act 0.006 oppDelta 0.010 relDeltaVsStart 0.483 wrapErr 0.235 |D| [4.87 4.89 4.91 4.97] | acc all 0.971 nll 0.099 <128 1.000 >=128 0.945 wrap 0.737
+s6 ep 300 trainloss~0.309    opp 0.008 |cos| 0.041 obs/act 0.007 oppDelta 0.008 relDeltaVsStart 0.511 wrapErr 0.280 |D| [4.69 4.7  4.83 4.87] | acc all 0.941 nll 0.208 <128 1.000 >=128 0.801 wrap 0.539
+s6 ep 325 trainloss~0.314    opp 0.009 |cos| 0.039 obs/act 0.006 oppDelta 0.010 relDeltaVsStart 0.519 wrapErr 0.273 |D| [4.46 4.49 4.86 4.9 ] | acc all 0.928 nll 0.309 <128 0.997 >=128 0.724 wrap 0.489
+s6 ep 350 trainloss~0.308    opp 0.014 |cos| 0.009 obs/act 0.006 oppDelta 0.014 relDeltaVsStart 0.545 wrapErr 0.260 |D| [4.25 4.28 4.61 4.67] | acc all 0.892 nll 0.397 <128 0.984 >=128 0.429 wrap 0.493
+s6 ep 375 trainloss~0.303    opp 0.008 |cos| 0.020 obs/act 0.007 oppDelta 0.008 relDeltaVsStart 0.593 wrapErr 0.308 |D| [3.91 3.92 3.82 3.84] | acc all 0.942 nll 0.244 <128 0.999 >=128 0.859 wrap 0.496
+s6 ep 400 trainloss~0.284    opp 0.011 |cos| 0.077 obs/act 0.004 oppDelta 0.011 relDeltaVsStart 0.617 wrapErr 0.264 |D| [3.43 3.45 3.83 3.86] | acc all 0.920 nll 0.352 <128 0.997 >=128 0.627 wrap 0.495
+s6 ep 425 trainloss~0.278    opp 0.009 |cos| 0.044 obs/act 0.006 oppDelta 0.009 relDeltaVsStart 0.653 wrapErr 0.271 |D| [3.07 3.1  3.62 3.63] | acc all 0.935 nll 0.258 <128 0.999 >=128 0.785 wrap 0.495
+s6 ep 450 trainloss~0.275    opp 0.009 |cos| 0.036 obs/act 0.007 oppDelta 0.009 relDeltaVsStart 0.681 wrapErr 0.264 |D| [2.83 2.84 3.18 3.2 ] | acc all 0.943 nll 0.232 <128 0.999 >=128 0.872 wrap 0.497
+s6 ep 900 (committed final)  opp 0.004 |cos| 0.120 obs/act 0.002 oppDelta 0.004 relDeltaVsStart 0.813 wrapErr 0.127 |D| [1.94 1.94 1.8  1.81] | acc all 0.969 nll 0.132 <128 1.000 >=128 1.000 wrap 0.654

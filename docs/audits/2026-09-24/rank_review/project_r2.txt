@@ -1,0 +1,7 @@
+rank_matched r4 s6: latent sv [7.124, 6.233, 0.116, 0.059] top2 energy 0.99981 | Delta rel err after rank-2 proj 0.0068 | T=1024 acc r4 1.0000 (json 1.0) -> projected r2 0.9995; nll 0.000 -> 0.002  [88s, 100 trials]
+rank_matched r4 s5: latent sv [7.491, 6.185, 0.186, 0.064] top2 energy 0.99959 | Delta rel err after rank-2 proj 0.0111 | T=1024 acc r4 0.9996 (json 0.9996028958059687) -> projected r2 0.9537; nll 0.001 -> 0.433  [39s, 100 trials]
+rank_matched r4 s2: latent sv [7.026, 6.427, 1.76, 0.405] top2 energy 0.96526 | Delta rel err after rank-2 proj 0.1458 | T=1024 acc r4 1.0000 (json 1.0) -> projected r2 0.9896; nll 0.000 -> 0.058  [6s, 100 trials]
+rank_matched r4 s1: latent sv [7.197, 6.541, 0.098, 0.048] top2 energy 0.99987 | Delta rel err after rank-2 proj 0.0045 | T=1024 acc r4 0.9726 (json 0.9725468023621058) -> projected r2 0.9728; nll 0.050 -> 0.050  [7s, 100 trials]
+rank_matched r4 s0: latent sv [7.019, 5.416, 0.127, 0.09] top2 energy 0.99969 | Delta rel err after rank-2 proj 0.0086 | T=1024 acc r4 0.9083 (json 0.9082792970585472) -> projected r2 0.9079; nll 0.188 -> 0.190  [7s, 100 trials]
+rank_sweep r4 s0: latent sv [8.075, 5.511, 0.387, 0.107] top2 energy 0.99832 | Delta rel err after rank-2 proj 0.0257 | T=1024 acc r4 0.9060 (json n/a) -> projected r2 0.8759; nll 0.425 -> 0.896  [6s, 100 trials]
+rank_sweep r4 s1: latent sv [6.258, 4.65, 0.2, 0.071] top2 energy 0.99926 | Delta rel err after rank-2 proj 0.0122 | T=1024 acc r4 0.9335 (json n/a) -> projected r2 0.9232; nll 0.242 -> 0.428  [6s, 100 trials]

@@ -1,0 +1,113 @@
+0 {"Vanilla_r2ph vs Vanilla": 0.0, "Vanilla_r4mi vs Vanilla": 0.0, "r2ph.w_in == r4mi.w_in": 0.0, "keys equal": true, "Vanilla delta_std": 0.3453586995601654, "Vanilla n_params": 204373, "Vanilla_r2ph delta_std": 0.3718113303184509, "Vanilla_r2ph n_params": 204629, "Vanilla_r4mi delta_std": 0.379547655582428, "Vanilla_r4mi n_params": 204757}
+1 {"Vanilla_r2ph vs Vanilla": 0.0, "Vanilla_r4mi vs Vanilla": 0.0, "r2ph.w_in == r4mi.w_in": 0.0, "keys equal": true, "Vanilla delta_std": 0.3471032679080963, "Vanilla n_params": 204373, "Vanilla_r2ph delta_std": 0.3281193971633911, "Vanilla_r2ph n_params": 204629, "Vanilla_r4mi delta_std": 0.3355700969696045, "Vanilla_r4mi n_params": 204757}
+2 {"Vanilla_r2ph vs Vanilla": 0.0, "Vanilla_r4mi vs Vanilla": 0.0, "r2ph.w_in == r4mi.w_in": 0.0, "keys equal": true, "Vanilla delta_std": 0.2939787805080414, "Vanilla n_params": 204373, "Vanilla_r2ph delta_std": 0.3144795298576355, "Vanilla_r2ph n_params": 204629, "Vanilla_r4mi delta_std": 0.30790701508522034, "Vanilla_r4mi n_params": 204757}
+3 {"Vanilla_r2ph vs Vanilla": 0.0, "Vanilla_r4mi vs Vanilla": 0.0, "r2ph.w_in == r4mi.w_in": 0.0, "keys equal": true, "Vanilla delta_std": 0.3756793141365051, "Vanilla n_params": 204373, "Vanilla_r2ph delta_std": 0.36874133348464966, "Vanilla_r2ph n_params": 204629, "Vanilla_r4mi delta_std": 0.36106404662132263, "Vanilla_r4mi n_params": 204757}
+4 {"Vanilla_r2ph vs Vanilla": 0.0, "Vanilla_r4mi vs Vanilla": 0.0, "r2ph.w_in == r4mi.w_in": 0.0, "keys equal": true, "Vanilla delta_std": 0.27866223454475403, "Vanilla n_params": 204373, "Vanilla_r2ph delta_std": 0.3569377064704895, "Vanilla_r2ph n_params": 204629, "Vanilla_r4mi delta_std": 0.3532446324825287, "Vanilla_r4mi n_params": 204757}
+5 {"Vanilla_r2ph vs Vanilla": 0.0, "Vanilla_r4mi vs Vanilla": 0.0, "r2ph.w_in == r4mi.w_in": 0.0, "keys equal": true, "Vanilla delta_std": 0.33493688702583313, "Vanilla n_params": 204373, "Vanilla_r2ph delta_std": 0.3280183672904968, "Vanilla_r2ph n_params": 204629, "Vanilla_r4mi delta_std": 0.3129601776599884, "Vanilla_r4mi n_params": 204757}
+6 {"Vanilla_r2ph vs Vanilla": 0.0, "Vanilla_r4mi vs Vanilla": 0.0, "r2ph.w_in == r4mi.w_in": 0.0, "keys equal": true, "Vanilla delta_std": 0.29759305715560913, "Vanilla n_params": 204373, "Vanilla_r2ph delta_std": 0.35225364565849304, "Vanilla_r2ph n_params": 204629, "Vanilla_r4mi delta_std": 0.36101704835891724, "Vanilla_r4mi n_params": 204757}
+7 {"Vanilla_r2ph vs Vanilla": 0.0, "Vanilla_r4mi vs Vanilla": 0.0, "r2ph.w_in == r4mi.w_in": 0.0, "keys equal": true, "Vanilla delta_std": 0.40786731243133545, "Vanilla n_params": 204373, "Vanilla_r2ph delta_std": 0.32099857926368713, "Vanilla_r2ph n_params": 204629, "Vanilla_r4mi delta_std": 0.3382239043712616, "Vanilla_r4mi n_params": 204757}
+Vanilla seed=0 n_landmarks=0 p_noise=0.0
+params=204,373
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_s0/Vanilla.pt
+REPLAY Vanilla 0 {'stored': 2.9607356640757345, 'replay': 2.9607356640757345, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_s0/Vanilla.pt'}
+Vanilla seed=1 n_landmarks=0 p_noise=0.0
+params=204,373
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_s1/Vanilla.pt
+REPLAY Vanilla 1 {'stored': 3.109133236262263, 'replay': 3.109133236262263, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_s1/Vanilla.pt'}
+Vanilla seed=2 n_landmarks=0 p_noise=0.0
+params=204,373
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_s2/Vanilla.pt
+REPLAY Vanilla 2 {'stored': 2.7354811113707873, 'replay': 2.7354811113707873, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_s2/Vanilla.pt'}
+Vanilla seed=3 n_landmarks=0 p_noise=0.0
+params=204,373
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_s3/Vanilla.pt
+REPLAY Vanilla 3 {'stored': 2.9647533358359826, 'replay': 2.9647533358359826, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_s3/Vanilla.pt'}
+Vanilla seed=4 n_landmarks=0 p_noise=0.0
+params=204,373
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_s4/Vanilla.pt
+REPLAY Vanilla 4 {'stored': 3.120692771308276, 'replay': 3.120692771308276, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_s4/Vanilla.pt'}
+Vanilla seed=5 n_landmarks=0 p_noise=0.0
+params=204,373
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_s5/Vanilla.pt
+REPLAY Vanilla 5 {'stored': 3.1427988300518113, 'replay': 3.1427988300518113, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_s5/Vanilla.pt'}
+Vanilla seed=6 n_landmarks=0 p_noise=0.0
+params=204,373
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_s6/Vanilla.pt
+REPLAY Vanilla 6 {'stored': 2.8753466484498005, 'replay': 2.8753466484498005, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_s6/Vanilla.pt'}
+Vanilla seed=7 n_landmarks=0 p_noise=0.0
+params=204,373
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_s7/Vanilla.pt
+REPLAY Vanilla 7 {'stored': 2.8538407671208286, 'replay': 2.8538407671208286, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_s7/Vanilla.pt'}
+Vanilla_r2ph seed=0 n_landmarks=0 p_noise=0.0
+params=204,629
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r2ph_s0/Vanilla_r2ph.pt
+REPLAY Vanilla_r2ph 0 {'stored': 2.961063436099461, 'replay': 2.961063436099461, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r2ph_s0/Vanilla_r2ph.pt'}
+Vanilla_r2ph seed=1 n_landmarks=0 p_noise=0.0
+params=204,629
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r2ph_s1/Vanilla_r2ph.pt
+REPLAY Vanilla_r2ph 1 {'stored': 3.108859303046246, 'replay': 3.108859303046246, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r2ph_s1/Vanilla_r2ph.pt'}
+Vanilla_r2ph seed=2 n_landmarks=0 p_noise=0.0
+params=204,629
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r2ph_s2/Vanilla_r2ph.pt
+REPLAY Vanilla_r2ph 2 {'stored': 2.735403854019788, 'replay': 2.735403854019788, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r2ph_s2/Vanilla_r2ph.pt'}
+Vanilla_r2ph seed=3 n_landmarks=0 p_noise=0.0
+params=204,629
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r2ph_s3/Vanilla_r2ph.pt
+REPLAY Vanilla_r2ph 3 {'stored': 2.9649207154098822, 'replay': 2.9649207154098822, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r2ph_s3/Vanilla_r2ph.pt'}
+Vanilla_r2ph seed=4 n_landmarks=0 p_noise=0.0
+params=204,629
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r2ph_s4/Vanilla_r2ph.pt
+REPLAY Vanilla_r2ph 4 {'stored': 3.120809486934117, 'replay': 3.120809486934117, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r2ph_s4/Vanilla_r2ph.pt'}
+Vanilla_r2ph seed=5 n_landmarks=0 p_noise=0.0
+params=204,629
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r2ph_s5/Vanilla_r2ph.pt
+REPLAY Vanilla_r2ph 5 {'stored': 3.140713553039395, 'replay': 3.140713553039395, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r2ph_s5/Vanilla_r2ph.pt'}
+Vanilla_r2ph seed=6 n_landmarks=0 p_noise=0.0
+params=204,629
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r2ph_s6/Vanilla_r2ph.pt
+REPLAY Vanilla_r2ph 6 {'stored': 2.8746592657906667, 'replay': 2.8746592657906667, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r2ph_s6/Vanilla_r2ph.pt'}
+Vanilla_r2ph seed=7 n_landmarks=0 p_noise=0.0
+params=204,629
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r2ph_s7/Vanilla_r2ph.pt
+REPLAY Vanilla_r2ph 7 {'stored': 2.8541025069295145, 'replay': 2.8541025069295145, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r2ph_s7/Vanilla_r2ph.pt'}
+Vanilla_r4mi seed=0 n_landmarks=0 p_noise=0.0
+params=204,757
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r4mi_s0/Vanilla_r4mi.pt
+REPLAY Vanilla_r4mi 0 {'stored': 2.96092634784932, 'replay': 2.96092634784932, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r4mi_s0/Vanilla_r4mi.pt'}
+Vanilla_r4mi seed=1 n_landmarks=0 p_noise=0.0
+params=204,757
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r4mi_s1/Vanilla_r4mi.pt
+REPLAY Vanilla_r4mi 1 {'stored': 3.1098054258190855, 'replay': 3.1098054258190855, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r4mi_s1/Vanilla_r4mi.pt'}
+Vanilla_r4mi seed=2 n_landmarks=0 p_noise=0.0
+params=204,757
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r4mi_s2/Vanilla_r4mi.pt
+REPLAY Vanilla_r4mi 2 {'stored': 2.73503590603264, 'replay': 2.73503590603264, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r4mi_s2/Vanilla_r4mi.pt'}
+Vanilla_r4mi seed=3 n_landmarks=0 p_noise=0.0
+params=204,757
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r4mi_s3/Vanilla_r4mi.pt
+REPLAY Vanilla_r4mi 3 {'stored': 2.9647417846991093, 'replay': 2.9647417846991093, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r4mi_s3/Vanilla_r4mi.pt'}
+Vanilla_r4mi seed=4 n_landmarks=0 p_noise=0.0
+params=204,757
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r4mi_s4/Vanilla_r4mi.pt
+REPLAY Vanilla_r4mi 4 {'stored': 3.1209923904769274, 'replay': 3.1209923904769274, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r4mi_s4/Vanilla_r4mi.pt'}
+Vanilla_r4mi seed=5 n_landmarks=0 p_noise=0.0
+params=204,757
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r4mi_s5/Vanilla_r4mi.pt
+REPLAY Vanilla_r4mi 5 {'stored': 3.142123592143156, 'replay': 3.142123592143156, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r4mi_s5/Vanilla_r4mi.pt'}
+Vanilla_r4mi seed=6 n_landmarks=0 p_noise=0.0
+params=204,757
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r4mi_s6/Vanilla_r4mi.pt
+REPLAY Vanilla_r4mi 6 {'stored': 2.8752300836602034, 'replay': 2.8752300836602034, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r4mi_s6/Vanilla_r4mi.pt'}
+Vanilla_r4mi seed=7 n_landmarks=0 p_noise=0.0
+params=204,757
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_r4mi_s7/Vanilla_r4mi.pt
+REPLAY Vanilla_r4mi 7 {'stored': 2.8541587445200705, 'replay': 2.8541587445200705, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi/p0/Vanilla_r4mi_s7/Vanilla_r4mi.pt'}
+Vanilla seed=3 n_landmarks=0 p_noise=0.0
+params=204,373
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_s3/Vanilla.pt
+REPLAY Vanilla 3 {'stored': 2.9647533358359826, 'replay': 2.9647533358359826, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_mi_repro/p0/Vanilla_s3/Vanilla.pt'}
+Vanilla seed=0 n_landmarks=0 p_noise=0.0
+params=204,373
+Saved: /tmp/claude-1002/-home-prashr-mapformer/11c678ec-9c7c-4954-8b14-36979f03e955/scratchpad/review/replay/Vanilla_s0/Vanilla.pt
+REPLAY Vanilla 0 {'stored': 2.9607356640757345, 'replay': 2.9607356640757345, 'equal': True, 'ckpt': '/home/prashr/mapformer/runs/rank_perhead_pilot/p0/Vanilla_s0/Vanilla.pt'}
+DONE

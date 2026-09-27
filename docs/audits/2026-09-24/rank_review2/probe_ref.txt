@@ -1,0 +1,17 @@
+== references: from-scratch r=2 (e900 / e900c) and r=4 e900 ==
+_e900 r2 s0                  opp 1.339 |cos| 0.734 obs/act 0.555 oppDelta 1.260 relDeltaVsStart  wrapErr 0.397 |D| [15.57  3.04 10.76 19.67] | acc all 0.849 nll 0.530 <128 0.923 >=128 0.464 wrap 0.483
+_e900 r2 s1                  opp 0.050 |cos| 0.011 obs/act 0.108 oppDelta 0.056 relDeltaVsStart  wrapErr 0.397 |D| [10.65 10.19  7.75  7.53] | acc all 0.998 nll 0.008 <128 1.000 >=128 0.993 wrap 0.977
+_e900 r2 s2                  opp 1.353 |cos| 0.467 obs/act 0.415 oppDelta 1.424 relDeltaVsStart  wrapErr 0.402 |D| [5.37 6.32 3.77 3.83] | acc all 0.917 nll 0.247 <128 0.984 >=128 0.762 wrap 0.476
+_e900 r2 s3                  opp 1.388 |cos| 0.934 obs/act 0.376 oppDelta 1.579 relDeltaVsStart  wrapErr 0.351 |D| [2.7  2.17 5.19 5.5 ] | acc all 0.915 nll 0.295 <128 0.982 >=128 0.691 wrap 0.479
+_e900 r2 s4                  opp 1.509 |cos| 0.568 obs/act 0.380 oppDelta 1.616 relDeltaVsStart  wrapErr 0.281 |D| [2.31 3.21 6.47 5.49] | acc all 0.942 nll 0.228 <128 0.999 >=128 0.807 wrap 0.541
+_e900 r2 s5                  opp 1.098 |cos| 0.873 obs/act 0.351 oppDelta 1.036 relDeltaVsStart  wrapErr 0.390 |D| [12.22 10.06 10.51  9.93] | acc all 0.918 nll 0.323 <128 0.972 >=128 0.653 wrap 0.512
+_e900 r2 s6                  opp 1.237 |cos| 0.238 obs/act 0.417 oppDelta 1.351 relDeltaVsStart  wrapErr 0.431 |D| [11.28  7.78 19.29 10.36] | acc all 0.772 nll 0.686 <128 0.827 >=128 0.562 wrap 0.475
+_e900 r2 s7                  opp 0.787 |cos| 0.829 obs/act 0.670 oppDelta 0.728 relDeltaVsStart  wrapErr 0.380 |D| [11.44  9.21 11.66 11.6 ] | acc all 0.836 nll 0.616 <128 0.913 >=128 0.477 wrap 0.495
+e900c r2 s0                  opp 1.274 |cos| 0.800 obs/act 0.466 oppDelta 1.241 relDeltaVsStart  wrapErr 0.375 |D| [20.7   4.05 12.92 21.78] | acc all 0.863 nll 0.517 <128 0.944 >=128 0.444 wrap 0.461
+e900c r2 s1                  opp 0.007 |cos| 0.016 obs/act 0.004 oppDelta 0.007 relDeltaVsStart  wrapErr 0.184 |D| [8.07 8.12 6.93 6.92] | acc all 1.000 nll 0.000 <128 1.000 >=128 1.000 wrap 1.000
+e900c r2 s2                  opp 1.569 |cos| 0.610 obs/act 0.466 oppDelta 1.732 relDeltaVsStart  wrapErr 0.244 |D| [6.19 6.73 1.85 2.88] | acc all 0.898 nll 0.320 <128 0.977 >=128 0.610 wrap 0.472
+e900c r2 s3                  opp 1.508 |cos| 0.919 obs/act 0.361 oppDelta 1.874 relDeltaVsStart  wrapErr 0.300 |D| [2.51 1.75 6.41 7.09] | acc all 0.899 nll 0.368 <128 0.978 >=128 0.573 wrap 0.449
+e900c r2 s4                  opp 1.776 |cos| 0.767 obs/act 0.438 oppDelta 1.954 relDeltaVsStart  wrapErr 0.093 |D| [2.14 3.54 9.8  7.97] | acc all 0.926 nll 0.283 <128 0.999 >=128 0.681 wrap 0.502
+e900c r2 s5                  opp 1.598 |cos| 0.925 obs/act 0.567 oppDelta 1.633 relDeltaVsStart  wrapErr 0.303 |D| [ 7.59  3.03 11.33 15.77] | acc all 0.926 nll 0.257 <128 0.982 >=128 0.634 wrap 0.508
+e900c r2 s6                  opp 1.535 |cos| 0.490 obs/act 0.538 oppDelta 1.639 relDeltaVsStart  wrapErr 0.322 |D| [ 8.41  6.2  20.95 10.43] | acc all 0.879 nll 0.416 <128 0.949 >=128 0.638 wrap 0.469
+e900c r2 s7                  opp 0.870 |cos| 0.679 obs/act 0.736 oppDelta 0.867 relDeltaVsStart  wrapErr 0.399 |D| [13.93 11.67 12.7  12.97] | acc all 0.847 nll 0.587 <128 0.927 >=128 0.474 wrap 0.494

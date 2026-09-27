@@ -1,0 +1,43 @@
+== FROZEN: projected r=2 vs its source r=4, T=1024 ==
+  s0  r4 source 1.0000  -> projected r2 0.9993  (-0.0007)
+  s1  r4 source 1.0000  -> projected r2 1.0000  (+0.0000)
+  s2  r4 source 1.0000  -> projected r2 0.9988  (-0.0012)
+  s3  r4 source 1.0000  -> projected r2 1.0000  (+0.0000)
+  s4  r4 source 1.0000  -> projected r2 0.9850  (-0.0150)
+  s5  r4 source 0.9731  -> projected r2 0.9806  (+0.0075)
+  s6  r4 source 1.0000  -> projected r2 1.0000  (-0.0000)
+  s7  r4 source 1.0000  -> projected r2 1.0000  (+0.0000)
+  mean 0.9966 -> 0.9955; projected >= 0.95 on 8/8
+
+== TRAINABLE (r2 from projection) vs CONTROL (r4 from its own solution) vs r2 continuation ==
+  TRAINABLE r2-proj  {'SOLVED': 7, 'STALLED': 0, 'DESCENDING': 1}
+    s0 SOLVED     tail 0.0180  peak 0.405 @ep265  back below 0.05 @ep585
+    s1 SOLVED     tail 0.0188  peak 0.376 @ep318  back below 0.05 @ep578
+    s2 SOLVED     tail 0.0185  peak 0.372 @ep54  back below 0.05 @ep553
+    s3 SOLVED     tail 0.0175  peak 0.393 @ep170  back below 0.05 @ep610
+    s4 SOLVED     tail 0.0201  peak 0.401 @ep143  back below 0.05 @ep654
+    s5 SOLVED     tail 0.0190  peak 0.416 @ep251  back below 0.05 @ep573
+    s6 DESCENDING tail 0.1206  peak 0.409 @ep345  back below 0.05 @epNone
+    s7 SOLVED     tail 0.0157  peak 0.455 @ep227  back below 0.05 @ep562
+  CONTROL r4-cont    {'SOLVED': 7, 'STALLED': 0, 'DESCENDING': 1}
+    s0 SOLVED     tail 0.0202  peak 0.260 @ep303  back below 0.05 @ep540
+    s1 SOLVED     tail 0.0205  peak 0.290 @ep246  back below 0.05 @ep577
+    s2 SOLVED     tail 0.0216  peak 0.284 @ep156  back below 0.05 @ep605
+    s3 DESCENDING tail 0.1201  peak 0.298 @ep387  back below 0.05 @epNone
+    s4 SOLVED     tail 0.0200  peak 0.286 @ep304  back below 0.05 @ep669
+    s5 SOLVED     tail 0.0194  peak 0.260 @ep212  back below 0.05 @ep579
+    s6 SOLVED     tail 0.0215  peak 0.297 @ep166  back below 0.05 @ep613
+    s7 SOLVED     tail 0.0181  peak 0.267 @ep129  back below 0.05 @ep497
+  REFERENCE r2-cont  {'SOLVED': 1, 'STALLED': 3, 'DESCENDING': 4}
+    s0 STALLED    tail 0.5166  peak 0.801 @ep47  back below 0.05 @epNone
+    s1 SOLVED     tail 0.0065  peak 0.552 @ep183  back below 0.05 @ep540
+    s2 DESCENDING tail 0.3569  peak 0.667 @ep369  back below 0.05 @epNone
+    s3 DESCENDING tail 0.3917  peak 0.709 @ep43  back below 0.05 @epNone
+    s4 DESCENDING tail 0.1844  peak 0.556 @ep170  back below 0.05 @epNone
+    s5 DESCENDING tail 0.3761  peak 0.596 @ep148  back below 0.05 @epNone
+    s6 STALLED    tail 0.4560  peak 0.821 @ep46  back below 0.05 @epNone
+    s7 STALLED    tail 0.5812  peak 0.775 @ep176  back below 0.05 @epNone
+
+== primary: SOLVED trainable 7/8 vs control 7/8, Fisher p 1.0000
+== BRANCH: S1 STABLE -- r=2 holds and recovers the solution; the from-scratch failure is search
+== T=1024 accuracy: trainable 0.9937, control 0.9961 (perm p 0.6746), r2-cont 0.9053 (trainable vs r2-cont perm p 0.0009)

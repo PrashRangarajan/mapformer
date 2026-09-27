@@ -1,0 +1,2 @@
+rank_matched r4 s6: latent sv [7.124, 6.233, 0.116, 0.059] top2 energy 0.99981 | Delta rel err after rank-2 proj 0.0068 | T=1024 acc r4 1.0000 (json 1.0) -> projected r2 0.9995; nll 0.000 -> 0.002  [248s, 100 trials]
+rank_matched r4 s2: latent sv [7.026, 6.427, 1.76, 0.405] top2 energy 0.96526 | Delta rel err after rank-2 proj 0.1458 | T=1024 acc r4 1.0000 (json 1.0) -> projected r2 0.9896; nll 0.000 -> 0.058  [218s, 100 trials]
