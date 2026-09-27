@@ -1,0 +1,18 @@
+== run classes (SOLVED = final-5% loss < 0.05) ==
+  A   Vanilla      SOLVED 0/8  acc 0.894  s0:STAL(0.587) s1:DESC(0.051) s2:DESC(0.308) s3:DESC(0.321) s4:DESC(0.177) s5:STAL(0.404) s6:STAL(0.675) s7:STAL(0.605)
+  L   Looped       SOLVED 2/8  acc 0.973  s0:SOLV(0.045) s1:DESC(0.053) s2:DESC(0.127) s3:DESC(0.066) s4:SOLV(0.045) s5:DESC(0.066) s6:DESC(0.114) s7:DESC(0.070)
+  L4  Vanilla_L4   SOLVED 5/8  acc 0.990  s0:DESC(0.064) s1:SOLV(0.011) s2:SOLV(0.047) s3:SOLV(0.031) s4:SOLV(0.047) s5:DESC(0.054) s6:DESC(0.070) s7:SOLV(0.042)
+  C   Vanilla_r4mi SOLVED 8/8  acc 0.998  s0:SOLV(0.004) s1:SOLV(0.003) s2:SOLV(0.003) s3:SOLV(0.003) s4:SOLV(0.002) s5:SOLV(0.004) s6:SOLV(0.004) s7:SOLV(0.010)
+
+== reproduction A s0: max |per-epoch loss diff| 0.00e+00 over 900 epochs
+
+== contrasts ==
+  L - A: SOLVED 2/8 vs 0/8 Fisher p 0.4667 | acc +0.079 perm p 0.0034 CI [+0.026, +0.131]
+  L4 - A: SOLVED 5/8 vs 0/8 Fisher p 0.0256 | acc +0.096 perm p 0.0012 CI [+0.044, +0.147]
+  L4 - L: SOLVED 5/8 vs 2/8 Fisher p 0.3147 | acc +0.017 perm p 0.0009 CI [+0.009, +0.025]
+  Holm-adjusted: L-A=0.0034 L4-A=0.0028 L4-L=0.0028
+
+== BRANCH: UNMEASURED
+   compute reading: 4x compute is sufficient; the loop is not special
+  T=512: A 0.934  L 0.996  L4 0.998  C 1.000
+  T=2048: A 0.819  L 0.825  L4 0.868  C 0.973

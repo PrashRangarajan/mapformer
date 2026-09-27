@@ -93,6 +93,16 @@ shape: at 2 heads its r=2 read literally is the per-head r=2 (2/8); with a full 
 r=4 (8/8). Scope: n_heads=2, one length, one recipe. MapPoPE r=4 +0.019 is an OOD, unmatched-init
 number.
 
+**Search aids partly recover rank 2, but do not reach rank 4** (`LOOP_RANK_RESULTS.md`, H1,
+registered verdict UNMEASURED). At T=1024/900 ep: r=2 + loop x4 (bit-identical params and init to
+r=2) solves 2/8 with accuracy 0.973; r=2 at 4 real layers 5/8 and 0.990; plain r=2 0/8 and 0.894;
+r=4 8/8 and 0.998. Both aids fire on accuracy (perm p 0.0034 / 0.0012); only depth fires on solved
+count (Fisher 0.026). Final losses form three regimes (r=2 0.05-0.68, the aids 0.03-0.13, r=4
+0.002-0.010): extra search leaves r=2's regime but never enters r=4's. The registered 0.05 cutoff
+falls inside the aids' spread -- at 0.08+ H1's condition would have been met, so the verdict is
+uncertain rather than negative. Depth (4x params) beats the matched-parameter loop, so this is NOT
+"search at constant capacity".
+
 **Live negatives -- do not re-run:** Level 1.5 / InEKF is stabilisation, not inference (no
 component load-bearing, capacity control ties, benefit does not grow with drift:
 `L15_ABLATION.md`, `EXTRAHEAD_CONTROL.md`, `MQ_NOISE_2X2*.md`); refining theta across depth

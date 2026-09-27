@@ -5,6 +5,13 @@ metadata:
   type: project
 ---
 
+**H1, 2026-09-27 (`LOOP_RANK_RESULTS.md`): search aids partly recover rank 2, registered verdict
+UNMEASURED.** r=2 + loop x4 (identical params/init to r=2) 2/8 solved, acc 0.973; r=2 at 4 real
+layers 5/8, 0.990; r=2 0/8, 0.894; r=4 8/8, 0.998. Accuracy fires for both aids; solved count only
+for depth. Three loss regimes -- the aids leave r=2's and never reach r=4's. The 0.05 cutoff sits
+inside the aids' spread (at 0.08+ H1 would have passed), so uncertain, not negative. Depth beats the
+matched-param loop, so "search at constant capacity" is NOT shown.
+
 **RESOLVED 2026-09-25 (`RANK_SEP_RESULTS.md`): it is the PER-HEAD rank.** Five arms from our r=2's
 initial weights, differing only in the bottleneck; SOLVED within 900 ep at T=1024: per-head rank 2 ->
 0/8 (shared r=2), 2/8 (per-head r=2), 2/8 (block-diagonal r=4); per-head rank 4 -> 8/8 (shared r=4),
