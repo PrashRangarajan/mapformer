@@ -5,14 +5,26 @@ metadata:
   type: project
 ---
 
-Written 2026-09-27 ~15:30, at the end of a long session, as a hand-off. Goes stale fast: check
-`git log`, `.done` markers and the results files first. New here? Read
-`docs/WHERE_THINGS_STAND.md` next -- thesis, what survives, what is open, what is stale.
+Updated 2026-09-27 ~18:15. Goes stale fast: check `git log`, `.done` markers and the results files
+first. New here? Read `docs/WHERE_THINGS_STAND.md` next.
 
-## Running
-**Nothing.** No `mapformer` python3 process; both 4090s idle (22 / 49 MiB). Working tree clean
-apart from `runs/rank_mi/p0/` (absolute symlinks, deliberately untracked) and
-`runs/rank_matched_e900/.code_md5.now`. `main` is well ahead of `origin/main`; **not pushed**.
+## Running (all detached; judge completion by the .done marker AND the artifacts)
+Five queues, launched 2026-09-27 17:47-18:10; each pre-registered and committed before launch.
+The three train_variant drivers share the 2-jobs/GPU picker and run in this order as slots free:
+1. **Rank 3 per head** (`RANK3_PREREG.md`, `run_rank3.sh`, `runs/rank3`, marker `.rank3_done`):
+   8 x `Vanilla_r3ph` + reproduction of D s0 (`runs/rank3_repro`, tracked the stored losses exactly
+   through epoch 25). ~2 h.
+2. **Sign at matched length** (`SIGN_MATCHED_PREREG.md`, `run_sign_matched.sh`, `runs/sign_matched`,
+   `.sign_matched_done`): Signed/Abs/Pos/RoPE r=4 trained AND tested at T=1024, 8 seeds. ~6-8 h.
+3. **H1 at 1800 epochs** (`LOOP_RANK_E1800_PREREG.md`, `run_loop_rank_e1800.sh`,
+   `runs/loop_rank_e1800`, `.loop_rank_e1800_done`): A, L, L4, C from scratch. ~25 h wall.
+Plus, outside the picker:
+4. **Code full-val rescore** (`CODE_FULLVAL_PREREG.md`, `run_code_fullval.sh`, `.code_fullval_done`),
+   eval-only on cuda:1, ~6 min per 2048 checkpoint.
+5. **H3 pilot** (`runs/cancel_pilot/run.sh`, `.done` in that dir): 16 short runs on the biased 1D
+   ring (`environment_cancel.py`, `train_cancel.py`), to set the recipe and noise floor BEFORE the
+   H3 pre-registration is written. H3 itself is NOT registered yet.
+Do not edit train_variant.py, model*.py, train.py, environment*.py while 1-3 run (md5 guards, rule 22).
 
 ## Last results (all committed)
 - **H1: search aids partly recover rank 2, registered verdict UNMEASURED** (`LOOP_RANK_RESULTS.md`,
@@ -35,15 +47,17 @@ apart from `runs/rank_mi/p0/` (absolute symlinks, deliberately untracked) and
   review scripts behind them, and behind the rank line, in `docs/audits/2026-09-24/rank_review*/`
   and `docs/audits/2026-09-25/rank_mi_review/` (rescued from a scratchpad 2026-09-27).
 
+## Done 2026-09-27
+- Pushed (207 commits); documents rewrite committed (75445b0): the five .tex files and
+  RESULTS_INDEX.md now carry Dyck matched-depth, per-head rank and LOOP_RANK; PDFs rebuilt.
+
 ## Waiting on the user
-1. **The documents rewrite.** The five `.tex` files and `RESULTS_INDEX.md` were corrected
+0. (old item, done) **The documents rewrite.** The five `.tex` files and `RESULTS_INDEX.md` were corrected
    2026-09-25, BEFORE the two batches above, so they still carry the old Dyck framing (+0.168 at 3x
    depth as the language line's positive result) and the "unseparated" rank caveat. Per-file list
    in `docs/WHERE_THINGS_STAND.md`; use `docs/prepared/tex_edits_2026-09-25/rep.py`.
-2. **Which experiment next.** Ranked with costs in `docs/WHERE_THINGS_STAND.md`. Cheapest first:
-   code checkpoints rescored on the full val file (eval-only, 1-2 GPU-h); rank 3 per head (~4 h);
-   a longer budget for the H1 arms, several of which were still descending (~6 h); the H3
-   cancellation-knob dose-response (~10 h); sign at matched length (10-20 GPU-h).
+2. **Which experiment next** -- all five cheap items were launched 2026-09-27 (see Running). Still
+   unlaunched: H3 proper (after its pilot), more loops (8, 16) and the loop at rank 4.
 
 ## Known loose ends
 - md5 guards abort resuming any pre-2026-09-24 series (training files changed bit-identically);
