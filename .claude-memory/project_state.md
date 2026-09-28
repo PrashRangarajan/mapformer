@@ -17,7 +17,13 @@ The three train_variant drivers share the 2-jobs/GPU picker and run in this orde
 2. **Sign at matched length** (`SIGN_MATCHED_PREREG.md`, `run_sign_matched.sh`, `runs/sign_matched`,
    `.sign_matched_done`): Signed/Abs/Pos/RoPE r=4 trained AND tested at T=1024, 8 seeds. ~6-8 h.
 3. **H1 at 1800 epochs** (`LOOP_RANK_E1800_PREREG.md`, `run_loop_rank_e1800.sh`,
-   `runs/loop_rank_e1800`, `.loop_rank_e1800_done`): A, L, L4, C from scratch. ~25 h wall.
+   `runs/loop_rank_e1800`, `.loop_rank_e1800_done`): **PAUSED 2026-09-28 01:05 at the user's
+   request.** The shared picker has no priorities, so it grabbed slots from rank 3 and, with 3 jobs
+   per GPU, `Looped` ran at 25 s/epoch (~12.5 h per run, ~3-4 days for the batch). Killed: driver,
+   Looped s0 (epoch ~975), Vanilla_L4 s0, Vanilla_r4mi s0 (just launched); their empty dirs removed.
+   Kept: `Vanilla_s0/Vanilla.pt` (finished). **Restart once rank 3, sign and H3 are done**:
+   `setsid nohup ./run_loop_rank_e1800.sh >/dev/null 2>&1 </dev/null &` -- it skips the finished run
+   and the md5 guard passes if training code is unchanged. Killed runs restart from scratch.
 Plus, outside the picker:
 4. **Code full-val rescore** (`CODE_FULLVAL_PREREG.md`, `run_code_fullval.sh`, `.code_fullval_done`),
    eval-only on cuda:1, ~6 min per 2048 checkpoint.
