@@ -10,7 +10,7 @@ Rules and conventions live in CLAUDE.md (rules 1-28); these files hold the why a
 - [PoPE/MapFormer asymmetry](project_mappope_asymmetry.md) -- PoPE's encoding helps the path row; path integration hurts PoPE on clocks.
 - [EM vs WM mechanism](feedback_em_vs_wm_mechanism.md) -- WM is not additive; EM's recency deficit is search.
 - [Clock vs map](project_clock_vs_map.md) -- signed = map, monotone = clock; the PoPE-decoupling corollary is withdrawn.
-- [Sign of the phase increment](project_sign_axis.md) -- monotone cannot represent a -1 action; cost is OOD-only; a replication.
+- [Sign of the phase increment](project_sign_axis.md) -- monotone cannot represent a -1 action; the cost survives matched length (2026-09-28); a replication.
 - [Loop and correction](project_loop_and_correction.md) -- loop main effect survives; Level 1.5 is not inference; PC and Kalman are duals.
 - [Hierarchy](project_hierarchy_negative.md) -- helps only if a summary is a sufficient statistic; compositional claim unpowered.
 - [Map-size threshold](project_miniworld_flip_negative.md) -- aliasing falsified; threshold between 128 and 512 occupied cells.

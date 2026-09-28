@@ -15,8 +15,9 @@ The three train_variant drivers share the 2-jobs/GPU picker and run in this orde
    its boundary. Per-head r=3 6/8 SOLVED, acc 0.987 (r=2 0.885, r=4 0.999); 3 - 2 fires on accuracy
    only (perm p 0.027, Fisher 0.13, Holm 0.054); 4 - 3 UNMEASURED. Reproduction exact. The two
    unsolved seeds sit in the non-cancelling basin (opposition 1.6-1.8). Next test: 3D torus.
-2. **Sign at matched length** (`SIGN_MATCHED_PREREG.md`, `run_sign_matched.sh`, `runs/sign_matched`,
-   `.sign_matched_done`): Signed/Abs/Pos/RoPE r=4 trained AND tested at T=1024, 8 seeds. ~6-8 h.
+2. **Sign at matched length** -- DONE 2026-09-28 14:08 (`SIGN_MATCHED_RESULTS.md`): registered SIGN IS
+   CAPABILITY. Trained and tested at T=1024: Abs - Signed -0.177 (perm p 0.0002), solved 0/8 vs 8/8;
+   opposition signed 0.06 vs monotone 1.92-1.97. Monotone arms stalled (budget-scoped).
 3. **H1 at 1800 epochs** (`LOOP_RANK_E1800_PREREG.md`, `run_loop_rank_e1800.sh`,
    `runs/loop_rank_e1800`, `.loop_rank_e1800_done`): **PAUSED 2026-09-28 01:05 at the user's
    request.** The shared picker has no priorities, so it grabbed slots from rank 3 and, with 3 jobs

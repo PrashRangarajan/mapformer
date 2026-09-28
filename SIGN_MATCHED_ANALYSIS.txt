@@ -1,0 +1,17 @@
+== run classes (SOLVED = final-5% loss < 0.05) ==
+  Signed_r4  SOLVED 8/8  acc@1024 0.998 +/- 0.004  acc@2048 0.969  SOLV(0.003) SOLV(0.003) SOLV(0.005) SOLV(0.008) SOLV(0.004) SOLV(0.003) SOLV(0.004) SOLV(0.004)
+  Abs_r4     SOLVED 0/8  acc@1024 0.821 +/- 0.120  acc@2048 0.725  DESC(0.201) DESC(0.314) STAL(0.492) STAL(1.043) DESC(0.962) STAL(0.446) STAL(0.349) STAL(0.834)
+  Pos_r4     SOLVED 1/8  acc@1024 0.781 +/- 0.193  acc@2048 0.693  STAL(1.250) STAL(1.510) STAL(1.084) DESC(0.158) STAL(1.009) DESC(0.295) DESC(0.345) SOLV(0.049)
+  RoPE       SOLVED 0/8  acc@1024 0.731 +/- 0.008  acc@2048 0.552  STAL(0.983) STAL(0.939) STAL(0.931) STAL(0.910) STAL(0.928) STAL(0.885) STAL(0.956) STAL(0.976)
+
+  r(final loss, acc@1024) over 32 runs: -0.992
+
+== contrasts (a - b) ==
+  PRIMARY Abs_r4 - Signed_r4 @T=1024: -0.177 (MDE ~0.138) perm p 0.0002 | SOLVED 0/8 vs 8/8 Fisher p 0.0002 | FIRES
+  Pos_r4 - Signed_r4 @T=1024: -0.218 (MDE ~0.223) perm p 0.0003 | SOLVED 1/8 vs 8/8 Fisher p 0.0014 | FIRES
+  Signed_r4 - RoPE @T=1024: +0.267 (MDE ~0.011) perm p 0.0002 | SOLVED 8/8 vs 0/8 Fisher p 0.0002 | FIRES
+  Abs_r4 - Signed_r4 @T=2048: -0.244 (MDE ~0.103) perm p 0.0002 | FIRES
+  Pos_r4 - Signed_r4 @T=2048: -0.276 (MDE ~0.177) perm p 0.0002 | FIRES
+  Signed_r4 - RoPE @T=2048: +0.417 (MDE ~0.052) perm p 0.0002 | FIRES
+
+== REGISTERED VERDICT: SIGN IS CAPABILITY

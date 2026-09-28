@@ -1,9 +1,14 @@
 ---
 name: project-sign-axis
-description: A monotone phase increment cannot represent a -1 action; beyond the training length it costs MapFormer its advantage over RoPE (at training length the cost is in the loss). The sign axis is NOT ours.
+description: A monotone phase increment cannot represent a -1 action; the cost SURVIVES a matched-length control (T=1024, -0.177, 0/8 vs 8/8, 2026-09-28). The sign axis is NOT ours.
 metadata:
   type: project
 ---
+
+**Matched-length control, 2026-09-28 (`SIGN_MATCHED_RESULTS.md`): SIGN IS CAPABILITY.** Trained AND
+tested at T=1024: Abs - Signed -0.177 (perm p 0.0002), solved 0/8 vs 8/8; signed opposition 0.06 vs
+monotone 1.92-1.97. The earlier "cost is extrapolation-only" reading (T=128 training) is superseded.
+Monotone arms stalled, so budget-scoped.
 
 **The sign axis is published prior art — do not claim it.** Sarrof et al.
 (2405.17394) observed that SSM gates are "always nonnegative due to exponential or

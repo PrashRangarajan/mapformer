@@ -50,7 +50,8 @@ replication in a new regime).
 ## Citable results
 
 **The dividing line is matched vs mismatched length.** Every "helps past the training length"
-claim that got a matched-length control died. InEKF, forget gate, PoPE-wrapping, sign and
+claim that got a matched-length control died -- except sign, which SURVIVED its control
+(2026-09-28, `SIGN_MATCHED_RESULTS.md`). InEKF, forget gate, PoPE-wrapping and
 rotate/allocentric have never had one: robustness, not capability, until they do. Depth counts too:
 Dyck's +0.168 at 4 layers was depth extrapolation and CLOSED at matched depth (`DYCK_MDEPTH_RESULTS.md`);
 what survives there is depth-substitution (1 layer of path integration ~ 3 layers of attention).
@@ -62,7 +63,7 @@ what survives there is depth-substitution (1 layer of path integration ~ 3 layer
 | Boundary: map extent, a threshold | -0.010 / +0.015 / +0.305 at 32 / 128 / 512 occupied cells, matched aliasing | `ALIASING_CONTROLLED.md`, `VISITS_TEST.md` |
 | Boundary: rotation actions; allocentric recoding fixes it | +0.050 -> +0.488 (8/8); 12 headings +0.26..+0.38 | `KNOB_SWEEP_n8.md` (the 8/8 pair), `H12_BUDGET_CURVE.md`; `ALLOCENTRIC_RECODING.md` is the n=3 mechanism run (+0.049 -> +0.485) |
 | Dyck: path integration is worth ~3 layers of attention, at matched depth | trained AND tested at L32 D12 (`DYCK_MDEPTH_RESULTS.md`): position main +0.353 / +0.130 / +0.045 / +0.024 at 1-4 layers (8/8 each, A2f, floor 0.594). At 4 layers and 3x budget every arm is at ceiling (index 0.997-0.998, path 1.000; effect +0.002): **the ladder's +0.168 at 4L was depth extrapolation, trained at D4**. Mixture training (D in 4..12) keeps +0.110 at D12. Settled in the same batch: index base 32 vs 10000 within MDE at 4L; the 1x ladder budget limits the index arms (+0.021) | `DYCK_MDEPTH_RESULTS.md`, `DYCK_LADDER_RESULTS.md` |
-| Sign of the increment (replicates Sarrof / Grazzi / SRoPE in a new regime) | at T=512/1024 (trained 128): signed beats index +0.123 / +0.195 (12/12), monotone does not; opposition 0.11 vs 1.85-1.98. **At training length monotone scores 0.90-0.98 vs index 0.80: the accuracy cost is extrapolation-only; no matched-length control** | `SIGN_ABLATION.md` |
+| Sign of the increment (replicates Sarrof / Grazzi / SRoPE in a new regime) | **at MATCHED length** (trained and tested T=1024, 900 ep): Abs - Signed **-0.177** (perm p 0.0002), solved 0/8 vs 8/8; Pos -0.218; opposition 0.06 signed vs 1.92-1.97 monotone; monotone arms stalled (budget-scoped). Trained at 128 the in-distribution cost was unmeasured (-0.054) and the OOD one -0.363 | `SIGN_MATCHED_RESULTS.md`, `SIGN_ABLATION.md` |
 | Clock/map crossover | monotone costs -0.280 torus, -0.004 recency; magnitude-matched content increment +0.594 (8/8) | `RECENCY_RESULTS.md`, `RECENCY_GATE_ABLATION.md` |
 | A shared block looped x4 helps path integration (Match-Query) | loop vs no loop **+0.346 unpaired** (t 3.75; loop pooled over two batches 0.803 +/- 0.200, 1/16 failures); matches 3 real layers at 1/3 the params. Runs do NOT reproduce across batches (per-seed drift 0.185), so the paired +0.315 interaction and "never fails" are single-batch and withdrawn; r=4 + loop x4 0.986 (8/8 >= 0.941) is one batch | `REFINE_RESULTS.md`, `LOOP_HEADROOM.md`, `MQ_RANK_2X2.md` |
 | EM's recency deficit is search | EM - WM -0.375 (0/8); installed rewind frozen 1.000; per-pair origins +0.215 (n=48) | `EM_WM_STATE.md`, `SEARCH_RESULTS.md`, `PAIRSPLIT_RESULTS.md` |
