@@ -104,3 +104,9 @@ class MapFormerWM_r4MIBlockDiag(MapFormerWM):
 class MapFormerWM_PerHead4(MapFormerWM_PerHead):
     """D: per-head r=4 (8 latent dims, 4 per head, block-diagonal), from r=2's base."""
     PER_HEAD_R = 4
+
+
+class MapFormerWM_PerHead3(MapFormerWM_PerHead):
+    """E: per-head r=3 (6 latent dims, 3 per head, block-diagonal), from r=2's base. Between B
+    (per-head r=2) and D (per-head r=4); RANK3_PREREG.md."""
+    PER_HEAD_R = 3
