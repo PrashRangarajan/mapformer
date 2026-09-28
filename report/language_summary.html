@@ -218,12 +218,12 @@ footer{
 <header class="mast">
   <div class="eyebrow">MapFormer &times; PoPE &mdash; positional encodings on language</div>
   <h1>Position codes<br>on <em>language</em></h1>
-  <p class="standfirst">Two recent papers change how a transformer represents <em>where</em> a token is. <strong>MapFormer</strong> replaces the token&rsquo;s index with a learned running sum, built for navigation; <strong>PoPE</strong> separates what a token is from where it is. This work tested both on language-like data &mdash; bracket languages, real code, text and music &mdash; and re-checked MapFormer&rsquo;s navigation results at the length they were trained on. <strong>The clearest results: on bracket languages one layer of path integration is worth about three layers of ordinary attention; PoPE&rsquo;s encoding improves MapFormer; and what makes MapFormer&rsquo;s navigation solution hard to find is the rank of each attention head&rsquo;s position map.</strong></p>
+  <p class="standfirst">Two recent papers change how a transformer represents <em>where</em> a token is. <strong>MapFormer</strong> replaces the token&rsquo;s index with a learned running sum, built for navigation; <strong>PoPE</strong> separates what a token is from where it is. This work tested both on language-like data &mdash; bracket languages, real code, text and music &mdash; and re-checked MapFormer&rsquo;s navigation results at the length they were trained on. <strong>The clearest results: on bracket languages one layer of path integration is worth about three layers of ordinary attention; PoPE&rsquo;s encoding improves MapFormer; and what makes MapFormer&rsquo;s navigation solution hard to find is the rank of each attention head&rsquo;s position map. On navigation, letting a step be negative is needed at the training length, not only beyond it.</strong></p>
   <dl class="metastrip">
     <div><dt>Tasks</dt><dd>Dyck-2, real Python, enwik8, Indirect Indexing, Bach Chorales; torus navigation</dd></div>
     <div><dt>Standard</dt><dd>3&ndash;8 seeds, all arms in one batch; newer results tested with exact permutation and Fisher tests</dd></div>
     <div><dt>Every result</dt><dd>reported beside the score of a model with no memory</dd></div>
-    <div><dt>As of</dt><dd>26 Sep 2026</dd></div>
+    <div><dt>As of</dt><dd>28 Sep 2026</dd></div>
   </dl>
 </header>
 
@@ -232,9 +232,10 @@ footer{
   <ol>
     <li><strong>On Dyck-2, one layer of path integration is worth about three layers of ordinary attention.</strong> Trained and tested on the same bracket depth: +0.35 at one layer, +0.13 at two, +0.05 at three, +0.02 at four (8/8 seeds each). It buys parameter efficiency, not something depth cannot reach &mdash; given four layers and enough training, ordinary models get there too.</li>
     <li><strong>PoPE&rsquo;s encoding also improves MapFormer.</strong> At the training length the combined model beats MapFormer on every task where PoPE helps and is never detectably worse &mdash; so when a task needs path integration, add PoPE on top. Where position only counts tokens, plain PoPE (music) or plain RoPE (code) is better.</li>
-    <li><strong>MapFormer&rsquo;s bottleneck limits it, and the deciding number is per attention head.</strong> On long navigation walks, every version giving each head a rank-2 position map finds the solution on 0 to 2 of 8 seeds; every rank-4 version on 8 of 8 &mdash; though rank 2 can represent and hold that solution. It is a problem of finding it.</li>
+    <li><strong>MapFormer&rsquo;s bottleneck limits it, and the deciding number is per attention head.</strong> On long navigation walks, every version giving each head a rank-2 position map finds the solution on 0 to 2 of 8 seeds; every rank-4 version on 8 of 8 &mdash; though rank 2 can represent and hold that solution. It is a problem of finding it. Rank 3 per head recovers most of the gap (6 of 8 seeds).</li>
+    <li><strong>On navigation, the step has to be allowed to go negative.</strong> Trained and tested on the same 1024-step walks, forcing every step to be positive costs 0.177 accuracy: 0 of 8 seeds find the solution against 8 of 8. Earlier this cost had only been seen on walks longer than training.</li>
     <li><strong>Three published results replicate</strong>: MapFormer on Dyck-2, and PoPE on both Indirect Indexing and Bach Chorales.</li>
-    <li><strong>A 48-parameter fix matches a 786k-parameter one.</strong> A simple distance penalty in attention repairs long-context failures on Bach, and improved every model on real code.</li>
+    <li><strong>A 48-parameter fix matches a 786k-parameter one.</strong> A simple distance penalty in attention repairs long-context failures on Bach, and improved every model on real code (significantly for two of the four).</li>
     <li><strong>A simple data trick beats PoPE&rsquo;s published Bach score</strong> by a wide margin &mdash; 0.394 against their 0.489.</li>
     <li><strong>The metric the MapFormer paper uses on Dyck is unreliable.</strong> A model with no memory scores 0.88 on it, and it reports the effect running in the opposite direction to what it actually does.</li>
   </ol>
@@ -281,6 +282,7 @@ footer{
     <li><span class="chip det">8/8 seeds</span><strong>Varying depth during training keeps the advantage.</strong> Training on a mixture of depths 4 to 12 leaves +0.110 at depth 12 with four layers. What removes the effect is training at one fixed depth with enough layers and budget &mdash; not depth-matching as such.</li>
   </ul>
   <p style="margin-top:22px">It agrees in direction with MapFormer&rsquo;s own navigation result, measured at the training length: with a converged training recipe, path integration beats a matched index model by <strong class="num">+0.243</strong> (8/8; 0.971 against 0.805, floor 0.506). The two tasks share the property that makes a signed running sum useful &mdash; position that can move backwards.</p>
+  <p>The same exchange rate appeared on a second task: a walk on a 32-cell ring where the chance of stepping backwards is a dial. One path-integrated layer solves every setting (32 of 32 runs). Ordinary attention needs three layers wherever a step can be undone, even when only one stretch in ten runs backwards, and one layer only when every step goes forward. The pre-registered main readout, how one-layer attention accuracy moves along the dial, came out uneven (0.717, 0.676, 0.825, 1.000) and fit neither predicted pattern.</p>
 </section>
 
 <!-- ============ REPLICATIONS ============ -->
@@ -312,7 +314,7 @@ footer{
       </tbody>
     </table>
   </div>
-  <p class="caption">Test NLL, lower is better, 5/5 seeds for each repair. On real code the same fix improved all four models on every seed, even at the training length; <b>plain RoPE plus the fix scored best of the eight code models</b>, though its lead over the next ones is not statistically established.</p>
+  <p class="caption">Test NLL, lower is better, 5/5 seeds for each repair. On real code, rescored on the whole validation file, the same fix improved all four models on every seed, even at the training length; the gain is statistically established for the two path-integrated models (MapPoPE p = 0.008, MapWM p = 0.036) and not for RoPE or PoPE. Plain RoPE plus the fix has the lowest score of the eight code models, but its lead is not established.</p>
 
   <h3>A simple data trick beats the published Bach score</h3>
   <ul class="findings">
@@ -339,11 +341,11 @@ footer{
         <tr><td>Dyck-2, 1 layer</td><td class="best">+0.010 (8/8)</td><td class="best">+0.073 (7/8)</td></tr>
         <tr><td>Dyck-2, 2 layers</td><td class="best">+0.026 (8/8)</td><td class="best">+0.050 (8/8)</td></tr>
         <tr><td>Dyck-2, 3&ndash;4 layers</td><td class="best">+0.017 / +0.026</td><td>&minus;0.013 / +0.025 &nbsp;<em>unmeasured</em></td></tr>
-        <tr><td>real code, trained and tested at 2048</td><td>&minus;0.001 &nbsp;<em>unmeasured</em></td><td class="best">&minus;0.005 (3/3)</td></tr>
+        <tr><td>real code, trained and tested at 2048</td><td>&minus;0.001 &nbsp;<em>unmeasured</em></td><td>&minus;0.005 (3/3) &nbsp;<em>unmeasured</em></td></tr>
       </tbody>
     </table>
   </div>
-  <p class="caption">Highlighted = detectable and in PoPE&rsquo;s favour. Lower is better for Bach and code; higher for Dyck. On Bach the gain is about half as large on the path-integrated model; on Dyck at shallow depth and on code it is larger &mdash; though whether it is <em>genuinely</em> larger is not yet statistically established. On Dyck it fades by three to four layers, where the path-integrated models become noisier.</p>
+  <p class="caption">Highlighted = detectable and in PoPE&rsquo;s favour. Lower is better for Bach and code; higher for Dyck. On Bach the gain is about half as large on the path-integrated model; on Dyck at shallow depth it is larger &mdash; though whether it is <em>genuinely</em> larger is not yet statistically established. On code it points the same way on all three seeds but is not established (p = 0.09 on the whole validation file). On Dyck it fades by three to four layers, where the path-integrated models become noisier.</p>
 
   <p>That is not the same as MapPoPE being the best model. The full ordering, task by task:</p>
   <div class="tablewrap">
@@ -358,16 +360,40 @@ footer{
   </div>
 
   <ul class="findings">
-    <li><span class="chip det">Detectable</span><strong>Adding PoPE&rsquo;s encoding to path integration is a good idea at the training length.</strong> Detectably better on three tasks, never detectably worse on any. Beyond the training context it can collapse &mdash; on Bach MapPoPE scores 4.616 against MapWM&rsquo;s 1.397 &mdash; unless the 48-parameter fix above is added (0.622). If a task calls for MapFormer, use MapPoPE with the fix.</li>
-    <li><span class="chip det">Detectable</span><strong>Adding path integration to PoPE is not, on clock-like tasks.</strong> Where position only counts tokens, plain PoPE wins: a learned counter is slightly but consistently worse than the exact one the index provides for free.</li>
-    <li><span class="chip ok">In practice</span><strong>The two ideas are not symmetric partners.</strong> PoPE&rsquo;s encoding reliably helps a path-integrated model where it helps at all, but on its own it is not a general improvement: it wins on music, is small on Dyck, ties RoPE on code (and scores worse on 3/3 seeds once both have the distance fix), and loses on the navigation index model. Path integration is a specialist tool for <em>where</em> the angle comes from &mdash; worth it when position is genuinely signed, as in navigation and bracket structure, and not otherwise.</li>
+    <li><span class="chip det">Detectable</span><strong>Adding PoPE&rsquo;s encoding to path integration is a good idea at the training length.</strong> Detectably better on two tasks (Bach, and Dyck at one and two layers), the same direction on code, and never detectably worse on any. Beyond the training context it can collapse &mdash; on Bach MapPoPE scores 4.616 against MapWM&rsquo;s 1.397 &mdash; unless the 48-parameter fix above is added (0.622). If a task calls for MapFormer, use MapPoPE with the fix.</li>
+    <li><span class="chip warn">Directional</span><strong>Adding path integration to PoPE is not, on clock-like tasks.</strong> Where position only counts tokens, plain PoPE scores better on every seed (Bach 5/5, code 3/3), but neither gap is statistically established. What is established on code is that path integration costs overall at the training length: +0.0056 bits per byte, p = 0.024, three seeds. A learned counter is slightly worse than the exact one the index provides for free.</li>
+    <li><span class="chip ok">In practice</span><strong>The two ideas are not symmetric partners.</strong> PoPE&rsquo;s encoding reliably helps a path-integrated model where it helps at all, but on its own it is not a general improvement: it wins on music, is small on Dyck, ties RoPE on code (and is detectably worse once both have the distance fix, p = 0.002), and loses on the navigation index model. Path integration is a specialist tool for <em>where</em> the angle comes from &mdash; worth it when position is genuinely signed, as in navigation and bracket structure, and not otherwise.</li>
+  </ul>
+</section>
+
+<!-- ============ SIGN ============ -->
+<section>
+  <h2>A navigation check: the step has to be able to go negative</h2>
+  <p class="sectmeta">torus navigation &middot; trained and tested on 1024-step walks &middot; 4 models &times; 8 seeds, one batch</p>
+  <p>MapFormer&rsquo;s step can be negative, so moving east then west cancels. Several published designs force the step to be positive, which turns position into a clock that only moves forward. An earlier test found that costly only on walks longer than training, which is the kind of result this page treats as robustness, not capability. So it was re-run with every model trained and tested at the same length:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>step</th><th>seeds that find<br>the solution</th><th>revisit accuracy</th></tr></thead>
+      <tbody>
+        <tr class="hero"><td>signed (MapFormer)</td><td class="best">8 / 8</td><td class="best">0.998</td></tr>
+        <tr><td>forced positive, |step|</td><td>0 / 8</td><td>0.821</td></tr>
+        <tr><td>forced positive, softplus (as in GRAPE-AP)</td><td>1 / 8</td><td>0.781</td></tr>
+        <tr><td>token index (RoPE)</td><td>0 / 8</td><td>0.731</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="caption">Within 900 epochs; &ldquo;finds the solution&rdquo; = final training loss below 0.05. The |step| model differs from the signed one only in taking the absolute value.</p>
+  <ul class="findings">
+    <li><span class="chip det">8/8 vs 0/8</span><strong>The sign is a capability, not only robustness.</strong> Forcing the step positive costs 0.177 at the training length (p = 0.0002). In the trained signed models opposite moves cancel almost exactly (0.06 on a scale where 0 is perfect cancellation and 2 is none); in the positive-only models they cannot (1.92&ndash;1.97).</li>
+    <li><span class="chip ok">Replicates</span><strong>This is known elsewhere.</strong> Sarrof et al., Grazzi et al. and Selective RoPE show that positive-only updates cannot track states that go back; this carries it to navigation at the training length.</li>
+    <li><span class="chip warn">Caveat</span><strong>The positive-only models stalled rather than converged,</strong> so the claim is that they do not learn it within this training budget, not that they never could.</li>
   </ul>
 </section>
 
 <!-- ============ RANK ============ -->
 <section>
   <h2>A navigation check: MapFormer&rsquo;s own bottleneck</h2>
-  <p class="sectmeta">torus navigation &middot; trained and tested on 1024-step walks &middot; 3 models &times; 8 seeds &middot; identical starting weights except the bottleneck</p>
+  <p class="sectmeta">torus navigation &middot; trained and tested on 1024-step walks &middot; 6 models &times; 8 seeds &middot; identical starting weights except the bottleneck</p>
   <p>MapFormer turns each token into a step through a small bottleneck &mdash; the paper uses rank 2, arguing that a 2-D world needs a 2-D step. An earlier result here favoured rank 4, but only on walks longer than those trained on, which is exactly the kind of result the measurement lesson below distrusts. So it was re-run at the training length, with every model built from the same starting weights and differing only in the bottleneck:</p>
   <div class="tablewrap">
     <table>
@@ -376,17 +402,19 @@ footer{
         <tr><td>our shared rank 2</td><td>2</td><td>0 / 8</td><td>0.894</td></tr>
         <tr><td>per-head rank 2 (literal reading of the paper)</td><td>2</td><td>2 / 8</td><td>0.885</td></tr>
         <tr><td>rank 4, heads kept separate</td><td>2</td><td>2 / 8</td><td>0.948</td></tr>
+        <tr><td>per-head rank 3</td><td>3</td><td>6 / 8</td><td>0.987</td></tr>
         <tr class="hero"><td>shared rank 4</td><td>4</td><td class="best">8 / 8</td><td class="best">0.998</td></tr>
         <tr class="hero"><td>per-head rank 4</td><td>4</td><td class="best">8 / 8</td><td class="best">0.999</td></tr>
         <tr class="floor"><td>no memory at all</td><td colspan="2">&mdash;</td><td>0.506</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="caption">Within 900 epochs; &ldquo;finds the solution&rdquo; = final training loss below 0.05. All five differ only in this bottleneck &mdash; every other starting weight is identical at each seed. The split follows the third column exactly, and the total size of the bottleneck does not track it: rows 2 and 4 are the same size and land on opposite sides.</p>
+  <p class="caption">Within 900 epochs; &ldquo;finds the solution&rdquo; = final training loss below 0.05. All six differ only in this bottleneck &mdash; every other starting weight is identical at each seed. Rank 3 was trained in a later batch, which also re-ran one stored rank-4 model and matched it exactly. The split follows the third column exactly, and the total size of the bottleneck does not track it: rows 2 and 4 are the same size and land on opposite sides.</p>
   <ul class="findings">
     <li><span class="chip det">8/8 vs 2/8</span><strong>What decides it is the rank per attention head.</strong> Two further versions separate the candidates: whether the heads share one set of dimensions makes no measurable difference, and neither does the output layer&rsquo;s scale. Only the number of dimensions driving each individual head&rsquo;s angle does (p = 0.007). The paper states a per-head input layer but not the output layer&rsquo;s shape; read literally its rank 2 is a 2-of-8 row, but with a full output layer it would be an 8-of-8 row.</li>
+    <li><span class="chip det">6/8</span><strong>Rank 3 per head recovers most of the gap.</strong> It finds the solution on 6 of 8 seeds with accuracy 0.987, against 0.885 at rank 2 (p = 0.027; 0.054 after correcting for two comparisons, so at the edge of the pre-registered test). Rank 3 and rank 4 are not distinguishable at 8 seeds. The two failures stall in the same code as rank 2&rsquo;s, one where opposite moves do not cancel.</li>
     <li><span class="chip det">Existence</span><strong>Rank 2 can represent and hold the solution &mdash; it just rarely finds it.</strong> Squeezing a trained rank-4 model to rank 2 keeps 0.995 accuracy; trained further from there, rank 2 keeps it on 7 of 8 seeds, like rank 4. So the problem is search, not capacity.</li>
-    <li><span class="chip warn">Scope</span><strong>One task, one length, two heads, a fixed budget.</strong> Rank 2 was shown to hold the solution for our shared version; for the per-head versions that is inferred. Rank 3 per head is untested.</li>
+    <li><span class="chip warn">Scope</span><strong>One task, one length, two heads, a fixed budget.</strong> Rank 2 was shown to hold the solution for our shared version; for the per-head versions that is inferred.</li>
   </ul>
 </section>
 
@@ -422,7 +450,7 @@ footer{
   <h2>Next</h2>
   <p class="sectmeta">ranked by how much each could change the picture</p>
   <ul class="findings">
-    <li><span class="chip plain">Next</span><strong>The remaining navigation checks.</strong> Three earlier results (sign, a correction filter, a forget gate) have still only been measured past what training covered. Dyck and rank have now both been checked; Dyck's four-layer claim did not survive, rank's did.</li>
+    <li><span class="chip plain">Next</span><strong>The remaining navigation checks.</strong> Two earlier results (a correction filter, a forget gate) have still only been measured past what training covered. Dyck, rank and sign have now been checked at the training length: Dyck's four-layer claim did not survive; rank and sign did. Running now: whether a looped block or extra depth lets rank 2 find the solution given twice the training.</li>
     <li><span class="chip plain">Next</span><strong>MAESTRO</strong>, ~200 hours of piano, large enough to avoid overfitting &mdash; the direct test of whether PoPE&rsquo;s gain survives without that ceiling. About two days.</li>
     <li><span class="chip plain">Next</span><strong>Pointer arithmetic that generalises.</strong> Both models currently memorise Indirect Indexing shift by shift; the design analysis suggests a specific architectural change that should let it be done as arithmetic.</li>
   </ul>

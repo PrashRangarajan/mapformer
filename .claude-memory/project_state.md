@@ -48,7 +48,7 @@ Do not edit train_variant.py, model*.py, train.py, environment*.py while 1-3 run
   (+0.353 / +0.130 / +0.045 / +0.024 at 1-4 layers) and mixture training over D 4..12 (+0.110 at
   D12). Closed in the same batch: the RoPE base confound at 4L; the 1x ladder budget WAS limiting
   the index arms (+0.021).
-- Shared report at v8. The 2026-09-24 audits and code fixes are in `docs/audits/2026-09-24/`; the
+- Shared report at v9 (2026-09-28: sign, rank 3, code full-val, H3). The 2026-09-24 audits and code fixes are in `docs/audits/2026-09-24/`; the
   review scripts behind them, and behind the rank line, in `docs/audits/2026-09-24/rank_review*/`
   and `docs/audits/2026-09-25/rank_mi_review/` (rescued from a scratchpad 2026-09-27).
 
