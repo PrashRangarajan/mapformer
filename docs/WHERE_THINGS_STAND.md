@@ -4,6 +4,14 @@ Orientation for a fresh session. Read `.claude-memory/project_state.md` first (w
 what the user must decide), then this. `CLAUDE.md` holds the conventions, the citable table and the
 withdrawal list and is the authority on all three; this file is the shape of the project around them.
 
+
+> **Update 2026-09-28** (this note is otherwise as of 2026-09-27). Landed since: **sign SURVIVED its
+> matched-length control** (`SIGN_MATCHED_RESULTS.md`: trained and tested at T=1024, Abs - Signed
+> -0.177, p 0.0002, 0/8 vs 8/8) -- it is no longer a never-controlled claim; **rank 3 per head**
+> solves 6/8, acc 0.987, registered RANK 3 SUFFICES at its boundary (`RANK3_RESULTS.md`); the code
+> full-val rescore flipped no signs (`CODE_FULLVAL_RESULTS.md`). Running: H3 (`CANCEL_PREREG.md`).
+> Paused: H1 at 1800 epochs. Live state is in `.claude-memory/project_state.md`.
+
 ## The thesis, as it now stands
 
 This began as a reproduction of Rambaud et al.'s MapFormer -- a transformer whose rotary angle is a

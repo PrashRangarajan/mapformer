@@ -1,5 +1,9 @@
 # C2, the repaired-baseline control: in distribution the envelope HELPS, and both axes are detectably WORSE
 
+> **CORRECTED 2026-09-28 by `CODE_FULLVAL_RESULTS.md`** (supersedes the contrasts below). The
+> numbers here are read on `best_val_bpc` (min over 36 evals of ~5.7 percent of val). Rescored on the
+> whole val file (.final.pt, n=3, t-test): PoPE-Decay - RoPE-Decay +0.0054 (p 0.002, keep); MapPoPE-Decay - PoPE-Decay +0.0061 (p 0.067, UNMEASURED); MapWM-Decay - RoPE-Decay +0.0034 (p 0.20: "RoPE-Decay best of eight" unsupported); envelope keeps for MapPoPE (p 0.008) and MapWM (p 0.036) only. No sign flips; nothing withdrawn.
+
 Registered in `CODE_PREREG.md` Amendment 2 as "the decisive one". Batch completed
 2026-09-22 02:52 (`runs/code_decay/.done`), 4 arms x 3 seeds in one batch, and sat
 **unread for a day** until an audit found it. Arms verified as exact inert twins of

@@ -1,5 +1,9 @@
 # Code modelling: the out-of-distribution result is RETRACTED
 
+> **CORRECTED 2026-09-28 by `CODE_FULLVAL_RESULTS.md`** (supersedes the contrasts below). The
+> numbers here are read on `best_val_bpc` (min over 36 evals of ~5.7 percent of val). Rescored on the
+> whole val file (.final.pt, n=3, t-test): C1 position main +0.0056 (p 0.024, keep); MapPoPE - PoPE +0.0034 (p 0.19, UNMEASURED -- not "DETECTABLE"); MapPoPE - MapWM -0.0054 (p 0.086, UNMEASURED); encoding main -0.0033 (p 0.31). No sign flips; nothing withdrawn.
+
 > **RETRACTED 2026-09-21 by its own registered control (C1).** Trained AND tested
 > at 2048 (matched tokens/step, `runs/code2048`, seed 0, all four arms complete):
 >
