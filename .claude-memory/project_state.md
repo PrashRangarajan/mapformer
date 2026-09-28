@@ -18,14 +18,11 @@ The three train_variant drivers share the 2-jobs/GPU picker and run in this orde
 2. **Sign at matched length** -- DONE 2026-09-28 14:08 (`SIGN_MATCHED_RESULTS.md`): registered SIGN IS
    CAPABILITY. Trained and tested at T=1024: Abs - Signed -0.177 (perm p 0.0002), solved 0/8 vs 8/8;
    opposition signed 0.06 vs monotone 1.92-1.97. Monotone arms stalled (budget-scoped).
-3. **H1 at 1800 epochs** (`LOOP_RANK_E1800_PREREG.md`, `run_loop_rank_e1800.sh`,
-   `runs/loop_rank_e1800`, `.loop_rank_e1800_done`): **PAUSED 2026-09-28 01:05 at the user's
-   request.** The shared picker has no priorities, so it grabbed slots from rank 3 and, with 3 jobs
-   per GPU, `Looped` ran at 25 s/epoch (~12.5 h per run, ~3-4 days for the batch). Killed: driver,
-   Looped s0 (epoch ~975), Vanilla_L4 s0, Vanilla_r4mi s0 (just launched); their empty dirs removed.
-   Kept: `Vanilla_s0/Vanilla.pt` (finished). **Restart once rank 3, sign and H3 are done**:
-   `setsid nohup ./run_loop_rank_e1800.sh >/dev/null 2>&1 </dev/null &` -- it skips the finished run
-   and the md5 guard passes if training code is unchanged. Killed runs restart from scratch.
+3. **H1 at 1800 epochs** -- RESTARTED 2026-09-28 14:38 after the pause (Vanilla s0 kept). Has the
+   GPUs to itself: ~30 h wall. Marker `.loop_rank_e1800_done`.
+4. **H3** -- DONE 2026-09-28 14:37 (`CANCEL_RESULTS.md`): no registered branch (index 1-layer acc
+   non-monotone in p_plus, dip at 0.75); secondary: exchange rate 3 wherever steps cancel, 1 at the
+   clock, path 1 layer 32/32 -- replicates Dyck's 1 ~ 3 layers.
 Plus, outside the picker:
 4. **Code full-val rescore** (`CODE_FULLVAL_PREREG.md`, `run_code_fullval.sh`, `.code_fullval_done`),
    eval-only on cuda:1, ~6 min per 2048 checkpoint.
