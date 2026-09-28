@@ -1,7 +1,7 @@
 \contentsline {section}{\numberline {1}Introduction}{3}{section.1}%
 \contentsline {paragraph}{What is already known.}{3}{section*.2}%
 \contentsline {paragraph}{The argument of this report.}{3}{section*.3}%
-\contentsline {paragraph}{Organisation.}{4}{section*.5}%
+\contentsline {paragraph}{Organisation.}{5}{section*.5}%
 \contentsline {section}{\numberline {2}Background: the accumulator, the kernel, and where MapFormer sits}{5}{section.2}%
 \contentsline {subsection}{\numberline {2.1}The accumulated phase}{5}{subsection.2.1}%
 \contentsline {paragraph}{Frequency initialisation.}{5}{section*.6}%
@@ -10,14 +10,14 @@
 \contentsline {paragraph}{MapWM.}{5}{section*.8}%
 \contentsline {paragraph}{Three axes.}{5}{section*.9}%
 \contentsline {subsection}{\numberline {2.3}Where the mechanisms sit}{5}{subsection.2.3}%
-\contentsline {paragraph}{MapFormer v4.}{5}{section*.11}%
+\contentsline {paragraph}{MapFormer v4.}{6}{section*.11}%
 \contentsline {section}{\numberline {3}Methods}{6}{section.3}%
 \contentsline {subsection}{\numberline {3.1}Models and knobs}{6}{subsection.3.1}%
-\contentsline {paragraph}{The index baseline's frequency schedule.}{6}{section*.12}%
+\contentsline {paragraph}{The index baseline's frequency schedule.}{7}{section*.12}%
 \contentsline {subsection}{\numberline {3.2}Tasks}{7}{subsection.3.2}%
 \contentsline {paragraph}{Paper task.}{7}{section*.14}%
 \contentsline {paragraph}{Match-Query.}{7}{section*.15}%
-\contentsline {paragraph}{Recency.}{7}{section*.16}%
+\contentsline {paragraph}{Recency.}{8}{section*.16}%
 \contentsline {subsection}{\numberline {3.3}Validity gates}{8}{subsection.3.3}%
 \contentsline {subsection}{\numberline {3.4}Statistics}{8}{subsection.3.4}%
 \contentsline {subsection}{\numberline {3.5}Recipes}{9}{subsection.3.5}%
@@ -29,14 +29,14 @@
 \contentsline {paragraph}{Two conjectures.}{10}{section*.25}%
 \contentsline {section}{\numberline {5}Claim 1: the accumulated phase carries transfer}{10}{section.5}%
 \contentsline {subsection}{\numberline {5.1}The paper task: position by encoding}{11}{subsection.5.1}%
-\contentsline {paragraph}{Under the converged recipe.}{11}{section*.28}%
+\contentsline {paragraph}{Under the converged recipe.}{12}{section*.28}%
 \contentsline {paragraph}{The maps are used.}{12}{section*.29}%
-\contentsline {paragraph}{Why index models exceed the floor at all.}{12}{section*.30}%
+\contentsline {paragraph}{Why index models exceed the floor at all.}{13}{section*.30}%
 \contentsline {subsection}{\numberline {5.2}Blind continuation}{13}{subsection.5.2}%
 \contentsline {subsection}{\numberline {5.3}Beyond navigation: parity and contextual counting}{13}{subsection.5.3}%
 \contentsline {paragraph}{Parity.}{13}{section*.31}%
 \contentsline {paragraph}{Recency.}{13}{section*.33}%
-\contentsline {subsection}{\numberline {5.4}The recipe objection}{13}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.4}The recipe objection}{14}{subsection.5.4}%
 \contentsline {section}{\numberline {6}Claim 2: the environment must make displacement a function of the token}{14}{section.6}%
 \contentsline {subsection}{\numberline {6.1}Rotation actions and allocentric recording}{14}{subsection.6.1}%
 \contentsline {subsection}{\numberline {6.2}Heading resolution}{15}{subsection.6.2}%
@@ -86,110 +86,112 @@
 \contentsline {paragraph}{The sweep.}{25}{section*.77}%
 \contentsline {paragraph}{What $r=2$ learns.}{25}{section*.80}%
 \contentsline {paragraph}{At matched length it is search.}{26}{section*.81}%
-\contentsline {paragraph}{Scope.}{26}{section*.83}%
+\contentsline {paragraph}{Scope.}{27}{section*.83}%
 \contentsline {paragraph}{Not packing geometry.}{27}{section*.84}%
 \contentsline {subsection}{\numberline {8.9}Relation to the two-algorithms account}{27}{subsection.8.9}%
-\contentsline {paragraph}{Scope of Claim 4.}{27}{section*.85}%
-\contentsline {section}{\numberline {9}Claim 5: what added machinery buys}{27}{section.9}%
+\contentsline {paragraph}{Scope of Claim 4.}{28}{section*.85}%
+\contentsline {section}{\numberline {9}Claim 5: what added machinery buys}{28}{section.9}%
 \contentsline {subsection}{\numberline {9.1}Recursion}{28}{subsection.9.1}%
 \contentsline {paragraph}{Where there is headroom.}{28}{section*.86}%
-\contentsline {paragraph}{On parity the composition is additive.}{28}{section*.88}%
-\contentsline {paragraph}{On the torus the gain is convergence.}{28}{section*.89}%
-\contentsline {paragraph}{Prior art.}{29}{section*.90}%
+\contentsline {paragraph}{On parity the composition is additive.}{29}{section*.88}%
+\contentsline {paragraph}{On the torus the gain is convergence.}{29}{section*.89}%
+\contentsline {paragraph}{On the torus at $T=1024$, rank 2: the loop partly recovers the rank deficit.}{29}{section*.90}%
+\contentsline {paragraph}{Prior art.}{29}{section*.91}%
 \contentsline {subsection}{\numberline {9.2}Gates and alternative generators}{29}{subsection.9.2}%
-\contentsline {paragraph}{An explicit what/where gate.}{29}{section*.91}%
-\contentsline {paragraph}{Selective RoPE's generator.}{29}{section*.92}%
-\contentsline {paragraph}{A forget gate.}{29}{section*.93}%
-\contentsline {subsection}{\numberline {9.3}Hierarchy}{29}{subsection.9.3}%
-\contentsline {paragraph}{Compositional transfer.}{29}{section*.94}%
-\contentsline {paragraph}{Parity at length.}{29}{section*.95}%
-\contentsline {paragraph}{On MiniGrid it compensates.}{29}{section*.96}%
-\contentsline {paragraph}{Compute.}{30}{section*.97}%
+\contentsline {paragraph}{An explicit what/where gate.}{29}{section*.92}%
+\contentsline {paragraph}{Selective RoPE's generator.}{30}{section*.93}%
+\contentsline {paragraph}{A forget gate.}{30}{section*.94}%
+\contentsline {subsection}{\numberline {9.3}Hierarchy}{30}{subsection.9.3}%
+\contentsline {paragraph}{Compositional transfer.}{30}{section*.95}%
+\contentsline {paragraph}{Parity at length.}{30}{section*.96}%
+\contentsline {paragraph}{On MiniGrid it compensates.}{30}{section*.97}%
+\contentsline {paragraph}{Compute.}{30}{section*.98}%
 \contentsline {section}{\numberline {10}Explicit state correction: no measurable benefit}{30}{section.10}%
-\contentsline {paragraph}{The prediction and the result.}{30}{section*.98}%
-\contentsline {paragraph}{What the filter does do.}{30}{section*.100}%
-\contentsline {paragraph}{Scope.}{31}{section*.102}%
+\contentsline {paragraph}{The prediction and the result.}{30}{section*.99}%
+\contentsline {paragraph}{What the filter does do.}{31}{section*.101}%
+\contentsline {paragraph}{Scope.}{31}{section*.103}%
 \contentsline {section}{\numberline {11}The length axis: an open problem}{31}{section.11}%
-\contentsline {paragraph}{What the accumulator exponent covers.}{31}{section*.103}%
-\contentsline {paragraph}{A refuted import.}{31}{section*.104}%
-\contentsline {paragraph}{PoPE's gain follows length, not octaves.}{31}{section*.105}%
-\contentsline {paragraph}{Collisions.}{31}{section*.106}%
+\contentsline {paragraph}{What the accumulator exponent covers.}{32}{section*.104}%
+\contentsline {paragraph}{A refuted import.}{32}{section*.105}%
+\contentsline {paragraph}{PoPE's gain follows length, not octaves.}{32}{section*.106}%
+\contentsline {paragraph}{Collisions.}{32}{section*.107}%
 \contentsline {section}{\numberline {12}Nested hierarchies: Dyck-2, and what its metric measures}{32}{section.12}%
-\contentsline {paragraph}{The ordering replicates; the levels do not.}{32}{section*.108}%
-\contentsline {paragraph}{The metric gives most of its range to positions that need no stack.}{32}{section*.109}%
-\contentsline {paragraph}{The floor verdict, stated.}{33}{section*.111}%
-\contentsline {paragraph}{Reach, not capability.}{33}{section*.112}%
-\contentsline {section}{\numberline {13}PoPE's own tasks, and why the two mechanisms anti-compose}{33}{section.13}%
-\contentsline {paragraph}{Indirect Indexing replicates, and the task is a late-transition search problem.}{33}{section*.113}%
-\contentsline {paragraph}{Bach Chorales replicates, and path integration adds nothing in distribution --- under a ceiling worth three times the effect.}{33}{section*.114}%
-\contentsline {paragraph}{The replication itself.}{33}{section*.115}%
-\contentsline {paragraph}{Beyond the training context the ordering inverts, and the naive combination collapses.}{33}{section*.116}%
-\contentsline {subsection}{\numberline {13.1}Why the combination fails, and what fixes it}{33}{subsection.13.1}%
-\contentsline {paragraph}{The accumulator is identical in both arms.}{33}{section*.118}%
-\contentsline {paragraph}{A dissociation locates the difference.}{34}{section*.119}%
-\contentsline {paragraph}{Two reparameterisations fail to explain it.}{34}{section*.120}%
-\contentsline {paragraph}{Two interventions do.}{34}{section*.121}%
-\contentsline {paragraph}{A decay envelope repairs it for 48 parameters, and its damage has two separable causes.}{34}{section*.122}%
-\contentsline {paragraph}{The boundary does not survive a within-task test (2026-09-20).}{34}{section*.123}%
-\contentsline {paragraph}{The between-task pattern, which prompted that test.}{35}{section*.124}%
-\contentsline {paragraph}{What is withdrawn.}{35}{section*.125}%
-\contentsline {section}{\numberline {14}Limitations}{35}{section.14}%
-\contentsline {section}{\numberline {15}Conclusion}{36}{section.15}%
-\contentsline {section}{\numberline {A}Gates and floors}{37}{appendix.A}%
-\contentsline {paragraph}{Gate records.}{37}{section*.126}%
-\contentsline {paragraph}{Excluded task families.}{37}{section*.128}%
-\contentsline {paragraph}{Why index models exceed the paper-task floor.}{37}{section*.129}%
-\contentsline {paragraph}{Match-Query at scale and at length.}{38}{section*.131}%
-\contentsline {paragraph}{Noisy Match-Query context destruction.}{38}{section*.132}%
-\contentsline {paragraph}{The MiniWorld noise floor.}{38}{section*.133}%
-\contentsline {section}{\numberline {B}Early baselines and TEM}{38}{appendix.B}%
-\contentsline {paragraph}{Length.}{38}{section*.135}%
-\contentsline {paragraph}{TEM.}{39}{section*.136}%
-\contentsline {paragraph}{Stitching, ported from CSCG (exploratory).}{39}{section*.137}%
-\contentsline {paragraph}{First paper-task pass.}{39}{section*.138}%
-\contentsline {section}{\numberline {C}Family tree and non-commutativity}{39}{appendix.C}%
-\contentsline {section}{\numberline {D}Compositional task and hierarchy}{40}{appendix.D}%
-\contentsline {paragraph}{Task.}{40}{section*.140}%
-\contentsline {paragraph}{Old recipe.}{40}{section*.141}%
-\contentsline {paragraph}{Recipe versus architecture.}{40}{section*.142}%
-\contentsline {paragraph}{Structure-aligned pooling does not help.}{40}{section*.144}%
-\contentsline {paragraph}{Which lever pays depends on structure.}{40}{section*.145}%
-\contentsline {paragraph}{Parity at $L=16$.}{40}{section*.146}%
-\contentsline {section}{\numberline {E}MiniGrid and MiniWorld: supplementary}{40}{appendix.E}%
-\contentsline {paragraph}{The other four torus knobs.}{40}{section*.147}%
-\contentsline {paragraph}{Frequency learning (exploratory).}{41}{section*.148}%
-\contentsline {paragraph}{Allocentric MiniGrid, full factorial at $n=3$.}{41}{section*.149}%
-\contentsline {paragraph}{Twelve headings, per seed.}{41}{section*.150}%
-\contentsline {paragraph}{Habitat measurements.}{41}{section*.151}%
-\contentsline {paragraph}{MiniWorld with a fixed map.}{41}{section*.152}%
-\contentsline {paragraph}{Environments.}{41}{section*.153}%
-\contentsline {section}{\numberline {F}Rank and generator probes}{41}{appendix.F}%
-\contentsline {paragraph}{Truncation is not a sufficiency test.}{41}{section*.154}%
-\contentsline {paragraph}{Selective RoPE's generator, knob by knob.}{41}{section*.155}%
-\contentsline {paragraph}{The gate is not a token suppressor.}{41}{section*.157}%
-\contentsline {paragraph}{PoPE on top of path integration, by grid.}{41}{section*.158}%
-\contentsline {paragraph}{Drift from a skewed basis.}{42}{section*.159}%
-\contentsline {paragraph}{The forget gate over training.}{42}{section*.160}%
-\contentsline {section}{\numberline {G}EM kernel: supplementary}{42}{appendix.G}%
-\contentsline {paragraph}{Kernel coherence set by construction.}{42}{section*.161}%
-\contentsline {paragraph}{Phase degrees of freedom on the torus.}{42}{section*.162}%
-\contentsline {paragraph}{Recency, $n=24$.}{42}{section*.163}%
-\contentsline {paragraph}{The start and end of search.}{42}{section*.164}%
-\contentsline {paragraph}{The 300-epoch offset-set batch.}{42}{section*.165}%
-\contentsline {paragraph}{Kernel value at zero displacement.}{43}{section*.166}%
-\contentsline {section}{\numberline {H}State correction: supplementary}{43}{appendix.H}%
-\contentsline {paragraph}{Refining the phase on the depth axis.}{43}{section*.167}%
-\contentsline {paragraph}{Landmarks.}{43}{section*.168}%
-\contentsline {paragraph}{Paper task and Match-Query at $n=3$.}{43}{section*.169}%
-\contentsline {section}{\numberline {I}Loops: supplementary}{43}{appendix.I}%
-\contentsline {paragraph}{Per-token recursion depth.}{43}{section*.170}%
-\contentsline {paragraph}{Recursion buys an index model horizon (exploratory).}{43}{section*.171}%
-\contentsline {paragraph}{Sampling the loop count.}{43}{section*.172}%
-\contentsline {section}{\numberline {J}Language and borrowed benchmarks}{43}{appendix.J}%
-\contentsline {paragraph}{MapFormer v4 on language.}{43}{section*.173}%
-\contentsline {paragraph}{enwik8.}{44}{section*.174}%
-\contentsline {paragraph}{Flip-Flop.}{44}{section*.175}%
-\contentsline {paragraph}{MQAR.}{44}{section*.176}%
-\contentsline {section}{\numberline {K}The MONOTONE batch}{44}{appendix.K}%
-\contentsline {paragraph}{Registered verdicts.}{44}{section*.179}%
-\contentsline {paragraph}{Route (P4).}{44}{section*.180}%
+\contentsline {paragraph}{The ordering replicates; the levels do not.}{32}{section*.109}%
+\contentsline {paragraph}{The metric gives most of its range to positions that need no stack.}{32}{section*.110}%
+\contentsline {paragraph}{The floor verdict, stated.}{33}{section*.112}%
+\contentsline {paragraph}{Reach, not capability.}{33}{section*.113}%
+\contentsline {paragraph}{At matched depth the depth-extrapolation effect closes; depth substitution survives.}{33}{section*.114}%
+\contentsline {section}{\numberline {13}PoPE's own tasks, and why the two mechanisms anti-compose}{34}{section.13}%
+\contentsline {paragraph}{Indirect Indexing replicates, and the task is a late-transition search problem.}{34}{section*.115}%
+\contentsline {paragraph}{Bach Chorales replicates, and path integration adds nothing in distribution --- under a ceiling worth three times the effect.}{34}{section*.116}%
+\contentsline {paragraph}{The replication itself.}{34}{section*.117}%
+\contentsline {paragraph}{Beyond the training context the ordering inverts, and the naive combination collapses.}{34}{section*.118}%
+\contentsline {subsection}{\numberline {13.1}Why the combination fails, and what fixes it}{34}{subsection.13.1}%
+\contentsline {paragraph}{The accumulator is identical in both arms.}{34}{section*.120}%
+\contentsline {paragraph}{A dissociation locates the difference.}{35}{section*.121}%
+\contentsline {paragraph}{Two reparameterisations fail to explain it.}{35}{section*.122}%
+\contentsline {paragraph}{Two interventions do.}{35}{section*.123}%
+\contentsline {paragraph}{A decay envelope repairs it for 48 parameters, and its damage has two separable causes.}{35}{section*.124}%
+\contentsline {paragraph}{The boundary does not survive a within-task test (2026-09-20).}{35}{section*.125}%
+\contentsline {paragraph}{The between-task pattern, which prompted that test.}{36}{section*.126}%
+\contentsline {paragraph}{What is withdrawn.}{36}{section*.127}%
+\contentsline {section}{\numberline {14}Limitations}{36}{section.14}%
+\contentsline {section}{\numberline {15}Conclusion}{37}{section.15}%
+\contentsline {section}{\numberline {A}Gates and floors}{38}{appendix.A}%
+\contentsline {paragraph}{Gate records.}{38}{section*.128}%
+\contentsline {paragraph}{Excluded task families.}{38}{section*.130}%
+\contentsline {paragraph}{Why index models exceed the paper-task floor.}{38}{section*.131}%
+\contentsline {paragraph}{Match-Query at scale and at length.}{39}{section*.133}%
+\contentsline {paragraph}{Noisy Match-Query context destruction.}{39}{section*.134}%
+\contentsline {paragraph}{The MiniWorld noise floor.}{39}{section*.135}%
+\contentsline {section}{\numberline {B}Early baselines and TEM}{39}{appendix.B}%
+\contentsline {paragraph}{Length.}{39}{section*.137}%
+\contentsline {paragraph}{TEM.}{40}{section*.138}%
+\contentsline {paragraph}{Stitching, ported from CSCG (exploratory).}{40}{section*.139}%
+\contentsline {paragraph}{First paper-task pass.}{40}{section*.140}%
+\contentsline {section}{\numberline {C}Family tree and non-commutativity}{40}{appendix.C}%
+\contentsline {section}{\numberline {D}Compositional task and hierarchy}{41}{appendix.D}%
+\contentsline {paragraph}{Task.}{41}{section*.142}%
+\contentsline {paragraph}{Old recipe.}{41}{section*.143}%
+\contentsline {paragraph}{Recipe versus architecture.}{41}{section*.144}%
+\contentsline {paragraph}{Structure-aligned pooling does not help.}{41}{section*.146}%
+\contentsline {paragraph}{Which lever pays depends on structure.}{41}{section*.147}%
+\contentsline {paragraph}{Parity at $L=16$.}{41}{section*.148}%
+\contentsline {section}{\numberline {E}MiniGrid and MiniWorld: supplementary}{41}{appendix.E}%
+\contentsline {paragraph}{The other four torus knobs.}{41}{section*.149}%
+\contentsline {paragraph}{Frequency learning (exploratory).}{42}{section*.150}%
+\contentsline {paragraph}{Allocentric MiniGrid, full factorial at $n=3$.}{42}{section*.151}%
+\contentsline {paragraph}{Twelve headings, per seed.}{42}{section*.152}%
+\contentsline {paragraph}{Habitat measurements.}{42}{section*.153}%
+\contentsline {paragraph}{MiniWorld with a fixed map.}{42}{section*.154}%
+\contentsline {paragraph}{Environments.}{42}{section*.155}%
+\contentsline {section}{\numberline {F}Rank and generator probes}{42}{appendix.F}%
+\contentsline {paragraph}{Truncation is not a sufficiency test.}{42}{section*.156}%
+\contentsline {paragraph}{Selective RoPE's generator, knob by knob.}{42}{section*.157}%
+\contentsline {paragraph}{The gate is not a token suppressor.}{42}{section*.159}%
+\contentsline {paragraph}{PoPE on top of path integration, by grid.}{42}{section*.160}%
+\contentsline {paragraph}{Drift from a skewed basis.}{43}{section*.161}%
+\contentsline {paragraph}{The forget gate over training.}{43}{section*.162}%
+\contentsline {section}{\numberline {G}EM kernel: supplementary}{43}{appendix.G}%
+\contentsline {paragraph}{Kernel coherence set by construction.}{43}{section*.163}%
+\contentsline {paragraph}{Phase degrees of freedom on the torus.}{43}{section*.164}%
+\contentsline {paragraph}{Recency, $n=24$.}{43}{section*.165}%
+\contentsline {paragraph}{The start and end of search.}{43}{section*.166}%
+\contentsline {paragraph}{The 300-epoch offset-set batch.}{43}{section*.167}%
+\contentsline {paragraph}{Kernel value at zero displacement.}{44}{section*.168}%
+\contentsline {section}{\numberline {H}State correction: supplementary}{44}{appendix.H}%
+\contentsline {paragraph}{Refining the phase on the depth axis.}{44}{section*.169}%
+\contentsline {paragraph}{Landmarks.}{44}{section*.170}%
+\contentsline {paragraph}{Paper task and Match-Query at $n=3$.}{44}{section*.171}%
+\contentsline {section}{\numberline {I}Loops: supplementary}{44}{appendix.I}%
+\contentsline {paragraph}{Per-token recursion depth.}{44}{section*.172}%
+\contentsline {paragraph}{Recursion buys an index model horizon (exploratory).}{44}{section*.173}%
+\contentsline {paragraph}{Sampling the loop count.}{44}{section*.174}%
+\contentsline {section}{\numberline {J}Language and borrowed benchmarks}{44}{appendix.J}%
+\contentsline {paragraph}{MapFormer v4 on language.}{44}{section*.175}%
+\contentsline {paragraph}{enwik8.}{45}{section*.176}%
+\contentsline {paragraph}{Flip-Flop.}{45}{section*.177}%
+\contentsline {paragraph}{MQAR.}{45}{section*.178}%
+\contentsline {section}{\numberline {K}The MONOTONE batch}{45}{appendix.K}%
+\contentsline {paragraph}{Registered verdicts.}{45}{section*.181}%
+\contentsline {paragraph}{Route (P4).}{45}{section*.182}%

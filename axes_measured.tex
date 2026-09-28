@@ -43,8 +43,10 @@ content-to-phase map, training rarely \emph{finds} the solution, although it
 exists: trained and tested at $T=1024$ for $900$ epochs from matched initial
 weights, our shared $r=2$ solves $0/8$ seeds, a per-head $r=2$ $2/8$ and a shared
 $r=4$ $8/8$, while a rank-$2$ solution exists ($0.9955$) and holds under training
-(measured for our shared $r=2$). Which of per-head rank, cross-head sharing and
-$W_{\mathrm{out}}$'s scale is responsible is not separated.
+(measured for our shared $r=2$). A separation batch identifies the responsible property
+as the per-head rank of the map: a block-diagonal $r=4$ (rank $2$ per head) solves $2/8$
+and a per-head $r=4$ $8/8$ (Fisher and permutation $p=0.0070$); cross-head sharing and
+$W_{\mathrm{out}}$'s per-entry scale are individually unmeasured.
 
 Both are measured on grid navigation and algorithmic tasks rather than on text,
 because they are separable only where position must be reconstructed from the input
@@ -67,6 +69,11 @@ result by a badly conditioned $r=2$ basis (within $r=2$ the skew does not predic
 accuracy; the matched-length result above replaces it), and called recency a task
 ``built to want a clock'' on which the ordering ``inverts'' (a signed rewind solves it
 exactly, and nothing inverts).
+
+\smallskip\noindent\emph{Corrected 2026-09-27.} The 2026-09-25 text said which property
+of the rank bottleneck is responsible was not separated; it is per-head rank
+(\texttt{RANK\_SEP\_RESULTS.md}). A search-aid batch at $r=2$ (\texttt{LOOP\_RANK\_RESULTS.md})
+is added to $\S$\ref{sec:rankmeas}.
 \end{abstract}
 
 \section{What is measured, and how}
@@ -238,7 +245,9 @@ with the contrast that would have refuted it.
   $r=32$. Trained and tested at $T=1024$ from matched initial weights, training finds
   the solution within $900$ epochs on $0/8$ seeds at our shared $r=2$, $2/8$ at a
   per-head $r=2$ and $8/8$ at a shared $r=4$, while a rank-$2$ solution exists and holds
-  ($\S$\ref{sec:rankmeas}); what separates the per-head $r=2$ from $r=4$ is not isolated.
+  ($\S$\ref{sec:rankmeas}). What separates them is per-head rank: a block-diagonal $r=4$
+  (rank $2$ per head) solves $2/8$ and a per-head $r=4$ $8/8$ (Fisher and permutation
+  $p=0.0070$); sharing and $W_{\mathrm{out}}$'s per-entry scale are unmeasured.
   \emph{Refuted by} a capacity slope, by the deficit growing with world dimension ---
   which was tested, and it does not --- or by the projected rank-$2$ solution failing
   to hold under training, which was tested, and it holds.
@@ -398,15 +407,34 @@ shared $r=4$ $8/8$ ($0.998$); Fisher $p=0.0002$ and $0.007$ against $r=4$, so $r
 advantage is not its initial draws. The per-head arm and $r=4$ have the same four
 latent dimensions and identical initial $W_{\mathrm{in}}$, but differ in three ways at
 once --- the rank of each head's content-to-angle map, whether the heads read a shared
-latent (perfectly confounded with it at two heads), and $W_{\mathrm{out}}$'s per-entry
-scale --- and which is responsible is not separated; the initial scale of the angle
-increments is matched. The two $r=2$ arms are not distinguishable ($2/8$ against
-$0/8$, Fisher $p=0.47$): unmeasured. The solution is not out of reach at
+latent, and $W_{\mathrm{out}}$'s per-entry scale. A second batch, built the same way,
+separates them with two more arms: a block-diagonal $r=4$ (the shared $r=4$ with its
+cross-head blocks held at zero, so rank $2$ per head at $r=4$'s $W_{\mathrm{out}}$ scale)
+solves $2/8$ ($0.948$), and a per-head $r=4$ (rank $4$ per head, separate latents) $8/8$
+($0.999$). The split is entirely by per-head rank: every arm at rank $2$ per head solves
+$0$--$2$ of $8$, every arm at rank $4$ solves $8$ of $8$, and total latent size does not
+track it. Per-head rank fires (per-head against block-diagonal $r=4$, Fisher and permutation
+$p=0.0070$, Holm $0.028$); sharing (per-head against shared $r=4$, $8/8$ against $8/8$,
+permutation $p=0.59$) and $W_{\mathrm{out}}$'s per-entry scale (block-diagonal $r=4$ against
+per-head $r=2$, $2/8$ against $2/8$, permutation $p=0.24$) are unmeasured. The
+initial-angle-scale worry is answered rather than merely matched: zeroing the cross-head
+blocks halves the block-diagonal arm's initial increment (std $0.208$), but our shared and
+the per-head $r=2$ start at normal scale ($0.335$, $0.328$) and fail the same way, so low
+initial scale is not necessary for failure. The two original $r=2$ arms are not
+distinguishable ($2/8$ against $0/8$, Fisher $p=0.47$): unmeasured. The solution is not out of reach at
 rank~$2$: projecting each solved $r=4$ model onto rank $2$ scores $0.9955$ frozen, and
 trained onward from there it stays solved ($7/8$, against $7/8$ for the $r=4$ control)
 while from-scratch $r=2$ reaches $1/8$ after $1800$ epochs. The representation exists
 and is held (measured for our shared $r=2$; for the per-head arm it is inferred); training from scratch does not find it --- the same pattern as EM's
-recency deficit. Scope: two heads, one task, one length, one width, one recipe, budget-scoped (runs
+recency deficit. A search aid partly recovers rank $2$ but does not reach rank $4$: looping
+our shared $r=2$ block $4\times$ at identical parameters and initialisation raises accuracy
+from $0.894$ to $0.973$ (permutation $p=0.0034$) and solves $2/8$; four real layers ($4\times$
+the parameters) reach $0.990$ and $5/8$, beating the loop ($+0.017$, permutation $p=0.0009$);
+$r=4$ is at $0.998$ and $8/8$. Final losses form three regimes, and nothing at rank $2$ enters
+$r=4$'s on any seed. The registered verdict is unmeasured, and uncertain rather than negative:
+the $0.05$ solved cutoff falls inside the aids' spread, and at $0.08$ the loop would have met
+its solved-count condition. Since depth beats the matched-parameter loop, this is not search
+at constant capacity. Scope: two heads, one task, one length, one width, one recipe, budget-scoped (runs
 still descending count as unsolved). \textbf{Which $r=2$}: our bottleneck is shared
 across heads and the paper's $W_{\mathrm{in}}$ is per head, so at two heads our $r=2$
 has half the paper's latent dimensions. The paper does not state $W_{\mathrm{out}}$'s
@@ -986,13 +1014,13 @@ above.
 \textbf{And keep the bottleneck.} Since $W_{\mathrm{in}}$ \emph{is} the
 identification mechanism, its rank is the channel the whole distinction passes
 through, and at rank $2$ training rarely finds the torus solution within budget
-($\S$\ref{sec:rankmeas}); a shared $r=4$, which finds it on $8/8$ seeds, costs $384$
-parameters.
+($\S$\ref{sec:rankmeas}); what buys it is per-head rank $4$, and a shared $r=4$, which
+finds it on $8/8$ seeds, costs $384$ parameters.
 
 \subsection{Combinations worth building}
 
 \begin{table}[htbp]\centering\small
-\caption{Combinations the frame identifies, ordered by how much evidence already points at them. None has been built.}
+\caption{Combinations the frame identifies, ordered by how much evidence already points at them. Only the last has been built (Match-Query, one batch); on the torus the loop has been tested at $r=2$ only, where it helps accuracy but does not reach $r=4$ ($\S$\ref{sec:rankmeas}).}
 \label{tab:combinations}
 \begin{tabular}{@{}p{3.6cm}p{3.9cm}p{3.6cm}p{3.2cm}@{}}
 \toprule
@@ -1025,8 +1053,9 @@ measures net displacement or elapsed path; its accuracy cost appears past the tr
 length. Through a rank-$2$ bottleneck training rarely finds the torus solution ---
 $0/8$, $2/8$ and $8/8$ seeds for our shared $r=2$, a per-head $r=2$ and a shared $r=4$,
 trained and tested at $T=1024$ --- although a rank-$2$ solution exists and is held, so
-the deficit is one of search; which property of the bottleneck is responsible is not
-separated. Neither dominates the choice of encoding: under the
+the deficit is one of search; the responsible property is the per-head rank of the map
+($p=0.0070$), with cross-head sharing and $W_{\mathrm{out}}$'s per-entry scale unmeasured,
+and looping or deepening the $r=2$ model partly recovers it without reaching rank $4$. Neither dominates the choice of encoding: under the
 converged recipe the encoding main effect on the torus is $+0.189$ at $T=1024$, larger
 than rank's $+0.085$. Both matter only where position must be reconstructed from the
 input, which is why they are invisible on text and why the measurements here are not.
@@ -1035,6 +1064,8 @@ input, which is why they are invisible on text and why the measurements here are
 for more of the variance than the choice of positional encoding'', and that the rank
 ``decides whether the map is well conditioned''. Both rested on superseded numbers (the
 $16$-epoch torus recipe and the $r=2$ basis reading).
+\emph{Corrected 2026-09-27:} it also said the responsible property of the bottleneck was not
+separated; it is per-head rank.
 
 What we could not show is as much of the content, and four negatives are worth
 stating together because each was a prediction of ours that failed.

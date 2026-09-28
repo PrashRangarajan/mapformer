@@ -84,6 +84,12 @@ collapse and its PoPE-decoupling corollary are withdrawn (\texttt{T2\_RESULTS.md
 search, not a skewed basis; and the torus numbers $+0.461$ / $+0.003$ quoted below
 are the $16$-epoch recipe, converged $+0.243$ with the encoding detectable at every
 length.
+
+\smallskip\noindent\emph{Corrected 2026-09-27.} (iv) Rank separation
+(\texttt{RANK\_SEP\_RESULTS.md}): the property of the bottleneck the 2026-09-25 text left
+unseparated is the per-head rank of the content-to-angle map; cross-head sharing and
+$W_{\mathrm{out}}$'s per-entry scale are individually unmeasured. (v) Recursion on the torus
+(\texttt{LOOP\_RANK\_RESULTS.md}): at $r=2$, four real layers beat the matched-parameter loop.
 \end{abstract}
 
 \section{The shared frame}
@@ -573,24 +579,32 @@ Within $r=2$ the skew does not predict accuracy ($r=-0.35$ and $+0.30$ for the t
 metrics), so it describes the arm and is not the cause.
 
 \begin{quote}\small
-\textbf{Tested at matched length (2026-09-24), and the heading above holds.} Trained
+\textbf{Tested at matched length (2026-09-24, separated 2026-09-25), and the heading above holds.} Trained
 and tested at $T=1024$ for $900$ epochs, every arm built from the same initial
 weights, $8$ seeds: our shared $r=2$ solves $0/8$ (accuracy $0.894$), a
 per-head $r=2$ $2/8$ ($0.885$), a shared $r=4$ $8/8$ ($0.998$); Fisher $p=0.0002$ and
 $0.007$ against $r=4$, so $r=4$'s advantage is not its initial draws. The per-head arm
 and $r=4$ have the same four latent dimensions and identical initial
-$W_{\mathrm{in}}$, but which of per-head rank, cross-head sharing (perfectly
-confounded with it at two heads) and $W_{\mathrm{out}}$'s per-entry scale (bound
-$0.5$ against $0.707$) is responsible is not separated; the initial scale of the
-angle increments is matched. The two $r=2$ arms are not distinguishable (Fisher
-$p=0.47$). A rank-$2$ projection of each solved $r=4$ model scores $0.9955$ frozen,
+$W_{\mathrm{in}}$, but differ in per-head rank, cross-head sharing and
+$W_{\mathrm{out}}$'s per-entry scale (bound $0.5$ against $0.707$). Two more arms from
+the same initial weights separate them: a block-diagonal $r=4$ (rank $2$ per head, at
+$r=4$'s $W_{\mathrm{out}}$ scale) solves $2/8$ ($0.948$) and a per-head $r=4$ $8/8$
+($0.999$). The split is entirely by per-head rank, which fires (per-head against
+block-diagonal $r=4$, Fisher and permutation $p=0.0070$); sharing ($8/8$ against $8/8$)
+and $W_{\mathrm{out}}$'s scale ($2/8$ against $2/8$) are unmeasured. Low initial angle
+scale is not necessary for failure: the block-diagonal arm starts at std $0.208$, but our
+shared and the per-head $r=2$ start at $0.335$ and $0.328$ and fail the same way. The two
+original $r=2$ arms are not distinguishable (Fisher $p=0.47$). A rank-$2$ projection of each solved $r=4$ model scores $0.9955$ frozen,
 and trained onward it stays solved ($7/8$, as does the $r=4$ control). The solution
 is expressible and stable at rank $2$ (measured for our shared $r=2$; inferred for
 the per-head one) and training from scratch does not find it. The paper states a
 per-head $W_{\mathrm{in}}$ but not $W_{\mathrm{out}}$'s shape: the per-head arm is
 its literal reading, and with a full $W_{\mathrm{out}}$ its $r=2$ at two heads is our
 $r=4$. Budget-scoped (within $900$ epochs), two heads, one task, length and width
-(\texttt{RANK\_MI\_RESULTS.md}, \texttt{RANK\_PROJ\_RESULTS.md}).
+(\texttt{RANK\_MI\_RESULTS.md}, \texttt{RANK\_SEP\_RESULTS.md}, \texttt{RANK\_PROJ\_RESULTS.md}).
+Looping the $r=2$ block $4\times$ at identical parameters partly recovers it ($0.973$,
+$2/8$) and four real layers more ($0.990$, $5/8$), but neither enters $r=4$'s loss regime
+on any seed (\texttt{LOOP\_RANK\_RESULTS.md}; registered verdict unmeasured).
 \end{quote}
 
 \textbf{The extra rank carries no signal; it is slack that lets gradient descent
@@ -1554,8 +1568,9 @@ and both are empirical rather than structural:
   $+0.085$ at $8\times$ training length ($T=1024$ against a training length of $128$;
   at $4\times$ it is $+0.038$) for $384$ parameters, $8/8$ seeds, and when trained and tested at
   $T=1024$ training rarely finds the solution through a rank-$2$ bottleneck
-  ($0/8$ shared $r=2$, $2/8$ a per-head $r=2$, $8/8$ a shared $r=4$; per-head rank,
-  sharing and $W_{\mathrm{out}}$'s scale not separated) while a rank-$2$
+  ($0/8$ shared $r=2$, $2/8$ a per-head $r=2$ and $2/8$ a block-diagonal $r=4$, against
+  $8/8$ for a shared and a per-head $r=4$: it is per-head rank, $p=0.0070$, with sharing and
+  $W_{\mathrm{out}}$'s scale unmeasured) while a rank-$2$
   solution exists --- is a claim about a constraint that nobody else sweeps above the
   world dimension (MapFormer itself ablates $r\in\{1,2\}$).
 \item \textbf{The navigation regime.} The papers above evaluate on language,
@@ -1913,7 +1928,7 @@ fail to cancel at an opposition score of $1.85$--$1.98$ out of a possible $2$,
 against $0.11$--$0.13$ signed. It is a replication in a new regime rather than a
 discovery, and \texttt{SIGN\_ABLATION\_PREREG.md}'s amendment says so in advance.
 
-\emph{(ii$'$) A6 is thinner than a blank column suggests, but still open.}
+\emph{(ii$'$) A6 is thinner than a blank column suggests; one torus measurement now sits in it.}
 
 Two rows
 constrain something rank-like for reasons of their own: PaTH's Householder factors
@@ -1927,8 +1942,11 @@ dimensions of content may steer the angle. That is the column where this project
 has a measurement --- $r=2$ is the worst setting, $r=4$ buys $+0.085$ at $8\times$
 training length for $384$ parameters, and at matched length the deficit is one of
 search rather than a skewed basis or missing capacity: a rank-$2$ solution exists
-and holds, and training finds it on $0/8$ seeds (ours) and $2/8$ (a per-head $r=2$,
-the paper's literal reading) against $8/8$ at a shared $r=4$.
+and holds, and training finds it on $0/8$ seeds (ours), $2/8$ (a per-head $r=2$,
+the paper's literal reading) and $2/8$ (a block-diagonal $r=4$) against $8/8$ at a shared
+and at a per-head $r=4$. The deciding property is the per-head rank of the map
+($p=0.0070$); sharing and $W_{\mathrm{out}}$'s scale are unmeasured. Scope: two heads, one
+task, one length.
 
 \emph{(iii) A7 is nearly free.} Selective RoPE runs in both hosts and Mamba-3
 crosses over by state-space duality, so ``softmax versus SSM'' separates
@@ -2139,7 +2157,7 @@ if the task needs \dots & it requires & and these supply it \\
 \midrule
 \emph{order only} --- which token came first & any monotone clock & RoPE, ALiBi, CoPE, CARoPE, GRAPE-AP, every gated linear RNN \\[3pt]
 \emph{signed displacement} --- parity, net motion, state tracking & a signed increment & MapFormer, Selective RoPE, Mamba-3; DeltaNet/PaTH/RWKV-7 with $\beta>1$. \textbf{Not} CARoPE, GRAPE-AP or CoPE \\[3pt]
-\emph{absolute location in a bounded map} & signed, \textbf{and} a shared $r\ge4$ to be found reliably (two heads tested) & MapFormer at $r\ge4$. At $r=2$ (ours shared or per head) training usually fails to find the torus solution within budget, though a rank-$2$ solution exists: search, not a skewed basis or capacity \\[3pt]
+\emph{absolute location in a bounded map} & signed, \textbf{and} per-head rank $\ge4$ to be found reliably (two heads tested) & MapFormer at per-head rank $\ge4$, shared or per head. At per-head rank $2$ (ours shared, per head, or block-diagonal $r=4$) training usually fails to find the torus solution within budget --- $0/8$, $2/8$, $2/8$ against $8/8$, $8/8$ at per-head rank $4$, $T{=}1024$ --- though a rank-$2$ solution exists: search, not a skewed basis or capacity \\[3pt]
 \emph{holding position far past the training length} & a diffusive accumulator, $\alpha\approx0.5$ & follows from cancellation (T2), as an association; a wrapped filter does \emph{not} bound the accumulator (it wraps the innovation: range $285.6$ against $283.9$) \\[3pt]
 \emph{path-dependent actions} (turn/forward) & non-abelian transport, \textbf{or} an allocentric recoding of the input & PaTH, DeltaNet, RWKV-7, TEM-t --- none evaluated on navigation. Recoding the action to absolute displacement restores $+0.488$ and keeps the scan \\[3pt]
 \emph{overwriting stale associations} & a delta rule & DeltaNet, PaTH, RWKV-7; forfeits the parallel scan \\[3pt]
@@ -2509,8 +2527,8 @@ mechanism & sets & parameter cost & measured effect \\
 \midrule
 Path integration & phase $\theta$ & $+448$ on $199{,}042$ ($+0.23\%$) & $+0.078$ parity ($16/16$); $+0.461$ torus ($16$-epoch recipe; converged $+0.243$ at $T{=}128$) \\[2pt]
 PoPE             & magnitude $\mu$ & $\hd/2 \to \hd$ widening, $+320$ & $+0.027$ \emph{with} path int. Without it, both arms were on the floor at $16$ epochs --- see note \\[2pt]
-Bottleneck rank  & state rank $\rho$ & $+384$ on $204{,}373$ ($+0.19\%$) & $+0.085$ torus $T{=}1024$ for $r{=}2\to4$ trained at $128$ ($8/8$); flat to $r{=}32$; trained at $1024$, solved $8/8$ against $0/8$ \\[2pt]
-Recursion        & block reuse & $0$ & $+0.056$ parity ($16/16$); matches or beats $3\times$ params \\[2pt]
+Bottleneck rank  & state rank $\rho$ & $+384$ on $204{,}373$ ($+0.19\%$) & $+0.085$ torus $T{=}1024$ for $r{=}2\to4$ trained at $128$ ($8/8$); flat to $r{=}32$; trained at $1024$, solved $0/8$, $2/8$, $2/8$ at per-head rank $2$ against $8/8$, $8/8$ at per-head rank $4$ \\[2pt]
+Recursion        & block reuse & $0$ & $+0.056$ parity ($16/16$); matches $3\times$ params on Match-Query. Torus $T{=}1024$, $r{=}2$: $4$ real layers beat the loop ($+0.017$, perm.\ $p=0.0009$; $5/8$ against $2/8$ solved) \\[2pt]
 Hierarchy        & token count & $0$ if weight-shared & length-dependent: $\approx 0$ at $L=16$, $+0.060$ at $L=512$ ($23/24$ seeds); $-22.8\%$ time \emph{at $L=2048$}, but see note (iv) \\[2pt]
 InEKF            & $\theta \to \hat\theta$ & $+49{,}600$ on $204{,}373$ ($+24\%$) & no individual \emph{component} is load-bearing; the whole filter is $+0.06$ to $+0.13$, at OOD length only \\[2pt]
 \textbf{Signed} $\Delta$ & sign of the increment & $\mathbf{0}$ & the largest effect here per parameter. Removing it: $-0.215$ / $-0.280$ loss-matched at $T{=}512/1024$ ($12/12$); a monotone phase beats an index clock \emph{nowhere} \\

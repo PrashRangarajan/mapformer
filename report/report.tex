@@ -29,7 +29,7 @@
 
 \title{When a Learned Path Integrator Makes a Map:\\
 \large Controlled Measurements on MapFormer}
-\date{Results report, 13 September 2026; corrected 25 September 2026}
+\date{Results report, 13 September 2026; corrected 25 and 27 September 2026}
 \author{Prashant Rangarajan}
 
 \begin{document}
@@ -67,19 +67,24 @@ $0.215$ over single-origin MapEM ($n=48$): $0.124$ from added pathway capacity w
 shared, and $0.091$ from per-pair freedom, both detectable. The rank-2 bottleneck shows the
 same pattern on the torus: trained and tested at $T=1024$ from matched initial weights, our shared $r=2$
 finds the solution on $0/8$ seeds within 900 epochs, a per-head $r=2$ on $2/8$ and a shared $r=4$ on
-$8/8$, although a rank-2 solution exists and is held under training; which of per-head rank, cross-head
-sharing and $W_{\mathrm{out}}$'s scale is responsible is not separated.
-% src: RECENCY_EM_RESULTS.md (F1); WARM_RESULTS.md (F9); SEARCH_RESULTS.md (F12); PAIRSPLIT_RESULTS.md (F19); RANK_MI_RESULTS.md; RANK_PROJ_RESULTS.md
+$8/8$, although a rank-2 solution exists and is held under training. Two more arms separate the
+cause: it is the per-head rank of the content-to-angle map (a block-diagonal $r=4$, rank 2 per head, $2/8$;
+a per-head $r=4$ $8/8$; Fisher and permutation $p=0.0070$), with cross-head sharing and $W_{\mathrm{out}}$'s
+per-entry scale individually unmeasured.
+% src: RECENCY_EM_RESULTS.md (F1); WARM_RESULTS.md (F9); SEARCH_RESULTS.md (F12); PAIRSPLIT_RESULTS.md (F19); RANK_MI_RESULTS.md; RANK_SEP_RESULTS.md; RANK_PROJ_RESULTS.md
 \end{itemize}
 Explicit state correction gives no measurable benefit on a drifting task built for it and helps
 only beyond the training length; an explicit token gate adds no measurable accuracy, and hierarchical
 pooling's only detectable gain is a ceiling-level $0.012$ (its larger gains, up to $+0.151$ on compositional transfer, are directional). % src: HIER_PARITY.md (C20); HIER_RECHECK.md (C05)
  Weight-shared recursion does add accuracy where the base model
-trains unreliably (on Match-Query, in an unpaired analysis); on the torus its gain vanishes at matched
-loss. Transfer across a change of structure is not tested, and the sequence-modelling results (Dyck-2,
+trains unreliably (on Match-Query, in an unpaired analysis); on the torus at $T=128$ its gain vanishes at matched
+loss, and at $T=1024$ it partly recovers the rank-2 deficit, where four real layers do better. Transfer across a change of structure is not tested, and the sequence-modelling results (Dyck-2,
 Bach, Indirect Indexing, enwik8) are replications and length effects at small scale, not language-model
-quality. \emph{Corrected 25 September 2026}: rank was described as a skewed basis that $r=4$ repairs; it
-is a search deficit (Section~\ref{sec:c3-rank}).
+quality; on Dyck-2 the depth-extrapolation effect closes when models are trained at the test depth, leaving
+depth substitution (one layer of path integration is worth about three of attention). \emph{Corrected 25 September 2026}: rank was described as a skewed basis that $r=4$ repairs; it
+is a search deficit (Section~\ref{sec:c3-rank}). \emph{Corrected 27 September 2026}: the responsible property
+of the rank bottleneck, previously unseparated, is per-head rank; the torus loop and Dyck matched-depth
+batches are added (Sections~\ref{sec:c5-loop} and~\ref{sec:dyck}).
 % src: MQ_NOISE_2X2.md, MQ_NOISE_2X2_C2.md; L15_ABLATION.md; GATED_RESULTS.md; HIER_PARITY.md; REFINE_RESULTS.md; L15_LOOP_2X2.md
 \end{abstract}
 
@@ -181,12 +186,12 @@ result & standing & prior work \\
 Path integration is the larger factor on MapFormer's own task on raw accuracy: at training length under the paper's recipe, and at every length measured under a converged recipe (index and PoPE controls, context destruction); the encoding adds a smaller amount beyond training length & ours & MapFormer shows path integration solves its task \\
 Rotation-based actions remove the effect; recording realised displacement restores it; the MiniGrid flip needs $r=4$; the aliasing account fails on its converged cells (exploratory at the least aliased level) & ours & none evaluates navigation \\
 Monotone increments destroy the map in navigation (at matched loss in a six-arm pool, no gain over an index code remains; loss-matched verdicts depend on the pool), isolated as one operation; a second generator pays the same raw cost & replication in a new regime & Sarrof; Grazzi; Selective RoPE \S4.2 \\
-At rank 2 per head (ours shared, and a per-head reading of the paper's design) training rarely finds a torus solution that exists and is held at rank 2; $r=4$ finds it on every seed & ours & LieRE (different axis) \\
+At rank 2 per head (ours shared, a per-head reading of the paper's design, and a block-diagonal $r=4$) training rarely finds a torus solution that exists and is held at rank 2; at rank 4 per head, shared or per head, it is found on every seed; the deciding property is per-head rank & ours & LieRE (different axis) \\
 Index codes cannot count contextually & replication & CoPE \\
 An unconstrained MapFormer counts through a content gate, by intervention & ours & CoPE's gate is the analogue \\
 Shared versus per-pair position kernel: existence, holdability, per-token search, per-pair decomposition & ours & \citet{whittington2025tale} and TEM are the frame \\
 State correction shows no detectable scaling with drift; an explicit gate separates and buys no measurable accuracy; hierarchy directional & ours & -- \\
-Recursion adds accuracy to path integration on one task (unpaired; the super-additive paired estimate is single-batch and withdrawn); recursion's torus gain is convergence & ours & recursion for depth: Mixture-of-Recursions \\
+Recursion adds accuracy to path integration on one task (unpaired; the super-additive paired estimate is single-batch and withdrawn); recursion's torus gain is convergence at $T=128$; at $T=1024$, $r=2$ it partly recovers the rank deficit, and four real layers beat it & ours & recursion for depth: Mixture-of-Recursions \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1621,8 +1626,20 @@ per-head $r=2$ $2/8$ and a shared $r=4$ $8/8$ (Fisher $p=0.0002$ and $0.007$ aga
 $+0.104$ and $+0.112$, permutation $p=0.0005$ and $0.007$), so $r=4$'s advantage is not its initial draws.
 The per-head arm and $r=4$ have the same four latent dimensions and identical initial $W_{\mathrm{in}}$, but
 differ in three ways at once: the rank of each head's content-to-angle map, whether the heads read a shared
-latent (perfectly confounded with it at two heads), and $W_{\mathrm{out}}$'s per-entry scale. Which is
-responsible is not separated; the initial scale of the angle increments is matched. The two $r=2$ arms are
+latent, and $W_{\mathrm{out}}$'s per-entry scale. A second batch built the same way (pre-registered,
+\texttt{RANK\_SEP\_PREREG.md}) separates them with two more arms: a block-diagonal $r=4$ (the shared $r=4$
+with its cross-head blocks held at zero, so rank 2 per head at $r=4$'s $W_{\mathrm{out}}$ scale) solves $2/8$
+($0.948$), and a per-head $r=4$ (rank 4 per head, separate latents) solves $8/8$ ($0.999$). The split is
+entirely by per-head rank: every arm at rank 2 per head solves 0--2 of 8, every arm at rank 4 solves 8 of 8,
+and total latent size does not track it (the per-head $r=2$ and the shared $r=4$ both have four dimensions and
+land on opposite sides). Per-head rank fires (per-head against block-diagonal $r=4$, both unshared: Fisher and
+permutation $p=0.0070$, Holm $0.028$). Sharing (per-head against shared $r=4$: $8/8$ against $8/8$,
+permutation $p=0.59$) and $W_{\mathrm{out}}$'s per-entry scale (block-diagonal $r=4$ against per-head $r=2$:
+$2/8$ against $2/8$, permutation $p=0.24$) are unmeasured. The initial-angle-scale worry is answered rather
+than merely matched: zeroing the cross-head blocks halves the block-diagonal arm's initial increment (std
+$0.208$), but our shared and the per-head $r=2$ start at normal scale ($0.335$, $0.328$) and fail the same
+way, so low initial scale is not necessary for failure. A reproduction run inside the batch matched the
+stored shared-$r=4$ seed on all 900 per-epoch losses. The two original $r=2$ arms are
 not distinguishable ($2/8$ against $0/8$, Fisher $p=0.47$; accuracy 95\% CI $[-0.123,+0.100]$): unmeasured. The
 solution exists at rank 2 and is held: projecting each solved $r=4$ model onto rank 2 scores $0.9955$
 frozen ($8/8$ seeds $\ge0.95$), and trained onward from there it stays solved on $7/8$ seeds, as does an
@@ -1633,31 +1650,36 @@ per head ($W_{\mathrm{in}}\in\R^{d\times n_h\times r}$), so at two heads our $r=
 latent dimensions. The paper does not state $W_{\mathrm{out}}$'s shape: the per-head arm is its literal
 reading, and with a full $W_{\mathrm{out}}$ the paper's $r=2$ at two heads is our shared $r=4$. Existence and
 holding were measured for our shared $r=2$; for the per-head arm they are inferred.
-% src: RANK_MI_RESULTS.md, RANK_MI_ANALYSIS.txt; RANK_PROJ_RESULTS.md (S1 STABLE); RANK_MATCHED_RESULTS.md (continuation)
+% src: RANK_MI_RESULTS.md, RANK_MI_ANALYSIS.txt; RANK_SEP_RESULTS.md, RANK_SEP_PREREG.md; RANK_PROJ_RESULTS.md (S1 STABLE); RANK_MATCHED_RESULTS.md (continuation)
 
 \begin{table}[t]
 \centering
 \small
 \captionsetup{font=footnotesize,skip=4pt}
-\caption{Rank at matched length and matched initialisation: torus, trained and tested at $T=1024$, 900 epochs, $n=8$ per arm, one batch, every arm built from the $r=2$ arm's initial weights at the same seed. Solved = mean training loss over the final 5\% of epochs below 0.05; runs still descending count as not solved. Floor 0.506. Reading: at the same four latent dimensions and identical initial $W_{\mathrm{in}}$, the shared $r=4$ finds the solution and the per-head $r=2$ rarely does; per-head rank, cross-head sharing and $W_{\mathrm{out}}$'s per-entry scale differ together between them and are not separated. A rank-2 solution exists (0.9955 frozen) and is held (measured for the shared $r=2$).}
+\caption{Rank at matched length and matched initialisation: torus, trained and tested at $T=1024$, 900 epochs, $n=8$ per arm, two batches, every arm built from the $r=2$ arm's initial weights at the same seed. Solved = mean training loss over the final 5\% of epochs below 0.05; runs still descending count as not solved. Floor 0.506. The first three arms are one batch, the last two a second batch built the same way (reproduction exact); the second batch reports means only. Reading: the split is entirely by rank per head; per-head rank fires (per-head against block-diagonal $r=4$, Fisher and permutation $p=0.0070$), while sharing (per-head against shared $r=4$) and $W_{\mathrm{out}}$'s per-entry scale (block-diagonal $r=4$ against per-head $r=2$) are unmeasured. A rank-2 solution exists (0.9955 frozen) and is held (measured for the shared $r=2$).}
 \label{tab:rank-mi}
-\begin{tabular}{@{}lcccc@{}}
+\begin{tabular}{@{}lccccc@{}}
 \toprule
-arm & latent dims & rank per head & solved & accuracy $T=1024$ \\
+arm & latent dims & heads share a latent & rank per head & solved & accuracy $T=1024$ \\
 \midrule
-our shared $r=2$ & 2 & 2 & $0/8$ & $0.894\pm0.070$ \\
-per-head $r=2$ (the paper, read literally) & 4 & 2 & $2/8$ & $0.885\pm0.131$ \\
-shared $r=4$ & 4 & 4 & $8/8$ & $0.998\pm0.005$ \\
+our shared $r=2$ & 2 & yes & 2 & $0/8$ & $0.894\pm0.070$ \\
+per-head $r=2$ (the paper, read literally) & 4 & no & 2 & $2/8$ & $0.885\pm0.131$ \\
+block-diagonal $r=4$ (\arm{Vanilla\_r4mibd}) & 4 & no & 2 & $2/8$ & $0.948$ \\
+shared $r=4$ & 4 & yes & 4 & $8/8$ & $0.998\pm0.005$ \\
+per-head $r=4$ (\arm{Vanilla\_r4ph}) & 8 & no & 4 & $8/8$ & $0.999$ \\
 \bottomrule
 \end{tabular}
-% src: RANK_MI_RESULTS.md
+% src: RANK_MI_RESULTS.md; RANK_SEP_RESULTS.md
 \end{table}
 
 \paragraph{Scope.} The rank result is conditional.
 \begin{itemize}
 \item \textbf{Budget and initialisation.} ``Within 900 epochs'' at $T=1024$, one task, one width ($d=128$, two
-heads), one recipe. $r=4$'s $W_{\mathrm{out}}$ starts at a smaller per-entry scale (bound $0.5$ against $0.707$; the initial
-angle-increment scale is matched), which is not separated from its rank or from cross-head sharing.
+heads), one recipe. $r=4$'s $W_{\mathrm{out}}$ starts at a smaller per-entry scale (bound $0.5$ against $0.707$). The
+separation batch tested that scale (block-diagonal $r=4$ against per-head $r=2$, both rank 2 per head): $2/8$
+against $2/8$, unmeasured, so it is not shown to matter; per-head rank is the factor that fires. Untested: rank
+3 per head, more heads, and whether a rank-2 arm can be brought to the solution by another route (init,
+schedule, curriculum; for depth and looping see Section~\ref{sec:c5-loop}).
 \item \textbf{MapPoPE.} $r=4$ against $r=2$ on MapPoPE is $+0.019$ at $T=1024$ ($5/8$; loss-matched
 $+0.015$), unmeasured. PoPE has 64 frequency channels per head to MapWM's 32, which may explain it; that reason
 is untested. ``Use $r=4$'' is a MapWM-family recommendation. % src: MAPPOPE_R4_RESULTS.md (E8)
@@ -1707,8 +1729,9 @@ against $8$); the paired estimates are $+0.414$ on the path-integrated model and
 and the paired interaction of $+0.315$ (\mde\ $0.281$) is a single-batch statistic on a task whose same-seed
 retrains drift $0.185$, so it is withdrawn. With $r=4$ the looped model scores $0.986\pm0.020$ in its
 (single) batch. No loss-matched analysis exists on Match-Query, so that gain
-is associated with, not separated from, more reliable training. On the torus the loop's training-length gain
-is $+0.052$ raw but $+0.006$ at matched loss. An explicit what/where gate separates action from observation tokens by a
+is associated with, not separated from, more reliable training. On the torus at $T=128$ the loop's training-length gain
+is $+0.052$ raw but $+0.006$ at matched loss; at $T=1024$ with $r=2$ it adds $+0.079$ (permutation $p=0.0034$),
+and four real layers add more. An explicit what/where gate separates action from observation tokens by a
 factor of $4.16$ and changes torus accuracy at $T=512$ by $+0.004$ (\mde\ $0.008$). State correction is
 reported in Section~\ref{sec:correction}.
 % src: LOOP_HEADROOM.md (C12); REFINE_RESULTS.md; MQ_RANK_2X2.md (C13); L15_LOOP_2X2.md (C24); GATED_RESULTS.md (E18); HIER_PARITY.md (C20)
@@ -1716,8 +1739,9 @@ reported in Section~\ref{sec:correction}.
 \subsection{Recursion}
 \label{sec:c5-loop}
 
-\paragraph{Where there is headroom.} On the torus a one-layer path-integrated model is already near
-ceiling, so a loop has nothing measurable to add there. Match-Query at $128^2$ leaves headroom. Five arms,
+\paragraph{Where there is headroom.} On the torus at $T=128$ with $r=4$ a one-layer path-integrated model is already near
+ceiling, so a loop has little to add there; at $T=1024$ with $r=2$ there is headroom, and the loop adds
+measurably (below). Match-Query at $128^2$ leaves headroom. Five arms,
 eight seeds each, pooled from three launches of the same recipe (Table~\ref{tab:loop}).
 
 \begin{table}[t]
@@ -1749,7 +1773,7 @@ contrasts are read unpaired. The loop effect survives: pooled over the two batch
 $0.803\pm0.200$ with one failure in 16 draws, and the loop on the path-integrated model minus no loop is $+0.346$ (se $0.092$, t $3.75$). The
 super-additive interaction ($+0.315$) is a paired, single-batch estimate and is withdrawn. Unpaired,
 the loop against three real layers is $+0.032$ (se $0.105$, t $0.30$): not distinguishable from them, at a
-third of the parameters. An earlier reading that the looped arm never fails (every seed at least $0.77$) came from
+third of the parameters, on this task (on the torus at $T=1024$, $r=2$, four real layers beat the loop; below). An earlier reading that the looped arm never fails (every seed at least $0.77$) came from
 one batch and is retracted. With $r=4$ (Section~\ref{sec:c3-rank}), $r=4$ plus the loop scores
 $0.986\pm0.020$ (worst seed $0.941$) at 204,757 parameters, the best arm in its batch; rank adds $+0.154$ (\mde\
 $0.084$, $8/8$) with the loop and $+0.005$ (\mde\ $0.091$) without it, a paired interaction of $+0.149$ (\mde\
@@ -1769,9 +1793,26 @@ seeds in every condition while \arm{Vanilla} converged on $3/8$, $4/8$ and $6/8$
 training length (Table~\ref{tab:l15loop}) is a separate matter (Appendix~\ref{app:loops}).
 % src: L15_LOOP_2X2.md (C24, B2); RECIPE_POWER.md (C25)
 
+\paragraph{On the torus at $T=1024$, rank 2: the loop partly recovers the rank deficit.} A pre-registered
+batch asked whether a search aid recovers rank 2 (Section~\ref{sec:c3-rank}). Trained and tested at $T=1024$
+for 900 epochs, eight seeds, one batch: our shared $r=2$ at one layer (204,373 parameters) solves $0/8$ at
+accuracy $0.894$; the same block looped four times, bit-identical in parameters and initialisation, solves
+$2/8$ at $0.973$ ($+0.079$, 95\% CI $[+0.026,+0.131]$, permutation $p=0.0034$; solved count Fisher $p=0.47$);
+four real $r=2$ layers (799,189 parameters) solve $5/8$ at $0.990$ (Fisher $0.0256$, permutation $0.0012$);
+$r=4$ at one layer solves $8/8$ at $0.998$. Four real layers beat the matched-parameter loop ($+0.017$,
+permutation $p=0.0009$; $5/8$ against $2/8$, Fisher $0.31$). Final losses form three regimes (one-layer $r=2$
+$0.05$--$0.68$, the two aids $0.011$--$0.13$, $r=4$ $0.002$--$0.010$): extra search moves rank 2 out of its
+regime but into $r=4$'s on no seed. The registered verdict is unmeasured (the loop had to solve at least
+$4/8$), and it is uncertain rather than negative: the $0.05$ solved cutoff, calibrated on a 300-epoch batch,
+falls inside the aids' spread, and at $0.08$ the loop solves $6/8$ (Fisher $0.041$ against one layer). Since
+parameters plus compute beat compute alone here, this is not ``search at constant capacity''. Scope: one task,
+length and recipe; one loop count; several looped and deep runs were still descending.
+% src: LOOP_RANK_RESULTS.md, LOOP_RANK_PREREG.md
+
 \paragraph{Prior art.} That recursion substitutes for depth is the premise of Mixture-of-Recursions
-\citep{bae2025mor}. What this report adds is the unpaired loop gain with path integration on one task, and the
-decomposition of the torus gain into convergence. A per-position oracle router on Match-Query would add
+\citep{bae2025mor}. What this report adds is the unpaired loop gain with path integration on one task, the
+decomposition of the $T=128$ torus gain into convergence, and a torus case at $T=1024$, $r=2$ where the loop
+partly recovers a search deficit but real depth beats it (its verdict threshold-sensitive). A per-position oracle router on Match-Query would add
 at most $+0.007$ against a seed sd of $0.152$ (Appendix~\ref{app:loops}). % src: LOOP_DEPTH_STRATA.md (C14)
 
 \subsection{Gates and alternative generators}
@@ -1934,9 +1975,11 @@ more slowly than MapWM with length on the paper task (Section~\ref{sec:c4-map}; 
 failed). No account covers these. Where a matched-length control has been run, the out-of-distribution
 benefit did not survive as such: on a separate code-modelling line, trained and tested at 2048 the encoding
 effect is $-0.0030$ (\mde\ $0.0046$) against $-3.694$ bpc extrapolating from a 512 context
-(\texttt{CODE\_RESULTS.md}), and on the torus rank's matched-length effect is on search. The sign, the
+(\texttt{CODE\_RESULTS.md}); on the torus rank's matched-length effect is on search; and on Dyck-2 the clearest
+instance, on the depth axis: the 4-layer position effect trained at depth 4 and scored at depth 12 closes to
+$+0.002$ at ceiling when models are trained at depth 12 (Section~\ref{sec:dyck}). The sign, the
 filter, the forget gate, PoPE's wrapping and rotation/allocentric recording have no matched-length control.
-% src: CODE_RESULTS.md; RANK_MI_RESULTS.md; RANK_SWEEP.md (E1); SIGN_ABLATION.md (E11); L15_ABLATION.md (B1); FORGET_GATE.md (E19); POPE_WRAPPING.md (E10); PAPERTASK_RESULTS.md (F20)
+% src: CODE_RESULTS.md; RANK_MI_RESULTS.md; DYCK_MDEPTH_RESULTS.md; RANK_SWEEP.md (E1); SIGN_ABLATION.md (E11); L15_ABLATION.md (B1); FORGET_GATE.md (E19); POPE_WRAPPING.md (E10); PAPERTASK_RESULTS.md (F20)
 
 \paragraph{What the accumulator exponent covers.} The growth exponent $\alpha$ tracks sign and rank
 (Section~\ref{sec:c3-alpha}). It does not detectably change under the forget gate ($-0.051$, \mde\ $0.092$),
@@ -1974,12 +2017,12 @@ metric of Goodale et al.), trained at $L=32$, $D=4$ on 560k sequences at their r
 their $L\times D$ grid. Eight seeds per arm, one batch. Pre-registration: \texttt{DYCK\_PREREG.md}.
 
 \begin{table}[h]\centering\footnotesize
-\caption{Dyck-2 F1 (ours, 8 seeds; paper value in brackets). Every model fits the training cell; the
-split appears only out of distribution. The \emph{n-gram floor} is the best of orders 1--6 fitted on the
+\caption{Dyck-2 F1 (ours, 8 seeds; paper value in brackets), trained at $L32\,D4$. Every model fits the training cell; the
+split appears only out of distribution: the $D12$ columns are $3\times$ the training depth (depth extrapolation). The \emph{n-gram floor} is the best of orders 1--6 fitted on the
 training distribution: a lookup table with no stack. The paper reports no such floor.}
 \begin{tabular}{lcccc}
 \toprule
-arm & $L32\,D4$ (trained) & $L128\,D4$ & $L32\,D12$ & $L128\,D12$ \\
+arm & $L32\,D4$ (trained) & $L128\,D4$ & $L32\,D12$ (depth-OOD) & $L128\,D12$ (depth-OOD) \\
 \midrule
 MapPoPE-1L & \textbf{0.988} & \textbf{0.923} & \textbf{0.976} & \textbf{0.927} \\
 MapWM-1L & 0.985 [1.00] & 0.900 [0.97] & 0.942 [0.98] & 0.868 [0.94] \\
@@ -2014,12 +2057,12 @@ Dyck literature uses separates the models properly (Table~\ref{tab:dyck-std}).
 (Hewitt et al.\ 2020; Yao et al.\ 2021 follow it): probability of the legal closer renormalised over
 closing brackets, averaged over distances; chance $0.500$. \emph{Valid-set prediction per sequence}
 (Suzgun et al.\ 2019; Bhattamishra et al.\ 2020; Ebrahimi et al.\ 2020): correct only if every step of the
-sequence is correct; chance $0.000$.}
+sequence is correct; chance $0.000$. Trained at $L32\,D4$: the $L128\,D12$ columns are $3\times$ the training depth and $4\times$ its length.}
 \begin{tabular}{lcc cc}
 \toprule
 & \multicolumn{2}{c}{bracket-closing memory} & \multicolumn{2}{c}{set prediction, per sequence} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
-arm & $L32\,D4$ & $L128\,D12$ & $L32\,D4$ & $L128\,D12$ \\
+arm & $L32\,D4$ & $L128\,D12$ (OOD) & $L32\,D4$ & $L128\,D12$ (OOD) \\
 \midrule
 MapPoPE-1L & \textbf{0.994} & \textbf{0.719} & 0.661 & \textbf{0.042} \\
 MapWM-1L & 0.992 & 0.638 & \textbf{0.672} & 0.003 \\
@@ -2034,9 +2077,10 @@ RoPE-1L & 0.627 & 0.535 & 0.000 & 0.000 \\
 \label{tab:dyck-std}
 \end{table}
 
-Three things follow. First, the paper's real claim survives and sharpens: a \emph{one-layer} path-integrated
+Three things follow. First, the one-layer half of the paper's claim survives: a \emph{one-layer} path-integrated
 model learns the stack at the training distribution ($0.98$--$0.99$) where one-layer index models do not
-($0.63$--$0.65$), and index models need a second layer to learn it, exactly as the transformer theory predicts
+($0.63$--$0.65$), and index models need more layers to learn it. That is a claim about parameter efficiency
+(depth substitution), not about something depth cannot buy; the matched-depth batch below measures it
 --- a distinction the F1 metric hides by scoring RoPE-1L at $0.912$ (the $0.910$ of Table~\ref{tab:dyck} is the same arm on the larger 1024-sequence evaluation). Second, ``perfect OOD generalisation''
 survives no standard metric: under the published per-sequence criterion MapWM falls from $0.672$ to $0.003$.
 Third, only under the paper's own F1 does the stack-free n-gram outscore every index model.
@@ -2050,6 +2094,25 @@ opened shows each model has a horizon rather than an ability: at $L=128$, $D=12$
 within two tokens, and at distance $33+$ MapPoPE is at $0.730$, MapWM $0.611$, RoPE $0.539$ and the n-gram
 $0.511$. Pushed to $L=512$ every model reaches chance beyond roughly 128 tokens of reach (\texttt{DYCK\_FAR\_PROBE.md}; that evaluation was run but uncommitted when this section was first written, and is committed now).
 % src: DYCK_STACK_PROBE.md
+
+\paragraph{At matched depth the depth-extrapolation effect closes; depth substitution survives.} A depth
+ladder of the same arms (RoPE, PoPE, MapWM, MapPoPE at 1--4 layers, trained at $L32\,D4$) showed a position
+effect at $L32\,D12$ at every depth, including 4 layers; but $D12$ is $3\times$ the training depth. A
+pre-registered batch trained every arm at $L32\,D12$ and scored it there, on bracket-closing memory averaged over
+distance (chance $0.500$, best trivial predictor $0.594$), eight seeds, one batch, with two of the ladder's 4-layer
+runs reproduced exactly inside it. At 4 layers and $3\times$ budget every arm is at ceiling (index
+$0.997$--$0.998$, path-integrated $1.000$): the position effect is $+0.002$ ($8/8$), a ceiling difference far
+below the pre-registered $0.05$, and the verdict is that the effect \emph{closes}. The ladder's 4-layer effect
+was depth extrapolation. What survives at matched depth and $1\times$ budget is depth substitution: path
+integration minus index position is $+0.353$, $+0.130$, $+0.045$ and $+0.024$ at 1, 2, 3 and 4 layers (each
+$8/8$), so one layer of path integration is worth roughly three layers of attention. The earlier readings that
+the index arms plateau and that depth closes part of the gap and then stops are dead: at $1\times$ the index
+arms keep climbing from 3 to 4 layers ($+0.018$ RoPE, within its \mde; $+0.025$ PoPE), the $1\times$ budget limits them ($3\times$
+minus $1\times$ is $+0.021$, $8/8$), and at $3\times$ they reach ceiling by 4 layers. Training over a mixture of
+depths (4--12) keeps a real effect at 4 layers, $+0.110$ at $L32\,D12$ ($8/8$) and $+0.043$ at $L32\,D4$; at
+$L128\,D12$ it is unmeasured. Index base 32 against base 10000 is within the \mde\ at 4 layers ($+0.001$,
+$-0.001$).
+% src: DYCK_MDEPTH_RESULTS.md, DYCK_MDEPTH_PREREG.md, DYCK_LADDER_RESULTS.md
 
 %======================================================================
 \section{PoPE's own tasks, and why the two mechanisms anti-compose}
@@ -2186,7 +2249,9 @@ observation map within one topology and action space. The TEM claim that motivat
 carrying structural knowledge across structures; nothing here tests it, and sample efficiency (learning
 curves) is not measured either.
 \item \textbf{Language modelling only at small scale.} The sequence results here are replications and
-length effects (Dyck-2, Bach, Indirect Indexing); the enwik8 experiments are underpowered or single-seed
+length effects (Dyck-2, Bach, Indirect Indexing); the one sequence result that got a matched-distribution
+control, Dyck-2's 4-layer position effect at $3\times$ the training depth, closed under it, leaving depth
+substitution (Section~\ref{sec:dyck}); the enwik8 experiments are underpowered or single-seed
 (Appendix~\ref{app:lang}); and published work reports negatives for content-dependent phase on language
 (HGRN, HGRN2) alongside MapFormer v4's own mixed result.
 \item \textbf{One varying-offset task.} Claim~4 rests on $k$-back recency. MapWM at the larger budget
@@ -2194,7 +2259,7 @@ was not run.
 \item \textbf{Out-of-distribution length.} Most accuracy effects are concentrated beyond the training length
 (Section~\ref{sec:length}), and no account of that concentration exists. The sign ablation, the filter,
 the forget gate, PoPE's wrapping and rotation/allocentric recording have never had a matched-length control;
-where one was run (code, rank) the extrapolation effect did not survive as such.
+where one was run (code, rank, Dyck depth) the extrapolation effect did not survive as such.
 \item \textbf{Recipe dependence of index baselines.} Under the paper's recipe the torus index arms are
 undertrained. Under the converged recipe the raw position main effect at training length is $+0.243$
 (\mde\ $0.038$), against $+0.461$ in the paper-recipe batch (different evaluator); it stays detectable. Loss-matched readings depend on the pool, and they are uninformative where arm losses do not
@@ -2207,7 +2272,8 @@ detectability criterion is a 10.7\% false-positive test (Section~\ref{sec:stats}
 \item \textbf{Our bottleneck is shared across heads; the paper's $W_{\mathrm{in}}$ is per head.} At two heads
 our $r=2$ has half the paper's latent dimensions. The paper does not state $W_{\mathrm{out}}$'s shape; the
 matched-length rank test includes its literal per-head reading, and with a full $W_{\mathrm{out}}$ the paper's
-$r=2$ at two heads is our $r=4$.
+$r=2$ at two heads is our $r=4$. Sharing itself was tested (per-head against shared $r=4$: $8/8$ against $8/8$,
+Fisher $p=1.00$, permutation $p=0.59$) and is unmeasured; the rank of each head's map is what fires.
 \item \textbf{Holdability at a pinned point.} The held rewind was shown with the content columns of
 $W_{\mathrm{in}}$ fixed at zero.
 \item \textbf{Simulator realism.} Allocentric recoding needs a known heading, and the one realistic simulator
@@ -2235,11 +2301,13 @@ displacement fixed, when increments are signed so that they cancel, and when tra
 finds the solution. The first two conditions were supported by single-operation interventions (the action
 record, the absolute value); the third by constructing the solution, holding it, and measuring where
 from-scratch training finds it --- for MapEM's shared kernel on recency, and for the rank-2 bottleneck on
-the torus, where our shared and a per-head $r=2$ usually fail to find a solution that exists. A fully factorised where, MapEM's shared kernel, represents the one
+the torus, where every arm at rank 2 per head usually fails to find a solution that exists and every arm
+at rank 4 per head finds it. A fully factorised where, MapEM's shared kernel, represents the one
 varying-offset task measured exactly but is found per query token, and giving the kernel per-pair freedom
 changes both the accuracy and the mechanism. Filtering and gating the where add no measurable
 accuracy at training length on these tasks, and pooling's only detectable gain is ceiling-level (its larger gains are directional); recursion does, in
-association with more reliable optimisation (on the torus its gain vanishes at matched loss; Match-Query was not
+association with more reliable optimisation (on the torus at $T=128$ its gain vanishes at matched loss; at
+$T=1024$, $r=2$ it partly recovers the rank deficit and real depth does better; Match-Query was not
 loss-matched). What remains
 open is why so many mechanisms help only beyond the training length, and whether any of this transfers across
 a change of structure.
@@ -2247,6 +2315,11 @@ a change of structure.
 \emph{Corrected 25 September 2026.} Earlier versions placed rank under cancellation (``signed and well
 conditioned''), attributed it to a skewed basis, cited a paired super-additive loop interaction, and kept a
 two-part account of the Bach collapse; all four are corrected above.
+
+\emph{Corrected 27 September 2026.} The 25 September text left the responsible property of the rank
+bottleneck unseparated (it is per-head rank; sharing and $W_{\mathrm{out}}$'s scale are unmeasured), said a
+loop has nothing to add on the torus (at $T=1024$, $r=2$ it does, and real depth does more), and did not say
+that Dyck-2's out-of-distribution depth effect closes at matched depth.
 
 \clearpage
 \appendix

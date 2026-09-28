@@ -38,11 +38,11 @@ replication in a new regime).
 |---|---|
 | live state (running, next) | `.claude-memory/project_state.md` -- read first |
 | orientation for a fresh session (thesis, what survives, what is open, what is stale) | `docs/WHERE_THINGS_STAND.md` -- read second |
-| catalogue of every results file | `RESULTS_INDEX.md` (regenerated 2026-09-24, corrected 2026-09-25: catalogue says 444 top-level `*.md`, there are 455; its Dyck and rank rows are stale; the tables below are current). Regenerate with `docs/tools/catalog_results_index.py` |
+| catalogue of every results file | `RESULTS_INDEX.md` (catalogue regenerated and rank / Dyck / loop-rank rows corrected 2026-09-27). Regenerate with `docs/tools/catalog_results_index.py` |
 | EM/WM and position-kernel line | `EM_WM_STATE.md`, `AUDIT_2026-09-10.md` |
 | guards | `GUARDS.md`; `python3 -m mapformer.test_guards` from `/home/prashr`; `python3 -m mapformer.experiment_audit --runs-dir D --control TWIN --control-of ARM` before reading any run dir |
 | void / stale results | `archive/void/` (bannered), `archive_stale/`; code bugs `KNOWN_BUGS.md` |
-| documents | `positional_review.pdf` (review), `axes_measured.pdf` (results paper), `mapformer_math.pdf` (record), `report/report.pdf`, `report/report_short.pdf` -- **all five last corrected 2026-09-25, BEFORE the Dyck matched-depth and rank-separation batches: stale, per-file list in `docs/WHERE_THINGS_STAND.md`**; corpus `papers/INDEX.md` (40 papers, read first-hand -- grep, don't re-search) |
+| documents | `positional_review.pdf` (review), `axes_measured.pdf` (results paper), `mapformer_math.pdf` (record), `report/report.pdf`, `report/report_short.pdf` -- all five corrected 2026-09-27 (rank separation, Dyck matched depth, torus loop-rank) and rebuilt from source; corpus `papers/INDEX.md` (40 papers, read first-hand -- grep, don't re-search) |
 | shared report | https://claude.ai/artifact/LVfYeHhjs1KjwMpg3Pxggc, source `report/language_summary.html`; republish WITH `url=` or the user's link breaks |
 | run dirs of the Dyck / Bach / Indirect line | `docs/LOG.md`, block 2026-09-15..20 (`DYCK_T3_RESULTS.md` is an empty artefact) |
 | model aliases | `train_variant.py::VARIANT_MAP`: MapWM-Flat=Vanilla, MapEM-Flat=VanillaEM, MapWM-Hier=Hourglass_k2, MapWM-FlatHG=HourglassFlat3; Plain-* use index RoPE |
