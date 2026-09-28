@@ -1,0 +1,21 @@
+== run classes (SOLVED = final-5% loss < 0.05) ==
+  B T=512: acc 0.910
+  B T=1024: acc 0.885
+  B T=2048: acc 0.832
+  B Vanilla_r2ph  SOLVED 2/8  acc 0.885  s0:STAL(1.049) s1:SOLV(0.007) s2:SOLV(0.003) s3:STAL(0.910) s4:DESC(0.194) s5:DESC(0.211) s6:DESC(0.248) s7:STAL(0.539)
+  E T=512: acc 0.997
+  E T=1024: acc 0.987
+  E T=2048: acc 0.952
+  E Vanilla_r3ph  SOLVED 6/8  acc 0.987  s0:DESC(0.243) s1:SOLV(0.003) s2:SOLV(0.003) s3:DESC(0.134) s4:SOLV(0.003) s5:SOLV(0.006) s6:SOLV(0.003) s7:SOLV(0.005)
+  D T=512: acc 1.000
+  D T=1024: acc 0.999
+  D T=2048: acc 0.970
+  D Vanilla_r4ph  SOLVED 8/8  acc 0.999  s0:SOLV(0.004) s1:SOLV(0.010) s2:SOLV(0.004) s3:SOLV(0.004) s4:SOLV(0.002) s5:SOLV(0.008) s6:SOLV(0.005) s7:SOLV(0.003)
+
+== reproduction D s0: max |per-epoch loss diff| 0.00e+00 over 900 epochs -> OK
+
+== contrasts (hi - lo) ==
+  rank 3 vs 2  E - B: SOLVED 6/8 vs 2/8 Fisher p 0.1319 | acc +0.102 perm p 0.0270 | Holm 0.0541 | FIRES
+  rank 4 vs 3  D - E: SOLVED 8/8 vs 6/8 Fisher p 0.4667 | acc +0.012 perm p 0.1859 | Holm 0.1859 | UNMEASURED
+
+== REGISTERED VERDICT: RANK 3 SUFFICES

@@ -83,6 +83,7 @@ r=2's initial weights at each seed, differing only in the bottleneck; SOLVED wit
 | per-head rank | arms | solved |
 |---|---|---|
 | 2 | our shared r=2, per-head r=2, block-diagonal r=4 | 0/8, 2/8, 2/8 |
+| 3 | per-head r=3 (`RANK3_RESULTS.md`; acc 0.987 vs r=2 0.885, perm p 0.027, Holm 0.054; vs r=4 UNMEASURED) | 6/8 |
 | 4 | shared r=4, per-head r=4 | 8/8, 8/8 |
 
 Separated: per-head rank FIRES (D - C_bd, both block-diagonal, Fisher and permutation p 0.0070);

@@ -11,9 +11,10 @@ first. New here? Read `docs/WHERE_THINGS_STAND.md` next.
 ## Running (all detached; judge completion by the .done marker AND the artifacts)
 Five queues, launched 2026-09-27 17:47-18:10; each pre-registered and committed before launch.
 The three train_variant drivers share the 2-jobs/GPU picker and run in this order as slots free:
-1. **Rank 3 per head** (`RANK3_PREREG.md`, `run_rank3.sh`, `runs/rank3`, marker `.rank3_done`):
-   8 x `Vanilla_r3ph` + reproduction of D s0 (`runs/rank3_repro`, tracked the stored losses exactly
-   through epoch 25). ~2 h.
+1. **Rank 3 per head** -- DONE 2026-09-28 02:41 (`RANK3_RESULTS.md`): registered RANK 3 SUFFICES, at
+   its boundary. Per-head r=3 6/8 SOLVED, acc 0.987 (r=2 0.885, r=4 0.999); 3 - 2 fires on accuracy
+   only (perm p 0.027, Fisher 0.13, Holm 0.054); 4 - 3 UNMEASURED. Reproduction exact. The two
+   unsolved seeds sit in the non-cancelling basin (opposition 1.6-1.8). Next test: 3D torus.
 2. **Sign at matched length** (`SIGN_MATCHED_PREREG.md`, `run_sign_matched.sh`, `runs/sign_matched`,
    `.sign_matched_done`): Signed/Abs/Pos/RoPE r=4 trained AND tested at T=1024, 8 seeds. ~6-8 h.
 3. **H1 at 1800 epochs** (`LOOP_RANK_E1800_PREREG.md`, `run_loop_rank_e1800.sh`,
