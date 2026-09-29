@@ -18,11 +18,16 @@ The three train_variant drivers share the 2-jobs/GPU picker and run in this orde
 2. **Sign at matched length** -- DONE 2026-09-28 14:08 (`SIGN_MATCHED_RESULTS.md`): registered SIGN IS
    CAPABILITY. Trained and tested at T=1024: Abs - Signed -0.177 (perm p 0.0002), solved 0/8 vs 8/8;
    opposition signed 0.06 vs monotone 1.92-1.97. Monotone arms stalled (budget-scoped).
-3. **H1 at 1800 epochs** -- PAUSED AGAIN 2026-09-28 18:11 (user: free the GPUs for the text world).
-   Kept: `Vanilla_s0`, `Vanilla_r4mi_s0`. Killed at ~epoch 780/1800: Looped s0/s1, Vanilla_L4 s0;
-   Vanilla_L4 s1 at 245. Restart: `setsid nohup ./run_loop_rank_e1800.sh >/dev/null 2>&1 </dev/null &`
-   (skips finished runs; killed ones restart from scratch).
+3. **H1 at 1800 epochs** -- SPLIT by Amendment 1 (2026-09-28 22:50). Part 1 running:
+   `run_loop_rank_e1800_budget.sh` (A r=2 and C r=4 only, 8 seeds; marker `.loop_rank_e1800_p1_done`;
+   reads only branch RANK 2 WAS BUDGET). Part 2 (Looped, Vanilla_L4) deferred; its runs were killed.
+4. **H3** -- DONE (`CANCEL_RESULTS.md`).
 5. **Text world** -- DONE 2026-09-28 21:14 (`TEXTWORLD_RESULTS.md`): PATH WINS IN WORDS (0.969 vs
    RoPE 0.505, RoPE 2L 0.772); step-table verdict no branch (4/8), but opposites cancel on 8/8 after
    the common component; half the seeds add a per-step clock. Jericho feasibility: NOT a good test
    (6/57 games clean, near-trees; /home/prashr/jericho_data/feasibility/).
+6. **Context-dependent step** (`CONTEXT_STEP_DESIGN.md`): decoy text world
+   (`environment_textworld_ctx.py`), `model_context_step.py` (CtxGateWM, HiddenStepWM),
+   `train_ctxstep.py`, gate `docs/audits/2026-09-27/gate_ctxstep.py` (all pass). Pilot
+   `runs/ctxstep_pilot` (CF, SR, CG, HS x 2 seeds, p_decoy 0.3) running since 23:05; pre-registration
+   after it.
