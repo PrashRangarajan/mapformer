@@ -39,3 +39,20 @@ Void: any of the 32 runs missing; md5 guard trips.
 Scope: torus, T=1024, n_heads 2, d 128, one recipe, 1800-epoch budget, one loop count (4).
 Cost: L and L4 ~7.4 s/epoch solo (~3.7 h solo, ~5 h shared); A and C ~2 s/epoch (~1-1.5 h).
 ~100 slot-hours, ~25 h wall at 2 jobs/GPU. Queued behind the rank-3 and sign batches.
+
+---
+
+## Amendment 1 (2026-09-28 ~22:30, before any result of this batch was read)
+
+The batch was paused twice for other work, and the loop (L) and 4-layer (L4) arms cost ~6-12 h per
+run. Since this was registered, `RANK3_RESULTS.md` answered a close cousin of the L/L4 question (one
+extra dimension per head recovers most of rank 2's gap). The batch is therefore split:
+- **Now (part 1): A (`Vanilla`, r=2) and C (`Vanilla_r4mi`, r=4) only, 8 seeds, 1800 epochs, same
+  recipe, same run dir and md5 list** (`run_loop_rank_e1800_budget.sh`). Two runs (A s0, C s0) had
+  already finished; nothing of them was read.
+- **Read on part 1 alone: only the first registered branch, RANK 2 WAS BUDGET (A solves >= 6/8).**
+  Reported with it: A and C SOLVED counts, T=1024 accuracy, C - A (Fisher, permutation), and A's
+  change from 900 epochs (0/8 in `runs/rank_mi`) -- descriptive, no further verdict.
+- **Deferred (part 2): L and L4.** The registered primary (L vs A) and the H1 CONFIRMED / REFUTED /
+  UNMEASURED branches are NOT read until part 2 exists; if part 2 is never run, H1 stays UNMEASURED
+  as registered at 900 epochs.
