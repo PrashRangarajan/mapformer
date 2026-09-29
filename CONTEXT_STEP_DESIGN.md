@@ -106,3 +106,15 @@ clause whose observation is the CURRENT (unchanged) cell, not scored. In the tra
 decoy starts exactly like a movement clause and is retracted right after the direction word. Gate:
 the class (move / decoy) must be unpredictable from the 3 tokens after the direction word (leading)
 or the 4 tokens before it (trailing), measured with a frequency table on held-out data.
+
+## Second revision (2026-09-29, from pilot 2): cue DISTANCE, not cue side
+Pilot 2 (`CTXSTEP_PILOT2.md`) refuted the lead/trail dissociation: the context gate used trailing cues
+and the Selective-RoPE generator used leading ones, each through a nonlinear interaction inside its
+4-token window (the gates of neighbouring tokens read the direction word, or the direction word's
+per-channel gate multiplies the cue's lagged terms). The distinction that should hold is the window:
+CG and SR can only use a cue within k-1 = 3 tokens of the direction word; the hidden-state step reads
+context through attention. Next task: insert movement-free padding between cue and direction word
+("she did not, after a long pause and some thought, go north"), distance d in {1-3, 6-10}, both sides.
+Predictions: CF fails at every d; CG and SR solve at d <= 3 and fail at d >= 6; HS solves at every d.
+A window of 4 is a design choice, so the claim will be "finite-window steps fail past their window",
+tested at one window size.
