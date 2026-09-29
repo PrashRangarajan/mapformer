@@ -92,7 +92,8 @@ r=2's initial weights at each seed, differing only in the bottleneck; SOLVED wit
 Separated: per-head rank FIRES (D - C_bd, both block-diagonal, Fisher and permutation p 0.0070);
 sharing one latent vs per-head latents UNMEASURED (D - C); `W_out` per-entry scale UNMEASURED
 (C_bd - B). Initial angle scale does not explain it (A and B fail at normal scale). A rank-2 solution
-EXISTS (0.9955) and is HELD under training, so this is SEARCH, not capacity. r=4's old +0.085 was
+EXISTS (0.9955) and is HELD under training, so this is SEARCH, not capacity. **Not a budget effect**: at 2x the budget (1800 epochs, from scratch) rank 2 still solves 0/8 vs
+rank 4 7/8 (Fisher p 0.0014; `LOOP_RANK_E1800_P1_RESULTS.md`; 5/8 rank-2 runs still descending). r=4's old +0.085 was
 out-of-distribution only (`RANK_SWEEP.md`). The paper states a per-head `W_in` but not `W_out`'s
 shape: at 2 heads its r=2 read literally is the per-head r=2 (2/8); with a full `W_out` it is our
 r=4 (8/8). Scope: n_heads=2, one length, one recipe. MapPoPE r=4 +0.019 is an OOD, unmatched-init

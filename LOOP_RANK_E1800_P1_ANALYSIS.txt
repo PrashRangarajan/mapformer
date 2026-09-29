@@ -1,0 +1,8 @@
+A r=2: 1800 ep SOLVED 0/8 acc 0.908  STAL(0.489) DESC(0.383) DESC(0.390) DESC(0.340) DESC(0.141) STAL(0.231) DESC(0.305) STAL(0.571)
+      900 ep SOLVED 0/8 acc 0.894
+C r=4: 1800 ep SOLVED 7/8 acc 0.994  SOLV(0.022) SOLV(0.024) SOLV(0.020) SOLV(0.021) SOLV(0.022) STAL(0.180) SOLV(0.024) SOLV(0.022)
+      900 ep SOLVED 8/8 acc 0.998
+
+C - A at 1800: SOLVED 7/8 vs 0/8 Fisher p 0.0014; acc +0.086 perm p 0.0003
+
+REGISTERED (branch 1 only): not budget at 1800 epochs (A < 6/8)
