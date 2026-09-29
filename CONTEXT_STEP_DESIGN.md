@@ -1,5 +1,15 @@
 # A context-dependent step -- design (2026-09-28; not yet pre-registered)
 
+> **CORRECTED 2026-09-28 23:45 (from the pilot's training losses, before any eval was read).** The
+> claim below that Selective RoPE's generator is additive is WRONG. It computes
+> `w_t = sigmoid(W_g x_t) * sum_k a_k u_{t-k}`: the gate at t multiplies the conv's LAGGED terms, so
+> a word's step can be carried one to three tokens late and switched off by a gate reading the words
+> that FOLLOW it. It cannot use a cue before the word; it can use one after. The pilot's decoy grammar
+> gave it exactly that: after a real move the direction word is always followed by "and", "there"
+> or a filler, after a decoy always by "." (checked in the task code), and SR's loss fell to 0.009
+> like the context gate's. The design is revised into a double dissociation (section "Revision")
+> below; the pilot runs to completion and its SR gates are read to confirm the mechanism.
+
 ## The problem
 MapFormer's step is a function of the token alone: `Delta_t = W_out W_in emb(x_t)` (`model.py:171`).
 In the text world (`TEXTWORLD_RESULTS.md`) that sufficed because a direction word only ever appeared
@@ -82,3 +92,17 @@ not needed.
 ## Cost
 Main batch 7 arms x 8 seeds = 56 runs, plus the no-decoy control 3 x 8 = 24: 80 runs at ~25-35 min
 each, ~8-9 h on both GPUs alone. A 2-seed pilot of CF / CG / HS first (~1 h).
+
+## Revision (2026-09-28): two cue conditions, a double dissociation
+The cue's POSITION decides which mechanism can use it:
+
+| condition | example | what is matched | CF | CG (reads before) | SR (gates lagged steps by what follows) | HS (attention) |
+|---|---|---|---|---|---|---|
+| **leading cue** | "she did not go north and saw a lamp ." | the tokens AFTER the direction word are drawn exactly as after a real move | fail | solve | fail | solve |
+| **trailing cue** | "walked north -- no , she stayed ." | the tokens BEFORE the direction word are drawn exactly as before a real move | fail | fail | solve | solve (cancel at the cue) |
+
+Task: `environment_textworld_ctx2.py`, one `cue` argument. In the leading condition a decoy is a full
+clause whose observation is the CURRENT (unchanged) cell, not scored. In the trailing condition the
+decoy starts exactly like a movement clause and is retracted right after the direction word. Gate:
+the class (move / decoy) must be unpredictable from the 3 tokens after the direction word (leading)
+or the 4 tokens before it (trailing), measured with a frequency table on held-out data.
