@@ -1,0 +1,23 @@
+== T=1024 held-out-map accuracy (floor 0.512); classes SOLVED/STALLED/DESCENDING; [T=2048, no verdict] ==
+  Vanilla_r4_L1  0.969 +/- 0.054  (7/0/1)  [0.956]  0.881 0.998 0.999 0.995 0.999 1.000 1.000 0.882
+  RoPE_L1        0.505 +/- 0.001  (0/8/0)  [0.512]  0.504 0.504 0.503 0.506 0.505 0.506 0.506 0.504
+  RoPE_L2        0.772 +/- 0.097  (0/8/0)  [0.656]  0.695 0.723 0.927 0.722 0.926 0.706 0.760 0.720
+  r(final loss, acc) over 24 runs: -0.989
+
+== primary A: path 1L - RoPE 1L = +0.464, perm p 0.0002; SOLVED 7/8 vs 0/8 Fisher p 0.0014
+   REGISTERED A: PATH WINS IN WORDS
+   secondary RoPE_L2 - RoPE_L1: +0.267, perm p 0.0002
+   secondary Vanilla_r4_L1 - RoPE_L2: +0.197, perm p 0.0009
+
+== primary B: the step table (path arm) ==
+  s0: move 0.277  opp 1.730  syn cos 1.000  syn norm 0.997  |cos NE| 0.856             DESCENDING  top: left westward west up north northward moved wandered
+  s1: move 0.058  opp 0.083  syn cos 1.000  syn norm 0.993  |cos NE| 0.282  CRITERION  SOLVED  top: north northward up south southward west down westward
+  s2: move 0.291  opp 1.434  syn cos 1.000  syn norm 0.993  |cos NE| 0.178             SOLVED  top: south down southward left west westward east eastward
+  s3: move 0.416  opp 1.707  syn cos 1.000  syn norm 0.990  |cos NE| 0.839             SOLVED  top: up north northward westward left west remembered saw
+  s4: move 0.484  opp 1.768  syn cos 1.000  syn norm 0.995  |cos NE| 0.659             SOLVED  top: northward up north west westward left remembered found
+  s5: move 0.089  opp 0.121  syn cos 1.000  syn norm 0.996  |cos NE| 0.125  CRITERION  SOLVED  top: left westward west eastward right east northward north
+  s6: move 0.086  opp 0.082  syn cos 1.000  syn norm 0.993  |cos NE| 0.236  CRITERION  SOLVED  top: up westward west east northward left right eastward
+  s7: move 0.064  opp 0.119  syn cos 1.000  syn norm 0.994  |cos NE| 0.099  CRITERION  SOLVED  top: west westward left up north northward south down
+   criterion met 4/8, synonym cos > 0.9 on 8/8
+   REGISTERED B: no registered branch -- reported as it falls
+   secondary: criterion x SOLVED table [[4,0],[3,1]], Fisher p 1.0000

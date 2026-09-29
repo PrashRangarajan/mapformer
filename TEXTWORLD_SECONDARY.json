@@ -1,0 +1,247 @@
+{
+ "floors": {
+  "constant": 0.5054066760695816,
+  "reversal_copy": 0.596458235386303,
+  "n": 6381
+ },
+ "s0": {
+  "raw": {
+   "move_ratio": 0.2772718369960785,
+   "opposition_raw": 1.7296125456937113,
+   "opposition_minus_common": 0.007141071430088366,
+   "cosNE_minus_common": 0.34595271944999695,
+   "common_over_N": 0.7110896290423964,
+   "cos_common_verb": 0.9999958276748657,
+   "synonym_cos": 0.9999944319327673
+  },
+  "omega": {
+   "move_ratio": 0.26350271701812744,
+   "opposition_raw": 1.657332557356674,
+   "opposition_minus_common": 0.003698499590414875,
+   "cosNE_minus_common": 0.4675726592540741,
+   "common_over_N": 0.7154706623342569,
+   "cos_common_verb": 0.9999961256980896,
+   "synonym_cos": 0.9999960561593374
+  },
+  "S4": {
+   "cross_direction_abs_cos": 0.6120303322871526,
+   "verb_cos": 0.9999960780143737,
+   "see_cos": 0.9225877960522969
+  },
+  "S3": {
+   "full": 0.8805829807240244,
+   "non_direction_zeroed": 0.1913493182886695,
+   "direction_zeroed": 0.38834038551951106
+  }
+ },
+ "s1": {
+  "raw": {
+   "move_ratio": 0.05818270146846771,
+   "opposition_raw": 0.0828814014462185,
+   "opposition_minus_common": 0.0029205391313440934,
+   "cosNE_minus_common": 0.2848793864250183,
+   "common_over_N": 0.040707561410604526,
+   "cos_common_verb": 0.4499261975288391,
+   "synonym_cos": 0.9999594887097677
+  },
+  "omega": {
+   "move_ratio": 0.040301479399204254,
+   "opposition_raw": 0.06257312916712565,
+   "opposition_minus_common": 0.0025710514790108505,
+   "cosNE_minus_common": 0.2666473984718323,
+   "common_over_N": 0.030878910625561428,
+   "cos_common_verb": -0.034997034817934036,
+   "synonym_cos": 0.9999670932690302
+  },
+  "S4": {
+   "cross_direction_abs_cos": 0.5215680251518885,
+   "verb_cos": 0.9620775540669759,
+   "see_cos": 0.7818243245283762
+  },
+  "S3": {
+   "full": 0.998119417019276,
+   "non_direction_zeroed": 0.8929634853471243,
+   "direction_zeroed": 0.5047798150760069
+  }
+ },
+ "s2": {
+  "raw": {
+   "move_ratio": 0.29101696610450745,
+   "opposition_raw": 1.4335374408332515,
+   "opposition_minus_common": 0.0064196192920732,
+   "cosNE_minus_common": 0.11200383305549622,
+   "common_over_N": 1.1440674772927448,
+   "cos_common_verb": 0.9994139075279236,
+   "synonym_cos": 0.9999439418315887
+  },
+  "omega": {
+   "move_ratio": 0.2669645845890045,
+   "opposition_raw": 1.3316862083294727,
+   "opposition_minus_common": 0.005561575778639029,
+   "cosNE_minus_common": 0.05955870822072029,
+   "common_over_N": 0.9848716394051344,
+   "cos_common_verb": 0.9992396831512451,
+   "synonym_cos": 0.9999703069527944
+  },
+  "S4": {
+   "cross_direction_abs_cos": 0.3583551902944843,
+   "verb_cos": 0.9999870737393697,
+   "see_cos": 0.9497515797615051
+  },
+  "S3": {
+   "full": 0.9992164237580317,
+   "non_direction_zeroed": 0.6649427989343363,
+   "direction_zeroed": 0.4820561040589249
+  }
+ },
+ "s3": {
+  "raw": {
+   "move_ratio": 0.41603875160217285,
+   "opposition_raw": 1.7072953118233714,
+   "opposition_minus_common": 0.0022299207707549666,
+   "cosNE_minus_common": 0.5582335591316223,
+   "common_over_N": 0.48048199854732837,
+   "cos_common_verb": 0.9999039173126221,
+   "synonym_cos": 0.9999132951100668
+  },
+  "omega": {
+   "move_ratio": 0.39044225215911865,
+   "opposition_raw": 1.610434274551586,
+   "opposition_minus_common": 0.0018548663712034136,
+   "cosNE_minus_common": 0.38717836141586304,
+   "common_over_N": 0.46962029394334115,
+   "cos_common_verb": 0.9998741149902344,
+   "synonym_cos": 0.9999363323052725
+  },
+  "S4": {
+   "cross_direction_abs_cos": 0.4729406616340081,
+   "verb_cos": 0.9999874472618103,
+   "see_cos": 0.9858114123344421
+  },
+  "S3": {
+   "full": 0.9945149663062216,
+   "non_direction_zeroed": 0.6729352766024134,
+   "direction_zeroed": 0.4632502742516847
+  }
+ },
+ "s4": {
+  "raw": {
+   "move_ratio": 0.48441073298454285,
+   "opposition_raw": 1.7682327800130035,
+   "opposition_minus_common": 0.005159688806966047,
+   "cosNE_minus_common": 0.7592346668243408,
+   "common_over_N": 0.5012511831353507,
+   "cos_common_verb": 0.9999851584434509,
+   "synonym_cos": 0.9997936884562174
+  },
+  "omega": {
+   "move_ratio": 0.4536301791667938,
+   "opposition_raw": 1.662451034695998,
+   "opposition_minus_common": 0.004684900552186216,
+   "cosNE_minus_common": 0.631514310836792,
+   "common_over_N": 0.4972808359194294,
+   "cos_common_verb": 0.9999798536300659,
+   "synonym_cos": 0.9998852958281835
+  },
+  "S4": {
+   "cross_direction_abs_cos": 0.3996715173125267,
+   "verb_cos": 0.9999903678894043,
+   "see_cos": 0.9938372373580933
+  },
+  "S3": {
+   "full": 0.9993731390064253,
+   "non_direction_zeroed": 0.5394138849710077,
+   "direction_zeroed": 0.44522802068641276
+  }
+ },
+ "s5": {
+  "raw": {
+   "move_ratio": 0.08897221088409424,
+   "opposition_raw": 0.11954744428386849,
+   "opposition_minus_common": 0.005047928950923797,
+   "cosNE_minus_common": 0.13491658866405487,
+   "common_over_N": 0.06042213824605242,
+   "cos_common_verb": 0.803093671798706,
+   "synonym_cos": 0.9996389945348104
+  },
+  "omega": {
+   "move_ratio": 0.06598103791475296,
+   "opposition_raw": 0.10063606261563109,
+   "opposition_minus_common": 0.00482255507494342,
+   "cosNE_minus_common": 0.1364215910434723,
+   "common_over_N": 0.049621080768675045,
+   "cos_common_verb": 0.7081138491630554,
+   "synonym_cos": 0.9997759908437729
+  },
+  "S4": {
+   "cross_direction_abs_cos": 0.42148543521761894,
+   "verb_cos": 0.9806224385897319,
+   "see_cos": 0.6199259951089819
+  },
+  "S3": {
+   "full": 1.0,
+   "non_direction_zeroed": 0.8981350885441154,
+   "direction_zeroed": 0.5047798150760069
+  }
+ },
+ "s6": {
+  "raw": {
+   "move_ratio": 0.08586744964122772,
+   "opposition_raw": 0.08039965324875033,
+   "opposition_minus_common": 0.011653393331388009,
+   "cosNE_minus_common": 0.2332802563905716,
+   "common_over_N": 0.039772141030895825,
+   "cos_common_verb": 0.8346763253211975,
+   "synonym_cos": 0.9998608628908793
+  },
+  "omega": {
+   "move_ratio": 0.05969201400876045,
+   "opposition_raw": 0.06454977637950589,
+   "opposition_minus_common": 0.009752114883267934,
+   "cosNE_minus_common": 0.1846669763326645,
+   "common_over_N": 0.031480687961516415,
+   "cos_common_verb": 0.7523555159568787,
+   "synonym_cos": 0.9999349315961202
+  },
+  "S4": {
+   "cross_direction_abs_cos": 0.48985718190670013,
+   "verb_cos": 0.993600066502889,
+   "see_cos": 0.30806909104188285
+  },
+  "S3": {
+   "full": 1.0,
+   "non_direction_zeroed": 0.9500078357624197,
+   "direction_zeroed": 0.5050932455727942
+  }
+ },
+ "s7": {
+  "raw": {
+   "move_ratio": 0.06440440565347672,
+   "opposition_raw": 0.11885314316348909,
+   "opposition_minus_common": 0.005674880392678116,
+   "cosNE_minus_common": 0.10707639157772064,
+   "common_over_N": 0.059197618695679716,
+   "cos_common_verb": 0.8880580067634583,
+   "synonym_cos": 0.9998926271994909
+  },
+  "omega": {
+   "move_ratio": 0.035981208086013794,
+   "opposition_raw": 0.07743686016443435,
+   "opposition_minus_common": 0.0037661840671366414,
+   "cosNE_minus_common": 0.26388731598854065,
+   "common_over_N": 0.03936700860887197,
+   "cos_common_verb": 0.7240051031112671,
+   "synonym_cos": 0.9999609788258871
+  },
+  "S4": {
+   "cross_direction_abs_cos": 0.4028289777537187,
+   "verb_cos": 0.995675015449524,
+   "see_cos": -0.00487137238184611
+  },
+  "S3": {
+   "full": 0.8816799874627801,
+   "non_direction_zeroed": 0.5858015984955336,
+   "direction_zeroed": 0.4977276288982918
+  }
+ }
+}

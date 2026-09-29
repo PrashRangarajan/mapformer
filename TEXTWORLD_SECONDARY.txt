@@ -1,0 +1,11 @@
+== S5 floors on the eval set (6381 targets): best constant 0.5054; reversal-copy 0.5965
+
+== S1-S4 per path seed (raw Delta; S2 in brackets = Delta * omega) ==
+  s0: opp 1.730 -> minus common 0.007 [0.004] | |c|/|N| 0.711 cos(c,verb) +1.000 | move 0.277 [0.264] | syn 1.000 vs cross-dir 0.612 verbs 1.000 see 0.923 | acc full 0.881 non-dir zeroed 0.191 dir zeroed 0.388
+  s1: opp 0.083 -> minus common 0.003 [0.003] | |c|/|N| 0.041 cos(c,verb) +0.450 | move 0.058 [0.040] | syn 1.000 vs cross-dir 0.522 verbs 0.962 see 0.782 | acc full 0.998 non-dir zeroed 0.893 dir zeroed 0.505
+  s2: opp 1.434 -> minus common 0.006 [0.006] | |c|/|N| 1.144 cos(c,verb) +0.999 | move 0.291 [0.267] | syn 1.000 vs cross-dir 0.358 verbs 1.000 see 0.950 | acc full 0.999 non-dir zeroed 0.665 dir zeroed 0.482
+  s3: opp 1.707 -> minus common 0.002 [0.002] | |c|/|N| 0.480 cos(c,verb) +1.000 | move 0.416 [0.390] | syn 1.000 vs cross-dir 0.473 verbs 1.000 see 0.986 | acc full 0.995 non-dir zeroed 0.673 dir zeroed 0.463
+  s4: opp 1.768 -> minus common 0.005 [0.005] | |c|/|N| 0.501 cos(c,verb) +1.000 | move 0.484 [0.454] | syn 1.000 vs cross-dir 0.400 verbs 1.000 see 0.994 | acc full 0.999 non-dir zeroed 0.539 dir zeroed 0.445
+  s5: opp 0.120 -> minus common 0.005 [0.005] | |c|/|N| 0.060 cos(c,verb) +0.803 | move 0.089 [0.066] | syn 1.000 vs cross-dir 0.421 verbs 0.981 see 0.620 | acc full 1.000 non-dir zeroed 0.898 dir zeroed 0.505
+  s6: opp 0.080 -> minus common 0.012 [0.010] | |c|/|N| 0.040 cos(c,verb) +0.835 | move 0.086 [0.060] | syn 1.000 vs cross-dir 0.490 verbs 0.994 see 0.308 | acc full 1.000 non-dir zeroed 0.950 dir zeroed 0.505
+  s7: opp 0.119 -> minus common 0.006 [0.004] | |c|/|N| 0.059 cos(c,verb) +0.888 | move 0.064 [0.036] | syn 1.000 vs cross-dir 0.403 verbs 0.996 see -0.005 | acc full 0.882 non-dir zeroed 0.586 dir zeroed 0.498
