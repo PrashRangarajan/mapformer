@@ -48,3 +48,36 @@ probe criterion (Fisher); |cos(N,E)|; the 12 largest-step words per seed; T=2048
 Void: any of the 24 runs missing; md5 guard trips.
 Scope: one rendering grammar, 58 words, context-free steps, T=1024, 1 layer, r=4 shared, 900 epochs.
 Cost: 1.5 s/epoch solo, ~25-35 min per run; 24 runs over 4 slots ~3 h.
+
+---
+
+## Amendment 1 (2026-09-28, 20:15, after an independent audit, BEFORE any batch result was read)
+
+An audit (all checks CPU-only, blind to `runs/textworld/p0` results) found no bug that would make
+verdict A or B wrong, and four things that change how B must be read. The registered computations
+and branches above are UNCHANGED; the following are added as declared secondaries
+(`analyze_textworld_secondary.py`, output `TEXTWORLD_SECONDARY.json`), run after the batch:
+
+1. **The pilot's s0 was misread above.** Its raw opposition 1.730 is not a non-cancelling map. Every
+   movement clause holds one verb and one direction word, so a vector can move between the verbs and
+   the direction words without changing any object-slot phase (an exact gauge, rule 8). s0 carries a
+   per-step clock on both: the common component of the four direction steps is 0.711 of |north| and
+   has cosine 1.000 with the mean verb step; with it removed, north+south and west+east cancel
+   (0.008 / 0.006; s1 0.003 / 0.003). Verified by us on the pilot weights. Added: S1, opposition and
+   |cos NE| of the direction steps minus their common component, |c|/|N|, cos(c, verb step).
+2. **The raw step table is gauge-dependent** ((Delta*k, omega/k) is exact). Added: S2, the table on
+   Delta*omega; S3, the functional version of "finds the action words": held-out accuracy with Delta
+   zeroed for all non-direction words, and for the direction words. (The auditor found zeroing the
+   non-direction words costs 0.999 -> 0.903 in pilot s1 and 0.885 -> 0.195 in s0: a small move ratio
+   does not mean the other words carry no used phase.)
+3. **Synonym cosine > 0.9 barely discriminates**: every exchangeable class collapses (verbs,
+   seeing-phrase words, in both pilot seeds). Added: S4, synonym cosine read against the mean |cos|
+   between different directions and within the verb and seeing-phrase classes.
+4. **The floor.** 0.512 was the gate's own sample; the constant floor on the registered eval set is
+   0.505, and a reversal-copy rule (copy the object from two steps back when a move reverses the
+   previous one) that word n-grams cannot express scores ~0.597. Added: S5, both floors recomputed on
+   the eval set. RoPE's pilot 0.504 sits at the constant floor, below the reversal-copy rule; any RoPE
+   "cannot" is budget-scoped (its loss was still creeping).
+Also noted: verdict A ORs two tests (family-wise alpha up to ~0.10); `model_rank.py` (defines
+`Vanilla_r4`, unchanged since 2026-09-04) is missing from the md5 list; eval seed 0 shares its walk
+stream with training batch 0 of seed-0 runs (different map, so no answer leak).
