@@ -44,6 +44,10 @@ def main():
     ap.add_argument("--p-decoy", type=float, default=0.3)
     ap.add_argument("--cue", required=True, choices=["lead", "trail"])
     ap.add_argument("--dist", required=True, choices=["near", "far"])
+    ap.add_argument("--warm-cf", default=None,
+                    help="HS only: start from a trained 1-layer context-free text-world model (Vanilla_r4.pt from "
+                         "runs/textworld): its embeddings (the shared vocabulary prefix), step map, omega, output head "
+                         "and its one layer (as HS's path-integrated layer 2) are copied; HS's context layer is fresh")
     ap.add_argument("--seed", type=int, required=True)
     ap.add_argument("--size", type=int, default=64)
     ap.add_argument("--n-layers", type=int, default=1)
@@ -65,6 +69,21 @@ def main():
                                    n_layers=a.n_layers, grid_size=a.size)
     assert len(model.layers) == a.n_layers, (len(model.layers), a.n_layers)   # rule 17
     print(f"{a.variant} L{a.n_layers} seed={a.seed} params={sum(p.numel() for p in model.parameters()):,}")
+    if a.warm_cf:
+        assert a.variant == "HS", "--warm-cf is for the hidden-state step"
+        src = torch.load(a.warm_cf, map_location="cpu", weights_only=False)["model_state_dict"]
+        dst = model.state_dict(); n = 0
+        for k, v in src.items():
+            tk = k.replace("layers.0.", "layers.1.") if k.startswith("layers.0.") else k
+            if tk not in dst:
+                continue
+            if tk in ("token_emb.weight", "out_proj.weight", "out_proj.bias"):
+                dst[tk][:v.shape[0]] = v
+            else:
+                assert dst[tk].shape == v.shape, (tk, dst[tk].shape, v.shape); dst[tk] = v
+            n += 1
+        model.load_state_dict(dst)
+        print(f"warm start from {a.warm_cf}: {n} tensors copied (context layer 0 and step_norm fresh)")
     losses = train(model, env, n_epochs=a.epochs, lr=a.lr, batch_size=a.batch_size, n_steps=a.n_steps,
                    n_batches=a.n_batches, device=a.device, schedule="cosine", data_workers=a.data_workers)
     torch.save({"model_state_dict": model.state_dict(), "losses": losses, "variant": a.variant,
