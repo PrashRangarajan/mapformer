@@ -35,3 +35,32 @@ Secondary: T=2048; final-loss regimes per cell; the per-run action geometry is n
 Void: any run missing; md5 guard trips.
 Scope: torus with D in {2, 3}, ~1000 cells, T=1024, n_heads 2, d 128, one recipe, 900 epochs, n=8.
 Cost: ~3.5 s/epoch alone (data-bound), 8 concurrent on 32 cores; ~5-6 h.
+
+---
+
+## Amendment 1 (2026-10-01, after an independent CPU audit, BEFORE any result of the batch was read)
+No bug changes the registered computation. Dates: this pre-registration was committed (fcad5d5) at
+2026-09-30 22:59, the same second the driver started; "2026-10-01" in its header is wrong. Measured cost
+is ~9 h (8.3-9.0 s/epoch with 8 concurrent jobs), not 5-6 h. Qualifications, fixed now:
+1. **The two rows differ in more than D.** Wrap-only revisits (seen before only at a different unwrapped
+   position, so the phase must be exactly periodic in N) are 0.361 of revisits at D=2 N=32 and **0.703**
+   at D=3 N=10 (the paper torus, N=64, where the 2D rank results were measured: 0.080). Omega's init range
+   follows N (lowest omega 0.196 vs 0.628), and the initial angle-increment std ratio rank D+1 / rank D is
+   1.00 (D=2) vs 0.90 (D=3). A THRESHOLD TRACKS DIMENSION verdict will therefore be read as "rank = D is hard
+   at D=2 and D=3 in this setting", not as a pure effect of dimension; RANK 3 IS ENOUGH likewise.
+2. **Floors.** The gate's chance / n-gram (0.52) understates what a non-path strategy reaches: a retrace
+   predictor (copy o[t-2j] while a run reverses the previous one) scores 0.750 (D=2 N=32) and 0.653 (D=3
+   N=10) at T=1024 (`docs/audits/2026-09-27/nd_floor_wrap.py`). Accuracy levels are compared only within D.
+3. **Memorisation.** The training map has 1000 cells; SOLVED (training loss) could include memorising it.
+Declared secondaries (`analyze_rank_nd_secondary.py`, run after the batch, no verdict):
+- S1 the floors above beside every accuracy cell;
+- S2 held-out accuracy on wrap-only vs other revisits, per arm;
+- S3 accuracy on each run's own training map beside the held-out map; SOLVED runs with held-out accuracy
+  below 0.95 flagged;
+- S4 the 2D control's B2 - A2 contrast reported beside the verdict (the registered branch only requires
+  A2 <= 2/8, not B2 > A2);
+- S5 at read time: md5 of every guarded file against `runs/rank_nd/code_md5.txt`, and
+  `git diff fcad5d5 -- stats_core.py analyze_rank_nd.py eval_nd.py environment_nd.py` (empty expected),
+  recorded in the results file (the guard runs only at driver start).
+The FIRES rule is a union of two two-sided tests with a direction condition: at most ~0.05 one-sided per
+contrast; at n=8 Fisher fires only at 0 vs >= 5, 1 vs >= 6, 2 vs >= 7.
