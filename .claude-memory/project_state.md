@@ -41,3 +41,4 @@ Nothing. No GPU jobs.
   consolidation into one trainer proposed in the 2026-09-30 audit, not done.
 - Checkpoints are the only copy of the per-epoch loss curves for these batches; do not clear run dirs.
 - `CANCEL` eval stream for seed-0 runs overlaps training batch 0 (see `CANCEL_RESULTS.md` block).
+- 2026-10-01: 3D rank test DONE (`RANK_ND_RESULTS.md`): no registered branch; rank = D hard in 2D and 3D (1/8 each); rank D+1 rescues 2D (8/8) but 3D only 4/8. Failures on wrap-only revisits. What/where analysis: `docs/WHAT_WHERE_ANALYSIS.md`.

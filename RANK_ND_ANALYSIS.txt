@@ -1,0 +1,11 @@
+== cells (SOLVED = final-5% loss < 0.05) ==
+  A2 D=2 Vanilla_r2ph  SOLVED 1/8  acc@1024 0.769 +/- 0.121  [2048 0.689]  DESC(0.325) DESC(0.360) SOLV(0.011) STAL(0.449) DESC(0.298) DESC(0.237) STAL(0.406) STAL(0.451)
+  B2 D=2 Vanilla_r3ph  SOLVED 8/8  acc@1024 0.999 +/- 0.001  [2048 0.976]  SOLV(0.015) SOLV(0.003) SOLV(0.004) SOLV(0.004) SOLV(0.002) SOLV(0.003) SOLV(0.003) SOLV(0.007)
+  A3 D=3 Vanilla_r3ph  SOLVED 1/8  acc@1024 0.800 +/- 0.092  [2048 0.704]  STAL(0.531) SOLV(0.010) DESC(0.120) DESC(0.369) DESC(0.399) STAL(0.456) STAL(0.446) STAL(0.376)
+  B3 D=3 Vanilla_r4ph  SOLVED 4/8  acc@1024 0.847 +/- 0.176  [2048 0.810]  SOLV(0.014) STAL(0.651) DESC(0.356) SOLV(0.014) SOLV(0.003) STAL(0.449) SOLV(0.019) STAL(0.559)
+
+  B2 - A2: SOLVED 8/8 vs 1/8 Fisher p 0.0014 | acc +0.230 perm p 0.0014 | FIRES
+
+  B3 - A3: SOLVED 4/8 vs 1/8 Fisher p 0.2821 | acc +0.047 perm p 0.4998 | does not fire
+
+== REGISTERED: no registered branch -- reported as it falls

@@ -1,0 +1,5 @@
+== S2/S3 per arm, T=1024: held-out map (wrap-only / other), own training map (all) ==
+  A2 D=2 Vanilla_r2ph  held wrap 0.530 other 0.907 all 0.767 | own map 0.937 (gap +0.169) | wrap share 0.37 | flagged SOLVED-but-held<0.95: []
+  B2 D=2 Vanilla_r3ph  held wrap 0.999 other 1.000 all 1.000 | own map 1.000 (gap -0.000) | wrap share 0.37 | flagged SOLVED-but-held<0.95: []
+  A3 D=3 Vanilla_r3ph  held wrap 0.729 other 0.974 all 0.799 | own map 0.917 (gap +0.118) | wrap share 0.71 | flagged SOLVED-but-held<0.95: []
+  B3 D=3 Vanilla_r4ph  held wrap 0.803 other 0.958 all 0.848 | own map 0.942 (gap +0.093) | wrap share 0.71 | flagged SOLVED-but-held<0.95: []
