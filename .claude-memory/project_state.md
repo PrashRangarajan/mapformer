@@ -32,8 +32,7 @@ Nothing. No GPU jobs.
 - **H1 part 2** (loop and 4-layer rank-2 arms at 1800 ep, the registered H1 primary): deferred.
 - **Documents**: four .tex/PDFs corrected 2026-09-30 only where contradicted (sign, code full-val;
   `mapformer_math` needed nothing); they do not carry rank 3, H1 part 1, H3, the text world or the context step. The shared
-  report source `report/language_summary.html` was updated 2026-09-30 and NOT republished (republish
-  WITH `url=`).
+  report source `report/language_summary.html` updated and republished 2026-09-30 as v10 (same link).
 
 ## Loose ends
 - `runs/rank_mi/p0/` is untracked; `Vanilla_r2ph_s0/s1` there are symlinks into
