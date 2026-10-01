@@ -1,5 +1,9 @@
 # Context-step pilot 2 (two cue conditions) -- the double dissociation did NOT happen (2026-09-29)
 
+> **Swap-test numbers re-derived 2026-09-30 (audit B1)** by the committed `docs/audits/2026-09-27/swap_test.py`
+> (`run_swap_all.sh`, every record in `swap_results.jsonl`); they match the figures below within rounding.
+> Where a run learned no movement step (move change <= 0.002) the ratio is noise.
+
 Pilot, 2 seeds, not a registered result. Runs `runs/ctxstep2_pilot`; task `environment_textworld_ctx2.py`
 (gated: the move/decoy class is unpredictable from the matched side); held-out map, T=1024, p_decoy 0.3.
 
@@ -16,7 +20,7 @@ CF 1.00 / 1.00 (both conditions); CG 0.00-0.01 (lead), 0.02-0.03 (trail); SR 0.1
 0.07-0.10 (trail); HS 0.00 (lead), 0.03-0.04 (trail). Every context arm suppresses decoys in both
 conditions (SR only partly on leading cues).
 
-## Which words they read (inline check, 2026-09-29 05:10)
+## Which words they read (originally inline, 2026-09-29 05:10; now `swap_test.py --replace-at`)
 - SR, leading: replace the cue word just before the decoy's direction ("go" / "going") by "walked"
   and the decoy's angle change rises 0.012-0.014 -> 0.054-0.061 (real moves 0.062-0.071). SR reads the
   LEADING cue.

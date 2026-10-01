@@ -1,0 +1,8 @@
+s0: blocks with revisit mean|dtheta|>1.0: 31/64; clock|>0.3 rad/step: 17
+s1: blocks with revisit mean|dtheta|>1.0: 2/64; clock|>0.3 rad/step: 0
+s2: blocks with revisit mean|dtheta|>1.0: 31/64; clock|>0.3 rad/step: 11
+s3: blocks with revisit mean|dtheta|>1.0: 36/64; clock|>0.3 rad/step: 17
+s4: blocks with revisit mean|dtheta|>1.0: 38/64; clock|>0.3 rad/step: 13
+s5: blocks with revisit mean|dtheta|>1.0: 3/64; clock|>0.3 rad/step: 0
+s6: blocks with revisit mean|dtheta|>1.0: 3/64; clock|>0.3 rad/step: 0
+s7: blocks with revisit mean|dtheta|>1.0: 4/64; clock|>0.3 rad/step: 0

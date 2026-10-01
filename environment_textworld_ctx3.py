@@ -6,7 +6,7 @@ word is a real move or a decoy. `dist` decides where the PAD goes relative to th
 step are the same in both distances and only the cue's distance to the direction word changes:
 
   cue="lead"   near:  she PAD <cue> <verb> [adv] <dir> ...        cue 2-3 tokens before <dir>
-               far:   she <cue> PAD <verb> [adv] <dir> ...        cue 7-13 tokens before <dir>
+               far:   she <cue> PAD <verb> [adv] <dir> ...        cue 7-12 tokens before <dir>
                move cue in {then, soon, finally}; decoy cue in {never, nearly, almost}.
                After <dir>: [filler] <seeing phrase> <object> . for both (a decoy's object is the
                CURRENT cell's, correct because the walker did not move; not scored).

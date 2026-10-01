@@ -1,0 +1,178 @@
+[
+  {
+    "variant": "Abs_r4",
+    "delta_min": 2.1852552890777588e-05,
+    "delta_max": 6.751584053039551,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.9398549795150757,
+    "oppose_y": 1.9072614908218384,
+    "cos_xy": 0.9130653142929077,
+    "seed": 0
+  },
+  {
+    "variant": "Abs_r4",
+    "delta_min": 2.0305626094341278e-05,
+    "delta_max": 6.16452693939209,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.9125189781188965,
+    "oppose_y": 1.8347076177597046,
+    "cos_xy": 0.8755656480789185,
+    "seed": 1
+  },
+  {
+    "variant": "Abs_r4",
+    "delta_min": 1.7136335372924805e-06,
+    "delta_max": 7.985384941101074,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.831470251083374,
+    "oppose_y": 1.864470362663269,
+    "cos_xy": 0.9051649570465088,
+    "seed": 2
+  },
+  {
+    "variant": "Abs_r4",
+    "delta_min": 5.3532421588897705e-06,
+    "delta_max": 9.229630470275879,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.9969571828842163,
+    "oppose_y": 1.9970626831054688,
+    "cos_xy": 0.9919692873954773,
+    "seed": 3
+  },
+  {
+    "variant": "Abs_r4",
+    "delta_min": 1.0218995157629251e-05,
+    "delta_max": 7.328451156616211,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.9725254774093628,
+    "oppose_y": 1.9291919469833374,
+    "cos_xy": 0.5846347808837891,
+    "seed": 4
+  },
+  {
+    "variant": "Abs_r4",
+    "delta_min": 2.8433743864297867e-05,
+    "delta_max": 7.09049129486084,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.844988465309143,
+    "oppose_y": 1.9332934617996216,
+    "cos_xy": 0.6519922614097595,
+    "seed": 5
+  },
+  {
+    "variant": "Abs_r4",
+    "delta_min": 1.1317431926727295e-05,
+    "delta_max": 6.237605094909668,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.916158676147461,
+    "oppose_y": 1.8976435661315918,
+    "cos_xy": 0.5307115316390991,
+    "seed": 6
+  },
+  {
+    "variant": "Abs_r4",
+    "delta_min": 1.712888479232788e-05,
+    "delta_max": 6.536505699157715,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.9798164367675781,
+    "oppose_y": 1.989061951637268,
+    "cos_xy": 0.9785269498825073,
+    "seed": 7
+  },
+  {
+    "variant": "Pos_r4",
+    "delta_min": 3.121331974398345e-05,
+    "delta_max": 8.506752967834473,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.996901035308838,
+    "oppose_y": 1.9869511127471924,
+    "cos_xy": 0.972862720489502,
+    "seed": 0
+  },
+  {
+    "variant": "Pos_r4",
+    "delta_min": 3.109018143732101e-05,
+    "delta_max": 7.5379815101623535,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.9987729787826538,
+    "oppose_y": 1.9971144199371338,
+    "cos_xy": 0.9981616139411926,
+    "seed": 1
+  },
+  {
+    "variant": "Pos_r4",
+    "delta_min": 0.0003501773171592504,
+    "delta_max": 6.149893760681152,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.998092532157898,
+    "oppose_y": 1.996384620666504,
+    "cos_xy": 0.997383177280426,
+    "seed": 2
+  },
+  {
+    "variant": "Pos_r4",
+    "delta_min": 9.684110409580171e-06,
+    "delta_max": 8.861784934997559,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.8340537548065186,
+    "oppose_y": 1.833032250404358,
+    "cos_xy": 0.974023163318634,
+    "seed": 3
+  },
+  {
+    "variant": "Pos_r4",
+    "delta_min": 0.0002482185373082757,
+    "delta_max": 7.264967441558838,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.99765145778656,
+    "oppose_y": 1.9992562532424927,
+    "cos_xy": 0.9972149133682251,
+    "seed": 4
+  },
+  {
+    "variant": "Pos_r4",
+    "delta_min": 0.00018602887575980276,
+    "delta_max": 8.66995906829834,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.9993244409561157,
+    "oppose_y": 1.9968526363372803,
+    "cos_xy": 0.999305009841919,
+    "seed": 5
+  },
+  {
+    "variant": "Pos_r4",
+    "delta_min": 0.00015431981591973454,
+    "delta_max": 7.233078479766846,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.9898910522460938,
+    "oppose_y": 1.9987775087356567,
+    "cos_xy": 0.9831187129020691,
+    "seed": 6
+  },
+  {
+    "variant": "Pos_r4",
+    "delta_min": 0.0001018805050989613,
+    "delta_max": 7.454188346862793,
+    "frac_negative": 0.0,
+    "nonneg": true,
+    "oppose_x": 1.9134141206741333,
+    "oppose_y": 1.9567270278930664,
+    "cos_xy": 0.9849551916122437,
+    "seed": 7
+  }
+]

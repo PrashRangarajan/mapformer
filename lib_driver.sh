@@ -23,7 +23,8 @@
 #   drv_done "$REPO/.x_done"                             # only after drv_require passed
 #
 # Knobs (environment): DRV_MAXPG (2), DRV_MINFREE MiB (4500), DRV_POLL s (30), DRV_SPACING s
-# (45), DRV_MODULE_RE (mapformer[.]train_ : which python modules count as trainers),
+# (45), DRV_MODULE_RE (kept for old drivers; IGNORED for slot counting since 2026-09-30: every
+# mapformer.train_* process on a GPU counts, so concurrent drivers share one budget -- audit m3),
 # DRV_DRYRUN=1 (log the launch instead of running it).
 
 DRV_MODULE_RE="${DRV_MODULE_RE:-mapformer[.]train_}"
@@ -37,7 +38,7 @@ _drv_log() { echo "$(date '+%F %T') $*" >> "${LOG:-/dev/stderr}"; }
 # real trainers on device $1 (python3 by comm, so no shell ever matches)
 drv_ntrain() {
   ps -u "$USER" -o comm=,args= |
-    awk -v d="--device cuda:$1" -v re="$DRV_MODULE_RE" '$1=="python3" && $0 ~ re && index($0, d)' | wc -l
+    awk -v d="--device cuda:$1" -v re="mapformer[.]train_" '$1=="python3" && $0 ~ re && index($0, d)' | wc -l
 }
 drv_freemem() { nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits -i "$1"; }
 drv_ngpu()    { nvidia-smi --query-gpu=index --format=csv,noheader | wc -l; }

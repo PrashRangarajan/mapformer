@@ -1,5 +1,15 @@
 # H3, the cancellation knob -- results (2026-09-28)
 
+> **CORRECTED 2026-09-30 (audit).** (1) **Seeds 0 and 1 are the pilot**: `runs/cancel_pilot` L1 cells are
+> byte-identical to the batch's s0/s1 (4 of 16 cells, including the registered primary's index 1-layer cells
+> at p_plus 0.5 and 1.0). On the six fresh seeds alone (`docs/audits/2026-09-27/fresh_seeds.txt`): a1 =
+> 0.710 / 0.677 / 0.824 / 1.000, every pair still differs (perm p 0.0022-0.0108); the non-monotone dip at 0.75
+> holds. (2) **k = 3 at p_plus 0.9 is knife-edge**: the 2-layer gap there is 0.0115 (fresh seeds 0.0133)
+> against the 0.01 threshold, with 7/8 runs STALLED; read "3 layers wherever steps can cancel" as budget- and
+> threshold-scoped, and "however rarely" as overstated. (3) The eval stream (np seed 0) is the data stream of
+> training batch 0 for seed-0 runs, and this task redraws the map per sequence, so 128 of the 200 eval
+> sequences of seed-0 runs were training batch 0 (1 of 29,400 batches); the docstring's "held-out map" is wrong
+> for this task.
 Pre-registration `CANCEL_PREREG.md`; runs `runs/cancel` (128 runs, one batch, 8 seeds); full output
 `CANCEL_ANALYSIS.txt` (`python3 -m mapformer.analyze_cancel`); task `environment_cancel.py`, trainer
 `train_cancel.py`, gate `docs/audits/2026-09-27/gate_cancel.py`. A 32-cell ring, map redrawn per
@@ -20,7 +30,7 @@ T=128 accuracy, mean +/- sd over 8 seeds (SOLVED / STALLED / DESCENDING):
 Secondary (registered, no verdict): the exchange rate k(p), the fewest index layers within 0.01 of
 path's 1-layer accuracy, is **3 at p_plus 0.5, 0.75 and 0.9, and 1 at p_plus 1.0**. Path integration
 solves every cell with one layer, 32/32 SOLVED. Index attention needs three layers as soon as any
-step can be undone, however rarely (at p_plus 0.9 one segment in ten runs backwards), and one layer
+step can be undone (at p_plus 0.9, one segment in ten runs backwards, the 2-layer gap is 0.0115 against the 0.01 threshold: knife-edge), and one layer
 when none can. This reproduces Dyck's matched-depth exchange rate (`DYCK_MDEPTH_RESULTS.md`: one
 layer of path integration ~ three of attention) on a second task, inside one task family, at the
 training length. The 1-layer gap G1 = path - index: +0.283 / +0.324 / +0.175 / 0.000.

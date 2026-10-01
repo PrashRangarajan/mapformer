@@ -81,3 +81,5 @@ papers/_fetch.out
 
 # driver single-instance locks (flock)
 .run_*.lock
+# per-run-dir completion markers (judge by the artifacts, rule 20)
+.done

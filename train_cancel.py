@@ -1,9 +1,11 @@
 """Trainer for H3, the cancellation knob (CANCEL_PREREG.md). A separate entry point so the running
 batches' train_variant.py is not edited (rule 22); it reuses VARIANT_MAP and train() unchanged.
 
-Trains on a 1D ring (environment_cancel.GridWorldCancel, map seed = --seed), then scores revisit
-accuracy on a HELD-OUT map (env seed 10000) at --n-steps and 4x --n-steps, writing <variant>.pt
-and eval.json in --output-dir."""
+Trains on a 1D ring (environment_cancel.GridWorldCancel), then scores revisit accuracy at --n-steps and
+4x --n-steps, writing <variant>.pt and eval.json in --output-dir. NOTE (audit 2026-09-30): this task
+redraws the map per trajectory, so the env seed (10000 for eval) does NOT give a held-out map, and the
+eval stream (np seed 0) equals training batch 0 of seed-0 runs (1 of 29,400 batches). Kept as is so the
+committed runs reproduce; new trainers evaluate with seed 10**6."""
 import argparse
 import json
 from pathlib import Path

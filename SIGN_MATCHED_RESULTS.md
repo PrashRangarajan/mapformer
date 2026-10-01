@@ -2,9 +2,10 @@
 
 Pre-registration `SIGN_MATCHED_PREREG.md`; runs `runs/sign_matched`; full output
 `SIGN_MATCHED_ANALYSIS.txt` (`python3 -m mapformer.analyze_sign_matched`); eval `SIGN_MATCHED.md` /
-`.json`; strata `SIGN_MATCHED_STRATA.json`; probe `SIGN_MATCHED_PROBE.md` (registered, constrained
+`.json`; strata `SIGN_MATCHED_STRATA.json`; probe `SIGN_MATCHED_PROBE.md` / `.json` (registered, constrained
 arms) and `SIGN_MATCHED_PROBE_SIGNED.md` (the signed arm, run afterwards as that probe's own reading
-note requires). Torus, trained AND tested at T=1024, 900 epochs, 8 seeds, r=4 shared, one batch.
+note requires, with `python3 -m mapformer.probe_sign --runs-dir runs/sign_matched --variants Signed_r4
+--seeds 0 1 2 3 4 5 6 7 --out SIGN_MATCHED_PROBE_SIGNED.md`; reproduced by the 2026-09-30 audit). Torus, trained AND tested at T=1024, 900 epochs, 8 seeds, r=4 shared, one batch.
 
 ## Registered verdict: SIGN IS CAPABILITY
 

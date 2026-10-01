@@ -114,7 +114,7 @@ and the Selective-RoPE generator used leading ones, each through a nonlinear int
 per-channel gate multiplies the cue's lagged terms). The distinction that should hold is the window:
 CG and SR can only use a cue within k-1 = 3 tokens of the direction word; the hidden-state step reads
 context through attention. Next task: insert movement-free padding between cue and direction word
-("she did not, after a long pause and some thought, go north"), distance d in {1-3, 6-10}, both sides.
+("she did not, after a long pause and some thought, go north"), distance d in {1-3, 6-12} (as built: leading 7-12, trailing 6-10), both sides.
 Predictions: CF fails at every d; CG and SR solve at d <= 3 and fail at d >= 6; HS solves at every d.
 A window of 4 is a design choice, so the claim will be "finite-window steps fail past their window",
 tested at one window size.

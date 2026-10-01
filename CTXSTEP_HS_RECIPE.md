@@ -1,5 +1,9 @@
 # Hidden-state step, recipe pilot on far cues (2026-09-30)
 
+> **Swap-test numbers re-derived 2026-09-30 (audit B1)** by the committed `docs/audits/2026-09-27/swap_test.py`
+> (`run_swap_all.sh`, every record in `swap_results.jsonl`); they match the figures below within rounding.
+> Where a run learned no movement step (move change <= 0.002) the ratio is noise.
+
 Pilot, not registered. Runs `runs/hs_recipe_pilot` (driver `run.sh`): the hidden-state step (HS) on the
 cue-distance task with the cue FAR (6-13 tokens), both sides, seeds 1 and 5, T=2048 words, batch 8.
 cold = from scratch, 1800 epochs; warm = warm-started from the solved decoy-free text-world model of
@@ -22,8 +26,8 @@ Selective-RoPE generator 0.844 / 0.855 (leading / trailing); none suppress far d
   is non-negligible (>= 0.03) has a decoy/move ratio of 0.01-0.07. Pooled with pilot 3 (trailing/far
   s0: step 1.116, ratio 0.10): 5 of 5 such runs. This is the capability the window-limited steps lack.
 - **Whether it learns a step is unreliable.** 5 of the 10 far-cue HS runs across both pilots never
-  learned one (movement step 0.000-0.002). The warm start made this worse (3/4 without a step), so
-  starting the path layer from a trained model does not help the context layer learn to drive it.
+  learned one (movement step 0.000-0.002). The warm runs did worse (3/4 without a step), but warm (900
+  epochs) and cold (1800 epochs) differ in budget as well as start, so the two are not separable here.
 - **Even with a step, it has not converged:** final losses 0.31-0.40 (cold, with a step), accuracy
   0.87-0.91, below the near-cue window arms (0.97-1.00).
 - Unmeasured and at n = 2 per cell: nothing here is a verdict.

@@ -49,3 +49,9 @@ Void: any of the 128 runs missing; md5 guard trips; path 1-layer below its floor
 Scope: 1D ring of 32, T=128, d 128, 2 heads, one recipe, 300-epoch budget.
 Cost: ~3-9 s/epoch under the current GPU load; ~40 slot-hours. Runs one job per GPU beside the
 train_variant batches.
+
+---
+
+## Post-hoc correction (2026-09-30, after the results)
+"Pilot ... NOT reused" was false: the pilot's L1 cells are byte-identical to the batch's s0/s1. Fresh-seed
+numbers are in `CANCEL_RESULTS.md`.

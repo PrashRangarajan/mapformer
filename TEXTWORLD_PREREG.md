@@ -81,3 +81,12 @@ and branches above are UNCHANGED; the following are added as declared secondarie
 Also noted: verdict A ORs two tests (family-wise alpha up to ~0.10); `model_rank.py` (defines
 `Vanilla_r4`, unchanged since 2026-09-04) is missing from the md5 list; eval seed 0 shares its walk
 stream with training batch 0 of seed-0 runs (different map, so no answer leak).
+
+---
+
+## Post-hoc correction (2026-09-30, after the results; changes no registered computation)
+- "Pilot ... NOT reused" was false: the pilot's seeds 0 and 1 are byte-identical to the batch's s0/s1.
+  Fresh-seed-only numbers are reported in `TEXTWORLD_RESULTS.md`.
+- Amendment 1 called the verb/direction shift "an exact gauge". It is a gauge only for a vector moved
+  between the two classes with opposite sign; the learned common component is parallel to the verb step
+  (cos +1.000), i.e. a per-step clock, not a gauge (`docs/audits/2026-09-27/tw_clock_probe.py`).

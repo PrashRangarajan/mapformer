@@ -3,7 +3,8 @@ batches' train_variant.py is not edited (rule 22); it reuses VARIANT_MAP and tra
 
 Trains on the torus walk rendered as words (environment_textworld.TextWorld, map seed = --seed), then scores revisit
 object accuracy on a HELD-OUT map (env seed 10000) at --n-steps and 2x --n-steps (tokens), writing <variant>.pt
-and eval.json in --output-dir."""
+and eval.json in --output-dir. NOTE (audit 2026-09-30): the eval walk/render stream (np seed 0) equals
+training batch 0 of seed-0 runs; the map differs (10000), so no answer leaks. Kept so committed runs reproduce."""
 import argparse
 import json
 from pathlib import Path

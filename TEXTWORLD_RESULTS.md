@@ -1,5 +1,15 @@
 # Navigation told in words -- results (2026-09-28)
 
+> **CORRECTED 2026-09-30 (audit, `docs/audits/2026-09-27/`).** (1) **Seeds 0 and 1 are the pilot**:
+> `runs/textworld_pilot` s0/s1 are byte-identical to the batch's s0/s1, so 2 of 8 seeds per arm were seen
+> before registration (the pre-registration's "NOT reused" was false). On the six fresh seeds alone
+> (`fresh_seeds.py` / `.txt`): path 0.979 +/- 0.048 (6/6 SOLVED) vs RoPE 1L 0.505 (0/6), +0.474, permutation
+> and Fisher p 0.0022; RoPE 2L 0.793. Verdict A stands. (2) **The "per-step clock" is NOT equivalent to the
+> map.** A gauge would make the common component anti-parallel to the verb step; it is parallel (cos +1.000),
+> so the clock seeds really count steps: 31-38 of 64 phase channels drift between visits to the same cell,
+> against 2-4 in the map seeds (`tw_clock_probe.py` / `.txt`). The clock seeds carry the map in about half
+> their channels and time in the rest. The sentence "the two are equivalent in what they encode about
+> position" below is withdrawn.
 Pre-registration `TEXTWORLD_PREREG.md` (+ Amendment 1, committed before any result was read); runs
 `runs/textworld` (24 runs, one batch); registered output `TEXTWORLD_ANALYSIS.txt`
 (`analyze_textworld.py`), step table `TEXTWORLD_PROBE.json`, declared secondaries
@@ -39,9 +49,8 @@ seeds (FINDS THE ACTION WORDS needed 6/8; FINDS SYNONYMS ONLY needed <= 2/8). Sy
 - **Two solutions, split 4/4.** Half the seeds put essentially all the phase on the direction words
   (common component 4-6% of a direction step). The other half add a **per-step clock**: a shared
   vector, identical in direction to the verbs' step (cosine 1.000), carried by every verb and every
-  direction word -- a step counter layered on the map. The two are equivalent in what they encode
-  about position (a verb and a direction word occur once per clause), which is why the registered
-  opposition and move-ratio readouts, which are not invariant to that gauge, split them. The clock
+  direction word -- a step counter layered on the map. [CORRECTED 2026-09-30: this is a real clock, not a
+  gauge; 31-38 of 64 phase channels drift between visits, see the block at the top.] The clock
   seeds depend more on the non-direction words (zeroing them costs 0.33-0.69 vs 0.05-0.30).
 - Synonym agreement (1.000 on 8/8) is real but weak evidence: every interchangeable class collapses
   (verbs 0.96-1.00), while different directions sit at |cos| 0.36-0.61.

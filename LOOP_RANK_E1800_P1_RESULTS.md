@@ -1,11 +1,14 @@
 # H1 part 1: is rank 2's failure a budget effect? -- results (2026-09-29)
 
+> Wording corrected 2026-09-30 (audit): "NOT a budget effect" overclaimed; 5 of 8 rank-2 runs were still
+> descending. What is shown: twice the budget solves none of them.
+
 Pre-registration `LOOP_RANK_E1800_PREREG.md` (Amendment 1: part 1 = A and C only; only branch
 RANK 2 WAS BUDGET is read). Runs `runs/loop_rank_e1800` (A `Vanilla` r=2, C `Vanilla_r4mi` r=4, 8 seeds,
 1800 epochs, from scratch, the rank recipe at T=1024); output `LOOP_RANK_E1800_P1.md` / `.json`,
 `LOOP_RANK_E1800_P1_ANALYSIS.txt` (`analyze_loop_rank_e1800_budget.py`).
 
-## Registered (branch 1): NOT a budget effect at 1800 epochs
+## Registered (branch 1): not rescued by twice the budget (0/8 at 1800 epochs; 5/8 still descending)
 
 | arm | SOLVED at 900 ep (`runs/rank_mi`) | **SOLVED at 1800 ep** | T=1024 acc 900 -> 1800 |
 |---|---|---|---|
@@ -13,7 +16,7 @@ RANK 2 WAS BUDGET is read). Runs `runs/loop_rank_e1800` (A `Vanilla` r=2, C `Van
 | C, r=4 | 8/8 | **7/8** | 0.998 -> 0.994 |
 
 C - A at 1800: SOLVED 7/8 vs 0/8 (Fisher p 0.0014); accuracy +0.086 (permutation p 0.0003).
-Doubling the budget does not rescue rank 2: final losses 0.14-0.57, none below 0.05. The citable rank
+Doubling the budget does not rescue rank 2 (the registered reading is only that branch 1 did not fire): final losses 0.14-0.57, none below 0.05. The citable rank
 split survives at twice the budget.
 
 ## Caveats
