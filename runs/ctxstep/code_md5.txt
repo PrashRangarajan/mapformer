@@ -1,0 +1,13 @@
+0a379a4a6565ef565b914a83165f885a  model.py
+e5ac5e3ead069925f62ce474b6a048e5  model_context_step.py
+2f477e41310465c6caa6b51b3fbe604d  model_selective.py
+89d1951ecff4d1f9e800fefb7b902e01  model_rank.py
+f06c215bf1109022ce1097ecbbc23bbc  model_baseline_rope.py
+7c994706a73da2ea70e18ca7359d2cea  train.py
+15ae0b372a4378c71768fe662c666b17  train_variant.py
+16bd018d452ee196c954976b0541ca09  train_ctxstep3.py
+b998fec07b68dd92a7357b2e0625ca1f  environment.py
+200157717b63f0369ec59f385d914a12  environment_textworld.py
+2d16ca0c3537f3674f85a0bd4ac27bd9  environment_textworld_ctx3.py
+93dd1e71bc7816ded9235d05c6c4f7a1  data_parallel.py
+a34965f1892019022b14aef7af0b8ff1  docs/audits/2026-09-27/swap_test.py
