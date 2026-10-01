@@ -5,8 +5,8 @@ Rules and conventions live in CLAUDE.md (rules 1-28); these files hold the why a
 - `docs/WHERE_THINGS_STAND.md` -- **read second.** One-page orientation: the thesis (most effects here
   are robustness, not capability, and close at matched distribution), what survives with its numbers,
   what is open ranked with costs. The documents were brought into line 2026-09-27.
-- [Robustness is not capability](project_robustness_vs_capability.md) -- matched length AND depth decide; OOD-only effects are robustness.
-- [Rank, and Selective RoPE](project_rank_and_selective_rope.md) -- per-head rank decides it: rank 2 per head 0-2/8, rank 4 8/8; sharing and scale unmeasured.
+- [Robustness is not capability](project_robustness_vs_capability.md) -- matched length AND depth decide; OOD-only effects are robustness until controlled; sign is the one that survived its control.
+- [Rank, and Selective RoPE](project_rank_and_selective_rope.md) -- per-head rank decides it: rank 2 per head 0-2/8, rank 3 6/8 (Holm 0.054, at the registered edge), rank 4 8/8; 2x budget does not rescue rank 2; sharing and scale unmeasured.
 - [PoPE/MapFormer asymmetry](project_mappope_asymmetry.md) -- PoPE's encoding helps the path row; path integration hurts PoPE on clocks.
 - [EM vs WM mechanism](feedback_em_vs_wm_mechanism.md) -- WM is not additive; EM's recency deficit is search.
 - [Clock vs map](project_clock_vs_map.md) -- signed = map, monotone = clock; the PoPE-decoupling corollary is withdrawn.

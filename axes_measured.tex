@@ -35,8 +35,10 @@ accumulator measures: signed increments cancel, so the interval sum is net
 displacement and the code is a map; monotone ones cannot, so it is elapsed path and
 the code is a clock. On a map task, at $4$--$8\times$ the training length, a signed
 increment beats an index code by $0.12$--$0.20$ at matched loss on $12/12$ seeds and a
-monotone one beats it nowhere; at the training length the monotone arms still beat the
-index code, so the accuracy cost is an extrapolation effect. On a $k$-back recency task
+monotone one beats it nowhere; at that batch's training length ($T=128$) the monotone arms
+still beat the index code, but trained and tested at $T=1024$ the cost holds in
+distribution ($-0.177$; the monotone arm solves $0/8$ seeds against $8/8$), so it is not
+only an extrapolation effect. On a $k$-back recency task
 the cost of monotonicity vanishes, and the same unconstrained architecture learns a
 different accumulator for each task. At \textbf{input-side rank} $2$ of the
 content-to-phase map, training rarely \emph{finds} the solution, although it
@@ -74,6 +76,11 @@ exactly, and nothing inverts).
 of the rank bottleneck is responsible was not separated; it is per-head rank
 (\texttt{RANK\_SEP\_RESULTS.md}). A search-aid batch at $r=2$ (\texttt{LOOP\_RANK\_RESULTS.md})
 is added to $\S$\ref{sec:rankmeas}.
+
+\smallskip\noindent\emph{Corrected 2026-09-30.} The 2026-09-27 text called the sign's
+accuracy cost an extrapolation effect and said no arm had been trained at the length where
+it appears. A matched-length control (\texttt{SIGN\_MATCHED\_RESULTS.md}) finds the cost
+in distribution; $\S$\ref{sec:sign} and F1 are corrected.
 \end{abstract}
 
 \section{What is measured, and how}
@@ -233,12 +240,13 @@ with the contrast that would have refuted it.
 
 \begin{itemize}\itemsep2pt
 \item \textbf{F1. The sign of the increment is load-bearing where the task needs a
-  map past the training length, and free.} At matched loss and identical parameter
+  map, and free.} At matched loss and identical parameter
   count, at $4$--$8\times$ the training length, a signed increment beats an index code
   by $0.12$--$0.20$ ($12/12$ seeds); a monotone one beats it nowhere
   ($\S$\ref{sec:sign}). At the training length the monotone arms score $0.90$--$0.98$
-  against the index code's $0.80$; no arm has been trained at the length where the
-  cost appears. \emph{Refuted by} a monotone arm matching the signed arm on the map
+  against the index code's $0.80$. Trained and tested at $T=1024$ the monotone arm
+  scores $0.821$ against the signed arm's $0.998$ ($0/8$ against $8/8$ solved), so the
+  cost holds in distribution. \emph{Refuted by} a monotone arm matching the signed arm on the map
   task.
 \item \textbf{F2. Rank $r=2$ fails by search, not capacity.} Trained at $T=128$,
   $r=4$ buys $+0.085$ at $8\times$ that length for $384$ parameters and is flat to
@@ -313,9 +321,13 @@ value of a content-dependent phase over a plain index clock, on this task, requi
 the increment to be signed. At $T=128$ the loss-matched contrast is uninformative ---
 it makes even the signed arm lose to the index code ($-0.021$, detectable), because
 every path-integrated arm fits far better --- and raw, every monotone arm beats the
-index code ($0.90$--$0.98$ against $0.80$). So the accuracy cost of monotonicity is
-an extrapolation effect; a monotone arm trained and tested at $T=1024$ has not been
-run.
+index code ($0.90$--$0.98$ against $0.80$). In this batch, then, the accuracy cost of
+monotonicity appears only past the training length. A matched-length control has since
+been run (\texttt{SIGN\_MATCHED\_RESULTS.md}): trained and tested at $T=1024$ for $900$
+epochs ($r=4$, $n=8$), the monotone arm ($|\Delta|$) scores $0.821$ against the signed
+arm's $0.998$ ($-0.177$, permutation $p=0.0002$) and solves $0/8$ seeds against $8/8$;
+a softplus arm $0.781$ ($1/8$). The cost is capability, not only robustness to length
+(budget-scoped: the monotone arms stalled within $900$ epochs).
 
 The learned code shows why. The opposition score
 $\lVert\Delta(+x)+\Delta(-x)\rVert / \overline{\lVert\Delta\rVert}$ is $0$ when
@@ -1050,7 +1062,8 @@ Two properties of the content-to-phase map, neither applied as a design constrai
 the positional-encoding literature for language and neither tested on navigation
 before, are measured here. The sign costs nothing and decides whether the accumulator
 measures net displacement or elapsed path; its accuracy cost appears past the training
-length. Through a rank-$2$ bottleneck training rarely finds the torus solution ---
+length when trained at $T=128$, and holds in distribution when trained and tested at
+$T=1024$ ($-0.177$, $0/8$ against $8/8$ solved). Through a rank-$2$ bottleneck training rarely finds the torus solution ---
 $0/8$, $2/8$ and $8/8$ seeds for our shared $r=2$, a per-head $r=2$ and a shared $r=4$,
 trained and tested at $T=1024$ --- although a rank-$2$ solution exists and is held, so
 the deficit is one of search; the responsible property is the per-head rank of the map
@@ -1066,6 +1079,8 @@ for more of the variance than the choice of positional encoding'', and that the 
 $16$-epoch torus recipe and the $r=2$ basis reading).
 \emph{Corrected 2026-09-27:} it also said the responsible property of the bottleneck was not
 separated; it is per-head rank.
+\emph{Corrected 2026-09-30:} the sign's cost, called extrapolation-only, holds at matched
+length ($\S$\ref{sec:sign}).
 
 What we could not show is as much of the content, and four negatives are worth
 stating together because each was a prediction of ours that failed.

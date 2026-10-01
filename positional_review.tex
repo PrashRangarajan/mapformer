@@ -44,7 +44,7 @@ Two consequences do not follow from any single mechanism. The two slots answer
 \emph{different questions}: a signed accumulated phase measures net displacement and
 is a map, a monotone one measures elapsed path and is a clock, and for a scalar
 accumulator the two are mutually exclusive --- so the monotone increments of CARoPE,
-GRAPE-AP and CoPE suit language and, past the training length, cost navigation. That the distinction is invisible
+GRAPE-AP and CoPE suit language and cost navigation (past the training length, and in distribution when trained and tested at $T=1024$). That the distinction is invisible
 on text is not incidental: in one content-dependent mechanism's own ablation, NoPE
 attains the lowest perplexity of every encoding tested. And the frame has a second
 reading, in which the positional operator is an associative memory's transport
@@ -69,6 +69,11 @@ the rank bottleneck is responsible was not separated. A separation batch
 (\texttt{RANK\_SEP\_RESULTS.md}) since identified it as the per-head rank of the
 content-to-phase map; cross-head sharing and $W_{\mathrm{out}}$'s per-entry scale are
 individually unmeasured.
+
+\smallskip\noindent\emph{Corrected 2026-09-30.} Earlier versions placed the navigation cost
+of a monotone increment only past the training length. Trained and tested at $T=1024$ the
+companion's matched-length control finds it in distribution ($-0.177$; the monotone arm
+solves $0/8$ seeds against $8/8$; \texttt{SIGN\_MATCHED\_RESULTS.md}).
 \end{abstract}
 
 \section{Introduction}
@@ -161,8 +166,9 @@ questions}. A signed accumulated phase measures net displacement and is a map; a
 monotone one measures elapsed path and is a clock; for a scalar accumulator they are
 mutually exclusive by construction (a rank-$r$ accumulator can cancel in one subspace
 and count in another). The consequence is that a monotone increment is not a defect
---- it is correct on language, and on navigation it costs accuracy past the training
-length (in raw accuracy at the training length a monotone arm still beats an index code). This is
+--- it is correct on language, and on navigation it costs accuracy: past the training
+length when trained at $T=128$ (at that training length a monotone arm still beats an index
+code in raw accuracy), and in distribution when trained and tested at $T=1024$ ($-0.177$). This is
 tested by crossover in the companion paper: on a $k$-back recency task that counts
 symbols the cost of forcing monotonicity falls from $0.28$ to nothing measurable, and
 an architecture free to choose adopts a different accumulator per task. Two limits:
@@ -1091,10 +1097,10 @@ growth exponent is set by how completely opposite actions cancel, but the
 exponent is a symptom and the substance is $\S$\ref{sec:clockmap}:
 a signed increment makes the interval sum a \emph{net displacement}, invariant to
 route and blind to elapsed time, and a monotone one makes it a \emph{path length},
-injective in time and blind to place. Neither dominates. On navigation past the
-training length the signed form wins outright (at matched training loss the monotone
-one does not beat a plain index clock anywhere; in raw accuracy at the training length
-it does); on language the monotone form is the correct object, and the
+injective in time and blind to place. Neither dominates. On navigation the signed form
+wins outright: past the training length (at matched training loss the monotone one does
+not beat a plain index clock anywhere; in raw accuracy at a $T=128$ training length it
+does) and, trained and tested at $T=1024$, in distribution ($0/8$ against $8/8$ solved); on language the monotone form is the correct object, and the
 signed one would be discarding the very distinction position exists to make.
 
 \paragraph{(T3) Compressing the memory makes decay compulsory; rewriting it forfeits
@@ -1161,7 +1167,8 @@ Titans and TAPE give up the accumulation structure itself.
 The two parts are not two knobs. A signed accumulated phase is a map and a monotone
 one is a clock, and a system with a scalar accumulator that needs both must spend both
 slots. That is why the monotone increments of CARoPE, GRAPE-AP and CoPE are correct on
-language and, past the training length, fail on navigation, and why the sign of the
+language and fail on navigation (past the training length, and at it when trained at
+$T=1024$), and why the sign of the
 increment --- which costs nothing, and which the positional-encoding literature for
 language does not treat as a design constraint --- is worth more per parameter than
 any other ingredient measured here. The dichotomy is not only an interpretation: on a
@@ -1188,6 +1195,8 @@ $\S$\ref{sec:capability}) that sign and rank dominate the choice of encoding and
 $r=2$ fails by a skewed basis. See the corrected abstract.
 \emph{Corrected 2026-09-27:} the rank bottleneck's responsible property, listed as
 unseparated, is per-head rank ($\S$\ref{sec:open}).
+\emph{Corrected 2026-09-30:} the navigation cost of a monotone increment, stated as past
+the training length only, also holds at a matched $T=1024$ training length.
 
 
 \section{Open questions}
@@ -1258,8 +1267,9 @@ unseparated, is per-head rank ($\S$\ref{sec:open}).
   encoding helps on text, how much of the gain is over NoPE rather than over RoPE is
   usually not reported.
 \item \textbf{Sign on language.} A monotone clock cannot represent a $-1$ action, and
-  on navigation that costs $0.2$--$0.4$ past the training length (at the training
-  length a monotone arm still beats an index code). On text HGRN's own ablation finds a
+  on navigation that costs $0.2$--$0.4$ past the training length (at a $T=128$ training
+  length a monotone arm still beats an index code; trained and tested at $T=1024$ it
+  costs $0.18$ in distribution). On text HGRN's own ablation finds a
   data-dependent phase worse than a constant one. Whether the sign matters there, and
   for what, is untested --- and the companion paper sharpens rather than settles
   it: on a symbolic counting task the sign is free to be given up at no cost, which is

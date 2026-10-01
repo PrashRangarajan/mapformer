@@ -53,7 +53,7 @@
 \contentsline {paragraph}{Design.}{17}{section*.44}%
 \contentsline {paragraph}{Result.}{18}{section*.47}%
 \contentsline {paragraph}{The learned code.}{18}{section*.48}%
-\contentsline {paragraph}{A second generator.}{18}{section*.49}%
+\contentsline {paragraph}{A second generator.}{19}{section*.49}%
 \contentsline {paragraph}{Prior art.}{19}{section*.50}%
 \contentsline {subsection}{\numberline {7.2}The task sets the value}{19}{subsection.7.2}%
 \contentsline {paragraph}{Recency.}{19}{section*.51}%
@@ -67,13 +67,13 @@
 \contentsline {paragraph}{No detectable difference once initialisation is fixed.}{21}{section*.57}%
 \contentsline {paragraph}{The origin design is task-dependent.}{21}{section*.58}%
 \contentsline {paragraph}{Length on the paper task.}{21}{section*.59}%
-\contentsline {subsection}{\numberline {8.3}The recency gap}{22}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.3}The recency gap}{21}{subsection.8.3}%
 \contentsline {subsection}{\numberline {8.4}Existence and holdability}{22}{subsection.8.4}%
 \contentsline {paragraph}{Existence.}{22}{section*.63}%
 \contentsline {paragraph}{Holdability.}{22}{section*.64}%
-\contentsline {paragraph}{Scope.}{23}{section*.65}%
-\contentsline {subsection}{\numberline {8.5}Search}{23}{subsection.8.5}%
-\contentsline {paragraph}{Found per token, wrapped.}{23}{section*.66}%
+\contentsline {paragraph}{Scope.}{22}{section*.65}%
+\contentsline {subsection}{\numberline {8.5}Search}{22}{subsection.8.5}%
+\contentsline {paragraph}{Found per token, wrapped.}{22}{section*.66}%
 \contentsline {paragraph}{The obstacle is spread, not size.}{23}{section*.67}%
 \contentsline {paragraph}{Queries per token is the currency.}{23}{section*.69}%
 \contentsline {paragraph}{Availability.}{23}{section*.71}%
@@ -117,17 +117,17 @@
 \contentsline {paragraph}{Collisions.}{32}{section*.107}%
 \contentsline {section}{\numberline {12}Nested hierarchies: Dyck-2, and what its metric measures}{32}{section.12}%
 \contentsline {paragraph}{The ordering replicates; the levels do not.}{32}{section*.109}%
-\contentsline {paragraph}{The metric gives most of its range to positions that need no stack.}{32}{section*.110}%
+\contentsline {paragraph}{The metric gives most of its range to positions that need no stack.}{33}{section*.110}%
 \contentsline {paragraph}{The floor verdict, stated.}{33}{section*.112}%
 \contentsline {paragraph}{Reach, not capability.}{33}{section*.113}%
-\contentsline {paragraph}{At matched depth the depth-extrapolation effect closes; depth substitution survives.}{33}{section*.114}%
+\contentsline {paragraph}{At matched depth the depth-extrapolation effect closes; depth substitution survives.}{34}{section*.114}%
 \contentsline {section}{\numberline {13}PoPE's own tasks, and why the two mechanisms anti-compose}{34}{section.13}%
 \contentsline {paragraph}{Indirect Indexing replicates, and the task is a late-transition search problem.}{34}{section*.115}%
 \contentsline {paragraph}{Bach Chorales replicates, and path integration adds nothing in distribution --- under a ceiling worth three times the effect.}{34}{section*.116}%
 \contentsline {paragraph}{The replication itself.}{34}{section*.117}%
 \contentsline {paragraph}{Beyond the training context the ordering inverts, and the naive combination collapses.}{34}{section*.118}%
-\contentsline {subsection}{\numberline {13.1}Why the combination fails, and what fixes it}{34}{subsection.13.1}%
-\contentsline {paragraph}{The accumulator is identical in both arms.}{34}{section*.120}%
+\contentsline {subsection}{\numberline {13.1}Why the combination fails, and what fixes it}{35}{subsection.13.1}%
+\contentsline {paragraph}{The accumulator is identical in both arms.}{35}{section*.120}%
 \contentsline {paragraph}{A dissociation locates the difference.}{35}{section*.121}%
 \contentsline {paragraph}{Two reparameterisations fail to explain it.}{35}{section*.122}%
 \contentsline {paragraph}{Two interventions do.}{35}{section*.123}%

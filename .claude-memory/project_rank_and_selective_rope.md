@@ -1,9 +1,21 @@
 ---
 name: project-rank-and-selective-rope
-description: It is the PER-HEAD rank of the content-to-angle map: rank 2 per head solves the T=1024 torus on 0-2/8 seeds, rank 4 on 8/8. Sharing and W_out scale are unmeasured. A rank-2 solution exists and is held: a search deficit.
+description: It is the PER-HEAD rank of the content-to-angle map: rank 2 per head solves the T=1024 torus on 0-2/8 seeds, rank 3 on 6/8, rank 4 on 8/8; 2x the budget does not rescue rank 2. Sharing and W_out scale are unmeasured. A rank-2 solution exists and is held: a search deficit.
 metadata:
   type: project
 ---
+
+**RANK 3, 2026-09-28 (`RANK3_RESULTS.md`): rank 3 per head sits with rank 4.** Per-head r=3 (built
+from our r=2's base, T=1024, 900 ep) solves 6/8, acc 0.987 (per-head r=2 2/8, 0.885; per-head r=4 8/8,
+0.999). 3 - 2: +0.102, perm p 0.027, Holm 0.054, solved Fisher 0.13 -- registered RANK 3 SUFFICES, at
+the registered edge on every count (accuracy only, Holm just above .05, exactly 6/8). 4 - 3 UNMEASURED
+(+0.012). The two unsolved r=3 seeds sit in the non-cancelling basin (opposition 1.58 / 1.83): rank 3
+makes the basin rarer, it does not remove it. Favours "rank 2 is special" (= the torus's 2 DOF); the
+untested prediction is a 3D torus where rank 3 fails.
+
+**NOT RESCUED BY 2x BUDGET, 2026-09-29 (`LOOP_RANK_E1800_P1_RESULTS.md`, H1 part 1).** From scratch at
+1800 epochs: shared r=2 0/8 (0.894 -> 0.908), shared r=4 7/8 (Fisher p 0.0014). Not "never": 5/8 rank-2
+runs still descending. H1 part 2 (loop and 4 layers at 1800 ep) deferred.
 
 **H1, 2026-09-27 (`LOOP_RANK_RESULTS.md`): search aids partly recover rank 2, registered verdict
 UNMEASURED.** r=2 + loop x4 (identical params/init to r=2) 2/8 solved, acc 0.973; r=2 at 4 real

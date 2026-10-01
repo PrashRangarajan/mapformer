@@ -1,16 +1,8 @@
-# Where things stand -- 2026-09-27
+# Where things stand -- 2026-09-30
 
 Orientation for a fresh session. Read `.claude-memory/project_state.md` first (what is running,
 what the user must decide), then this. `CLAUDE.md` holds the conventions, the citable table and the
 withdrawal list and is the authority on all three; this file is the shape of the project around them.
-
-
-> **Update 2026-09-28** (this note is otherwise as of 2026-09-27). Landed since: **sign SURVIVED its
-> matched-length control** (`SIGN_MATCHED_RESULTS.md`: trained and tested at T=1024, Abs - Signed
-> -0.177, p 0.0002, 0/8 vs 8/8) -- it is no longer a never-controlled claim; **rank 3 per head**
-> solves 6/8, acc 0.987, registered RANK 3 SUFFICES at its boundary (`RANK3_RESULTS.md`); the code
-> full-val rescore flipped no signs (`CODE_FULLVAL_RESULTS.md`). Running: H3 (`CANCEL_PREREG.md`).
-> Paused: H1 at 1800 epochs. Live state is in `.claude-memory/project_state.md`.
 
 ## The thesis, as it now stands
 
@@ -20,19 +12,24 @@ when a learned "where" separates from the "what". What the project has actually 
 mostly a negative with a sharp edge: **nearly every positional-encoding effect measured here turns
 out to be robustness to distribution shift rather than capability, and it closes once the training
 distribution is matched on the axis the claim is about.** Code extrapolating past 512 gave -3.694
-bpc; trained at 2048 it is -0.0030, unmeasured, and the composition claim reverses. Dyck at 4
-layers gave +0.168 at nesting depth 12; trained at depth 12 every arm is at ceiling and the effect
-is +0.002. Length was not enough -- depth had to be matched too, and the general form is: match the
+bpc; trained at 2048 and scored on the full val file it is -0.0033, unmeasured. Dyck at 4 layers
+gave +0.168 at nesting depth 12; trained at depth 12 every arm is at ceiling and the effect is
++0.002. Length was not enough -- depth had to be matched too, and the general form is: match the
 training distribution on *every* axis the task varies, or you are measuring extrapolation.
-Three positives survive that test: navigation on the torus at training length, depth-substitution
-on Dyck, and the rank result, which is the one place a matched-distribution control made the effect
-*sharper* rather than killing it. The published taxonomy and the content-dependent rotation itself
-are not ours (GRAPE 2512.07805, Mamba-3 2603.15569, Selective RoPE 2511.17388); what is ours is
-empirical -- the rank of the content-to-angle map, and the navigation regime.
+**The one exception so far is sign**: the first of the never-controlled OOD claims to get its
+matched-length control survived it (trained and tested at T=1024, monotone arms 0/8 and 1/8 solved vs
+signed 8/8, `SIGN_MATCHED_RESULTS.md`). What survives the matched-distribution test: navigation on
+the torus at training length; depth substitution (Dyck, and the same 1 ~ 3 layer exchange rate on a
+biased 1D walk, H3, knife-edge at its most biased cancelling cell); the per-head rank result, now
+with rank 3 sitting with rank 4 and rank 2 not rescued by twice the budget -- the one line where
+controls made the effect *sharper*; sign; and path integration on the torus walk told in English
+(PATH WINS IN WORDS). The published taxonomy and the content-dependent rotation itself are not ours
+(GRAPE 2512.07805, Mamba-3 2603.15569, Selective RoPE 2511.17388); what is ours is empirical -- the
+rank of the content-to-angle map, and the navigation regime (sign is a replication in a new regime).
 
 ## What survives
 
-Numbers verified against their results files on 2026-09-27. `CLAUDE.md`'s citable table is the full
+Numbers verified against their results files on 2026-09-27; rows added 2026-09-30 checked against theirs. `CLAUDE.md`'s citable table is the full
 list with scopes; these are the load-bearing ones.
 
 | result | numbers | file |
@@ -43,6 +40,11 @@ list with scopes; these are the load-bearing ones.
 | **Rank: it is the PER-HEAD rank of the content-to-angle map** | per-head rank 2 solves 0/8, 2/8, 2/8; per-head rank 4 solves 8/8, 8/8. Decisive contrast D - C_bd, Fisher and permutation p 0.0070. Sharing and `W_out` scale UNMEASURED | `RANK_SEP_RESULTS.md` |
 | ...and it is SEARCH, not capacity | a rank-2 solution exists (0.9955 frozen, 8/8) and is held under training | `RANK_PROJ_RESULTS.md` |
 | ...but search aids do not close it | r=2 + loop x4 2/8 solved / 0.973; 4 real layers 5/8 / 0.990; plain r=2 0/8 / 0.894; r=4 8/8 / 0.998. Registered verdict **UNMEASURED** | `LOOP_RANK_RESULTS.md` |
+| ...nor does twice the budget (H1 part 1) | at 1800 epochs from scratch: r=2 0/8 (0.908) vs r=4 7/8 (0.994), Fisher p 0.0014. 5/8 rank-2 runs still descending, so "never" is not shown | `LOOP_RANK_E1800_P1_RESULTS.md` |
+| ...and rank 3 sits with rank 4 | per-head r=3 6/8 solved, 0.987 (r=2 0.885, r=4 0.999); 3 - 2 +0.102, perm p 0.027, Holm 0.054 -- registered RANK 3 SUFFICES at its boundary on every count; 4 - 3 UNMEASURED | `RANK3_RESULTS.md` |
+| Sign of the increment, **at matched length** | trained and tested at T=1024: Abs - Signed -0.177 (perm p 0.0002), solved 0/8 vs 8/8; opposition 0.06 vs 1.92-1.97. Monotone arms stalled (budget-scoped); a replication in a new regime | `SIGN_MATCHED_RESULTS.md` |
+| Depth substitution on a biased 1D walk (H3) | 1 path layer solves all 32 cells; index needs 3 layers at p_plus 0.5 / 0.75 / 0.9 and 1 at 1.0. At 0.9 the 2-layer gap is 0.0115 vs a 0.01 threshold: **knife-edge**. Registered primary in no branch. Seeds 0-1 were the pilot; fresh seeds agree | `CANCEL_RESULTS.md` |
+| Navigation told in words: PATH WINS IN WORDS | path 1L 0.969 vs RoPE 1L 0.505 (constant floor 0.505, reversal-copy 0.597), RoPE 2L 0.772; fresh seeds +0.474, 6/6 vs 0/6. Step-table branch did not fire; opposites cancel on 8/8 after a common component, which on 4/8 seeds is a real per-step clock. Scripted grammar, context-free steps | `TEXTWORLD_RESULTS.md` |
 | Boundary: map extent, a threshold | -0.010 / +0.015 / +0.305 at 32 / 128 / 512 occupied cells, matched aliasing | `ALIASING_CONTROLLED.md`, `VISITS_TEST.md` |
 | Boundary: rotation actions; allocentric recoding fixes it | +0.050 -> +0.488 (8/8) | `KNOB_SWEEP_n8.md`, `H12_BUDGET_CURVE.md` |
 | A shared block looped x4 helps path integration | Match-Query +0.346 unpaired (t 3.75); matches 3 real layers at 1/3 the params | `REFINE_RESULTS.md`, `LOOP_HEADROOM.md` |
@@ -55,62 +57,51 @@ later, not to a mistake in the run.
 ## What is open, ranked
 
 Ranked by what would change the story per GPU-hour. Costs are estimates from comparable batches.
+Done since 2026-09-27 and removed from this list: sign at matched length, rank 3, H1 budget (part 1),
+H3.
 
-1. **The three never-controlled OOD claims** -- the largest unpaid debts, because each is currently
-   stated as robustness and would become capability if it survived. All three trained at T=128 and
-   read at T=512/1024.
-   - **Sign of the increment** (`SIGN_ABLATION.md`): signed beats index +0.123 / +0.195 at T=512 /
-     1024 (12/12). At *training* length monotone scores 0.90-0.98 against index 0.80, so the
-     accuracy cost is extrapolation-only; the matched-length evidence is in the loss. **10-20 GPU-h.**
-     The most likely of the three to survive, and it is a replication of Sarrof / Grazzi / Selective
-     RoPE in a new regime, so the payoff is a clean regime claim rather than a novel one.
-   - **InEKF / Level 1.5 and the forget gate** (`L15_ABLATION.md`, `FORGET_CONTROL.md`): the filter
-     line is already a live negative (stabilisation, not inference); the forget gate's +0.086 has no
-     identified mechanism. **Low priority** -- run only if the mechanism question is revived.
-   - **PoPE-wrapping**: never had a matched-length control. Cheap to bundle with the sign batch.
-2. **Rank follow-ups** -- the one line where controls have been making the result *sharper*.
-   - **Rank 3 per head** (~4 GPU-h). The current split is 2 vs 4 with nothing between it. If 3
-     solves 8/8 the story is "rank 2 is special"; if it solves 0-2/8 it is "rank must exceed the
-     task's degrees of freedom". Registered as untested in `RANK_SEP_RESULTS.md`.
-   - **A longer budget for the H1 arms** (~6 GPU-h). Several `L` and `L4` runs in
-     `LOOP_RANK_RESULTS.md` were still descending at 900 epochs, and the registered 0.05 cutoff sits
-     inside their spread -- at 0.08 or above H1 would have passed. Extending the budget is the
-     honest way to convert UNMEASURED into a verdict (rule 4: prefer extending the budget to
-     convergence-conditioning arguments). Cheapest decisive item on this list.
-   - **More loops** (8, 16) and the loop at rank 4 (~4 GPU-h). Tests whether the loop saturates.
+1. **A context-dependent step** (`CONTEXT_STEP_DESIGN.md`, pilots `CTXSTEP_PILOT1-3.md`,
+   `CTXSTEP_HS_RECIPE.md`; pilots, no result). The text world's steps are context-free; real language
+   uses "north" without moving. Pilot 3 at n=1 per cell: window-limited steps (context gate,
+   Selective-RoPE generator) suppress decoys when the cue is 1-3 tokens away and fail past their
+   window -- ready to pre-register (exclude or declare seeds 0, 1, 5; the SR arm is not one-knob).
+   The hidden-state step (HS) reached far cues on 5/5 runs that learned a step, but half its far-cue
+   runs never learned one; the proposed fix (step from `emb + LN(h1)`, starting as the context-free
+   model) is untested. Pilot the fix before registering HS. **~2 GPU-h pilot, then ~10-20 GPU-h.**
+2. **InEKF / Level 1.5, forget gate, PoPE-wrapping, rotate/allocentric** -- still never had a
+   matched-length control. The filter line is a live negative; the forget gate has no mechanism.
+   **Low priority** unless the mechanism question is revived; PoPE-wrapping is the cheapest.
+3. **Rank follow-ups.**
+   - **H1 part 2** (loop x4 and 4 real layers at rank 2, 1800 ep; the registered H1 primary), deferred
+     by Amendment 1. ~6 GPU-h.
+   - **A 3D torus** (`environment_nd.py`): rank 3 succeeded on a 2-DOF task; if the threshold tracks
+     DOF, rank 3 should fail where rank 4 succeeds. ~6 GPU-h.
    - Still unmeasured from `RANK_SEP_RESULTS.md`: cross-head sharing (D - C) and `W_out` per-entry
      scale (C_bd - B). Both need a design that moves one without the other; neither is cheap.
-3. **H3, the "cancellation knob": a within-task dose-response** (~10 GPU-h, design sketched
-   2026-09-27, not pre-registered yet). *Motivation:* this project's cross-task generalisations have
-   failed repeatedly -- an effect established on the torus, transferred to Dyck or to code, has
-   closed every time a matched control arrived. Within-task dose-response has not failed that way.
-   So instead of asking "does path integration help on task X", vary the property that path
-   integration is supposed to exploit, continuously, inside one task, and measure the response.
-   *Design:* a walk whose steps are +/-1 with a bias parameter `p`. At `p = 0.5` the increments
-   cancel in expectation and the accumulated phase is a genuine position -- the regime a signed,
-   content-dependent phase is for. At `p = 1` every step is +1, the accumulator is the token index,
-   and the model is a clock: index RoPE should match it exactly. Sweep `p` and measure the
-   depth-substitution exchange rate (how many attention layers buy one layer of path integration,
-   the +0.353 -> +0.024 curve of `DYCK_MDEPTH_RESULTS.md`) as a function of `p`. *What it would
-   settle:* whether "signed = map, monotone = clock" (`project_clock_vs_map.md`) is a dichotomy or a
-   continuum, and whether the exchange rate is a property of the task's cancellation structure
-   rather than of the task. *Before launching:* it needs a pre-registration with branch boundaries
-   set against the measured noise floor, an action-stream n-gram gate (rule 11), and a check that
-   the readout is invariant to the sign and scale gauges (rule 8).
-4. **The documents rewrite** (no GPU). See below. It is not research, but five documents currently
-   assert things the results files contradict, which is how a retraction propagates.
+4. **A real dataset.** Jericho is not a good test (6/57 games clean, near-trees;
+   `/home/prashr/jericho_data/feasibility/table_final.txt`). Talk the Walk is the only real dataset
+   still worth a look. Unscoped.
+5. **Trainer consolidation** (no GPU). `train_textworld.py`, `train_ctxstep{,2,3}.py` and
+   `train_cancel.py` were cloned by sed; the 2026-09-30 audit proposes one trainer. Do it before the
+   next registered batch, verifying loss-exact on one seed (rule 19).
+6. **The documents** (no GPU): the .tex papers lack the new results (see below).
 
 ## Known stale
 
-Nothing in the six document files, as of **2026-09-27**. The five `.tex` documents and
-`RESULTS_INDEX.md` were rewritten that day against `DYCK_MDEPTH_RESULTS.md`, `RANK_SEP_RESULTS.md` and
-`LOOP_RANK_RESULTS.md` (scripts in `docs/prepared/tex_edits_2026-09-27/`, applied with `rep.py`), and
-all five PDFs rebuilt from source. The "not separated" rank caveat is now "per-head rank fires; sharing
-and `W_out` scale unmeasured" everywhere; the Dyck matched-depth closure and depth-substitution ladder
-are in `report.tex` / `report_short.tex` / the index; the torus loop-rank batch is in every document
-that carries the rank claim. The catalogue was regenerated (457 top-level `*.md`). Not covered by that
-pass: `report/language_summary.html` (the shared report), `README.md`, and the `paper/`, `paper_rank/`
-drafts.
+As of **2026-09-30**:
+- The five `.tex` documents (`positional_review`, `axes_measured`, `mapformer_math`, `report/report`,
+  `report/report_short`) were corrected 2026-09-30 only where a later result contradicted them (sign
+  listed as never controlled or extrapolation-only; code encoding -0.0030 -> full-val -0.0033) and the
+  four touched were rebuilt (`mapformer_math` had no contradicted statement and was left as is). They are
+  **incomplete, not wrong**: none carries rank 3, H1 part 1, H3, the text world or the context step,
+  and sign at matched length appears only as a correction, not as a result with its table.
+- `report/language_summary.html` (shared report source) was updated 2026-09-30 (H1 part 1, H3
+  knife-edge, code n=3, a text-world section) and has NOT been republished; the live link shows the
+  previous version until it is republished WITH `url=`.
+- `RESULTS_INDEX.md` catalogue regenerated 2026-09-30 (478 top-level `*.md`, zero unclassified);
+  its hand-written rows cover the 2026-09-30 results.
+- Not covered by any pass: `README.md`, the `paper/` and `paper_rank/` drafts, and older summaries
+  (`REPORT*.md`, `RESULTS_SUMMARY_*`).
 
 ## The working method, in five lines
 

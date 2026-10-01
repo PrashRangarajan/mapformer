@@ -26,7 +26,7 @@
 
 \title{When a Learned Path Integrator Makes a Map:\\
 \large Controlled Measurements on MapFormer (short version)}
-\date{Short version of the results report of 13 September 2026; corrected 25 and 27 September 2026}
+\date{Short version of the results report of 13 September 2026; corrected 25, 27 and 30 September 2026}
 \author{Prashant Rangarajan}
 
 \begin{document}
@@ -51,6 +51,8 @@ unreliably (on Match-Query, in an unpaired analysis). Transfer across a change o
 \emph{Corrected 25 September 2026}: rank was described as a skewed basis that $r=4$ repairs; it is a search
 deficit. \emph{Corrected 27 September 2026}: the responsible property of the rank bottleneck, previously
 unseparated, is per-head rank; a torus loop batch and the Dyck-2 matched-depth result are added.
+\emph{Corrected 30 September 2026}: the sign was listed as never having a matched-length control; trained and
+tested at $T=1024$ its cost holds (Section~\ref{sec:claim3}).
 \end{abstract}
 
 %======================================================================
@@ -293,8 +295,10 @@ map extent, Habitat).
 For the interval sum to measure net displacement, opposite actions must produce cancelling increments. Forcing the increment non-negative costs MapWM $0.363$ raw and
 $0.280$ at matched loss on the torus at $T=1024$, both detectable, and at matched loss leaves no measurable gain over
 an index code (raw, the monotone arm stays ahead of it, $+0.213$); Selective RoPE's generator pays the same raw cost.
-All of this is beyond the training length: at $T=128$ the monotone arms score $0.90$--$0.98$ against the index
-code's $0.80$, and no monotone arm has been trained at the length where the cost appears. For the two WM-type
+In that batch the accuracy cost is beyond the training length: at $T=128$ the monotone arms score $0.90$--$0.98$ against the index
+code's $0.80$. A matched-length control has since been run: trained and tested at $T=1024$ for 900 epochs ($r=4$,
+$n=8$), the monotone arm scores $0.821$ against the signed arm's $0.998$ ($-0.177$, permutation $p=0.0002$) and
+solves $0/8$ seeds against $8/8$ (budget-scoped: the monotone arms stalled), so the cost holds in distribution. For the two WM-type
 generators the constraint's cost is large on a map task and small on a counting task. (Rank, which an earlier
 version placed here as ``cancel cleanly'', is a search effect and is in Claim~4.)
 
@@ -573,8 +577,9 @@ across structures; nothing here tests it, and sample efficiency is not measured 
 \item \textbf{One varying-offset task.} Claim~4 rests on $k$-back recency. MapWM at the larger budget was not run.
 \item \textbf{Out-of-distribution length.} Most accuracy effects are concentrated beyond the training length (rank,
 sign, the filter, the forget gate, PoPE's magnitude), and no account of that concentration exists (full report,
-Section~11). The sign, the filter, the forget gate and PoPE's wrapping have never had a matched-length control;
-where one was run (code, rank, Dyck depth) the extrapolation effect did not survive as such.
+Section~11). The filter, the forget gate and PoPE's wrapping have never had a matched-length control;
+where one was run (code, rank, Dyck depth) the extrapolation effect did not survive as such, except for the sign,
+whose cost holds trained and tested at $T=1024$ (Section~\ref{sec:claim3}).
 \item \textbf{Loss-matched readings depend on the pool}, and they are uninformative where arm losses do not overlap.
 \item \textbf{Conditions established on different tasks.} The three conditions were shown on different tasks; no
 single task shows them binding together, and they are not claimed to be sufficient.
@@ -621,6 +626,10 @@ corrected above.
 \emph{Corrected 27 September 2026.} The 25 September text left the responsible property of the rank bottleneck
 unseparated (it is per-head rank), scoped the torus loop to $T=128$ without saying so, and did not say that
 Dyck-2's out-of-distribution depth effect closes at matched depth.
+
+\emph{Corrected 30 September 2026.} The 27 September text listed the sign among the claims with no
+matched-length control and placed its whole accuracy cost beyond the training length. Trained and tested at
+$T=1024$ the cost holds ($-0.177$, $0/8$ against $8/8$ solved; \texttt{SIGN\_MATCHED\_RESULTS.md}).
 
 \bibliographystyle{plainnat}
 \bibliography{refs}

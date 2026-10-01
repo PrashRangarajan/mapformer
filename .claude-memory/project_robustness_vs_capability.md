@@ -1,6 +1,6 @@
 ---
 name: project-robustness-vs-capability
-description: Past the training length (or depth) measures robustness, not capability; every such claim that got a matched control died. Train at the target length, or add a decay envelope.
+description: Past the training length (or depth) measures robustness, not capability; every such claim that got a matched control died except sign, which survived its matched-length control (2026-09-28). Train at the target length, or add a decay envelope.
 metadata:
   type: project
 ---
@@ -15,21 +15,25 @@ metadata:
   the +0.290 / +0.209 / +0.159 / +0.168 at L32 D12 is matched LENGTH but **3x the training nesting
   depth** -- an extrapolation in the variable the claim is about. **That control ran (2026-09-25)
   and the effect CLOSED: see the last block of this file. Do not quote +0.168.**
-- **Every "helps at OOD length" claim that got a matched-length control died.** Code: -3.694 bpc
-  extrapolating from 512 became -0.0030 (unmeasured) at matched 2048, and the composition claim
+- **Every "helps at OOD length" claim that got a matched-length control died -- except sign (below).** Code: -3.694 bpc
+  extrapolating from 512 became -0.0033 on the full val file (unmeasured, `CODE_FULLVAL_RESULTS.md`) at matched 2048, and the composition claim
   reversed (`CODE_RESULTS.md`, `CODE_DECAY_RESULTS.md`, `runs/code2048`). The MapFormer paper's Dyck
   "helps OOD" pattern is produced by its F1 metric (0.88 no-stack floor).
-- **Sign**: the accuracy cost of a monotone increment is extrapolation-only. At training length
-  monotone arms score 0.90-0.98 against index 0.80; the matched-length evidence is in the LOSS (12/12
-  worse). No matched-length arm yet (`SIGN_ABLATION.md`).
+- **Sign: the exception -- it SURVIVED its matched-length control** (2026-09-28,
+  `SIGN_MATCHED_RESULTS.md`). Trained at T=128 the accuracy cost of a monotone increment was
+  extrapolation-only (-0.054 unmeasured in distribution, -0.363 at 1024; `SIGN_ABLATION.md`). Trained
+  AND tested at T=1024: Abs - Signed -0.177 (perm p 0.0002), solved 0/8 vs 8/8; opposition 0.06 signed
+  vs 1.92-1.97 monotone. Budget-scoped (monotone arms stalled). So the rule is "OOD-only is
+  robustness UNTIL controlled", not "OOD-only effects always die".
 - **Rank at matched length** (T=1024 train and test, 900 epochs): r=4 solves 8/8, r=2 0/8, +0.103 at
   T=1024 (perm p 0.0003) -- registered verdict UNREADABLE (4 r=2 runs still descending;
   `RANK_MATCHED_RESULTS.md`). A rank-2 projection of each solved r=4 scores 0.995 at T=1024 on 8/8
   seeds (`RANK_PROJ_FROZEN.md`), so r=2 can REPRESENT the solution: the gap is search, not capacity.
   **Settled since** (`RANK_SEP_RESULTS.md`, `LOOP_RANK_RESULTS.md`): the factor is per-head rank,
   and search aids move rank 2 a long way without reaching rank 4's regime. This is the one place
-  where a matched-distribution control did NOT kill the effect -- see [[project-rank-and-selective-rope]].
-- **Never had a matched control:** InEKF / Level15, forget gate, PoPE-wrapping, rotate/allocentric.
+  where a matched-distribution control made the effect sharper (rank 3 sits with rank 4; 2x the budget
+  does not rescue rank 2) -- see [[project-rank-and-selective-rope]].
+- **Never had a matched control (as of 2026-09-30):** InEKF / Level15, forget gate, PoPE-wrapping, rotate/allocentric.
   All trained T=128 and read at T=512/1024 (allocentric also at the 16-epoch recipe).
 
 **Why:** a model evaluated past its training length or depth meets accumulator values, positions and
@@ -40,8 +44,8 @@ depths it never saw; handling them is a robustness property worth having, not "a
   OOD-only effect as robustness until a matched control says otherwise (CLAUDE.md rule 10).
 - Practical: **train at the target length if you can; if not, add the 48-parameter ALiBi-style decay
   envelope** (`DECAY_RESULTS.md`) rather than choosing an encoding for how it extrapolates. "RoPE +
-  envelope is the best of eight code arms" is n=3 and cross-batch (p 0.35 against MapWM-Decay) --
-  suggestive, not established.
+  envelope is the best of eight code arms" is n=3 and stays unsupported on the full-val rescore
+  (MapWM-Decay - RoPE-Decay +0.0034, t p 0.20; `CODE_FULLVAL_RESULTS.md`).
 - Related: [[project-mappope-asymmetry]], [[project-rank-and-selective-rope]],
   [[feedback-validate-task-first]].
 

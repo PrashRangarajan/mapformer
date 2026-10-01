@@ -29,7 +29,7 @@
 
 \title{When a Learned Path Integrator Makes a Map:\\
 \large Controlled Measurements on MapFormer}
-\date{Results report, 13 September 2026; corrected 25 and 27 September 2026}
+\date{Results report, 13 September 2026; corrected 25, 27 and 30 September 2026}
 \author{Prashant Rangarajan}
 
 \begin{document}
@@ -55,7 +55,8 @@ MapWM's increment non-negative costs $0.363$ raw and $0.280$ at matched loss ($1
 loss-matched verdicts depend on the pool, Section~\ref{sec:c1-recipe}). At
 matched loss no measurable gain over an index code remains, although raw accuracy stays detectably
 above it; this extends a known result to navigation, and Selective RoPE's generator pays the same raw
-cost. On a counting task the raw cost is small for these two generators ($0.060$, unmeasured, and
+cost. Trained and tested at $T=1024$ the cost holds in distribution ($-0.177$; the monotone arm solves
+$0/8$ seeds against $8/8$). On a counting task the raw cost is small for these two generators ($0.060$, unmeasured, and
 $0.068$), but single-origin MapEM pays $0.198$.
 % src: SIGN_ABLATION.md (E11); MONOTONE_RESULTS.md P1, P2, Q2
 \item \textbf{Findable solutions.} MapEM, whose shared position kernel is TEM's conjunction of
@@ -84,7 +85,9 @@ quality; on Dyck-2 the depth-extrapolation effect closes when models are trained
 depth substitution (one layer of path integration is worth about three of attention). \emph{Corrected 25 September 2026}: rank was described as a skewed basis that $r=4$ repairs; it
 is a search deficit (Section~\ref{sec:c3-rank}). \emph{Corrected 27 September 2026}: the responsible property
 of the rank bottleneck, previously unseparated, is per-head rank; the torus loop and Dyck matched-depth
-batches are added (Sections~\ref{sec:c5-loop} and~\ref{sec:dyck}).
+batches are added (Sections~\ref{sec:c5-loop} and~\ref{sec:dyck}). \emph{Corrected 30 September 2026}: the sign
+was listed as never having a matched-length control; it has had one, and its cost holds in distribution
+(Section~\ref{sec:claim3}); the code encoding effect at matched length is quoted on the full validation file.
 % src: MQ_NOISE_2X2.md, MQ_NOISE_2X2_C2.md; L15_ABLATION.md; GATED_RESULTS.md; HIER_PARITY.md; REFINE_RESULTS.md; L15_LOOP_2X2.md
 \end{abstract}
 
@@ -1010,8 +1013,9 @@ Forcing the increment non-negative costs MapWM $0.363$
 raw (\mde\ $0.025$) and $0.280$ at matched loss (\mde\ $0.061$) on the torus at $T=1024$ ($12/12$), and at
 matched loss leaves no measurable gain over an index code (raw, the monotone arm stays ahead of it, $+0.213$,
 \mde\ $0.097$); Selective RoPE's generator pays the same raw cost ($-0.355$ against MapWM's $-0.363$). All of
-this is beyond the training length: at $T=128$ the monotone arms score $0.90$--$0.98$ against the index
-code's $0.80$, and no monotone arm has been trained at the length where the cost appears. The rank of the
+this batch's accuracy cost is beyond its training length: at $T=128$ the monotone arms score $0.90$--$0.98$ against the index
+code's $0.80$. A matched-length control has since been run: trained and tested at $T=1024$ for $900$ epochs ($r=4$, $n=8$), the monotone arm ($|\Delta|$) scores $0.821$ against the signed arm's $0.998$ ($-0.177$, permutation $p=0.0002$) and solves $0/8$ seeds against $8/8$ (\texttt{SIGN\_MATCHED\_RESULTS.md}; budget-scoped, the monotone arms stalled). The cost is capability,
+not only robustness to length. The rank of the
 bottleneck, which an earlier version placed here as ``cancel cleanly'', is a search effect and is in
 Claim~4 (Section~\ref{sec:c3-rank}). The value of the sign depends on the task: on a counting task the same sign constraint costs
 MapWM an unmeasured $-0.060$ and Selective RoPE's generator a small, detectable $-0.068$ (both raw); for that
@@ -1973,13 +1977,15 @@ $T=512$ and $+0.081$ at $T=1024$; PoPE's magnitude on top of path integration ad
 $+0.101$ at $T=128$, 512 and 1024 (grid 64, raw; the last two detectable, \mde\ $0.032$ and $0.065$); and MapEM degrades
 more slowly than MapWM with length on the paper task (Section~\ref{sec:c4-map}; exploratory, convergence gate
 failed). No account covers these. Where a matched-length control has been run, the out-of-distribution
-benefit did not survive as such: on a separate code-modelling line, trained and tested at 2048 the encoding
-effect is $-0.0030$ (\mde\ $0.0046$) against $-3.694$ bpc extrapolating from a 512 context
-(\texttt{CODE\_RESULTS.md}); on the torus rank's matched-length effect is on search; and on Dyck-2 the clearest
-instance, on the depth axis: the 4-layer position effect trained at depth 4 and scored at depth 12 closes to
-$+0.002$ at ceiling when models are trained at depth 12 (Section~\ref{sec:dyck}). The sign, the
-filter, the forget gate, PoPE's wrapping and rotation/allocentric recording have no matched-length control.
-% src: CODE_RESULTS.md; RANK_MI_RESULTS.md; DYCK_MDEPTH_RESULTS.md; RANK_SWEEP.md (E1); SIGN_ABLATION.md (E11); L15_ABLATION.md (B1); FORGET_GATE.md (E19); POPE_WRAPPING.md (E10); PAPERTASK_RESULTS.md (F20)
+benefit did not survive as such, with one exception (the sign, below). On a separate code-modelling line, trained and tested at 2048 and
+scored on the full validation file, the encoding effect is $-0.0033$ ($n=3$, $t$-test $p=0.31$, unmeasured) against
+$-3.694$ bpc extrapolating from a 512 context (\texttt{CODE\_FULLVAL\_RESULTS.md}); on the torus rank's matched-length
+effect is on search; and on Dyck-2 the clearest instance, on the depth axis: the 4-layer position effect trained
+at depth 4 and scored at depth 12 closes to $+0.002$ at ceiling when models are trained at depth 12
+(Section~\ref{sec:dyck}). The exception is the sign: trained and tested at $T=1024$ the monotone arm still loses
+($-0.177$, $0/8$ against $8/8$ solved; Section~\ref{sec:claim3}). The filter, the forget gate, PoPE's wrapping and
+rotation/allocentric recording have no matched-length control.
+% src: SIGN_MATCHED_RESULTS.md; CODE_FULLVAL_RESULTS.md; CODE_RESULTS.md; RANK_MI_RESULTS.md; DYCK_MDEPTH_RESULTS.md; RANK_SWEEP.md (E1); SIGN_ABLATION.md (E11); L15_ABLATION.md (B1); FORGET_GATE.md (E19); POPE_WRAPPING.md (E10); PAPERTASK_RESULTS.md (F20)
 
 \paragraph{What the accumulator exponent covers.} The growth exponent $\alpha$ tracks sign and rank
 (Section~\ref{sec:c3-alpha}). It does not detectably change under the forget gate ($-0.051$, \mde\ $0.092$),
@@ -2257,9 +2263,10 @@ substitution (Section~\ref{sec:dyck}); the enwik8 experiments are underpowered o
 \item \textbf{One varying-offset task.} Claim~4 rests on $k$-back recency. MapWM at the larger budget
 was not run.
 \item \textbf{Out-of-distribution length.} Most accuracy effects are concentrated beyond the training length
-(Section~\ref{sec:length}), and no account of that concentration exists. The sign ablation, the filter,
+(Section~\ref{sec:length}), and no account of that concentration exists. The filter,
 the forget gate, PoPE's wrapping and rotation/allocentric recording have never had a matched-length control;
-where one was run (code, rank, Dyck depth) the extrapolation effect did not survive as such.
+where one was run (code, rank, Dyck depth) the extrapolation effect did not survive as such, except for the
+sign, whose cost holds trained and tested at $T=1024$ (Section~\ref{sec:claim3}).
 \item \textbf{Recipe dependence of index baselines.} Under the paper's recipe the torus index arms are
 undertrained. Under the converged recipe the raw position main effect at training length is $+0.243$
 (\mde\ $0.038$), against $+0.461$ in the paper-recipe batch (different evaluator); it stays detectable. Loss-matched readings depend on the pool, and they are uninformative where arm losses do not
@@ -2320,6 +2327,11 @@ two-part account of the Bach collapse; all four are corrected above.
 bottleneck unseparated (it is per-head rank; sharing and $W_{\mathrm{out}}$'s scale are unmeasured), said a
 loop has nothing to add on the torus (at $T=1024$, $r=2$ it does, and real depth does more), and did not say
 that Dyck-2's out-of-distribution depth effect closes at matched depth.
+
+\emph{Corrected 30 September 2026.} The 27 September text listed the sign among the claims with no
+matched-length control and called its accuracy cost extrapolation-only. Trained and tested at $T=1024$ the cost
+holds ($-0.177$, $0/8$ against $8/8$ solved; \texttt{SIGN\_MATCHED\_RESULTS.md}). The matched-length code encoding
+effect is now quoted on the full validation file ($-0.0033$, unmeasured; \texttt{CODE\_FULLVAL\_RESULTS.md}).
 
 \clearpage
 \appendix

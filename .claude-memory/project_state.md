@@ -5,28 +5,40 @@ metadata:
   type: project
 ---
 
-Updated 2026-09-27 ~18:15. Goes stale fast: check `git log`, `.done` markers and the results files
-first. New here? Read `docs/WHERE_THINGS_STAND.md` next.
+Updated 2026-09-30. Goes stale fast: check `git log`, `.done` markers and the results files first.
+New here? Read `docs/WHERE_THINGS_STAND.md` next.
 
-## Running (all detached; judge completion by the .done marker AND the artifacts)
-Five queues, launched 2026-09-27 17:47-18:10; each pre-registered and committed before launch.
-The three train_variant drivers share the 2-jobs/GPU picker and run in this order as slots free:
-1. **Rank 3 per head** -- DONE 2026-09-28 02:41 (`RANK3_RESULTS.md`): registered RANK 3 SUFFICES, at
-   its boundary. Per-head r=3 6/8 SOLVED, acc 0.987 (r=2 0.885, r=4 0.999); 3 - 2 fires on accuracy
-   only (perm p 0.027, Fisher 0.13, Holm 0.054); 4 - 3 UNMEASURED. Reproduction exact. The two
-   unsolved seeds sit in the non-cancelling basin (opposition 1.6-1.8). Next test: 3D torus.
-2. **Sign at matched length** -- DONE 2026-09-28 14:08 (`SIGN_MATCHED_RESULTS.md`): registered SIGN IS
-   CAPABILITY. Trained and tested at T=1024: Abs - Signed -0.177 (perm p 0.0002), solved 0/8 vs 8/8;
-   opposition signed 0.06 vs monotone 1.92-1.97. Monotone arms stalled (budget-scoped).
-3. **H1 at 1800 epochs** -- part 1 DONE 2026-09-29 (`LOOP_RANK_E1800_P1_RESULTS.md`): NOT a budget
-   effect -- rank 2 0/8 vs rank 4 7/8 at 1800 epochs (Fisher p 0.0014). Part 2 (loop, 4 layers) deferred.
-4. **H3** -- DONE (`CANCEL_RESULTS.md`).
-5. **Text world** -- DONE 2026-09-28 21:14 (`TEXTWORLD_RESULTS.md`): PATH WINS IN WORDS (0.969 vs
-   RoPE 0.505, RoPE 2L 0.772); step-table verdict no branch (4/8), but opposites cancel on 8/8 after
-   the common component; half the seeds add a per-step clock. Jericho feasibility: NOT a good test
-   (6/57 games clean, near-trees; /home/prashr/jericho_data/feasibility/).
-6. **Context-dependent step** (`CONTEXT_STEP_DESIGN.md`): decoy text world
-   (`environment_textworld_ctx.py`), `model_context_step.py` (CtxGateWM, HiddenStepWM),
-   `train_ctxstep.py`, gate `docs/audits/2026-09-27/gate_ctxstep.py` (all pass). Pilot
-   `runs/ctxstep_pilot` (CF, SR, CG, HS x 2 seeds, p_decoy 0.3) running since 23:05; pre-registration
-   after it.
+## Running
+Nothing. No GPU jobs.
+
+## Finished since 2026-09-27 (one line each; numbers in the file)
+- Rank 3 per head: RANK 3 SUFFICES at its boundary, 6/8, Holm 0.054 -- `RANK3_RESULTS.md`
+- Sign at matched length: SIGN IS CAPABILITY, Abs - Signed -0.177, 0/8 vs 8/8 -- `SIGN_MATCHED_RESULTS.md`
+- H1 part 1: 2x budget solves 0/8 rank-2 runs (5/8 still descending) vs 7/8 rank 4 -- `LOOP_RANK_E1800_P1_RESULTS.md`
+- H3 cancellation knob: no registered branch; exchange rate 3 layers (knife-edge at p_plus 0.9) -- `CANCEL_RESULTS.md`
+- Text world: PATH WINS IN WORDS 0.969 vs 0.505; step table B no branch, map on 8/8 -- `TEXTWORLD_RESULTS.md`
+- Code full-val rescore: no sign flips; 4 contrasts keep t p < .05 at n=3 -- `CODE_FULLVAL_RESULTS.md`
+- Jericho feasibility: NOT a good test (6/57 games clean, near-trees) -- `/home/prashr/jericho_data/feasibility/table_final.txt`
+- Context-step pilots 1-3 and the HS recipe pilot -- `CTXSTEP_PILOT{1,2,3}.md`, `CTXSTEP_HS_RECIPE.md`
+- 2026-09-30 audit: pilot seeds reused in TEXTWORLD and CANCEL (fresh-seed numbers in
+  `docs/audits/2026-09-27/fresh_seeds.txt`), text-world clock is real, swap tests committed.
+
+## Open / waiting
+- **Context step** (`CONTEXT_STEP_DESIGN.md`): the window result (context gate and SR generator fail
+  past their 4-token window, n=1 per cell) is ready to pre-register; exclude or declare seeds 0, 1, 5;
+  SR is not one-knob (full rank, no omega) -- add a rank-4 SR arm or say so.
+- **HS fix untested**: step from `emb(x_t) + LN(h1_t)` instead of LN(h1) alone, so it starts as the
+  context-free model. Pilot it before registering HS.
+- **H1 part 2** (loop and 4-layer rank-2 arms at 1800 ep, the registered H1 primary): deferred.
+- **Documents**: four .tex/PDFs corrected 2026-09-30 only where contradicted (sign, code full-val;
+  `mapformer_math` needed nothing); they do not carry rank 3, H1 part 1, H3, the text world or the context step. The shared
+  report source `report/language_summary.html` was updated 2026-09-30 and NOT republished (republish
+  WITH `url=`).
+
+## Loose ends
+- `runs/rank_mi/p0/` is untracked; `Vanilla_r2ph_s0/s1` there are symlinks into
+  `runs/rank_perhead_pilot/p0/`. Do not delete the pilot dir.
+- Trainers duplicated by sed (`train_textworld.py`, `train_ctxstep{,2,3}.py`, `train_cancel.py`);
+  consolidation into one trainer proposed in the 2026-09-30 audit, not done.
+- Checkpoints are the only copy of the per-epoch loss curves for these batches; do not clear run dirs.
+- `CANCEL` eval stream for seed-0 runs overlaps training batch 0 (see `CANCEL_RESULTS.md` block).

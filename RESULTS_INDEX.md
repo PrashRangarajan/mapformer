@@ -1,4 +1,4 @@
-# Results index (regenerated 2026-09-24; rank, documents and statistics updated 2026-09-25; rank separation, Dyck matched depth, loop-rank and catalogue updated 2026-09-27)
+# Results index (regenerated 2026-09-24; rank, documents and statistics updated 2026-09-25; rank separation, Dyck matched depth, loop-rank and catalogue updated 2026-09-27; sign at matched length, rank 3, H1 part 1, H3, text world, code full-val, context-step pilots and catalogue updated 2026-09-30)
 
 A catalogue with statuses, not a narrative. **`CLAUDE.md` is the authority** for conventions, the
 standing rules (numbered 1-28 there; this file keeps no rule list of its own), the withdrawn list and
@@ -12,12 +12,15 @@ SOLID = holds as stated at its scope; NEEDS CONTROL = real measurement, but the 
 inside a t-based MDE or n <= 4. "OOD" = read past the training length or depth, i.e. robustness until a
 matched control exists (CLAUDE.md rule 10). The house "DETECTABLE" (|mean| > 2.8 sd/sqrt(n), i.e. |t| > 2.8)
 is a 10.7% false-positive test at n=3 (2.7% at n=8), so an n < 8 DETECTABLE is read with its t-test p
-(CLAUDE.md rule 5; e.g. code C1 MapPoPE - PoPE +0.0033 has p ~0.1).
+(CLAUDE.md rule 5; e.g. code C1 MapPoPE - PoPE: +0.0034 on the full val file, t-test p 0.19).
 
 Documents: `positional_review.pdf` (review), `axes_measured.pdf` (results paper), `mapformer_math.pdf`
-(record), `report/report.pdf` and `report/report_short.pdf`; all brought into line with this index on
-2026-09-27 (rank separation, Dyck matched depth, torus loop-rank). `report/language_summary.html` (the
-shared report) was not part of that pass.
+(record), `report/report.pdf` and `report/report_short.pdf`; brought into line with this index on
+2026-09-27 (rank separation, Dyck matched depth, torus loop-rank) and corrected 2026-09-30 where they
+contradicted the later results (sign at matched length, code full-val). They do NOT carry rank 3, H1
+part 1, H3, the text world or the context-step pilots. `report/language_summary.html` (the shared
+report source) was updated 2026-09-30 and carries all of these except the context-step pilots (one
+sentence).
 
 ## Citable results
 
@@ -27,16 +30,22 @@ shared report) was not part of that pass.
 | ...and is necessary for in-context maps (Match-Query) | 0.730 +/- 0.247 vs index 0.154; context destruction 0.918 -> 0.074 | 5 | chance 0.0625 | SOLID; its index control is PlainFlat, never the architecture-matched RoPE arm | `MATCH_QUERY_SCALE.md`, `MATCH_QUERY_RESULTS.md` |
 | It is the PER-HEAD rank of the content-to-angle map that decides whether training finds the torus solution (trained and tested at T=1024, 900 ep, every arm built from our r=2's initial weights) | SOLVED within 900 ep, five arms: per-head rank 2 -- our shared r=2 **0/8** (0.894), per-head r=2 **2/8** (0.885), block-diagonal r=4 **2/8** (0.948); per-head rank 4 -- shared r=4 **8/8** (0.998), per-head r=4 **8/8** (0.999). Per-head rank FIRES (D - C_bd, Fisher and perm p 0.0070, Holm 0.028); sharing (D - C, Fisher 1.00, perm 0.59) and W_out per-entry scale (C_bd - B, Fisher 1.00, perm 0.24) UNMEASURED. A rank-2 projection of each solved r=4 scores 0.9955 frozen and is held under training (7/8 vs the r=4 control's 7/8): a SEARCH deficit | 8 | constant floor 0.506 (wrap-only 0.507) | SOLID, budget-scoped (within 900 epochs); r=4's smaller `W_out` init (bound 0.5 vs 0.707) was tested (C_bd - B) and is UNMEASURED, not shown to matter; low initial angle scale is not necessary for failure (A 0.335 / B 0.328 fail like C_bd 0.208); n_heads=2, one task, one length, one recipe; MapWM family only | `RANK_SEP_RESULTS.md`, `RANK_SEP_PREREG.md`, `RANK_MI_RESULTS.md`, `RANK_PROJ_RESULTS.md`, `RANK_MATCHED_RESULTS.md` |
 | Search aids partly recover rank 2 but do not reach rank 4 (torus, T=1024, 900 ep) | r=2 + loop x4 (bit-identical params and init to r=2) 2/8 solved, 0.973 (perm p 0.0034 vs r=2); r=2 at 4 real layers 5/8, 0.990 (Fisher 0.0256, perm 0.0012); plain r=2 0/8, 0.894; r=4 8/8, 0.998. 4 real layers beat the loop +0.017 (perm p 0.0009). Final losses form three regimes; no rank-2 run enters r=4's | 8 | constant floor 0.506 | registered H1 verdict UNMEASURED; the 0.05 solved cutoff falls inside the aids' spread (at 0.08 H1's condition would have been met), so uncertain rather than negative; depth (4x params) beats the matched-parameter loop, so NOT search at constant capacity | `LOOP_RANK_RESULTS.md`, `LOOP_RANK_PREREG.md` |
+| Rank 3 per head sits with rank 4 (torus, trained and tested at T=1024, 900 ep, built from our r=2's base) | per-head r=3 **6/8** SOLVED, 0.987 at T=1024 (r=2 per head 2/8, 0.885; r=4 per head 8/8, 0.999). 3 - 2: +0.102, perm p 0.027, Holm (2) 0.054; solved 6/8 vs 2/8 Fisher 0.13. 4 - 3: +0.012, p 0.19, UNMEASURED. The two unsolved r=3 seeds sit in the non-cancelling basin (opposition 1.58 / 1.83 vs 0.017-0.076 solved). Reproduction of a stored D seed exact | 8 | constant floor 0.506 | registered RANK 3 SUFFICES at its boundary on every count (accuracy only, Holm 0.054, exactly 6/8); budget-scoped; 2-DOF torus only (a 3D torus is the untested prediction) | `RANK3_RESULTS.md`, `RANK3_PREREG.md`, `RANK3_GEOMETRY.md` |
+| H1 part 1: twice the budget does not rescue rank 2 (torus, T=1024, from scratch, 1800 ep) | shared r=2 **0/8** SOLVED (0.894 -> 0.908 from 900 to 1800 ep), shared r=4 **7/8** (0.998 -> 0.994); C - A +0.086, perm p 0.0003, Fisher 0.0014 | 8 | constant floor 0.506 | SOLID as "2x the budget solves none"; NOT "never": 5/8 rank-2 runs still DESCENDING (3 STALLED); one r=4 run stalled at 1800 that solved at 900. Part 2 (loop and 4-layer arms, the registered H1 primary) deferred | `LOOP_RANK_E1800_P1_RESULTS.md`, `LOOP_RANK_E1800_PREREG.md` |
 | Dyck-2 depth ladder at the training cell (L32 D4), width fixed | position +0.293 / +0.081 / +0.048 / +0.019 at 1-4 layers (8/8); index RoPE 0.979 at 4L | 8 | chance 0.5 | SOLID (matched length and depth) | `DYCK_LADDER_RESULTS.md` |
 | Dyck-2 at matched depth: path integration is worth ~3 layers of attention (trained AND tested at L32 D12, A2f) | position main +0.353 / +0.130 / +0.045 / +0.024 at 1-4 layers (8/8 each, 1x budget). Mixture training (D in 4..12, 4L) keeps +0.110 at L32 D12 (8/8) and +0.043 at D4; L128 D12 unmeasured | 8 | chance 0.500; best floor 0.594 | SOLID as depth-substitution (parameter efficiency), not as something depth cannot buy: at 4L and 3x budget every arm is at ceiling (index 0.997-0.998, path 1.000), effect +0.002 | `DYCK_MDEPTH_RESULTS.md`, `DYCK_MDEPTH_PREREG.md` |
+| The same exchange rate on a biased 1D walk (H3, the cancellation knob; 32-cell ring, T=128, 300 ep, matched length) | path 1 layer 1.000 in every cell (32/32 SOLVED); fewest index layers within 0.01 of it: 3 at p_plus 0.5 / 0.75 / 0.9, 1 at 1.0. Registered primary (index 1L a1(p) = 0.717 / 0.676 / 0.825 / 1.000) is non-monotone: NO registered branch. Fresh seeds s2-s7 (s0-s1 were the pilot): a1 0.710 / 0.677 / 0.824 / 1.000, every pair differs (perm p 0.0022-0.0108) | 8 (6 fresh) | floors 0.554 / 0.544 / 0.520 / 0.498 | exchange rate SOLID at p_plus 0.5 / 0.75; KNIFE-EDGE at 0.9 (2-layer gap 0.0115, fresh 0.0133, vs the 0.01 threshold; 7/8 STALLED); budget-scoped (index 1L and 23/24 index 2L STALLED); path at ceiling, so "one layer" is an upper bound | `CANCEL_RESULTS.md`, `CANCEL_PREREG.md` |
 | Index code cannot count contextually (reproduces CoPE) | +0.750 at T=1024 (8/8) | 8 | chance 0.0625 | SOLID (matched length) | `RECENCY_RESULTS.md` |
+| Sign of the increment AT MATCHED LENGTH (a replication of Sarrof / Grazzi / Selective RoPE in navigation; torus, trained and tested at T=1024, 900 ep, r=4 shared) | Signed 8/8 SOLVED, 0.998; Abs 0/8, 0.821; Pos (softplus) 1/8, 0.781; RoPE 0/8, 0.731. Abs - Signed **-0.177** (MDE ~0.14, perm p 0.0002; Fisher 0.0002), Pos - Signed -0.218 (p 0.0003). Opposition 0.06 signed vs 1.92-1.97 monotone; no monotone Delta negative after training. Trained at T=128 the in-distribution cost was -0.054, unmeasured | 8 | RoPE 0.731 | SOLID: the first never-controlled OOD claim to get its matched-length control, and it survived. Budget-scoped (monotone arms STALLED / DESCENDING); accuracy is loss here (r -0.992); Pos carries the original's init confound | `SIGN_MATCHED_RESULTS.md`, `SIGN_MATCHED_PREREG.md`, `SIGN_MATCHED_PROBE.md`, `SIGN_ABLATION.md` |
+| Navigation told in words: PATH WINS IN WORDS (the torus walk as English, 58 words, synonyms, fillers; held-out map; trained and tested at T=1024 words, 900 ep) | path 1 layer (r=4) **0.969 +/- 0.054** (7/8 SOLVED), RoPE 1L 0.505 (0/8), RoPE 2L 0.772 (0/8); path - RoPE 1L +0.464 (perm p 0.0002, Fisher 0.0014). Fresh seeds s2-s7 only (s0-s1 were the pilot): +0.474, 6/6 vs 0/6, p 0.0022. Step table: registered B did NOT fire (4/8 meet the criterion); declared secondaries: opposite directions cancel on 8/8 after a common component is removed; on 4/8 seeds that component is a real per-step clock (31-38 of 64 phase channels drift between visits vs 2-4) | 8 (6 fresh) | best constant 0.505; reversal-copy rule 0.597 | SOLID for verdict A at this budget (RoPE arms STALLED, creeping); scripted grammar, context-free steps (a direction word never appears outside a movement clause) | `TEXTWORLD_RESULTS.md`, `TEXTWORLD_PREREG.md`, `docs/audits/2026-09-27/fresh_seeds.txt`, `docs/audits/2026-09-27/tw_clock_probe.txt` |
 | Loop on path integration (Match-Query) | loop main effect **unpaired** +0.346 (t 3.75); loop arm pooled 0.803 +/- 0.200, 1/16 failures | 8 / 16 | chance 0.0625 | SOLID for the main effect. The paired interaction +0.315 and "r=4 + loop x4 0.986, 8/8 >= 0.941" are paired / one-batch statistics on a task whose same-seed retrains drift 0.185: CONTRADICTED (see Withdrawn) | `REFINE_RESULTS.md`, `LOOP_HEADROOM.md`, `MQ_RANK_2X2.md` |
 | EM's recency deficit is search | EM - WM -0.375 (0/8, MDE 0.154); installed rewind frozen 1.000 (8/8); per-pair origins +0.215 = pathway +0.124 + freedom +0.091 (n=48) | 8 / 48 | chance 0.0625 | SOLID as a fixed-budget learnability result | `RECENCY_EM_RESULTS.md`, `WARM_RESULTS.md`, `SEARCH_RESULTS.md`, `PAIRSPLIT_RESULTS.md`; `EM_WM_STATE.md` Sec 3-4 gives the status of every EM/WM file |
 | Phase freedom in q0/k0 | +0.146 vs a matched-optimiser control (22/24); fresh seeds +0.113 | 24 | -- | SOLID; mechanism unidentified | `MAGONLY_RESULTS.md`, `D5_RESULTS.md` |
 | Paper replications | MapFormer v4 Dyck-2: ordering MapWM-1L - RoPE-2L +0.370 (8/8, F1; on Hewitt closing accuracy +0.064, 0.638 vs 0.574 at L128 D12, same direction -- that cell is 3x the training depth and 4x its length, i.e. depth-extrapolation, and the 4L depth effect closes at matched depth, `DYCK_MDEPTH_RESULTS.md`); levels do not replicate and sit at the F1 floor 0.884. PoPE's Indirect Indexing at 200k iters 7/8 (1/8 at their 100k). PoPE's Bach: PoPE - RoPE -0.032 NLL (5/5) | 8 / 8 / 5 | F1 no-stack 0.884 | SOLID as replications; the Dyck ordering is read OOD in depth (robustness) | `DYCK_RESULTS_bs128.md`, `INDIRECT_RESULTS_200k.md`, `JSB_RESULTS.md` |
 | Our PoPE is faithful; non-negativity is not what extrapolates | 1.7e-06 max logit difference vs the authors' code; NoSigma penalty -0.0108 vs RoPE +3.5885; 80.7% of `pope_delta` frozen in its clamp | 3 | batch floor 0.0021 / 0.0028 bpc | SOLID as corrected (the NoSigma Table-5 cell is unmeasured) | `ABLATE_RESULTS.md` |
-| PoPE's encoding helps the path row (Bach) | MapPoPE - MapWM -0.0165 NLL (5/5, MDE 0.0111) | 5 | -- | SOLID on Bach. Dyck 2L +0.050 is depth-OOD (~0 at L32 D4); code -0.0052 and MapPoPE - PoPE +0.0033 are UNDERPOWERED | `JSB_RESULTS.md`, `.claude-memory/project_mappope_asymmetry.md` |
-| Code: the OOD encoding "win" is extrapolation cost | at matched 2048 the encoding effect is -0.0030 (MDE 0.0046) against -3.694 extrapolating from 512 | 3 | no-memory brackets 0.858 | SOLID as a retraction | `CODE_RESULTS.md`, `CODE_GATES.md` |
+| PoPE's encoding helps the path row (Bach) | MapPoPE - MapWM -0.0165 NLL (5/5, MDE 0.0111) | 5 | -- | SOLID on Bach. Dyck 2L +0.050 is depth-OOD (~0 at L32 D4); code on the full val file -0.0054 (t p 0.086) and MapPoPE - PoPE +0.0034 (t p 0.19) are UNMEASURED (n=3) | `JSB_RESULTS.md`, `.claude-memory/project_mappope_asymmetry.md` |
+| Code: the OOD encoding "win" is extrapolation cost | at matched 2048, rescored on the full val file, the encoding effect is -0.0033 (1/3 seeds, t p 0.31, UNMEASURED) against -3.694 extrapolating from 512 | 3 | no-memory brackets 0.858 | SOLID as a retraction | `CODE_FULLVAL_RESULTS.md`, `CODE_RESULTS.md`, `CODE_GATES.md` |
+| Code at matched length, full-val rescore (36 `.final.pt` checkpoints scored on the whole val file instead of `best_val_bpc`) | no sign flips. Keep a t-test: C1 position main +0.0056 (path integration costs at 2048; 3/3, p 0.024); C2 PoPE-Decay - RoPE-Decay +0.0054 (p 0.002); envelope on MapPoPE -0.0059 (p 0.008) and MapWM -0.0170 (p 0.036). UNMEASURED: encoding main, MapPoPE - PoPE (+0.0034, p 0.19), MapPoPE - MapWM, MapPoPE-Decay - PoPE-Decay, "RoPE-Decay best of eight", envelope on RoPE (cross-batch) and PoPE | 3 | -- | n=3: significant rows are t-test p < .05 only, below the n where any distribution-free test can reach .05; envelope rows are cross-batch. Full-val sits +0.048-0.051 above `best_val_bpc` at 2048 and 0.024-0.035 below it at 512 (unexplained); do not compare absolute bpc across the two readouts | `CODE_FULLVAL_RESULTS.md`, `CODE_FULLVAL_PREREG.md` |
 | Recipe beats architecture on the compositional task | warmup + cosine +0.160 (7/8) | 8 | floor 0.072 | SOLID (hierarchy's +0.136 on the same task is UNDERPOWERED) | `COMP_HEADROOM.md`, `HIER_RECHECK.md` |
 | Parallel scan | 2.6-3.3x over a 16x length increase; MapEM-NC 14.5x; TEMFaithful 120x | -- | -- | SOLID | `TIMING_BENCHMARK.md` |
 | CSCG stitching control reproduces | paired +0.131 +/- 0.024 vs index -0.005 | 3 | exactly 0 | SOLID, n=3 | `STITCH_ATTENTION.md` |
@@ -46,9 +55,10 @@ shared report) was not part of that pass.
 
 ## Listed as citable in CLAUDE.md, but NEEDS CONTROL
 
+(The sign row left this table 2026-09-30: its matched-length control was run and it survived; see the citable table.)
+
 | claim | key number | what is missing | file |
 |---|---|---|---|
-| Sign of the increment (a replication of Sarrof / Grazzi / Selective RoPE in navigation) | signed beats index +0.123 / +0.195 at T=512/1024 (12/12); monotone does not; opposition 0.11 vs 1.85-1.98 | the accuracy cost is extrapolation-only (at T=128 monotone 0.90-0.98 vs index 0.80; loss 12/12 worse). Needs a monotone arm trained and tested at T=1024 | `SIGN_ABLATION.md`, `SIGN_PROBE.md` |
 | Clock/map crossover | monotone costs -0.280 on the torus, -0.004 on recency; magnitude-matched content increment +0.594 (8/8) | both halves are extrapolation readouts at different ratios | `RECENCY_RESULTS.md`, `RECENCY_GATE_ABLATION.md` |
 | Map extent is a threshold | -0.010 / +0.015 / +0.305 at 32 / 128 / 512 occupied cells, matched aliasing | the index arms behind +0.305 and +0.015 were still DESCENDING under a flat-slope "converged" label | `ALIASING_CONTROLLED.md`, `VISITS_TEST.md` |
 | Rotation actions; allocentric recoding fixes it | +0.050 -> +0.488 (8/8); 12 headings +0.26..+0.38 (bimodal budget curve) | all at the 16-epoch recipe with the index arm on the 0.508 floor; rerun under the converged recipe | `KNOB_SWEEP_n8.md`, `ALLOCENTRIC_RECODING.md` (n=3), `H12_BUDGET_CURVE.md` |
@@ -76,10 +86,18 @@ shared report) was not part of that pass.
 - **"The loop's torus gain is convergence, not representation"** is a loss-matched residual at
   matched length, the inference withdrawn for rank; the LoopedSampled count-curve flattening itself is
   solid (`L15_LOOP_2X2.md`, `LOOP_SAMPLED.md`).
-- **Code C1 "reversal"** (position +0.0055, MapPoPE - PoPE +0.0033) and the C2 envelope contrasts:
-  n=3, paired t-test p 0.04-0.10, read on `best_val_bpc` (min over 36 evals of 40 windows). Rescore the
-  `.final.pt` checkpoints on the full val file before adding seeds. "RoPE + envelope is the best of
-  eight" is p 0.35 and cross-batch (`CODE_RESULTS.md`, `CODE_DECAY_RESULTS.md`).
+- **Code C1 "reversal"** (MapPoPE - PoPE +0.0034 full-val, t p 0.19) and the UNMEASURED C2 / envelope
+  contrasts: rescored on the full val file 2026-09-27 (`CODE_FULLVAL_RESULTS.md`, row above); no sign
+  flipped, n=3 throughout. More seeds are the only way to read them.
+- **Context-dependent step (pilots, NOT results)** (`CONTEXT_STEP_DESIGN.md`, `CTXSTEP_PILOT1.md`,
+  `CTXSTEP_PILOT2.md`, `CTXSTEP_PILOT3.md`, `CTXSTEP_HS_RECIPE.md`): the text world with decoy uses of
+  direction words. Pilot 1 leaked a trailing cue; pilot 2's predicted lead/trail dissociation did not
+  happen (both window steps use either side). Pilot 3 (n=1 per cell): window-limited steps (context
+  gate, Selective-RoPE generator) suppress decoys with the cue 1-3 tokens away (ratio 0.01-0.42, acc
+  0.97-1.00) and fail with it 6-13 away (ratio 0.94-1.00, acc at the context-free level) -- ready to
+  pre-register. Hidden-state step: every run that learned a step ignored far decoys (5/5, ratio
+  0.01-0.10) but 5/10 far-cue runs never learned one; proposed fix (step from emb + LN(h1)) untested.
+  The SR arm is not one-knob (full rank, no omega). Seeds 0, 1, 5 are used.
 - **MiniGrid 2x2x2**: index arms best (0.955 / 0.953), MapWM last (0.823); convergence unreported
   (`MINIGRID_FULL_2X2X2.md`).
 - **Indirect Indexing**: path integration faster (6/7, directional) and more padding-robust (0.430 vs
@@ -133,7 +151,7 @@ Contradicted by the 2026-09-24 audit and **not yet on CLAUDE.md's withdrawn list
 
 ## Catalogue of results files, by line
 
-Top-level `*.md` only (457 files; regenerated 2026-09-27 with `docs/tools/catalog_results_index.py`). `*` = a CORRECTED / RETRACTED / WITHDRAWN / SUPERSEDED / VOID /
+Top-level `*.md` only (478 files; regenerated 2026-09-30 with `docs/tools/catalog_results_index.py`). `*` = a CORRECTED / RETRACTED / WITHDRAWN / SUPERSEDED / VOID /
 STALE marker in the first 12 lines (a correction block further down also supersedes the body).
 Files starting with `_` are raw per-seed dumps; names ending `_PREREG` are pre-registrations and
 `_GATES` task gates.
@@ -142,21 +160,21 @@ Files starting with `_` are raw per-seed dumps; names ending `_PREREG` are pre-r
 
 `ALLOCENTRIC_RECODING`, `AUDIT_HEADLINE`, `BASELINE_TABLE`*, `CLOCK_SCAN`, `DETAILED_RESULTS`, `DRIFT_PROBE`, `FREQ_CONTROL`, `GENERALIZATION_REPORT`, `H12_BUDGET_CURVE`, `HORIZON_L1d128e16`, `HORIZON_L1d128e50`, `HORIZON_L2d128e16`, `HORIZON_L2d256e16`, `HORIZON_L4d128e16`, `HORIZON_L4d256e16`, `HORIZON_RESULTS`, `HORIZON_TASK_DISTANCES`, `INDEX_BASELINE_PAPER_TASK`, `INDEX_BASELINE_PAPER_TASK_n8`, `KNOB_SWEEP`, `KNOB_SWEEP_n8`, `LONG_SEQ_clean`, `N3_AUDIT`, `NOISE_CLEAN_REVALIDATION`, `OMEGA_RESCALE_clean`, `OOD_GRID_RESULTS`, `PAPER2X2_PREREG`, `PAPER2X2_RESULTS`, `PAPERTASK_PREREG`, `PAPERTASK_RESULTS`, `PAPER_OOD_EXTENDED`, `PAPER_OOD_EXTENDED_n8`, `PAPER_OOD_PROTOCOL`, `PAPER_OOD_RERUN`, `PAPER_OOD_WITH_POPE`, `PAPER_TASK_ABLATION`, `PAPER_TASK_ACCURACY`*, `PAPER_TASK_FLOORS`, `PAPER_VALIDATION`, `PERSCALE_OMEGA_RESULTS`, `PER_VISIT_clean`, `RECIPE_POWER`, `REVISIT_2X2`, `REVISIT_DISTANCE`, `ROPE_CANONICAL`, `ROPE_CONVERGE`, `TIMING_BENCHMARK`, `TOPOLOGY_RESULTS`, `ZERO_SHOT_TRANSFER_clean`, `ZERO_SHOT_TRANSFER_clean_brokeninit`, `_PAPER2X2_RAW`, `_RECIPE_C0`, `_RECIPE_C1`, `_RECIPE_C2`
 
-**Rank, generator and accumulator** (50)
+**Rank, generator and accumulator** (53)
 
-`ACCUMULATOR`, `ACTION_GEOMETRY`*, `CONV_KERNEL_PROBE`, `DXR_PRELIM`, `DXR_RANK_THRESHOLD`, `FAST_ATTN_RANK`, `GATE_PROBE`, `LEARNED_RANK`, `LOCALISATION`, `LOCALISATION_PREREG`, `LOCALISATION_RANK`, `MAPPOPE_R4`, `MAPPOPE_R4_PREREG`, `MAPPOPE_R4_RESULTS`, `ND_GATES`, `PAPER_FIG4_EM`, `PAPER_FIG4_REPRO`, `RANK3_PREREG`, `RANK_MATCHED`, `RANK_MATCHED_GEOMETRY`, `RANK_MATCHED_PREREG`, `RANK_MATCHED_RESULTS`, `RANK_MATCHED_e900`, `RANK_MATCHED_e900_GEOMETRY`, `RANK_MATCHED_e900c`, `RANK_MATCHED_e900c_GEOMETRY`, `RANK_MI`, `RANK_MI_GEOMETRY`, `RANK_MI_PREREG`, `RANK_MI_RESULTS`, `RANK_PERHEAD_PILOT`, `RANK_PERHEAD_PILOT_GEOMETRY`, `RANK_PERHEAD_PILOT_RESULTS`, `RANK_PERHEAD_PREREG`, `RANK_PROJ_FROZEN`, `RANK_PROJ_PREREG`, `RANK_PROJ_RESULTS`, `RANK_PROJ_TRAIN`, `RANK_PROJ_TRAIN_GEOMETRY`, `RANK_SEP`, `RANK_SEP_GEOMETRY`, `RANK_SEP_PREREG`, `RANK_SEP_RESULTS`, `RANK_SWEEP`*, `RANK_TRUNCATION`, `SELECTIVE_ROPE`, `THEORY_NARRATIVE`*, `THEORY_NUMBERS`, `THEORY_SEARCH_AND_LENGTH`, `_SELECTIVE_TORUS`
+`ACCUMULATOR`, `ACTION_GEOMETRY`*, `CONV_KERNEL_PROBE`, `DXR_PRELIM`, `DXR_RANK_THRESHOLD`, `FAST_ATTN_RANK`, `GATE_PROBE`, `LEARNED_RANK`, `LOCALISATION`, `LOCALISATION_PREREG`, `LOCALISATION_RANK`, `MAPPOPE_R4`, `MAPPOPE_R4_PREREG`, `MAPPOPE_R4_RESULTS`, `ND_GATES`, `PAPER_FIG4_EM`, `PAPER_FIG4_REPRO`, `RANK3`, `RANK3_GEOMETRY`, `RANK3_PREREG`, `RANK3_RESULTS`, `RANK_MATCHED`, `RANK_MATCHED_GEOMETRY`, `RANK_MATCHED_PREREG`, `RANK_MATCHED_RESULTS`, `RANK_MATCHED_e900`, `RANK_MATCHED_e900_GEOMETRY`, `RANK_MATCHED_e900c`, `RANK_MATCHED_e900c_GEOMETRY`, `RANK_MI`, `RANK_MI_GEOMETRY`, `RANK_MI_PREREG`, `RANK_MI_RESULTS`, `RANK_PERHEAD_PILOT`, `RANK_PERHEAD_PILOT_GEOMETRY`, `RANK_PERHEAD_PILOT_RESULTS`, `RANK_PERHEAD_PREREG`, `RANK_PROJ_FROZEN`, `RANK_PROJ_PREREG`, `RANK_PROJ_RESULTS`, `RANK_PROJ_TRAIN`, `RANK_PROJ_TRAIN_GEOMETRY`, `RANK_SEP`, `RANK_SEP_GEOMETRY`, `RANK_SEP_PREREG`, `RANK_SEP_RESULTS`, `RANK_SWEEP`*, `RANK_TRUNCATION`, `SELECTIVE_ROPE`, `THEORY_NARRATIVE`*, `THEORY_NUMBERS`, `THEORY_SEARCH_AND_LENGTH`, `_SELECTIVE_TORUS`
 
-**Sign, clock/map and recency** (32)
+**Sign, clock/map and recency** (37)
 
-`COUNTER_BATCH`, `COUNTER_RESULTS`, `FLIPFLOP_GATES`, `FLIPFLOP_RESULTS`, `FORGET_CLOCK_PREREG`, `FORGET_CONTROL`, `FORGET_GATE`, `GATED_PREREG`, `GATED_RESULTS`, `GATED_SEPARATION`, `GATED_TORUS`, `LAMBDA_TRACE`, `MONOTONE_PREREG`, `MONOTONE_RAW`, `MONOTONE_RESULTS`, `MQAR_PREREG`, `MQAR_RESULTS`, `RECENCY_GATES`, `RECENCY_GATES_K16SET`, `RECENCY_GATES_K4SET`, `RECENCY_GATES_K64`, `RECENCY_GATE_ABLATION`, `RECENCY_H2`, `RECENCY_PREREG`, `RECENCY_RESULTS`, `SIGN_ABLATION`, `SIGN_ABLATION_PREREG`, `SIGN_PROBE`, `TEM_RECENCY_DIAG`, `TEM_RECENCY_PILOT`, `_MONOTONE_TORUS`, `_SIGN_RAW`
+`COUNTER_BATCH`, `COUNTER_RESULTS`, `FLIPFLOP_GATES`, `FLIPFLOP_RESULTS`, `FORGET_CLOCK_PREREG`, `FORGET_CONTROL`, `FORGET_GATE`, `GATED_PREREG`, `GATED_RESULTS`, `GATED_SEPARATION`, `GATED_TORUS`, `LAMBDA_TRACE`, `MONOTONE_PREREG`, `MONOTONE_RAW`, `MONOTONE_RESULTS`, `MQAR_PREREG`, `MQAR_RESULTS`, `RECENCY_GATES`, `RECENCY_GATES_K16SET`, `RECENCY_GATES_K4SET`, `RECENCY_GATES_K64`, `RECENCY_GATE_ABLATION`, `RECENCY_H2`, `RECENCY_PREREG`, `RECENCY_RESULTS`, `SIGN_ABLATION`, `SIGN_ABLATION_PREREG`, `SIGN_MATCHED`, `SIGN_MATCHED_PREREG`, `SIGN_MATCHED_PROBE`, `SIGN_MATCHED_PROBE_SIGNED`, `SIGN_MATCHED_RESULTS`, `SIGN_PROBE`, `TEM_RECENCY_DIAG`, `TEM_RECENCY_PILOT`, `_MONOTONE_TORUS`, `_SIGN_RAW`
 
 **EM vs WM and the position kernel** (49)
 
 `AP_KERNEL_DIAGNOSTIC`, `AUDIT_2026-09-10`, `D5_PREREG`, `D5_RESULTS`, `DOF_PREREG`, `DOF_RESULTS`, `EM_COMP_SAMEBATCH`, `EM_FIX_COMP`, `EM_HOPFIELD_CROSSSCALE`, `EM_P0_COMP`, `EM_P0_PAPER`, `EM_WM_STATE`*, `EM_WM_THEORY`, `HOPFIELD_NOMAINAP_RESULTS`, `MAGONLY_PREREG`, `MAGONLY_RESULTS`, `MATCH_QUERY_EM`, `MINIGRID_EM`, `MINIGRID_EM_FIX`, `MINIGRID_EM_FIX_PREREG`, `MINIGRID_EM_PREREG`, `N5_PREREG`, `N5_RESULTS`, `NOLEAK_PREREG`, `NOLEAK_RESULTS`, `PAIRCONST_PREREG`, `PAIRCONST_RESULTS`, `PAIRORIGIN_PREREG`, `PAIRORIGIN_RESULTS`, `PAIRSPLIT_PREREG`, `PAIRSPLIT_RESULTS`, `RECENCY_EM_RESULTS`, `REC_EM_PREREG`, `SEARCH_PREREG`, `SEARCH_RESULTS`, `SPREAD2_PREREG`, `SPREAD2_RESULTS`, `SPREAD_PREREG`, `SPREAD_RESULTS`, `TALE_OF_TWO_ALGORITHMS`, `THEORY_KERNEL`, `UNFREEZE_PREREG`, `UNFREEZE_RESULTS`*, `VOCAB_EM`, `VOCAB_EM_PREREG`, `WARM_PREREG`, `WARM_RESULTS`*, `_DOF_TORUS_RAW`, `_N5_TORUS_RAW`
 
-**Match-Query, loop and algorithmic tasks** (42)
+**Match-Query, loop and algorithmic tasks** (45)
 
-`ADDITION_CHO_REPRO`, `ADDITION_DESIGN`, `ADDITION_GATES`, `ADDITION_PILOT`, `ADDITION_PILOT2`, `ALGORITHMIC_GATES`, `ALGORITHMIC_RESULTS`, `FRONTIER_ALGORITHMIC`, `HIER_PARITY`*, `L15_LOOP_2X2`, `LOOPED_L1`, `LOOPED_L4`, `LOOPED_Loop4`, `LOOPED_PILOT`, `LOOP_DEPTH_STRATA`, `LOOP_HEADROOM`, `LOOP_HIER_COMPUTE`, `LOOP_HIER_PARITY`, `LOOP_RANK`, `LOOP_RANK_GEOMETRY`, `LOOP_RANK_PREREG`, `LOOP_RANK_RESULTS`, `LOOP_SAMPLED`, `MATCH_GATES_128_16`, `MATCH_GATES_64_16`, `MATCH_GATES_64_4`, `MATCH_QUERY_GATES`*, `MATCH_QUERY_GATES_P010`, `MATCH_QUERY_LONGQ`, `MATCH_QUERY_NOISE_ABLATION`, `MATCH_QUERY_RESULTS`, `MATCH_QUERY_SCALE`, `MQ_NOISE_2X2`, `MQ_NOISE_2X2_C2`, `MQ_RANK_2X2`, `RECURSIVE_RESULTS`, `REFINE_RESULTS`, `SAMEBLOCK_COMPILE_CHECK`, `SAMEBLOCK_PREREG`, `SAMEBLOCK_RAW`, `SAMEBLOCK_RESULTS`, `_L15_LOOP_RAW`
+`ADDITION_CHO_REPRO`, `ADDITION_DESIGN`, `ADDITION_GATES`, `ADDITION_PILOT`, `ADDITION_PILOT2`, `ALGORITHMIC_GATES`, `ALGORITHMIC_RESULTS`, `FRONTIER_ALGORITHMIC`, `HIER_PARITY`*, `L15_LOOP_2X2`, `LOOPED_L1`, `LOOPED_L4`, `LOOPED_Loop4`, `LOOPED_PILOT`, `LOOP_DEPTH_STRATA`, `LOOP_HEADROOM`, `LOOP_HIER_COMPUTE`, `LOOP_HIER_PARITY`, `LOOP_RANK`, `LOOP_RANK_E1800_P1`, `LOOP_RANK_E1800_P1_RESULTS`, `LOOP_RANK_E1800_PREREG`, `LOOP_RANK_GEOMETRY`, `LOOP_RANK_PREREG`, `LOOP_RANK_RESULTS`, `LOOP_SAMPLED`, `MATCH_GATES_128_16`, `MATCH_GATES_64_16`, `MATCH_GATES_64_4`, `MATCH_QUERY_GATES`*, `MATCH_QUERY_GATES_P010`, `MATCH_QUERY_LONGQ`, `MATCH_QUERY_NOISE_ABLATION`, `MATCH_QUERY_RESULTS`, `MATCH_QUERY_SCALE`, `MQ_NOISE_2X2`, `MQ_NOISE_2X2_C2`, `MQ_RANK_2X2`, `RECURSIVE_RESULTS`, `REFINE_RESULTS`, `SAMEBLOCK_COMPILE_CHECK`, `SAMEBLOCK_PREREG`, `SAMEBLOCK_RAW`, `SAMEBLOCK_RESULTS`, `_L15_LOOP_RAW`
 
 **Hierarchy, compositional and planner tasks** (35)
 
@@ -170,9 +188,13 @@ Files starting with `_` are raw per-seed dumps; names ending `_PREREG` are pre-r
 
 `ALIASING_CONTROLLED`, `ALIASING_COVARIATE`, `ALIASING_GATES`, `CONTINUOUS_ALLOC`, `CROSSOVER_CONVERGED`, `DAGGER_DK6_RESULTS`, `DAGGER_EMPTY_RESULTS`, `DAGGER_RESULTS`, `DOORKEY_BC_RESULTS`, `HABITAT_BUILD`, `MINIGRID_2X2`, `MINIGRID_2X2X2`, `MINIGRID_2X2X2_n8`, `MINIGRID_ALLOCENTRIC_2X2X2`, `MINIGRID_ALLOCENTRIC_8CELL`, `MINIGRID_ALLO_8THCELL`, `MINIGRID_DK16_RESULTS`, `MINIGRID_DOORKEY_CACHED`, `MINIGRID_DOORKEY_LONGT`, `MINIGRID_DOORKEY_RESULTS`, `MINIGRID_DOORKEY_ROPE_DIAG`, `MINIGRID_FULL_2X2X2`, `MINIGRID_MEMORY_RESULTS`, `MINIGRID_REPRO_CONTROL`, `MINIWORLD_ENDPOINTS`, `MINIWORLD_FIXED_FINDINGS`, `MINIWORLD_FIXED_RESULTS`, `MINIWORLD_FIXED_RESULTS_T1024`, `MINIWORLD_FRESH_ABLATION`, `MINIWORLD_FRESH_FINDINGS`, `MINIWORLD_FRESH_GATES_ALLO`, `MINIWORLD_FRESH_GATES_RAW`, `MINIWORLD_FRESH_RESULTS`, `MINIWORLD_FRESH_RESULTS_T1024`, `MINIWORLD_GATES_ALLO`, `MINIWORLD_GATES_FIXED`, `MINIWORLD_GATE_CONTROL`, `MINIWORLD_GRID16_GATES`, `MINIWORLD_GRID24_GATES`, `MINIWORLD_GRID32_GATES`, `MINIWORLD_GRID_SWEEP`, `MINIWORLD_GRID_SWEEP_HIER`, `MINIWORLD_HIER_ABLATION`, `MINIWORLD_ORACLE_ABLATION`, `MINIWORLD_ORACLE_GATES`, `MINIWORLD_ORACLE_RESULTS_T1024`, `MINIWORLD_ORACLE_RESULTS_T512`, `MINIWORLD_PROBE3`, `MINIWORLD_RESULTS`, `MINIWORLD_SROPE_COMPONENTS`, `MINIWORLD_TODO`, `PERCEPTION_EXPERIMENT_PLAN`, `POSITION_EFFECT_CONVERGED`, `VISITS_TEST`
 
-**Dyck-2** (19)
+**Dyck-2 and the cancellation knob (H3): depth substitution** (21)
 
-`DYCK_DECAY_PREREG`, `DYCK_DECAY_PROBE`, `DYCK_DECAY_RESULTS`, `DYCK_DEPTH_PREREG`, `DYCK_DEPTH_RESULTS`, `DYCK_FAR_PROBE`, `DYCK_GATES`, `DYCK_LADDER_PREREG`, `DYCK_LADDER_RESULTS`*, `DYCK_LITERATURE_METRICS`, `DYCK_MDEPTH_GATES`, `DYCK_MDEPTH_PREREG`, `DYCK_MDEPTH_RESULTS`, `DYCK_PREREG`, `DYCK_RESULTS_POPE`, `DYCK_RESULTS_bs128`, `DYCK_SHAREABLE`, `DYCK_STACK_PROBE`, `DYCK_T3_RESULTS`
+`CANCEL_PREREG`, `CANCEL_RESULTS`*, `DYCK_DECAY_PREREG`, `DYCK_DECAY_PROBE`, `DYCK_DECAY_RESULTS`, `DYCK_DEPTH_PREREG`, `DYCK_DEPTH_RESULTS`, `DYCK_FAR_PROBE`, `DYCK_GATES`, `DYCK_LADDER_PREREG`, `DYCK_LADDER_RESULTS`*, `DYCK_LITERATURE_METRICS`, `DYCK_MDEPTH_GATES`, `DYCK_MDEPTH_PREREG`, `DYCK_MDEPTH_RESULTS`, `DYCK_PREREG`, `DYCK_RESULTS_POPE`, `DYCK_RESULTS_bs128`, `DYCK_SHAREABLE`, `DYCK_STACK_PROBE`, `DYCK_T3_RESULTS`
+
+**Navigation told in words and the context-dependent step** (7)
+
+`CONTEXT_STEP_DESIGN`*, `CTXSTEP_HS_RECIPE`, `CTXSTEP_PILOT1`, `CTXSTEP_PILOT2`, `CTXSTEP_PILOT3`, `TEXTWORLD_PREREG`, `TEXTWORLD_RESULTS`*
 
 **Indirect Indexing** (5)
 
@@ -182,9 +204,9 @@ Files starting with `_` are raw per-seed dumps; names ending `_PREREG` are pre-r
 
 `AUG_PREREG`, `AUG_RESULTS`, `CROSS_PREREG`, `CROSS_RESULTS`, `DECAY_PREREG`, `DECAY_RESULTS`, `JSBLEN_PREREG`, `JSB_LENGTH_RESULTS`, `JSB_LENGTH_RESULTS_BASE`, `JSB_LENGTH_RESULTS_RANK`, `JSB_PREREG`, `JSB_RESULTS`, `MAESTRO_PLAN`, `MAPPOPE_VS_POPE`, `POPE_WRAPPING`, `RECENCY_T3_PREREG`, `RECENCY_T3_RESULTS`*, `T1_PREREG`, `T1_RESULTS`, `T2_PREREG`, `T2_RESULTS`, `T3GEN_PREREG`, `T3GEN_RESULTS`*, `T3_PREREG`, `T3_RESULTS`, `THEORY_MAPPOPE`, `TORUS_T3_RESULTS`
 
-**PoPE ablation, code and enwik8** (16)
+**PoPE ablation, code and enwik8** (17)
 
-`ABLATE_PREREG`, `ABLATE_RESULTS`*, `BF16_RESULTS`, `CODE_DECAY_RESULTS`, `CODE_FULLVAL_PREREG`, `CODE_GATES`, `CODE_PREREG`, `CODE_RESULTS`*, `CODE_RESULTS_OOD`, `ENWIK8_2X2`, `ENWIK8_COMPOSITION_PREREG`, `ENWIK8_HIER`, `ENWIK8_HIERARCHY`, `ENWIK8_LONG`, `ENWIK8_SEEDS`, `LANGUAGE_LANDSCAPE`
+`ABLATE_PREREG`, `ABLATE_RESULTS`*, `BF16_RESULTS`, `CODE_DECAY_RESULTS`*, `CODE_FULLVAL_PREREG`, `CODE_FULLVAL_RESULTS`, `CODE_GATES`, `CODE_PREREG`, `CODE_RESULTS`*, `CODE_RESULTS_OOD`, `ENWIK8_2X2`, `ENWIK8_COMPOSITION_PREREG`, `ENWIK8_HIER`, `ENWIK8_HIERARCHY`, `ENWIK8_LONG`, `ENWIK8_SEEDS`, `LANGUAGE_LANDSCAPE`
 
 **Level 1.5 / InEKF / PC / TEM / grid cells (April-August lines)** (56)
 

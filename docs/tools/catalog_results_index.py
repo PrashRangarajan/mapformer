@@ -7,7 +7,9 @@ STALE banner.
 Prints the grouped lists plus UNCLASSIFIED (files matching no group -- add a pattern for each, or
 they are silently missing from the index). Used to build the 2026-09-24 catalogue; kept because
 RESULTS_INDEX.md was last regenerated 2026-09-11 and is missing the Dyck / Bach / code /
-rank-matched / rank-separation / loop-rank files. It chdirs to the repo itself (rule 25).
+rank-matched / rank-separation / loop-rank files (2026-09-30: added the CANCEL_, TEXTWORLD_, CTXSTEP_ and
+CONTEXT_STEP groups). Output is pasted by hand into the catalogue section of RESULTS_INDEX.md; the
+hand-written tables above it are not touched by this script. It chdirs to the repo itself (rule 25).
 """
 import glob,re,os,collections
 os.chdir('/home/prashr/mapformer')
@@ -21,7 +23,8 @@ groups=[
  ('Hierarchy, compositional and planner tasks', r'^(COMPOSITIONAL|COMP_HEADROOM|HIER_|HIERGOAL|AGGREGATE|BOUNDED_MEMORY|ROUTE_ATTN|SPACETIME|ABLATE_COMPOSITIONAL|CORRECTION_COMPOSITIONAL|PLANNER|ROOMS_GOAL|DISSOCIATION|CSCG|STITCH|MAP_QUERY|LAP_)'),
  ('Family tree', r'^(FAMILY_TREE|ABLATE_FAMILY)'),
  ('MiniGrid, MiniWorld, Habitat', r'^(MINIGRID|MINIWORLD|ALIASING|VISITS_TEST|POSITION_EFFECT|CROSSOVER_CONVERGED|CONTINUOUS_ALLOC|DAGGER|DOORKEY|HABITAT|PERCEPTION)'),
- ('Dyck-2', r'^DYCK_'),
+ ('Dyck-2 and the cancellation knob (H3): depth substitution', r'^(DYCK_|CANCEL_)'),
+ ('Navigation told in words and the context-dependent step', r'^(TEXTWORLD_|CTXSTEP_|CONTEXT_STEP)'),
  ('Indirect Indexing', r'^INDIRECT_'),
  ('Bach chorales, decay envelope and the MapPoPE collapse', r'^(JSB|AUG_|DECAY_|T1_|T2_|T3_|T3GEN|TORUS_T3|RECENCY_T3|CROSS_|MAESTRO|THEORY_MAPPOPE|MAPPOPE_VS_POPE|POPE_WRAPPING)'),
  ('PoPE ablation, code and enwik8', r'^(ABLATE_PREREG|ABLATE_RESULTS|CODE_|ENWIK8|BF16|LANGUAGE_LANDSCAPE)'),
