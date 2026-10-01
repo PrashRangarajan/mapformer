@@ -14,12 +14,12 @@ import torch
 import torch.nn.functional as F
 
 from mapformer.environment_textworld_ctx3 import TextWorldCtx3
-from mapformer.model_context_step import CtxGateWM, HiddenStepWM
+from mapformer.model_context_step import CtxGateWM, HiddenStepWM, HiddenStepResWM
 from mapformer.train import train
 from mapformer.train_variant import VARIANT_MAP
 
 ARMS = {"CF": VARIANT_MAP["Vanilla_r4"], "SR": VARIANT_MAP["SRoPEGen"], "CG": CtxGateWM,
-        "HS": HiddenStepWM, "RoPE": VARIANT_MAP["RoPE"]}
+        "HS": HiddenStepWM, "HSR": HiddenStepResWM, "RoPE": VARIANT_MAP["RoPE"]}
 
 
 @torch.no_grad()

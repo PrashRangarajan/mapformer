@@ -88,3 +88,25 @@ class HiddenStepWM(MapFormerWM):
         m = torch.triu(torch.ones(L, L, device=tokens.device, dtype=torch.bool), 1)
         x = self.layers[1](h1, cos_a, sin_a, m)
         return self.out_proj(self.out_norm(x))
+
+
+class HiddenStepResWM(HiddenStepWM):
+    """HS with the word's own step kept and context ADDED as a correction (CTXSTEP_HS_RECIPE.md, fix):
+
+        Delta_t = W_out W_in ( emb(x_t) + alpha * LN(h1_t) ),   alpha a learned scalar, initialised at 0.
+
+    At initialisation the step is exactly the context-free step of the embedding (the CF model, which
+    reliably learns a movement step); attention can then correct it, e.g. cancel a decoy's step from a
+    cue anywhere in context. Built as HiddenStepWM first, so every shared weight equals HS's at the seed."""
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self.ctx_alpha = nn.Parameter(torch.zeros(1))
+
+    def step(self, tokens):
+        B, L = tokens.shape
+        x = self.token_emb(tokens)
+        m = torch.triu(torch.ones(L, L, device=tokens.device, dtype=torch.bool), 1)
+        c, s = self._index_cos_sin(B, L, tokens.device, x.dtype)
+        h1 = self.layers[0](x, c, s, m)
+        return self.action_to_lie(x + self.ctx_alpha * self.step_norm(h1)), h1
