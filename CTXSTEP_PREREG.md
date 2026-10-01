@@ -56,3 +56,14 @@ r(final loss, accuracy) per arm; T=4096 accuracy (extrapolation).
 Void: any run missing; the md5 guard trips; a CF ratio differing from 1.00 by more than 0.01 (wiring).
 Scope: one scripted grammar, single-word cues, window 4 for CG/SR, T=2048, 1800 epochs, n=8 per cell.
 Cost estimate: ~1-1.5 days on both GPUs (two-layer HSR runs are ~2x the one-layer ones).
+
+---
+
+## STOPPED 2026-10-01 ~00:10, before any run finished and before any result was read
+Measured cost was ~31 h of both GPUs (8 concurrent runs at 4.5 s/epoch one-layer, 8.4 s two-layer).
+On review, the window-limit hypothesis (H-W) is close to guaranteed by construction (a 4-token window
+cannot see a cue 7-12 tokens away, and the gate showed nothing nearby carries the answer), the near-cue
+behaviour is already clear from the pilots, and the line is a side branch of the project's main
+question. The GPUs went to the 3D-torus rank test instead. No verdict; the context-step line stands as
+pilots (`CTXSTEP_PILOT1/2/3.md`, `CTXSTEP_HS_RECIPE.md`, `CTXSTEP_HSR_PILOT.md`). Partial runs in
+`runs/ctxstep/p0` (8 runs killed at epochs 40-240) are not results.
