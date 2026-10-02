@@ -1,0 +1,14 @@
+== cells (SOLVED = final-5% loss < 0.05); T=1024 held-out acc; [T=2048]; secondary: wrap-only / other, own map ==
+  2L D=2 N=32 Vanilla_r3ph: SOLVED 8/8 acc 0.999 +/- 0.001 [0.976] | wrap share 0.37, wrap-only 0.999, other 1.000, own map 0.999 | determinism max loss diff vs RANK_ND 0.0e+00
+  2H D=2 N=10 Vanilla_r3ph: SOLVED 1/8 acc 0.273 +/- 0.028 [0.282] | wrap share 0.68, wrap-only 0.243, other 0.334, own map 0.986
+  3L D=3 N=18 Vanilla_r4ph: SOLVED 8/8 acc 1.000 +/- 0.000 [0.991] | wrap share 0.35, wrap-only 1.000, other 1.000, own map 1.000
+  3H D=3 N=10 Vanilla_r4ph: SOLVED 4/8 acc 0.847 +/- 0.176 [0.810] | wrap share 0.71, wrap-only 0.804, other 0.958, own map 0.942 | determinism max loss diff vs RANK_ND 0.0e+00
+
+== wrap effect within D (low wrap better) ==
+  2L over 2H: SOLVED 8/8 vs 1/8 Fisher p 0.0014 | acc +0.726 perm p 0.0002 | FIRES
+  3L over 3H: SOLVED 8/8 vs 4/8 Fisher p 0.0769 | acc +0.153 perm p 0.0085 | FIRES
+== dimension effect within wrap level (2D better) ==
+  2L over 3L: SOLVED 8/8 vs 8/8 Fisher p 1.0000 | acc -0.001 perm p 0.5114 | does not fire
+  2H over 3H: SOLVED 1/8 vs 4/8 Fisher p 0.2821 | acc -0.574 perm p 0.0002 | does not fire
+
+== REGISTERED: WRAP DRIVES IT

@@ -42,3 +42,4 @@ Nothing. No GPU jobs.
 - Checkpoints are the only copy of the per-epoch loss curves for these batches; do not clear run dirs.
 - `CANCEL` eval stream for seed-0 runs overlaps training batch 0 (see `CANCEL_RESULTS.md` block).
 - 2026-10-01: 3D rank test DONE (`RANK_ND_RESULTS.md`): no registered branch; rank = D hard in 2D and 3D (1/8 each); rank D+1 rescues 2D (8/8) but 3D only 4/8. Failures on wrap-only revisits. What/where analysis: `docs/WHAT_WHERE_ANALYSIS.md`.
+- 2026-10-02: rank x wrap DONE (`RANK_WRAP_RESULTS.md`): registered WRAP DRIVES IT; clean half is 3D (grid 18: rank 4 8/8 vs grid 10: 4/8); 2D high-wrap cell memorised its 100-cell map, so its half is invalid.

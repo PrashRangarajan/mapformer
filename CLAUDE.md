@@ -87,7 +87,7 @@ r=2's initial weights at each seed, differing only in the bottleneck; SOLVED wit
 |---|---|---|
 | 2 | our shared r=2, per-head r=2, block-diagonal r=4 | 0/8, 2/8, 2/8 |
 | 3 | per-head r=3 (`RANK3_RESULTS.md`; acc 0.987 vs r=2 0.885, perm p 0.027, Holm 0.054; vs r=4 UNMEASURED) | 6/8 |
-| 3D torus (`RANK_ND_RESULTS.md`) | rank 3 (= D) 1/8; rank 4 (= D+1) 4/8, vs rank 3 UNMEASURED (p 0.28); in-batch 2D control rank 2 1/8 vs rank 3 8/8 (p 0.0014). Failures sit on wrap-only revisits | -- |
+| 3D torus (`RANK_ND_RESULTS.md`, `RANK_WRAP_RESULTS.md`) | rank 3 (= D) 1/8; rank 4 (= D+1) 4/8 on a small wrap-heavy grid (10/side) but **8/8 on grid 18** (few wrap-only revisits): the shortfall was the small-grid regime, not dimension. 2D control rank 2 1/8 vs rank 3 8/8 (p 0.0014). A 100-cell 2D grid is memorised (own map 0.986, unseen 0.273) | -- |
 | 4 | shared r=4, per-head r=4 | 8/8, 8/8 |
 
 Separated: per-head rank FIRES (D - C_bd, both block-diagonal, Fisher and permutation p 0.0070);

@@ -1,0 +1,19 @@
+== per seed: class(final-5% loss) held-out acc ==
+  2L: SOLV(0.015) 1.000 SOLV(0.003) 1.000 SOLV(0.004) 1.000 SOLV(0.004) 0.996 SOLV(0.002) 1.000 SOLV(0.003) 1.000 SOLV(0.003) 1.000 SOLV(0.007) 1.000
+      floor-relative +0.998 | reweighted to wrap 0.5 1.000 | SOLVED-but-held<0.95 []
+      determinism vs RANK_ND per seed [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] -> OK
+  2H: STAL(0.068) 0.246 STAL(0.071) 0.283 STAL(0.076) 0.280 DESC(0.098) 0.285 SOLV(0.041) 0.247 STAL(0.064) 0.284 STAL(0.064) 0.238 DESC(0.064) 0.322
+      floor-relative -0.769 | reweighted to wrap 0.5 0.289 | SOLVED-but-held<0.95 [4]
+  3L: SOLV(0.003) 1.000 SOLV(0.002) 1.000 SOLV(0.002) 1.000 SOLV(0.013) 1.000 SOLV(0.002) 1.000 SOLV(0.023) 1.000 SOLV(0.004) 1.000 SOLV(0.013) 1.000
+      floor-relative +1.000 | reweighted to wrap 0.5 1.000 | SOLVED-but-held<0.95 []
+  3H: SOLV(0.014) 1.000 STAL(0.651) 0.598 DESC(0.356) 0.813 SOLV(0.014) 1.000 SOLV(0.003) 1.000 STAL(0.449) 0.737 SOLV(0.019) 1.000 STAL(0.559) 0.630
+      floor-relative +0.559 | reweighted to wrap 0.5 0.881 | SOLVED-but-held<0.95 []
+      determinism vs RANK_ND per seed [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] -> OK
+
+== amended contrasts (accuracy-only firing needs |d| >= 0.02) ==
+  2L over 2H: SOLVED 8/8 vs 1/8 p 0.0014 | acc +0.726 p 0.0002 | at 1.000: 4 vs 0 | within type: wrap +0.756 (p 0.0002), other +0.666 (p 0.0002) | FIRES
+  3L over 3H: SOLVED 8/8 vs 4/8 p 0.0769 | acc +0.153 p 0.0085 | at 1.000: 6 vs 0 | within type: wrap +0.196 (p 0.0443), other +0.042 (p 0.0256) | FIRES
+  2L over 3L: SOLVED 8/8 vs 8/8 p 1.0000 | acc -0.001 p 0.5114 | at 1.000: 4 vs 6 | within type: wrap -0.001 (p 0.5897), other -0.000 (p 1.0000) | unmeasured
+  2H over 3H: SOLVED 1/8 vs 4/8 p 0.2821 | acc -0.574 p 0.0002 | at 1.000: 0 vs 0 | within type: wrap -0.561 (p 0.0002), other -0.624 (p 0.0002) | REVERSED
+
+== AMENDED READING (Amendment 1, not the registered verdict): WRAP DRIVES IT
