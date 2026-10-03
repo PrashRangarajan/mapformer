@@ -336,7 +336,8 @@ Untrained controls n=3.
    training*).
 3. **New-object transfer (GPU, needs registration).** Observation embeddings drawn fresh per sequence
    (frozen random codes, or a held-out set of object tokens with embeddings tied to a random code
-   book); test on unseen codes. TEM's actual claim. Arms: RoPE, PoPE, MapWM, MapPoPE, MapEM, plus a
+   book); test on unseen codes. [Corrected 2026-10-03: this is NOT TEM's tested claim -- TEM and TEM-t
+   generalise to new ARRANGEMENTS of a fixed object set, never to unseen objects (`docs/lit/LIT_NEW_OBJECTS.md`).] Arms: RoPE, PoPE, MapWM, MapPoPE, MapEM, plus a
    TEM-t-style arm whose score has no content term (Q = K = position only, content in V) as the
    strict-separation reference.
 4. **Enforce vs relax separation (GPU).** MapPoPE with `delta` frozen at 0 (L2 exact) vs free; MapWM
