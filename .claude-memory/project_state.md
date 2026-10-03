@@ -14,9 +14,14 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next.
   2026-10-03 09:20, ~10 s/epoch at 8 concurrent, expected done ~17:00-18:00. On completion the driver writes
   `LEAK_ANALYSIS.txt` + `LEAK.json`; then write `LEAK_RESULTS.md` (registered branch per remedy arm: REMEDY /
   REMEDY WITH A COST / NO REMEDY; label x4 as robustness, rule 10), update CLAUDE.md and this file, commit, push.
-- A code-verification agent was launched 2026-10-03 ~11:35 on the leak batch (blind to results). Its findings may
-  require an amendment BEFORE reading results; likely issue: NormStep is invariant to embedding norm by construction
-  (LN), so its x4 REMEDY branch may be guaranteed -- the informative contrast for NormStep is x1 (cost).
+- Leak batch audit DONE; Amendment 1 committed (f18f2e8) before any result: the x4 test cannot fail for either
+  remedy (both norm-invariant by construction) -- read the registered branch as 'trains within 0.01 of MapWM at x1,
+  leak <= 0.01'; the informative readouts are `analyze_leak_secondary.py` (x1 contrast + MDE, NormStep vs MapWM
+  in-distribution leak, step gains, final loss, MapWM blank-zeroing). That script is UNTESTED -- run it after the
+  batch, fix if needed. Before reading: `md5sum -c runs/leak/code_md5.txt`; the void line is the LAST line of
+  LEAK_ANALYSIS.txt (not enforced).
+- 76 orphaned python3 multiprocessing workers (2-5 days old, init parent, 0% CPU, ~32 GB RSS) found by the audit;
+  not killed -- ask the user.
 
 ## Finished since 2026-09-30 (one line each; numbers in the file)
 - 3D rank (`RANK_ND_RESULTS.md`) + rank x wrap (`RANK_WRAP_RESULTS.md`): rank = D hard in 2D and 3D; D+1 suffices on
