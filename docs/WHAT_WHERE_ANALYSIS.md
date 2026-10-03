@@ -239,6 +239,15 @@ WM-vs-EM regime table, "r=2 loses because its basis is skewed".
 
 ## 6. Probe: how separated are trained scores? (CPU, stored checkpoints)
 
+> **CORRECTED 2026-10-03.** The probe added the key observation's own step to the key phase; that step is in both
+> the key's and the query's cumsum and cancels, so it should not be added (found by the N-D probe audit). Fixed
+> rerun: `docs/audits/2026-09-27/probe_whatwhere_fixed.json` / `probe_whatwhere_fixed_out.txt` (`KEY_STEP=1` reproduces
+> the old run). Converged trained arms are unchanged (MapWM r=4 0.083, MapPoPE r=4 0.128, MapEM r=4 0.104). Changed:
+> MapWM r=2 inter/pos 0.125 -> 0.077 (peak0 0.432 -> 0.193); untrained MapPoPE inits 0.12-0.14 -> 0.05-0.06 (PoPE's
+> separation at init is larger than stated). The conclusion -- PoPE imposes separation at init, the trained endpoint
+> is not cleaner -- stands. See also `docs/WHAT_WHERE_CHECKS.md` (causal test, memorising models, leak).
+
+
 **What it measures.** For a 1-layer model the layer-1 score is exactly a function `S(a, o, d)` of
 the query token, the key token and the phase difference. Grid: query = the 4 action tokens (the
 loss is on the observation following an action), key = the 17 observation tokens (16 objects +

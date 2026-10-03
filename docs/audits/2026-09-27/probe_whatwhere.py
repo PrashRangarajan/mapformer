@@ -155,7 +155,9 @@ def factorial(m):
         P = len(disp); i0 = disp.index((0, 0))
         ang = torch.stack([(dx * Ee if dx > 0 else -dx * Ww) + (dy * Nn if dy > 0 else -dy * Ss)
                            for dx, dy in disp])              # (P, H, nb) key-cell phase
-        keyang = ang[:, None] + st[N_ACT:N_ACT + N_OBS][None]   # (P, O, H, nb) + key's own step
+        # CORRECTED 2026-10-03: the key's own step is in BOTH the key's and the query's cumsum and cancels in
+        # the phase difference, so it is not added (the 2026-10-01 run added it; KEY_STEP=1 reproduces that).
+        keyang = ang[:, None] + (st[N_ACT:N_ACT + N_OBS][None] if os.environ.get('KEY_STEP') == '1' else 0)
         aq = torch.zeros(1, H, N_ACT, delta.shape[-1])
         rows, axs = [], None
         for p in range(P):
@@ -222,7 +224,7 @@ def main():
             m, _ = load(None, v, untrained_seed=s)
             r = factorial(m); r["verify_maxabs"] = verify(m, toks)
             allres[arm + " UNTRAINED"].append(r)
-    json.dump(allres, open(os.path.join(os.path.dirname(__file__), "probe_whatwhere.json"), "w"), indent=1)
+    json.dump(allres, open(os.path.join(os.path.dirname(__file__), "probe_whatwhere.json" if os.environ.get("KEY_STEP") == "1" else "probe_whatwhere_fixed.json"), "w"), indent=1)
     keys = ["pos_share", "cont_share", "inter_share", "inter_of_pos", "shape1", "peak0", "flip"]
     print(f"{'arm':32s} n  verify   " + " ".join(f"{k:>12s}" for k in keys) + "   leak  oppNS  oppWE")
     for arm, rs in allres.items():

@@ -1,0 +1,21 @@
+train: 93489 revisit targets, always-blank floor 0.4969
+test: 93489 revisit targets, always-blank floor 0.4969
+MapWM verify {'identity_no_intervention_bitexact': True, 'identity_allones_mask_bitexact': True, 'zobj_kept_steps_bitexact': True, 'zobj_masked_steps_exact_zero': True, 'zobj_n_masked_tokens': 1049, 'zobj_masked_token_ids_ok': True, 'zobj_logits_changed': True, 'zob_kept_steps_bitexact': True, 'zob_masked_steps_exact_zero': True, 'zob_n_masked_tokens': 2046, 'zob_masked_token_ids_ok': True, 'zob_logits_changed': True, 'zall_logits_maxabs_change': 27.140256881713867, 'integrator_receives_hook_output': True, 'normemb_special_emb_unchanged': True, 'normemb_obj_emb_scaled_x4_maxrel': 0.0, 'normemb_readout_codes_unchanged': True, 'restore_bitexact': True, 'evaluate_train_acc': 0.9848859224079838, 'evaluate_train_minus_eval_json': 0.0, 'evaluate_test_acc': 0.982479222154478, 'evaluate_test_minus_eval_json': 0.0}
+MapWM test done 21s
+MapWM train done 32s
+MapPoPE verify {'identity_no_intervention_bitexact': True, 'identity_allones_mask_bitexact': True, 'zobj_kept_steps_bitexact': True, 'zobj_masked_steps_exact_zero': True, 'zobj_n_masked_tokens': 1049, 'zobj_masked_token_ids_ok': True, 'zobj_logits_changed': True, 'zob_kept_steps_bitexact': True, 'zob_masked_steps_exact_zero': True, 'zob_n_masked_tokens': 2046, 'zob_masked_token_ids_ok': True, 'zob_logits_changed': True, 'zall_logits_maxabs_change': 28.335426330566406, 'integrator_receives_hook_output': True, 'normemb_special_emb_unchanged': True, 'normemb_obj_emb_scaled_x4_maxrel': 0.0, 'normemb_readout_codes_unchanged': True, 'restore_bitexact': True, 'evaluate_train_acc': 0.9862229781043759, 'evaluate_train_minus_eval_json': 0.0, 'evaluate_test_acc': 0.9765640877536395, 'evaluate_test_minus_eval_json': 0.0}
+MapPoPE test done 54s
+MapPoPE train done 71s
+MapEM verify {'identity_no_intervention_bitexact': True, 'identity_allones_mask_bitexact': True, 'zobj_kept_steps_bitexact': True, 'zobj_masked_steps_exact_zero': True, 'zobj_n_masked_tokens': 1049, 'zobj_masked_token_ids_ok': True, 'zobj_logits_changed': True, 'zob_kept_steps_bitexact': True, 'zob_masked_steps_exact_zero': True, 'zob_n_masked_tokens': 2046, 'zob_masked_token_ids_ok': True, 'zob_logits_changed': True, 'zall_logits_maxabs_change': 27.398191452026367, 'integrator_receives_hook_output': True, 'normemb_special_emb_unchanged': True, 'normemb_obj_emb_scaled_x4_maxrel': 0.0, 'normemb_readout_codes_unchanged': True, 'restore_bitexact': True, 'evaluate_train_acc': 0.983099615997604, 'evaluate_train_minus_eval_json': 0.0, 'evaluate_test_acc': 0.9761148370396517, 'evaluate_test_minus_eval_json': 0.0}
+MapEM test done 94s
+MapEM train done 111s
+PosOnly verify {'identity_no_intervention_bitexact': True, 'identity_allones_mask_bitexact': True, 'zobj_kept_steps_bitexact': True, 'zobj_masked_steps_exact_zero': True, 'zobj_n_masked_tokens': 1049, 'zobj_masked_token_ids_ok': True, 'zobj_logits_changed': True, 'zob_kept_steps_bitexact': True, 'zob_masked_steps_exact_zero': True, 'zob_n_masked_tokens': 2046, 'zob_masked_token_ids_ok': True, 'zob_logits_changed': True, 'zall_logits_maxabs_change': 28.645832061767578, 'integrator_receives_hook_output': True, 'normemb_special_emb_unchanged': True, 'normemb_obj_emb_scaled_x4_maxrel': 0.0, 'normemb_readout_codes_unchanged': True, 'restore_bitexact': True, 'evaluate_train_acc': 0.9857951202815305, 'evaluate_train_minus_eval_json': 0.0, 'evaluate_test_acc': 0.9762218014953631, 'evaluate_test_minus_eval_json': 0.0}
+PosOnly test done 129s
+PosOnly train done 142s
+RoPE verify {'identity_no_intervention_bitexact': True, 'evaluate_train_acc': 0.5779610435452299, 'evaluate_train_minus_eval_json': 0.0, 'evaluate_test_acc': 0.4405652001839789, 'evaluate_test_minus_eval_json': 0.0}
+RoPE test done 152s
+RoPE train done 155s
+PoPE verify {'identity_no_intervention_bitexact': True, 'evaluate_train_acc': 0.51068040090278, 'evaluate_train_minus_eval_json': 0.0, 'evaluate_test_acc': 0.393789643701398, 'evaluate_test_minus_eval_json': 0.0}
+PoPE test done 167s
+PoPE train done 172s
+done 172s
