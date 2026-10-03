@@ -14,12 +14,13 @@ import torch
 import torch.nn.functional as F
 
 from mapformer.environment_newobj import NewObjectWorld, N_SPECIAL
-from mapformer.model_codes import use_object_codes, set_pool, MapFormerEM_PosOnly
+from mapformer.model_codes import use_object_codes, set_pool, MapFormerEM_PosOnly, MapWM_ActOnly, MapWM_NormStep
 from mapformer.train import train
 from mapformer.train_variant import VARIANT_MAP
 
 ARMS = {"RoPE": VARIANT_MAP["RoPE"], "PoPE": VARIANT_MAP["PoPE-Flat"], "MapWM": VARIANT_MAP["Vanilla_r4"],
-        "MapPoPE": VARIANT_MAP["MapPoPE_r4"], "MapEM": VARIANT_MAP["VanillaEM_r4"], "PosOnly": MapFormerEM_PosOnly}
+        "MapPoPE": VARIANT_MAP["MapPoPE_r4"], "MapEM": VARIANT_MAP["VanillaEM_r4"], "PosOnly": MapFormerEM_PosOnly,
+        "ActOnly": MapWM_ActOnly, "NormStep": MapWM_NormStep}
 
 
 @torch.no_grad()

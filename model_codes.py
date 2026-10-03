@@ -105,3 +105,44 @@ class MapFormerEM_PosOnly(_rank_em(4)):
         self.layers = nn.ModuleList([EMPosOnlyLayer(d_model, n_heads, dropout) for _ in range(n_layers)])
         with torch.no_grad():
             self.q0_pos.normal_(0, 1.0); self.k0_pos.normal_(0, 1.0)
+
+
+# ------------------------------------------------------------------ leak remedies (LEAK_PREREG.md)
+from mapformer.model_rank import MapFormerWM_r4 as _WM4
+
+
+class _StepOverride(_WM4):
+    """MapWM r=4 whose step computation is overridable; forward otherwise identical to MapFormerWM.forward."""
+
+    def step(self, tokens, x):
+        return self.action_to_lie(x)
+
+    def forward(self, tokens):
+        B, L = tokens.shape
+        x = self.token_emb(tokens)
+        cos_a, sin_a = self.path_integrator(self.step(tokens, x))
+        m = torch.triu(torch.ones(L, L, device=tokens.device, dtype=torch.bool), diagonal=1)
+        for layer in self.layers:
+            x = layer(x, cos_a, sin_a, m)
+        return self.out_proj(self.out_norm(x))
+
+
+class MapWM_ActOnly(_StepOverride):
+    """Steps from ACTION tokens only (ids < 4): TEM-t's action-only update. A reference arm: it is told
+    which tokens are actions, so the leak is 0 by construction."""
+
+    def step(self, tokens, x):
+        return self.action_to_lie(x) * (tokens < 4)[..., None, None].to(x.dtype)
+
+
+class MapWM_NormStep(_StepOverride):
+    """The step reads LayerNorm(embedding) instead of the raw embedding: removes the step's sensitivity to the
+    embedding norm, while the model still learns which tokens step. The LayerNorm is created after the base,
+    so every base weight equals MapWM r=4's at the seed."""
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self.step_ln = nn.LayerNorm(self.d_model)
+
+    def step(self, tokens, x):
+        return self.action_to_lie(self.step_ln(x))
