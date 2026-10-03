@@ -5,6 +5,11 @@ metadata:
   type: project
 ---
 
+**3D and wrap (2026-10-01/02, `RANK_ND_RESULTS.md`, `RANK_WRAP_RESULTS.md`):** per-head rank = D is hard in 2D AND 3D
+(1/8 each); rank D+1 suffices when the torus is large (3D grid 18: 8/8) but only partly on a small wrap-heavy grid
+(3D grid 10: 4/8); every failure sits on wrap-only revisits (the code must be exactly periodic). A 100-cell 2D map is
+memorised instead (own 0.986, unseen 0.273).
+
 **RANK 3, 2026-09-28 (`RANK3_RESULTS.md`): rank 3 per head sits with rank 4.** Per-head r=3 (built
 from our r=2's base, T=1024, 900 ep) solves 6/8, acc 0.987 (per-head r=2 2/8, 0.885; per-head r=4 8/8,
 0.999). 3 - 2: +0.102, perm p 0.027, Holm 0.054, solved Fisher 0.13 -- registered RANK 3 SUFFICES, at

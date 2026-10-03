@@ -15,6 +15,8 @@ Rules and conventions live in CLAUDE.md (rules 1-28); these files hold the why a
 - [Hierarchy](project_hierarchy_negative.md) -- helps only if a summary is a sufficient statistic; compositional claim unpowered.
 - [Map-size threshold](project_miniworld_flip_negative.md) -- aliasing falsified; threshold between 128 and 512 occupied cells.
 
+- [What/where, text world, context step](project_what_where_and_language.md) -- what is ours vs prior art (docs/lit/); separation is learned, causal form measured; leak = pre-LN step.
+
 ## Reference
 - [Documents, shared report, corpus](reference_review_documents.md) -- review / results paper / record; report link; 40 papers.
 - [Prior art](reference_positional_landscape.md) -- GRAPE and Mamba-3 publish the taxonomy. Read before theory.
@@ -31,6 +33,8 @@ Rules and conventions live in CLAUDE.md (rules 1-28); these files hold the why a
 - [Scheduler, destructive-command and path traps](feedback_scheduler_and_measurement_traps.md) -- rules 20-27.
 - [Seed ordering](feedback_seed_ordering.md) -- seed outer, variant inner.
 - [Backfill standard baselines](feedback_baselines_backfill.md) -- within-family tables need a RoPE column.
+
+- [Batch workflow](feedback_batch_workflow.md) -- verification agent per batch, amend before reading, pilots on outside seeds, show cost arithmetic.
 
 ## Context
 - [User style](user_style.md) -- terse, no emojis, honest, no Co-Authored-By; reports lead with positives.

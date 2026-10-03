@@ -4,6 +4,13 @@ Orientation for a fresh session. Read `.claude-memory/project_state.md` first (w
 what the user must decide), then this. `CLAUDE.md` holds the conventions, the citable table and the
 withdrawal list and is the authority on all three; this file is the shape of the project around them.
 
+
+> **Update 2026-10-03.** Since 2026-09-30: rank = D is hard in 3D too, D+1 suffices on large tori and failures sit
+> on wrap-only revisits (`RANK_ND_RESULTS.md`, `RANK_WRAP_RESULTS.md`); the context-step line is pilots only, with
+> a reliable hidden-state step (`CTXSTEP_HSR_PILOT.md`); what/where separation in path models is causal in form
+> (shared kernel x content gain) and does not need map redraw (`docs/WHAT_WHERE_CHECKS.md`); literature reviews mark
+> what is prior art (`docs/lit/`). Running: leak-remedy batch (`LEAK_PREREG.md`). Live state:
+> `.claude-memory/project_state.md`.
 ## The thesis, as it now stands
 
 This began as a reproduction of Rambaud et al.'s MapFormer -- a transformer whose rotary angle is a
