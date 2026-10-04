@@ -11,7 +11,9 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next.
 ## Running
 Nothing. Leak batch DONE 2026-10-03 (`LEAK_RESULTS.md`): REMEDY for both arms (x4 by construction); in
 distribution the remedies gain +0.0107 = MapWM's leak (p 0.0002) and converge where MapWM does not.
-- 76 orphaned python3 multiprocessing workers (2-5 days old, init parent, ~32 GB RSS) -- asked the user, not killed.
+- 2026-10-03: 76 orphaned data-worker processes (19 groups of tracker + 3 workers left by killed runs, ~30 GB RSS)
+  killed at the user's request. Killing a trainer with SIGTERM orphans its --data-workers; check `ps` for
+  parent-1 multiprocessing processes after stopping runs.
 
 ## Finished since 2026-09-30 (one line each; numbers in the file)
 - 3D rank (`RANK_ND_RESULTS.md`) + rank x wrap (`RANK_WRAP_RESULTS.md`): rank = D hard in 2D and 3D; D+1 suffices on
