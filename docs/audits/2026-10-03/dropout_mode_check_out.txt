@@ -1,0 +1,5 @@
+tw_normstep_pilot/MapWM_s100/MapWM.pt eval 0.8406/0.828  train 0.9914/0.028  attn 0.9923/0.027  resid 0.8578/0.442  ffn 0.8346/0.750
+tw_normstep_pilot/DirOnly_s100/DirOnly.pt eval 0.9597/0.051  train 0.9634/0.053  attn 0.9546/0.056  resid 0.9606/0.051  ffn 0.9632/0.050
+textworld/p0/Vanilla_r4_L1_s0/Vanilla_r4.pt eval 0.8835/0.318  train 0.9672/0.138  attn 0.9717/0.134  resid 0.9032/0.272  ffn 0.8869/0.310
+textworld/p0/Vanilla_r4_L1_s7/Vanilla_r4.pt eval 0.8955/0.281  train 0.9846/0.078  attn 0.9863/0.082  resid 0.9237/0.214  ffn 0.8955/0.270
+textworld/p0/Vanilla_r4_L1_s1/Vanilla_r4.pt eval 0.9991/0.006  train 0.9989/0.007  attn 0.9983/0.013  resid 0.9991/0.005  ffn 0.9991/0.006

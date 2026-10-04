@@ -1,0 +1,14 @@
+  MapWM      s100: acc 0.8343  SOLVED      drift 27/64  word drift 0.0745 rad ( 0/64)  move 0.246  bias_step None  ablate 0.2012  own map 0.8437  eval/train mode 0.8406/0.9914
+  NormStep   s100: acc 0.8646  SOLVED      drift 29/64  word drift 0.0725 rad ( 0/64)  move 0.262  bias_step 0.112  ablate 0.3528  own map 0.8779  eval/train mode 0.8646/0.9949
+  NormStepNB s100: acc 0.9432  DESCENDING  drift 35/64  word drift 0.0614 rad ( 0/64)  move 0.434  bias_step 0.0  ablate 0.2198  own map 0.9495  eval/train mode 0.9460/0.9826
+  DirOnly    s100: acc 0.9696  SOLVED      drift  0/64  word drift 0.0000 rad ( 0/64)  move 0.000  bias_step None  ablate 0.9696  own map 0.9779  eval/train mode 0.9597/0.9634
+
+== per arm (n=1): T=1024 held-out acc | SOLVED | drift channels of 64 | clock seeds (drift > 16) | move ratio | non-direction steps zeroed | [T=2048] ==
+  MapWM      0.8343 +/- 0.0000  1/1  drift  27.0 (27)  clock 1/1  word drift 0.0745 rad  move 0.246  ablate 0.2012  own map 0.8437  [0.8186]  train-mode 0.9914 (eval 0.8406, same 40 walks)
+  NormStep   0.8646 +/- 0.0000  1/1  drift  29.0 (29)  clock 1/1  word drift 0.0725 rad  move 0.262  ablate 0.3528  own map 0.8779  [0.8475]  train-mode 0.9949 (eval 0.8646, same 40 walks)
+  NormStepNB 0.9432 +/- 0.0000  0/1  drift  35.0 (35)  clock 1/1  word drift 0.0614 rad  move 0.434  ablate 0.2198  own map 0.9495  [0.9188]  train-mode 0.9826 (eval 0.9460, same 40 walks)
+  DirOnly    0.9696 +/- 0.0000  1/1  drift   0.0 (0)  clock 0/1  word drift 0.0000 rad  move 0.000  ablate 0.9696  own map 0.9779  [0.9715]  train-mode 0.9634 (eval 0.9597, same 40 walks)
+  NormStep bias step / direction step: 0.1120
+  void check: DirOnly non-direction steps exactly 0 and ablation a no-op on every seed -> OK
+
+(pilot: no verdicts below n=8)

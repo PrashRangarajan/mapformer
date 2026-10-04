@@ -1,0 +1,1 @@
+eval seed 10**6: best constant 0.5120; reversal-copy 0.6024; 6109 targets
