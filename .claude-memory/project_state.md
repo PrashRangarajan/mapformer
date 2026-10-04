@@ -1,46 +1,49 @@
 ---
 name: project-state
-description: LIVE STATE ONLY -- what is running, what the user must decide, the last results. History is docs/LOG.md; citable and withdrawn claims are in CLAUDE.md; orientation is docs/WHERE_THINGS_STAND.md.
+description: LIVE STATE ONLY -- what is running, what the user must decide, the last results. History is docs/LOG.md and docs/SESSION_*.md; citable and withdrawn claims are in CLAUDE.md; orientation is docs/WHERE_THINGS_STAND.md.
 metadata:
   type: project
 ---
 
-Updated 2026-10-03 ~12:00. Goes stale fast: check `git log`, `.done` markers and the results files first.
-New here? Read `docs/WHERE_THINGS_STAND.md` next.
+Updated 2026-10-03 (end of session). Goes stale fast: check `git log`, `.done` markers and results files first.
+New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs/SESSION_2026-09-27_to_10-03.md`.
 
 ## Running
-Nothing. Leak batch DONE 2026-10-03 (`LEAK_RESULTS.md`): REMEDY for both arms (x4 by construction); in
-distribution the remedies gain +0.0107 = MapWM's leak (p 0.0002) and converge where MapWM does not.
-- 2026-10-03: 76 orphaned data-worker processes (19 groups of tracker + 3 workers left by killed runs, ~30 GB RSS)
-  killed at the user's request. Killing a trainer with SIGTERM orphans its --data-workers; check `ps` for
-  parent-1 multiprocessing processes after stopping runs.
+Nothing. GPUs idle. No batch queued.
 
-## Finished since 2026-09-30 (one line each; numbers in the file)
-- 3D rank (`RANK_ND_RESULTS.md`) + rank x wrap (`RANK_WRAP_RESULTS.md`): rank = D hard in 2D and 3D; D+1 suffices on
-  large tori (3D grid 18: 8/8); failures on wrap-only revisits; the 2D 100-cell cell memorised its map.
-- Context step: the fixed hidden-state step HSR (step = W(emb + alpha*LN(h1)), alpha init 0) learns a step 4/4 and
-  ignores far decoys (`CTXSTEP_HSR_PILOT.md`); the registered batch was STOPPED before any result for cost
-  (`CTXSTEP_PREREG.md` STOPPED block). Pilots only.
-- What/where: analysis `docs/WHAT_WHERE_ANALYSIS.md` (+ correction banner: key-step error fixed 2026-10-03), checks
-  `docs/WHAT_WHERE_CHECKS.md` (causal: converged path models do not need the content x position interaction; fixed
-  32x32 map separates without redraw; leak = pre-LayerNorm step).
-- New-object transfer pilot (`runs/newobj_pilot`, seed 100, n=1): path arms copy unseen objects ~0.98-0.99; transfer
-  to iid codes is known prior art (Chen 2019); the train-test "gap" was blank calibration.
-- Literature reviews: `docs/lit/LIT_CONTEXT_STEPS.md`, `LIT_WHAT_WHERE.md`, `LIT_NEW_OBJECTS.md` (what is prior art).
+## Last results (newest first; one line each, numbers in the file)
+- NormStep analysis (`docs/NORMSTEP_NOTES.md`): scale robustness is by construction; zeroing its obs steps removes a
+  per-move gauge, not leak; identity leak ~5x smaller than MapWM's (2 seeds). ANALYSIS.
+- Leak remedies (`LEAK_RESULTS.md`, REG): ActOnly and NormStep +0.0107 unseen-object acc in distribution (p 0.0002)
+  = MapWM's leak; 16/16 SOLVED vs MapWM 8/8 descending; x4 test unfailable (Amendment 1).
+- What/where checks (`docs/WHAT_WHERE_CHECKS.md`, POST HOC): path models do not need the content x position
+  interaction; separation without map redraw; leak = pre-LayerNorm step.
+- Literature reviews (`docs/lit/LIT_CONTEXT_STEPS.md`, `LIT_WHAT_WHERE.md`, `LIT_NEW_OBJECTS.md`): what is prior art.
+- New-object pilot (`runs/newobj_pilot`, n=1): path arms 0.976-0.982 on unseen codes; transfer is prior art.
+- Rank x wrap (`RANK_WRAP_RESULTS.md`, REG): 3D grid 18 rank 4 8/8; the 3D shortfall was the small grid; 2D 100-cell
+  cell memorised its map.
+- 3D rank (`RANK_ND_RESULTS.md`, REG, no branch): rank = D hard in 2D and 3D; failures on wrap-only revisits.
+- What/where analysis (`docs/WHAT_WHERE_ANALYSIS.md`, section 6 corrected 2026-10-03). ANALYSIS.
+- Context step (`CTXSTEP_HSR_PILOT.md`, PILOT): HSR learns a step 4/4; registered batch STOPPED (`CTXSTEP_PREREG.md`).
+- Earlier this week (REG): H1 part 1 (`LOOP_RANK_E1800_P1_RESULTS.md`), text world (`TEXTWORLD_RESULTS.md`), H3
+  (`CANCEL_RESULTS.md`), sign matched (`SIGN_MATCHED_RESULTS.md`), rank 3 (`RANK3_RESULTS.md`), code full-val
+  (`CODE_FULLVAL_RESULTS.md`).
 
-## Open / waiting
-- Leak batch (above). Then candidate next steps from the reviews: window limit as a cue-distance curve (~10-12 h);
-  Mamba-3-style gate at depth vs HSR (~13 h); separation vs data at matched map size (~3.5 h, 48 runs);
-  anisotropic SWAP code shift for the leak (gate on CPU first).
-- H1 part 2 (loop and 4-layer rank-2 arms at 1800 ep): deferred.
-- Documents: the .tex papers lack rank 3, H1 part 1, H3, text world, 3D rank/wrap, what/where checks. Shared report
-  v10 (`report/language_summary.html`, https://claude.ai/artifact/LVfYeHhjs1KjwMpg3Pxggc) lacks the 3D/wrap and
-  what/where results.
-- Trainer consolidation (sed-derived trainers: train_cancel, train_textworld, train_ctxstep{,2,3}, train_newobj).
+## Open decisions (user picks; costs are wall-clock estimates on both GPUs from comparable batches -- re-measure s/epoch before launching)
+1. NormStep on the text world + a bias-free NormStep arm (word-count-clock risk) -- ~3 h.
+2. Separation vs data at matched map size (`LIT_WHAT_WHERE.md` P2) -- 48 runs, ~3.5 h.
+3. Window limit as a cue-distance curve (`LIT_CONTEXT_STEPS.md` P3) -- ~10-12 h; Mamba-3-style gate vs HSR (P1) ~13 h;
+   HSR decomposition (P2) ~9 h.
+4. Leak test that can fail: anisotropic codes + SWAP shift (`LIT_NEW_OBJECTS.md` E2; CPU gate first) -- ~10 h.
+5. H1 part 2 (loop and 4-layer rank-2 arms at 1800 ep) -- ~6 h.
+6. No GPU: trainer consolidation (train_cancel, train_textworld, train_ctxstep{,2,3}, train_newobj; verify
+   loss-exact); documents -- the .tex papers lack rank 3, H1 part 1, H3, text world, context step, 3D rank/wrap,
+   what/where, leak; shared report v10 (`report/language_summary.html`, republish WITH url=) lacks 3D/wrap,
+   what/where, leak.
 
 ## Loose ends
-- `runs/rank_mi/p0/` is untracked; `Vanilla_r2ph_s0/s1` there are symlinks into `runs/rank_perhead_pilot/p0/`.
+- `runs/rank_mi/p0/` is untracked on purpose; `Vanilla_r2ph_s0/s1` there are symlinks into `runs/rank_perhead_pilot/p0/`.
 - Checkpoints are the only copy of per-epoch loss curves; do not clear run dirs.
-- `CANCEL` eval stream for seed-0 runs overlaps training batch 0; `train_newobj`/ctxstep trainers use eval seed 10**6.
-- `lib_driver.sh` now counts every mapformer.train_* job (shared slot budget) since 2026-09-30.
+- `CANCEL` eval stream for seed-0 runs overlaps training batch 0; `train_newobj` / ctxstep trainers use eval seed 10**6.
+- Killing a trainer orphans its `--data-workers`; after stopping runs check `ps` for parent-1 python3 processes.
 - Jericho environment and feasibility outputs live outside the repo: `/home/prashr/jericho_env`, `/home/prashr/jericho_data`.
