@@ -8,8 +8,11 @@ Prints the grouped lists plus UNCLASSIFIED (files matching no group -- add a pat
 they are silently missing from the index). Used to build the 2026-09-24 catalogue; kept because
 RESULTS_INDEX.md was last regenerated 2026-09-11 and is missing the Dyck / Bach / code /
 rank-matched / rank-separation / loop-rank files (2026-09-30: added the CANCEL_, TEXTWORLD_, CTXSTEP_ and
-CONTEXT_STEP groups). Output is pasted by hand into the catalogue section of RESULTS_INDEX.md; the
+CONTEXT_STEP groups; 2026-10-03: a LEAK_ / NEWOBJ / WHAT_WHERE group, and a second pass listing the
+docs-level notes `docs/*.md` and `docs/lit/*.md`, which have no top-level file). Output is in the
+catalogue's own format and is pasted by hand into the catalogue section of RESULTS_INDEX.md; the
 hand-written tables above it are not touched by this script. It chdirs to the repo itself (rule 25).
+Exits 1 if any top-level file is unclassified.
 """
 import glob,re,os,collections
 os.chdir('/home/prashr/mapformer')
@@ -25,6 +28,7 @@ groups=[
  ('MiniGrid, MiniWorld, Habitat', r'^(MINIGRID|MINIWORLD|ALIASING|VISITS_TEST|POSITION_EFFECT|CROSSOVER_CONVERGED|CONTINUOUS_ALLOC|DAGGER|DOORKEY|HABITAT|PERCEPTION)'),
  ('Dyck-2 and the cancellation knob (H3): depth substitution', r'^(DYCK_|CANCEL_)'),
  ('Navigation told in words and the context-dependent step', r'^(TEXTWORLD_|CTXSTEP_|CONTEXT_STEP)'),
+ ('New objects, what/where and the what-to-where leak', r'^(LEAK_|NEWOBJ|WHAT_WHERE)'),
  ('Indirect Indexing', r'^INDIRECT_'),
  ('Bach chorales, decay envelope and the MapPoPE collapse', r'^(JSB|AUG_|DECAY_|T1_|T2_|T3_|T3GEN|TORUS_T3|RECENCY_T3|CROSS_|MAESTRO|THEORY_MAPPOPE|MAPPOPE_VS_POPE|POPE_WRAPPING)'),
  ('PoPE ablation, code and enwik8', r'^(ABLATE_PREREG|ABLATE_RESULTS|CODE_|ENWIK8|BF16|LANGUAGE_LANDSCAPE)'),
@@ -42,5 +46,13 @@ for f in files:
             break
     else: un.append(f)
 print('UNCLASSIFIED',un)
+print(f'top-level *.md: {len(files)}\n')
 for g,l in out.items():
-    print(f'### {g} ({len(l)})\n'); print(', '.join('`%s`'%x if not x.endswith('*') else '`%s`*'%x[:-1] for x in l)); print()
+    print(f'**{g}** ({len(l)})\n'); print(', '.join('`%s`'%x if not x.endswith('*') else '`%s`*'%x[:-1] for x in l)); print()
+docs=sorted(glob.glob('docs/*.md'))+sorted(glob.glob('docs/lit/*.md'))
+dl=[]
+for f in docs:
+    head=''.join(open(f,errors='ignore').readlines()[:12])
+    dl.append('`%s`'%f+('*' if ban.search(head) else ''))
+print(f'**Docs-level notes** ({len(dl)})\n'); print(', '.join(dl)); print()
+raise SystemExit(1 if un else 0)
