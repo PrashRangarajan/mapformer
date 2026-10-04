@@ -5,11 +5,17 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-03 (end of session). Goes stale fast: check `git log`, `.done` markers and results files first.
+Updated 2026-10-03 21:25. Goes stale fast: check `git log`, `.done` markers and results files first.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs/SESSION_2026-09-27_to_10-03.md`.
 
 ## Running
-Nothing. GPUs idle. No batch queued.
+- NormStep on the text world (`TW_NORMSTEP_PREREG.md`, + Amendments 1-2, committed 302d901 before launch): 32 runs
+  (MapWM, NormStep, NormStepNB, DirOnly x seeds 10-17), `run_tw_normstep.sh` launched 2026-10-03 21:21, MAXPG 3,
+  ETA ~00:30. Done marker `.tw_normstep_done`; analysis `TW_NORMSTEP_ANALYSIS.txt` / `TW_NORMSTEP.json` (written by the
+  driver). Verification agent already ran (Amendment 1). Then: write TW_NORMSTEP_RESULTS.md, fill the `<!-- TWNS -->`
+  slot in `report/language_summary.html` and republish WITH url= (3D rank, what/where, leak already added locally).
+- Found in its pilot (Amendment 2, `docs/audits/2026-10-03/dropout_mode_check_out.txt`): eval mode under-reports
+  clock-type solutions by 0.08-0.15 (attention-probability dropout; train mode 0.99). Unchecked on other batches.
 
 ## Last results (newest first; one line each, numbers in the file)
 - NormStep analysis (`docs/NORMSTEP_NOTES.md`): scale robustness is by construction; zeroing its obs steps removes a
