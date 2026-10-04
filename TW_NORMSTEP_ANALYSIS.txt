@@ -1,0 +1,69 @@
+  MapWM      s10: acc 0.9997  SOLVED      drift  5/64  word drift 0.0972 rad ( 0/64)  move 0.079  bias_step None  ablate 0.7039  own map 0.9997  eval/train mode 1.0000/0.9997
+  NormStep   s10: acc 1.0000  SOLVED      drift  1/64  word drift 0.1297 rad ( 0/64)  move 0.042  bias_step 0.0046  ablate 0.8077  own map 1.0000  eval/train mode 1.0000/1.0000
+  NormStepNB s10: acc 0.8140  DESCENDING  drift 16/64  word drift 0.0875 rad ( 0/64)  move 0.067  bias_step 0.0  ablate 0.3948  own map 0.7935  eval/train mode 0.8175/0.9612
+  DirOnly    s10: acc 0.9725  SOLVED      drift  0/64  word drift 0.0000 rad ( 0/64)  move 0.000  bias_step None  ablate 0.9725  own map 0.9751  eval/train mode 0.9632/0.9657
+  MapWM      s11: acc 0.9900  SOLVED      drift 41/64  word drift 0.0371 rad ( 0/64)  move 0.421  bias_step None  ablate 0.3650  own map 0.9917  eval/train mode 0.9871/0.9874
+  NormStep   s11: acc 0.9985  SOLVED      drift 31/64  word drift 0.0720 rad ( 0/64)  move 0.466  bias_step 0.1708  ablate 0.3752  own map 0.9994  eval/train mode 0.9991/0.9980
+  NormStepNB s11: acc 0.9923  SOLVED      drift  1/64  word drift 0.0790 rad ( 0/64)  move 0.032  bias_step 0.0  ablate 0.8646  own map 0.9958  eval/train mode 0.9931/0.9920
+  DirOnly    s11: acc 0.9717  SOLVED      drift  0/64  word drift 0.0000 rad ( 0/64)  move 0.000  bias_step None  ablate 0.9717  own map 0.9776  eval/train mode 0.9649/0.9643
+  MapWM      s12: acc 0.8304  SOLVED      drift  3/64  word drift 0.0710 rad ( 0/64)  move 0.071  bias_step None  ablate 0.4906  own map 0.8143  eval/train mode 0.8278/0.9874
+  NormStep   s12: acc 1.0000  SOLVED      drift  0/64  word drift 0.1163 rad ( 0/64)  move 0.031  bias_step 0.0033  ablate 0.8853  own map 1.0000  eval/train mode 1.0000/1.0000
+  NormStepNB s12: acc 0.8250  SOLVED      drift 29/64  word drift 0.0817 rad ( 0/64)  move 0.238  bias_step 0.0  ablate 0.3441  own map 0.8252  eval/train mode 0.8278/0.9929
+  DirOnly    s12: acc 0.9736  SOLVED      drift  0/64  word drift 0.0000 rad ( 0/64)  move 0.000  bias_step None  ablate 0.9736  own map 0.9712  eval/train mode 0.9666/0.9669
+  MapWM      s13: acc 0.9949  SOLVED      drift 30/64  word drift 0.0400 rad ( 0/64)  move 0.512  bias_step None  ablate 0.4616  own map 0.9958  eval/train mode 0.9923/0.9920
+  NormStep   s13: acc 1.0000  SOLVED      drift  4/64  word drift 0.1591 rad ( 0/64)  move 0.051  bias_step 0.0069  ablate 0.8879  own map 1.0000  eval/train mode 1.0000/1.0000
+  NormStepNB s13: acc 0.9998  SOLVED      drift  6/64  word drift 0.1349 rad ( 0/64)  move 0.054  bias_step 0.0  ablate 0.9340  own map 1.0000  eval/train mode 1.0000/1.0000
+  DirOnly    s13: acc 0.9718  SOLVED      drift  0/64  word drift 0.0000 rad ( 0/64)  move 0.000  bias_step None  ablate 0.9718  own map 0.9776  eval/train mode 0.9640/0.9674
+  MapWM      s14: acc 0.9714  SOLVED      drift 29/64  word drift 0.0460 rad ( 0/64)  move 0.290  bias_step None  ablate 0.2892  own map 0.9575  eval/train mode 0.9649/0.9914
+  NormStep   s14: acc 1.0000  SOLVED      drift  4/64  word drift 0.1918 rad ( 0/64)  move 0.056  bias_step 0.0082  ablate 0.9399  own map 1.0000  eval/train mode 1.0000/1.0000
+  NormStepNB s14: acc 0.9957  SOLVED      drift 38/64  word drift 0.0762 rad ( 0/64)  move 0.809  bias_step 0.0  ablate 0.4745  own map 0.9981  eval/train mode 0.9957/0.9934
+  DirOnly    s14: acc 0.9717  SOLVED      drift  0/64  word drift 0.0000 rad ( 0/64)  move 0.000  bias_step None  ablate 0.9717  own map 0.9728  eval/train mode 0.9632/0.9666
+  MapWM      s15: acc 0.9972  SOLVED      drift 34/64  word drift 0.1110 rad ( 0/64)  move 0.447  bias_step None  ablate 0.4709  own map 0.9946  eval/train mode 0.9957/0.9954
+  NormStep   s15: acc 0.9993  SOLVED      drift  4/64  word drift 0.1866 rad ( 0/64)  move 0.043  bias_step 0.0063  ablate 0.8263  own map 0.9997  eval/train mode 0.9991/0.9991
+  NormStepNB s15: acc 1.0000  SOLVED      drift  7/64  word drift 0.1557 rad ( 0/64)  move 0.073  bias_step 0.0  ablate 0.9139  own map 1.0000  eval/train mode 1.0000/0.9997
+  DirOnly    s15: acc 0.9717  SOLVED      drift  0/64  word drift 0.0000 rad ( 0/64)  move 0.000  bias_step None  ablate 0.9717  own map 0.9770  eval/train mode 0.9683/0.9677
+  MapWM      s16: acc 1.0000  SOLVED      drift  0/64  word drift 0.1175 rad ( 0/64)  move 0.055  bias_step None  ablate 0.9537  own map 1.0000  eval/train mode 1.0000/0.9997
+  NormStep   s16: acc 0.8312  DESCENDING  drift 30/64  word drift 0.0421 rad ( 0/64)  move 0.435  bias_step 0.1781  ablate 0.2613  own map 0.8469  eval/train mode 0.8355/0.9743
+  NormStepNB s16: acc 0.9034  SOLVED      drift 26/64  word drift 0.0730 rad ( 0/64)  move 0.267  bias_step 0.0  ablate 0.3384  own map 0.9118  eval/train mode 0.8963/0.9951
+  DirOnly    s16: acc 0.9732  SOLVED      drift  0/64  word drift 0.0000 rad ( 0/64)  move 0.000  bias_step None  ablate 0.9732  own map 0.9792  eval/train mode 0.9674/0.9666
+  MapWM      s17: acc 0.9980  SOLVED      drift  4/64  word drift 0.0920 rad ( 0/64)  move 0.080  bias_step None  ablate 0.9581  own map 0.9990  eval/train mode 0.9983/0.9986
+  NormStep   s17: acc 0.9998  SOLVED      drift  1/64  word drift 0.1692 rad ( 0/64)  move 0.045  bias_step 0.0038  ablate 0.8605  own map 0.9997  eval/train mode 0.9991/0.9991
+  NormStepNB s17: acc 1.0000  SOLVED      drift  3/64  word drift 0.1241 rad ( 0/64)  move 0.052  bias_step 0.0  ablate 0.8419  own map 1.0000  eval/train mode 1.0000/1.0000
+  DirOnly    s17: acc 0.9705  SOLVED      drift  0/64  word drift 0.0000 rad ( 0/64)  move 0.000  bias_step None  ablate 0.9705  own map 0.9716  eval/train mode 0.9580/0.9620
+
+== per arm (n=8): T=1024 held-out acc | SOLVED | drift channels of 64 | clock seeds (drift > 16) | move ratio | non-direction steps zeroed | [T=2048] ==
+  MapWM      0.9727 +/- 0.0583  8/8  drift  18.2 (5 41 3 30 29 34 0 4)  clock 4/8  word drift 0.0765 rad  move 0.244  ablate 0.5866  own map 0.9691  [0.9534]  train-mode 0.9940 (eval 0.9708, same 40 walks)
+  NormStep   0.9786 +/- 0.0596  7/8  drift   9.4 (1 31 0 4 4 4 30 1)  clock 2/8  word drift 0.1333 rad  move 0.146  ablate 0.7305  own map 0.9807  [0.9699]  train-mode 0.9963 (eval 0.9791, same 40 walks)
+  NormStepNB 0.9413 +/- 0.0820  7/8  drift  15.8 (16 1 29 6 38 7 26 3)  clock 3/8  word drift 0.1015 rad  move 0.199  ablate 0.6383  own map 0.9406  [0.9294]  train-mode 0.9918 (eval 0.9413, same 40 walks)
+  DirOnly    0.9721 +/- 0.0010  8/8  drift   0.0 (0 0 0 0 0 0 0 0)  clock 0/8  word drift 0.0000 rad  move 0.000  ablate 0.9721  own map 0.9753  [0.9722]  train-mode 0.9659 (eval 0.9644, same 40 walks)
+  NormStep bias step / direction step: 0.0046 0.1708 0.0033 0.0069 0.0082 0.0063 0.1781 0.0038
+  void check: DirOnly non-direction steps exactly 0 and ablation a no-op on every seed -> OK
+
+== primary A: accuracy, NormStep - MapWM (fires: perm p < .05 and |d| >= 0.02, or Fisher p < .05) ==
+  d +0.0059, perm p 0.4715; SOLVED 7/8 vs 8/8, Fisher p 1.0000; MDE (exact t, pooled sd, 2-sample) 0.0960
+  REGISTERED A: NO DETECTABLE DIFFERENCE (unmeasured below 0.0960)
+
+== primary B (Amendment 1): per-word clock, drift_opt_rad (fires: perm p < .05 and |d| >= 0.05 rad) ==
+  NormStep - MapWM      +0.0569 rad, perm p 0.0266  FIRES
+  NormStep - NormStepNB +0.0318 rad, perm p 0.1730  
+  REGISTERED B: WORD-COUNT CLOCK, BIAS NOT SHOWN TO CAUSE IT
+  COMPOSITE: NORMSTEP DOES NOT CARRY OVER CLEANLY
+
+== declared secondary (formerly primary B): all-word drift channels (fires: p < .05, |d| >= 4); bimodal per seed, needs a swing of ~4 clock seeds: a non-firing is UNMEASURED ==
+  NormStep - MapWM      -8.88 channels, perm p 0.2239  unmeasured
+  NormStep - NormStepNB -6.38 channels, perm p 0.3532  unmeasured
+
+== secondaries (no verdict) ==
+  NormStepNB - MapWM: acc -0.0314 (p 0.4261), SOLVED 7 vs 8 (Fisher 1.0000); drift -2.50 (p 0.7647)
+  NormStepNB - NormStep: acc -0.0373 (p 0.2155), SOLVED 7 vs 7 (Fisher 1.0000); drift +6.38 (p 0.3532)
+  DirOnly - MapWM: acc -0.0006 (p 0.9998), SOLVED 8 vs 8 (Fisher 1.0000); drift -18.25 (p 0.0014)
+  DirOnly - NormStep: acc -0.0065 (p 0.9902), SOLVED 8 vs 7 (Fisher 1.0000); drift -9.38 (p 0.0014)
+  clock seeds NormStep 2/8 vs MapWM 4/8, Fisher p 0.6084
+  train-mode accuracy (40 walks) NormStep - MapWM +0.0024, perm p 0.6011; mode gap train - eval per arm: MapWM +0.0232, NormStep +0.0172, NormStepNB +0.0505, DirOnly +0.0015
+  paired by seed NormStep - MapWM: acc +0.0059 sign-flip p 0.5078; word drift +0.0569 sign-flip p 0.0469
+  paired by seed NormStepNB - MapWM: acc -0.0314 sign-flip p 0.4375; word drift +0.0250 sign-flip p 0.1406
+  r(final loss, acc) over 32 runs: -0.728
+  r(drift, acc) within MapWM: +0.290
+  r(drift, acc) within NormStep: -0.641
+  r(drift, acc) within NormStepNB: -0.422
+  r(drift, acc) within DirOnly: +nan

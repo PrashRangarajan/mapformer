@@ -1,0 +1,4 @@
+DirOnly   s10: revisit acc 0.9751; errors 78, of which predicted an earlier ASIDE object at that cell 78 (100%); targets with a different aside object at the cell 0.167
+DirOnly   s13: revisit acc 0.9716; errors 89, of which predicted an earlier ASIDE object at that cell 89 (100%); targets with a different aside object at the cell 0.167
+MapWM     s16: revisit acc 1.0000; errors 0, of which predicted an earlier ASIDE object at that cell 0 (0%); targets with a different aside object at the cell 0.167
+NormStep  s12: revisit acc 1.0000; errors 0, of which predicted an earlier ASIDE object at that cell 0 (0%); targets with a different aside object at the cell 0.167

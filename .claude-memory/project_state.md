@@ -5,19 +5,17 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-03 21:25. Goes stale fast: check `git log`, `.done` markers and results files first.
+Updated 2026-10-04 00:45. Goes stale fast: check `git log`, `.done` markers and results files first.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs/SESSION_2026-09-27_to_10-03.md`.
 
 ## Running
-- NormStep on the text world (`TW_NORMSTEP_PREREG.md`, + Amendments 1-2, committed 302d901 before launch): 32 runs
-  (MapWM, NormStep, NormStepNB, DirOnly x seeds 10-17), `run_tw_normstep.sh` launched 2026-10-03 21:21, MAXPG 3,
-  ETA ~00:30. Done marker `.tw_normstep_done`; analysis `TW_NORMSTEP_ANALYSIS.txt` / `TW_NORMSTEP.json` (written by the
-  driver). Verification agent already ran (Amendment 1). Then: write TW_NORMSTEP_RESULTS.md, fill the `<!-- TWNS -->`
-  slot in `report/language_summary.html` and republish WITH url= (3D rank, what/where, leak already added locally).
-- Found in its pilot (Amendment 2, `docs/audits/2026-10-03/dropout_mode_check_out.txt`): eval mode under-reports
-  clock-type solutions by 0.08-0.15 (attention-probability dropout; train mode 0.99). Unchecked on other batches.
+Nothing. GPUs idle (2026-10-04 00:20).
 
 ## Last results (newest first; one line each, numbers in the file)
+- NormStep on words (`TW_NORMSTEP_RESULTS.md`, REG): accuracy no detectable difference (+0.006, MDE 0.096); predicted
+  word-count clock fired but tiny (+0.057 rad optional-word drift, p 0.027, 0/64 channels), not from the LN bias.
+  Post hoc: DirOnly oracle capped at 0.972 by aside objects (100% of its errors); eval mode under-reports runs below
+  ceiling (attention dropout; up to +0.16 in train mode) -- UNCHECKED on other batches (next: eval-only CPU audit).
 - NormStep analysis (`docs/NORMSTEP_NOTES.md`): scale robustness is by construction; zeroing its obs steps removes a
   per-move gauge, not leak; identity leak ~5x smaller than MapWM's (2 seeds). ANALYSIS.
 - Leak remedies (`LEAK_RESULTS.md`, REG): ActOnly and NormStep +0.0107 unseen-object acc in distribution (p 0.0002)
@@ -36,7 +34,7 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs
   (`CODE_FULLVAL_RESULTS.md`).
 
 ## Open decisions (user picks; costs are wall-clock estimates on both GPUs from comparable batches -- re-measure s/epoch before launching)
-1. NormStep on the text world + a bias-free NormStep arm (word-count-clock risk) -- ~3 h.
+1. DONE 2026-10-04. New, no GPU: eval-mode vs train-mode gap on committed navigation batches (eval-only, CPU).
 2. Separation vs data at matched map size (`LIT_WHAT_WHERE.md` P2) -- 48 runs, ~3.5 h.
 3. Window limit as a cue-distance curve (`LIT_CONTEXT_STEPS.md` P3) -- ~10-12 h; Mamba-3-style gate vs HSR (P1) ~13 h;
    HSR decomposition (P2) ~9 h.
@@ -44,8 +42,7 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs
 5. H1 part 2 (loop and 4-layer rank-2 arms at 1800 ep) -- ~6 h.
 6. No GPU: trainer consolidation (train_cancel, train_textworld, train_ctxstep{,2,3}, train_newobj; verify
    loss-exact); documents -- the .tex papers lack rank 3, H1 part 1, H3, text world, context step, 3D rank/wrap,
-   what/where, leak; shared report v10 (`report/language_summary.html`, republish WITH url=) lacks 3D/wrap,
-   what/where, leak.
+   what/where, leak, NormStep on words; shared report v12 (`report/language_summary.html`, republish WITH url=) is current.
 
 ## Loose ends
 - `runs/rank_mi/p0/` is untracked on purpose; `Vanilla_r2ph_s0/s1` there are symlinks into `runs/rank_perhead_pilot/p0/`.

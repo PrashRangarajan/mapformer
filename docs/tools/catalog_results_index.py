@@ -28,7 +28,7 @@ groups=[
  ('MiniGrid, MiniWorld, Habitat', r'^(MINIGRID|MINIWORLD|ALIASING|VISITS_TEST|POSITION_EFFECT|CROSSOVER_CONVERGED|CONTINUOUS_ALLOC|DAGGER|DOORKEY|HABITAT|PERCEPTION)'),
  ('Dyck-2 and the cancellation knob (H3): depth substitution', r'^(DYCK_|CANCEL_)'),
  ('Navigation told in words and the context-dependent step', r'^(TEXTWORLD_|CTXSTEP_|CONTEXT_STEP)'),
- ('New objects, what/where and the what-to-where leak', r'^(LEAK_|NEWOBJ|WHAT_WHERE)'),
+ ('New objects, what/where and the what-to-where leak', r'^(LEAK_|NEWOBJ|WHAT_WHERE|TW_NORMSTEP)'),
  ('Indirect Indexing', r'^INDIRECT_'),
  ('Bach chorales, decay envelope and the MapPoPE collapse', r'^(JSB|AUG_|DECAY_|T1_|T2_|T3_|T3GEN|TORUS_T3|RECENCY_T3|CROSS_|MAESTRO|THEORY_MAPPOPE|MAPPOPE_VS_POPE|POPE_WRAPPING)'),
  ('PoPE ablation, code and enwik8', r'^(ABLATE_PREREG|ABLATE_RESULTS|CODE_|ENWIK8|BF16|LANGUAGE_LANDSCAPE)'),

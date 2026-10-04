@@ -1,0 +1,25 @@
+optional word types 16, core non-direction 14
+MapWM      s10: opt/dir step 0.0363  core/dir 0.0454  emb opt/dir 0.489  word drift 0.0972  drift  5  acc 0.9997
+MapWM      s11: opt/dir step 0.1468  core/dir 0.5791  emb opt/dir 0.513  word drift 0.0371  drift 41  acc 0.9900
+MapWM      s12: opt/dir step 0.0307  core/dir 0.0529  emb opt/dir 0.450  word drift 0.0710  drift  3  acc 0.8304
+MapWM      s13: opt/dir step 0.2156  core/dir 0.8131  emb opt/dir 0.540  word drift 0.0400  drift 30  acc 0.9949
+MapWM      s14: opt/dir step 0.0868  core/dir 0.5292  emb opt/dir 0.362  word drift 0.0460  drift 29  acc 0.9714
+MapWM      s15: opt/dir step 0.1618  core/dir 0.6817  emb opt/dir 0.419  word drift 0.1110  drift 34  acc 0.9972
+MapWM      s16: opt/dir step 0.0381  core/dir 0.0522  emb opt/dir 0.517  word drift 0.1175  drift  0  acc 1.0000
+MapWM      s17: opt/dir step 0.0420  core/dir 0.0808  emb opt/dir 0.467  word drift 0.0920  drift  4  acc 0.9980
+NormStep   s10: opt/dir step 0.0271  core/dir 0.0454  emb opt/dir 2.735  word drift 0.1297  drift  1  acc 1.0000
+NormStep   s11: opt/dir step 0.1620  core/dir 0.8317  emb opt/dir 1.430  word drift 0.0720  drift 31  acc 0.9985
+NormStep   s12: opt/dir step 0.0244  core/dir 0.0363  emb opt/dir 2.575  word drift 0.1163  drift  0  acc 1.0000
+NormStep   s13: opt/dir step 0.0417  core/dir 0.0399  emb opt/dir 2.907  word drift 0.1591  drift  4  acc 1.0000
+NormStep   s14: opt/dir step 0.0494  core/dir 0.0651  emb opt/dir 2.086  word drift 0.1918  drift  4  acc 1.0000
+NormStep   s15: opt/dir step 0.0473  core/dir 0.0519  emb opt/dir 2.362  word drift 0.1866  drift  4  acc 0.9993
+NormStep   s16: opt/dir step 0.1205  core/dir 0.7816  emb opt/dir 1.458  word drift 0.0421  drift 30  acc 0.8312
+NormStep   s17: opt/dir step 0.0325  core/dir 0.0377  emb opt/dir 2.329  word drift 0.1692  drift  1  acc 0.9998
+NormStepNB s10: opt/dir step 0.0255  core/dir 0.1119  emb opt/dir 2.676  word drift 0.0875  drift 16  acc 0.8140
+NormStepNB s11: opt/dir step 0.0175  core/dir 0.0202  emb opt/dir 3.828  word drift 0.0790  drift  1  acc 0.9923
+NormStepNB s12: opt/dir step 0.0776  core/dir 0.6225  emb opt/dir 1.615  word drift 0.0817  drift 29  acc 0.8250
+NormStepNB s13: opt/dir step 0.0318  core/dir 0.0501  emb opt/dir 2.363  word drift 0.1349  drift  6  acc 0.9998
+NormStepNB s14: opt/dir step 0.3285  core/dir 1.3764  emb opt/dir 1.346  word drift 0.0762  drift 38  acc 0.9957
+NormStepNB s15: opt/dir step 0.0502  core/dir 0.0730  emb opt/dir 2.060  word drift 0.1557  drift  7  acc 1.0000
+NormStepNB s16: opt/dir step 0.0893  core/dir 0.5723  emb opt/dir 1.615  word drift 0.0730  drift 26  acc 0.9034
+NormStepNB s17: opt/dir step 0.0302  core/dir 0.0466  emb opt/dir 2.992  word drift 0.1241  drift  3  acc 1.0000

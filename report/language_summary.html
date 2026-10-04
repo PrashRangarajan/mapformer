@@ -223,7 +223,7 @@ footer{
     <div><dt>Tasks</dt><dd>Dyck-2, real Python, enwik8, Indirect Indexing, Bach Chorales; torus navigation, also told in words</dd></div>
     <div><dt>Standard</dt><dd>3&ndash;8 seeds, all arms in one batch; newer results tested with exact permutation and Fisher tests</dd></div>
     <div><dt>Every result</dt><dd>reported beside the score of a model with no memory</dd></div>
-    <div><dt>As of</dt><dd>3 Oct 2026</dd></div>
+    <div><dt>As of</dt><dd>4 Oct 2026</dd></div>
   </dl>
 </header>
 
@@ -237,7 +237,7 @@ footer{
     <li><strong>Path integration still works when the walk is told in words.</strong> With the moves buried in English prose (synonyms, fillers, asides), a one-layer path-integrated model scores 0.969 against 0.505 for a one-layer index model &mdash; exactly the score of always guessing the most common answer &mdash; and 0.772 for a two-layer one. It learns from prediction alone which words move it and that opposite directions cancel.</li>
     <li><strong>The hard case is a rank equal to the world&rsquo;s dimension, in 3-D as in 2-D.</strong> On a 3-D torus, rank 3 per head finds the solution on 1 of 8 seeds; rank 4 on 8 of 8 when the torus is large. Failures sit on revisits that are only reachable by wrapping around the torus.</li>
     <li><strong>Trained path-integrated models keep <em>what</em> apart from <em>where</em>.</strong> Removing object identity from their attention scores leaves 0.97&ndash;0.99 accuracy; index models fall below the no-memory floor. This was checked after the fact, not pre-registered.</li>
-    <li><strong>A small leak of <em>what</em> into <em>where</em>, and a one-line fix.</strong> In MapFormer every token moves the position a little, objects included. Normalising the step&rsquo;s input (NormStep) removes the leak and gains +0.011 on unseen objects (8/8, p = 0.0002), as much as an oracle told which tokens are moves.</li>
+    <li><strong>A small leak of <em>what</em> into <em>where</em>, and a one-line fix.</strong> In MapFormer every token moves the position a little, objects included. Normalising the step&rsquo;s input (NormStep) removes the leak and gains +0.011 on unseen objects (8/8, p = 0.0002), as much as an oracle told which tokens are moves. On navigation told in words it neither helps nor hurts, and adds only a tiny word-counting drift. There, the oracle that only lets direction words move is beaten by learned steps: it confuses objects mentioned in passing with objects at the place.</li>
     <li><strong>Three published results replicate</strong>: MapFormer on Dyck-2, and PoPE on both Indirect Indexing and Bach Chorales.</li>
     <li><strong>A 48-parameter fix matches a 786k-parameter one.</strong> A simple distance penalty in attention repairs long-context failures on Bach, and improved every model on real code (passing a t-test for two of the four, at three seeds).</li>
     <li><strong>A simple data trick beats PoPE&rsquo;s published Bach score</strong> by a wide margin &mdash; 0.394 against their 0.489.</li>
@@ -453,7 +453,7 @@ footer{
 <!-- ============ WHAT / WHERE ============ -->
 <section>
   <h2>Is <em>what</em> kept apart from <em>where</em>?</h2>
-  <p class="sectmeta">torus navigation &middot; checks on trained models, then one registered batch (3 models &times; 8 seeds) &middot; 1 layer</p>
+  <p class="sectmeta">torus navigation, then navigation told in words &middot; checks on trained models, then two registered batches (3 and 4 models &times; 8 seeds) &middot; 1 layer</p>
   <p>The idea behind MapFormer, borrowed from models of the hippocampus, is a <em>cognitive map</em>: the model should keep <em>where</em> it is (built from the moves) separate from <em>what</em> it sees there (the objects), so that a learned sense of place carries over to new rooms and new objects. Two questions: do trained models actually separate them, and does anything leak from one to the other?</p>
 
   <h3>Trained path-integrated models do separate them</h3>
@@ -493,9 +493,26 @@ footer{
     <li><span class="chip warn">Caveat</span><strong>Part of the gain is training speed.</strong> MapWM was still improving on every seed at 900 epochs, and across runs final loss and accuracy correlate at &minus;0.94, so the two cannot be separated at this budget. The pre-registered robustness test (codes four times larger) could not have failed: NormStep ignores input scale by construction.</li>
     <li><span class="chip warn">Analysis</span><strong>What NormStep actually changes.</strong> Its object steps are not smaller on average; they are all the same. The normalisation&rsquo;s learned offset gives every observation one shared step, which the moves absorb; what varies with the object&rsquo;s identity is about five times smaller than in MapWM (two seeds checked). MapWM could reach zero leak too, so this is easier optimisation, not a capability MapWM lacks.</li>
   </ul>
-  <!-- TWNS -->
-  <ul class="findings" id="twns-pending">
-    <li><span class="chip plain">Running</span><strong>Does the fix carry over to words?</strong> On the text world a move is told in a varying number of words, so the normalisation&rsquo;s shared offset could give every word a small step &mdash; a word counter leaking time into place. A pre-registered batch (4 models &times; 8 fresh seeds) is running; the result will appear here.</li>
+    <h3>Does the fix carry over to words?</h3>
+  <p>On the text world a move is told in a varying number of words, so NormStep had a predicted risk: the normalisation&rsquo;s learned offset gives every word the same small step, which would count words &mdash; time leaking into place. A pre-registered batch tested it on fresh seeds, with a version that has no offset and a reference that steps only on the twelve direction words:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>model</th><th>revisit accuracy</th><th>seeds converged</th><th>drift from<br>non-move words</th></tr></thead>
+      <tbody>
+        <tr><td>MapWM</td><td>0.973</td><td>8 / 8</td><td>0.077 rad</td></tr>
+        <tr><td>NormStep</td><td>0.979</td><td>7 / 8</td><td>0.133 rad</td></tr>
+        <tr><td>NormStep without its offset</td><td>0.941</td><td>7 / 8</td><td>0.102 rad</td></tr>
+        <tr><td>direction words only (oracle)</td><td>0.972</td><td>8 / 8</td><td>0</td></tr>
+        <tr class="floor"><td>always the most common answer</td><td>0.512</td><td>&mdash;</td><td>&mdash;</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="caption">Navigation told in words, 1024-word texts, unseen map, 8 fresh seeds per model, one batch, pre-registered. &ldquo;Drift from non-move words&rdquo;: how far the position phase moves, between two visits to the same place, because of fillers, adverbs and asides alone (a random phase would be about 1.57 rad). Accuracy is split by seed between two kinds of solution, so accuracy differences below about 0.1 cannot be detected at 8 seeds.</p>
+  <ul class="findings">
+    <li><span class="chip warn">Unmeasured</span><strong>NormStep neither helps nor hurts here.</strong> +0.006 accuracy, far below what 8 seeds can detect. It cannot show its benefit on this task: objects are 16 learned words, not new ones.</li>
+    <li><span class="chip det">p = 0.027</span><strong>The predicted word counter is there, but tiny &mdash; and not from the offset.</strong> Non-move words move NormStep&rsquo;s position by 0.057 rad more than MapWM&rsquo;s, what a per-word step of a twentieth to a tenth of a real move would give. No channel comes close to behaving like a clock, and the models with the most of it score 0.999&ndash;1.000. Removing the offset does not detectably remove it; most seeds had already learned to neutralise the offset.</li>
+    <li><span class="chip warn">Post hoc</span><strong>Being told which words move is not the best you can do.</strong> The oracle stops at 0.972 on every seed, below the learned models that converge (0.99&ndash;1.00). Every one of its errors (78 of 78 and 89 of 89 on the two seeds checked) names an object from an aside &mdash; &ldquo;she thought about a cat&rdquo; &mdash; mentioned earlier at the same place. With no step on any other word, the aside&rsquo;s cat sits at that place&rsquo;s position. A learned step map moves the aside elsewhere. In language, keeping <em>what</em> out of <em>where</em> does not mean only action words may move.</li>
+    <li><span class="chip warn">Method</span><strong>Switching off dropout at test time can understate a model.</strong> On the same walks, runs that had not converged to the clean solution score up to 0.16 higher with dropout on, as in training (0.83 &rarr; 0.99); dropout on the attention weights alone accounts for it. All models here were scored the same way, so the comparisons hold; whether other results on this page are affected has not yet been checked.</li>
   </ul>
 </section>
 

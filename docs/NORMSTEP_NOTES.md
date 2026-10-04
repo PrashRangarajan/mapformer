@@ -38,6 +38,9 @@ the scale no longer touches the step, leaving only a direction to learn. Tests: 
 - Risk 1, language: with a variable number of tokens per move (text world), the shared beta-step is a per-TOKEN tick,
   i.e. a word-count clock leaking into "where"; the gauge argument no longer applies. Must be learned away (beta into
   W's null space), not guaranteed. Test: NormStep and a bias-free NormStep on the text world (~3 h).
+  RESULT (2026-10-04, `TW_NORMSTEP_RESULTS.md`): the per-word drift exists but is tiny (+0.057 rad, no channel > 1 rad)
+  and NOT from beta: training put beta's step at 0.003-0.008 of a direction step on 6/8 seeds (in W's null space, as
+  hoped); the two seeds where it is large (0.17-0.18) use it inside a per-move clock. Accuracy: no detectable difference.
 - Risk 2, graded/continuous actions: normalising removes magnitude carried by the input's norm (fine for discrete
   tokens, which keep per-token steps through direction; breaks continuous-magnitude inputs).
 - Orthogonal: context ("did not go north") is not addressed -- combine with the context-aware step (HSR).
