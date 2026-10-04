@@ -25,6 +25,9 @@ Each cost real time and was caught only by looking at something other than the l
 - **Killing a supervisor does not kill its children.** The launcher survived as an orphan and the next
   supervisor started a second copy: 16 launches for 12 runs, ~10 GPU-hours. Every driver takes
   `exec 9>/tmp/.mapformer_<name>.lock; flock -n 9 || exit 0`.
+- **Killing a trainer orphans its `--data-workers` (2026-10-03).** 76 orphaned multiprocessing processes
+  (tracker + 3 workers per killed run, ~30 GB RSS) had piled up. After stopping runs, check `ps` for
+  python3 processes with parent 1 and kill them by PID (never `pkill -f`).
 - **Duplicate drivers (2026-09-20).** I started one batch three times; three drivers raced on the same
   seeds. Check `ps` for the driver by name before relaunching; kill extras by PID.
 - **A checkpoint can be stale and load cleanly.** A duplicate launch overwrote a finished best.pt with

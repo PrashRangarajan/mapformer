@@ -1,6 +1,6 @@
 ---
 name: project-rank-and-selective-rope
-description: It is the PER-HEAD rank of the content-to-angle map: rank 2 per head solves the T=1024 torus on 0-2/8 seeds, rank 3 on 6/8, rank 4 on 8/8; 2x the budget does not rescue rank 2. Sharing and W_out scale are unmeasured. A rank-2 solution exists and is held: a search deficit.
+description: It is the PER-HEAD rank of the content-to-angle map: rank 2 per head solves the T=1024 torus on 0-2/8 seeds, rank 3 on 6/8, rank 4 on 8/8; 2x the budget does not rescue rank 2. Rank = D is hard in 3D too; D+1 suffices on a large 3D torus, failures sit on wrap-only revisits. Sharing and W_out scale are unmeasured. A rank-2 solution exists and is held: a search deficit.
 metadata:
   type: project
 ---
@@ -16,7 +16,7 @@ from our r=2's base, T=1024, 900 ep) solves 6/8, acc 0.987 (per-head r=2 2/8, 0.
 the registered edge on every count (accuracy only, Holm just above .05, exactly 6/8). 4 - 3 UNMEASURED
 (+0.012). The two unsolved r=3 seeds sit in the non-cancelling basin (opposition 1.58 / 1.83): rank 3
 makes the basin rarer, it does not remove it. Favours "rank 2 is special" (= the torus's 2 DOF); the
-untested prediction is a 3D torus where rank 3 fails.
+3D test (top block) found rank 3 fails in 3D (1/8), as predicted.
 
 **NOT RESCUED BY 2x BUDGET, 2026-09-29 (`LOOP_RANK_E1800_P1_RESULTS.md`, H1 part 1).** From scratch at
 1800 epochs: shared r=2 0/8 (0.894 -> 0.908), shared r=4 7/8 (Fisher p 0.0014). Not "never": 5/8 rank-2

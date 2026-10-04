@@ -1,9 +1,16 @@
 ---
 name: project-mappope-asymmetry
-description: PoPE's encoding helps MapFormer wherever it helps at all (MapPoPE never detectably worse than MapWM); path integration added to PoPE hurts on clock-like tasks.
+description: PoPE's encoding helps the path row on Bach (MapPoPE never detectably worse than MapWM); "path integration added to PoPE hurts on clock tasks" is UNMEASURED after the code full-val rescore; the Dyck +0.050 is depth-OOD.
 metadata:
   type: project
 ---
+
+> **CORRECTED 2026-10-03.** (1) Code, rescored on the full val file (`CODE_FULLVAL_RESULTS.md`, n=3, t-test):
+> MapPoPE - MapWM -0.0054 (p 0.086) and MapPoPE - PoPE +0.0034 (p 0.19) are both UNMEASURED; the "detectable"
+> labels below were the house |t| > 2.8 rule on `best_val_bpc`. (2) The Dyck rows are the D4-trained ladder read at
+> D12, i.e. depth extrapolation; trained at D12 (`DYCK_MDEPTH_RESULTS.md`) MapWM and MapPoPE are both 0.996-1.000.
+> What survives: MapPoPE - MapWM on Bach -0.0165 (5/5, MDE 0.0111). The clock half (path integration hurts PoPE) is
+> unmeasured everywhere; do not claim it.
 
 Encoding effect on the index row (PoPE - RoPE) vs the path row (MapPoPE - MapWM), 2026-09-23:
 
@@ -23,6 +30,7 @@ MapPoPE > MapWM. MapPoPE - PoPE on clock tasks: code +0.0033 (detectable), Bach 
 improvement to how an angle is used; path integration is a specialist tool for where the angle comes
 from -- worth it only when position is genuinely signed (navigation, bracket depth).
 
-**How to apply:** adding PoPE's encoding to path integration is good (if a task needs MapFormer, use
-MapPoPE); adding path integration to PoPE on a clock-like task is not. Whether the path-row effect is
+**How to apply:** adding PoPE's encoding to path integration is good on Bach and never detectably bad
+(if a task needs MapFormer, use MapPoPE); on clock-like tasks path integration buys nothing measured
+(code position main +0.0056 bpc, t p 0.024, n=3, is a cost of path integration averaged over encodings). Whether the path-row effect is
 genuinely LARGER is the 2x2 interaction and is NOT established -- do not claim it.
