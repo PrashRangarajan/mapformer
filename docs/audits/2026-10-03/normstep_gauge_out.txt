@@ -1,0 +1,4 @@
+NormStep s0: shared obs step 0.0035 | object-identity spread 0.0007 | cancel raw N+S 0.007 W+E 0.008 | incl. 2 obs steps 0.001 0.001
+NormStep s3: shared obs step 0.0028 | object-identity spread 0.0009 | cancel raw N+S 0.006 W+E 0.006 | incl. 2 obs steps 0.001 0.001
+MapWM    s0: shared obs step 0.0012 | object-identity spread 0.0038 | cancel raw N+S 0.007 W+E 0.007 | incl. 2 obs steps 0.004 0.004
+MapWM    s3: shared obs step 0.0013 | object-identity spread 0.0041 | cancel raw N+S 0.007 W+E 0.007 | incl. 2 obs steps 0.004 0.004
