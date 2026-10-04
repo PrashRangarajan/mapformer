@@ -1,0 +1,12 @@
+== object-identity accuracy, test pool (mean +/- sd over 8 seeds); leak L = zeroed - intact (median) ==
+  MapWM    x1: 0.9890 +/- 0.0030 L +0.0098 | x2: 0.9513 +/- 0.0106 L +0.0448 | x4: 0.8623 +/- 0.0214 L +0.1319 | train x1 0.9897 | classes DESC(0.070) DESC(0.072) DESC(0.070) DESC(0.069) DESC(0.070) DESC(0.070) DESC(0.071) DESC(0.070)
+  ActOnly  x1: 0.9997 +/- 0.0006 L +0.0000 | x2: 0.9997 +/- 0.0006 L +0.0000 | x4: 0.9997 +/- 0.0006 L +0.0000 | train x1 1.0000 | classes SOLV(0.016) SOLV(0.016) SOLV(0.016) SOLV(0.015) SOLV(0.017) SOLV(0.016) SOLV(0.015) SOLV(0.015)
+  NormStep x1: 0.9998 +/- 0.0002 L -0.1861 | x2: 0.9998 +/- 0.0002 L -0.1861 | x4: 0.9998 +/- 0.0002 L -0.1861 | train x1 0.9999 | classes SOLV(0.019) SOLV(0.020) SOLV(0.019) SOLV(0.019) SOLV(0.020) SOLV(0.020) SOLV(0.020) SOLV(0.022)
+
+  ActOnly - MapWM: x1 +0.0107 (p 0.0002) | x2 +0.0484 (p 0.0002) | x4 +0.1374 (p 0.0002) | median L(x4) +0.0000
+  REGISTERED ActOnly: REMEDY
+
+  NormStep - MapWM: x1 +0.0107 (p 0.0002) | x2 +0.0484 (p 0.0002) | x4 +0.1374 (p 0.0002) | median L(x4) -0.1861
+  REGISTERED NormStep: REMEDY
+
+== void check: ActOnly max |L| 0.0000 (must be <= 0.002) -> OK

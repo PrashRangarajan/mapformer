@@ -1,0 +1,22 @@
+== (d) final-5% loss per arm (mean, per seed) ==
+  MapWM    0.0702  0.070 0.072 0.070 0.069 0.070 0.070 0.071 0.070
+  ActOnly  0.0157  0.016 0.016 0.016 0.015 0.017 0.016 0.015 0.015
+  NormStep 0.0198  0.019 0.020 0.019 0.019 0.020 0.020 0.020 0.022
+  r(final loss, x1 accuracy) over 24 runs: -0.944
+
+== (a) x1 contrast R - MapWM, with exact-t MDE (unpaired, pooled sd) ==
+  ActOnly - MapWM: +0.0107 (perm p 0.0002; MDE ~0.0035); expected if leak removed at no cost: +0.0107
+  NormStep - MapWM: +0.0107 (perm p 0.0002; MDE ~0.0035); expected if leak removed at no cost: +0.0107
+
+== (b) in-distribution leak L(x1): NormStep vs MapWM ==
+  MapWM    median +0.0098 mean +0.0107
+  ActOnly  median +0.0000 mean +0.0000
+  NormStep median -0.1861 mean -0.1966
+  NormStep - MapWM: -0.2073 perm p 0.0002
+
+== (c) step gain: rms(object step) / rms(action step), blank / action ==
+  MapWM    object 0.0044  blank 0.0039
+  ActOnly  object 0.0000  blank 0.0000
+  NormStep object 0.0041  blank 0.0042
+
+== (e) MapWM eval-only, object AND blank steps zeroed: 0.9937 (vs object-only zeroed 0.9998, intact 0.9890)
