@@ -51,6 +51,7 @@ for G in R2 R4; do
     --variants $ARMS --noises 0.0 --seeds $SEEDS --lengths 1024 --n-trials 100 --device cuda:0 \
     --out "$REPO/SCORE_RANK_RESCORE_$G.md" --title "SCORE_RANK dropout-scale re-score ($G)" >> "$LOG" 2>&1 || drv_fail "rescore $G"
 done
+drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before analysis"
 python3 -u -m mapformer.analyze_score_rank > "$REPO/SCORE_RANK_ANALYSIS.txt" 2>&1 || drv_fail analyze
 drv_done "$REPO/.score_rank_done" "$REPO/SCORE_RANK_R2.json" "$REPO/SCORE_RANK_R4.json" "$REPO/SCORE_RANK_STRATA_R2.json" \
   "$REPO/SCORE_RANK_STRATA_R4.json" "$REPO/SCORE_RANK_RESCORE_R2.json" "$REPO/SCORE_RANK_RESCORE_R4.json" \

@@ -1,7 +1,8 @@
 """MapPoPE-Pair at rank 4 with MATCHED initialisation (SCORE_RANK_PREREG.md).
 
-The four arms of SCORE_RANK form a 2 x 2 (score rule x per-head rank) in which every shared component starts from the
-same draws at a given seed:
+The four arms of SCORE_RANK form a 2 x 2 (score rule x per-head rank). At a given seed: token_emb, omega, out_norm /
+out_proj and the layer norms are shared by all four arms; action_to_lie within a rank; q/k/v/o and FFN within a score
+rule only (A2 = A4, P2 = P4; between score rules they are independent draws from the same distribution):
 
     Vanilla            base r2 (MapFormerWM)                         -- MapWM score, rank 2
     MapPoPE-Pair       base r2, then PoPE layers drawn                -- PoPE score,  rank 2  (model_pope_pair, unchanged)

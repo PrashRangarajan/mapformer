@@ -161,3 +161,30 @@ PoPE-Pair ~92 min at 2/GPU. n=8 for the rank-2 arms would be 32 runs, ~11.5 h; n
 ## Void conditions
 Positive control (branch 0); any of 40 checkpoints missing; md5 guard trips at launch or before eval (training code,
 models, wrappers, evaluators, rescore hook, analysis, stats_core); the pilot reproduction failing.
+
+
+## Amendment 1 (2026-10-05, after an independent code audit, BEFORE the batch was launched)
+The audit (read-only, blind to the PoPE pilot outcomes) re-verified: the init check (byte-identical, PASS on seeds
+10-17 and 100, positive controls fail), the recipe and eval flags against RANK_MI, the pilot reproduction (900/900
+per-epoch losses and final weights bitwise equal to runs/rank_mi/p0/Vanilla_s0), the wrappers (no variant-name
+branching; strict loads), the driver (40 runs, md5 at launch and before eval), every registered branch reachable on
+synthetic data, and the thresholds (premise fires at A2 <= 6/12; SOLVED fires at P2 >= 5/12 vs 0/12; Fisher power at a
+true P2 rate of 0.5 is 0.806). Changes:
+1. **BUG fixed (analysis).** SOLVED firing NEGATIVE with accuracy POSITIVE was labelled PARTIAL RESCUE; it is now
+   CONFLICT. SOLVED NEGATIVE with accuracy not firing was labelled NO RESCUE; it now reads POPE SCORE HURTS AT RANK 2
+   ("fires on SOLVED"). PARTIAL requires the other readout not to fire negative. Both cases re-tested.
+2. **Wording.** "Within a rank only the score rule differs" was overstated. At a seed, token_emb, omega, out_norm /
+   out_proj and the layer norms are shared by all four arms; action_to_lie within a rank; q/k/v/o and FFN within a score
+   rule only (A2 = A4, P2 = P4). The primary P2 - A2 is matched in data, map, embeddings, omega, readout and bottleneck,
+   NOT in the attention/FFN initial draws (independent draws from the same distribution). Docstrings fixed.
+3. **RESCUE is reported with P2's count and a 95% Clopper-Pearson interval**, never as "full": with P4 at 8/8, P2 7/12
+   reads RESCUE (P2 vs P4 Fisher p 0.055) and 6/12 PARTIAL (p 0.042), and at a true rate of 0.5, P(P2 >= 7/12) = 0.39.
+4. **Dropout-scale re-score**: if the accuracy readout's firing state differs between eval mode and the re-score, the
+   verdict line is FLAGGED; the verdict itself is unchanged.
+5. **SOLVED is measured on the training map**: the verdict line also prints the held-out accuracy of P2's SOLVED runs
+   against the retrace floor (0.843).
+6. The md5 guard is re-checked before the analysis step too.
+Noted, no change: the speed readout (S11) is descriptive and partly selected (it averages only runs that reach the
+threshold; a dip below 0.05 counts); "MapWM r4 solved 24/24 at this recipe" mixes shared and per-head r4 classes (the
+VOID threshold is still sound: P(A4 <= 5/8) = 0.038 at a true rate of 0.9); the registered accuracy test is unpaired
+although arms share data per seed (conservative).

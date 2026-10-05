@@ -2,7 +2,9 @@
 
 Torus, trained and tested at T=1024, 900 epochs (the RANK_MI recipe). Arms (2 x 2, matched initialisation,
 model_pope_pair_mi): A2 = MapWM r2 (`Vanilla`), P2 = MapPoPE-Pair r2, A4 = MapWM r4 (`Vanilla_r4mi`), P4 =
-MapPoPE-Pair_r4mi. 32 angles per head in every arm; within a rank only the score rule differs.
+MapPoPE-Pair_r4mi. 32 angles per head in every arm; within a rank the score rule differs, and so do the attention/FFN
+initial draws (independent draws from the same distribution; Amendment 1). Shared within a rank: data, map,
+embeddings, omega, readout, bottleneck.
 
 Inputs: SCORE_RANK_R2.json / _R4.json (eval_score_rank -> eval_noise_refine; keys '0.0|<arm>|<T>' -> [[seed, acc,
 nll], ...]), SCORE_RANK_RESCORE_R2.json / _R4.json (same, attention x 1/(1-p); secondary), SCORE_RANK_STRATA_R2.json /
@@ -86,11 +88,14 @@ def decide(sol, n, acc):
         return "RESCUE", q + [f"P2 not detectably below P4 on SOLVED (Fisher p {p_r4:.4f})"], det
     if fs == "POS" and as_ == "NEG":
         return "CONFLICT", q, det + " -- SOLVED rises, accuracy falls"
-    if fs == "POS" or as_ == "POS":
+    if fs == "NEG" and as_ == "POS":                                   # Amendment 1: was mislabelled PARTIAL
+        return "CONFLICT", q, det + " -- accuracy rises, SOLVED falls"
+    if (fs == "POS" and as_ != "NEG") or (as_ == "POS" and fs != "NEG"):
         which = "SOLVED only (accuracy does not fire)" if fs == "POS" else "accuracy only (SOLVED does not fire)"
         return "PARTIAL RESCUE", q + [which], det
-    if as_ == "NEG":
-        return "POPE SCORE HURTS AT RANK 2", q, det
+    if as_ == "NEG" or fs == "NEG":                                    # Amendment 1: SOLVED NEG also counts as HURTS
+        return "POPE SCORE HURTS AT RANK 2", q + [f"fires on {'accuracy' if as_ == 'NEG' else ''}"
+                                                  f"{' and ' if as_ == 'NEG' and fs == 'NEG' else ''}{'SOLVED' if fs == 'NEG' else ''}"], det
     return "NO RESCUE", q, det + f" -- accuracy unmeasured below MDE {max(mde2(acc[A2], acc[P2]), MIN_D):.4f}"
 
 
@@ -161,6 +166,19 @@ def main():
     acc1024 = {a: acc[(a, 1024)] for a in ARMS}
     br, qual, det = decide(sol, n, acc1024)
     print(f"\n== primary (P2 - A2, T=1024) ==\n  {det}")
+    from scipy.stats import beta as _beta                               # Amendment 1: P2's count with an interval
+    k2, n2 = sol[P2], n[P2]
+    lo_ = _beta.ppf(0.025, k2, n2 - k2 + 1) if k2 > 0 else 0.0; hi_ = _beta.ppf(0.975, k2 + 1, n2 - k2) if k2 < n2 else 1.0
+    qual = qual + [f"P2 solved {k2}/{n2} (95% Clopper-Pearson {lo_:.2f}-{hi_:.2f}); report the count, never 'full' rescue"]
+    so = [v for s_, v in zip(SEEDS[P2], acc1024[P2]) if cl[(P2, s_)]["registered"] == "SOLVED"]
+    qual = qual + [f"held-out accuracy of P2's SOLVED runs: " + (f"mean {np.mean(so):.4f}, min {np.min(so):.4f} (retrace floor 0.843)" if so else "none")]
+    if all(os.path.exists(f"{REPO}/SCORE_RANK_RESCORE_{r}.json") for r in ("R2", "R4")):
+        JR0 = json.load(open(f"{REPO}/SCORE_RANK_RESCORE_R2.json"))
+        rs2 = {a: np.array([r[1] for r in sorted(JR0[f"0.0|{a}|1024"])]) for a in (A2, P2)}
+        st_r = acc_state(rs2[A2], rs2[P2])[0]; st_e = acc_state(acc1024[A2], acc1024[P2])[0]
+        if st_r != st_e:
+            qual = qual + [f"FLAG: the accuracy readout's firing state differs under the dropout-scale re-score ({st_e} eval "
+                           f"mode vs {st_r} re-scored); verdict unchanged (Amendment 1)"]
     print(f"\n  REGISTERED: {br}" + "".join(f"\n    - {x}" for x in qual))
 
     print("\n== secondaries (no verdict) ==")
