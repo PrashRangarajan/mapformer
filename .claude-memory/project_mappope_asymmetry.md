@@ -16,7 +16,9 @@ metadata:
 the frequency count (64 per-element angles vs 32 per pair). On the paper torus (T=128, r2, n=16) the score rule carries
 the whole gain (+0.0243, p 0.012; 16/16 vs 10/16 SOLVED); the angle count adds +0.0002, CI [-0.0004, +0.0008]. It also
 does not explain MapPoPE's small rank-4 gain. Read MapPoPE vs MapWM as a score-rule comparison on this task. Open:
-does PoPE's score rescue rank 2 at T=1024 (MapWM r2 0/8 there)?
+does PoPE's score rescue rank 2 at T=1024? NO (`SCORE_RANK_RESULTS.md`, registered, 2026-10-05: 3/12 vs
+3/12 SOLVED; PoPE repairs short-gap revisits, +0.115, not wrap-only ones, -0.015). Rank fixes the periodic code, the
+score rule fixes the local map: two defects, two fixes.
 
 Encoding effect on the index row (PoPE - RoPE) vs the path row (MapPoPE - MapWM), 2026-09-23:
 

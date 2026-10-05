@@ -1,0 +1,45 @@
+== T=1024 held-out accuracy (registered; floors on this stream: blank 0.507, best n-gram 0.576, retrace 0.843) | SOLVED | [T=512, T=2048] ==
+  A2 MapWM r2        n=12 0.8476 +/- 0.1783  SOLVED 3/12  [0.8689, 0.7947]
+      s10:0.918/DESC(0.344) s11:1.000/SOLV(0.002) s12:0.834/STAL(0.508) s13:0.535/STAL(1.457) s14:0.970/DESC(0.151) s15:0.554/STAL(1.322) s16:0.941/DESC(0.203) s17:0.841/STAL(0.611) s18:1.000/SOLV(0.002) s19:0.997/SOLV(0.050) s20:0.966/DESC(0.194) s21:0.615/STAL(1.144)
+  P2 PoPE-score r2   n=12 0.9459 +/- 0.0399  SOLVED 3/12  [0.9780, 0.8915]
+      s10:0.926/DESC(0.230) s11:1.000/SOLV(0.003) s12:0.956/DESC(0.255) s13:0.921/DESC(0.263) s14:0.891/DESC(0.279) s15:1.000/SOLV(0.002) s16:0.926/DESC(0.340) s17:0.908/STAL(0.450) s18:1.000/SOLV(0.003) s19:0.898/STAL(0.441) s20:0.966/DESC(0.230) s21:0.958/DESC(0.208)
+  A4 MapWM r4        n= 8 0.9998 +/- 0.0005  SOLVED 8/8  [1.0000, 0.9861]
+      s10:1.000/SOLV(0.004) s11:1.000/SOLV(0.002) s12:0.999/SOLV(0.003) s13:1.000/SOLV(0.009) s14:1.000/SOLV(0.003) s15:1.000/SOLV(0.002) s16:1.000/SOLV(0.003) s17:1.000/SOLV(0.004)
+  P4 PoPE-score r4   n= 8 0.9995 +/- 0.0013  SOLVED 8/8  [1.0000, 0.9860]
+      s10:1.000/SOLV(0.009) s11:1.000/SOLV(0.002) s12:0.996/SOLV(0.003) s13:1.000/SOLV(0.009) s14:1.000/SOLV(0.003) s15:1.000/SOLV(0.009) s16:1.000/SOLV(0.003) s17:1.000/SOLV(0.009)
+
+== primary (P2 - A2, T=1024) ==
+  P2 - A2: SOLVED 3/12 vs 3/12 (Fisher p 1.0000, NONE); accuracy +0.0984 (perm p 0.0891, NONE); premise A4 vs A2 Fisher p 0.0014 (POS) -- accuracy unmeasured below MDE 0.1547
+
+  REGISTERED: NO RESCUE
+    - P2 solved 3/12 (95% Clopper-Pearson 0.05-0.57); report the count, never 'full' rescue
+    - held-out accuracy of P2's SOLVED runs: mean 1.0000, min 1.0000 (retrace floor 0.843)
+
+== secondaries (no verdict) ==
+  rank effect, MapWM (A4 - A2; replicates RANK_MI on fresh seeds) SOLVED 8/8 vs 3/12 Fisher p 0.0014 | acc +0.1522 perm p 0.0228 (POS)
+  rank effect, PoPE score (P4 - P2)                              SOLVED 8/8 vs 3/12 Fisher p 0.0014 | acc +0.0536 perm p 0.0030 (POS)
+  score rule at rank 4 (P4 - A4)                                 SOLVED 8/8 vs 8/8 Fisher p 1.0000 | acc -0.0003 perm p 0.8051 (NONE)
+  P2 - A2 at T=512 (rule 10: shorter than training length): +0.1091 perm p 0.0526
+  P2 - A2 at T=2048 (rule 10: past training length): +0.0967 perm p 0.0764   floors blank 0.508, best n-gram 0.566, retrace 0.790
+  P2 - A2 revisit NLL at T=1024: -0.2778 perm p 0.1037 (lower is better)
+  dropout-scale re-score (attention x 1/(1-p)), T=1024: A2 0.8479  P2 0.9459  A4 0.9998  P4 0.9996; P2 - A2 +0.0980 perm p 0.0908 (NONE)
+  stratum wrap            (floor 0.511): A2 0.647  P2 0.632  A4 0.998  P4 0.996; P2 - A2 -0.0148 perm p 0.8400
+  stratum plain_lag>=128  (floor 0.509): A2 0.749  P2 0.792  A4 1.000  P4 0.999; P2 - A2 +0.0428 perm p 0.6161
+  stratum plain_lag<128   (floor 0.507): A2 0.877  P2 0.992  A4 1.000  P4 1.000; P2 - A2 +0.1151 perm p 0.0356
+  r(final-5% loss, acc@1024) over 40 runs: -0.989; within arm: A2 -0.996  P2 -0.894  A4 +0.201  P4 +0.347
+  epoch at which the 10-epoch running loss first falls below 0.05 (runs that get there; speed, descriptive): A2 median 505 [414-837] n=3  P2 median 423 [384-448] n=3  A4 median 523 [468-579] n=8  P4 median 532 [495-567] n=8
+  run classes: A2 SOLVED:3,STALLED:5,DESCENDING:4,RISING:0  P2 SOLVED:3,STALLED:2,DESCENDING:7,RISING:0  A4 SOLVED:8,STALLED:0,DESCENDING:0,RISING:0  P4 SOLVED:8,STALLED:0,DESCENDING:0,RISING:0
+
+== basins (T1; declared secondary). Per run: basin of its best head, + SOLVED / - not ==
+  A2 MapWM r2        CLO- CLE+ CLO- CLO- CLO- CLO- CLO- CLO- CLE+ CLO+ CLO- CLO-
+  P2 PoPE-score r2   CLO- CLE+ CLO- COL- CLO- CLE+ COL- CLO- CLE+ CLO- CLO- CLO-
+  A4 MapWM r4        CLE+ CLE+ CLE+ CLE+ CLE+ CLE+ CLE+ CLE+
+  P4 PoPE-score r4   CLE+ CLE+ CLE+ CLE+ CLE+ CLE+ CLE+ CLE+
+  weighted: A2 CLEAN/S 2 CLOCK/S 1 CLOCK/U 9; P2 CLEAN/S 3 COLLAPSE/U 2 CLOCK/U 7; A4 CLEAN/S 8; P4 CLEAN/S 8
+    'SOLVED iff CLEAN' holds on: A2 11/12  P2 12/12  A4 8/8  P4 8/8
+    CLOCK runs P2 7/12 vs A2 10/12 (Fisher p 0.3707)
+  unweighted: A2 CLEAN/S 2 CLOCK/S 1 CLOCK/U 9; P2 CLEAN/S 3 CLOCK/U 9; A4 CLEAN/S 8; P4 CLEAN/S 8
+    'SOLVED iff CLEAN' holds on: A2 11/12  P2 12/12  A4 8/8  P4 8/8
+    CLOCK runs P2 9/12 vs A2 10/12 (Fisher p 1.0000)
+
+== pilot reproduction (train_score_rank Vanilla s0 vs stored rank_mi): max |per-epoch loss diff| 0.00e+00 over 900 epochs

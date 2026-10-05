@@ -9,14 +9,13 @@ Updated 2026-10-04 00:45. Goes stale fast: check `git log`, `.done` markers and 
 New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs/SESSION_2026-09-27_to_10-03.md`.
 
 ## Running
-- SCORE_RANK (`SCORE_RANK_PREREG.md` + Amendment 1, committed d3ebe91 before launch): does PoPE's score rule rescue
-  per-head rank 2 at T=1024 (MapWM r2 0/8 in RANK_MI)? 2x2 score x rank, 32 angles, matched init; Vanilla /
-  MapPoPE-Pair at r2 x seeds 10-21, Vanilla_r4mi / MapPoPE-Pair_r4mi at r4 x 10-17; 40 runs, MAXPG 2, launched
-  2026-10-05 ~01:13, ETA ~14 h (PoPE ~30% slower). Driver writes SCORE_RANK_*.json, SCORE_RANK_ANALYSIS.txt, marker
-  `.score_rank_done`. Pilot (seeds 100/101, 40 ep) already showed PoPE r2 solving -- disclosed in the prereg.
-  Then: results file; head-class + centring census on its checkpoints (docs/audits/2026-10-05/neuro_rank2_mech.py).
+Nothing. GPUs idle (2026-10-05 14:40).
 
 ## Last results (newest first; one line each, numbers in the file)
+- SCORE_RANK (`SCORE_RANK_RESULTS.md`, REG): NO RESCUE -- PoPE's score leaves rank 2 at 3/12 SOLVED at T=1024 (MapWM
+  3/12; r4 8/8 both); it repairs short-gap revisits (+0.115, p 0.036), not wrap-only ones. T1 'SOLVED iff clean' 39/40.
+- Post hoc step tables: Indirect Indexing (letters = counter, digits step by value), Bach (pure clock), code (clock on
+  whitespace/brackets), Dyck (push/pop; MapPoPE a depth code, MapWM type axes) -- `docs/audits/2026-10-05/*step_table*`.
 - Neuro review + design (`docs/theory/2026-10-05/neuro_positional.md`, `neuro_design.md`, ANALYSIS): MapPoPE-Pair tops a
   brain-constraint scorecard; remap probe (post hoc): MapEM pure gain, MapPoPE gain + width (stronger = narrower), MapWM
   gain + skew; rank-2 rescue mechanism (post hoc): PoPE tolerates defective codes, MapWM leans on a content phase offset.

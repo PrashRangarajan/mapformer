@@ -132,3 +132,7 @@ context, the ordering INVERTS -- MapWM r=1 is the best arm at every position buc
 torus needs a well-conditioned 2-D displacement basis, serialised music has no displacement to
 represent and a wider bottleneck mainly lets more content drive the phase. Unresolved.
 
+**2026-10-05 (`SCORE_RANK_RESULTS.md`, registered NO RESCUE):** PoPE's score does not rescue rank 2 at T=1024 (3/12 vs
+3/12 SOLVED; r4 8/8 under both score rules). PoPE fixes short-gap revisits (+0.115) but not wrap-only revisits (-0.015):
+the rank-2 defect is in the periodic code wrap-around needs. 'SOLVED iff a clean head' (theory T1) held on 39/40 runs as a
+declared secondary.
