@@ -9,13 +9,11 @@ Updated 2026-10-04 00:45. Goes stale fast: check `git log`, `.done` markers and 
 New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs/SESSION_2026-09-27_to_10-03.md`.
 
 ## Running
-- MapPoPE pairwise frequencies (`MAPPOPE_PAIR_PREREG.md` + Amendment 1, committed 49fb251 before launch): separates
-  MapPoPE's score rule from its frequency count (64 vs 32 angles) on the paper torus T=128. 72 runs (MapWM / MapPoPE-Pair
-  / MapPoPE-Flat at r2 x seeds 10-25; r4 versions x 10-17), `run_mappope_pair.sh` launched 2026-10-04 21:27, MAXPG 4,
-  ETA ~01:30. Driver writes MAPPOPE_PAIR_R2/R4.json and MAPPOPE_PAIR_ANALYSIS.txt, marker `.mappope_pair_done`.
-  Verification agent done (Amendment 1). Then: MAPPOPE_PAIR_RESULTS.md, memory/report.
+Nothing. GPUs idle (2026-10-05 00:00).
 
 ## Last results (newest first; one line each, numbers in the file)
+- MapPoPE separated (`MAPPOPE_PAIR_RESULTS.md`, REG): the score rule carries the gain (+0.024, 16/16 vs 10/16 SOLVED at
+  r2); the doubled angle count adds +0.0002, CI [-0.0004, +0.0008]. Open: does PoPE's score rescue rank 2 at T=1024?
 - NormStep on words (`TW_NORMSTEP_RESULTS.md`, REG): accuracy no detectable difference (+0.006, MDE 0.096); predicted
   word-count clock fired but tiny (+0.057 rad optional-word drift, p 0.027, 0/64 channels), not from the LN bias.
   Post hoc: DirOnly oracle capped at 0.972 by aside objects (100% of its errors); eval mode under-reports runs below

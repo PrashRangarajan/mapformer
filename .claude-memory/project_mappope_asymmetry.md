@@ -12,6 +12,12 @@ metadata:
 > What survives: MapPoPE - MapWM on Bach -0.0165 (5/5, MDE 0.0111). The clock half (path integration hurts PoPE) is
 > unmeasured everywhere; do not claim it.
 
+**SEPARATED 2026-10-05 (`MAPPOPE_PAIR_RESULTS.md`, registered).** Our MapPoPE differed from MapWM in the score rule AND
+the frequency count (64 per-element angles vs 32 per pair). On the paper torus (T=128, r2, n=16) the score rule carries
+the whole gain (+0.0243, p 0.012; 16/16 vs 10/16 SOLVED); the angle count adds +0.0002, CI [-0.0004, +0.0008]. It also
+does not explain MapPoPE's small rank-4 gain. Read MapPoPE vs MapWM as a score-rule comparison on this task. Open:
+does PoPE's score rescue rank 2 at T=1024 (MapWM r2 0/8 there)?
+
 Encoding effect on the index row (PoPE - RoPE) vs the path row (MapPoPE - MapWM), 2026-09-23:
 
 | task | PoPE - RoPE | MapPoPE - MapWM |

@@ -223,7 +223,7 @@ footer{
     <div><dt>Tasks</dt><dd>Dyck-2, real Python, enwik8, Indirect Indexing, Bach Chorales; torus navigation, also told in words</dd></div>
     <div><dt>Standard</dt><dd>3&ndash;8 seeds, all arms in one batch; newer results tested with exact permutation and Fisher tests</dd></div>
     <div><dt>Every result</dt><dd>reported beside the score of a model with no memory</dd></div>
-    <div><dt>As of</dt><dd>4 Oct 2026</dd></div>
+    <div><dt>As of</dt><dd>5 Oct 2026</dd></div>
   </dl>
 </header>
 
@@ -366,6 +366,7 @@ footer{
   <ul class="findings">
     <li><span class="chip det">Detectable</span><strong>Adding PoPE&rsquo;s encoding to path integration is a good idea at the training length.</strong> Detectably better on two tasks (Bach, and Dyck at one and two layers), the same direction on code, and never detectably worse on any. Beyond the training context it can collapse &mdash; on Bach MapPoPE scores 4.616 against MapWM&rsquo;s 1.397 &mdash; unless the 48-parameter fix above is added (0.622). If a task calls for MapFormer, use MapPoPE with the fix.</li>
     <li><span class="chip warn">Directional</span><strong>Adding path integration to PoPE is not, on clock-like tasks.</strong> Where position only counts tokens, plain PoPE scores better on every seed (Bach 5/5, code 3/3), but neither gap is statistically established. The one such code contrast that passes a t-test is that path integration costs overall at the training length: +0.0056 bits per byte, p = 0.024 &mdash; at three seeds, where no distribution-free test can reach p &lt; 0.05, so likely rather than established. A learned counter is slightly worse than the exact one the index provides for free.</li>
+    <li><span class="chip det">16/16 vs 10/16</span><strong>What MapPoPE gains comes from PoPE&rsquo;s way of scoring, not from its extra frequencies.</strong> Our MapPoPE changed two things at once: how attention scores are formed (content sets only how much each frequency counts; position alone sets the phase) and how many frequencies each head has (PoPE&rsquo;s 64 instead of MapFormer&rsquo;s 32). A version with PoPE&rsquo;s scoring but MapFormer&rsquo;s 32 frequencies, tested on 16 fresh seeds of the paper&rsquo;s navigation task, gets the whole gain: +0.024 over MapFormer (p = 0.012), solving 16 of 16 seeds against 10 of 16. Doubling the frequencies adds +0.0002, pinned between &minus;0.0004 and +0.0008. PoPE&rsquo;s scoring also lets the low-rank bottleneck work here, which raises the question of whether it rescues rank 2 on the long walks where MapFormer fails; that is untested.</li>
     <li><span class="chip ok">In practice</span><strong>The two ideas are not symmetric partners.</strong> PoPE&rsquo;s encoding reliably helps a path-integrated model where it helps at all, but on its own it is not a general improvement: it wins on music, is small on Dyck, ties RoPE on code (and is worse once both have the distance fix, p = 0.002 at three seeds), and loses on the navigation index model. Path integration is a specialist tool for <em>where</em> the angle comes from &mdash; worth it when position is genuinely signed, as in navigation and bracket structure, and not otherwise.</li>
   </ul>
 </section>

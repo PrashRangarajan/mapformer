@@ -1,0 +1,29 @@
+== T=128 held-out accuracy (registered; floors: best n-gram 0.598, always-blank 0.507) | SOLVED | [T=512, T=1024: no verdict] ==
+  MapWM r2 (32 angles)     n=16 0.9752 +/- 0.0393  10/16  nll 0.0564  [0.9362, 0.8314]  0.907 0.959 0.971 0.998 1.000 0.925 0.999 0.969 1.000 1.000 1.000 1.000 1.000 0.876 1.000 1.000
+  MapPoPE r2, 32 angles    n=16 0.9995 +/- 0.0010  16/16  nll 0.0014  [0.9768, 0.9303]  0.998 1.000 0.999 0.997 1.000 1.000 1.000 1.000 1.000 1.000 1.000 0.997 1.000 1.000 1.000 1.000
+  MapPoPE r2, 64 angles    n=16 0.9997 +/- 0.0008  16/16  nll 0.0008  [0.9796, 0.9327]  1.000 0.999 1.000 1.000 0.997 1.000 1.000 1.000 1.000 1.000 1.000 0.999 1.000 1.000 1.000 0.999
+  MapWM r4 (32)            n= 8 1.0000 +/- 0.0000  8/8  nll 0.0000  [0.9849, 0.9238]  1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000
+  MapPoPE r4, 32           n= 8 1.0000 +/- 0.0000  8/8  nll 0.0000  [0.9863, 0.9507]  1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000
+  MapPoPE r4, 64           n= 8 1.0000 +/- 0.0000  8/8  nll 0.0000  [0.9908, 0.9592]  1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000
+
+== primary (rank 2, T=128, n=16 per arm) ==
+  TOTAL   MapPoPE 64 - MapWM (paper2x2 replication) +0.0244  perm p 0.0090  SOLVED 16/16 vs 10/16 Fisher p 0.0177  -> FIRES (+)
+  SCORE   MapPoPE 32 - MapWM (score rule only)   +0.0243  perm p 0.0120  SOLVED 16/16 vs 10/16 Fisher p 0.0177  -> FIRES (+)
+  COUNT   MapPoPE 64 - MapPoPE 32 (frequency count only) +0.0002  perm p 0.6015  SOLVED 16/16 vs 16/16 Fisher p 1.0000  -> no (unmeasured below 0.0100)
+
+  REGISTERED: SCORE RULE (the frequency count does not detectably add)
+
+== secondaries (no verdict) ==
+  rank 4: MapPoPE 32 - MapWM                     +0.0000  perm p 1.0000  SOLVED 8/8 vs 8/8 Fisher p 1.0000  -> CEILING (both arms >= 0.999 on every seed: undetermined)
+  rank 4: MapPoPE 64 - MapPoPE 32                +0.0000  perm p 1.0000  SOLVED 8/8 vs 8/8 Fisher p 1.0000  -> CEILING (both arms >= 0.999 on every seed: undetermined)
+  rank-4 upgrade within MapWM      (r2 seeds 10-25 vs r4 seeds 10-17): T=128 +0.0248; T=1024 (OOD, rule 10) +0.0924 (perm p 0.0257)
+  rank-4 upgrade within MapPoPE 32 (r2 seeds 10-25 vs r4 seeds 10-17): T=128 +0.0005; T=1024 (OOD, rule 10) +0.0204 (perm p 0.1377)
+  rank-4 upgrade within MapPoPE 64 (r2 seeds 10-25 vs r4 seeds 10-17): T=128 +0.0003; T=1024 (OOD, rule 10) +0.0265 (perm p 0.0407)
+  T=512 (OOD) SCORE: +0.0406 (perm p 0.0025)
+  T=512 (OOD) COUNT: +0.0028 (perm p 0.5957)
+  T=1024 (OOD) SCORE: +0.0988 (perm p 0.0013)
+  T=1024 (OOD) COUNT: +0.0025 (perm p 0.8190)
+  T=128 revisit NLL TOTAL: -0.0556 (perm p 0.0077; lower is better)
+  T=128 revisit NLL SCORE: -0.0550 (perm p 0.0123; lower is better)
+  T=128 revisit NLL COUNT: -0.0006 (perm p 0.4683; lower is better)
+  r(final loss, acc@128) over 72 runs: -0.963
