@@ -1,0 +1,121 @@
+== part 1: decision functions ==
+ granularity_state(ref = P, x = coarser gain)
+  [PASS] identical arms                                                 -> AS GOOD
+  [PASS] both at 1.000 (ceiling)                                        -> AS GOOD
+      detail: d +0.0000 (perm p 1.0000, CEIL); SOLVED 16/16 vs 16/16 (Fisher p 1.0000, NONE); non-inferiority at -0.01: one-sided p 0.0000 -- both arms >= 0.999 on every seed (at ceiling)
+  [PASS] x 10/16 solved, failures ~0.85 (accuracy + SOLVED)             -> WORSE
+      detail: d -0.0501 (perm p 0.0149, NEG); SOLVED 10/16 vs 16/16 (Fisher p 0.0177, NEG); non-inferiority at -0.01: one-sided p 0.9882 -- fires on accuracy and SOLVED
+  [PASS] x uniformly 0.012 lower, all solved (accuracy only)            -> WORSE
+  [PASS] x accuracy equal, SOLVED 10/16 (SOLVED only)                   -> WORSE
+  [PASS] reference falters, x solid                                     -> BETTER
+  [PASS] x lower on accuracy and SOLVED (both NEG)                      -> WORSE
+  [PASS] one x seed at 0.93 (CI too wide)                               -> UNDETERMINED
+      detail: d -0.0043 (perm p 0.5349, NONE); SOLVED 15/16 vs 16/16 (Fisher p 1.0000, NONE); non-inferiority at -0.01: one-sided p 0.0801 -- accuracy not shown within 0.01
+  [PASS] accuracy equal, SOLVED 14/16 (slack rule)                      -> UNDETERMINED
+      detail: d +0.0000 (perm p 1.0000, NONE); SOLVED 14/16 vs 16/16 (Fisher p 0.4839, NONE); non-inferiority at -0.01: one-sided p 0.0000 -- SOLVED more than 1 below the reference
+  [PASS] accuracy NEG while SOLVED POS                                  -> CONFLICT
+      detail: d -0.0424 (perm p 0.0000, NEG); SOLVED 16/16 vs 4/16 (Fisher p 0.0000, POS); non-inferiority at -0.01: one-sided p 1.0000
+ granularity_verdict (all 25 label pairs)
+    S AS GOOD      M AS GOOD      -> SCALAR GAIN SUFFICES (per-module also as good): per-frequency freedom not needed on this task
+    S AS GOOD      M BETTER       -> SCALAR GAIN SUFFICES (per-module also as good): per-frequency freedom not needed on this task
+    S AS GOOD      M WORSE        -> NON-MONOTONE: scalar as good, per-module WORSE (anomalous; the module arm's cost is not granularity)
+    S AS GOOD      M UNDETERMINED -> SCALAR GAIN SUFFICES (per-module undetermined): per-frequency freedom not needed on this task
+    S AS GOOD      M CONFLICT     -> CONFLICT (scalar AS GOOD, per-module CONFLICT): accuracy and SOLVED disagree; reported as it falls
+    S BETTER       M AS GOOD      -> SCALAR GAIN SUFFICES (per-module also as good): per-frequency freedom not needed on this task
+    S BETTER       M BETTER       -> SCALAR GAIN SUFFICES (per-module also as good): per-frequency freedom not needed on this task
+    S BETTER       M WORSE        -> NON-MONOTONE: scalar as good, per-module WORSE (anomalous; the module arm's cost is not granularity)
+    S BETTER       M UNDETERMINED -> SCALAR GAIN SUFFICES (per-module undetermined): per-frequency freedom not needed on this task
+    S BETTER       M CONFLICT     -> CONFLICT (scalar BETTER, per-module CONFLICT): accuracy and SOLVED disagree; reported as it falls
+    S WORSE        M AS GOOD      -> MODULE GAIN SUFFICES, SCALAR DOES NOT: content must choose among scale bands, not among single frequencies
+    S WORSE        M BETTER       -> MODULE GAIN SUFFICES, SCALAR DOES NOT: content must choose among scale bands, not among single frequencies
+    S WORSE        M WORSE        -> PER-FREQUENCY GAIN NEEDED: both coarser non-negative gains cost against MapPoPE-Pair
+    S WORSE        M UNDETERMINED -> SCALAR COSTS; per-module undetermined
+    S WORSE        M CONFLICT     -> CONFLICT (scalar WORSE, per-module CONFLICT): accuracy and SOLVED disagree; reported as it falls
+    S UNDETERMINED M AS GOOD      -> MODULE GAIN SUFFICES; scalar undetermined
+    S UNDETERMINED M BETTER       -> MODULE GAIN SUFFICES; scalar undetermined
+    S UNDETERMINED M WORSE        -> MODULE COSTS; scalar undetermined (non-monotone if the scalar is later shown as good)
+    S UNDETERMINED M UNDETERMINED -> UNDETERMINED: neither coarser gain shown as good or worse
+    S UNDETERMINED M CONFLICT     -> CONFLICT (scalar UNDETERMINED, per-module CONFLICT): accuracy and SOLVED disagree; reported as it falls
+    S CONFLICT     M AS GOOD      -> CONFLICT (scalar CONFLICT, per-module AS GOOD): accuracy and SOLVED disagree; reported as it falls
+    S CONFLICT     M BETTER       -> CONFLICT (scalar CONFLICT, per-module BETTER): accuracy and SOLVED disagree; reported as it falls
+    S CONFLICT     M WORSE        -> CONFLICT (scalar CONFLICT, per-module WORSE): accuracy and SOLVED disagree; reported as it falls
+    S CONFLICT     M UNDETERMINED -> CONFLICT (scalar CONFLICT, per-module UNDETERMINED): accuracy and SOLVED disagree; reported as it falls
+    S CONFLICT     M CONFLICT     -> CONFLICT (scalar CONFLICT, per-module CONFLICT): accuracy and SOLVED disagree; reported as it falls
+ sign_state(E = MapEM, N = softplus)
+  [PASS] both at ceiling                                                -> CEILING
+  [PASS] N solid, E bimodal                                             -> NON-NEGATIVE BETTER (MapEM's signed gain costs)
+      detail: d +0.0701 (perm p 0.0000, POS); SOLVED 16/16 vs 10/16 (Fisher p 0.0177, POS) -- fires on accuracy and SOLVED
+  [PASS] N bimodal, E solid                                             -> NON-NEGATIVE WORSE (the sign freedom helps)
+  [PASS] same distribution                                              -> NO DIFFERENCE DETECTED
+      detail: d +0.0000 (perm p 1.0000, NONE); SOLVED 10/16 vs 10/16 (Fisher p 1.0000, NONE) -- accuracy unmeasured below MDE 0.1036
+  [PASS] accuracy POS while SOLVED NEG                                  -> CONFLICT
+  [PASS] SOLVED only, negative                                          -> NON-NEGATIVE WORSE (the sign freedom helps)
+ headroom_state(W, P)
+  [PASS] MapWM deficit replicates                                       -> OK
+  [PASS] MapWM at P's level                                             -> NO HEADROOM
+
+== part 2: main() end to end on synthetic checkpoints (untrained weights, fake losses, fake eval) ==
+== T=128 held-out accuracy (registered; floors best n-gram 0.598, always-blank 0.507 (docs/WHAT_WHERE_CHECKS.md)) | SOLVED | NLL | [T=512, T=1024: no verdict] ==
+  W MapWM r2                           0.9689 +/- 0.0044  SOLVED 10/20  nll 0.0533  [0.9393, 0.8902]
+      s26:0.979/SOLV s27:0.967/SOLV s28:0.970/SOLV s29:0.971/SOLV s30:0.968/SOLV s31:0.964/SOLV s32:0.973/SOLV s33:0.966/SOLV s34:0.969/SOLV s35:0.968/SOLV s36:0.971/STAL s37:0.971/STAL s38:0.963/STAL s39:0.973/STAL s40:0.969/STAL s41:0.974/STAL s42:0.966/STAL s43:0.959/STAL s44:0.967/STAL s45:0.970/STAL
+  P MapPoPE-Pair (per-frequency gain)  0.9979 +/- 0.0029  SOLVED 16/20  nll 0.0510  [0.9717, 0.9193]
+      s26:0.995/SOLV s27:0.998/SOLV s28:1.000/SOLV s29:1.000/SOLV s30:1.000/SOLV s31:0.994/SOLV s32:1.000/SOLV s33:1.000/SOLV s34:1.000/SOLV s35:1.000/SOLV s36:0.993/SOLV s37:0.996/SOLV s38:1.000/SOLV s39:1.000/SOLV s40:0.995/SOLV s41:1.000/SOLV s42:0.996/STAL s43:0.992/STAL s44:1.000/STAL s45:1.000/STAL
+  S scalar gain                        0.9969 +/- 0.0036  SOLVED 16/20  nll 0.0529  [0.9689, 0.9199]
+      s26:0.999/SOLV s27:0.996/SOLV s28:0.992/SOLV s29:0.999/SOLV s30:0.989/SOLV s31:1.000/SOLV s32:0.998/SOLV s33:0.992/SOLV s34:0.992/SOLV s35:1.000/SOLV s36:1.000/SOLV s37:0.994/SOLV s38:0.992/SOLV s39:1.000/SOLV s40:0.996/SOLV s41:1.000/SOLV s42:1.000/STAL s43:0.999/STAL s44:1.000/STAL s45:0.998/STAL
+  M per-module gain (4)                0.9964 +/- 0.0026  SOLVED 15/20  nll 0.0421  [0.9679, 0.9152]
+      s26:0.998/SOLV s27:0.998/SOLV s28:1.000/SOLV s29:0.997/SOLV s30:0.993/SOLV s31:0.994/SOLV s32:0.994/SOLV s33:0.995/SOLV s34:0.995/SOLV s35:0.996/SOLV s36:0.991/SOLV s37:1.000/SOLV s38:1.000/SOLV s39:0.994/SOLV s40:0.996/SOLV s41:0.995/STAL s42:1.000/STAL s43:0.996/STAL s44:0.996/STAL s45:0.999/STAL
+  E MapEM (signed scalar)              0.9301 +/- 0.0057  SOLVED 10/20  nll 0.0499  [0.8999, 0.8506]
+      s26:0.925/SOLV s27:0.937/SOLV s28:0.923/SOLV s29:0.924/SOLV s30:0.926/SOLV s31:0.944/SOLV s32:0.933/SOLV s33:0.927/SOLV s34:0.931/SOLV s35:0.932/SOLV s36:0.932/STAL s37:0.926/STAL s38:0.927/STAL s39:0.930/STAL s40:0.935/STAL s41:0.922/STAL s42:0.935/STAL s43:0.923/STAL s44:0.934/STAL s45:0.936/STAL
+  N MapEM, softplus(A_X)               0.9905 +/- 0.0056  SOLVED 15/20  nll 0.0397  [0.9597, 0.9097]
+      s26:0.999/SOLV s27:0.987/SOLV s28:0.996/SOLV s29:0.992/SOLV s30:0.996/SOLV s31:0.991/SOLV s32:0.988/SOLV s33:0.991/SOLV s34:0.990/SOLV s35:0.978/SOLV s36:0.985/SOLV s37:0.996/SOLV s38:0.991/SOLV s39:0.990/SOLV s40:0.993/SOLV s41:0.997/STAL s42:0.978/STAL s43:0.989/STAL s44:0.994/STAL s45:0.990/STAL
+
+== primary (a) GRANULARITY: coarser non-negative gains against MapPoPE-Pair, T=128, n=20 per arm ==
+  headroom control (OK): P - W: d +0.0290 (perm p 0.0000, POS); SOLVED 16/20 vs 10/20 (Fisher p 0.0958, NONE)
+  S scalar  vs P: AS GOOD      d -0.0010 (perm p 0.3166, NONE); SOLVED 16/20 vs 16/20 (Fisher p 1.0000, NONE); non-inferiority at -0.01: one-sided p 0.0000
+  M module  vs P: AS GOOD      d -0.0015 (perm p 0.0931, NONE); SOLVED 15/20 vs 16/20 (Fisher p 1.0000, NONE); non-inferiority at -0.01: one-sided p 0.0000
+  S - P 90% permutation CI (two-sided; its lower end is the one-sided 95% bound): [-0.0025, +0.0005]
+  M - P 90% permutation CI (two-sided; its lower end is the one-sided 95% bound): [-0.0025, -0.0005]
+
+  REGISTERED (a): SCALAR GAIN SUFFICES (per-module also as good): per-frequency freedom not needed on this task
+
+== primary (b) SIGN: MapEM with softplus(A_X) vs MapEM, T=128, n=20 per arm (matched initial weights) ==
+  N vs E: d +0.0604 (perm p 0.0000, POS); SOLVED 15/20 vs 10/20 (Fisher p 0.1908, NONE) -- fires on accuracy
+  N - E 95% permutation CI: [+0.0569, +0.0639]
+
+  REGISTERED (b): NON-NEGATIVE BETTER (MapEM's signed gain costs)
+
+== secondaries (no verdict) ==
+  SCORE replication P - W (MAPPOPE_PAIR +0.0243, 16/16 vs 10/16)                   +0.0290 perm p 0.0000 (POS); SOLVED 16 vs 10 Fisher p 0.0958
+  bundle S - E (non-neg factorised scalar, delta 0 vs MapEM)                       +0.0667 perm p 0.0000 (POS); SOLVED 16 vs 10 Fisher p 0.0958
+  content form S - N (factorised gain, delta 0 vs softplus(q.k), learned offsets)  +0.0064 perm p 0.0001 (NONE); SOLVED 16 vs 15 Fisher p 1.0000
+  module vs scalar M - S                                                           -0.0004 perm p 0.6509 (NONE); SOLVED 15 vs 16 Fisher p 1.0000
+  MapEM vs MapWM E - W                                                             -0.0387 perm p 0.0000 (NEG); SOLVED 10 vs 10 Fisher p 1.0000
+  N - P                                                                            -0.0074 perm p 0.0000 (NONE); SOLVED 15 vs 16 Fisher p 1.0000
+  T=512 (OOD, rule 10) S - P: -0.0029 (perm p 0.0731)
+  T=512 (OOD, rule 10) M - P: -0.0038 (perm p 0.0144)
+  T=512 (OOD, rule 10) N - E: +0.0598 (perm p 0.0000)
+  T=512 (OOD, rule 10) P - W: +0.0324 (perm p 0.0000)
+  T=1024 (OOD, rule 10) S - P: +0.0006 (perm p 0.6524)
+  T=1024 (OOD, rule 10) M - P: -0.0040 (perm p 0.0077)
+  T=1024 (OOD, rule 10) N - E: +0.0592 (perm p 0.0000)
+  T=1024 (OOD, rule 10) P - W: +0.0291 (perm p 0.0000)
+  T=128 revisit NLL S - P: +0.0019 (perm p 0.7513; lower is better)
+  T=128 revisit NLL M - P: -0.0089 (perm p 0.1294; lower is better)
+  T=128 revisit NLL N - E: -0.0102 (perm p 0.1356; lower is better)
+  r(final-5% loss, acc@128) over 120 runs: -0.247; within arm: Vanill -0.128  MapPoP -0.188  GainSc +0.334  GainMo +0.151  Vanill -0.006  Vanill -0.093
+  run classes: Vanilla: SOLVED:10,STALLED:10,DESCENDING:0,RISING:0  MapPoPE-Pair: SOLVED:16,STALLED:4,DESCENDING:0,RISING:0  GainScalar: SOLVED:16,STALLED:4,DESCENDING:0,RISING:0  GainMod4: SOLVED:15,STALLED:5,DESCENDING:0,RISING:0  VanillaEM: SOLVED:10,STALLED:10,DESCENDING:0,RISING:0  VanillaEM_NonNeg: SOLVED:15,STALLED:5,DESCENDING:0,RISING:0
+  epoch at which the 10-epoch running loss first falls below 0.05 (descriptive): Vanilla median 250 n=10  MapPoPE-Pair median 250 n=16  GainScalar median 250 n=16  GainMod4 median 250 n=15  VanillaEM median 250 n=10  VanillaEM_NonNeg median 250 n=15
+
+== basins (declared secondary; thresholds of analyze_score_rank, set at T=1024, unchanged). + SOLVED / - not ==
+  Vanilla           CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO- CLO- CLO- CLO- CLO- CLO- CLO- CLO- CLO- CLO-
+  MapPoPE-Pair      CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO- CLO- CLO- CLO-
+  GainScalar        CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO- CLO- CLO- CLO-
+  GainMod4          CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO- CLO- CLO- CLO- CLO-
+  VanillaEM         CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO- CLO- CLO- CLO- CLO- CLO- CLO- CLO- CLO- CLO-
+  VanillaEM_NonNeg  CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO+ CLO- CLO- CLO- CLO- CLO-
+  weighted: 'SOLVED iff CLEAN' holds on Vanilla 10/20  MapPoPE-Pair 4/20  GainScalar 4/20  GainMod4 5/20  VanillaEM 10/20  VanillaEM_NonNeg 5/20
+  unweighted: 'SOLVED iff CLEAN' holds on Vanilla 10/20  MapPoPE-Pair 4/20  GainScalar 4/20  GainMod4 5/20  VanillaEM 10/20  VanillaEM_NonNeg 5/20
+
+(synthetic directory /tmp/claude-1002/-home-prashr-mapformer/224d7c23-b570-4513-8742-cf8a41acc4a3/scratchpad/gain_grain_smoke_94gv78di; numbers above are synthetic and mean nothing)
+
+PART 1 OVERALL: PASS

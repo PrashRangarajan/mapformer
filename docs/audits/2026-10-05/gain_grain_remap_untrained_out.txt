@@ -1,0 +1,14 @@
+arm                  inter_of_pos           gain           even            odd         shift0     shift_mean      height_cv       width_cv     width_mean r_height_width   verify
+Vanilla                     0.982          0.193          0.378          0.424          0.000         18.404          0.221          0.398         98.228         -0.306   0.0e+00
+MapPoPE-Pair                0.037          0.265          0.323          0.419          1.000          0.000          0.084          0.172        104.221          0.104   0.0e+00
+GainScalar                  0.187          1.000          0.000          0.000          1.000          0.000          0.480          0.000        106.500            nan   0.0e+00
+GainMod4                    0.107          0.596          0.174          0.230          1.000          0.000          0.272          0.338        108.890         -0.176   0.0e+00
+VanillaEM                   0.954          1.000          0.000          0.000          0.000         16.404          0.705          0.311        104.426         -0.183   0.0e+00
+VanillaEM_NonNeg            0.046          1.000          0.000          0.000          0.000         15.500          0.219          0.000         95.000            nan   0.0e+00
+
+GainScalar         spectrum share per omega band (fine -> coarse), median over runs x heads: 0.250 0.250 0.250 0.250; key-gain cv median 0.412
+GainMod4           spectrum share per omega band (fine -> coarse), median over runs x heads: 0.250 0.250 0.250 0.250; key-gain cv median 0.376
+VanillaEM          share of (action, observation) pairs with A_X < 0: median 0.478, heads all-negative 0/4
+VanillaEM_NonNeg   share of (action, observation) pairs with A_X < 0: median 0.478, heads all-negative 0/4
+
+(medians over runs x 2 heads; gain + even + odd = 1 of the interaction; verify = max |dlogit| of the rebuilt forward)

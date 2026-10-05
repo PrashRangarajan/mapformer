@@ -1,0 +1,41 @@
+== 1. nesting chain (eval mode, 4 held-out walks of T=128, 255 input tokens) ==
+  [PASS] Mod32 (A_c = 1) == MapPoPE-Pair, element gains tied, delta 0: max |dlogit| 6.56e-07
+  [PASS]   control: MapPoPE-Pair UNTIED (its own random q/k rows): max |dlogit| 7.37e-02  (positive control: must differ)
+  [PASS]   control: MapPoPE-Pair tied but delta = -0.5: max |dlogit| 5.99e-02  (positive control: must differ)
+  [PASS]   control: Mod32 with A_c = 1.5: max |dlogit| 1.78e-01  (positive control: must differ)
+  [PASS] Mod4 == Mod32 with rows tied within contiguous modules (channels 8m..8m+7): max |dlogit| 5.96e-07
+  [PASS]   control: Mod32 tied with INTERLEAVED modules (c % 4): max |dlogit| 2.74e-01  (positive control: must differ)
+  [PASS] Scalar == Mod4 with all module rows equal: max |dlogit| 8.34e-07
+  [PASS]   control: Mod4 with module 3's query bias moved by +1: max |dlogit| 1.74e-01  (positive control: must differ)
+
+== 2. GainScalar with gains fixed at 1 == MapEM with A_X fixed at 1, q0_c = k0_c = (sqrt(2 A_c), 0) ==
+  [PASS] GainScalar(mu = 1) == MapEM(A_X = 1, zero phase offsets): a pure position kernel: max |dlogit| 7.15e-07
+  [PASS]   control: MapEM with a non-zero q0 phase offset: max |dlogit| 3.02e-02  (positive control: must differ)
+
+== 3. sign arm: VanillaEM_NonNeg ==
+  [PASS] seed 26: initial state_dict of VanillaEM_NonNeg == VanillaEM, bit for bit
+  [PASS] seed 45: initial state_dict of VanillaEM_NonNeg == VanillaEM, bit for bit
+  [PASS] seed 100: initial state_dict of VanillaEM_NonNeg == VanillaEM, bit for bit
+  [PASS] NonNeg with content_map = identity == VanillaEM: max |dlogit| 0.00e+00
+  [PASS]   control: NonNeg with softplus (the trained arm): max |dlogit| 1.41e-01  (positive control: must differ)
+
+== 4. matched initialisation at the batch seeds (26-45) and the pilot seeds (100, 101) ==
+  seed 26: GainScalar PASS (20 tensors); GainMod4 PASS (20 tensors); Vanilla/Pair base PASS
+  seed 45: GainScalar PASS (20 tensors); GainMod4 PASS (20 tensors); Vanilla/Pair base PASS
+  seed 100: GainScalar PASS (20 tensors); GainMod4 PASS (20 tensors); Vanilla/Pair base PASS
+  seed 101: GainScalar PASS (20 tensors); GainMod4 PASS (20 tensors); Vanilla/Pair base PASS
+  (seeds 27-44 checked identically; printed only on failure)
+  shared with MapPoPE-Pair: token_emb, action_to_lie (rank-2 bottleneck), omega, layer v/o/norms/FFN, out_norm/out_proj;
+  not shared: the score's content projections (Pair q_proj/k_proj 64 per head; gain arms q_gain/k_gain 1 or 4 per head).
+
+== 5. causality, angles, omega, rank, parameters ==
+  [PASS] Vanilla           leak 0.0e+00  angles/head 32  omega 6.2832..0.0982  rank 2  params 204,373
+  [PASS] MapPoPE-Pair      leak 0.0e+00  angles/head 32  omega 6.2832..0.0982  rank 2  params 204,501
+  [PASS] VanillaEM         leak 0.0e+00  angles/head 32  omega 6.2832..0.0982  rank 2  params 204,629
+  [PASS] VanillaEM_NonNeg  leak 0.0e+00  angles/head 32  omega 6.2832..0.0982  rank 2  params 204,629
+  [PASS] GainScalar        leak 0.0e+00  angles/head 32  omega 6.2832..0.0982  rank 2  params 171,929
+  [PASS] GainMod4          leak 0.0e+00  angles/head 32  omega 6.2832..0.0982  rank 2  params 173,477
+  [PASS] initial omega identical in all six arms (2pi = 6.2832 .. 2pi/64 = 0.0982)
+  GainMod4 modules (omega order, init): m0: ch 0-7, omega 6.283..2.457 (period 1.0-2.6 steps); m1: ch 8-15, omega 2.148..0.840 (period 2.9-7.5 steps); m2: ch 16-23, omega 0.734..0.287 (period 8.6-21.9 steps); m3: ch 24-31, omega 0.251..0.098 (period 25.0-64.0 steps)
+
+OVERALL: PASS
