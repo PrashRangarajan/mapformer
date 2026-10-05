@@ -1,0 +1,40 @@
+scale-none reproduces every registered JSON entry exactly (all batches)
+
+batch                arm              registered  rescored  max per-seed gain
+PAPER2X2             MapPoPE-Flat         0.9992    0.9993            +0.0003
+PAPER2X2             MapPoPE_r4           0.9997    0.9997            +0.0000
+PAPER2X2             PoPE-Flat            0.6794    0.6921            +0.0774
+PAPER2X2             RoPE                 0.8050    0.8156            +0.0279
+PAPER2X2             Vanilla              0.9707    0.9708            +0.0007
+PAPER2X2             Vanilla_r4           1.0000    1.0000            +0.0000
+RANK_MI              Vanilla              0.8938    0.8943            +0.0016
+RANK_MI              Vanilla_r2ph         0.8851    0.8856            +0.0023
+RANK_MI              Vanilla_r4mi         0.9976    0.9977            +0.0002
+RANK_SEP             Vanilla_r4mibd       0.9485    0.9485            +0.0002
+RANK_SEP             Vanilla_r4ph         0.9991    0.9991            +0.0000
+RANK3                Vanilla_r3ph         0.9873    0.9874            +0.0002
+LOOP_RANK            Looped               0.9732    0.9652            -0.0010
+LOOP_RANK            Vanilla_L4           0.9901    0.9726            -0.0015
+LOOP_RANK_E1800_P1   Vanilla              0.9085    0.9088            +0.0011
+LOOP_RANK_E1800_P1   Vanilla_r4mi         0.9945    0.9945            +0.0002
+SIGN_MATCHED         Signed_r4            0.9983    0.9982            +0.0000
+SIGN_MATCHED         Abs_r4               0.8211    0.8210            +0.0007
+SIGN_MATCHED         Pos_r4               0.7805    0.7807            +0.0011
+SIGN_MATCHED         RoPE                 0.7311    0.7352            +0.0279
+
+== registered accuracy contrasts, registered vs re-scored ==
+  paper2x2: MapWM r2 - RoPE (T=128)            registered +0.1658 (p 0.0002)   rescored +0.1552 (p 0.0002)  
+  paper2x2: MapWM r4 - RoPE (T=128)            registered +0.1950 (p 0.0002)   rescored +0.1844 (p 0.0002)  
+  paper2x2: MapPoPE r2 - PoPE (T=128)          registered +0.3198 (p 0.0002)   rescored +0.3072 (p 0.0002)  
+  rank_mi: r4 shared - r2 shared               registered +0.1039 (p 0.0005)   rescored +0.1034 (p 0.0005)  
+  rank_mi: r4 shared - r2 per head             registered +0.1125 (p 0.0070)   rescored +0.1120 (p 0.0070)  
+  rank_sep: D (r4/head) - C_bd (block-diag)    registered +0.0507 (p 0.0070)   rescored +0.0506 (p 0.0070)  
+  rank3: r3/head - r2/head                     registered +0.1022 (p 0.0270)   rescored +0.1018 (p 0.0270)  
+  rank3: r4/head - r3/head                     registered +0.0118 (p 0.1859)   rescored +0.0117 (p 0.1859)  
+  loop_rank: loop x4 - plain r2                registered +0.0794 (p 0.0034)   rescored +0.0710 (p 0.0062)  
+  loop_rank: 4 layers - plain r2               registered +0.0964 (p 0.0012)   rescored +0.0783 (p 0.0039)  
+  loop_rank: r4 - loop x4                      registered +0.0245 (p 0.0002)   rescored +0.0324 (p 0.0002)  
+  e1800: r4 - r2 (1800 ep)                     registered +0.0860 (p 0.0003)   rescored +0.0857 (p 0.0003)  
+  sign: Abs - Signed                           registered -0.1771 (p 0.0002)   rescored -0.1772 (p 0.0002)  
+  sign: Pos - Signed                           registered -0.2177 (p 0.0003)   rescored -0.2175 (p 0.0003)  
+  sign: RoPE - Signed                          registered -0.2671 (p 0.0002)   rescored -0.2631 (p 0.0002)  

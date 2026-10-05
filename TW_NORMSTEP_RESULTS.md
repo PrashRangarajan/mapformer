@@ -11,6 +11,9 @@
 > probabilities by 1.111 at eval with no noise recovers every gap run (0.841 -> 0.997, 0.828 -> 0.993, 0.836 -> 0.982,
 > 0.818 -> 0.977; text-world s0 0.884 -> 0.974) and leaves a run at ceiling unchanged (0.999). "Clock-type solutions
 > depend on dropout" below is withdrawn: the dependence is on the expected attention scale, in runs below ceiling.
+> (3) **Re-scored with the scale** (`docs/audits/2026-10-04/DROPOUT_RESCORE.md`): MapWM 0.973 -> 0.997, NormStep 0.979 ->
+> 0.997, NormStepNB 0.941 -> 0.994, DirOnly 0.972 -> 0.973. A unchanged (NormStep - MapWM +0.001, p 0.90). DirOnly -
+> MapWM becomes -0.024 (p 0.0002): every learned-step arm beats the direction-words-only oracle once rescaled.
 
 Pre-registration `TW_NORMSTEP_PREREG.md` (+ Amendment 1 from the code audit, Amendment 2 from the pilot; committed
 302d901 before launch). Runs `runs/tw_normstep/p0` (32 runs, one batch, seeds 10-17, all fresh); registered output

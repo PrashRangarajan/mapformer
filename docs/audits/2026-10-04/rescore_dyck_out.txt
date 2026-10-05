@@ -1,0 +1,8 @@
+1 layers, scale none: RoPE 0.648 PoPE 0.640 MapWM 0.996 MapPoPE 0.998  position main +0.353 (8/8 +, sign-flip p 0.0078)
+1 layers, scale auto: RoPE 0.649 PoPE 0.641 MapWM 0.996 MapPoPE 0.998  position main +0.352 (8/8 +, sign-flip p 0.0078)
+2 layers, scale none: RoPE 0.889 PoPE 0.850 MapWM 1.000 MapPoPE 1.000  position main +0.130 (8/8 +, sign-flip p 0.0078)
+2 layers, scale auto: RoPE 0.890 PoPE 0.852 MapWM 1.000 MapPoPE 1.000  position main +0.129 (8/8 +, sign-flip p 0.0078)
+3 layers, scale none: RoPE 0.964 PoPE 0.946 MapWM 1.000 MapPoPE 1.000  position main +0.045 (8/8 +, sign-flip p 0.0078)
+3 layers, scale auto: RoPE 0.962 PoPE 0.937 MapWM 1.000 MapPoPE 1.000  position main +0.050 (8/8 +, sign-flip p 0.0078)
+4 layers, scale none: RoPE 0.982 PoPE 0.971 MapWM 1.000 MapPoPE 1.000  position main +0.024 (8/8 +, sign-flip p 0.0078)
+4 layers, scale auto: RoPE 0.980 PoPE 0.960 MapWM 1.000 MapPoPE 1.000  position main +0.030 (8/8 +, sign-flip p 0.0078)

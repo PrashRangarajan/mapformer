@@ -1,0 +1,56 @@
+== text world (registered A: path 1L - RoPE 1L) ==
+  RoPE_L1                0.5047 -> 0.5056   max per-seed change +0.0033 / -0.0008
+  RoPE_L2                0.7722 -> 0.7717   max per-seed change +0.0092 / -0.0092
+  Vanilla_r4_L1          0.9692 -> 0.9934   max per-seed change +0.1045 / +0.0000
+  path 1L - RoPE 1L                          registered +0.4644 (p 0.0002)   rescored +0.4878 (p 0.0002)  
+  path 1L - RoPE 2L                          registered +0.1970 (p 0.0009)   rescored +0.2217 (p 0.0002)  
+  RoPE 2L - RoPE 1L                          registered +0.2674 (p 0.0002)   rescored +0.2661 (p 0.0002)  
+  fresh seeds s2-s7: path 1L - RoPE 1L       registered +0.4742 (p 0.0022)   rescored +0.4914 (p 0.0022)  
+
+== TW_NORMSTEP (registered A: NormStep - MapWM) ==
+  DirOnly                0.9721 -> 0.9725   max per-seed change +0.0021 / -0.0010
+  MapWM                  0.9727 -> 0.9965   max per-seed change +0.1655 / +0.0000
+  NormStepNB             0.9413 -> 0.9944   max per-seed change +0.1702 / +0.0000
+  NormStep               0.9786 -> 0.9972   max per-seed change +0.1483 / +0.0000
+  NormStep - MapWM                           registered +0.0059 (p 0.4715)   rescored +0.0006 (p 0.9024)  
+  NormStepNB - MapWM                         registered -0.0314 (p 0.4261)   rescored -0.0021 (p 0.6828)  
+  DirOnly - MapWM                            registered -0.0006 (p 0.9998)   rescored -0.0240 (p 0.0002)  <-- CHANGES
+
+== H3 cancel (T=128) ==
+  p=0.5: path1 1.0000->1.0000; index 1L 0.7172->0.7252; G2 +0.0461->+0.0402; G3 +0.0015->+0.0021; k 3 -> 3
+  p=0.75: path1 1.0000->1.0000; index 1L 0.6762->0.6860; G2 +0.0312->+0.0302; G3 +0.0020->+0.0077; k 3 -> 3
+  p=0.9: path1 1.0000->1.0000; index 1L 0.8252->0.8195; G2 +0.0115->+0.0201; G3 +0.0009->+0.0074; k 3 -> 3
+  p=1.0: path1 1.0000->1.0000; index 1L 1.0000->1.0000; G2 +0.0000->+0.0000; G3 +0.0000->+0.0000; k 1 -> 1
+  index 1L a1(0.75) - a1(0.5)                registered -0.0410 (p 0.0011)   rescored -0.0393 (p 0.0008)  
+  index 1L a1(0.9) - a1(0.5)                 registered +0.1080 (p 0.0002)   rescored +0.0943 (p 0.0002)  
+  index 1L a1(1.0) - a1(0.5)                 registered +0.2828 (p 0.0002)   rescored +0.2748 (p 0.0002)  
+  index 1L a1(0.9) - a1(0.75)                registered +0.1491 (p 0.0002)   rescored +0.1336 (p 0.0002)  
+  index 1L a1(1.0) - a1(0.75)                registered +0.3238 (p 0.0002)   rescored +0.3140 (p 0.0002)  
+  index 1L a1(1.0) - a1(0.9)                 registered +0.1748 (p 0.0002)   rescored +0.1805 (p 0.0002)  
+
+== leak (x1 unseen-object accuracy; registered from LEAK.json) ==
+  rerun reproduces LEAK.json on 24/24
+  ActOnly                0.9997 -> 0.9997   max per-seed change +0.0001 / -0.0000
+  MapWM                  0.9890 -> 0.9890   max per-seed change +0.0000 / -0.0001
+  NormStep               0.9998 -> 0.9998   max per-seed change +0.0000 / +0.0000
+  ActOnly - MapWM                            registered +0.0107 (p 0.0002)   rescored +0.0107 (p 0.0002)  
+  NormStep - MapWM                           registered +0.0107 (p 0.0002)   rescored +0.0108 (p 0.0002)  
+
+== rank_nd (T=1024) ==
+  Vanilla_r2ph           0.7693 -> 0.7660   max per-seed change +0.0050 / -0.0186
+  Vanilla_r3ph           0.9995 -> 0.9995   max per-seed change +0.0001 / +0.0000
+  D2: rank D+1 - rank D                      registered +0.2302 (p 0.0014)   rescored +0.2334 (p 0.0014)  
+  Vanilla_r3ph           0.7998 -> 0.7985   max per-seed change +0.0030 / -0.0096
+  Vanilla_r4ph           0.8471 -> 0.8477   max per-seed change +0.0040 / -0.0001
+  D3: rank D+1 - rank D                      registered +0.0473 (p 0.4998)   rescored +0.0492 (p 0.4775)  
+  (rerun reproduces RANK_ND.json exactly)
+
+== rank_wrap (T=1024) ==
+  2L                     0.9995 -> 0.9995   max per-seed change +0.0001 / +0.0000
+  2H                     0.2731 -> 0.2796   max per-seed change +0.0116 / -0.0036
+  3L                     1.0000 -> 1.0000   max per-seed change +0.0000 / +0.0000
+  3H                     0.8471 -> 0.8477   max per-seed change +0.0040 / -0.0001
+  (rerun reproduces EVAL_D*.json exactly)
+  3D wrap: 3L - 3H                           registered +0.1528 (p 0.0085)   rescored +0.1522 (p 0.0117)  
+  2D wrap: 2L - 2H                           registered +0.7263 (p 0.0002)   rescored +0.7199 (p 0.0002)  
+  high wrap: 3H - 2H                         registered +0.5740 (p 0.0002)   rescored +0.5681 (p 0.0002)  

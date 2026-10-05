@@ -24,7 +24,7 @@ Results (files are authoritative; full account `docs/SESSION_2026-09-27_to_10-03
 - Text world, post hoc: an oracle stepping only on direction words caps at 0.972 -- every error is an object from an
   aside at the same cell. In language "only actions move" is the wrong target; learned steps move asides away.
 - Eval mode (dropout off) under-reports runs below ceiling by up to 0.16: the 1/(1-p) attention-dropout SCALE (x1.111
-  at eval recovers them); not yet re-scored on other batches.
+  at eval recovers them); all batches re-scored 2026-10-04: no registered verdict changes (DROPOUT_RESCORE.md).
 
 **Prior art (do not claim; `docs/lit/LIT_*.md`):** context-gated steps are Mamba/Selective-RoPE/CoPE forms; alpha=0
 residual init is ReZero/Flamingo/RWKV-7; "separation is learned" is in MapFormer's own Fig. 9; transfer to unseen iid

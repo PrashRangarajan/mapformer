@@ -3,8 +3,9 @@
 > **AUDIT 2026-10-04 (`TW_NORMSTEP_RESULTS.md` CORRECTED block, `docs/theory/2026-10-04/03_formal.md` section 3).** The
 > path arm's eval-mode accuracy is under-reported on its below-ceiling seeds: the model was trained with attention
 > dropout and expects the 1/(1-p) attention scale; at eval x1.111 seed 0 goes 0.884 -> 0.974 (40-walk check). The
-> 40-walk mean of the path arm is 0.971 eval vs 0.994 rescaled (formal review; RoPE arms barely move). Verdict A only
-> strengthens; the registered numbers below are unchanged.
+> registered eval re-run with the scale (`docs/audits/2026-10-04/DROPOUT_RESCORE.md`, all 24 runs, the batch's own stream):
+> path 0.969 -> 0.993, RoPE 1L 0.505 -> 0.506, RoPE 2L 0.772 -> 0.772; path - RoPE 1L +0.464 -> +0.488 (p 0.0002). Verdict A
+> only strengthens; the registered numbers below are unchanged.
 
 > **CORRECTED 2026-09-30 (audit, `docs/audits/2026-09-27/`).** (1) **Seeds 0 and 1 are the pilot**:
 > `runs/textworld_pilot` s0/s1 are byte-identical to the batch's s0/s1, so 2 of 8 seeds per arm were seen
