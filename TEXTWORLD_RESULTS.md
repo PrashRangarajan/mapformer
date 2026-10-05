@@ -1,5 +1,11 @@
 # Navigation told in words -- results (2026-09-28)
 
+> **AUDIT 2026-10-04 (`TW_NORMSTEP_RESULTS.md` CORRECTED block, `docs/theory/2026-10-04/03_formal.md` section 3).** The
+> path arm's eval-mode accuracy is under-reported on its below-ceiling seeds: the model was trained with attention
+> dropout and expects the 1/(1-p) attention scale; at eval x1.111 seed 0 goes 0.884 -> 0.974 (40-walk check). The
+> 40-walk mean of the path arm is 0.971 eval vs 0.994 rescaled (formal review; RoPE arms barely move). Verdict A only
+> strengthens; the registered numbers below are unchanged.
+
 > **CORRECTED 2026-09-30 (audit, `docs/audits/2026-09-27/`).** (1) **Seeds 0 and 1 are the pilot**:
 > `runs/textworld_pilot` s0/s1 are byte-identical to the batch's s0/s1, so 2 of 8 seeds per arm were seen
 > before registration (the pre-registration's "NOT reused" was false). On the six fresh seeds alone

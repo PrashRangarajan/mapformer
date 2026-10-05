@@ -1,5 +1,17 @@
 # NormStep on the text world -- results (2026-10-04)
 
+> **CORRECTED 2026-10-04 (theory review, `docs/theory/2026-10-04/03_formal.md`; verified independently,
+> `docs/audits/2026-10-04/word_drift_split_out.txt`, `dropout_scale_check_out.txt`).** (1) **Verdict B's "per-word clock"
+> is the aside offset, not a word counter.** Split by source, the optional-word drift is almost all ASIDE sentences
+> (NormStep 0.126 of 0.133 rad, MapWM 0.072 of 0.077); adverbs and fillers drift LESS in NormStep (0.016 vs 0.020).
+> The aside sentences carry a small net phase offset that keeps an aside's noun off the cell's phase -- the mechanism
+> by which learned steps beat DirOnly below. The registered verdict stands as computed; its name misdescribes what it
+> measured: NormStep uses a LARGER aside offset than MapWM, not a word-count clock. (2) **The eval/train-mode gap is
+> the 1/(1-p) scale of inverted attention dropout, not its noise and not clocks.** Multiplying attention
+> probabilities by 1.111 at eval with no noise recovers every gap run (0.841 -> 0.997, 0.828 -> 0.993, 0.836 -> 0.982,
+> 0.818 -> 0.977; text-world s0 0.884 -> 0.974) and leaves a run at ceiling unchanged (0.999). "Clock-type solutions
+> depend on dropout" below is withdrawn: the dependence is on the expected attention scale, in runs below ceiling.
+
 Pre-registration `TW_NORMSTEP_PREREG.md` (+ Amendment 1 from the code audit, Amendment 2 from the pilot; committed
 302d901 before launch). Runs `runs/tw_normstep/p0` (32 runs, one batch, seeds 10-17, all fresh); registered output
 `TW_NORMSTEP_ANALYSIS.txt` / `TW_NORMSTEP.json` (`analyze_tw_normstep.py`, run by the driver after a second md5 check).

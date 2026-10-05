@@ -19,11 +19,12 @@ Results (files are authoritative; full account `docs/SESSION_2026-09-27_to_10-03
 - NormStep, ANALYSIS (`docs/NORMSTEP_NOTES.md`): zeroing its observation steps (-0.19) removes a per-move gauge, not
   leak; its object-identity leak is ~5x smaller than MapWM's (2 seeds). Not provable that it must be smaller.
   Predicted risk tested (`TW_NORMSTEP_RESULTS.md`, REG, 2026-10-04): on the text world NormStep's accuracy is
-  unmeasured-equal to MapWM's; a per-word drift exists but is tiny (+0.057 rad) and not from the LN bias.
+  unmeasured-equal to MapWM's; the registered "per-word clock" (+0.057 rad) is the ASIDE offset (asides move their
+  nouns off the cell's phase), not a word counter (CORRECTED 2026-10-04).
 - Text world, post hoc: an oracle stepping only on direction words caps at 0.972 -- every error is an object from an
   aside at the same cell. In language "only actions move" is the wrong target; learned steps move asides away.
-- Eval mode (dropout off) under-reports runs below ceiling by up to 0.16 (attention-probability dropout); unchecked
-  on other batches.
+- Eval mode (dropout off) under-reports runs below ceiling by up to 0.16: the 1/(1-p) attention-dropout SCALE (x1.111
+  at eval recovers them); not yet re-scored on other batches.
 
 **Prior art (do not claim; `docs/lit/LIT_*.md`):** context-gated steps are Mamba/Selective-RoPE/CoPE forms; alpha=0
 residual init is ReZero/Flamingo/RWKV-7; "separation is learned" is in MapFormer's own Fig. 9; transfer to unseen iid

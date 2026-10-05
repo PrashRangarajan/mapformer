@@ -33,8 +33,15 @@ Nothing. GPUs idle (2026-10-04 00:20).
   (`CANCEL_RESULTS.md`), sign matched (`SIGN_MATCHED_RESULTS.md`), rank 3 (`RANK3_RESULTS.md`), code full-val
   (`CODE_FULLVAL_RESULTS.md`).
 
+## Theory review (2026-10-04)
+Five-agent review: `docs/theory/2026-10-04/00_PLAN.md` (theory T1-T7 and a ranked plan; reports 01-05). Corrections
+applied: TW_NORMSTEP verdict B is the aside offset, not a word clock; the eval-mode gap is the 1/(1-p) attention
+scale (CORRECTED block, verified). Top of the plan: CPU re-score of all committed batches; 1D ring rank 1 vs 2;
+rank escape test.
+
 ## Open decisions (user picks; costs are wall-clock estimates on both GPUs from comparable batches -- re-measure s/epoch before launching)
-1. DONE 2026-10-04. New, no GPU: eval-mode vs train-mode gap on committed navigation batches (eval-only, CPU).
+1. NOT YET RUN, no GPU: eval-mode vs train-mode gap on committed navigation batches (eval-only, CPU). (The former item 1,
+   NormStep on the text world, is done: `TW_NORMSTEP_RESULTS.md`.)
 2. Separation vs data at matched map size (`LIT_WHAT_WHERE.md` P2) -- 48 runs, ~3.5 h.
 3. Window limit as a cue-distance curve (`LIT_CONTEXT_STEPS.md` P3) -- ~10-12 h; Mamba-3-style gate vs HSR (P1) ~13 h;
    HSR decomposition (P2) ~9 h.

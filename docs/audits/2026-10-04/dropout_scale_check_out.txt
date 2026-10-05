@@ -1,0 +1,6 @@
+tw_normstep_pilot/MapWM_s100/MapWM.pt eval 0.8406  eval x1.111 0.9966  attn dropout on 0.9923
+textworld/p0/Vanilla_r4_L1_s0/Vanilla_r4.pt eval 0.8835  eval x1.111 0.9743  attn dropout on 0.9717
+tw_normstep/p0/MapWM_s12/MapWM.pt eval 0.8278  eval x1.111 0.9931  attn dropout on 0.9889
+tw_normstep/p0/NormStep_s16/NormStep.pt eval 0.8355  eval x1.111 0.9820  attn dropout on 0.9751
+tw_normstep/p0/NormStepNB_s10/NormStepNB.pt eval 0.8175  eval x1.111 0.9769  attn dropout on 0.9709
+textworld/p0/Vanilla_r4_L1_s1/Vanilla_r4.pt eval 0.9991  eval x1.111 0.9991  attn dropout on 0.9983

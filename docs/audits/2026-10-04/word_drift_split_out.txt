@@ -1,0 +1,18 @@
+MapWM     s10: optional 0.0972 rad = aside 0.0989 + adverb/filler 0.0308 (not additive: wrapped means)
+MapWM     s11: optional 0.0371 rad = aside 0.0319 + adverb/filler 0.0091 (not additive: wrapped means)
+MapWM     s12: optional 0.0710 rad = aside 0.0720 + adverb/filler 0.0351 (not additive: wrapped means)
+MapWM     s13: optional 0.0400 rad = aside 0.0336 + adverb/filler 0.0098 (not additive: wrapped means)
+MapWM     s14: optional 0.0460 rad = aside 0.0331 + adverb/filler 0.0216 (not additive: wrapped means)
+MapWM     s15: optional 0.1110 rad = aside 0.0910 + adverb/filler 0.0280 (not additive: wrapped means)
+MapWM     s16: optional 0.1175 rad = aside 0.1149 + adverb/filler 0.0077 (not additive: wrapped means)
+MapWM     s17: optional 0.0920 rad = aside 0.1027 + adverb/filler 0.0200 (not additive: wrapped means)
+MapWM     mean: optional 0.0765  aside 0.0723  adverb/filler 0.0202
+NormStep  s10: optional 0.1297 rad = aside 0.1283 + adverb/filler 0.0088 (not additive: wrapped means)
+NormStep  s11: optional 0.0720 rad = aside 0.0636 + adverb/filler 0.0143 (not additive: wrapped means)
+NormStep  s12: optional 0.1163 rad = aside 0.1128 + adverb/filler 0.0107 (not additive: wrapped means)
+NormStep  s13: optional 0.1591 rad = aside 0.1486 + adverb/filler 0.0195 (not additive: wrapped means)
+NormStep  s14: optional 0.1918 rad = aside 0.1829 + adverb/filler 0.0131 (not additive: wrapped means)
+NormStep  s15: optional 0.1866 rad = aside 0.1725 + adverb/filler 0.0201 (not additive: wrapped means)
+NormStep  s16: optional 0.0421 rad = aside 0.0384 + adverb/filler 0.0249 (not additive: wrapped means)
+NormStep  s17: optional 0.1692 rad = aside 0.1617 + adverb/filler 0.0131 (not additive: wrapped means)
+NormStep  mean: optional 0.1333  aside 0.1261  adverb/filler 0.0155
