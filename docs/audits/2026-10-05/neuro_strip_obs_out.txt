@@ -1,0 +1,26 @@
+Vanilla     s10 intact 0.9194 strip_psi_on_obs_keys 0.4786 diff -0.4408
+Vanilla     s11 intact 0.9617 strip_psi_on_obs_keys 0.9402 diff -0.0214
+Vanilla     s12 intact 0.9656 strip_psi_on_obs_keys 0.9510 diff -0.0147
+Vanilla     s13 intact 0.9994 strip_psi_on_obs_keys 0.7153 diff -0.2841
+Vanilla     s14 intact 1.0000 strip_psi_on_obs_keys 0.6911 diff -0.3089
+Vanilla     s15 intact 0.9267 strip_psi_on_obs_keys 0.5970 diff -0.3298
+Vanilla     s16 intact 0.9994 strip_psi_on_obs_keys 0.7424 diff -0.2570
+Vanilla     s17 intact 0.9707 strip_psi_on_obs_keys 0.9526 diff -0.0180
+Vanilla     s18 intact 1.0000 strip_psi_on_obs_keys 0.9938 diff -0.0062
+Vanilla     s19 intact 1.0000 strip_psi_on_obs_keys 1.0000 diff +0.0000
+Vanilla     s20 intact 0.9994 strip_psi_on_obs_keys 0.5784 diff -0.4211
+Vanilla     s21 intact 0.9994 strip_psi_on_obs_keys 0.7683 diff -0.2311
+Vanilla     s22 intact 1.0000 strip_psi_on_obs_keys 0.9741 diff -0.0259
+Vanilla     s23 intact 0.8641 strip_psi_on_obs_keys 0.7880 diff -0.0761
+Vanilla     s24 intact 1.0000 strip_psi_on_obs_keys 0.9594 diff -0.0406
+Vanilla     s25 intact 1.0000 strip_psi_on_obs_keys 1.0000 diff +0.0000
+== Vanilla: mean diff -0.1547; up 0 down 14
+Vanilla_r4  s10 intact 1.0000 strip_psi_on_obs_keys 0.9944 diff -0.0056
+Vanilla_r4  s11 intact 1.0000 strip_psi_on_obs_keys 1.0000 diff +0.0000
+Vanilla_r4  s12 intact 1.0000 strip_psi_on_obs_keys 0.9543 diff -0.0457
+Vanilla_r4  s13 intact 1.0000 strip_psi_on_obs_keys 0.9679 diff -0.0321
+Vanilla_r4  s14 intact 1.0000 strip_psi_on_obs_keys 0.9729 diff -0.0271
+Vanilla_r4  s15 intact 1.0000 strip_psi_on_obs_keys 0.9994 diff -0.0006
+Vanilla_r4  s16 intact 1.0000 strip_psi_on_obs_keys 0.9617 diff -0.0383
+Vanilla_r4  s17 intact 1.0000 strip_psi_on_obs_keys 0.9707 diff -0.0293
+== Vanilla_r4: mean diff -0.0223; up 0 down 7

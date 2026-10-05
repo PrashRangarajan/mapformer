@@ -1,0 +1,80 @@
+Vanilla          s10 reg 0.9073 acc 0.9194 loss 0.3220        cls AA cond 0.02 0.06 clk 0.387 0.249 top1 0.785 strip 0.3574 psi_disp 0.08 0.02 verify 0.0e+00
+Vanilla          s11 reg 0.9589 acc 0.9617 loss 0.0528        cls BB cond 0.00 0.00 clk 0.004 0.005 top1 0.909 strip 0.5857 psi_disp 0.05 0.03 verify 0.0e+00
+Vanilla          s12 reg 0.9706 acc 0.9656 loss 0.0530        cls BB cond 0.00 0.00 clk 0.013 0.004 top1 0.941 strip 0.3816 psi_disp 0.03 0.01 verify 0.0e+00
+Vanilla          s13 reg 0.9977 acc 0.9994 loss 0.0105 SOLVED cls BB cond 0.00 0.00 clk 0.007 0.003 top1 0.916 strip 0.2097 psi_disp 0.06 0.01 verify 0.0e+00
+Vanilla          s14 reg 1.0000 acc 1.0000 loss 0.0020 SOLVED cls AA cond 0.15 0.14 clk 0.756 0.641 top1 0.980 strip 0.6731 psi_disp 0.02 0.03 verify 0.0e+00
+Vanilla          s15 reg 0.9253 acc 0.9267 loss 0.1395        cls AB cond 0.09 0.02 clk 0.092 0.040 top1 0.832 strip 0.5896 psi_disp 0.13 0.05 verify 0.0e+00
+Vanilla          s16 reg 0.9991 acc 0.9994 loss 0.0117 SOLVED cls BB cond 0.00 0.00 clk 0.003 0.005 top1 0.957 strip 0.5079 psi_disp 0.02 0.01 verify 0.0e+00
+Vanilla          s17 reg 0.9688 acc 0.9707 loss 0.0506        cls oo cond 0.45 0.41 clk 0.035 0.035 top1 0.931 strip 0.0778 psi_disp 0.01 0.01 verify 0.0e+00
+Vanilla          s18 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.92 0.80 clk 0.000 0.000 top1 0.993 strip 0.9989 psi_disp 0.01 0.01 verify 0.0e+00
+Vanilla          s19 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.80 0.67 clk 0.000 0.000 top1 0.995 strip 1.0000 psi_disp 0.01 0.01 verify 0.0e+00
+Vanilla          s20 reg 1.0000 acc 0.9994 loss 0.0122 SOLVED cls AA cond 0.31 0.38 clk 0.272 0.336 top1 0.940 strip 0.5868 psi_disp 0.43 0.03 verify 0.0e+00
+Vanilla          s21 reg 0.9996 acc 0.9994 loss 0.0055 SOLVED cls AB cond 0.04 0.01 clk 0.249 0.031 top1 0.933 strip 0.6708 psi_disp 0.04 0.05 verify 0.0e+00
+Vanilla          s22 reg 1.0000 acc 1.0000 loss 0.0019 SOLVED cls AA cond 0.15 0.08 clk 0.479 0.302 top1 0.972 strip 0.0789 psi_disp 0.02 0.02 verify 0.0e+00
+Vanilla          s23 reg 0.8762 acc 0.8641 loss 0.3003        cls BB cond 0.00 0.00 clk 0.016 0.006 top1 0.798 strip 0.0885 psi_disp 0.07 0.02 verify 0.0e+00
+Vanilla          s24 reg 1.0000 acc 1.0000 loss 0.0002 SOLVED cls oo cond 0.45 0.52 clk 0.000 0.001 top1 0.980 strip 0.9831 psi_disp 0.01 0.01 verify 0.0e+00
+Vanilla          s25 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.54 0.67 clk 0.002 0.001 top1 0.976 strip 1.0000 psi_disp 0.03 0.02 verify 0.0e+00
+== Vanilla: heads ok 10 A 10 B 12; SOLVED 10/16; mean acc 0.9754; seeds with an ok head 5
+MapPoPE-Pair     s10 reg 0.9984 acc 0.9989 loss 0.0117 SOLVED cls BB cond 0.02 0.02 clk 0.040 0.027 top1 0.994 delta0 0.9989 d@0 0.95 0.94 verify 0.0e+00
+MapPoPE-Pair     s11 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.92 0.60 clk 0.001 0.001 top1 0.960 delta0 1.0000 d@0 0.95 0.97 verify 0.0e+00
+MapPoPE-Pair     s12 reg 0.9987 acc 1.0000 loss 0.0153 SOLVED cls BB cond 0.00 0.00 clk 0.004 0.002 top1 0.999 delta0 1.0000 d@0 0.97 0.97 verify 0.0e+00
+MapPoPE-Pair     s13 reg 0.9973 acc 0.9983 loss 0.0098 SOLVED cls BB cond 0.00 0.00 clk 0.006 0.003 top1 0.988 delta0 0.9983 d@0 0.98 0.95 verify 0.0e+00
+MapPoPE-Pair     s14 reg 1.0000 acc 1.0000 loss 0.0021 SOLVED cls AA cond 0.33 0.23 clk 0.817 0.546 top1 0.995 delta0 1.0000 d@0 0.97 0.98 verify 0.0e+00
+MapPoPE-Pair     s15 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.53 0.78 clk 0.000 0.000 top1 0.974 delta0 1.0000 d@0 0.98 0.91 verify 0.0e+00
+MapPoPE-Pair     s16 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.67 0.67 clk 0.002 0.002 top1 0.968 delta0 1.0000 d@0 1.00 0.95 verify 0.0e+00
+MapPoPE-Pair     s17 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.72 0.80 clk 0.000 0.000 top1 0.966 delta0 1.0000 d@0 0.98 0.94 verify 0.0e+00
+MapPoPE-Pair     s18 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.72 0.55 clk 0.002 0.002 top1 0.976 delta0 1.0000 d@0 1.00 0.97 verify 0.0e+00
+MapPoPE-Pair     s19 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.59 0.58 clk 0.002 0.002 top1 0.972 delta0 1.0000 d@0 0.95 0.98 verify 0.0e+00
+MapPoPE-Pair     s20 reg 1.0000 acc 1.0000 loss 0.0023 SOLVED cls AA cond 0.58 0.59 clk 0.520 0.532 top1 0.993 delta0 0.9994 d@0 0.95 0.97 verify 0.0e+00
+MapPoPE-Pair     s21 reg 0.9972 acc 0.9983 loss 0.0107 SOLVED cls BB cond 0.00 0.00 clk 0.003 0.002 top1 0.992 delta0 0.9983 d@0 1.00 0.97 verify 0.0e+00
+MapPoPE-Pair     s22 reg 1.0000 acc 1.0000 loss 0.0002 SOLVED cls oo cond 0.90 0.54 clk 0.002 0.001 top1 0.974 delta0 1.0000 d@0 0.98 0.97 verify 0.0e+00
+MapPoPE-Pair     s23 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.90 0.70 clk 0.000 0.000 top1 0.993 delta0 1.0000 d@0 0.97 0.94 verify 0.0e+00
+MapPoPE-Pair     s24 reg 1.0000 acc 1.0000 loss 0.0002 SOLVED cls oo cond 0.54 0.57 clk 0.002 0.002 top1 0.972 delta0 1.0000 d@0 0.97 0.89 verify 0.0e+00
+MapPoPE-Pair     s25 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.73 0.71 clk 0.002 0.002 top1 0.977 delta0 1.0000 d@0 0.98 1.00 verify 0.0e+00
+== MapPoPE-Pair: heads ok 20 A 4 B 8; SOLVED 16/16; mean acc 0.9997; seeds with an ok head 10
+MapPoPE-Flat     s10 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.60 0.56 clk 0.000 0.000 top1 0.972 delta0 1.0000 d@0 0.94 0.97 verify 0.0e+00
+MapPoPE-Flat     s11 reg 0.9993 acc 0.9994 loss 0.0149 SOLVED cls BB cond 0.00 0.00 clk 0.005 0.004 top1 1.000 delta0 0.9994 d@0 0.95 0.98 verify 0.0e+00
+MapPoPE-Flat     s12 reg 1.0000 acc 1.0000 loss 0.0073 SOLVED cls AA cond 0.13 0.02 clk 0.667 0.084 top1 0.976 delta0 1.0000 d@0 0.97 0.92 verify 0.0e+00
+MapPoPE-Flat     s13 reg 1.0000 acc 1.0000 loss 0.0029 SOLVED cls AA cond 0.57 0.63 clk 0.730 0.744 top1 0.994 delta0 1.0000 d@0 0.95 0.98 verify 0.0e+00
+MapPoPE-Flat     s14 reg 0.9968 acc 0.9977 loss 0.0150 SOLVED cls BB cond 0.00 0.00 clk 0.006 0.002 top1 0.998 delta0 0.9977 d@0 0.94 0.97 verify 0.0e+00
+MapPoPE-Flat     s15 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.73 0.67 clk 0.000 0.000 top1 0.981 delta0 1.0000 d@0 0.92 0.91 verify 0.0e+00
+MapPoPE-Flat     s16 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.63 0.52 clk 0.001 0.001 top1 0.984 delta0 1.0000 d@0 0.98 0.94 verify 0.0e+00
+MapPoPE-Flat     s17 reg 1.0000 acc 1.0000 loss 0.0020 SOLVED cls AA cond 0.21 0.30 clk 0.477 0.666 top1 0.995 delta0 1.0000 d@0 0.97 0.98 verify 0.0e+00
+MapPoPE-Flat     s18 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.64 0.75 clk 0.001 0.001 top1 0.980 delta0 1.0000 d@0 0.98 1.00 verify 0.0e+00
+MapPoPE-Flat     s19 reg 1.0000 acc 0.9994 loss 0.0098 SOLVED cls BB cond 0.00 0.00 clk 0.003 0.003 top1 0.995 delta0 0.9893 d@0 0.94 0.92 verify 0.0e+00
+MapPoPE-Flat     s20 reg 1.0000 acc 1.0000 loss 0.0020 SOLVED cls AA cond 0.04 0.04 clk 0.551 0.565 top1 0.998 delta0 1.0000 d@0 0.97 0.89 verify 0.0e+00
+MapPoPE-Flat     s21 reg 0.9993 acc 1.0000 loss 0.0024 SOLVED cls AA cond 0.48 0.41 clk 0.575 0.623 top1 0.993 delta0 1.0000 d@0 0.95 0.95 verify 0.0e+00
+MapPoPE-Flat     s22 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.79 0.65 clk 0.001 0.001 top1 0.959 delta0 1.0000 d@0 0.94 0.98 verify 0.0e+00
+MapPoPE-Flat     s23 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.43 0.72 clk 0.002 0.002 top1 0.986 delta0 1.0000 d@0 0.94 0.95 verify 0.0e+00
+MapPoPE-Flat     s24 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.67 0.52 clk 0.001 0.001 top1 0.989 delta0 1.0000 d@0 0.98 0.98 verify 0.0e+00
+MapPoPE-Flat     s25 reg 0.9990 acc 1.0000 loss 0.0133 SOLVED cls BA cond 0.03 0.07 clk 0.030 0.071 top1 0.997 delta0 1.0000 d@0 0.95 0.94 verify 0.0e+00
+== MapPoPE-Flat: heads ok 14 A 11 B 7; SOLVED 16/16; mean acc 0.9998; seeds with an ok head 7
+Vanilla_r4       s10 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.52 0.54 clk 0.006 0.006 top1 0.988 strip 0.9994 psi_disp 0.01 0.01 verify 0.0e+00
+Vanilla_r4       s11 reg 1.0000 acc 1.0000 loss 0.0002 SOLVED cls oo cond 0.68 0.77 clk 0.005 0.006 top1 0.969 strip 1.0000 psi_disp 0.01 0.01 verify 0.0e+00
+Vanilla_r4       s12 reg 1.0000 acc 1.0000 loss 0.0002 SOLVED cls oo cond 0.60 0.96 clk 0.006 0.007 top1 0.942 strip 0.9673 psi_disp 0.02 0.02 verify 0.0e+00
+Vanilla_r4       s13 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.72 0.95 clk 0.003 0.005 top1 0.939 strip 0.9989 psi_disp 0.02 0.02 verify 0.0e+00
+Vanilla_r4       s14 reg 1.0000 acc 1.0000 loss 0.0002 SOLVED cls oo cond 0.51 0.46 clk 0.002 0.002 top1 0.959 strip 0.9949 psi_disp 0.01 0.01 verify 0.0e+00
+Vanilla_r4       s15 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.83 0.75 clk 0.003 0.002 top1 0.960 strip 1.0000 psi_disp 0.01 0.02 verify 0.0e+00
+Vanilla_r4       s16 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.77 0.65 clk 0.005 0.004 top1 0.961 strip 0.9825 psi_disp 0.02 0.01 verify 0.0e+00
+Vanilla_r4       s17 reg 1.0000 acc 1.0000 loss 0.0002 SOLVED cls oo cond 0.54 0.42 clk 0.002 0.002 top1 0.964 strip 0.9994 psi_disp 0.02 0.01 verify 0.0e+00
+== Vanilla_r4: heads ok 16 A 0 B 0; SOLVED 8/8; mean acc 1.0000; seeds with an ok head 8
+MapPoPE-Pair_r4  s10 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.76 0.81 clk 0.000 0.000 top1 0.984 delta0 1.0000 d@0 0.98 0.94 verify 0.0e+00
+MapPoPE-Pair_r4  s11 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.81 0.77 clk 0.002 0.001 top1 0.986 delta0 1.0000 d@0 0.98 0.94 verify 0.0e+00
+MapPoPE-Pair_r4  s12 reg 1.0000 acc 1.0000 loss 0.0002 SOLVED cls oo cond 0.50 0.73 clk 0.001 0.001 top1 0.990 delta0 1.0000 d@0 0.98 0.92 verify 0.0e+00
+MapPoPE-Pair_r4  s13 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.93 0.79 clk 0.002 0.002 top1 0.948 delta0 1.0000 d@0 0.97 0.94 verify 0.0e+00
+MapPoPE-Pair_r4  s14 reg 1.0000 acc 1.0000 loss 0.0002 SOLVED cls oo cond 0.63 0.74 clk 0.000 0.000 top1 0.966 delta0 1.0000 d@0 0.97 0.92 verify 0.0e+00
+MapPoPE-Pair_r4  s15 reg 1.0000 acc 1.0000 loss 0.0002 SOLVED cls oo cond 0.61 0.65 clk 0.001 0.001 top1 0.963 delta0 1.0000 d@0 1.00 0.98 verify 0.0e+00
+MapPoPE-Pair_r4  s16 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.83 0.72 clk 0.005 0.007 top1 0.981 delta0 1.0000 d@0 0.91 0.94 verify 0.0e+00
+MapPoPE-Pair_r4  s17 reg 1.0000 acc 1.0000 loss 0.0002 SOLVED cls oo cond 0.82 0.65 clk 0.001 0.001 top1 0.967 delta0 1.0000 d@0 0.98 0.94 verify 0.0e+00
+== MapPoPE-Pair_r4: heads ok 16 A 0 B 0; SOLVED 8/8; mean acc 1.0000; seeds with an ok head 8
+MapPoPE_r4       s10 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.72 0.55 clk 0.003 0.002 top1 0.976 delta0 1.0000 d@0 0.98 0.95 verify 0.0e+00
+MapPoPE_r4       s11 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.60 0.62 clk 0.001 0.001 top1 0.988 delta0 1.0000 d@0 0.97 1.00 verify 0.0e+00
+MapPoPE_r4       s12 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.82 0.94 clk 0.000 0.000 top1 0.989 delta0 1.0000 d@0 0.95 0.91 verify 0.0e+00
+MapPoPE_r4       s13 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.73 0.79 clk 0.001 0.001 top1 0.977 delta0 1.0000 d@0 0.97 0.98 verify 0.0e+00
+MapPoPE_r4       s14 reg 1.0000 acc 1.0000 loss 0.0002 SOLVED cls oo cond 0.91 0.80 clk 0.000 0.000 top1 0.964 delta0 1.0000 d@0 0.89 0.95 verify 0.0e+00
+MapPoPE_r4       s15 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.55 0.68 clk 0.001 0.001 top1 0.992 delta0 1.0000 d@0 0.98 0.92 verify 0.0e+00
+MapPoPE_r4       s16 reg 1.0000 acc 1.0000 loss 0.0001 SOLVED cls oo cond 0.61 0.56 clk 0.001 0.001 top1 0.979 delta0 1.0000 d@0 0.97 0.95 verify 0.0e+00
+MapPoPE_r4       s17 reg 1.0000 acc 1.0000 loss 0.0002 SOLVED cls oo cond 0.60 0.55 clk 0.001 0.001 top1 0.981 delta0 1.0000 d@0 0.95 0.95 verify 0.0e+00
+== MapPoPE_r4: heads ok 16 A 0 B 0; SOLVED 8/8; mean acc 1.0000; seeds with an ok head 8
+
+Vanilla: strip_psi - intact mean -0.4260 (seeds up 0, down 14); Spearman(acc, max psi_disp) -0.57
