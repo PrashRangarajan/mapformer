@@ -1,0 +1,3 @@
+n= 8 per arm: P(full effect fires) 0.59;  P(half effect fires) 0.13
+n=12 per arm: P(full effect fires) 0.88;  P(half effect fires) 0.14
+n=16 per arm: P(full effect fires) 0.95;  P(half effect fires) 0.21
