@@ -35,7 +35,7 @@ LABEL = {W: "W MapWM r2", P: "P MapPoPE-Pair (per-frequency gain)", S: "S scalar
          E: "E MapEM (signed scalar)", N: "N MapEM, softplus(A_X)"}
 MARGIN = 0.01        # non-inferiority margin on mean T=128 accuracy (granularity)
 MIN_D = 0.01         # materiality floor for an accuracy firing (house rule, MAPPOPE_PAIR)
-SOLVED_SLACK = 1     # AS GOOD also needs SOLVED(x) >= SOLVED(P) - 1
+SOLVED_SLACK = 0     # Amendment 1 (audit D1): AS GOOD needs SOLVED(x) >= SOLVED(P); slack 1 gave a realised size ~0.10
 CEIL = 0.999
 N_MC = 200_000       # Monte Carlo relabellings when C(32, 16) > 250k (the power script lowers it)
 FLOORS = "best n-gram 0.598, always-blank 0.507 (docs/WHAT_WHERE_CHECKS.md)"
@@ -116,13 +116,16 @@ def granularity_verdict(s_lab, m_lab):
     if s_lab == "WORSE" and m_lab in ok:
         return "MODULE GAIN SUFFICES, SCALAR DOES NOT: content must choose among scale bands, not among single frequencies"
     if s_lab == "WORSE" and m_lab == "WORSE":
-        return "PER-FREQUENCY GAIN NEEDED: both coarser non-negative gains cost against MapPoPE-Pair"
+        return ("PER-FREQUENCY GAIN NEEDED: both coarser non-negative gains cost against MapPoPE-Pair "
+                "(confounded: they also have ~32k fewer content-projection parameters, no delta, learned A_c, tied pairs)")
     if s_lab == "WORSE" and m_lab == "UNDETERMINED":
-        return "SCALAR COSTS; per-module undetermined"
+        return ("SCALAR COSTS; per-module undetermined (confounded: fewer content-projection parameters, no delta, "
+                "learned A_c, tied pairs)")
     if s_lab == "UNDETERMINED" and m_lab in ok:
         return "MODULE GAIN SUFFICES; scalar undetermined"
     if s_lab == "UNDETERMINED" and m_lab == "WORSE":
-        return "MODULE COSTS; scalar undetermined (non-monotone if the scalar is later shown as good)"
+        return ("MODULE COSTS; scalar undetermined (non-monotone if the scalar is later shown as good; confounded as "
+                "above)")
     return "UNDETERMINED: neither coarser gain shown as good or worse"
 
 
@@ -131,13 +134,14 @@ def sign_state(e_acc, e_sol, n_acc, n_sol, ne, nn):
     NON-NEGATIVE WORSE, NO DIFFERENCE DETECTED. Returns (label, detail)."""
     a, d, pa = acc_state(e_acc, n_acc); f, pf = fisher_state(e_sol, ne, n_sol, nn)
     det = f"d {d:+.4f} (perm p {pa:.4f}, {a}); SOLVED {n_sol}/{nn} vs {e_sol}/{ne} (Fisher p {pf:.4f}, {f})"
-    if a == "CEIL":
+    if a == "CEIL" and f == "NONE":                                   # Amendment 1 (N1): SOLVED is checked first
         return "CEILING", det + " -- both arms >= 0.999 on every seed: undetermined"
     if (a == "POS" and f == "NEG") or (a == "NEG" and f == "POS"):
         return "CONFLICT", det
     if a == "POS" or f == "POS":
         which = " and ".join(w for w, s_ in (("accuracy", a), ("SOLVED", f)) if s_ == "POS")
-        return "NON-NEGATIVE BETTER (MapEM's signed gain costs)", det + f" -- fires on {which}"
+        return ("NON-NEGATIVE / POSITIVE-MEAN BETTER (MapEM's signed, zero-mean gain costs; non-negativity and a positive "
+                "mean are not separated)"), det + f" -- fires on {which}"
     if a == "NEG" or f == "NEG":
         which = " and ".join(w for w, s_ in (("accuracy", a), ("SOLVED", f)) if s_ == "NEG")
         return "NON-NEGATIVE WORSE (the sign freedom helps)", det + f" -- fires on {which}"
@@ -235,6 +239,8 @@ def main():
         print(f"  {nm} 90% permutation CI (two-sided; its lower end is the one-sided 95% bound): [{ci['lo']:+.4f}, {ci['hi']:+.4f}]")
     q = [] if hs == "OK" else ["NO HEADROOM: MapWM r2 is not detectably below MapPoPE-Pair on these seeds, so an AS GOOD "
                                "verdict does not show that a coarser gain avoids a cost this task can reveal"]
+    if gv.startswith(("SCALAR GAIN SUFFICES", "MODULE GAIN SUFFICES")) and "at ceiling" in (sdet + mdet):
+        gv += " (at ceiling)"                                           # Amendment 1 (N2)
     print(f"\n  REGISTERED (a): {gv}" + "".join(f"\n    - {x}" for x in q))
 
     gl, gdet = sign_state(A128[E], sol[E], A128[N], sol[N], n, n)

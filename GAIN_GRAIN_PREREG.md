@@ -222,3 +222,27 @@ n = 16 (96 runs) would be ~3.6 h.
 
 ## Launch (not done; rule 29: independent code audit first, findings as Amendment 1 before launch)
     cd /home/prashr/mapformer && setsid nohup bash run_gain_grain.sh > /dev/null 2>&1 &
+
+## Amendment 1 (2026-10-05, after an independent code audit, BEFORE the batch was launched)
+The audit (read-only, blind to pilot outcomes) found no bug. Re-verified: the score classes (incl. dropout placement in
+train mode: tied GainMod32 vs MapPoPE-Pair max |dlogit| 7.2e-07); the equivalence chain (byte-identical re-run; every
+positive control fails); NonNeg = VanillaEM at identical init with content map = identity (0.0); all six arms 32
+angles, rank 2, identical omega, causal; recipe and eval equal to MAPPOPE_PAIR (Pair s10 reproduced bitwise, 300/300
+epochs and final tensors); seeds 26-45 fresh; md5 GUARD covers every imported module; analysis directions; power.
+Changes, all before launch:
+1. **D1 -- AS GOOD calibration.** Outcomes are bimodal, so the shift-permutation non-inferiority test is miscalibrated:
+   with SOLVED slack 1 the realised false-AS-GOOD rate at the 0.01 margin was ~0.10 (audit simulation). SOLVED_SLACK is
+   now 0 (AS GOOD needs SOLVED(x) >= SOLVED(P)): realised size at the margin ~0.03; an arm identical to P still passes
+   (1.00); a half-margin deficit passes 0.22. Cost: a coarse arm with a true 5% / 10% failure rate passes AS GOOD less
+   often (it was 0.59 / 0.30 with slack 1). Read AS GOOD as "no failure the reference did not also have".
+2. **D2 -- verdict (b) relabelled** "NON-NEGATIVE / POSITIVE-MEAN BETTER": softplus(A_X) is ~0.69 for every pair at init,
+   so q0/k0 get a coherent position gradient from step one; non-negativity and a positive mean gain are not separated.
+3. **D3 -- WORSE headlines carry their confound** (fewer content-projection parameters, ~32k; no delta; learned A_c; tied
+   pairs). AS GOOD is unaffected. The separating follow-up, if needed, is a trained GainMod32.
+4. **D4 -- dropout-scale re-score added as a declared secondary** after the marker
+   (`docs/audits/2026-10-05/gain_grain_rescore.py`): rescore_hook with the two new layer classes registered (both feed
+   o_proj with attention @ V; dry check: all six arms hooked, none skipped). No verdict.
+5. N1: sign_state checks SOLVED before declaring CEILING. N2: "(at ceiling)" is carried into the (a) headline. N3: the
+   driver logs `git rev-parse HEAD` and whether the tree is clean at launch.
+The analysis smoke test (`gain_grain_smoke.py`) now reports one FAIL, the expected-label string for "N solid, E
+bimodal", which was written before the relabel in item 2; that case still routes to the intended branch.

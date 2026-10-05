@@ -39,6 +39,7 @@ GUARD=(__init__.py analyze_gain_grain.py ckpt_guard.py data_parallel.py environm
        docs/audits/2026-10-05/remap_probe.py docs/audits/2026-09-27/probe_whatwhere.py)
 echo "start $(date)" >> "$LOG"
 drv_md5_guard "$R" "${GUARD[@]}" || exit 1
+_drv_log "code version at launch: $(cd "$REPO" && git rev-parse HEAD) $(cd "$REPO" && git diff --quiet && echo clean || echo DIRTY)"
 for S in $SEEDS; do for V in $ARMS; do
   OUT="$R/p0/${V}_s${S}"
   [ -f "$OUT/${V}.pt" ] && { echo "skip $OUT" >> "$LOG"; continue; }
@@ -62,3 +63,7 @@ drv_done "$REPO/.gain_grain_done" "$REPO/GAIN_GRAIN_EVAL.json" "$REPO/GAIN_GRAIN
 # declared secondary, after the registered artifacts and the marker (its failure does not touch the registered result)
 python3 -u "$REPO/docs/audits/2026-10-05/gain_grain_remap.py" > "$REPO/docs/audits/2026-10-05/gain_grain_remap_out.txt" 2>&1 \
   && _drv_log "remap secondary done" || _drv_log "remap secondary FAILED (registered result unaffected)"
+python3 -u "$REPO/docs/audits/2026-10-05/gain_grain_rescore.py" --runs-dir "$R" --variants $ARMS --noises 0.0 \
+  --seeds $SEEDS --lengths 128 --n-trials 100 --device cuda:0 --out "$REPO/GAIN_GRAIN_RESCORE.md" \
+  --title "GAIN_GRAIN dropout-scale re-score (declared secondary)" > "$REPO/docs/audits/2026-10-05/gain_grain_rescore_out.txt" 2>&1 \
+  && _drv_log "rescore secondary done" || _drv_log "rescore secondary FAILED (registered result unaffected)"
