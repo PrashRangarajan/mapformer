@@ -1,0 +1,18 @@
+MapWM    (8 seeds, median [min, max]):
+    |step ')'| / opener                      +1.068  [+0.621, +1.725]
+    |step ']'| / opener                      +0.996  [+0.336, +1.370]
+    cos( '(' , '[' )  same push              +0.235  [-0.996, +0.999]
+    cos( ')' , ']' )  same pop               +0.041  [-0.948, +1.000]
+    opposition ( vs )                        +0.308  [+0.063, +1.913]
+    opposition [ vs ]                        +0.394  [+0.055, +1.784]
+    opposition ( vs ]  (mismatched pair)     +1.553  [+0.409, +1.986]
+    |step BOS| / opener                      +0.809  [+0.049, +2.763]
+MapPoPE  (8 seeds, median [min, max]):
+    |step ')'| / opener                      +1.113  [+0.390, +1.265]
+    |step ']'| / opener                      +1.066  [+0.508, +1.221]
+    cos( '(' , '[' )  same push              +0.764  [-0.661, +1.000]
+    cos( ')' , ']' )  same pop               +0.994  [-0.699, +1.000]
+    opposition ( vs )                        +0.372  [+0.030, +1.664]
+    opposition [ vs ]                        +0.396  [+0.016, +1.402]
+    opposition ( vs ]  (mismatched pair)     +0.679  [+0.371, +1.840]
+    |step BOS| / opener                      +0.592  [+0.163, +1.156]
