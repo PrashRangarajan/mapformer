@@ -9,7 +9,12 @@ Updated 2026-10-04 00:45. Goes stale fast: check `git log`, `.done` markers and 
 New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs/SESSION_2026-09-27_to_10-03.md`.
 
 ## Running
-Nothing. GPUs idle (2026-10-05 14:40).
+- GAIN_GRAIN (`GAIN_GRAIN_PREREG.md` + Amendment 1, committed dadb3a3 before launch): the MapEM x PoPE family -- does a
+  scalar or per-module non-negative content gain do as well as MapPoPE's per-frequency gain, and does MapEM's signed
+  gain cost? Paper torus T=128, rank 2, 32 angles; arms Vanilla, MapPoPE-Pair, GainScalar, GainMod4, VanillaEM,
+  VanillaEM_NonNeg x seeds 26-45 (n=20), 120 runs; launched 2026-10-05 15:31, ETA ~20:00. Driver writes
+  GAIN_GRAIN_EVAL.json, GAIN_GRAIN_ANALYSIS.txt, marker `.gain_grain_done`, then remap and dropout re-score secondaries.
+  Pilot (all arms solved) disclosed in the prereg: (a) likely AS GOOD, (b) may be CEILING.
 
 ## Last results (newest first; one line each, numbers in the file)
 - SCORE_RANK (`SCORE_RANK_RESULTS.md`, REG): NO RESCUE -- PoPE's score leaves rank 2 at 3/12 SOLVED at T=1024 (MapWM
