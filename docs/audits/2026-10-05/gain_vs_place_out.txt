@@ -1,0 +1,18 @@
+MapPoPE_r4    s0: weakest object at d=0 beats strongest object at any d!=0 in 0% of (head, action); median scores: weakest@0   6.53, strongest@0  13.71, strongest elsewhere   7.94
+MapPoPE_r4    s1: weakest object at d=0 beats strongest object at any d!=0 in 50% of (head, action); median scores: weakest@0   5.42, strongest@0  14.08, strongest elsewhere   5.69
+MapPoPE_r4    s2: weakest object at d=0 beats strongest object at any d!=0 in 0% of (head, action); median scores: weakest@0   5.35, strongest@0  13.33, strongest elsewhere   6.84
+MapPoPE_r4    s3: weakest object at d=0 beats strongest object at any d!=0 in 0% of (head, action); median scores: weakest@0   5.88, strongest@0  13.71, strongest elsewhere   7.57
+MapPoPE-Flat  s0: weakest object at d=0 beats strongest object at any d!=0 in 0% of (head, action); median scores: weakest@0   5.17, strongest@0  13.47, strongest elsewhere   6.25
+MapPoPE-Flat  s1: weakest object at d=0 beats strongest object at any d!=0 in 0% of (head, action); median scores: weakest@0  38.72, strongest@0  46.05, strongest elsewhere  43.77
+MapPoPE-Flat  s2: weakest object at d=0 beats strongest object at any d!=0 in 0% of (head, action); median scores: weakest@0   5.07, strongest@0  13.78, strongest elsewhere   6.22
+MapPoPE-Flat  s3: weakest object at d=0 beats strongest object at any d!=0 in 50% of (head, action); median scores: weakest@0   5.76, strongest@0  13.43, strongest elsewhere   6.54
+Vanilla_r4    s0: weakest object at d=0 beats strongest object at any d!=0 in 0% of (head, action); median scores: weakest@0   9.20, strongest@0  16.92, strongest elsewhere  11.78
+Vanilla_r4    s1: weakest object at d=0 beats strongest object at any d!=0 in 0% of (head, action); median scores: weakest@0   3.03, strongest@0  13.84, strongest elsewhere   6.71
+Vanilla_r4    s2: weakest object at d=0 beats strongest object at any d!=0 in 0% of (head, action); median scores: weakest@0   5.66, strongest@0  14.07, strongest elsewhere   9.07
+Vanilla_r4    s3: weakest object at d=0 beats strongest object at any d!=0 in 0% of (head, action); median scores: weakest@0   2.95, strongest@0  14.23, strongest elsewhere   7.36
+
+-- by distance: weakest object at d=0 vs strongest object at L1 distance k (median over heads x actions) --
+MapPoPE_r4  s0: weakest@0 wins against strongest at distance k=1: 50%  k=2: 50%  k=3: 50%  k=4: 100%  k=6: 75%  k=8: 100%   | where the strongest wrong-place key sits: L1 [np.int64(3), np.int64(3), np.int64(3), np.int64(9), np.int64(26), np.int64(26), np.int64(26), np.int64(26)]
+MapPoPE_r4  s1: weakest@0 wins against strongest at distance k=1: 50%  k=2: 50%  k=3: 100%  k=4: 100%  k=6: 75%  k=8: 100%   | where the strongest wrong-place key sits: L1 [np.int64(2), np.int64(2), np.int64(2), np.int64(19), np.int64(25), np.int64(26), np.int64(28), np.int64(28)]
+Vanilla_r4  s0: weakest@0 wins against strongest at distance k=1: 0%  k=2: 0%  k=3: 100%  k=4: 100%  k=6: 0%  k=8: 62%   | where the strongest wrong-place key sits: L1 [np.int64(1), np.int64(1), np.int64(1), np.int64(1), np.int64(31), np.int64(31), np.int64(31), np.int64(31)]
+Vanilla_r4  s1: weakest@0 wins against strongest at distance k=1: 0%  k=2: 0%  k=3: 0%  k=4: 0%  k=6: 0%  k=8: 0%   | where the strongest wrong-place key sits: L1 [np.int64(9), np.int64(10), np.int64(17), np.int64(17), np.int64(17), np.int64(17), np.int64(20), np.int64(31)]

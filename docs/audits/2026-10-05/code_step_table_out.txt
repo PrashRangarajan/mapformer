@@ -1,0 +1,12 @@
+Vanilla      s0: clock share 0.800; top-10 bytes carry 89% of freq-weighted step; largest steps: ' ' ) # \n <178> , ( = | <169> <196> <183>
+                 bracket opposition (common removed) () 1.41  [] 1.97  {} 1.91   | random byte pairs: median 1.97, 5th pct 1.73
+Vanilla      s1: clock share 0.868; top-10 bytes carry 82% of freq-weighted step; largest steps: ' ' \n ( ) , ' " \ [ = { <214>
+                 bracket opposition (common removed) () 1.96  [] 1.59  {} 1.71   | random byte pairs: median 1.92, 5th pct 1.49
+Vanilla      s2: clock share 0.858; top-10 bytes carry 89% of freq-weighted step; largest steps: ' ' \n ) ( <163> <240> [ , # ? K ]
+                 bracket opposition (common removed) () 1.95  [] 1.96  {} 1.98   | random byte pairs: median 1.98, 5th pct 1.89
+MapPoPE-Flat s0: clock share 0.752; top-10 bytes carry 76% of freq-weighted step; largest steps: \n ( ' ' [ ) @ . ] { <226> < -
+                 bracket opposition (common removed) () 1.82  [] 1.02  {} 1.92   | random byte pairs: median 1.77, 5th pct 1.10
+MapPoPE-Flat s1: clock share 0.924; top-10 bytes carry 84% of freq-weighted step; largest steps: \n ' ' ( ) [ ] , { ` = " .
+                 bracket opposition (common removed) () 1.95  [] 1.15  {} 1.48   | random byte pairs: median 1.95, 5th pct 0.99
+MapPoPE-Flat s2: clock share 0.767; top-10 bytes carry 74% of freq-weighted step; largest steps: \n ) [ ( ' ' { ] | <208> " } <196>
+                 bracket opposition (common removed) () 1.01  [] 0.70  {} 1.46   | random byte pairs: median 1.71, 5th pct 0.93
