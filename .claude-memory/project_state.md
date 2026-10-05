@@ -9,9 +9,17 @@ Updated 2026-10-04 00:45. Goes stale fast: check `git log`, `.done` markers and 
 New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs/SESSION_2026-09-27_to_10-03.md`.
 
 ## Running
-Nothing. GPUs idle (2026-10-05 00:00).
+- SCORE_RANK (`SCORE_RANK_PREREG.md` + Amendment 1, committed d3ebe91 before launch): does PoPE's score rule rescue
+  per-head rank 2 at T=1024 (MapWM r2 0/8 in RANK_MI)? 2x2 score x rank, 32 angles, matched init; Vanilla /
+  MapPoPE-Pair at r2 x seeds 10-21, Vanilla_r4mi / MapPoPE-Pair_r4mi at r4 x 10-17; 40 runs, MAXPG 2, launched
+  2026-10-05 ~01:13, ETA ~14 h (PoPE ~30% slower). Driver writes SCORE_RANK_*.json, SCORE_RANK_ANALYSIS.txt, marker
+  `.score_rank_done`. Pilot (seeds 100/101, 40 ep) already showed PoPE r2 solving -- disclosed in the prereg.
+  Then: results file; head-class + centring census on its checkpoints (docs/audits/2026-10-05/neuro_rank2_mech.py).
 
 ## Last results (newest first; one line each, numbers in the file)
+- Neuro review + design (`docs/theory/2026-10-05/neuro_positional.md`, `neuro_design.md`, ANALYSIS): MapPoPE-Pair tops a
+  brain-constraint scorecard; remap probe (post hoc): MapEM pure gain, MapPoPE gain + width (stronger = narrower), MapWM
+  gain + skew; rank-2 rescue mechanism (post hoc): PoPE tolerates defective codes, MapWM leans on a content phase offset.
 - MapPoPE separated (`MAPPOPE_PAIR_RESULTS.md`, REG): the score rule carries the gain (+0.024, 16/16 vs 10/16 SOLVED at
   r2); the doubled angle count adds +0.0002, CI [-0.0004, +0.0008]. Open: does PoPE's score rescue rank 2 at T=1024?
 - NormStep on words (`TW_NORMSTEP_RESULTS.md`, REG): accuracy no detectable difference (+0.006, MDE 0.096); predicted
