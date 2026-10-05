@@ -1,0 +1,20 @@
+== Indirect Indexing ==
+  MapPoPE r2, 200k (7/8 solved) (n=8), medians:
+    letters: cos to their mean step 1.000; spread of a 0.021  (1, 0 = one shared counter step)
+    digits:  corr(a, digit value) -0.96 [-1.00, +0.63]; |a| 5.37; residual 4.92
+    '+': a +2.29 res 6.48;  '-': a -6.76 res 6.22;  |s(+) - s(-)| / |u| 14.97
+    ',': a +2.23;  ' ': a +1.44
+  MapPoPE r2, 100k (n=8), medians:
+    letters: cos to their mean step 1.000; spread of a 0.025  (1, 0 = one shared counter step)
+    digits:  corr(a, digit value) -0.86 [-1.00, +0.53]; |a| 4.30; residual 5.53
+    '+': a +0.28 res 5.43;  '-': a -7.64 res 6.17;  |s(+) - s(-)| / |u| 16.44
+    ',': a +3.04;  ' ': a +2.24
+  MapWM r2, 100k (n=8), medians:
+    letters: cos to their mean step 0.657; spread of a 0.734  (1, 0 = one shared counter step)
+    digits:  corr(a, digit value) -0.92 [-0.96, -0.76]; |a| 7.50; residual 4.23
+    '+': a +4.08 res 1.58;  '-': a -8.58 res 3.00;  |s(+) - s(-)| / |u| 14.93
+    ',': a +3.24;  ' ': a +1.38
+
+== Bach chorales ==
+  MapWM_r2 (n=5), medians: notes' cos to the mean note step (freq-weighted) 0.981; corr(a, pitch) +0.18 [+0.11, +0.49]; residual 0.15; silence: a +0.90, cos +0.96
+  MapPoPE_r2 (n=5), medians: notes' cos to the mean note step (freq-weighted) 0.986; corr(a, pitch) +0.19 [-0.15, +0.35]; residual 0.07; silence: a +0.84, cos +0.86
