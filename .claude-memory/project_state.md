@@ -9,7 +9,11 @@ Updated 2026-10-04 00:45. Goes stale fast: check `git log`, `.done` markers and 
 New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs/SESSION_2026-09-27_to_10-03.md`.
 
 ## Running
-Nothing. GPUs idle (2026-10-04 00:20).
+- MapPoPE pairwise frequencies (`MAPPOPE_PAIR_PREREG.md` + Amendment 1, committed 49fb251 before launch): separates
+  MapPoPE's score rule from its frequency count (64 vs 32 angles) on the paper torus T=128. 72 runs (MapWM / MapPoPE-Pair
+  / MapPoPE-Flat at r2 x seeds 10-25; r4 versions x 10-17), `run_mappope_pair.sh` launched 2026-10-04 21:27, MAXPG 4,
+  ETA ~01:30. Driver writes MAPPOPE_PAIR_R2/R4.json and MAPPOPE_PAIR_ANALYSIS.txt, marker `.mappope_pair_done`.
+  Verification agent done (Amendment 1). Then: MAPPOPE_PAIR_RESULTS.md, memory/report.
 
 ## Last results (newest first; one line each, numbers in the file)
 - NormStep on words (`TW_NORMSTEP_RESULTS.md`, REG): accuracy no detectable difference (+0.006, MDE 0.096); predicted
