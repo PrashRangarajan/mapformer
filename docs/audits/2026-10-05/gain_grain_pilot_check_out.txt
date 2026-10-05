@@ -1,0 +1,20 @@
+(a) reproduction MapPoPE-Pair s10 (train_gain_grain vs stored mappope_pair): 300/300 epochs bitwise equal, max |loss diff| 0.00e+00, max |final weight diff| 0.00e+00 -> PASS
+
+(b) per-epoch wall time at 8 concurrent (4 per GPU, 2 RTX 4090), median over logged epochs 50-300:
+  GainMod4_s100.log            3.10 s/epoch  (n=51)
+  GainMod4_s101.log            2.80 s/epoch  (n=51)
+  GainScalar_s100.log          3.10 s/epoch  (n=51)
+  GainScalar_s101.log          2.80 s/epoch  (n=51)
+  VanillaEM_NonNeg_s100.log    3.50 s/epoch  (n=51)
+  VanillaEM_NonNeg_s101.log    3.50 s/epoch  (n=51)
+  VanillaEM_s100.log           3.10 s/epoch  (n=51)
+  MapPoPE-Pair_s10.log         3.50 s/epoch  (n=51)
+
+(c) pilot runs (seeds 100-101; READ after the prereg commit d332718):
+  GainMod4          s100: SOLVED     final-5% loss 0.0002  T=128 acc 1.0000  nll 0.0000
+  GainMod4          s101: SOLVED     final-5% loss 0.0002  T=128 acc 1.0000  nll 0.0000
+  GainScalar        s100: SOLVED     final-5% loss 0.0002  T=128 acc 1.0000  nll 0.0000
+  GainScalar        s101: SOLVED     final-5% loss 0.0002  T=128 acc 1.0000  nll 0.0000
+  VanillaEM_NonNeg  s100: SOLVED     final-5% loss 0.0003  T=128 acc 1.0000  nll 0.0000
+  VanillaEM_NonNeg  s101: SOLVED     final-5% loss 0.0002  T=128 acc 1.0000  nll 0.0000
+  VanillaEM         s100: SOLVED     final-5% loss 0.0005  T=128 acc 1.0000  nll 0.0000

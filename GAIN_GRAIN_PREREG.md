@@ -199,6 +199,26 @@ reproduction check failing.
   non-negativity from a positive mean gain (N); say anything about MapPoPE's unused delta beyond the prior post hoc
   lesion. The remap-probe readouts of S, E and N are architectural, not findings.
 
-## Pilot (appended after the pilot; see below)
+## Pilot (`docs/audits/2026-10-05/gain_grain_pilot.sh`; readout `gain_grain_pilot_check.py` / `_out.txt`; seeds 100-101 and 10)
+Launched AFTER the prereg, analysis, branches, power table and n were committed (d332718); nothing in them was changed
+after it. Full recipe, 8 concurrent jobs (4 per GPU), the batch's flags.
+(a) **Reproduction** (pass = bitwise-equal per-epoch losses): `MapPoPE-Pair` s10 through `train_gain_grain` (which also
+imports `model_em_pope`) against the stored `runs/mappope_pair/p0/MapPoPE-Pair_s10` -- **PASS: 300/300 epochs bitwise
+equal, final weights equal (max diff 0.0)**. The wrapper changes nothing on the existing path.
+(b) **Timing** at 8 concurrent: GainScalar / GainMod4 2.8-3.1 s/epoch, VanillaEM 3.1, VanillaEM_NonNeg 3.5,
+MapPoPE-Pair 3.5 (MAPPOPE_PAIR's logs: 3.2 for its arms at the same load). Wall time of the 8-job wave: 16.4 min.
+(c) **Outcome, READ** (seeds outside the batch; disclosed): GainScalar s100/s101, GainMod4 s100/s101,
+VanillaEM_NonNeg s100/s101 and VanillaEM s100 all SOLVED (final-5% loss 0.0002-0.0005), T=128 held-out accuracy 1.000
+on every run. The per-epoch training-loss prints were also seen while it ran (every new arm below 0.03 by epoch 45).
+Training is sane; the eval path (eval_gain_grain -> eval_noise_refine, ckpt_guard layout) works. It suggests AS GOOD
+for (a) and, if MapEM solves as often here as s100 did (em_fig4: 5/8 at another data stream), little headroom for (b),
+whose CEILING / NO DIFFERENCE branches exist for that case. n = 1-2 per arm: no inference.
 
-## Cost (appended after the pilot)
+## Cost (measured)
+120 runs at 8 concurrent = 15 waves x ~16.5 min (pilot wave 16.4 min, mixed arms) -> **~4.1 h of training**, + launch
+spacing (8 s per job, overlapping) and queue tail ~0.2 h; eval (120 runs x T = 128 / 512 / 1024 x 100 walks) ~10 min;
+analysis (permutation tests, 240 basin classifications) and the remap secondary ~15 min. **ETA ~4.5 h from launch.**
+n = 16 (96 runs) would be ~3.6 h.
+
+## Launch (not done; rule 29: independent code audit first, findings as Amendment 1 before launch)
+    cd /home/prashr/mapformer && setsid nohup bash run_gain_grain.sh > /dev/null 2>&1 &
