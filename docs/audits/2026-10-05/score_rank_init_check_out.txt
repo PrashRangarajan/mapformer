@@ -1,0 +1,119 @@
+seed 10: PASS  params {'Vanilla': 204373, 'MapPoPE-Pair': 204501, 'Vanilla_r4mi': 204757, 'MapPoPE-Pair_r4mi': 204885}  logit diff 6.0e-07
+    ok  shared (emb, omega, readout) equal across 4 arms
+    ok  r2 bottleneck Vanilla == MapPoPE-Pair
+    ok  r4 bottleneck Vanilla_r4mi == MapPoPE-Pair_r4mi
+    ok  MapWM layers Vanilla == Vanilla_r4mi
+    ok  PoPE layers MapPoPE-Pair == MapPoPE-Pair_r4mi
+    ok  32 angles per head everywhere
+    ok  per-head ranks 2/2/4/4
+    ok  causal (all arms)
+    ok  r4mi with r2 weights embedded == MapPoPE-Pair (max logit diff < 1e-5)
+    ok  control (a) no RNG rewind: PoPE layers equal? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: r4 bottleneck equal to Vanilla_r4mi? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: PoPE layers equal? -> False (must be False)
+seed 11: PASS  params {'Vanilla': 204373, 'MapPoPE-Pair': 204501, 'Vanilla_r4mi': 204757, 'MapPoPE-Pair_r4mi': 204885}  logit diff 7.2e-07
+    ok  shared (emb, omega, readout) equal across 4 arms
+    ok  r2 bottleneck Vanilla == MapPoPE-Pair
+    ok  r4 bottleneck Vanilla_r4mi == MapPoPE-Pair_r4mi
+    ok  MapWM layers Vanilla == Vanilla_r4mi
+    ok  PoPE layers MapPoPE-Pair == MapPoPE-Pair_r4mi
+    ok  32 angles per head everywhere
+    ok  per-head ranks 2/2/4/4
+    ok  causal (all arms)
+    ok  r4mi with r2 weights embedded == MapPoPE-Pair (max logit diff < 1e-5)
+    ok  control (a) no RNG rewind: PoPE layers equal? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: r4 bottleneck equal to Vanilla_r4mi? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: PoPE layers equal? -> False (must be False)
+seed 12: PASS  params {'Vanilla': 204373, 'MapPoPE-Pair': 204501, 'Vanilla_r4mi': 204757, 'MapPoPE-Pair_r4mi': 204885}  logit diff 7.7e-07
+    ok  shared (emb, omega, readout) equal across 4 arms
+    ok  r2 bottleneck Vanilla == MapPoPE-Pair
+    ok  r4 bottleneck Vanilla_r4mi == MapPoPE-Pair_r4mi
+    ok  MapWM layers Vanilla == Vanilla_r4mi
+    ok  PoPE layers MapPoPE-Pair == MapPoPE-Pair_r4mi
+    ok  32 angles per head everywhere
+    ok  per-head ranks 2/2/4/4
+    ok  causal (all arms)
+    ok  r4mi with r2 weights embedded == MapPoPE-Pair (max logit diff < 1e-5)
+    ok  control (a) no RNG rewind: PoPE layers equal? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: r4 bottleneck equal to Vanilla_r4mi? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: PoPE layers equal? -> False (must be False)
+seed 13: PASS  params {'Vanilla': 204373, 'MapPoPE-Pair': 204501, 'Vanilla_r4mi': 204757, 'MapPoPE-Pair_r4mi': 204885}  logit diff 7.2e-07
+    ok  shared (emb, omega, readout) equal across 4 arms
+    ok  r2 bottleneck Vanilla == MapPoPE-Pair
+    ok  r4 bottleneck Vanilla_r4mi == MapPoPE-Pair_r4mi
+    ok  MapWM layers Vanilla == Vanilla_r4mi
+    ok  PoPE layers MapPoPE-Pair == MapPoPE-Pair_r4mi
+    ok  32 angles per head everywhere
+    ok  per-head ranks 2/2/4/4
+    ok  causal (all arms)
+    ok  r4mi with r2 weights embedded == MapPoPE-Pair (max logit diff < 1e-5)
+    ok  control (a) no RNG rewind: PoPE layers equal? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: r4 bottleneck equal to Vanilla_r4mi? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: PoPE layers equal? -> False (must be False)
+seed 14: PASS  params {'Vanilla': 204373, 'MapPoPE-Pair': 204501, 'Vanilla_r4mi': 204757, 'MapPoPE-Pair_r4mi': 204885}  logit diff 6.0e-07
+    ok  shared (emb, omega, readout) equal across 4 arms
+    ok  r2 bottleneck Vanilla == MapPoPE-Pair
+    ok  r4 bottleneck Vanilla_r4mi == MapPoPE-Pair_r4mi
+    ok  MapWM layers Vanilla == Vanilla_r4mi
+    ok  PoPE layers MapPoPE-Pair == MapPoPE-Pair_r4mi
+    ok  32 angles per head everywhere
+    ok  per-head ranks 2/2/4/4
+    ok  causal (all arms)
+    ok  r4mi with r2 weights embedded == MapPoPE-Pair (max logit diff < 1e-5)
+    ok  control (a) no RNG rewind: PoPE layers equal? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: r4 bottleneck equal to Vanilla_r4mi? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: PoPE layers equal? -> False (must be False)
+seed 15: PASS  params {'Vanilla': 204373, 'MapPoPE-Pair': 204501, 'Vanilla_r4mi': 204757, 'MapPoPE-Pair_r4mi': 204885}  logit diff 9.5e-07
+    ok  shared (emb, omega, readout) equal across 4 arms
+    ok  r2 bottleneck Vanilla == MapPoPE-Pair
+    ok  r4 bottleneck Vanilla_r4mi == MapPoPE-Pair_r4mi
+    ok  MapWM layers Vanilla == Vanilla_r4mi
+    ok  PoPE layers MapPoPE-Pair == MapPoPE-Pair_r4mi
+    ok  32 angles per head everywhere
+    ok  per-head ranks 2/2/4/4
+    ok  causal (all arms)
+    ok  r4mi with r2 weights embedded == MapPoPE-Pair (max logit diff < 1e-5)
+    ok  control (a) no RNG rewind: PoPE layers equal? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: r4 bottleneck equal to Vanilla_r4mi? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: PoPE layers equal? -> False (must be False)
+seed 16: PASS  params {'Vanilla': 204373, 'MapPoPE-Pair': 204501, 'Vanilla_r4mi': 204757, 'MapPoPE-Pair_r4mi': 204885}  logit diff 8.3e-07
+    ok  shared (emb, omega, readout) equal across 4 arms
+    ok  r2 bottleneck Vanilla == MapPoPE-Pair
+    ok  r4 bottleneck Vanilla_r4mi == MapPoPE-Pair_r4mi
+    ok  MapWM layers Vanilla == Vanilla_r4mi
+    ok  PoPE layers MapPoPE-Pair == MapPoPE-Pair_r4mi
+    ok  32 angles per head everywhere
+    ok  per-head ranks 2/2/4/4
+    ok  causal (all arms)
+    ok  r4mi with r2 weights embedded == MapPoPE-Pair (max logit diff < 1e-5)
+    ok  control (a) no RNG rewind: PoPE layers equal? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: r4 bottleneck equal to Vanilla_r4mi? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: PoPE layers equal? -> False (must be False)
+seed 17: PASS  params {'Vanilla': 204373, 'MapPoPE-Pair': 204501, 'Vanilla_r4mi': 204757, 'MapPoPE-Pair_r4mi': 204885}  logit diff 8.3e-07
+    ok  shared (emb, omega, readout) equal across 4 arms
+    ok  r2 bottleneck Vanilla == MapPoPE-Pair
+    ok  r4 bottleneck Vanilla_r4mi == MapPoPE-Pair_r4mi
+    ok  MapWM layers Vanilla == Vanilla_r4mi
+    ok  PoPE layers MapPoPE-Pair == MapPoPE-Pair_r4mi
+    ok  32 angles per head everywhere
+    ok  per-head ranks 2/2/4/4
+    ok  causal (all arms)
+    ok  r4mi with r2 weights embedded == MapPoPE-Pair (max logit diff < 1e-5)
+    ok  control (a) no RNG rewind: PoPE layers equal? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: r4 bottleneck equal to Vanilla_r4mi? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: PoPE layers equal? -> False (must be False)
+seed 100: PASS  params {'Vanilla': 204373, 'MapPoPE-Pair': 204501, 'Vanilla_r4mi': 204757, 'MapPoPE-Pair_r4mi': 204885}  logit diff 7.2e-07
+    ok  shared (emb, omega, readout) equal across 4 arms
+    ok  r2 bottleneck Vanilla == MapPoPE-Pair
+    ok  r4 bottleneck Vanilla_r4mi == MapPoPE-Pair_r4mi
+    ok  MapWM layers Vanilla == Vanilla_r4mi
+    ok  PoPE layers MapPoPE-Pair == MapPoPE-Pair_r4mi
+    ok  32 angles per head everywhere
+    ok  per-head ranks 2/2/4/4
+    ok  causal (all arms)
+    ok  r4mi with r2 weights embedded == MapPoPE-Pair (max logit diff < 1e-5)
+    ok  control (a) no RNG rewind: PoPE layers equal? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: r4 bottleneck equal to Vanilla_r4mi? -> False (must be False)
+    ok  control (b) old MapPoPE-Pair_r4: PoPE layers equal? -> False (must be False)
+
+OVERALL: PASS

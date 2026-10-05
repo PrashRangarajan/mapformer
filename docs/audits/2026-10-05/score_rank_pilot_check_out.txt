@@ -1,0 +1,23 @@
+(1) reproduction Vanilla s0: 900 vs 900 epochs, max |diff| 0.00e+00, bitwise equal: True -> PASS
+(2) per-epoch wall time (s), from the train.py prints:
+    c8 MapPoPE-Pair_r4mi_s100   median 11.9 s/epoch over 8 prints
+    c8 MapPoPE-Pair_r4mi_s101   median 11.9 s/epoch over 8 prints
+    c8 MapPoPE-Pair_s100        median 12.4 s/epoch over 8 prints
+    c8 MapPoPE-Pair_s101        median 11.9 s/epoch over 8 prints
+    c8 Vanilla_r4mi_s100        median 9.1 s/epoch over 8 prints
+    c8 Vanilla_s100             median 9.1 s/epoch over 8 prints
+    c8 Vanilla_s101             median 8.5 s/epoch over 8 prints
+    c4 MapPoPE-Pair_s100        median 6.0 s/epoch over 8 prints
+    c4 MapPoPE-Pair_s101        median 6.2 s/epoch over 8 prints
+    c4 Vanilla_s100             median 4.3 s/epoch over 8 prints
+(3) pilot outcome (40-epoch schedule, seeds outside the batch):
+    c4/MapPoPE-Pair_s100/MapPoPE-Pair.pt               final-5% loss 0.0212 SOLVED
+    c4/MapPoPE-Pair_s101/MapPoPE-Pair.pt               final-5% loss 0.0138 SOLVED
+    c4/Vanilla_s100/Vanilla.pt                         final-5% loss 1.2021 STALLED
+    c8/MapPoPE-Pair_r4mi_s100/MapPoPE-Pair_r4mi.pt     final-5% loss 0.0236 SOLVED
+    c8/MapPoPE-Pair_r4mi_s101/MapPoPE-Pair_r4mi.pt     final-5% loss 0.0588 DESCENDING
+    c8/MapPoPE-Pair_s100/MapPoPE-Pair.pt               final-5% loss 0.0212 SOLVED
+    c8/MapPoPE-Pair_s101/MapPoPE-Pair.pt               final-5% loss 0.0138 SOLVED
+    c8/Vanilla_r4mi_s100/Vanilla_r4mi.pt               final-5% loss 0.6612 STALLED
+    c8/Vanilla_s100/Vanilla.pt                         final-5% loss 1.2021 STALLED
+    c8/Vanilla_s101/Vanilla.pt                         final-5% loss 1.3406 STALLED
