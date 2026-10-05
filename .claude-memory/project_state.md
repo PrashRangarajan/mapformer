@@ -58,7 +58,7 @@ rank escape test.
 5. H1 part 2 (loop and 4-layer rank-2 arms at 1800 ep) -- ~6 h.
 6. No GPU: trainer consolidation (train_cancel, train_textworld, train_ctxstep{,2,3}, train_newobj; verify
    loss-exact); documents -- the .tex papers lack rank 3, H1 part 1, H3, text world, context step, 3D rank/wrap,
-   what/where, leak, NormStep on words; shared report v15 (`report/language_summary.html`, republish WITH url=) is current.
+   what/where, leak, NormStep on words; shared report v16 (`report/language_summary.html`, republish WITH url=) is current.
 
 ## Loose ends
 - `runs/rank_mi/p0/` is untracked on purpose; `Vanilla_r2ph_s0/s1` there are symlinks into `runs/rank_perhead_pilot/p0/`.
