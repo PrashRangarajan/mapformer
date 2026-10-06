@@ -1,0 +1,63 @@
+== T=128 held-out accuracy (registered; floors best n-gram 0.598, always-blank 0.507 (docs/WHAT_WHERE_CHECKS.md)) | SOLVED | NLL | [T=512, T=1024: no verdict] ==
+  W MapWM r2                           0.9902 +/- 0.0211  SOLVED 18/20  nll 0.0182  [0.9394, 0.8319]
+      s26:0.997/SOLV s27:1.000/SOLV s28:0.999/SOLV s29:0.975/SOLV s30:1.000/SOLV s31:0.984/SOLV s32:1.000/SOLV s33:0.998/SOLV s34:1.000/SOLV s35:0.994/SOLV s36:0.931/STAL s37:0.932/STAL s38:1.000/SOLV s39:1.000/SOLV s40:1.000/SOLV s41:0.997/SOLV s42:0.999/SOLV s43:1.000/SOLV s44:0.999/SOLV s45:1.000/SOLV
+  P MapPoPE-Pair (per-frequency gain)  0.9995 +/- 0.0008  SOLVED 20/20  nll 0.0016  [0.9765, 0.9274]
+      s26:0.999/SOLV s27:1.000/SOLV s28:1.000/SOLV s29:1.000/SOLV s30:1.000/SOLV s31:0.999/SOLV s32:0.999/SOLV s33:0.999/SOLV s34:1.000/SOLV s35:1.000/SOLV s36:0.998/SOLV s37:1.000/SOLV s38:1.000/SOLV s39:1.000/SOLV s40:0.998/SOLV s41:0.998/SOLV s42:1.000/SOLV s43:1.000/SOLV s44:1.000/SOLV s45:1.000/SOLV
+  S scalar gain                        0.9999 +/- 0.0006  SOLVED 20/20  nll 0.0007  [0.9858, 0.9417]
+      s26:1.000/SOLV s27:1.000/SOLV s28:1.000/SOLV s29:1.000/SOLV s30:1.000/SOLV s31:1.000/SOLV s32:1.000/SOLV s33:1.000/SOLV s34:1.000/SOLV s35:1.000/SOLV s36:1.000/SOLV s37:0.997/SOLV s38:1.000/SOLV s39:1.000/SOLV s40:1.000/SOLV s41:1.000/SOLV s42:1.000/SOLV s43:1.000/SOLV s44:1.000/SOLV s45:1.000/SOLV
+  M per-module gain (4)                0.9997 +/- 0.0008  SOLVED 20/20  nll 0.0009  [0.9799, 0.9316]
+      s26:0.998/SOLV s27:1.000/SOLV s28:1.000/SOLV s29:1.000/SOLV s30:1.000/SOLV s31:0.998/SOLV s32:1.000/SOLV s33:1.000/SOLV s34:1.000/SOLV s35:1.000/SOLV s36:1.000/SOLV s37:1.000/SOLV s38:1.000/SOLV s39:1.000/SOLV s40:1.000/SOLV s41:0.998/SOLV s42:1.000/SOLV s43:1.000/SOLV s44:1.000/SOLV s45:1.000/SOLV
+  E MapEM (signed scalar)              0.9968 +/- 0.0104  SOLVED 19/20  nll 0.0125  [0.9318, 0.8286]
+      s26:1.000/SOLV s27:0.998/SOLV s28:0.999/SOLV s29:0.999/SOLV s30:1.000/SOLV s31:0.999/SOLV s32:0.998/SOLV s33:1.000/SOLV s34:1.000/SOLV s35:1.000/SOLV s36:1.000/SOLV s37:0.999/SOLV s38:0.999/SOLV s39:0.995/SOLV s40:0.953/DESC s41:0.999/SOLV s42:1.000/SOLV s43:1.000/SOLV s44:1.000/SOLV s45:1.000/SOLV
+  N MapEM, softplus(A_X)               0.9816 +/- 0.0284  SOLVED 12/20  nll 0.0678  [0.8651, 0.7165]
+      s26:0.997/SOLV s27:0.988/STAL s28:0.999/SOLV s29:0.942/DESC s30:0.935/DESC s31:0.974/DESC s32:0.901/STAL s33:1.000/SOLV s34:0.983/DESC s35:1.000/SOLV s36:1.000/SOLV s37:0.946/DESC s38:0.998/SOLV s39:1.000/SOLV s40:0.999/SOLV s41:0.975/DESC s42:1.000/SOLV s43:1.000/SOLV s44:1.000/SOLV s45:0.997/SOLV
+
+== primary (a) GRANULARITY: coarser non-negative gains against MapPoPE-Pair, T=128, n=20 per arm ==
+  headroom control (NO HEADROOM): P - W: d +0.0092 (perm p 0.0110, NONE); SOLVED 20/20 vs 18/20 (Fisher p 0.4872, NONE)
+  S scalar  vs P: AS GOOD      d +0.0004 (perm p 0.1121, NONE); SOLVED 20/20 vs 20/20 (Fisher p 1.0000, NONE); non-inferiority at -0.01: one-sided p 0.0000
+  M module  vs P: AS GOOD      d +0.0002 (perm p 0.4287, NONE); SOLVED 20/20 vs 20/20 (Fisher p 1.0000, NONE); non-inferiority at -0.01: one-sided p 0.0000
+  S - P 90% permutation CI (two-sided; its lower end is the one-sided 95% bound): [+0.0004, +0.0004]
+  M - P 90% permutation CI (two-sided; its lower end is the one-sided 95% bound): [+0.0002, +0.0002]
+
+  REGISTERED (a): SCALAR GAIN SUFFICES (per-module also as good): per-frequency freedom not needed on this task
+    - NO HEADROOM: MapWM r2 is not detectably below MapPoPE-Pair on these seeds, so an AS GOOD verdict does not show that a coarser gain avoids a cost this task can reveal
+
+== primary (b) SIGN: MapEM with softplus(A_X) vs MapEM, T=128, n=20 per arm (matched initial weights) ==
+  N vs E: d -0.0152 (perm p 0.0256, NEG); SOLVED 12/20 vs 19/20 (Fisher p 0.0197, NEG) -- fires on accuracy and SOLVED
+  N - E 95% permutation CI: [-0.0287, -0.0022]
+
+  REGISTERED (b): NON-NEGATIVE WORSE (the sign freedom helps)
+
+== secondaries (no verdict) ==
+  SCORE replication P - W (MAPPOPE_PAIR +0.0243, 16/16 vs 10/16)                   +0.0092 perm p 0.0110 (NONE); SOLVED 20 vs 18 Fisher p 0.4872
+  bundle S - E (non-neg factorised scalar, delta 0 vs MapEM)                       +0.0031 perm p 0.0091 (NONE); SOLVED 20 vs 19 Fisher p 1.0000
+  content form S - N (factorised gain, delta 0 vs softplus(q.k), learned offsets)  +0.0182 perm p 0.0000 (POS); SOLVED 20 vs 12 Fisher p 0.0033
+  module vs scalar M - S                                                           -0.0002 perm p 0.5376 (NONE); SOLVED 20 vs 20 Fisher p 1.0000
+  MapEM vs MapWM E - W                                                             +0.0066 perm p 0.2461 (NONE); SOLVED 19 vs 18 Fisher p 1.0000
+  N - P                                                                            -0.0179 perm p 0.0004 (NEG); SOLVED 12 vs 20 Fisher p 0.0033
+  T=512 (OOD, rule 10) S - P: +0.0094 (perm p 0.0584)
+  T=512 (OOD, rule 10) M - P: +0.0034 (perm p 0.4978)
+  T=512 (OOD, rule 10) N - E: -0.0667 (perm p 0.0526)
+  T=512 (OOD, rule 10) P - W: +0.0371 (perm p 0.0002)
+  T=1024 (OOD, rule 10) S - P: +0.0143 (perm p 0.1397)
+  T=1024 (OOD, rule 10) M - P: +0.0042 (perm p 0.6611)
+  T=1024 (OOD, rule 10) N - E: -0.1121 (perm p 0.0168)
+  T=1024 (OOD, rule 10) P - W: +0.0955 (perm p 0.0000)
+  T=128 revisit NLL S - P: -0.0009 (perm p 0.2966; lower is better)
+  T=128 revisit NLL M - P: -0.0006 (perm p 0.3881; lower is better)
+  T=128 revisit NLL N - E: +0.0553 (perm p 0.0427; lower is better)
+  r(final-5% loss, acc@128) over 120 runs: -0.933; within arm: Vanill -0.985  MapPoP -0.895  GainSc -0.920  GainMo -0.905  Vanill -0.988  Vanill -0.994
+  run classes: Vanilla: SOLVED:18,STALLED:2,DESCENDING:0,RISING:0  MapPoPE-Pair: SOLVED:20,STALLED:0,DESCENDING:0,RISING:0  GainScalar: SOLVED:20,STALLED:0,DESCENDING:0,RISING:0  GainMod4: SOLVED:20,STALLED:0,DESCENDING:0,RISING:0  VanillaEM: SOLVED:19,STALLED:0,DESCENDING:1,RISING:0  VanillaEM_NonNeg: SOLVED:12,STALLED:2,DESCENDING:6,RISING:0
+  epoch at which the 10-epoch running loss first falls below 0.05 (descriptive): Vanilla median 132 n=18  MapPoPE-Pair median 74 n=20  GainScalar median 23 n=20  GainMod4 median 21 n=20  VanillaEM median 148 n=19  VanillaEM_NonNeg median 117 n=12
+
+== basins (declared secondary; thresholds of analyze_score_rank, set at T=1024, unchanged). + SOLVED / - not ==
+  Vanilla           CLO+ CLO+ COL+ CLO+ CLO+ COL+ CLE+ CLO+ CLE+ CLO+ CLO- COL- COL+ CLO+ COL+ COL+ CLO+ CLO+ COL+ CLE+
+  MapPoPE-Pair      COL+ CLO+ CLE+ CLO+ CLO+ COL+ CLO+ COL+ CLE+ CLE+ COL+ CLE+ CLE+ CLE+ COL+ CLO+ CLO+ CLO+ CLE+ CLE+
+  GainScalar        CLE+ CLE+ CLE+ CLE+ CLE+ CLE+ CLE+ CLO+ CLE+ CLE+ CLE+ COL+ CLE+ CLE+ CLE+ CLE+ CLO+ CLO+ CLE+ CLE+
+  GainMod4          CLO+ CLO+ CLE+ COL+ CLE+ COL+ CLE+ CLO+ CLE+ CLE+ CLE+ CLE+ CLE+ CLE+ CLE+ CLO+ CLO+ CLE+ CLE+ CLE+
+  VanillaEM         CLE+ COL+ COL+ COL+ COL+ COL+ COL+ CLO+ COL+ COL+ CLO+ COL+ COL+ COL+ CLO- COL+ COL+ COL+ COL+ COL+
+  VanillaEM_NonNeg  COL+ CLO- COL+ CLO- CLO- CLO- CLO- CLO+ CLO- CLO+ CLE+ CLO- COL+ COL+ CLO+ CLO- CLO+ CLE+ CLO+ COL+
+  weighted: 'SOLVED iff CLEAN' holds on Vanilla 5/20  MapPoPE-Pair 8/20  GainScalar 16/20  GainMod4 13/20  VanillaEM 2/20  VanillaEM_NonNeg 10/20
+  unweighted: 'SOLVED iff CLEAN' holds on Vanilla 5/20  MapPoPE-Pair 8/20  GainScalar 16/20  GainMod4 13/20  VanillaEM 2/20  VanillaEM_NonNeg 10/20
+
+== pilot reproduction (train_gain_grain MapPoPE-Pair s10 vs stored mappope_pair): max |per-epoch loss diff| 0.00e+00 over 300 epochs

@@ -1,0 +1,146 @@
+p=0.00 Vanilla        s26 T= 128  acc 0.9973  nll 0.008
+p=0.00 Vanilla        s27 T= 128  acc 1.0000  nll 0.000
+p=0.00 Vanilla        s28 T= 128  acc 0.9990  nll 0.003
+p=0.00 Vanilla        s29 T= 128  acc 0.9744  nll 0.037
+p=0.00 Vanilla        s30 T= 128  acc 1.0000  nll 0.000
+p=0.00 Vanilla        s31 T= 128  acc 0.9821  nll 0.036
+p=0.00 Vanilla        s32 T= 128  acc 1.0000  nll 0.000
+p=0.00 Vanilla        s33 T= 128  acc 0.9989  nll 0.004
+p=0.00 Vanilla        s34 T= 128  acc 1.0000  nll 0.000
+p=0.00 Vanilla        s35 T= 128  acc 0.9951  nll 0.022
+p=0.00 Vanilla        s36 T= 128  acc 0.9304  nll 0.119
+p=0.00 Vanilla        s37 T= 128  acc 0.9315  nll 0.116
+p=0.00 Vanilla        s38 T= 128  acc 0.9993  nll 0.001
+p=0.00 Vanilla        s39 T= 128  acc 1.0000  nll 0.000
+p=0.00 Vanilla        s40 T= 128  acc 1.0000  nll 0.001
+p=0.00 Vanilla        s41 T= 128  acc 0.9968  nll 0.007
+p=0.00 Vanilla        s42 T= 128  acc 0.9997  nll 0.001
+p=0.00 Vanilla        s43 T= 128  acc 1.0000  nll 0.000
+p=0.00 Vanilla        s44 T= 128  acc 0.9990  nll 0.003
+p=0.00 Vanilla        s45 T= 128  acc 1.0000  nll 0.000
+p=0.00 MapPoPE-Pair   s26 T= 128  acc 0.9993  nll 0.004
+p=0.00 MapPoPE-Pair   s27 T= 128  acc 1.0000  nll 0.000
+p=0.00 MapPoPE-Pair   s28 T= 128  acc 1.0000  nll 0.000
+p=0.00 MapPoPE-Pair   s29 T= 128  acc 1.0000  nll 0.000
+p=0.00 MapPoPE-Pair   s30 T= 128  acc 1.0000  nll 0.000
+p=0.00 MapPoPE-Pair   s31 T= 128  acc 0.9993  nll 0.003
+p=0.00 MapPoPE-Pair   s32 T= 128  acc 0.9990  nll 0.003
+p=0.00 MapPoPE-Pair   s33 T= 128  acc 0.9989  nll 0.003
+p=0.00 MapPoPE-Pair   s34 T= 128  acc 1.0000  nll 0.000
+p=0.00 MapPoPE-Pair   s35 T= 128  acc 1.0000  nll 0.000
+p=0.00 MapPoPE-Pair   s36 T= 128  acc 0.9978  nll 0.005
+p=0.00 MapPoPE-Pair   s37 T= 128  acc 1.0000  nll 0.000
+p=0.00 MapPoPE-Pair   s38 T= 128  acc 1.0000  nll 0.000
+p=0.00 MapPoPE-Pair   s39 T= 128  acc 1.0000  nll 0.000
+p=0.00 MapPoPE-Pair   s40 T= 128  acc 0.9980  nll 0.007
+p=0.00 MapPoPE-Pair   s41 T= 128  acc 0.9989  nll 0.002
+p=0.00 MapPoPE-Pair   s42 T= 128  acc 1.0000  nll 0.000
+p=0.00 MapPoPE-Pair   s43 T= 128  acc 0.9997  nll 0.002
+p=0.00 MapPoPE-Pair   s44 T= 128  acc 1.0000  nll 0.000
+p=0.00 MapPoPE-Pair   s45 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s26 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s27 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s28 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s29 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s30 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s31 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s32 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s33 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s34 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s35 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s36 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s37 T= 128  acc 0.9975  nll 0.013
+p=0.00 GainScalar     s38 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s39 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s40 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s41 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s42 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s43 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s44 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainScalar     s45 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s26 T= 128  acc 0.9993  nll 0.002
+p=0.00 GainMod4       s27 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s28 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s29 T= 128  acc 0.9997  nll 0.001
+p=0.00 GainMod4       s30 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s31 T= 128  acc 0.9983  nll 0.006
+p=0.00 GainMod4       s32 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s33 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s34 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s35 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s36 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s37 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s38 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s39 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s40 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s41 T= 128  acc 0.9975  nll 0.009
+p=0.00 GainMod4       s42 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s43 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s44 T= 128  acc 1.0000  nll 0.000
+p=0.00 GainMod4       s45 T= 128  acc 1.0000  nll 0.000
+p=0.00 VanillaEM      s26 T= 128  acc 1.0000  nll 0.000
+p=0.00 VanillaEM      s27 T= 128  acc 0.9979  nll 0.011
+p=0.00 VanillaEM      s28 T= 128  acc 0.9990  nll 0.004
+p=0.00 VanillaEM      s29 T= 128  acc 0.9993  nll 0.002
+p=0.00 VanillaEM      s30 T= 128  acc 0.9997  nll 0.001
+p=0.00 VanillaEM      s31 T= 128  acc 0.9983  nll 0.005
+p=0.00 VanillaEM      s32 T= 128  acc 0.9980  nll 0.008
+p=0.00 VanillaEM      s33 T= 128  acc 1.0000  nll 0.000
+p=0.00 VanillaEM      s34 T= 128  acc 0.9997  nll 0.003
+p=0.00 VanillaEM      s35 T= 128  acc 1.0000  nll 0.000
+p=0.00 VanillaEM      s36 T= 128  acc 0.9996  nll 0.003
+p=0.00 VanillaEM      s37 T= 128  acc 0.9993  nll 0.002
+p=0.00 VanillaEM      s38 T= 128  acc 0.9990  nll 0.004
+p=0.00 VanillaEM      s39 T= 128  acc 0.9946  nll 0.034
+p=0.00 VanillaEM      s40 T= 128  acc 0.9535  nll 0.176
+p=0.00 VanillaEM      s41 T= 128  acc 0.9996  nll 0.001
+p=0.00 VanillaEM      s42 T= 128  acc 0.9997  nll 0.000
+p=0.00 VanillaEM      s43 T= 128  acc 1.0000  nll 0.001
+p=0.00 VanillaEM      s44 T= 128  acc 1.0000  nll 0.000
+p=0.00 VanillaEM      s45 T= 128  acc 1.0000  nll 0.000
+p=0.00 VanillaEM_NonNeg s26 T= 128  acc 0.9970  nll 0.009
+p=0.00 VanillaEM_NonNeg s27 T= 128  acc 0.9872  nll 0.034
+p=0.00 VanillaEM_NonNeg s28 T= 128  acc 0.9993  nll 0.001
+p=0.00 VanillaEM_NonNeg s29 T= 128  acc 0.9420  nll 0.243
+p=0.00 VanillaEM_NonNeg s30 T= 128  acc 0.9355  nll 0.245
+p=0.00 VanillaEM_NonNeg s31 T= 128  acc 0.9755  nll 0.065
+p=0.00 VanillaEM_NonNeg s32 T= 128  acc 0.9020  nll 0.385
+p=0.00 VanillaEM_NonNeg s33 T= 128  acc 1.0000  nll 0.000
+p=0.00 VanillaEM_NonNeg s34 T= 128  acc 0.9827  nll 0.044
+p=0.00 VanillaEM_NonNeg s35 T= 128  acc 1.0000  nll 0.000
+p=0.00 VanillaEM_NonNeg s36 T= 128  acc 0.9996  nll 0.001
+p=0.00 VanillaEM_NonNeg s37 T= 128  acc 0.9464  nll 0.233
+p=0.00 VanillaEM_NonNeg s38 T= 128  acc 0.9976  nll 0.008
+p=0.00 VanillaEM_NonNeg s39 T= 128  acc 1.0000  nll 0.000
+p=0.00 VanillaEM_NonNeg s40 T= 128  acc 0.9987  nll 0.007
+p=0.00 VanillaEM_NonNeg s41 T= 128  acc 0.9748  nll 0.075
+p=0.00 VanillaEM_NonNeg s42 T= 128  acc 1.0000  nll 0.000
+p=0.00 VanillaEM_NonNeg s43 T= 128  acc 1.0000  nll 0.000
+p=0.00 VanillaEM_NonNeg s44 T= 128  acc 1.0000  nll 0.000
+p=0.00 VanillaEM_NonNeg s45 T= 128  acc 0.9976  nll 0.008
+# GAIN_GRAIN dropout-scale re-score (declared secondary)
+
+Torus paper task, held-out map, evaluated under the same noise it trained on.
+
+## T=128
+
+| p_action_noise | Vanilla | MapPoPE-Pair | GainScalar | GainMod4 | VanillaEM | VanillaEM_NonNeg |
+|---|---|---|---|---|---|---|
+| 0 | 0.990 ± 0.021 | 1.000 ± 0.001 | 1.000 ± 0.001 | 1.000 ± 0.001 | 0.997 ± 0.010 | 0.982 ± 0.028 |
+
+[rescore_hook] layers hooked 120, hook calls 12000, unknown layer classes skipped []
+re-scored (attention x 1/(1-p)) vs registered, T=128:
+  GainMod4           0.9997 -> 0.9997
+  GainScalar         0.9999 -> 0.9999
+  MapPoPE-Pair       0.9995 -> 0.9995
+  Vanilla            0.9902 -> 0.9902
+  VanillaEM          0.9968 -> 0.9969
+  VanillaEM_NonNeg   0.9816 -> 0.9818
+  GainScalar - MapPoPE-Pair (registered): +0.0004 (two-sided perm p 0.1121)
+  GainScalar - MapPoPE-Pair (re-scored): +0.0003 (two-sided perm p 0.1212)
+  GainMod4 - MapPoPE-Pair (registered): +0.0002 (two-sided perm p 0.4287)
+  GainMod4 - MapPoPE-Pair (re-scored): +0.0002 (two-sided perm p 0.3734)
+  VanillaEM_NonNeg - VanillaEM (registered): -0.0152 (two-sided perm p 0.0256)
+  VanillaEM_NonNeg - VanillaEM (re-scored): -0.0151 (two-sided perm p 0.0260)
+  MapPoPE-Pair - Vanilla (registered): +0.0092 (two-sided perm p 0.0110)
+  MapPoPE-Pair - Vanilla (re-scored): +0.0094 (two-sided perm p 0.0115)

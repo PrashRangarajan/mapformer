@@ -20,6 +20,12 @@ does PoPE's score rescue rank 2 at T=1024? NO (`SCORE_RANK_RESULTS.md`, register
 3/12 SOLVED; PoPE repairs short-gap revisits, +0.115, not wrap-only ones, -0.015). Rank fixes the periodic code, the
 score rule fixes the local map: two defects, two fixes.
 
+**GAIN GRANULARITY 2026-10-05 (`GAIN_GRAIN_RESULTS.md`, registered).** On the paper torus (T=128, r2, n=20) one non-negative
+gain per token per head (pure gain field, peak always at "here") is AS GOOD as MapPoPE's per-frequency gain (20/20 vs
+20/20, NO HEADROOM qualifier: MapWM 18/20 here) and trains ~3x faster; per-module too. softplus on MapEM's q.k is WORSE
+(12/20 vs 19/20): the factorised per-token form helps, not non-negativity as such. MapPoPE's SCORE gain over MapWM shrinks
+on fresh seeds (+0.024 -> +0.009, direction kept).
+
 Encoding effect on the index row (PoPE - RoPE) vs the path row (MapPoPE - MapWM), 2026-09-23:
 
 | task | PoPE - RoPE | MapPoPE - MapWM |
