@@ -1,0 +1,61 @@
+!! SMOKE TEST: runs-dir /home/prashr/mapformer/runs/rank_nowrap_pilot, seeds [100, 101] -- not the registered batch
+
+== cells: T=1024 held-out accuracy (raw | floor-relative) | SOLVED | [T=2048] | run classes ==
+  grid 32: eval-stream floors (mean over seeds): blank 0.517, retrace 0.739; scored targets per stream 46401
+  grid 256: eval-stream floors (mean over seeds): blank 0.503, retrace 0.868; scored targets per stream 28823
+  A32  grid  32 Vanilla_r2ph_om32  0.6317 +/- 0.0244 | rel -0.411 | SOLVED 0/2 | [0.6061] | {'SOLVED': 0, 'STALLED': 2, 'DESCENDING': 0, 'RISING': 0}
+        s100:0.614/STAL(1.339) s101:0.649/STAL(1.264)
+  B32  grid  32 Vanilla_r3ph_om32  0.6417 +/- 0.0689 | rel -0.371 | SOLVED 0/2 | [0.6250] | {'SOLVED': 0, 'STALLED': 2, 'DESCENDING': 0, 'RISING': 0}
+        s100:0.593/STAL(1.449) s101:0.690/STAL(1.015)
+  AL   grid 256 Vanilla_r2ph_om32  0.6032 +/- 0.0160 | rel -2.015 | SOLVED 0/2 | [0.5939] | {'SOLVED': 0, 'STALLED': 2, 'DESCENDING': 0, 'RISING': 0}
+        s100:0.592/STAL(1.289) s101:0.614/STAL(1.163)
+  BL   grid 256 Vanilla_r3ph_om32  0.7519 +/- 0.0018 | rel -0.885 | SOLVED 0/2 | [0.7428] | {'SOLVED': 0, 'STALLED': 2, 'DESCENDING': 0, 'RISING': 0}
+        s100:0.751/STAL(0.655) s101:0.753/STAL(0.663)
+
+== registered contrasts (X over Y; Fisher two-sided on SOLVED, permutation on accuracy) ==
+  K   control, 32-torus: B32 over A32 (raw)        Fisher p 1.0000 | d +0.0100 perm p 1.0000 | does not fire
+  G   rank 2: AL over A32 (floor-relative)         Fisher p 1.0000 | d -1.6044 perm p 0.3333 | does not fire
+  G'  rank 2 reversed: A32 over AL                 Fisher p 1.0000 | d +1.6044 perm p 0.3333 | does not fire
+  R   256-torus: BL over AL (raw)                  Fisher p 1.0000 | d +0.1487 perm p 0.3333 | does not fire
+  R'  256-torus reversed: AL over BL               Fisher p 1.0000 | d -0.1487 perm p 0.3333 | does not fire
+      (secondary) rank 3: BL over B32 (floor-rel.) Fisher p 1.0000 | d -0.5135 perm p 0.3333 | does not fire
+      (secondary) rank 3 reversed: B32 over BL     Fisher p 1.0000 | d +0.5135 perm p 0.3333 | does not fire
+
+  REGISTERED: CONTROL FAILED (VOID)
+    - rank 3 not detectably above rank 2 on the 32-torus (B32 0/2 vs A32 0/2): no deficit to explain in this batch
+
+== secondaries (no verdict) ==
+  interaction (BL - AL) - (B32 - A32), SOLVED fraction: +0.000  bootstrap 95% CI [+0.000, +0.000] (negative = the rank gap shrinks on the large torus)
+  interaction (BL - AL) - (B32 - A32), floor-relative accuracy: +1.091  bootstrap 95% CI [+0.780, +1.402] (negative = the rank gap shrinks on the large torus)
+  interaction (BL - AL) - (B32 - A32), raw accuracy: +0.139  bootstrap 95% CI [+0.073, +0.205] (negative = the rank gap shrinks on the large torus)
+  r(final-5% loss, acc@1024) over 8 runs: -0.957; per grid: 32: -0.983  256: -0.999
+  T=2048 (rule 10: past training length) A32: 0.6061
+  T=2048 (rule 10: past training length) B32: 0.6250
+  T=2048 (rule 10: past training length) AL: 0.5939
+  T=2048 (rule 10: past training length) BL: 0.7428
+
+  accuracy by revisit stratum, held-out map, T=1024 (mean over seeds; target counts per stream in brackets):
+    A32  wrap 0.520 [17578]  plain<128 0.713 [26094]  plain>=128 0.572 [2728]  retrace_ok 0.823 [34290]  retrace_miss 0.089 [12110]
+         own training map 0.638 vs held-out 0.632 (gap +0.006); SOLVED-but-held-out<0.95: []
+         basins (descriptive): CLOCK/U 2; 'SOLVED iff CLEAN' on 2/2
+    B32  wrap 0.556 [17578]  plain<128 0.701 [26094]  plain>=128 0.625 [2728]  retrace_ok 0.825 [34290]  retrace_miss 0.123 [12110]
+         own training map 0.652 vs held-out 0.642 (gap +0.010); SOLVED-but-held-out<0.95: []
+         basins (descriptive): CLOCK/U 2; 'SOLVED iff CLEAN' on 2/2
+    AL   wrap nan [0]  plain<128 0.611 [26038]  plain>=128 0.526 [2786]  retrace_ok 0.676 [25026]  retrace_miss 0.123 [3798]
+         own training map 0.598 vs held-out 0.603 (gap -0.006); SOLVED-but-held-out<0.95: []
+         basins (descriptive): CLOCK/U 2; 'SOLVED iff CLEAN' on 2/2
+    BL   wrap nan [0]  plain<128 0.752 [26038]  plain>=128 0.754 [2786]  retrace_ok 0.790 [25026]  retrace_miss 0.498 [3798]
+         own training map 0.745 vs held-out 0.752 (gap -0.007); SOLVED-but-held-out<0.95: []
+         basins (descriptive): CLEAN/U 1 CLOCK/U 1; 'SOLVED iff CLEAN' on 1/2
+    stratum wrap         B32 - A32: +0.036 perm p 0.6667 (n 2/2)
+    stratum plain<128    B32 - A32: -0.012 perm p 1.0000 (n 2/2)
+    stratum plain<128    BL - AL: +0.140 perm p 0.3333 (n 2/2)
+    stratum plain<128    AL - A32: -0.101 perm p 0.3333 (n 2/2)
+    stratum plain>=128   B32 - A32: +0.052 perm p 0.6667 (n 2/2)
+    stratum plain>=128   BL - AL: +0.229 perm p 0.3333 (n 2/2)
+    stratum plain>=128   AL - A32: -0.046 perm p 0.3333 (n 2/2)
+    stratum retrace_miss B32 - A32: +0.034 perm p 1.0000 (n 2/2)
+    stratum retrace_miss BL - AL: +0.375 perm p 0.3333 (n 2/2)
+    stratum retrace_miss AL - A32: +0.034 perm p 1.0000 (n 2/2)
+  hard-target qualifier (registered, attaches to PERIODIC CODE IS THE LIMIT): non-retrace targets on the 256-torus, AL 0.123 vs BL 0.498, AL - BL -0.375 perm p 0.3333 -> no detectable shortfall; AL below 0.95 there (0.123) [branch is CONTROL FAILED (VOID): printed for the record]
+  dropout-scale re-score (attention x 1/(1-p)): A32 0.6315  B32 0.6418  AL 0.6027  BL 0.7519; branch under re-score: CONTROL FAILED (VOID)

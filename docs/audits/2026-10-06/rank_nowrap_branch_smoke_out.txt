@@ -1,0 +1,14 @@
+PASS  expected CEILING                      got CEILING                      | every run of every cell >= 0.999: nothing can be read
+PASS  expected CONTROL FAILED (VOID)        got CONTROL FAILED (VOID)        | rank 3 not detectably above rank 2 on the 32-torus (B32 12/12 vs A32 11/12): no deficit to explain in this batch
+PASS  expected LARGE-GRID CONTROL FAILED    got LARGE-GRID CONTROL FAILED    | rank 3 solves on 5/12 < 6: the large torus is not a working reference; reported as it falls
+PASS  expected LARGE-GRID CONTROL FAILED    got LARGE-GRID CONTROL FAILED    | rank 3 is detectably worse there than on the 32-torus: the large torus is not a working reference; reported as it falls
+PASS  expected LARGE GRID HURTS RANK 2      got LARGE GRID HURTS RANK 2      | rank 2 detectably worse on the 256-torus than on the 32-torus; R fires
+PASS  expected PERIODIC CODE IS THE LIMIT   got PERIODIC CODE IS THE LIMIT   | AL 11/12 >= 9; the rank-3 - rank-2 gap at 256 is unmeasured (does not fire), not shown to be zero
+PASS  expected PERIODIC CODE IS THE LIMIT   got PERIODIC CODE IS THE LIMIT   | REVERSAL: rank 2 detectably ABOVE rank 3 on the 256-torus; AL 12/12 >= 9; the rank-3 - rank-2 gap at 256 is unmeasured (does not fire), not shown to b
+PASS  expected PARTIAL                      got PARTIAL                      | rank 2 improves when wrap-around revisits vanish, but rank 3 still detectably above rank 2 at 256
+PASS  expected PARTIAL                      got PARTIAL                      | rank 2 improves when wrap-around revisits vanish, but AL 8/12 < 9
+PASS  expected RANK LIMIT IS GENERAL        got RANK LIMIT IS GENERAL        | rank 2 does not detectably improve on the 256-torus (AL 1/12 <= 3) and stays detectably below rank 3 there
+PASS  expected INTERMEDIATE                 got INTERMEDIATE                 | rank 2 below rank 3 at 256 but AL 5/12 > 3 and not detectably above its 32-torus self: neither the 32-torus failure rate nor rank 3's
+PASS  expected UNMEASURED                   got UNMEASURED                   | neither G nor R fires: rank 2 on the 256-torus is distinguishable from neither its 32-torus self nor rank 3
+
+12/12 branch cases pass (n = 12)

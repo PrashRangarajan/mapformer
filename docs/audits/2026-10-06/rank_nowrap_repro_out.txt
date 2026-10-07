@@ -1,0 +1,9 @@
+RANK_NOWRAP pilot reproduction (rank_nowrap_repro.py, 15 epochs, train_rank_nowrap Vanilla_r2ph_om32, grid 32, seed 0,
+run_rank_nd.sh flags) vs stored runs/rank_nd/D2/Vanilla_r2ph_s0 per-epoch losses. Compared with:
+  python3 -c "json losses of runs/rank_nowrap_pilot/repro/repro_losses.json vs torch.load(...)['losses'][:15]"
+epochs 15 max |diff| 0.0 bitwise equal True
+[2.955171585083008, 2.2506855872212626, 2.0568760317199084] [2.955171585083008, 2.2506855872212626, 2.0568760317199084]
+
+[exited with code 0]
+Note: a first attempt patched the FUNCTION mapformer.train (mapformer/__init__.py re-exports train) and was inert;
+it was killed at epoch ~80 without saving; the script now patches sys.modules['mapformer.train'] and asserts it.

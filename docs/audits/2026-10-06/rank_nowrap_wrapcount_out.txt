@@ -1,0 +1,4 @@
+grid 192 map/walk seed 10000: scored 295232, wrap-only 20 (share 6.77e-05), retrace 0.8713, blank 0.5014
+grid 192 map/walk seed 200: scored 297262, wrap-only 16 (share 5.38e-05), retrace 0.8702, blank 0.5024
+grid 256 map/walk seed 10000: scored 295647, wrap-only 0 (share 0.00e+00), retrace 0.8717, blank 0.4999
+grid 256 map/walk seed 200: scored 296929, wrap-only 0 (share 0.00e+00), retrace 0.8705, blank 0.5017

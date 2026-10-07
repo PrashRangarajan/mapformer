@@ -1,0 +1,13 @@
+RANK_NOWRAP pilot timing (seeds 100-101, 40 epochs, 2026-10-06 ~20:00). Per-epoch wall time printed every 5 epochs.
+Placement: i%2 -> all four rank-2 runs on cuda:0 (plus the repro run, and at times a second inert repro), all four
+rank-3 runs on cuda:1. Both GPUs were also running another user's jobs (9 processes, ~97% util) and, late in the
+pilot, the concurrent gain_phase agent's repro on cuda:1. Rank 2 vs rank 3 cost is the same model size; the cuda:0
+slowdown is the extra job(s) on that GPU.
+N256_Vanilla_r2ph_om32_s100.log      11.4 11.7 15.7 14.0 15.2 16.6 19.2 21.1 
+N256_Vanilla_r2ph_om32_s101.log      11.4 11.8 15.4 14.1 15.3 17.2 19.1 21.1 
+N256_Vanilla_r3ph_om32_s100.log      10.6 10.2 9.9 10.2 10.3 11.4 10.8 9.6 
+N256_Vanilla_r3ph_om32_s101.log      10.7 10.1 10.4 10.0 10.3 10.8 10.8 9.2 
+N32_Vanilla_r2ph_om32_s100.log       11.4 11.7 15.6 14.1 15.3 17.3 19.2 20.7 
+N32_Vanilla_r2ph_om32_s101.log       11.6 11.8 15.8 14.3 15.3 18.1 19.8 19.4 
+N32_Vanilla_r3ph_om32_s100.log       10.7 10.2 10.1 10.1 10.2 11.3 10.7 9.5 
+N32_Vanilla_r3ph_om32_s101.log       10.7 10.1 10.2 10.1 10.3 11.1 10.7 9.5 
