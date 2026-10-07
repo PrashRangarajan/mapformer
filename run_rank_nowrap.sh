@@ -10,7 +10,10 @@ set -uo pipefail
 REPO="$(cd "$(dirname "$0")" && pwd)"
 LOG="$REPO/rank_nowrap.log"
 source "$REPO/lib_driver.sh"
-DRV_MAXPG="${MAXPG:-4}"; DRV_SPACING="${DRV_SPACING:-15}"   # 4/GPU as RANK_ND; slots are shared with any other batch
+# Amendment 3: assigned UNCONDITIONALLY after sourcing lib_driver.sh (which pre-sets DRV_SPACING=45 / DRV_MINFREE=4500,
+# so a "${DRV_SPACING:-15}" default was a no-op). 4/GPU as RANK_ND (slots shared with any other batch); 15 s spacing;
+# MINFREE 4500 MiB: a T=1024 B16 per-head job uses ~3.4 GB (lib_driver efficiency audit #4, rank config), not re-measured.
+DRV_MAXPG="${MAXPG:-4}"; DRV_SPACING=15; DRV_MINFREE=4500
 drv_lock "$REPO/.run_rank_nowrap.lock" || exit 1
 export PYTHONUNBUFFERED=1
 cd "$REPO/.."
@@ -40,6 +43,7 @@ GUARD=(__init__.py analyze_rank_nowrap.py data_parallel.py environment.py enviro
        train_rank_nowrap.py train_variant.py)
 running() { ps -u "$USER" -o comm=,args= | awk -v d="--output-dir $1 " '$1=="python3" && index($0, d)' | wc -l; }
 echo "start $(date)" >> "$LOG"
+_drv_log "knobs: DRV_MAXPG $DRV_MAXPG DRV_SPACING $DRV_SPACING DRV_MINFREE $DRV_MINFREE"
 drv_md5_guard "$R" "${GUARD[@]}" || exit 1
 _drv_log "code version at launch: $(cd "$REPO" && git rev-parse HEAD) $(cd "$REPO" && git diff --quiet HEAD -- && echo clean || echo DIRTY)"
 for S in $SEEDS; do for c in "${CELLS[@]}"; do set -- $c
@@ -61,10 +65,23 @@ REQ=(); for S in $SEEDS; do for c in "${CELLS[@]}"; do set -- $c; REQ+=("$R/N$1/
 drv_require "${REQ[@]}" || drv_fail "missing checkpoints"
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before eval"
 # eval / re-score on the GPU with the most free memory (Amendment 2), not a pinned cuda:0; the analysis picks its own
-best_gpu() { nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits | sort -t, -k2 -nr | head -1 | cut -d, -f1 | tr -d ' '; }
+# Amendment 3: nvidia-smi under a timeout, empty output guarded, a minimum of EVAL_MINFREE MiB free, every try logged;
+# polls up to 60 x 30 s, then fails the batch (the done marker is not set) rather than evaluating on a full GPU
+EVAL_MINFREE=3000
+best_gpu() {
+  local i line
+  for ((i = 0; i < 60; i++)); do
+    line=$(timeout 30 nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits 2>/dev/null | sort -t, -k2 -nr | head -1)
+    if [ -n "$line" ] && [ "$(echo "$line" | cut -d, -f2 | tr -d ' ')" -ge "$EVAL_MINFREE" ] 2>/dev/null; then
+      _drv_log "best_gpu: $line (index, free MiB)"; echo "$line" | cut -d, -f1 | tr -d ' '; return 0
+    fi
+    _drv_log "best_gpu: no GPU with >= $EVAL_MINFREE MiB free (nvidia-smi: '${line:-empty}'); retry $i"; sleep 30
+  done
+  return 1
+}
 for N in 32 256; do
   ARMS="Vanilla_r2ph_om32,Vanilla_r3ph_om32"; [ "$N" = 32 ] && ARMS="$ARMS,Vanilla_r2ph_om32_redraw"
-  EG=$(best_gpu); _drv_log "eval N$N on cuda:$EG"
+  EG=$(best_gpu) || drv_fail "no GPU for eval N$N"; _drv_log "eval N$N on cuda:$EG"
   python3 -u -m mapformer.eval_rank_nowrap --runs-dir "$R/N$N" --configs "2:$N:$ARMS" \
     --seeds $SEEDS --lengths 1024 2048 --n-trials 100 --device "cuda:$EG" --out "$R/N$N/EVAL_D2.md" >> "$LOG" 2>&1 \
     || drv_fail "eval N$N"

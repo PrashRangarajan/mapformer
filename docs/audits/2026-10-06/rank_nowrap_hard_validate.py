@@ -1,5 +1,7 @@
-"""RANK_NOWRAP Amendment 2, CPU only: validate the hard-target accuracy h (stratum retrace_miss) as the registered
-quantity, on stored per-head runs, and build the per-stratum pools for the transport power simulation.
+"""RANK_NOWRAP Amendments 2-3, CPU only: validate the plain-hard-target accuracy p (stratum hard_plain = retrace_miss
+and not wrap-only; Amendment 3) as the registered quantity -- and h (all hard, Amendment 2) beside it -- on stored
+per-head runs; describe the hard-target composition of both grids; build the per-stratum pools for the wrap-aware
+transport power simulation.
 
 Runs (T=1024, 900 epochs): RANK_ND D2 Vanilla_r2ph / Vanilla_r3ph seeds 0-7 (ND 32-torus; held-out map seed 10000,
 walk seed 10000 + s, as eval_nd), RANK_MI Vanilla_r2ph and RANK3 Vanilla_r3ph seeds 0-7 (paper 64-torus,
@@ -28,6 +30,7 @@ from mapformer.train_variant import VARIANT_MAP         # noqa: E402
 
 RP = "/home/prashr/mapformer"; NW = 60; T = 1024
 ST3 = ("copy", "blank_out", "retrace_miss")
+ST4 = ("copy", "blank_out", "hard_wrap", "hard_plain")      # the transport strata (Amendment 3)
 
 
 def gw_stream(s, n=NW):
@@ -44,8 +47,9 @@ def run_one(ck, st):
                                   n_layers=c["n_layers"], grid_size=c["grid_size"])
     m.load_state_dict(b["model_state_dict"]); m.eval()
     acc, cnt, nll = A.strat(m, st, "cpu", want_nll=True)
-    return {"acc": {k: acc[k] for k in ST3 + ("all",)}, "nll": {k: nll[k] for k in ST3 + ("all",)},
-            "n": {k: cnt[k] for k in ST3}, "solved": classify_run(b["losses"])["registered"] == "SOLVED",
+    ks = ST3 + ("hard_wrap", "hard_plain", "all")
+    return {"acc": {k: acc[k] for k in ks}, "nll": {k: nll[k] for k in ks},
+            "n": {k: cnt[k] for k in ks}, "solved": classify_run(b["losses"])["registered"] == "SOLVED",
             "tail": float(classify_run(b["losses"])["tail"])}
 
 
@@ -58,8 +62,24 @@ def main():
     for N in (32, 256):
         env, st = A.stream(N, 0, n=100); f = A.floors(st, env.unified_blank)
         assert f["bad_copy"] == 0; share[N] = f["share"]
-        print(f"ND {N}-torus stratum shares (held-out stream, 100 walks): " + "  ".join(f"{k} {v:.3f}" for k, v in f["share"].items())
+        # wrap-aware composition of the hard set (Amendment 3): counts per sequence, lag, and turns (direction changes
+        # between the previous visit to the cell and the target)
+        comp = {"hard_wrap": [], "hard_plain": []}; tot = 0
+        for tok, r, o, wrap, lag, ret, inr in st:
+            a = tok[0::2].numpy(); turns = np.concatenate([[0], np.cumsum(a[1:] != a[:-1])])
+            for t in np.nonzero(r)[0]:
+                tot += 1
+                if ret[t] != o[t]:
+                    comp["hard_wrap" if wrap[t] else "hard_plain"].append((lag[t], turns[t] - turns[t - lag[t]] if lag[t] <= t else -1))
+        for k in comp:
+            share[N][k] = len(comp[k]) / tot
+        print(f"ND {N}-torus stratum shares (held-out stream, 100 walks): " + "  ".join(f"{k} {v:.3f}" for k, v in share[N].items())
               + f"; retrace-or-blank floor {f['retrace']:.3f}; bad copies {f['bad_copy']}", flush=True)
+        for k, v in comp.items():
+            if v:
+                v = np.array(v)
+                print(f"    {k}: {len(v) / 100:.1f} per sequence, {len(v) / max(1, len(comp['hard_wrap']) + len(comp['hard_plain'])):.2f} "
+                      f"of the hard set, lag median {np.median(v[:, 0]):.0f}, turns median {np.median(v[:, 1]):.0f}", flush=True)
     pool = []
     for tag, rank, fmt in sets:
         for s in range(8):
@@ -70,20 +90,22 @@ def main():
             fl = A.floors(st, env.unified_blank); assert fl["bad_copy"] == 0, (tag, s)
             r = run_one(fmt.format(s=s), st); r.update({"set": tag, "rank": rank, "seed": s, "floor": fl["retrace"]})
             pool.append(r)
-            print(f"  {tag} r{rank} s{s}: h {r['acc']['retrace_miss']:.3f} copy {r['acc']['copy']:.3f} blank_out "
+            print(f"  {tag} r{rank} s{s}: p {r['acc']['hard_plain']:.3f} wrap-only {r['acc']['hard_wrap'] if r['acc']['hard_wrap'] is not None else float('nan'):.3f} h {r['acc']['retrace_miss']:.3f} copy {r['acc']['copy']:.3f} blank_out "
                   f"{r['acc']['blank_out']:.3f} all {r['acc']['all']:.3f} | NLL all {r['nll']['all']:.3f} | loss-SOLVED "
                   f"{r['solved']} (tail {r['tail']:.3f})", flush=True)
     json.dump({"share": share, "pool": pool, "n_walks": NW}, open(f"{RP}/docs/audits/2026-10-06/rank_nowrap_hard_pool.json", "w"), indent=1)
 
-    print(f"\n(1) HIT = h >= {A.HIT_H} vs training-loss SOLVED, per run:")
-    for tag in ("ND32", "T64"):
-        for rank in (2, 3):
-            P = [p for p in pool if p["set"] == tag and p["rank"] == rank]
-            print(f"  {tag} rank {rank}: HIT {sum(p['acc']['retrace_miss'] >= A.HIT_H for p in P)}/8, SOLVED {sum(p['solved'] for p in P)}/8, "
-                  f"agree {sum((p['acc']['retrace_miss'] >= A.HIT_H) == p['solved'] for p in P)}/8; h sorted "
-                  + " ".join(f"{p['acc']['retrace_miss']:.3f}{'S' if p['solved'] else ''}" for p in sorted(P, key=lambda p: p['acc']['retrace_miss'])))
-    hs = sorted(p["acc"]["retrace_miss"] for p in pool if p["solved"]); hu = sorted(p["acc"]["retrace_miss"] for p in pool if not p["solved"])
-    print(f"  over all 32 runs: lowest h among SOLVED {hs[0]:.3f}, highest among not SOLVED {hu[-1]:.3f}")
+    for key, thr, nm in (("hard_plain", A.HIT_P, "p (plain hard; registered, Amendment 3)"), ("retrace_miss", 0.90, "h (all hard; Amendment 2)")):
+        print(f"\n(1) HIT = {nm} >= {thr} vs training-loss SOLVED, per run:")
+        for tag in ("ND32", "T64"):
+            for rank in (2, 3):
+                P = [p for p in pool if p["set"] == tag and p["rank"] == rank]
+                print(f"  {tag} rank {rank}: HIT {sum(p['acc'][key] >= thr for p in P)}/8, SOLVED {sum(p['solved'] for p in P)}/8, "
+                      f"agree {sum((p['acc'][key] >= thr) == p['solved'] for p in P)}/8; sorted "
+                      + " ".join(f"{p['acc'][key]:.3f}{'S' if p['solved'] else ''}" for p in sorted(P, key=lambda p: p['acc'][key])))
+        hs = sorted(p["acc"][key] for p in pool if p["solved"]); hu = sorted(p["acc"][key] for p in pool if not p["solved"])
+        print(f"  over all 32 runs: lowest among SOLVED {hs[0]:.4f}, highest among not SOLVED {hu[-1]:.4f}; gap {hs[0] - hu[-1]:+.4f}; "
+              f"threshold {thr} margin to SOLVED {hs[0] - thr:+.4f}, to not SOLVED {thr - hu[-1]:+.4f}")
 
     print("\n(2) transport of the ND 32-torus runs to the 256-torus stratum mix (per-stratum accuracy / NLL held fixed):")
     f32 = share[32]["copy"] + share[32]["blank_out"]; f256 = share[256]["copy"] + share[256]["blank_out"]

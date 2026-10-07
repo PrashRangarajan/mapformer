@@ -11,15 +11,19 @@ seed the initial weights are identical across cells of the same rank -- train_ra
 Every cell is evaluated on the stock fixed held-out map (env seed 10000, walk seed 10000 + s, 100 walks): eval_nd via
 eval_rank_nowrap for raw accuracy; the SAME walks are regenerated here for the strata.
 
-THE REGISTERED QUANTITY (Amendment 2) is h = held-out accuracy on the HARD targets: the revisit targets the
-retrace-or-blank floor gets wrong (stratum retrace_miss; the floor predicts the retraced observation inside a run that
-reverses the previous one and blank otherwise; inside a retrace run it is always right, checked, so retrace_miss = the
-non-blank targets outside a retrace run). h is the same quantity on both grids; Amendment 1's
-rel = (acc - f) / (1 - f) was not (an error on a floor-predicted target cost 3.0x at 32 but 6.8x at 256). A run HITS if
-h >= HIT_H. Every contrast "X over Y":
+THE REGISTERED QUANTITY (Amendment 3) is p = held-out accuracy on the PLAIN HARD targets: revisit targets that the
+retrace-or-blank floor gets wrong (stratum retrace_miss: non-blank targets outside a retrace run; the floor predicts the
+retraced observation inside a run that reverses the previous one and blank otherwise, and inside a retrace run it is
+always right, checked) AND that are not wrap-only (the cell was seen before at the same unwrapped position). p is
+kinematically matched across cells: on the 256-torus every hard target is plain (p = h); on the 32-torus the hard set is
+68% wrap-only, and p keeps only its plain part, which matches the 256 hard set (lag ~85, ~38-39 per sequence). So the
+question p asks is: does training without wrap-around make rank 2 better on the SAME kind of targets? h (all hard,
+Amendment 2) and wrap-only accuracy are declared secondaries. p and h count only non-blank labels (a lost model that
+defaults to blank scores 0 there), on both grids alike. Amendment 1's rel was not grid-comparable either.
+A run HITS if p >= HIT_P. Every contrast "X over Y":
   within a grid: FIRES if Fisher (two-sided) on HIT counts p < .05 with X higher, OR permutation (stats_core.perm2_p)
-                 on h has p < .05 with mean(X) - mean(Y) >= MIN_H;
-  across grids:  FIRES only if the permutation on h has p < .05 with mean(X) - mean(Y) >= MIN_H.
+                 on p has p < .05 with mean(X) - mean(Y) >= MIN_P;
+  across grids:  FIRES only if the permutation on p has p < .05 with mean(X) - mean(Y) >= MIN_P.
 Branches and qualifiers: decide(). `python3 -m mapformer.analyze_rank_nowrap [--no-gpu-secondaries]`
 """
 import argparse
@@ -42,14 +46,15 @@ N_SEEDS = 10
 SEEDS = list(range(60, 60 + N_SEEDS))
 R2, R3, RD = "Vanilla_r2ph_om32", "Vanilla_r3ph_om32", "Vanilla_r2ph_om32_redraw"
 CELLS = {"A32": (GS, R2), "B32": (GS, R3), "M32": (GS, RD), "AL": (GL, R2), "BL": (GL, R3)}
-HIT_H = 0.90                           # a run HITS if it gets >= 90% of the hard targets (validated, Amendment 2)
-MIN_H = 0.10                           # materiality of every accuracy arm, in hard-target units (grid-neutral)
+HIT_P = 0.98                           # a run HITS if p >= HIT_P (validated on stored runs, Amendment 3; narrow gap)
+MIN_P = 0.10                           # materiality of every accuracy arm, in plain-hard-target units (grid-neutral)
+MIN_FREE_MB = 3000                     # analysis device: a GPU needs this much free memory, else wait, else CPU
 QUAL_D = 0.02                          # hard-target qualifier: AL - BL <= -0.02 with p < .05
 NEAR = 0.75                            # "solves like rank 3": HIT >= ceil(0.75 n)
 LOW = 0.25                             # "fails like rank 2 at 32": HIT <= floor(0.25 n)
 T_REG, N_TRIALS, ENV_SEED = 1024, 100, 10000
 RESCUE = ("PERIODIC CODE IS THE LIMIT", "FIXED MAP WAS THE LIMIT", "LARGE TORUS RESCUES RANK 2, CAUSE UNRESOLVED")
-KEYS = ("all", "wrap", "plain<128", "plain>=128", "copy", "blank_out", "retrace_ok", "retrace_miss")
+KEYS = ("all", "wrap", "plain<128", "plain>=128", "copy", "blank_out", "retrace_ok", "retrace_miss", "hard_wrap", "hard_plain")
 
 
 # ------------------------------------------------------------------------------------------------ streams and floors
@@ -110,23 +115,24 @@ def floors(st, blank):
 
 # ------------------------------------------------------------------------------------------------ registered logic
 def within(hx, ax, hy, ay, n, pfun=perm2_p):
-    """X over Y on one grid. hx, hy: HIT counts of n; ax, ay: per-seed hard-target accuracies h."""
+    """X over Y on one grid. hx, hy: HIT counts of n; ax, ay: per-seed plain-hard accuracies p."""
     pf = fisher_solved(hy, n, hx, n)
     d = float(np.mean(ax) - np.mean(ay)); pp = pfun(ay, ax)["p"]
     f_fisher = pf < 0.05 and hx > hy
-    f_acc = pp < 0.05 and d >= MIN_H
+    f_acc = pp < 0.05 and d >= MIN_P
     return {"fires": f_fisher or f_acc, "fisher": f_fisher, "acc": f_acc, "p_fisher": pf, "p_perm": pp, "d": d}
 
 
 def across(ax, ay, pfun=perm2_p):
-    """X over Y across grids: permutation on h only (Amendment 1 D1, Amendment 2)."""
+    """X over Y across grids: permutation on p only (Amendments 1-3)."""
     d = float(np.mean(ax) - np.mean(ay)); pp = pfun(ay, ax)["p"]
-    f = pp < 0.05 and d >= MIN_H
+    f = pp < 0.05 and d >= MIN_P
     return {"fires": f, "fisher": False, "acc": f, "p_fisher": float("nan"), "p_perm": pp, "d": d}
 
 
 def hard_qualifier(h, pfun=perm2_p):
-    """Registered: on the 256-torus's hard targets does rank 2 still trail rank 3 by >= QUAL_D (finer than R)?"""
+    """Registered: on the 256-torus's (plain) hard targets does rank 2 still trail rank 3 by >= QUAL_D (finer than R)?
+    Takes the per-seed p of AL and BL (on the 256-torus p = h)."""
     a, b = np.asarray(h["AL"], float), np.asarray(h["BL"], float)
     d = float(a.mean() - b.mean()); p = pfun(b, a)["p"]
     trails = d <= -QUAL_D and p < 0.05
@@ -135,7 +141,8 @@ def hard_qualifier(h, pfun=perm2_p):
 
 
 def decide(hit, n, h, raw, pfun=perm2_p):
-    """The registered verdict. hit: HIT counts per cell; h: per-seed hard-target accuracy per cell; raw: per-seed raw
+    """The registered verdict. hit: HIT counts per cell; h: per-seed REGISTERED accuracy per cell (p since Amendment 3,
+    the plain-hard-target accuracy; the parameter keeps its name); raw: per-seed raw
     accuracy (CEILING only). Returns (branch, qualifiers, contrasts); the hard-target qualifier is always listed --
     attached to the verdict on the three rescue branches, '(record)' otherwise."""
     br, q, c = _decide(hit, n, h, raw, pfun)
@@ -195,8 +202,7 @@ def _decide(hit, n, h, raw, pfun=perm2_p):
             return "FIXED MAP AT 32, LARGE TORUS FAILS", q + [
                 "rank 2 solves the 32-torus (wraps included) with a redrawn map, yet fails the 256-torus: neither the "
                 "periodic code nor a general rank limit; the 32-torus failure was the fixed map (memorisation, train/test "
-                "shift, or map diversity) and the 256 failure has another cause (e.g. one third of the hard-target "
-                "supervision)", mem_txt], c
+                "shift, or map diversity) and the 256 failure has another cause", mem_txt], c
         if hit["AL"] <= low and m32_fails:
             return "RANK LIMIT IS GENERAL", q + [f"rank 2 fails the 256-torus (AL HIT {hit['AL']}/{n} <= {low}), stays below "
                                                  f"rank 3 there, and fails the 32-torus with a redrawn map too", mem_txt], c
@@ -207,12 +213,24 @@ def _decide(hit, n, h, raw, pfun=perm2_p):
 
 
 # ------------------------------------------------------------------------------------------------ models, strata
-def pick_device():
-    """The CUDA device with the most free memory (Amendment 2), else the CPU."""
+def pick_device(wait_s=1800, poll_s=30):
+    """The CUDA device with the most free memory if it has >= MIN_FREE_MB (Amendment 3); polls up to wait_s for one;
+    then falls back to the CPU (the strata check is then a WARN, Amendment 1 N9). Every decision is printed."""
+    import time
     if not torch.cuda.is_available():
-        return "cpu"
-    free = [torch.cuda.mem_get_info(i)[0] for i in range(torch.cuda.device_count())]
-    return f"cuda:{int(np.argmax(free))}"
+        print("pick_device: no CUDA -> cpu"); return "cpu"
+    t0 = time.time()
+    while True:
+        try:
+            free = [torch.cuda.mem_get_info(i)[0] / 2 ** 20 for i in range(torch.cuda.device_count())]
+        except Exception as e:                                     # a wedged driver must not hang or kill the verdict
+            print(f"pick_device: mem_get_info failed ({e}) -> cpu"); return "cpu"
+        if free and max(free) >= MIN_FREE_MB:
+            g = int(np.argmax(free)); print(f"pick_device: free MiB {[round(x) for x in free]} -> cuda:{g}"); return f"cuda:{g}"
+        if time.time() - t0 > wait_s:
+            print(f"pick_device: no GPU with >= {MIN_FREE_MB} MiB free after {wait_s} s (free {[round(x) for x in free]}) -> cpu")
+            return "cpu"
+        print(f"pick_device: free MiB {[round(x) for x in free]} < {MIN_FREE_MB}; waiting"); time.sleep(poll_s)
 
 
 def load(N, v, s, dev):
@@ -226,7 +244,8 @@ def load(N, v, s, dev):
 def strat(m, st, dev, want_nll=False):
     """Accuracy (and optionally NLL) by stratum on a precomputed stream. Strata: all; wrap-only / plain lag < 128 /
     plain lag >= 128; copy (inside a retrace run, floor right), blank_out (blank target outside a retrace run),
-    retrace_ok = copy + blank_out, retrace_miss = targets the retrace-or-blank floor gets wrong (the hard targets).
+    retrace_ok = copy + blank_out, retrace_miss = targets the retrace-or-blank floor gets wrong (the hard targets),
+    split into hard_wrap (wrap-only) and hard_plain (the registered stratum, Amendment 3).
     'all' reproduces eval_nd.evaluate on the same stream."""
     ok = dict.fromkeys(KEYS, 0); tot = dict.fromkeys(KEYS, 0); nl = dict.fromkeys(KEYS, 0.0)
     for tok, r, o, wrap, lag, ret, inr in st:
@@ -239,6 +258,8 @@ def strat(m, st, dev, want_nll=False):
                   "retrace_miss" if miss else "retrace_ok"]
             if not miss:
                 ks.append("copy" if inr[t] else "blank_out")
+            else:
+                ks.append("hard_wrap" if wrap[t] else "hard_plain")
             for k in ks:
                 ok[k] += hit; tot[k] += 1; nl[k] += nll
     acc = {k: (ok[k] / tot[k] if tot[k] else None) for k in KEYS}
@@ -285,7 +306,7 @@ def boot_did(x, n_boot=20000, seed=0):
 
 
 def all_strata(streams, dev, raw=None):
-    """h, HIT and strata for every cell and seed. On a GPU 'all' must reproduce eval_nd's accuracy (same walks); on a CPU
+    """p (registered), HIT and strata for every cell and seed. On a GPU 'all' must reproduce eval_nd's accuracy (same walks); on a CPU
     fallback a difference (argmax ties) is printed, not asserted (Amendment 1, N9)."""
     out = {}
     for k, (N, v) in CELLS.items():
@@ -302,8 +323,8 @@ def all_strata(streams, dev, raw=None):
             rows.append({"seed": s, "acc": acc, "n": cnt})
             del m
         out[k] = rows
-    h = {k: np.array([r["acc"]["retrace_miss"] for r in out[k]], float) for k in CELLS}
-    return out, h, {k: int((h[k] >= HIT_H).sum()) for k in CELLS}
+    p = {k: np.array([r["acc"]["hard_plain"] for r in out[k]], float) for k in CELLS}
+    return out, p, {k: int((p[k] >= HIT_P).sum()) for k in CELLS}
 
 
 # ------------------------------------------------------------------------------------------------ main
@@ -345,67 +366,79 @@ def main():
             cls[k].append(classify_run(b["losses"]))
         sol[k] = sum(c["registered"] == "SOLVED" for c in cls[k])
 
-    strata, h, hit = all_strata(streams, dev, raw)
-    br, qual, c = decide(hit, n, h, raw)
+    strata, p, hit = all_strata(streams, dev, raw)
+    br, qual, c = decide(hit, n, p, raw)
+    sec = lambda key: {k: np.array([r["acc"][key] if r["acc"][key] is not None else np.nan for r in strata[k]], float) for k in CELLS}
+    h, wo = sec("retrace_miss"), sec("hard_wrap")
 
-    print(f"== cells: T={T_REG} held-out | h = hard-target accuracy | HIT (h >= {HIT_H}) | raw | loss-SOLVED | [raw T=2048] | classes ==")
+    print(f"== cells: T={T_REG} held-out | p = plain-hard accuracy (registered) | HIT (p >= {HIT_P}) | h = all-hard | "
+          f"wrap-only hard | raw | loss-SOLVED | [raw T=2048] | classes ==")
     for N in (GS, GL):
         fr = [flo[(N, s)] for s in SEEDS]; sh = {kk: np.mean([x["share"][kk] for x in fr]) for kk in fr[0]["share"]}
+        nst = {kk: np.mean([sum(r["n"][kk] for r in strata[k] if r["seed"] == s) / N_TRIALS for k in CELLS if CELLS[k][0] == N
+                            for s in SEEDS[:1]]) for kk in ("hard_plain", "hard_wrap")}
         print(f"  grid {N}: floors blank {np.mean([x['blank'] for x in fr]):.3f}, retrace-or-blank {np.mean([x['retrace'] for x in fr]):.3f}; "
               f"target shares copy {sh['copy']:.3f} / blank_out {sh['blank_out']:.3f} / hard {sh['retrace_miss']:.3f}; "
-              f"targets per stream {np.mean([x['n'] for x in fr]):.0f}")
+              f"hard targets per sequence: plain {nst['hard_plain']:.1f}, wrap-only {nst['hard_wrap']:.1f}")
     for k, (N, v) in CELLS.items():
         cc = {c_: sum(c["cls"] == c_ for c in cls[k]) for c_ in ("SOLVED", "STALLED", "DESCENDING", "RISING")}
-        print(f"  {k:4s} grid {N:3d} {v:25s} h {h[k].mean():.4f} +/- {h[k].std(ddof=1):.4f} | HIT {hit[k]}/{n} | raw "
-              f"{raw[k].mean():.4f} | SOLVED {sol[k]}/{n} | [{raw2048[k].mean():.4f}] | {cc}")
+        print(f"  {k:4s} grid {N:3d} {v:25s} p {p[k].mean():.4f} +/- {p[k].std(ddof=1):.4f} | HIT {hit[k]}/{n} | h {np.nanmean(h[k]):.4f} | "
+              f"wrap-only {np.nanmean(wo[k]) if np.isfinite(wo[k]).any() else float('nan'):.4f} | raw {raw[k].mean():.4f} | "
+              f"SOLVED {sol[k]}/{n} | [{raw2048[k].mean():.4f}] | {cc}")
         print("        " + " ".join(f"s{s}:{x:.3f}/{y:.3f}/{cl['registered'][:4]}({cl['tail']:.3f})"
-                                    for s, x, y, cl in zip(SEEDS, h[k], raw[k], cls[k])))
-    lab = {"K": "K    32-torus: B32 over A32", "G": "G    rank 2: AL over A32 (h only)", "Grev": "G'   A32 over AL (h only)",
-           "R": "R    256-torus: BL over AL", "Rrev": "R'   256-torus: AL over BL", "G3rev": "G3'  rank 3: B32 over BL (h only)",
+                                    for s, x, y, cl in zip(SEEDS, p[k], raw[k], cls[k])))
+    lab = {"K": "K    32-torus: B32 over A32", "G": "G    rank 2: AL over A32 (p only)", "Grev": "G'   A32 over AL (p only)",
+           "R": "R    256-torus: BL over AL", "Rrev": "R'   256-torus: AL over BL", "G3rev": "G3'  rank 3: B32 over BL (p only)",
            "Mem": "Mem  32-torus: M32 (redrawn) over A32", "MemRev": "Mem' 32-torus: A32 over M32 (redrawn)",
            "Km": "Km   32-torus: B32 over M32 (redrawn)"}
-    print("\n== registered contrasts (within grid: Fisher on HIT or permutation on h; across grids: permutation on h) ==")
+    print("\n== registered contrasts (within grid: Fisher on HIT or permutation on p; across grids: permutation on p) ==")
     for key, x in c.items():
         print(f"  {lab[key]:42s} Fisher p {x['p_fisher']:.4f}{' FIRES' if x['fisher'] else ''} | d {x['d']:+.4f} perm p "
               f"{x['p_perm']:.4f}{' FIRES' if x['acc'] else ''} | {'FIRES' if x['fires'] else 'does not fire'}")
-    trails, _ = hard_qualifier(h)
+    trails, _ = hard_qualifier(p)
     tag = " [ON THE HARD TARGETS RANK 2 STILL TRAILS RANK 3]" if (trails and br in RESCUE) else ""
     print(f"\n  REGISTERED: {br}{tag}" + "".join(f"\n    - {x}" for x in qual))
 
     print("\n== secondaries (no verdict) ==")
-    br_s, _, _ = decide(sol, n, h, raw)
+    br_s, _, _ = decide(sol, n, p, raw)
     print(f"  amended branches with loss-SOLVED in place of HIT: {br_s}; loss-SOLVED " + " ".join(f"{k} {sol[k]}/{n}" for k in CELLS))
+    hh = {k: np.nan_to_num(h[k]) for k in CELLS}; hhit = {k: int((hh[k] >= HIT_P).sum()) for k in CELLS}
+    print(f"  amended branches on h (all hard targets, Amendment 2's quantity; not kinematically matched): {decide(hhit, n, hh, raw)[0]}")
     print(f"  HIT vs loss-SOLVED agreement per run: " + "  ".join(
-        f"{k} {sum((x >= HIT_H) == (cl['registered'] == 'SOLVED') for x, cl in zip(h[k], cls[k]))}/{n}" for k in CELLS))
-    fl = {k: np.array([flo[(CELLS[k][0], s)]["retrace"] for s in SEEDS]) for k in CELLS}
-    rel = {k: (raw[k] - fl[k]) / (1 - fl[k]) for k in CELLS}
-    print("  Amendment 1's floor-relative accuracy (not grid-comparable; descriptive): " + "  ".join(f"{k} {rel[k].mean():+.3f}" for k in CELLS))
-    for nm, vals in (("HIT fraction", {k: (h[k] >= HIT_H).astype(float) for k in CELLS}), ("h", h), ("raw accuracy", raw)):
+        f"{k} {sum((x >= HIT_P) == (cl['registered'] == 'SOLVED') for x, cl in zip(p[k], cls[k]))}/{n}" for k in CELLS))
+    for a_, b_ in (("A32", "B32"), ("A32", "M32")):
+        xa, xb = wo[a_][np.isfinite(wo[a_])], wo[b_][np.isfinite(wo[b_])]
+        if len(xa) >= 2 and len(xb) >= 2:
+            print(f"  wrap-only hard targets, 32-torus: {b_} - {a_} {xb.mean() - xa.mean():+.3f} perm p {perm2_p(xa, xb)['p']:.4f}; "
+                  f"wrap deficit within cell (p - wrap-only): " + "  ".join(f"{k} {np.nanmean(p[k] - wo[k]):+.3f}" for k in (a_, b_)))
+    for nm, vals in (("HIT fraction", {k: (p[k] >= HIT_P).astype(float) for k in CELLS}), ("p", p), ("raw accuracy", raw)):
         d, lo, hi = boot_did(vals)
         print(f"  interaction (BL - AL) - (B32 - A32), {nm}: {d:+.3f}  bootstrap 95% CI [{lo:+.3f}, {hi:+.3f}] "
               f"(negative = the rank gap shrinks on the large torus)")
-    for nm, x, y in (("paired G (N6): h(AL_s) - h(A32_s)", "AL", "A32"), ("paired Mem: h(M32_s) - h(A32_s)", "M32", "A32")):
-        dp = h[x] - h[y]
+    for nm, x, y in (("paired G (N6): p(AL_s) - p(A32_s)", "AL", "A32"), ("paired Mem: p(M32_s) - p(A32_s)", "M32", "A32")):
+        dp = p[x] - p[y]
         print(f"  {nm} (identical init and action streams per seed): mean {dp.mean():+.3f}, {int((dp > 0).sum())}/{n} "
               f"positive, sign-flip p {signflip_p(dp)['p']:.4f}")
     ks = list(CELLS)
     tails = np.concatenate([[cl["tail"] for cl in cls[k]] for k in ks])
-    for nm, v_ in (("raw acc", raw), ("h", h)):
+    for nm, v_ in (("raw acc", raw), ("p", p)):
         accs = np.concatenate([v_[k] for k in ks])
         print(f"  r(final-5% loss, {nm}@1024) over {len(tails)} runs: {np.corrcoef(tails, accs)[0, 1]:+.3f}; per grid: "
               + "  ".join(f"{N}: {np.corrcoef(np.concatenate([[cl['tail'] for cl in cls[k]] for k in ks if CELLS[k][0] == N]), np.concatenate([v_[k] for k in ks if CELLS[k][0] == N]))[0, 1]:+.3f}" for N in (GS, GL)))
     print("  T=2048 raw (rule 10: past training length): " + "  ".join(f"{k} {raw2048[k].mean():.4f}" for k in ks))
 
-    out = {"hit": hit, "solved": sol, "h": {k: v.tolist() for k, v in h.items()}, "raw": {k: v.tolist() for k, v in raw.items()},
+    out = {"hit": hit, "solved": sol, "p": {k: v.tolist() for k, v in p.items()}, "h": {k: v.tolist() for k, v in h.items()},
+           "wrap_only": {k: v.tolist() for k, v in wo.items()}, "raw": {k: v.tolist() for k, v in raw.items()},
            "branch": br, "qualifiers": qual, "strata": {k: [{"seed": r["seed"], **{f"acc_{kk}": vv for kk, vv in r["acc"].items()},
                                                              **{f"n_{kk}": vv for kk, vv in r["n"].items()}} for r in strata[k]] for k in ks},
            "own": {}, "basins": {}}
-    print("\n  accuracy by revisit stratum, held-out map, T=1024 (mean over seeds; targets per stream in brackets):")
+    print("\n  accuracy by revisit stratum, held-out map, T=1024 (mean over seeds; targets per stream in brackets; hard_wrap /")
+    print("  hard_plain = the hard targets crossed with wrap-only / plain):")
     for k, (N, v) in CELLS.items():
         rows = strata[k]
         mean = lambda kk: (np.mean([r["acc"][kk] for r in rows if r["acc"][kk] is not None]) if any(r["acc"][kk] is not None for r in rows) else float("nan"))
         print(f"    {k:4s} " + "  ".join(f"{kk} {mean(kk):.3f} [{np.mean([r['n'][kk] for r in rows]):.0f}]" for kk in KEYS[1:]))
-    for kk in ("wrap", "plain<128", "plain>=128", "copy", "blank_out", "retrace_miss"):
+    for kk in ("wrap", "plain<128", "plain>=128", "copy", "blank_out", "hard_wrap", "hard_plain", "retrace_miss"):
         for a_, b_ in (("A32", "B32"), ("A32", "M32"), ("AL", "BL"), ("A32", "AL")):
             xa = [r["acc"][kk] for r in strata[a_] if r["acc"][kk] is not None]; xb = [r["acc"][kk] for r in strata[b_] if r["acc"][kk] is not None]
             if len(xa) >= 2 and len(xb) >= 2:
@@ -418,7 +451,7 @@ def main():
                 if k != "M32":                                    # M32 has no training map of its own
                     _, own_st = stream(N, s, map_seed=s, n=40)
                     own.append(strat(m, own_st, dev)[0]["all"])
-                bs = basin(head_stats(m, b["config"])); hv = bool(h[k][i] >= HIT_H)
+                bs = basin(head_stats(m, b["config"])); hv = bool(p[k][i] >= HIT_P)
                 cnt[(bs, hv)] = cnt.get((bs, hv), 0) + 1; out["basins"].setdefault(k, []).append(bs)
             out["own"][k] = own
             conc = cnt.get(("CLEAN", True), 0) + sum(cnt.get((b_, False), 0) for b_ in ("COLLAPSE", "CLOCK"))
@@ -427,22 +460,29 @@ def main():
                   + "basins " + " ".join(f"{b_}/{'H' if v_ else 'U'} {cnt[(b_, v_)]}" for (b_, v_) in sorted(cnt))
                   + f"; 'HIT iff CLEAN' on {conc}/{n}")
 
-    # dropout-scale re-score (attention x 1/(1-p)): the registered branch recomputed with RE-SCORED h, HIT and hard-target
-    # qualifier (Amendment 2), plus eval_nd's re-scored raw accuracy when present. Installed last: it patches nn.Module.eval.
+    # dropout-scale re-score (attention x 1/(1-p)): the registered branch recomputed with RE-SCORED p, HIT and hard-target
+    # qualifier, plus eval_nd's re-scored raw accuracy (CEILING only) when present. Installed last: it patches nn.Module.eval.
+    # Amendment 3: the number of hooked layers must equal (models loaded after install) x (layers per model), else FAIL.
     from mapformer import rescore_hook
     rescore_hook.install("auto")
-    _, h_r, hit_r = all_strata(streams, dev)
+    _, p_r, hit_r = all_strata(streams, dev)
+    n_layers = {k: torch.load(f"{R}/N{CELLS[k][0]}/D2/{CELLS[k][1]}_s{SEEDS[0]}/{CELLS[k][1]}.pt", map_location="cpu",
+                              weights_only=False)["config"]["n_layers"] for k in CELLS}
+    want = sum(n_layers[k] * n for k in CELLS)
+    if rescore_hook.STATS["hooked"] != want or rescore_hook.STATS["skipped"]:
+        raise SystemExit(f"re-score FAILED: hooked {rescore_hook.STATS['hooked']} layers, expected {want}; "
+                         f"skipped classes {sorted(rescore_hook.STATS['skipped'])}")
     raw_r = raw
     rs = a.rescore_fmt
     if all(os.path.exists(rs.format(N=N)) for N in (GS, GL)):
         JR = {N: json.load(open(rs.format(N=N)))["D2"] for N in (GS, GL)}
         raw_r = {k: np.array([JR[N]["acc"][v][str(T_REG)][str(s)] for s in SEEDS]) for k, (N, v) in CELLS.items()}
-    br2, q2, c2 = decide(hit_r, n, h_r, raw_r)
+    br2, q2, c2 = decide(hit_r, n, p_r, raw_r)
     flag = [key for key in c if c[key]["fires"] != c2[key]["fires"]]
-    print(f"  dropout-scale re-score: " + "  ".join(f"{k} h {h_r[k].mean():.4f} HIT {hit_r[k]} raw {raw_r[k].mean():.4f}" for k in CELLS)
-          + f"; branch under re-score: {br2} ({q2[-1]})" + (f"; FLAG firing differs on {flag} (verdict unchanged)" if flag else "")
-          + f"; hooks {rescore_hook.STATS['hooked']}")
-    out["rescore"] = {"branch": br2, "h": {k: v.tolist() for k, v in h_r.items()}, "hit": hit_r, "flag": flag}
+    print(f"  dropout-scale re-score (hooked {rescore_hook.STATS['hooked']} = {want} layers): "
+          + "  ".join(f"{k} p {p_r[k].mean():.4f} HIT {hit_r[k]} raw {raw_r[k].mean():.4f}" for k in CELLS)
+          + f"; branch under re-score: {br2} ({q2[-1]})" + (f"; FLAG firing differs on {flag} (verdict unchanged)" if flag else ""))
+    out["rescore"] = {"branch": br2, "p": {k: v.tolist() for k, v in p_r.items()}, "hit": hit_r, "flag": flag}
     json.dump(out, open(a.json_out, "w"), indent=1, default=float)
 
 

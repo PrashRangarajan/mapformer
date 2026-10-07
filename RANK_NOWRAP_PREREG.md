@@ -1,9 +1,10 @@
 # Is per-head rank 2's torus failure about wrap-around? -- pre-registration (2026-10-06, before any batch run)
 
-> **Amendments 1 and 2 (end of file) supersede this body where they differ; Amendment 2 supersedes Amendment 1.** Final
-> design: 5 cells (adds a redrawn-map rank-2 control M32 on the 32-torus), n = 10 (seeds 60-69, 50 runs); the registered
-> quantity is h = held-out accuracy on the HARD targets (those the retrace-or-blank floor misses), HIT = h >= 0.90; every
-> accuracy arm is a permutation test on h (materiality 0.10); branch set of Amendment 2.
+> **Amendments 1-3 (end of file) supersede this body where they differ; each later one supersedes the earlier.** Final
+> design: 5 cells (adds a redrawn-map rank-2 control M32 on the 32-torus), n = 10 (seeds 60-69, 50 runs; n = 12 is the
+> recommendation put to the user, Amendment 3); the registered quantity is p = held-out accuracy on the PLAIN HARD
+> targets (missed by the retrace-or-blank floor and not wrap-only), HIT = p >= 0.98; every accuracy arm is a permutation
+> test on p (materiality 0.10); branch set of Amendment 2.
 
 ## Question
 Per-head rank 2 (= D) fails on the 2D torus at T=1024 and rank 3 solves (`RANK_ND_RESULTS.md`, 32-torus: 1/8 vs
@@ -124,8 +125,8 @@ another batch holding half the slots, ~30-35 h. Eval + re-score + analysis ~1 h.
 
 ## Scope and caveats (fixed now)
 Grid size changes, besides the wrap share: the map (1024 vs 65536 cells; memorisation possible only at 32), the
-revisit rate and targets per sequence (468 vs 296; HARD targets ~117 vs ~38 per sequence, one third -- Amendment 1,
-D3: less supervision at 256, which works AGAINST rank 2 there),
+revisit rate and targets per sequence (468 vs 296; hard targets ~117 vs ~39 per sequence, but the 32-torus surplus is
+ALL wrap-only: PLAIN hard targets are ~36 vs ~39 per sequence -- corrected in Amendment 3),
 and the target mix (retrace floor 0.750 vs 0.872, hence floor-relative accuracy and the hard-target qualifier). The
 design separates wrap-around from initialisation, not from these. One length, one recipe, 2 heads, 1 layer, 900
 epochs, omega initialised at grid 32; per-head rank only. PERIODIC would say rank D is hard on THIS torus because of
@@ -182,9 +183,9 @@ New within-grid contrasts: **Mem** = M32 over A32; **Km** = B32 over M32.
 8. UNMEASURED -- neither G nor R fires.
 Qualifiers: REVERSAL (R' fires); the M32 status line on every branch.
 
-**D3 -- supervision.** Hard-target supervision at 256 is about ONE THIRD of that at 32 (~38 vs ~117 hard targets per
-sequence; 0.128 x 296 vs 0.25 x 468), not the 63% the body's targets-per-sequence ratio suggests. This biases against
-rank 2 at 256 (toward GENERAL / MEMORISATION AT 32), not toward PERIODIC. Added to the caveats.
+**D3 -- supervision.** [CORRECTED in Amendment 3: the "one third" reading below is wrong -- the 32-torus's surplus of
+hard targets is entirely wrap-only; plain hard targets per sequence are equal, ~36 vs ~39.] Hard-target supervision at
+256 is about one third of that at 32 (~38 vs ~117 hard targets per sequence; 0.128 x 296 vs 0.25 x 468).
 
 **D4 -- the hard-target qualifier is in the registered path.** The strata are computed before the verdict, the
 qualifier is evaluated inside `decide()` (AL - BL on retrace_miss <= -0.02 with permutation p < .05) and printed on the
@@ -322,3 +323,79 @@ Launch (unchanged): `cd /home/prashr/mapformer && setsid nohup bash run_rank_now
 **N7 (first audit), resolved by the main session:** N7 was procedural -- "amend the analysis before launch, not after",
 because `analyze_rank_nowrap.py` is md5-guarded and re-checked before eval, so a post-launch edit trips the guard and the
 batch ends without a done marker. Amendments 1 and 2 were both made before launch; nothing to change in the code.
+
+---
+
+## Amendment 3 (2026-10-06, after a third independent audit, BEFORE launch; CPU only; no batch result exists)
+The audit found the Amendment 2 code correct but a residual of the comparability problem. Finding -> change:
+
+**1 (MAJOR). h is not composition-comparable.** On the 32-torus the hard set is 69% wrap-only (80.8 per sequence, lag
+median 330, 45 turns) and 31% plain (36.0 per sequence, lag 80, 11 turns); on the 256-torus it is all plain (38.8 per
+sequence, lag 80, 11 turns) -- the 256 hard set matches the 32 PLAIN hard targets, not the 32 hard set
+(`rank_nowrap_hard_validate_out.txt`). Stored RANK_ND rank-2 runs score higher on the plain part than on h (e.g. s0
+0.891 vs 0.622). So under GENERAL truth h rises at 256 merely because rank 2 stops being scored on what it fails (G and
+PARTIAL inflated, G' / G3' biased toward not firing). **Change:** the registered quantity is **p = held-out accuracy on
+the plain hard targets** (stratum hard_plain: missed by the retrace-or-blank floor AND not wrap-only). On the 256-torus
+p = h; on the 32-torus p is the plain part. p is used for HIT, every within-grid test (K, R, R', Mem, Mem', Km) and the
+cross-grid tests (G, G', G3'), and the hard-target qualifier. The question it asks: does training without wrap-around
+make rank 2 better on the SAME kind of targets? h (all hard) and the wrap-only hard accuracy are declared secondaries,
+with the within-cell wrap deficit (p - wrap-only) at 32 and B32/M32 - A32 on wrap-only targets, and the branch set
+recomputed on h (labelled not kinematically matched).
+
+**2. HIT threshold.** Validated on the plain hard targets of the 32 stored runs: lowest p among loss-SOLVED 0.990,
+highest among not SOLVED 0.975 (a narrow gap, 0.015). **HIT = p >= 0.98**: agrees with loss-SOLVED 32/32; margin 0.010
+to the lowest SOLVED run and 0.005 to the highest unsolved one (a paper-torus rank-3 run). Stated honestly: the criterion
+is lenient by up to ~0.02 of plain hard targets, and runs within ~0.005 of the cut are classed by sampling noise (SE of
+p ~0.0023 at 0.98 on ~3700 targets per stream). (h with its Amendment 2 cut 0.90 also agrees 32/32 but is not matched.)
+
+**3. Power with WRAP-AWARE per-stratum transport** (`rank_nowrap_power.py`, `_out.txt`; ND 32-torus pools only, 8 rank-2
+runs (1 HIT) and 8 rank-3 runs (8 HIT); strata copy / blank_out / hard_wrap / hard_plain, weights 0.475 / 0.276 / 0.173 /
+0.077 at 32 and 0.743 / 0.127 / 0 / 0.130 at 256; 400 simulations through the registered `decide()`; GENERAL = rank 2's
+per-stratum competence unchanged at 256). P(target branch) and the confusions:
+
+| truth (AL, M32) | target | n = 8 | **n = 10** | **n = 12** |
+|---|---|---|---|---|
+| rank-3-like, rank-2-like | PERIODIC CODE IS THE LIMIT | 0.91 | **0.84** (0.15 CAUSE UNRESOLVED) | **0.91** (0.09) |
+| rank-3-like, rank-3-like | FIXED MAP WAS THE LIMIT | 0.99 | **1.00** | **1.00** |
+| rank-2-like, rank-2-like | RANK LIMIT IS GENERAL | 0.85 | **0.75** (INTERMEDIATE 0.21, PARTIAL 0.03, LARGE GRID HURTS 0.01) | **0.86** (0.10 / 0.03 / 0.01) |
+| rank-2-like, rank-3-like | FIXED MAP AT 32, LARGE TORUS FAILS | 0.93 | **0.94** | **0.95** |
+| AL half | INTERMEDIATE / PARTIAL / UNMEASURED | 0.79 | **0.90** | **0.88** |
+
+Under GENERAL truth PARTIAL fires in 0.03 of worlds (the audit's up to one third came from h's composition). No truth
+produces its opposite pole. n = 8 beats n = 10 on PERIODIC and GENERAL because "low" = floor(0.25 n) is 2 at both: the
+M32 / AL <= low requirements are easier with 8 draws than with 10. CAVEAT: the ND32 rank-3 pool never fails (8/8), so
+the controls (K, BL, Km) look perfect here; on the paper torus rank 3 failed 2/8, so these are upper bounds.
+**Recommendation: n = 12** (60 runs, seeds 60-71, +20% cost) lifts PERIODIC 0.84 -> 0.91 and GENERAL 0.75 -> 0.86 and
+gives margin for the optimistic rank-3 pool. The code is registered at n = 10 (N_SEEDS, driver seeds 60-69); choosing
+n = 12 changes exactly `N_SEEDS = 12` (analysis) and `seq 60 71` / the checkpoint count 60 (driver), before launch.
+
+**4. Wording.** "One third of the hard-target supervision" removed from the analysis (FIXED MAP AT 32 text) and corrected
+in the body caveats and Amendment 1's D3 (marked CORRECTED): the 32-torus surplus of hard targets is all wrap-only;
+plain hard targets per sequence are ~36 (32) vs ~39 (256). p and h count only non-blank labels (a lost model that
+defaults to blank scores 0 there), identically on both grids.
+
+**5. Re-score hooks asserted.** After `rescore_hook.install`, the analysis requires `STATS['hooked']` == (models loaded
+after the install) x (layers per model) = 5 x n x 1 and no skipped layer classes, else it exits non-zero (no done marker).
+
+**6. Device selection.** Driver `best_gpu`: nvidia-smi under `timeout 30`, empty output guarded, a GPU needs >= 3000 MiB
+free, every try logged, up to 60 retries x 30 s, then the batch fails (no done marker). Analysis `pick_device`: the GPU
+with most free memory if >= 3000 MiB (`mem_get_info` failures caught), polls up to 30 min, then the CPU (strata check
+becomes a WARN), every decision printed.
+
+**7. Crossed strata.** hard_wrap (hard x wrap-only) and hard_plain (hard x plain) are computed for every run and printed
+with the other strata and in the stratum contrasts.
+
+**8. Driver knobs.** `lib_driver.sh` pre-sets DRV_SPACING=45 and DRV_MINFREE=4500, so `DRV_SPACING="${DRV_SPACING:-15}"`
+was a no-op (spacing 45). Now assigned unconditionally after the source: `DRV_MAXPG="${MAXPG:-4}"; DRV_SPACING=15;
+DRV_MINFREE=4500`, logged at start. MINFREE 4500 MiB is kept: a T=1024 B16 per-head job uses ~3.4 GB (lib_driver's
+efficiency audit #4, rank config); not re-measured (no GPU use allowed). Verified by sourcing
+(`rank_nowrap_driver_knobs_out.txt`: old 45, new 15).
+
+**N7** (first audit) remains OPEN as recorded in Amendment 2 (content not relayed to this session).
+
+**Tests re-run.** Branch smoke 18/18 (`rank_nowrap_branch_smoke_out.txt`); validation (`rank_nowrap_hard_validate_out.txt`);
+power (`rank_nowrap_power_out.txt`); CPU end-to-end analysis on the Amendment 2 smoke checkpoints with the Amendment 3 code
+(`runs/rank_nowrap_pilot/amend2/SMOKE_ANALYSIS_A3.txt`), including the hook-count assertion.
+
+Cost: unchanged at n = 10 (50 runs, ~16-19 h on 8 slots); n = 12: 60 runs, ~19-23 h on 8 slots, ~38-45 h sharing half.
+Launch (unchanged): `cd /home/prashr/mapformer && setsid nohup bash run_rank_nowrap.sh > /dev/null 2>&1 &`

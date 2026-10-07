@@ -1,60 +1,60 @@
-ND 32-torus stratum shares (held-out stream, 100 walks): copy 0.475  blank_out 0.276  retrace_miss 0.250; retrace-or-blank floor 0.750; bad copies 0
-ND 256-torus stratum shares (held-out stream, 100 walks): copy 0.743  blank_out 0.127  retrace_miss 0.130; retrace-or-blank floor 0.870; bad copies 0
-  ND32 r2 s0: h 0.622 copy 1.000 blank_out 0.937 all 0.888 | NLL all 0.391 | loss-SOLVED False (tail 0.325)
-  ND32 r2 s1: h 0.306 copy 0.975 blank_out 0.798 all 0.754 | NLL all 1.755 | loss-SOLVED False (tail 0.360)
-  ND32 r2 s2: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.011)
-  ND32 r2 s3: h 0.041 copy 0.993 blank_out 0.713 all 0.661 | NLL all 2.778 | loss-SOLVED False (tail 0.449)
-  ND32 r2 s4: h 0.375 copy 0.994 blank_out 0.788 all 0.781 | NLL all 1.588 | loss-SOLVED False (tail 0.298)
-  ND32 r2 s5: h 0.306 copy 0.909 blank_out 0.789 all 0.721 | NLL all 1.783 | loss-SOLVED False (tail 0.237)
-  ND32 r2 s6: h 0.082 copy 0.950 blank_out 0.707 all 0.663 | NLL all 2.603 | loss-SOLVED False (tail 0.406)
-  ND32 r2 s7: h 0.061 copy 0.972 blank_out 0.710 all 0.667 | NLL all 2.581 | loss-SOLVED False (tail 0.451)
-  ND32 r3 s0: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.015)
-  ND32 r3 s1: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
-  ND32 r3 s2: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.004)
-  ND32 r3 s3: h 0.989 copy 1.000 blank_out 0.994 all 0.995 | NLL all 0.016 | loss-SOLVED True (tail 0.004)
-  ND32 r3 s4: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.002)
-  ND32 r3 s5: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
-  ND32 r3 s6: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
-  ND32 r3 s7: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.007)
-  T64 r2 s0: h 0.242 copy 0.666 blank_out 0.991 all 0.653 | NLL all 1.010 | loss-SOLVED False (tail 1.049)
-  T64 r2 s1: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.007)
-  T64 r2 s2: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
-  T64 r2 s3: h 0.182 copy 0.788 blank_out 0.980 all 0.724 | NLL all 0.919 | loss-SOLVED False (tail 0.910)
-  T64 r2 s4: h 0.731 copy 1.000 blank_out 0.983 all 0.954 | NLL all 0.182 | loss-SOLVED False (tail 0.194)
-  T64 r2 s5: h 0.734 copy 1.000 blank_out 0.940 all 0.952 | NLL all 0.174 | loss-SOLVED False (tail 0.211)
-  T64 r2 s6: h 0.685 copy 1.000 blank_out 0.949 all 0.944 | NLL all 0.205 | loss-SOLVED False (tail 0.248)
-  T64 r2 s7: h 0.207 copy 0.977 blank_out 0.946 all 0.849 | NLL all 0.556 | loss-SOLVED False (tail 0.539)
-  T64 r3 s0: h 0.661 copy 1.000 blank_out 0.971 all 0.942 | NLL all 0.233 | loss-SOLVED False (tail 0.243)
-  T64 r3 s1: h 0.960 copy 1.000 blank_out 0.977 all 0.990 | NLL all 0.051 | loss-SOLVED True (tail 0.003)
-  T64 r3 s2: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
-  T64 r3 s3: h 0.776 copy 1.000 blank_out 0.998 all 0.965 | NLL all 0.145 | loss-SOLVED False (tail 0.134)
-  T64 r3 s4: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
-  T64 r3 s5: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.006)
-  T64 r3 s6: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
-  T64 r3 s7: h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.005)
+ND 32-torus stratum shares (held-out stream, 100 walks): copy 0.475  blank_out 0.276  retrace_miss 0.250  hard_wrap 0.173  hard_plain 0.077; retrace-or-blank floor 0.750; bad copies 0
+    hard_wrap: 80.8 per sequence, 0.69 of the hard set, lag median 330, turns median 45
+    hard_plain: 36.0 per sequence, 0.31 of the hard set, lag median 80, turns median 11
+ND 256-torus stratum shares (held-out stream, 100 walks): copy 0.743  blank_out 0.127  retrace_miss 0.130  hard_wrap 0.000  hard_plain 0.130; retrace-or-blank floor 0.870; bad copies 0
+    hard_plain: 38.8 per sequence, 1.00 of the hard set, lag median 80, turns median 11
+  ND32 r2 s0: p 0.891 wrap-only 0.505 h 0.622 copy 1.000 blank_out 0.937 all 0.888 | NLL all 0.391 | loss-SOLVED False (tail 0.325)
+  ND32 r2 s1: p 0.643 wrap-only 0.161 h 0.306 copy 0.975 blank_out 0.798 all 0.754 | NLL all 1.755 | loss-SOLVED False (tail 0.360)
+  ND32 r2 s2: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.011)
+  ND32 r2 s3: p 0.095 wrap-only 0.015 h 0.041 copy 0.993 blank_out 0.713 all 0.661 | NLL all 2.778 | loss-SOLVED False (tail 0.449)
+  ND32 r2 s4: p 0.830 wrap-only 0.189 h 0.375 copy 0.994 blank_out 0.788 all 0.781 | NLL all 1.588 | loss-SOLVED False (tail 0.298)
+  ND32 r2 s5: p 0.525 wrap-only 0.208 h 0.306 copy 0.909 blank_out 0.789 all 0.721 | NLL all 1.783 | loss-SOLVED False (tail 0.237)
+  ND32 r2 s6: p 0.209 wrap-only 0.028 h 0.082 copy 0.950 blank_out 0.707 all 0.663 | NLL all 2.603 | loss-SOLVED False (tail 0.406)
+  ND32 r2 s7: p 0.132 wrap-only 0.029 h 0.061 copy 0.972 blank_out 0.710 all 0.667 | NLL all 2.581 | loss-SOLVED False (tail 0.451)
+  ND32 r3 s0: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.015)
+  ND32 r3 s1: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
+  ND32 r3 s2: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.004)
+  ND32 r3 s3: p 0.999 wrap-only 0.984 h 0.989 copy 1.000 blank_out 0.994 all 0.995 | NLL all 0.016 | loss-SOLVED True (tail 0.004)
+  ND32 r3 s4: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.002)
+  ND32 r3 s5: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
+  ND32 r3 s6: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
+  ND32 r3 s7: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.007)
+  T64 r2 s0: p 0.285 wrap-only 0.106 h 0.242 copy 0.666 blank_out 0.991 all 0.653 | NLL all 1.010 | loss-SOLVED False (tail 1.049)
+  T64 r2 s1: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.007)
+  T64 r2 s2: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
+  T64 r2 s3: p 0.229 wrap-only 0.045 h 0.182 copy 0.788 blank_out 0.980 all 0.724 | NLL all 0.919 | loss-SOLVED False (tail 0.910)
+  T64 r2 s4: p 0.925 wrap-only 0.193 h 0.731 copy 1.000 blank_out 0.983 all 0.954 | NLL all 0.182 | loss-SOLVED False (tail 0.194)
+  T64 r2 s5: p 0.893 wrap-only 0.171 h 0.734 copy 1.000 blank_out 0.940 all 0.952 | NLL all 0.174 | loss-SOLVED False (tail 0.211)
+  T64 r2 s6: p 0.908 wrap-only 0.063 h 0.685 copy 1.000 blank_out 0.949 all 0.944 | NLL all 0.205 | loss-SOLVED False (tail 0.248)
+  T64 r2 s7: p 0.280 wrap-only 0.006 h 0.207 copy 0.977 blank_out 0.946 all 0.849 | NLL all 0.556 | loss-SOLVED False (tail 0.539)
+  T64 r3 s0: p 0.867 wrap-only 0.000 h 0.661 copy 1.000 blank_out 0.971 all 0.942 | NLL all 0.233 | loss-SOLVED False (tail 0.243)
+  T64 r3 s1: p 0.990 wrap-only 0.867 h 0.960 copy 1.000 blank_out 0.977 all 0.990 | NLL all 0.051 | loss-SOLVED True (tail 0.003)
+  T64 r3 s2: p 1.000 wrap-only 0.999 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
+  T64 r3 s3: p 0.975 wrap-only 0.188 h 0.776 copy 1.000 blank_out 0.998 all 0.965 | NLL all 0.145 | loss-SOLVED False (tail 0.134)
+  T64 r3 s4: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
+  T64 r3 s5: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.006)
+  T64 r3 s6: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
+  T64 r3 s7: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.005)
 
-(1) HIT = h >= 0.9 vs training-loss SOLVED, per run:
-  ND32 rank 2: HIT 1/8, SOLVED 1/8, agree 8/8; h sorted 0.041 0.061 0.082 0.306 0.306 0.375 0.622 1.000S
-  ND32 rank 3: HIT 8/8, SOLVED 8/8, agree 8/8; h sorted 0.989S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S
-  T64 rank 2: HIT 2/8, SOLVED 2/8, agree 8/8; h sorted 0.182 0.207 0.242 0.685 0.731 0.734 1.000S 1.000S
-  T64 rank 3: HIT 6/8, SOLVED 6/8, agree 8/8; h sorted 0.661 0.776 0.960S 1.000S 1.000S 1.000S 1.000S 1.000S
-  over all 32 runs: lowest h among SOLVED 0.960, highest among not SOLVED 0.776
+(1) HIT = p (plain hard; registered, Amendment 3) >= 0.98 vs training-loss SOLVED, per run:
+  ND32 rank 2: HIT 1/8, SOLVED 1/8, agree 8/8; sorted 0.095 0.132 0.209 0.525 0.643 0.830 0.891 1.000S
+  ND32 rank 3: HIT 8/8, SOLVED 8/8, agree 8/8; sorted 0.999S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S
+  T64 rank 2: HIT 2/8, SOLVED 2/8, agree 8/8; sorted 0.229 0.280 0.285 0.893 0.908 0.925 1.000S 1.000S
+  T64 rank 3: HIT 6/8, SOLVED 6/8, agree 8/8; sorted 0.867 0.975 0.990S 1.000S 1.000S 1.000S 1.000S 1.000S
+  over all 32 runs: lowest among SOLVED 0.9900, highest among not SOLVED 0.9748; gap +0.0151; threshold 0.98 margin to SOLVED +0.0100, to not SOLVED +0.0052
+
+(1) HIT = h (all hard; Amendment 2) >= 0.9 vs training-loss SOLVED, per run:
+  ND32 rank 2: HIT 1/8, SOLVED 1/8, agree 8/8; sorted 0.041 0.061 0.082 0.306 0.306 0.375 0.622 1.000S
+  ND32 rank 3: HIT 8/8, SOLVED 8/8, agree 8/8; sorted 0.989S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S
+  T64 rank 2: HIT 2/8, SOLVED 2/8, agree 8/8; sorted 0.182 0.207 0.242 0.685 0.731 0.734 1.000S 1.000S
+  T64 rank 3: HIT 6/8, SOLVED 6/8, agree 8/8; sorted 0.661 0.776 0.960S 1.000S 1.000S 1.000S 1.000S 1.000S
+  over all 32 runs: lowest among SOLVED 0.9598, highest among not SOLVED 0.7755; gap +0.1843; threshold 0.9 margin to SOLVED +0.0598, to not SOLVED +0.1245
 
 (2) transport of the ND 32-torus runs to the 256-torus stratum mix (per-stratum accuracy / NLL held fixed):
   floor-predicted share: 32 0.750, 256 0.870; an error on a floor-predicted target costs f/(1-f) = 3.01 (32) vs 6.70 (256) units of rel
-  r2 s0: h 0.622 (HIT False) | raw 32 0.888 -> 256 0.943 | rel 32 +0.552 -> 256 +0.560 (rel-HIT False -> False) | held-out NLL 32 0.391 -> 256 0.200 (< 0.05: False -> False)
-  r2 s1: h 0.306 (HIT False) | raw 32 0.759 -> 256 0.866 | rel 32 +0.036 -> 256 -0.032 (rel-HIT False -> False) | held-out NLL 32 1.711 -> 256 0.938 (< 0.05: False -> False)
-  r2 s2: h 1.000 (HIT True) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
-  r2 s3: h 0.041 (HIT False) | raw 32 0.678 -> 256 0.834 | rel 32 -0.290 -> 256 -0.281 (rel-HIT False -> False) | held-out NLL 32 2.629 -> 256 1.378 (< 0.05: False -> False)
-  r2 s4: h 0.375 (HIT False) | raw 32 0.783 -> 256 0.888 | rel 32 +0.130 -> 256 +0.135 (rel-HIT False -> False) | held-out NLL 32 1.566 -> 256 0.811 (< 0.05: False -> False)
-  r2 s5: h 0.306 (HIT False) | raw 32 0.726 -> 256 0.816 | rel 32 -0.100 -> 256 -0.421 (rel-HIT False -> False) | held-out NLL 32 1.747 -> 256 1.135 (< 0.05: False -> False)
-  r2 s6: h 0.082 (HIT False) | raw 32 0.666 -> 256 0.806 | rel 32 -0.338 -> 256 -0.494 (rel-HIT False -> False) | held-out NLL 32 2.578 -> 256 1.473 (< 0.05: False -> False)
-  r2 s7: h 0.061 (HIT False) | raw 32 0.672 -> 256 0.820 | rel 32 -0.313 -> 256 -0.384 (rel-HIT False -> False) | held-out NLL 32 2.530 -> 256 1.409 (< 0.05: False -> False)
-  r3 s0: h 1.000 (HIT True) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
-  r3 s1: h 1.000 (HIT True) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
-  r3 s2: h 1.000 (HIT True) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
-  r3 s3: h 0.989 (HIT True) | raw 32 0.996 -> 256 0.998 | rel 32 +0.982 -> 256 +0.983 (rel-HIT True -> True) | held-out NLL 32 0.015 -> 256 0.007 (< 0.05: True -> True)
-  r3 s4: h 1.000 (HIT True) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
-  r3 s5: h 1.000 (HIT True) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
-  r3 s6: h 1.000 (HIT True) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
-  r3 s7: h 1.000 (HIT True) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
+Traceback (most recent call last):
+  File "/home/prashr/mapformer/docs/audits/2026-10-06/rank_nowrap_hard_validate.py", line 124, in <module>
+    main()
+  File "/home/prashr/mapformer/docs/audits/2026-10-06/rank_nowrap_hard_validate.py", line 118, in main
+    print(f"  r{p['rank']} s{p['seed']}: h {p['acc']['retrace_miss']:.3f} (HIT {p['acc']['retrace_miss'] >= A.HIT_H}) | raw 32 "
+AttributeError: module 'mapformer.analyze_rank_nowrap' has no attribute 'HIT_H'. Did you mean: 'HIT_P'?

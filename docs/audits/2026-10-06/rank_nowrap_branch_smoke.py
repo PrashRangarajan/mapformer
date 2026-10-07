@@ -1,5 +1,5 @@
-"""Smoke test (Amendment 2 design): every branch and qualifier of analyze_rank_nowrap.decide is reachable, on synthetic
-per-seed data at the registered n (5 cells; h = hard-target accuracy, HIT = h >= HIT_H). Run from /home/prashr:
+"""Smoke test (Amendment 2-3 design; the registered accuracy is p, plain-hard): every branch and qualifier of analyze_rank_nowrap.decide is reachable, on synthetic
+per-seed data at the registered n (5 cells; h here stands for the registered p, HIT = p >= HIT_P). Run from /home/prashr:
 python3 mapformer/docs/audits/2026-10-06/rank_nowrap_branch_smoke.py"""
 import sys
 
@@ -14,7 +14,7 @@ n = A.N_SEEDS
 def cell(hits, fail_h=0.3, hit_h=1.0):
     """hits runs at h = hit_h, the others at fail_h (+ a small spread); raw = 0.9 + 0.1 h (any monotone map)."""
     h = np.array([hit_h] * hits + [fail_h + 0.01 * i for i in range(n - hits)])
-    return int((h >= A.HIT_H).sum()), h, np.minimum(0.9 + 0.1 * h, 1.0)
+    return int((h >= A.HIT_P).sum()), h, np.minimum(0.9 + 0.1 * h, 1.0)
 
 
 def run(spec, expect, qual=None):

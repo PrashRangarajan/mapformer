@@ -3,12 +3,16 @@
   "32": {
    "copy": 0.4746084987288226,
    "blank_out": 0.27579208238084046,
-   "retrace_miss": 0.2495994188903369
+   "retrace_miss": 0.2495994188903369,
+   "hard_wrap": 0.17273057448672208,
+   "hard_plain": 0.07686884440361484
   },
   "256": {
    "copy": 0.743075996788868,
    "blank_out": 0.1271073053251271,
-   "retrace_miss": 0.1298166978860048
+   "retrace_miss": 0.1298166978860048,
+   "hard_wrap": 0.0,
+   "hard_plain": 0.1298166978860048
   }
  },
  "pool": [
@@ -17,18 +21,25 @@
     "copy": 1.0,
     "blank_out": 0.9366069108859444,
     "retrace_miss": 0.6218094157685763,
+    "hard_wrap": 0.5051797684338818,
+    "hard_plain": 0.8914983560356975,
     "all": 0.8880332174036483
    },
    "nll": {
     "copy": 0.0004111813528741489,
     "blank_out": 0.2166514062605102,
     "retrace_miss": 1.3258667619230244,
+    "hard_wrap": 1.7340901752272255,
+    "hard_plain": 0.3819100387212484,
     "all": 0.3912029339797366
    },
    "n": {
     "copy": 13428,
     "blank_out": 7698,
-    "retrace_miss": 7052
+    "retrace_miss": 7052,
+    "hard_wrap": 4923,
+    "hard_plain": 2129,
+    "all": 28178
    },
    "solved": false,
    "tail": 0.3249548298634099,
@@ -42,18 +53,25 @@
     "copy": 0.9754706663541911,
     "blank_out": 0.7981674726393484,
     "retrace_miss": 0.30593351101136207,
+    "hard_wrap": 0.16125150421179302,
+    "hard_plain": 0.6425571628558097,
     "all": 0.7535626889304736
    },
    "nll": {
     "copy": 0.12336661941890274,
     "blank_out": 0.8201400020680887,
     "retrace_miss": 5.7155639270621705,
+    "hard_wrap": 7.201022668547078,
+    "hard_plain": 2.2594289363744746,
     "all": 1.7550788638066825
    },
    "n": {
     "copy": 12801,
     "blank_out": 7858,
-    "retrace_miss": 7129
+    "retrace_miss": 7129,
+    "hard_wrap": 4986,
+    "hard_plain": 2143,
+    "all": 27788
    },
    "solved": false,
    "tail": 0.35996734804712455,
@@ -67,18 +85,25 @@
     "copy": 1.0,
     "blank_out": 1.0,
     "retrace_miss": 1.0,
+    "hard_wrap": 1.0,
+    "hard_plain": 1.0,
     "all": 1.0
    },
    "nll": {
     "copy": 1.829645714141595e-06,
     "blank_out": 3.0001641786239636e-07,
     "retrace_miss": 3.0223649206886622e-05,
+    "hard_wrap": 2.9976313753299243e-05,
+    "hard_plain": 3.0845468858350006e-05,
     "all": 8.603046105396094e-06
    },
    "n": {
     "copy": 13062,
     "blank_out": 7874,
-    "retrace_miss": 7116
+    "retrace_miss": 7116,
+    "hard_wrap": 5091,
+    "hard_plain": 2025,
+    "all": 28052
    },
    "solved": true,
    "tail": 0.011155750293943549,
@@ -92,18 +117,25 @@
     "copy": 0.9929543634907926,
     "blank_out": 0.7126153046641549,
     "retrace_miss": 0.0405201916495551,
+    "hard_wrap": 0.014586709886547812,
+    "hard_plain": 0.09455466441536513,
     "all": 0.6613924050632911
    },
    "nll": {
     "copy": 0.06281819619271208,
     "blank_out": 1.2681929471436526,
     "retrace_miss": 9.010832784646764,
+    "hard_wrap": 9.289694972594507,
+    "hard_plain": 8.429801227149902,
     "all": 2.777899529916247
    },
    "n": {
     "copy": 12490,
     "blank_out": 7697,
-    "retrace_miss": 7305
+    "retrace_miss": 7305,
+    "hard_wrap": 4936,
+    "hard_plain": 2369,
+    "all": 27492
    },
    "solved": false,
    "tail": 0.4487857442999644,
@@ -117,18 +149,25 @@
     "copy": 0.9943468757066405,
     "blank_out": 0.7884640651688346,
     "retrace_miss": 0.37487705493887874,
+    "hard_wrap": 0.18931750741839762,
+    "hard_plain": 0.8297769156159069,
     "all": 0.7808894445436685
    },
    "nll": {
     "copy": 0.020300661995332495,
     "blank_out": 0.8268530046562732,
     "retrace_miss": 5.3225701211694885,
+    "hard_wrap": 7.095710346364747,
+    "hard_plain": 0.9757108397135854,
     "all": 1.5875420129842874
    },
    "n": {
     "copy": 13267,
     "blank_out": 7611,
-    "retrace_miss": 7117
+    "retrace_miss": 7117,
+    "hard_wrap": 5055,
+    "hard_plain": 2062,
+    "all": 27995
    },
    "solved": false,
    "tail": 0.29769373747969974,
@@ -142,18 +181,25 @@
     "copy": 0.909104785163703,
     "blank_out": 0.7894938650306749,
     "retrace_miss": 0.30588560375794416,
+    "hard_wrap": 0.20764152830566113,
+    "hard_plain": 0.5252344796784278,
     "all": 0.7208592224391975
    },
    "nll": {
     "copy": 0.4800393066655604,
     "blank_out": 0.7502456839515624,
     "retrace_miss": 5.258929968495603,
+    "hard_wrap": 6.2140114685551335,
+    "hard_plain": 3.1265260297740336,
     "all": 1.7832065463677433
    },
    "n": {
     "copy": 13103,
     "blank_out": 7824,
-    "retrace_miss": 7238
+    "retrace_miss": 7238,
+    "hard_wrap": 4999,
+    "hard_plain": 2239,
+    "all": 28165
    },
    "solved": false,
    "tail": 0.23699385193334954,
@@ -167,18 +213,25 @@
     "copy": 0.9496963790389085,
     "blank_out": 0.7065952289832886,
     "retrace_miss": 0.08163265306122448,
+    "hard_wrap": 0.02802066772655008,
+    "hard_plain": 0.20876531573986806,
     "all": 0.6632429761400537
    },
    "nll": {
     "copy": 0.3053248598047305,
     "blank_out": 1.1744933867624687,
     "retrace_miss": 8.452213897435174,
+    "hard_wrap": 9.260544433242927,
+    "hard_plain": 6.535381071711974,
     "all": 2.6029479099964226
    },
    "n": {
     "copy": 13339,
     "blank_out": 7839,
-    "retrace_miss": 7154
+    "retrace_miss": 7154,
+    "hard_wrap": 5032,
+    "hard_plain": 2122,
+    "all": 28332
    },
    "solved": false,
    "tail": 0.40626992066295775,
@@ -192,18 +245,25 @@
     "copy": 0.9719152157456472,
     "blank_out": 0.7101185050136737,
     "retrace_miss": 0.06104853288833264,
+    "hard_wrap": 0.02872168284789644,
+    "hard_plain": 0.1321762349799733,
     "all": 0.6670584045584046
    },
    "nll": {
     "copy": 0.22677059026041926,
     "blank_out": 1.2023524930514915,
     "retrace_miss": 8.376833463544495,
+    "hard_wrap": 8.78602538664097,
+    "hard_plain": 7.476501969201384,
     "all": 2.5807091783416456
    },
    "n": {
     "copy": 13210,
     "blank_out": 7679,
-    "retrace_miss": 7191
+    "retrace_miss": 7191,
+    "hard_wrap": 4944,
+    "hard_plain": 2247,
+    "all": 28080
    },
    "solved": false,
    "tail": 0.4512476526825877,
@@ -217,18 +277,25 @@
     "copy": 1.0,
     "blank_out": 1.0,
     "retrace_miss": 0.9995745887691435,
+    "hard_wrap": 0.9995937436522445,
+    "hard_plain": 0.9995302959135745,
     "all": 0.9998935339626659
    },
    "nll": {
     "copy": 2.9754099703149238e-06,
     "blank_out": 9.35523405358352e-07,
     "retrace_miss": 0.001413056777869134,
+    "hard_wrap": 0.001647022943978948,
+    "hard_plain": 0.0008720443608852851,
     "all": 0.00035531378599577574
    },
    "n": {
     "copy": 13428,
     "blank_out": 7698,
-    "retrace_miss": 7052
+    "retrace_miss": 7052,
+    "hard_wrap": 4923,
+    "hard_plain": 2129,
+    "all": 28178
    },
    "solved": true,
    "tail": 0.014575718323564973,
@@ -242,18 +309,25 @@
     "copy": 1.0,
     "blank_out": 1.0,
     "retrace_miss": 0.9998597278720718,
+    "hard_wrap": 0.9997994384275972,
+    "hard_plain": 1.0,
     "all": 0.9999640132431266
    },
    "nll": {
     "copy": 1.8299982246040428e-07,
     "blank_out": 8.424998789912436e-06,
     "retrace_miss": 0.00013033951017796502,
+    "hard_wrap": 0.00018618953118350066,
+    "hard_plain": 3.963441800179055e-07,
     "all": 3.590530406208292e-05
    },
    "n": {
     "copy": 12801,
     "blank_out": 7858,
-    "retrace_miss": 7129
+    "retrace_miss": 7129,
+    "hard_wrap": 4986,
+    "hard_plain": 2143,
+    "all": 27788
    },
    "solved": true,
    "tail": 0.0029501418266732193,
@@ -267,18 +341,25 @@
     "copy": 1.0,
     "blank_out": 1.0,
     "retrace_miss": 1.0,
+    "hard_wrap": 1.0,
+    "hard_plain": 1.0,
     "all": 1.0
    },
    "nll": {
     "copy": 4.234806689439747e-07,
     "blank_out": 6.435445355536243e-08,
     "retrace_miss": 1.4148447886482233e-06,
+    "hard_wrap": 1.7889543439918404e-06,
+    "hard_plain": 4.743056546954556e-07,
     "all": 5.741575281998388e-07
    },
    "n": {
     "copy": 13062,
     "blank_out": 7874,
-    "retrace_miss": 7116
+    "retrace_miss": 7116,
+    "hard_wrap": 5091,
+    "hard_plain": 2025,
+    "all": 28052
    },
    "solved": true,
    "tail": 0.003849244897115154,
@@ -292,18 +373,25 @@
     "copy": 1.0,
     "blank_out": 0.9940236455761985,
     "retrace_miss": 0.9890485968514716,
+    "hard_wrap": 0.9841977309562399,
+    "hard_plain": 0.9991557619248628,
     "all": 0.9954168485377565
    },
    "nll": {
     "copy": 3.297367917779535e-05,
     "blank_out": 0.0227215585010489,
     "retrace_miss": 0.03526057662186995,
+    "hard_wrap": 0.05064841693573568,
+    "hard_plain": 0.0031987869261157834,
     "all": 0.015745605603750684
    },
    "n": {
     "copy": 12490,
     "blank_out": 7697,
-    "retrace_miss": 7305
+    "retrace_miss": 7305,
+    "hard_wrap": 4936,
+    "hard_plain": 2369,
+    "all": 27492
    },
    "solved": true,
    "tail": 0.0039041714291120225,
@@ -317,18 +405,25 @@
     "copy": 1.0,
     "blank_out": 1.0,
     "retrace_miss": 1.0,
+    "hard_wrap": 1.0,
+    "hard_plain": 1.0,
     "all": 1.0
    },
    "nll": {
     "copy": 1.3917446134757217e-07,
     "blank_out": 5.053230891214648e-07,
     "retrace_miss": 6.756650777380253e-07,
+    "hard_wrap": 8.221640098231461e-07,
+    "hard_plain": 3.165224484022905e-07,
     "all": 3.7510805387616485e-07
    },
    "n": {
     "copy": 13267,
     "blank_out": 7611,
-    "retrace_miss": 7117
+    "retrace_miss": 7117,
+    "hard_wrap": 5055,
+    "hard_plain": 2062,
+    "all": 27995
    },
    "solved": true,
    "tail": 0.002333297622831269,
@@ -342,18 +437,25 @@
     "copy": 1.0,
     "blank_out": 1.0,
     "retrace_miss": 1.0,
+    "hard_wrap": 1.0,
+    "hard_plain": 1.0,
     "all": 1.0
    },
    "nll": {
     "copy": 7.026335735289026e-07,
     "blank_out": 2.1380548366161563e-05,
     "retrace_miss": 0.0002187697487373039,
+    "hard_wrap": 0.00031390596309698114,
+    "hard_plain": 6.3597730409990585e-06,
     "all": 6.248689719479506e-05
    },
    "n": {
     "copy": 13103,
     "blank_out": 7824,
-    "retrace_miss": 7238
+    "retrace_miss": 7238,
+    "hard_wrap": 4999,
+    "hard_plain": 2239,
+    "all": 28165
    },
    "solved": true,
    "tail": 0.003243933733592362,
@@ -367,18 +469,25 @@
     "copy": 1.0,
     "blank_out": 1.0,
     "retrace_miss": 1.0,
+    "hard_wrap": 1.0,
+    "hard_plain": 1.0,
     "all": 1.0
    },
    "nll": {
     "copy": 1.8231258688534619e-07,
     "blank_out": 6.797617462666364e-09,
     "retrace_miss": 3.896877585006298e-07,
+    "hard_wrap": 3.871929884701407e-07,
+    "hard_plain": 3.9560372588678477e-07,
     "all": 1.8611394691751306e-07
    },
    "n": {
     "copy": 13339,
     "blank_out": 7839,
-    "retrace_miss": 7154
+    "retrace_miss": 7154,
+    "hard_wrap": 5032,
+    "hard_plain": 2122,
+    "all": 28332
    },
    "solved": true,
    "tail": 0.003106040086297453,
@@ -392,18 +501,25 @@
     "copy": 1.0,
     "blank_out": 0.9998697747102487,
     "retrace_miss": 1.0,
+    "hard_wrap": 1.0,
+    "hard_plain": 1.0,
     "all": 0.9999643874643874
    },
    "nll": {
     "copy": 3.2872280443941396e-07,
     "blank_out": 0.00031054255218393705,
     "retrace_miss": 3.1751687525045016e-06,
+    "hard_wrap": 4.3444374038068765e-06,
+    "hard_plain": 6.024654983705718e-07,
     "all": 8.589142895179335e-05
    },
    "n": {
     "copy": 13210,
     "blank_out": 7679,
-    "retrace_miss": 7191
+    "retrace_miss": 7191,
+    "hard_wrap": 4944,
+    "hard_plain": 2247,
+    "all": 28080
    },
    "solved": true,
    "tail": 0.0067629642099301035,
@@ -417,18 +533,25 @@
     "copy": 0.6662028447742734,
     "blank_out": 0.9913294797687862,
     "retrace_miss": 0.24220060382422007,
+    "hard_wrap": 0.10578279266572638,
+    "hard_plain": 0.2847711267605634,
     "all": 0.6529872313593611
    },
    "nll": {
     "copy": 0.9104847695339866,
     "blank_out": 0.2030643111527503,
     "retrace_miss": 2.285614155600717,
+    "hard_wrap": 3.000898688139193,
+    "hard_plain": 2.0624025651210602,
     "all": 1.010130263331778
    },
    "n": {
     "copy": 12936,
     "blank_out": 3114,
-    "retrace_miss": 2981
+    "retrace_miss": 2981,
+    "hard_wrap": 709,
+    "hard_plain": 2272,
+    "all": 19031
    },
    "solved": false,
    "tail": 1.0490517252561995,
@@ -442,18 +565,25 @@
     "copy": 1.0,
     "blank_out": 1.0,
     "retrace_miss": 1.0,
+    "hard_wrap": 1.0,
+    "hard_plain": 1.0,
     "all": 1.0
    },
    "nll": {
     "copy": 7.120033675198283e-07,
     "blank_out": 9.518170131177677e-09,
     "retrace_miss": 2.1575769157165565e-06,
+    "hard_wrap": 2.7301529107000395e-06,
+    "hard_plain": 1.970720529411331e-06,
     "all": 8.271620131592378e-07
    },
    "n": {
     "copy": 13199,
     "blank_out": 3081,
-    "retrace_miss": 3036
+    "retrace_miss": 3036,
+    "hard_wrap": 747,
+    "hard_plain": 2289,
+    "all": 19316
    },
    "solved": true,
    "tail": 0.006701306212477516,
@@ -467,18 +597,25 @@
     "copy": 1.0,
     "blank_out": 1.0,
     "retrace_miss": 1.0,
+    "hard_wrap": 1.0,
+    "hard_plain": 1.0,
     "all": 1.0
    },
    "nll": {
     "copy": 1.0980041517424782e-06,
     "blank_out": 1.4506059114099732e-07,
     "retrace_miss": 2.7548707755893376e-06,
+    "hard_wrap": 3.6922116698328137e-06,
+    "hard_plain": 2.412174168394589e-06,
     "all": 1.2187616345800006e-06
    },
    "n": {
     "copy": 12626,
     "blank_out": 3181,
-    "retrace_miss": 3216
+    "retrace_miss": 3216,
+    "hard_wrap": 861,
+    "hard_plain": 2355,
+    "all": 19023
    },
    "solved": true,
    "tail": 0.003396112728377274,
@@ -492,18 +629,25 @@
     "copy": 0.787721837154391,
     "blank_out": 0.9800392670157068,
     "retrace_miss": 0.18221476510067114,
+    "hard_wrap": 0.045033112582781455,
+    "hard_plain": 0.22876404494382022,
     "all": 0.7242368901643621
    },
    "nll": {
     "copy": 0.6257173527699118,
     "blank_out": 0.4788505873574702,
     "retrace_miss": 2.664247212105761,
+    "hard_wrap": 3.27728582691796,
+    "hard_plain": 2.456227367529037,
     "all": 0.9192730086906205
    },
    "n": {
     "copy": 13129,
     "blank_out": 3056,
-    "retrace_miss": 2980
+    "retrace_miss": 2980,
+    "hard_wrap": 755,
+    "hard_plain": 2225,
+    "all": 19165
    },
    "solved": false,
    "tail": 0.910302094388711,
@@ -517,18 +661,25 @@
     "copy": 1.0,
     "blank_out": 0.982787156570672,
     "retrace_miss": 0.7309491978609626,
+    "hard_wrap": 0.19293820933165196,
+    "hard_plain": 0.9249658935879945,
     "all": 0.9542151939309755
    },
    "nll": {
     "copy": 0.0005168309737935084,
     "blank_out": 0.2191088999736509,
     "retrace_miss": 0.9174213999144023,
+    "hard_wrap": 2.8038221707427815,
+    "hard_plain": 0.23715045345378166,
     "all": 0.1823602496466683
    },
    "n": {
     "copy": 12705,
     "blank_out": 3021,
-    "retrace_miss": 2992
+    "retrace_miss": 2992,
+    "hard_wrap": 793,
+    "hard_plain": 2199,
+    "all": 18718
    },
    "solved": false,
    "tail": 0.19385846985035202,
@@ -542,18 +693,25 @@
     "copy": 0.9997813729777001,
     "blank_out": 0.9399731723675385,
     "retrace_miss": 0.7342560553633218,
+    "hard_wrap": 0.17111459968602827,
+    "hard_plain": 0.8934753661784287,
     "all": 0.9515157701337144
    },
    "nll": {
     "copy": 0.001157439472425116,
     "blank_out": 0.24900702227056676,
     "retrace_miss": 0.9170465748838122,
+    "hard_wrap": 2.901193166838804,
+    "hard_plain": 0.3560606099147356,
     "all": 0.17396580209582857
    },
    "n": {
     "copy": 13722,
     "blank_out": 2982,
-    "retrace_miss": 2890
+    "retrace_miss": 2890,
+    "hard_wrap": 637,
+    "hard_plain": 2253,
+    "all": 19594
    },
    "solved": false,
    "tail": 0.21082415686679537,
@@ -567,18 +725,25 @@
     "copy": 0.9996234939759037,
     "blank_out": 0.9493087557603687,
     "retrace_miss": 0.685404673213681,
+    "hard_wrap": 0.06306306306306306,
+    "hard_plain": 0.9076286764705882,
     "all": 0.9435421099060765
    },
    "nll": {
     "copy": 0.0012038748417485252,
     "blank_out": 0.2891240310241614,
     "retrace_miss": 1.036542851386428,
+    "hard_wrap": 3.135296982994718,
+    "hard_plain": 0.28712559023769596,
     "all": 0.20524400935571296
    },
    "n": {
     "copy": 13280,
     "blank_out": 3038,
-    "retrace_miss": 2953
+    "retrace_miss": 2953,
+    "hard_wrap": 777,
+    "hard_plain": 2176,
+    "all": 19271
    },
    "solved": false,
    "tail": 0.24779399443848607,
@@ -592,18 +757,25 @@
     "copy": 0.9770079705702023,
     "blank_out": 0.9459123406900839,
     "retrace_miss": 0.2073448163795905,
+    "hard_wrap": 0.006127450980392157,
+    "hard_plain": 0.2799646174259177,
     "all": 0.8493950987488367
    },
    "nll": {
     "copy": 0.07265371147490562,
     "blank_out": 0.5552720070960776,
     "retrace_miss": 2.607204716141183,
+    "hard_wrap": 3.728038088473327,
+    "hard_plain": 2.202693423870936,
     "all": 0.5561299030978742
    },
    "n": {
     "copy": 13048,
     "blank_out": 3217,
-    "retrace_miss": 3077
+    "retrace_miss": 3077,
+    "hard_wrap": 816,
+    "hard_plain": 2261,
+    "all": 19342
    },
    "solved": false,
    "tail": 0.5391312890041983,
@@ -617,18 +789,25 @@
     "copy": 0.9995361781076066,
     "blank_out": 0.9710982658959537,
     "retrace_miss": 0.6608520630660852,
+    "hard_wrap": 0.0,
+    "hard_plain": 0.8670774647887324,
     "all": 0.9418317482003048
    },
    "nll": {
     "copy": 0.0016865210054727497,
     "blank_out": 0.24790169331002648,
     "retrace_miss": 1.2195778661051688,
+    "hard_wrap": 3.5762025366717234,
+    "hard_plain": 0.48416990332713766,
     "all": 0.2327436460277298
    },
    "n": {
     "copy": 12936,
     "blank_out": 3114,
-    "retrace_miss": 2981
+    "retrace_miss": 2981,
+    "hard_wrap": 709,
+    "hard_plain": 2272,
+    "all": 19031
    },
    "solved": false,
    "tail": 0.2428269625487241,
@@ -642,18 +821,25 @@
     "copy": 0.999772710053792,
     "blank_out": 0.9769555339175592,
     "retrace_miss": 0.9598155467720685,
+    "hard_wrap": 0.8674698795180723,
+    "hard_plain": 0.9899519440803844,
     "all": 0.989852971629737
    },
    "nll": {
     "copy": 0.0009376341458066977,
     "blank_out": 0.11106776430666308,
     "retrace_miss": 0.21068431699077403,
+    "hard_wrap": 0.7466645855071281,
+    "hard_plain": 0.03577070380522717,
     "all": 0.05147096714140274
    },
    "n": {
     "copy": 13199,
     "blank_out": 3081,
-    "retrace_miss": 3036
+    "retrace_miss": 3036,
+    "hard_wrap": 747,
+    "hard_plain": 2289,
+    "all": 19316
    },
    "solved": true,
    "tail": 0.0029053484898317506,
@@ -667,18 +853,25 @@
     "copy": 1.0,
     "blank_out": 1.0,
     "retrace_miss": 0.9996890547263682,
+    "hard_wrap": 0.9988385598141696,
+    "hard_plain": 1.0,
     "all": 0.9999474320559323
    },
    "nll": {
     "copy": 3.79389285899375e-07,
     "blank_out": 1.034976770594145e-05,
     "retrace_miss": 0.0008855137536909231,
+    "hard_wrap": 0.0032992933358158877,
+    "hard_plain": 3.0236389522418046e-06,
     "all": 0.0001516861174402762
    },
    "n": {
     "copy": 12626,
     "blank_out": 3181,
-    "retrace_miss": 3216
+    "retrace_miss": 3216,
+    "hard_wrap": 861,
+    "hard_plain": 2355,
+    "all": 19023
    },
    "solved": true,
    "tail": 0.0028583891177182243,
@@ -692,18 +885,25 @@
     "copy": 1.0,
     "blank_out": 0.9977094240837696,
     "retrace_miss": 0.775503355704698,
+    "hard_wrap": 0.1880794701986755,
+    "hard_plain": 0.9748314606741573,
     "all": 0.9647273675971824
    },
    "nll": {
     "copy": 2.6770397571002622e-05,
     "blank_out": 0.160801327936255,
     "retrace_miss": 0.7671671967881207,
+    "hard_wrap": 2.8187612034359475,
+    "hard_plain": 0.07100833161099299,
     "all": 0.14494748620670433
    },
    "n": {
     "copy": 13129,
     "blank_out": 3056,
-    "retrace_miss": 2980
+    "retrace_miss": 2980,
+    "hard_wrap": 755,
+    "hard_plain": 2225,
+    "all": 19165
    },
    "solved": false,
    "tail": 0.13430596314066526,
@@ -717,18 +917,25 @@
     "copy": 1.0,
     "blank_out": 1.0,
     "retrace_miss": 1.0,
+    "hard_wrap": 1.0,
+    "hard_plain": 1.0,
     "all": 1.0
    },
    "nll": {
     "copy": 3.585938968946924e-07,
     "blank_out": 3.490914601879165e-07,
     "retrace_miss": 1.70369361707342e-06,
+    "hard_wrap": 4.067930107439845e-06,
+    "hard_plain": 8.511062878962601e-07,
     "all": 5.720692415620491e-07
    },
    "n": {
     "copy": 12705,
     "blank_out": 3021,
-    "retrace_miss": 2992
+    "retrace_miss": 2992,
+    "hard_wrap": 793,
+    "hard_plain": 2199,
+    "all": 18718
    },
    "solved": true,
    "tail": 0.002903740928101123,
@@ -742,18 +949,25 @@
     "copy": 1.0,
     "blank_out": 1.0,
     "retrace_miss": 1.0,
+    "hard_wrap": 1.0,
+    "hard_plain": 1.0,
     "all": 1.0
    },
    "nll": {
     "copy": 1.1770264794301946e-06,
     "blank_out": 8.072849964171963e-07,
     "retrace_miss": 3.902066249363315e-06,
+    "hard_wrap": 8.256177486483e-06,
+    "hard_plain": 2.6710103869375538e-06,
     "all": 1.5226831004755124e-06
    },
    "n": {
     "copy": 13722,
     "blank_out": 2982,
-    "retrace_miss": 2890
+    "retrace_miss": 2890,
+    "hard_wrap": 637,
+    "hard_plain": 2253,
+    "all": 19594
    },
    "solved": true,
    "tail": 0.00618686361295182,
@@ -767,18 +981,25 @@
     "copy": 1.0,
     "blank_out": 1.0,
     "retrace_miss": 1.0,
+    "hard_wrap": 1.0,
+    "hard_plain": 1.0,
     "all": 1.0
    },
    "nll": {
     "copy": 9.334063838456006e-07,
     "blank_out": 6.0017729541360304e-05,
     "retrace_miss": 4.428646263000113e-05,
+    "hard_wrap": 0.00015893918198678695,
+    "hard_plain": 3.346589955266488e-06,
     "all": 1.6891049933605703e-05
    },
    "n": {
     "copy": 13280,
     "blank_out": 3038,
-    "retrace_miss": 2953
+    "retrace_miss": 2953,
+    "hard_wrap": 777,
+    "hard_plain": 2176,
+    "all": 19271
    },
    "solved": true,
    "tail": 0.0029572429700631896,
@@ -792,18 +1013,25 @@
     "copy": 1.0,
     "blank_out": 1.0,
     "retrace_miss": 1.0,
+    "hard_wrap": 1.0,
+    "hard_plain": 1.0,
     "all": 1.0
    },
    "nll": {
     "copy": 2.7293507337364267e-07,
     "blank_out": 1.8528008035904246e-08,
     "retrace_miss": 7.116763958555917e-07,
+    "hard_wrap": 1.1357920854719784e-06,
+    "hard_plain": 5.586120868211063e-07,
     "all": 3.004182457490668e-07
    },
    "n": {
     "copy": 13048,
     "blank_out": 3217,
-    "retrace_miss": 3077
+    "retrace_miss": 3077,
+    "hard_wrap": 816,
+    "hard_plain": 2261,
+    "all": 19342
    },
    "solved": true,
    "tail": 0.005063434576656829,
