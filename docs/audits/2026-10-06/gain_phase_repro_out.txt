@@ -1,0 +1,15 @@
+torch 2.10.0+cu128; K = 5 epochs of the 900-epoch LEAK schedule; device cuda:1
+MapWM L1 seed=0 params=217,093
+  MapWM epoch 1: wrapper 6.7828870841435025 stored 6.7828870841435025 EQUAL
+  MapWM epoch 2: wrapper 5.713222980499268 stored 5.713222980499268 EQUAL
+  MapWM epoch 3: wrapper 4.3218823257757695 stored 4.3218823257757695 EQUAL
+  MapWM epoch 4: wrapper 4.165338092920732 stored 4.165338092920732 EQUAL
+  MapWM epoch 5: wrapper 4.1663349647911225 stored 4.1663349647911225 EQUAL
+MapWM s0: 5/5 epochs bitwise equal -> PASS
+NormStep L1 seed=0 params=217,349
+  NormStep epoch 1: wrapper 6.782849720546177 stored 6.782849720546177 EQUAL
+  NormStep epoch 2: wrapper 5.713113512311663 stored 5.713113512311663 EQUAL
+  NormStep epoch 3: wrapper 4.322395879395154 stored 4.322395879395154 EQUAL
+  NormStep epoch 4: wrapper 4.165318727493286 stored 4.165318727493286 EQUAL
+  NormStep epoch 5: wrapper 4.166363195497162 stored 4.166363195497162 EQUAL
+NormStep s0: 5/5 epochs bitwise equal -> PASS

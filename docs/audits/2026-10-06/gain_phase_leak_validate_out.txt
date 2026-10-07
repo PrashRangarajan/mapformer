@@ -1,0 +1,47 @@
+device cuda:0; LEAK eval stream: 200 test-pool sequences, T=1024
+MapWM    s0: acc 0.9893 (LEAK.json 0.9893) L_zero +0.0106 (LEAK.json +0.0106) L_ms +0.0106 | S_id 0.0050 shift 0.0047 cells resid 0.001 shared 0.0002 blank 0.0026 | GAUGE: acc 0.9893 L_ms +0.0106 L_zero +0.0105 S_id 0.0050
+MapWM    s1: acc 0.9918 (LEAK.json 0.9918) L_zero +0.0081 (LEAK.json +0.0081) L_ms +0.0082 | S_id 0.0039 shift 0.0041 cells resid 0.002 shared 0.0001 blank 0.0028 | GAUGE: acc 0.9918 L_ms +0.0081 L_zero +0.0081 S_id 0.0039
+MapWM    s2: acc 0.9861 (LEAK.json 0.9861) L_zero +0.0138 (LEAK.json +0.0138) L_ms +0.0139 | S_id 0.0048 shift 0.0048 cells resid 0.002 shared 0.0001 blank 0.0027
+MapWM    s3: acc 0.9875 (LEAK.json 0.9875) L_zero +0.0124 (LEAK.json +0.0124) L_ms +0.0124 | S_id 0.0050 shift 0.0051 cells resid 0.001 shared 0.0001 blank 0.0027
+MapWM    s4: acc 0.9838 (LEAK.json 0.9838) L_zero +0.0161 (LEAK.json +0.0161) L_ms +0.0159 | S_id 0.0048 shift 0.0051 cells resid 0.002 shared 0.0002 blank 0.0027
+MapWM    s5: acc 0.9919 (LEAK.json 0.9919) L_zero +0.0078 (LEAK.json +0.0078) L_ms +0.0078 | S_id 0.0041 shift 0.0042 cells resid 0.001 shared 0.0002 blank 0.0024
+MapWM    s6: acc 0.9908 (LEAK.json 0.9908) L_zero +0.0089 (LEAK.json +0.0089) L_ms +0.0089 | S_id 0.0048 shift 0.0046 cells resid 0.002 shared 0.0001 blank 0.0032
+MapWM    s7: acc 0.9911 (LEAK.json 0.9911) L_zero +0.0080 (LEAK.json +0.0080) L_ms +0.0074 | S_id 0.0038 shift 0.0037 cells resid 0.004 shared 0.0002 blank 0.0026
+ActOnly  s0: acc 1.0000 (LEAK.json 1.0000) L_zero +0.0000 (LEAK.json +0.0000) L_ms +0.0000 | S_id 0.0000 shift 0.0000 cells resid 0.000 shared 0.0000 blank 0.0000
+ActOnly  s1: acc 0.9983 (LEAK.json 0.9983) L_zero +0.0000 (LEAK.json +0.0000) L_ms +0.0000 | S_id 0.0000 shift 0.0000 cells resid 0.000 shared 0.0000 blank 0.0000
+ActOnly  s2: acc 1.0000 (LEAK.json 1.0000) L_zero +0.0000 (LEAK.json +0.0000) L_ms +0.0000 | S_id 0.0000 shift 0.0000 cells resid 0.000 shared 0.0000 blank 0.0000
+ActOnly  s3: acc 0.9999 (LEAK.json 0.9999) L_zero +0.0000 (LEAK.json +0.0000) L_ms +0.0000 | S_id 0.0000 shift 0.0000 cells resid 0.000 shared 0.0000 blank 0.0000
+ActOnly  s4: acc 1.0000 (LEAK.json 1.0000) L_zero +0.0000 (LEAK.json +0.0000) L_ms +0.0000 | S_id 0.0000 shift 0.0000 cells resid 0.000 shared 0.0000 blank 0.0000
+ActOnly  s5: acc 1.0000 (LEAK.json 1.0000) L_zero +0.0000 (LEAK.json +0.0000) L_ms +0.0000 | S_id 0.0000 shift 0.0000 cells resid 0.000 shared 0.0000 blank 0.0000
+ActOnly  s6: acc 0.9998 (LEAK.json 0.9998) L_zero +0.0000 (LEAK.json +0.0000) L_ms +0.0000 | S_id 0.0000 shift 0.0000 cells resid 0.000 shared 0.0000 blank 0.0000
+ActOnly  s7: acc 0.9997 (LEAK.json 0.9997) L_zero +0.0000 (LEAK.json +0.0000) L_ms +0.0000 | S_id 0.0000 shift 0.0000 cells resid 0.000 shared 0.0000 blank 0.0000
+NormStep s0: acc 0.9998 (LEAK.json 0.9998) L_zero -0.2039 (LEAK.json -0.2039) L_ms +0.0002 | S_id 0.0009 shift 0.0009 cells resid 0.001 shared 0.0035 blank 0.0035 | GAUGE: acc 0.9998 L_ms +0.0002 L_zero -0.3350 S_id 0.0009
+NormStep s1: acc 0.9996 (LEAK.json 0.9996) L_zero -0.2322 (LEAK.json -0.2322) L_ms +0.0003 | S_id 0.0008 shift 0.0008 cells resid 0.002 shared 0.0052 blank 0.0053 | GAUGE: acc 0.9996 L_ms +0.0002 L_zero -0.3663 S_id 0.0008
+NormStep s2: acc 0.9995 (LEAK.json 0.9995) L_zero -0.3040 (LEAK.json -0.3040) L_ms +0.0004 | S_id 0.0009 shift 0.0009 cells resid 0.001 shared 0.0056 blank 0.0057 | GAUGE: acc 0.9994 L_ms +0.0004 L_zero -0.4017 S_id 0.0009
+NormStep s3: acc 1.0000 (LEAK.json 1.0000) L_zero -0.1595 (LEAK.json -0.1595) L_ms +0.0000 | S_id 0.0010 shift 0.0010 cells resid 0.001 shared 0.0027 blank 0.0028 | GAUGE: acc 1.0000 L_ms +0.0000 L_zero -0.3026 S_id 0.0010
+NormStep s4: acc 0.9995 (LEAK.json 0.9995) L_zero -0.2282 (LEAK.json -0.2282) L_ms +0.0004 | S_id 0.0012 shift 0.0012 cells resid 0.001 shared 0.0044 blank 0.0042
+NormStep s5: acc 1.0000 (LEAK.json 1.0000) L_zero -0.1683 (LEAK.json -0.1683) L_ms +0.0000 | S_id 0.0008 shift 0.0008 cells resid 0.054 shared 0.0038 blank 0.0040
+NormStep s6: acc 0.9998 (LEAK.json 0.9998) L_zero -0.1580 (LEAK.json -0.1580) L_ms +0.0001 | S_id 0.0012 shift 0.0012 cells resid 0.002 shared 0.0036 blank 0.0042
+NormStep s7: acc 1.0000 (LEAK.json 1.0000) L_zero -0.1185 (LEAK.json -0.1185) L_ms +0.0000 | S_id 0.0010 shift 0.0010 cells resid 0.001 shared 0.0029 blank 0.0031
+V5 isotropic NormStep s0: S_id 0.0009 -> 0.0049 (target 0.0048), shift 0.0016 cells; acc 0.9998 -> injected 0.9972; L_ms on the injected model +0.0028
+V5 shift     NormStep s0: S_id 0.0009 -> 0.0048 (target 0.0048), shift 0.0048 cells; acc 0.9998 -> injected 0.9785; L_ms on the injected model +0.0214
+V5 isotropic NormStep s1: S_id 0.0008 -> 0.0048 (target 0.0048), shift 0.0014 cells; acc 0.9996 -> injected 0.9983; L_ms on the injected model +0.0015
+V5 shift     NormStep s1: S_id 0.0008 -> 0.0048 (target 0.0048), shift 0.0048 cells; acc 0.9996 -> injected 0.9776; L_ms on the injected model +0.0222
+V5 isotropic NormStep s2: S_id 0.0009 -> 0.0049 (target 0.0048), shift 0.0015 cells; acc 0.9995 -> injected 0.9972; L_ms on the injected model +0.0027
+V5 shift     NormStep s2: S_id 0.0009 -> 0.0049 (target 0.0048), shift 0.0049 cells; acc 0.9995 -> injected 0.9805; L_ms on the injected model +0.0193
+V5 isotropic NormStep s3: S_id 0.0010 -> 0.0049 (target 0.0048), shift 0.0015 cells; acc 1.0000 -> injected 0.9992; L_ms on the injected model +0.0008
+V5 shift     NormStep s3: S_id 0.0010 -> 0.0049 (target 0.0048), shift 0.0049 cells; acc 1.0000 -> injected 0.9857; L_ms on the injected model +0.0143
+
+== checks ==
+V0 wiring: max |acc, L_zero - LEAK.json| = 0.00e+00 -> PASS
+V1 ActOnly: max |L_ms|, |S_id| = 0.00e+00 -> PASS
+V2 MapWM: L_ms mean +0.0106 (median +0.0098, min +0.0074) vs L_zero +0.0107; per-seed L_ms - L_zero -0.0001 (range -0.0006 .. +0.0001); r = +0.998
+V3 NormStep: L_ms mean +0.0002 (range +0.0000 .. +0.0004) vs L_zero -0.1966; S_id NormStep 0.0010 vs MapWM 0.0045 (ratio 4.7x); shift_cells NormStep 0.0010 vs MapWM 0.0045
+V4 NormStep s0: S_id 0.000864 -> 0.000864; L_ms +0.0002 -> +0.0002; L_zero -0.2039 -> -0.3350; acc 0.9998 -> 0.9998
+V4 NormStep s1: S_id 0.000762 -> 0.000762; L_ms +0.0003 -> +0.0002; L_zero -0.2322 -> -0.3663; acc 0.9996 -> 0.9996
+V4 NormStep s2: S_id 0.000911 -> 0.000911; L_ms +0.0004 -> +0.0004; L_zero -0.3040 -> -0.4017; acc 0.9995 -> 0.9994
+V4 NormStep s3: S_id 0.001004 -> 0.001004; L_ms +0.0000 -> +0.0000; L_zero -0.1595 -> -0.3026; acc 1.0000 -> 1.0000
+V4 MapWM s0: S_id 0.004967 -> 0.004967; L_ms +0.0106 -> +0.0106; L_zero +0.0106 -> +0.0105; acc 0.9893 -> 0.9893
+V4 MapWM s1: S_id 0.003908 -> 0.003908; L_ms +0.0082 -> +0.0081; L_zero +0.0081 -> +0.0081; acc 0.9918 -> 0.9918
+V5 positive control (isotropic): L_ms on injected NormStep models +0.0028 +0.0015 +0.0027 +0.0008 (MapWM's own L_ms median +0.0098)
+V5 positive control (shift): L_ms on injected NormStep models +0.0214 +0.0222 +0.0193 +0.0143 (MapWM's own L_ms median +0.0098)

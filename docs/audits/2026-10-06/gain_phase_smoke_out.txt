@@ -1,0 +1,169 @@
+== contrast_state (y vs x) ==
+  [PASS] BETTER on accuracy and SOLVED: BETTER
+  [PASS] BETTER on accuracy only (both SOLVED): BETTER
+  [PASS] BETTER on SOLVED only (accuracy at ceiling-ish, tiny gap): BETTER
+  [PASS] WORSE on accuracy: WORSE
+  [PASS] WORSE on SOLVED only: WORSE
+  [PASS] CONFLICT: CONFLICT
+  [PASS] CEILING: CEILING
+  [PASS] NO DIFFERENCE (below MIN_D): NO DIFFERENCE
+  [PASS] NO DIFFERENCE (same): NO DIFFERENCE
+== ni_state (GP vs NormStep) ==
+  [PASS] AS GOOD (at ceiling): AS GOOD
+  [PASS] AS GOOD (off ceiling): AS GOOD
+  [PASS] UNDETERMINED (one run unsolved, acc within): UNDETERMINED
+  [PASS] UNDETERMINED (acc not within margin): UNDETERMINED
+  [PASS] WORSE: WORSE
+  [PASS] BETTER: BETTER
+  [PASS] CONFLICT: CONFLICT
+== speed_state (y vs x) ==
+  [PASS] FASTER: FASTER
+  [PASS] SLOWER: SLOWER
+  [PASS] NO DIFFERENCE: NO DIFFERENCE
+  [PASS] NO DIFFERENCE (p < .05 but ratio < 1.25): NO DIFFERENCE
+  [PASS] NEITHER CONVERGED: NEITHER CONVERGED
+  [PASS] FASTER with censoring: FASTER
+  [PASS] speed_epoch censoring: 901
+  [PASS] speed_epoch: 1-based last epoch of the first window with mean < 0.05: 56
+== leak_side (raw, norm) ==
+  [PASS] REMOVES: REMOVES
+  [PASS] NO LEAK TO REMOVE: NO LEAK TO REMOVE
+  [PASS] INCOMPLETE (norm still leaks): INCOMPLETE
+  [PASS] INCOMPLETE (S_id not lower): INCOMPLETE
+== gain_leak (GainRaw) ==
+  [PASS] PERSISTS: PERSISTS
+  [PASS] ABSENT, UNLEARNED: ABSENT, UNLEARNED
+  [PASS] ABSENT, TOLERATED: ABSENT, TOLERATED
+  [PASS] PARTIAL: PARTIAL
+
+== step_verdict (D1r, D1): exhaustive ==
+  BETTER        x BETTER        -> NORMSTEP HELPS UNDER BOTH SCORES (the step fix does not depend on the score)
+  BETTER        x CEILING       -> NORMSTEP HELPS UNDER THE ROTARY SCORE; UNDER THE GAIN SCORE THERE IS NO HEADROOM (GainRaw already at ceiling: the gain score alone avoids the leak's accuracy cost; D3 says why)
+  BETTER        x NO DIFFERENCE -> NORMSTEP HELPS UNDER THE ROTARY SCORE ONLY: no step effect detected under the gain score (see its CI and MDE; D3 says whether GainRaw leaks)
+  BETTER        x WORSE         -> NORMSTEP HELPS UNDER THE ROTARY SCORE BUT HURTS UNDER THE GAIN SCORE (interference)
+  BETTER        x CONFLICT      -> NORMSTEP HELPS UNDER THE ROTARY SCORE; UNDER THE GAIN SCORE accuracy and SOLVED disagree
+  NO DIFFERENCE x BETTER        -> REPLICATION FAILED: NormStep vs MapWM is NO DIFFERENCE on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is BETTER (reported as it falls)
+  NO DIFFERENCE x CEILING       -> REPLICATION FAILED: NormStep vs MapWM is NO DIFFERENCE on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is CEILING (reported as it falls)
+  NO DIFFERENCE x NO DIFFERENCE -> REPLICATION FAILED: NormStep vs MapWM is NO DIFFERENCE on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is NO DIFFERENCE (reported as it falls)
+  NO DIFFERENCE x WORSE         -> REPLICATION FAILED: NormStep vs MapWM is NO DIFFERENCE on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is WORSE (reported as it falls)
+  NO DIFFERENCE x CONFLICT      -> REPLICATION FAILED: NormStep vs MapWM is NO DIFFERENCE on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is CONFLICT (reported as it falls)
+  CEILING       x BETTER        -> REPLICATION FAILED: NormStep vs MapWM is CEILING on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is BETTER (reported as it falls)
+  CEILING       x CEILING       -> REPLICATION FAILED: NormStep vs MapWM is CEILING on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is CEILING (reported as it falls)
+  CEILING       x NO DIFFERENCE -> REPLICATION FAILED: NormStep vs MapWM is CEILING on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is NO DIFFERENCE (reported as it falls)
+  CEILING       x WORSE         -> REPLICATION FAILED: NormStep vs MapWM is CEILING on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is WORSE (reported as it falls)
+  CEILING       x CONFLICT      -> REPLICATION FAILED: NormStep vs MapWM is CEILING on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is CONFLICT (reported as it falls)
+  WORSE         x BETTER        -> REPLICATION FAILED: NormStep vs MapWM is WORSE on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is BETTER (reported as it falls)
+  WORSE         x CEILING       -> REPLICATION FAILED: NormStep vs MapWM is WORSE on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is CEILING (reported as it falls)
+  WORSE         x NO DIFFERENCE -> REPLICATION FAILED: NormStep vs MapWM is WORSE on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is NO DIFFERENCE (reported as it falls)
+  WORSE         x WORSE         -> REPLICATION FAILED: NormStep vs MapWM is WORSE on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is WORSE (reported as it falls)
+  WORSE         x CONFLICT      -> REPLICATION FAILED: NormStep vs MapWM is WORSE on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is CONFLICT (reported as it falls)
+  CONFLICT      x BETTER        -> REPLICATION FAILED: NormStep vs MapWM is CONFLICT on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is BETTER (reported as it falls)
+  CONFLICT      x CEILING       -> REPLICATION FAILED: NormStep vs MapWM is CONFLICT on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is CEILING (reported as it falls)
+  CONFLICT      x NO DIFFERENCE -> REPLICATION FAILED: NormStep vs MapWM is CONFLICT on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is NO DIFFERENCE (reported as it falls)
+  CONFLICT      x WORSE         -> REPLICATION FAILED: NormStep vs MapWM is CONFLICT on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is WORSE (reported as it falls)
+  CONFLICT      x CONFLICT      -> REPLICATION FAILED: NormStep vs MapWM is CONFLICT on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is CONFLICT (reported as it falls)
+
+== leak_verdict (rotary, gain, GainRaw): exhaustive ==
+  REMOVES           x REMOVES           x PERSISTS          -> SEPARATE DEFECTS: the step fix removes the leak under both scores; the score fix leaves it (it is in theta)
+  REMOVES           x REMOVES           x ABSENT, TOLERATED -> THE GAIN SCORE TOLERATES THE LEAK: the identity step is still in theta (S_id not lower than MapWM's) but costs no accuracy under the gain score; the step fix removes it under both scores
+  REMOVES           x REMOVES           x ABSENT, UNLEARNED -> THE GAIN SCORE ALSO REMOVES THE LEAK (training unlearns the identity step): not separate defects; the step fix removes it too
+  REMOVES           x REMOVES           x PARTIAL           -> PARTIAL: the step fix removes the leak under both scores; under the gain score the raw step leaks less
+  REMOVES           x NO LEAK TO REMOVE x PERSISTS          -> SEPARATE DEFECTS: the step fix removes the leak under both scores; the score fix leaves it (it is in theta)
+  REMOVES           x NO LEAK TO REMOVE x ABSENT, TOLERATED -> THE GAIN SCORE TOLERATES THE LEAK: the identity step is still in theta (S_id not lower than MapWM's) but costs no accuracy under the gain score; the step fix removes it under both scores
+  REMOVES           x NO LEAK TO REMOVE x ABSENT, UNLEARNED -> THE GAIN SCORE ALSO REMOVES THE LEAK (training unlearns the identity step): not separate defects; the step fix removes it too
+  REMOVES           x NO LEAK TO REMOVE x PARTIAL           -> PARTIAL: the step fix removes the leak under both scores; under the gain score the raw step leaks less
+  REMOVES           x INCOMPLETE        x PERSISTS          -> STEP FIX INCOMPLETE (rotary: REMOVES; gain: INCOMPLETE); GainRaw's leak PERSISTS -- reported as it falls
+  REMOVES           x INCOMPLETE        x ABSENT, TOLERATED -> STEP FIX INCOMPLETE (rotary: REMOVES; gain: INCOMPLETE); GainRaw's leak ABSENT, TOLERATED -- reported as it falls
+  REMOVES           x INCOMPLETE        x ABSENT, UNLEARNED -> STEP FIX INCOMPLETE (rotary: REMOVES; gain: INCOMPLETE); GainRaw's leak ABSENT, UNLEARNED -- reported as it falls
+  REMOVES           x INCOMPLETE        x PARTIAL           -> STEP FIX INCOMPLETE (rotary: REMOVES; gain: INCOMPLETE); GainRaw's leak PARTIAL -- reported as it falls
+  NO LEAK TO REMOVE x REMOVES           x PERSISTS          -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x REMOVES           x ABSENT, TOLERATED -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x REMOVES           x ABSENT, UNLEARNED -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x REMOVES           x PARTIAL           -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x NO LEAK TO REMOVE x PERSISTS          -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x NO LEAK TO REMOVE x ABSENT, TOLERATED -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x NO LEAK TO REMOVE x ABSENT, UNLEARNED -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x NO LEAK TO REMOVE x PARTIAL           -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x INCOMPLETE        x PERSISTS          -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x INCOMPLETE        x ABSENT, TOLERATED -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x INCOMPLETE        x ABSENT, UNLEARNED -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x INCOMPLETE        x PARTIAL           -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  INCOMPLETE        x REMOVES           x PERSISTS          -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: REMOVES); GainRaw's leak PERSISTS -- reported as it falls
+  INCOMPLETE        x REMOVES           x ABSENT, TOLERATED -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: REMOVES); GainRaw's leak ABSENT, TOLERATED -- reported as it falls
+  INCOMPLETE        x REMOVES           x ABSENT, UNLEARNED -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: REMOVES); GainRaw's leak ABSENT, UNLEARNED -- reported as it falls
+  INCOMPLETE        x REMOVES           x PARTIAL           -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: REMOVES); GainRaw's leak PARTIAL -- reported as it falls
+  INCOMPLETE        x NO LEAK TO REMOVE x PERSISTS          -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: NO LEAK TO REMOVE); GainRaw's leak PERSISTS -- reported as it falls
+  INCOMPLETE        x NO LEAK TO REMOVE x ABSENT, TOLERATED -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: NO LEAK TO REMOVE); GainRaw's leak ABSENT, TOLERATED -- reported as it falls
+  INCOMPLETE        x NO LEAK TO REMOVE x ABSENT, UNLEARNED -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: NO LEAK TO REMOVE); GainRaw's leak ABSENT, UNLEARNED -- reported as it falls
+  INCOMPLETE        x NO LEAK TO REMOVE x PARTIAL           -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: NO LEAK TO REMOVE); GainRaw's leak PARTIAL -- reported as it falls
+  INCOMPLETE        x INCOMPLETE        x PERSISTS          -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: INCOMPLETE); GainRaw's leak PERSISTS -- reported as it falls
+  INCOMPLETE        x INCOMPLETE        x ABSENT, TOLERATED -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: INCOMPLETE); GainRaw's leak ABSENT, TOLERATED -- reported as it falls
+  INCOMPLETE        x INCOMPLETE        x ABSENT, UNLEARNED -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: INCOMPLETE); GainRaw's leak ABSENT, UNLEARNED -- reported as it falls
+  INCOMPLETE        x INCOMPLETE        x PARTIAL           -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: INCOMPLETE); GainRaw's leak PARTIAL -- reported as it falls
+
+== combo_verdict (GP vs MapWM, GP vs NormStep): exhaustive ==
+  BETTER        x AS GOOD      -> THE GAIN-PHASE MAP WORKS: better than MapWM and as good as NormStep
+  BETTER        x BETTER       -> THE GAIN-PHASE MAP WORKS AND BEATS NORMSTEP
+  BETTER        x WORSE        -> BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep
+  BETTER        x UNDETERMINED -> BETTER THAN MapWM; non-inferiority to NormStep undetermined
+  BETTER        x CONFLICT     -> CONFLICT (vs MapWM BETTER, vs NormStep CONFLICT): reported as it falls
+  WORSE         x AS GOOD      -> THE GAIN-PHASE MAP FAILS: worse than MapWM
+  WORSE         x BETTER       -> THE GAIN-PHASE MAP FAILS: worse than MapWM
+  WORSE         x WORSE        -> THE GAIN-PHASE MAP FAILS: worse than MapWM
+  WORSE         x UNDETERMINED -> THE GAIN-PHASE MAP FAILS: worse than MapWM
+  WORSE         x CONFLICT     -> CONFLICT (vs MapWM WORSE, vs NormStep CONFLICT): reported as it falls
+  CEILING       x AS GOOD      -> NO GAIN OVER MapWM DETECTED (vs MapWM CEILING; vs NormStep AS GOOD)
+  CEILING       x BETTER       -> NO GAIN OVER MapWM DETECTED (vs MapWM CEILING; vs NormStep BETTER)
+  CEILING       x WORSE        -> NO GAIN OVER MapWM DETECTED (vs MapWM CEILING; vs NormStep WORSE)
+  CEILING       x UNDETERMINED -> NO GAIN OVER MapWM DETECTED (vs MapWM CEILING; vs NormStep UNDETERMINED)
+  CEILING       x CONFLICT     -> CONFLICT (vs MapWM CEILING, vs NormStep CONFLICT): reported as it falls
+  NO DIFFERENCE x AS GOOD      -> NO GAIN OVER MapWM DETECTED (vs MapWM NO DIFFERENCE; vs NormStep AS GOOD)
+  NO DIFFERENCE x BETTER       -> NO GAIN OVER MapWM DETECTED (vs MapWM NO DIFFERENCE; vs NormStep BETTER)
+  NO DIFFERENCE x WORSE        -> NO GAIN OVER MapWM DETECTED (vs MapWM NO DIFFERENCE; vs NormStep WORSE)
+  NO DIFFERENCE x UNDETERMINED -> NO GAIN OVER MapWM DETECTED (vs MapWM NO DIFFERENCE; vs NormStep UNDETERMINED)
+  NO DIFFERENCE x CONFLICT     -> CONFLICT (vs MapWM NO DIFFERENCE, vs NormStep CONFLICT): reported as it falls
+  CONFLICT      x AS GOOD      -> CONFLICT (vs MapWM CONFLICT, vs NormStep AS GOOD): reported as it falls
+  CONFLICT      x BETTER       -> CONFLICT (vs MapWM CONFLICT, vs NormStep BETTER): reported as it falls
+  CONFLICT      x WORSE        -> CONFLICT (vs MapWM CONFLICT, vs NormStep WORSE): reported as it falls
+  CONFLICT      x UNDETERMINED -> CONFLICT (vs MapWM CONFLICT, vs NormStep UNDETERMINED): reported as it falls
+  CONFLICT      x CONFLICT     -> CONFLICT (vs MapWM CONFLICT, vs NormStep CONFLICT): reported as it falls
+
+== main path end to end: 32 synthetic checkpoints + synthetic GAIN_PHASE_EVAL.json ==
+== per arm (unseen-object accuracy x1; leak readouts; classes) ==
+  MapWM     acc 0.9890 +/- 0.0030 (min 0.9838) | SOLVED 0/8 | L_ms median +0.0097 | S_id 0.0045 | final-5% loss 0.0751 | epochs to 0.05 - - - - - - - -
+  NormStep  acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+  GainRaw   acc 0.9890 +/- 0.0030 (min 0.9838) | SOLVED 0/8 | L_ms median +0.0097 | S_id 0.0045 | final-5% loss 0.0751 | epochs to 0.05 - - - - - - - -
+  GainPhase acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+
+== D1 STEP ==
+  D1r NormStep vs MapWM (rotary; positive control): BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  D1  GainPhase vs GainRaw (gain score): BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  REGISTERED D1: NORMSTEP HELPS UNDER BOTH SCORES (the step fix does not depend on the score)
+
+== D2 SCORE (gain vs rotary) ==
+  raw step: GainRaw vs MapWM: NO DIFFERENCE: d +0.0000 (perm p 1.0000, NONE); SOLVED 0/8 vs 0/8 (Fisher p 1.0000, NONE) -- 95% CI [-0.0030, +0.0030], MDE 0.0045
+  NormStep step: GainPhase vs NormStep: CEILING: d +0.0000 (perm p 1.0000, CEIL); SOLVED 8/8 vs 8/8 (Fisher p 1.0000, NONE) -- both arms >= 0.999 on every seed: no headroom
+  REGISTERED D2: raw step -- GAIN SCORE NO DIFFERENCE; NormStep step -- GAIN SCORE CEILING
+
+== D3 LEAK DISSOCIATION ==
+  step fix under the rotary score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
+  step fix under the gain score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
+  leak under the gain score, raw step: PERSISTS: median L_ms(GainRaw) +0.0097; S_id GainRaw 0.0045 vs MapWM 0.0045 (perm p 1.0000)
+  REGISTERED D3: SEPARATE DEFECTS: the step fix removes the leak under both scores; the score fix leaves it (it is in theta)
+
+== D4 COMBINATION ==
+  GainPhase vs MapWM: BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  GainPhase vs NormStep (non-inferiority): AS GOOD: d +0.0000 (perm p 1.0000, CEIL); SOLVED 8/8 vs 8/8 (Fisher p 1.0000, NONE) -- both arms >= 0.999 on every seed: no headroom; non-inferiority at -0.005: one-sided p 0.0001 (at ceiling)
+  REGISTERED D4: THE GAIN-PHASE MAP WORKS: better than MapWM and as good as NormStep (non-inferiority at ceiling)
+
+== D5 SPEED (epochs until the 10-epoch running training loss < 0.05) ==
+  GainPhase vs NormStep: NO DIFFERENCE: geometric-mean epochs 322 vs 322 (x1.00 faster); censored 0/8 vs 0/8; perm p 1.0000
+  GainRaw vs MapWM: NEITHER CONVERGED: geometric-mean epochs 901 vs 901 (x1.00 faster); censored 8/8 vs 8/8
+  REGISTERED D5: NormStep step -- gain score NO DIFFERENCE; raw step -- gain score NEITHER CONVERGED
+  [PASS] end to end: D1 headline: NORMSTEP HELPS UNDER BOTH SCORES
+  [PASS] end to end: D3 headline: SEPARATE DEFECTS
+  [PASS] end to end: D4 headline: THE GAIN-PHASE MAP WORKS
+  [PASS] end to end: D5 (raw arms never reach 0.05): NEITHER CONVERGED
+  [PASS] VOID on a missing run: ['void']
+
+ALL PASS

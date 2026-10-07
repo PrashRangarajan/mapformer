@@ -1,0 +1,249 @@
+
+######## n = 8 per arm, 200 resampled batches per scenario
+== A predicted
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== B tolerated
+   D1r          BETTER 1.00
+   D1           CEILING 1.00
+   D2_raw       BETTER 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  THE GAIN SCORE TOLERATES THE LEAK 0.96; THE GAIN SCORE ALSO REMOVES THE LEAK 0.04
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== C unlearned
+   D1r          BETTER 1.00
+   D1           CEILING 1.00
+   D2_raw       BETTER 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  THE GAIN SCORE ALSO REMOVES THE LEAK 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== D half
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 0.51; BETTER 0.49
+   D2_norm      CEILING 1.00
+   D3_headline  PARTIAL 0.51; SEPARATE DEFECTS 0.49
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== E GP fails 1/8
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      NO DIFFERENCE 0.66; CEILING 0.34; WORSE 0.01
+   D3_headline  SEPARATE DEFECTS 0.98; STEP FIX INCOMPLETE 0.02
+   D4_headline  BETTER THAN MapWM; non-inferiority to NormStep undetermined 0.66; THE GAIN-PHASE MAP WORKS 0.34; BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep 0.01
+   D4_vs_N      UNDETERMINED 0.66; AS GOOD 0.34; WORSE 0.01
+   D5_norm      NO DIFFERENCE 1.00
+== F GP fails 1/4
+   D1r          BETTER 1.00
+   D1           BETTER 0.96; NO DIFFERENCE 0.04
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      NO DIFFERENCE 0.82; CEILING 0.11; WORSE 0.07
+   D3_headline  SEPARATE DEFECTS 0.90; STEP FIX INCOMPLETE 0.10
+   D4_headline  BETTER THAN MapWM; non-inferiority to NormStep undetermined 0.81; THE GAIN-PHASE MAP WORKS 0.11; BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep 0.04; NO GAIN OVER MapWM DETECTED 0.04
+   D4_vs_N      UNDETERMINED 0.82; AS GOOD 0.11; WORSE 0.07
+   D5_norm      NO DIFFERENCE 1.00
+== G GP 3x faster
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      FASTER 1.00
+== H null speed
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== I GP stalls 1/8
+   D1r          BETTER 1.00
+   D1           BETTER 0.99; NO DIFFERENCE 0.01
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      NO DIFFERENCE 0.61; CEILING 0.35; WORSE 0.04
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  BETTER THAN MapWM; non-inferiority to NormStep undetermined 0.60; THE GAIN-PHASE MAP WORKS 0.35; BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep 0.03; NO GAIN OVER MapWM DETECTED 0.01
+   D4_vs_N      UNDETERMINED 0.61; AS GOOD 0.35; WORSE 0.04
+   D5_norm      NO DIFFERENCE 1.00
+
+######## n = 10 per arm, 200 resampled batches per scenario
+== A predicted
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== B tolerated
+   D1r          BETTER 1.00
+   D1           CEILING 1.00
+   D2_raw       BETTER 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  THE GAIN SCORE TOLERATES THE LEAK 0.97; THE GAIN SCORE ALSO REMOVES THE LEAK 0.03
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== C unlearned
+   D1r          BETTER 1.00
+   D1           CEILING 1.00
+   D2_raw       BETTER 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  THE GAIN SCORE ALSO REMOVES THE LEAK 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== D half
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 0.52; BETTER 0.48
+   D2_norm      CEILING 1.00
+   D3_headline  PARTIAL 0.56; SEPARATE DEFECTS 0.45
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== E GP fails 1/8
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      NO DIFFERENCE 0.73; CEILING 0.25; WORSE 0.01
+   D3_headline  SEPARATE DEFECTS 0.98; STEP FIX INCOMPLETE 0.01
+   D4_headline  BETTER THAN MapWM; non-inferiority to NormStep undetermined 0.73; THE GAIN-PHASE MAP WORKS 0.25; BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep 0.01
+   D4_vs_N      UNDETERMINED 0.73; AS GOOD 0.25; WORSE 0.01
+   D5_norm      NO DIFFERENCE 1.00
+== F GP fails 1/4
+   D1r          BETTER 1.00
+   D1           BETTER 0.99; NO DIFFERENCE 0.01
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      NO DIFFERENCE 0.86; WORSE 0.08; CEILING 0.06
+   D3_headline  SEPARATE DEFECTS 0.93; STEP FIX INCOMPLETE 0.07
+   D4_headline  BETTER THAN MapWM; non-inferiority to NormStep undetermined 0.86; BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep 0.07; THE GAIN-PHASE MAP WORKS 0.06; NO GAIN OVER MapWM DETECTED 0.01
+   D4_vs_N      UNDETERMINED 0.86; WORSE 0.08; AS GOOD 0.06
+   D5_norm      NO DIFFERENCE 1.00
+== G GP 3x faster
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      FASTER 1.00
+== H null speed
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== I GP stalls 1/8
+   D1r          BETTER 1.00
+   D1           BETTER 0.99; CONFLICT 0.01
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      NO DIFFERENCE 0.72; CEILING 0.21; WORSE 0.06
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  BETTER THAN MapWM; non-inferiority to NormStep undetermined 0.72; THE GAIN-PHASE MAP WORKS 0.21; BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep 0.06; CONFLICT 0.01
+   D4_vs_N      UNDETERMINED 0.72; AS GOOD 0.21; WORSE 0.06
+   D5_norm      NO DIFFERENCE 1.00
+
+######## n = 12 per arm, 200 resampled batches per scenario
+== A predicted
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== B tolerated
+   D1r          BETTER 1.00
+   D1           CEILING 1.00
+   D2_raw       BETTER 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  THE GAIN SCORE TOLERATES THE LEAK 0.98; THE GAIN SCORE ALSO REMOVES THE LEAK 0.01
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== C unlearned
+   D1r          BETTER 1.00
+   D1           CEILING 1.00
+   D2_raw       BETTER 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  THE GAIN SCORE ALSO REMOVES THE LEAK 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== D half
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 0.52; BETTER 0.48
+   D2_norm      CEILING 1.00
+   D3_headline  PARTIAL 0.54; SEPARATE DEFECTS 0.46
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== E GP fails 1/8
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      NO DIFFERENCE 0.81; CEILING 0.18; WORSE 0.01
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  BETTER THAN MapWM; non-inferiority to NormStep undetermined 0.81; THE GAIN-PHASE MAP WORKS 0.18; BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep 0.01
+   D4_vs_N      UNDETERMINED 0.81; AS GOOD 0.18; WORSE 0.01
+   D5_norm      NO DIFFERENCE 1.00
+== F GP fails 1/4
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      NO DIFFERENCE 0.83; WORSE 0.15; CEILING 0.01
+   D3_headline  SEPARATE DEFECTS 0.96; STEP FIX INCOMPLETE 0.04
+   D4_headline  BETTER THAN MapWM; non-inferiority to NormStep undetermined 0.83; BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep 0.15; THE GAIN-PHASE MAP WORKS 0.01
+   D4_vs_N      UNDETERMINED 0.83; WORSE 0.15; AS GOOD 0.01
+   D5_norm      NO DIFFERENCE 1.00
+== G GP 3x faster
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      FASTER 1.00
+== H null speed
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== I GP stalls 1/8
+   D1r          BETTER 1.00
+   D1           BETTER 0.99; CONFLICT 0.01
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      NO DIFFERENCE 0.71; CEILING 0.18; WORSE 0.10
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  BETTER THAN MapWM; non-inferiority to NormStep undetermined 0.71; THE GAIN-PHASE MAP WORKS 0.18; BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep 0.10; CONFLICT 0.01
+   D4_vs_N      UNDETERMINED 0.71; AS GOOD 0.18; WORSE 0.10
+   D5_norm      NO DIFFERENCE 1.00

@@ -1,0 +1,44 @@
+== 1. matched initialisation ==
+  [PASS] seed 8 MapWM=NormStep True GainRaw=GainPhase True MapWM=GainRaw on 24 shared tensors True RNG state + initial seed equal True gain init seed-dependent True
+    rotary-only tensors: ['layers.0.k_proj.bias', 'layers.0.k_proj.weight', 'layers.0.q_proj.bias', 'layers.0.q_proj.weight']
+    gain-only tensors: ['layers.0.amp_raw', 'layers.0.k_gain.bias', 'layers.0.k_gain.weight', 'layers.0.q_gain.bias', 'layers.0.q_gain.weight']
+  [PASS] seed 9 MapWM=NormStep True GainRaw=GainPhase True MapWM=GainRaw on 24 shared tensors True RNG state + initial seed equal True gain init seed-dependent True
+  [PASS] seed 10 MapWM=NormStep True GainRaw=GainPhase True MapWM=GainRaw on 24 shared tensors True RNG state + initial seed equal True gain init seed-dependent True
+  [PASS] seed 11 MapWM=NormStep True GainRaw=GainPhase True MapWM=GainRaw on 24 shared tensors True RNG state + initial seed equal True gain init seed-dependent True
+  [PASS] seed 12 MapWM=NormStep True GainRaw=GainPhase True MapWM=GainRaw on 24 shared tensors True RNG state + initial seed equal True gain init seed-dependent True
+  [PASS] seed 13 MapWM=NormStep True GainRaw=GainPhase True MapWM=GainRaw on 24 shared tensors True RNG state + initial seed equal True gain init seed-dependent True
+  [PASS] seed 14 MapWM=NormStep True GainRaw=GainPhase True MapWM=GainRaw on 24 shared tensors True RNG state + initial seed equal True gain init seed-dependent True
+  [PASS] seed 15 MapWM=NormStep True GainRaw=GainPhase True MapWM=GainRaw on 24 shared tensors True RNG state + initial seed equal True gain init seed-dependent True
+  [PASS] seed 110 MapWM=NormStep True GainRaw=GainPhase True MapWM=GainRaw on 24 shared tensors True RNG state + initial seed equal True gain init seed-dependent True
+  [PASS] seed 111 MapWM=NormStep True GainRaw=GainPhase True MapWM=GainRaw on 24 shared tensors True RNG state + initial seed equal True gain init seed-dependent True
+
+== 2. limits (eval mode, 4 held-out walks of 255 tokens, test pool) ==
+  [PASS] seed 8: NormStep with step_ln = identity equals MapWM (max |dlogit| 0.0e+00; positive control, with step_ln: 1.9e-01)
+  [PASS] seed 8: GainPhase with step_ln = identity equals GainRaw (max |dlogit| 0.0e+00; positive control, with step_ln: 7.1e-01)
+  [PASS] seed 8: GainRaw equals MapFormerWM_GainScalar(r=4) with the same weights (max |dlogit| 0.0e+00; positive control A_c x softplus shift: 3.4e-01)
+  [PASS] seed 110: NormStep with step_ln = identity equals MapWM (max |dlogit| 0.0e+00; positive control, with step_ln: 1.9e-01)
+  [PASS] seed 110: GainPhase with step_ln = identity equals GainRaw (max |dlogit| 0.0e+00; positive control, with step_ln: 6.5e-01)
+  [PASS] seed 110: GainRaw equals MapFormerWM_GainScalar(r=4) with the same weights (max |dlogit| 0.0e+00; positive control A_c x softplus shift: 4.5e-01)
+
+== 3. causality / 4. rank, angles, omega, parameters ==
+  [PASS] MapWM: causal (max |dlogit| before t 0.0e+00, at/after t 3.4e+00)
+  [PASS] MapWM: rank 4, 32 angles/head, omega as MapWM's (r 4, n_blocks 32, omega 6.2832 .. 0.1963; params 217,093)
+  [PASS] NormStep: causal (max |dlogit| before t 0.0e+00, at/after t 3.4e+00)
+  [PASS] NormStep: rank 4, 32 angles/head, omega as MapWM's (r 4, n_blocks 32, omega 6.2832 .. 0.1963; params 217,349)
+  [PASS] GainRaw: causal (max |dlogit| before t 0.0e+00, at/after t 3.4e+00)
+  [PASS] GainRaw: rank 4, 32 angles/head, omega as MapWM's (r 4, n_blocks 32, omega 6.2832 .. 0.1963; params 184,649)
+  [PASS] GainPhase: causal (max |dlogit| before t 0.0e+00, at/after t 3.4e+00)
+  [PASS] GainPhase: rank 4, 32 angles/head, omega as MapWM's (r 4, n_blocks 32, omega 6.2832 .. 0.1963; params 184,905)
+
+== 5. the gain score reads the code embedding ==
+  [PASS] GainRaw: the score layer's input is the token embedding (CodeEmbedding output) 
+  [PASS] GainRaw: object gains depend on the code and not on its norm (gain range over 3 codes 2.69e-01; x2 code norm changes gains by 9.7e-06)
+  [PASS] GainRaw: the code encoder A gets gradient through the gain score (|grad| 5.42e+05)
+  [PASS] GainPhase: the score layer's input is the token embedding (CodeEmbedding output) 
+  [PASS] GainPhase: object gains depend on the code and not on its norm (gain range over 3 codes 2.69e-01; x2 code norm changes gains by 9.7e-06)
+  [PASS] GainPhase: the code encoder A gets gradient through the gain score (|grad| 1.41e+06)
+
+== 6. train-mode RNG consumption ==
+  [PASS] one train-mode forward consumes the same RNG in all four arms 
+
+ALL PASS

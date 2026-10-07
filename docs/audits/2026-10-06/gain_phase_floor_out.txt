@@ -1,0 +1,5 @@
+object revisit targets: 47033 over 200 sequences
+  uniform-16    0.0625
+  most-frequent 0.0992
+  last-object   0.1410
+  retrace       0.5179
