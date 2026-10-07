@@ -14,6 +14,10 @@ Registered decisions (GAIN_PHASE_PREREG.md, all two-sided at .05 unless stated):
   D3  LEAK DISSOCIATION (separate defects?): L_ms and S_id per arm.
   D4  COMBINATION: GP vs W (two-sided) and GP vs N (non-inferiority at MARGIN, SOLVED slack 0).
   D5  SPEED: GP vs N and G vs W.
+Amendment 1 (independent audit, before launch): D3's gain-side labels are read only if the gain arms pass a convergence
+gate (converged_gate; else "D3 UNMEASURED"); NEGATIVE L_ms branch; TOLERATED carries the distortion share; budget-scope
+qualifiers on D1 / D2 / D4 (budget_flag); D1r's firing test on the D1 line; combo WORSE x AS GOOD names NormStep's own
+deficit; a registered accuracy label that flips under the dropout-scale re-score is flagged on its line.
 Every branch is exercised on synthetic data by docs/audits/2026-10-06/gain_phase_smoke.py.
 `python3 -m mapformer.analyze_gain_phase`
 """
@@ -37,6 +41,9 @@ CEIL = 0.999
 LEAK_ABSENT = 0.002  # median L_ms at or below: no leak (LEAK: NormStep max +0.0004, ActOnly 0)
 LEAK_PRESENT = 0.005 # median L_ms at or above: leak present (LEAK: MapWM min +0.0074, median +0.0098)
 SPEED_RATIO = 1.25   # geometric-mean ratio of epochs-to-0.05 that counts as faster / slower
+GATE_ACC_SLACK = 0.01   # D3 gate: median acc >= min acc(MapWM) - 0.01 (Amendment 1)
+GATE_RELIANCE = 0.2     # D3 gate: median theta reliance >= 0.2 (untrained models |.| <= 0.0001; LEAK checkpoints 0.92-0.97, V6)
+GATE_SID_X = 3.0        # D3 gate: median S_id <= 3 x max S_id(MapWM) (LEAK MapWM 0.0038-0.0050; untrained 0.98-1.84, V6)
 N_MC = 200_000       # Monte Carlo relabellings when C(2n, n) > 250k (n >= 12); the power script lowers it
 PRINT_CI = True      # the power script turns the (slow) CI walk off; it never changes a label
 
@@ -149,42 +156,77 @@ def step_verdict(rep, d1):
 
 
 def leak_side(raw_ms, norm_ms, raw_sid, norm_sid):
-    """Does the step fix remove the leak at one score? REMOVES: median L_ms(norm) <= LEAK_ABSENT and S_id(norm) <
-    S_id(raw) (two-sided perm p < .05). NO LEAK TO REMOVE: median L_ms(raw) <= LEAK_ABSENT. Else INCOMPLETE."""
+    """Does the step fix remove the leak at one score? NEGATIVE: either median L_ms < -LEAK_ABSENT (the identity step is
+    used; Amendment 1). NO LEAK TO REMOVE: |median L_ms(raw)| <= LEAK_ABSENT. REMOVES: |median L_ms(norm)| <= LEAK_ABSENT
+    and S_id(norm) < S_id(raw) (two-sided perm p < .05). Else INCOMPLETE."""
     p = perm2_p(raw_sid, norm_sid, n_mc=N_MC)["p"]; lower = np.mean(norm_sid) < np.mean(raw_sid)
     det = (f"median L_ms raw {np.median(raw_ms):+.4f} / NormStep {np.median(norm_ms):+.4f}; S_id raw "
            f"{np.mean(raw_sid):.4f} / NormStep {np.mean(norm_sid):.4f} (perm p {p:.4f})")
-    if np.median(raw_ms) <= LEAK_ABSENT:
+    if np.median(raw_ms) < -LEAK_ABSENT or np.median(norm_ms) < -LEAK_ABSENT:
+        return "NEGATIVE", det
+    if abs(np.median(raw_ms)) <= LEAK_ABSENT:
         return "NO LEAK TO REMOVE", det
-    if np.median(norm_ms) <= LEAK_ABSENT and p < 0.05 and lower:
+    if abs(np.median(norm_ms)) <= LEAK_ABSENT and p < 0.05 and lower:
         return "REMOVES", det
     return "INCOMPLETE", det
 
 
-def gain_leak(g_ms, w_sid, g_sid):
-    """The leak under the gain score with the raw step (GainRaw). PERSISTS: median L_ms(G) >= LEAK_PRESENT. ABSENT:
-    median L_ms(G) <= LEAK_ABSENT, split by S_id(G) vs S_id(W): UNLEARNED if lower (perm p < .05), TOLERATED otherwise.
-    PARTIAL in between."""
+def gain_leak(g_ms, w_sid, g_sid, g_resid=None, g_shift=None, w_shift=None):
+    """The leak under the gain score with the raw step (GainRaw). PERSISTS: median L_ms(G) >= LEAK_PRESENT. NEGATIVE:
+    median < -LEAK_ABSENT (Amendment 1). ABSENT: |median| <= LEAK_ABSENT, split by S_id(G) vs S_id(W): UNLEARNED if lower
+    (perm p < .05), TOLERATED otherwise. PARTIAL in between. The detail carries GainRaw's distortion share and field shift
+    (Amendment 1): a TOLERATED spread with distortion share >= 0.5 is mostly isotropic (cheap by V5), < 0.5 mostly a field
+    shift the gain score ignores."""
     p = perm2_p(w_sid, g_sid, n_mc=N_MC)["p"]; med = float(np.median(g_ms))
     det = f"median L_ms(GainRaw) {med:+.4f}; S_id GainRaw {np.mean(g_sid):.4f} vs MapWM {np.mean(w_sid):.4f} (perm p {p:.4f})"
+    if g_resid is not None:
+        det += (f"; GainRaw distortion share {np.median(g_resid):.2f}, field shift {np.median(g_shift):.4f} cells "
+                f"(MapWM {np.median(w_shift):.4f})")
     if med >= LEAK_PRESENT:
         return "PERSISTS", det
-    if med <= LEAK_ABSENT:
+    if med < -LEAK_ABSENT:
+        return "NEGATIVE", det
+    if abs(med) <= LEAK_ABSENT:
         return ("ABSENT, UNLEARNED" if (p < 0.05 and np.mean(g_sid) < np.mean(w_sid)) else "ABSENT, TOLERATED"), det
     return "PARTIAL", det
 
 
-def leak_verdict(rot, gain, gl):
-    """(step fix at rotary, step fix at gain, GainRaw's leak) -> D3 headline."""
+def tolerated_note(g_resid, g_shift, w_shift):
+    kind = "mostly isotropic spread" if np.median(g_resid) >= 0.5 else "mostly a field shift the gain score ignores"
+    return (f"{kind}: GainRaw distortion share {np.median(g_resid):.2f}, field shift {np.median(g_shift):.4f} cells vs "
+            f"MapWM {np.median(w_shift):.4f}")
+
+
+def converged_gate(a_acc, a_rel, a_sid, w_acc, w_sid, a_cls):
+    """Amendment 1: a gain arm's D3 labels are read only if median acc >= min acc(MapWM) - GATE_ACC_SLACK, median theta
+    reliance >= GATE_RELIANCE and median S_id <= GATE_SID_X x max S_id(MapWM). Returns (ok, detail)."""
+    acc_ok = np.median(a_acc) >= np.min(w_acc) - GATE_ACC_SLACK
+    rel_ok = np.median(a_rel) >= GATE_RELIANCE
+    sid_ok = np.median(a_sid) <= GATE_SID_X * np.max(w_sid)
+    n = len(a_cls); k = sum(c["cls"] == "SOLVED" for c in a_cls); j = sum(c["registered"] == "DESCENDING" for c in a_cls)
+    det = (f"median acc {np.median(a_acc):.4f} (gate >= {np.min(w_acc) - GATE_ACC_SLACK:.4f}: {'ok' if acc_ok else 'FAILS'}), "
+           f"median theta reliance {np.median(a_rel):.3f} (>= {GATE_RELIANCE}: {'ok' if rel_ok else 'FAILS'}), median S_id "
+           f"{np.median(a_sid):.4f} (<= {GATE_SID_X * np.max(w_sid):.4f}: {'ok' if sid_ok else 'FAILS'}); {k}/{n} SOLVED, "
+           f"{j}/{n} DESCENDING")
+    return bool(acc_ok and rel_ok and sid_ok), det
+
+
+def leak_verdict(rot, gain, gl, tol_note=""):
+    """(step fix at rotary, step fix at gain, GainRaw's leak) -> D3 headline (gain-side labels only after the
+    convergence gate; see analyse)."""
     if rot == "NO LEAK TO REMOVE":
         return "NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void"
+    if "NEGATIVE" in (rot, gain, gl):
+        return (f"NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: {rot}; "
+                f"gain: {gain}; GainRaw: {gl} -- reported as it falls")
     step_ok = rot == "REMOVES" and gain in ("REMOVES", "NO LEAK TO REMOVE")
     if step_ok and gl == "PERSISTS":
         return ("SEPARATE DEFECTS: the step fix removes the leak under both scores; the score fix leaves it (it is in "
                 "theta)")
     if step_ok and gl == "ABSENT, TOLERATED":
         return ("THE GAIN SCORE TOLERATES THE LEAK: the identity step is still in theta (S_id not lower than MapWM's) but "
-                "costs no accuracy under the gain score; the step fix removes it under both scores")
+                "costs no accuracy under the gain score; the step fix removes it under both scores"
+                + (f" [{tol_note}]" if tol_note else ""))
     if step_ok and gl == "ABSENT, UNLEARNED":
         return ("THE GAIN SCORE ALSO REMOVES THE LEAK (training unlearns the identity step): not separate defects; the "
                 "step fix removes it too")
@@ -197,6 +239,9 @@ def combo_verdict(vs_w, vs_n):
     """(GP vs W two-sided, GP vs N non-inferiority) -> D4 headline."""
     if "CONFLICT" in (vs_w, vs_n):
         return f"CONFLICT (vs MapWM {vs_w}, vs NormStep {vs_n}): reported as it falls"
+    if vs_w == "WORSE" and vs_n == "AS GOOD":
+        return ("WORSE THAN MapWM BUT AS GOOD AS NormStep: NormStep is itself below MapWM on these seeds (see D1r); "
+                "the gain-phase map is not worse than its step fix")
     if vs_w == "WORSE":
         return "THE GAIN-PHASE MAP FAILS: worse than MapWM"
     if vs_w == "BETTER":
@@ -205,6 +250,36 @@ def combo_verdict(vs_w, vs_n):
                 "WORSE": "BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep",
                 "UNDETERMINED": "BETTER THAN MapWM; non-inferiority to NormStep undetermined"}[vs_n]
     return f"NO GAIN OVER MapWM DETECTED (vs MapWM {vs_w}; vs NormStep {vs_n})"
+
+
+def budget_flag(arm, a_cls, ref, r_cls, by):
+    """Amendment 1: budget scope. by='solved' (GainPhase vs NormStep): flag if the gain arm has more DESCENDING runs than
+    its rotary counterpart. by='regime' (GainRaw vs MapWM; MapWM never reaches 0.05, so counts of DESCENDING are
+    uninformative): flag if the gain arm's median final-5% loss is above MapWM's largest and it has a DESCENDING run.
+    Returns the qualifier string ('' if none)."""
+    n = len(a_cls); k = sum(c["cls"] == "SOLVED" for c in a_cls); j = sum(c["registered"] == "DESCENDING" for c in a_cls)
+    jr = sum(c["registered"] == "DESCENDING" for c in r_cls)
+    if by == "solved":
+        hit = j > jr
+    else:
+        hit = np.median([c["tail"] for c in a_cls]) > max(c["tail"] for c in r_cls) and j > 0
+    if not hit:
+        return ""
+    extra = (f"; {ref} {sum(c['cls'] == 'SOLVED' for c in r_cls)}/{n} SOLVED, {jr}/{n} DESCENDING" if by == "solved" else
+             f"; median final loss {np.median([c['tail'] for c in a_cls]):.3f} vs {ref}'s max {max(c['tail'] for c in r_cls):.3f}")
+    return f" (budget-scoped: {arm} {k}/{n} SOLVED, {j}/{n} DESCENDING at {EPOCHS} epochs{extra})"
+
+
+def fires_on(detail):
+    return detail.split("-- fires on ")[1].split(" --")[0] if "-- fires on " in detail else "neither test"
+
+
+def acc_labels(acc, sol):
+    """The accuracy-bearing registered labels, for the dropout-scale re-score comparison."""
+    return {"D1r": contrast_state(acc[W], sol[W], acc[N], sol[N])[0], "D1": contrast_state(acc[G], sol[G], acc[GP], sol[GP])[0],
+            "D2_raw": contrast_state(acc[W], sol[W], acc[G], sol[G])[0],
+            "D2_norm": contrast_state(acc[N], sol[N], acc[GP], sol[GP])[0],
+            "D4_vs_W": contrast_state(acc[W], sol[W], acc[GP], sol[GP])[0], "D4_vs_N": ni_state(acc[N], sol[N], acc[GP], sol[GP])[0]}
 
 
 # ------------------------------------------------------------------------------------------- main
@@ -227,34 +302,59 @@ def analyse(D, seeds=SEEDS, E=EPOCHS, out=print):
     sol = {a: [cls[(a, s)]["cls"] == "SOLVED" for s in seeds] for a in ARMS}
     acc = {a: col(a, "acc") for a in ARMS}
     ep = {a: [speed_epoch(D[(a, s)]["losses"]) for s in seeds] for a in ARMS}
+    cl = {a: [cls[(a, s)] for s in seeds] for a in ARMS}
+    bf = {G: budget_flag(G, cl[G], W, cl[W], "regime"), GP: budget_flag(GP, cl[GP], N, cl[N], "solved")}
+    rescore = None
+    if all("acc_rescored" in D[(a, s)] for a in ARMS for s in seeds):
+        reg = acc_labels(acc, sol); rs = acc_labels({a: col(a, "acc_rescored") for a in ARMS}, sol)
+        rescore = {k: (f" [FLAG: under the dropout-scale re-score {k} reads {rs[k]}; registered verdict unchanged]"
+                       if rs[k] != reg[k] else "") for k in reg}
+    rflag = lambda *ks: "".join(rescore[k] for k in ks) if rescore else " [re-scored accuracies absent: flags not computed]"
     out("== per arm (unseen-object accuracy x1; leak readouts; classes) ==")
     for a in ARMS:
         out(f"  {a:9s} acc {acc[a].mean():.4f} +/- {acc[a].std(ddof=1):.4f} (min {acc[a].min():.4f}) | SOLVED "
             f"{sum(sol[a])}/{len(seeds)} | L_ms median {np.median(col(a, 'L_ms')):+.4f} | S_id {col(a, 'S_id').mean():.4f} | "
-            f"final-5% loss {np.mean([cls[(a, s)]['tail'] for s in seeds]):.4f} | epochs to 0.05 "
+            + (f"theta reliance median {np.median(col(a, 'reliance')):.3f} | " if "reliance" in D[(a, seeds[0])] else "")
+            + f"final-5% loss {np.mean([cls[(a, s)]['tail'] for s in seeds]):.4f} | epochs to 0.05 "
             + " ".join(str(e) if e <= E else "-" for e in ep[a]))
     V = {}
     rep, drep = contrast_state(acc[W], sol[W], acc[N], sol[N]); d1, dd1 = contrast_state(acc[G], sol[G], acc[GP], sol[GP])
     V["D1r"], V["D1"] = rep, d1
-    V["D1_headline"] = step_verdict(rep, d1)
+    V["D1_headline"] = (step_verdict(rep, d1) + f" [D1r fires on {fires_on(drep)}]" + bf[G] + bf[GP]
+                        + rflag("D1r", "D1"))
     out(f"\n== D1 STEP ==\n  D1r NormStep vs MapWM (rotary; positive control): {rep}: {drep}\n"
         f"  D1  GainPhase vs GainRaw (gain score): {d1}: {dd1}\n  REGISTERED D1: {V['D1_headline']}")
     s_raw, ds_raw = contrast_state(acc[W], sol[W], acc[G], sol[G]); s_nrm, ds_nrm = contrast_state(acc[N], sol[N], acc[GP], sol[GP])
     V["D2_raw"], V["D2_norm"] = s_raw, s_nrm
     out(f"\n== D2 SCORE (gain vs rotary) ==\n  raw step: GainRaw vs MapWM: {s_raw}: {ds_raw}\n"
         f"  NormStep step: GainPhase vs NormStep: {s_nrm}: {ds_nrm}\n"
-        f"  REGISTERED D2: raw step -- GAIN SCORE {s_raw}; NormStep step -- GAIN SCORE {s_nrm}")
+        f"  REGISTERED D2: raw step -- GAIN SCORE {s_raw}{bf[G]}; NormStep step -- GAIN SCORE {s_nrm}{bf[GP]}"
+        + rflag("D2_raw", "D2_norm"))
+    V["D2_headline"] = f"raw step -- GAIN SCORE {s_raw}{bf[G]}; NormStep step -- GAIN SCORE {s_nrm}{bf[GP]}" + rflag("D2_raw", "D2_norm")
     rot, drot = leak_side(col(W, "L_ms"), col(N, "L_ms"), col(W, "S_id"), col(N, "S_id"))
     gai, dgai = leak_side(col(G, "L_ms"), col(GP, "L_ms"), col(G, "S_id"), col(GP, "S_id"))
-    gl, dgl = gain_leak(col(G, "L_ms"), col(W, "S_id"), col(G, "S_id"))
+    gl, dgl = gain_leak(col(G, "L_ms"), col(W, "S_id"), col(G, "S_id"), col(G, "resid"), col(G, "shift_cells"),
+                        col(W, "shift_cells"))
+    gate = {a: converged_gate(col(a, "acc"), col(a, "reliance"), col(a, "S_id"), col(W, "acc"), col(W, "S_id"), cl[a])
+            for a in (G, GP)}
     V["D3_rot"], V["D3_gain"], V["D3_gainraw"] = rot, gai, gl
-    V["D3_headline"] = leak_verdict(rot, gai, gl)
-    out(f"\n== D3 LEAK DISSOCIATION ==\n  step fix under the rotary score: {rot}: {drot}\n"
-        f"  step fix under the gain score: {gai}: {dgai}\n  leak under the gain score, raw step: {gl}: {dgl}\n"
+    V["D3_gate"] = {a: gate[a][0] for a in gate}
+    unconv = [a for a in (G, GP) if not gate[a][0]]
+    if rot != "NO LEAK TO REMOVE" and unconv:
+        V["D3_headline"] = "D3 UNMEASURED: " + "; ".join(f"{a} not converged ({gate[a][1]})" for a in unconv)
+    else:
+        V["D3_headline"] = leak_verdict(rot, gai, gl, tolerated_note(col(G, "resid"), col(G, "shift_cells"),
+                                                                     col(W, "shift_cells")) if gl == "ABSENT, TOLERATED" else "")
+    out(f"\n== D3 LEAK DISSOCIATION ==\n  convergence gate (Amendment 1): GainRaw {'PASS' if gate[G][0] else 'FAIL'}: "
+        f"{gate[G][1]}\n  convergence gate: GainPhase {'PASS' if gate[GP][0] else 'FAIL'}: {gate[GP][1]}\n"
+        f"  step fix under the rotary score: {rot}: {drot}\n"
+        f"  step fix under the gain score: {gai}: {dgai}{'' if not unconv else ' [label not read: gate]'}\n"
+        f"  leak under the gain score, raw step: {gl}: {dgl}{'' if gate[G][0] else ' [label not read: gate]'}\n"
         f"  REGISTERED D3: {V['D3_headline']}")
     vw, dvw = contrast_state(acc[W], sol[W], acc[GP], sol[GP]); vn, dvn = ni_state(acc[N], sol[N], acc[GP], sol[GP])
     V["D4_vs_W"], V["D4_vs_N"] = vw, vn
-    V["D4_headline"] = combo_verdict(vw, vn) + (" (non-inferiority at ceiling)" if vn == "AS GOOD" and "(at ceiling)" in dvn else "")
+    V["D4_headline"] = (combo_verdict(vw, vn) + (" (non-inferiority at ceiling)" if vn == "AS GOOD" and "(at ceiling)" in dvn else "")
+                        + bf[GP] + rflag("D4_vs_W", "D4_vs_N"))
     out(f"\n== D4 COMBINATION ==\n  GainPhase vs MapWM: {vw}: {dvw}\n  GainPhase vs NormStep (non-inferiority): {vn}: {dvn}\n"
         f"  REGISTERED D4: {V['D4_headline']}")
     sp_n, dsp_n = speed_state(ep[N], ep[GP], E); sp_w, dsp_w = speed_state(ep[W], ep[G], E)

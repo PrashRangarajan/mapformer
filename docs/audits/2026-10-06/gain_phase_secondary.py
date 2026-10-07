@@ -23,7 +23,7 @@ sys.path.insert(0, "/home/prashr")
 import mapformer.rescore_hook as RH
 import mapformer.analyze_gain_phase as A
 from mapformer.stats_core import classify_run, perm2_p
-from mapformer.gain_phase_eval import load, Probe, obj_acc, sequences
+from mapformer.gain_phase_eval import load, Probe, obj_acc, sequences, pick_device
 from mapformer.model_codes import set_pool
 
 REPO = A.REPO; W, N, G, GP = A.W, A.N, A.G, A.GP
@@ -40,7 +40,7 @@ print("== (a) leak decomposition per arm (means over seeds; L in accuracy units,
 for a in A.ARMS:
     print(f"  {a:9s} L_zero {col(a, 'L_zero').mean():+.4f} | L_ms {col(a, 'L_ms').mean():+.4f} | S_id {col(a, 'S_id').mean():.4f} | "
           f"shift {col(a, 'shift_cells').mean():.4f} cells | distortion share {col(a, 'resid').mean():.3f} | shared "
-          f"{col(a, 'shared').mean():.4f} | blank {col(a, 'blank').mean():.4f}")
+          f"{col(a, 'shared').mean():.4f} | blank {col(a, 'blank').mean():.4f} | theta reliance {col(a, 'reliance').mean():.3f}")
 
 print("\n== (b) remap decomposition, gain arms (per head, mean over seeds) ==")
 for a in (G, GP):
@@ -72,14 +72,15 @@ for a in A.ARMS:
 print("\n== (e) dropout-scale re-score (attention x 1/(1-p), eval-only) ==")
 RH.KNOWN |= {"mapformer.model_em_pope.GainKernelLayer"}
 RH.install("auto")
-toks, revs = sequences("test"); dev = "cuda:0" if torch.cuda.is_available() else "cpu"
+toks, revs = sequences("test"); dev = pick_device()                  # Amendment 1: most free memory (or GAIN_PHASE_DEVICE)
 re_acc = {}
 for a in A.ARMS:
     re_acc[a] = []
     for s in A.SEEDS:
         m, _ = load(f"{RUNS}/{a}_s{s}/{a}.pt", a, dev); p = Probe(m); set_pool(m, "test")
         re_acc[a].append(obj_acc(p, toks, revs, "test", None, dev))
-    print(f"  {a:9s} {col(a, 'acc').mean():.4f} -> {np.mean(re_acc[a]):.4f}")
+    print(f"  {a:9s} {col(a, 'acc').mean():.4f} -> {np.mean(re_acc[a]):.4f} (eval's own acc_rescored "
+          f"{col(a, 'acc_rescored').mean():.4f}; max |diff| {np.max(np.abs(np.array(re_acc[a]) - col(a, 'acc_rescored'))):.1e})")
 print(f"  rescore hooks: {RH.STATS['hooked']} hooked, skipped classes {sorted(RH.STATS['skipped']) or 'none'}")
 for x_, y_ in ((W, N), (G, GP), (W, G), (N, GP), (W, GP)):
     for lab, f in (("registered", lambda a: col(a, "acc")), ("re-scored", lambda a: np.array(re_acc[a]))):

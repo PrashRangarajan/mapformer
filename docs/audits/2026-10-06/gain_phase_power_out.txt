@@ -72,12 +72,30 @@
    D4_headline  THE GAIN-PHASE MAP WORKS 1.00
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
+== J gain unconverged
+   D1r          BETTER 1.00
+   D1           NO DIFFERENCE 1.00
+   D2_raw       WORSE 1.00
+   D2_norm      WORSE 1.00
+   D3_headline  D3 UNMEASURED 1.00
+   D4_headline  THE GAIN-PHASE MAP FAILS 1.00
+   D4_vs_N      WORSE 1.00
+   D5_norm      SLOWER 1.00
+== K GainRaw unconverged
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       WORSE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  D3 UNMEASURED 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
 == I GP stalls 1/8
    D1r          BETTER 1.00
    D1           BETTER 0.99; NO DIFFERENCE 0.01
    D2_raw       NO DIFFERENCE 1.00
    D2_norm      NO DIFFERENCE 0.61; CEILING 0.35; WORSE 0.04
-   D3_headline  SEPARATE DEFECTS 1.00
+   D3_headline  SEPARATE DEFECTS 0.99; D3 UNMEASURED 0.01
    D4_headline  BETTER THAN MapWM; non-inferiority to NormStep undetermined 0.60; THE GAIN-PHASE MAP WORKS 0.35; BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep 0.03; NO GAIN OVER MapWM DETECTED 0.01
    D4_vs_N      UNDETERMINED 0.61; AS GOOD 0.35; WORSE 0.04
    D5_norm      NO DIFFERENCE 1.00
@@ -155,14 +173,32 @@
    D4_headline  THE GAIN-PHASE MAP WORKS 1.00
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
+== J gain unconverged
+   D1r          BETTER 1.00
+   D1           NO DIFFERENCE 1.00
+   D2_raw       WORSE 1.00
+   D2_norm      WORSE 1.00
+   D3_headline  D3 UNMEASURED 1.00
+   D4_headline  THE GAIN-PHASE MAP FAILS 1.00
+   D4_vs_N      WORSE 1.00
+   D5_norm      SLOWER 1.00
+== K GainRaw unconverged
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       WORSE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  D3 UNMEASURED 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
 == I GP stalls 1/8
    D1r          BETTER 1.00
    D1           BETTER 0.99; CONFLICT 0.01
    D2_raw       NO DIFFERENCE 1.00
-   D2_norm      NO DIFFERENCE 0.72; CEILING 0.21; WORSE 0.06
-   D3_headline  SEPARATE DEFECTS 1.00
-   D4_headline  BETTER THAN MapWM; non-inferiority to NormStep undetermined 0.72; THE GAIN-PHASE MAP WORKS 0.21; BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep 0.06; CONFLICT 0.01
-   D4_vs_N      UNDETERMINED 0.72; AS GOOD 0.21; WORSE 0.06
+   D2_norm      NO DIFFERENCE 0.73; CEILING 0.21; WORSE 0.06
+   D3_headline  SEPARATE DEFECTS 0.99; D3 UNMEASURED 0.01
+   D4_headline  BETTER THAN MapWM; non-inferiority to NormStep undetermined 0.73; THE GAIN-PHASE MAP WORKS 0.21; BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep 0.05; CONFLICT 0.01
+   D4_vs_N      UNDETERMINED 0.73; AS GOOD 0.21; WORSE 0.06
    D5_norm      NO DIFFERENCE 1.00
 
 ######## n = 12 per arm, 200 resampled batches per scenario
@@ -238,12 +274,30 @@
    D4_headline  THE GAIN-PHASE MAP WORKS 1.00
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
+== J gain unconverged
+   D1r          BETTER 1.00
+   D1           NO DIFFERENCE 1.00
+   D2_raw       WORSE 1.00
+   D2_norm      WORSE 1.00
+   D3_headline  D3 UNMEASURED 1.00
+   D4_headline  THE GAIN-PHASE MAP FAILS 1.00
+   D4_vs_N      WORSE 1.00
+   D5_norm      SLOWER 1.00
+== K GainRaw unconverged
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       WORSE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  D3 UNMEASURED 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
 == I GP stalls 1/8
    D1r          BETTER 1.00
    D1           BETTER 0.99; CONFLICT 0.01
    D2_raw       NO DIFFERENCE 1.00
-   D2_norm      NO DIFFERENCE 0.71; CEILING 0.18; WORSE 0.10
+   D2_norm      NO DIFFERENCE 0.71; CEILING 0.18; WORSE 0.11
    D3_headline  SEPARATE DEFECTS 1.00
    D4_headline  BETTER THAN MapWM; non-inferiority to NormStep undetermined 0.71; THE GAIN-PHASE MAP WORKS 0.18; BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep 0.10; CONFLICT 0.01
-   D4_vs_N      UNDETERMINED 0.71; AS GOOD 0.18; WORSE 0.10
+   D4_vs_N      UNDETERMINED 0.71; AS GOOD 0.18; WORSE 0.11
    D5_norm      NO DIFFERENCE 1.00

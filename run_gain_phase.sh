@@ -9,6 +9,7 @@ REPO="$(cd "$(dirname "$0")" && pwd)"
 LOG="$REPO/gain_phase.log"
 source "$REPO/lib_driver.sh"
 DRV_MAXPG="${MAXPG:-4}"; DRV_SPACING="${DRV_SPACING:-15}"    # 4/GPU as LEAK; the picker counts every mapformer.train_ job
+DRV_MINFREE="${DRV_MINFREE:-5500}"   # Amendment 1: the pilot measured ~4.7 GB per job; 5.5 GB free before each launch
 drv_lock "$REPO/.run_gain_phase.lock" || exit 1
 cd "$REPO/.."
 R="$REPO/runs/gain_phase"; mkdir -p "$R/p0"
@@ -42,6 +43,10 @@ _drv_log "code version at launch: $(cd "$REPO" && git rev-parse HEAD) $(cd "$REP
 for S in $SEEDS; do for ARM in $ARMS; do
   OUT="$R/p0/${ARM}_s${S}"
   [ -f "$OUT/${ARM}.pt" ] && { echo "skip $OUT" >> "$LOG"; continue; }
+  # Amendment 1 (rule 21): never launch a duplicate of a run that is already training (and never truncate its log)
+  if [ -n "$(ps -u "$USER" -o comm=,args= | awk -v r="--output-dir $OUT" '$1=="python3" && index($0, r)')" ]; then
+    echo "skip $OUT (already running)" >> "$LOG"; continue
+  fi
   mkdir -p "$OUT"; G=$(drv_wait_slot)
   echo "$(date +%H:%M:%S) $ARM s$S -> cuda:$G" >> "$LOG"
   OMP_NUM_THREADS=3 drv_launch "$R/p0/${ARM}_s${S}.log" python3 -u -m mapformer.train_gain_phase --variant "$ARM" \
@@ -52,7 +57,9 @@ REQ=(); for S in $SEEDS; do for ARM in $ARMS; do REQ+=("$R/p0/${ARM}_s${S}/${ARM
 [ "${#REQ[@]}" -eq 32 ] || drv_fail "expected 32 checkpoints, listed ${#REQ[@]}"
 drv_require "${REQ[@]}" || drv_fail "missing checkpoints"
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before eval"
-python3 -u -m mapformer.eval_gain_phase cuda:0 >> "$LOG" 2>&1 || drv_fail eval
+# Amendment 1: eval on the GPU with the most free memory, and only when it has >= 6 GB free
+until [ "$(nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits | sort -nr | head -1)" -gt 6000 ]; do sleep 60; done
+python3 -u -m mapformer.eval_gain_phase auto >> "$LOG" 2>&1 || drv_fail eval
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before analysis"
 python3 -u -m mapformer.analyze_gain_phase > "$REPO/GAIN_PHASE_ANALYSIS.txt" 2>&1 || drv_fail analyze
 drv_done "$REPO/.gain_phase_done" "$REPO/GAIN_PHASE_EVAL.json" "$REPO/GAIN_PHASE_ANALYSIS.txt" "$REPO/GAIN_PHASE_VERDICTS.json"

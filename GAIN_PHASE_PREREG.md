@@ -84,7 +84,9 @@ Linear(LN x)) >= 0, one per token per head; A_c = softplus(a_c) >= 0 learned per
   0.001-0.004): each object moves its own key by ~0.0045 cells.
 - V4 gauge: adding c to every observation step and -c to every action step (c = the model's own shared object step)
   leaves S_id identical to 6 digits and L_ms within 0.0001 on NormStep s0-s3 and MapWM s0-s1, while L_zero moves from
-  -0.20 to -0.34 (NormStep). The readout is gauge-invariant; zeroing is not.
+  -0.20 to -0.34 (NormStep). The readout is gauge-invariant; zeroing is not. (Amendment 1: the per-move gauge is exact
+  only for observation-to-observation scores; an action query sees the offset c once, which is why accuracy moves by up to
+  0.0001 here.)
 - V5 positive controls (NormStep s0-s3, which has no leak): injecting a fixed zero-mean identity-dependent step with
   MapWM's median S_id (0.0048) is read by S_id (0.0048-0.0049) and by L_ms: +0.0008 .. +0.0028 if isotropic over the
   64 channels, +0.0143 .. +0.0222 if a pure field shift (MapWM's structure). The readout detects a leak of MapWM's size
@@ -92,7 +94,8 @@ Linear(LN x)) >= 0, one per token per head; A_c = softplus(a_c) >= 0 learned per
 
 ## Registered decisions (`analyze_gain_phase.py`; all at .05, two-sided unless stated; n = 8 per arm)
 Shared rules: an accuracy contrast fires if the two-sided permutation p < .05 (`perm2_p`, exact, C(16, 8)) AND |d| >=
-**MIN_D = 0.005** (half of LEAK's registered leak cost, +0.0107; at n = 8 the LEAK sd of MapWM, 0.003, gives an MDE ~0.0045).
+**MIN_D = 0.005** (half of LEAK's registered leak cost, +0.0107; at n = 8 the LEAK sd of MapWM, 0.003, gives an MDE ~0.0045; Amendment 1: in the NormStep row the sd is ~0.0002, so the MDE there is ~0.0003 and MIN_D, not the
+MDE, decides whether a NormStep-row contrast fires).
 SOLVED (`classify_run`: final-5% training loss < 0.05) fires on a two-sided Fisher p < .05. `contrast_state(x, y)`:
 CONFLICT (accuracy and SOLVED fire in opposite directions) -> BETTER (either fires positive; which one is printed) ->
 WORSE -> CEILING (both arms >= 0.999 on every seed and SOLVED does not fire: no headroom) -> NO DIFFERENCE (95%
@@ -196,7 +199,7 @@ remap secondary covers the paper torus).
 
 ## Construction and equivalence checks (`docs/audits/2026-10-06/gain_phase_equiv.py` / `_out.txt`, ALL PASS)
 1. Matched initialisation at seeds 8-15 and 110-111 (above), RNG state identical after construction.
-2. Limits, 4 held-out walks (255 tokens), eval mode, step_ln moved off its init: NormStep with step_ln = identity equals
+2. Limits, 4 held-out walks (511 tokens; corrected in Amendment 1 from "255"), eval mode, step_ln moved off its init: NormStep with step_ln = identity equals
    MapWM (max |dlogit| 0.0) and GainPhase with step_ln = identity equals GainRaw (0.0); GainRaw equals
    `model_em_pope.MapFormerWM_GainScalar(bottleneck_r=4)` with the same weights (0.0). Positive controls differ
    (0.19-0.71).
@@ -229,7 +232,7 @@ in them was changed after it. Part 1 used the batch's flags with a 30-epoch sche
 read, because of what it showed) ran the batch's real 900-epoch schedule for the two gain arms, planned to stop at epoch 150, stopped early at ~26 (below).
 (a) **Reproduction** (`gain_phase_repro.py` / `_out.txt`, before the pilot; pass = bitwise-equal per-epoch losses):
 through `train_gain_phase` (which imports `model_gain_phase`), MapWM s0 and NormStep s0 at the LEAK recipe reproduce the
-stored `runs/leak/p0` runs **5/5 epochs bitwise each** (torch 2.10.0+cu128 now installed; the stack reproduces LEAK).
+stored `runs/leak/p0` runs **5/5 epochs bitwise each** (torch 2.10.0+cu128; Amendment 1: its user-site dist-info is dated 2026-02-24, so LEAK almost certainly ran on the same stack -- nothing changed between LEAK and this batch).
 (b) **Timing** (part 1, 8 of our jobs = 4 per GPU, plus another user's 12 non-mapformer jobs on the same GPUs at ~98%
 utilisation, which lib_driver does not count): MapWM 14.1-14.5 s/epoch, NormStep 12.1-12.2, GainRaw 15.4-16.7, GainPhase
 13.7-14.5 (GPU placement differs by arm); mean 14.1. GPU memory ~21.5 of 24.5 GB per GPU at 4 jobs each. Eval of 8 runs:
@@ -271,3 +274,66 @@ user's jobs are on the GPUs; the ETA counts from a launch on otherwise free GPUs
 
 ## Launch (not done; rule 29: independent code audit first, findings as Amendment 1 before launch)
     cd /home/prashr/mapformer && setsid nohup bash run_gain_phase.sh > /dev/null 2>&1 &
+
+## Amendment 1 (2026-10-06, after an independent code audit, BEFORE launch; CPU only, per the user's instruction)
+The audit was blind to batch results (none exist) and saw only the pilot. Changes, each answering a finding; all made
+before launch; the analysis, eval and driver are md5-guarded from launch.
+1. **D3 could read a gain arm that never used theta (DESIGN, major).** Untrained gain models read L_ms 0.0000 with S_id
+   ~1, so D3 could print "THE GAIN SCORE TOLERATES THE LEAK" or "ALSO REMOVES" for an arm that does not path-integrate.
+   (a) New per-run readout **theta reliance** = acc - acc with every token's step replaced by its token-type mean (the
+   four action steps by their mean, objects by the mean object step; blank unchanged), so theta carries no position
+   (`gain_phase_eval`, mode 'typemean'). Validated on CPU (`gain_phase_leak_validate_out.txt` V6): LEAK MapWM 0.923-0.944,
+   NormStep 0.941-0.972, ActOnly 0.940-0.970; **untrained models of all four arms (seeds 8, 110): |reliance| <= 0.0001**
+   (accuracy <= 0.0013, L_ms |.| <= 0.0001, S_id 0.98-1.84). (b) **Convergence gate** (`converged_gate`): a gain arm's
+   D3 labels are read only if median acc >= min acc(MapWM) - 0.01 (the house materiality floor below the reference's
+   worst run), median theta reliance >= 0.2 (converged path models 0.92-0.97, untrained 0.0000, pilot GainPhase 0.04-0.08),
+   and median S_id <= 3 x max S_id(MapWM) (LEAK MapWM max 0.0050 -> 0.015; untrained >= 0.98; a persisting MapWM-sized leak
+   sits at <= 1x). (c) Otherwise the registered D3 headline is **"D3 UNMEASURED: <arm> not converged (median acc, gate
+   values, k/n SOLVED, j/n DESCENDING)"**; the gain-side labels are still printed, marked "[label not read: gate]". The
+   rotary-side label and the NO LEAK TO DISSOCIATE void are unchanged. On the real 30-epoch pilot checkpoints (CPU
+   re-evaluation, `gain_phase_pilot_rescore_a1.py`, `runs/gain_phase_pilot/analysis_out_A1.txt`) both gain arms fail
+   the gate (GainRaw on accuracy; GainPhase on accuracy and reliance 0.06) and D3 reads UNMEASURED.
+2. **Budget scope on D1, D2, D4 (DESIGN).** `budget_flag` appends "(budget-scoped: <arm> k/n SOLVED, j/n DESCENDING at
+   900 epochs; ...)" to a REGISTERED line when a gain arm is less trained than its rotary counterpart: GainPhase vs
+   NormStep by DESCENDING count (NormStep was 8/8 SOLVED in LEAK); GainRaw vs MapWM by loss regime (median final-5%
+   loss above MapWM's largest, with a DESCENDING run), because MapWM never reaches 0.05 and is itself 8/8 DESCENDING.
+   D1 carries both arms' flags, D2 each row's, D4 GainPhase's. Labels unchanged.
+3. **Negative L_ms (DESIGN).** ABSENT and NO LEAK TO REMOVE now need |median L_ms| <= 0.002; a median < -0.002 is a new
+   label **NEGATIVE** (removing the identity step costs accuracy: the identity step is used), in `leak_side` and
+   `gain_leak`; any NEGATIVE makes the D3 headline "NEGATIVE L_ms ... reported as it falls".
+4. **Duplicate launch (driver, rule 21).** The driver also skips a run whose `--output-dir` appears in a running
+   python3's argv (checked by comm, never pgrep -f), before its log is opened; tested with a dummy process in a scratch
+   dry run (31 launches, the running one skipped).
+5. **Eval device / memory.** `eval_gain_phase` defaults to `auto` = the CUDA device with the most free memory
+   (`pick_device`; `GAIN_PHASE_DEVICE` overrides); the driver waits until some GPU has > 6 GB free before eval;
+   DRV_MINFREE = 5500 MiB per launch (pilot: ~4.7 GB per job). The secondary uses the same picker.
+6. **TOLERATED must separate a cheap isotropic spread from an ignored field shift.** `gain_leak` prints GainRaw's
+   distortion share and field shift (cells) beside MapWM's; a TOLERATED headline carries "[mostly isotropic spread |
+   mostly a field shift the gain score ignores: distortion share x, field shift y cells vs MapWM z]" (share >= 0.5 vs
+   < 0.5; V5: an isotropic spread of MapWM's size costs 0.001-0.003, a field shift 0.014-0.022).
+7. **Wording.** combo_verdict WORSE x AS GOOD now reads "WORSE THAN MapWM BUT AS GOOD AS NormStep: NormStep is itself
+   below MapWM on these seeds (see D1r)". The REGISTERED D1 line states which test made D1r fire ("[D1r fires on accuracy
+   and SOLVED]", or "neither test").
+8. **Dropout-scale re-score on the registered lines.** The eval now also records `acc_rescored` (o_proj input x 1/(1-p)
+   on this model only; equals `rescore_hook`'s re-score exactly on MapWM s0 and NormStep s0, V7). If any accuracy-bearing
+   label (D1r, D1, D2 raw / NormStep, D4 vs MapWM / vs NormStep) differs when recomputed on re-scored accuracies, its
+   REGISTERED line carries "[FLAG: under the dropout-scale re-score <decision> reads <label>; registered verdict
+   unchanged]".
+9. **Prereg text.** The equivalence walks are 511 tokens (position 300 is an action), not 255; the per-move gauge is
+   exact only for observation-to-observation scores (an action query sees the offset once; V4 accuracy moves <= 0.0001);
+   torch 2.10.0+cu128 is in the user site since 2026-02-24 (dist-info date; the audit's note said 2026-04-08), so LEAK
+   almost certainly ran on it and nothing changed between LEAK and this batch; the NormStep-row MDE is ~0.0003, so there
+   MIN_D, not the MDE, decides firing.
+Re-run after the changes, all CPU (CUDA hidden): equivalence checks (`gain_phase_equiv_out.txt`, byte-identical to the
+pre-amendment output, ALL PASS); leak-readout validation with V6 / V7 added (`gain_phase_leak_validate_out.txt`; V0 is
+now CPU vs LEAK.json's GPU eval: max difference 8.5e-05, about 4 of 47,033 targets; every other number within 0.0001 of the GPU run); the
+branch smoke test with every new branch, the exhaustive 4 x 4 x 5 D3 table and three end-to-end synthetic batches
+(predicted; unconverged gain arms -> D3 UNMEASURED and budget flags on D2 / D4; a re-score flip -> FLAG on D4, verdict
+unchanged) (`gain_phase_smoke_out.txt`, ALL PASS); power (`gain_phase_power_out.txt`, below).
+
+### Power after Amendment 1 (n = 8; n = 10 / 12 in the file)
+The gate costs nothing where the gain arms behave like a converged LEAK run: scenarios A-I give the same labels with the
+same probabilities as before (A predicted: D1 BETTER, D3 SEPARATE DEFECTS, D4 WORKS, each 1.00; B: D3 TOLERATES 0.96;
+C: ALSO REMOVES 1.00; E: AS GOOD 0.34). New scenarios: **J, both gain arms untrained-like** (acc 0.14, reliance 0, S_id 1.0,
+L_ms 0, loss still descending): D3 **UNMEASURED 1.00** (before the amendment the same inputs gave a gain-side reading);
+D4 FAILS 1.00 with the budget qualifier. **K, GainRaw alone untrained-like:** D3 UNMEASURED 1.00, D4 WORKS 1.00.

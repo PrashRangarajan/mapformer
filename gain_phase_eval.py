@@ -21,11 +21,18 @@ For a checkpoint of any arm in model_gain_phase.ARMS (and LEAK's ActOnly, for th
   x2 / x4        accuracy with the object codes scaled on the embedding side (readout codes unchanged): a real shift for
                  raw steps, a construction check for NormStep steps (LN(s e) = LN(e)) -- no verdict.
   train_x1       train-pool accuracy at x1.
+  reliance       THETA RELIANCE (Amendment 1): acc - acc with every token's step replaced by its token-TYPE mean (the
+                 four action steps by their mean, every object step by the mean object step, blank unchanged), so theta
+                 advances by one constant per move and carries no position. ~0 for a model that does not use theta
+                 (untrained: validated), large for a path-integrating one (LEAK checkpoints: validated).
+  acc_rescored   acc with every attention layer's o_proj input scaled by 1/(1-p) (the dropout-scale re-score of
+                 rescore_hook, applied by hooks on this model only).
   gains          gain arms only: mu_k over test objects (mean, cv), blank, actions; mu_q over actions; spectrum share of
                  sum A_c per 8-channel band (fine -> coarse). Per head.
 `python3 -m mapformer.gain_phase_eval CKPT ARM [device]` prints the dict.
 """
 import json
+import os
 import sys
 
 import numpy as np
@@ -39,6 +46,16 @@ from mapformer.model_em_pope import GainKernelLayer
 from mapformer.model_gain_phase import ARMS as GP_ARMS
 
 ALL_ARMS = dict(GP_ARMS, ActOnly=MapWM_ActOnly)
+
+
+def pick_device():
+    """GAIN_PHASE_DEVICE if set; else the CUDA device with the most free memory; else cpu (Amendment 1, audit item 5)."""
+    if os.environ.get("GAIN_PHASE_DEVICE"):
+        return os.environ["GAIN_PHASE_DEVICE"]
+    if not torch.cuda.is_available():
+        return "cpu"
+    free = [torch.cuda.mem_get_info(i)[0] for i in range(torch.cuda.device_count())]
+    return f"cuda:{int(np.argmax(free))}"
 TEST_IDS = torch.arange(N_SPECIAL + P, N_SPECIAL + 2 * P)
 
 
@@ -59,7 +76,8 @@ def step_of(m, tok):
 class Probe:
     """Hooks on action_to_lie's output (the per-token step, after NormStep's LayerNorm where present) and on the
     embedding-side codes. mode None: untouched; 'zero': object steps 0; 'mean': object steps = mean test-pool step;
-    'add': object steps + self.extra[code index] (positive control). Readout codes are never scaled."""
+    'add': object steps + self.extra[code index] (positive control); 'typemean': action steps = their mean, object
+    steps = the mean test-pool step (theta reliance). Readout codes are never scaled."""
 
     def __init__(self, m):
         self.m, self.mode, self.obj, self.tok = m, None, None, None
@@ -75,6 +93,7 @@ class Probe:
                 return self.ro(h, read)
         m.out_proj = _Out()
         self.mean = self.mean_step()
+        self.act_mean = self.action_mean()
         self.extra = None
 
     def _hook(self, mod, inp, out):
@@ -85,6 +104,10 @@ class Probe:
             return torch.where(obj, torch.zeros_like(out), out)
         if self.mode == "mean":
             return torch.where(obj, self.mean.to(out.dtype).expand_as(out), out)
+        if self.mode == "typemean":
+            act = (self.tok < 4)[..., None, None]
+            out = torch.where(act, self.act_mean.to(out.dtype).expand_as(out), out)
+            return torch.where(obj, self.mean.to(out.dtype).expand_as(out), out)
         if self.mode == "add":
             idx = (self.tok - N_SPECIAL).clamp(min=0)
             return torch.where(obj, out + self.extra[idx].to(out.dtype), out)
@@ -94,6 +117,13 @@ class Probe:
     def mean_step(self):
         mode, self.mode = self.mode, None
         d = step_of(self.m, TEST_IDS[None].to(self.codes.device))[0]          # (1000, H, nb)
+        self.mode = mode
+        return d.mean(0)
+
+    @torch.no_grad()
+    def action_mean(self):
+        mode, self.mode = self.mode, None
+        d = step_of(self.m, torch.arange(4, device=self.codes.device)[None])[0]   # (4, H, nb)
         self.mode = mode
         return d.mean(0)
 
@@ -150,14 +180,38 @@ def gain_stats(m):
             "band_share": band.tolist()}
 
 
-def evaluate_run(ckpt, arm, dev="cuda:0", data=None):
-    m, b = load(ckpt, arm, dev); probe = Probe(m); out = {}
+@torch.no_grad()
+def rescored_acc(probe, toks, revs, dev):
+    """acc with each attention layer's o_proj input x 1/(1-p) (rescore_hook's correction), hooks removed after."""
+    hs = [L.o_proj.register_forward_pre_hook(lambda mod, a, s=1.0 / (1.0 - L.dropout.p): (a[0] * s,) + tuple(a[1:]))
+          for L in probe.m.layers]
+    try:
+        return obj_acc(probe, toks, revs, "test", None, dev)
+    finally:
+        for h in hs:
+            h.remove()
+
+
+def evaluate_run(ckpt, arm, dev=None, data=None):
+    dev = dev or pick_device()
+    m, b = load(ckpt, arm, dev)
+    return evaluate_model(m, dev, data)
+
+
+def evaluate_model(m, dev, data=None, full=True):
+    """All readouts of the module docstring for a built model (use_object_codes applied, on dev, eval mode).
+    full=False: acc, L_ms, reliance and the step geometry only (the untrained-model validation)."""
+    m.eval(); probe = Probe(m); out = {}
     data = data or {pool: sequences(pool) for pool in ("test", "train")}
     set_pool(m, "test"); toks, revs = data["test"]
     a1 = obj_acc(probe, toks, revs, "test", None, dev)
     out["acc"] = a1
     out["L_ms"] = obj_acc(probe, toks, revs, "test", "mean", dev) - a1
+    out["reliance"] = a1 - obj_acc(probe, toks, revs, "test", "typemean", dev)
+    if not full:
+        out.update(step_geometry(m)); return out
     out["L_zero"] = obj_acc(probe, toks, revs, "test", "zero", dev) - a1
+    out["acc_rescored"] = rescored_acc(probe, toks, revs, dev)
     for s in (2.0, 4.0):
         probe.set_scale(s); out[f"x{s:g}"] = obj_acc(probe, toks, revs, "test", None, dev)
     probe.set_scale(1.0)
@@ -169,4 +223,4 @@ def evaluate_run(ckpt, arm, dev="cuda:0", data=None):
 
 
 if __name__ == "__main__":
-    print(json.dumps(evaluate_run(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "cuda:0"), indent=1))
+    print(json.dumps(evaluate_run(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None), indent=1))

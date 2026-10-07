@@ -14,6 +14,12 @@ Checks:
     identity leak of MapWM's size in a model that has none). (a) isotropic: iid over all H x 32 channels;
     (b) a pure field shift: a random per-object displacement (in cells) along the model's own two axis steps -- the
     structure MapWM's identity step has (resid ~0 above).
+Amendment 1 (audit, CPU only):
+ V6 theta reliance (acc - acc with every step replaced by its token-type mean) on the 24 LEAK checkpoints (large for
+    path-integrating models) and on UNTRAINED models of all four GAIN_PHASE arms, built exactly as the trainer builds
+    them at seeds 8 and 110 (must read ~0; their L_ms reads ~0 too, which is why D3 needs the convergence gate).
+ V7 gain_phase_eval.rescored_acc equals rescore_hook's re-score (install('auto')) on MapWM s0 and NormStep s0.
+Run on CPU since Amendment 1 (the first version ran on cuda:0): V0 is then exact only up to CPU/GPU float differences.
 """
 import json
 import sys
@@ -23,11 +29,13 @@ import torch
 
 sys.path.insert(0, "/home/prashr")
 from mapformer.environment_newobj import N_SPECIAL
-from mapformer.gain_phase_eval import load, Probe, obj_acc, step_geometry, step_of, sequences, P
+from mapformer.gain_phase_eval import (load, Probe, obj_acc, step_geometry, step_of, sequences, P, evaluate_model,
+                                       rescored_acc)
 from mapformer.model_codes import set_pool
 
 REPO = "/home/prashr/mapformer"; R = f"{REPO}/runs/leak/p0"; OUT = f"{REPO}/docs/audits/2026-10-06/gain_phase_leak_validate"
-dev = "cuda:0" if torch.cuda.is_available() else "cpu"
+dev = "cpu"                                     # Amendment 1: CPU only (user's instruction)
+torch.set_num_threads(8)
 L = json.load(open(f"{REPO}/LEAK.json"))["res"]
 data = {pool: sequences(pool) for pool in ("test",)}
 toks, revs = data["test"]
@@ -53,7 +61,8 @@ def readouts(probe):
     a = obj_acc(probe, toks, revs, "test", None, dev)
     ms = obj_acc(probe, toks, revs, "test", "mean", dev)
     z = obj_acc(probe, toks, revs, "test", "zero", dev)
-    return a, ms - a, z - a
+    tm = obj_acc(probe, toks, revs, "test", "typemean", dev)
+    return a, ms - a, z - a, a - tm
 
 
 print(f"device {dev}; LEAK eval stream: 200 test-pool sequences, T=1024")
@@ -61,17 +70,17 @@ for arm in ("MapWM", "ActOnly", "NormStep"):
     res[arm] = []
     for s in range(8):
         m, _ = load(f"{R}/{arm}_s{s}/{arm}.pt", arm, dev); g = Gauge(m); p = Probe(m); set_pool(m, "test")
-        a, lms, lz = readouts(p); geo = step_geometry(m)
-        row = {"seed": s, "acc": a, "L_ms": lms, "L_zero": lz, **geo,
+        a, lms, lz, rel = readouts(p); geo = step_geometry(m)
+        row = {"seed": s, "acc": a, "L_ms": lms, "L_zero": lz, "reliance": rel, **geo,
                "leak_json_acc": L[arm][s]["test|x1"]["intact"], "leak_json_L": L[arm][s]["test|x1"]["leak"]}
         if (arm == "NormStep" and s < 4) or (arm == "MapWM" and s < 2):          # V4
             g.c = p.mean.clone(); p.mean = p.mean_step()                          # mean now includes the gauge
-            ga, gms, gz = readouts(p); row["gauge"] = {"acc": ga, "L_ms": gms, "L_zero": gz,
+            ga, gms, gz, _ = readouts(p); row["gauge"] = {"acc": ga, "L_ms": gms, "L_zero": gz,
                                                         "S_id": step_geometry(m)["S_id"]}
             g.c = None; p.mean = p.mean_step()
         res[arm].append(row)
         print(f"{arm:8s} s{s}: acc {a:.4f} (LEAK.json {row['leak_json_acc']:.4f}) L_zero {lz:+.4f} (LEAK.json "
-              f"{row['leak_json_L']:+.4f}) L_ms {lms:+.4f} | S_id {geo['S_id']:.4f} shift {geo['shift_cells']:.4f} cells "
+              f"{row['leak_json_L']:+.4f}) L_ms {lms:+.4f} reliance {rel:.4f} | S_id {geo['S_id']:.4f} shift {geo['shift_cells']:.4f} cells "
               f"resid {geo['resid']:.3f} shared {geo['shared']:.4f} blank {geo['blank']:.4f}"
               + (f" | GAUGE: acc {row['gauge']['acc']:.4f} L_ms {row['gauge']['L_ms']:+.4f} L_zero "
                  f"{row['gauge']['L_zero']:+.4f} S_id {row['gauge']['S_id']:.4f}" if "gauge" in row else ""))
@@ -107,11 +116,26 @@ for s in range(4):
               f"{geo['shift_cells']:.4f} cells; acc {a0:.4f} -> injected {a_inj:.4f}; L_ms on the injected model "
               f"{a_ms - a_inj:+.4f}")
 
+# V6 untrained models (trainer's construction order), all four GAIN_PHASE arms
+from mapformer.environment_newobj import NewObjectWorld
+from mapformer.model_codes import use_object_codes
+from mapformer.model_gain_phase import ARMS as GP_ARMS
+res["untrained"] = []
+for s in (8, 110):
+    for arm, cls in GP_ARMS.items():
+        torch.manual_seed(s); np.random.seed(s)
+        env = NewObjectWorld(size=32, seed=s, pool_size=P, pool="train")
+        m = cls(vocab_size=env.unified_vocab_size, d_model=128, n_heads=2, n_layers=1, grid_size=32)
+        use_object_codes(m, N_SPECIAL, P); m = m.to(dev); set_pool(m, "test")
+        r = evaluate_model(m, dev, data, full=False); r.update(arm=arm, seed=s); res["untrained"].append(r)
+        print(f"V6 untrained {arm:9s} s{s}: acc {r['acc']:.4f} reliance {r['reliance']:+.4f} L_ms {r['L_ms']:+.4f} "
+              f"S_id {r['S_id']:.4f}")
+
 g = lambda arm, k: np.array([r[k] for r in res[arm]])
 print("\n== checks ==")
 v0 = max(max(abs(g(a, "acc") - g(a, "leak_json_acc")).max(), abs(g(a, "L_zero") - g(a, "leak_json_L")).max())
          for a in ("MapWM", "ActOnly", "NormStep"))
-print(f"V0 wiring: max |acc, L_zero - LEAK.json| = {v0:.2e} -> {'PASS' if v0 == 0 else 'FAIL'}")
+print(f"V0 wiring: max |acc, L_zero - LEAK.json| = {v0:.2e} -> {'PASS (exact)' if v0 == 0 else ('PASS (CPU vs the GPU eval of LEAK.json; <= 2e-4 = ~10 of 47,033 targets)' if v0 <= 2e-4 else 'FAIL')}")
 v1 = max(abs(g("ActOnly", "L_ms")).max(), abs(g("ActOnly", "S_id")).max())
 print(f"V1 ActOnly: max |L_ms|, |S_id| = {v1:.2e} -> {'PASS' if v1 == 0 else 'FAIL'}")
 dd = g("MapWM", "L_ms") - g("MapWM", "L_zero")
@@ -133,4 +157,24 @@ for kind in ("isotropic", "shift"):
     print(f"V5 positive control ({kind}): L_ms on injected NormStep models "
           + " ".join(f"{r['L_ms_injected']:+.4f}" for r in res["inject"] if r["kind"] == kind)
           + f" (MapWM's own L_ms median {np.median(g('MapWM', 'L_ms')):+.4f})")
+for arm in ("MapWM", "ActOnly", "NormStep"):
+    print(f"V6 reliance, LEAK {arm}: {' '.join(f'{x:.3f}' for x in g(arm, 'reliance'))} (min {g(arm, 'reliance').min():.3f})")
+un = np.array([r["reliance"] for r in res["untrained"]])
+print(f"V6 reliance, untrained (8 models): max |reliance| {abs(un).max():.4f}; acc max "
+      f"{max(r['acc'] for r in res['untrained']):.4f}; L_ms max |.| {max(abs(r['L_ms']) for r in res['untrained']):.4f}; "
+      f"S_id {min(r['S_id'] for r in res['untrained']):.3f} .. {max(r['S_id'] for r in res['untrained']):.3f} -> "
+      f"{'PASS' if abs(un).max() < 0.02 else 'FAIL'} (must be ~0)")
+
+# V7 last: rescore_hook patches nn.Module.eval for the rest of the process
+import mapformer.rescore_hook as RH
+mine = {}
+for arm in ("MapWM", "NormStep"):
+    m, _ = load(f"{R}/{arm}_s0/{arm}.pt", arm, dev); p = Probe(m); set_pool(m, "test")
+    mine[arm] = rescored_acc(p, toks, revs, dev)
+RH.install("auto")
+for arm in ("MapWM", "NormStep"):
+    m, _ = load(f"{R}/{arm}_s0/{arm}.pt", arm, dev); p = Probe(m); set_pool(m, "test")
+    theirs = obj_acc(p, toks, revs, "test", None, dev)
+    print(f"V7 {arm} s0: rescored_acc {mine[arm]:.6f} vs rescore_hook {theirs:.6f} -> {'PASS' if mine[arm] == theirs else 'FAIL'}")
+res["rescore_check"] = mine
 json.dump(res, open(OUT + ".json", "w"), indent=1)

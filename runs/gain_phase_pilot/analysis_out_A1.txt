@@ -1,0 +1,33 @@
+== per arm (unseen-object accuracy x1; leak readouts; classes) ==
+  MapWM     acc 0.9467 +/- 0.0180 (min 0.9340) | SOLVED 0/2 | L_ms median +0.0330 | S_id 0.4098 | theta reliance median 0.898 | final-5% loss 0.5878 | epochs to 0.05 - -
+  NormStep  acc 0.9600 +/- 0.0552 (min 0.9209) | SOLVED 0/2 | L_ms median +0.0151 | S_id 0.6605 | theta reliance median 0.912 | final-5% loss 0.5466 | epochs to 0.05 - -
+  GainRaw   acc 0.5044 +/- 0.3275 (min 0.2728) | SOLVED 0/2 | L_ms median +0.0255 | S_id 0.5145 | theta reliance median 0.435 | final-5% loss 2.3978 | epochs to 0.05 - -
+  GainPhase acc 0.1365 +/- 0.0333 (min 0.1129) | SOLVED 0/2 | L_ms median +0.0270 | S_id 1.3213 | theta reliance median 0.060 | final-5% loss 3.5818 | epochs to 0.05 - -
+
+== D1 STEP ==
+  D1r NormStep vs MapWM (rotary; positive control): NO DIFFERENCE: d +0.0133 (perm p 1.0000, NONE); SOLVED 0/2 vs 0/2 (Fisher p 1.0000, NONE) -- 95% CI [-0.2992, +0.3258], MDE 0.2202
+  D1  GainPhase vs GainRaw (gain score): NO DIFFERENCE: d -0.3679 (perm p 0.3333, NONE); SOLVED 0/2 vs 0/2 (Fisher p 1.0000, NONE) -- 95% CI [-2.8604, +2.1246], MDE 1.2485
+  REGISTERED D1: REPLICATION FAILED: NormStep vs MapWM is NO DIFFERENCE on these seeds (LEAK: BETTER), so the batch cannot show whether the step effect carries over; under the gain score NormStep is NO DIFFERENCE (reported as it falls) [D1r fires on neither test]
+
+== D2 SCORE (gain vs rotary) ==
+  raw step: GainRaw vs MapWM: NO DIFFERENCE: d -0.4423 (perm p 0.3333, NONE); SOLVED 0/2 vs 0/2 (Fisher p 1.0000, NONE) -- 95% CI [-3.1893, +2.3047], MDE 1.2439
+  NormStep step: GainPhase vs NormStep: NO DIFFERENCE: d -0.8235 (perm p 0.3333, NONE); SOLVED 0/2 vs 0/2 (Fisher p 1.0000, NONE) -- 95% CI [-4.3680, +2.7210], MDE 0.2445
+  REGISTERED D2: raw step -- GAIN SCORE NO DIFFERENCE; NormStep step -- GAIN SCORE NO DIFFERENCE
+
+== D3 LEAK DISSOCIATION ==
+  convergence gate (Amendment 1): GainRaw FAIL: median acc 0.5044 (gate >= 0.9240: FAILS), median theta reliance 0.435 (>= 0.2: ok), median S_id 0.5145 (<= 1.4003: ok); 0/2 SOLVED, 0/2 DESCENDING
+  convergence gate: GainPhase FAIL: median acc 0.1365 (gate >= 0.9240: FAILS), median theta reliance 0.060 (>= 0.2: FAILS), median S_id 1.3213 (<= 1.4003: ok); 0/2 SOLVED, 0/2 DESCENDING
+  step fix under the rotary score: INCOMPLETE: median L_ms raw +0.0330 / NormStep +0.0151; S_id raw 0.4098 / NormStep 0.6605 (perm p 1.0000)
+  step fix under the gain score: INCOMPLETE: median L_ms raw +0.0255 / NormStep +0.0270; S_id raw 0.5145 / NormStep 1.3213 (perm p 0.3333) [label not read: gate]
+  leak under the gain score, raw step: PERSISTS: median L_ms(GainRaw) +0.0255; S_id GainRaw 0.5145 vs MapWM 0.4098 (perm p 1.0000); GainRaw distortion share 0.65, field shift 0.4017 cells (MapWM 0.0961) [label not read: gate]
+  REGISTERED D3: D3 UNMEASURED: GainRaw not converged (median acc 0.5044 (gate >= 0.9240: FAILS), median theta reliance 0.435 (>= 0.2: ok), median S_id 0.5145 (<= 1.4003: ok); 0/2 SOLVED, 0/2 DESCENDING); GainPhase not converged (median acc 0.1365 (gate >= 0.9240: FAILS), median theta reliance 0.060 (>= 0.2: FAILS), median S_id 1.3213 (<= 1.4003: ok); 0/2 SOLVED, 0/2 DESCENDING)
+
+== D4 COMBINATION ==
+  GainPhase vs MapWM: NO DIFFERENCE: d -0.8102 (perm p 0.3333, NONE); SOLVED 0/2 vs 0/2 (Fisher p 1.0000, NONE) -- 95% CI [-4.1962, +2.5758], MDE 0.1435
+  GainPhase vs NormStep (non-inferiority): UNDETERMINED: d -0.8235 (perm p 0.3333, NONE); SOLVED 0/2 vs 0/2 (Fisher p 1.0000, NONE) -- 95% CI [-4.3680, +2.7210], MDE 0.2445; non-inferiority at -0.005: one-sided p 0.8333 -- accuracy not shown within 0.005
+  REGISTERED D4: NO GAIN OVER MapWM DETECTED (vs MapWM NO DIFFERENCE; vs NormStep UNDETERMINED)
+
+== D5 SPEED (epochs until the 10-epoch running training loss < 0.05) ==
+  GainPhase vs NormStep: NEITHER CONVERGED: geometric-mean epochs 31 vs 31 (x1.00 faster); censored 2/2 vs 2/2
+  GainRaw vs MapWM: NEITHER CONVERGED: geometric-mean epochs 31 vs 31 (x1.00 faster); censored 2/2 vs 2/2
+  REGISTERED D5: NormStep step -- gain score NEITHER CONVERGED; raw step -- gain score NEITHER CONVERGED

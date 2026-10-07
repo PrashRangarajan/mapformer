@@ -1,0 +1,9 @@
+eval device cpu
+MapWM     s110: acc 0.9594 L_ms +0.0347 L_zero +0.0352 S_id 0.3528 rel 0.9114 resc 0.9595 x2 0.8776 x4 0.7675 train 0.9687 (63 s)
+NormStep  s110: acc 0.9209 L_ms +0.0297 L_zero -0.2515 S_id 1.0720 rel 0.8786 resc 0.9212 x2 0.9209 x4 0.9209 train 0.9341 (61 s)
+GainRaw   s110: acc 0.7360 L_ms +0.0317 L_zero +0.0338 S_id 0.3285 rel 0.6900 resc 0.7358 x2 0.7079 x4 0.6593 train 0.7378 (100 s)
+GainPhase s110: acc 0.1600 L_ms +0.0432 L_zero +0.0451 S_id 1.0940 rel 0.0822 resc 0.1609 x2 0.1601 x4 0.1601 train 0.1673 (106 s)
+MapWM     s111: acc 0.9340 L_ms +0.0313 L_zero +0.0371 S_id 0.4668 rel 0.8837 resc 0.9340 x2 0.8690 x4 0.7704 train 0.9422 (59 s)
+NormStep  s111: acc 0.9990 L_ms +0.0006 L_zero -0.3338 S_id 0.2490 rel 0.9457 resc 0.9991 x2 0.9990 x4 0.9990 train 0.9996 (59 s)
+GainRaw   s111: acc 0.2728 L_ms +0.0192 L_zero +0.0221 S_id 0.7005 rel 0.1804 resc 0.2733 x2 0.2342 x4 0.1901 train 0.2801 (97 s)
+GainPhase s111: acc 0.1129 L_ms +0.0107 L_zero +0.0124 S_id 1.5487 rel 0.0375 resc 0.1132 x2 0.1129 x4 0.1129 train 0.1207 (97 s)

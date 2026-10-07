@@ -35,6 +35,25 @@
   [PASS] ABSENT, UNLEARNED: ABSENT, UNLEARNED
   [PASS] ABSENT, TOLERATED: ABSENT, TOLERATED
   [PASS] PARTIAL: PARTIAL
+== Amendment 1: NEGATIVE, |median| for ABSENT, gate, budget flags, tolerated note, rescore flags ==
+  [PASS] leak_side NEGATIVE (norm arm < -0.002): NEGATIVE
+  [PASS] leak_side NEGATIVE (raw arm < -0.002): NEGATIVE
+  [PASS] leak_side NO LEAK TO REMOVE uses |median|: NO LEAK TO REMOVE
+  [PASS] gain_leak NEGATIVE: NEGATIVE
+  [PASS] gain_leak ABSENT at a small negative median: ABSENT, TOLERATED
+  [PASS] gain_leak PARTIAL just below -0.002 is NEGATIVE, not ABSENT: NEGATIVE
+  [PASS] gate PASS (converged, MapWM-like): True
+  [PASS] gate FAIL on accuracy: False
+  [PASS] gate FAIL on reliance (theta unused): False
+  [PASS] gate FAIL on S_id (unconverged steps): False
+  [PASS] budget flag, solved basis: GP 2 DESCENDING vs N 0: True
+  [PASS] budget flag, solved basis: equal -> none: 
+  [PASS] budget flag, regime basis: GainRaw loss regime above MapWM's: True
+  [PASS] budget flag, regime basis: same regime -> none: 
+  [PASS] tolerated note: isotropic: mostly isotropic spread
+  [PASS] tolerated note: field shift: mostly a field shift the gain score ignores
+  [PASS] combo WORSE x AS GOOD names NormStep's deficit: WORSE THAN MapWM BUT AS GOOD AS NormStep
+  [PASS] fires_on: accuracy and SOLVED
 
 == step_verdict (D1r, D1): exhaustive ==
   BETTER        x BETTER        -> NORMSTEP HELPS UNDER BOTH SCORES (the step fix does not depend on the score)
@@ -68,38 +87,82 @@
   REMOVES           x REMOVES           x ABSENT, TOLERATED -> THE GAIN SCORE TOLERATES THE LEAK: the identity step is still in theta (S_id not lower than MapWM's) but costs no accuracy under the gain score; the step fix removes it under both scores
   REMOVES           x REMOVES           x ABSENT, UNLEARNED -> THE GAIN SCORE ALSO REMOVES THE LEAK (training unlearns the identity step): not separate defects; the step fix removes it too
   REMOVES           x REMOVES           x PARTIAL           -> PARTIAL: the step fix removes the leak under both scores; under the gain score the raw step leaks less
+  REMOVES           x REMOVES           x NEGATIVE          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: REMOVES; gain: REMOVES; GainRaw: NEGATIVE -- reported as it falls
   REMOVES           x NO LEAK TO REMOVE x PERSISTS          -> SEPARATE DEFECTS: the step fix removes the leak under both scores; the score fix leaves it (it is in theta)
   REMOVES           x NO LEAK TO REMOVE x ABSENT, TOLERATED -> THE GAIN SCORE TOLERATES THE LEAK: the identity step is still in theta (S_id not lower than MapWM's) but costs no accuracy under the gain score; the step fix removes it under both scores
   REMOVES           x NO LEAK TO REMOVE x ABSENT, UNLEARNED -> THE GAIN SCORE ALSO REMOVES THE LEAK (training unlearns the identity step): not separate defects; the step fix removes it too
   REMOVES           x NO LEAK TO REMOVE x PARTIAL           -> PARTIAL: the step fix removes the leak under both scores; under the gain score the raw step leaks less
+  REMOVES           x NO LEAK TO REMOVE x NEGATIVE          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: REMOVES; gain: NO LEAK TO REMOVE; GainRaw: NEGATIVE -- reported as it falls
   REMOVES           x INCOMPLETE        x PERSISTS          -> STEP FIX INCOMPLETE (rotary: REMOVES; gain: INCOMPLETE); GainRaw's leak PERSISTS -- reported as it falls
   REMOVES           x INCOMPLETE        x ABSENT, TOLERATED -> STEP FIX INCOMPLETE (rotary: REMOVES; gain: INCOMPLETE); GainRaw's leak ABSENT, TOLERATED -- reported as it falls
   REMOVES           x INCOMPLETE        x ABSENT, UNLEARNED -> STEP FIX INCOMPLETE (rotary: REMOVES; gain: INCOMPLETE); GainRaw's leak ABSENT, UNLEARNED -- reported as it falls
   REMOVES           x INCOMPLETE        x PARTIAL           -> STEP FIX INCOMPLETE (rotary: REMOVES; gain: INCOMPLETE); GainRaw's leak PARTIAL -- reported as it falls
+  REMOVES           x INCOMPLETE        x NEGATIVE          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: REMOVES; gain: INCOMPLETE; GainRaw: NEGATIVE -- reported as it falls
+  REMOVES           x NEGATIVE          x PERSISTS          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: REMOVES; gain: NEGATIVE; GainRaw: PERSISTS -- reported as it falls
+  REMOVES           x NEGATIVE          x ABSENT, TOLERATED -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: REMOVES; gain: NEGATIVE; GainRaw: ABSENT, TOLERATED -- reported as it falls
+  REMOVES           x NEGATIVE          x ABSENT, UNLEARNED -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: REMOVES; gain: NEGATIVE; GainRaw: ABSENT, UNLEARNED -- reported as it falls
+  REMOVES           x NEGATIVE          x PARTIAL           -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: REMOVES; gain: NEGATIVE; GainRaw: PARTIAL -- reported as it falls
+  REMOVES           x NEGATIVE          x NEGATIVE          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: REMOVES; gain: NEGATIVE; GainRaw: NEGATIVE -- reported as it falls
   NO LEAK TO REMOVE x REMOVES           x PERSISTS          -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
   NO LEAK TO REMOVE x REMOVES           x ABSENT, TOLERATED -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
   NO LEAK TO REMOVE x REMOVES           x ABSENT, UNLEARNED -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
   NO LEAK TO REMOVE x REMOVES           x PARTIAL           -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x REMOVES           x NEGATIVE          -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
   NO LEAK TO REMOVE x NO LEAK TO REMOVE x PERSISTS          -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
   NO LEAK TO REMOVE x NO LEAK TO REMOVE x ABSENT, TOLERATED -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
   NO LEAK TO REMOVE x NO LEAK TO REMOVE x ABSENT, UNLEARNED -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
   NO LEAK TO REMOVE x NO LEAK TO REMOVE x PARTIAL           -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x NO LEAK TO REMOVE x NEGATIVE          -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
   NO LEAK TO REMOVE x INCOMPLETE        x PERSISTS          -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
   NO LEAK TO REMOVE x INCOMPLETE        x ABSENT, TOLERATED -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
   NO LEAK TO REMOVE x INCOMPLETE        x ABSENT, UNLEARNED -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
   NO LEAK TO REMOVE x INCOMPLETE        x PARTIAL           -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x INCOMPLETE        x NEGATIVE          -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x NEGATIVE          x PERSISTS          -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x NEGATIVE          x ABSENT, TOLERATED -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x NEGATIVE          x ABSENT, UNLEARNED -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x NEGATIVE          x PARTIAL           -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
+  NO LEAK TO REMOVE x NEGATIVE          x NEGATIVE          -> NO LEAK TO DISSOCIATE: MapWM's in-distribution leak is <= 0.002 on these seeds (LEAK: +0.0098); D3 void
   INCOMPLETE        x REMOVES           x PERSISTS          -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: REMOVES); GainRaw's leak PERSISTS -- reported as it falls
   INCOMPLETE        x REMOVES           x ABSENT, TOLERATED -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: REMOVES); GainRaw's leak ABSENT, TOLERATED -- reported as it falls
   INCOMPLETE        x REMOVES           x ABSENT, UNLEARNED -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: REMOVES); GainRaw's leak ABSENT, UNLEARNED -- reported as it falls
   INCOMPLETE        x REMOVES           x PARTIAL           -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: REMOVES); GainRaw's leak PARTIAL -- reported as it falls
+  INCOMPLETE        x REMOVES           x NEGATIVE          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: INCOMPLETE; gain: REMOVES; GainRaw: NEGATIVE -- reported as it falls
   INCOMPLETE        x NO LEAK TO REMOVE x PERSISTS          -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: NO LEAK TO REMOVE); GainRaw's leak PERSISTS -- reported as it falls
   INCOMPLETE        x NO LEAK TO REMOVE x ABSENT, TOLERATED -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: NO LEAK TO REMOVE); GainRaw's leak ABSENT, TOLERATED -- reported as it falls
   INCOMPLETE        x NO LEAK TO REMOVE x ABSENT, UNLEARNED -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: NO LEAK TO REMOVE); GainRaw's leak ABSENT, UNLEARNED -- reported as it falls
   INCOMPLETE        x NO LEAK TO REMOVE x PARTIAL           -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: NO LEAK TO REMOVE); GainRaw's leak PARTIAL -- reported as it falls
+  INCOMPLETE        x NO LEAK TO REMOVE x NEGATIVE          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: INCOMPLETE; gain: NO LEAK TO REMOVE; GainRaw: NEGATIVE -- reported as it falls
   INCOMPLETE        x INCOMPLETE        x PERSISTS          -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: INCOMPLETE); GainRaw's leak PERSISTS -- reported as it falls
   INCOMPLETE        x INCOMPLETE        x ABSENT, TOLERATED -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: INCOMPLETE); GainRaw's leak ABSENT, TOLERATED -- reported as it falls
   INCOMPLETE        x INCOMPLETE        x ABSENT, UNLEARNED -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: INCOMPLETE); GainRaw's leak ABSENT, UNLEARNED -- reported as it falls
   INCOMPLETE        x INCOMPLETE        x PARTIAL           -> STEP FIX INCOMPLETE (rotary: INCOMPLETE; gain: INCOMPLETE); GainRaw's leak PARTIAL -- reported as it falls
+  INCOMPLETE        x INCOMPLETE        x NEGATIVE          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: INCOMPLETE; gain: INCOMPLETE; GainRaw: NEGATIVE -- reported as it falls
+  INCOMPLETE        x NEGATIVE          x PERSISTS          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: INCOMPLETE; gain: NEGATIVE; GainRaw: PERSISTS -- reported as it falls
+  INCOMPLETE        x NEGATIVE          x ABSENT, TOLERATED -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: INCOMPLETE; gain: NEGATIVE; GainRaw: ABSENT, TOLERATED -- reported as it falls
+  INCOMPLETE        x NEGATIVE          x ABSENT, UNLEARNED -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: INCOMPLETE; gain: NEGATIVE; GainRaw: ABSENT, UNLEARNED -- reported as it falls
+  INCOMPLETE        x NEGATIVE          x PARTIAL           -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: INCOMPLETE; gain: NEGATIVE; GainRaw: PARTIAL -- reported as it falls
+  INCOMPLETE        x NEGATIVE          x NEGATIVE          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: INCOMPLETE; gain: NEGATIVE; GainRaw: NEGATIVE -- reported as it falls
+  NEGATIVE          x REMOVES           x PERSISTS          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: REMOVES; GainRaw: PERSISTS -- reported as it falls
+  NEGATIVE          x REMOVES           x ABSENT, TOLERATED -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: REMOVES; GainRaw: ABSENT, TOLERATED -- reported as it falls
+  NEGATIVE          x REMOVES           x ABSENT, UNLEARNED -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: REMOVES; GainRaw: ABSENT, UNLEARNED -- reported as it falls
+  NEGATIVE          x REMOVES           x PARTIAL           -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: REMOVES; GainRaw: PARTIAL -- reported as it falls
+  NEGATIVE          x REMOVES           x NEGATIVE          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: REMOVES; GainRaw: NEGATIVE -- reported as it falls
+  NEGATIVE          x NO LEAK TO REMOVE x PERSISTS          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: NO LEAK TO REMOVE; GainRaw: PERSISTS -- reported as it falls
+  NEGATIVE          x NO LEAK TO REMOVE x ABSENT, TOLERATED -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: NO LEAK TO REMOVE; GainRaw: ABSENT, TOLERATED -- reported as it falls
+  NEGATIVE          x NO LEAK TO REMOVE x ABSENT, UNLEARNED -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: NO LEAK TO REMOVE; GainRaw: ABSENT, UNLEARNED -- reported as it falls
+  NEGATIVE          x NO LEAK TO REMOVE x PARTIAL           -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: NO LEAK TO REMOVE; GainRaw: PARTIAL -- reported as it falls
+  NEGATIVE          x NO LEAK TO REMOVE x NEGATIVE          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: NO LEAK TO REMOVE; GainRaw: NEGATIVE -- reported as it falls
+  NEGATIVE          x INCOMPLETE        x PERSISTS          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: INCOMPLETE; GainRaw: PERSISTS -- reported as it falls
+  NEGATIVE          x INCOMPLETE        x ABSENT, TOLERATED -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: INCOMPLETE; GainRaw: ABSENT, TOLERATED -- reported as it falls
+  NEGATIVE          x INCOMPLETE        x ABSENT, UNLEARNED -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: INCOMPLETE; GainRaw: ABSENT, UNLEARNED -- reported as it falls
+  NEGATIVE          x INCOMPLETE        x PARTIAL           -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: INCOMPLETE; GainRaw: PARTIAL -- reported as it falls
+  NEGATIVE          x INCOMPLETE        x NEGATIVE          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: INCOMPLETE; GainRaw: NEGATIVE -- reported as it falls
+  NEGATIVE          x NEGATIVE          x PERSISTS          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: NEGATIVE; GainRaw: PERSISTS -- reported as it falls
+  NEGATIVE          x NEGATIVE          x ABSENT, TOLERATED -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: NEGATIVE; GainRaw: ABSENT, TOLERATED -- reported as it falls
+  NEGATIVE          x NEGATIVE          x ABSENT, UNLEARNED -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: NEGATIVE; GainRaw: ABSENT, UNLEARNED -- reported as it falls
+  NEGATIVE          x NEGATIVE          x PARTIAL           -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: NEGATIVE; GainRaw: PARTIAL -- reported as it falls
+  NEGATIVE          x NEGATIVE          x NEGATIVE          -> NEGATIVE L_ms (removing the identity step COSTS accuracy: the identity step is used) -- rotary: NEGATIVE; gain: NEGATIVE; GainRaw: NEGATIVE -- reported as it falls
 
 == combo_verdict (GP vs MapWM, GP vs NormStep): exhaustive ==
   BETTER        x AS GOOD      -> THE GAIN-PHASE MAP WORKS: better than MapWM and as good as NormStep
@@ -107,7 +170,7 @@
   BETTER        x WORSE        -> BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep
   BETTER        x UNDETERMINED -> BETTER THAN MapWM; non-inferiority to NormStep undetermined
   BETTER        x CONFLICT     -> CONFLICT (vs MapWM BETTER, vs NormStep CONFLICT): reported as it falls
-  WORSE         x AS GOOD      -> THE GAIN-PHASE MAP FAILS: worse than MapWM
+  WORSE         x AS GOOD      -> WORSE THAN MapWM BUT AS GOOD AS NormStep: NormStep is itself below MapWM on these seeds (see D1r); the gain-phase map is not worse than its step fix
   WORSE         x BETTER       -> THE GAIN-PHASE MAP FAILS: worse than MapWM
   WORSE         x WORSE        -> THE GAIN-PHASE MAP FAILS: worse than MapWM
   WORSE         x UNDETERMINED -> THE GAIN-PHASE MAP FAILS: worse than MapWM
@@ -128,17 +191,17 @@
   CONFLICT      x UNDETERMINED -> CONFLICT (vs MapWM CONFLICT, vs NormStep UNDETERMINED): reported as it falls
   CONFLICT      x CONFLICT     -> CONFLICT (vs MapWM CONFLICT, vs NormStep CONFLICT): reported as it falls
 
-== main path end to end: 32 synthetic checkpoints + synthetic GAIN_PHASE_EVAL.json ==
+== main path end to end: 32 synthetic checkpoints + synthetic GAIN_PHASE_EVAL.json (predicted) ==
 == per arm (unseen-object accuracy x1; leak readouts; classes) ==
-  MapWM     acc 0.9890 +/- 0.0030 (min 0.9838) | SOLVED 0/8 | L_ms median +0.0097 | S_id 0.0045 | final-5% loss 0.0751 | epochs to 0.05 - - - - - - - -
-  NormStep  acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
-  GainRaw   acc 0.9890 +/- 0.0030 (min 0.9838) | SOLVED 0/8 | L_ms median +0.0097 | S_id 0.0045 | final-5% loss 0.0751 | epochs to 0.05 - - - - - - - -
-  GainPhase acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+  MapWM     acc 0.9890 +/- 0.0030 (min 0.9838) | SOLVED 0/8 | L_ms median +0.0097 | S_id 0.0045 | theta reliance median 0.900 | final-5% loss 0.0751 | epochs to 0.05 - - - - - - - -
+  NormStep  acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | theta reliance median 0.900 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+  GainRaw   acc 0.9890 +/- 0.0030 (min 0.9838) | SOLVED 0/8 | L_ms median +0.0097 | S_id 0.0045 | theta reliance median 0.900 | final-5% loss 0.0751 | epochs to 0.05 - - - - - - - -
+  GainPhase acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | theta reliance median 0.900 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
 
 == D1 STEP ==
   D1r NormStep vs MapWM (rotary; positive control): BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
   D1  GainPhase vs GainRaw (gain score): BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
-  REGISTERED D1: NORMSTEP HELPS UNDER BOTH SCORES (the step fix does not depend on the score)
+  REGISTERED D1: NORMSTEP HELPS UNDER BOTH SCORES (the step fix does not depend on the score) [D1r fires on accuracy and SOLVED]
 
 == D2 SCORE (gain vs rotary) ==
   raw step: GainRaw vs MapWM: NO DIFFERENCE: d +0.0000 (perm p 1.0000, NONE); SOLVED 0/8 vs 0/8 (Fisher p 1.0000, NONE) -- 95% CI [-0.0030, +0.0030], MDE 0.0045
@@ -146,9 +209,11 @@
   REGISTERED D2: raw step -- GAIN SCORE NO DIFFERENCE; NormStep step -- GAIN SCORE CEILING
 
 == D3 LEAK DISSOCIATION ==
+  convergence gate (Amendment 1): GainRaw PASS: median acc 0.9900 (gate >= 0.9738: ok), median theta reliance 0.900 (>= 0.2: ok), median S_id 0.0048 (<= 0.0150: ok); 0/8 SOLVED, 8/8 DESCENDING
+  convergence gate: GainPhase PASS: median acc 0.9998 (gate >= 0.9738: ok), median theta reliance 0.900 (>= 0.2: ok), median S_id 0.0010 (<= 0.0150: ok); 8/8 SOLVED, 0/8 DESCENDING
   step fix under the rotary score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
   step fix under the gain score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
-  leak under the gain score, raw step: PERSISTS: median L_ms(GainRaw) +0.0097; S_id GainRaw 0.0045 vs MapWM 0.0045 (perm p 1.0000)
+  leak under the gain score, raw step: PERSISTS: median L_ms(GainRaw) +0.0097; S_id GainRaw 0.0045 vs MapWM 0.0045 (perm p 1.0000); GainRaw distortion share 0.00, field shift 0.0048 cells (MapWM 0.0048)
   REGISTERED D3: SEPARATE DEFECTS: the step fix removes the leak under both scores; the score fix leaves it (it is in theta)
 
 == D4 COMBINATION ==
@@ -161,9 +226,86 @@
   GainRaw vs MapWM: NEITHER CONVERGED: geometric-mean epochs 901 vs 901 (x1.00 faster); censored 8/8 vs 8/8
   REGISTERED D5: NormStep step -- gain score NO DIFFERENCE; raw step -- gain score NEITHER CONVERGED
   [PASS] end to end: D1 headline: NORMSTEP HELPS UNDER BOTH SCORES
+  [PASS] end to end: D1 carries D1r's firing test: True
   [PASS] end to end: D3 headline: SEPARATE DEFECTS
   [PASS] end to end: D4 headline: THE GAIN-PHASE MAP WORKS
+  [PASS] end to end: no rescore flag when labels agree: False
   [PASS] end to end: D5 (raw arms never reach 0.05): NEITHER CONVERGED
+
+== end to end, unconverged gain arms ==
+== per arm (unseen-object accuracy x1; leak readouts; classes) ==
+  MapWM     acc 0.9890 +/- 0.0030 (min 0.9838) | SOLVED 0/8 | L_ms median +0.0097 | S_id 0.0045 | theta reliance median 0.900 | final-5% loss 0.0751 | epochs to 0.05 - - - - - - - -
+  NormStep  acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | theta reliance median 0.900 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+  GainRaw   acc 0.1400 +/- 0.0000 (min 0.1400) | SOLVED 0/8 | L_ms median +0.0000 | S_id 1.0000 | theta reliance median 0.000 | final-5% loss 0.6659 | epochs to 0.05 - - - - - - - -
+  GainPhase acc 0.1400 +/- 0.0000 (min 0.1400) | SOLVED 0/8 | L_ms median +0.0000 | S_id 1.0000 | theta reliance median 0.000 | final-5% loss 0.6659 | epochs to 0.05 - - - - - - - -
+
+== D1 STEP ==
+  D1r NormStep vs MapWM (rotary; positive control): BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  D1  GainPhase vs GainRaw (gain score): NO DIFFERENCE: d +0.0000 (perm p 1.0000, NONE); SOLVED 0/8 vs 0/8 (Fisher p 1.0000, NONE) -- 95% CI [+0.0000, +0.0000], MDE 0.0000
+  REGISTERED D1: NORMSTEP HELPS UNDER THE ROTARY SCORE ONLY: no step effect detected under the gain score (see its CI and MDE; D3 says whether GainRaw leaks) [D1r fires on accuracy and SOLVED] (budget-scoped: GainRaw 0/8 SOLVED, 8/8 DESCENDING at 900 epochs; median final loss 0.666 vs MapWM's max 0.075) (budget-scoped: GainPhase 0/8 SOLVED, 8/8 DESCENDING at 900 epochs; NormStep 8/8 SOLVED, 0/8 DESCENDING)
+
+== D2 SCORE (gain vs rotary) ==
+  raw step: GainRaw vs MapWM: WORSE: d -0.8490 (perm p 0.0002, NEG); SOLVED 0/8 vs 0/8 (Fisher p 1.0000, NONE) -- fires on accuracy
+  NormStep step: GainPhase vs NormStep: WORSE: d -0.8598 (perm p 0.0002, NEG); SOLVED 0/8 vs 8/8 (Fisher p 0.0002, NEG) -- fires on accuracy and SOLVED
+  REGISTERED D2: raw step -- GAIN SCORE WORSE (budget-scoped: GainRaw 0/8 SOLVED, 8/8 DESCENDING at 900 epochs; median final loss 0.666 vs MapWM's max 0.075); NormStep step -- GAIN SCORE WORSE (budget-scoped: GainPhase 0/8 SOLVED, 8/8 DESCENDING at 900 epochs; NormStep 8/8 SOLVED, 0/8 DESCENDING)
+
+== D3 LEAK DISSOCIATION ==
+  convergence gate (Amendment 1): GainRaw FAIL: median acc 0.1400 (gate >= 0.9738: FAILS), median theta reliance 0.000 (>= 0.2: FAILS), median S_id 1.0000 (<= 0.0150: FAILS); 0/8 SOLVED, 8/8 DESCENDING
+  convergence gate: GainPhase FAIL: median acc 0.1400 (gate >= 0.9738: FAILS), median theta reliance 0.000 (>= 0.2: FAILS), median S_id 1.0000 (<= 0.0150: FAILS); 0/8 SOLVED, 8/8 DESCENDING
+  step fix under the rotary score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
+  step fix under the gain score: NO LEAK TO REMOVE: median L_ms raw +0.0000 / NormStep +0.0000; S_id raw 1.0000 / NormStep 1.0000 (perm p 1.0000) [label not read: gate]
+  leak under the gain score, raw step: ABSENT, TOLERATED: median L_ms(GainRaw) +0.0000; S_id GainRaw 1.0000 vs MapWM 0.0045 (perm p 0.0002); GainRaw distortion share 0.60, field shift 0.5000 cells (MapWM 0.0048) [label not read: gate]
+  REGISTERED D3: D3 UNMEASURED: GainRaw not converged (median acc 0.1400 (gate >= 0.9738: FAILS), median theta reliance 0.000 (>= 0.2: FAILS), median S_id 1.0000 (<= 0.0150: FAILS); 0/8 SOLVED, 8/8 DESCENDING); GainPhase not converged (median acc 0.1400 (gate >= 0.9738: FAILS), median theta reliance 0.000 (>= 0.2: FAILS), median S_id 1.0000 (<= 0.0150: FAILS); 0/8 SOLVED, 8/8 DESCENDING)
+
+== D4 COMBINATION ==
+  GainPhase vs MapWM: WORSE: d -0.8490 (perm p 0.0002, NEG); SOLVED 0/8 vs 0/8 (Fisher p 1.0000, NONE) -- fires on accuracy
+  GainPhase vs NormStep (non-inferiority): WORSE: d -0.8598 (perm p 0.0002, NEG); SOLVED 0/8 vs 8/8 (Fisher p 0.0002, NEG) -- fires on accuracy and SOLVED; non-inferiority at -0.005: one-sided p 0.9999
+  REGISTERED D4: THE GAIN-PHASE MAP FAILS: worse than MapWM (budget-scoped: GainPhase 0/8 SOLVED, 8/8 DESCENDING at 900 epochs; NormStep 8/8 SOLVED, 0/8 DESCENDING)
+
+== D5 SPEED (epochs until the 10-epoch running training loss < 0.05) ==
+  GainPhase vs NormStep: SLOWER: geometric-mean epochs 901 vs 322 (x0.36 faster); censored 8/8 vs 0/8; perm p 0.0002
+  GainRaw vs MapWM: NEITHER CONVERGED: geometric-mean epochs 901 vs 901 (x1.00 faster); censored 8/8 vs 8/8
+  REGISTERED D5: NormStep step -- gain score SLOWER; raw step -- gain score NEITHER CONVERGED
+  [PASS] unconverged: D3 UNMEASURED: D3 UNMEASURED
+  [PASS] unconverged: D4 carries the budget scope: True
+  [PASS] unconverged: D2 carries both budget scopes: True
+
+== end to end, a label that flips under the re-score (GainPhase re-scored down to MapWM's accuracy) ==
+== per arm (unseen-object accuracy x1; leak readouts; classes) ==
+  MapWM     acc 0.9890 +/- 0.0030 (min 0.9838) | SOLVED 0/8 | L_ms median +0.0097 | S_id 0.0045 | theta reliance median 0.900 | final-5% loss 0.0751 | epochs to 0.05 - - - - - - - -
+  NormStep  acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | theta reliance median 0.900 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+  GainRaw   acc 0.9890 +/- 0.0030 (min 0.9838) | SOLVED 0/8 | L_ms median +0.0097 | S_id 0.0045 | theta reliance median 0.900 | final-5% loss 0.0751 | epochs to 0.05 - - - - - - - -
+  GainPhase acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | theta reliance median 0.900 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+
+== D1 STEP ==
+  D1r NormStep vs MapWM (rotary; positive control): BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  D1  GainPhase vs GainRaw (gain score): BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  REGISTERED D1: NORMSTEP HELPS UNDER BOTH SCORES (the step fix does not depend on the score) [D1r fires on accuracy and SOLVED]
+
+== D2 SCORE (gain vs rotary) ==
+  raw step: GainRaw vs MapWM: NO DIFFERENCE: d +0.0000 (perm p 1.0000, NONE); SOLVED 0/8 vs 0/8 (Fisher p 1.0000, NONE) -- 95% CI [-0.0030, +0.0030], MDE 0.0045
+  NormStep step: GainPhase vs NormStep: CEILING: d +0.0000 (perm p 1.0000, CEIL); SOLVED 8/8 vs 8/8 (Fisher p 1.0000, NONE) -- both arms >= 0.999 on every seed: no headroom
+  REGISTERED D2: raw step -- GAIN SCORE NO DIFFERENCE; NormStep step -- GAIN SCORE CEILING [FLAG: under the dropout-scale re-score D2_norm reads WORSE; registered verdict unchanged]
+
+== D3 LEAK DISSOCIATION ==
+  convergence gate (Amendment 1): GainRaw PASS: median acc 0.9900 (gate >= 0.9738: ok), median theta reliance 0.900 (>= 0.2: ok), median S_id 0.0048 (<= 0.0150: ok); 0/8 SOLVED, 8/8 DESCENDING
+  convergence gate: GainPhase PASS: median acc 0.9998 (gate >= 0.9738: ok), median theta reliance 0.900 (>= 0.2: ok), median S_id 0.0010 (<= 0.0150: ok); 8/8 SOLVED, 0/8 DESCENDING
+  step fix under the rotary score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
+  step fix under the gain score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
+  leak under the gain score, raw step: PERSISTS: median L_ms(GainRaw) +0.0097; S_id GainRaw 0.0045 vs MapWM 0.0045 (perm p 1.0000); GainRaw distortion share 0.00, field shift 0.0048 cells (MapWM 0.0048)
+  REGISTERED D3: SEPARATE DEFECTS: the step fix removes the leak under both scores; the score fix leaves it (it is in theta)
+
+== D4 COMBINATION ==
+  GainPhase vs MapWM: BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  GainPhase vs NormStep (non-inferiority): AS GOOD: d +0.0000 (perm p 1.0000, CEIL); SOLVED 8/8 vs 8/8 (Fisher p 1.0000, NONE) -- both arms >= 0.999 on every seed: no headroom; non-inferiority at -0.005: one-sided p 0.0001 (at ceiling)
+  REGISTERED D4: THE GAIN-PHASE MAP WORKS: better than MapWM and as good as NormStep (non-inferiority at ceiling) [FLAG: under the dropout-scale re-score D4_vs_N reads WORSE; registered verdict unchanged]
+
+== D5 SPEED (epochs until the 10-epoch running training loss < 0.05) ==
+  GainPhase vs NormStep: NO DIFFERENCE: geometric-mean epochs 322 vs 322 (x1.00 faster); censored 0/8 vs 0/8; perm p 1.0000
+  GainRaw vs MapWM: NEITHER CONVERGED: geometric-mean epochs 901 vs 901 (x1.00 faster); censored 8/8 vs 8/8
+  REGISTERED D5: NormStep step -- gain score NO DIFFERENCE; raw step -- gain score NEITHER CONVERGED
+  [PASS] rescore flip: D4 line flagged: True
+  [PASS] rescore flip: D4 verdict unchanged: THE GAIN-PHASE MAP WORKS
   [PASS] VOID on a missing run: ['void']
 
 ALL PASS
