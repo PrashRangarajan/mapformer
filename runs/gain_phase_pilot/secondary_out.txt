@@ -1,0 +1,47 @@
+== (a) leak decomposition per arm (means over seeds; L in accuracy units, steps relative to an axis step) ==
+  MapWM     L_zero +0.0361 | L_ms +0.0330 | S_id 0.4098 | shift 0.0961 cells | distortion share 0.953 | shared 0.0116 | blank 0.8463
+  NormStep  L_zero -0.2927 | L_ms +0.0151 | S_id 0.6605 | shift 0.3088 cells | distortion share 0.890 | shared 0.0447 | blank 0.9544
+  GainRaw   L_zero +0.0280 | L_ms +0.0256 | S_id 0.5145 | shift 0.4017 cells | distortion share 0.647 | shared 0.0139 | blank 0.8727
+  GainPhase L_zero +0.0288 | L_ms +0.0270 | S_id 1.3213 | shift 0.8491 cells | distortion share 0.550 | shared 0.0516 | blank 1.8161
+
+== (b) remap decomposition, gain arms (per head, mean over seeds) ==
+  GainRaw   GAIN: mu_k objects [0.666 0.901] cv over codes [0.201 0.01 ] | blank [2.026 0.431] | action keys [0.656 0.188] | action queries [0.443 2.111]
+            WIDTH: none by construction; spectrum share per band fine -> coarse [[0.216, 0.244, 0.266, 0.274], [0.18, 0.155, 0.271, 0.394]]
+            SHIFT: object-identity field shift 0.4017 cells (rms), distortion share 0.647
+  GainPhase GAIN: mu_k objects [0.716 0.812] cv over codes [0.129 0.013] | blank [1.536 0.096] | action keys [0.456 0.094] | action queries [0.828 1.52 ]
+            WIDTH: none by construction; spectrum share per band fine -> coarse [[0.248, 0.229, 0.251, 0.272], [0.277, 0.201, 0.197, 0.325]]
+            SHIFT: object-identity field shift 0.8491 cells (rms), distortion share 0.550
+
+== (c) loss vs accuracy; classes; train pool ==
+  r(final-5% loss, acc) over 8 runs: -0.997; within arm: MapWM -1.000  NormStep -1.000  GainRaw -1.000  GainPhase -1.000
+  MapWM     classes SOLVED:0,STALLED:0,DESCENDING:2,RISING:0 | train-pool acc 0.9555 | test 0.9467
+  NormStep  classes SOLVED:0,STALLED:0,DESCENDING:2,RISING:0 | train-pool acc 0.9669 | test 0.9600
+  GainRaw   classes SOLVED:0,STALLED:2,DESCENDING:0,RISING:0 | train-pool acc 0.5090 | test 0.5043
+  GainPhase classes SOLVED:0,STALLED:2,DESCENDING:0,RISING:0 | train-pool acc 0.1441 | test 0.1364
+
+== (d) code norm x2 / x4 (embedding side) ==
+  MapWM     x2 - x1 -0.0734 | x4 - x1 -0.1778 (max |.| 0.1920) -- distribution shift
+  NormStep  x2 - x1 -0.0000 | x4 - x1 -0.0000 (max |.| 0.0000) -- CONSTRUCTION CHECK (must be ~0)
+  GainRaw   x2 - x1 -0.0333 | x4 - x1 -0.0796 (max |.| 0.0827) -- distribution shift
+  GainPhase x2 - x1 +0.0001 | x4 - x1 +0.0000 (max |.| 0.0001) -- CONSTRUCTION CHECK (must be ~0)
+
+== (e) dropout-scale re-score (attention x 1/(1-p), eval-only) ==
+  MapWM     0.9467 -> 0.9468
+  NormStep  0.9600 -> 0.9602
+  GainRaw   0.5043 -> 0.5046
+  GainPhase 0.1364 -> 0.1370
+  rescore hooks: 8 hooked, skipped classes none
+  NormStep - MapWM (registered): +0.0133 (perm p 1.0000)
+  NormStep - MapWM (re-scored): +0.0134 (perm p 1.0000)
+  GainPhase - GainRaw (registered): -0.3679 (perm p 0.3333)
+  GainPhase - GainRaw (re-scored): -0.3675 (perm p 0.3333)
+  GainRaw - MapWM (registered): -0.4424 (perm p 0.3333)
+  GainRaw - MapWM (re-scored): -0.4422 (perm p 0.3333)
+  GainPhase - NormStep (registered): -0.8236 (perm p 0.3333)
+  GainPhase - NormStep (re-scored): -0.8231 (perm p 0.3333)
+  GainPhase - MapWM (registered): -0.8103 (perm p 0.3333)
+  GainPhase - MapWM (re-scored): -0.8097 (perm p 0.3333)
+
+== (f) STEP x SCORE interaction, descriptive ==
+  (GainPhase - GainRaw) - (NormStep - MapWM) = -0.3813 (step effect under the gain score minus under the rotary)
+  Holm over the registered two-sided accuracy p's: D1 0.3333 -> 1.0000; D2 raw 0.3333 -> 1.0000; D2 norm 0.3333 -> 1.0000; D4 vs W 0.3333 -> 1.0000; D1r 1.0000 -> 1.0000

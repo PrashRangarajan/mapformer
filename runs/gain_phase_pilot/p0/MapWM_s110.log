@@ -1,0 +1,9 @@
+MapWM L1 seed=110 params=217,093
+  Epoch   5/30 | Loss: 4.1329 | LR: 9.67e-04 | 14.0s
+  Epoch  10/30 | Loss: 3.9374 | LR: 8.17e-04 | 13.0s
+  Epoch  15/30 | Loss: 2.4550 | LR: 5.87e-04 | 14.5s
+  Epoch  20/30 | Loss: 1.4123 | LR: 3.47e-04 | 14.1s
+  Epoch  25/30 | Loss: 0.8146 | LR: 1.67e-04 | 14.6s
+  Epoch  30/30 | Loss: 0.4621 | LR: 1.00e-04 | 16.7s
+train objects, T=1024: acc 0.9725 nll 0.2595
+test objects, T=1024: acc 0.9663 nll 0.3284

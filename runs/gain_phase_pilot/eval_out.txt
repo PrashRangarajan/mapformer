@@ -1,0 +1,8 @@
+MapWM     s110: acc 0.9595 L_ms +0.0347 L_zero +0.0352 S_id 0.3528 x2 0.8775 x4 0.7675 train 0.9687 (2 s)
+NormStep  s110: acc 0.9211 L_ms +0.0297 L_zero -0.2515 S_id 1.0720 x2 0.9210 x4 0.9210 train 0.9341 (2 s)
+GainRaw   s110: acc 0.7359 L_ms +0.0318 L_zero +0.0338 S_id 0.3285 x2 0.7078 x4 0.6593 train 0.7378 (3 s)
+GainPhase s110: acc 0.1600 L_ms +0.0432 L_zero +0.0451 S_id 1.0940 x2 0.1601 x4 0.1600 train 0.1673 (3 s)
+MapWM     s111: acc 0.9340 L_ms +0.0314 L_zero +0.0371 S_id 0.4668 x2 0.8690 x4 0.7704 train 0.9422 (2 s)
+NormStep  s111: acc 0.9990 L_ms +0.0006 L_zero -0.3338 S_id 0.2490 x2 0.9990 x4 0.9990 train 0.9996 (2 s)
+GainRaw   s111: acc 0.2727 L_ms +0.0194 L_zero +0.0221 S_id 0.7005 x2 0.2342 x4 0.1900 train 0.2801 (3 s)
+GainPhase s111: acc 0.1128 L_ms +0.0108 L_zero +0.0125 S_id 1.5487 x2 0.1128 x4 0.1129 train 0.1210 (3 s)

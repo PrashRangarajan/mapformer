@@ -223,5 +223,51 @@ before analysis); the pilot reproduction check failing.
   budget-scoped, rule 4); test robustness to code norm (by construction for NormStep steps); detect a GP failure rate
   below ~1 in 4 (power above).
 
+## Pilot (`docs/audits/2026-10-06/gain_phase_pilot.sh`, `gain_phase_pilot_long.py`; runs `runs/gain_phase_pilot`; seeds 110-111)
+Launched AFTER this pre-registration, the analysis, every branch, the power table and n were committed (d3b617e); nothing
+in them was changed after it. Part 1 used the batch's flags with a 30-epoch schedule; part 2 (added after part 1 was
+read, because of what it showed) ran the batch's real 900-epoch schedule for the two gain arms, planned to stop at epoch 150, stopped early at ~26 (below).
+(a) **Reproduction** (`gain_phase_repro.py` / `_out.txt`, before the pilot; pass = bitwise-equal per-epoch losses):
+through `train_gain_phase` (which imports `model_gain_phase`), MapWM s0 and NormStep s0 at the LEAK recipe reproduce the
+stored `runs/leak/p0` runs **5/5 epochs bitwise each** (torch 2.10.0+cu128 now installed; the stack reproduces LEAK).
+(b) **Timing** (part 1, 8 of our jobs = 4 per GPU, plus another user's 12 non-mapformer jobs on the same GPUs at ~98%
+utilisation, which lib_driver does not count): MapWM 14.1-14.5 s/epoch, NormStep 12.1-12.2, GainRaw 15.4-16.7, GainPhase
+13.7-14.5 (GPU placement differs by arm); mean 14.1. GPU memory ~21.5 of 24.5 GB per GPU at 4 jobs each. Eval of 8 runs:
+26 s. LEAK's logs: 10.6-11 s/epoch at the same concurrency without the other user's load.
+(c) **Pipeline** end to end on the 8 pilot checkpoints: `eval_gain_phase` (all readouts), `analyse` (every decision prints;
+n = 2 cannot fire), `gain_phase_secondary.py` (all six parts; the re-score hooked all 8 models, skipped none; x2 / x4 of
+the NormStep-step arms within 0.0001 of x1, as constructed).
+(d) **Outcome, READ (disclosed):** part 1 (30-epoch schedule; LR warmup 1.5 epochs, decayed by epoch 30), final training
+loss / unseen-object accuracy: MapWM 0.46, 0.72 / 0.960, 0.934; NormStep 0.80, 0.31 / 0.921, 0.999; **GainRaw 1.50, 3.26 /
+0.736, 0.273; GainPhase 3.56, 3.60 / 0.160, 0.113.** On this short schedule both gain arms trained far slower than the
+rotary arms -- the reverse of GAIN_GRAIN (T = 128, rank 2), where the scalar gain was fastest. Part 2 (the batch's real 900-epoch schedule,
+GainRaw and GainPhase s110 only, planned 150 epochs) was **STOPPED EARLY at epoch ~26 of 150 on the user's instruction
+(no GPU work while another user's jobs share the GPUs)**; its last logged training losses (epoch 25): GainRaw 2.13,
+GainPhase 2.02 (epochs 5 / 10 / 15 / 20: 4.16 / 3.19 / 2.64 / 2.42 and 4.17 / 3.66 / 2.63 / 2.32). LEAK's logs at epoch 25,
+same schedule, seeds 0-7: MapWM 1.98-3.97, NormStep 1.94-3.99. So under the real schedule the gain arms were NOT behind at
+epoch 25; part 1's gap is plausibly the 30-epoch schedule (1.5-epoch warmup, LR decayed by epoch 30), but whether the gain
+arms converge by 900 epochs at T = 1024 is unknown (GAIN_GRAIN's evidence is T = 128, rank 2). Part 2's orphaned data
+workers were terminated by pid after the stop; nothing was saved.
+No branch, threshold, n or readout was changed after reading either part.
+
+## Cost (ESTIMATE from the partial pilot: part 1's 30 epochs at full concurrency; part 2 stopped at epoch ~26)
+32 runs x 900 epochs at ~14 s/epoch (pilot part 1 mean; gain arms ~15-16) = ~3.5 h per run (gain arms ~3.9 h). With all
+8 slots (4 per GPU): 4 waves -> **~15 h** of training, + launch spacing and queue tail ~0.3 h, eval ~2 min, analysis and
+secondaries ~5 min. **The slots are shared** (lib_driver counts every mapformer.train_ job): RANK_NOWRAP (the other
+batch being built now, 48 runs at T = 1024, 900 epochs, same picker) would take half the slots if launched together, giving
+**~28-30 h** for this batch (8 waves on ~4 slots); both batches together occupy the 8 slots for ~35 h. The other user's
+load on the same GPUs is outside lib_driver's count and may change the per-epoch time either way (part 2 ran at ~7.5
+s/epoch with only 2 of our jobs on the GPUs). Per the user's instruction, the batch is not to be launched while another
+user's jobs are on the GPUs; the ETA counts from a launch on otherwise free GPUs, where LEAK's 10.6-11 s/epoch gives
+~2.7 h per run and ~11 h for 4 waves alone.
+
+## Open for the independent audit (raised by the pilot, not acted on: no branch changed)
+- D3 and convergence: if GainRaw does not converge by 900 epochs, a PERSISTS reading (L_ms >= 0.005, S_id high) may reflect
+  an unconverged step map rather than "the leak is in theta" (in pilot part 1 every arm's S_id was 0.25-1.5, i.e.
+  unconverged steps, 50-300x LEAK's converged values). LEAK's MapWM was itself DESCENDING at 900 epochs, so the same
+  caveat already applies to the rotary row. A qualifier (e.g. D3 carries "confounded with convergence" when GainRaw is
+  not SOLVED on a majority of seeds) is a candidate for Amendment 1.
+- Whether the gain score converges at T = 1024 within 900 epochs is unmeasured (pilot part 2 stopped at epoch ~26).
+
 ## Launch (not done; rule 29: independent code audit first, findings as Amendment 1 before launch)
     cd /home/prashr/mapformer && setsid nohup bash run_gain_phase.sh > /dev/null 2>&1 &

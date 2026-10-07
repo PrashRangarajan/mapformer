@@ -1,0 +1,19 @@
+2026-10-06 20:17:39 pilot start; code version d3b617e52d1ffb3e362857cbfc6c6236ec18a4ae clean
+2026-10-06 20:17:39 MapWM s110 -> cuda:0 (mapformer.train_ jobs now: gpu0 0, gpu1 0)
+2026-10-06 20:17:39 launched pid 1888747 -> /home/prashr/mapformer/runs/gain_phase_pilot/p0/MapWM_s110.log
+2026-10-06 20:17:45 NormStep s110 -> cuda:1 (mapformer.train_ jobs now: gpu0 1, gpu1 0)
+2026-10-06 20:17:45 launched pid 1890384 -> /home/prashr/mapformer/runs/gain_phase_pilot/p0/NormStep_s110.log
+2026-10-06 20:17:50 GainRaw s110 -> cuda:0 (mapformer.train_ jobs now: gpu0 1, gpu1 1)
+2026-10-06 20:17:50 launched pid 1891996 -> /home/prashr/mapformer/runs/gain_phase_pilot/p0/GainRaw_s110.log
+2026-10-06 20:17:55 GainPhase s110 -> cuda:1 (mapformer.train_ jobs now: gpu0 2, gpu1 1)
+2026-10-06 20:17:55 launched pid 1893049 -> /home/prashr/mapformer/runs/gain_phase_pilot/p0/GainPhase_s110.log
+2026-10-06 20:18:00 MapWM s111 -> cuda:0 (mapformer.train_ jobs now: gpu0 2, gpu1 2)
+2026-10-06 20:18:00 launched pid 1894085 -> /home/prashr/mapformer/runs/gain_phase_pilot/p0/MapWM_s111.log
+2026-10-06 20:18:06 NormStep s111 -> cuda:1 (mapformer.train_ jobs now: gpu0 3, gpu1 2)
+2026-10-06 20:18:06 launched pid 1895115 -> /home/prashr/mapformer/runs/gain_phase_pilot/p0/NormStep_s111.log
+2026-10-06 20:18:11 GainRaw s111 -> cuda:0 (mapformer.train_ jobs now: gpu0 3, gpu1 3)
+2026-10-06 20:18:11 launched pid 1896172 -> /home/prashr/mapformer/runs/gain_phase_pilot/p0/GainRaw_s111.log
+2026-10-06 20:18:16 GainPhase s111 -> cuda:1 (mapformer.train_ jobs now: gpu0 4, gpu1 3)
+2026-10-06 20:18:16 launched pid 1896855 -> /home/prashr/mapformer/runs/gain_phase_pilot/p0/GainPhase_s111.log
+2026-10-06 20:27:48 pilot eval took 26 s for 8 runs
+2026-10-06 20:27:59 DONE /home/prashr/mapformer/runs/gain_phase_pilot/.pilot_done

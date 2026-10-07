@@ -1,0 +1,9 @@
+NormStep L1 seed=111 params=217,349
+  Epoch   5/30 | Loss: 4.1247 | LR: 9.67e-04 | 12.6s
+  Epoch  10/30 | Loss: 3.2185 | LR: 8.17e-04 | 12.3s
+  Epoch  15/30 | Loss: 1.6136 | LR: 5.87e-04 | 12.6s
+  Epoch  20/30 | Loss: 1.1210 | LR: 3.47e-04 | 12.5s
+  Epoch  25/30 | Loss: 0.5547 | LR: 1.67e-04 | 12.3s
+  Epoch  30/30 | Loss: 0.3098 | LR: 1.00e-04 | 11.0s
+train objects, T=1024: acc 0.9994 nll 0.0462
+test objects, T=1024: acc 0.9987 nll 0.0861

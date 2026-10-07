@@ -1,0 +1,9 @@
+GainPhase L1 seed=110 params=184,905
+  Epoch   5/30 | Loss: 4.1363 | LR: 9.67e-04 | 16.1s
+  Epoch  10/30 | Loss: 4.1170 | LR: 8.17e-04 | 15.3s
+  Epoch  15/30 | Loss: 4.0982 | LR: 5.87e-04 | 16.1s
+  Epoch  20/30 | Loss: 3.8016 | LR: 3.47e-04 | 16.2s
+  Epoch  25/30 | Loss: 3.6183 | LR: 1.67e-04 | 12.0s
+  Epoch  30/30 | Loss: 3.5582 | LR: 1.00e-04 | 11.1s
+train objects, T=1024: acc 0.5013 nll 3.4932
+test objects, T=1024: acc 0.4997 nll 3.5191

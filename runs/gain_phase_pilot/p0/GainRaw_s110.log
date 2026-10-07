@@ -1,0 +1,9 @@
+GainRaw L1 seed=110 params=184,649
+  Epoch   5/30 | Loss: 4.1262 | LR: 9.67e-04 | 17.1s
+  Epoch  10/30 | Loss: 3.9220 | LR: 8.17e-04 | 16.3s
+  Epoch  15/30 | Loss: 3.0049 | LR: 5.87e-04 | 17.5s
+  Epoch  20/30 | Loss: 1.8530 | LR: 3.47e-04 | 17.2s
+  Epoch  25/30 | Loss: 1.6228 | LR: 1.67e-04 | 16.9s
+  Epoch  30/30 | Loss: 1.5036 | LR: 1.00e-04 | 15.0s
+train objects, T=1024: acc 0.8352 nll 1.2586
+test objects, T=1024: acc 0.8354 nll 1.2892

@@ -1,0 +1,8 @@
+GainPhase L1 seed=110 params=184,905
+  Epoch   5/900 | Loss: 4.1652 | LR: 1.11e-04 | 7.6s
+  Epoch  10/900 | Loss: 3.6550 | LR: 2.22e-04 | 7.2s
+  Epoch  15/900 | Loss: 2.6316 | LR: 3.34e-04 | 7.4s
+  Epoch  20/900 | Loss: 2.3207 | LR: 4.45e-04 | 7.6s
+  Epoch  25/900 | Loss: 2.0248 | LR: 5.56e-04 | 7.5s
+/usr/lib/python3.10/multiprocessing/resource_tracker.py:224: UserWarning: resource_tracker: There appear to be 6 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
