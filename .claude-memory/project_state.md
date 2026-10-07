@@ -9,7 +9,15 @@ Updated 2026-10-04 00:45. Goes stale fast: check `git log`, `.done` markers and 
 New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs/SESSION_2026-09-27_to_10-03.md`.
 
 ## Running
-Nothing. GPUs idle (2026-10-05 23:45).
+Nothing. Two batches READY, NOT LAUNCHED (user: no GPU work while another user's jobs occupy the GPUs; launch only on the
+user's go):
+- GAIN_PHASE (`GAIN_PHASE_PREREG.md` + Amendments 1-3, latest 596cfbd): new-object task, 2x2 step {raw, NormStep} x score
+  {MapWM, GainScalar}; seeds 8-15, 32 runs, ~11-15 h. Launch: `setsid nohup bash run_gain_phase.sh > /dev/null 2>&1 &`.
+- RANK_NOWRAP (`RANK_NOWRAP_PREREG.md` + Amendments 1-4, latest f8ecf92/20162f2): rank 2 vs 3 on a 256-torus (no
+  wrap-only revisits) + 32-torus control + redrawn-map M32; registered quantity p = plain-hard accuracy; n switch
+  `N_SEEDS` in analyze_rank_nowrap.py (10 registered; user to choose 10 or 12); ~16-23 h. Launch: `setsid nohup bash
+  run_rank_nowrap.sh > /dev/null 2>&1 &`.
+Each batch had an independent verification per amendment round (rule 29). Recommended order: GAIN_PHASE first.
 
 ## Last results (newest first; one line each, numbers in the file)
 - GAIN_GRAIN (`GAIN_GRAIN_RESULTS.md`, REG): (a) SCALAR GAIN SUFFICES (per-module too) vs MapPoPE-Pair, NO HEADROOM
