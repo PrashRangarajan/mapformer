@@ -2,8 +2,9 @@
 # Is per-head rank 2's failure on the 2D torus about wrap-around (the exactly periodic code)? Pre-registration:
 # RANK_NOWRAP_PREREG.md. Recipe = run_rank_nd.sh's 2D cells exactly (T=1024, 900 epochs x 98 batches, B16, lr 1e-3,
 # cosine, 1 layer, 2 heads, d 128, no landmarks, data-workers 3, explicit attention path, --save-full-state); arms
-# through train_rank_nowrap (omega initialised at grid 32 on every torus). Cells: per-head rank 2 / 3 on the 32-torus
-# and on the 256-torus; seeds 60-71 (n=12); 48 runs; seed outer, cell inner. Launch:
+# through train_rank_nowrap (omega initialised at grid 32 on every torus). Cells (Amendment 1): per-head rank 2 / 3 on
+# the 32-torus and on the 256-torus, plus rank 2 on the 32-torus with the map redrawn every trajectory (memorisation
+# control); seeds 60-69 (n=10); 50 runs; seed outer, cell inner. Launch:
 #   cd /home/prashr/mapformer && setsid nohup bash run_rank_nowrap.sh > /dev/null 2>&1 &
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")" && pwd)"
@@ -14,12 +15,12 @@ drv_lock "$REPO/.run_rank_nowrap.lock" || exit 1
 export PYTHONUNBUFFERED=1
 cd "$REPO/.."
 R="$REPO/runs/rank_nowrap"; mkdir -p "$R"
-SEEDS="$(seq -s ' ' 60 71)"
-CELLS=("32 Vanilla_r2ph_om32" "32 Vanilla_r3ph_om32" "256 Vanilla_r2ph_om32" "256 Vanilla_r3ph_om32")
+SEEDS="$(seq -s ' ' 60 69)"
+CELLS=("32 Vanilla_r2ph_om32" "32 Vanilla_r3ph_om32" "32 Vanilla_r2ph_om32_redraw" "256 Vanilla_r2ph_om32" "256 Vanilla_r3ph_om32")
 # every mapformer module the trainer / evaluators / analysis import (sys.modules after importing train_rank_nowrap,
 # analyze_rank_nowrap, eval_nd, rescore_hook), plus the runpy'd eval wrapper
 GUARD=(__init__.py analyze_rank_nowrap.py data_parallel.py environment.py environment_addition.py environment_nd.py
-       eval_nd.py eval_rank_nowrap.py evaluate.py hourglass_plain.py lie_groups.py model.py model_ablations.py
+       environment_nd_redraw.py eval_nd.py eval_rank_nowrap.py evaluate.py hourglass_plain.py lie_groups.py model.py model_ablations.py
        model_baseline_nope.py model_baseline_rope.py model_baselines_extra.py model_bounded_mem.py model_cho_coupled.py
        model_cho_positions.py model_code_decay.py model_counter_installed.py model_coupled_ape.py model_coupled_rope.py
        model_em_dof.py model_em_fixed.py model_em_magonly.py model_em_noleak.py model_em_pairconst.py
@@ -37,13 +38,17 @@ GUARD=(__init__.py analyze_rank_nowrap.py data_parallel.py environment.py enviro
        model_tem_faithful.py model_tem_ffn.py model_tem_recency.py model_tem_scaling.py model_tem_t.py
        model_vanilla_extrahead.py model_vanilla_nodrop.py prefix_scan.py rescore_hook.py stats_core.py train.py
        train_rank_nowrap.py train_variant.py)
+running() { ps -u "$USER" -o comm=,args= | awk -v d="--output-dir $1 " '$1=="python3" && index($0, d)' | wc -l; }
 echo "start $(date)" >> "$LOG"
 drv_md5_guard "$R" "${GUARD[@]}" || exit 1
 _drv_log "code version at launch: $(cd "$REPO" && git rev-parse HEAD) $(cd "$REPO" && git diff --quiet HEAD -- && echo clean || echo DIRTY)"
 for S in $SEEDS; do for c in "${CELLS[@]}"; do set -- $c
   OUT="$R/N$1/D2/${2}_s${S}"
   [ -f "$OUT/$2.pt" ] && { echo "skip $OUT" >> "$LOG"; continue; }
+  # duplicate-launch guard (Amendment 1, N8; rule 23: python3 by comm, never pgrep -f)
+  if [ "$(running "$OUT")" -gt 0 ]; then echo "$(date +%H:%M:%S) skip $OUT: a trainer for it is already running" >> "$LOG"; continue; fi
   G=$(drv_wait_slot); mkdir -p "$OUT"
+  [ "$(running "$OUT")" -gt 0 ] && { echo "$(date +%H:%M:%S) skip $OUT: started while waiting for a slot" >> "$LOG"; continue; }
   echo "$(date +%H:%M:%S) N$1 $2 s$S -> cuda:$G" >> "$LOG"
   OMP_NUM_THREADS=2 drv_launch "$R/N$1_${2}_s${S}.log" python3 -u -m mapformer.train_rank_nowrap --variant "$2" \
     --env nd --n-dims 2 --grid-size "$1" --seed "$S" --epochs 900 --lr 1e-3 --n-batches 98 --batch-size 16 \
@@ -52,15 +57,16 @@ for S in $SEEDS; do for c in "${CELLS[@]}"; do set -- $c
 done; done
 drv_wait_dir "$R/"
 REQ=(); for S in $SEEDS; do for c in "${CELLS[@]}"; do set -- $c; REQ+=("$R/N$1/D2/${2}_s${S}/$2.pt"); done; done
-[ "${#REQ[@]}" -eq 48 ] || drv_fail "expected 48 checkpoints, listed ${#REQ[@]}"
+[ "${#REQ[@]}" -eq 50 ] || drv_fail "expected 50 checkpoints, listed ${#REQ[@]}"
 drv_require "${REQ[@]}" || drv_fail "missing checkpoints"
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before eval"
 for N in 32 256; do
-  python3 -u -m mapformer.eval_rank_nowrap --runs-dir "$R/N$N" --configs "2:$N:Vanilla_r2ph_om32,Vanilla_r3ph_om32" \
+  ARMS="Vanilla_r2ph_om32,Vanilla_r3ph_om32"; [ "$N" = 32 ] && ARMS="$ARMS,Vanilla_r2ph_om32_redraw"
+  python3 -u -m mapformer.eval_rank_nowrap --runs-dir "$R/N$N" --configs "2:$N:$ARMS" \
     --seeds $SEEDS --lengths 1024 2048 --n-trials 100 --device cuda:0 --out "$R/N$N/EVAL_D2.md" >> "$LOG" 2>&1 \
     || drv_fail "eval N$N"
   python3 -u -m mapformer.rescore_hook --scale auto -- mapformer.eval_rank_nowrap --runs-dir "$R/N$N" \
-    --configs "2:$N:Vanilla_r2ph_om32,Vanilla_r3ph_om32" --seeds $SEEDS --lengths 1024 --n-trials 100 --device cuda:0 \
+    --configs "2:$N:$ARMS" --seeds $SEEDS --lengths 1024 --n-trials 100 --device cuda:0 \
     --out "$REPO/RANK_NOWRAP_RESCORE_N$N.md" >> "$LOG" 2>&1 || drv_fail "rescore N$N"
 done
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before analysis"

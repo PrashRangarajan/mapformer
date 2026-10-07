@@ -1,18 +1,18 @@
-"""Power for RANK_NOWRAP_PREREG.md: probability of each registered branch (analyze_rank_nowrap.decide, imported, so the
-simulation runs the registered logic) under three scenarios, by seeds per cell.
+"""Power for RANK_NOWRAP_PREREG.md + Amendment 1: probability of each registered branch (analyze_rank_nowrap.decide,
+imported, so the simulation runs the registered logic) under five scenarios, by seeds per cell.
 
-Per-seed pools (stored batches, T=1024, 900 epochs, per-head rank, one layer, 2 heads):
-  rank 2: RANK_ND D2 Vanilla_r2ph (32-torus, seeds 0-7, 1/8 SOLVED) + RANK_MI Vanilla_r2ph (64-torus paper env, 2/8)
-  rank 3: RANK_ND D2 Vanilla_r3ph (8/8) + RANK3 Vanilla_r3ph (64-torus, 6/8)
-A simulated run draws SOLVED ~ Bernoulli(p) and an accuracy from the pool's runs of the same status, converted to
-floor-relative units with its source floor (retrace 0.750 on the 32-torus ND stream, 0.844 on the 64-torus) and back
-with the target cell's floor (0.750 at 32, 0.872 at 256: rank_nowrap_gate_out.txt). Scenarios for AL (rank 2 at 256):
-  PERIODIC  AL behaves like rank 3     (p = p_r3)
-  GENERAL   AL behaves like rank 2     (p = p_r2)
-  HALF      AL solves half the time    (p = 0.5, accuracies mixed accordingly)
-A32 ~ rank 2, B32 ~ rank 3, BL ~ rank 3 throughout. The permutation test uses 2000 Monte-Carlo relabellings here (the
-registered analysis uses stats_core's exact / 200k MC); Fisher is exact.
-Run from /home/prashr: python3 mapformer/docs/audits/2026-10-06/rank_nowrap_power.py
+Per-seed pools of stored runs (T=1024, 900 epochs, per-head rank, one layer, 2 heads), as floor-relative held-out
+accuracy rel = (acc - f) / (1 - f) with the source stream's retrace-or-blank floor (0.750 on the 32-torus ND stream,
+0.844 on the 64-torus):
+  rank 2: RANK_ND D2 Vanilla_r2ph (seeds 0-7) + RANK_MI Vanilla_r2ph
+  rank 3: RANK_ND D2 Vanilla_r3ph + RANK3 Vanilla_r3ph
+A simulated run of a "rank-2-like" cell draws a stored rank-2 run's rel at random (with replacement); "rank-3-like"
+likewise; HALF draws a HIT rank-3 run or a non-HIT rank-2 run with probability 1/2 each. raw = f + rel (1 - f) with the
+target cell's floor (0.750 at 32, 0.872 at 256), HIT = rel >= 0.90. A32 ~ rank 2, B32 ~ rank 3, BL ~ rank 3 always.
+Scenarios (AL, M32): PERIODIC (rank 3, rank 2); MEMORISATION (rank 3, rank 3); GENERAL (rank 2, rank 2);
+MEMO-AT-32 (rank 2, rank 3); HALF (half, rank 2). The hard-target qualifier is not simulated (hm=None). Permutation tests
+use 2000 Monte-Carlo relabellings here (the registered analysis: exact at n=10). Fisher is exact.
+Run from /home/prashr: python3 mapformer/docs/audits/2026-10-06/rank_nowrap_power.py [n_sim]
 """
 import json
 import sys
@@ -44,32 +44,39 @@ def main():
           + pool(f"{RP}/runs/rank_mi/p0/Vanilla_r2ph_s{{s}}/Vanilla_r2ph.pt", [mi[s] for s in range(8)], 0.844))
     P3 = (pool(f"{RP}/runs/rank_nd/D2/Vanilla_r3ph_s{{s}}/Vanilla_r3ph.pt", [nd["Vanilla_r3ph"]["1024"][str(s)] for s in range(8)], 0.750)
           + pool(f"{RP}/runs/rank3/p0/Vanilla_r3ph_s{{s}}/Vanilla_r3ph.pt", [r3[s] for s in range(8)], 0.844))
-    p2 = np.mean([x[0] for x in P2]); p3 = np.mean([x[0] for x in P3])
-    print(f"pools: rank 2 SOLVED {sum(x[0] for x in P2)}/{len(P2)} (p {p2:.3f}); rank 3 {sum(x[0] for x in P3)}/{len(P3)} (p {p3:.3f})")
-    solved_pool = [r for sv, r in P2 + P3 if sv]
-    fail2 = [r for sv, r in P2 if not sv]; fail3 = [r for sv, r in P3 if not sv]
+    H = A.HIT_REL
+    for nm, P in (("rank 2", P2), ("rank 3", P3)):
+        print(f"pool {nm}: loss-SOLVED {sum(x[0] for x in P)}/{len(P)}, HIT (rel >= {H}) {sum(x[1] >= H for x in P)}/{len(P)}, "
+              f"agreement {sum((x[1] >= H) == x[0] for x in P)}/{len(P)}; rel " + " ".join(f"{x[1]:+.2f}{'S' if x[0] else ''}" for x in P))
+    r2 = np.array([x[1] for x in P2]); r3v = np.array([x[1] for x in P3])
+    half_pool = (r3v[r3v >= H], r2[r2 < H])
     rng = np.random.default_rng(0)
     pf = lambda a, b: perm2_p(a, b, n_mc=2000, max_exact=0)
 
-    def draw(p, n, floor, fail_pool):
-        """SOLVED ~ Bernoulli(p); a solved run's accuracy from every stored solved run, a failed run's from the pool of
-        its type (rank-2 failures for rank-2-like cells, rank-3 failures for rank-3-like cells), floor-relative."""
-        sv = rng.random(n) < p
-        rel = np.array([rng.choice(solved_pool) if s else rng.choice(fail_pool) for s in sv])
-        raw = np.minimum(floor + rel * (1 - floor), 1.0)
-        return int(sv.sum()), raw, (raw - floor) / (1 - floor)
+    def draw(kind, n, floor):
+        if kind == "r2":
+            rel = rng.choice(r2, n)
+        elif kind == "r3":
+            rel = rng.choice(r3v, n)
+        else:
+            rel = np.where(rng.random(n) < 0.5, rng.choice(half_pool[0], n), rng.choice(half_pool[1], n))
+        raw = np.minimum(floor + rel * (1 - floor), 1.0); rel = (raw - floor) / (1 - floor)
+        return int((rel >= H).sum()), raw, rel
 
     n_sim = int(sys.argv[1]) if len(sys.argv) > 1 else 400
+    scen = (("PERIODIC", "r3", "r2", "PERIODIC CODE IS THE LIMIT"), ("MEMORISATION", "r3", "r3", "MAP MEMORISATION WAS THE LIMIT"),
+            ("GENERAL", "r2", "r2", "RANK LIMIT IS GENERAL"), ("MEMO-AT-32", "r2", "r3", "MEMORISATION AT 32, LARGE TORUS FAILS"),
+            ("HALF", "half", "r2", None))
     for n in (8, 10, 12):
-        for name, pAL in (("PERIODIC", p3), ("GENERAL", p2), ("HALF", 0.5)):
+        for name, kal, km, want in scen:
             cnt = Counter()
             for _ in range(n_sim):
-                sol, raw, rel = {}, {}, {}
-                for k, p, fl, fp in (("A32", p2, 0.750, fail2), ("B32", p3, 0.750, fail3),
-                                     ("AL", pAL, 0.872, fail3 if name == "PERIODIC" else fail2), ("BL", p3, 0.872, fail3)):
-                    sol[k], raw[k], rel[k] = draw(p, n, fl, fp)
-                cnt[A.decide(sol, n, raw, rel, pfun=pf)[0]] += 1
-            print(f"n={n:2d} {name:9s} " + "  ".join(f"{b}: {v / n_sim:.2f}" for b, v in cnt.most_common()), flush=True)
+                hit, raw, rel = {}, {}, {}
+                for k, kind, fl in (("A32", "r2", 0.750), ("B32", "r3", 0.750), ("M32", km, 0.750), ("AL", kal, 0.872), ("BL", "r3", 0.872)):
+                    hit[k], raw[k], rel[k] = draw(kind, n, fl)
+                cnt[A.decide(hit, n, raw, rel, None, pfun=pf)[0]] += 1
+            tgt = f"P(target) {cnt[want] / n_sim:.2f} | " if want else ""
+            print(f"n={n:2d} {name:12s} {tgt}" + "  ".join(f"{b}: {v / n_sim:.2f}" for b, v in cnt.most_common()), flush=True)
 
 
 if __name__ == "__main__":

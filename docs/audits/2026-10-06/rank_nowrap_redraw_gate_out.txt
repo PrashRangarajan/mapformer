@@ -1,0 +1,15 @@
+PASS  C1 draw_map == GridWorldND map for seeds 0..9 (2D, 32) and 3 (3D, 10)
+PASS  C2 identical actions over 20 walks
+PASS  C2 identical visited cells
+PASS  C2 identical revisit masks
+PASS  C2 global RNG state identical after the walk (map draw consumes nothing)
+PASS  C2 observations differ (mean fraction of differing obs tokens 0.734; 0.734 = 1 - (0.25 + 0.25/16) expected for independent maps)
+PASS  C3 30 trajectories -> 30 distinct maps
+PASS  C3 generate_batch uses the redraw (8 sequences, distinct last maps differ from before)
+PASS  C3 pickled env redraws and is deterministic given the global RNG state (as in a data worker)
+
+Gate, 32-torus, T=1024, map redrawn per trajectory, 100 walks (seed 10000); n-grams fit on 100 redrawn walks (seed 200)
+revisit frac 0.457 | targets/seq 468 (min 401) | wrap share 0.3613 | blank 0.499 | majority 0.499 | rev-copy 0.549 | retrace-or-blank 0.737 | act n-gram 0.496 (order 1) | obs n-gram 1/2/3 0.499/0.486/0.406
+hard targets (missed by retrace-or-blank) per sequence: 123
+
+ALL CHECKS PASS

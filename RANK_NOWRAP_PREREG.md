@@ -1,5 +1,9 @@
 # Is per-head rank 2's torus failure about wrap-around? -- pre-registration (2026-10-06, before any batch run)
 
+> **Amendment 1 (end of file) supersedes this body where they differ**: 5 cells (adds a redrawn-map rank-2 control on the
+> 32-torus), n = 10 (seeds 60-69, 50 runs), registered counts are HIT (floor-relative held-out accuracy >= 0.90) not
+> training-loss SOLVED, the cross-grid contrast fires on floor-relative accuracy only, new branch set.
+
 ## Question
 Per-head rank 2 (= D) fails on the 2D torus at T=1024 and rank 3 solves (`RANK_ND_RESULTS.md`, 32-torus: 1/8 vs
 8/8; paper torus, grid 64: 0-2/8 vs 6/8). The failures concentrate on WRAP-ONLY revisits -- the cell was seen before
@@ -69,8 +73,9 @@ Branches, evaluated in order (n = 12; "near" = SOLVED >= 9, "low" = SOLVED <= 3)
 7. **RANK LIMIT IS GENERAL** -- G does not fire, R fires, AL SOLVED <= 3/12 (the 32-torus failure rate).
 8. **INTERMEDIATE** -- G does not fire, R fires, AL SOLVED > 3/12.
 9. **UNMEASURED** -- neither G nor R fires.
-Qualifiers: REVERSAL if R' fires. **Hard-target qualifier (registered):** SOLVED is more lenient at 256 (87% of targets
-are retrace-predictable vs 75% at 32), so a PERIODIC verdict carries "on the hard targets rank 2 still trails rank 3"
+Qualifiers: REVERSAL if R' fires. **Hard-target qualifier (registered):** SOLVED is more lenient at 256 (the retrace-or-blank
+floor -- the retraced observation inside a run reversing the previous one, blank otherwise -- predicts 87% of targets
+vs 75% at 32; wording corrected in Amendment 1), so a PERIODIC verdict carries "on the hard targets rank 2 still trails rank 3"
 if, on non-retrace targets of the 256-torus (stratum `retrace_miss`), AL - BL <= -0.02 with permutation p < .05.
 Void also: any run missing; md5 guard trips (checked at launch, before eval and before analysis).
 
@@ -90,7 +95,8 @@ reached without widening "low", which would mislabel a half-solving AL.
 
 ## Secondaries (no verdict)
 Interaction (BL - AL) - (B32 - A32) on SOLVED fraction, floor-relative and raw accuracy, bootstrap 95% CI; accuracy by
-stratum on the eval stream (wrap-only / plain gap < 128 / plain gap >= 128 / retrace-predictable / not), asserted to
+stratum on the eval stream (wrap-only / plain gap < 128 / plain gap >= 128 / retrace_ok = predicted by the
+retrace-or-blank floor / retrace_miss = non-blank targets outside a retrace run), asserted to
 reproduce eval_nd's total; own training map vs held-out (40 walks) and SOLVED-but-held-out < 0.95 flags; r(final loss,
 acc) overall and per grid; T=2048 (rule 10); run classes; clock / collapse / clean head classification
 (`docs/theory/2026-10-04/scripts/basins.py` logic, per-head models, D from the config; declared descriptive) and
@@ -117,10 +123,111 @@ another batch holding half the slots, ~30-35 h. Eval + re-score + analysis ~1 h.
 
 ## Scope and caveats (fixed now)
 Grid size changes, besides the wrap share: the map (1024 vs 65536 cells; memorisation possible only at 32), the
-revisit rate and targets per sequence (468 vs 296: less supervision per batch at 256, which works AGAINST rank 2 there),
+revisit rate and targets per sequence (468 vs 296; HARD targets ~117 vs ~38 per sequence, one third -- Amendment 1,
+D3: less supervision at 256, which works AGAINST rank 2 there),
 and the target mix (retrace floor 0.750 vs 0.872, hence floor-relative accuracy and the hard-target qualifier). The
 design separates wrap-around from initialisation, not from these. One length, one recipe, 2 heads, 1 layer, 900
 epochs, omega initialised at grid 32; per-head rank only. PERIODIC would say rank D is hard on THIS torus because of
 closure; it would not say rank 2 is sufficient in general (one plane walk, one budget).
 
 Launch: `cd /home/prashr/mapformer && setsid nohup bash run_rank_nowrap.sh > /dev/null 2>&1 &`
+
+---
+
+## Amendment 1 (2026-10-06, after an independent code/design audit, BEFORE launch; no batch result exists)
+All changes are CPU-side; no GPU job was run for this amendment (the user's instruction while another user's jobs hold
+the GPUs). Every item below is in the md5-guarded code as launched.
+
+**D1 -- SOLVED is not comparable across grids.** The hard targets (missed by the retrace-or-blank floor) are 0.25 of
+revisit targets at 32 but 0.128 at 256, so the 0.05 training-loss cut is ~2x more lenient at 256. Chosen fix: base
+every registered count on floor-relative held-out accuracy, not on loss. Per run rel = (acc - f) / (1 - f), f the
+retrace-or-blank floor of that seed's own eval stream, i.e. the share of the hard targets recovered; a run **HITS** if
+rel >= 0.90. Justification: rel is the same quantity on both grids by construction (scaling the loss cut by the hard
+share would still mix in the loss on easy targets and on the training map), it is held-out (immune to memorising the
+training map), and on all 32 stored per-head runs it agrees with loss-SOLVED 32/32 (rank 2 3/16, rank 3 14/16; values in
+`rank_nowrap_power_out.txt`). HIT replaces SOLVED in: the within-grid Fisher arms, the PERIODIC threshold (AL HIT >= 8/10),
+the GENERAL threshold (AL HIT <= 2/10) and the large-grid control (BL HIT >= 5/10). **The cross-grid contrasts (G, G',
+G3') fire only through the permutation test on rel** (d >= 0.10), never through a count. Loss-SOLVED and the
+pre-amendment readout are printed as secondaries.
+
+**D2 -- memorisation is a second explanation.** A32 can memorise its 1024-cell training map, AL cannot (65536 cells).
+New cell **M32**: per-head rank 2 on the 32-torus with the observation map REDRAWN every trajectory
+(`environment_nd_redraw.GridWorldNDRedraw`, variant `Vanilla_r2ph_om32_redraw`, same om32 init). It overrides only
+`generate_trajectory` (redraw, then the parent's walk); the map is drawn by GridWorldND's own three lines from a
+RandomState seeded by a CRC32 of the global RNG state, so it consumes nothing from the walk's RNG: at a seed M32's action
+stream is identical to A32's. Checks and CPU gate (`rank_nowrap_redraw_gate.py`, `_out.txt`, all PASS): map code equals
+GridWorldND's for fixed seeds; identical actions, cells, revisit masks and final RNG state vs the parent over 20 walks;
+observations differ at 0.734 of steps (= 1 - (0.25 + 0.25/16), independent maps); 30/30 distinct maps; pickles and
+redraws deterministically in a data worker. Gate T=1024: revisit 0.457, wrap-only 0.361 (as A32), blank 0.499, retrace-or-
+blank 0.737, best action n-gram 0.496, observation n-gram 0.499 / 0.486 / 0.406 -- PASS (chance-level; nothing to
+memorise). Data cost equal (0.096 vs 0.100 s per batch, `rank_nowrap_redraw_datatime.txt`). Trainer path smoke-tested on
+CPU (the wrapper selects the redraw class by variant name). M32 is evaluated on the same fixed held-out map as A32.
+New within-grid contrasts: **Mem** = M32 over A32; **Km** = B32 over M32.
+
+**Branches (replace the body's list; evaluated in order; n = 10; near = HIT >= 8, low = HIT <= 2, half = 5):**
+1. CEILING -- every run of every cell >= 0.999.
+2. CONTROL FAILED (VOID) -- K (B32 over A32) does not fire.
+3. LARGE-GRID CONTROL FAILED -- BL HIT < 5, or G3' fires.
+4. LARGE GRID HURTS RANK 2 -- G' fires.
+5. Rescue = G fires, R does not, AL HIT >= 8. Then:
+   - **PERIODIC CODE IS THE LIMIT** -- Km fires and Mem does not (rank 2 still fails the 32-torus with nothing to
+     memorise, and solves the torus without wrap-around);
+   - **MAP MEMORISATION WAS THE LIMIT** -- Mem fires and Km does not (with a redrawn map rank 2 solves the 32-torus,
+     wrap-around included: the 32-torus failure was the fixed map);
+   - **LARGE TORUS RESCUES RANK 2, CAUSE UNRESOLVED** -- otherwise.
+6. PARTIAL -- G fires, not a rescue.
+7. If R fires (G does not): **MEMORISATION AT 32, LARGE TORUS FAILS** if Mem fires and Km does not; else **RANK LIMIT
+   IS GENERAL** if AL HIT <= 2 and Km fires; else INTERMEDIATE.
+8. UNMEASURED -- neither G nor R fires.
+Qualifiers: REVERSAL (R' fires); the M32 status line on every branch.
+
+**D3 -- supervision.** Hard-target supervision at 256 is about ONE THIRD of that at 32 (~38 vs ~117 hard targets per
+sequence; 0.128 x 296 vs 0.25 x 468), not the 63% the body's targets-per-sequence ratio suggests. This biases against
+rank 2 at 256 (toward GENERAL / MEMORISATION AT 32), not toward PERIODIC. Added to the caveats.
+
+**D4 -- the hard-target qualifier is in the registered path.** The strata are computed before the verdict, the
+qualifier is evaluated inside `decide()` (AL - BL on retrace_miss <= -0.02 with permutation p < .05) and printed on the
+REGISTERED line as `[ON THE HARD TARGETS RANK 2 STILL TRAILS RANK 3]` when the branch is one of the three rescue
+branches; on other branches it is printed as "(record)".
+
+**N5 -- wording.** "retrace" everywhere means the retrace-or-blank predictor; retrace_ok = targets it predicts (inside
+a retrace run, or blank); retrace_miss = non-blank targets outside a retrace run. Fixed in the body (two places).
+
+**N6 -- paired G (declared secondary).** Per seed rel(AL_s) - rel(A32_s) (identical init and action streams per
+seed), mean, sign count and exact sign-flip p.
+
+**N8 -- duplicate-launch guard.** Before launching (and again after waiting for a slot) the driver skips a run whose
+output dir already appears as `--output-dir <dir> ` in a running python3's argv (`ps -u $USER -o comm=,args=` + awk,
+rule 23). Dry run with a fake trainer holding one run dir: 49 launches, that one skipped.
+
+**N9 -- CPU fallback.** The strata-vs-eval_nd equality is asserted only on the GPU; on a CPU fallback a difference is
+printed as a WARN (argmax ties), and the verdict is still produced. The registered accuracy always comes from eval_nd.
+
+**n and power.** n = 10 per cell (seeds 60-69), 5 cells, 50 runs. Power (`rank_nowrap_power.py`, runs the amended
+`decide()`, 400 simulations; stored-run pools as above), P(target branch):
+
+| truth (AL, M32) | target | n = 8 | **n = 10** | n = 12 |
+|---|---|---|---|---|
+| rank-3-like, rank-2-like | PERIODIC CODE IS THE LIMIT | 0.76 | **0.84** | 0.93 |
+| rank-3-like, rank-3-like | MAP MEMORISATION WAS THE LIMIT | 0.82 | **0.83** | 0.92 |
+| rank-2-like, rank-2-like | RANK LIMIT IS GENERAL (+ INTERMEDIATE) | 0.71 (0.84) | **0.66 (0.91)** | 0.80 (0.95) |
+| rank-2-like, rank-3-like | MEMORISATION AT 32, LARGE TORUS FAILS | 0.80 | **0.87** | 0.93 |
+| AL solves half the time | INTERMEDIATE / PARTIAL / UNMEASURED | 0.74 | **0.87** | 0.89 |
+
+PERIODIC and MAP MEMORISATION are never confused with each other (<= 0.01) and GENERAL never yields a rescue branch
+(0.00) at n = 10. GENERAL alone is below 0.8 at n = 10; its shortfall goes to INTERMEDIATE (AL drawing 3+/10 hits).
+
+**Branch smoke test** (`rank_nowrap_branch_smoke.py`, `_out.txt`): 16/16 synthetic cases reach their branch or
+qualifier, every branch above included.
+
+**Cost.** 50 runs x 900 epochs x 10-12 s/epoch (the earlier pilot, 4 jobs per GPU under the external load; the redraw
+arm's data cost is equal) = 125-150 slot-hours: ~16-19 h with all 8 slots; ~30-38 h if another batch holds half.
+Not re-measured on GPU for this amendment (no GPU use allowed now).
+
+**Pilot disclosure.** No new outcome was read: the M32 pilot checkpoints (seeds 100-101) were trained on the CPU for
+3 x 10 batches only, to run eval, re-score and analysis end to end on the CPU path; their accuracies are meaningless.
+Earlier 40-epoch pilot outcomes are as disclosed above. The CPU smoke (`runs/rank_nowrap_pilot/amend1/`, `cpu_smoke.sh`, `SMOKE_ANALYSIS.txt`) ran train (M32) -> eval -> re-score -> analysis on the CPU with all five cells.
+`train_rank_nowrap.py` gained a `main()` that swaps the environment for `*_redraw` variants only; the om32 path is the
+same call (`train_variant.main()`), so the 15-epoch bitwise reproduction stands (not re-run: no GPU).
+
+Launch (unchanged): `cd /home/prashr/mapformer && setsid nohup bash run_rank_nowrap.sh > /dev/null 2>&1 &`

@@ -1,14 +1,18 @@
-PASS  expected CEILING                      got CEILING                      | every run of every cell >= 0.999: nothing can be read
-PASS  expected CONTROL FAILED (VOID)        got CONTROL FAILED (VOID)        | rank 3 not detectably above rank 2 on the 32-torus (B32 12/12 vs A32 11/12): no deficit to explain in this batch
-PASS  expected LARGE-GRID CONTROL FAILED    got LARGE-GRID CONTROL FAILED    | rank 3 solves on 5/12 < 6: the large torus is not a working reference; reported as it falls
-PASS  expected LARGE-GRID CONTROL FAILED    got LARGE-GRID CONTROL FAILED    | rank 3 is detectably worse there than on the 32-torus: the large torus is not a working reference; reported as it falls
-PASS  expected LARGE GRID HURTS RANK 2      got LARGE GRID HURTS RANK 2      | rank 2 detectably worse on the 256-torus than on the 32-torus; R fires
-PASS  expected PERIODIC CODE IS THE LIMIT   got PERIODIC CODE IS THE LIMIT   | AL 11/12 >= 9; the rank-3 - rank-2 gap at 256 is unmeasured (does not fire), not shown to be zero
-PASS  expected PERIODIC CODE IS THE LIMIT   got PERIODIC CODE IS THE LIMIT   | REVERSAL: rank 2 detectably ABOVE rank 3 on the 256-torus; AL 12/12 >= 9; the rank-3 - rank-2 gap at 256 is unmeasured (does not fire), not shown to b
-PASS  expected PARTIAL                      got PARTIAL                      | rank 2 improves when wrap-around revisits vanish, but rank 3 still detectably above rank 2 at 256
-PASS  expected PARTIAL                      got PARTIAL                      | rank 2 improves when wrap-around revisits vanish, but AL 8/12 < 9
-PASS  expected RANK LIMIT IS GENERAL        got RANK LIMIT IS GENERAL        | rank 2 does not detectably improve on the 256-torus (AL 1/12 <= 3) and stays detectably below rank 3 there
-PASS  expected INTERMEDIATE                 got INTERMEDIATE                 | rank 2 below rank 3 at 256 but AL 5/12 > 3 and not detectably above its 32-torus self: neither the 32-torus failure rate nor rank 3's
-PASS  expected UNMEASURED                   got UNMEASURED                   | neither G nor R fires: rank 2 on the 256-torus is distinguishable from neither its 32-torus self nor rank 3
+PASS  expected CEILING                                      got CEILING                                      | every run of every cell >= 0.999: nothing can be read; (record) hard-target qualifier: not computed
+PASS  expected CONTROL FAILED (VOID)                        got CONTROL FAILED (VOID)                        | rank 3 not detectably above rank 2 on the 32-torus (B32 HIT 10/10 vs A32 9/10): no deficit to explain in this batch; memorisation control M3
+PASS  expected LARGE-GRID CONTROL FAILED                    got LARGE-GRID CONTROL FAILED                    | rank 3 hits on 4/10 < 5: the 256-torus is not a working reference; reported as it falls; memorisation control M32 (rank 2, 32-torus, map red
+PASS  expected LARGE-GRID CONTROL FAILED                    got LARGE-GRID CONTROL FAILED                    | rank 3 is detectably worse there than on the 32-torus: the 256-torus is not a working reference; reported as it falls; memorisation control 
+PASS  expected LARGE GRID HURTS RANK 2                      got LARGE GRID HURTS RANK 2                      | R fires; memorisation control M32 (rank 2, 32-torus, map redrawn): HIT 1/10; over A32 does not fire; B32 over M32 FIRES; (record) hard-targe
+PASS  expected PERIODIC CODE IS THE LIMIT                   got PERIODIC CODE IS THE LIMIT                   | AL HIT 9/10 >= 8; the rank-3 - rank-2 gap at 256 is unmeasured (R does not fire), not shown to be zero; memorisation control M32 (rank 2, 32
+PASS  expected PERIODIC CODE IS THE LIMIT                   got PERIODIC CODE IS THE LIMIT                   | REVERSAL: rank 2 detectably ABOVE rank 3 on the 256-torus; AL HIT 10/10 >= 8; the rank-3 - rank-2 gap at 256 is unmeasured (R does not fire)
+PASS  expected PERIODIC CODE IS THE LIMIT                   got PERIODIC CODE IS THE LIMIT                   | AL HIT 9/10 >= 8; the rank-3 - rank-2 gap at 256 is unmeasured (R does not fire), not shown to be zero; memorisation control M32 (rank 2, 32
+PASS  expected MAP MEMORISATION WAS THE LIMIT               got MAP MEMORISATION WAS THE LIMIT               | AL HIT 9/10 >= 8; the rank-3 - rank-2 gap at 256 is unmeasured (R does not fire), not shown to be zero; memorisation control M32 (rank 2, 32
+PASS  expected LARGE TORUS RESCUES RANK 2, CAUSE UNRESOLVED got LARGE TORUS RESCUES RANK 2, CAUSE UNRESOLVED | AL HIT 9/10 >= 8; the rank-3 - rank-2 gap at 256 is unmeasured (R does not fire), not shown to be zero; memorisation control M32 (rank 2, 32
+PASS  expected PARTIAL                                      got PARTIAL                                      | rank 2 improves when wrap-around revisits vanish, but rank 3 still detectably above rank 2 at 256; memorisation control M32 (rank 2, 32-toru
+PASS  expected PARTIAL                                      got PARTIAL                                      | rank 2 improves when wrap-around revisits vanish, but AL HIT 7/10 < 8; memorisation control M32 (rank 2, 32-torus, map redrawn): HIT 1/10; o
+PASS  expected RANK LIMIT IS GENERAL                        got RANK LIMIT IS GENERAL                        | rank 2 fails the 256-torus (AL HIT 1/10 <= 2), stays below rank 3 there, and fails the 32-torus even with a redrawn map; memorisation contro
+PASS  expected MEMORISATION AT 32, LARGE TORUS FAILS        got MEMORISATION AT 32, LARGE TORUS FAILS        | rank 2 solves the 32-torus (wraps included) with a redrawn map, yet fails the 256-torus: neither the periodic code nor a general rank limit;
+PASS  expected INTERMEDIATE                                 got INTERMEDIATE                                 | rank 2 below rank 3 at 256 (AL HIT 4/10) but neither at the 32-torus failure rate with a failing redrawn-map control, nor rescued; memorisat
+PASS  expected UNMEASURED                                   got UNMEASURED                                   | neither G nor R fires: rank 2 on the 256-torus is distinguishable from neither its 32-torus self nor rank 3; memorisation control M32 (rank 
 
-12/12 branch cases pass (n = 12)
+16/16 branch cases pass (n = 10)

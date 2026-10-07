@@ -12,7 +12,13 @@ trained omega regardless.
 
   Vanilla_r2ph_om32 : per-head rank 2 (model_rank_perhead.MapFormerWM_PerHead), omega init of grid 32
   Vanilla_r3ph_om32 : per-head rank 3 (PER_HEAD_R = 3, as MapFormerWM_PerHead3), omega init of grid 32
+  Vanilla_r2ph_om32_redraw : the rank-2 model, trained on environment_nd_redraw.GridWorldNDRedraw (observation map
+      redrawn every trajectory; Amendment 1 memorisation control). The variant name selects the environment: main()
+      replaces environment_nd.GridWorldND, which train_variant imports inside main() at call time, by the redraw class
+      for this variant only. Evaluation uses the stock GridWorldND (fixed held-out map, env seed 10000) for every arm.
 """
+import sys
+
 from mapformer import train_variant
 from mapformer.model_rank_perhead import MapFormerWM_PerHead
 
@@ -33,6 +39,20 @@ class MapFormerWM_PerHead3_Om32(MapFormerWM_PerHead_Om32):
 
 train_variant.VARIANT_MAP["Vanilla_r2ph_om32"] = MapFormerWM_PerHead_Om32
 train_variant.VARIANT_MAP["Vanilla_r3ph_om32"] = MapFormerWM_PerHead3_Om32
+train_variant.VARIANT_MAP["Vanilla_r2ph_om32_redraw"] = MapFormerWM_PerHead_Om32
+REDRAW_SUFFIX = "_redraw"
+
+
+def main():
+    v = sys.argv[sys.argv.index("--variant") + 1] if "--variant" in sys.argv else ""
+    if v.endswith(REDRAW_SUFFIX):
+        from mapformer import environment_nd
+        from mapformer.environment_nd_redraw import GridWorldNDRedraw
+        assert "--env" in sys.argv and sys.argv[sys.argv.index("--env") + 1] == "nd", "redraw arms need --env nd"
+        environment_nd.GridWorldND = GridWorldNDRedraw
+        print(f"{v}: training environment = GridWorldNDRedraw (map redrawn per trajectory)")
+    train_variant.main()
+
 
 if __name__ == "__main__":
-    train_variant.main()
+    main()

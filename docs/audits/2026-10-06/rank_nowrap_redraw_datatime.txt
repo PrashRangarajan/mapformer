@@ -1,0 +1,2 @@
+GridWorldND 0.100 s per batch of 16 x T=1024
+GridWorldNDRedraw 0.096 s per batch of 16 x T=1024

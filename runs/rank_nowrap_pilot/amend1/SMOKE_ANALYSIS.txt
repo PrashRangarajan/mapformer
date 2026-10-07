@@ -1,0 +1,77 @@
+!! SMOKE TEST: runs-dir /home/prashr/mapformer/runs/rank_nowrap_pilot/amend1, seeds [100, 101], cells ['A32', 'B32', 'M32', 'AL', 'BL'] -- not the registered batch
+
+== cells: T=1024 held-out accuracy (raw | floor-relative) | HIT (rel >= 0.9) | loss-SOLVED | [T=2048] | classes ==
+  grid 32: eval-stream floors (mean over seeds): blank 0.517, retrace-or-blank 0.739; scored targets per stream 46401
+  grid 256: eval-stream floors (mean over seeds): blank 0.503, retrace-or-blank 0.868; scored targets per stream 28823
+  A32  grid  32 Vanilla_r2ph_om32         0.6317 +/- 0.0243 | rel -0.411 | HIT 0/2 | SOLVED 0/2 | [0.6061] | {'SOLVED': 0, 'STALLED': 2, 'DESCENDING': 0, 'RISING': 0}
+        s100:0.614/-0.46/STAL(1.339) s101:0.649/-0.36/STAL(1.264)
+  B32  grid  32 Vanilla_r3ph_om32         0.6417 +/- 0.0689 | rel -0.371 | HIT 0/2 | SOLVED 0/2 | [0.6250] | {'SOLVED': 0, 'STALLED': 2, 'DESCENDING': 0, 'RISING': 0}
+        s100:0.593/-0.55/STAL(1.449) s101:0.690/-0.20/STAL(1.015)
+  M32  grid  32 Vanilla_r2ph_om32_redraw  0.5173 +/- 0.0022 | rel -0.849 | HIT 0/2 | SOLVED 0/2 | [0.5214] | {'SOLVED': 0, 'STALLED': 2, 'DESCENDING': 0, 'RISING': 0}
+        s100:0.519/-0.83/STAL(2.095) s101:0.516/-0.87/STAL(2.109)
+  AL   grid 256 Vanilla_r2ph_om32         0.6032 +/- 0.0159 | rel -2.015 | HIT 0/2 | SOLVED 0/2 | [0.5939] | {'SOLVED': 0, 'STALLED': 2, 'DESCENDING': 0, 'RISING': 0}
+        s100:0.592/-2.15/STAL(1.289) s101:0.614/-1.88/STAL(1.163)
+  BL   grid 256 Vanilla_r3ph_om32         0.7519 +/- 0.0018 | rel -0.885 | HIT 0/2 | SOLVED 0/2 | [0.7427] | {'SOLVED': 0, 'STALLED': 2, 'DESCENDING': 0, 'RISING': 0}
+        s100:0.751/-0.93/STAL(0.655) s101:0.753/-0.84/STAL(0.663)
+
+== registered contrasts (within grid: Fisher on HIT or permutation on raw accuracy; across: permutation on rel) ==
+  K   control, 32-torus: B32 over A32            Fisher p 1.0000 | d +0.0100 perm p 1.0000 | does not fire
+  G   rank 2: AL over A32 (floor-relative only)  Fisher p nan | d -1.6044 perm p 0.3333 | does not fire
+  G'  A32 over AL (floor-relative only)          Fisher p nan | d +1.6044 perm p 0.3333 | does not fire
+  R   256-torus: BL over AL                      Fisher p 1.0000 | d +0.1487 perm p 0.3333 | does not fire
+  R'  256-torus: AL over BL                      Fisher p 1.0000 | d -0.1487 perm p 0.3333 | does not fire
+  G3' rank 3: B32 over BL (floor-relative only)  Fisher p nan | d +0.5136 perm p 0.3333 | does not fire
+  Mem 32-torus: M32 (redrawn) over A32           Fisher p 1.0000 | d -0.1143 perm p 0.3333 | does not fire
+  Km  32-torus: B32 over M32 (redrawn)           Fisher p 1.0000 | d +0.1244 perm p 0.3333 | does not fire
+
+  REGISTERED: CONTROL FAILED (VOID)
+    - rank 3 not detectably above rank 2 on the 32-torus (B32 HIT 0/2 vs A32 0/2): no deficit to explain in this batch
+    - memorisation control M32 (rank 2, 32-torus, map redrawn): HIT 0/2; over A32 does not fire; B32 over M32 does not fire
+    - (record) hard targets on the 256-torus: AL 0.123 vs BL 0.498, AL - BL -0.376 perm p 0.3333 -> no detectable shortfall
+
+== secondaries (no verdict) ==
+  pre-amendment readout (training-loss SOLVED in place of HIT, no hard qualifier): CONTROL FAILED (VOID); loss-SOLVED A32 0/2 B32 0/2 M32 0/2 AL 0/2 BL 0/2
+  HIT vs loss-SOLVED agreement per run: 10/10
+  interaction (BL - AL) - (B32 - A32), HIT fraction: +0.000  bootstrap 95% CI [+0.000, +0.000] (negative = the rank gap shrinks on the large torus)
+  interaction (BL - AL) - (B32 - A32), floor-relative accuracy: +1.091  bootstrap 95% CI [+0.780, +1.401] (negative = the rank gap shrinks on the large torus)
+  interaction (BL - AL) - (B32 - A32), raw accuracy: +0.139  bootstrap 95% CI [+0.073, +0.205] (negative = the rank gap shrinks on the large torus)
+  paired G (N6): per seed rel(AL_s) - rel(A32_s) (identical init and action streams per seed): mean -1.604, 0/2 positive, sign-flip p 0.5000
+  r(final-5% loss, acc@1024) over 10 runs: -0.960; per grid: 32: -0.983  256: -0.999
+  T=2048 (rule 10: past training length) A32: 0.6061
+  T=2048 (rule 10: past training length) B32: 0.6250
+  T=2048 (rule 10: past training length) M32: 0.5214
+  T=2048 (rule 10: past training length) AL: 0.5939
+  T=2048 (rule 10: past training length) BL: 0.7427
+
+  accuracy by revisit stratum, held-out map, T=1024 (mean over seeds; target counts per stream in brackets).
+  retrace_ok = targets the retrace-or-blank floor predicts (inside a retrace run, or blank); retrace_miss = non-blank
+  targets outside a retrace run (the hard targets):
+    A32  wrap 0.520 [17578]  plain<128 0.713 [26094]  plain>=128 0.572 [2728]  retrace_ok 0.823 [34290]  retrace_miss 0.089 [12110]
+         own training map 0.638 vs held-out 0.632 (gap +0.006); HIT-but-raw<0.95: []
+         basins (descriptive): CLOCK/U 2; 'HIT iff CLEAN' on 2/2
+    B32  wrap 0.556 [17578]  plain<128 0.701 [26094]  plain>=128 0.625 [2728]  retrace_ok 0.825 [34290]  retrace_miss 0.123 [12110]
+         own training map 0.652 vs held-out 0.642 (gap +0.010); HIT-but-raw<0.95: []
+         basins (descriptive): CLOCK/U 2; 'HIT iff CLEAN' on 2/2
+    M32  wrap 0.521 [17578]  plain<128 0.515 [26094]  plain>=128 0.518 [2728]  retrace_ok 0.700 [34290]  retrace_miss 0.000 [12110]
+         basins (descriptive): CLOCK/U 2; 'HIT iff CLEAN' on 2/2
+    AL   wrap nan [0]  plain<128 0.611 [26038]  plain>=128 0.526 [2786]  retrace_ok 0.676 [25026]  retrace_miss 0.123 [3798]
+         own training map 0.598 vs held-out 0.603 (gap -0.006); HIT-but-raw<0.95: []
+         basins (descriptive): CLOCK/U 2; 'HIT iff CLEAN' on 2/2
+    BL   wrap nan [0]  plain<128 0.752 [26038]  plain>=128 0.754 [2786]  retrace_ok 0.790 [25026]  retrace_miss 0.498 [3798]
+         own training map 0.745 vs held-out 0.752 (gap -0.007); HIT-but-raw<0.95: []
+         basins (descriptive): CLEAN/U 1 CLOCK/U 1; 'HIT iff CLEAN' on 1/2
+    stratum wrap         B32 - A32: +0.036 perm p 0.6667 (n 2/2)
+    stratum wrap         M32 - A32: +0.001 perm p 1.0000 (n 2/2)
+    stratum plain<128    B32 - A32: -0.012 perm p 1.0000 (n 2/2)
+    stratum plain<128    M32 - A32: -0.198 perm p 0.3333 (n 2/2)
+    stratum plain<128    BL - AL: +0.140 perm p 0.3333 (n 2/2)
+    stratum plain<128    AL - A32: -0.101 perm p 0.3333 (n 2/2)
+    stratum plain>=128   B32 - A32: +0.052 perm p 0.6667 (n 2/2)
+    stratum plain>=128   M32 - A32: -0.055 perm p 0.3333 (n 2/2)
+    stratum plain>=128   BL - AL: +0.229 perm p 0.3333 (n 2/2)
+    stratum plain>=128   AL - A32: -0.046 perm p 0.3333 (n 2/2)
+    stratum retrace_miss B32 - A32: +0.034 perm p 1.0000 (n 2/2)
+    stratum retrace_miss M32 - A32: -0.089 perm p 0.3333 (n 2/2)
+    stratum retrace_miss BL - AL: +0.376 perm p 0.3333 (n 2/2)
+    stratum retrace_miss AL - A32: +0.034 perm p 1.0000 (n 2/2)
+  dropout-scale re-score (attention x 1/(1-p)): A32 0.6316 HIT 0  B32 0.6418 HIT 0  M32 0.5173 HIT 0  AL 0.6027 HIT 0  BL 0.7519 HIT 0; branch under re-score: CONTROL FAILED (VOID)
