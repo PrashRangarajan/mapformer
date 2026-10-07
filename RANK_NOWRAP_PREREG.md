@@ -1,8 +1,9 @@
 # Is per-head rank 2's torus failure about wrap-around? -- pre-registration (2026-10-06, before any batch run)
 
-> **Amendment 1 (end of file) supersedes this body where they differ**: 5 cells (adds a redrawn-map rank-2 control on the
-> 32-torus), n = 10 (seeds 60-69, 50 runs), registered counts are HIT (floor-relative held-out accuracy >= 0.90) not
-> training-loss SOLVED, the cross-grid contrast fires on floor-relative accuracy only, new branch set.
+> **Amendments 1 and 2 (end of file) supersede this body where they differ; Amendment 2 supersedes Amendment 1.** Final
+> design: 5 cells (adds a redrawn-map rank-2 control M32 on the 32-torus), n = 10 (seeds 60-69, 50 runs); the registered
+> quantity is h = held-out accuracy on the HARD targets (those the retrace-or-blank floor misses), HIT = h >= 0.90; every
+> accuracy arm is a permutation test on h (materiality 0.10); branch set of Amendment 2.
 
 ## Question
 Per-head rank 2 (= D) fails on the 2D torus at T=1024 and rank 3 solves (`RANK_ND_RESULTS.md`, 32-torus: 1/8 vs
@@ -229,5 +230,91 @@ Not re-measured on GPU for this amendment (no GPU use allowed now).
 Earlier 40-epoch pilot outcomes are as disclosed above. The CPU smoke (`runs/rank_nowrap_pilot/amend1/`, `cpu_smoke.sh`, `SMOKE_ANALYSIS.txt`) ran train (M32) -> eval -> re-score -> analysis on the CPU with all five cells.
 `train_rank_nowrap.py` gained a `main()` that swaps the environment for `*_redraw` variants only; the om32 path is the
 same call (`train_variant.main()`), so the 15-epoch bitwise reproduction stands (not re-run: no GPU).
+
+Launch (unchanged): `cd /home/prashr/mapformer && setsid nohup bash run_rank_nowrap.sh > /dev/null 2>&1 &`
+
+---
+
+## Amendment 2 (2026-10-06, after a second independent audit of Amendment 1, BEFORE launch; CPU only; no batch result exists)
+The audit found the Amendment 1 code correct but one major design flaw and several smaller ones. Finding -> change:
+
+**1 (MAJOR). Amendment 1's floor-relative accuracy is not grid-comparable.** rel = h - f/(1-f) (1 - acc_floor-predicted):
+an error on a floor-predicted target costs f/(1-f) = 3.01 units of rel at 32 but 6.70 at 256 (blank targets are free
+for the floor, not for a model), so identical per-stratum behaviour moves rel across grids and near-solved runs flip
+HIT; the Amendment 1 power script had assumed rel invariant. **Change:** the registered quantity is now
+**h = held-out accuracy on the hard targets** -- the stratum retrace_miss, the targets the retrace-or-blank floor gets
+wrong (= the non-blank targets outside a retrace run; inside a retrace run the floor is always right: 0 exceptions on
+every stream checked, asserted in the analysis). h is the same quantity on both grids. **HIT = h >= 0.90**; the
+cross-grid contrasts G, G', G3' are permutation tests on h. Validation (`rank_nowrap_hard_validate.py`, `_out.txt`,
+CPU, 60 held-out walks per run, 32 stored runs: RANK_ND D2 r2/r3 on the ND 32-torus, RANK_MI r2 / RANK3 r3 on the paper
+64-torus): HIT agrees with training-loss SOLVED on **32/32** runs (lowest h among SOLVED 0.960, highest among not SOLVED
+0.776; 0.90 sits in the gap). At 256 there are no stored runs; under per-stratum transport (each ND run's per-stratum
+accuracies re-weighted by the 256 stratum mix: copy 0.743 / blank_out 0.127 / hard 0.130, vs 0.475 / 0.276 / 0.250 at
+32) h and HIT are invariant by construction, whereas rel moved (e.g. rank-2 s5 -0.100 -> -0.421) and held-out NLL
+roughly halved (the loss-cut leniency of Amendment 1's D1). Hard targets per held-out stream at 256: ~3800 (100 walks),
+so h is precise to ~0.01.
+
+**2. The within-grid materiality floor was not grid-neutral** (0.02 raw = 0.08 hard-target units at 32, 0.156 at 256).
+**Change:** every accuracy arm, within and across grids, is a permutation test on h with materiality **0.10 in h units**;
+within a grid a contrast also fires on Fisher over HIT counts. Raw accuracy is a secondary only (and decides CEILING).
+
+**3. M32 branch asymmetry (absence of evidence).** **Change:** "M32 fails like rank 2" = Km fires AND Mem does not AND
+(M32 HIT <= 2/10 OR Mem' fires); "M32 solves like rank 3" = Mem fires AND Km does not AND M32 HIT >= 8/10 (the threshold
+AL needs). PERIODIC CODE IS THE LIMIT and RANK LIMIT IS GENERAL require the first; FIXED MAP WAS THE LIMIT and FIXED MAP
+AT 32, LARGE TORUS FAILS require the second; anything else is CAUSE UNRESOLVED (rescue) or INTERMEDIATE (no rescue).
+
+**4. M32 confounds.** **Change:** reverse test **Mem' = A32 over M32**; when it fires a qualifier says redrawing made the
+32-torus HARDER for rank 2 (no fixed-map stepping stone; or the redraw adds map diversity / removes train-test overlap).
+Branches renamed **FIXED MAP WAS THE LIMIT** and **FIXED MAP AT 32, LARGE TORUS FAILS**; their text says "the fixed map
+(memorisation, train/test shift, or map diversity)", not "memorisation". **Paired Mem** (h(M32_s) - h(A32_s), shared init
+and action streams per seed, sign-flip p) added as a declared secondary beside paired G.
+
+**5.** The secondary "pre-amendment readout" is relabelled **"amended branches with loss-SOLVED in place of HIT"**.
+
+**6. Dropout re-score.** The analysis now re-computes the strata itself under `rescore_hook.install('auto')`
+(attention x 1/(1-p)), so the re-scored branch uses re-scored h, HIT AND hard-target qualifier; eval_nd's re-scored raw
+accuracy (driver) is used only for CEILING. Firing differences are FLAGged; the registered verdict is unchanged.
+
+**7. N7 of the first audit.** Its content was not relayed to this session (the first amendment request listed D1-D4,
+N5, N6, N8, N9). It is therefore neither fixed nor dropped here: **OPEN -- to be supplied by the coordinator and
+recorded in a further amendment before launch.**
+
+**8. Provenance and devices.** `train_rank_nowrap.py` writes `map_redrawn`, `train_env_class` and `omega_init_grid` into
+each checkpoint's config after training (atomic replace); the analysis asserts map_redrawn is True exactly for M32
+(strict in the registered run; pilot checkpoints predating the key are accepted only in smoke mode). Eval and re-score
+run on the GPU with the most free memory (driver `best_gpu`), the analysis picks its own (`pick_device`).
+
+**Registered branches (replace Amendment 1's; in order; n = 10; near = HIT >= 8, low = HIT <= 2, half = 5):**
+1 CEILING (every run of every cell raw >= 0.999); 2 CONTROL FAILED (VOID) (K does not fire); 3 LARGE-GRID CONTROL FAILED
+(BL HIT < 5 or G3' fires); 4 LARGE GRID HURTS RANK 2 (G' fires); 5 rescue = G fires, R does not, AL HIT >= 8 ->
+**PERIODIC CODE IS THE LIMIT** (M32 fails like rank 2) / **FIXED MAP WAS THE LIMIT** (M32 solves like rank 3) /
+**LARGE TORUS RESCUES RANK 2, CAUSE UNRESOLVED**; 6 PARTIAL (G fires, not a rescue); 7 R fires: **FIXED MAP AT 32, LARGE
+TORUS FAILS** (M32 solves like rank 3) / **RANK LIMIT IS GENERAL** (AL HIT <= 2 and M32 fails like rank 2) /
+INTERMEDIATE; 8 UNMEASURED. Qualifiers: REVERSAL (R'), HARDER (Mem'), the M32 status line, and the hard-target
+qualifier (AL - BL on h <= -0.02, p < .05), attached on rescue branches and "(record)" otherwise.
+
+**Smoke tests.** Branch smoke (`rank_nowrap_branch_smoke.py`, `_out.txt`): 18/18 synthetic cases, every branch and
+qualifier above. CPU end to end (`runs/rank_nowrap_pilot/amend2/`, `cpu_smoke.sh`, `SMOKE_ANALYSIS.txt`): M32 trained on
+the CPU through the wrapper (config key written), eval, re-score, analysis incl. the in-analysis re-score.
+
+**Power with per-stratum transport** (`rank_nowrap_power.py`, `_out.txt`, 400 simulations, runs the amended
+`decide()`; pools = the 32 validated runs as per-stratum vectors). P(target branch):
+
+| truth (AL, M32) | target | n = 8 | **n = 10** | n = 12 |
+|---|---|---|---|---|
+| rank-3-like, rank-2-like | PERIODIC CODE IS THE LIMIT | 0.66 | **0.63** (+0.25 CAUSE UNRESOLVED) | 0.77 |
+| rank-3-like, rank-3-like | FIXED MAP WAS THE LIMIT | 0.79 | **0.75** | 0.86 |
+| rank-2-like, rank-2-like | RANK LIMIT IS GENERAL | 0.61 | **0.48** (+0.44 INTERMEDIATE) | 0.65 |
+| rank-2-like, rank-3-like | FIXED MAP AT 32, LARGE TORUS FAILS | 0.76 | **0.80** | 0.90 |
+
+**GENERAL truth -> LARGE GRID HURTS RANK 2: 0.01 at n = 10** (0.02 at n = 8 and 12), against the audit's 0.29 for
+Amendment 1's rel under transport. No truth produces its opposite pole (PERIODIC vs FIXED MAP <= 0.01; GENERAL -> any
+rescue branch 0.00). The price of item 3 (positive evidence that M32 fails: HIT <= 2/10 has probability ~0.7 when M32 is
+rank-2-like) is lower power for PERIODIC and GENERAL, whose shortfall goes to CAUSE UNRESOLVED / INTERMEDIATE, never to
+a wrong verdict. **n = 10 is kept as instructed; n = 12 (60 runs, +20% cost) would lift PERIODIC to 0.77 and GENERAL
+to 0.65** -- a decision for the user before launch.
+
+**Cost** unchanged: 50 runs, ~125-150 slot-hours, ~16-19 h on 8 slots, ~30-38 h sharing half (GPU timing not
+re-measured; no GPU use allowed).
 
 Launch (unchanged): `cd /home/prashr/mapformer && setsid nohup bash run_rank_nowrap.sh > /dev/null 2>&1 &`

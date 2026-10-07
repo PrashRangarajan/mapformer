@@ -52,6 +52,23 @@ def main():
         environment_nd.GridWorldND = GridWorldNDRedraw
         print(f"{v}: training environment = GridWorldNDRedraw (map redrawn per trajectory)")
     train_variant.main()
+    record_config(v)
+
+
+def record_config(v):
+    """Amendment 2: write the arm's environment and omega initialisation into the checkpoint's config (train_variant saves
+    only the variant name). Atomic: written to a temporary file in the same directory, then os.replace'd."""
+    import os
+    import torch
+    out = sys.argv[sys.argv.index("--output-dir") + 1]
+    ck = os.path.join(out, f"{v}.pt")
+    b = torch.load(ck, map_location="cpu", weights_only=False)
+    b["config"]["map_redrawn"] = v.endswith(REDRAW_SUFFIX)
+    b["config"]["train_env_class"] = "GridWorldNDRedraw" if v.endswith(REDRAW_SUFFIX) else "GridWorldND"
+    b["config"]["omega_init_grid"] = OMEGA_GRID
+    tmp = ck + ".tmp"
+    torch.save(b, tmp); os.replace(tmp, ck)
+    print(f"recorded in config: map_redrawn={b['config']['map_redrawn']}, omega_init_grid={OMEGA_GRID}")
 
 
 if __name__ == "__main__":

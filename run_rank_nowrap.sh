@@ -60,13 +60,16 @@ REQ=(); for S in $SEEDS; do for c in "${CELLS[@]}"; do set -- $c; REQ+=("$R/N$1/
 [ "${#REQ[@]}" -eq 50 ] || drv_fail "expected 50 checkpoints, listed ${#REQ[@]}"
 drv_require "${REQ[@]}" || drv_fail "missing checkpoints"
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before eval"
+# eval / re-score on the GPU with the most free memory (Amendment 2), not a pinned cuda:0; the analysis picks its own
+best_gpu() { nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits | sort -t, -k2 -nr | head -1 | cut -d, -f1 | tr -d ' '; }
 for N in 32 256; do
   ARMS="Vanilla_r2ph_om32,Vanilla_r3ph_om32"; [ "$N" = 32 ] && ARMS="$ARMS,Vanilla_r2ph_om32_redraw"
+  EG=$(best_gpu); _drv_log "eval N$N on cuda:$EG"
   python3 -u -m mapformer.eval_rank_nowrap --runs-dir "$R/N$N" --configs "2:$N:$ARMS" \
-    --seeds $SEEDS --lengths 1024 2048 --n-trials 100 --device cuda:0 --out "$R/N$N/EVAL_D2.md" >> "$LOG" 2>&1 \
+    --seeds $SEEDS --lengths 1024 2048 --n-trials 100 --device "cuda:$EG" --out "$R/N$N/EVAL_D2.md" >> "$LOG" 2>&1 \
     || drv_fail "eval N$N"
   python3 -u -m mapformer.rescore_hook --scale auto -- mapformer.eval_rank_nowrap --runs-dir "$R/N$N" \
-    --configs "2:$N:$ARMS" --seeds $SEEDS --lengths 1024 --n-trials 100 --device cuda:0 \
+    --configs "2:$N:$ARMS" --seeds $SEEDS --lengths 1024 --n-trials 100 --device "cuda:$EG" \
     --out "$REPO/RANK_NOWRAP_RESCORE_N$N.md" >> "$LOG" 2>&1 || drv_fail "rescore N$N"
 done
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before analysis"
