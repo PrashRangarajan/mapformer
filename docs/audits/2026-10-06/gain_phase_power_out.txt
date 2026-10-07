@@ -90,6 +90,33 @@
    D4_headline  THE GAIN-PHASE MAP WORKS 1.00
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
+== L tolerated, big S_id
+   D1r          BETTER 1.00
+   D1           CEILING 1.00
+   D2_raw       BETTER 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  THE GAIN SCORE TOLERATES THE LEAK 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== M large PERSISTS
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       WORSE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== N GP flat tail
+   D1r          BETTER 1.00
+   D1           WORSE 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      WORSE 1.00
+   D3_headline  D3 UNMEASURED 1.00
+   D4_headline  THE GAIN-PHASE MAP FAILS 1.00
+   D4_vs_N      WORSE 1.00
+   D5_norm      SLOWER 1.00
 == I GP stalls 1/8
    D1r          BETTER 1.00
    D1           BETTER 0.99; NO DIFFERENCE 0.01
@@ -191,6 +218,33 @@
    D4_headline  THE GAIN-PHASE MAP WORKS 1.00
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
+== L tolerated, big S_id
+   D1r          BETTER 1.00
+   D1           CEILING 1.00
+   D2_raw       BETTER 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  THE GAIN SCORE TOLERATES THE LEAK 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== M large PERSISTS
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       WORSE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== N GP flat tail
+   D1r          BETTER 1.00
+   D1           WORSE 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      WORSE 1.00
+   D3_headline  D3 UNMEASURED 1.00
+   D4_headline  THE GAIN-PHASE MAP FAILS 1.00
+   D4_vs_N      WORSE 1.00
+   D5_norm      SLOWER 1.00
 == I GP stalls 1/8
    D1r          BETTER 1.00
    D1           BETTER 0.99; CONFLICT 0.01
@@ -292,6 +346,33 @@
    D4_headline  THE GAIN-PHASE MAP WORKS 1.00
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
+== L tolerated, big S_id
+   D1r          BETTER 1.00
+   D1           CEILING 1.00
+   D2_raw       BETTER 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  THE GAIN SCORE TOLERATES THE LEAK 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== M large PERSISTS
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       WORSE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== N GP flat tail
+   D1r          BETTER 1.00
+   D1           WORSE 1.00
+   D2_raw       NO DIFFERENCE 1.00
+   D2_norm      WORSE 1.00
+   D3_headline  D3 UNMEASURED 1.00
+   D4_headline  THE GAIN-PHASE MAP FAILS 1.00
+   D4_vs_N      WORSE 1.00
+   D5_norm      SLOWER 1.00
 == I GP stalls 1/8
    D1r          BETTER 1.00
    D1           BETTER 0.99; CONFLICT 0.01

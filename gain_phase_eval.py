@@ -23,10 +23,12 @@ For a checkpoint of any arm in model_gain_phase.ARMS (and LEAK's ActOnly, for th
   train_x1       train-pool accuracy at x1.
   reliance       THETA RELIANCE (Amendment 1): acc - acc with every token's step replaced by its token-TYPE mean (the
                  four action steps by their mean, every object step by the mean object step, blank unchanged), so theta
-                 advances by one constant per move and carries no position. ~0 for a model that does not use theta
+                 advances by the same amount on every move (mean action step + the blank step or the mean object step; blank
+                 keeps its own step) and carries no position. ~0 for a model that does not use theta
                  (untrained: validated), large for a path-integrating one (LEAK checkpoints: validated).
   acc_rescored   acc with every attention layer's o_proj input scaled by 1/(1-p) (the dropout-scale re-score of
-                 rescore_hook, applied by hooks on this model only).
+                 rescore_hook, applied by hooks on this model only); reliance_rescored the same for theta reliance
+                 (Amendment 2: the D3 gate is re-checked on it).
   gains          gain arms only: mu_k over test objects (mean, cv), blank, actions; mu_q over actions; spectrum share of
                  sum A_c per 8-channel band (fine -> coarse). Per head.
 `python3 -m mapformer.gain_phase_eval CKPT ARM [device]` prints the dict.
@@ -181,12 +183,13 @@ def gain_stats(m):
 
 
 @torch.no_grad()
-def rescored_acc(probe, toks, revs, dev):
-    """acc with each attention layer's o_proj input x 1/(1-p) (rescore_hook's correction), hooks removed after."""
+def rescored_acc(probe, toks, revs, dev, mode=None):
+    """acc (step-probe mode `mode`) with each attention layer's o_proj input x 1/(1-p) (rescore_hook's correction),
+    hooks removed after."""
     hs = [L.o_proj.register_forward_pre_hook(lambda mod, a, s=1.0 / (1.0 - L.dropout.p): (a[0] * s,) + tuple(a[1:]))
           for L in probe.m.layers]
     try:
-        return obj_acc(probe, toks, revs, "test", None, dev)
+        return obj_acc(probe, toks, revs, "test", mode, dev)
     finally:
         for h in hs:
             h.remove()
@@ -212,6 +215,7 @@ def evaluate_model(m, dev, data=None, full=True):
         out.update(step_geometry(m)); return out
     out["L_zero"] = obj_acc(probe, toks, revs, "test", "zero", dev) - a1
     out["acc_rescored"] = rescored_acc(probe, toks, revs, dev)
+    out["reliance_rescored"] = out["acc_rescored"] - rescored_acc(probe, toks, revs, dev, "typemean")
     for s in (2.0, 4.0):
         probe.set_scale(s); out[f"x{s:g}"] = obj_acc(probe, toks, revs, "test", None, dev)
     probe.set_scale(1.0)

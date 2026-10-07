@@ -337,3 +337,42 @@ same probabilities as before (A predicted: D1 BETTER, D3 SEPARATE DEFECTS, D4 WO
 C: ALSO REMOVES 1.00; E: AS GOOD 0.34). New scenarios: **J, both gain arms untrained-like** (acc 0.14, reliance 0, S_id 1.0,
 L_ms 0, loss still descending): D3 **UNMEASURED 1.00** (before the amendment the same inputs gave a gain-side reading);
 D4 FAILS 1.00 with the budget qualifier. **K, GainRaw alone untrained-like:** D3 UNMEASURED 1.00, D4 WORKS 1.00.
+
+## Amendment 2 (2026-10-06, after a re-audit of Amendment 1, BEFORE launch; CPU only, per the user's instruction)
+Finding -> change. All before launch; the md5 guard covers every changed file.
+1. **BUG (driver):** `lib_driver.sh`, sourced first, already sets DRV_SPACING=45 and DRV_MINFREE=4500, so the driver's
+   `${DRV_MINFREE:-5500}` / `${DRV_SPACING:-15}` were no-ops (Amendment 1's MINFREE change never took effect). -> Assigned
+   unconditionally after the source (`DRV_SPACING=${GP_SPACING:-15}`, `DRV_MINFREE=${GP_MINFREE:-5500}`); verified by
+   sourcing lib_driver and evaluating the driver's lines: MAXPG 4, SPACING 15, MINFREE 5500.
+2. **DESIGN, major: the D3 gate read the leak itself.** Its S_id criterion (<= 3x MapWM) excluded exactly the TOLERATED
+   outcome (a gain score that ignores the identity step has no pressure to shrink it: synthetic GainRaw 8/8 SOLVED, acc
+   0.9998, reliance 0.9, L_ms ~0, S_id 4x MapWM read "not converged"), and its accuracy criterion (>= min MapWM - 0.01)
+   turned a large PERSISTS (3x MapWM's leak, acc 0.971) into "not converged". -> The gate is now **training loss + theta
+   reliance**, neither of which reads the leak: median final-5% training loss <= **0.25** (LEAK at 900 epochs: MapWM
+   0.069-0.072, NormStep 0.019-0.022; MapWM crosses 0.25 only near epoch ~650; 30-epoch pilot arms 0.31-3.60; untrained
+   >= 4; a leak 3x MapWM's is estimated at ~0.15) AND median theta reliance >= 0.2 (unchanged). The S_id and
+   accuracy-vs-MapWM criteria are removed. The failed criterion is named: "not converged", "does not use theta although
+   trained", or both. On re-scored reliance (new per-run `reliance_rescored`) the gate is re-checked and a flip is
+   flagged on the D3 line (verdict unchanged).
+3. **DESIGN, major: scope qualifiers missed flat-tail runs.** Counting only DESCENDING left runs that flattened at high
+   loss under cosine decay (STALLED; rule 3) unqualified (pilot GainPhase: loss 3.56 / 3.60, "0/2 DESCENDING"). -> GainPhase
+   vs NormStep is flagged when GainPhase has more non-SOLVED runs (STALLED or DESCENDING); GainRaw vs MapWM when GainRaw's
+   median final-5% loss is above MapWM's largest, whatever the class. The qualifier reads "(scoped to 900 epochs, not
+   converged: <arm> k/n SOLVED, s/n STALLED, d/n DESCENDING; ...)".
+4. **Minor.** Eval wait loop: logged, robust to empty nvidia-smi output, bounded at 12 h (then drv_fail). D4 "WORSE x AS
+   GOOD" says NormStep is itself below MapWM only when D1r fired WORSE; otherwise "WORSE THAN MapWM BUT NON-INFERIOR TO
+   NormStep (within 0.005); NormStep vs MapWM is <D1r>, so the shortfall is not attributed to either fix". Duplicate-launch
+   guard: exact `--output-dir` token match (dry run: a dummy on GainRaw_s15 skipped only GainRaw_s15; a dummy on a
+   MapWM_s1 prefix skipped nothing; 31 launches). Re-score flags now also cover the D3 gate (item 2). Reliance wording:
+   with type-mean steps theta advances by the same amount on every move (mean action step + the blank step or the mean
+   object step; blank keeps its own step), so it carries no position.
+Re-run, all CPU: equivalence checks (byte-identical, ALL PASS); smoke test (`gain_phase_smoke_out.txt`, 74 cases, ALL
+PASS), incl. the gate's three named failures, STALLED counted in both scope bases, both D4 WORSE x AS GOOD wordings, and
+end-to-end batches for a flat-tail GainPhase (D4 qualified "8/8 STALLED"; D3 UNMEASURED naming both criteria), TOLERATED
+with S_id 4x MapWM (read as TOLERATES, with the field-shift note), a large PERSISTS (read as SEPARATE DEFECTS), SOLVED but
+reliance 0.1 ("does not use theta although trained"), and a re-score flip of the gate (flagged, verdict unchanged).
+Power (`gain_phase_power_out.txt`, n = 8): scenarios A-K unchanged (A: D3 SEPARATE DEFECTS 1.00, D4 WORKS 1.00; J / K
+UNMEASURED 1.00); new **L, TOLERATED with S_id 4x MapWM: TOLERATES 1.00**; **M, large PERSISTS: SEPARATE DEFECTS 1.00**;
+**N, GainPhase flat at loss 3.6: D3 UNMEASURED 1.00, D4 FAILS with the scope qualifier**. n stays 8. The Amendment 1
+pilot re-evaluation (`runs/gain_phase_pilot/analysis_out_A1.txt`) used the Amendment 1 gate and is superseded by these
+synthetic checks (no further evaluation was run, per the CPU-only instruction).

@@ -42,17 +42,22 @@
   [PASS] gain_leak NEGATIVE: NEGATIVE
   [PASS] gain_leak ABSENT at a small negative median: ABSENT, TOLERATED
   [PASS] gain_leak PARTIAL just below -0.002 is NEGATIVE, not ABSENT: NEGATIVE
-  [PASS] gate PASS (converged, MapWM-like): True
-  [PASS] gate FAIL on accuracy: False
-  [PASS] gate FAIL on reliance (theta unused): False
-  [PASS] gate FAIL on S_id (unconverged steps): False
-  [PASS] budget flag, solved basis: GP 2 DESCENDING vs N 0: True
-  [PASS] budget flag, solved basis: equal -> none: 
-  [PASS] budget flag, regime basis: GainRaw loss regime above MapWM's: True
-  [PASS] budget flag, regime basis: same regime -> none: 
+== Amendment 2: leak-independent gate, scope flags counting STALLED ==
+  [PASS] gate PASS (MapWM-like: loss 0.07, reliance 0.9): True|
+  [PASS] gate PASS (SOLVED, reliance 0.9) -- whatever S_id or accuracy: True|
+  [PASS] gate FAIL: not converged (loss 0.5): not converged
+  [PASS] gate FAIL: SOLVED but theta unused -> named: does not use theta although trained
+  [PASS] gate FAIL: both: not converged and does not use theta
+  [PASS] scope flag, solved basis: GP 2 DESCENDING vs N 0: True
+  [PASS] scope flag, solved basis: GP 2 STALLED (flat tail) vs N 0: True
+  [PASS] scope flag, solved basis: equal -> none: 
+  [PASS] scope flag, regime basis: GainRaw loss regime above MapWM's: True
+  [PASS] scope flag, regime basis: flat-tail (STALLED) GainRaw above MapWM's regime: True
+  [PASS] scope flag, regime basis: same regime -> none: 
   [PASS] tolerated note: isotropic: mostly isotropic spread
   [PASS] tolerated note: field shift: mostly a field shift the gain score ignores
-  [PASS] combo WORSE x AS GOOD names NormStep's deficit: WORSE THAN MapWM BUT AS GOOD AS NormStep
+  [PASS] combo WORSE x AS GOOD with D1r WORSE names NormStep's deficit: WORSE THAN MapWM BUT AS GOOD AS NormStep
+  [PASS] combo WORSE x AS GOOD without D1r WORSE is softened: WORSE THAN MapWM BUT NON-INFERIOR TO NormStep (within 0.005)
   [PASS] fires_on: accuracy and SOLVED
 
 == step_verdict (D1r, D1): exhaustive ==
@@ -170,7 +175,7 @@
   BETTER        x WORSE        -> BETTER THAN MapWM, BUT THE GAIN SCORE COSTS AGAINST NormStep
   BETTER        x UNDETERMINED -> BETTER THAN MapWM; non-inferiority to NormStep undetermined
   BETTER        x CONFLICT     -> CONFLICT (vs MapWM BETTER, vs NormStep CONFLICT): reported as it falls
-  WORSE         x AS GOOD      -> WORSE THAN MapWM BUT AS GOOD AS NormStep: NormStep is itself below MapWM on these seeds (see D1r); the gain-phase map is not worse than its step fix
+  WORSE         x AS GOOD      -> WORSE THAN MapWM BUT NON-INFERIOR TO NormStep (within 0.005); NormStep vs MapWM is None, so the shortfall is not attributed to either fix
   WORSE         x BETTER       -> THE GAIN-PHASE MAP FAILS: worse than MapWM
   WORSE         x WORSE        -> THE GAIN-PHASE MAP FAILS: worse than MapWM
   WORSE         x UNDETERMINED -> THE GAIN-PHASE MAP FAILS: worse than MapWM
@@ -209,8 +214,8 @@
   REGISTERED D2: raw step -- GAIN SCORE NO DIFFERENCE; NormStep step -- GAIN SCORE CEILING
 
 == D3 LEAK DISSOCIATION ==
-  convergence gate (Amendment 1): GainRaw PASS: median acc 0.9900 (gate >= 0.9738: ok), median theta reliance 0.900 (>= 0.2: ok), median S_id 0.0048 (<= 0.0150: ok); 0/8 SOLVED, 8/8 DESCENDING
-  convergence gate: GainPhase PASS: median acc 0.9998 (gate >= 0.9738: ok), median theta reliance 0.900 (>= 0.2: ok), median S_id 0.0010 (<= 0.0150: ok); 8/8 SOLVED, 0/8 DESCENDING
+  convergence gate (Amendment 2): GainRaw PASS: median final-5% loss 0.0751 (<= 0.25: ok), median theta reliance 0.900 (>= 0.2: ok); 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING
+  convergence gate: GainPhase PASS: median final-5% loss 0.0150 (<= 0.25: ok), median theta reliance 0.900 (>= 0.2: ok); 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING
   step fix under the rotary score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
   step fix under the gain score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
   leak under the gain score, raw step: PERSISTS: median L_ms(GainRaw) +0.0097; S_id GainRaw 0.0045 vs MapWM 0.0045 (perm p 1.0000); GainRaw distortion share 0.00, field shift 0.0048 cells (MapWM 0.0048)
@@ -242,33 +247,174 @@
 == D1 STEP ==
   D1r NormStep vs MapWM (rotary; positive control): BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
   D1  GainPhase vs GainRaw (gain score): NO DIFFERENCE: d +0.0000 (perm p 1.0000, NONE); SOLVED 0/8 vs 0/8 (Fisher p 1.0000, NONE) -- 95% CI [+0.0000, +0.0000], MDE 0.0000
-  REGISTERED D1: NORMSTEP HELPS UNDER THE ROTARY SCORE ONLY: no step effect detected under the gain score (see its CI and MDE; D3 says whether GainRaw leaks) [D1r fires on accuracy and SOLVED] (budget-scoped: GainRaw 0/8 SOLVED, 8/8 DESCENDING at 900 epochs; median final loss 0.666 vs MapWM's max 0.075) (budget-scoped: GainPhase 0/8 SOLVED, 8/8 DESCENDING at 900 epochs; NormStep 8/8 SOLVED, 0/8 DESCENDING)
+  REGISTERED D1: NORMSTEP HELPS UNDER THE ROTARY SCORE ONLY: no step effect detected under the gain score (see its CI and MDE; D3 says whether GainRaw leaks) [D1r fires on accuracy and SOLVED] (scoped to 900 epochs, not converged: GainRaw 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING; median final loss 0.666 vs MapWM's max 0.075) (scoped to 900 epochs, not converged: GainPhase 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING; NormStep 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING)
 
 == D2 SCORE (gain vs rotary) ==
   raw step: GainRaw vs MapWM: WORSE: d -0.8490 (perm p 0.0002, NEG); SOLVED 0/8 vs 0/8 (Fisher p 1.0000, NONE) -- fires on accuracy
   NormStep step: GainPhase vs NormStep: WORSE: d -0.8598 (perm p 0.0002, NEG); SOLVED 0/8 vs 8/8 (Fisher p 0.0002, NEG) -- fires on accuracy and SOLVED
-  REGISTERED D2: raw step -- GAIN SCORE WORSE (budget-scoped: GainRaw 0/8 SOLVED, 8/8 DESCENDING at 900 epochs; median final loss 0.666 vs MapWM's max 0.075); NormStep step -- GAIN SCORE WORSE (budget-scoped: GainPhase 0/8 SOLVED, 8/8 DESCENDING at 900 epochs; NormStep 8/8 SOLVED, 0/8 DESCENDING)
+  REGISTERED D2: raw step -- GAIN SCORE WORSE (scoped to 900 epochs, not converged: GainRaw 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING; median final loss 0.666 vs MapWM's max 0.075); NormStep step -- GAIN SCORE WORSE (scoped to 900 epochs, not converged: GainPhase 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING; NormStep 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING)
 
 == D3 LEAK DISSOCIATION ==
-  convergence gate (Amendment 1): GainRaw FAIL: median acc 0.1400 (gate >= 0.9738: FAILS), median theta reliance 0.000 (>= 0.2: FAILS), median S_id 1.0000 (<= 0.0150: FAILS); 0/8 SOLVED, 8/8 DESCENDING
-  convergence gate: GainPhase FAIL: median acc 0.1400 (gate >= 0.9738: FAILS), median theta reliance 0.000 (>= 0.2: FAILS), median S_id 1.0000 (<= 0.0150: FAILS); 0/8 SOLVED, 8/8 DESCENDING
+  convergence gate (Amendment 2): GainRaw FAIL: median final-5% loss 0.6659 (<= 0.25: FAILS), median theta reliance 0.000 (>= 0.2: FAILS); 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING
+  convergence gate: GainPhase FAIL: median final-5% loss 0.6659 (<= 0.25: FAILS), median theta reliance 0.000 (>= 0.2: FAILS); 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING
   step fix under the rotary score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
   step fix under the gain score: NO LEAK TO REMOVE: median L_ms raw +0.0000 / NormStep +0.0000; S_id raw 1.0000 / NormStep 1.0000 (perm p 1.0000) [label not read: gate]
   leak under the gain score, raw step: ABSENT, TOLERATED: median L_ms(GainRaw) +0.0000; S_id GainRaw 1.0000 vs MapWM 0.0045 (perm p 0.0002); GainRaw distortion share 0.60, field shift 0.5000 cells (MapWM 0.0048) [label not read: gate]
-  REGISTERED D3: D3 UNMEASURED: GainRaw not converged (median acc 0.1400 (gate >= 0.9738: FAILS), median theta reliance 0.000 (>= 0.2: FAILS), median S_id 1.0000 (<= 0.0150: FAILS); 0/8 SOLVED, 8/8 DESCENDING); GainPhase not converged (median acc 0.1400 (gate >= 0.9738: FAILS), median theta reliance 0.000 (>= 0.2: FAILS), median S_id 1.0000 (<= 0.0150: FAILS); 0/8 SOLVED, 8/8 DESCENDING)
+  REGISTERED D3: D3 UNMEASURED: GainRaw not converged and does not use theta (median final-5% loss 0.6659 (<= 0.25: FAILS), median theta reliance 0.000 (>= 0.2: FAILS); 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING); GainPhase not converged and does not use theta (median final-5% loss 0.6659 (<= 0.25: FAILS), median theta reliance 0.000 (>= 0.2: FAILS); 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING)
 
 == D4 COMBINATION ==
   GainPhase vs MapWM: WORSE: d -0.8490 (perm p 0.0002, NEG); SOLVED 0/8 vs 0/8 (Fisher p 1.0000, NONE) -- fires on accuracy
   GainPhase vs NormStep (non-inferiority): WORSE: d -0.8598 (perm p 0.0002, NEG); SOLVED 0/8 vs 8/8 (Fisher p 0.0002, NEG) -- fires on accuracy and SOLVED; non-inferiority at -0.005: one-sided p 0.9999
-  REGISTERED D4: THE GAIN-PHASE MAP FAILS: worse than MapWM (budget-scoped: GainPhase 0/8 SOLVED, 8/8 DESCENDING at 900 epochs; NormStep 8/8 SOLVED, 0/8 DESCENDING)
+  REGISTERED D4: THE GAIN-PHASE MAP FAILS: worse than MapWM (scoped to 900 epochs, not converged: GainPhase 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING; NormStep 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING)
 
 == D5 SPEED (epochs until the 10-epoch running training loss < 0.05) ==
   GainPhase vs NormStep: SLOWER: geometric-mean epochs 901 vs 322 (x0.36 faster); censored 8/8 vs 0/8; perm p 0.0002
   GainRaw vs MapWM: NEITHER CONVERGED: geometric-mean epochs 901 vs 901 (x1.00 faster); censored 8/8 vs 8/8
   REGISTERED D5: NormStep step -- gain score SLOWER; raw step -- gain score NEITHER CONVERGED
   [PASS] unconverged: D3 UNMEASURED: D3 UNMEASURED
-  [PASS] unconverged: D4 carries the budget scope: True
-  [PASS] unconverged: D2 carries both budget scopes: True
+  [PASS] unconverged: D3 names the failed criteria: True
+  [PASS] unconverged: D4 carries the scope: True
+  [PASS] unconverged: D2 carries both scopes: True
+
+== end to end, Amendment 2 scenarios ==
+== per arm (unseen-object accuracy x1; leak readouts; classes) ==
+  MapWM     acc 0.9890 +/- 0.0030 (min 0.9838) | SOLVED 0/8 | L_ms median +0.0097 | S_id 0.0045 | theta reliance median 0.900 | final-5% loss 0.0751 | epochs to 0.05 - - - - - - - -
+  NormStep  acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | theta reliance median 0.900 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+  GainRaw   acc 0.9890 +/- 0.0030 (min 0.9838) | SOLVED 0/8 | L_ms median +0.0097 | S_id 0.0045 | theta reliance median 0.900 | final-5% loss 0.0751 | epochs to 0.05 - - - - - - - -
+  GainPhase acc 0.1400 +/- 0.0000 (min 0.1400) | SOLVED 0/8 | L_ms median +0.0300 | S_id 1.3000 | theta reliance median 0.050 | final-5% loss 3.6000 | epochs to 0.05 - - - - - - - -
+
+== D1 STEP ==
+  D1r NormStep vs MapWM (rotary; positive control): BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  D1  GainPhase vs GainRaw (gain score): WORSE: d -0.8490 (perm p 0.0002, NEG); SOLVED 0/8 vs 0/8 (Fisher p 1.0000, NONE) -- fires on accuracy
+  REGISTERED D1: NORMSTEP HELPS UNDER THE ROTARY SCORE BUT HURTS UNDER THE GAIN SCORE (interference) [D1r fires on accuracy and SOLVED] (scoped to 900 epochs, not converged: GainPhase 0/8 SOLVED, 8/8 STALLED, 0/8 DESCENDING; NormStep 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING)
+
+== D2 SCORE (gain vs rotary) ==
+  raw step: GainRaw vs MapWM: NO DIFFERENCE: d +0.0000 (perm p 1.0000, NONE); SOLVED 0/8 vs 0/8 (Fisher p 1.0000, NONE) -- 95% CI [-0.0030, +0.0030], MDE 0.0045
+  NormStep step: GainPhase vs NormStep: WORSE: d -0.8598 (perm p 0.0002, NEG); SOLVED 0/8 vs 8/8 (Fisher p 0.0002, NEG) -- fires on accuracy and SOLVED
+  REGISTERED D2: raw step -- GAIN SCORE NO DIFFERENCE; NormStep step -- GAIN SCORE WORSE (scoped to 900 epochs, not converged: GainPhase 0/8 SOLVED, 8/8 STALLED, 0/8 DESCENDING; NormStep 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING)
+
+== D3 LEAK DISSOCIATION ==
+  convergence gate (Amendment 2): GainRaw PASS: median final-5% loss 0.0751 (<= 0.25: ok), median theta reliance 0.900 (>= 0.2: ok); 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING
+  convergence gate: GainPhase FAIL: median final-5% loss 3.6000 (<= 0.25: FAILS), median theta reliance 0.050 (>= 0.2: FAILS); 0/8 SOLVED, 8/8 STALLED, 0/8 DESCENDING
+  step fix under the rotary score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
+  step fix under the gain score: INCOMPLETE: median L_ms raw +0.0097 / NormStep +0.0300; S_id raw 0.0045 / NormStep 1.3000 (perm p 0.0002) [label not read: gate]
+  leak under the gain score, raw step: PERSISTS: median L_ms(GainRaw) +0.0097; S_id GainRaw 0.0045 vs MapWM 0.0045 (perm p 1.0000); GainRaw distortion share 0.00, field shift 0.0048 cells (MapWM 0.0048)
+  REGISTERED D3: D3 UNMEASURED: GainPhase not converged and does not use theta (median final-5% loss 3.6000 (<= 0.25: FAILS), median theta reliance 0.050 (>= 0.2: FAILS); 0/8 SOLVED, 8/8 STALLED, 0/8 DESCENDING)
+
+== D4 COMBINATION ==
+  GainPhase vs MapWM: WORSE: d -0.8490 (perm p 0.0002, NEG); SOLVED 0/8 vs 0/8 (Fisher p 1.0000, NONE) -- fires on accuracy
+  GainPhase vs NormStep (non-inferiority): WORSE: d -0.8598 (perm p 0.0002, NEG); SOLVED 0/8 vs 8/8 (Fisher p 0.0002, NEG) -- fires on accuracy and SOLVED; non-inferiority at -0.005: one-sided p 0.9999
+  REGISTERED D4: THE GAIN-PHASE MAP FAILS: worse than MapWM (scoped to 900 epochs, not converged: GainPhase 0/8 SOLVED, 8/8 STALLED, 0/8 DESCENDING; NormStep 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING)
+
+== D5 SPEED (epochs until the 10-epoch running training loss < 0.05) ==
+  GainPhase vs NormStep: SLOWER: geometric-mean epochs 901 vs 322 (x0.36 faster); censored 8/8 vs 0/8; perm p 0.0002
+  GainRaw vs MapWM: NEITHER CONVERGED: geometric-mean epochs 901 vs 901 (x1.00 faster); censored 8/8 vs 8/8
+  REGISTERED D5: NormStep step -- gain score SLOWER; raw step -- gain score NEITHER CONVERGED
+  [PASS] flat tail: D4 qualified although 0/8 DESCENDING: True
+  [PASS] flat tail: D3 UNMEASURED, GainPhase not converged and does not use theta: True
+== per arm (unseen-object accuracy x1; leak readouts; classes) ==
+  MapWM     acc 0.9890 +/- 0.0030 (min 0.9838) | SOLVED 0/8 | L_ms median +0.0097 | S_id 0.0045 | theta reliance median 0.900 | final-5% loss 0.0751 | epochs to 0.05 - - - - - - - -
+  NormStep  acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | theta reliance median 0.900 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+  GainRaw   acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0181 | theta reliance median 0.900 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+  GainPhase acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | theta reliance median 0.900 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+
+== D1 STEP ==
+  D1r NormStep vs MapWM (rotary; positive control): BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  D1  GainPhase vs GainRaw (gain score): CEILING: d +0.0000 (perm p 1.0000, CEIL); SOLVED 8/8 vs 8/8 (Fisher p 1.0000, NONE) -- both arms >= 0.999 on every seed: no headroom
+  REGISTERED D1: NORMSTEP HELPS UNDER THE ROTARY SCORE; UNDER THE GAIN SCORE THERE IS NO HEADROOM (GainRaw already at ceiling: the gain score alone avoids the leak's accuracy cost; D3 says why) [D1r fires on accuracy and SOLVED]
+
+== D2 SCORE (gain vs rotary) ==
+  raw step: GainRaw vs MapWM: BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  NormStep step: GainPhase vs NormStep: CEILING: d +0.0000 (perm p 1.0000, CEIL); SOLVED 8/8 vs 8/8 (Fisher p 1.0000, NONE) -- both arms >= 0.999 on every seed: no headroom
+  REGISTERED D2: raw step -- GAIN SCORE BETTER; NormStep step -- GAIN SCORE CEILING
+
+== D3 LEAK DISSOCIATION ==
+  convergence gate (Amendment 2): GainRaw PASS: median final-5% loss 0.0150 (<= 0.25: ok), median theta reliance 0.900 (>= 0.2: ok); 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING
+  convergence gate: GainPhase PASS: median final-5% loss 0.0150 (<= 0.25: ok), median theta reliance 0.900 (>= 0.2: ok); 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING
+  step fix under the rotary score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
+  step fix under the gain score: NO LEAK TO REMOVE: median L_ms raw +0.0002 / NormStep +0.0002; S_id raw 0.0181 / NormStep 0.0010 (perm p 0.0002)
+  leak under the gain score, raw step: ABSENT, TOLERATED: median L_ms(GainRaw) +0.0002; S_id GainRaw 0.0181 vs MapWM 0.0045 (perm p 0.0002); GainRaw distortion share 0.00, field shift 0.0192 cells (MapWM 0.0048)
+  REGISTERED D3: THE GAIN SCORE TOLERATES THE LEAK: the identity step is still in theta (S_id not lower than MapWM's) but costs no accuracy under the gain score; the step fix removes it under both scores [mostly a field shift the gain score ignores: GainRaw distortion share 0.00, field shift 0.0192 cells vs MapWM 0.0048]
+
+== D4 COMBINATION ==
+  GainPhase vs MapWM: BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  GainPhase vs NormStep (non-inferiority): AS GOOD: d +0.0000 (perm p 1.0000, CEIL); SOLVED 8/8 vs 8/8 (Fisher p 1.0000, NONE) -- both arms >= 0.999 on every seed: no headroom; non-inferiority at -0.005: one-sided p 0.0001 (at ceiling)
+  REGISTERED D4: THE GAIN-PHASE MAP WORKS: better than MapWM and as good as NormStep (non-inferiority at ceiling)
+
+== D5 SPEED (epochs until the 10-epoch running training loss < 0.05) ==
+  GainPhase vs NormStep: NO DIFFERENCE: geometric-mean epochs 322 vs 322 (x1.00 faster); censored 0/8 vs 0/8; perm p 1.0000
+  GainRaw vs MapWM: FASTER: geometric-mean epochs 322 vs 901 (x2.80 faster); censored 0/8 vs 8/8; perm p 0.0002
+  REGISTERED D5: NormStep step -- gain score NO DIFFERENCE; raw step -- gain score FASTER
+  [PASS] TOLERATED with S_id 4x MapWM's is read (gate does not use S_id): THE GAIN SCORE TOLERATES THE LEAK
+  [PASS] TOLERATED carries the field-shift note: True
+== per arm (unseen-object accuracy x1; leak readouts; classes) ==
+  MapWM     acc 0.9890 +/- 0.0030 (min 0.9838) | SOLVED 0/8 | L_ms median +0.0097 | S_id 0.0045 | theta reliance median 0.900 | final-5% loss 0.0751 | epochs to 0.05 - - - - - - - -
+  NormStep  acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | theta reliance median 0.900 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+  GainRaw   acc 0.9710 +/- 0.0030 (min 0.9658) | SOLVED 0/8 | L_ms median +0.0293 | S_id 0.0136 | theta reliance median 0.900 | final-5% loss 0.1551 | epochs to 0.05 - - - - - - - -
+  GainPhase acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | theta reliance median 0.900 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+
+== D1 STEP ==
+  D1r NormStep vs MapWM (rotary; positive control): BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  D1  GainPhase vs GainRaw (gain score): BETTER: d +0.0287 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  REGISTERED D1: NORMSTEP HELPS UNDER BOTH SCORES (the step fix does not depend on the score) [D1r fires on accuracy and SOLVED] (scoped to 900 epochs, not converged: GainRaw 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING; median final loss 0.155 vs MapWM's max 0.075)
+
+== D2 SCORE (gain vs rotary) ==
+  raw step: GainRaw vs MapWM: WORSE: d -0.0180 (perm p 0.0002, NEG); SOLVED 0/8 vs 0/8 (Fisher p 1.0000, NONE) -- fires on accuracy
+  NormStep step: GainPhase vs NormStep: CEILING: d +0.0000 (perm p 1.0000, CEIL); SOLVED 8/8 vs 8/8 (Fisher p 1.0000, NONE) -- both arms >= 0.999 on every seed: no headroom
+  REGISTERED D2: raw step -- GAIN SCORE WORSE (scoped to 900 epochs, not converged: GainRaw 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING; median final loss 0.155 vs MapWM's max 0.075); NormStep step -- GAIN SCORE CEILING
+
+== D3 LEAK DISSOCIATION ==
+  convergence gate (Amendment 2): GainRaw PASS: median final-5% loss 0.1551 (<= 0.25: ok), median theta reliance 0.900 (>= 0.2: ok); 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING
+  convergence gate: GainPhase PASS: median final-5% loss 0.0150 (<= 0.25: ok), median theta reliance 0.900 (>= 0.2: ok); 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING
+  step fix under the rotary score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
+  step fix under the gain score: REMOVES: median L_ms raw +0.0293 / NormStep +0.0002; S_id raw 0.0136 / NormStep 0.0010 (perm p 0.0002)
+  leak under the gain score, raw step: PERSISTS: median L_ms(GainRaw) +0.0293; S_id GainRaw 0.0136 vs MapWM 0.0045 (perm p 0.0002); GainRaw distortion share 0.00, field shift 0.0144 cells (MapWM 0.0048)
+  REGISTERED D3: SEPARATE DEFECTS: the step fix removes the leak under both scores; the score fix leaves it (it is in theta)
+
+== D4 COMBINATION ==
+  GainPhase vs MapWM: BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  GainPhase vs NormStep (non-inferiority): AS GOOD: d +0.0000 (perm p 1.0000, CEIL); SOLVED 8/8 vs 8/8 (Fisher p 1.0000, NONE) -- both arms >= 0.999 on every seed: no headroom; non-inferiority at -0.005: one-sided p 0.0001 (at ceiling)
+  REGISTERED D4: THE GAIN-PHASE MAP WORKS: better than MapWM and as good as NormStep (non-inferiority at ceiling)
+
+== D5 SPEED (epochs until the 10-epoch running training loss < 0.05) ==
+  GainPhase vs NormStep: NO DIFFERENCE: geometric-mean epochs 322 vs 322 (x1.00 faster); censored 0/8 vs 0/8; perm p 1.0000
+  GainRaw vs MapWM: NEITHER CONVERGED: geometric-mean epochs 901 vs 901 (x1.00 faster); censored 8/8 vs 8/8
+  REGISTERED D5: NormStep step -- gain score NO DIFFERENCE; raw step -- gain score NEITHER CONVERGED
+  [PASS] large PERSISTS (3x MapWM's leak, acc 0.97) is read: SEPARATE DEFECTS
+== per arm (unseen-object accuracy x1; leak readouts; classes) ==
+  MapWM     acc 0.9890 +/- 0.0030 (min 0.9838) | SOLVED 0/8 | L_ms median +0.0097 | S_id 0.0045 | theta reliance median 0.900 | final-5% loss 0.0751 | epochs to 0.05 - - - - - - - -
+  NormStep  acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | theta reliance median 0.900 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+  GainRaw   acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0045 | theta reliance median 0.100 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+  GainPhase acc 0.9998 +/- 0.0002 (min 0.9995) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0010 | theta reliance median 0.900 | final-5% loss 0.0150 | epochs to 0.05 322 322 322 322 322 322 322 322
+
+== D1 STEP ==
+  D1r NormStep vs MapWM (rotary; positive control): BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  D1  GainPhase vs GainRaw (gain score): CEILING: d +0.0000 (perm p 1.0000, CEIL); SOLVED 8/8 vs 8/8 (Fisher p 1.0000, NONE) -- both arms >= 0.999 on every seed: no headroom
+  REGISTERED D1: NORMSTEP HELPS UNDER THE ROTARY SCORE; UNDER THE GAIN SCORE THERE IS NO HEADROOM (GainRaw already at ceiling: the gain score alone avoids the leak's accuracy cost; D3 says why) [D1r fires on accuracy and SOLVED]
+
+== D2 SCORE (gain vs rotary) ==
+  raw step: GainRaw vs MapWM: BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  NormStep step: GainPhase vs NormStep: CEILING: d +0.0000 (perm p 1.0000, CEIL); SOLVED 8/8 vs 8/8 (Fisher p 1.0000, NONE) -- both arms >= 0.999 on every seed: no headroom
+  REGISTERED D2: raw step -- GAIN SCORE BETTER; NormStep step -- GAIN SCORE CEILING
+
+== D3 LEAK DISSOCIATION ==
+  convergence gate (Amendment 2): GainRaw FAIL: median final-5% loss 0.0150 (<= 0.25: ok), median theta reliance 0.100 (>= 0.2: FAILS); 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING
+  convergence gate: GainPhase PASS: median final-5% loss 0.0150 (<= 0.25: ok), median theta reliance 0.900 (>= 0.2: ok); 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING
+  step fix under the rotary score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
+  step fix under the gain score: NO LEAK TO REMOVE: median L_ms raw +0.0002 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002) [label not read: gate]
+  leak under the gain score, raw step: ABSENT, TOLERATED: median L_ms(GainRaw) +0.0002; S_id GainRaw 0.0045 vs MapWM 0.0045 (perm p 1.0000); GainRaw distortion share 0.00, field shift 0.0048 cells (MapWM 0.0048) [label not read: gate]
+  REGISTERED D3: D3 UNMEASURED: GainRaw does not use theta although trained (median final-5% loss 0.0150 (<= 0.25: ok), median theta reliance 0.100 (>= 0.2: FAILS); 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING)
+
+== D4 COMBINATION ==
+  GainPhase vs MapWM: BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  GainPhase vs NormStep (non-inferiority): AS GOOD: d +0.0000 (perm p 1.0000, CEIL); SOLVED 8/8 vs 8/8 (Fisher p 1.0000, NONE) -- both arms >= 0.999 on every seed: no headroom; non-inferiority at -0.005: one-sided p 0.0001 (at ceiling)
+  REGISTERED D4: THE GAIN-PHASE MAP WORKS: better than MapWM and as good as NormStep (non-inferiority at ceiling)
+
+== D5 SPEED (epochs until the 10-epoch running training loss < 0.05) ==
+  GainPhase vs NormStep: NO DIFFERENCE: geometric-mean epochs 322 vs 322 (x1.00 faster); censored 0/8 vs 0/8; perm p 1.0000
+  GainRaw vs MapWM: FASTER: geometric-mean epochs 322 vs 901 (x2.80 faster); censored 0/8 vs 8/8; perm p 0.0002
+  REGISTERED D5: NormStep step -- gain score NO DIFFERENCE; raw step -- gain score FASTER
+  [PASS] SOLVED but theta unused: named: True
 
 == end to end, a label that flips under the re-score (GainPhase re-scored down to MapWM's accuracy) ==
 == per arm (unseen-object accuracy x1; leak readouts; classes) ==
@@ -288,12 +434,12 @@
   REGISTERED D2: raw step -- GAIN SCORE NO DIFFERENCE; NormStep step -- GAIN SCORE CEILING [FLAG: under the dropout-scale re-score D2_norm reads WORSE; registered verdict unchanged]
 
 == D3 LEAK DISSOCIATION ==
-  convergence gate (Amendment 1): GainRaw PASS: median acc 0.9900 (gate >= 0.9738: ok), median theta reliance 0.900 (>= 0.2: ok), median S_id 0.0048 (<= 0.0150: ok); 0/8 SOLVED, 8/8 DESCENDING
-  convergence gate: GainPhase PASS: median acc 0.9998 (gate >= 0.9738: ok), median theta reliance 0.900 (>= 0.2: ok), median S_id 0.0010 (<= 0.0150: ok); 8/8 SOLVED, 0/8 DESCENDING
+  convergence gate (Amendment 2): GainRaw PASS: median final-5% loss 0.0751 (<= 0.25: ok), median theta reliance 0.900 (>= 0.2: ok); 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING
+  convergence gate: GainPhase PASS: median final-5% loss 0.0150 (<= 0.25: ok), median theta reliance 0.900 (>= 0.2: ok); 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING
   step fix under the rotary score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
   step fix under the gain score: REMOVES: median L_ms raw +0.0097 / NormStep +0.0002; S_id raw 0.0045 / NormStep 0.0010 (perm p 0.0002)
   leak under the gain score, raw step: PERSISTS: median L_ms(GainRaw) +0.0097; S_id GainRaw 0.0045 vs MapWM 0.0045 (perm p 1.0000); GainRaw distortion share 0.00, field shift 0.0048 cells (MapWM 0.0048)
-  REGISTERED D3: SEPARATE DEFECTS: the step fix removes the leak under both scores; the score fix leaves it (it is in theta)
+  REGISTERED D3: SEPARATE DEFECTS: the step fix removes the leak under both scores; the score fix leaves it (it is in theta) [FLAG: under the dropout-scale re-score the D3 gate for GainRaw reads FAIL (does not use theta although trained); registered verdict unchanged]
 
 == D4 COMBINATION ==
   GainPhase vs MapWM: BETTER: d +0.0107 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
@@ -306,6 +452,7 @@
   REGISTERED D5: NormStep step -- gain score NO DIFFERENCE; raw step -- gain score NEITHER CONVERGED
   [PASS] rescore flip: D4 line flagged: True
   [PASS] rescore flip: D4 verdict unchanged: THE GAIN-PHASE MAP WORKS
+  [PASS] rescore flip: D3 gate flag on the D3 line, verdict unchanged: True
   [PASS] VOID on a missing run: ['void']
 
 ALL PASS

@@ -19,6 +19,12 @@ acc in the library, so no re-score flag fires here):
   J gain unconverged  G and GP untrained-like (acc 0.14, reliance 0, S_id 1.0, L_ms 0 -- what untrained models read --
                       loss still descending at ~0.6): D3 must read UNMEASURED, never TOLERATES / ALSO REMOVES
   K GainRaw unconv.   G untrained-like, GP N-like
+Amendment 2 (gate = training loss <= 0.25 and theta reliance >= 0.2; no S_id, no accuracy-vs-MapWM criterion):
+  L tolerated, big S_id  G N-like (SOLVED, acc ~1, L_ms ~0, reliance ~0.95) with S_id and field shift 4x the W draw's:
+                         D3 must read TOLERATES (Amendment 1's S_id criterion called it "not converged")
+  M large PERSISTS       G W-like with acc - 0.018, L_ms x3, S_id and shift x3, loss + 0.08 (tail ~0.15):
+                         D3 must read SEPARATE DEFECTS (Amendment 1's accuracy criterion called it "not converged")
+  N GP flat tail         GP flattened at loss 3.6 (STALLED), acc 0.14, reliance 0.05: D3 UNMEASURED, D4 qualified
 Output: gain_phase_power_out.txt"""
 import json
 import re
@@ -39,7 +45,7 @@ for arm, key in (("MapWM", "W"), ("NormStep", "N")):
     for r in V[arm]:
         l = torch.load(f"{REPO}/runs/leak/p0/{arm}_s{r['seed']}/{arm}.pt", map_location="cpu", weights_only=False)["losses"]
         LIB[key].append({"acc": r["acc"], "acc_rescored": r["acc"], "L_ms": r["L_ms"], "S_id": r["S_id"],
-                         "reliance": r["reliance"], "resid": r["resid"], "shift_cells": r["shift_cells"], "losses": list(l)})
+                         "reliance": r["reliance"], "reliance_rescored": r["reliance"], "resid": r["resid"], "shift_cells": r["shift_cells"], "losses": list(l)})
 
 
 def hybrid(n_run, w_run):
@@ -73,12 +79,31 @@ SCEN = {
     "G GP 3x faster": lambda rng, n: {"G": draw(rng, LIB["W"], n), "GP": [fast(r) for r in draw(rng, LIB["N"], n)]},
     "H null speed": lambda rng, n: {"G": draw(rng, LIB["W"], n), "GP": draw(rng, LIB["N"], n)},
 }
-STALL = {"acc": 0.60, "acc_rescored": 0.60, "L_ms": 0.0, "S_id": 0.001, "reliance": 0.5, "resid": 0.5, "shift_cells": 0.001,
+STALL = {"acc": 0.60, "acc_rescored": 0.60, "L_ms": 0.0, "S_id": 0.001, "reliance": 0.5, "reliance_rescored": 0.5,
+         "resid": 0.5, "shift_cells": 0.001,
          "losses": list(np.linspace(6.8, 0.5, 900))}
-UNC = {"acc": 0.14, "acc_rescored": 0.14, "L_ms": 0.0, "S_id": 1.0, "reliance": 0.0, "resid": 0.6, "shift_cells": 0.5,
+UNC = {"acc": 0.14, "acc_rescored": 0.14, "L_ms": 0.0, "S_id": 1.0, "reliance": 0.0, "reliance_rescored": 0.0, "resid": 0.6,
+       "shift_cells": 0.5,
        "losses": list(6.8 * np.exp(-np.arange(900) / 300) + 0.3)}
 SCEN["J gain unconverged"] = lambda rng, n: {"G": [UNC] * n, "GP": [UNC] * n}
 SCEN["K GainRaw unconverged"] = lambda rng, n: {"G": [UNC] * n, "GP": draw(rng, LIB["N"], n)}
+FLAT = dict(UNC, L_ms=0.03, S_id=1.3, reliance=0.05, reliance_rescored=0.05, shift_cells=0.8,
+            losses=list(6.8 * np.exp(-np.arange(900) / 10) + 3.6))
+
+
+def big_sid(n_run, w_run):
+    return dict(n_run, S_id=4 * w_run["S_id"], shift_cells=4 * w_run["shift_cells"], resid=w_run["resid"])
+
+
+def big_leak(w_run):
+    return dict(w_run, acc=w_run["acc"] - 0.018, acc_rescored=w_run["acc"] - 0.018, L_ms=3 * w_run["L_ms"],
+                S_id=3 * w_run["S_id"], shift_cells=3 * w_run["shift_cells"], losses=[x + 0.08 for x in w_run["losses"]])
+
+
+SCEN["L tolerated, big S_id"] = lambda rng, n: {"G": [big_sid(a, b) for a, b in zip(draw(rng, LIB["N"], n), draw(rng, LIB["W"], n))],
+                                                "GP": draw(rng, LIB["N"], n)}
+SCEN["M large PERSISTS"] = lambda rng, n: {"G": [big_leak(r) for r in draw(rng, LIB["W"], n)], "GP": draw(rng, LIB["N"], n)}
+SCEN["N GP flat tail"] = lambda rng, n: {"G": draw(rng, LIB["W"], n), "GP": [FLAT] * n}
 SCEN["I GP stalls 1/8"] = lambda rng, n: {"G": draw(rng, LIB["W"], n),
                                           "GP": [STALL if rng.random() < 1 / 8 else LIB["N"][rng.integers(8)] for _ in range(n)]}
 KEYS = ("D1r", "D1", "D2_raw", "D2_norm", "D3_headline", "D4_headline", "D4_vs_N", "D5_norm")

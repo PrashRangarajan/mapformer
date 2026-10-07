@@ -18,6 +18,9 @@ Amendment 1 (independent audit, before launch): D3's gain-side labels are read o
 gate (converged_gate; else "D3 UNMEASURED"); NEGATIVE L_ms branch; TOLERATED carries the distortion share; budget-scope
 qualifiers on D1 / D2 / D4 (budget_flag); D1r's firing test on the D1 line; combo WORSE x AS GOOD names NormStep's own
 deficit; a registered accuracy label that flips under the dropout-scale re-score is flagged on its line.
+Amendment 2 (re-audit): the D3 gate no longer depends on the leak (S_id and accuracy-vs-MapWM criteria removed): it
+reads theta reliance and a training-loss criterion, names the failed criterion, and is re-checked on the re-scored
+reliance; scope qualifiers count every non-SOLVED run (STALLED too); D4's WORSE x AS GOOD wording depends on D1r.
 Every branch is exercised on synthetic data by docs/audits/2026-10-06/gain_phase_smoke.py.
 `python3 -m mapformer.analyze_gain_phase`
 """
@@ -41,9 +44,11 @@ CEIL = 0.999
 LEAK_ABSENT = 0.002  # median L_ms at or below: no leak (LEAK: NormStep max +0.0004, ActOnly 0)
 LEAK_PRESENT = 0.005 # median L_ms at or above: leak present (LEAK: MapWM min +0.0074, median +0.0098)
 SPEED_RATIO = 1.25   # geometric-mean ratio of epochs-to-0.05 that counts as faster / slower
-GATE_ACC_SLACK = 0.01   # D3 gate: median acc >= min acc(MapWM) - 0.01 (Amendment 1)
 GATE_RELIANCE = 0.2     # D3 gate: median theta reliance >= 0.2 (untrained models |.| <= 0.0001; LEAK checkpoints 0.92-0.97, V6)
-GATE_SID_X = 3.0        # D3 gate: median S_id <= 3 x max S_id(MapWM) (LEAK MapWM 0.0038-0.0050; untrained 0.98-1.84, V6)
+GATE_LOSS = 0.25        # D3 gate (Amendment 2): median final-5% training loss <= 0.25. LEAK at 900 epochs: MapWM 0.069-0.072,
+                        # NormStep 0.019-0.022; MapWM passes 0.25 only around epoch ~650 (0.32-0.38 at 600); the 30-epoch
+                        # pilot arms 0.31-3.60; untrained >= 4. A leak 3x MapWM's (acc ~0.97) is estimated at ~0.15, so the
+                        # criterion does not exclude a large PERSISTS; it does not read the leak (S_id) at all.
 N_MC = 200_000       # Monte Carlo relabellings when C(2n, n) > 250k (n >= 12); the power script lowers it
 PRINT_CI = True      # the power script turns the (slow) CI walk off; it never changes a label
 
@@ -197,18 +202,23 @@ def tolerated_note(g_resid, g_shift, w_shift):
             f"MapWM {np.median(w_shift):.4f}")
 
 
-def converged_gate(a_acc, a_rel, a_sid, w_acc, w_sid, a_cls):
-    """Amendment 1: a gain arm's D3 labels are read only if median acc >= min acc(MapWM) - GATE_ACC_SLACK, median theta
-    reliance >= GATE_RELIANCE and median S_id <= GATE_SID_X x max S_id(MapWM). Returns (ok, detail)."""
-    acc_ok = np.median(a_acc) >= np.min(w_acc) - GATE_ACC_SLACK
-    rel_ok = np.median(a_rel) >= GATE_RELIANCE
-    sid_ok = np.median(a_sid) <= GATE_SID_X * np.max(w_sid)
-    n = len(a_cls); k = sum(c["cls"] == "SOLVED" for c in a_cls); j = sum(c["registered"] == "DESCENDING" for c in a_cls)
-    det = (f"median acc {np.median(a_acc):.4f} (gate >= {np.min(w_acc) - GATE_ACC_SLACK:.4f}: {'ok' if acc_ok else 'FAILS'}), "
-           f"median theta reliance {np.median(a_rel):.3f} (>= {GATE_RELIANCE}: {'ok' if rel_ok else 'FAILS'}), median S_id "
-           f"{np.median(a_sid):.4f} (<= {GATE_SID_X * np.max(w_sid):.4f}: {'ok' if sid_ok else 'FAILS'}); {k}/{n} SOLVED, "
-           f"{j}/{n} DESCENDING")
-    return bool(acc_ok and rel_ok and sid_ok), det
+def class_counts(cls):
+    return (sum(c["cls"] == "SOLVED" for c in cls), sum(c["registered"] == "STALLED" for c in cls),
+            sum(c["registered"] == "DESCENDING" for c in cls))
+
+
+def converged_gate(a_rel, a_cls):
+    """Amendment 2: a gain arm's D3 labels are read only if it is TRAINED (median final-5% training loss <= GATE_LOSS)
+    and USES THETA (median theta reliance >= GATE_RELIANCE). Neither criterion reads the leak (no S_id, no accuracy
+    relative to MapWM). Returns (ok, reason, detail); reason names the failed criterion ('' if ok)."""
+    tail = float(np.median([c["tail"] for c in a_cls])); rel = float(np.median(a_rel))
+    loss_ok, rel_ok = tail <= GATE_LOSS, rel >= GATE_RELIANCE
+    n = len(a_cls); k, st, d = class_counts(a_cls)
+    det = (f"median final-5% loss {tail:.4f} (<= {GATE_LOSS}: {'ok' if loss_ok else 'FAILS'}), median theta reliance "
+           f"{rel:.3f} (>= {GATE_RELIANCE}: {'ok' if rel_ok else 'FAILS'}); {k}/{n} SOLVED, {st}/{n} STALLED, {d}/{n} DESCENDING")
+    reason = ("" if loss_ok and rel_ok else "not converged and does not use theta" if not (loss_ok or rel_ok)
+              else "not converged" if not loss_ok else "does not use theta although trained")
+    return bool(loss_ok and rel_ok), reason, det
 
 
 def leak_verdict(rot, gain, gl, tol_note=""):
@@ -235,13 +245,16 @@ def leak_verdict(rot, gain, gl, tol_note=""):
     return (f"STEP FIX INCOMPLETE (rotary: {rot}; gain: {gain}); GainRaw's leak {gl} -- reported as it falls")
 
 
-def combo_verdict(vs_w, vs_n):
-    """(GP vs W two-sided, GP vs N non-inferiority) -> D4 headline."""
+def combo_verdict(vs_w, vs_n, rep=None):
+    """(GP vs W two-sided, GP vs N non-inferiority[, D1r label]) -> D4 headline."""
     if "CONFLICT" in (vs_w, vs_n):
         return f"CONFLICT (vs MapWM {vs_w}, vs NormStep {vs_n}): reported as it falls"
-    if vs_w == "WORSE" and vs_n == "AS GOOD":
-        return ("WORSE THAN MapWM BUT AS GOOD AS NormStep: NormStep is itself below MapWM on these seeds (see D1r); "
+    if vs_w == "WORSE" and vs_n == "AS GOOD" and rep == "WORSE":
+        return ("WORSE THAN MapWM BUT AS GOOD AS NormStep: NormStep is itself below MapWM on these seeds (D1r WORSE); "
                 "the gain-phase map is not worse than its step fix")
+    if vs_w == "WORSE" and vs_n == "AS GOOD":
+        return (f"WORSE THAN MapWM BUT NON-INFERIOR TO NormStep (within {MARGIN}); NormStep vs MapWM is {rep}, so the "
+                f"shortfall is not attributed to either fix")
     if vs_w == "WORSE":
         return "THE GAIN-PHASE MAP FAILS: worse than MapWM"
     if vs_w == "BETTER":
@@ -253,21 +266,21 @@ def combo_verdict(vs_w, vs_n):
 
 
 def budget_flag(arm, a_cls, ref, r_cls, by):
-    """Amendment 1: budget scope. by='solved' (GainPhase vs NormStep): flag if the gain arm has more DESCENDING runs than
-    its rotary counterpart. by='regime' (GainRaw vs MapWM; MapWM never reaches 0.05, so counts of DESCENDING are
-    uninformative): flag if the gain arm's median final-5% loss is above MapWM's largest and it has a DESCENDING run.
+    """Training scope (Amendment 1; Amendment 2: every non-SOLVED run counts, STALLED as well as DESCENDING -- a run that
+    flattened at high loss under cosine decay is not converged either, rule 3). by='solved' (GainPhase vs NormStep): flag if
+    the gain arm has more non-SOLVED runs than its rotary counterpart. by='regime' (GainRaw vs MapWM; MapWM never reaches
+    0.05): flag if the gain arm's median final-5% loss is above MapWM's largest, whatever its class.
     Returns the qualifier string ('' if none)."""
-    n = len(a_cls); k = sum(c["cls"] == "SOLVED" for c in a_cls); j = sum(c["registered"] == "DESCENDING" for c in a_cls)
-    jr = sum(c["registered"] == "DESCENDING" for c in r_cls)
+    n = len(a_cls); k, st, d = class_counts(a_cls); kr, str_, dr = class_counts(r_cls)
     if by == "solved":
-        hit = j > jr
+        hit = (n - k) > (len(r_cls) - kr)
     else:
-        hit = np.median([c["tail"] for c in a_cls]) > max(c["tail"] for c in r_cls) and j > 0
+        hit = np.median([c["tail"] for c in a_cls]) > max(c["tail"] for c in r_cls)
     if not hit:
         return ""
-    extra = (f"; {ref} {sum(c['cls'] == 'SOLVED' for c in r_cls)}/{n} SOLVED, {jr}/{n} DESCENDING" if by == "solved" else
+    extra = (f"; {ref} {kr}/{n} SOLVED, {str_}/{n} STALLED, {dr}/{n} DESCENDING" if by == "solved" else
              f"; median final loss {np.median([c['tail'] for c in a_cls]):.3f} vs {ref}'s max {max(c['tail'] for c in r_cls):.3f}")
-    return f" (budget-scoped: {arm} {k}/{n} SOLVED, {j}/{n} DESCENDING at {EPOCHS} epochs{extra})"
+    return f" (scoped to {EPOCHS} epochs, not converged: {arm} {k}/{n} SOLVED, {st}/{n} STALLED, {d}/{n} DESCENDING{extra})"
 
 
 def fires_on(detail):
@@ -335,25 +348,31 @@ def analyse(D, seeds=SEEDS, E=EPOCHS, out=print):
     gai, dgai = leak_side(col(G, "L_ms"), col(GP, "L_ms"), col(G, "S_id"), col(GP, "S_id"))
     gl, dgl = gain_leak(col(G, "L_ms"), col(W, "S_id"), col(G, "S_id"), col(G, "resid"), col(G, "shift_cells"),
                         col(W, "shift_cells"))
-    gate = {a: converged_gate(col(a, "acc"), col(a, "reliance"), col(a, "S_id"), col(W, "acc"), col(W, "S_id"), cl[a])
-            for a in (G, GP)}
+    gate = {a: converged_gate(col(a, "reliance"), cl[a]) for a in (G, GP)}
+    gflag = ""
+    if all("reliance_rescored" in D[(a, s)] for a in (G, GP) for s in seeds):
+        gr = {a: converged_gate(col(a, "reliance_rescored"), cl[a]) for a in (G, GP)}
+        gflag = "".join(f" [FLAG: under the dropout-scale re-score the D3 gate for {a} reads "
+                        f"{'PASS' if gr[a][0] else 'FAIL (' + gr[a][1] + ')'}; registered verdict unchanged]"
+                        for a in (G, GP) if gr[a][0] != gate[a][0])
     V["D3_rot"], V["D3_gain"], V["D3_gainraw"] = rot, gai, gl
     V["D3_gate"] = {a: gate[a][0] for a in gate}
     unconv = [a for a in (G, GP) if not gate[a][0]]
     if rot != "NO LEAK TO REMOVE" and unconv:
-        V["D3_headline"] = "D3 UNMEASURED: " + "; ".join(f"{a} not converged ({gate[a][1]})" for a in unconv)
+        V["D3_headline"] = "D3 UNMEASURED: " + "; ".join(f"{a} {gate[a][1]} ({gate[a][2]})" for a in unconv)
     else:
         V["D3_headline"] = leak_verdict(rot, gai, gl, tolerated_note(col(G, "resid"), col(G, "shift_cells"),
                                                                      col(W, "shift_cells")) if gl == "ABSENT, TOLERATED" else "")
-    out(f"\n== D3 LEAK DISSOCIATION ==\n  convergence gate (Amendment 1): GainRaw {'PASS' if gate[G][0] else 'FAIL'}: "
-        f"{gate[G][1]}\n  convergence gate: GainPhase {'PASS' if gate[GP][0] else 'FAIL'}: {gate[GP][1]}\n"
+    V["D3_headline"] += gflag
+    out(f"\n== D3 LEAK DISSOCIATION ==\n  convergence gate (Amendment 2): GainRaw {'PASS' if gate[G][0] else 'FAIL'}: "
+        f"{gate[G][2]}\n  convergence gate: GainPhase {'PASS' if gate[GP][0] else 'FAIL'}: {gate[GP][2]}\n"
         f"  step fix under the rotary score: {rot}: {drot}\n"
         f"  step fix under the gain score: {gai}: {dgai}{'' if not unconv else ' [label not read: gate]'}\n"
         f"  leak under the gain score, raw step: {gl}: {dgl}{'' if gate[G][0] else ' [label not read: gate]'}\n"
         f"  REGISTERED D3: {V['D3_headline']}")
     vw, dvw = contrast_state(acc[W], sol[W], acc[GP], sol[GP]); vn, dvn = ni_state(acc[N], sol[N], acc[GP], sol[GP])
     V["D4_vs_W"], V["D4_vs_N"] = vw, vn
-    V["D4_headline"] = (combo_verdict(vw, vn) + (" (non-inferiority at ceiling)" if vn == "AS GOOD" and "(at ceiling)" in dvn else "")
+    V["D4_headline"] = (combo_verdict(vw, vn, rep) + (" (non-inferiority at ceiling)" if vn == "AS GOOD" and "(at ceiling)" in dvn else "")
                         + bf[GP] + rflag("D4_vs_W", "D4_vs_N"))
     out(f"\n== D4 COMBINATION ==\n  GainPhase vs MapWM: {vw}: {dvw}\n  GainPhase vs NormStep (non-inferiority): {vn}: {dvn}\n"
         f"  REGISTERED D4: {V['D4_headline']}")

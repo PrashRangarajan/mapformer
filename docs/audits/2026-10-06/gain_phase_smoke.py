@@ -79,17 +79,23 @@ cl_s = [{"cls": "SOLVED", "registered": "SOLVED", "tail": 0.015}] * 8
 cl_d = [{"cls": "DESCENDING", "registered": "DESCENDING", "tail": 0.07}] * 8
 cl_hi = [{"cls": "DESCENDING", "registered": "DESCENDING", "tail": 0.5}] * 8
 rel_hi, rel_0 = np.full(8, 0.9), np.full(8, 0.01)
-case("gate PASS (converged, MapWM-like)", A.converged_gate(lo, rel_hi, ws, lo, ws, cl_d)[0], True)
-case("gate FAIL on accuracy", A.converged_gate(lo - 0.02, rel_hi, ws, lo, ws, cl_d)[0], False)
-case("gate FAIL on reliance (theta unused)", A.converged_gate(hi, rel_0, ns, lo, ws, cl_s)[0], False)
-case("gate FAIL on S_id (unconverged steps)", A.converged_gate(hi, rel_hi, ws * 4, lo, ws, cl_s)[0], False)
-case("budget flag, solved basis: GP 2 DESCENDING vs N 0", bool(A.budget_flag("GainPhase", cl_s[:6] + cl_d[:2], "NormStep", cl_s, "solved")), True)
-case("budget flag, solved basis: equal -> none", A.budget_flag("GainPhase", cl_s, "NormStep", cl_s, "solved"), "")
-case("budget flag, regime basis: GainRaw loss regime above MapWM's", bool(A.budget_flag("GainRaw", cl_hi, "MapWM", cl_d, "regime")), True)
-case("budget flag, regime basis: same regime -> none", A.budget_flag("GainRaw", cl_d, "MapWM", cl_d, "regime"), "")
+cl_flat = [{"cls": "STALLED", "registered": "STALLED", "tail": 3.6}] * 8
+print("== Amendment 2: leak-independent gate, scope flags counting STALLED ==")
+case("gate PASS (MapWM-like: loss 0.07, reliance 0.9)", "|".join(map(str, A.converged_gate(rel_hi, cl_d)[:2])), "True|")
+case("gate PASS (SOLVED, reliance 0.9) -- whatever S_id or accuracy", "|".join(map(str, A.converged_gate(rel_hi, cl_s)[:2])), "True|")
+case("gate FAIL: not converged (loss 0.5)", A.converged_gate(rel_hi, cl_hi)[1], "not converged")
+case("gate FAIL: SOLVED but theta unused -> named", A.converged_gate(rel_0, cl_s)[1], "does not use theta although trained")
+case("gate FAIL: both", A.converged_gate(rel_0, cl_flat)[1], "not converged and does not use theta")
+case("scope flag, solved basis: GP 2 DESCENDING vs N 0", bool(A.budget_flag("GainPhase", cl_s[:6] + cl_d[:2], "NormStep", cl_s, "solved")), True)
+case("scope flag, solved basis: GP 2 STALLED (flat tail) vs N 0", bool(A.budget_flag("GainPhase", cl_s[:6] + cl_flat[:2], "NormStep", cl_s, "solved")), True)
+case("scope flag, solved basis: equal -> none", A.budget_flag("GainPhase", cl_s, "NormStep", cl_s, "solved"), "")
+case("scope flag, regime basis: GainRaw loss regime above MapWM's", bool(A.budget_flag("GainRaw", cl_hi, "MapWM", cl_d, "regime")), True)
+case("scope flag, regime basis: flat-tail (STALLED) GainRaw above MapWM's regime", bool(A.budget_flag("GainRaw", cl_flat, "MapWM", cl_d, "regime")), True)
+case("scope flag, regime basis: same regime -> none", A.budget_flag("GainRaw", cl_d, "MapWM", cl_d, "regime"), "")
 case("tolerated note: isotropic", A.tolerated_note(np.full(8, 0.9), ws, ws).split(":")[0], "mostly isotropic spread")
 case("tolerated note: field shift", A.tolerated_note(np.full(8, 0.01), ws, ws).split(":")[0], "mostly a field shift the gain score ignores")
-case("combo WORSE x AS GOOD names NormStep's deficit", A.combo_verdict("WORSE", "AS GOOD").split(":")[0], "WORSE THAN MapWM BUT AS GOOD AS NormStep")
+case("combo WORSE x AS GOOD with D1r WORSE names NormStep's deficit", A.combo_verdict("WORSE", "AS GOOD", "WORSE").split(":")[0], "WORSE THAN MapWM BUT AS GOOD AS NormStep")
+case("combo WORSE x AS GOOD without D1r WORSE is softened", A.combo_verdict("WORSE", "AS GOOD", "NO DIFFERENCE").split(";")[0], "WORSE THAN MapWM BUT NON-INFERIOR TO NormStep (within 0.005)")
 case("fires_on", A.fires_on("x -- fires on accuracy and SOLVED"), "accuracy and SOLVED")
 
 print("\n== step_verdict (D1r, D1): exhaustive ==")
@@ -109,24 +115,47 @@ for vw in ("BETTER", "WORSE", "CEILING", "NO DIFFERENCE", "CONFLICT"):
 solved_curve = list(6.8 * np.exp(-np.arange(900) / 60) + 0.015)
 desc_curve = list(6.8 * np.exp(-np.arange(900) / 120) + 0.07 + 0.02 * np.linspace(1, 0, 900))
 high_curve = list(6.8 * np.exp(-np.arange(900) / 300) + 0.3)          # still descending at 900 (tail ~0.6)
+flat_curve = list(6.8 * np.exp(-np.arange(900) / 10) + 3.6)            # flattened at 3.6 (STALLED), pilot-like
+leaky_curve = list(np.array(desc_curve) + 0.08)                        # a large-leak GainRaw: tail ~0.15, DESCENDING
 
 
 def synth(variant):
     """32 synthetic checkpoints + EVAL.json. 'predicted': raw arms MapWM-like, NormStep arms NormStep-like.
     'unconverged': both gain arms untrained-like (acc 0.14, reliance 0, S_id 1.0, L_ms 0), loss still descending at 0.6.
-    'rescore_flip': as predicted, but GainPhase's re-scored accuracy falls to MapWM's (a D4 / D2 label flips)."""
+    'rescore_flip': as predicted, but GainPhase's re-scored accuracy falls to MapWM's (a D4 / D2 label flips) and
+                    GainRaw's re-scored reliance falls to 0.1 (the D3 gate flips).
+    Amendment 2: 'flat_tail': GainPhase flattened at loss 3.6 (STALLED), acc 0.14, reliance 0.05.
+    'tolerated_bigsid': GainRaw SOLVED, acc ~1, reliance 0.9, L_ms ~0, S_id and field shift 4x MapWM's.
+    'persists_large': GainRaw acc MapWM's - 0.018, L_ms 3x, S_id 3x MapWM's, loss tail ~0.15 (DESCENDING).
+    'solved_no_theta': GainRaw SOLVED, acc ~1, reliance 0.1."""
     tmp = tempfile.mkdtemp(prefix=f"gain_phase_smoke_{variant}_"); J = {}
     for a in A.ARMS:
         for s in A.SEEDS:
             d = f"{tmp}/{a}_s{s}"; os.makedirs(d); i = s - 8
             raw = a in ("MapWM", "GainRaw"); unc = variant == "unconverged" and a in ("GainRaw", "GainPhase")
-            torch.save({"losses": high_curve if unc else (desc_curve if raw else solved_curve)}, f"{d}/{a}.pt")
+            curve = high_curve if unc else (desc_curve if raw else solved_curve)
+            if variant == "flat_tail" and a == "GainPhase":
+                curve = flat_curve
+            if a == "GainRaw" and variant in ("tolerated_bigsid", "solved_no_theta"):
+                curve = solved_curve
+            if a == "GainRaw" and variant == "persists_large":
+                curve = leaky_curve
+            torch.save({"losses": curve}, f"{d}/{a}.pt")
             r = {"acc": float(lo[i] if raw else hi[i]), "L_ms": float(wl[i] if raw else nl[i]),
                  "S_id": float(ws[i] if raw else ns[i]), "reliance": 0.9, "resid": 0.002, "shift_cells": float(ws[i] if raw else ns[i]),
                  "L_zero": 0.0, "x2": 0.9, "x4": 0.8, "train_x1": 0.99}
             if unc:
                 r.update(acc=0.14, L_ms=0.0, S_id=1.0, reliance=0.0, resid=0.6, shift_cells=0.5)
+            if variant == "flat_tail" and a == "GainPhase":
+                r.update(acc=0.14, L_ms=0.03, S_id=1.3, reliance=0.05, resid=0.6, shift_cells=0.8)
+            if a == "GainRaw" and variant == "tolerated_bigsid":
+                r.update(acc=float(hi[i]), L_ms=float(nl[i]), S_id=float(4 * ws[i]), shift_cells=float(4 * ws[i]))
+            if a == "GainRaw" and variant == "persists_large":
+                r.update(acc=float(lo[i] - 0.018), L_ms=float(3 * wl[i]), S_id=float(3 * ws[i]), shift_cells=float(3 * ws[i]))
+            if a == "GainRaw" and variant == "solved_no_theta":
+                r.update(acc=float(hi[i]), L_ms=float(nl[i]), reliance=0.1)
             r["acc_rescored"] = float(lo[i]) if (variant == "rescore_flip" and a == "GainPhase") else r["acc"]
+            r["reliance_rescored"] = 0.1 if (variant == "rescore_flip" and a == "GainRaw") else r["reliance"]
             J[f"{a}|{s}"] = r
     json.dump(J, open(f"{tmp}/EVAL.json", "w"))
     return A.load_runs(f"{tmp}/EVAL.json", tmp)
@@ -144,12 +173,26 @@ case("end to end: D5 (raw arms never reach 0.05)", V["D5_raw"], "NEITHER CONVERG
 print("\n== end to end, unconverged gain arms ==")
 V = A.analyse(synth("unconverged"))
 case("unconverged: D3 UNMEASURED", V["D3_headline"].split(":")[0], "D3 UNMEASURED")
-case("unconverged: D4 carries the budget scope", "budget-scoped: GainPhase" in V["D4_headline"], True)
-case("unconverged: D2 carries both budget scopes", "budget-scoped: GainRaw" in V["D2_headline"] and "budget-scoped: GainPhase" in V["D2_headline"], True)
+case("unconverged: D3 names the failed criteria", "GainRaw not converged and does not use theta" in V["D3_headline"], True)
+case("unconverged: D4 carries the scope", "not converged: GainPhase" in V["D4_headline"], True)
+case("unconverged: D2 carries both scopes", "not converged: GainRaw" in V["D2_headline"] and "not converged: GainPhase" in V["D2_headline"], True)
+print("\n== end to end, Amendment 2 scenarios ==")
+V = A.analyse(synth("flat_tail"))
+case("flat tail: D4 qualified although 0/8 DESCENDING", "not converged: GainPhase 0/8 SOLVED, 8/8 STALLED" in V["D4_headline"], True)
+case("flat tail: D3 UNMEASURED, GainPhase not converged and does not use theta", "GainPhase not converged and does not use theta" in V["D3_headline"], True)
+V = A.analyse(synth("tolerated_bigsid"))
+case("TOLERATED with S_id 4x MapWM's is read (gate does not use S_id)", V["D3_headline"].split(":")[0], "THE GAIN SCORE TOLERATES THE LEAK")
+case("TOLERATED carries the field-shift note", "mostly a field shift the gain score ignores" in V["D3_headline"], True)
+V = A.analyse(synth("persists_large"))
+case("large PERSISTS (3x MapWM's leak, acc 0.97) is read", V["D3_headline"].split(":")[0], "SEPARATE DEFECTS")
+V = A.analyse(synth("solved_no_theta"))
+case("SOLVED but theta unused: named", "GainRaw does not use theta although trained" in V["D3_headline"], True)
 print("\n== end to end, a label that flips under the re-score (GainPhase re-scored down to MapWM's accuracy) ==")
 V = A.analyse(synth("rescore_flip"))
 case("rescore flip: D4 line flagged", "FLAG: under the dropout-scale re-score D4_vs_N reads WORSE" in V["D4_headline"], True)
 case("rescore flip: D4 verdict unchanged", V["D4_headline"].split(":")[0], "THE GAIN-PHASE MAP WORKS")
+case("rescore flip: D3 gate flag on the D3 line, verdict unchanged",
+     ("the D3 gate for GainRaw reads FAIL" in V["D3_headline"], V["D3_headline"].split(":")[0]) == (True, "SEPARATE DEFECTS"), True)
 D.pop(("GainPhase", 15))
 case("VOID on a missing run", list(A.analyse(D, out=lambda *a: None)), ["void"])
 print(f"\nALL {'PASS' if ok else 'FAIL'}")

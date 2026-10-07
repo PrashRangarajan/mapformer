@@ -8,8 +8,11 @@ set -uo pipefail
 REPO="$(cd "$(dirname "$0")" && pwd)"
 LOG="$REPO/gain_phase.log"
 source "$REPO/lib_driver.sh"
-DRV_MAXPG="${MAXPG:-4}"; DRV_SPACING="${DRV_SPACING:-15}"    # 4/GPU as LEAK; the picker counts every mapformer.train_ job
-DRV_MINFREE="${DRV_MINFREE:-5500}"   # Amendment 1: the pilot measured ~4.7 GB per job; 5.5 GB free before each launch
+# Amendment 2 (bug): lib_driver.sh, sourced above, already sets DRV_SPACING=45 and DRV_MINFREE=4500, so "${X:-default}"
+# here was a no-op; these are assigned unconditionally (overridable through GP_* variables).
+DRV_MAXPG="${MAXPG:-4}"                 # 4/GPU as LEAK; the picker counts every mapformer.train_ job
+DRV_SPACING="${GP_SPACING:-15}"
+DRV_MINFREE="${GP_MINFREE:-5500}"       # the pilot measured ~4.7 GB per job; 5.5 GB free before each launch
 drv_lock "$REPO/.run_gain_phase.lock" || exit 1
 cd "$REPO/.."
 R="$REPO/runs/gain_phase"; mkdir -p "$R/p0"
@@ -44,7 +47,8 @@ for S in $SEEDS; do for ARM in $ARMS; do
   OUT="$R/p0/${ARM}_s${S}"
   [ -f "$OUT/${ARM}.pt" ] && { echo "skip $OUT" >> "$LOG"; continue; }
   # Amendment 1 (rule 21): never launch a duplicate of a run that is already training (and never truncate its log)
-  if [ -n "$(ps -u "$USER" -o comm=,args= | awk -v r="--output-dir $OUT" '$1=="python3" && index($0, r)')" ]; then
+  # Amendment 2: exact-token match (a prefix such as ..._s1 must not match ..._s15)
+  if [ -n "$(ps -u "$USER" -o comm=,args= | awk -v o="$OUT" '$1=="python3" { for (i = 2; i < NF; i++) if ($i == "--output-dir" && $(i + 1) == o) { print; break } }')" ]; then
     echo "skip $OUT (already running)" >> "$LOG"; continue
   fi
   mkdir -p "$OUT"; G=$(drv_wait_slot)
@@ -57,8 +61,17 @@ REQ=(); for S in $SEEDS; do for ARM in $ARMS; do REQ+=("$R/p0/${ARM}_s${S}/${ARM
 [ "${#REQ[@]}" -eq 32 ] || drv_fail "expected 32 checkpoints, listed ${#REQ[@]}"
 drv_require "${REQ[@]}" || drv_fail "missing checkpoints"
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before eval"
-# Amendment 1: eval on the GPU with the most free memory, and only when it has >= 6 GB free
-until [ "$(nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits | sort -nr | head -1)" -gt 6000 ]; do sleep 60; done
+# Amendment 1: eval on the GPU with the most free memory, and only when it has > 6 GB free. Amendment 2: logged, guarded
+# against empty nvidia-smi output, and bounded (12 h, then drv_fail).
+_drv_log "eval: waiting for a GPU with > 6000 MiB free"
+W0=$(date +%s)
+while :; do
+  F=$(nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits 2>/dev/null | sort -nr | head -1 | tr -dc '0-9')
+  [ -n "$F" ] && [ "$F" -gt 6000 ] && break
+  [ $(( $(date +%s) - W0 )) -gt 43200 ] && drv_fail "eval: no GPU with > 6000 MiB free (or nvidia-smi empty) for 12 h"
+  sleep 60
+done
+_drv_log "eval: starting (max free ${F} MiB)"
 python3 -u -m mapformer.eval_gain_phase auto >> "$LOG" 2>&1 || drv_fail eval
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before analysis"
 python3 -u -m mapformer.analyze_gain_phase > "$REPO/GAIN_PHASE_ANALYSIS.txt" 2>&1 || drv_fail analyze
