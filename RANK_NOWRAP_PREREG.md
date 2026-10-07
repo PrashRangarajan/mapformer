@@ -464,6 +464,6 @@ plain-hard counts).
 **7. DIRTY check.** The launch log's clean / DIRTY now covers only the md5-guarded files (`git diff --quiet HEAD --
 "${GUARD[@]}"`), so unrelated edits elsewhere in the repo do not log DIRTY.
 
-N7 of the first audit remains OPEN (Amendment 2).
+N7 of the first audit is CLOSED (procedural; commit 18c1b81).
 
 Launch (unchanged): `cd /home/prashr/mapformer && setsid nohup bash run_rank_nowrap.sh > /dev/null 2>&1 &`
