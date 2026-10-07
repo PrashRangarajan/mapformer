@@ -391,7 +391,7 @@ DRV_MINFREE=4500`, logged at start. MINFREE 4500 MiB is kept: a T=1024 B16 per-h
 efficiency audit #4, rank config); not re-measured (no GPU use allowed). Verified by sourcing
 (`rank_nowrap_driver_knobs_out.txt`: old 45, new 15).
 
-**N7** (first audit) remains OPEN as recorded in Amendment 2 (content not relayed to this session).
+**N7** (first audit): CLOSED -- it was procedural (amend the md5-guarded analysis before launch, not after); see the main-session note above (commit 18c1b81). All three amendments were made before launch.
 
 **Tests re-run.** Branch smoke 18/18 (`rank_nowrap_branch_smoke_out.txt`); validation (`rank_nowrap_hard_validate_out.txt`);
 power (`rank_nowrap_power_out.txt`); CPU end-to-end analysis on the Amendment 2 smoke checkpoints with the Amendment 3 code
