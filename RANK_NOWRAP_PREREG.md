@@ -318,3 +318,7 @@ to 0.65** -- a decision for the user before launch.
 re-measured; no GPU use allowed).
 
 Launch (unchanged): `cd /home/prashr/mapformer && setsid nohup bash run_rank_nowrap.sh > /dev/null 2>&1 &`
+
+**N7 (first audit), resolved by the main session:** N7 was procedural -- "amend the analysis before launch, not after",
+because `analyze_rank_nowrap.py` is md5-guarded and re-checked before eval, so a post-launch edit trips the guard and the
+batch ends without a done marker. Amendments 1 and 2 were both made before launch; nothing to change in the code.
