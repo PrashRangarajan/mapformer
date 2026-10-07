@@ -4,7 +4,9 @@
 # cosine, 1 layer, 2 heads, d 128, no landmarks, data-workers 3, explicit attention path, --save-full-state); arms
 # through train_rank_nowrap (omega initialised at grid 32 on every torus). Cells (Amendment 1): per-head rank 2 / 3 on
 # the 32-torus and on the 256-torus, plus rank 2 on the 32-torus with the map redrawn every trajectory (memorisation
-# control); seeds 60-69 (n=10); 50 runs; seed outer, cell inner. Launch:
+# control); seed outer, cell inner. SEED COUNT (Amendment 4): read from the ONE switch `N_SEEDS = ...` in
+# analyze_rank_nowrap.py -- registered n=10 (seeds 60-69, 50 runs); the option n=12 (seeds 60-71, 60 runs) is that one
+# edit, nothing here. Launch:
 #   cd /home/prashr/mapformer && setsid nohup bash run_rank_nowrap.sh > /dev/null 2>&1 &
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")" && pwd)"
@@ -18,7 +20,9 @@ drv_lock "$REPO/.run_rank_nowrap.lock" || exit 1
 export PYTHONUNBUFFERED=1
 cd "$REPO/.."
 R="$REPO/runs/rank_nowrap"; mkdir -p "$R"
-SEEDS="$(seq -s ' ' 60 69)"
+NS=$(awk '/^N_SEEDS = [0-9]+/ {print $3; exit}' "$REPO/analyze_rank_nowrap.py")
+case "$NS" in ''|*[!0-9]*) echo "cannot read N_SEEDS from analyze_rank_nowrap.py" >> "$LOG"; exit 1;; esac
+SEEDS="$(seq -s ' ' 60 $((60 + NS - 1)))"; NRUNS=$((5 * NS))
 CELLS=("32 Vanilla_r2ph_om32" "32 Vanilla_r3ph_om32" "32 Vanilla_r2ph_om32_redraw" "256 Vanilla_r2ph_om32" "256 Vanilla_r3ph_om32")
 # every mapformer module the trainer / evaluators / analysis import (sys.modules after importing train_rank_nowrap,
 # analyze_rank_nowrap, eval_nd, rescore_hook), plus the runpy'd eval wrapper
@@ -45,7 +49,7 @@ running() { ps -u "$USER" -o comm=,args= | awk -v d="--output-dir $1 " '$1=="pyt
 echo "start $(date)" >> "$LOG"
 _drv_log "knobs: DRV_MAXPG $DRV_MAXPG DRV_SPACING $DRV_SPACING DRV_MINFREE $DRV_MINFREE"
 drv_md5_guard "$R" "${GUARD[@]}" || exit 1
-_drv_log "code version at launch: $(cd "$REPO" && git rev-parse HEAD) $(cd "$REPO" && git diff --quiet HEAD -- && echo clean || echo DIRTY)"
+_drv_log "code version at launch: $(cd "$REPO" && git rev-parse HEAD) $(cd "$REPO" && git diff --quiet HEAD -- "${GUARD[@]}" && echo clean || echo DIRTY) (guarded files only); n=$NS seeds $SEEDS, $NRUNS runs"
 for S in $SEEDS; do for c in "${CELLS[@]}"; do set -- $c
   OUT="$R/N$1/D2/${2}_s${S}"
   [ -f "$OUT/$2.pt" ] && { echo "skip $OUT" >> "$LOG"; continue; }
@@ -61,7 +65,7 @@ for S in $SEEDS; do for c in "${CELLS[@]}"; do set -- $c
 done; done
 drv_wait_dir "$R/"
 REQ=(); for S in $SEEDS; do for c in "${CELLS[@]}"; do set -- $c; REQ+=("$R/N$1/D2/${2}_s${S}/$2.pt"); done; done
-[ "${#REQ[@]}" -eq 50 ] || drv_fail "expected 50 checkpoints, listed ${#REQ[@]}"
+[ "${#REQ[@]}" -eq "$NRUNS" ] || drv_fail "expected $NRUNS checkpoints, listed ${#REQ[@]}"
 drv_require "${REQ[@]}" || drv_fail "missing checkpoints"
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before eval"
 # eval / re-score on the GPU with the most free memory (Amendment 2), not a pinned cuda:0; the analysis picks its own

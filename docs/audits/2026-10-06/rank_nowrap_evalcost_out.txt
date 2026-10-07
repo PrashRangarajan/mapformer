@@ -1,0 +1,2 @@
+grid 32: per 400 walks -- stream+info 3.3 s, CPU forward 9.1 s, strata loop excl. forward 0.0 s
+grid 256: per 400 walks -- stream+info 3.9 s, CPU forward 8.5 s, strata loop excl. forward 0.4 s

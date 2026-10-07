@@ -36,6 +36,46 @@ ND 256-torus stratum shares (held-out stream, 100 walks): copy 0.743  blank_out 
   T64 r3 s6: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.003)
   T64 r3 s7: p 1.000 wrap-only 1.000 h 1.000 copy 1.000 blank_out 1.000 all 1.000 | NLL all 0.000 | loss-SOLVED True (tail 0.005)
 
+(3) per-seed sampling error of p (cluster bootstrap over walks, 2000 resamples; binomial for comparison):
+  ND32 r2 s0: p 0.8915 on 2129 targets / 60 walks | SE cluster 0.0095 (binomial 0.0067); projected to 400 walks 0.0037
+  ND32 r2 s1: p 0.6426 on 2143 targets / 60 walks | SE cluster 0.0119 (binomial 0.0104); projected to 400 walks 0.0046
+  ND32 r2 s2: p 1.0000 on 2025 targets / 60 walks | SE cluster 0.0000 (binomial 0.0000); projected to 400 walks 0.0000
+  ND32 r2 s3: p 0.0946 on 2369 targets / 60 walks | SE cluster 0.0086 (binomial 0.0060); projected to 400 walks 0.0033
+  ND32 r2 s4: p 0.8298 on 2062 targets / 60 walks | SE cluster 0.0158 (binomial 0.0083); projected to 400 walks 0.0061
+  ND32 r2 s5: p 0.5252 on 2239 targets / 60 walks | SE cluster 0.0161 (binomial 0.0106); projected to 400 walks 0.0062
+  ND32 r2 s6: p 0.2088 on 2122 targets / 60 walks | SE cluster 0.0141 (binomial 0.0088); projected to 400 walks 0.0054
+  ND32 r2 s7: p 0.1322 on 2247 targets / 60 walks | SE cluster 0.0102 (binomial 0.0071); projected to 400 walks 0.0039
+  ND32 r3 s0: p 0.9995 on 2129 targets / 60 walks | SE cluster 0.0005 (binomial 0.0005); projected to 400 walks 0.0002
+  ND32 r3 s1: p 1.0000 on 2143 targets / 60 walks | SE cluster 0.0000 (binomial 0.0000); projected to 400 walks 0.0000
+  ND32 r3 s2: p 1.0000 on 2025 targets / 60 walks | SE cluster 0.0000 (binomial 0.0000); projected to 400 walks 0.0000
+  ND32 r3 s3: p 0.9992 on 2369 targets / 60 walks | SE cluster 0.0006 (binomial 0.0006); projected to 400 walks 0.0002
+  ND32 r3 s4: p 1.0000 on 2062 targets / 60 walks | SE cluster 0.0000 (binomial 0.0000); projected to 400 walks 0.0000
+  ND32 r3 s5: p 1.0000 on 2239 targets / 60 walks | SE cluster 0.0000 (binomial 0.0000); projected to 400 walks 0.0000
+  ND32 r3 s6: p 1.0000 on 2122 targets / 60 walks | SE cluster 0.0000 (binomial 0.0000); projected to 400 walks 0.0000
+  ND32 r3 s7: p 1.0000 on 2247 targets / 60 walks | SE cluster 0.0000 (binomial 0.0000); projected to 400 walks 0.0000
+  T64 r2 s0: p 0.2848 on 2272 targets / 60 walks | SE cluster 0.0094 (binomial 0.0095); projected to 400 walks 0.0036
+  T64 r2 s1: p 1.0000 on 2289 targets / 60 walks | SE cluster 0.0000 (binomial 0.0000); projected to 400 walks 0.0000
+  T64 r2 s2: p 1.0000 on 2355 targets / 60 walks | SE cluster 0.0000 (binomial 0.0000); projected to 400 walks 0.0000
+  T64 r2 s3: p 0.2288 on 2225 targets / 60 walks | SE cluster 0.0100 (binomial 0.0089); projected to 400 walks 0.0039
+  T64 r2 s4: p 0.9250 on 2199 targets / 60 walks | SE cluster 0.0128 (binomial 0.0056); projected to 400 walks 0.0050
+  T64 r2 s5: p 0.8935 on 2253 targets / 60 walks | SE cluster 0.0159 (binomial 0.0065); projected to 400 walks 0.0062
+  T64 r2 s6: p 0.9076 on 2176 targets / 60 walks | SE cluster 0.0115 (binomial 0.0062); projected to 400 walks 0.0045
+  T64 r2 s7: p 0.2800 on 2261 targets / 60 walks | SE cluster 0.0139 (binomial 0.0094); projected to 400 walks 0.0054
+  T64 r3 s0: p 0.8671 on 2272 targets / 60 walks | SE cluster 0.0171 (binomial 0.0071); projected to 400 walks 0.0066
+  T64 r3 s1: p 0.9900 on 2289 targets / 60 walks | SE cluster 0.0031 (binomial 0.0021); projected to 400 walks 0.0012
+  T64 r3 s2: p 1.0000 on 2355 targets / 60 walks | SE cluster 0.0000 (binomial 0.0000); projected to 400 walks 0.0000
+  T64 r3 s3: p 0.9748 on 2225 targets / 60 walks | SE cluster 0.0094 (binomial 0.0033); projected to 400 walks 0.0036
+  T64 r3 s4: p 1.0000 on 2199 targets / 60 walks | SE cluster 0.0000 (binomial 0.0000); projected to 400 walks 0.0000
+  T64 r3 s5: p 1.0000 on 2253 targets / 60 walks | SE cluster 0.0000 (binomial 0.0000); projected to 400 walks 0.0000
+  T64 r3 s6: p 1.0000 on 2176 targets / 60 walks | SE cluster 0.0000 (binomial 0.0000); projected to 400 walks 0.0000
+  T64 r3 s7: p 1.0000 on 2261 targets / 60 walks | SE cluster 0.0000 (binomial 0.0000); projected to 400 walks 0.0000
+  near-cut runs (|p - 0.98| < 0.02) re-evaluated on a second, independent 60-walk stream (walk seed +20000):
+    ND32 r3 s0 (loss-SOLVED True): p 0.9995 -> second stream 1.0000
+    ND32 r3 s3 (loss-SOLVED True): p 0.9992 -> second stream 0.9982
+    T64 r3 s1 (loss-SOLVED True): p 0.9900 -> second stream 0.9805
+    T64 r3 s3 (loss-SOLVED False): p 0.9748 -> second stream 0.9546
+  ND 32-torus runs only: lowest p among SOLVED 0.9992, highest among not SOLVED 0.8915 (the narrow 0.975-0.990 gap of all 32 runs comes from the paper-torus runs)
+
 (1) HIT = p (plain hard; registered, Amendment 3) >= 0.98 vs training-loss SOLVED, per run:
   ND32 rank 2: HIT 1/8, SOLVED 1/8, agree 8/8; sorted 0.095 0.132 0.209 0.525 0.643 0.830 0.891 1.000S
   ND32 rank 3: HIT 8/8, SOLVED 8/8, agree 8/8; sorted 0.999S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S
@@ -52,9 +92,19 @@ ND 256-torus stratum shares (held-out stream, 100 walks): copy 0.743  blank_out 
 
 (2) transport of the ND 32-torus runs to the 256-torus stratum mix (per-stratum accuracy / NLL held fixed):
   floor-predicted share: 32 0.750, 256 0.870; an error on a floor-predicted target costs f/(1-f) = 3.01 (32) vs 6.70 (256) units of rel
-Traceback (most recent call last):
-  File "/home/prashr/mapformer/docs/audits/2026-10-06/rank_nowrap_hard_validate.py", line 124, in <module>
-    main()
-  File "/home/prashr/mapformer/docs/audits/2026-10-06/rank_nowrap_hard_validate.py", line 118, in main
-    print(f"  r{p['rank']} s{p['seed']}: h {p['acc']['retrace_miss']:.3f} (HIT {p['acc']['retrace_miss'] >= A.HIT_H}) | raw 32 "
-AttributeError: module 'mapformer.analyze_rank_nowrap' has no attribute 'HIT_H'. Did you mean: 'HIT_P'?
+  r2 s0: h 0.622 (h-HIT@0.90 False; p 0.891) | raw 32 0.888 -> 256 0.943 | rel 32 +0.552 -> 256 +0.560 (rel-HIT False -> False) | held-out NLL 32 0.391 -> 256 0.200 (< 0.05: False -> False)
+  r2 s1: h 0.306 (h-HIT@0.90 False; p 0.643) | raw 32 0.759 -> 256 0.866 | rel 32 +0.036 -> 256 -0.032 (rel-HIT False -> False) | held-out NLL 32 1.711 -> 256 0.938 (< 0.05: False -> False)
+  r2 s2: h 1.000 (h-HIT@0.90 True; p 1.000) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
+  r2 s3: h 0.041 (h-HIT@0.90 False; p 0.095) | raw 32 0.678 -> 256 0.834 | rel 32 -0.290 -> 256 -0.281 (rel-HIT False -> False) | held-out NLL 32 2.629 -> 256 1.378 (< 0.05: False -> False)
+  r2 s4: h 0.375 (h-HIT@0.90 False; p 0.830) | raw 32 0.783 -> 256 0.888 | rel 32 +0.130 -> 256 +0.135 (rel-HIT False -> False) | held-out NLL 32 1.566 -> 256 0.811 (< 0.05: False -> False)
+  r2 s5: h 0.306 (h-HIT@0.90 False; p 0.525) | raw 32 0.726 -> 256 0.816 | rel 32 -0.100 -> 256 -0.421 (rel-HIT False -> False) | held-out NLL 32 1.747 -> 256 1.135 (< 0.05: False -> False)
+  r2 s6: h 0.082 (h-HIT@0.90 False; p 0.209) | raw 32 0.666 -> 256 0.806 | rel 32 -0.338 -> 256 -0.494 (rel-HIT False -> False) | held-out NLL 32 2.578 -> 256 1.473 (< 0.05: False -> False)
+  r2 s7: h 0.061 (h-HIT@0.90 False; p 0.132) | raw 32 0.672 -> 256 0.820 | rel 32 -0.313 -> 256 -0.384 (rel-HIT False -> False) | held-out NLL 32 2.530 -> 256 1.409 (< 0.05: False -> False)
+  r3 s0: h 1.000 (h-HIT@0.90 True; p 1.000) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
+  r3 s1: h 1.000 (h-HIT@0.90 True; p 1.000) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
+  r3 s2: h 1.000 (h-HIT@0.90 True; p 1.000) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
+  r3 s3: h 0.989 (h-HIT@0.90 True; p 0.999) | raw 32 0.996 -> 256 0.998 | rel 32 +0.982 -> 256 +0.983 (rel-HIT True -> True) | held-out NLL 32 0.015 -> 256 0.007 (< 0.05: True -> True)
+  r3 s4: h 1.000 (h-HIT@0.90 True; p 1.000) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
+  r3 s5: h 1.000 (h-HIT@0.90 True; p 1.000) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
+  r3 s6: h 1.000 (h-HIT@0.90 True; p 1.000) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)
+  r3 s7: h 1.000 (h-HIT@0.90 True; p 1.000) | raw 32 1.000 -> 256 1.000 | rel 32 +1.000 -> 256 +1.000 (rel-HIT True -> True) | held-out NLL 32 0.000 -> 256 0.000 (< 0.05: True -> True)

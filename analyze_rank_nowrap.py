@@ -1,4 +1,4 @@
-"""Registered readouts for RANK_NOWRAP_PREREG.md (+ Amendments 1 and 2): is per-head rank 2's failure on the 2D torus
+"""Registered readouts for RANK_NOWRAP_PREREG.md (+ Amendments 1-4): is per-head rank 2's failure on the 2D torus
 about the exactly periodic code that wrap-around revisits demand, or about the small fixed map of the 32-torus?
 
 Cells (one batch, seeds SEEDS, recipe of run_rank_nd.sh; omega initialised at the grid-32 values in every cell, so at a
@@ -16,7 +16,8 @@ retrace-or-blank floor gets wrong (stratum retrace_miss: non-blank targets outsi
 retraced observation inside a run that reverses the previous one and blank otherwise, and inside a retrace run it is
 always right, checked) AND that are not wrap-only (the cell was seen before at the same unwrapped position). p is
 kinematically matched across cells: on the 256-torus every hard target is plain (p = h); on the 32-torus the hard set is
-68% wrap-only, and p keeps only its plain part, which matches the 256 hard set (lag ~85, ~38-39 per sequence). So the
+69% wrap-only, and p keeps only its plain part, which matches the 256 hard set (lag median 80, ~36 vs ~39 per
+sequence). So the
 question p asks is: does training without wrap-around make rank 2 better on the SAME kind of targets? h (all hard,
 Amendment 2) and wrap-only accuracy are declared secondaries. p and h count only non-blank labels (a lost model that
 defaults to blank scores 0 there), on both grids alike. Amendment 1's rel was not grid-comparable either.
@@ -42,7 +43,7 @@ from mapformer.train_variant import VARIANT_MAP
 
 REPO = "/home/prashr/mapformer"; R = f"{REPO}/runs/rank_nowrap"
 GS, GL = 32, 256
-N_SEEDS = 10
+N_SEEDS = 10                           # THE seed-count switch (Amendment 4): the driver reads it from here; 10 or 12
 SEEDS = list(range(60, 60 + N_SEEDS))
 R2, R3, RD = "Vanilla_r2ph_om32", "Vanilla_r3ph_om32", "Vanilla_r2ph_om32_redraw"
 CELLS = {"A32": (GS, R2), "B32": (GS, R3), "M32": (GS, RD), "AL": (GL, R2), "BL": (GL, R3)}
@@ -52,7 +53,10 @@ MIN_FREE_MB = 3000                     # analysis device: a GPU needs this much 
 QUAL_D = 0.02                          # hard-target qualifier: AL - BL <= -0.02 with p < .05
 NEAR = 0.75                            # "solves like rank 3": HIT >= ceil(0.75 n)
 LOW = 0.25                             # "fails like rank 2 at 32": HIT <= floor(0.25 n)
-T_REG, N_TRIALS, ENV_SEED = 1024, 100, 10000
+T_REG, N_TRIALS, ENV_SEED = 1024, 100, 10000     # N_TRIALS: eval_nd's walks per seed (raw accuracy)
+N_STRATA = 400                         # walks per seed for the strata / p (Amendment 4); the first N_TRIALS are eval_nd's
+HIT_SENS = (0.97, 0.99)                # registered sensitivity FLAG: the branch recomputed at these HIT cuts
+H_CUT_A2 = 0.90                        # Amendment 2's cut for h (secondary only)
 RESCUE = ("PERIODIC CODE IS THE LIMIT", "FIXED MAP WAS THE LIMIT", "LARGE TORUS RESCUES RANK 2, CAUSE UNRESOLVED")
 KEYS = ("all", "wrap", "plain<128", "plain>=128", "copy", "blank_out", "retrace_ok", "retrace_miss", "hard_wrap", "hard_plain")
 
@@ -90,7 +94,7 @@ def traj_info(env, tok, T):
     return o, wrap, lag, ret, inr
 
 
-def stream(N, s, map_seed=ENV_SEED, n=N_TRIALS, T=T_REG):
+def stream(N, s, map_seed=ENV_SEED, n=N_STRATA, T=T_REG):
     """eval_nd.evaluate's trajectories for run seed s (np.random.seed(env_seed + s), held-out map env_seed), with
     per-step info. map_seed = s gives the run's own TRAINING map instead (secondary)."""
     env = GridWorldND(dims=2, size=N, seed=map_seed); np.random.seed(ENV_SEED + s if map_seed == ENV_SEED else 10 ** 6 + s)
@@ -313,11 +317,15 @@ def all_strata(streams, dev, raw=None):
         rows = []
         for i, s in enumerate(SEEDS):
             m, b = load(N, v, s, dev)
-            acc, cnt = strat(m, streams[(N, s)], dev)
+            st = streams[(N, s)]
+            a1, c1 = strat(m, st[:N_TRIALS], dev)                  # eval_nd's walks (checked against eval_nd)
+            a2, c2 = strat(m, st[N_TRIALS:], dev)                  # the further walks (Amendment 4)
+            cnt = {kk: c1[kk] + c2[kk] for kk in KEYS}
+            acc = {kk: (((a1[kk] or 0) * c1[kk] + (a2[kk] or 0) * c2[kk]) / cnt[kk] if cnt[kk] else None) for kk in KEYS}
             if raw is not None:
-                diff = abs(acc["all"] - raw[k][i])
+                diff = abs(a1["all"] - raw[k][i])
                 if dev.startswith("cuda"):
-                    assert diff < 1e-4, (k, s, acc["all"], raw[k][i])
+                    assert diff < 1e-4, (k, s, a1["all"], raw[k][i])
                 elif diff >= 1e-4:
                     print(f"  WARN (CPU fallback): strata 'all' differs from eval_nd by {diff:.2e} for {k} s{s}")
             rows.append({"seed": s, "acc": acc, "n": cnt})
@@ -375,7 +383,7 @@ def main():
           f"wrap-only hard | raw | loss-SOLVED | [raw T=2048] | classes ==")
     for N in (GS, GL):
         fr = [flo[(N, s)] for s in SEEDS]; sh = {kk: np.mean([x["share"][kk] for x in fr]) for kk in fr[0]["share"]}
-        nst = {kk: np.mean([sum(r["n"][kk] for r in strata[k] if r["seed"] == s) / N_TRIALS for k in CELLS if CELLS[k][0] == N
+        nst = {kk: np.mean([sum(r["n"][kk] for r in strata[k] if r["seed"] == s) / N_STRATA for k in CELLS if CELLS[k][0] == N
                             for s in SEEDS[:1]]) for kk in ("hard_plain", "hard_wrap")}
         print(f"  grid {N}: floors blank {np.mean([x['blank'] for x in fr]):.3f}, retrace-or-blank {np.mean([x['retrace'] for x in fr]):.3f}; "
               f"target shares copy {sh['copy']:.3f} / blank_out {sh['blank_out']:.3f} / hard {sh['retrace_miss']:.3f}; "
@@ -397,13 +405,17 @@ def main():
               f"{x['p_perm']:.4f}{' FIRES' if x['acc'] else ''} | {'FIRES' if x['fires'] else 'does not fire'}")
     trails, _ = hard_qualifier(p)
     tag = " [ON THE HARD TARGETS RANK 2 STILL TRAILS RANK 3]" if (trails and br in RESCUE) else ""
-    print(f"\n  REGISTERED: {br}{tag}" + "".join(f"\n    - {x}" for x in qual))
+    sens = {cut: decide({k: int((p[k] >= cut).sum()) for k in CELLS}, n, p, raw)[0] for cut in HIT_SENS}
+    stag = (" [HIT-cut sensitivity: " + ", ".join(f"{cut} -> {b_}" for cut, b_ in sens.items())
+            + ("; FLAG: the branch depends on the cut (verdict unchanged)]" if any(b_ != br for b_ in sens.values()) else "; stable]"))
+    print(f"\n  REGISTERED: {br}{tag}{stag}" + "".join(f"\n    - {x}" for x in qual))
 
     print("\n== secondaries (no verdict) ==")
     br_s, _, _ = decide(sol, n, p, raw)
     print(f"  amended branches with loss-SOLVED in place of HIT: {br_s}; loss-SOLVED " + " ".join(f"{k} {sol[k]}/{n}" for k in CELLS))
-    hh = {k: np.nan_to_num(h[k]) for k in CELLS}; hhit = {k: int((hh[k] >= HIT_P).sum()) for k in CELLS}
-    print(f"  amended branches on h (all hard targets, Amendment 2's quantity; not kinematically matched): {decide(hhit, n, hh, raw)[0]}")
+    hh = {k: np.nan_to_num(h[k]) for k in CELLS}; hhit = {k: int((hh[k] >= H_CUT_A2).sum()) for k in CELLS}
+    print(f"  amended branches on h (all hard targets, Amendment 2's quantity and cut {H_CUT_A2}; not kinematically matched): "
+          f"{decide(hhit, n, hh, raw)[0]}")
     print(f"  HIT vs loss-SOLVED agreement per run: " + "  ".join(
         f"{k} {sum((x >= HIT_P) == (cl['registered'] == 'SOLVED') for x, cl in zip(p[k], cls[k]))}/{n}" for k in CELLS))
     for a_, b_ in (("A32", "B32"), ("A32", "M32")):
@@ -482,6 +494,7 @@ def main():
     print(f"  dropout-scale re-score (hooked {rescore_hook.STATS['hooked']} = {want} layers): "
           + "  ".join(f"{k} p {p_r[k].mean():.4f} HIT {hit_r[k]} raw {raw_r[k].mean():.4f}" for k in CELLS)
           + f"; branch under re-score: {br2} ({q2[-1]})" + (f"; FLAG firing differs on {flag} (verdict unchanged)" if flag else ""))
+    out["hit_sensitivity"] = {str(k_): v_ for k_, v_ in sens.items()}
     out["rescore"] = {"branch": br2, "p": {k: v.tolist() for k, v in p_r.items()}, "hit": hit_r, "flag": flag}
     json.dump(out, open(a.json_out, "w"), indent=1, default=float)
 

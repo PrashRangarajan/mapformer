@@ -1,9 +1,11 @@
 # Is per-head rank 2's torus failure about wrap-around? -- pre-registration (2026-10-06, before any batch run)
 
-> **Amendments 1-3 (end of file) supersede this body where they differ; each later one supersedes the earlier.** Final
-> design: 5 cells (adds a redrawn-map rank-2 control M32 on the 32-torus), n = 10 (seeds 60-69, 50 runs; n = 12 is the
-> recommendation put to the user, Amendment 3); the registered quantity is p = held-out accuracy on the PLAIN HARD
-> targets (missed by the retrace-or-blank floor and not wrap-only), HIT = p >= 0.98; every accuracy arm is a permutation
+> **Amendments 1-4 (end of file) supersede this body where they differ; each later one supersedes the earlier.** Final
+> design: 5 cells (adds a redrawn-map rank-2 control M32 on the 32-torus); seed count = the ONE switch `N_SEEDS` in
+> `analyze_rank_nowrap.py` (read by the driver): registered n = 10 (seeds 60-69, 50 runs, ~16-19 h on 8 slots) or the
+> option n = 12 (seeds 60-71, 60 runs, ~19-23 h) -- the user chooses before launch; the registered quantity is p =
+> held-out accuracy on the PLAIN HARD targets (missed by the retrace-or-blank floor and not wrap-only) over 400 walks per
+> seed, HIT = p >= 0.98 with a registered HIT-cut sensitivity flag (0.97 / 0.99); every accuracy arm is a permutation
 > test on p (materiality 0.10); branch set of Amendment 2.
 
 ## Question
@@ -346,7 +348,8 @@ recomputed on h (labelled not kinematically matched).
 highest among not SOLVED 0.975 (a narrow gap, 0.015). **HIT = p >= 0.98**: agrees with loss-SOLVED 32/32; margin 0.010
 to the lowest SOLVED run and 0.005 to the highest unsolved one (a paper-torus rank-3 run). Stated honestly: the criterion
 is lenient by up to ~0.02 of plain hard targets, and runs within ~0.005 of the cut are classed by sampling noise (SE of
-p ~0.0023 at 0.98 on ~3700 targets per stream). (h with its Amendment 2 cut 0.90 also agrees 32/32 but is not matched.)
+p ~0.0023 at 0.98 on ~3700 targets per stream) [CORRECTED in Amendment 4: that is the binomial figure; errors cluster
+within walks, and the cluster-bootstrap SE is ~0.003-0.007 per seed at 400 walks for runs below the cut]. (h with its Amendment 2 cut 0.90 also agrees 32/32 but is not matched.)
 
 **3. Power with WRAP-AWARE per-stratum transport** (`rank_nowrap_power.py`, `_out.txt`; ND 32-torus pools only, 8 rank-2
 runs (1 HIT) and 8 rank-3 runs (8 HIT); strata copy / blank_out / hard_wrap / hard_plain, weights 0.475 / 0.276 / 0.173 /
@@ -398,4 +401,69 @@ power (`rank_nowrap_power_out.txt`); CPU end-to-end analysis on the Amendment 2 
 (`runs/rank_nowrap_pilot/amend2/SMOKE_ANALYSIS_A3.txt`), including the hook-count assertion.
 
 Cost: unchanged at n = 10 (50 runs, ~16-19 h on 8 slots); n = 12: 60 runs, ~19-23 h on 8 slots, ~38-45 h sharing half.
+Launch (unchanged): `cd /home/prashr/mapformer && setsid nohup bash run_rank_nowrap.sh > /dev/null 2>&1 &`
+
+---
+
+## Amendment 4 (2026-10-06, after a final audit of Amendment 3, BEFORE launch; CPU only; no batch result exists)
+The audit found no verdict-changing bug; its one design finding is noise at the HIT cut. Finding -> change:
+
+**1. HIT noise near the cut.** Errors cluster within walks, so the per-seed SE of p is larger than the binomial figure
+Amendment 3 quoted (0.0023). Cluster bootstrap over walks (`rank_nowrap_hard_validate.py` section 3, `_out.txt`, 60 walks
+per stored run): SE 0.009-0.017 for runs with p in 0.5-0.93 (binomial 0.006-0.011), 0.0094 for the 0.975 run, 0.0031 for
+the 0.990 run; projected to 400 walks 0.003-0.007 (0.0036 and 0.0012 for those two). On a second independent 60-walk
+stream the two paper-torus runs nearest the cut moved 0.990 -> 0.981 (loss-SOLVED) and 0.975 -> 0.955 (not); the audit's
+own second stream reversed their order (0.9780 vs 0.9794). The narrow 0.975-0.990 gap comes from the paper-torus runs
+only; on the ND 32-torus runs the gap is 0.892 (highest unsolved) to 0.999 (lowest solved). Changes:
+(a) **p is computed on 400 walks per seed** (`N_STRATA = 400`; the first 100 are eval_nd's walks, on which the strata's
+'all' is still checked against eval_nd; the other 300 continue the same RNG stream). Cost, measured on the CPU
+(`rank_nowrap_evalcost_out.txt`): 3.3-3.9 s per 400 walks for the walks and their per-step info, ~9 s per run per pass
+for the CPU forward; the analysis does two passes (registered + dropout re-score) over 5 x n runs, so <= ~16 min at
+n = 10 (~19 min at n = 12) even on the CPU fallback; a few minutes on a GPU (not measured: no GPU use allowed).
+(b) **Registered HIT-cut sensitivity FLAG**: the branch is recomputed with HIT at 0.97 and at 0.99 and printed on the
+REGISTERED line ("stable", or "FLAG: the branch depends on the cut"); the verdict is the 0.98 branch, unchanged, as for
+the dropout re-score. Stored in RANK_NOWRAP.json (`hit_sensitivity`).
+(c) The SE statement of Amendment 3 is marked CORRECTED with the cluster-bootstrap figure.
+
+**2. Power: both pools.** (`rank_nowrap_power.py`, `_out.txt`; 400 simulations through `decide()`, wrap-aware
+per-stratum transport.) ND32 pool (32-torus runs only; rank 3 never fails there): UPPER BOUNDS. ALL pool (+ paper-torus
+runs; rank 3 fails 2/8 there). P(target branch); "wrong pole" = a different pole verdict (PERIODIC / FIXED MAP WAS THE
+LIMIT / RANK LIMIT IS GENERAL / FIXED MAP AT 32):
+
+| truth | n = 10 ND32 | n = 10 ALL | n = 12 ND32 | n = 12 ALL |
+|---|---|---|---|---|
+| PERIODIC CODE IS THE LIMIT | 0.84 | 0.62 | 0.91 | 0.77 |
+| FIXED MAP WAS THE LIMIT | 1.00 | 0.74 | 1.00 | 0.86 |
+| RANK LIMIT IS GENERAL | 0.75 | 0.47 | 0.86 | 0.66 |
+| FIXED MAP AT 32, LARGE TORUS FAILS | 0.94 | 0.79 | 0.95 | 0.91 |
+| wrong pole, any truth | 0.00 | 0.00 | 0.00 | 0.00 |
+| HALF truth: any pole verdict | 0.09 | 0.07 | 0.11 | 0.09 |
+
+The shortfall goes to CAUSE UNRESOLVED / INTERMEDIATE / PARTIAL, never to the opposite pole in this simulation (the
+audit's independent simulation found wrong-pole rates up to 0.04). Under HALF truth (AL solves half the time) a pole
+verdict appears ~7-11% of the time.
+
+**3. One seed-count switch.** `N_SEEDS` in `analyze_rank_nowrap.py` is the only place the seed count is set: the driver
+reads it (`awk '/^N_SEEDS = /'`), derives seeds 60..(60+n-1) and the expected checkpoint count 5n, and logs them; the
+power script reports n = 8, 10, 12; the branch smoke takes n as an argument. Changing 10 -> 12 is exactly one edit.
+Verified: driver dry runs at n = 10 (50 launches, "n=10 seeds 60..69, 50 runs") and with a copy set to 12 (60 launches,
+60 checkpoints expected). The two smoke cases that hard-coded counts (REVERSAL: B32 and BL at ceil(n/2); "neither": M32 at
+floor(0.25 n) + 1) are now written in n: 18/18 at n = 10 and 18/18 at n = 12 (`rank_nowrap_branch_smoke_n10_out.txt`,
+`_n12_out.txt`). Registered at n = 10; the user chooses; the main session flips the switch before launch.
+
+**4. Bug (secondary only).** The "branches on h" secondary used the p cut 0.98; it now uses Amendment 2's h cut 0.90
+(`H_CUT_A2`) and says so.
+
+**5. Validation script.** It referenced the removed `HIT_H` and its committed output ended in a traceback; fixed, re-run,
+and the transport section (2) regenerates (`rank_nowrap_hard_validate_out.txt`; the pool JSON is rebuilt with per-walk
+plain-hard counts).
+
+**6. Wording.** Analysis header now "Amendments 1-4"; composition figures match the prereg (69% wrap-only, lag median
+80, ~36 vs ~39 plain hard targets per sequence).
+
+**7. DIRTY check.** The launch log's clean / DIRTY now covers only the md5-guarded files (`git diff --quiet HEAD --
+"${GUARD[@]}"`), so unrelated edits elsewhere in the repo do not log DIRTY.
+
+N7 of the first audit remains OPEN (Amendment 2).
+
 Launch (unchanged): `cd /home/prashr/mapformer && setsid nohup bash run_rank_nowrap.sh > /dev/null 2>&1 &`

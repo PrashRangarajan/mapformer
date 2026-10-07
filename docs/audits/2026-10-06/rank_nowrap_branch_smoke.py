@@ -1,6 +1,7 @@
 """Smoke test (Amendment 2-3 design; the registered accuracy is p, plain-hard): every branch and qualifier of analyze_rank_nowrap.decide is reachable, on synthetic
 per-seed data at the registered n (5 cells; h here stands for the registered p, HIT = p >= HIT_P). Run from /home/prashr:
-python3 mapformer/docs/audits/2026-10-06/rank_nowrap_branch_smoke.py"""
+python3 mapformer/docs/audits/2026-10-06/rank_nowrap_branch_smoke.py [n]   (n defaults to the registered N_SEEDS;
+Amendment 4: every case is written in terms of n, half = ceil(n/2), low = floor(0.25 n), and passes at n = 10 and 12)"""
 import sys
 
 import numpy as np
@@ -8,7 +9,10 @@ import numpy as np
 sys.path.insert(0, "/home/prashr")
 from mapformer import analyze_rank_nowrap as A     # noqa: E402
 
-n = A.N_SEEDS
+import math
+
+n = int(sys.argv[1]) if len(sys.argv) > 1 else A.N_SEEDS
+half, low = math.ceil(n / 2), math.floor(A.LOW * n)
 
 
 def cell(hits, fail_h=0.3, hit_h=1.0):
@@ -39,10 +43,10 @@ cases = [
     (S((4, 0.6), (n,), (1,), (0, 0.0), (n,)), "LARGE GRID HURTS RANK 2"),
     (S((1,), (n,), (1,), (n - 1,), (n,)), "PERIODIC CODE IS THE LIMIT"),
     (S((1,), (n,), (1,), (n - 1,), (n,)), "PERIODIC CODE IS THE LIMIT", "[attaches to the verdict]"),
-    (S((0, 0.0), (5,), (0, 0.0), (n,), (5,)), "PERIODIC CODE IS THE LIMIT", "REVERSAL"),
+    (S((0, 0.0), (half,), (0, 0.0), (n,), (half,)), "PERIODIC CODE IS THE LIMIT", "REVERSAL"),
     (S((1,), (n,), (n - 1,), (n - 1,), (n,)), "FIXED MAP WAS THE LIMIT"),
     (S((1,), (n,), (5,), (n - 1,), (n,)), "LARGE TORUS RESCUES RANK 2, CAUSE UNRESOLVED"),
-    (S((1,), (n,), (3,), (n - 1,), (n,)), "LARGE TORUS RESCUES RANK 2, CAUSE UNRESOLVED", "neither a clear failure"),
+    (S((1,), (n,), (low + 1,), (n - 1,), (n,)), "LARGE TORUS RESCUES RANK 2, CAUSE UNRESOLVED", "neither a clear failure"),
     (S((3, 0.6), (n,), (0, 0.0), (n - 1,), (n,)), "PERIODIC CODE IS THE LIMIT", "HARDER"),
     (S((0,), (n,), (1,), (5,), (n,)), "PARTIAL", "rank 3 still detectably above"),
     (S((0,), (n,), (1,), (7, 0.85), (8, 0.85)), "PARTIAL", "AL HIT"),
