@@ -21,6 +21,8 @@ deficit; a registered accuracy label that flips under the dropout-scale re-score
 Amendment 2 (re-audit): the D3 gate no longer depends on the leak (S_id and accuracy-vs-MapWM criteria removed): it
 reads theta reliance and a training-loss criterion, names the failed criterion, and is re-checked on the re-scored
 reliance; scope qualifiers count every non-SOLVED run (STALLED too); D4's WORSE x AS GOOD wording depends on D1r.
+Amendment 3 (final audit): the gate's convergence criterion is the LEAK-FREE loss nll_ms (Amendment 2's training tail
+contained the leak's cost); the GainRaw-vs-MapWM scope qualifier reads nll_ms too; D3 carries GainRaw's qualifier.
 Every branch is exercised on synthetic data by docs/audits/2026-10-06/gain_phase_smoke.py.
 `python3 -m mapformer.analyze_gain_phase`
 """
@@ -45,10 +47,16 @@ LEAK_ABSENT = 0.002  # median L_ms at or below: no leak (LEAK: NormStep max +0.0
 LEAK_PRESENT = 0.005 # median L_ms at or above: leak present (LEAK: MapWM min +0.0074, median +0.0098)
 SPEED_RATIO = 1.25   # geometric-mean ratio of epochs-to-0.05 that counts as faster / slower
 GATE_RELIANCE = 0.2     # D3 gate: median theta reliance >= 0.2 (untrained models |.| <= 0.0001; LEAK checkpoints 0.92-0.97, V6)
-GATE_LOSS = 0.25        # D3 gate (Amendment 2): median final-5% training loss <= 0.25. LEAK at 900 epochs: MapWM 0.069-0.072,
-                        # NormStep 0.019-0.022; MapWM passes 0.25 only around epoch ~650 (0.32-0.38 at 600); the 30-epoch
-                        # pilot arms 0.31-3.60; untrained >= 4. A leak 3x MapWM's (acc ~0.97) is estimated at ~0.15, so the
-                        # criterion does not exclude a large PERSISTS; it does not read the leak (S_id) at all.
+GATE_NLL = 0.06         # D3 gate (Amendment 3): median LEAK-FREE loss nll_ms <= 0.06 -- eval-mode NLL at every revisit target
+                        # with object steps mean-substituted (the L_ms substitution), test-pool stream. Amendment 2's
+                        # training-tail criterion was NOT leak-independent (the auditor: ~97% of MapWM's eval loss is its
+                        # leak; a 1.7x identity step crosses 0.25). Validation (gain_phase_lossgate_validate_out.txt): LEAK
+                        # MapWM 0.007-0.038, NormStep 0.0003-0.0012, ActOnly 0.0006-0.0017; identity step x1.5-x3 leaves
+                        # nll_ms unchanged (0.0071) while eval nll goes 0.125 -> 0.959; untrained models ~7; 30-epoch pilot
+                        # models 0.080-3.41. 0.06 sits between MapWM's worst converged run (0.038) and the best short-pilot
+                        # model (NormStep s111, 0.080).
+REGIME_X = 1.0          # scope qualifier GainRaw vs MapWM (Amendment 3): median nll_ms(GainRaw) above every MapWM run's
+REGIME_FLOOR = 0.01     # ... and > 0.01 (no flag for differences inside converged runs' spread)
 N_MC = 200_000       # Monte Carlo relabellings when C(2n, n) > 250k (n >= 12); the power script lowers it
 PRINT_CI = True      # the power script turns the (slow) CI walk off; it never changes a label
 
@@ -207,18 +215,21 @@ def class_counts(cls):
             sum(c["registered"] == "DESCENDING" for c in cls))
 
 
-def converged_gate(a_rel, a_cls):
-    """Amendment 2: a gain arm's D3 labels are read only if it is TRAINED (median final-5% training loss <= GATE_LOSS)
-    and USES THETA (median theta reliance >= GATE_RELIANCE). Neither criterion reads the leak (no S_id, no accuracy
-    relative to MapWM). Returns (ok, reason, detail); reason names the failed criterion ('' if ok)."""
-    tail = float(np.median([c["tail"] for c in a_cls])); rel = float(np.median(a_rel))
-    loss_ok, rel_ok = tail <= GATE_LOSS, rel >= GATE_RELIANCE
+def converged_gate(a_rel, a_nll_ms, a_cls):
+    """Amendment 3: a gain arm's D3 labels are read only if its LEAK-FREE loss is converged (median nll_ms <= GATE_NLL)
+    and it USES THETA (median theta reliance >= GATE_RELIANCE). Neither criterion reads the leak: nll_ms removes the
+    identity step's cost by the same substitution as L_ms (no S_id, no accuracy relative to MapWM, no training tail).
+    Returns (ok, reason, detail); reason names the failed criterion ('' if ok)."""
+    nll = float(np.median(a_nll_ms)); rel = float(np.median(a_rel))
+    loss_ok, rel_ok = nll <= GATE_NLL, rel >= GATE_RELIANCE
     n = len(a_cls); k, st, d = class_counts(a_cls)
-    det = (f"median final-5% loss {tail:.4f} (<= {GATE_LOSS}: {'ok' if loss_ok else 'FAILS'}), median theta reliance "
-           f"{rel:.3f} (>= {GATE_RELIANCE}: {'ok' if rel_ok else 'FAILS'}); {k}/{n} SOLVED, {st}/{n} STALLED, {d}/{n} DESCENDING")
-    reason = ("" if loss_ok and rel_ok else "not converged and does not use theta" if not (loss_ok or rel_ok)
-              else "not converged" if not loss_ok else "does not use theta although trained")
-    return bool(loss_ok and rel_ok), reason, det
+    tail = float(np.median([c["tail"] for c in a_cls]))
+    det = (f"median leak-free loss nll_ms {nll:.4f} (<= {GATE_NLL}: {'ok' if loss_ok else 'FAILS'}), median theta reliance "
+           f"{rel:.3f} (>= {GATE_RELIANCE}: {'ok' if rel_ok else 'FAILS'}); training tail {tail:.4f}; {k}/{n} SOLVED, "
+           f"{st}/{n} STALLED, {d}/{n} DESCENDING")
+    fl = [w for w, ok_ in ((f"leak-free loss above {GATE_NLL} (not converged)", loss_ok),
+                           (f"theta reliance below {GATE_RELIANCE} (does not use theta)", rel_ok)) if not ok_]
+    return bool(loss_ok and rel_ok), " and ".join(fl), det
 
 
 def leak_verdict(rot, gain, gl, tol_note=""):
@@ -265,21 +276,22 @@ def combo_verdict(vs_w, vs_n, rep=None):
     return f"NO GAIN OVER MapWM DETECTED (vs MapWM {vs_w}; vs NormStep {vs_n})"
 
 
-def budget_flag(arm, a_cls, ref, r_cls, by):
+def budget_flag(arm, a_cls, ref, r_cls, by, a_nll=None, r_nll=None):
     """Training scope (Amendment 1; Amendment 2: every non-SOLVED run counts, STALLED as well as DESCENDING -- a run that
     flattened at high loss under cosine decay is not converged either, rule 3). by='solved' (GainPhase vs NormStep): flag if
     the gain arm has more non-SOLVED runs than its rotary counterpart. by='regime' (GainRaw vs MapWM; MapWM never reaches
-    0.05): flag if the gain arm's median final-5% loss is above MapWM's largest, whatever its class.
+    0.05): Amendment 3 -- flag if the gain arm's median LEAK-FREE loss nll_ms is above REGIME_X x MapWM's largest and above
+    REGIME_FLOOR (the training tail would call a converged but leakier GainRaw "not converged").
     Returns the qualifier string ('' if none)."""
     n = len(a_cls); k, st, d = class_counts(a_cls); kr, str_, dr = class_counts(r_cls)
     if by == "solved":
         hit = (n - k) > (len(r_cls) - kr)
     else:
-        hit = np.median([c["tail"] for c in a_cls]) > max(c["tail"] for c in r_cls)
+        hit = np.median(a_nll) > max(REGIME_X * np.max(r_nll), REGIME_FLOOR)
     if not hit:
         return ""
     extra = (f"; {ref} {kr}/{n} SOLVED, {str_}/{n} STALLED, {dr}/{n} DESCENDING" if by == "solved" else
-             f"; median final loss {np.median([c['tail'] for c in a_cls]):.3f} vs {ref}'s max {max(c['tail'] for c in r_cls):.3f}")
+             f"; median leak-free loss {np.median(a_nll):.4f} vs {ref}'s max {np.max(r_nll):.4f}")
     return f" (scoped to {EPOCHS} epochs, not converged: {arm} {k}/{n} SOLVED, {st}/{n} STALLED, {d}/{n} DESCENDING{extra})"
 
 
@@ -316,7 +328,8 @@ def analyse(D, seeds=SEEDS, E=EPOCHS, out=print):
     acc = {a: col(a, "acc") for a in ARMS}
     ep = {a: [speed_epoch(D[(a, s)]["losses"]) for s in seeds] for a in ARMS}
     cl = {a: [cls[(a, s)] for s in seeds] for a in ARMS}
-    bf = {G: budget_flag(G, cl[G], W, cl[W], "regime"), GP: budget_flag(GP, cl[GP], N, cl[N], "solved")}
+    bf = {G: budget_flag(G, cl[G], W, cl[W], "regime", col(G, "nll_ms"), col(W, "nll_ms")),
+          GP: budget_flag(GP, cl[GP], N, cl[N], "solved")}
     rescore = None
     if all("acc_rescored" in D[(a, s)] for a in ARMS for s in seeds):
         reg = acc_labels(acc, sol); rs = acc_labels({a: col(a, "acc_rescored") for a in ARMS}, sol)
@@ -348,10 +361,10 @@ def analyse(D, seeds=SEEDS, E=EPOCHS, out=print):
     gai, dgai = leak_side(col(G, "L_ms"), col(GP, "L_ms"), col(G, "S_id"), col(GP, "S_id"))
     gl, dgl = gain_leak(col(G, "L_ms"), col(W, "S_id"), col(G, "S_id"), col(G, "resid"), col(G, "shift_cells"),
                         col(W, "shift_cells"))
-    gate = {a: converged_gate(col(a, "reliance"), cl[a]) for a in (G, GP)}
+    gate = {a: converged_gate(col(a, "reliance"), col(a, "nll_ms"), cl[a]) for a in (G, GP)}
     gflag = ""
     if all("reliance_rescored" in D[(a, s)] for a in (G, GP) for s in seeds):
-        gr = {a: converged_gate(col(a, "reliance_rescored"), cl[a]) for a in (G, GP)}
+        gr = {a: converged_gate(col(a, "reliance_rescored"), col(a, "nll_ms"), cl[a]) for a in (G, GP)}
         gflag = "".join(f" [FLAG: under the dropout-scale re-score the D3 gate for {a} reads "
                         f"{'PASS' if gr[a][0] else 'FAIL (' + gr[a][1] + ')'}; registered verdict unchanged]"
                         for a in (G, GP) if gr[a][0] != gate[a][0])
@@ -359,12 +372,13 @@ def analyse(D, seeds=SEEDS, E=EPOCHS, out=print):
     V["D3_gate"] = {a: gate[a][0] for a in gate}
     unconv = [a for a in (G, GP) if not gate[a][0]]
     if rot != "NO LEAK TO REMOVE" and unconv:
-        V["D3_headline"] = "D3 UNMEASURED: " + "; ".join(f"{a} {gate[a][1]} ({gate[a][2]})" for a in unconv)
+        V["D3_headline"] = "D3 UNMEASURED: " + "; ".join(f"{a}: {gate[a][1]} ({gate[a][2]})" for a in unconv)
     else:
         V["D3_headline"] = leak_verdict(rot, gai, gl, tolerated_note(col(G, "resid"), col(G, "shift_cells"),
                                                                      col(W, "shift_cells")) if gl == "ABSENT, TOLERATED" else "")
-    V["D3_headline"] += gflag
-    out(f"\n== D3 LEAK DISSOCIATION ==\n  convergence gate (Amendment 2): GainRaw {'PASS' if gate[G][0] else 'FAIL'}: "
+    if rot != "NO LEAK TO REMOVE":                     # Amendment 3: no flags on a void D3; GainRaw's scope as on D1 / D2
+        V["D3_headline"] += bf[G] + gflag
+    out(f"\n== D3 LEAK DISSOCIATION ==\n  convergence gate (Amendment 3): GainRaw {'PASS' if gate[G][0] else 'FAIL'}: "
         f"{gate[G][2]}\n  convergence gate: GainPhase {'PASS' if gate[GP][0] else 'FAIL'}: {gate[GP][2]}\n"
         f"  step fix under the rotary score: {rot}: {drot}\n"
         f"  step fix under the gain score: {gai}: {dgai}{'' if not unconv else ' [label not read: gate]'}\n"

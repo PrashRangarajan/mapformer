@@ -1,6 +1,7 @@
 
 ######## n = 8 per arm, 200 resampled batches per scenario
 == A predicted
+   D3 GainRaw-qualified False 0.99; True 0.01
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -10,6 +11,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == B tolerated
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           CEILING 1.00
    D2_raw       BETTER 1.00
@@ -19,6 +21,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == C unlearned
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           CEILING 1.00
    D2_raw       BETTER 1.00
@@ -28,6 +31,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == D half
+   D3 GainRaw-qualified False 0.99; True 0.01
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 0.51; BETTER 0.49
@@ -37,6 +41,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == E GP fails 1/8
+   D3 GainRaw-qualified False 0.98; True 0.02
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -46,6 +51,7 @@
    D4_vs_N      UNDETERMINED 0.66; AS GOOD 0.34; WORSE 0.01
    D5_norm      NO DIFFERENCE 1.00
 == F GP fails 1/4
+   D3 GainRaw-qualified False 0.98; True 0.02
    D1r          BETTER 1.00
    D1           BETTER 0.96; NO DIFFERENCE 0.04
    D2_raw       NO DIFFERENCE 1.00
@@ -55,6 +61,7 @@
    D4_vs_N      UNDETERMINED 0.82; AS GOOD 0.11; WORSE 0.07
    D5_norm      NO DIFFERENCE 1.00
 == G GP 3x faster
+   D3 GainRaw-qualified False 0.99; True 0.01
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -64,6 +71,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      FASTER 1.00
 == H null speed
+   D3 GainRaw-qualified False 0.99; True 0.01
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -73,6 +81,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == J gain unconverged
+   D3 GainRaw-qualified True 1.00
    D1r          BETTER 1.00
    D1           NO DIFFERENCE 1.00
    D2_raw       WORSE 1.00
@@ -82,6 +91,7 @@
    D4_vs_N      WORSE 1.00
    D5_norm      SLOWER 1.00
 == K GainRaw unconverged
+   D3 GainRaw-qualified True 1.00
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       WORSE 1.00
@@ -91,6 +101,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == L tolerated, big S_id
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           CEILING 1.00
    D2_raw       BETTER 1.00
@@ -100,6 +111,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == M large PERSISTS
+   D3 GainRaw-qualified False 0.99; True 0.01
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       WORSE 1.00
@@ -109,6 +121,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == N GP flat tail
+   D3 GainRaw-qualified False 0.98; True 0.02
    D1r          BETTER 1.00
    D1           WORSE 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -117,7 +130,28 @@
    D4_headline  THE GAIN-PHASE MAP FAILS 1.00
    D4_vs_N      WORSE 1.00
    D5_norm      SLOWER 1.00
+== M' L_ms x3
+   D3 GainRaw-qualified False 0.99; True 0.01
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       WORSE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== Q converged flat
+   D3 GainRaw-qualified False 0.99; True 0.01
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 0.89; WORSE 0.11
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
 == I GP stalls 1/8
+   D3 GainRaw-qualified False 0.97; True 0.03
    D1r          BETTER 1.00
    D1           BETTER 0.99; NO DIFFERENCE 0.01
    D2_raw       NO DIFFERENCE 1.00
@@ -129,6 +163,7 @@
 
 ######## n = 10 per arm, 200 resampled batches per scenario
 == A predicted
+   D3 GainRaw-qualified False 0.99; True 0.01
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -138,6 +173,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == B tolerated
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           CEILING 1.00
    D2_raw       BETTER 1.00
@@ -147,6 +183,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == C unlearned
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           CEILING 1.00
    D2_raw       BETTER 1.00
@@ -156,6 +193,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == D half
+   D3 GainRaw-qualified False 0.99; True 0.01
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 0.52; BETTER 0.48
@@ -165,6 +203,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == E GP fails 1/8
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -174,6 +213,7 @@
    D4_vs_N      UNDETERMINED 0.73; AS GOOD 0.25; WORSE 0.01
    D5_norm      NO DIFFERENCE 1.00
 == F GP fails 1/4
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           BETTER 0.99; NO DIFFERENCE 0.01
    D2_raw       NO DIFFERENCE 1.00
@@ -183,6 +223,7 @@
    D4_vs_N      UNDETERMINED 0.86; WORSE 0.08; AS GOOD 0.06
    D5_norm      NO DIFFERENCE 1.00
 == G GP 3x faster
+   D3 GainRaw-qualified False 0.99; True 0.01
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -192,6 +233,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      FASTER 1.00
 == H null speed
+   D3 GainRaw-qualified False 0.99; True 0.01
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -201,6 +243,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == J gain unconverged
+   D3 GainRaw-qualified True 1.00
    D1r          BETTER 1.00
    D1           NO DIFFERENCE 1.00
    D2_raw       WORSE 1.00
@@ -210,6 +253,7 @@
    D4_vs_N      WORSE 1.00
    D5_norm      SLOWER 1.00
 == K GainRaw unconverged
+   D3 GainRaw-qualified True 1.00
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       WORSE 1.00
@@ -219,6 +263,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == L tolerated, big S_id
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           CEILING 1.00
    D2_raw       BETTER 1.00
@@ -228,6 +273,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == M large PERSISTS
+   D3 GainRaw-qualified False 0.99; True 0.01
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       WORSE 1.00
@@ -237,6 +283,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == N GP flat tail
+   D3 GainRaw-qualified False 0.99; True 0.01
    D1r          BETTER 1.00
    D1           WORSE 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -245,7 +292,28 @@
    D4_headline  THE GAIN-PHASE MAP FAILS 1.00
    D4_vs_N      WORSE 1.00
    D5_norm      SLOWER 1.00
+== M' L_ms x3
+   D3 GainRaw-qualified False 0.99; True 0.01
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       WORSE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== Q converged flat
+   D3 GainRaw-qualified False 0.99; True 0.01
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 0.94; WORSE 0.06
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
 == I GP stalls 1/8
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           BETTER 0.99; CONFLICT 0.01
    D2_raw       NO DIFFERENCE 1.00
@@ -257,6 +325,7 @@
 
 ######## n = 12 per arm, 200 resampled batches per scenario
 == A predicted
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -266,6 +335,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == B tolerated
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           CEILING 1.00
    D2_raw       BETTER 1.00
@@ -275,6 +345,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == C unlearned
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           CEILING 1.00
    D2_raw       BETTER 1.00
@@ -284,6 +355,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == D half
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 0.52; BETTER 0.48
@@ -293,6 +365,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == E GP fails 1/8
+   D3 GainRaw-qualified False 0.99; True 0.01
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -302,6 +375,7 @@
    D4_vs_N      UNDETERMINED 0.81; AS GOOD 0.18; WORSE 0.01
    D5_norm      NO DIFFERENCE 1.00
 == F GP fails 1/4
+   D3 GainRaw-qualified False 0.99; True 0.01
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -311,6 +385,7 @@
    D4_vs_N      UNDETERMINED 0.83; WORSE 0.15; AS GOOD 0.01
    D5_norm      NO DIFFERENCE 1.00
 == G GP 3x faster
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -320,6 +395,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      FASTER 1.00
 == H null speed
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -329,6 +405,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == J gain unconverged
+   D3 GainRaw-qualified True 1.00
    D1r          BETTER 1.00
    D1           NO DIFFERENCE 1.00
    D2_raw       WORSE 1.00
@@ -338,6 +415,7 @@
    D4_vs_N      WORSE 1.00
    D5_norm      SLOWER 1.00
 == K GainRaw unconverged
+   D3 GainRaw-qualified True 1.00
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       WORSE 1.00
@@ -347,6 +425,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == L tolerated, big S_id
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           CEILING 1.00
    D2_raw       BETTER 1.00
@@ -356,6 +435,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == M large PERSISTS
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           BETTER 1.00
    D2_raw       WORSE 1.00
@@ -365,6 +445,7 @@
    D4_vs_N      AS GOOD 1.00
    D5_norm      NO DIFFERENCE 1.00
 == N GP flat tail
+   D3 GainRaw-qualified False 0.99; True 0.01
    D1r          BETTER 1.00
    D1           WORSE 1.00
    D2_raw       NO DIFFERENCE 1.00
@@ -373,7 +454,28 @@
    D4_headline  THE GAIN-PHASE MAP FAILS 1.00
    D4_vs_N      WORSE 1.00
    D5_norm      SLOWER 1.00
+== M' L_ms x3
+   D3 GainRaw-qualified False 1.00
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       WORSE 1.00
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
+== Q converged flat
+   D3 GainRaw-qualified False 1.00
+   D1r          BETTER 1.00
+   D1           BETTER 1.00
+   D2_raw       NO DIFFERENCE 0.94; WORSE 0.06
+   D2_norm      CEILING 1.00
+   D3_headline  SEPARATE DEFECTS 1.00
+   D4_headline  THE GAIN-PHASE MAP WORKS 1.00
+   D4_vs_N      AS GOOD 1.00
+   D5_norm      NO DIFFERENCE 1.00
 == I GP stalls 1/8
+   D3 GainRaw-qualified False 1.00
    D1r          BETTER 1.00
    D1           BETTER 0.99; CONFLICT 0.01
    D2_raw       NO DIFFERENCE 1.00

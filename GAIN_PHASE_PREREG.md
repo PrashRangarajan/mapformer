@@ -376,3 +376,43 @@ UNMEASURED 1.00); new **L, TOLERATED with S_id 4x MapWM: TOLERATES 1.00**; **M, 
 **N, GainPhase flat at loss 3.6: D3 UNMEASURED 1.00, D4 FAILS with the scope qualifier**. n stays 8. The Amendment 1
 pilot re-evaluation (`runs/gain_phase_pilot/analysis_out_A1.txt`) used the Amendment 1 gate and is superseded by these
 synthetic checks (no further evaluation was run, per the CPU-only instruction).
+
+## Amendment 3 (2026-10-06, after the final audit of Amendment 2, BEFORE launch; CPU only, per the user's instruction)
+Finding -> change. All before launch; the md5 guard covers every changed file.
+1. **The training-loss gate was not leak-independent (DESIGN, major).** The auditor measured (CPU, eval-mode CE at revisit
+   targets, train pool) that ~97% of MapWM's eval loss is its leak (0.0545 -> 0.0018 with object steps mean-substituted)
+   and that scaling MapWM's identity step by 1.7x crosses the 0.25 training-tail gate; Amendment 2's estimate "3x leak ->
+   tail ~0.15" was ~2x too low, so a converged GainRaw with a large leak would have read "D3 UNMEASURED (not converged)".
+   -> The gate's convergence criterion is now the **LEAK-FREE loss nll_ms**: eval-mode mean NLL at every revisit target
+   (objects and blanks, the training loss's targets) with every object step mean-substituted (the L_ms substitution), on
+   the fixed test-pool eval stream (new per-run readouts `nll`, `nll_ms` in `gain_phase_eval`). Gate: median nll_ms <=
+   **0.06** AND median theta reliance >= 0.2 (unchanged). Validation (`gain_phase_lossgate_validate.py` / `_out.txt`,
+   CPU): LEAK MapWM nll 0.106-0.207 but nll_ms 0.007-0.038; NormStep nll_ms 0.0003-0.0012; ActOnly 0.0006-0.0017. Leak
+   independence: MapWM s0 with its identity step scaled by k = 1 / 1.5 / 2 / 3 -> eval nll 0.125 / 0.302 / 0.514 / 0.959,
+   nll_ms 0.0071 at every k. Must fail: untrained models of all four arms 6.96-7.21; the 8 pilot checkpoints (30-epoch
+   schedule) 0.080-3.55. 0.06 sits between MapWM's worst converged run (0.038) and the best short-pilot model (NormStep
+   s111, 0.080, accuracy 0.999 after 30 epochs). The reason text names the failed criterion precisely ("leak-free loss
+   above 0.06 (not converged)", "theta reliance below 0.2 (does not use theta)", or both). The training tail is printed,
+   not gated.
+2. **Scope qualifier GainRaw vs MapWM read the training tail (DESIGN).** -> It now reads nll_ms: flagged when GainRaw's median
+   nll_ms is above every MapWM run's and above 0.01, so a converged but leakier GainRaw is not called "not converged".
+   (GainPhase vs NormStep keeps the non-SOLVED count: NormStep-step arms carry almost no leak.)
+3. **D3 lacked GainRaw's qualifier.** -> When D3 is not void, its REGISTERED line carries GainRaw's scope qualifier like D1 and
+   D2 (a lagging-but-descending GainRaw can still be unlearning its leak at 900 epochs, as MapWM is).
+4. **Big-leak scenarios used the wrong loss mapping.** -> Smoke and power now use the measured mapping (3x leak -> training
+   tail ~0.28) with the leak-free loss of the MapWM draw: M corrected; new M' (L_ms x3, S_id unchanged) and Q (converged
+   GainRaw flat at training loss 0.09, STALLED, leak 1.3x). Smoke: both read SEPARATE DEFECTS with no "not converged"
+   qualifier; a lagging GainRaw (nll_ms 0.05: passes the gate, above every MapWM run) reads SEPARATE DEFECTS with GainRaw's
+   qualifier on D3.
+5. **Cosmetic.** No re-score flag or qualifier is appended to a void D3 (smoke case); DRV_MAXPG reads GP_MAXPG like the other
+   GP_* knobs; MapWM's LEAK training-tail range is 0.069-0.0725 (Amendment 2 item 2 said 0.069-0.072).
+6. **Operational note.** The launch log's clean / DIRTY flag is repo-wide (other sessions' files count). The md5 guard covers
+   shared files (stats_core.py, train.py, environment.py, rescore_hook.py, model.py and the rest of the GUARD list): no
+   session may edit them while this batch runs, or the pre-eval guard trips and the batch stops before evaluation.
+Re-run, all CPU: equivalence checks (byte-identical, ALL PASS); the new validation (above); smoke (`gain_phase_smoke_out.txt`,
+79 cases, ALL PASS); power (`gain_phase_power_out.txt`, below).
+Power after Amendment 3 (n = 8; n = 10 / 12 in the file): every earlier scenario keeps its D3 label and probability (A:
+SEPARATE DEFECTS 1.00; B: TOLERATES 0.96; L: TOLERATES 1.00; J / K / N: UNMEASURED 1.00); the corrected **M (3x leak,
+training tail ~0.28): SEPARATE DEFECTS 1.00**; **M' (L_ms x3): SEPARATE DEFECTS 1.00**; **Q (converged GainRaw flat at
+0.09, leak 1.3x): SEPARATE DEFECTS 1.00**. GainRaw's D3 qualifier fires on 0.01-0.03 of batches where GainRaw is drawn
+from MapWM's own runs (its median nll_ms above every MapWM draw by chance) and on 1.00 where it is untrained-like. n stays 8.

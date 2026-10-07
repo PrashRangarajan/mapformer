@@ -10,7 +10,7 @@ LOG="$REPO/gain_phase.log"
 source "$REPO/lib_driver.sh"
 # Amendment 2 (bug): lib_driver.sh, sourced above, already sets DRV_SPACING=45 and DRV_MINFREE=4500, so "${X:-default}"
 # here was a no-op; these are assigned unconditionally (overridable through GP_* variables).
-DRV_MAXPG="${MAXPG:-4}"                 # 4/GPU as LEAK; the picker counts every mapformer.train_ job
+DRV_MAXPG="${GP_MAXPG:-4}"              # 4/GPU as LEAK; the picker counts every mapformer.train_ job (Amendment 3: GP_*)
 DRV_SPACING="${GP_SPACING:-15}"
 DRV_MINFREE="${GP_MINFREE:-5500}"       # the pilot measured ~4.7 GB per job; 5.5 GB free before each launch
 drv_lock "$REPO/.run_gain_phase.lock" || exit 1

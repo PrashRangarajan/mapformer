@@ -25,6 +25,11 @@ Amendment 2 (gate = training loss <= 0.25 and theta reliance >= 0.2; no S_id, no
   M large PERSISTS       G W-like with acc - 0.018, L_ms x3, S_id and shift x3, loss + 0.08 (tail ~0.15):
                          D3 must read SEPARATE DEFECTS (Amendment 1's accuracy criterion called it "not converged")
   N GP flat tail         GP flattened at loss 3.6 (STALLED), acc 0.14, reliance 0.05: D3 UNMEASURED, D4 qualified
+Amendment 3 (gate on the LEAK-FREE loss nll_ms <= 0.1; GainRaw scope qualifier on nll_ms): M corrected with the auditor's
+measured loss mapping (identity step 1.7x crosses a 0.25 training tail; 3x leak -> tail ~0.28: losses + 0.21) and the W draw's
+own nll_ms (the substitution removes the leak's cost, validated: nll_ms unchanged for k = 1..3); new:
+  M' L_ms x3           G W-like with L_ms x3 only (S_id unchanged), losses + 0.21, W's nll_ms
+  Q converged flat     G flat at training loss 0.09 (STALLED), acc - 0.003, L_ms and S_id x1.3, W's nll_ms
 Output: gain_phase_power_out.txt"""
 import json
 import re
@@ -39,13 +44,15 @@ import mapformer.analyze_gain_phase as A
 REPO = "/home/prashr/mapformer"
 A.PRINT_CI = False; A.N_MC = 20_000
 V = json.load(open(f"{REPO}/docs/audits/2026-10-06/gain_phase_leak_validate.json"))
+LG = json.load(open(f"{REPO}/docs/audits/2026-10-06/gain_phase_lossgate_validate.json"))["leak"]   # nll_ms (Amendment 3)
 LIB = {}
 for arm, key in (("MapWM", "W"), ("NormStep", "N")):
     LIB[key] = []
     for r in V[arm]:
         l = torch.load(f"{REPO}/runs/leak/p0/{arm}_s{r['seed']}/{arm}.pt", map_location="cpu", weights_only=False)["losses"]
         LIB[key].append({"acc": r["acc"], "acc_rescored": r["acc"], "L_ms": r["L_ms"], "S_id": r["S_id"],
-                         "reliance": r["reliance"], "reliance_rescored": r["reliance"], "resid": r["resid"], "shift_cells": r["shift_cells"], "losses": list(l)})
+                         "reliance": r["reliance"], "reliance_rescored": r["reliance"],
+                         "nll_ms": LG[arm][r["seed"]]["nll_ms"], "resid": r["resid"], "shift_cells": r["shift_cells"], "losses": list(l)})
 
 
 def hybrid(n_run, w_run):
@@ -79,15 +86,16 @@ SCEN = {
     "G GP 3x faster": lambda rng, n: {"G": draw(rng, LIB["W"], n), "GP": [fast(r) for r in draw(rng, LIB["N"], n)]},
     "H null speed": lambda rng, n: {"G": draw(rng, LIB["W"], n), "GP": draw(rng, LIB["N"], n)},
 }
-STALL = {"acc": 0.60, "acc_rescored": 0.60, "L_ms": 0.0, "S_id": 0.001, "reliance": 0.5, "reliance_rescored": 0.5,
+STALL = {"acc": 0.60, "acc_rescored": 0.60, "L_ms": 0.0, "S_id": 0.001, "reliance": 0.5, "reliance_rescored": 0.5, "nll_ms": 0.6,
          "resid": 0.5, "shift_cells": 0.001,
          "losses": list(np.linspace(6.8, 0.5, 900))}
-UNC = {"acc": 0.14, "acc_rescored": 0.14, "L_ms": 0.0, "S_id": 1.0, "reliance": 0.0, "reliance_rescored": 0.0, "resid": 0.6,
+UNC = {"acc": 0.14, "acc_rescored": 0.14, "L_ms": 0.0, "S_id": 1.0, "reliance": 0.0, "reliance_rescored": 0.0, "nll_ms": 4.0,
+       "resid": 0.6,
        "shift_cells": 0.5,
        "losses": list(6.8 * np.exp(-np.arange(900) / 300) + 0.3)}
 SCEN["J gain unconverged"] = lambda rng, n: {"G": [UNC] * n, "GP": [UNC] * n}
 SCEN["K GainRaw unconverged"] = lambda rng, n: {"G": [UNC] * n, "GP": draw(rng, LIB["N"], n)}
-FLAT = dict(UNC, L_ms=0.03, S_id=1.3, reliance=0.05, reliance_rescored=0.05, shift_cells=0.8,
+FLAT = dict(UNC, L_ms=0.03, S_id=1.3, reliance=0.05, reliance_rescored=0.05, shift_cells=0.8, nll_ms=3.5,
             losses=list(6.8 * np.exp(-np.arange(900) / 10) + 3.6))
 
 
@@ -97,16 +105,29 @@ def big_sid(n_run, w_run):
 
 def big_leak(w_run):
     return dict(w_run, acc=w_run["acc"] - 0.018, acc_rescored=w_run["acc"] - 0.018, L_ms=3 * w_run["L_ms"],
-                S_id=3 * w_run["S_id"], shift_cells=3 * w_run["shift_cells"], losses=[x + 0.08 for x in w_run["losses"]])
+                S_id=3 * w_run["S_id"], shift_cells=3 * w_run["shift_cells"], losses=[x + 0.21 for x in w_run["losses"]])
+
+
+def lms3(w_run):
+    return dict(w_run, acc=w_run["acc"] - 0.018, acc_rescored=w_run["acc"] - 0.018, L_ms=3 * w_run["L_ms"],
+                losses=[x + 0.21 for x in w_run["losses"]])
+
+
+def conv_flat(w_run):
+    return dict(w_run, acc=w_run["acc"] - 0.003, acc_rescored=w_run["acc"] - 0.003, L_ms=1.3 * w_run["L_ms"],
+                S_id=1.3 * w_run["S_id"], shift_cells=1.3 * w_run["shift_cells"],
+                losses=list(6.8 * np.exp(-np.arange(900) / 10) + 0.09))
 
 
 SCEN["L tolerated, big S_id"] = lambda rng, n: {"G": [big_sid(a, b) for a, b in zip(draw(rng, LIB["N"], n), draw(rng, LIB["W"], n))],
                                                 "GP": draw(rng, LIB["N"], n)}
 SCEN["M large PERSISTS"] = lambda rng, n: {"G": [big_leak(r) for r in draw(rng, LIB["W"], n)], "GP": draw(rng, LIB["N"], n)}
 SCEN["N GP flat tail"] = lambda rng, n: {"G": draw(rng, LIB["W"], n), "GP": [FLAT] * n}
+SCEN["M' L_ms x3"] = lambda rng, n: {"G": [lms3(r) for r in draw(rng, LIB["W"], n)], "GP": draw(rng, LIB["N"], n)}
+SCEN["Q converged flat"] = lambda rng, n: {"G": [conv_flat(r) for r in draw(rng, LIB["W"], n)], "GP": draw(rng, LIB["N"], n)}
 SCEN["I GP stalls 1/8"] = lambda rng, n: {"G": draw(rng, LIB["W"], n),
                                           "GP": [STALL if rng.random() < 1 / 8 else LIB["N"][rng.integers(8)] for _ in range(n)]}
-KEYS = ("D1r", "D1", "D2_raw", "D2_norm", "D3_headline", "D4_headline", "D4_vs_N", "D5_norm")
+KEYS = ("D3 GainRaw-qualified", "D1r", "D1", "D2_raw", "D2_norm", "D3_headline", "D4_headline", "D4_vs_N", "D5_norm")
 
 
 def simulate(name, n, reps, seed=0):
@@ -116,7 +137,8 @@ def simulate(name, n, reps, seed=0):
         D = {(A.ARMS[i], s): arms[k][s] for i, k in enumerate(("W", "N", "G", "GP")) for s in range(n)}
         v = A.analyse(D, seeds=list(range(n)), out=lambda *a: None)
         for k in KEYS:
-            lab = re.split(r":| \(| --", v[k])[0]
+            lab = (str("not converged: GainRaw" in v.get("D3_headline", "")) if k == "D3 GainRaw-qualified"
+                   else re.split(r":| \(| --", v[k])[0])
             tally[k][lab] = tally[k].get(lab, 0) + 1
     return tally
 

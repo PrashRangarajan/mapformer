@@ -26,6 +26,9 @@ For a checkpoint of any arm in model_gain_phase.ARMS (and LEAK's ActOnly, for th
                  advances by the same amount on every move (mean action step + the blank step or the mean object step; blank
                  keeps its own step) and carries no position. ~0 for a model that does not use theta
                  (untrained: validated), large for a path-integrating one (LEAK checkpoints: validated).
+  nll / nll_ms   (Amendment 3) eval-mode mean NLL at every revisit target (objects and blanks: the training loss's
+                 targets), intact and with object steps mean-substituted; nll_ms is the LEAK-FREE convergence measure
+                 the D3 gate reads (the leak's cost is removed by the same substitution as L_ms).
   acc_rescored   acc with every attention layer's o_proj input scaled by 1/(1-p) (the dropout-scale re-score of
                  rescore_hook, applied by hooks on this model only); reliance_rescored the same for theta reliance
                  (Amendment 2: the D3 gate is re-checked on it).
@@ -135,14 +138,24 @@ class Probe:
 
 @torch.no_grad()
 def obj_acc(probe, toks, revs, pool, mode, dev):
-    m = probe.m; lo = N_SPECIAL + (0 if pool == "train" else P); ok = n = 0
+    return obj_eval(probe, toks, revs, pool, mode, dev)[0]
+
+
+@torch.no_grad()
+def obj_eval(probe, toks, revs, pool, mode, dev):
+    """(object-identity accuracy, mean NLL at ALL revisit targets -- objects and blanks, the training loss's targets --
+    of the model's full output, eval mode). Amendment 3: the NLL with mode='mean' is the LEAK-FREE convergence measure."""
+    m = probe.m; lo = N_SPECIAL + (0 if pool == "train" else P); ok = n = 0; nll = 0.0; nt = 0
     for i in range(0, len(toks), BATCH):
         tok = toks[i:i + BATCH].to(dev); rev = revs[i:i + BATCH].to(dev); inp = tok[:, :-1]
         probe.mode, probe.obj, probe.tok = mode, inp >= N_SPECIAL, inp
         lg = m(inp).float(); probe.mode = None
         tgt, msk = tok[:, 1:], rev[:, 1:] & (tok[:, 1:] >= N_SPECIAL)
         ok += int((((lg[..., lo:lo + P].argmax(-1) + lo) == tgt) & msk).sum()); n += int(msk.sum())
-    return ok / n
+        r = rev[:, 1:]
+        lp = torch.log_softmax(lg, dim=-1).gather(-1, tgt[..., None])[..., 0]
+        nll += float(-(lp[r]).double().sum()); nt += int(r.sum())
+    return ok / n, nll / nt
 
 
 @torch.no_grad()
@@ -207,9 +220,10 @@ def evaluate_model(m, dev, data=None, full=True):
     m.eval(); probe = Probe(m); out = {}
     data = data or {pool: sequences(pool) for pool in ("test", "train")}
     set_pool(m, "test"); toks, revs = data["test"]
-    a1 = obj_acc(probe, toks, revs, "test", None, dev)
-    out["acc"] = a1
-    out["L_ms"] = obj_acc(probe, toks, revs, "test", "mean", dev) - a1
+    a1, nll = obj_eval(probe, toks, revs, "test", None, dev)
+    out["acc"] = a1; out["nll"] = nll
+    a_ms, out["nll_ms"] = obj_eval(probe, toks, revs, "test", "mean", dev)
+    out["L_ms"] = a_ms - a1
     out["reliance"] = a1 - obj_acc(probe, toks, revs, "test", "typemean", dev)
     if not full:
         out.update(step_geometry(m)); return out

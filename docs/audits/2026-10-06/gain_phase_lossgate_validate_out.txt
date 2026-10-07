@@ -1,0 +1,55 @@
+== G1 LEAK checkpoints ==
+  MapWM    s0: training tail 0.0696 | eval nll 0.1253 | nll_ms 0.0071 (acc 0.9893 -> 0.9999)
+  MapWM    s1: training tail 0.0725 | eval nll 0.1081 | nll_ms 0.0078 (acc 0.9918 -> 0.9999)
+  MapWM    s2: training tail 0.0697 | eval nll 0.1628 | nll_ms 0.0141 (acc 0.9861 -> 0.9999)
+  MapWM    s3: training tail 0.0692 | eval nll 0.1459 | nll_ms 0.0124 (acc 0.9875 -> 0.9998)
+  MapWM    s4: training tail 0.0699 | eval nll 0.2071 | nll_ms 0.0242 (acc 0.9838 -> 0.9997)
+  MapWM    s5: training tail 0.0702 | eval nll 0.1055 | nll_ms 0.0113 (acc 0.9919 -> 0.9998)
+  MapWM    s6: training tail 0.0706 | eval nll 0.1176 | nll_ms 0.0155 (acc 0.9908 -> 0.9997)
+  MapWM    s7: training tail 0.0703 | eval nll 0.1150 | nll_ms 0.0377 (acc 0.9911 -> 0.9986)
+  NormStep s0: training tail 0.0189 | eval nll 0.0014 | nll_ms 0.0006 (acc 0.9998 -> 1.0000)
+  NormStep s1: training tail 0.0196 | eval nll 0.0023 | nll_ms 0.0012 (acc 0.9996 -> 0.9998)
+  NormStep s2: training tail 0.0186 | eval nll 0.0026 | nll_ms 0.0006 (acc 0.9995 -> 0.9999)
+  NormStep s3: training tail 0.0188 | eval nll 0.0004 | nll_ms 0.0004 (acc 1.0000 -> 1.0000)
+  NormStep s4: training tail 0.0198 | eval nll 0.0029 | nll_ms 0.0007 (acc 0.9995 -> 0.9999)
+  NormStep s5: training tail 0.0203 | eval nll 0.0003 | nll_ms 0.0003 (acc 1.0000 -> 1.0000)
+  NormStep s6: training tail 0.0200 | eval nll 0.0013 | nll_ms 0.0006 (acc 0.9998 -> 0.9999)
+  NormStep s7: training tail 0.0224 | eval nll 0.0004 | nll_ms 0.0004 (acc 1.0000 -> 1.0000)
+  ActOnly  s0: training tail 0.0158 | eval nll 0.0010 | nll_ms 0.0010 (acc 1.0000 -> 1.0000)
+  ActOnly  s1: training tail 0.0162 | eval nll 0.0017 | nll_ms 0.0017 (acc 0.9983 -> 0.9983)
+  ActOnly  s2: training tail 0.0156 | eval nll 0.0011 | nll_ms 0.0011 (acc 1.0000 -> 1.0000)
+  ActOnly  s3: training tail 0.0148 | eval nll 0.0017 | nll_ms 0.0017 (acc 0.9999 -> 0.9999)
+  ActOnly  s4: training tail 0.0167 | eval nll 0.0006 | nll_ms 0.0006 (acc 1.0000 -> 1.0000)
+  ActOnly  s5: training tail 0.0159 | eval nll 0.0007 | nll_ms 0.0007 (acc 1.0000 -> 1.0000)
+  ActOnly  s6: training tail 0.0155 | eval nll 0.0009 | nll_ms 0.0009 (acc 0.9998 -> 0.9998)
+  ActOnly  s7: training tail 0.0150 | eval nll 0.0009 | nll_ms 0.0009 (acc 0.9997 -> 0.9997)
+== G2 MapWM s0, identity step scaled by k ==
+  k 1.0: eval nll 0.1253 | nll_ms 0.0071 | acc 0.9893 | L_ms +0.0106
+  k 1.5: eval nll 0.3024 | nll_ms 0.0071 | acc 0.9737 | L_ms +0.0262
+  k 2.0: eval nll 0.5140 | nll_ms 0.0071 | acc 0.9530 | L_ms +0.0469
+  k 3.0: eval nll 0.9592 | nll_ms 0.0071 | acc 0.9097 | L_ms +0.0903
+== G3 untrained models ==
+  untrained MapWM     s8: nll 7.2102 | nll_ms 7.2102
+  untrained NormStep  s8: nll 7.2101 | nll_ms 7.2102
+  untrained GainRaw   s8: nll 7.1556 | nll_ms 7.1555
+  untrained GainPhase s8: nll 7.1573 | nll_ms 7.1567
+  untrained MapWM     s110: nll 6.9680 | nll_ms 6.9680
+  untrained NormStep  s110: nll 6.9681 | nll_ms 6.9680
+  untrained GainRaw   s110: nll 6.9593 | nll_ms 6.9592
+  untrained GainPhase s110: nll 6.9595 | nll_ms 6.9593
+== G3 pilot checkpoints (30-epoch schedule) ==
+  pilot MapWM     s110: training tail 0.4609 | nll 0.3284 | nll_ms 0.1650 (acc 0.9594)
+  pilot NormStep  s110: training tail 0.7922 | nll 0.5763 | nll_ms 0.4462 (acc 0.9209)
+  pilot GainRaw   s110: training tail 1.5047 | nll 1.2892 | nll_ms 1.1470 (acc 0.7360)
+  pilot GainPhase s110: training tail 3.5623 | nll 3.5192 | nll_ms 3.4083 (acc 0.1600)
+  pilot MapWM     s111: training tail 0.7147 | nll 0.5101 | nll_ms 0.3503 (acc 0.9340)
+  pilot NormStep  s111: training tail 0.3009 | nll 0.0861 | nll_ms 0.0801 (acc 0.9990)
+  pilot GainRaw   s111: training tail 3.2909 | nll 3.1860 | nll_ms 3.1108 (acc 0.2728)
+  pilot GainPhase s111: training tail 3.6013 | nll 3.5686 | nll_ms 3.5515 (acc 0.1129)
+
+== summary ==
+  LEAK MapWM   : nll 0.1055-0.2071, nll_ms 0.0071-0.0377
+  LEAK NormStep: nll 0.0003-0.0029, nll_ms 0.0003-0.0012
+  LEAK ActOnly : nll 0.0006-0.0017, nll_ms 0.0006-0.0017
+  G2: nll 0.1253 -> 0.9592 (k 1 -> 3); nll_ms range 0.0071-0.0071
+  G3: untrained nll_ms min 6.959; pilot nll_ms MapWM/110 0.165 NormStep/110 0.446 GainRaw/110 1.147 GainPhase/110 3.408 MapWM/111 0.350 NormStep/111 0.080 GainRaw/111 3.111 GainPhase/111 3.552
