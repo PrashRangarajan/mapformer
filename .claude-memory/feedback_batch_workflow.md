@@ -22,3 +22,7 @@ would have mis-stated registered verdicts. **How to apply:**
 - Ask before long or cost-heavy runs only if the value is doubtful; the user stopped a 31 h batch once the window
   hypothesis turned out near-guaranteed by construction. State what each experiment can and cannot show.
 - Push when the user says "push"; commits are single-author (no Co-Authored-By).
+- Expect 2-4 audit rounds on a new design: each amendment gets its own independent re-check (2026-10-06..08: rounds
+  caught grid-incomparable readouts, gates that read the leak, generator answer leaks, depth-mismatched oracles).
+- lib_driver.sh sets DRV_SPACING/DRV_MINFREE first: assign driver knobs unconditionally AFTER sourcing (a `${X:-..}`
+  default after sourcing is a no-op). Waiters: comm-matched ps/awk, never `ps | grep pattern` (grep matches itself).

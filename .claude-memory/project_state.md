@@ -5,26 +5,35 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-04 00:45. Goes stale fast: check `git log`, `.done` markers and results files first.
-New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs/SESSION_2026-09-27_to_10-03.md`.
+Updated 2026-10-09 02:30 (before a compaction). Goes stale fast: check `git log`, `.done` markers, the logs named below.
+New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
-## Running (launched 2026-10-08 19:04, on the user's go; GPUs were nearly free)
-- GAIN_PHASE (`GAIN_PHASE_PREREG.md` + Amendments 1-3): 32 runs, seeds 8-15, `run_gain_phase.sh`, ETA ~11-15 h.
-  Marker `.gain_phase_done`; artifacts GAIN_PHASE_EVAL.json / _ANALYSIS.txt / _VERDICTS.json.
-- Built, CPU-validated, NOT launched (each needs a GPU pilot + its independent audit, running now on CPU):
-  each audited and amended (Amendment 1), awaiting GPU pilots and the user's choice of what to run:
-  TW_STATECHANGE (`TW_STATECHANGE_PREREG.md`, d385e0e; take/drop clauses off the map; 32 runs ~3 h + ~1 h pilot),
-  TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e; same word as action or observation; 64 runs at 1800 ep ~15 h, or ~11 h
-  without DirOnlyRole and RoPE2, + ~3 h pilot),
-  TW_LANDMARK (`TW_LANDMARK_PREREG.md`, e9cd479; named places vs path integration, 2-layer arms, in-distribution
-  probe O-ID; 48 runs ~7 h + pilot).
-  Post hoc word-class breakdown done (`docs/audits/2026-10-08/tw_wordclass_out.txt`).
-- RANK_NOWRAP: POSTPONED by the user 2026-10-08 (cost ~19-23 h); the queue waiter was killed before it launched
-  anything. Ready to launch later (`run_rank_nowrap.sh`, N_SEEDS 12; consider 8 if time-limited).
-Both had an independent verification per amendment round. If either driver dies while trainers run, check with the
-rule-23 ps/awk pattern before relaunching (both drivers have a per-run-dir duplicate guard).
+## Running
+- GAIN_PHASE (`GAIN_PHASE_PREREG.md` + Amendments 1-3): launched 2026-10-08 19:04 (code 9755355, clean); 32 runs, seeds
+  8-15; 14/32 done at 02:18; ETA ~07:30-08:00. Driver `run_gain_phase.sh`, log `gain_phase.log`, marker `.gain_phase_done`;
+  artifacts GAIN_PHASE_EVAL.json / _ANALYSIS.txt / _VERDICTS.json. Then: GAIN_PHASE_RESULTS.md, CLAUDE.md row, report.
+- QUEUED (user, 2026-10-09): `docs/audits/2026-10-09/queue_tw_statechange_pilot.sh` (setsid waiter; log
+  runs/tw_statechange_pilot/queue.log) waits for the GAIN_PHASE driver + trainers to exit, then runs the TW_STATECHANGE
+  pilot: (a) GPU bitwise repro (`docs/audits/2026-10-08/tw_statechange_repro.py 5 cuda:0` -> `_repro_gpu_out.txt`),
+  (b) 4 arms at seed 150 (900 ep, 2/GPU), (c) pilot readouts -> runs/tw_statechange_pilot/TWSC_PILOT.json; marker
+  `.tw_statechange_pilot_done`. It does NOT launch the batch. NEXT: read the pilot, write the pilot amendment
+  (timing, repro pass/fail, whether 1-layer models learn the state targets), commit, then launch
+  `run_tw_statechange.sh` (32 runs, ~3 h). The user asked to "start with state change at least".
+
+## Ready, not launched (each audited + amended; user chooses)
+- TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or
+  ~11 h without DirOnlyRole and RoPE2) + ~3 h pilot. Recommended after state-change.
+- TW_LANDMARK (`TW_LANDMARK_PREREG.md`, e9cd479): named places vs path integration, 2-layer arms, in-distribution probe
+  O-ID; 48 runs ~7 h + pilot.
+- RANK_NOWRAP (`RANK_NOWRAP_PREREG.md`, Amendments 1-4, N_SEEDS 12): POSTPONED by the user (cost ~19-23 h); 8 seeds if
+  time-limited.
+The user is cost-sensitive (a day of GPU is "a lot") and does not want our jobs on the GPUs while another user's jobs
+are there; check `nvidia-smi` owners before launching and ask if another user is active.
 
 ## Last results (newest first; one line each, numbers in the file)
+- Word-class breakdown of text-world models (`docs/audits/2026-10-08/tw_wordclass_out.txt`, POST HOC): only direction-word
+  identity carries position (-0.49 when mean-substituted); other classes act as blocks (per-move offsets); adverbs and
+  fillers are inert; NormStep keeps position more on direction words.
 - GAIN_GRAIN (`GAIN_GRAIN_RESULTS.md`, REG): (a) SCALAR GAIN SUFFICES (per-module too) vs MapPoPE-Pair, NO HEADROOM
   qualifier (MapWM 18/20); (b) softplus(q.k) MapEM WORSE than signed MapEM (12/20 vs 19/20). Scalar gain fastest.
 - SCORE_RANK (`SCORE_RANK_RESULTS.md`, REG): NO RESCUE -- PoPE's score leaves rank 2 at 3/12 SOLVED at T=1024 (MapWM

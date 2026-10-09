@@ -4,7 +4,7 @@ Rules and conventions live in CLAUDE.md (rules 1-29); these files hold the why a
 - [Project state](project_state.md) -- **read first.** Live state only: running (nothing, 2026-10-03), last results, open decisions with costs.
 - `docs/WHERE_THINGS_STAND.md` -- **read second.** One-page orientation: thesis (most effects are robustness, not
   capability), what survives with numbers and status (registered / post hoc / pilot), what is open ranked with costs,
-  what is stale. Week of 2026-09-27..10-03 in `docs/SESSION_2026-09-27_to_10-03.md`.
+  what is stale. Week of 2026-09-27..10-03 in `docs/SESSION_2026-09-27_to_10-03.md`; 2026-10-04..09 in `docs/SESSION_2026-10-04_to_10-09.md`.
 - [Robustness is not capability](project_robustness_vs_capability.md) -- matched length AND depth decide; OOD-only effects are robustness until controlled; sign is the one that survived its control.
 - [Rank, and Selective RoPE](project_rank_and_selective_rope.md) -- per-head rank decides it: rank 2 per head 0-2/8, rank 3 6/8, rank 4 8/8; 2x budget does not rescue rank 2; rank = D hard in 3D too, D+1 fine on large tori; sharing and scale unmeasured.
 - [PoPE/MapFormer asymmetry](project_mappope_asymmetry.md) -- PoPE's encoding helps the path row (Bach); "path integration hurts PoPE" is unmeasured (corrected 2026-10-03).
@@ -26,6 +26,7 @@ Rules and conventions live in CLAUDE.md (rules 1-29); these files hold the why a
 ## Method (detail behind CLAUDE.md rules)
 - [Convergence, floor, power, recipe](feedback_convergence_first.md) -- rules 1-5, 12; lm200 and the 0.415 ceiling.
 - [Validate the task; audit the design](feedback_validate_task_first.md) -- rules 11-13; premise, runtime knobs, split hypotheses.
+- [GPU sharing and cost](feedback_gpu_sharing_and_cost.md) -- shared server; no launches while another user's jobs run; show cost, offer trimmed variants.
 - [Batch workflow](feedback_batch_workflow.md) -- rule 29: verification agent per batch, amend before reading, pilots on outside seeds, show cost arithmetic.
 - [Existence before mechanism](feedback_existence_before_mechanism.md) -- rules 14-15; warm-start frozen and trainable; gauges.
 - [Probes, agents and summaries lie confidently](feedback_probe_verification.md) -- rule 9; verify before relaying.
