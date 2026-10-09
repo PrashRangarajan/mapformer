@@ -12,8 +12,9 @@ trainer runs). Output: gate_tw_ambig_out.txt.
      reversal-copy rule (move-role words), word n-grams of order 1-5 fit on a training-map sample
   6  path oracles on the same stream: CLEAN (true cell), CONTAMINATED (every direction word integrated as a move:
      the context-free step's best case, the CF-ceiling estimate), DIRONLY-CAP (true cell, aside nouns stored at
-     the cell, as a steps-on-move-words-only model would see them) -- the cap oracle is validated on plain
-     TextWorld against TW_NORMSTEP's DirOnly (0.970-0.974)
+     the cell, as a steps-on-move-words-only model would see them) -- the cap oracle FAILS its validation on plain
+     TextWorld against TW_NORMSTEP's DirOnly (0.970-0.974) and is not used
+  4b (Amendment 1) equality-aware role check (object repetition, token equalities) and sentence-order check
   7  leak / construction: tagged stream = untagged after untag, tags exactly at non-movement direction words;
      the reported object in lead-form non-movement sentences is the current cell's; p_nm=0 equals TextWorld
 """
@@ -61,7 +62,9 @@ def walk_check(env, E):
 
 
 def oracles(env, E, mode):
-    """Most-recent-observation predictors at revisit targets. mode: 'clean' (true cell), 'contam' (every direction
+    """Amendment 1: in 'contam' mode the reversal-copy fallback is ROLE-FREE (it reads the last two direction words of any
+    role); it read the movement-role words before, which leaked the role into the context-free estimate.
+    Most-recent-observation predictors at revisit targets. mode: 'clean' (true cell), 'contam' (every direction
     word moves the position), 'dironly' (true cell; aside nouns are stored at the current cell too).
     Memory: movement-clause object slots; for 'contam', the lead-form non-movement objects at their (contaminated)
     position as well; fallback: reversal-copy, else 'nothing'. -> (acc, acc on clean gaps, acc on contaminated
@@ -74,11 +77,12 @@ def oracles(env, E, mode):
         slots = list(np.nonzero(obs)[0]); locs = e["locs"]
         dir_at = {i: (role, f) for i, role, f in e["ctx"]}
         mem = {}; true_pos = None; cpos = np.zeros(2, int); started = False
-        last_visit = {}; nm_seen = 0; nm_at_visit = {}; k = 0; mv_dirs = []
+        last_visit = {}; nm_seen = 0; nm_at_visit = {}; k = 0; mv_dirs = []; all_dirs = []; dirs_at_slot = []
         for i, w in enumerate(t):
             if i in dir_at:
                 role, f = dir_at[i]; a = w2a[w]; d = np.array(GridWorld.ACTION_DELTAS[a])
                 cpos = (cpos + d) % 64
+                all_dirs.append(a)
                 if role == "move":
                     mv_dirs.append(a)
                 else:
@@ -96,8 +100,10 @@ def oracles(env, E, mode):
                 if rev[i]:
                     if key in mem:
                         pred = mem[key]
-                    elif k >= 2 and len(mv_dirs) > k and mv_dirs[k] == OPP[mv_dirs[k - 1]]:
+                    elif mode != "contam" and k >= 2 and len(mv_dirs) > k and mv_dirs[k] == OPP[mv_dirs[k - 1]]:
                         pred = t[slots[k - 2]]
+                    elif mode == "contam" and k >= 2 and len(all_dirs) >= 2 and all_dirs[-1] == OPP[all_dirs[-2]]:
+                        pred = t[slots[k - 2]]     # Amendment 1: ROLE-FREE fallback (last two direction words, any role)
                     else:
                         pred = nothing
                     ok = pred == w
@@ -153,7 +159,7 @@ def calibrate():
 
 
 def floors(env, E, Tr):
-    w2a = w2a_of(env); nothing = env.idx["nothing"]; ys, rc = [], []
+    w2a = w2a_of(env); nothing = env.idx["nothing"]; ys, rc, rcf = [], [], []
     for e in E:
         slots = np.nonzero(e["obs"])[0]
         mv = [w2a[e["t"][i]] for i, role, f in e["ctx"] if role == "move"] if e["ctx"] else \
@@ -162,6 +168,12 @@ def floors(env, E, Tr):
             if e["rev"][i]:
                 ys.append(e["t"][i])
                 rc.append(e["t"][slots[k - 2]] == e["t"][i] if k >= 2 and mv[k] == OPP[mv[k - 1]] else e["t"][i] == nothing)
+        alld = [(i, w2a[e["t"][i]]) for i, role, f in e["ctx"]]
+        for k, i in enumerate(slots):
+            if e["rev"][i]:
+                prev = [a for j, a in alld if j < i]
+                rcf.append(e["t"][slots[k - 2]] == e["t"][i] if k >= 2 and len(prev) >= 2 and prev[-1] == OPP[prev[-2]]
+                           else e["t"][i] == nothing)
     const = max(np.mean([y == v for y in ys]) for v in set(ys))
     ng = {}
     for n in range(1, 6):
@@ -172,7 +184,7 @@ def floors(env, E, Tr):
         mode = Counter(e["t"][i] for e in Tr for i in np.nonzero(e["rev"])[0]).most_common(1)[0][0]
         ng[n] = float(np.mean([(tab[tuple(e["t"][i - n:i])].most_common(1)[0][0] if tab[tuple(e["t"][i - n:i])] else mode)
                                == e["t"][i] for e in E for i in np.nonzero(e["rev"])[0]]))
-    return float(const), float(np.mean(rc)), ng, len(ys)
+    return float(const), float(np.mean(rc)), ng, len(ys), float(np.mean(rcf))
 
 
 def main():
@@ -239,6 +251,59 @@ def main():
         print(f"   {g:11s}: " + "  ".join(f"{k} {np.mean([x[k] for x, _ in v]):.3f}" for k in
                                          ("before4", "after3", "joint", "naive_bayes"))
               + f"  | base rate {base:.3f}  (n {len(v)})")
+    # Amendment 1 (audit): EQUALITY-aware checks the word-identity tables cannot make.
+    obj_ids = set(te.idx[o] for o in OBJECTS[:16] + ["nothing"])
+    def eqfeats(e, i, slots):
+        t = e["t"]; prev = [s_ for s_ in slots if s_ < i]; po = t[prev[-1]] if prev else -1
+        j = i + 1
+        while j < len(t) and t[j] not in obj_ids and te.vocab[t[j]] != ".":
+            j += 1
+        nxt = t[j] if j < len(t) and t[j] in obj_ids else -2
+        win = [t[i + o] if 0 <= i + o < len(t) else -9 for o in (-4, -3, -2, -1, 1, 2, 3)] + [nxt]
+        f = [("rep", nxt == po)] + [(("eqprev", k), w == po) for k, w in enumerate(win)]
+        f += [(("pair", a, b), win[a] == win[b]) for a in range(8) for b in range(a + 1, 8)]
+        return f, nxt == po
+    nbe = defaultdict(Counter); pri = Counter(); rep = defaultdict(list)
+    for e in Tr:
+        slots = list(np.nonzero(e["obs"])[0])
+        for i, role, f in e["ctx"]:
+            fs, _ = eqfeats(e, i, slots); pri[role] += 1
+            for ft in fs + feats(e, i):
+                nbe[ft][role] += 1
+    eqg = defaultdict(list)
+    for e in E:
+        slots = list(np.nonzero(e["obs"])[0])
+        for i, role, f in e["ctx"]:
+            fs, r_ = eqfeats(e, i, slots); g = f if f in FORMS else "base/nat"; rep[(g, role)].append(r_)
+            lp = {r: np.log(pri[r]) for r in ("move", "nm")}
+            for ft in fs + feats(e, i):
+                for r in lp:
+                    lp[r] += np.log((nbe[ft][r] + 1) / (pri[r] + 100))
+            eqg[g].append(max(lp, key=lp.get) == role)
+    print("   equality-aware (Amendment 1): P(the object after the direction word repeats the last movement object | role)"
+          " and a naive-Bayes over the 7 positional words + equality features (repeat, each window token == last object,"
+          " all 28 within-window token equalities)")
+    for g in ["base/nat"] + FORMS:
+        v = groups[g]; base = max(np.mean([r == "nm" for _, r in v]), np.mean([r == "move" for _, r in v]))
+        pm, pn = rep.get((g, "move"), []), rep.get((g, "nm"), [])
+        print(f"   {g:11s}: P(repeat | move) {np.mean(pm) if pm else float('nan'):.3f}  P(repeat | non-move) "
+              f"{np.mean(pn) if pn else float('nan'):.3f}  | equality-aware NB {np.mean(eqg[g]):.3f} vs base rate {base:.3f}")
+    # sentence order: is the previous sentence a non-movement one?
+    po = defaultdict(list)
+    for e in E:
+        nm_dir = sorted(i for i, r, f in e["ctx"] if r == "nm"); spans = []
+        for i, role, f in e["ctx"]:
+            a = i
+            while a > 0 and te.vocab[e["t"][a - 1]] != ".":
+                a -= 1
+            b = a - 2                                          # inside the previous sentence
+            while b > 0 and te.vocab[e["t"][b - 1]] != ".":
+                b -= 1
+            prev_nm = bool(e["nm"][a - 2]) if a >= 2 else False
+            g = f if f in FORMS else ("nat" if f == "nat" else "base")
+            po[(g if g in FORMS else "other", role)].append(prev_nm)
+    print("   sentence order (Amendment 1): P(previous sentence is non-movement | role), framed classes: " +
+          "  ".join(f"{g} move {np.mean(po[(g, 'move')]):.3f} / nm {np.mean(po[(g, 'nm')]):.3f}" for g in FORMS))
     ok = []; dist = defaultdict(list)
     for e in E:
         t = e["t"]
@@ -258,8 +323,9 @@ def main():
     print("   cue distance to the direction word (tokens), non-movement classes:",
           {f: (min(v), max(v)) for f, v in sorted(dist.items())})
 
-    const, rcopy, ng, nt = floors(te, E, Tr)
-    print(f"\n== 5 floors on the eval stream ({nt} targets): best constant {const:.4f}; reversal-copy {rcopy:.4f}; "
+    const, rcopy, ng, nt, rcf = floors(te, E, Tr)
+    print(f"\n== 5 floors on the eval stream ({nt} targets): best constant {const:.4f}; reversal-copy {rcopy:.4f} "
+          f"(movement-role words; role-free: {rcf:.4f}); "
           f"word n-gram " + " ".join(f"{n}:{v:.4f}" for n, v in ng.items()))
 
     print("\n== 6 path oracles (most recent observation at the same key; fallback reversal-copy, else 'nothing')")
@@ -297,7 +363,7 @@ def main():
                 if j < len(e["t"]) and prev:
                     rep.append(e["t"][j] == e["t"][prev[-1]])
     print(f"   lead-form reported object == the current cell's (last movement slot's) object: {np.mean(rep):.4f} "
-          f"(n {len(rep)})")
+          f"(n {len(rep)}; Amendment 1: drawn from the map's marginal now -- it was 1.000, a role give-away)")
     a = TextWorld(seed=3); b = TextWorldAmbig(seed=3, p_nm=0.0); same0 = True
     for k in range(20):
         np.random.seed(k); x = a.generate_trajectory(T); np.random.seed(k); y = b.generate_trajectory(T)

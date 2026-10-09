@@ -1,4 +1,4 @@
-"""Construction / equivalence checks for TW_AMBIG_PREREG.md, CPU only (CUDA_VISIBLE_DEVICES=""). Output:
+"""Construction / equivalence checks for TW_AMBIG_PREREG.md (+ Amendment 1: RoleTag2), CPU only (CUDA_VISIBLE_DEVICES=""). Output:
 tw_ambig_checks_out.txt. Every check prints PASS / FAIL with its number.
 
  C1  class identity: MapWM = VARIANT_MAP['Vanilla_r4'], RoPE = VARIANT_MAP['RoPE'] (the text-world arms)
@@ -101,6 +101,9 @@ def main():
         mh, eh = mk("HSR", 40); mc, ec = mk("CF2", 40)
         dh = max(float((mh(t[None]) - mc(t[None])).abs().max()) for t, _ in walks(eh, 3))
         check("C3 CF2 == HSR at init (alpha 0)", dh == 0.0, f"max diff {dh}")
+        m2, e2 = mk("RoleTag2", 40)
+        d2 = max(float((mc(e2.untag(t)[None]) - m2(t[None])).abs().max()) for t, _ in walks(e2, 3))
+        check("C3 RoleTag2(tagged) == CF2(plain) at init (Amendment 1, the depth-matched oracle)", d2 == 0.0, f"max diff {d2}")
 
         for arm in ARMS:
             m, e = mk(arm, 41); t = walks(e, 1)[0][0][None]; t2 = t.clone(); j = 150
@@ -161,6 +164,9 @@ def main():
     mz, _ = mk("RoleTag", 44); mz.nm_emb.data.zero_(); sw = RO.swap(mz, Wst, "cpu", tet, n_max=20)
     check("C7 RoleTag nm_emb=0: non-movement swap exactly 0 on every class",
           all(sw[f"{c}@15"] == 0.0 for c in NM_CLASSES), f"(move {sw['move@15']:.4f})")
+    m2z, _ = mk("RoleTag2", 44); m2z.nm_emb.data.zero_(); sw = RO.swap(m2z, Wst, "cpu", tet, n_max=20)
+    check("C7 RoleTag2 nm_emb=0: non-movement swap exactly 0 on every class",
+          all(sw[f"{c}@15"] == 0.0 for c in NM_CLASSES), f"(move {sw['move@15']:.4f})")
     md_, _ = mk("DirOnlyRole", 44); sw = RO.swap(md_, Wst, "cpu", tet, n_max=20)
     dd = RO.drift_disp(md_, RO.walk_set(tet, 6, 5), "cpu", tet)
     check("C7 DirOnlyRole: non-movement swap exactly 0; non-movement-sentence drift exactly 0 (no word there steps)",
@@ -187,7 +193,7 @@ def main():
     # C9 trainer reproduction, CPU vs CPU bitwise
     env = dict(os.environ, CUDA_VISIBLE_DEVICES="", OMP_NUM_THREADS="2", PYTHONPATH="/home/prashr")
     small = ["--seed", "40", "--epochs", "2", "--n-batches", "3", "--n-steps", "256", "--batch-size", "4",
-             "--n-trials", "5", "--device", "cpu", "--data-workers", "3"]
+             "--n-trials", "20", "--device", "cpu", "--data-workers", "3"]
     with tempfile.TemporaryDirectory() as d:
         subprocess.run([sys.executable, "-m", "mapformer.train_tw_ambig", "--arm", "MapWM", "--p-nm", "0",
                         "--output-dir", f"{d}/a"] + small, check=True, env=env, cwd="/home/prashr", capture_output=True)
@@ -236,7 +242,8 @@ def main():
                                        "acc_contam", "n_clean", "n_contam", "acc_rescored", "arm", "seed")}
             res[f"{a}_s{s}"] = r
     try:
-        AN.report(res, AN.SEEDS); AN.report(res, AN.SEEDS[:1]); ok = True
+        rc8 = AN.report(res, AN.SEEDS); rc1 = AN.report(res, AN.SEEDS[:1]); ok = True
+        print(f"   (report return codes: n=8 {rc8}, n=1 {rc1}; 3 = VOID on this random synthetic set, by design)")
     except Exception as ex:                                   # noqa
         ok = False; print("report raised", repr(ex))
     check("C11 analysis report runs end to end on a synthetic n=8 set and on the n=1 pilot path", ok)

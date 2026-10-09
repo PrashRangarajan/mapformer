@@ -16,7 +16,7 @@ import numpy as np
 from mapformer.stats_core import classify_run, perm2_p, perm2_ci, fisher_solved, mde, signflip_p
 
 REPO = "/home/prashr/mapformer"
-ARMS = ["MapWM", "RoleTag", "DirOnlyRole", "HSR", "CF2", "RoPE1", "RoPE2"]
+ARMS = ["MapWM", "RoleTag", "DirOnlyRole", "HSR", "CF2", "RoleTag2", "RoPE1", "RoPE2"]
 NM_CLASSES = ["nat", "lead_near", "lead_far", "trail_near", "trail_far"]
 NEAR, FAR = ["nat", "lead_near", "trail_near"], ["lead_far", "trail_far"]
 ACC_MIN, NI_MARGIN, RATIO_SUPP, STEP_MIN, WIRING_TOL = 0.02, 0.03, 0.3, 0.01, 0.01
@@ -36,26 +36,31 @@ def noninferior(ref, x, margin=NI_MARGIN):
 
 
 def verdict_a(res, seeds, acc_key="acc"):
+    """Amendment 1: G and non-inferiority compare HSR with the DEPTH-MATCHED oracle RoleTag2 (2 layers, HSR's
+    architecture); N stays RoleTag - MapWM (both 1 layer), R stays HSR - CF2 (both 2 layers)."""
     g = lambda arm: [res[f"{arm}_s{s}"][acc_key] for s in seeds]
     sol = lambda arm: sum(res[f"{arm}_s{s}"]["cls"] == "SOLVED" for s in seeds)
     n = len(seeds); need = math.ceil(0.75 * n)
-    out = {"n": n, "RoleTag_solved": sol("RoleTag")}
+    out = {"n": n, "RoleTag_solved": sol("RoleTag"), "RoleTag2_solved": sol("RoleTag2")}
     dN, pN, fN = contrast(g("MapWM"), g("RoleTag")); dR, pR, fR = contrast(g("CF2"), g("HSR"))
-    dG, pG, fG = contrast(g("RoleTag"), g("HSR"))
-    ni_h = noninferior(g("RoleTag"), g("HSR")); ni_m = noninferior(g("RoleTag"), g("MapWM"))
+    dG, pG, fG = contrast(g("RoleTag2"), g("HSR"))
+    ni_h = noninferior(g("RoleTag2"), g("HSR")); ni_m = noninferior(g("RoleTag"), g("MapWM"))
     out.update(N=(dN, pN, fN), R=(dR, pR, fR), G=(dG, pG, fG), NI_HSR=ni_h, NI_MapWM=ni_m)
     if sol("RoleTag") < need:
         lab = f"UNINTERPRETABLE: THE ORACLE DID NOT LEARN (RoleTag SOLVED {sol('RoleTag')}/{n} < {need})"
     elif fN and dN > 0:
         if fR and dR > 0:
-            if fG and dG < 0:
-                lab = "CONTEXT STEP NEEDED; HSR RECOVERS PART OF IT (below the oracle)"
+            if sol("RoleTag2") < need:
+                lab = (f"CONTEXT STEP NEEDED; HSR RECOVERS IT (gap to the depth-matched oracle NOT READABLE: RoleTag2 "
+                       f"SOLVED {sol('RoleTag2')}/{n} < {need})")
+            elif fG and dG < 0:
+                lab = "CONTEXT STEP NEEDED; HSR RECOVERS PART OF IT (below the depth-matched oracle)"
             elif fG and dG > 0:
-                lab = "CONTEXT STEP NEEDED; HSR RECOVERS IT AND EXCEEDS THE ORACLE"
+                lab = "CONTEXT STEP NEEDED; HSR RECOVERS IT AND EXCEEDS THE DEPTH-MATCHED ORACLE"
             elif ni_h:
-                lab = f"CONTEXT STEP NEEDED; HSR RECOVERS IT (non-inferior to the oracle at {NI_MARGIN})"
+                lab = f"CONTEXT STEP NEEDED; HSR RECOVERS IT (non-inferior to the depth-matched oracle at {NI_MARGIN})"
             else:
-                lab = f"CONTEXT STEP NEEDED; HSR RECOVERS IT (gap to the oracle unmeasured at {NI_MARGIN})"
+                lab = f"CONTEXT STEP NEEDED; HSR RECOVERS IT (gap to the depth-matched oracle unmeasured at {NI_MARGIN})"
         elif fR and dR < 0:
             lab = "CONTEXT STEP NEEDED; HSR BELOW ITS CONTEXT-FREE TWIN"
         else:
@@ -67,10 +72,16 @@ def verdict_a(res, seeds, acc_key="acc"):
     else:
         lab = "UNMEASURED (the need is not shown and neither is non-inferiority)"
     q = []
-    if "RoPE1_s%d" % seeds[0] in res and np.mean(g("MapWM")) - np.mean(g("RoPE1")) < ACC_MIN:
-        q.append("MapWM AT THE INDEX FLOOR")
-    if all(res[f"{a}_s{s}"][acc_key] >= 0.99 for a in ("RoleTag", "HSR", "MapWM") for s in seeds):
-        q.append("CEILING: RoleTag, HSR and MapWM >= 0.99 on every seed")
+    if "RoPE1_s%d" % seeds[0] in res:                 # Amendment 1: eval mode AND re-scored (eval mode under-reports MapWM)
+        modes = [k for k in (acc_key, "acc_rescored") if all(k in res[f"{a}_s{s}"] for a in ("MapWM", "RoPE1") for s in seeds)]
+        low = [k for k in modes if np.mean([res[f"MapWM_s{s}"][k] for s in seeds])
+               - np.mean([res[f"RoPE1_s{s}"][k] for s in seeds]) < ACC_MIN]
+        if low and len(low) == len(modes):
+            q.append(f"MapWM AT THE INDEX FLOOR ({' and '.join(low)})")
+        elif low:
+            q.append(f"MapWM AT THE INDEX FLOOR IN {low[0]} ONLY (not in {[k for k in modes if k not in low][0]})")
+    if all(res[f"{a}_s{s}"][acc_key] >= 0.99 for a in ("RoleTag", "RoleTag2", "HSR", "MapWM") for s in seeds):
+        q.append("CEILING: RoleTag, RoleTag2, HSR and MapWM >= 0.99 on every seed")
     out["label"] = lab; out["qualifiers"] = q
     return out
 
@@ -135,13 +146,16 @@ def collect(rdir, seeds, do_readouts, out, dev):
             r["acc_readout"] = r.pop("acc")
             e = ev["eval"]
             r.update(acc=e["1024"]["acc"], acc2048=e["2048"]["acc"], acc_tm=e["1024"]["acc_train_mode"],
-                     cls=c["registered"], tail=float(c["tail"]), final_loss=ev["final_loss"])
+                     cls=c["registered"], tail=float(c["tail"]), final_loss=ev["final_loss"],
+                     epochs=int(ck["config"]["args"]["epochs"]), n_losses=len(ck["losses"]))
             res[f"{a}_s{s}"] = r
             print(f"  {a:11s} s{s}: acc {r['acc']:.4f} (readout {r['acc_readout']:.4f}) train-mode {r['acc_tm']:.4f} "
                   f"{r['cls']:10s} clean/contam {r['acc_clean']:.3f}/{r['acc_contam']:.3f}"
                   + (f"  move {r['move_change']:.3f} ratios " + " ".join(f"{c} {r[f'ratio_{c}']:.2f}" for c in NM_CLASSES)
                      + f"  nm drift {r['nm_drift_rad']:.3f} rad, drift {r['drift']}/64, reliance {r['reliance']:+.3f}"
                      if "move_change" in r else ""), flush=True)
+    ep = sorted(set((r["epochs"], r["n_losses"]) for r in res.values()))
+    assert len(ep) == 1 and ep[0][0] == ep[0][1], ("Amendment 1: every run must have the same epoch count", ep)
     json.dump(res, open(out, "w"), indent=1)
     return res
 
@@ -158,8 +172,9 @@ def report(res, seeds):
               f"clean {np.nanmean([x if x is not None else np.nan for x in g(arm, 'acc_clean')]):.4f} / contam "
               f"{np.nanmean([x if x is not None else np.nan for x in g(arm, 'acc_contam')]):.4f}  "
               f"[{np.mean(g(arm, 'acc2048')):.4f}]  per seed " + " ".join(f"{x:.3f}" for x in acc))
-    print("  floors (gate, this eval stream): best constant 0.5112, reversal-copy 0.6132; contaminated-path oracle 0.5998"
-          " (an estimate, NOT a bound: a trained context-free model beat it by +0.19 on ctx3 lead/far)")
+    print("  floors (gate, this eval stream, Amendment 1 task): best constant 0.4956, reversal-copy 0.5991 (role-free"
+          " 0.5759); contaminated-path oracle 0.5982 with a role-free fallback (an estimate, NOT a bound: a trained"
+          " context-free model beat it by +0.22 on ctx3 lead/far)")
     dif = [abs(res[f"{a}_s{s}"]["acc_readout"] - res[f"{a}_s{s}"]["acc"]) for a in ARMS for s in seeds
            if "acc_readout" in res[f"{a}_s{s}"]]
     if dif:
@@ -168,17 +183,19 @@ def report(res, seeds):
     bad = void_checks(res, seeds)
     print(f"  void check (wiring: context-free swap ratio 1.00 +/- {WIRING_TOL}, DirOnlyRole non-movement swap 0): "
           + ("OK" if not bad else "VOID -- " + "; ".join(bad[:10])))
+    if bad:                                            # Amendment 1: VOID stops the verdicts; non-zero exit, no marker
+        print("\n  REGISTERED A: VOID\n  REGISTERED B: VOID"); return 3
     if n < 8:
-        print("\n(pilot: no verdicts below n=8)"); return
+        print("\n(pilot: no verdicts below n=8)"); return 0
     for key, name in (("acc", "eval mode, REGISTERED"), ("acc_tm", "train mode, registered mode check")):
         A = verdict_a(res, seeds, key)
         print(f"\n== primary A ({name}) ==")
-        for k, nm_ in (("N", "need: RoleTag - MapWM"), ("R", "recovery: HSR - CF2"), ("G", "gap: HSR - RoleTag")):
+        for k, nm_ in (("N", "need: RoleTag - MapWM"), ("R", "recovery: HSR - CF2"), ("G", "gap: HSR - RoleTag2")):
             d, p, f = A[k]
             print(f"  {nm_:24s} {d:+.4f}  perm p {p:.4f}  {'FIRES' if f else ''}")
-        ci = perm2_ci(g("RoleTag", key), g("HSR", key), step=0.002)
-        print(f"  HSR - RoleTag 95% CI [{ci['lo']:+.3f}, {ci['hi']:+.3f}]; non-inferior at {NI_MARGIN}: HSR {A['NI_HSR']}, "
-              f"MapWM {A['NI_MapWM']}; RoleTag SOLVED {A['RoleTag_solved']}/{n}")
+        ci = perm2_ci(g("RoleTag2", key), g("HSR", key), step=0.002)
+        print(f"  HSR - RoleTag2 95% CI [{ci['lo']:+.3f}, {ci['hi']:+.3f}]; non-inferior at {NI_MARGIN}: HSR {A['NI_HSR']}, "
+              f"MapWM (vs RoleTag) {A['NI_MapWM']}; RoleTag SOLVED {A['RoleTag_solved']}/{n}, RoleTag2 {A['RoleTag2_solved']}/{n}")
         print(f"  {'REGISTERED A' if key == 'acc' else 'MODE CHECK A'}: {A['label']}"
               + (f"  [{'; '.join(A['qualifiers'])}]" if A["qualifiers"] else ""))
         if key == "acc":
@@ -191,12 +208,12 @@ def report(res, seeds):
     print(f"  REGISTERED B: {B['label']}")
 
     print("\n== declared secondaries (no verdict) ==")
-    for x, y in (("MapWM", "HSR"), ("MapWM", "CF2"), ("DirOnlyRole", "RoleTag"), ("MapWM", "DirOnlyRole"),
+    for x, y in (("MapWM", "HSR"), ("MapWM", "CF2"), ("RoleTag", "RoleTag2"), ("DirOnlyRole", "RoleTag"), ("MapWM", "DirOnlyRole"),
                  ("RoPE1", "MapWM"), ("RoPE1", "RoPE2"), ("RoPE2", "HSR")):
         d, p, _ = contrast(g(x, "acc"), g(y, "acc"), 0)
         print(f"  {y} - {x}: acc {d:+.4f} (perm p {p:.4f}); SOLVED {sol(y)} vs {sol(x)} (Fisher "
               f"{fisher_solved(sol(x), n, sol(y), n):.4f})")
-    for arm in ("MapWM", "CF2", "HSR", "RoleTag", "DirOnlyRole"):
+    for arm in ("MapWM", "CF2", "HSR", "RoleTag", "RoleTag2", "DirOnlyRole"):
         print(f"  {arm:11s} nm drift {np.mean(g(arm, 'nm_drift_rad')):.3f} rad, core drift {np.mean(g(arm, 'core_drift_rad')):.3f}"
               f" rad, drift channels {np.mean(g(arm, 'drift')):.1f}/64, disp {np.mean(g(arm, 'disp')):.3f} rad, sharp "
               f"{np.mean(g(arm, 'sharp')):.3f}, reliance {np.mean(g(arm, 'reliance')):+.3f}, move change "
@@ -209,8 +226,8 @@ def report(res, seeds):
            for s in seeds]
     print(f"  HSR far - near ratio, paired by seed: {np.mean(far):+.3f}, sign-flip p {signflip_p(far)['p']:.4f}")
     for arm in ("MapWM", "CF2"):
-        print(f"  {arm} contaminated-gap accuracy {np.mean(g(arm, 'acc_contam')):.4f} vs the contaminated-path oracle's 0.5182"
-              " (above = the context-free step copes in part)")
+        print(f"  {arm} contaminated-gap accuracy {np.mean(g(arm, 'acc_contam')):.4f} vs the contaminated-path oracle's 0.4588"
+              " (role-free fallback, Amendment 1; above = the context-free step copes in part)")
     d, p, _ = contrast(g("RoleTag", "sharp"), g("MapWM", "sharp"), 0)
     print(f"  compromise step: sharp-channel share MapWM - RoleTag {d:+.3f} (perm p {p:.4f}); disp MapWM - RoleTag "
           f"{np.mean(g('MapWM', 'disp')) - np.mean(g('RoleTag', 'disp')):+.3f} rad")
@@ -219,6 +236,7 @@ def report(res, seeds):
     print(f"  r(final loss, acc) over {len(x)} runs: {np.corrcoef(x, y)[0, 1]:+.3f}")
     sd = np.sqrt((np.var(g("MapWM", "acc"), ddof=1) + np.var(g("RoleTag", "acc"), ddof=1)) / 2)
     print(f"  MDE (exact t, pooled sd of MapWM / RoleTag, two-sample) {mde(sd, n) * np.sqrt(2):.4f}")
+    return 0
 
 
 # ------------------------------------------------------------------ smoke test of every branch on synthetic data
@@ -238,19 +256,22 @@ def smoke():
     S = list(range(8)); rng = np.random.default_rng(0)
     hi = lambda m=0.985: np.clip(m + 0.01 * rng.standard_normal(8), 0, 1)
     lo = lambda m=0.70: np.clip(m + 0.03 * rng.standard_normal(8), 0, 1)
-    base = {"MapWM": lo(), "RoleTag": hi(), "DirOnlyRole": hi(0.97), "HSR": hi(), "CF2": lo(), "RoPE1": 0.51,
-            "RoPE2": 0.77}
+    base = {"MapWM": lo(), "RoleTag": hi(), "DirOnlyRole": hi(0.97), "HSR": hi(), "CF2": lo(), "RoleTag2": hi(),
+            "RoPE1": 0.51, "RoPE2": 0.77}
     cases = {
         "RECOVERS IT (non-inferior": dict(base),
         "RECOVERS PART OF IT": dict(base, HSR=hi(0.90)),
-        "EXCEEDS THE ORACLE": (dict(base, RoleTag=hi(0.93), HSR=hi(0.99)), {"RoleTag": True}),
-        "gap to the oracle unmeasured": dict(base, HSR=np.array([0.99, 0.99, 0.99, 0.99, 0.80, 0.99, 0.99, 0.80])),
+        "EXCEEDS THE DEPTH-MATCHED ORACLE": (dict(base, RoleTag2=hi(0.93), HSR=hi(0.99)), {"RoleTag2": True}),
+        "NOT READABLE": dict(base, RoleTag2=lo(0.80)),
+        "gap to the depth-matched oracle unmeasured": dict(base, HSR=np.array([0.99, 0.99, 0.99, 0.99, 0.80, 0.99, 0.99, 0.80])),
         "BELOW ITS CONTEXT-FREE TWIN": dict(base, HSR=lo(0.60), CF2=lo(0.72)),
         "THE CONTEXT STEP FAILS TOO": dict(base, HSR=lo(0.70)),
         "ORACLE BELOW CONTEXT-FREE": dict(base, MapWM=hi(0.99), RoleTag=np.array([0.96] * 6 + [0.955, 0.955])),
         "CONTEXT-FREE COPES": dict(base, MapWM=hi(0.985)),
         "UNMEASURED": dict(base, MapWM=np.array([0.99, 0.70, 0.99, 0.99, 0.70, 0.99, 0.99, 0.99])),
         "UNINTERPRETABLE": dict(base, RoleTag=lo(0.80)),
+        "RECOVERS PART OF IT (below the depth-matched": (dict(base, RoleTag=hi(0.93), RoleTag2=hi(0.99), HSR=hi(0.93)),
+                                                        {"RoleTag": True, "HSR": True}),
     }
     ok = True
     for want, acc in cases.items():
@@ -258,8 +279,14 @@ def smoke():
         lab = verdict_a(_syn(S, acc, sv), S)["label"]; hit = want in lab; ok &= hit
         print(f"  A  want '{want}': got '{lab}'  {'OK' if hit else 'MISMATCH'}")
     q = verdict_a(_syn(S, dict(base, MapWM=0.515)), S)["qualifiers"]
-    print(f"  A  qualifier floor: {q}  {'OK' if 'MapWM AT THE INDEX FLOOR' in q else 'MISMATCH'}"); ok &= 'MapWM AT THE INDEX FLOOR' in q
-    q = verdict_a(_syn(S, dict(base, MapWM=0.995, RoleTag=0.996, HSR=0.995)), S)["qualifiers"]
+    hit = any(x.startswith("MapWM AT THE INDEX FLOOR (acc)") for x in q); ok &= hit
+    print(f"  A  qualifier floor (eval mode only available): {q}  {'OK' if hit else 'MISMATCH'}")
+    rq = _syn(S, dict(base, MapWM=0.515))
+    for s_ in S:
+        rq[f"MapWM_s{s_}"]["acc_rescored"] = 0.80; rq[f"RoPE1_s{s_}"]["acc_rescored"] = 0.51
+    q = verdict_a(rq, S)["qualifiers"]; hit = any("ONLY" in x for x in q); ok &= hit
+    print(f"  A  qualifier floor, eval mode low but re-scored not: {q}  {'OK' if hit else 'MISMATCH'}")
+    q = verdict_a(_syn(S, dict(base, MapWM=0.995, RoleTag=0.996, RoleTag2=0.996, HSR=0.995)), S)["qualifiers"]
     hit = any(x.startswith("CEILING") for x in q); ok &= hit
     print(f"  A  qualifier ceiling: {q}  {'OK' if hit else 'MISMATCH'}")
 
@@ -285,6 +312,18 @@ def smoke():
     v1 = void_checks(vres, S); vres["CF2_s3"]["ratio_nat"] = 0.97; v2 = void_checks(vres, S)
     hit = (not v1) and len(v2) == 1; ok &= hit
     print(f"  void check: clean -> {v1}; one CF2 ratio 0.97 -> {v2}  {'OK' if hit else 'MISMATCH'}")
+    # Amendment 1: a VOID result set makes report() print VOID verdicts and return non-zero (no done marker)
+    import contextlib, io
+    vr = _syn(S, base, extra={"MapWM": {f"ratio_{c}": 1.0 for c in NM_CLASSES}, "CF2": {f"ratio_{c}": 0.5 for c in NM_CLASSES},
+                              "DirOnlyRole": {f"{c}@15": 0.0 for c in NM_CLASSES}, "RoleTag": {}, "RoleTag2": {}})
+    for r in vr.values():
+        r.update(acc2048=r["acc"], acc_rescored=r["acc"], acc_clean=r["acc"], acc_contam=r["acc"])
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rc = report(vr, S)
+    hit = rc == 3 and "REGISTERED A: VOID" in buf.getvalue(); ok &= hit
+    print(f"  VOID stops the verdicts: report() returned {rc}, printed VOID: {'REGISTERED A: VOID' in buf.getvalue()}  "
+          f"{'OK' if hit else 'MISMATCH'}")
     print(f"SMOKE {'PASS' if ok else 'FAIL'}")
     return ok
 
@@ -302,7 +341,7 @@ def main():
         raise SystemExit(0 if smoke() else 1)
     seeds = [int(s) for s in (a.seeds or ",".join(map(str, SEEDS))).split(",")]
     res = collect(a.runs_dir, seeds, a.readouts, a.out, a.device)
-    report(res, seeds)
+    raise SystemExit(report(res, seeds) or 0)
 
 
 SEEDS = list(range(40, 48))

@@ -1,8 +1,9 @@
 # Direction words as actions and as observed content -- pre-registration (2026-10-08, before any run)
 
 Status: built and checked on CPU only (a GAIN_PHASE batch holds every GPU slot). NOT piloted on GPU, NOT launched.
-Remaining before launch: the GPU pilot (section "Pilot"), an independent blind code-verification agent (rule 29), an
-Amendment with both, and the user's go.
+An independent blind audit of 3f304db found no bug and two major design issues: **Amendment 1 at the end REPLACES the
+text it names** (task, arms, G / non-inferiority, budget, cost). Remaining before launch: the GPU pilot, an Amendment
+with it, and the user's go.
 
 ## Question
 In the text world (`TEXTWORLD_RESULTS.md`) a direction word always moves the walker, so MapFormer's context-free step
@@ -192,3 +193,73 @@ Measured on the committed batches (not yet on this task; the pilot re-measures):
   is close to guaranteed by construction (`CTXSTEP_PREREG.md`, stopped for that reason).
 - The non-movement uses carry no scored target; a task where the observed direction is itself content to be recalled
   (a sign's direction at a cell) would test the what/where split on one token more directly. Not this batch.
+
+---
+
+## Amendment 1 (2026-10-08, after an independent blind code audit of 3f304db; before any GPU run or result)
+The audit found no bug. Finding -> change. Where this section and the text above disagree, this section holds.
+
+1. **MAJOR: lead-frame non-movement uses were identifiable without their cue.** A lead-form non-movement clause named
+   the CURRENT cell's object, which always repeats the previous movement object (P(repeat | non-move) 1.000 vs 0.272 for
+   a move); repetition alone gave the role at ~0.86 vs base 0.50, 3-6 tokens after the direction word, and the gate's
+   word-identity tables cannot see equality. lead_far was therefore not a far-cue-only class (B's FAR/NEAR branches and
+   the far-minus-near secondary confounded). -> `environment_tw_ambig.py`: the reported object is now the object of a
+   uniformly drawn cell of the map (the map's marginal; reported content, never scored, not at the current cell). Gate
+   re-run with an EQUALITY-aware check (repetition of the last movement object; each window token == that object; all
+   28 within-window token equalities, in a naive-Bayes with the positional words): P(repeat | move / non-move) lead_far
+   0.241 / 0.283, lead_near 0.253 / 0.264; equality-aware role prediction lead_far **0.500** (base 0.507), trail_far
+   **0.497** (base 0.503); near classes 0.75-1.00 (decidable, as designed). B's far classes are kept, now gated.
+2. **MAJOR: G and non-inferiority compared the 2-layer HSR with a 1-layer oracle in eval mode.** Eval-mode
+   under-reporting is depth-dependent (1-layer text-world path arms up to ~0.16, 2-layer not), and HSR has an extra
+   attention layer (RoPE 2L - 1L +0.27 in the text world); the auditor's re-simulation with HSR unbiased gave
+   P(non-inferior) 0.95 vs the registered 0.23. -> new arm **RoleTag2** (`model_tw_ambig.RoleTag2`: CF2 -- HSR's
+   architecture with alpha fixed at 0 -- whose step reads the tagged stream as RoleTag's does; == CF2 at init, max logit
+   diff 0.0). **G = HSR - RoleTag2 and non-inferiority vs RoleTag2**; N stays RoleTag - MapWM (both 1 layer), R stays HSR
+   - CF2 (both 2 layers). If RoleTag2 is SOLVED on < 6/8 seeds, the R-fires branch reads "HSR RECOVERS IT (gap to the
+   depth-matched oracle NOT READABLE)". The train-mode mode check is kept. 64 runs (8 arms x 8 seeds).
+3. The floor qualifier compared under-reported eval-mode MapWM with RoPE1 -> it is computed in eval mode AND on the
+   1/(1-p) re-scored accuracy (both 1 layer); fires as "AT THE INDEX FLOOR (both)" or "... IN <mode> ONLY".
+4. The 'every direction word is a move' oracle's reversal-copy fallback read the movement-role words (role-informed)
+   -> role-free fallback (last two direction words of any role). Re-gated on the amended task: **0.598** overall,
+   **0.459** on contaminated gaps (843 clean / 2430 contaminated targets); calibration on the ctx3 CF pilot: oracle 0.592
+   vs model 0.809 (lead/far), 0.563 vs 0.619 (trail/far). The 0.518 reference is replaced by 0.459.
+5. Sentence order carried role information (a non-movement sentence never followed another; 15% of framed words) ->
+   non-movement sentences now come BEFORE the step's clause, K ~ Geometric with continuation q = p_nm / (1 + p_nm)
+   (mean p_nm = 0.3 per step), so the next sentence is non-movement with probability q whatever came before. Gate:
+   P(previous sentence is non-movement | move / non-move) 0.216-0.242 / 0.217-0.237 across the four frames.
+6. VOID did not stop the verdicts -> `analyze_tw_ambig.report` prints "REGISTERED A: VOID / B: VOID", returns 3 and the
+   script exits non-zero, so the driver sets no done marker (smoke-tested).
+7. The epoch count was a pilot-dependent knob -> **1800 epochs registered now for every arm** (the HSR pilots at 1800
+   epochs, T=2048, were not SOLVED; the 900-epoch rule would almost surely have fired). It is the driver's default
+   (md5-covered); `collect()` asserts one epoch count across all runs (config and loss-curve length). The pilot rule is
+   replaced: the pilot reports whether HSR learns a step and is SOLVED at 1800 epochs; if it learns no step, the batch
+   is not launched without a new decision.
+8. 'sharp' (the compromise-step secondary) now wraps the per-move phases to (-pi, pi] (rule 8).
+9. Timeouts: each run `timeout 8h`, readouts + analysis `timeout 6h` (driver knobs RUN_TIMEOUT / ANA_TIMEOUT); a timeout
+   leaves eval.json or the analysis missing, so no done marker.
+
+Amended gate numbers (`gate_tw_ambig_out.txt`, re-run): 77.2 object slots / sequence, revisit fraction 0.211, 16.4 scored
+targets / sequence; non-movement share 0.229 (per synonym 0.214-0.243); walk from movement words 0 mismatches / 15430;
+local window (frequency tables, naive-Bayes) lead_far 0.489-0.501, trail_far 0.497-0.517 vs base 0.507 / 0.503;
+floors: best constant 0.4956, reversal-copy 0.5991 (movement-role words; role-free 0.5759), word n-grams 0.444-0.496;
+clean oracle 1.000; p_nm = 0 stream still byte-identical to TextWorld; tagged stream checks pass.
+
+Amended power: re-simulated with the amended decision function (`tw_ambig_power_out.txt`), RoleTag2 drawn from the same
+pool as a successful HSR seed. n = 8: R fires with power 1.00 / 0.94 / 0.53 (CF-LOW) and 1.00 / 0.80 / 0.35 (CF-HIGH)
+at p = 1 / 0.75 / 0.5; P('HSR RECOVERS IT') 0.92 / 0.80 (LOW) and 0.91 / 0.73 (HIGH) at p = 1 / 0.75; HSR context-free
+(p = 0) -> 'FAILS TOO' 0.91. Non-inferiority vs RoleTag2: eval mode 0.19 at p = 1, train mode (the mode check) **1.00**.
+The eval-mode figure is pessimistic by construction: no 2-layer path text-world runs exist, so both 2-layer arms are
+drawn from the 1-layer pool, whose bimodality is the eval-mode under-report (the auditor's re-simulation with 2-layer
+arms unbiased gave 0.95). n = 8 kept; n = 12 moves p = 0.75 CF-HIGH from 0.80 to 0.95 on R for +50% cost.
+
+Amended cost (estimates from TW_NORMSTEP's 2.0 s/epoch for 1 layer at 6 concurrent and x1.67 for 2 layers; the pilot
+re-measures): at 1800 epochs a 1-layer run ~1.0 h, a 2-layer run ~1.8 h. Per seed 4 x 1.0 + 4 x 1.8 = 11.3 run-h;
+8 seeds 90 run-h / 6 slots = **~15 h wall** + readouts and analysis ~0.7 h. Pilot (8 runs, seed 140): ~3 h. Dropping the
+two secondary-only arms (DirOnlyRole, RoPE2) would save ~2.8 run-h per seed (~11 h wall); not done.
+
+Checks re-run (`tw_ambig_checks_out.txt`): ALL PASS, now including RoleTag2: shared init with the 2-layer reference, RoleTag2 (tagged) == CF2 (plain) at
+init (max diff 0.0), causal, 2 layers hooked by rescore_hook, non-movement swap exactly 0 with nm_emb = 0; C9 CPU bitwise
+reproduction and HSR determinism on the amended stream; C10 unchanged (+5.9e-4). The trainer now returns nan instead of
+dividing by zero when a (check-sized) eval set has no revisit target. Smoke (`tw_ambig_smoke_out.txt`): every A branch incl. the new
+depth-matched ones (EXCEEDS / PART / NOT READABLE / unmeasured), both floor-qualifier forms, the ceiling qualifier,
+every B branch, the void check and VOID stopping the verdicts with exit code 3: SMOKE PASS.

@@ -2,14 +2,16 @@
 # Direction words as actions and as observed content. Pre-registration: TW_AMBIG_PREREG.md.
 #   batch:  nohup setsid bash run_tw_ambig.sh > /dev/null 2>&1 &
 #   pilot:  TAG=tw_ambig_pilot SEEDS="140" nohup setsid bash run_tw_ambig.sh > /dev/null 2>&1 &   (no verdicts below n=8)
-# Knobs (env): TAG (run dir name), SEEDS, EPOCHS (900), MAXPG (3 jobs per GPU). Every run trains all 7 arms (the
-# analysis reads all of them).
+# Knobs (env): TAG (run dir name), SEEDS, EPOCHS (1800: Amendment 1 -- the default lives here and is md5-covered),
+# MAXPG (3 jobs per GPU), RUN_TIMEOUT (per run, 8h), ANA_TIMEOUT (readouts + analysis, 6h). Every run trains all 8 arms
+# (the analysis reads all of them and asserts one epoch count).
 set -uo pipefail
 REPO=/home/prashr/mapformer
 TAG="${TAG:-tw_ambig}"
 SEEDS="${SEEDS:-40 41 42 43 44 45 46 47}"
-EPOCHS="${EPOCHS:-900}"
-ARMS_LIST="HSR CF2 RoPE2 MapWM RoleTag DirOnlyRole RoPE1"     # seed outer, arm inner; 2-layer arms first
+EPOCHS="${EPOCHS:-1800}"
+RUN_TIMEOUT="${RUN_TIMEOUT:-8h}"; ANA_TIMEOUT="${ANA_TIMEOUT:-6h}"
+ARMS_LIST="HSR CF2 RoleTag2 RoPE2 MapWM RoleTag DirOnlyRole RoPE1"   # seed outer, arm inner; 2-layer arms first
 LOG="$REPO/$TAG.log"
 source "$REPO/lib_driver.sh"
 DRV_MAXPG="${MAXPG:-3}"; DRV_SPACING="${SPACING:-20}"; DRV_MINFREE="${MINFREE:-4500}"   # after sourcing (it sets defaults)
@@ -43,7 +45,7 @@ for S in $SEEDS; do for A in $ARMS_LIST; do
   if running "$OUT"; then _drv_log "skip $OUT (started while waiting)"; continue; fi
   mkdir -p "$OUT"
   _drv_log "$A s$S -> cuda:$G"
-  OMP_NUM_THREADS=2 drv_launch "$OUT.log" python3 -u -m mapformer.train_tw_ambig --arm "$A" --seed "$S" \
+  OMP_NUM_THREADS=2 drv_launch "$OUT.log" timeout --kill-after=120 "$RUN_TIMEOUT" python3 -u -m mapformer.train_tw_ambig --arm "$A" --seed "$S" \
     --epochs "$EPOCHS" --device "cuda:$G" --output-dir "$OUT"
 done; done
 drv_wait_dir "$R/p0/"
@@ -57,6 +59,6 @@ if [ "$TAG" = tw_ambig ]; then
 else
   OUTJ="$R/readouts.json"; OUTA="$R/analysis.txt"
 fi
-python3 -u -m mapformer.analyze_tw_ambig --readouts --runs-dir "$R/p0" --seeds "$SEEDS_CSV" --out "$OUTJ" > "$OUTA" 2>&1 \
-  || drv_fail analyze
+timeout --kill-after=120 "$ANA_TIMEOUT" python3 -u -m mapformer.analyze_tw_ambig --readouts --runs-dir "$R/p0" --seeds "$SEEDS_CSV" --out "$OUTJ" > "$OUTA" 2>&1 \
+  || drv_fail "analyze (non-zero: VOID, a failed assertion or the timeout; see $OUTA)"
 drv_done "$REPO/.${TAG}_done" "$OUTJ" "$OUTA"

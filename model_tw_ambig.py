@@ -15,6 +15,8 @@ docs/audits/2026-10-08/tw_ambig_checks.py).
                learned scalar initialised at 0; h1 = an index-RoPE attention layer; layer 2 is path-integrated.
   CF2          HSR with alpha FIXED at 0 (a buffer): the same 2-layer architecture with a context-free step, the
                one-knob control for HSR's context correction (identical to HSR at init).
+  RoleTag2     ORACLE at 2 layers (Amendment 1): CF2 (HSR's architecture, alpha fixed at 0) whose step reads the tagged
+               stream as RoleTag's does; the depth-matched oracle for G and non-inferiority (== CF2 at init).
   RoPE1, RoPE2 model_baseline_rope.MapFormerWM_RoPE, 1 / 2 layers: index position, no path (the floor).
 """
 import torch
@@ -77,11 +79,31 @@ class CF2(HiddenStepResWM):
         self.register_buffer("ctx_alpha", torch.zeros(1))
 
 
+class RoleTag2(CF2):
+    def __init__(self, vocab_size, *a, dir_ids=None, **kw):
+        super().__init__(vocab_size, *a, **kw)
+        assert dir_ids is not None and len(dir_ids) == N_DIR, dir_ids
+        base = torch.arange(vocab_size + N_DIR); base[vocab_size:] = torch.as_tensor(dir_ids)
+        self.register_buffer("base_id", base)
+        self.n_base = vocab_size
+        self.nm_emb = nn.Parameter(self.token_emb.weight.detach()[torch.as_tensor(dir_ids)].clone())
+
+    def step(self, tokens):
+        B, L = tokens.shape
+        x = self.token_emb(self.base_id[tokens])
+        m = torch.triu(torch.ones(L, L, device=tokens.device, dtype=torch.bool), 1)
+        c, s = self._index_cos_sin(B, L, tokens.device, x.dtype)
+        h1 = self.layers[0](x, c, s, m)
+        tag = tokens >= self.n_base
+        xs = torch.where(tag[..., None], self.nm_emb[(tokens - self.n_base).clamp(min=0, max=N_DIR - 1)], x)
+        return self.action_to_lie(xs + self.ctx_alpha * self.step_norm(h1)), h1
+
+
 # arm -> (constructor, layers, reads a tagged stream)
 ARMS = {"MapWM": (MapFormerWM_r4, 1, False), "RoleTag": (RoleTag, 1, True), "DirOnlyRole": (DirOnlyRole, 1, True),
-        "HSR": (HiddenStepResWM, 2, False), "CF2": (CF2, 2, False), "RoPE1": (MapFormerWM_RoPE, 1, False),
+        "HSR": (HiddenStepResWM, 2, False), "CF2": (CF2, 2, False), "RoleTag2": (RoleTag2, 2, True), "RoPE1": (MapFormerWM_RoPE, 1, False),
         "RoPE2": (MapFormerWM_RoPE, 2, False)}
-PATH_ARMS = ["MapWM", "RoleTag", "DirOnlyRole", "HSR", "CF2"]
+PATH_ARMS = ["MapWM", "RoleTag", "DirOnlyRole", "HSR", "CF2", "RoleTag2"]
 
 
 def build(arm, env, size=64):
@@ -101,6 +123,8 @@ def steps(m, tokens):
         return None
     if isinstance(m, _Tagged):
         return m.step(tokens, m.token_emb(m.base_id[tokens]))
+    if isinstance(m, RoleTag2):
+        return m.step(tokens)[0]
     if isinstance(m, HiddenStepResWM):
         return m.step(tokens)[0]
     return m.action_to_lie(m.token_emb(tokens))

@@ -14,7 +14,7 @@ is added, and the token stream is byte-identical to TextWorld's; checked in docs
             <mcue> in {so, thus, hence}
    The tokens are the same in near and far; only the order of PAD and cue changes (environment_textworld_ctx3).
 
-2. After the step (and its optional aside), with probability p_nm, ONE NON-MOVEMENT sentence that uses a
+2. Before the step's clause, K ~ Geometric NON-MOVEMENT sentences (mean p_nm per step; Amendment 1), each that uses a
    direction word (any of the 12 synonyms, uniformly) without moving the walker. Classes (shares of p_nm):
      nat (1/3)        observation content, cue 1-2 tokens away:  she saw a sign pointing <dir> .
                       / she heard a sound from the <dir> .  / a cold <dir> wind blew .
@@ -22,8 +22,8 @@ is added, and the token stream is byte-identical to TextWorld's; checked in docs
      lead_far  (1/6)  she <ncue> PAD <verb> [adv] <dir> [fillers] <and saw> <obj> .
      trail_near (1/6) later , she <verb> [adv] <dir> <ncue> PAD the sign .           <ncue> in {said, read, showed}
      trail_far (1/6)  later , she <verb> [adv] <dir> PAD <ncue> the sign .
-   In the lead forms the reported clause's object is the CURRENT cell's (the walker did not move, so it is
-   true; never scored). In the far forms the 4 tokens before and the 3 after the direction word are drawn
+   In the lead forms the reported clause names the object of a uniformly drawn cell of the map (Amendment 1; it was
+   the current cell's, which repeated the previous movement object and gave the role away); never scored. In the far forms the 4 tokens before and the 3 after the direction word are drawn
    exactly as in the movement clause of the same frame: only a cue 6-12 tokens away decides the role.
 
 `self.ctx` lists (token index, role, form) for every direction word (role "move" / "nm"; form "base",
@@ -102,14 +102,22 @@ class TextWorldAmbig(TextWorld):
         obj_at = len(words)
         return words + [obj_word, "."], di, obj_at
 
-    def _nm(self, r, obj_word):
+    def _reported_obj(self, r):
+        """Amendment 1: the object named in a lead-form non-movement clause is the object of a UNIFORMLY drawn cell of the
+        map (the map's own marginal), not the current cell's. The current cell's object repeated the previous movement
+        slot's object with probability 1.000 (vs 0.272 for a real move), which gave the role away without the cue."""
+        n = self.grid.obs_map.shape[0]
+        x, y = r.randint(n), r.randint(n)
+        return self._obj_word(int(self.grid.obs_map[x, y]) + self.grid.obs_offset)
+
+    def _nm(self, r):
         """One non-movement sentence -> (words, index of <dir>, class)."""
         cls = NM_CLASSES[int(np.searchsorted(self._cum, r.random() * self._cum[-1], side="right"))]
         d = ALL_DIR[r.randint(len(ALL_DIR))]
         if cls == "nat":
             pre, post = NAT[r.randint(len(NAT))]
             return pre + [d] + post + ["."], len(pre), cls
-        words, di, _ = self._framed(r, cls, True, d, obj_word)
+        words, di, _ = self._framed(r, cls, True, d, self._reported_obj(r) if cls.startswith("lead") else None)
         return words, di, cls
 
     # ------------------------------------------------------------------ trajectory
@@ -121,26 +129,32 @@ class TextWorldAmbig(TextWorld):
         locs = list(self.grid.visited_locations)
         out, obs, rv, nmm, self.visited_locations, self.ctx = [], [], [], [], [], []
         q = self.p_nm / 6
+        q_geo = self.p_nm / (1 + self.p_nm)               # Amendment 1: geometric count, mean p_nm per step
         for s in range(steps):
             a, o = int(tok[2 * s]), int(tok[2 * s + 1])
             ow = self._obj_word(o)
+            # Amendment 1: non-movement sentences come BEFORE the step's clause, K ~ Geometric (P(K >= k+1 | K >= k) =
+            # q_geo), so whatever sentence came last, the next one is non-movement with the same probability q_geo:
+            # sentence order carries no role information (before, a non-movement sentence never followed another).
+            words, nm, dirs = [], [], []
+            while self.p_nm > 0 and r.random() < q_geo:
+                nw, ndi, cls = self._nm(r)
+                dirs.append((len(words) + ndi, "nm", cls)); words += nw; nm += [True] * len(nw)
             form = "base"
             if self.p_nm > 0:
                 u = r.random()
                 if u < 4 * q:
                     form = FORMS[int(u // q)]
             if form == "base":
-                words, di, obj_at = self._base(r, a, ow)
+                cw, di, obj_at = self._base(r, a, ow)
             else:
-                words, di, obj_at = self._framed(r, form, False, DIRS[a][r.randint(3)], ow)
-            dirs = [(di, "move", form)]
-            nm = [False] * len(words)
+                cw, di, obj_at = self._framed(r, form, False, DIRS[a][r.randint(3)], ow)
+            off = len(words)
+            dirs.append((off + di, "move", form)); obj_at += off
+            words += cw; nm += [False] * len(cw)
             if r.random() < self.p_aside:
                 add = ASIDE[r.randint(len(ASIDE))] + [OBJECTS[r.randint(self.n_obs_types)], "."]
                 words += add; nm += [False] * len(add)
-            if self.p_nm > 0 and r.random() < self.p_nm:
-                nw, ndi, cls = self._nm(r, ow)
-                dirs.append((len(words) + ndi, "nm", cls)); words += nw; nm += [True] * len(nw)
             room = n_tokens - len(out)
             if room <= 0:
                 break

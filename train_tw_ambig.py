@@ -41,6 +41,8 @@ def score(model, W, dev):
             continue
         ok += (lp.argmax(-1)[0][m] == tgt[m]).sum().item(); tot += int(m.sum())
         nll += float(-lp[0, torch.arange(lp.shape[1], device=dev)[m], tgt[m]].sum())
+    if tot == 0:                     # only reachable in tiny check configs (registered: 200 walks x 1024 words)
+        return float("nan"), float("nan")
     return ok / tot, nll / tot
 
 

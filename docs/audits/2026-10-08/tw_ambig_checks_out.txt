@@ -5,6 +5,7 @@
 [PASS] C2 s40 DirOnlyRole: 24 shared tensors equal the reference (extra: ['base_id', 'step_mask'])
 [PASS] C2 s40 HSR: 40 shared tensors equal the reference (extra: ['ctx_alpha', 'inv_freq', 'step_norm.weight', 'step_norm.bias'])
 [PASS] C2 s40 CF2: 40 shared tensors equal the reference (extra: ['inv_freq', 'ctx_alpha', 'step_norm.weight', 'step_norm.bias'])
+[PASS] C2 s40 RoleTag2: 40 shared tensors equal the reference (extra: ['nm_emb', 'inv_freq', 'ctx_alpha', 'base_id', 'step_norm.weight', 'step_norm.bias'])
 [PASS] C2 s40 RoPE1: 22 shared tensors equal the reference (extra: [])
 [PASS] C2 s40 RoPE2: 38 shared tensors equal the reference (extra: [])
 [PASS] C2 s41 MapWM: 24 shared tensors equal the reference (extra: [])
@@ -12,117 +13,81 @@
 [PASS] C2 s41 DirOnlyRole: 24 shared tensors equal the reference (extra: ['base_id', 'step_mask'])
 [PASS] C2 s41 HSR: 40 shared tensors equal the reference (extra: ['ctx_alpha', 'inv_freq', 'step_norm.weight', 'step_norm.bias'])
 [PASS] C2 s41 CF2: 40 shared tensors equal the reference (extra: ['inv_freq', 'ctx_alpha', 'step_norm.weight', 'step_norm.bias'])
+[PASS] C2 s41 RoleTag2: 40 shared tensors equal the reference (extra: ['nm_emb', 'inv_freq', 'ctx_alpha', 'base_id', 'step_norm.weight', 'step_norm.bias'])
 [PASS] C2 s41 RoPE1: 22 shared tensors equal the reference (extra: [])
 [PASS] C2 s41 RoPE2: 38 shared tensors equal the reference (extra: [])
 [PASS] C3 tagged stream == plain after untag (4 walks) 
 [PASS] C3 RoleTag(tagged) logits == MapWM(plain) logits at init max diff 0.0
-[PASS] C3 DirOnlyRole: non-zero steps only at movement-role direction words (non-zero elsewhere 0; move words with a step 78)
+[PASS] C3 DirOnlyRole: non-zero steps only at movement-role direction words (non-zero elsewhere 0; move words with a step 74)
 [PASS] C3 RoleTag with nm_emb = 0: zero step at every non-movement use max 0.0
 [PASS] C3 CF2 == HSR at init (alpha 0) max diff 0.0
+[PASS] C3 RoleTag2(tagged) == CF2(plain) at init (Amendment 1, the depth-matched oracle) max diff 0.0
 [PASS] C4 MapWM: causal (perturb token 150: earlier logits / steps unchanged) logit 0.0 step 0.0
 [PASS] C4 RoleTag: causal (perturb token 150: earlier logits / steps unchanged) logit 0.0 step 0.0
 [PASS] C4 DirOnlyRole: causal (perturb token 150: earlier logits / steps unchanged) logit 0.0 step 0.0
 [PASS] C4 HSR: causal (perturb token 150: earlier logits / steps unchanged) logit 0.0 step 0.0
 [PASS] C4 CF2: causal (perturb token 150: earlier logits / steps unchanged) logit 0.0 step 0.0
+[PASS] C4 RoleTag2: causal (perturb token 150: earlier logits / steps unchanged) logit 0.0 step 0.0
 [PASS] C4 RoPE1: causal (perturb token 150: earlier logits / steps unchanged) logit 0.0 step 0.0
 [PASS] C4 RoPE2: causal (perturb token 150: earlier logits / steps unchanged) logit 0.0 step 0.0
 [PASS] C4 CF2: step context-free (perturbing an earlier token changes no later step) 0.0
 [PASS] C5 CF2 ctx_alpha is a buffer, not a parameter 
-[PASS] C5 HSR alpha after one AdamW step (lr 1e-2, 53 targets): +0.01000 
-[PASS] C5 CF2 alpha after one AdamW step (lr 1e-2, 53 targets): +0.00000 
+[PASS] C5 HSR alpha after one AdamW step (lr 1e-2, 88 targets): +0.01000 
+[PASS] C5 CF2 alpha after one AdamW step (lr 1e-2, 88 targets): +0.00000 
 [PASS] C6 MapWM: rescore_hook hooks 1 = 1 layers, skipped [] 
 [PASS] C6 RoleTag: rescore_hook hooks 1 = 1 layers, skipped [] 
 [PASS] C6 DirOnlyRole: rescore_hook hooks 1 = 1 layers, skipped [] 
 [PASS] C6 HSR: rescore_hook hooks 2 = 2 layers, skipped [] 
 [PASS] C6 CF2: rescore_hook hooks 2 = 2 layers, skipped [] 
+[PASS] C6 RoleTag2: rescore_hook hooks 2 = 2 layers, skipped [] 
 [PASS] C6 RoPE1: rescore_hook hooks 1 = 1 layers, skipped [] 
 [PASS] C6 RoPE2: rescore_hook hooks 2 = 2 layers, skipped [] 
 [PASS] C6 readout rescale == rescore_hook (stored MapWM s12, 20 walks) hook 0.9889 vs readout 0.9889 (eval mode without rescale 0.8307)
-[PASS] C7 MapWM (untrained) swap ratio 1.000 on every class [1. 1. 1. 1. 1.]
-[PASS] C7 CF2 (untrained) swap ratio 1.000 on every class [1. 1. 1. 1. 1.]
+[PASS] C7 MapWM (untrained) swap ratio 1.000 on every class [1.       1.       1.       1.       1.000001]
+[PASS] C7 CF2 (untrained) swap ratio 1.000 on every class [1.       1.       1.       1.       1.000001]
 [PASS] C7 RoleTag nm_emb=0: non-movement swap exactly 0 on every class (move 0.4360)
+[PASS] C7 RoleTag2 nm_emb=0: non-movement swap exactly 0 on every class (move 0.4360)
 [PASS] C7 DirOnlyRole: non-movement swap exactly 0; non-movement-sentence drift exactly 0 (no word there steps) (nm drift 0.0)
 [PASS] C8 stored TW_NORMSTEP MapWM s10 through this eval (p_nm=0): accuracy reproduced 0.9997 vs registered 0.9997 (GPU-trained, CPU eval); every gap clean: n_contam 0
 [PASS] C8 theta reliance on a trained map is large acc 1.0000 -> 0.4934 with type-mean steps
 [PASS] C8 theta reliance on an untrained model is ~0 0.0131 -> 0.0141
 [PASS] C8 trained map: few drifting channels, a real per-move displacement drift 4/64, disp 2.103 rad, sharp 0.109
 [PASS] C9 CPU bitwise: train_tw_ambig --p-nm 0 == train_tw_normstep (MapWM, seed 40, small config) losses [3.9095874627431235, 2.9350452423095703] vs [3.9095874627431235, 2.9350452423095703]; weights equal True; acc 0.5000 vs 0.5000
-[PASS] C9 CPU determinism: HSR on the p_nm=0.3 task, run twice, identical losses [4.0195192495981855, 3.237429141998291]
+[PASS] C9 CPU determinism: HSR on the p_nm=0.3 task, run twice, identical losses [4.061388413111369, 3.0410407384236655]
 [PASS] C10 epoch-1 loss, CPU re-run of the stored TW_NORMSTEP MapWM s10 config vs the stored GPU run 4.048683 vs 4.048096 (diff +5.87e-04; bitwise only on the same device: deferred to the GPU pilot, tw_ambig_repro.py --device cuda:0)
-/home/prashr/.local/lib/python3.10/site-packages/numpy/lib/_function_base_impl.py:3045: RuntimeWarning: invalid value encountered in divide
-  c /= stddev[:, None]
-/home/prashr/.local/lib/python3.10/site-packages/numpy/lib/_function_base_impl.py:3046: RuntimeWarning: invalid value encountered in divide
-  c /= stddev[None, :]
 
 == per arm (n=8): T=1024 held-out acc (eval mode) | SOLVED | train mode | rescored | clean / contaminated gaps | [T=2048] ==
-  MapWM       0.7763 +/- 0.1318  8/8  tm 0.7587  rescored 0.0009  clean 0.0024 / contam 0.0027  [0.8000]  per seed 0.616 0.769 0.703 0.908 1.000 0.804 0.785 0.626
-  RoleTag     0.7936 +/- 0.1396  8/8  tm 0.7606  rescored 0.0042  clean 0.0074 / contam 0.0058  [0.8000]  per seed 0.898 0.741 0.990 0.967 0.716 0.655 0.628 0.754
-  DirOnlyRole 0.7609 +/- 0.1280  8/8  tm 0.8476  rescored 0.0055  clean 0.0031 / contam 0.0012  [0.8000]  per seed 0.687 0.793 0.917 0.989 0.706 0.652 0.650 0.693
-  HSR         0.8686 +/- 0.0732  8/8  tm 0.7563  rescored 0.0050  clean 0.0080 / contam 0.0066  [0.8000]  per seed 0.936 0.848 0.849 0.808 0.749 0.864 0.917 0.978
-  CF2         0.8029 +/- 0.1299  8/8  tm 0.7751  rescored 0.0111  clean 0.0054 / contam 0.0072  [0.8000]  per seed 0.629 0.665 0.798 0.971 0.909 0.942 0.807 0.702
-  RoPE1       0.8260 +/- 0.1258  8/8  tm 0.8126  rescored 0.0062  clean 0.0032 / contam 0.0043  [0.8000]  per seed 0.874 0.872 0.626 0.924 0.689 0.874 0.749 0.999
-  RoPE2       0.8302 +/- 0.1143  8/8  tm 0.7629  rescored 0.0070  clean 0.0057 / contam 0.0048  [0.8000]  per seed 0.869 0.981 0.781 0.988 0.833 0.799 0.725 0.664
-  floors (gate, this eval stream): best constant 0.5112, reversal-copy 0.6132; contaminated-path oracle 0.5998 (an estimate, NOT a bound: a trained context-free model beat it by +0.19 on ctx3 lead/far)
+  MapWM       0.7763 +/- 0.1318  8/8  tm 0.7587  rescored 0.0019  clean 0.0024 / contam 0.0046  [0.8000]  per seed 0.616 0.769 0.703 0.908 1.000 0.804 0.785 0.626
+  RoleTag     0.7936 +/- 0.1396  8/8  tm 0.7606  rescored 0.0057  clean 0.0074 / contam 0.0083  [0.8000]  per seed 0.898 0.741 0.990 0.967 0.716 0.655 0.628 0.754
+  DirOnlyRole 0.7609 +/- 0.1280  8/8  tm 0.8476  rescored 0.0067  clean 0.0031 / contam 0.0023  [0.8000]  per seed 0.687 0.793 0.917 0.989 0.706 0.652 0.650 0.693
+  HSR         0.8686 +/- 0.0732  8/8  tm 0.7563  rescored 0.0066  clean 0.0080 / contam 0.0089  [0.8000]  per seed 0.936 0.848 0.849 0.808 0.749 0.864 0.917 0.978
+  CF2         0.8029 +/- 0.1299  8/8  tm 0.7751  rescored 0.0127  clean 0.0054 / contam 0.0096  [0.8000]  per seed 0.629 0.665 0.798 0.971 0.909 0.942 0.807 0.702
+  RoleTag2    0.8260 +/- 0.1258  8/8  tm 0.8126  rescored 0.0079  clean 0.0032 / contam 0.0062  [0.8000]  per seed 0.874 0.872 0.626 0.924 0.689 0.874 0.749 0.999
+  RoPE1       0.8302 +/- 0.1143  8/8  tm 0.7629  rescored 0.0086  clean 0.0057 / contam 0.0069  [0.8000]  per seed 0.869 0.981 0.781 0.988 0.833 0.799 0.725 0.664
+  RoPE2       0.7350 +/- 0.1168  8/8  tm 0.7468  rescored 0.0072  clean 0.0017 / contam 0.0104  [0.8000]  per seed 0.642 0.657 0.647 0.767 0.741 0.759 0.672 0.995
+  floors (gate, this eval stream, Amendment 1 task): best constant 0.4956, reversal-copy 0.5991 (role-free 0.5759); contaminated-path oracle 0.5982 with a role-free fallback (an estimate, NOT a bound: a trained context-free model beat it by +0.22 on ctx3 lead/far)
   consistency: readout re-computation of the registered accuracy, max |diff| 0.1996 (FLAG: > 0.002, device numerics or a stream mismatch)
-  void check (wiring: context-free swap ratio 1.00 +/- 0.01, DirOnlyRole non-movement swap 0): VOID -- MapWM_s40 ratio_lead_far 1.0100674952271216; MapWM_s40 ratio_trail_near 0.9811098197014498; CF2_s40 ratio_lead_near 0.9886068405405337; DirOnlyRole_s40 nat@15 0.25414641205031274; DirOnlyRole_s40 lead_near@15 0.27700637680953516; DirOnlyRole_s40 lead_far@15 0.2738199927352493; DirOnlyRole_s40 trail_near@15 0.2885624414765513; DirOnlyRole_s40 trail_far@15 0.26686398324740596; MapWM_s41 ratio_lead_near 0.9875126288538825; DirOnlyRole_s41 nat@15 0.2651866667744337
+  void check (wiring: context-free swap ratio 1.00 +/- 0.01, DirOnlyRole non-movement swap 0): VOID -- MapWM_s40 ratio_lead_far 1.0100673737899988; MapWM_s40 ratio_trail_near 0.9811103845682155; CF2_s40 ratio_lead_near 0.9886072214116304; DirOnlyRole_s40 nat@15 0.25414632463016706; DirOnlyRole_s40 lead_near@15 0.27700644386476053; DirOnlyRole_s40 lead_far@15 0.2738199241899078; DirOnlyRole_s40 trail_near@15 0.28856255820231397; DirOnlyRole_s40 trail_far@15 0.2668639618890749; MapWM_s41 ratio_lead_near 0.9875130097249791; DirOnlyRole_s41 nat@15 0.265186579354288
 
-== primary A (eval mode, REGISTERED) ==
-  need: RoleTag - MapWM    +0.0173  perm p 0.7998  
-  recovery: HSR - CF2      +0.0657  perm p 0.2312  
-  gap: HSR - RoleTag       +0.0749  perm p 0.1972  
-  HSR - RoleTag 95% CI [-0.045, +0.197]; non-inferior at 0.03: HSR False, MapWM False; RoleTag SOLVED 8/8
-  REGISTERED A: UNMEASURED (the need is not shown and neither is non-inferiority)  [MapWM AT THE INDEX FLOOR]
-
-== primary A (train mode, registered mode check) ==
-  need: RoleTag - MapWM    +0.0019  perm p 0.9795  
-  recovery: HSR - CF2      -0.0187  perm p 0.7585  
-  gap: HSR - RoleTag       -0.0043  perm p 0.9378  
-  HSR - RoleTag 95% CI [-0.122, +0.112]; non-inferior at 0.03: HSR False, MapWM False; RoleTag SOLVED 8/8
-  MODE CHECK A: UNMEASURED (the need is not shown and neither is non-inferiority)  [MapWM AT THE INDEX FLOOR]
-
-== primary B (mechanism, HSR swap ratio at +15 tokens, seeds with a step: 8/8) ==
-  median ratio per class: nat 0.998  lead_near 1.002  lead_far 1.000  trail_near 0.999  trail_far 0.994
-  REGISTERED B: HSR TREATS NON-MOVEMENT USES AS MOVES
-
-== declared secondaries (no verdict) ==
-  HSR - MapWM: acc +0.0923 (perm p 0.1055); SOLVED 8 vs 8 (Fisher 1.0000)
-  CF2 - MapWM: acc +0.0266 (perm p 0.6856); SOLVED 8 vs 8 (Fisher 1.0000)
-  RoleTag - DirOnlyRole: acc +0.0328 (perm p 0.6297); SOLVED 8 vs 8 (Fisher 1.0000)
-  DirOnlyRole - MapWM: acc -0.0154 (perm p 0.8121); SOLVED 8 vs 8 (Fisher 1.0000)
-  MapWM - RoPE1: acc -0.0497 (perm p 0.4438); SOLVED 8 vs 8 (Fisher 1.0000)
-  RoPE2 - RoPE1: acc +0.0042 (perm p 0.9453); SOLVED 8 vs 8 (Fisher 1.0000)
-  HSR - RoPE2: acc +0.0384 (perm p 0.4325); SOLVED 8 vs 8 (Fisher 1.0000)
-  MapWM       nm drift 0.869 rad, core drift 1.249 rad, drift channels 51.0/64, disp 1.746 rad, sharp 0.083, reliance +0.001, move change 0.268
-  CF2         nm drift 0.867 rad, core drift 1.250 rad, drift channels 51.0/64, disp 1.745 rad, sharp 0.078, reliance +0.001, move change 0.276
-  HSR         nm drift 0.868 rad, core drift 1.252 rad, drift channels 51.0/64, disp 1.751 rad, sharp 0.080, reliance +0.001, move change 0.265
-  RoleTag     nm drift 0.857 rad, core drift 1.250 rad, drift channels 51.0/64, disp 1.750 rad, sharp 0.071, reliance +0.004, move change 0.270
-  DirOnlyRole nm drift 0.864 rad, core drift 1.247 rad, drift channels 51.0/64, disp 1.749 rad, sharp 0.075, reliance +0.003, move change 0.269
-  HSR nat       : ratio at +15 0.998, at the word 0.997 (gate-inside: both ~0; cancel-later: word ~1, +15 ~0)
-  HSR lead_near : ratio at +15 1.002, at the word 1.008 (gate-inside: both ~0; cancel-later: word ~1, +15 ~0)
-  HSR lead_far  : ratio at +15 1.000, at the word 1.003 (gate-inside: both ~0; cancel-later: word ~1, +15 ~0)
-  HSR trail_near: ratio at +15 0.999, at the word 0.995 (gate-inside: both ~0; cancel-later: word ~1, +15 ~0)
-  HSR trail_far : ratio at +15 0.994, at the word 1.003 (gate-inside: both ~0; cancel-later: word ~1, +15 ~0)
-  HSR far - near ratio, paired by seed: -0.002, sign-flip p 0.5234
-  MapWM contaminated-gap accuracy 0.0027 vs the contaminated-path oracle's 0.5182 (above = the context-free step copes in part)
-  CF2 contaminated-gap accuracy 0.0072 vs the contaminated-path oracle's 0.5182 (above = the context-free step copes in part)
-  compromise step: sharp-channel share MapWM - RoleTag +0.012 (perm p 0.0437); disp MapWM - RoleTag -0.004 rad
-  HSR alpha: +0.000 +0.000 +0.000 +0.020 +0.000 +0.013 +0.003 +0.025
-  r(final loss, acc) over 56 runs: +nan
-  MDE (exact t, pooled sd of MapWM / RoleTag, two-sample) 0.2213
+  REGISTERED A: VOID
+  REGISTERED B: VOID
 
 == per arm (n=1): T=1024 held-out acc (eval mode) | SOLVED | train mode | rescored | clean / contaminated gaps | [T=2048] ==
-  MapWM       0.6158 +/- 0.0000  1/1  tm 0.8114  rescored 0.0000  clean 0.0082 / contam 0.0033  [0.8000]  per seed 0.616
-  RoleTag     0.8984 +/- 0.0000  1/1  tm 0.6507  rescored 0.0178  clean 0.0000 / contam 0.0067  [0.8000]  per seed 0.898
+  MapWM       0.6158 +/- 0.0000  1/1  tm 0.8114  rescored 0.0000  clean 0.0082 / contam 0.0066  [0.8000]  per seed 0.616
+  RoleTag     0.8984 +/- 0.0000  1/1  tm 0.6507  rescored 0.0203  clean 0.0000 / contam 0.0100  [0.8000]  per seed 0.898
   DirOnlyRole 0.6870 +/- 0.0000  1/1  tm 0.7989  rescored 0.0000  clean 0.0000 / contam 0.0000  [0.8000]  per seed 0.687
-  HSR         0.9363 +/- 0.0000  1/1  tm 0.7818  rescored 0.0035  clean 0.0000 / contam 0.0223  [0.8000]  per seed 0.936
-  CF2         0.6294 +/- 0.0000  1/1  tm 0.8074  rescored 0.0199  clean 0.0001 / contam 0.0000  [0.8000]  per seed 0.629
-  RoPE1       0.8744 +/- 0.0000  1/1  tm 0.7719  rescored 0.0000  clean 0.0000 / contam 0.0121  [0.8000]  per seed 0.874
-  RoPE2       0.8694 +/- 0.0000  1/1  tm 0.8331  rescored 0.0000  clean 0.0133 / contam 0.0000  [0.8000]  per seed 0.869
-  floors (gate, this eval stream): best constant 0.5112, reversal-copy 0.6132; contaminated-path oracle 0.5998 (an estimate, NOT a bound: a trained context-free model beat it by +0.19 on ctx3 lead/far)
+  HSR         0.9363 +/- 0.0000  1/1  tm 0.7818  rescored 0.0059  clean 0.0000 / contam 0.0256  [0.8000]  per seed 0.936
+  CF2         0.6294 +/- 0.0000  1/1  tm 0.8074  rescored 0.0224  clean 0.0001 / contam 0.0000  [0.8000]  per seed 0.629
+  RoleTag2    0.8744 +/- 0.0000  1/1  tm 0.7719  rescored 0.0018  clean 0.0000 / contam 0.0154  [0.8000]  per seed 0.874
+  RoPE1       0.8694 +/- 0.0000  1/1  tm 0.8331  rescored 0.0000  clean 0.0133 / contam 0.0000  [0.8000]  per seed 0.869
+  RoPE2       0.6425 +/- 0.0000  1/1  tm 0.7452  rescored 0.0000  clean 0.0000 / contam 0.0000  [0.8000]  per seed 0.642
+  floors (gate, this eval stream, Amendment 1 task): best constant 0.4956, reversal-copy 0.5991 (role-free 0.5759); contaminated-path oracle 0.5982 with a role-free fallback (an estimate, NOT a bound: a trained context-free model beat it by +0.22 on ctx3 lead/far)
   consistency: readout re-computation of the registered accuracy, max |diff| 0.1842 (FLAG: > 0.002, device numerics or a stream mismatch)
-  void check (wiring: context-free swap ratio 1.00 +/- 0.01, DirOnlyRole non-movement swap 0): VOID -- MapWM_s40 ratio_lead_far 1.0100674952271216; MapWM_s40 ratio_trail_near 0.9811098197014498; CF2_s40 ratio_lead_near 0.9886068405405337; DirOnlyRole_s40 nat@15 0.25414641205031274; DirOnlyRole_s40 lead_near@15 0.27700637680953516; DirOnlyRole_s40 lead_far@15 0.2738199927352493; DirOnlyRole_s40 trail_near@15 0.2885624414765513; DirOnlyRole_s40 trail_far@15 0.26686398324740596
+  void check (wiring: context-free swap ratio 1.00 +/- 0.01, DirOnlyRole non-movement swap 0): VOID -- MapWM_s40 ratio_lead_far 1.0100673737899988; MapWM_s40 ratio_trail_near 0.9811103845682155; CF2_s40 ratio_lead_near 0.9886072214116304; DirOnlyRole_s40 nat@15 0.25414632463016706; DirOnlyRole_s40 lead_near@15 0.27700644386476053; DirOnlyRole_s40 lead_far@15 0.2738199241899078; DirOnlyRole_s40 trail_near@15 0.28856255820231397; DirOnlyRole_s40 trail_far@15 0.2668639618890749
 
-(pilot: no verdicts below n=8)
+  REGISTERED A: VOID
+  REGISTERED B: VOID
+   (report return codes: n=8 3, n=1 3; 3 = VOID on this random synthetic set, by design)
 [PASS] C11 analysis report runs end to end on a synthetic n=8 set and on the n=1 pilot path 
 
 ALL PASS

@@ -27,7 +27,7 @@ oracle arms; identical random draws).
                |dtheta| with the phase integrated over NON-MOVEMENT sentence positions only (the map drift the
                ambiguity causes); core_drift_rad = over all other positions.
   disp         per-move displacement in phase units, gauge-free: u_NS = (mean omega*Delta at move-role north words -
-               south) / 2, u_WE likewise, from the walks. disp = (||u_NS|| + ||u_WE||) / 2 rad; sharp = share of the 64
+               south) / 2, u_WE likewise, from the walks, each wrapped to (-pi, pi] (Amendment 1, rule 8). disp = (||u_NS|| + ||u_WE||) / 2 rad; sharp = share of the 64
                channels whose max(|u_NS|, |u_WE|) exceeds 0.5 rad (fine, cell-resolving channels) -- the 'compromise
                step' readout (does MapWM move its map to coarse channels that one wrong step barely shifts?).
 `python3 -m mapformer.tw_ambig_readouts CKPT [device]` prints the dict.
@@ -196,7 +196,7 @@ def drift_disp(m, W, dev, te, thr=1.0):
         out["drift" if key == "full" else f"{key}_drift_ch"] = int((md > thr).sum())
         out[f"{key}_drift_rad"] = float(md.mean())
     u = {a: dsum[a] / max(1, dcnt[a]) for a in range(4)}
-    uNS, uWE = (u[0] - u[1]) / 2, (u[2] - u[3]) / 2
+    uNS, uWE = wrap((u[0] - u[1]) / 2), wrap((u[2] - u[3]) / 2)       # Amendment 1: phases wrapped (rule 8)
     out["disp"] = float((np.linalg.norm(uNS) + np.linalg.norm(uWE)) / 2)
     out["sharp"] = float((np.maximum(np.abs(uNS), np.abs(uWE)) > 0.5).mean())
     return out

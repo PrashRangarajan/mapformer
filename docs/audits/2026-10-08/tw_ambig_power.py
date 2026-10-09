@@ -9,6 +9,7 @@ batches, which are bimodal in eval mode (the 1/(1-p) attention-scale under-repor
   ORACLE pool, train mode: TW_NORMSTEP acc40_train of the same 24 runs.
 Context-free arms (MapWM, CF2; never SOLVED): CF-LOW N(0.62, 0.03) (the gate's contaminated-path oracle, 0.600) and
 CF-HIGH N(0.80, 0.06) (ctx3 pilot: a trained context-free model reached 0.81 lead/far, 0.61 trail/far).
+Amendment 1: G and non-inferiority use RoleTag2 (2 layers), drawn from the same pool as a successful HSR seed.
 HSR scenarios: a seed learns the context step with probability p (then drawn from the oracle pool), else it is a
 context-free seed; PARTIAL = oracle pool - 0.05 on every seed.
 """
@@ -47,6 +48,8 @@ def sim(n, pool, cf, p_learn, partial=False, n_sim=300, seed=0):
         o = [pool[i] for i in rng.integers(len(pool), size=n)]
         for j in seeds:
             res[f"RoleTag_s{j}"] = {"acc": o[j][0], "cls": o[j][1]}
+            r2 = pool[rng.integers(len(pool))]                    # Amendment 1: depth-matched oracle, same pool as HSR
+            res[f"RoleTag2_s{j}"] = {"acc": r2[0], "cls": r2[1]}
             for a in ("MapWM", "CF2"):
                 res[f"{a}_s{j}"] = {"acc": float(np.clip(rng.normal(*cf), 0, 1)), "cls": "STALLED"}
             if partial:
@@ -77,7 +80,7 @@ def main():
             for name, p, part in scen:
                 if n in (6, 12) and name not in ("p=0.75", "p=0.50"):
                     continue
-                f, lab = sim(n, ev, cf, p, part, n_sim=300 if n <= 10 else 150, seed=n)
+                f, lab = sim(n, ev, cf, p, part, n_sim=300 if n <= 10 else 150, seed=n + 1000)
                 print(f"  n={n:2d} {name:26s} N {f['N']:.2f} R {f['R']:.2f} G {f['G']:.2f} NI {f['NI']:.2f} | "
                       + "; ".join(f"{k.replace('CONTEXT STEP NEEDED; ', '')} {v:.2f}" for k, v in sorted(lab.items(), key=lambda x: -x[1])))
     print("\n== train mode (the registered mode check), CF-LOW, n=8 ==")
