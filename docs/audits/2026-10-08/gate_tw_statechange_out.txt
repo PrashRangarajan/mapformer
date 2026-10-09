@@ -1,0 +1,35 @@
+vocab 65: ['.', 'walked', 'went', 'moved', 'stepped', 'headed', 'wandered', 'slowly', 'quickly', 'carefully', 'quietly', 'then', 'paused', 'looked', 'around', 'for', 'a', 'moment', 'and', 'she', 'saw', 'found', 'noticed', 'there', 'was', 'nothing', 'lamp', 'cat', 'chair', 'tree', 'key', 'book', 'cup', 'bell', 'coin', 'shoe', 'rope', 'stone', 'hat', 'clock', 'box', 'pen', 'thought', 'about', 'remembered', 'story', 'north', 'up', 'northward', 'south', 'down', 'southward', 'west', 'left', 'westward', 'east', 'right', 'eastward', 'took', 'grabbed', 'lifted', 'dropped', 'placed', 'released', 'the']
+sample: moved slowly down there was key . walked south and saw nothing . headed southward there was coin . she took the coin . she remembered a tree . moved southward around and and found cat . went north there was nothing . a story about a coin . wandered slowly north and noticed nothing . she placed the coin . walked up there was key . walked up and noticed cup . a story about a box . headed up there was key . went carefully northward and saw
+
+checks: direction/movement words inside state clauses 0; state words in core positions 0; state clauses not attached to the preceding slot's cell/event 0; T2 answers equal to last saw 0
+replay check (targets rebuilt from tokens + slot locations + map): 200/200 walks reproduce every slot
+
+p_take = p_drop = 0.4 (registered): moves/seq 118.1, words/move 8.67; state clauses per move: take 0.094, drop 0.091; aside 0.148; token share: state clauses 0.106, asides 0.097, optional total 0.307
+   revisit targets/seq 26.9 (fraction of slots 0.228); strata share of revisit targets: T1 0.754 (4052), T2take 0.103 (555), T2drop 0.093 (498), T3 0.050 (270)
+   T1 targets straddling >= 1 state clause (T1s): 2809
+
+floors on the eval stream (accuracy of each rule, by stratum; n = [5375, 4052, 2809, 555, 498, 270]):
+  rule                all       T1      T1s   T2take   T2drop       T3
+  constant         0.5139   0.5118   0.5301   1.0000   0.0000   0.4926
+  ngram1           0.5139   0.5118   0.5301   1.0000   0.0000   0.4926
+  ngram2           0.5139   0.5118   0.5301   1.0000   0.0000   0.4926
+  ngram3           0.5139   0.5118   0.5301   1.0000   0.0000   0.4926
+  ngram4           0.5092   0.5069   0.5247   0.9928   0.0000   0.4889
+  ngram5           0.4571   0.4556   0.4717   0.8847   0.0020   0.4407
+  revcopy          0.5656   0.6074   0.5650   0.7604   0.0000   0.5815
+  revcopy_state    0.6099   0.6074   0.5650   1.0000   0.2108   0.5815
+  last_dropped     0.1064   0.0447   0.0338   0.0306   0.6486   0.1889
+  first_saw        0.7539   1.0000   1.0000   0.0000   0.0000   0.0000
+  last_saw         0.8041   1.0000   1.0000   0.0000   0.0000   1.0000
+  constant word: 'nothing'
+
+C floor F (best location-free / short-range rule on T2drop): 0.6486 (last_dropped)
+no word n-gram beats the constant on all revisit targets: 0.5139 vs 0.5139 -> OK
+
+p_take = p_drop = 0.2 (100 walks): moves/seq 124.4, words/move 8.23; state clauses per move: take 0.051, drop 0.048; aside 0.147; token share: state clauses 0.059, asides 0.102, optional total 0.270
+   revisit targets/seq 27.9 (fraction of slots 0.224); strata share of revisit targets: T1 0.871 (2427), T2take 0.054 (150), T2drop 0.048 (133), T3 0.027 (76)
+   T1 targets straddling >= 1 state clause (T1s): 1335
+
+p_take = p_drop = 0.6 (100 walks): moves/seq 112.0, words/move 9.15; state clauses per move: take 0.139, drop 0.135; aside 0.149; token share: state clauses 0.149, asides 0.093, optional total 0.343
+   revisit targets/seq 25.4 (fraction of slots 0.227); strata share of revisit targets: T1 0.650 (1653), T2take 0.139 (353), T2drop 0.142 (362), T3 0.069 (175)
+   T1 targets straddling >= 1 state clause (T1s): 1272

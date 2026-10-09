@@ -1,0 +1,10 @@
+torch 2.10.0+cu128; K = 1 epochs of the 900-epoch TW_NORMSTEP schedule; device cpu
+MapWM L1 seed=10 vocab=58 p_take=0.0 p_drop=0.0 params=214,266
+  MapWM epoch 1: wrapper 4.048683166503906 stored 4.0480959804690615 DIFFERENT
+MapWM s10: 0/1 epochs bitwise equal -> FAIL
+NormStep L1 seed=10 vocab=58 p_take=0.0 p_drop=0.0 params=214,522
+  NormStep epoch 1: wrapper 4.048572985493407 stored 4.047979680859313 DIFFERENT
+NormStep s10: 0/1 epochs bitwise equal -> FAIL
+DirOnly L1 seed=10 vocab=58 p_take=0.0 p_drop=0.0 params=214,266
+  DirOnly epoch 1: wrapper 4.048406092488036 stored 4.047820217755376 DIFFERENT
+DirOnly s10: 0/1 epochs bitwise equal -> FAIL

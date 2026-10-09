@@ -1,0 +1,57 @@
+[PASS] contrast BETTER 
+[PASS] contrast WORSE 
+[PASS] contrast CONFLICT 
+[PASS] contrast SOLVED RATE HIGHER 
+[PASS] contrast SOLVED RATE LOWER 
+[PASS] contrast CEILING 
+[PASS] contrast NO DIFFERENCE 
+[PASS] contrast 1% gap does not fire 
+[PASS] geom OFF 8/8 
+[PASS] geom OFF 6/8 (boundary) 
+[PASS] geom MIXED 5/8 
+[PASS] geom MIXED 3/8 
+[PASS] geom ON 2/8 off 
+[PASS] geom threshold inclusive 
+[PASS] aside LARGER 
+[PASS] aside SMALLER 
+[PASS] aside NOT DISTINGUISHED 
+[PASS] B OFF / STATE BOUND TO P -> STATE VERBS STAY OFF THE MAP (not distinguished from asides)
+[PASS] B OFF / STATE NOT SHOWN  -> STATE VERBS STAY OFF THE MAP (not distinguished from asides) [state not shown used by this arm (C): the clauses are not shown task-relevant to it]
+[PASS] B ON / STATE BOUND TO P -> STATE VERBS MOVE THE MAP (not distinguished from asides)
+[PASS] B ON / STATE NOT SHOWN  -> STATE VERBS MOVE THE MAP (not distinguished from asides) [state not shown used by this arm (C): the clauses are not shown task-relevant to it]
+[PASS] B MIXED / STATE BOUND TO P -> MIXED: STATE VERBS OFF THE MAP ON 4/8 SEEDS (not distinguished from asides)
+[PASS] B MIXED / STATE NOT SHOWN  -> MIXED: STATE VERBS OFF THE MAP ON 4/8 SEEDS (not distinguished from asides) [state not shown used by this arm (C): the clauses are not shown task-relevant to it]
+[PASS] func COSTS 
+[PASS] func USED 
+[PASS] func NO COST (small) 
+[PASS] C BOUND 
+[PASS] C PARTLY 
+[PASS] C NOT SHOWN 
+[PASS] C NOT SHOWN (mixed signs) 
+[PASS] A headlines 
+[PASS] e2e predicted: A -> PATH NEEDED FOR LOCATION: path integration beats index RoPE on unchanged-cell revisits
+[PASS] e2e predicted: B MapWM -> STATE VERBS STAY OFF THE MAP (smaller than asides)
+[PASS] e2e predicted: C MapWM -> STATE BOUND TO PLACE
+[PASS] e2e predicted: D2 DirOnly worse -> WORSE
+[PASS] e2e predicted: SUMMARY holds 
+[PASS] e2e leak: B MapWM MOVE + LARGER -> STATE VERBS MOVE THE MAP (larger than asides)
+[PASS] e2e leak: B NormStep OFF 
+[PASS] e2e leak: SUMMARY does not hold 
+[PASS] e2e state unused: C NOT SHOWN, B qualified -> STATE VERBS STAY OFF THE MAP (smaller than asides) [state not shown used by this arm (C): the clauses are not shown task-relevant to it]
+[PASS] e2e state unused: SUMMARY does not hold 
+[PASS] e2e index equal: A not PATH NEEDED -> LOCATION CONTRAST SOLVED RATE HIGHER (convergence; accuracy unmeasured below 0.0200)
+[PASS] e2e eval-mode disagreement flagged on D2 (registered = re-scored) -> WORSE [FLAG: in eval mode without the dropout-scale correction D2 reads NO DIFFERENCE (unmeasured below 0.0200); registered verdict unchanged]
+[PASS] e2e VOID missing run 
+[PASS] e2e VOID short run 
+[PASS] e2e VOID DirOnly step (assertion) 
+  NOTE MapWM_s150: CPU readout accuracy 0.1293 vs trainer eval.json 0.0000 (device difference > 0.002)
+  MapWM     s150: acc 0.1293 T1 0.1306 T2drop 0.0000 STALLED  shift_sc 10.1597 L_sc +0.0000
+  NOTE NormStep_s150: CPU readout accuracy 0.1293 vs trainer eval.json 0.0000 (device difference > 0.002)
+  NormStep  s150: acc 0.1293 T1 0.1306 T2drop 0.0000 STALLED  shift_sc 10.7092 L_sc +0.0000
+  NOTE DirOnly_s150: CPU readout accuracy 0.1293 vs trainer eval.json 0.0000 (device difference > 0.002)
+  DirOnly   s150: acc 0.1293 T1 0.1306 T2drop 0.0000 STALLED  shift_sc 0.0000 L_sc +0.0000
+  NOTE RoPE_s150: CPU readout accuracy 0.0056 vs trainer eval.json 0.0000 (device difference > 0.002)
+  RoPE      s150: acc 0.0056 T1 0.0054 T2drop 0.0120 STALLED
+[PASS] collect end to end (4 untrained runs) (MapWM acc 0.1293, reliance +0.0000, shift_sc 10.160; F2 0.6486)
+
+47 cases: ALL PASS

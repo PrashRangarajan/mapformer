@@ -1,0 +1,61 @@
+TW:MapWM_s0            acc 0.8812 rs 0.9720  R_aside 0.090 shift 0.015 moves dist 0.069  drift_aside 0.047 rad  L_aside -0.0695 (n 4400)  reliance 0.473  clock ch 30
+TW:MapWM_s1            acc 0.9993 rs 0.9993  R_aside 0.596 shift 0.095 moves dist 0.409  drift_aside 0.152 rad  L_aside -0.0034 (n 4400)  reliance 0.487  clock ch 1
+TW:MapWM_s2            acc 0.9980 rs 0.9984  R_aside 0.204 shift 0.031 moves dist 0.161  drift_aside 0.067 rad  L_aside -0.0020 (n 4400)  reliance 0.502  clock ch 29
+TW:MapWM_s3            acc 0.9943 rs 0.9943  R_aside 0.300 shift 0.074 moves dist 0.250  drift_aside 0.104 rad  L_aside -0.0041 (n 4400)  reliance 0.491  clock ch 36
+TW:MapWM_s4            acc 0.9990 rs 0.9990  R_aside 0.231 shift 0.042 moves dist 0.189  drift_aside 0.087 rad  L_aside -0.0039 (n 4400)  reliance 0.488  clock ch 38
+TW:MapWM_s5            acc 1.0000 rs 1.0000  R_aside 0.733 shift 0.026 moves dist 0.433  drift_aside 0.160 rad  L_aside -0.0020 (n 4400)  reliance 0.488  clock ch 2
+TW:MapWM_s6            acc 0.9998 rs 0.9998  R_aside 0.742 shift 0.106 moves dist 0.447  drift_aside 0.194 rad  L_aside -0.0030 (n 4400)  reliance 0.487  clock ch 3
+TW:MapWM_s7            acc 0.8866 rs 0.9874  R_aside 0.166 shift 0.006 moves dist 0.135  drift_aside 0.075 rad  L_aside -0.0789 (n 4400)  reliance 0.390  clock ch 2
+TW:RoPE_s0             acc 0.5148 rs 0.5151
+TW:RoPE_s1             acc 0.5122 rs 0.5142
+TW:RoPE_s2             acc 0.5135 rs 0.5125
+TW:RoPE_s3             acc 0.5135 rs 0.5142
+TW:RoPE_s4             acc 0.5114 rs 0.5109
+TW:RoPE_s5             acc 0.5165 rs 0.5178
+TW:RoPE_s6             acc 0.5161 rs 0.5143
+TW:RoPE_s7             acc 0.5155 rs 0.5148
+TWNS:MapWM_s10         acc 0.9997 rs 0.9997  R_aside 0.314 shift 0.029 moves dist 0.220  drift_aside 0.124 rad  L_aside -0.0027 (n 4400)  reliance 0.501  clock ch 4
+TWNS:NormStep_s10      acc 1.0000 rs 1.0000  R_aside 0.278 shift 0.012 moves dist 0.235  drift_aside 0.164 rad  L_aside -0.0043 (n 4400)  reliance 0.488  clock ch 0
+TWNS:NormStepNB_s10    acc 0.8140 rs 0.9745  R_aside 0.079 shift 0.033 moves dist 0.062  drift_aside 0.051 rad  L_aside -0.0577 (n 4400)  reliance 0.348  clock ch 16
+TWNS:DirOnly_s10       acc 0.9725 rs 0.9727  R_aside 0.000 shift 0.000 moves dist 0.000  drift_aside 0.000 rad  L_aside +0.0000 (n 4400)  reliance 0.461  clock ch 0
+TWNS:MapWM_s11         acc 0.9900 rs 0.9907  R_aside 0.110 shift 0.014 moves dist 0.084  drift_aside 0.041 rad  L_aside -0.0152 (n 4400)  reliance 0.495  clock ch 38
+TWNS:NormStep_s11      acc 0.9985 rs 0.9985  R_aside 0.240 shift 0.030 moves dist 0.159  drift_aside 0.082 rad  L_aside -0.0116 (n 4400)  reliance 0.493  clock ch 29
+TWNS:NormStepNB_s11    acc 0.9925 rs 0.9933  R_aside 0.167 shift 0.031 moves dist 0.085  drift_aside 0.105 rad  L_aside -0.0039 (n 4400)  reliance 0.492  clock ch 1
+TWNS:DirOnly_s11       acc 0.9717 rs 0.9738  R_aside 0.000 shift 0.000 moves dist 0.000  drift_aside 0.000 rad  L_aside +0.0000 (n 4400)  reliance 0.460  clock ch 0
+TWNS:MapWM_s12         acc 0.8304 rs 0.9959  R_aside 0.213 shift 0.023 moves dist 0.174  drift_aside 0.091 rad  L_aside -0.0698 (n 4400)  reliance 0.351  clock ch 3
+TWNS:NormStep_s12      acc 1.0000 rs 1.0000  R_aside 0.221 shift 0.013 moves dist 0.198  drift_aside 0.145 rad  L_aside -0.0066 (n 4400)  reliance 0.490  clock ch 0
+TWNS:NormStepNB_s12    acc 0.8250 rs 0.9953  R_aside 0.152 shift 0.015 moves dist 0.187  drift_aside 0.073 rad  L_aside -0.0698 (n 4400)  reliance 0.427  clock ch 29
+TWNS:DirOnly_s12       acc 0.9736 rs 0.9727  R_aside 0.000 shift 0.000 moves dist 0.000  drift_aside 0.000 rad  L_aside +0.0000 (n 4400)  reliance 0.462  clock ch 0
+TWNS:MapWM_s13         acc 0.9949 rs 0.9956  R_aside 0.195 shift 0.023 moves dist 0.130  drift_aside 0.043 rad  L_aside -0.0036 (n 4400)  reliance 0.489  clock ch 29
+TWNS:NormStep_s13      acc 1.0000 rs 1.0000  R_aside 0.354 shift 0.033 moves dist 0.261  drift_aside 0.190 rad  L_aside -0.0018 (n 4400)  reliance 0.487  clock ch 3
+TWNS:NormStepNB_s13    acc 0.9998 rs 1.0000  R_aside 0.362 shift 0.055 moves dist 0.281  drift_aside 0.179 rad  L_aside -0.0030 (n 4400)  reliance 0.488  clock ch 4
+TWNS:DirOnly_s13       acc 0.9718 rs 0.9723  R_aside 0.000 shift 0.000 moves dist 0.000  drift_aside 0.000 rad  L_aside +0.0000 (n 4400)  reliance 0.460  clock ch 0
+TWNS:MapWM_s14         acc 0.9714 rs 0.9951  R_aside 0.127 shift 0.022 moves dist 0.111  drift_aside 0.044 rad  L_aside -0.0627 (n 4400)  reliance 0.571  clock ch 28
+TWNS:NormStep_s14      acc 1.0000 rs 1.0000  R_aside 0.499 shift 0.033 moves dist 0.370  drift_aside 0.237 rad  L_aside -0.0030 (n 4400)  reliance 0.488  clock ch 3
+TWNS:NormStepNB_s14    acc 0.9957 rs 0.9957  R_aside 0.220 shift 0.033 moves dist 0.189  drift_aside 0.083 rad  L_aside -0.0045 (n 4400)  reliance 0.492  clock ch 37
+TWNS:DirOnly_s14       acc 0.9717 rs 0.9715  R_aside 0.000 shift 0.000 moves dist 0.000  drift_aside 0.000 rad  L_aside +0.0000 (n 4400)  reliance 0.553  clock ch 0
+TWNS:MapWM_s15         acc 0.9972 rs 0.9972  R_aside 0.348 shift 0.013 moves dist 0.283  drift_aside 0.117 rad  L_aside -0.0123 (n 4400)  reliance 0.493  clock ch 33
+TWNS:NormStep_s15      acc 0.9993 rs 0.9993  R_aside 0.474 shift 0.099 moves dist 0.390  drift_aside 0.223 rad  L_aside -0.0045 (n 4400)  reliance 0.487  clock ch 3
+TWNS:NormStepNB_s15    acc 1.0000 rs 1.0000  R_aside 0.516 shift 0.098 moves dist 0.371  drift_aside 0.218 rad  L_aside -0.0014 (n 4400)  reliance 0.488  clock ch 6
+TWNS:DirOnly_s15       acc 0.9717 rs 0.9733  R_aside 0.000 shift 0.000 moves dist 0.000  drift_aside 0.000 rad  L_aside +0.0000 (n 4400)  reliance 0.459  clock ch 0
+TWNS:MapWM_s16         acc 1.0000 rs 1.0000  R_aside 0.465 shift 0.038 moves dist 0.348  drift_aside 0.148 rad  L_aside -0.0102 (n 4400)  reliance 0.488  clock ch 0
+TWNS:NormStep_s16      acc 0.8311 rs 0.9795  R_aside 0.127 shift 0.037 moves dist 0.128  drift_aside 0.049 rad  L_aside -0.0539 (n 4400)  reliance 0.398  clock ch 30
+TWNS:NormStepNB_s16    acc 0.9034 rs 0.9966  R_aside 0.166 shift 0.011 moves dist 0.208  drift_aside 0.069 rad  L_aside -0.0566 (n 4400)  reliance 0.479  clock ch 26
+TWNS:DirOnly_s16       acc 0.9732 rs 0.9730  R_aside 0.000 shift 0.000 moves dist 0.000  drift_aside 0.000 rad  L_aside +0.0000 (n 4400)  reliance 0.461  clock ch 0
+TWNS:MapWM_s17         acc 0.9980 rs 0.9982  R_aside 0.460 shift 0.008 moves dist 0.302  drift_aside 0.134 rad  L_aside -0.0027 (n 4400)  reliance 0.486  clock ch 4
+TWNS:NormStep_s17      acc 0.9998 rs 0.9998  R_aside 0.307 shift 0.017 moves dist 0.252  drift_aside 0.208 rad  L_aside -0.0027 (n 4400)  reliance 0.489  clock ch 0
+TWNS:NormStepNB_s17    acc 1.0000 rs 1.0000  R_aside 0.325 shift 0.038 moves dist 0.247  drift_aside 0.163 rad  L_aside -0.0120 (n 4400)  reliance 0.488  clock ch 3
+TWNS:DirOnly_s17       acc 0.9705 rs 0.9707  R_aside 0.000 shift 0.000 moves dist 0.000  drift_aside 0.000 rad  L_aside +0.0000 (n 4400)  reliance 0.459  clock ch 0
+
+== summary by arm (median [min, max]) ==
+TW:MapWM         acc 0.9985 [0.8812, 1.0000]  rs 0.9987 [0.9720, 1.0000]
+                 R_aside 0.2654 [0.0897, 0.7422]  shift_aside 0.0361 [0.0063, 0.1058]  L_aside -0.0036 [-0.0789, -0.0020]  drift_aside 0.0952 [0.0474, 0.1941]
+TWNS:MapWM       acc 0.9961 [0.8304, 1.0000]  rs 0.9966 [0.9907, 1.0000]
+                 R_aside 0.2634 [0.1096, 0.4648]  shift_aside 0.0222 [0.0082, 0.0379]  L_aside -0.0113 [-0.0698, -0.0027]  drift_aside 0.1041 [0.0411, 0.1484]
+TWNS:NormStep    acc 0.9999 [0.8311, 1.0000]  rs 0.9999 [0.9795, 1.0000]
+                 R_aside 0.2924 [0.1275, 0.4990]  shift_aside 0.0316 [0.0125, 0.0991]  L_aside -0.0044 [-0.0539, -0.0018]  drift_aside 0.1773 [0.0486, 0.2367]
+TWNS:NormStepNB  acc 0.9941 [0.8140, 1.0000]  rs 0.9962 [0.9745, 1.0000]
+                 R_aside 0.1938 [0.0794, 0.5159]  shift_aside 0.0329 [0.0107, 0.0978]  L_aside -0.0083 [-0.0698, -0.0014]  drift_aside 0.0943 [0.0507, 0.2176]
+TWNS:DirOnly     acc 0.9718 [0.9705, 0.9736]  rs 0.9727 [0.9707, 0.9738]
+                 R_aside 0.0000 [0.0000, 0.0000]  shift_aside 0.0000 [0.0000, 0.0000]  L_aside 0.0000 [0.0000, 0.0000]  drift_aside 0.0000 [0.0000, 0.0000]
+TW:RoPE          acc 0.5142 [0.5114, 0.5165]  rs 0.5142 [0.5109, 0.5178]
