@@ -12,9 +12,12 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs
 - GAIN_PHASE (`GAIN_PHASE_PREREG.md` + Amendments 1-3): 32 runs, seeds 8-15, `run_gain_phase.sh`, ETA ~11-15 h.
   Marker `.gain_phase_done`; artifacts GAIN_PHASE_EVAL.json / _ANALYSIS.txt / _VERDICTS.json.
 - Built, CPU-validated, NOT launched (each needs a GPU pilot + its independent audit, running now on CPU):
-  TW_AMBIG (`TW_AMBIG_PREREG.md`, 3f304db; same word as action or observation; 56 runs ~6.5 h + pilot),
-  TW_STATECHANGE (`TW_STATECHANGE_PREREG.md`, 87d57f3; take/drop clauses off the map; 32 runs ~3 h + pilot),
-  TW_LANDMARK (`TW_LANDMARK_PREREG.md`, fc7fd4c; named places vs path integration, 2-layer arms; 48 runs ~7 h + pilot).
+  each audited and amended (Amendment 1), awaiting GPU pilots and the user's choice of what to run:
+  TW_STATECHANGE (`TW_STATECHANGE_PREREG.md`, d385e0e; take/drop clauses off the map; 32 runs ~3 h + ~1 h pilot),
+  TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e; same word as action or observation; 64 runs at 1800 ep ~15 h, or ~11 h
+  without DirOnlyRole and RoPE2, + ~3 h pilot),
+  TW_LANDMARK (`TW_LANDMARK_PREREG.md`, e9cd479; named places vs path integration, 2-layer arms, in-distribution
+  probe O-ID; 48 runs ~7 h + pilot).
   Post hoc word-class breakdown done (`docs/audits/2026-10-08/tw_wordclass_out.txt`).
 - RANK_NOWRAP: POSTPONED by the user 2026-10-08 (cost ~19-23 h); the queue waiter was killed before it launched
   anything. Ready to launch later (`run_rank_nowrap.sh`, N_SEEDS 12; consider 8 if time-limited).
