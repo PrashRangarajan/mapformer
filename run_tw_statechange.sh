@@ -13,6 +13,31 @@ DRV_MAXPG="${TWSC_MAXPG:-4}"            # jobs per GPU; the picker counts every 
 DRV_SPACING="${TWSC_SPACING:-15}"
 DRV_MINFREE="${TWSC_MINFREE:-5500}"     # MiB free before each launch (T = 1024 jobs measured ~4.7 GB in GAIN_PHASE's pilot)
 drv_lock "$REPO/.run_tw_statechange.lock" || exit 1
+# Amendment 1: bounded waits. lib_driver's drv_wait_slot / drv_wait_dir loop forever, and drv_wait_dir counts ANY python3
+# with the run dir in argv (an orphaned or unrelated process would block it); these wait on this batch's TRAINERS only.
+SLOT_TIMEOUT="${TWSC_SLOT_TIMEOUT:-172800}"   # 48 h for a free slot, then fail
+DIR_TIMEOUT="${TWSC_DIR_TIMEOUT:-86400}"      # 24 h after the last launch for every trainer to exit, then fail
+twsc_wait_slot() {
+  local g="" t0; t0=$(date +%s)
+  while [ -z "$g" ]; do
+    g=$(drv_pick)
+    if [ -z "$g" ]; then
+      [ $(( $(date +%s) - t0 )) -gt "$SLOT_TIMEOUT" ] && return 1
+      sleep "$DRV_POLL"
+    fi
+  done
+  echo "$g"
+}
+twsc_ntrainers() {   # python3 trainers of THIS batch (module name AND run dir in argv)
+  ps -u "$USER" -o comm=,args= | awk -v r="$1" '$1=="python3" && /mapformer[.]train_tw_statechange/ && index($0, r)' | wc -l
+}
+twsc_wait_dir() {
+  local t0; t0=$(date +%s)
+  while [ "$(twsc_ntrainers "$1")" -gt 0 ]; do
+    [ $(( $(date +%s) - t0 )) -gt "$DIR_TIMEOUT" ] && return 1
+    sleep "${DRV_WAIT_POLL:-60}"
+  done
+}
 cd "$REPO/.."
 R="$REPO/runs/tw_statechange"; mkdir -p "$R/p0"
 ARMS="MapWM NormStep DirOnly RoPE"
@@ -44,16 +69,18 @@ _drv_log "code version at launch: $(cd "$REPO" && git rev-parse HEAD) $(cd "$REP
 for S in $SEEDS; do for ARM in $ARMS; do
   OUT="$R/p0/${ARM}_s${S}"
   [ -f "$OUT/eval.json" ] && { echo "skip $OUT" >> "$LOG"; continue; }
-  # rule 21: never launch a duplicate of a run already training; exact --output-dir token match (s5 must not match s55)
-  if [ -n "$(ps -u "$USER" -o comm=,args= | awk -v o="$OUT" '$1=="python3" { for (i = 2; i < NF; i++) if ($i == "--output-dir" && $(i + 1) == o) { print; break } }')" ]; then
+  # rule 21: never launch a duplicate of a run already training; exact --output-dir token match (s5 must not match s55).
+  # Amendment 1: also a RELATIVE --output-dir of the same run (runs/tw_statechange/p0/X or any path ending /runs/...).
+  REL="runs/tw_statechange/p0/${ARM}_s${S}"
+  if [ -n "$(ps -u "$USER" -o comm=,args= | awk -v o="$OUT" -v rel="$REL" '$1=="python3" { for (i = 2; i < NF; i++) if ($i == "--output-dir") { t = $(i + 1); sub(/\/+$/, "", t); if (t == o || t == rel || (length(t) > length(rel) && substr(t, length(t) - length(rel)) == "/" rel)) { print; break } } }')" ]; then
     echo "skip $OUT (already running)" >> "$LOG"; continue
   fi
-  mkdir -p "$OUT"; G=$(drv_wait_slot)
+  mkdir -p "$OUT"; G=$(twsc_wait_slot) || drv_fail "no free GPU slot within ${SLOT_TIMEOUT} s"
   echo "$(date +%H:%M:%S) $ARM s$S -> cuda:$G" >> "$LOG"
   OMP_NUM_THREADS=2 drv_launch "$R/p0/${ARM}_s${S}.log" python3 -u -m mapformer.train_tw_statechange --arm "$ARM" \
     --seed "$S" --epochs 900 --n-steps 1024 --batch-size 16 --p-take 0.4 --p-drop 0.4 --device "cuda:$G" --output-dir "$OUT"
 done; done
-drv_wait_dir "$R/"
+twsc_wait_dir "$R/" || drv_fail "trainers still running ${DIR_TIMEOUT} s after the last launch"
 REQ=(); for S in $SEEDS; do for ARM in $ARMS; do REQ+=("$R/p0/${ARM}_s${S}/${ARM}.pt" "$R/p0/${ARM}_s${S}/eval.json"); done; done
 [ "${#REQ[@]}" -eq 64 ] || drv_fail "expected 64 artifacts, listed ${#REQ[@]}"
 drv_require "${REQ[@]}" || drv_fail "missing checkpoints or eval.json"

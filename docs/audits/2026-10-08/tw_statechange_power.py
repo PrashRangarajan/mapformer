@@ -72,7 +72,7 @@ for n in (6, 8, 10):
             def fB(n, arm=arm, fac=fac):
                 own, st = draw(arm, n), draw(arm, n)
                 sh = [fac * x["shift_aside"] for x in st]; sa = [x["shift_aside"] for x in own]
-                g, k = A.geom_label(sh); al = A.aside_label(sh, sa)[0]
+                g = A.geom_label(sh)[0]; al = A.aside_label(sh, sa)[0]
                 return f"{g} / {al}"
             print(f"B {arm}, state shift = {fac:.0f} x aside-like:", fmt(tally(fB, n)))
     # C

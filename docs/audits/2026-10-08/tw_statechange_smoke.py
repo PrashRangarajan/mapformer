@@ -40,21 +40,32 @@ ok("contrast NO DIFFERENCE", A.contrast_state(x, y, 4, 4, n)[0].startswith("NO D
 ok("contrast 1% gap does not fire", A.contrast_state([0.98] * 4 + [0.981] * 4, [0.99] * 4 + [0.991] * 4, 8, 8, n)[0]
    .startswith("NO DIFFERENCE"))
 # ---- geometry / asides
-ok("geom OFF 8/8", A.geom_label([0.05] * 8) == ("OFF", 8))
-ok("geom OFF 6/8 (boundary)", A.geom_label([0.05] * 6 + [0.3] * 2) == ("OFF", 6))
-ok("geom MIXED 5/8", A.geom_label([0.05] * 5 + [0.3] * 3) == ("MIXED", 5))
-ok("geom MIXED 3/8", A.geom_label([0.05] * 3 + [0.3] * 5) == ("MIXED", 3))
-ok("geom ON 2/8 off", A.geom_label([0.05] * 2 + [0.3] * 6) == ("ON", 2))
+ok("geom OFF 8/8", A.geom_label([0.05] * 8) == ("OFF", 8, 0, 0))
+ok("geom OFF 6/8 (boundary)", A.geom_label([0.05] * 6 + [0.3] * 2) == ("OFF", 6, 2, 0))
+ok("geom MIXED 5/8", A.geom_label([0.05] * 5 + [0.3] * 3) == ("MIXED", 5, 3, 0))
+ok("geom MIXED 3/8", A.geom_label([0.05] * 3 + [0.3] * 5) == ("MIXED", 3, 5, 0))
+ok("geom ON 2/8 off", A.geom_label([0.05] * 2 + [0.3] * 6) == ("ON", 2, 6, 0))
 ok("geom threshold inclusive", A.geom_label([A.SHIFT_OFF] * 8)[0] == "OFF")
+nan = float("nan")
+ok("geom NaN shift is UNDEFINED, not ON (A1)", A.geom_label([nan] * 3 + [0.05] * 5) == ("UNDEFINED", 5, 0, 3))
+ok("geom 2 NaN + 6 off -> OFF (A1)", A.geom_label([nan] * 2 + [0.05] * 6) == ("OFF", 6, 0, 2))
+ok("geom 2 NaN + 3/3 -> MIXED (A1)", A.geom_label([nan] * 2 + [0.05] * 3 + [0.3] * 3) == ("MIXED", 3, 3, 2))
+ok("geom collinear axes UNDEFINED (A1)", A.geom_label([0.3] * 8, [0.995] * 3 + [0.2] * 5) == ("UNDEFINED", 0, 5, 3))
+ok("geom axis |cos| 0.99 still defined (A1)", A.geom_label([0.05] * 8, [-0.99] * 8)[0] == "OFF")
+ok("aside label with NaN pairs dropped (A1)", A.aside_label([nan] * 8, [0.05] * 8)[0] == "NOT DISTINGUISHED FROM ASIDES")
 ok("aside LARGER", A.aside_label([0.3] * 8, [0.05] * 8)[0] == "LARGER THAN ASIDES")
 ok("aside SMALLER", A.aside_label([0.01] * 8, [0.05] * 8)[0] == "SMALLER THAN ASIDES")
 ok("aside NOT DISTINGUISHED", A.aside_label([0.05, 0.06] * 4, [0.06, 0.05] * 4)[0] == "NOT DISTINGUISHED FROM ASIDES")
 # ---- B verdict
-for g_ in ("OFF", "ON", "MIXED"):
-    for c_ in ("STATE BOUND TO PLACE", "STATE NOT SHOWN USED"):
-        v = A.b_verdict(g_, 4, 8, "NOT DISTINGUISHED FROM ASIDES", c_)
-        exp = {"OFF": "STATE VERBS STAY OFF THE MAP", "ON": "STATE VERBS MOVE THE MAP", "MIXED": "MIXED"}[g_]
-        ok(f"B {g_} / {c_[:16]}", v.startswith(exp) and (("not shown used" in v) == c_.startswith("STATE NOT")), f"-> {v}")
+for g_ in ("OFF", "ON", "MIXED", "UNDEFINED"):
+    for c_ in ("STATE BOUND TO PLACE", "STATE NOT SHOWN USED", A.C_UNMEASURED + " (x)"):
+        v = A.b_verdict(g_, 4, 3, 1, 8, "NOT DISTINGUISHED FROM ASIDES", c_)
+        exp = {"OFF": "STATE VERBS STAY OFF THE MAP PLANE (within the aside range", "ON": "STATE VERBS MOVE THE MAP PLANE",
+               "MIXED": "MIXED: STATE VERBS OFF THE MAP PLANE ON 4/8", "UNDEFINED": "B UNDEFINED"}[g_]
+        ok(f"B {g_} / {c_[:16]}", v.startswith(exp) and (("not shown used" in v) == c_.startswith("STATE NOT"))
+           and (("1/8 seeds undefined" in v) == (g_ != "UNDEFINED")), f"-> {v}")
+ok("C unmeasured rule: all arms <= F1 (A1)", A.c_unmeasured({"a": [0.2] * 8, "b": [0.21] * 8}, 0.211)
+   and not A.c_unmeasured({"a": [0.2] * 7 + [0.3], "b": [0.1] * 8}, 0.211))
 # ---- functional (secondary)
 ok("func COSTS", A.func_label([0.03 + 0.001 * i for i in range(8)])[0] == "COSTS")
 ok("func USED", A.func_label([-0.03 - 0.001 * i for i in range(8)])[0] == "USED")
@@ -75,7 +86,7 @@ FL = {"constant": {"all": 0.514, "T1": 0.512, "T2drop": 0.0}, "revcopy": {"all":
 STR = ("all", "T1", "T1s", "T1a", "T1clean", "T2take", "T2drop", "T3")
 
 
-def run(arm, accs, rs=None, shift=0.04, aside=0.05, cls="SOLVED", epochs=900, L=-0.003):
+def run(arm, accs, rs=None, shift=0.04, aside=0.05, cls="SOLVED", epochs=900, L=-0.003, kw_ac=0.2):
     a = {"intact": {k: accs.get(k, accs["all"]) for k in STR}}
     a["intact_rs"] = {k: (rs or accs).get(k, (rs or accs)["all"]) for k in STR}
     r = {"arm": arm, "acc": a, "cls": cls, "tail": 0.01 if cls == "SOLVED" else 0.3, "epochs": epochs, "acc2048": accs["all"]}
@@ -83,7 +94,7 @@ def run(arm, accs, rs=None, shift=0.04, aside=0.05, cls="SOLVED", epochs=900, L=
         z = arm == "DirOnly"
         r["geom"] = {"shift_sc": 0.0 if z else shift, "shift_take": 0.0 if z else shift, "shift_drop": 0.0 if z else shift,
                      "shift_aside": 0.0 if z else aside, "R_sc": 0.0 if z else 0.3, "R_aside": 0.0 if z else 0.4,
-                     "carry_cos": 0.1, "class_step": {"verb": 0.1, "take_verb": 0.05}}
+                     "carry_cos": 0.1, "axis_cos": kw_ac, "dist_take": 0.2, "dist_drop": 0.2, "class_step": {"verb": 0.1, "take_verb": 0.05}}
         r.update(L_sc=0.0 if z else L, L_sc_rs=0.0 if z else L, L_sc0=0.0 if z else -0.01, L_sc_all=0.0 if z else L,
                  L_aside=0.0 if z else -0.003, drift_sc=0.0 if z else 0.05, drift_aside=0.0 if z else 0.1,
                  drift_optword=0.03, clock_channels=2, reliance=0.0 if z else 0.48)
@@ -95,7 +106,8 @@ def batch(**kw):
     for i, s in enumerate(A.SEEDS):
         j = 0.001 * i
         res[f"MapWM_s{s}"] = run("MapWM", kw.get("W", {"all": 0.99 + j, "T1": 0.995 + j / 2, "T2drop": 0.95 - j}),
-                                 shift=kw.get("Wshift", 0.04 + j), aside=0.05 + j / 2)
+                                 shift=kw.get("Wshift", 0.04 + j), aside=kw.get("Waside", 0.05 + j / 2),
+                                 kw_ac=kw.get("Wac", 0.2) if i < kw.get("Wac_n", 8) else 0.2)
         res[f"NormStep_s{s}"] = run("NormStep", kw.get("N", {"all": 0.99 + j, "T1": 0.995, "T2drop": 0.94 - j}),
                                     shift=kw.get("Nshift", 0.05 + j), aside=0.05)
         res[f"DirOnly_s{s}"] = run("DirOnly", kw.get("D", {"all": 0.972 + j / 10, "T1": 0.975, "T2drop": 0.80 + j}),
@@ -113,12 +125,24 @@ def go(res, fl=FL):
 
 V, txt = go(batch())
 ok("e2e predicted: A", V["A"].startswith("PATH NEEDED"), f"-> {V['A']}")
-ok("e2e predicted: B MapWM", V["B_MapWM"].startswith("STATE VERBS STAY OFF THE MAP"), f"-> {V['B_MapWM']}")
+ok("e2e predicted: B MapWM", V["B_MapWM"].startswith("STATE VERBS STAY OFF THE MAP PLANE (within the aside range"),
+   f"-> {V['B_MapWM']}")
+ok("e2e predicted: R, dist and axis |cos| printed beside B (A1)", "off-plane dist" in txt and "axis |cos|" in txt)
 ok("e2e predicted: C MapWM", V["C_MapWM"].startswith("STATE BOUND TO PLACE"), f"-> {V['C_MapWM']}")
 ok("e2e predicted: D2 DirOnly worse", V["D2"].startswith("WORSE"), f"-> {V['D2']}")
-ok("e2e predicted: SUMMARY holds", V["SUMMARY"].startswith("PREDICTION HOLDS"))
+ok("e2e predicted: SUMMARY holds", V["SUMMARY"].startswith("PREDICTION HOLDS (location"))
+V, _ = go(batch(Wshift=0.09, Waside=0.02))
+ok("e2e OFF but larger than asides: SUMMARY does not hold (A1)", V["B_MapWM"].startswith("STATE VERBS STAY OFF")
+   and "(larger than asides)" in V["B_MapWM"] and V["SUMMARY"].startswith("PREDICTION DOES NOT HOLD"), f"-> {V['SUMMARY']}")
+V, _ = go(batch(Wac=0.999, Wac_n=3))
+ok("e2e 3 collinear-axis seeds: B UNDEFINED (A1)", V["B_MapWM"].startswith("B UNDEFINED"), f"-> {V['B_MapWM']}")
+V, _ = go(batch(W={"all": 0.9, "T1": 0.99, "T2drop": 0.1}, N={"all": 0.9, "T1": 0.99, "T2drop": 0.15},
+                D={"all": 0.97, "T1": 0.975, "T2drop": 0.2}))
+ok("e2e no arm above F1: C UNMEASURED, B unqualified, SUMMARY 'C unmeasured' (A1)",
+   V["C_MapWM"].startswith(A.C_UNMEASURED) and "not shown used" not in V["B_MapWM"]
+   and V["SUMMARY"] == "PREDICTION HOLDS FOR A AND B; C UNMEASURED AT 1 LAYER", f"-> {V['C_MapWM']} | {V['SUMMARY']}")
 V, _ = go(batch(Wshift=0.3, Nshift=0.05))
-ok("e2e leak: B MapWM MOVE + LARGER", V["B_MapWM"].startswith("STATE VERBS MOVE THE MAP") and "larger than asides" in V["B_MapWM"],
+ok("e2e leak: B MapWM MOVE + LARGER", V["B_MapWM"].startswith("STATE VERBS MOVE THE MAP PLANE") and "larger than asides" in V["B_MapWM"],
    f"-> {V['B_MapWM']}")
 ok("e2e leak: B NormStep OFF", V["B_NormStep"].startswith("STATE VERBS STAY OFF"))
 ok("e2e leak: SUMMARY does not hold", V["SUMMARY"].startswith("PREDICTION DOES NOT HOLD"))

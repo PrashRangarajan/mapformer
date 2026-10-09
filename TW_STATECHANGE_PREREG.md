@@ -56,7 +56,7 @@ read with the same readout code (the calibration below).
 | stale map: first 'saw' at the cell (location oracle, no state) | 0.754 | 1.000 | 1.000 | 0.000 | 0.000 | 0.000 |
 | last 'saw' at the cell (location oracle with recency, no state) | 0.804 | 1.000 | 1.000 | 0.000 | 0.000 | 1.000 |
 No word n-gram beats the constant. T2take is decided by the constant ('nothing'), so it cannot show state use; **T2drop
-is the clean state stratum**: every state-free rule scores 0 on it, location-free state rules at most 0.211 when applied
+is the clean state stratum**: every state-free rule scores 0 on it (the order-5 word n-gram 0.002; corrected in Amendment 1), location-free state rules at most 0.211 when applied
 uniformly (reversal-copy with state, the best rule overall) and 0.649 for the last-dropped rule (which scores 0.106 on all
 targets: no model can apply it only where it is right without knowing the location).
 - p_take = p_drop: 0.2 gives state clauses on 9.9% of moves and only 133 T2drop targets per 100 walks; 0.6 gives 27.4% and
@@ -304,3 +304,54 @@ Only after: GAIN_PHASE finishes (or the user frees slots), the pilot amendment i
   measured step); a different threshold rationale (e.g. a fraction of a move that would break exact return over the
   typical number of state clauses between visits) is a candidate amendment.
 - The T2take stratum cannot show state use (the constant answers it); it is reported but carries no decision.
+
+## Amendment 1 (2026-10-08, after an independent code audit of 87d57f3, BEFORE any run; CPU only, no pilot, no launch)
+The audit (blind; no batch result exists) found no bug. Finding -> change; the text above is kept for the record and the
+items below REPLACE it where they conflict. Code: `analyze_tw_statechange.py`, `run_tw_statechange.sh`, the smoke test.
+1. **SUMMARY ignored the aside comparison.** A state shift ~4x the aside shift (e.g. 0.09 vs 0.02) read "STAY OFF THE MAP
+   (larger than asides)" and "PREDICTION HOLDS"; SHIFT_OFF = 0.10 is the TOP of the calibrated aside range (pooled median
+   ~0.03), so OFF means "up to ~3x a median aside". -> SUMMARY now also requires B MapWM not to be LARGER THAN ASIDES, and
+   the OFF label reads "STATE VERBS STAY OFF THE MAP PLANE (within the aside range, <= 0.10 move per clause)".
+2. **B is an unweighted in-plane projection, not "net displacement ~0"** (the Question's wording, line 14-15, overstated
+   it). -> The labels say MAP PLANE ("STAY OFF THE MAP PLANE" / "MOVE THE MAP PLANE (> 0.10 move per clause, above the aside
+   range)" / "MIXED: ... OFF THE MAP PLANE ON k/8 SEEDS"); per seed, R (total displacement, any direction) and the off-plane
+   dist are printed beside the shift, with each seed's axis |cos|. Rule: a seed is UNDEFINED -- counted neither OFF nor ON
+   -- if its shift is not finite (zero axis step, hbar = 0; it was counted ON before) or its two axis half-steps have
+   |cos| > 0.99 (QR's second plane direction is then arbitrary; stored example NormStepNB s10, 1.000). OFF / ON still need
+   6 of 8 seeds; if fewer than 6 seeds are defined, B reads "B UNDEFINED: NO MAP PLANE ON u/8 SEEDS"; otherwise undefined
+   seeds are named in the line. Undefined pairs are dropped from the aside comparison.
+3. **C had no positive control (rule 14).** No existence construction is built at this stage (a hand-set one-layer model
+   needs the location map as well as the role offset; the pilot's trained seed is the first evidence either way). ->
+   Registered branch: if MapWM, NormStep AND DirOnly are all <= F1 (0.211) on T2drop on every seed, C reads
+   "STATE BINDING UNMEASURED AT 1 LAYER (no path arm above F1 on any seed; no existence construction)" for both arms, B
+   carries NO "not shown used" qualifier on that basis, and SUMMARY reads "PREDICTION HOLDS FOR A AND B; C UNMEASURED AT 1
+   LAYER" (or "PREDICTION DOES NOT HOLD AS STATED (see A, B); C UNMEASURED AT 1 LAYER"). The "STATE NOT SHOWN USED" label
+   and B's qualifier remain for the case where some path arm does bind state on some seed. The rule is re-checked on
+   eval-mode accuracy for the FLAG line.
+4. **SOLVED now includes the state targets.** The training loss (and so SOLVED, final-5% loss < 0.05) is taken over every
+   revisit target, T2 and T3 included; an arm that solves location but not state may never reach 0.05, so the Fisher route
+   of `contrast_state` may go inert, and the power table's SOLVED rates (from text-world runs, where all targets were
+   location) need not transfer. The accuracy route decides every registered accuracy label.
+5. **C's test, stated exactly (code and text agree):** per seed d = acc(T2drop) - F; a label fires if mean(d) >= 0.10 (a
+   materiality floor) AND the exact sign-flip test of mean(d) = 0 gives p < .05. It is not a test against 0.10.
+6. **Gate table:** the order-5 word n-gram scores 0.002 on T2drop, not 0 (fixed in place above; the floor F is unchanged).
+7. **Driver.** lib_driver's `drv_wait_slot` / `drv_wait_dir` loop forever and `drv_wait_dir` counts any python3 with the run
+   dir in argv. -> The driver uses its own bounded waits: a free slot within 48 h (`TWSC_SLOT_TIMEOUT`), and after the last
+   launch it waits only on this batch's TRAINERS (python3 with `mapformer.train_tw_statechange` AND the run dir in argv),
+   at most 24 h (`TWSC_DIR_TIMEOUT`), each failing loudly (no done marker). The duplicate-launch guard matches the exact
+   absolute `--output-dir`, the relative `runs/tw_statechange/p0/<run>`, any path ending in `/runs/tw_statechange/p0/<run>`,
+   and trailing slashes. The driver's first analysis call (`--readouts`) now writes the readouts only; the verdicts file is
+   written once, by the second call. Dry run (scratch mirror, `DRV_DRYRUN=1`): 30 launches; a dummy holding the RELATIVE
+   path of NormStep_s51 and one holding MapWM_s52 with a trailing slash were both skipped; a dummy on the prefix `..._s5`
+   and a non-trainer dummy carrying the run dir in argv (an orphaned-worker stand-in) blocked nothing; the driver then
+   failed at the missing checkpoints, as it must in a dry run.
+Re-run after the changes, all CPU: smoke (`tw_statechange_smoke_out.txt`, 64 cases, ALL PASS; new: UNDEFINED from a
+NaN shift and from collinear axes, NaN not counted ON, undefined seeds named, the B x C table with the unmeasured C, the
+C-unmeasured rule, end-to-end "OFF but larger than asides" -> SUMMARY does not hold, 3 collinear-axis seeds -> B
+UNDEFINED, no path arm above F1 -> C UNMEASURED with B unqualified and SUMMARY "HOLDS FOR A AND B; C UNMEASURED"; R, dist
+and axis |cos| printed); construction checks (`tw_statechange_checks_out.txt`, ALL PASS, unchanged); power
+(`tw_statechange_power_out.txt`: labels unchanged in substance -- B's OFF / ON / MIXED counts and the aside comparison are
+computed as before; scenario numbers in the Power section stand, identical
+draws). New reading from the same table: B MapWM's SUMMARY condition (OFF and not LARGER THAN ASIDES) holds with probability
+0.96 for an aside-like clause, but still 0.62 for a clause at 2x the aside shift and 0.29 at 3x: the paired aside test is
+the only guard against a moderate leak and it is weak (conservative simulation, see Power).. The gate is untouched (not re-run).

@@ -45,13 +45,24 @@ def contrast_state(x, y, sx, sy, n, acc_min=ACC_MIN):
     return f"NO DIFFERENCE (unmeasured below {m_:.4f})", info
 
 
-def geom_label(shifts, thr=SHIFT_OFF, k=OFF_K):
-    n_off = sum(s <= thr for s in shifts); n = len(shifts)
+AXIS_COS_MAX = 0.99      # Amendment 1: a seed whose two axis half-steps have |cos| > 0.99 has no defined map plane
+
+
+def geom_label(shifts, axis_cos=None, thr=SHIFT_OFF, k=OFF_K):
+    """-> (label, n_off, n_on, n_undef). A seed is UNDEFINED if its shift is not finite (zero axis step) or its axes are
+    collinear (|cos| > AXIS_COS_MAX: QR's second plane direction is then arbitrary); undefined seeds count neither OFF
+    nor ON (Amendment 1). OFF / ON need k*n/8 defined seeds; UNDEFINED if fewer than k*n/8 seeds are defined."""
+    n = len(shifts); ac = axis_cos if axis_cos is not None else [0.0] * n
+    ok = [math.isfinite(s) and math.isfinite(c) and abs(c) <= AXIS_COS_MAX for s, c in zip(shifts, ac)]
+    n_off = sum(o and s <= thr for s, o in zip(shifts, ok)); n_on = sum(o and s > thr for s, o in zip(shifts, ok))
+    n_undef = n - n_off - n_on
     if n_off >= k * n / 8:
-        return "OFF", n_off
-    if n - n_off >= k * n / 8:
-        return "ON", n_off
-    return "MIXED", n_off
+        return "OFF", n_off, n_on, n_undef
+    if n_on >= k * n / 8:
+        return "ON", n_off, n_on, n_undef
+    if n - n_undef < k * n / 8:
+        return "UNDEFINED", n_off, n_on, n_undef
+    return "MIXED", n_off, n_on, n_undef
 
 
 def func_label(L, l_min=L_MIN):
@@ -67,26 +78,43 @@ def func_label(L, l_min=L_MIN):
 
 def aside_label(sh, sa):
     """Paired by seed: state-clause shift minus aside shift in the same model (sign-flip, two-sided)."""
-    dd = np.asarray(sh, float) - np.asarray(sa, float); p = signflip_p(dd)["p"]; m = float(dd.mean())
+    dd = np.asarray(sh, float) - np.asarray(sa, float); dd = dd[np.isfinite(dd)]
+    if dd.size < 2:
+        return "NOT DISTINGUISHED FROM ASIDES", float("nan"), 1.0
+    p = signflip_p(dd)["p"]; m = float(dd.mean())
     if p < 0.05:
         return ("LARGER THAN ASIDES" if m > 0 else "SMALLER THAN ASIDES"), m, p
     return "NOT DISTINGUISHED FROM ASIDES", m, p
 
 
-B_HEAD = {"OFF": "STATE VERBS STAY OFF THE MAP", "ON": "STATE VERBS MOVE THE MAP"}
+C_UNMEASURED = "STATE BINDING UNMEASURED AT 1 LAYER"
 
 
-def b_verdict(g, n_off, n, al, c_label):
-    head = B_HEAD.get(g) or f"MIXED: STATE VERBS OFF THE MAP ON {n_off}/{n} SEEDS"
+def b_verdict(g, n_off, n_on, n_undef, n, al, c_label):
+    """Amendment 1: B reads the MAP PLANE (an in-plane projection), and OFF means 'within the aside range'."""
+    head = {"OFF": f"STATE VERBS STAY OFF THE MAP PLANE (within the aside range, <= {SHIFT_OFF} move per clause)",
+            "ON": f"STATE VERBS MOVE THE MAP PLANE (> {SHIFT_OFF} move per clause, above the aside range)",
+            "MIXED": f"MIXED: STATE VERBS OFF THE MAP PLANE ON {n_off}/{n} SEEDS",
+            "UNDEFINED": f"B UNDEFINED: NO MAP PLANE ON {n_undef}/{n} SEEDS (axis |cos| > {AXIS_COS_MAX} or zero axis step)"}[g]
     head += f" ({al.lower()})"
+    if n_undef and g != "UNDEFINED":
+        head += f" [{n_undef}/{n} seeds undefined, counted neither off nor on]"
     if c_label.startswith("STATE NOT SHOWN"):
         head += " [state not shown used by this arm (C): the clauses are not shown task-relevant to it]"
     return head
 
 
+def c_unmeasured(t2drop_by_arm, F1):
+    """Amendment 1 (no positive control, rule 14): if every path arm (MapWM, NormStep, DirOnly) is <= F1 on T2drop on
+    every seed, nothing shows that a one-layer path model CAN bind state here, so C is UNMEASURED, not negative."""
+    return all(a <= F1 for accs in t2drop_by_arm.values() for a in accs)
+
+
 def c_label(acc_t2drop, F1, F2, margin=C_MARGIN):
     """F1: T2drop accuracy of the best location-free rule chosen on ALL revisit targets (the rule a model without path
-    integration would apply); F2: the best location-free rule on T2drop alone (an upper bound no uniform rule reaches)."""
+    integration would apply); F2: the best location-free rule on T2drop alone (an upper bound no uniform rule reaches).
+    Test (Amendment 1, stated): d = acc - F per seed; fires if mean(d) >= margin AND the sign-flip test of mean(d) = 0
+    gives p < .05 (a materiality floor plus a test against 0, not a test against the margin)."""
     a = np.asarray(acc_t2drop, float)
     out = {}
     for tag, F in (("F2", F2), ("F1", F1)):
@@ -166,8 +194,16 @@ def analyse(res, fl, seeds=SEEDS, epochs=EPOCHS, out=print):
     # ---- C (before B: B carries C's qualifier)
     out(f"\n== C STATE BOUND TO PLACE: T2drop accuracy vs F2 = {F2:.4f} and F1 = {F1:.4f} (margin {C_MARGIN}, sign-flip) ==")
     Cl = {}
+    unm = c_unmeasured({a: acc(a, "T2drop") for a in ("MapWM", "NormStep", "DirOnly")}, F1)
+    unm_r = c_unmeasured({a: acc(a, "T2drop", ALT_V) for a in ("MapWM", "NormStep", "DirOnly")}, F1)
+    out(f"  every path arm <= F1 on T2drop on every seed: {unm} (DirOnly T2drop "
+        f"{' '.join(f'{a:.3f}' for a in acc('DirOnly', 'T2drop'))})")
     for arm in ("MapWM", "NormStep"):
         lab, o = c_label(acc(arm, "T2drop"), F1, F2); labr, _ = c_label(acc(arm, "T2drop", ALT_V), F1, F2)
+        if unm:
+            lab = f"{C_UNMEASURED} (no path arm above F1 on any seed; no existence construction)"
+        if unm_r:
+            labr = C_UNMEASURED
         Cl[arm] = lab
         out(f"  {arm}: T2drop {' '.join(f'{a:.3f}' for a in acc(arm, 'T2drop'))}; - F2 {o['F2'][0]:+.4f} (p {o['F2'][1]:.4f}),"
             f" - F1 {o['F1'][0]:+.4f} (p {o['F1'][1]:.4f})")
@@ -180,10 +216,15 @@ def analyse(res, fl, seeds=SEEDS, epochs=EPOCHS, out=print):
         f"and the same model's aside shift (paired sign-flip) ==")
     for arm in ("MapWM", "NormStep"):
         sh = g(arm, lambda r: r["geom"]["shift_sc"]); sa = g(arm, lambda r: r["geom"]["shift_aside"])
-        gl, n_off = geom_label(sh); al, m_, p_ = aside_label(sh, sa)
-        out(f"  {arm}: state shift {' '.join(f'{x:.3f}' for x in sh)} -> {gl} ({n_off}/{n} <= {SHIFT_OFF}); aside shift "
-            f"{' '.join(f'{x:.3f}' for x in sa)}; state - aside {m_:+.4f} moves, sign-flip p {p_:.4f} -> {al}")
-        V[f"B_{arm}"] = b_verdict(gl, n_off, n, al, Cl[arm])
+        ac = g(arm, lambda r: r["geom"]["axis_cos"])
+        gl, n_off, n_on, n_undef = geom_label(sh, ac); al, m_, p_ = aside_label(sh, sa)
+        out(f"  {arm}: state shift {' '.join(f'{x:.3f}' for x in sh)} -> {gl} ({n_off} off / {n_on} on / {n_undef} undefined "
+            f"of {n}); aside shift {' '.join(f'{x:.3f}' for x in sa)}; state - aside {m_:+.4f} moves, sign-flip p {p_:.4f} -> {al}")
+        out(f"     beside it (Amendment 1): R state {' '.join(f'{x:.3f}' for x in g(arm, lambda r: r['geom']['R_sc']))}; "
+            f"off-plane dist {' '.join(f'{x:.3f}' for x in g(arm, lambda r: (r['geom']['dist_take'] + r['geom']['dist_drop']) / 2))}"
+            f"; axis |cos| {' '.join(f'{abs(x):.3f}' for x in ac)} (flagged > {AXIS_COS_MAX}: "
+            f"{sum(abs(x) > AXIS_COS_MAX for x in ac)})")
+        V[f"B_{arm}"] = b_verdict(gl, n_off, n_on, n_undef, n, al, Cl[arm])
         out(f"  REGISTERED B ({arm}): {V[f'B_{arm}']}")
 
     # ---- D
@@ -195,10 +236,17 @@ def analyse(res, fl, seeds=SEEDS, epochs=EPOCHS, out=print):
         out(f"  {tag}: {i_}\n  REGISTERED {tag[:2]}: {V[tag[:2]]}")
 
     # ---- the question, from A, B(MapWM), C(MapWM) -- no new test
-    holds = (V["A"].startswith("PATH NEEDED") and V["B_MapWM"].startswith("STATE VERBS STAY OFF THE MAP")
-             and not Cl["MapWM"].startswith("STATE NOT SHOWN"))
-    V["SUMMARY"] = ("PREDICTION HOLDS (location needs path integration; learned steps keep state verbs off the map while "
-                    "state is used)" if holds else "PREDICTION DOES NOT HOLD AS STATED (see A, B, C)")
+    # Amendment 1: B must also not be LARGER THAN ASIDES; an unmeasured C is reported as such, not as a failure
+    ab = (V["A"].startswith("PATH NEEDED") and V["B_MapWM"].startswith("STATE VERBS STAY OFF THE MAP PLANE")
+          and "(larger than asides)" not in V["B_MapWM"])
+    if Cl["MapWM"].startswith(C_UNMEASURED):
+        V["SUMMARY"] = ("PREDICTION HOLDS FOR A AND B; C UNMEASURED AT 1 LAYER" if ab else
+                        "PREDICTION DOES NOT HOLD AS STATED (see A, B); C UNMEASURED AT 1 LAYER")
+    else:
+        holds = ab and not Cl["MapWM"].startswith("STATE NOT SHOWN")
+        V["SUMMARY"] = ("PREDICTION HOLDS (location needs path integration; learned steps keep state verbs off the map "
+                        "plane, within the aside range and not larger than asides, while state is used)" if holds
+                        else "PREDICTION DOES NOT HOLD AS STATED (see A, B, C)")
     out(f"\n  SUMMARY (computed, no new test): {V['SUMMARY']}")
     if flags:
         out(f"  re-score flags on: {', '.join(flags)}")
@@ -269,8 +317,9 @@ def main():
     ap.add_argument("--verdicts", default=f"{REPO}/TW_STATECHANGE_VERDICTS.json")
     a = ap.parse_args()
     seeds = [int(s) for s in a.seeds.split(",")]
-    if a.readouts:
-        res, fl = collect(a.runs_dir, seeds, a.out)
+    if a.readouts:                                  # Amendment 1: readouts only; the verdicts are written once, by the
+        collect(a.runs_dir, seeds, a.out)           # second (analysis) call
+        print("\nreadouts written; run without --readouts for the verdicts"); return
     else:
         d = json.load(open(a.out)); res, fl = d["runs"], d["floors"]
     if len(seeds) < 8:
