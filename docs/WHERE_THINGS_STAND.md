@@ -1,4 +1,6 @@
 # Where things stand -- 2026-10-03
+> **Update 2026-10-09:** results since 10-03 (dropout re-score, MapPoPE separated, SCORE_RANK, GAIN_GRAIN, neuro review, word-class
+> breakdown) and the running / queued / ready batches: `docs/SESSION_2026-10-04_to_10-09.md`, `.claude-memory/project_state.md`, CLAUDE.md rows.
 
 Orientation for a fresh session. Read `.claude-memory/project_state.md` first (what is running, what the user
 must decide), then this. `CLAUDE.md` holds the conventions, the citable table and the withdrawal list and is the
