@@ -8,16 +8,14 @@ metadata:
 Updated 2026-10-04 00:45. Goes stale fast: check `git log`, `.done` markers and results files first.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs/SESSION_2026-09-27_to_10-03.md`.
 
-## Running
-Nothing. Two batches READY, NOT LAUNCHED (user: no GPU work while another user's jobs occupy the GPUs; launch only on the
-user's go):
-- GAIN_PHASE (`GAIN_PHASE_PREREG.md` + Amendments 1-3, latest 596cfbd): new-object task, 2x2 step {raw, NormStep} x score
-  {MapWM, GainScalar}; seeds 8-15, 32 runs, ~11-15 h. Launch: `setsid nohup bash run_gain_phase.sh > /dev/null 2>&1 &`.
-- RANK_NOWRAP (`RANK_NOWRAP_PREREG.md` + Amendments 1-4, latest f8ecf92/20162f2): rank 2 vs 3 on a 256-torus (no
-  wrap-only revisits) + 32-torus control + redrawn-map M32; registered quantity p = plain-hard accuracy; n switch
-  `N_SEEDS` in analyze_rank_nowrap.py (10 registered; user to choose 10 or 12); ~16-23 h. Launch: `setsid nohup bash
-  run_rank_nowrap.sh > /dev/null 2>&1 &`.
-Each batch had an independent verification per amendment round (rule 29). Recommended order: GAIN_PHASE first.
+## Running (launched 2026-10-08 19:04, on the user's go; GPUs were nearly free)
+- GAIN_PHASE (`GAIN_PHASE_PREREG.md` + Amendments 1-3): 32 runs, seeds 8-15, `run_gain_phase.sh`, ETA ~11-15 h.
+  Marker `.gain_phase_done`; artifacts GAIN_PHASE_EVAL.json / _ANALYSIS.txt / _VERDICTS.json.
+- RANK_NOWRAP (`RANK_NOWRAP_PREREG.md` + Amendments 1-4; N_SEEDS = 12 fixed before launch, commit 9755355): QUEUED by
+  a setsid waiter (scratchpad queue_rank_nowrap.sh) that starts `run_rank_nowrap.sh` when the GAIN_PHASE driver exits;
+  log rank_nowrap_queue.log. 60 runs, ETA ~19-23 h after it starts.
+Both had an independent verification per amendment round. If either driver dies while trainers run, check with the
+rule-23 ps/awk pattern before relaunching (both drivers have a per-run-dir duplicate guard).
 
 ## Last results (newest first; one line each, numbers in the file)
 - GAIN_GRAIN (`GAIN_GRAIN_RESULTS.md`, REG): (a) SCALAR GAIN SUFFICES (per-module too) vs MapPoPE-Pair, NO HEADROOM
