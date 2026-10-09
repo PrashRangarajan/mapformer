@@ -5,20 +5,15 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-09 02:30 (before a compaction). Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-09 12:40. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- GAIN_PHASE (`GAIN_PHASE_PREREG.md` + Amendments 1-3): launched 2026-10-08 19:04 (code 9755355, clean); 32 runs, seeds
-  8-15; 14/32 done at 02:18; ETA ~07:30-08:00. Driver `run_gain_phase.sh`, log `gain_phase.log`, marker `.gain_phase_done`;
-  artifacts GAIN_PHASE_EVAL.json / _ANALYSIS.txt / _VERDICTS.json. Then: GAIN_PHASE_RESULTS.md, CLAUDE.md row, report.
-- QUEUED (user, 2026-10-09): `docs/audits/2026-10-09/queue_tw_statechange_pilot.sh` (setsid waiter; log
-  runs/tw_statechange_pilot/queue.log) waits for the GAIN_PHASE driver + trainers to exit, then runs the TW_STATECHANGE
-  pilot: (a) GPU bitwise repro (`docs/audits/2026-10-08/tw_statechange_repro.py 5 cuda:0` -> `_repro_gpu_out.txt`),
-  (b) 4 arms at seed 150 (900 ep, 2/GPU), (c) pilot readouts -> runs/tw_statechange_pilot/TWSC_PILOT.json; marker
-  `.tw_statechange_pilot_done`. It does NOT launch the batch. NEXT: read the pilot, write the pilot amendment
-  (timing, repro pass/fail, whether 1-layer models learn the state targets), commit, then launch
-  `run_tw_statechange.sh` (32 runs, ~3 h). The user asked to "start with state change at least".
+- Nothing of ours. GAIN_PHASE finished 2026-10-09 09:05 (written up). TW_STATECHANGE pilot ran 09:10-09:44 (queue
+  script; log runs/tw_statechange_pilot/queue.log) and is disclosed as TW_STATECHANGE_PREREG Amendment 2.
+- NEXT: launch the TW_STATECHANGE batch (32 runs, ~3 h): `cd /home/prashr/mapformer && setsid nohup bash
+  run_tw_statechange.sh > /dev/null 2>&1 &` -- ONLY when the GPUs are free of another user's jobs (12:40: vsathish had
+  2 small jobs, GPU 1 at 98%; held). Rule-29 audit is Amendment 1; read results only after the done marker.
 
 ## Ready, not launched (each audited + amended; user chooses)
 - TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or
@@ -31,6 +26,11 @@ The user is cost-sensitive (a day of GPU is "a lot") and does not want our jobs 
 are there; check `nvidia-smi` owners before launching and ask if another user is active.
 
 ## Last results (newest first; one line each, numbers in the file)
+- TW_STATECHANGE pilot (Amendment 2, n=1, seed 150): repro bitwise pass; NormStep binds state to place (T2drop 0.998
+  vs last-dropped floor 0.649); MapWM descending (T2drop 0.673); DirOnly 0.928; RoPE stalled 0.515; shift_sc < 0.10.
+- GAIN_PHASE (`GAIN_PHASE_RESULTS.md`, REG): SEPARATE DEFECTS (leak in theta; step fix removes it, score fix does not);
+  THE GAIN-PHASE MAP WORKS (0.9994, 8/8, min 0.998; non-inferior to NormStep); D1r replicates LEAK on SOLVED only
+  (accuracy +0.0045, p 0.46); gain score no difference; no speed-up (x1.03).
 - Word-class breakdown of text-world models (`docs/audits/2026-10-08/tw_wordclass_out.txt`, POST HOC): only direction-word
   identity carries position (-0.49 when mean-substituted); other classes act as blocks (per-move offsets); adverbs and
   fillers are inert; NormStep keeps position more on direction words.
