@@ -1,0 +1,12 @@
+PASS C1 rate 0 == TextWorld (tokens, masks, RNG state, generate_batch) 
+PASS C2 conditions consume identical draws (asserted inside render_conditions) 
+PASS C3 named rendering minus name clauses == stripped prefix 
+PASS C4 names: injective, constant per cell, at object-3 (mark at -4); fresh never repeat; conflict -> other visited landmark with its object recorded 
+PASS C5 rate-0.5 landmarks subset of rate-1 landmarks, same names 
+PASS C6 landmark share of cells at rate 0.5 (0.4967, 18058 cells, 4 se 0.0149)
+PASS C7 names redrawn per walk; pool disjoint from text-world words; ids < vocab (cells seen in >1 walk with >1 name: 0.695)
+   MapWM 1L untrained: identity-hook max |logit diff| 1.07e-06; acc 0.0000; reliance +0.0000
+   MapWM 2L untrained: identity-hook max |logit diff| 1.19e-06; acc 0.0000; reliance +0.0000
+PASS C8 same init across rates; layers; identity hook inert; untrained reliance ~0 
+PASS C9 CPU trainer determinism (losses and weights bitwise, data workers on) (losses [6.571782112121582, 5.125312328338623])
+ALL PASS
