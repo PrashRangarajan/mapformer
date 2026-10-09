@@ -11,9 +11,8 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; this week's narrative is `docs
 ## Running (launched 2026-10-08 19:04, on the user's go; GPUs were nearly free)
 - GAIN_PHASE (`GAIN_PHASE_PREREG.md` + Amendments 1-3): 32 runs, seeds 8-15, `run_gain_phase.sh`, ETA ~11-15 h.
   Marker `.gain_phase_done`; artifacts GAIN_PHASE_EVAL.json / _ANALYSIS.txt / _VERDICTS.json.
-- RANK_NOWRAP (`RANK_NOWRAP_PREREG.md` + Amendments 1-4; N_SEEDS = 12 fixed before launch, commit 9755355): QUEUED by
-  a setsid waiter (scratchpad queue_rank_nowrap.sh) that starts `run_rank_nowrap.sh` when the GAIN_PHASE driver exits;
-  log rank_nowrap_queue.log. 60 runs, ETA ~19-23 h after it starts.
+- RANK_NOWRAP: POSTPONED by the user 2026-10-08 (cost ~19-23 h); the queue waiter was killed before it launched
+  anything. Ready to launch later (`run_rank_nowrap.sh`, N_SEEDS 12; consider 8 if time-limited).
 Both had an independent verification per amendment round. If either driver dies while trainers run, check with the
 rule-23 ps/awk pattern before relaunching (both drivers have a per-run-dir duplicate guard).
 
