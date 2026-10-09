@@ -1,0 +1,40 @@
+== 1 vocabulary 89 (TextWorld 58 + 31 new): [',', 'after', 'long', 'pause', 'some', 'with', 'sigh', 'shrug', 'while', 'next', 'soon', 'finally', 'dreamt', 'imagined', 'recalled', 'so', 'thus', 'hence', 'said', 'read', 'showed', 'later', 'the', 'sign', 'pointing', 'heard', 'sound', 'from', 'cold', 'wind', 'blew']
+sample: went left and found stone . she saw a sign pointing up . walked west looked and found key . she , with a sigh and a shrug , dreamt moved eastward then looked there was key . stepped carefully west and noticed clock . stepped west there was box . she , after a long pause and some thought , next stepped west and noticed cup . she heard a sound from the south . went quietly left around for for and noticed rope . headed quickly westward a she and saw nothing . later , she headed eastward , for a while , showed the sign . stepped west and saw nothing . walked west there was nothing . she finally , after a long pause , wandered left and found bell . a story about a key . walked west there was nothing . headed left and noticed rope . a story about a chair . wandered
+T=1024: object slots / seq 77.2 (TextWorld ~132), revisit fraction 0.222 (TextWorld 0.231), scored targets / seq 17.2
+
+== 2 walk from move-role direction words only: 0 mismatches of 15449 steps
+
+== 3 direction words: 19994; non-movement 4488 = 0.224 of direction words; per seq 22.4 non-movement, 77.5 moves
+   by (role, form): {'move/base': 12392, 'move/lead_far': 769, 'move/lead_near': 787, 'move/trail_far': 798, 'move/trail_near': 760, 'nm/lead_far': 741, 'nm/lead_near': 786, 'nm/nat': 1510, 'nm/trail_far': 732, 'nm/trail_near': 719}
+   P(non-movement | synonym): north 0.224 up 0.239 northward 0.235 south 0.226 down 0.218 southward 0.216 west 0.225 left 0.212 westward 0.229 east 0.214 right 0.218 eastward 0.235
+
+== 4 role decidability
+   per frame: role predicted from the LOCAL window by frequency tables (before-4, after-3, joint; unseen -> 'move') and by a smoothed naive-Bayes over the 7 positional words, fit on a training-map sample, scored on the eval sample, vs the majority base rate within the frame
+   base/nat   : before4 1.000  after3 0.999  joint 1.000  naive_bayes 1.000  | base rate 0.891  (n 13902)
+   lead_near  : before4 1.000  after3 0.500  joint 0.654  naive_bayes 1.000  | base rate 0.500  (n 1573)
+   lead_far   : before4 0.501  after3 0.509  joint 0.505  naive_bayes 0.519  | base rate 0.509  (n 1510)
+   trail_near : before4 0.503  after3 0.999  joint 0.994  naive_bayes 1.000  | base rate 0.514  (n 1479)
+   trail_far  : before4 0.512  after3 0.520  joint 0.513  naive_bayes 0.478  | base rate 0.522  (n 1530)
+   sentence-level cue rule (nm iff the sentence holds a non-movement cue word): 0.9997 correct (n 19994)
+   cue distance to the direction word (tokens), non-movement classes: {'lead_far': (7, 12), 'lead_near': (2, 3), 'nat': (1, 3), 'trail_far': (6, 10), 'trail_near': (1, 1)}
+
+== 5 floors on the eval stream (3433 targets): best constant 0.5112; reversal-copy 0.6132; word n-gram 1:0.5112 2:0.5112 3:0.5112 4:0.4742 5:0.4658
+
+== 6 path oracles (most recent observation at the same key; fallback reversal-copy, else 'nothing')
+   clean   : 1.0000  (clean gaps 1.0000 n 581; contaminated gaps 1.0000 n 2852)
+   contam  : 0.5998  (clean gaps 1.0000 n 581; contaminated gaps 0.5182 n 2852)
+   dironly : 0.8558  (clean gaps 0.8571 n 581; contaminated gaps 0.8555 n 2852)
+   validation on plain TextWorld, clean   : 1.0000  (TW_NORMSTEP DirOnly 0.970-0.974 eval mode)
+   validation on plain TextWorld, dironly : 0.8556  (TW_NORMSTEP DirOnly 0.970-0.974 eval mode)
+   -> the aside-overwrite ('dironly') oracle FAILS its validation (0.856 vs a trained DirOnly's 0.97): not used.
+   calibration, ctx3 lead/far T=2048: contaminated oracle 0.6065 (contaminated gaps 0.5379); trained CF s0 0.8094 (clean gaps 1.0000, contaminated 0.7763)
+   calibration, ctx3 trail/far T=2048: contaminated oracle 0.5786 (contaminated gaps 0.4892); trained CF s0 0.6192 (clean gaps 0.7183, contaminated 0.5982)
+   -> the contaminated oracle is an ESTIMATE, not a bound: a trained context-free model beat it on lead/far.
+   dose (no verdict): p_nm 0.15: contaminated oracle 0.6761
+   dose (no verdict): p_nm 0.45: contaminated oracle 0.5458
+
+== 7 leak / construction
+   tagged stream == untagged after untag: True; tags exactly at non-movement direction words: True
+   lead-form reported object == the current cell's (last movement slot's) object: 1.0000 (n 1522)
+   p_nm=0 stream byte-identical to TextWorld (20 walks): True
+   targets are object words only: True; max token id 88 < vocab 89

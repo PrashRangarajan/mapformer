@@ -1,0 +1,20 @@
+  A  want 'RECOVERS IT (non-inferior': got 'CONTEXT STEP NEEDED; HSR RECOVERS IT (non-inferior to the oracle at 0.03)'  OK
+  A  want 'RECOVERS PART OF IT': got 'CONTEXT STEP NEEDED; HSR RECOVERS PART OF IT (below the oracle)'  OK
+  A  want 'EXCEEDS THE ORACLE': got 'CONTEXT STEP NEEDED; HSR RECOVERS IT AND EXCEEDS THE ORACLE'  OK
+  A  want 'gap to the oracle unmeasured': got 'CONTEXT STEP NEEDED; HSR RECOVERS IT (gap to the oracle unmeasured at 0.03)'  OK
+  A  want 'BELOW ITS CONTEXT-FREE TWIN': got 'CONTEXT STEP NEEDED; HSR BELOW ITS CONTEXT-FREE TWIN'  OK
+  A  want 'THE CONTEXT STEP FAILS TOO': got 'CONTEXT STEP NEEDED; THE CONTEXT STEP FAILS TOO'  OK
+  A  want 'ORACLE BELOW CONTEXT-FREE': got 'ORACLE BELOW CONTEXT-FREE (a defect of the oracle or the task; no claim)'  OK
+  A  want 'CONTEXT-FREE COPES': got 'CONTEXT-FREE COPES (MapWM non-inferior to the oracle at 0.03)'  OK
+  A  want 'UNMEASURED': got 'UNMEASURED (the need is not shown and neither is non-inferiority)'  OK
+  A  want 'UNINTERPRETABLE': got 'UNINTERPRETABLE: THE ORACLE DID NOT LEARN (RoleTag SOLVED 0/8 < 6)'  OK
+  A  qualifier floor: ['MapWM AT THE INDEX FLOOR']  OK
+  A  qualifier ceiling: ['CEILING: RoleTag, HSR and MapWM >= 0.99 on every seed']  OK
+  B  want 'AT EVERY CUE DISTANCE': got 'HSR IGNORES NON-MOVEMENT USES AT EVERY CUE DISTANCE'  OK
+  B  want 'NEAR-CUE USES ONLY': got 'HSR IGNORES NEAR-CUE USES ONLY'  OK
+  B  want 'FAR-CUE USES ONLY': got 'HSR IGNORES FAR-CUE USES ONLY'  OK
+  B  want 'SOME CLASSES': got 'HSR IGNORES SOME CLASSES: nat, lead_near, lead_far, trail_near (not: trail_far)'  OK
+  B  want 'TREATS NON-MOVEMENT USES AS MOVES': got 'HSR TREATS NON-MOVEMENT USES AS MOVES'  OK
+  B  want 'DID NOT RELIABLY LEARN': got 'HSR DID NOT RELIABLY LEARN A STEP (5/8 seeds with move change >= 0.01); B NOT READ'  OK
+  void check: clean -> []; one CF2 ratio 0.97 -> ['CF2_s3 ratio_nat 0.97']  OK
+SMOKE PASS
