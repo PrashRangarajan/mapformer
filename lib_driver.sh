@@ -26,6 +26,7 @@
 # (45), DRV_MODULE_RE (kept for old drivers; IGNORED for slot counting since 2026-09-30: every
 # mapformer.train_* process on a GPU counts, so concurrent drivers share one budget -- audit m3),
 # DRV_DRYRUN=1 (log the launch instead of running it).
+# DRV_GPUS (space-separated device indices, e.g. "0"; default every GPU) restricts drv_pick (2026-10-09).
 
 DRV_MODULE_RE="${DRV_MODULE_RE:-mapformer[.]train_}"
 DRV_MAXPG="${DRV_MAXPG:-2}"
@@ -47,7 +48,7 @@ drv_ngpu()    { nvidia-smi --query-gpu=index --format=csv,noheader | wc -l; }
 drv_pick() {  # [$1 max jobs per GPU] [$2 min free MiB]
   local maxpg="${1:-$DRV_MAXPG}" minfree="${2:-$DRV_MINFREE}" best="" bn=999 g n ng
   ng=$(drv_ngpu)
-  for ((g = 0; g < ng; g++)); do
+  for g in ${DRV_GPUS:-$(seq 0 $((ng - 1)))}; do
     n=$(drv_ntrain "$g")
     if [ "$n" -lt "$maxpg" ] && [ "$(drv_freemem "$g")" -gt "$minfree" ] && [ "$n" -lt "$bn" ]; then
       best=$g; bn=$n
