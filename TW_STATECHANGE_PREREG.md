@@ -355,3 +355,26 @@ computed as before; scenario numbers in the Power section stand, identical
 draws). New reading from the same table: B MapWM's SUMMARY condition (OFF and not LARGER THAN ASIDES) holds with probability
 0.96 for an aside-like clause, but still 0.62 for a clause at 2x the aside shift and 0.29 at 3x: the paired aside test is
 the only guard against a moderate leak and it is weak (conservative simulation, see Power).. The gate is untouched (not re-run).
+
+## Amendment 2 (2026-10-09, pilot outcomes, BEFORE the batch; no branch, threshold, n or readout changed)
+Pilot run by `docs/audits/2026-10-09/queue_tw_statechange_pilot.sh` after GAIN_PHASE finished (log
+`runs/tw_statechange_pilot/queue.log`), seed 150 (outside the batch).
+(a) **Reproduction PASS** (`docs/audits/2026-10-08/tw_statechange_repro_gpu_out.txt`): at p = 0, `train_tw_statechange`
+reproduces the stored `runs/tw_normstep/p0/{MapWM,NormStep,DirOnly}_s10` runs 5/5 epochs bitwise each.
+(b) **Timing**: four arms concurrently (2 per GPU), another user's jobs present: wall time per 900-epoch run MapWM ~21
+min, DirOnly ~21, RoPE ~27, NormStep ~32. At 8 slots the batch estimate stays ~3 h (4 waves).
+(c) **Pipeline** end to end: `analyze_tw_statechange --readouts` exit 0 on the 4 checkpoints (`TWSC_PILOT.json`).
+(d) **Outcome, READ (disclosed; n = 1, no verdict)** -- held-out map, T = 1024:
+
+| arm | acc | T1 | T2drop | class (training tail) | shift_sc | L_sc | theta reliance |
+|---|---|---|---|---|---|---|---|
+| MapWM | 0.936 | 0.979 | 0.673 | DESCENDING (0.158) | 0.0099 | +0.0021 | 0.571 |
+| NormStep | 0.999 | 0.9995 | 0.998 | SOLVED (0.022) | 0.0245 | -0.0025 | 0.560 |
+| DirOnly | 0.971 | 0.971 | 0.928 | SOLVED (0.046) | 0 (construction) | 0 | 0.507 |
+| RoPE | 0.515 | 0.514 | 0.004 | STALLED (1.709) | -- | -- | -- |
+
+Floors on T2drop: F1 (reversal-copy with state) 0.211, F2 (last dropped) 0.649. What this settles for the open items: a
+one-layer path model CAN bind a state change to its place (NormStep 0.998 on T2drop, far above F2), so Amendment 1
+item 3's "C UNMEASURED AT 1 LAYER" branch is unlikely to be reached; MapWM was still descending at 900 epochs with T2drop
+just above F2 (one seed). Both learned-step arms read shift_sc below SHIFT_OFF (0.10) on this seed. Nothing above is used
+to change the design; the batch runs as registered (seeds 50-57, 32 runs).

@@ -1,0 +1,35 @@
+GAIN_PHASE registered analysis; runs /home/prashr/mapformer/runs/gain_phase/p0; seeds 8-15
+floors for the readout (object-identity accuracy at object revisits, test pool; docs/audits/2026-10-06/gain_phase_floor_out.txt): retrace 0.518, last object 0.141, most frequent 0.099, uniform over the sequence's 16 objects 0.0625
+== per arm (unseen-object accuracy x1; leak readouts; classes) ==
+  MapWM     acc 0.9895 +/- 0.0108 (min 0.9633) | SOLVED 0/8 | L_ms median +0.0069 | S_id 0.0042 | theta reliance median 0.935 | final-5% loss 0.0705 | epochs to 0.05 - - - - - - - -
+  NormStep  acc 0.9940 +/- 0.0123 (min 0.9642) | SOLVED 8/8 | L_ms median +0.0002 | S_id 0.0009 | theta reliance median 0.946 | final-5% loss 0.0202 | epochs to 0.05 659 648 666 653 660 686 655 643
+  GainRaw   acc 0.9906 +/- 0.0035 (min 0.9859) | SOLVED 0/8 | L_ms median +0.0100 | S_id 0.0042 | theta reliance median 0.931 | final-5% loss 0.0718 | epochs to 0.05 - - - - - - - -
+  GainPhase acc 0.9994 +/- 0.0008 (min 0.9977) | SOLVED 8/8 | L_ms median +0.0001 | S_id 0.0008 | theta reliance median 0.951 | final-5% loss 0.0188 | epochs to 0.05 637 634 650 650 638 663 648 621
+
+== D1 STEP ==
+  D1r NormStep vs MapWM (rotary; positive control): BETTER: d +0.0045 (perm p 0.4623, NONE); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on SOLVED
+  D1  GainPhase vs GainRaw (gain score): BETTER: d +0.0088 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  REGISTERED D1: NORMSTEP HELPS UNDER BOTH SCORES (the step fix does not depend on the score) [D1r fires on SOLVED]
+
+== D2 SCORE (gain vs rotary) ==
+  raw step: GainRaw vs MapWM: NO DIFFERENCE: d +0.0011 (perm p 0.9475, NONE); SOLVED 0/8 vs 0/8 (Fisher p 1.0000, NONE) -- 95% CI [-0.0049, +0.0091], MDE 0.0121
+  NormStep step: GainPhase vs NormStep: NO DIFFERENCE: d +0.0054 (perm p 0.1354, NONE); SOLVED 8/8 vs 8/8 (Fisher p 1.0000, NONE) -- 95% CI [-0.0001, +0.0139], MDE 0.0131
+  REGISTERED D2: raw step -- GAIN SCORE NO DIFFERENCE; NormStep step -- GAIN SCORE NO DIFFERENCE
+
+== D3 LEAK DISSOCIATION ==
+  convergence gate (Amendment 3): GainRaw PASS: median leak-free loss nll_ms 0.0082 (<= 0.06: ok), median theta reliance 0.931 (>= 0.2: ok); training tail 0.0719; 0/8 SOLVED, 0/8 STALLED, 8/8 DESCENDING
+  convergence gate: GainPhase PASS: median leak-free loss nll_ms 0.0006 (<= 0.06: ok), median theta reliance 0.951 (>= 0.2: ok); training tail 0.0187; 8/8 SOLVED, 0/8 STALLED, 0/8 DESCENDING
+  step fix under the rotary score: REMOVES: median L_ms raw +0.0069 / NormStep +0.0002; S_id raw 0.0042 / NormStep 0.0009 (perm p 0.0002)
+  step fix under the gain score: REMOVES: median L_ms raw +0.0100 / NormStep +0.0001; S_id raw 0.0042 / NormStep 0.0008 (perm p 0.0002)
+  leak under the gain score, raw step: PERSISTS: median L_ms(GainRaw) +0.0100; S_id GainRaw 0.0042 vs MapWM 0.0042 (perm p 0.9085); GainRaw distortion share 0.00, field shift 0.0043 cells (MapWM 0.0041)
+  REGISTERED D3: SEPARATE DEFECTS: the step fix removes the leak under both scores; the score fix leaves it (it is in theta)
+
+== D4 COMBINATION ==
+  GainPhase vs MapWM: BETTER: d +0.0099 (perm p 0.0002, POS); SOLVED 8/8 vs 0/8 (Fisher p 0.0002, POS) -- fires on accuracy and SOLVED
+  GainPhase vs NormStep (non-inferiority): AS GOOD: d +0.0054 (perm p 0.1354, NONE); SOLVED 8/8 vs 8/8 (Fisher p 1.0000, NONE) -- 95% CI [-0.0001, +0.0139], MDE 0.0131; non-inferiority at -0.005: one-sided p 0.0001
+  REGISTERED D4: THE GAIN-PHASE MAP WORKS: better than MapWM and as good as NormStep
+
+== D5 SPEED (epochs until the 10-epoch running training loss < 0.05) ==
+  GainPhase vs NormStep: NO DIFFERENCE: geometric-mean epochs 643 vs 659 (x1.03 faster); censored 0/8 vs 0/8; perm p 0.0213
+  GainRaw vs MapWM: NEITHER CONVERGED: geometric-mean epochs 901 vs 901 (x1.00 faster); censored 8/8 vs 8/8
+  REGISTERED D5: NormStep step -- gain score NO DIFFERENCE; raw step -- gain score NEITHER CONVERGED

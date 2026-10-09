@@ -1,0 +1,22 @@
+torch 2.10.0+cu128; K = 5 epochs of the 900-epoch TW_NORMSTEP schedule; device cuda:0
+MapWM L1 seed=10 vocab=58 p_take=0.0 p_drop=0.0 params=214,266
+  MapWM epoch 1: wrapper 4.0480959804690615 stored 4.0480959804690615 EQUAL
+  MapWM epoch 2: wrapper 2.9951734421204548 stored 2.9951734421204548 EQUAL
+  MapWM epoch 3: wrapper 2.228228347642081 stored 2.228228347642081 EQUAL
+  MapWM epoch 4: wrapper 2.1150903567975883 stored 2.1150903567975883 EQUAL
+  MapWM epoch 5: wrapper 2.0859532149470583 stored 2.0859532149470583 EQUAL
+MapWM s10: 5/5 epochs bitwise equal -> PASS
+NormStep L1 seed=10 vocab=58 p_take=0.0 p_drop=0.0 params=214,522
+  NormStep epoch 1: wrapper 4.047979680859313 stored 4.047979680859313 EQUAL
+  NormStep epoch 2: wrapper 2.99502707500847 stored 2.99502707500847 EQUAL
+  NormStep epoch 3: wrapper 2.228390799493206 stored 2.228390799493206 EQUAL
+  NormStep epoch 4: wrapper 2.115070285845776 stored 2.115070285845776 EQUAL
+  NormStep epoch 5: wrapper 2.086148973630399 stored 2.086148973630399 EQUAL
+NormStep s10: 5/5 epochs bitwise equal -> PASS
+DirOnly L1 seed=10 vocab=58 p_take=0.0 p_drop=0.0 params=214,266
+  DirOnly epoch 1: wrapper 4.047820217755376 stored 4.047820217755376 EQUAL
+  DirOnly epoch 2: wrapper 2.986628150453373 stored 2.986628150453373 EQUAL
+  DirOnly epoch 3: wrapper 2.2228733678253327 stored 2.2228733678253327 EQUAL
+  DirOnly epoch 4: wrapper 2.1151590785201715 stored 2.1151590785201715 EQUAL
+  DirOnly epoch 5: wrapper 2.086481662429109 stored 2.086481662429109 EQUAL
+DirOnly s10: 5/5 epochs bitwise equal -> PASS

@@ -1,0 +1,21 @@
+{
+ "D1r": "BETTER",
+ "D1": "BETTER",
+ "D1_headline": "NORMSTEP HELPS UNDER BOTH SCORES (the step fix does not depend on the score) [D1r fires on SOLVED]",
+ "D2_raw": "NO DIFFERENCE",
+ "D2_norm": "NO DIFFERENCE",
+ "D2_headline": "raw step -- GAIN SCORE NO DIFFERENCE; NormStep step -- GAIN SCORE NO DIFFERENCE",
+ "D3_rot": "REMOVES",
+ "D3_gain": "REMOVES",
+ "D3_gainraw": "PERSISTS",
+ "D3_gate": {
+  "GainRaw": true,
+  "GainPhase": true
+ },
+ "D3_headline": "SEPARATE DEFECTS: the step fix removes the leak under both scores; the score fix leaves it (it is in theta)",
+ "D4_vs_W": "BETTER",
+ "D4_vs_N": "AS GOOD",
+ "D4_headline": "THE GAIN-PHASE MAP WORKS: better than MapWM and as good as NormStep",
+ "D5_norm": "NO DIFFERENCE",
+ "D5_raw": "NEITHER CONVERGED"
+}
