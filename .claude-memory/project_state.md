@@ -5,15 +5,14 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-09 12:40. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-09 12:25. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- Nothing of ours. GAIN_PHASE finished 2026-10-09 09:05 (written up). TW_STATECHANGE pilot ran 09:10-09:44 (queue
-  script; log runs/tw_statechange_pilot/queue.log) and is disclosed as TW_STATECHANGE_PREREG Amendment 2.
-- NEXT: launch the TW_STATECHANGE batch (32 runs, ~3 h): `cd /home/prashr/mapformer && setsid nohup bash
-  run_tw_statechange.sh > /dev/null 2>&1 &` -- ONLY when the GPUs are free of another user's jobs (12:40: vsathish had
-  2 small jobs, GPU 1 at 98%; held). Rule-29 audit is Amendment 1; read results only after the done marker.
+- TW_STATECHANGE batch (`TW_STATECHANGE_PREREG.md` + Amendments 1-2): launched 2026-10-09 12:21 (code a106cfe, clean) on
+  GPU 0 ONLY (`DRV_GPUS=0`, user's choice while vsathish held GPU 1), 4 jobs at a time, ~3 s/epoch -> ~45 min/run, 8
+  waves, ETA ~18:30. Log `tw_statechange.log`, runs `runs/tw_statechange/p0`, marker `.tw_statechange_done`. Read results
+  only after the marker AND the artifacts; then TW_STATECHANGE_RESULTS.md, CLAUDE.md row, report (url=).
 
 ## Ready, not launched (each audited + amended; user chooses)
 - TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or
