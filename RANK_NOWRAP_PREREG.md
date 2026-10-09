@@ -467,3 +467,7 @@ plain-hard counts).
 N7 of the first audit is CLOSED (procedural; commit 18c1b81).
 
 Launch (unchanged): `cd /home/prashr/mapformer && setsid nohup bash run_rank_nowrap.sh > /dev/null 2>&1 &`
+
+**Seed count fixed before launch (2026-10-08, main session, on the user's go):** N_SEEDS = 12 (seeds 60-71, 5 cells x 12 =
+60 runs), the recommended option of Amendment 4 (power, ND32 pool / all runs: PERIODIC 0.91 / 0.77, GENERAL 0.86 / 0.66).
+No other change.

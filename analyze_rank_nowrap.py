@@ -43,7 +43,7 @@ from mapformer.train_variant import VARIANT_MAP
 
 REPO = "/home/prashr/mapformer"; R = f"{REPO}/runs/rank_nowrap"
 GS, GL = 32, 256
-N_SEEDS = 10                           # THE seed-count switch (Amendment 4): the driver reads it from here; 10 or 12
+N_SEEDS = 12                           # THE seed-count switch (Amendment 4): the driver reads it from here; 10 or 12
 SEEDS = list(range(60, 60 + N_SEEDS))
 R2, R3, RD = "Vanilla_r2ph_om32", "Vanilla_r3ph_om32", "Vanilla_r2ph_om32_redraw"
 CELLS = {"A32": (GS, R2), "B32": (GS, R3), "M32": (GS, RD), "AL": (GL, R2), "BL": (GL, R3)}
