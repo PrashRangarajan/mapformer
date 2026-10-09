@@ -223,3 +223,72 @@ before the batch's results are read.
     cd /home/prashr/mapformer && setsid nohup bash run_tw_landmark.sh > /dev/null 2>&1 &           # the batch
 Outputs: `runs/tw_landmark/p0/<arm>_L<layers>_r<rate>_s<seed>`, `TW_LANDMARK.json`, `TW_LANDMARK_RESCORED.json`,
 `TW_LANDMARK_ANALYSIS.txt`, `TW_LANDMARK_VERDICTS.json`, marker `.tw_landmark_done`; log `tw_landmark.log`.
+
+---
+
+## Amendment 1 (2026-10-08, after an independent code audit of fc7fd4c, BEFORE any GPU run; CPU only)
+The audit (read-only, blind; no results exist) found no bug. Each finding -> the change made. The registered text above
+is kept for the record; where it conflicts, this amendment governs.
+
+**D1 (major): every registered O readout is out of distribution at r > 0.** At r = 1 every trained revisit had a
+matching name; `uninf` (a fresh name at a revisit) and `strip` (no names) probe situations never trained, so a
+misfiring name route can depress acc_uninf / rel_uninf and fire OVERSHADOW with the path route intact.
+-> New REGISTERED primary **O-ID, the in-distribution probe**: P2(r=0.5) - P2(r=0) on **rel_own_u05**, theta reliance in
+each run's OWN rendering on revisits to cells that are NOT landmarks at rate 0.5 (the same targets in both cells, well
+defined at every rate by the coupled draws; unnamed arrivals occur in training at both rates; 2284 of 4617 targets in
+the gate rerun). Same rule (perm p < .05 and |d| >= 0.05; gate median rel_own_u05 of P2(r=0) >= 0.2). Branches:
+**NAMES REDUCE PATH INTEGRATION AT UNNAMED PLACES (in distribution)** / **NAMES INCREASE ...** / **PATH INTEGRATION AT
+UNNAMED PLACES PERSISTS (95% CI above -0.10)** / **O-ID UNMEASURED** (no shift and CI below -0.10, or gate). Companion
+(no verdict): acc_own_u05 on the same targets.
+-> O1 / O2 relabelled: every downward branch (the four ATTRIB branches) carries a tag. O1: **"[OUT-OF-DISTRIBUTION
+PROBES ONLY ... r=1 has no in-distribution path probe -- NOT readable as map loss]"**. O2: "[... CONFIRMED IN
+DISTRIBUTION by O-ID]" when O-ID reads NAMES REDUCE, else "[OUT-OF-DISTRIBUTION PROBES ONLY; NOT CONFIRMED IN
+DISTRIBUTION by O-ID -- not readable as map loss]". **r = 1 has no in-distribution path probe**: any r = 1 map-loss
+reading is out of distribution by construction.
+Power (`tw_landmark_power_out.txt`, O-ID section; proxy = the 16 committed path runs' reliance on that subset, 0.472 +/-
+0.051): at n = 6, null -> false firing 0.008, PERSISTS 0.88; every seed loses the map -> fires 1.00; each seed w.p. 0.5
+-> 0.39; uniform shift -0.10 -> 0.86. Validation: untrained models read 0.0000-0.0004 on the subset. (The rerun's I0 power reads
+0.947 at n = 6 and 0.990 at n = 8, vs 0.95 / 0.98 above: the O-ID section now consumes the simulation RNG first; the O
+section is unchanged.)
+
+**D2: training-signal confound in O1.** At r = 1 names shorten the rendering: 104.7 vs 131.8 moves per 1024-word sequence,
+~23.0 vs ~30.6 revisit targets per walk (25% less path supervision). -> Stated in O1's tag; P1 controls it only partly
+(it sees the same shortened data but cannot read names, so a P1 drop is "names cost data" OR "names as noise").
+
+**D3: eval vs train mode at 2 layers.** The x1/(1-p) re-score is a one-layer correction; eval mode under-reports runs
+below ceiling. -> (i) New per-run readouts acc_own_mc / acc_strip_mc: MC-dropout (train mode, all dropout on, mean of 3
+dropout seeds), valid at any depth, read from the plain pass (the re-scored pass runs with --no-mc: rescore_hook's
+pre-hooks stay active in train mode). Declared secondary: per-cell MC accuracies, P2 - R2 at each r and P2 strip r=1 - r=0
+on MC accuracy. (ii) P1's attribution qualifier now ADOPTS the re-scored reading (valid for one layer) and prints the
+eval-mode reading beside it ("eval mode agrees" / "eval mode reads: ..."). (iii) The pilot prints, per run, eval mode,
+re-scored and MC-dropout accuracy and eval / re-scored reliance.
+
+**D4: pilot criteria, quantified before the pilot is read** (printed PASS/FAIL by `run_tw_landmark_pilot.sh`):
+(a) P2 r=0: rel_strip >= 0.2 and acc_strip >= 0.90. (b) R2 r=1: name benefit >= 0.10 and acc_named >= 0.85 (midway
+between reversal-copy 0.603 and name lookup 1.000 is 0.80). (c1) RoPE 1L r=1: acc_own <= 0.623 (reversal-copy + 0.02) and
+|name benefit| <= 0.02. (c2) P1 r=1: |name benefit| <= 0.02 (weak alone: a perfect map saturates it; c1 is the real
+check). Decisions: **(a) fails once** -> a single seed is not a verdict (text-world path 1L solved 7/8, so one unsolved
+seed has prior ~1/8): run P2 r=0 at seed 151 (outside the batch); if it passes, launch, noting that the O and O-ID gates
+need >= 4/6 path-integrating seeds; if both fail, do not launch (redesign: 1800 epochs). **(b) fails** -> no name route at
+this budget: do not launch as is. **(c1) fails** -> the one-layer argument is wrong: stop and investigate.
+
+**Notes.** N1: the attribution qualifier attaches to exactly four named branches (ATTRIB: OVERSHADOW THE MAP, MAP LOST
+NAMES NOT USED, OVERSHADOW WHEN PRESENT, MAP LOST ONLY WHEN STRIPPED), now explicit in code. N2: the composite counts a
+"PATH WINS (does not survive Holm)" as a win; printed beside it. N3: the I MDE now uses the two-sample df,
+(t_{.975,2n-2} + t_{.80,2n-2}) sd sqrt(2/n). N4: O2's name-use gate compares acc_named (names at rate 1) with acc_uninf
+(fresh names at rate 0.5): the name density differs between the two conditions, so name benefit at r = 0.5 mixes name
+use with a density shift; it only gates the OVERSHADOW vs LEARNING FAILURE label. N5: a stored per-run readout is
+reused only if its checkpoint md5 and walk count match. N6: per-run `timeout` (8 h train, 4 h per eval shard); a failed
+eval shard kills its siblings before drv_fail. N7: DRV_SPACING default 60 s; before launch DRV_MINFREE = 1.25 x the
+pilot's peak per 2-layer job and DRV_SPACING >= its measured time to peak (the pilot samples GPU memory every 20 s).
+N8: rel_own, mark_step, common_over_dir printed. N9: seeds 50-57 and pilot seed 150 are also used by TW_STATECHANGE
+(same maps and walk streams under different renderings); no contrast across the two experiments is made or allowed.
+N10: conf_name = share of argmax predictions at a conflict target equal to the object of the cell whose name was shown,
+conf_path = share equal to the true cell's object, over conflict targets whose two objects differ and are both
+non-blank.
+Re-run after the changes: gate (`gate_tw_landmark_out.txt`, unchanged numbers plus the O-ID subset size), construction
+checks (ALL PASS), reliance validation (adds the O-ID subset), power (adds O-ID), analysis smoke (ALL BRANCHES PASS,
+incl. the O-ID branches, the OOD tags, the re-scored attribution), end-to-end driver test (`driver_e2e_out.txt`: it
+caught one bug in the amended analysis -- the re-scored pass has no MC fields -- fixed, added to the smoke test, and it
+exercised the N5 reuse path).
+Cost: the plain readout pass gains 6 MC forwards per run (~+60% of its CPU time; readouts ~1.5 h in 4 shards).

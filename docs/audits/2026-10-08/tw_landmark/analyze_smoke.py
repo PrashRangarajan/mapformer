@@ -17,11 +17,13 @@ def run(c, r, s, mod=None):
         d.update(acc_own=0.99, acc_strip=0.99, acc_uninf=0.99, acc_named=0.99, rel_uninf=0.49, rel_strip=0.49,
                  rel_named=0.49, rel_own=0.49, rel_all_uninf=0.49, acc_own_land=0.99, acc_own_unnamed=0.99, move=0.1,
                  opp_minus_common=0.01, name_step=0.05, name_identity_step=0.02, mark_step=0.05, common_over_dir=0.05,
-                 drift=2, drift_rad=0.1, channels=64)
+                 drift=2, drift_rad=0.1, channels=64, rel_own_u05=0.49, acc_own_u05=0.99, acc_own_mc=0.995,
+                 acc_strip_mc=0.995)
     else:
         a = {0.0: 0.75, 0.5: 0.85, 1.0: 0.995}[r]
         d.update(acc_own=a, acc_strip=0.75, acc_uninf=0.70, acc_named=0.99, acc_own_land=0.99 if r else a,
-                 acc_own_unnamed=0.65 if r < 1 else float("nan"), cls="STALLED" if r < 1 else "SOLVED", final_loss=0.6)
+                 acc_own_unnamed=0.65 if r < 1 else float("nan"), cls="STALLED" if r < 1 else "SOLVED", final_loss=0.6,
+                 acc_own_u05=0.65, acc_own_mc=a, acc_strip_mc=0.75)
     d["name_benefit"] = d["acc_named"] - d["acc_uninf"]
     for k in list(d):
         if isinstance(d[k], float) and k not in ("final_loss",) and not np.isnan(d[k]):
@@ -41,12 +43,12 @@ def lost(d, s=None):
     d.update(rel_uninf=rng.uniform(0, 0.02), acc_strip=rng.uniform(0.5, 0.61), acc_uninf=0.55, acc_named=0.99)
 
 
-def expect(name, res, checks, seeds=SEEDS):
+def expect(name, res, checks, seeds=SEEDS, res2=None):
     lines = []
-    V = analyse(res, seeds, out=lines.append)
-    ok = all(str(V.get(k, V.get("void", ""))).startswith(v) if not v.startswith("~") else v[1:] in str(V.get(k, ""))
-             for k, v in checks.items())
-    print(f"{'PASS' if ok else 'FAIL'} {name}: " + "; ".join(f"{k} = {V.get(k, V.get('void'))}" for k in checks))
+    V = analyse(res, seeds, out=lines.append, res2=res2)
+    get = lambda k: str(V.get(k.strip(), V.get("void", "")))
+    ok = all(get(k).startswith(v) if not v.startswith("~") else v[1:] in get(k) for k, v in checks.items())
+    print(f"{'PASS' if ok else 'FAIL'} {name}: " + "; ".join(f"{k.strip()} = {get(k)}" for k in dict.fromkeys(c.strip() for c in checks)))
     if not ok:
         FAIL.append(name); print("\n".join(lines))
 
@@ -86,6 +88,35 @@ expect("persists at ceiling", build(), {"O1": "~both cells at ceiling"})
 expect("persists, names unused", build(), {"O1": "~no cue competition took place"})
 expect("persists, names dominate in conflict",
        build({("P2", 1.0): lambda d, s: d.update(conf_name=0.9, conf_path=0.1)}), {"O1": "~cue conflict: names dominate"})
+
+# --- Amendment 1: O-ID (in-distribution probe), OOD qualifiers, attribution from re-scored readouts
+def lost_id(d, s=None):
+    d.update(rel_own_u05=rng.uniform(0, 0.02), acc_own_u05=rng.uniform(0.5, 0.61))
+
+
+expect("O-ID persists (baseline)", build(), {"O-ID": "PATH INTEGRATION AT UNNAMED PLACES PERSISTS"})
+expect("O-ID down", build({("P2", 0.5): lost_id}), {"O-ID": "NAMES REDUCE PATH INTEGRATION AT UNNAMED PLACES"})
+expect("O-ID up", build({("P2", 0.0): lambda d, s: d.update(rel_own_u05=0.40 + rng.normal(0, 0.003))}),
+       {"O-ID": "NAMES INCREASE PATH INTEGRATION"})
+expect("O-ID unmeasured", build({("P2", 0.5): lambda d, s: d.update(rel_own_u05=[0.49, 0.10, 0.49, 0.30, 0.49, 0.05][s - 50]),
+                                 ("P2", 0.0): lambda d, s: d.update(rel_own_u05=[0.10, 0.49, 0.30, 0.49, 0.05, 0.49][s - 50])}),
+       {"O-ID": "O-ID UNMEASURED (no shift"})
+expect("O-ID gate", build({("P2", 0.0): lambda d, s: (lost(d), lost_id(d))}), {"O-ID": "O-ID UNMEASURED: P2 trained"})
+expect("O2 overshadow confirmed in distribution", build({("P2", 0.5): lambda d, s: (lost(d), lost_id(d))}),
+       {"O2": "NAMES OVERSHADOW THE MAP [OUT-OF-DISTRIBUTION probes; CONFIRMED IN DISTRIBUTION"})
+expect("O2 overshadow OOD only", build({("P2", 0.5): lost}), {"O2": "~NOT CONFIRMED IN DISTRIBUTION"})
+expect("O1 overshadow carries the OOD and confound qualifiers", build({("P2", 1.0): lost}),
+       {"O1": "~NOT readable as map loss", "O1 ": "~training-signal confound"})
+expect("O1 form shift carries attribution (N1)", build({("P2", 1.0): lambda d, s: d.update(acc_strip=rng.uniform(0.5, 0.61))}),
+       {"O1": "~keeps its map"})
+r1 = build({("P2", 1.0): lost}); r2 = build({("P2", 1.0): lost, ("P1", 1.0): lost})
+expect("attribution adopts the re-scored reading, prints the eval one", r1, {"O1": "~names ALSO lower 1-layer path integration: not cue competition alone (re-scored; eval mode reads: the 1-layer"}, res2=r2)
+expect("attribution: re-scored agrees", r1, {"O1": "~(re-scored; eval mode agrees)"}, res2=r1)
+
+res = build()
+for d in res.values():
+    d.pop("acc_own_mc", None); d.pop("acc_strip_mc", None)
+expect("re-scored pass without MC fields (found by the end-to-end test)", res, {"O1": "PATH INTEGRATION PERSISTS"}, res2=res)
 
 # --- I branches and composite
 expect("I: path wins at 0 and 0.5u; ceiling at 1 -> names close the gap", build(),

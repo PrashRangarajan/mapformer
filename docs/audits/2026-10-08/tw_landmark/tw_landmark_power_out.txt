@@ -18,8 +18,18 @@ O (per cell n): P(reliance down fires) | P(stripped acc down fires) | P(both: OV
   n=8 HALF    : 0.630 | 0.630 | 0.550 | 0.010
   n=8 SHIFT10 : 0.955 | 0.905 | 0.890 | 0.005
 
+O-ID (Amendment 1; proxy reliance on the subset 0.4720 +/- 0.0508): P(down fires) | P(PERSISTS)
+  n=6 NULL    : 0.008 | 0.877
+  n=6 LOST    : 1.000 | 0.000
+  n=6 HALF    : 0.392 | 0.009
+  n=6 SHIFT10 : 0.855 | 0.013
+  n=8 NULL    : 0.005 | 0.930
+  n=8 LOST    : 1.000 | 0.000
+  n=8 HALF    : 0.685 | 0.005
+  n=8 SHIFT10 : 0.955 | 0.015
+
 I0 (P2 - R2 at r = 0, accuracy): P(PATH WINS)
-  n=4: 0.630
-  n=5: 0.885
-  n=6: 0.950
-  n=8: 0.980
+  n=4: 0.636
+  n=5: 0.894
+  n=6: 0.947
+  n=8: 0.990

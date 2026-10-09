@@ -12,8 +12,13 @@ LOG="${TL_LOG:-$REPO/tw_landmark.log}"
 source "$REPO/lib_driver.sh"
 # knobs AFTER sourcing lib_driver.sh (it assigns its own defaults); overridable through TL_* variables
 DRV_MAXPG="${TL_MAXPG:-4}"              # 8 slots on the two 4090s; the picker counts every mapformer.train_ job
-DRV_SPACING="${TL_SPACING:-15}"
-DRV_MINFREE="${TL_MINFREE:-7000}"       # set from the pilot's measured peak per 2-layer job before launch
+# Amendment 1 (N7, rule 24): DRV_MINFREE = 1.25 x the pilot's measured peak per 2-layer job, and DRV_SPACING >= the
+# pilot's measured time from launch to that peak, so a job not yet holding its memory is not double-booked. Defaults
+# until the pilot: 60 s spacing, 7000 MiB.
+DRV_SPACING="${TL_SPACING:-60}"
+DRV_MINFREE="${TL_MINFREE:-7000}"
+RUN_TIMEOUT="${TL_RUN_TIMEOUT:-8h}"     # Amendment 1 (N6): per-run wall limit (expected ~1.5 h per 2-layer run)
+EVAL_TIMEOUT="${TL_EVAL_TIMEOUT:-4h}"
 drv_lock "$REPO/.run_tw_landmark.lock" || exit 1
 cd "$REPO/.."
 R="${TL_RUNS:-$REPO/runs/tw_landmark}"; mkdir -p "$R/p0"   # TL_RUNS / TL_OUT: end-to-end test only
@@ -56,7 +61,7 @@ for S in $SEEDS; do for C in $CELLS; do
   fi
   mkdir -p "$OUT"; G=$(drv_wait_slot)
   echo "$(date +%H:%M:%S) $ARM L$L r$RATE s$S -> cuda:$G" >> "$LOG"
-  OMP_NUM_THREADS=2 drv_launch "$OUT.log" python3 -u -m mapformer.train_tw_landmark --arm "$ARM" --n-layers "$L" \
+  OMP_NUM_THREADS=2 drv_launch "$OUT.log" timeout "$RUN_TIMEOUT" python3 -u -m mapformer.train_tw_landmark --arm "$ARM" --n-layers "$L" \
     --name-rate "$RATE" --seed "$S" --epochs 900 --device "cuda:$G" --output-dir "$OUT"
 done; done
 drv_wait_dir "$R/"
@@ -66,19 +71,24 @@ drv_require "${REQ[@]}" || drv_fail "missing runs"
 # readouts on CPU (deterministic; no GPU needed), 4 shards of 12 runs, plain and re-scored
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before eval"
 _drv_log "eval: starting (4 CPU shards x 2 passes)"
+# stale shard outputs are not trusted blindly: tw_landmark_eval reuses a stored run only if its checkpoint md5 and
+# walk count match (Amendment 1, N5)
 for PASS in plain rescored; do
   PIDS=()
   for K in 0 1 2 3; do
     SH=("${RUNS[@]:$((K * 12)):12}")
     if [ "$PASS" = plain ]; then
-      CUDA_VISIBLE_DEVICES="" python3 -u -m mapformer.tw_landmark_eval --runs "${SH[@]}" --threads 6 --n-walks "$NW" \
+      CUDA_VISIBLE_DEVICES="" timeout "$EVAL_TIMEOUT" python3 -u -m mapformer.tw_landmark_eval --runs "${SH[@]}" --threads 6 --n-walks "$NW" \
         --out "$R/eval_${PASS}_${K}.json" > "$R/eval_${PASS}_${K}.log" 2>&1 & PIDS+=($!)
     else
-      CUDA_VISIBLE_DEVICES="" python3 -u -m mapformer.rescore_hook --scale auto -- mapformer.tw_landmark_eval \
-        --runs "${SH[@]}" --threads 6 --n-walks "$NW" --out "$R/eval_${PASS}_${K}.json" > "$R/eval_${PASS}_${K}.log" 2>&1 & PIDS+=($!)
+      CUDA_VISIBLE_DEVICES="" timeout "$EVAL_TIMEOUT" python3 -u -m mapformer.rescore_hook --scale auto -- mapformer.tw_landmark_eval \
+        --runs "${SH[@]}" --threads 6 --n-walks "$NW" --no-mc --out "$R/eval_${PASS}_${K}.json" > "$R/eval_${PASS}_${K}.log" 2>&1 & PIDS+=($!)
     fi
   done
-  for P in "${PIDS[@]}"; do wait "$P" || drv_fail "eval $PASS shard failed (pid $P)"; done
+  # Amendment 1 (N6): a failed shard stops its siblings before drv_fail (no orphaned eval processes)
+  for P in "${PIDS[@]}"; do
+    wait "$P" || { kill "${PIDS[@]}" 2>/dev/null; drv_fail "eval $PASS shard failed (pid $P); sibling shards stopped"; }
+  done
 done
 python3 - "$R" "$OUTD" <<'EOF' || drv_fail "merge"
 import json, sys

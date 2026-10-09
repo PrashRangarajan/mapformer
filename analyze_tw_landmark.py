@@ -11,12 +11,28 @@ import sys
 
 import numpy as np
 
-from mapformer.stats_core import perm2_p, perm2_ci, fisher_solved, mde, signflip_p
+from scipy import stats
+
+from mapformer.stats_core import perm2_p, perm2_ci, fisher_solved, signflip_p
 
 REPO = "/home/prashr/mapformer"
 SEEDS = [50, 51, 52, 53, 54, 55]
 CELLS = {"P2": ("MapWM", 2, (0.0, 0.5, 1.0)), "R2": ("RoPE", 2, (0.0, 0.5, 1.0)), "P1": ("MapWM", 1, (0.0, 1.0))}
 O_MIN, ACC_MIN, GATE_REL, NAME_USE, EQUIV, CEIL = 0.05, 0.02, 0.2, 0.05, 0.10, 0.98
+# Amendment 1 (N1): the O branches that carry the P1 attribution qualifier, by name
+ATTRIB = ("NAMES OVERSHADOW THE MAP", "MAP LOST, NAMES NOT USED EITHER", "NAMES OVERSHADOW WHEN PRESENT",
+          "MAP LOST ONLY WHEN NAMES ARE STRIPPED")
+OOD_O1 = (" [OUT-OF-DISTRIBUTION PROBES ONLY: at r=1 every trained revisit had a matching name, so fresh or absent names "
+          "are untrained situations and a misfiring name route can produce this with the path route intact; r=1 has no "
+          "in-distribution path probe -- NOT readable as map loss] [training-signal confound: at r=1 a 1024-word "
+          "sequence holds 104.7 vs 131.8 moves and ~23.0 vs ~30.6 revisit targets, 25% less path supervision; P1 "
+          "controls it only partly]")
+
+
+def mde2(sd, n, alpha=0.05, power=0.80):
+    """Two-sample MDE with two-sample df (Amendment 1, N3): (t_{1-a/2, 2n-2} + t_{power, 2n-2}) * sd * sqrt(2/n)."""
+    df = 2 * n - 2
+    return float((stats.t.ppf(1 - alpha / 2, df) + stats.t.ppf(power, df)) * sd * np.sqrt(2.0 / n))
 
 
 def key(cell, r, s):
@@ -34,9 +50,11 @@ def check_void(res, seeds):
     for c, (arm, _l, rs) in CELLS.items():
         for r in rs:
             for s in seeds:
-                has = "rel_uninf" in res[key(c, r, s)]
-                if has != (arm == "MapWM"):
-                    return f"VOID: reliance {'missing on a path run' if arm == 'MapWM' else 'present on an index run'}"
+                d = res[key(c, r, s)]
+                if arm == "MapWM" and not ("rel_uninf" in d and "rel_own_u05" in d):
+                    return "VOID: reliance missing on a path run"
+                if arm != "MapWM" and "rel_uninf" in d:
+                    return "VOID: reliance present on an index run"
     return None
 
 
@@ -99,15 +117,46 @@ def verdict_O(g, rstar, out):
     return f"UNMEASURED (no shift detected; a 95% CI reaches below -{EQUIV})" + q
 
 
-def attribution(g, out):
-    x, y = g("P1", 0.0, "rel_uninf"), g("P1", 1.0, "rel_uninf")
+def _attrib_label(x, y):
     c = contrast(x, y, O_MIN)
-    out(f"  attribution control, P1 (1 layer: cannot read names) reliance r=1 - r=0: {fmt(c)}")
     if np.median(x) < GATE_REL:
-        return "P1 qualifier unmeasured (P1 trained without names does not path-integrate)"
+        return c, "P1 qualifier unmeasured (P1 trained without names does not path-integrate)"
     if c["fire"] and c["d"] < 0:
-        return "names ALSO lower 1-layer path integration: not cue competition alone"
-    return "the 1-layer path model, which cannot read names, keeps its map: names in the stream do not by themselves block step learning"
+        return c, "names ALSO lower 1-layer path integration: not cue competition alone"
+    return c, ("the 1-layer path model, which cannot read names, keeps its map: names in the stream do not by "
+               "themselves block step learning")
+
+
+def attribution(g, out, g2=None):
+    """P1 reliance r=1 - r=0. Amendment 1 (D3): the label is read from the dropout re-scored readouts when given (the
+    x1/(1-p) correction is valid for one-layer models); the eval-mode reading is printed beside it."""
+    ce, le = _attrib_label(g("P1", 0.0, "rel_uninf"), g("P1", 1.0, "rel_uninf"))
+    out(f"  attribution control, P1 (1 layer: cannot read names) reliance r=1 - r=0, eval mode: {fmt(ce)} -> {le}")
+    if g2 is None:
+        return le + " (eval mode; no re-scored readouts given)"
+    cr, lr = _attrib_label(g2("P1", 0.0, "rel_uninf"), g2("P1", 1.0, "rel_uninf"))
+    out(f"  attribution control, re-scored (adopted): {fmt(cr)} -> {lr}")
+    return lr + (" (re-scored; eval mode agrees)" if lr == le else f" (re-scored; eval mode reads: {le})")
+
+
+def verdict_OID(g, out):
+    """Amendment 1 (D1), registered: the in-distribution probe. P2(r=0.5) - P2(r=0) on rel_own_u05, the reliance in
+    each run's OWN rendering on revisits to cells that are not landmarks at rate 0.5 (the same targets in both cells;
+    both renderings are in distribution there: unnamed arrivals occur in training at both rates)."""
+    x, y = g("P2", 0.0, "rel_own_u05"), g("P2", 0.5, "rel_own_u05")
+    c = contrast(x, y, O_MIN)
+    ca = contrast(g("P2", 0.0, "acc_own_u05"), g("P2", 0.5, "acc_own_u05"), O_MIN)
+    out(f"  reliance, own rendering, cells unnamed at rate 0.5: P2(r=0.5) - P2(r=0): {fmt(c)}")
+    out(f"  companion (no verdict): accuracy on the same targets: {fmt(ca)}")
+    med0 = float(np.median(x))
+    if med0 < GATE_REL:
+        return f"O-ID UNMEASURED: P2 trained without names does not path-integrate (median reliance {med0:.4f})"
+    if c["fire"]:
+        return ("NAMES REDUCE PATH INTEGRATION AT UNNAMED PLACES (in distribution)" if c["d"] < 0 else
+                "NAMES INCREASE PATH INTEGRATION AT UNNAMED PLACES (in distribution)")
+    if c["lo"] is not None and c["lo"] >= -EQUIV:
+        return f"PATH INTEGRATION AT UNNAMED PLACES PERSISTS (in distribution; 95% CI above -{EQUIV})"
+    return f"O-ID UNMEASURED (no shift detected; the 95% CI reaches below -{EQUIV})"
 
 
 def verdict_I(g, r, field, out, tag):
@@ -116,7 +165,7 @@ def verdict_I(g, r, field, out, tag):
     sx, sy = sum(v == "SOLVED" for v in g("R2", r, "cls")), sum(v == "SOLVED" for v in g("P2", r, "cls"))
     n = len(x); pf = fisher_solved(sx, n, sy, n)
     sd = np.sqrt((np.var(x, ddof=1) + np.var(y, ddof=1)) / 2) if n > 1 else 0.0
-    m_ = max(mde(sd, n) * np.sqrt(2), ACC_MIN)
+    m_ = max(mde2(sd, n), ACC_MIN)
     out(f"  [{tag}] P2 - R2 on {field}: {fmt(c)}; SOLVED P2 {sy}/{n} vs R2 {sx}/{n} (Fisher p {pf:.4f}); "
         f"MDE {m_:.4f}; medians P2 {np.median(y):.4f} R2 {np.median(x):.4f}")
     ceil = " (BOTH AT CEILING)" if min(np.median(x), np.median(y)) >= CEIL else ""
@@ -129,11 +178,26 @@ def verdict_I(g, r, field, out, tag):
     return lab, c["p"]
 
 
-def analyse(res, seeds, out=print):
+def mc_secondary(g, out):
+    """Amendment 1 (D3): MC-dropout accuracies (plain pass only)."""
+    out("  MC-dropout accuracy (train mode, 3 dropout seeds; valid at any depth; Amendment 1 D3), own / strip:")
+    for cell, (arm, L, rs) in CELLS.items():
+        for r in rs:
+            out(f"    {cell} r={r}: {np.mean(g(cell, r, 'acc_own_mc')):.4f} / {np.mean(g(cell, r, 'acc_strip_mc')):.4f} "
+                f"(eval mode {np.mean(g(cell, r, 'acc_own')):.4f} / {np.mean(g(cell, r, 'acc_strip')):.4f})")
+    for r in (0.0, 0.5, 1.0):
+        c = contrast(g("R2", r, "acc_own_mc"), g("P2", r, "acc_own_mc"), ACC_MIN)
+        out(f"    P2 - R2 at r={r} on MC-dropout accuracy: {fmt(c)}")
+    c = contrast(g("P2", 0.0, "acc_strip_mc"), g("P2", 1.0, "acc_strip_mc"), O_MIN)
+    out(f"    P2 names-stripped MC-dropout accuracy r=1 - r=0: {fmt(c)}")
+
+
+def analyse(res, seeds, out=print, res2=None):
     v = check_void(res, seeds)
     if v:
         out(v); return {"void": v}
     g = lambda cell, r, f: [res[key(cell, r, s)][f] for s in seeds]
+    g2 = (lambda cell, r, f: [res2[key(cell, r, s)][f] for s in seeds]) if res2 is not None else None
     n = len(seeds)
     out(f"== per cell (n={n}): acc own / strip / uninf / named | reliance strip / uninf / named | name benefit | "
         "conflict path / name | SOLVED | final loss ==")
@@ -145,13 +209,24 @@ def analyse(res, seeds, out=print):
                 f" | {m('conf_path'):.3f} / {m('conf_name'):.3f} | {sum(c == 'SOLVED' for c in g(cell, r, 'cls'))}/{n}"
                 f" | {m('final_loss'):.4f}")
     V = {}
-    out("\n== PRIMARY O: do names overshadow the map? (P2, MapWM 2 layers; fires: perm p < .05 and |d| >= "
-        f"{O_MIN}; gate: median reliance of P2(r=0) >= {GATE_REL}) ==")
+    out("\n== PRIMARY O-ID (Amendment 1): the in-distribution probe, r=0.5 vs r=0 (P2; fires: perm p < .05 and "
+        f"|d| >= {O_MIN}) ==")
+    V["O-ID"] = verdict_OID(g, out)
+    out(f"  REGISTERED O-ID: {V['O-ID']}")
+    out("\n== PRIMARY O: do names overshadow the map? OUT-OF-DISTRIBUTION probes at r>0 (names fresh / absent at test)"
+        f" (P2, MapWM 2 layers; fires: perm p < .05 and |d| >= {O_MIN}; gate: median reliance of P2(r=0) >= "
+        f"{GATE_REL}) ==")
     for rstar in (1.0, 0.5):
         out(f" O{'1' if rstar == 1.0 else '2'}: r={rstar} vs r=0")
         lab = verdict_O(g, rstar, out)
-        if rstar == 1.0 and lab.startswith(("NAMES OVERSHADOW", "MAP LOST")):
-            lab += "; " + attribution(g, out)
+        if lab.startswith(ATTRIB):
+            if rstar == 1.0:
+                lab += OOD_O1 + "; " + attribution(g, out, g2)
+            else:
+                conf = V["O-ID"].startswith("NAMES REDUCE")
+                lab += (" [OUT-OF-DISTRIBUTION probes; CONFIRMED IN DISTRIBUTION by O-ID]" if conf else
+                        " [OUT-OF-DISTRIBUTION PROBES ONLY; NOT CONFIRMED IN DISTRIBUTION by O-ID -- not readable "
+                        "as map loss]")
         V[f"O{'1' if rstar == 1.0 else '2'}"] = lab
         out(f"  REGISTERED O{'1' if rstar == 1.0 else '2'}: {lab}")
     out(f"\n== PRIMARY I: path (P2) vs index (R2) at matched depth (fires: perm p < .05 and |d| >= {ACC_MIN}; "
@@ -169,7 +244,7 @@ def analyse(res, seeds, out=print):
     comp = ("NAMES CLOSE THE PATH ADVANTAGE" if w0 and not w1 else "PATH ADVANTAGE SURVIVES NAMES" if w0 and w1
             else "NO COMPOSITE (I0 is not PATH WINS)")
     V["composite"] = comp
-    out(f"  COMPOSITE (from I0 and I1, no new test): {comp}")
+    out(f"  COMPOSITE (from I0 and I1, no new test; a PATH WINS that does not survive Holm counts as a win): {comp}")
 
     out("\n== declared secondaries (no verdict) ==")
     for r in (0.0, 0.5, 1.0):
@@ -187,12 +262,17 @@ def analyse(res, seeds, out=print):
                 f"{np.mean(g(cell, r, 'opp_minus_common')):.3f}, name step {np.mean(g(cell, r, 'name_step')):.3f} "
                 f"(identity part {np.mean(g(cell, r, 'name_identity_step')):.3f}) of a direction step; drift "
                 f"{np.mean(g(cell, r, 'drift')):.1f}/64 ({' '.join(str(x) for x in g(cell, r, 'drift'))}); "
-                f"rel_all(uninf) {np.mean(g(cell, r, 'rel_all_uninf')):+.4f}")
+                f"rel_all(uninf) {np.mean(g(cell, r, 'rel_all_uninf')):+.4f}; rel_own {np.mean(g(cell, r, 'rel_own')):+.4f}; "
+                f"mark step {np.mean(g(cell, r, 'mark_step')):.3f}; common / direction {np.mean(g(cell, r, 'common_over_dir')):.3f}")
     for rstar in (1.0,):
         c = contrast(g("R2", rstar, "conf_name"), g("P2", rstar, "conf_name"), 0)
         out(f"  cue conflict at r={rstar}: share following the NAME, P2 {np.mean(g('P2', rstar, 'conf_name')):.3f} vs "
             f"R2 {np.mean(g('R2', rstar, 'conf_name')):.3f} ({fmt(c)}); following the PATH, P2 "
             f"{np.mean(g('P2', rstar, 'conf_path')):.3f}")
+    if "acc_own_mc" not in res[key("P2", 0.0, seeds[0])]:
+        out("  MC-dropout accuracy: not in this pass (the re-scored pass runs with --no-mc)")
+    else:
+        mc_secondary(g, out)
     x = sum((g(c, r, "final_loss") for c, (_a, _l, rs) in CELLS.items() for r in rs), [])
     y = sum((g(c, r, "acc_own") for c, (_a, _l, rs) in CELLS.items() for r in rs), [])
     out(f"  r(final loss, acc own) over {len(x)} runs: {np.corrcoef(x, y)[0, 1]:+.3f}")
@@ -208,7 +288,8 @@ def main():
     a = ap.parse_args()
     seeds = [int(s) for s in a.seeds.split(",")]
     res = json.load(open(a.json))
-    V = analyse(res, seeds)
+    res2 = json.load(open(a.rescored)) if a.rescored else None
+    V = analyse(res, seeds, res2=res2)
     if a.verdicts_out:
         json.dump(V, open(a.verdicts_out, "w"), indent=1)
     if a.rescored:
@@ -216,7 +297,7 @@ def main():
               "2-layer models it compounds and is not a better estimate (DROPOUT_RESCORE.md), so only flips are "
               "flagged ==")
         lines = []
-        V2 = analyse(json.load(open(a.rescored)), seeds, out=lines.append)
+        V2 = analyse(res2, seeds, out=lines.append, res2=res2)
         print("\n".join("  " + l for l in lines if l.lstrip().startswith(("REGISTERED", "COMPOSITE", "P1 r=", "P2 r=", "R2 r="))
                         and "step table" not in l))
         for k in V:

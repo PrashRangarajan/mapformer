@@ -13,6 +13,9 @@ Scenarios for O (P2 at r* vs P2 at r = 0), each seed of the r* cell resampled fr
   HALF        each seed loses it w.p. 0.5
   SHIFT10     every seed's reliance and stripped accuracy shifted down by 0.10
   (failing seeds of the proxy are kept: the r = 0 cell is itself bimodal)
+Amendment 1 (D1): O-ID, the in-distribution probe (P2 r=0.5 vs r=0 on reliance at cells unnamed at rate 0.5; one
+readout, fires p < .05 and |d| >= 0.05, PERSISTS when the 95% CI lies above -0.10), proxy = the same 16 runs' reliance
+on that target subset (rel_u05).
 For I0 (P2 - R2 at r = 0): path accuracy resampled from the proxy vs RoPE 2L resampled from the text world.
 1000 simulations per cell (200 at n = 8); n per cell in {4, 5, 6, 8}.
 """
@@ -25,6 +28,7 @@ from mapformer.analyze_tw_landmark import contrast, O_MIN, ACC_MIN, EQUIV
 V = json.load(open("/home/prashr/mapformer/docs/audits/2026-10-08/tw_landmark/reliance_validate_out.json"))
 P = [d for k in ("tw_path1L", "ns_MapWM") for d in V[k].values()]
 REL = np.array([d["rel"] for d in P]); ACC = np.array([d["acc"] for d in P])
+RELU = np.array([d["rel_u05"] for d in P])
 ROPE2 = np.array([json.load(open(f"/home/prashr/mapformer/runs/textworld/p0/RoPE_L2_s{s}/eval.json"))["eval"]["1024"]["acc"]
                   for s in range(8)])
 print(f"proxy path (n=16): reliance {REL.mean():.4f} +/- {REL.std(ddof=1):.4f}, stripped acc {ACC.mean():.4f} +/- "
@@ -63,6 +67,24 @@ for n in (4, 5, 6, 8):
                 pers += 1
         k = NS if n <= 6 else 200
         print(f"  n={n} {name:8s}: {f_r / k:.3f} | {f_a / k:.3f} | {both / k:.3f} | {pers / k:.3f}", flush=True)
+
+print(f"\nO-ID (Amendment 1; proxy reliance on the subset {RELU.mean():.4f} +/- {RELU.std(ddof=1):.4f}): "
+      "P(down fires) | P(PERSISTS)")
+for n in (6, 8):
+    for name in ("NULL", "LOST", "HALF", "SHIFT10"):
+        f = pers = 0; K = NS if n <= 6 else 200
+        for _ in range(K):
+            x = RELU[rng.integers(0, 16, n)].copy(); y = RELU[rng.integers(0, 16, n)].copy()
+            if name == "LOST":
+                y = rng.uniform(0, 0.02, n)
+            elif name == "HALF":
+                k = rng.random(n) < 0.5; y[k] = rng.uniform(0, 0.02, k.sum())
+            elif name == "SHIFT10":
+                y -= 0.10
+            c = contrast(x, y, O_MIN)
+            f += c["fire"] and c["d"] < 0
+            pers += (not c["fire"]) and c["lo"] is not None and c["lo"] >= -EQUIV
+        print(f"  n={n} {name:8s}: {f / K:.3f} | {pers / K:.3f}", flush=True)
 
 print("\nI0 (P2 - R2 at r = 0, accuracy): P(PATH WINS)")
 for n in (4, 5, 6, 8):

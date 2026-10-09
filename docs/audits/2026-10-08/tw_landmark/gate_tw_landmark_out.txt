@@ -3,13 +3,13 @@ sample (0.5, 'consistent'): walked left then paused and found stone . wandered q
 sample (1.0, 'fresh'): walked down reached n484 and found nothing . headed down reached n360 and saw clock . wandered down reached n138 and noticed rope . went quietly southward for reached n085 and found cup . she remembered a key . walked carefully southward and for reached n223 there was nothing . moved slowly down reached n116 and found bell . went south for for reached n022 and noticed box . moved
 sample (1.0, 'conflict'): moved northward moment and looked reached n202 and saw nothing . she remembered a cup . moved up reached n393 and found nothing . went north reached n323 and noticed nothing . walked north reached n038 and found shoe . headed slowly left paused for reached n427 there was nothing . headed left reached n322 and saw rope . headed west reached n265 and saw nothing . went quietly left
 
-=== training rate r = 0.0: own rendering 131.8 object slots / walk, revisit fraction 0.232; scored common-move revisit targets 4617 (23.1 / walk); share of scored revisits whose place is named before (landmark): 0.000
+=== training rate r = 0.0: own rendering 131.8 object slots / walk, revisit fraction 0.232; scored common-move revisit targets 4617 (23.1 / walk); share of scored revisits whose place is named before (landmark): 0.000; in-distribution probe subset (cells unnamed at rate 0.5, Amendment 1): 2284 targets
   [own   rate 0.0 consistent] const 0.5077 | rcopy 0.6030 | ncopy 0.5077 (nameable 0.000) | ncopy+rcopy 0.6030 | n-gram 1:0.5077 2:0.5077 3:0.5077 4:0.5040 5:0.4470 | BEST TRIVIAL 0.6030
   [strip rate 0.0 consistent] const 0.5077 | rcopy 0.6030 | ncopy 0.5077 (nameable 0.000) | ncopy+rcopy 0.6030 | n-gram 1:0.5077 2:0.5077 3:0.5077 4:0.5040 5:0.4470 | BEST TRIVIAL 0.6030
   [named rate 1.0 consistent] const 0.5077 | rcopy 0.6030 | ncopy 1.0000 (nameable 1.000) | ncopy+rcopy 1.0000 | n-gram 1:0.5077 2:0.5077 3:0.4966 4:0.4966 5:0.3717 | BEST TRIVIAL 1.0000
   [conf  rate 1.0 conflict  ] const 0.5077 | rcopy 0.6030 | ncopy 0.5976 (nameable 1.000) | ncopy+rcopy 0.5976 | n-gram 1:0.5077 2:0.5077 3:0.5029 4:0.5029 5:0.3634 | BEST TRIVIAL 0.6030
 
-=== training rate r = 0.5: own rendering 116.7 object slots / walk, revisit fraction 0.225; scored common-move revisit targets 4617 (23.1 / walk); share of scored revisits whose place is named before (landmark): 0.505
+=== training rate r = 0.5: own rendering 116.7 object slots / walk, revisit fraction 0.225; scored common-move revisit targets 4617 (23.1 / walk); share of scored revisits whose place is named before (landmark): 0.505; in-distribution probe subset (cells unnamed at rate 0.5, Amendment 1): 2284 targets
   leak check: best constant on landmark targets 0.494, on unnamed 0.522, overall 0.508; top answer landmark 'nothing' unnamed 'nothing'
   [own   rate 0.5 consistent] const 0.5077 | rcopy 0.6030 | ncopy 0.7635 (nameable 0.505) | ncopy+rcopy 0.8098 | n-gram 1:0.5077 2:0.5077 3:0.4849 4:0.4748 5:0.4217 | BEST TRIVIAL 0.8098
   [strip rate 0.0 consistent] const 0.5077 | rcopy 0.6030 | ncopy 0.5077 (nameable 0.000) | ncopy+rcopy 0.6030 | n-gram 1:0.5077 2:0.5077 3:0.5077 4:0.5040 5:0.4470 | BEST TRIVIAL 0.6030
@@ -17,7 +17,7 @@ sample (1.0, 'conflict'): moved northward moment and looked reached n202 and saw
   [named rate 1.0 consistent] const 0.5077 | rcopy 0.6030 | ncopy 1.0000 (nameable 1.000) | ncopy+rcopy 1.0000 | n-gram 1:0.5077 2:0.5077 3:0.4966 4:0.4966 5:0.3717 | BEST TRIVIAL 1.0000
   [conf  rate 1.0 conflict  ] const 0.5077 | rcopy 0.6030 | ncopy 0.5976 (nameable 1.000) | ncopy+rcopy 0.5976 | n-gram 1:0.5077 2:0.5077 3:0.5029 4:0.5029 5:0.3634 | BEST TRIVIAL 0.6030
 
-=== training rate r = 1.0: own rendering 104.7 object slots / walk, revisit fraction 0.220; scored common-move revisit targets 4617 (23.1 / walk); share of scored revisits whose place is named before (landmark): 1.000
+=== training rate r = 1.0: own rendering 104.7 object slots / walk, revisit fraction 0.220; scored common-move revisit targets 4617 (23.1 / walk); share of scored revisits whose place is named before (landmark): 1.000; in-distribution probe subset (cells unnamed at rate 0.5, Amendment 1): 2284 targets
   [own   rate 1.0 consistent] const 0.5077 | rcopy 0.6030 | ncopy 1.0000 (nameable 1.000) | ncopy+rcopy 1.0000 | n-gram 1:0.5077 2:0.5077 3:0.4966 4:0.4966 5:0.3717 | BEST TRIVIAL 1.0000
   [strip rate 0.0 consistent] const 0.5077 | rcopy 0.6030 | ncopy 0.5077 (nameable 0.000) | ncopy+rcopy 0.6030 | n-gram 1:0.5077 2:0.5077 3:0.5077 4:0.5040 5:0.4470 | BEST TRIVIAL 0.6030
   [uninf rate 1.0 fresh     ] const 0.5077 | rcopy 0.6030 | ncopy 0.5077 (nameable 0.000) | ncopy+rcopy 0.6030 | n-gram 1:0.5077 2:0.5077 3:0.5005 4:0.5005 5:0.3736 | BEST TRIVIAL 0.6030

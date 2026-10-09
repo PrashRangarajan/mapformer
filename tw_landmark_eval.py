@@ -11,12 +11,15 @@ Conditions (r = the run's training name rate):
   uninf   names at rate r, each FRESH      training form, names carry no information (= strip at r = 0)
   named   names at rate 1, consistent      every revisit name-solvable
   conf    names at rate 1, cue conflict    on conflict targets whose true and alt objects differ and are both non-blank,
-                                           the share of predictions naming the PATH object (true cell) vs the NAME
-                                           object (alt cell)
+                                           conf_path = share of argmax predictions at the object slot equal to the true
+                                           cell's object, conf_name = share equal to the object of the cell whose name
+                                           was shown (alt); the rest predict a third word
 Theta reliance (path models): acc - acc with every direction word's step replaced by the mean step of the 12
 direction words (theta then carries no displacement; the per-move common component, the aside / role offsets and
 the name steps are untouched), per condition: rel_strip, rel_uninf, rel_named, rel_own. Secondary rel_all: also every
 name token's step and the mark's step by the name mean (no name identity in theta).
+In-distribution probe (Amendment 1, D1): acc_own_u05 / rel_own_u05 on the own rendering's targets at cells that are NOT
+landmarks at rate 0.5 (defined at every rate by the coupled draws). MC-dropout acc_own_mc / acc_strip_mc (D3).
 Also: acc_own split by landmark / unnamed cell (rate r naming), name benefit = acc_named - acc_uninf, the step table
 (path models), drift channels, run class from the training losses.
 
@@ -24,6 +27,7 @@ Usage: python3 -m mapformer.tw_landmark_eval --runs RUN_DIR [RUN_DIR ...] --out 
        (each RUN_DIR holds <arm>.pt). Under rescore_hook it gives the dropout re-scored readouts (one-layer correction).
 """
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -40,6 +44,7 @@ from mapformer.train_variant import VARIANT_MAP
 HELDOUT, EVAL_SEED, T = 10000, 10**6, 1024
 VARIANT = {"MapWM": "Vanilla_r4", "RoPE": "RoPE"}
 wrap = lambda x: (x + np.pi) % (2 * np.pi) - np.pi
+MC = True          # --no-mc (the re-scored pass) skips the MC-dropout readouts
 
 
 def load(ck):
@@ -59,22 +64,25 @@ def conds_for(r):
 
 def build_eval(r, n_walks, n_tokens=T, map_seed=HELDOUT):
     """-> {cond: (tokens (N, T), targets)} plus '_slots' ({cond: per walk, the rendering's slots}); targets: list of
-    (walk, pos, true tok, landmark-at-rate-r, conflict, alt obj) for revisit slots with move index < K1. CPU only,
+    (walk, pos, true tok, landmark-at-rate-r, conflict, alt obj, landmark-at-rate-0.5) for revisit slots with move
+    index < K1. The last field (Amendment 1, D1) is defined for every training rate by the coupled draws: the
+    in-distribution probe scores the 'own' rendering on cells that are NOT landmarks at rate 0.5. CPU only,
     deterministic."""
     env = TextWorldLandmark(size=64, seed=map_seed)
-    cd = conds_for(r); keys = list(dict.fromkeys(cd.values()))
+    cd = conds_for(r); keys = list(dict.fromkeys(list(cd.values()) + [(0.5, "consistent")]))
     np.random.seed(EVAL_SEED)
     out = {c: ([], []) for c in cd}; slots_all = {c: [] for c in cd}
     for w in range(n_walks):
         R = render_conditions(env, n_tokens, keys)
         K1 = len(R[(1.0, "consistent")][3])
         land = {s[1]: s[3] for s in R[(r, "consistent")][3]}
+        land05 = {s[1]: s[3] for s in R[(0.5, "consistent")][3]}
         for c, key in cd.items():
             t, _o, _rv, slots = R[key]
             out[c][0].append(t); slots_all[c].append(slots)
             for (pos, k, cell, _l, rev, conf, alt) in slots:
                 if rev and k < K1:
-                    out[c][1].append((w, pos, int(t[pos]), bool(land[k]), conf, alt))
+                    out[c][1].append((w, pos, int(t[pos]), bool(land[k]), conf, alt, bool(land05[k])))
     E = {c: (torch.stack(v[0]), v[1]) for c, v in out.items()}
     E["_slots"] = slots_all
     return E
@@ -116,7 +124,7 @@ def predict(m, toks, dev, bs=20, hook=None):
 
 
 def acc_of(pred, targets, sel=lambda t: True):
-    ok = [int(pred[w, pos - 1]) == y for (w, pos, y, l, c, a) in targets if sel((w, pos, y, l, c, a))]
+    ok = [int(pred[t[0], t[1] - 1]) == t[2] for t in targets if sel(t)]
     return (float(np.mean(ok)) if ok else float("nan")), len(ok)
 
 
@@ -162,6 +170,12 @@ def drift(m, toks, targets_slots, thr=1.0):
     return {"drift": int((md > thr).sum()), "drift_rad": float(md.mean()), "channels": int(md.size)}
 
 
+def ckpt_md5(run_dir):
+    arm = [f for f in os.listdir(run_dir) if f.endswith(".pt")]
+    assert len(arm) == 1, (run_dir, arm)
+    return hashlib.md5(open(os.path.join(run_dir, arm[0]), "rb").read()).hexdigest()
+
+
 def readouts(run_dir, n_walks, dev, cache):
     arm = [f for f in os.listdir(run_dir) if f.endswith(".pt")]
     assert len(arm) == 1, (run_dir, arm)
@@ -174,7 +188,7 @@ def readouts(run_dir, n_walks, dev, cache):
     c = classify_run(losses)
     out = {"arm": a["arm"], "n_layers": a["n_layers"], "name_rate": r, "seed": a["seed"], "cls": c["registered"],
            "tail": float(c["tail"]), "final_loss": float(np.mean(losses[-max(1, len(losses) // 20):])),
-           "n_targets": len(E["own"][1])}
+           "n_targets": len(E["own"][1]), "n_walks": n_walks, "ckpt_md5": ckpt_md5(run_dir)}
     path = hasattr(m, "action_to_lie")
     dirs = [i for d in range(4) for i in env.dir_ids[d]]
     hook = DirMean(m, dirs, env.name_ids + [env.mark_id]) if path else None
@@ -185,14 +199,16 @@ def readouts(run_dir, n_walks, dev, cache):
         if cond == "own":
             out["acc_own_land"], out["n_own_land"] = acc_of(p, tg, lambda t: t[3])
             out["acc_own_unnamed"], out["n_own_unnamed"] = acc_of(p, tg, lambda t: not t[3])
+            # Amendment 1 (D1): the in-distribution probe -- own rendering, cells unnamed at rate 0.5
+            out["acc_own_u05"], out["n_own_u05"] = acc_of(p, tg, lambda t: not t[6])
         if cond == "conf":
             # conflict targets with two DIFFERENT, NON-BLANK objects: with a blank on either side the base rate of
             # 'nothing' alone makes a constant predictor look like a name- or path-follower (e2e test: 0.31 vs 0.52)
             nothing = env.idx["nothing"]
             cf = [t for t in tg if t[4] and t[5] != t[2] and t[2] != nothing and t[5] != nothing]
             out["n_conf"] = len(cf)
-            out["conf_path"] = float(np.mean([int(p[w, pos - 1]) == y for (w, pos, y, *_x) in cf])) if cf else float("nan")
-            out["conf_name"] = float(np.mean([int(p[w, pos - 1]) == al for (w, pos, y, l, c_, al) in cf])) if cf else float("nan")
+            out["conf_path"] = float(np.mean([int(p[t[0], t[1] - 1]) == t[2] for t in cf])) if cf else float("nan")
+            out["conf_name"] = float(np.mean([int(p[t[0], t[1] - 1]) == t[5] for t in cf])) if cf else float("nan")
         if path and cond in ("own", "strip", "uninf", "named"):
             for mode, key in (("dir", f"rel_{cond}"), ("all", f"rel_all_{cond}")):
                 if mode == "all" and cond != "uninf":
@@ -201,6 +217,18 @@ def readouts(run_dir, n_walks, dev, cache):
                 q = predict(m, toks, dev, hook=hook)
                 hook.mode = None
                 out[key] = out[f"acc_{cond}"] - acc_of(q, tg)[0]
+                if cond == "own" and mode == "dir":
+                    out["rel_own_u05"] = out["acc_own_u05"] - acc_of(q, tg, lambda t: not t[6])[0]
+        if cond in ("own", "strip") and MC:
+            # Amendment 1 (D3): MC-dropout accuracy (train mode, all dropout on, mean of 3 dropout seeds): valid at any
+            # depth, unlike the one-layer x1/(1-p) re-score. Read it from the PLAIN pass (rescore_hook's pre-hooks stay
+            # on in train mode, so the re-scored pass's MC values are double-scaled and not used).
+            mc = []
+            for k in range(3):
+                m.train(); torch.manual_seed(k)
+                mc.append(acc_of(predict(m, toks, dev), tg)[0])
+            m.eval()
+            out[f"acc_{cond}_mc"] = float(np.mean(mc))
     out["name_benefit"] = out["acc_named"] - out["acc_uninf"]
     if path:
         hook.h.remove(); m.cpu()
@@ -216,13 +244,17 @@ def main():
     ap.add_argument("--n-walks", type=int, default=200)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--threads", type=int, default=8)
+    ap.add_argument("--no-mc", action="store_true")
     a = ap.parse_args()
+    global MC
+    MC = not a.no_mc
     torch.set_num_threads(a.threads)
     res = json.load(open(a.out)) if os.path.exists(a.out) else {}
     cache = {}
     for rd in a.runs:
         key = os.path.basename(rd.rstrip("/"))
-        if key in res:
+        # Amendment 1 (N5): reuse a stored readout only if it was computed from THIS checkpoint with these walks
+        if key in res and res[key].get("ckpt_md5") == ckpt_md5(rd) and res[key].get("n_walks") == a.n_walks:
             continue
         res[key] = readouts(rd, a.n_walks, a.device, cache)
         json.dump(res, open(a.out + ".tmp", "w"), indent=1); os.replace(a.out + ".tmp", a.out)

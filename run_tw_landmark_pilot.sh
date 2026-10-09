@@ -13,7 +13,8 @@ set -uo pipefail
 REPO="$(cd "$(dirname "$0")" && pwd)"
 LOG="${TL_LOG:-$REPO/tw_landmark_pilot.log}"
 source "$REPO/lib_driver.sh"
-DRV_MAXPG="${TL_MAXPG:-4}"; DRV_SPACING="${TL_SPACING:-15}"; DRV_MINFREE="${TL_MINFREE:-7000}"
+DRV_MAXPG="${TL_MAXPG:-4}"; DRV_SPACING="${TL_SPACING:-60}"; DRV_MINFREE="${TL_MINFREE:-7000}"
+RUN_TIMEOUT="${TL_RUN_TIMEOUT:-8h}"
 drv_lock "$REPO/.run_tw_landmark_pilot.lock" || exit 1
 cd "$REPO/.."
 R="${TL_RUNS:-$REPO/runs/tw_landmark_pilot}"; mkdir -p "$R/p0"   # TL_RUNS: dry-run test only
@@ -24,7 +25,7 @@ echo "start $(date)" >> "$LOG"
 drv_md5_guard "$R" "${GUARD[@]}" || exit 1
 _drv_log "code version: $(cd "$REPO" && git rev-parse HEAD) $(cd "$REPO" && [ -z "$(git status --porcelain -- "${GUARD[@]}")" ] && echo clean || echo "DIRTY (a guarded file is modified or untracked)")"
 ( while :; do echo "$(date +%T) $(nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader | tr '\n' ';')" \
-    >> "$R/gpu_mem.log"; sleep 300; done ) & MEMPID=$!
+    >> "$R/gpu_mem.log"; sleep 20; done ) & MEMPID=$!     # 20 s: time-to-peak and peak per job (N7)
 trap 'kill "$MEMPID" 2>/dev/null' EXIT
 RUNS=()
 launch() {  # arm layers rate seed epochs outdir
@@ -35,7 +36,7 @@ launch() {  # arm layers rate seed epochs outdir
   fi
   mkdir -p "$OUT"; local G; G=$(drv_wait_slot)
   echo "$(date +%H:%M:%S) $1 L$2 r$3 s$4 e$5 -> cuda:$G" >> "$LOG"
-  OMP_NUM_THREADS=2 drv_launch "$OUT.log" python3 -u -m mapformer.train_tw_landmark --arm "$1" --n-layers "$2" \
+  OMP_NUM_THREADS=2 drv_launch "$OUT.log" timeout "$RUN_TIMEOUT" python3 -u -m mapformer.train_tw_landmark --arm "$1" --n-layers "$2" \
     --name-rate "$3" --seed "$4" --epochs "$5" --device "cuda:$G" --output-dir "$OUT"
 }
 for C in MapWM:2:0.0 MapWM:2:1.0 RoPE:2:1.0 MapWM:1:1.0 RoPE:1:1.0; do
@@ -61,9 +62,12 @@ EOF
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before eval"
 CUDA_VISIBLE_DEVICES="" python3 -u -m mapformer.tw_landmark_eval --runs "${RUNS[@]}" --threads 12 --out "$R/eval.json" \
   >> "$R/analysis.txt" 2>&1 || drv_fail eval
+# Amendment 1 (D3): the x1/(1-p) re-score beside eval mode and MC-dropout (from the plain pass), per run
+CUDA_VISIBLE_DEVICES="" python3 -u -m mapformer.rescore_hook --scale auto -- mapformer.tw_landmark_eval --runs "${RUNS[@]}" \
+  --threads 12 --no-mc --out "$R/eval_rescored.json" >> "$R/analysis.txt" 2>&1 || drv_fail "eval rescored"
 python3 - "$R" <<'EOF' >> "$R/analysis.txt" 2>&1
 import json, re, sys, glob
-R = sys.argv[1]; E = json.load(open(f"{R}/eval.json"))
+R = sys.argv[1]; E = json.load(open(f"{R}/eval.json")); E2 = json.load(open(f"{R}/eval_rescored.json"))
 print("\nrun | acc own / strip / uninf / named | reliance strip / uninf / named | name benefit | conflict path / name | class | final loss | s/epoch (last 50)")
 for k, r in E.items():
     t = [float(x) for x in re.findall(r"\| ([0-9.]+)s$", open(f"{R}/p0/{k}.log").read(), re.M)][-10:]
@@ -71,5 +75,22 @@ for k, r in E.items():
     print(f"{k} | {g('acc_own'):.4f} / {g('acc_strip'):.4f} / {g('acc_uninf'):.4f} / {g('acc_named'):.4f} | "
           f"{g('rel_strip'):+.4f} / {g('rel_uninf'):+.4f} / {g('rel_named'):+.4f} | {g('name_benefit'):+.4f} | "
           f"{g('conf_path'):.3f} / {g('conf_name'):.3f} | {r['cls']} | {r['final_loss']:.4f} | {sum(t) / max(1, len(t)):.2f}")
+print("\nAmendment 1 (D3): accuracy own / strip in eval mode | x1/(1-p) re-scored | MC-dropout (3 seeds); reliance uninf "
+      "eval | re-scored")
+for k, r in E.items():
+    q = E2[k]
+    print(f"{k} | {r['acc_own']:.4f} / {r['acc_strip']:.4f} | {q['acc_own']:.4f} / {q['acc_strip']:.4f} | "
+          f"{r['acc_own_mc']:.4f} / {r['acc_strip_mc']:.4f} | {r.get('rel_uninf', float('nan')):+.4f} | "
+          f"{q.get('rel_uninf', float('nan')):+.4f}")
+# Amendment 1 (D4): the pilot criteria, quantified before the pilot is read
+P2_0, R2_1, P1_1, R1_1 = (E[f"{k}_s150"] for k in ("MapWM_L2_r0.0", "RoPE_L2_r1.0", "MapWM_L1_r1.0", "RoPE_L1_r1.0"))
+crit = {
+    "(a) P2 r=0 path-integrates: rel_strip >= 0.2 and acc_strip >= 0.90": P2_0["rel_strip"] >= 0.2 and P2_0["acc_strip"] >= 0.90,
+    "(b) R2 r=1 uses names: name benefit >= 0.10 and acc_named >= 0.85": R2_1["name_benefit"] >= 0.10 and R2_1["acc_named"] >= 0.85,
+    "(c1) RoPE 1L r=1 name-blind: acc_own <= 0.623 and |name benefit| <= 0.02": R1_1["acc_own"] <= 0.623 and abs(R1_1["name_benefit"]) <= 0.02,
+    "(c2) P1 r=1 name-blind: |name benefit| <= 0.02": abs(P1_1["name_benefit"]) <= 0.02,
+}
+for c, ok in crit.items():
+    print(f"PILOT CRITERION {c}: {'PASS' if ok else 'FAIL'}")
 EOF
 drv_done "$REPO/.tw_landmark_pilot_done" "$R/eval.json" "$R/analysis.txt"

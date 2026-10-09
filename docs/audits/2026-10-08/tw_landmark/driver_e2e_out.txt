@@ -1,24 +1,32 @@
-End-to-end CPU test of run_tw_landmark.sh (2026-10-08): 48 runs trained on CPU for 2 epochs x 2 batches (batch 4) into a scratch dir,
-then the real driver with TL_RUNS / TL_OUT (scratch) and TL_NWALKS=6: launch loop (all skipped: train.json present),
-md5 guard, 4 CPU eval shards x 2 passes (plain, rescore_hook), merge, analysis, done marker. Paths shortened to $S.
+End-to-end CPU test of run_tw_landmark.sh: 48 runs trained on CPU for 2 epochs x 2 batches (batch 4) into a scratch dir,
+then the real driver with TL_RUNS / TL_OUT (scratch), TL_NWALKS=6, TL_SPACING=0: launch loop (all skipped: train.json present),
+md5 guard, 4 CPU eval shards x 2 passes (plain with MC-dropout; rescore_hook with --no-mc), merge, analysis, done marker.
+Paths shortened to $S. Original build (fc7fd4c): run 1 below; Amendment 1 code: runs 2-3.
 
-== run 1: a module edited while the driver ran -> the md5 re-check aborts before the analysis (as intended) ==
+== run 1 (fc7fd4c build): a module edited while the driver ran -> the md5 re-check aborts before the analysis (as intended) ==
 start Thu Oct  8 09:05:06 PM PDT 2026
 2026-10-08 21:05:06 code version at launch: 190558dd1b1068e2929d27eda542f344466d05bc clean
 2026-10-08 21:05:07 eval: starting (4 CPU shards x 2 passes)
 2026-10-08 21:07:17 ABORT: training code changed since $S/code_md5.txt
 2026-10-08 21:07:17 FAILED: code changed before analysis -- done marker NOT set
 
-== run 2 (clean) ==
-start Thu Oct  8 09:10:02 PM PDT 2026
-2026-10-08 21:10:02 code version at launch: 190558dd1b1068e2929d27eda542f344466d05bc clean
-2026-10-08 21:10:02 eval: starting (4 CPU shards x 2 passes)
-2026-10-08 21:12:13 DONE $S/out/.tw_landmark_done
+== run 2 (Amendment 1 code): FAILED in the analysis -- the re-scored pass has no MC-dropout fields (KeyError acc_own_mc).
+   Fixed (MC secondary printed only when present) and added to the smoke test. Log: ==
+start Thu Oct  8 10:25:39 PM PDT 2026
+2026-10-08 22:25:39 code version at launch: 76a38d208a77c5fbeb481034ded509240ccaf192 DIRTY (a guarded file is modified or untracked)
+2026-10-08 22:25:39 eval: starting (4 CPU shards x 2 passes)
+2026-10-08 22:32:33 FAILED: analyze -- done marker NOT set
+
+== run 3 (fixed; the shard outputs of run 2 were REUSED because their checkpoint md5 and walk count matched -- the N5 path) ==
+start Thu Oct  8 10:33:03 PM PDT 2026
+2026-10-08 22:33:03 code version at launch: 76a38d208a77c5fbeb481034ded509240ccaf192 DIRTY (a guarded file is modified or untracked)
+2026-10-08 22:33:03 eval: starting (4 CPU shards x 2 passes)
+2026-10-08 22:33:15 DONE $S/out/.tw_landmark_done
 (48 'skip' lines omitted)
 
-rescore_hook: [rescore_hook] layers hooked 22, hook calls 180, unknown layer classes skipped []
+rescore_hook: [rescore_hook] layers hooked 0, hook calls 0, unknown layer classes skipped []
 
-== TW_LANDMARK_ANALYSIS.txt (untrained-like runs; verdicts read O UNMEASURED / NO DETECTABLE DIFFERENCE, as they must) ==
+== TW_LANDMARK_ANALYSIS.txt (untrained-like runs; verdicts must read UNMEASURED / NO DETECTABLE DIFFERENCE) ==
 == per cell (n=6): acc own / strip / uninf / named | reliance strip / uninf / named | name benefit | conflict path / name | SOLVED | final loss ==
   P2 r=0.0: 0.5493 / 0.5493 / 0.5493 / 0.5493 | +0.0000 / +0.0000 / +0.0000 | +0.0000 | 0.000 / 0.000 | 0/6 | 4.7570
   P2 r=0.5: 0.5493 / 0.5493 / 0.5493 / 0.5493 | +0.0000 / +0.0000 / +0.0000 | +0.0000 | 0.000 / 0.000 | 0/6 | 4.7731
@@ -29,7 +37,12 @@ rescore_hook: [rescore_hook] layers hooked 22, hook calls 180, unknown layer cla
   P1 r=0.0: 0.5059 / 0.5059 / 0.5059 / 0.5047 | +0.0000 / +0.0000 / +0.0035 | -0.0012 | 0.000 / 0.000 | 0/6 | 5.4198
   P1 r=1.0: 0.5000 / 0.4953 / 0.4977 / 0.5000 | +0.0047 / +0.0023 / +0.0047 | +0.0023 | 0.000 / 0.000 | 0/6 | 5.4035
 
-== PRIMARY O: do names overshadow the map? (P2, MapWM 2 layers; fires: perm p < .05 and |d| >= 0.05; gate: median reliance of P2(r=0) >= 0.2) ==
+== PRIMARY O-ID (Amendment 1): the in-distribution probe, r=0.5 vs r=0 (P2; fires: perm p < .05 and |d| >= 0.05) ==
+  reliance, own rendering, cells unnamed at rate 0.5: P2(r=0.5) - P2(r=0): d +0.0000 (perm p 1.0000, 95% CI [+0.0000, +0.0000])
+  companion (no verdict): accuracy on the same targets: d +0.0000 (perm p 1.0000, 95% CI [+0.0000, +0.0000])
+  REGISTERED O-ID: O-ID UNMEASURED: P2 trained without names does not path-integrate (median reliance 0.0000)
+
+== PRIMARY O: do names overshadow the map? OUT-OF-DISTRIBUTION probes at r>0 (names fresh / absent at test) (P2, MapWM 2 layers; fires: perm p < .05 and |d| >= 0.05; gate: median reliance of P2(r=0) >= 0.2) ==
  O1: r=1.0 vs r=0
   reliance (names uninformative) P2(r=1.0) - P2(r=0): d +0.0000 (perm p 1.0000, 95% CI [+0.0000, +0.0000])
   names-stripped accuracy        P2(r=1.0) - P2(r=0): d +0.0000 (perm p 1.0000, 95% CI [+0.0000, +0.0000])
@@ -50,24 +63,37 @@ rescore_hook: [rescore_hook] layers hooked 22, hook calls 180, unknown layer cla
   REGISTERED I1: NO DETECTABLE DIFFERENCE (unmeasured below 0.0200)  [Holm p 1.0000]
   REGISTERED I05: NO DETECTABLE DIFFERENCE (unmeasured below 0.0200)  [Holm p 1.0000]
   REGISTERED I05u: NO DETECTABLE DIFFERENCE (unmeasured below 0.0200)  [Holm p 1.0000]
-  COMPOSITE (from I0 and I1, no new test): NO COMPOSITE (I0 is not PATH WINS)
+  COMPOSITE (from I0 and I1, no new test; a PATH WINS that does not survive Holm counts as a win): NO COMPOSITE (I0 is not PATH WINS)
 
 == declared secondaries (no verdict) ==
-/home/prashr/mapformer/analyze_tw_landmark.py:178: RuntimeWarning: Mean of empty slice
+/home/prashr/mapformer/analyze_tw_landmark.py:253: RuntimeWarning: Mean of empty slice
   f"{np.nanmean(g('R2', r, 'acc_own_land')):.4f} / {np.nanmean(g('R2', r, 'acc_own_unnamed')):.4f}; "
-/home/prashr/mapformer/analyze_tw_landmark.py:179: RuntimeWarning: Mean of empty slice
+/home/prashr/mapformer/analyze_tw_landmark.py:254: RuntimeWarning: Mean of empty slice
   f"P2 {np.nanmean(g('P2', r, 'acc_own_land')):.4f} / {np.nanmean(g('P2', r, 'acc_own_unnamed')):.4f}")
   R2 r=0.0: name benefit +0.0000; acc own landmark / unnamed nan / 0.5493; P2 nan / 0.5493
   R2 r=0.5: name benefit +0.0000; acc own landmark / unnamed 0.5658 / 0.5303; P2 0.5658 / 0.5303
   R2 r=1.0: name benefit +0.0000; acc own landmark / unnamed 0.5493 / nan; P2 0.5493 / nan
   paired by seed (same init, same walks) P2 reliance r=0.5 - r=0: +0.0000, sign-flip p 1.0000
   paired by seed (same init, same walks) P2 reliance r=1.0 - r=0: +0.0000, sign-flip p 1.0000
-  P2 r=0.0 step table: move 0.944, opposition minus common 2.157, name step 0.977 (identity part 0.976) of a direction step; drift 50.2/64 (53 45 53 49 57 44); rel_all(uninf) +0.0000
-  P2 r=0.5 step table: move 0.945, opposition minus common 2.128, name step 0.980 (identity part 0.978) of a direction step; drift 49.3/64 (55 40 49 52 53 47); rel_all(uninf) +0.0000
-  P2 r=1.0 step table: move 0.946, opposition minus common 2.082, name step 0.977 (identity part 0.976) of a direction step; drift 52.0/64 (60 48 51 54 53 46); rel_all(uninf) +0.0000
-  P1 r=0.0 step table: move 0.949, opposition minus common 2.109, name step 0.980 (identity part 0.978) of a direction step; drift 50.8/64 (58 41 56 48 54 48); rel_all(uninf) +0.0000
-  P1 r=1.0 step table: move 0.940, opposition minus common 2.118, name step 0.971 (identity part 0.970) of a direction step; drift 53.0/64 (60 50 52 49 54 53); rel_all(uninf) +0.0059
+  P2 r=0.0 step table: move 0.944, opposition minus common 2.157, name step 0.977 (identity part 0.976) of a direction step; drift 50.2/64 (53 45 53 49 57 44); rel_all(uninf) +0.0000; rel_own +0.0000; mark step 0.832; common / direction 0.308
+  P2 r=0.5 step table: move 0.945, opposition minus common 2.128, name step 0.980 (identity part 0.978) of a direction step; drift 49.3/64 (55 40 49 52 53 47); rel_all(uninf) +0.0000; rel_own +0.0000; mark step 0.872; common / direction 0.300
+  P2 r=1.0 step table: move 0.946, opposition minus common 2.082, name step 0.977 (identity part 0.976) of a direction step; drift 52.0/64 (60 48 51 54 53 46); rel_all(uninf) +0.0000; rel_own +0.0000; mark step 0.908; common / direction 0.316
+  P1 r=0.0 step table: move 0.949, opposition minus common 2.109, name step 0.980 (identity part 0.978) of a direction step; drift 50.8/64 (58 41 56 48 54 48); rel_all(uninf) +0.0000; rel_own +0.0000; mark step 0.839; common / direction 0.308
+  P1 r=1.0 step table: move 0.940, opposition minus common 2.118, name step 0.971 (identity part 0.970) of a direction step; drift 53.0/64 (60 50 52 49 54 53); rel_all(uninf) +0.0059; rel_own +0.0047; mark step 0.838; common / direction 0.311
   cue conflict at r=1.0: share following the NAME, P2 0.000 vs R2 0.000 (d +0.0000 (perm p 1.0000, 95% CI [+0.0000, +0.0000])); following the PATH, P2 0.000
+  MC-dropout accuracy (train mode, 3 dropout seeds; valid at any depth; Amendment 1 D3), own / strip:
+    P2 r=0.0: 0.5493 / 0.5493 (eval mode 0.5493 / 0.5493)
+    P2 r=0.5: 0.5493 / 0.5493 (eval mode 0.5493 / 0.5493)
+    P2 r=1.0: 0.5493 / 0.5493 (eval mode 0.5493 / 0.5493)
+    R2 r=0.0: 0.5493 / 0.5493 (eval mode 0.5493 / 0.5493)
+    R2 r=0.5: 0.5493 / 0.5493 (eval mode 0.5493 / 0.5493)
+    R2 r=1.0: 0.5493 / 0.5493 (eval mode 0.5493 / 0.5493)
+    P1 r=0.0: 0.4977 / 0.4977 (eval mode 0.5059 / 0.5059)
+    P1 r=1.0: 0.5027 / 0.4973 (eval mode 0.5000 / 0.4953)
+    P2 - R2 at r=0.0 on MC-dropout accuracy: d +0.0000 (perm p 1.0000, 95% CI [+0.0000, +0.0000])
+    P2 - R2 at r=0.5 on MC-dropout accuracy: d +0.0000 (perm p 1.0000, 95% CI [+0.0000, +0.0000])
+    P2 - R2 at r=1.0 on MC-dropout accuracy: d +0.0000 (perm p 1.0000, 95% CI [+0.0000, +0.0000])
+    P2 names-stripped MC-dropout accuracy r=1 - r=0: d +0.0000 (perm p 1.0000, 95% CI [+0.0000, +0.0000])
   r(final loss, acc own) over 48 runs: -0.544
 
 == declared secondary: dropout re-score (x 1/(1-p) at eval, rescore_hook). A ONE-LAYER correction: in 2-layer models it compounds and is not a better estimate (DROPOUT_RESCORE.md), so only flips are flagged ==
@@ -79,19 +105,21 @@ rescore_hook: [rescore_hook] layers hooked 22, hook calls 180, unknown layer cla
     R2 r=1.0: 0.5493 / 0.5493 / 0.5493 / 0.5493 | +nan / +nan / +nan | +0.0000 | 0.000 / 0.000 | 0/6 | 4.6631
     P1 r=0.0: 0.5059 / 0.5059 / 0.5059 / 0.5059 | +0.0000 / +0.0000 / +0.0000 | +0.0000 | 0.000 / 0.000 | 0/6 | 5.4198
     P1 r=1.0: 0.5200 / 0.5235 / 0.5223 / 0.5200 | -0.0012 / +0.0012 / -0.0035 | -0.0023 | 0.000 / 0.000 | 0/6 | 5.4035
+    REGISTERED O-ID: O-ID UNMEASURED: P2 trained without names does not path-integrate (median reliance 0.0000)
     REGISTERED O1: O UNMEASURED: P2 trained without names does not path-integrate (median reliance 0.0000 < 0.2; 0/6 SOLVED)
     REGISTERED O2: O UNMEASURED: P2 trained without names does not path-integrate (median reliance 0.0000 < 0.2; 0/6 SOLVED)
     REGISTERED I0: NO DETECTABLE DIFFERENCE (unmeasured below 0.0200)  [Holm p 1.0000]
     REGISTERED I1: NO DETECTABLE DIFFERENCE (unmeasured below 0.0200)  [Holm p 1.0000]
     REGISTERED I05: NO DETECTABLE DIFFERENCE (unmeasured below 0.0200)  [Holm p 1.0000]
     REGISTERED I05u: NO DETECTABLE DIFFERENCE (unmeasured below 0.0200)  [Holm p 1.0000]
-    COMPOSITE (from I0 and I1, no new test): NO COMPOSITE (I0 is not PATH WINS)
+    COMPOSITE (from I0 and I1, no new test; a PATH WINS that does not survive Holm counts as a win): NO COMPOSITE (I0 is not PATH WINS)
     R2 r=0.0: name benefit +0.0000; acc own landmark / unnamed nan / 0.5493; P2 nan / 0.5493
     R2 r=0.5: name benefit +0.0000; acc own landmark / unnamed 0.5658 / 0.5303; P2 0.5658 / 0.5303
     R2 r=1.0: name benefit +0.0000; acc own landmark / unnamed 0.5493 / nan; P2 0.5493 / nan
 
 == TW_LANDMARK_VERDICTS.json ==
 {
+ "O-ID": "O-ID UNMEASURED: P2 trained without names does not path-integrate (median reliance 0.0000)",
  "O1": "O UNMEASURED: P2 trained without names does not path-integrate (median reliance 0.0000 < 0.2; 0/6 SOLVED)",
  "O2": "O UNMEASURED: P2 trained without names does not path-integrate (median reliance 0.0000 < 0.2; 0/6 SOLVED)",
  "I0": "NO DETECTABLE DIFFERENCE (unmeasured below 0.0200)",

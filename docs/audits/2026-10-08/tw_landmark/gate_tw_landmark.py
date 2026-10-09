@@ -31,7 +31,7 @@ def rules(toks, tg, slots, env):
     out = {"rcopy": [], "ncopy": [], "ncopy+rcopy": [], "nameable": []}
     ys = [t[2] for t in tg]
     cache = {}
-    for (w, pos, y, land, conf, alt) in tg:
+    for (w, pos, y, land, conf, alt, _l05) in tg:
         if w not in cache:
             tok = toks[w].tolist()
             cache[w] = (tok, [w2d[x] for x in tok if x in w2d], {s_[1]: s_[0] for s_ in slots[w]},
@@ -84,11 +84,12 @@ def main():
         so = E["_slots"]["own"]
         nslot = np.mean([len(s) for s in so]); rf = np.mean([sum(x[4] for x in s) / len(s) for s in so])
         toks, tg = E["own"]
-        land = np.mean([t[3] for t in tg])
+        land = np.mean([t[3] for t in tg]); u05 = sum(not t[6] for t in tg)
         assert int(max(int(E[c][0].max()) for c in conds_for(r))) < env.unified_vocab_size
         print(f"\n=== training rate r = {r}: own rendering {nslot:.1f} object slots / walk, revisit fraction {rf:.3f}; "
               f"scored common-move revisit targets {len(tg)} ({len(tg) / 200:.1f} / walk); "
-              f"share of scored revisits whose place is named before (landmark): {land:.3f}")
+              f"share of scored revisits whose place is named before (landmark): {land:.3f}; "
+              f"in-distribution probe subset (cells unnamed at rate 0.5, Amendment 1): {u05} targets")
         ys = [t[2] for t in tg]
         lnd = [t[2] for t in tg if t[3]]; unn = [t[2] for t in tg if not t[3]]
         if lnd and unn:
