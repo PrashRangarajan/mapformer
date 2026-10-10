@@ -6,7 +6,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "$0")" && pwd)"
 LOG="$REPO/tinystories.log"
 source "$REPO/lib_driver.sh"
-DRV_MAXPG=6; DRV_MINFREE=4000; DRV_SPACING=20     # assigned after sourcing (rule 27)
+DRV_MAXPG=2; DRV_MINFREE=9000; DRV_SPACING=90     # assigned after sourcing (rule 27); a run peaks at ~8.5 GB (6 at once OOM-killed 4)
 export DRV_GPUS="${DRV_GPUS:-0}"
 drv_lock "$REPO/.tinystories.lock" || exit 0
 cd "$REPO/.."
