@@ -1,0 +1,4 @@
+RoPE_L2_r1.0_e1800_s150: own 0.7869 strip 0.4687 uninf 0.7802 named 0.7869 rel_uninf nan STALLED
+RoPE_L3_r1.0_e900_s150: own 0.9666 strip 0.5274 uninf 0.7418 named 0.9666 rel_uninf nan DESCENDING
+RoPE_L2_r1.0_e1800_s150: own 0.7869 strip 0.4687 uninf 0.7802 named 0.7869 name benefit +0.0067 conflict path/name 0.711/0.015 STALLED final loss 0.6813 -> criterion (b) FAIL
+RoPE_L3_r1.0_e900_s150: own 0.9666 strip 0.5274 uninf 0.7418 named 0.9666 name benefit +0.2248 conflict path/name 0.756/0.006 DESCENDING final loss 0.1100 -> criterion (b) PASS

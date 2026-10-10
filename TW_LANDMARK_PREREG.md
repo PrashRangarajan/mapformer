@@ -318,3 +318,23 @@ Noted, not used for any decision: at r = 1 the 2-layer path model follows the pa
 (1.000 / 0.000) and gains nothing from names; without the name route's existence this cannot be read as "the path
 blocks the names" rather than "names are unlearnable at this budget". Stripping names drops it to 0.50 (out of
 distribution, Amendment 1 D1).
+
+## Amendment 3 (2026-10-10, existence runs after Amendment 2; the batch is still NOT launched)
+Script `docs/audits/2026-10-10/tw_landmark_exist.sh` (committed 631ec43 before launch, clean), seed 150, name rate 1,
+one run per GPU; output `runs/tw_landmark_pilot/exist/` (`eval.json`, `eval_out.txt`). Pass rule = criterion (b)
+unchanged (name benefit >= 0.10 and acc_named >= 0.85).
+
+| run | own | strip | uninf | named | name benefit | conflict path / name (n = 537) | class (final loss) | (b) |
+|---|---|---|---|---|---|---|---|---|
+| RoPE 2L, 1800 epochs | 0.7869 | 0.4687 | 0.7802 | 0.7869 | +0.0067 | 0.711 / 0.015 | STALLED (0.681; still falling: 0.95 at ep 900) | FAIL |
+| RoPE 3L, 900 epochs | 0.9666 | 0.5274 | 0.7418 | 0.9666 | **+0.2248** | 0.756 / 0.006 | DESCENDING (0.110) | **PASS** |
+
+- **The name route exists at 3 layers** (900 epochs), not at 2 layers even with twice the budget (one seed each).
+- **Conflict readout caveat (read, not used for a decision).** The 3-layer index model gains +0.22 from consistent names
+  but follows a misleading name on 0.6% of conflict targets (true-cell object 75.6%). An index model that uses names
+  therefore does NOT follow them when they disagree with the rest of the context: in this task the conflict readout does
+  not separate "the path blocks the names" from "names are used only jointly with other context". The P2 r=1 pilot's
+  1.000 / 0.000 cannot be read as path dominance. Mechanism unexamined.
+- Consequence for a redesign (to be written as its own amendment, with a fresh independent audit, before any batch):
+  the index arm needs 3 layers; matched depth puts the path arm at 3 layers too; RoPE 3L was still descending at 900
+  epochs, so the budget needs a pilot; overshadowing must be read from in-distribution readouts (O-ID), not conflicts.
