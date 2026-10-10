@@ -292,3 +292,29 @@ incl. the O-ID branches, the OOD tags, the re-scored attribution), end-to-end dr
 caught one bug in the amended analysis -- the re-scored pass has no MC fields -- fixed, added to the smoke test, and it
 exercised the N5 reuse path).
 Cost: the plain readout pass gains 6 MC forwards per run (~+60% of its CPU time; readouts ~1.5 h in 4 shards).
+
+## Amendment 2 (2026-10-10, pilot outcomes; the batch is NOT launched)
+Pilot `run_tw_landmark_pilot.sh` at f840699 (clean), seed 150, both GPUs, 11:22-12:17; output
+`runs/tw_landmark_pilot/analysis.txt`, `eval.json`, `eval_rescored.json`, `gpu_mem.log`.
+(e) Pipeline end to end on GPU-trained checkpoints: OK. GPU reproduction (MapWM 2L r=1 s151, 3 epochs, twice): BITWISE
+IDENTICAL. (d) Cost: 1.2-2.4 s/epoch at 5-7 concurrent jobs on two GPUs; peak per job ~1.8 GB (2-layer), ~1.4 GB
+(1-layer); 900 epochs ~30-50 min.
+Outcome, READ (n = 1, no verdict), eval mode (re-scored and MC-dropout agree within 0.01):
+
+| run | own | strip | uninf | named | rel_uninf | name benefit | conflict path / name | class |
+|---|---|---|---|---|---|---|---|---|
+| MapWM 2L r=0 | 1.0000 | 1.0000 | 1.0000 | 0.7542 | 0.499 | -0.246 | 0.620 / 0.017 | SOLVED |
+| MapWM 2L r=1 | 0.9996 | 0.5012 | 0.9996 | 0.9996 | 0.495 | 0.000 | **1.000 / 0.000** | SOLVED |
+| RoPE 2L r=1 | 0.7557 | 0.4356 | 0.7550 | 0.7557 | -- | +0.0006 | 0.644 / 0.026 | STALLED (0.759) |
+| MapWM 1L r=1 | 0.9974 | 0.7327 | 0.9981 | 0.9974 | 0.543 | -0.0006 | 0.996 / 0.000 | SOLVED |
+| RoPE 1L r=1 | 0.5079 | 0.4364 | 0.5086 | 0.5079 | -- | -0.0006 | 0.061 / 0.011 | STALLED |
+
+Criteria (D4): (a) PASS (P2 r=0 path-integrates: rel_strip 0.499, acc_strip 1.000); **(b) FAIL** (R2 r=1 name benefit
++0.0006, acc_named 0.756: the 2-layer index model did not learn name lookup in 900 epochs; it stalls at the text-world
+RoPE 2L level, 0.772); (c1) PASS (RoPE 1L at the floor, name-blind); (c2) PASS.
+Decision, as registered for (b): **no name route at this budget -- the batch is not launched as is.** A redesign needs
+an existence proof that a 2-layer model can learn name lookup in this task before overshadowing can be asked.
+Noted, not used for any decision: at r = 1 the 2-layer path model follows the path on every conflict target
+(1.000 / 0.000) and gains nothing from names; without the name route's existence this cannot be read as "the path
+blocks the names" rather than "names are unlearnable at this budget". Stripping names drops it to 0.50 (out of
+distribution, Amendment 1 D1).
