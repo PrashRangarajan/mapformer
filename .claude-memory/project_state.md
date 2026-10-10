@@ -5,11 +5,13 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-09 22:00. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-10 13:20. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- Nothing. TinyStories pilot finished 2026-10-09 21:45 (GPU 0), probed and written up. Next candidates below.
+- Nothing. TW_LANDMARK pilot (Amendment 2: criterion (b) FAIL, RoPE 2L learns no name lookup) and existence runs
+  (Amendment 3: RoPE 3L +0.225 PASS; RoPE 2L 1800 ep FAIL; the conflict readout does not identify name use) are done.
+  NEXT (user decides): redesign at 3 layers (path and index), budget pilot, new amendment + independent audit, batch.
 
 ## Ready, not launched (each audited + amended; user chooses)
 - TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or
