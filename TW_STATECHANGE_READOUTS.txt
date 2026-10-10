@@ -1,0 +1,34 @@
+  MapWM     s50: acc 0.9978 T1 0.9985 T2drop 0.9880 SOLVED  shift_sc 0.0230 L_sc -0.0011
+  NormStep  s50: acc 0.9998 T1 0.9998 T2drop 1.0000 SOLVED  shift_sc 0.0768 L_sc +0.0004
+  DirOnly   s50: acc 0.9713 T1 0.9716 T2drop 0.9237 SOLVED  shift_sc 0.0000 L_sc +0.0000
+  RoPE      s50: acc 0.5161 T1 0.5138 T2drop 0.0201 STALLED
+  MapWM     s51: acc 0.9961 T1 0.9980 T2drop 0.9880 SOLVED  shift_sc 0.0103 L_sc -0.0018
+  NormStep  s51: acc 0.9890 T1 0.9916 T2drop 0.9779 SOLVED  shift_sc 0.0067 L_sc -0.0078
+  DirOnly   s51: acc 0.9678 T1 0.9687 T2drop 0.9096 SOLVED  shift_sc 0.0000 L_sc +0.0000
+  RoPE      s51: acc 0.5148 T1 0.5118 T2drop 0.0141 STALLED
+  MapWM     s52: acc 1.0000 T1 1.0000 T2drop 1.0000 SOLVED  shift_sc 0.0240 L_sc +0.0000
+  NormStep  s52: acc 0.9948 T1 0.9948 T2drop 0.9880 SOLVED  shift_sc 0.0141 L_sc -0.0011
+  DirOnly   s52: acc 0.9689 T1 0.9684 T2drop 0.9217 SOLVED  shift_sc 0.0000 L_sc +0.0000
+  RoPE      s52: acc 0.5146 T1 0.5116 T2drop 0.0161 STALLED
+  MapWM     s53: acc 0.9994 T1 1.0000 T2drop 0.9940 SOLVED  shift_sc 0.0423 L_sc +0.0000
+  NormStep  s53: acc 0.9888 T1 0.9916 T2drop 0.9538 SOLVED  shift_sc 0.0162 L_sc +0.0028
+  DirOnly   s53: acc 0.9699 T1 0.9699 T2drop 0.9217 SOLVED  shift_sc 0.0000 L_sc +0.0000
+  RoPE      s53: acc 0.5152 T1 0.5126 T2drop 0.0221 STALLED
+  MapWM     s54: acc 0.9991 T1 0.9995 T2drop 0.9960 SOLVED  shift_sc 0.0553 L_sc -0.0064
+  NormStep  s54: acc 0.9927 T1 0.9919 T2drop 0.9940 DESCENDING  shift_sc 0.0094 L_sc -0.0028
+  DirOnly   s54: acc 0.9708 T1 0.9711 T2drop 0.9237 SOLVED  shift_sc 0.0000 L_sc +0.0000
+  RoPE      s54: acc 0.5168 T1 0.5141 T2drop 0.0281 STALLED
+  MapWM     s55: acc 0.9903 T1 0.9896 T2drop 0.9839 SOLVED  shift_sc 0.0275 L_sc -0.0125
+  NormStep  s55: acc 0.7905 T1 0.8687 T2drop 0.9859 DESCENDING  shift_sc 0.0074 L_sc -0.0032
+  DirOnly   s55: acc 0.9715 T1 0.9716 T2drop 0.9237 SOLVED  shift_sc 0.0000 L_sc +0.0000
+  RoPE      s55: acc 0.5142 T1 0.5101 T2drop 0.0221 STALLED
+  MapWM     s56: acc 0.9027 T1 0.9173 T2drop 0.8815 DESCENDING  shift_sc 0.0097 L_sc -0.0253
+  NormStep  s56: acc 0.7816 T1 0.7932 T2drop 0.7992 DESCENDING  shift_sc 0.0034 L_sc +0.0000
+  DirOnly   s56: acc 0.9715 T1 0.9711 T2drop 0.9297 SOLVED  shift_sc 0.0000 L_sc +0.0000
+  RoPE      s56: acc 0.5150 T1 0.5114 T2drop 0.0161 STALLED
+  MapWM     s57: acc 1.0000 T1 1.0000 T2drop 1.0000 SOLVED  shift_sc 0.0351 L_sc +0.0000
+  NormStep  s57: acc 1.0000 T1 1.0000 T2drop 1.0000 SOLVED  shift_sc 0.0843 L_sc +0.0000
+  DirOnly   s57: acc 0.9725 T1 0.9726 T2drop 0.9257 SOLVED  shift_sc 0.0000 L_sc +0.0000
+  RoPE      s57: acc 0.5191 T1 0.5160 T2drop 0.0261 STALLED
+
+readouts written; run without --readouts for the verdicts

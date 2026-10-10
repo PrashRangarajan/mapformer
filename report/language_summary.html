@@ -238,6 +238,7 @@ footer{
     <li><strong>The hard case is a rank equal to the world&rsquo;s dimension, in 3-D as in 2-D.</strong> On a 3-D torus, rank 3 per head finds the solution on 1 of 8 seeds; rank 4 on 8 of 8 when the torus is large. Failures sit on revisits that are only reachable by wrapping around the torus.</li>
     <li><strong>Trained path-integrated models keep <em>what</em> apart from <em>where</em>.</strong> Removing object identity from their attention scores leaves 0.97&ndash;0.99 accuracy; index models fall below the no-memory floor. This was checked after the fact, not pre-registered.</li>
     <li><strong>A small leak of <em>what</em> into <em>where</em>, and a one-line fix.</strong> In MapFormer every token moves the position a little, objects included. Normalising the step&rsquo;s input (NormStep) removes the leak and gains +0.011 on unseen objects (8/8, p = 0.0002), as much as an oracle told which tokens are moves. On navigation told in words it neither helps nor hurts. There, the oracle that only lets direction words move is beaten by learned steps: it confuses objects mentioned in passing with objects at the place.</li>
+    <li><strong>The model also tracks what changes in the world.</strong> When the story says &ldquo;she dropped the cat&rdquo;, a one-layer path-integrated model files the cat at that place (0.98 on the first return, against 0.65 for the best rule that ignores location) and keeps the sentence from moving its map. Index attention stays at the floor.</li>
     <li><strong>The leak and PoPE-style scoring are separate problems, and their fixes combine.</strong> The leak lives in the position itself, so changing how attention is scored leaves it untouched; NormStep removes it under either scoring rule. Together &mdash; moves set the position, the items being compared only set how strongly they attend &mdash; they give the most consistent model on unseen objects: 0.9994, 8 of 8 seeds, none below 0.998.</li>
     <li><strong>Three published results replicate</strong>: MapFormer on Dyck-2, and PoPE on both Indirect Indexing and Bach Chorales.</li>
     <li><strong>A 48-parameter fix matches a 786k-parameter one.</strong> A simple distance penalty in attention repairs long-context failures on Bach, and improved every model on real code (passing a t-test for two of the four, at three seeds).</li>
@@ -451,6 +452,29 @@ footer{
     <li><span class="chip warn">Caveat</span><strong>The pre-registered test of the learned steps did not pass &mdash; but the map is there on all 8 seeds.</strong> The registered criterion held on 4 of 8 seeds, short of the 6 required. Follow-up readouts declared before the results were read show why: once a component shared by all four direction words is removed, north and south, and west and east, cancel almost exactly on every seed, and zeroing the direction words&rsquo; steps drops every model to or below the constant floor (0.39&ndash;0.51). On half the seeds that shared component is a genuine per-step clock &mdash; about half the angle channels count steps, the rest carry the map &mdash; and those seeds solve the task just as well.</li>
     <li><span class="chip warn">Scope</span><strong>Scripted grammar, context-free steps.</strong> 58 words from a fixed grammar, and a direction word never appears outside a movement clause, so a step that depends only on the word itself suffices. Real language says &ldquo;she thought about the north&rdquo;. Pilots of steps that read their context (not registered) found that a step reading only nearby words works when the cue is within about three words; a step that also reads the layer&rsquo;s hidden state learned the right step for distant cues on 4 of 4 pilot runs. The registered batch was stopped: these step designs are already published, so it would add a measurement, not a mechanism.</li>
   </ul>
+
+  <h3>When the story also changes the world</h3>
+  <p>The same walk-in-words, now with sentences that change what is at a place without moving anyone: after a move the agent may pick up the object there or drop one (&ldquo;She dropped the cat.&rdquo;). The hardest returns are the first ones after a drop: the right answer differs from everything ever seen at that place, so the model must know both where it is and what was dropped there. Pre-registered, 8 fresh seeds per model:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>model</th><th>all revisits</th><th>place unchanged</th><th>first return<br>after a drop</th><th>seeds that<br>find the solution</th></tr></thead>
+      <tbody>
+        <tr class="hero"><td>path integration (MapWM)</td><td class="best">0.994</td><td class="best">0.995</td><td class="best">0.983</td><td class="best">7 / 8</td></tr>
+        <tr><td>path integration, NormStep</td><td>0.961</td><td>0.970</td><td>0.979</td><td>5 / 8</td></tr>
+        <tr><td>only direction words move (oracle)</td><td>0.970</td><td>0.970</td><td>0.926</td><td>8 / 8</td></tr>
+        <tr><td>index RoPE, 1 layer</td><td>0.516</td><td>0.514</td><td>0.011</td><td>0 / 8</td></tr>
+        <tr class="floor"><td>best rule that ignores location</td><td>&mdash;</td><td>&mdash;</td><td>0.649</td><td>&mdash;</td></tr>
+        <tr class="floor"><td>always the most common answer</td><td>0.514</td><td>0.512</td><td>0</td><td>&mdash;</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="caption">1024-word texts, unseen map, one layer, 900 epochs. &ldquo;Best rule that ignores location&rdquo;: answer with the most recently dropped object; no model can apply it only where it is right without knowing where it is.</p>
+  <ul class="findings">
+    <li><span class="chip det">every seed</span><strong>The model ties the change to the place.</strong> On first returns after a drop, both path-integrated models beat every location-free rule by a third (+0.33, every seed above it). Trained only to predict the next word, a one-layer model tracks where it is and what has changed there. Index attention at the same depth does neither.</li>
+    <li><span class="chip det">8/8 seeds</span><strong>State changes do not move the map.</strong> A whole &ldquo;she dropped the cat&rdquo; sentence shifts the model&rsquo;s position estimate by about 0.03 of a move. Its words do get sizeable steps, but they cancel within the sentence &mdash; the same treatment the model gives asides. The change is stored as <em>what</em> at a <em>where</em>, not as a move.</li>
+    <li><span class="chip det">p = 0.0014</span><strong>Learned steps again beat the oracle.</strong> Letting only direction words move costs 0.024 overall and 0.057 on first returns after a drop. This depends on the dropout correction above; without it the gap is not detectable.</li>
+    <li><span class="chip warn">Unmeasured</span><strong>NormStep is no better here.</strong> Two of its eight seeds had not converged; one of them learned that a drop puts an object at a place but not that picking it up removes it.</li>
+  </ul>
 </section>
 
 <!-- ============ WHAT / WHERE ============ -->
@@ -573,7 +597,7 @@ footer{
   <p class="sectmeta">ranked by how much each could change the picture</p>
   <ul class="findings">
     <li><span class="chip plain">Next</span><strong>The remaining navigation checks.</strong> Two earlier results (a correction filter, a forget gate) have still only been measured past what training covered. Dyck, rank and sign have now been checked at the training length: Dyck's four-layer claim did not survive; rank and sign did. Twice the training budget did not rescue rank 2 (above); whether a looped block or extra depth helps at that budget is deferred.</li>
-    <li><span class="chip plain">Next</span><strong>State changes told in words.</strong> &ldquo;She picked up the cat&rdquo; changes what is at a place without moving anyone. A pre-registered test asks whether learned steps keep such sentences off the map, and whether a one-layer model ties the change to the place. In a one-seed pilot NormStep did (0.998 on the returns that need it, against 0.649 for the best rule that ignores location); the batch is ready to run.</li>
+    <li><span class="chip plain">Next</span><strong>The same word as a move and as something said.</strong> &ldquo;She walked north&rdquo; against &ldquo;she saw a sign pointing north&rdquo;: a step that depends only on the word must move the map on both. A pre-registered test is built: how much that costs, and whether a step that reads the context learns to ignore the non-moving uses (about 11&ndash;15 hours plus a pilot).</li>
     <li><span class="chip plain">Next</span><strong>Words that name a direction without moving.</strong> The text-world result relies on every direction word being a move. Context-reading steps have been piloted (above); a registered comparison against a Mamba-3-style gate is deferred.</li>
     <li><span class="chip plain">Next</span><strong>A leak test that can fail.</strong> The registered robustness test above could not fail; objects whose codes point in particular directions, swapped at test time, would separate the fixes by what they learned rather than by construction.</li>
     <li><span class="chip plain">Next</span><strong>MAESTRO</strong>, ~200 hours of piano, large enough to avoid overfitting &mdash; the direct test of whether PoPE&rsquo;s gain survives without that ceiling. About two days.</li>

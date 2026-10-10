@@ -46,6 +46,7 @@ and none of the 2026-10-01..03 results (3D rank / wrap, what/where, leak).
 | Does PoPE's score rescue per-head rank 2 at T=1024? (torus, 900 ep, 1 layer; MapWM vs MapPoPE-Pair at r2 (n=12) and matched-init r4 (n=8), 32 angles) | SOLVED r2 3/12 vs 3/12, r4 8/8 vs 8/8; acc r2 0.848 vs 0.946 (+0.098, p 0.089, MDE 0.155); strata: short-gap +0.115 (p 0.036), wrap-only -0.015 | 12 / 8 | blank 0.507, n-gram 0.576, retrace 0.843 | registered NO RESCUE; PoPE fixes the local map not the periodic code; T1 'SOLVED iff clean head' 39/40 (declared secondary) | `SCORE_RANK_RESULTS.md`, `SCORE_RANK_PREREG.md` |
 | Gain granularity between MapEM and MapPoPE (paper torus T=128, rank 2, 32 angles; MapWM, MapPoPE-Pair, GainScalar, GainMod4, MapEM, MapEM softplus(q.k); n=20, seeds 26-45) | acc / SOLVED: W 0.990 18/20, P 0.9995 20/20, S 0.9999 20/20, M 0.9997 20/20, E 0.997 19/20, N 0.982 12/20; S - P +0.0004, M - P +0.0002 (non-inferior at -0.01, p < 0.0001); N - E -0.015 (p 0.026), Fisher p 0.020 | 20 | best n-gram 0.598, always-blank 0.507 | registered (a) SCALAR GAIN SUFFICES with NO HEADROOM qualifier, (b) NON-NEGATIVE WORSE (softplus on q.k); scalar gain trains ~3x faster (descriptive) | `GAIN_GRAIN_RESULTS.md`, `GAIN_GRAIN_PREREG.md` |
 | The gain-phase map: STEP (raw / NormStep) x SCORE (rotary / gain) on the new-object task (T=1024, rank 4, 32x32 torus; n=8, seeds 8-15) | unseen-object acc / SOLVED: MapWM 0.9895 0/8, NormStep 0.9940 8/8, GainRaw 0.9906 0/8, GainPhase 0.9994 8/8 (min 0.998); leak L_ms median +0.0069 / +0.0002 / +0.0100 / +0.0001; GainPhase - MapWM +0.0099 (p 0.0002); GainPhase - NormStep +0.0054 (p 0.135, non-inferior at -0.005) | 8 | retrace 0.518, last object 0.141 | registered D3 SEPARATE DEFECTS, D4 THE GAIN-PHASE MAP WORKS, D1 NORMSTEP HELPS UNDER BOTH SCORES (D1r on SOLVED only), D2 NO DIFFERENCE, D5 NO DIFFERENCE (no speed-up) | `GAIN_PHASE_RESULTS.md`, `GAIN_PHASE_PREREG.md` |
+| State changes told in words: text world + take/drop sentences (T=1024, 1 layer; MapWM, NormStep, DirOnly, RoPE 1L; n=8, seeds 50-57) | all / T2drop / SOLVED: MapWM 0.994 / 0.983 / 7/8, NormStep 0.961 / 0.979 / 5/8, DirOnly 0.970 / 0.926 / 8/8, RoPE 0.516 / 0.011 / 0/8; state sentence shift 0.028 / 0.027 moves | 8 | constant 0.514; T2drop F1 0.211, F2 0.649 | registered A PATH NEEDED FOR LOCATION, C STATE BOUND TO PLACE (both), B OFF THE MAP PLANE (not distinguished from asides), D1 NO DIFFERENCE, D2 DirOnly WORSE (flag) | `TW_STATECHANGE_RESULTS.md`, `TW_STATECHANGE_PREREG.md` |
 | Loop on path integration (Match-Query) | loop main effect **unpaired** +0.346 (t 3.75); loop arm pooled 0.803 +/- 0.200, 1/16 failures | 8 / 16 | chance 0.0625 | SOLID for the main effect. The paired interaction +0.315 and "r=4 + loop x4 0.986, 8/8 >= 0.941" are paired / one-batch statistics on a task whose same-seed retrains drift 0.185: CONTRADICTED (see Withdrawn) | `REFINE_RESULTS.md`, `LOOP_HEADROOM.md`, `MQ_RANK_2X2.md` |
 | EM's recency deficit is search | EM - WM -0.375 (0/8, MDE 0.154); installed rewind frozen 1.000 (8/8); per-pair origins +0.215 = pathway +0.124 + freedom +0.091 (n=48) | 8 / 48 | chance 0.0625 | SOLID as a fixed-budget learnability result | `RECENCY_EM_RESULTS.md`, `WARM_RESULTS.md`, `SEARCH_RESULTS.md`, `PAIRSPLIT_RESULTS.md`; `EM_WM_STATE.md` Sec 3-4 gives the status of every EM/WM file |
 | Phase freedom in q0/k0 | +0.146 vs a matched-optimiser control (22/24); fresh seeds +0.113 | 24 | -- | SOLID; mechanism unidentified | `MAGONLY_RESULTS.md`, `D5_RESULTS.md` |
@@ -173,7 +174,7 @@ Contradicted by the 2026-09-24 audit and **not yet on CLAUDE.md's withdrawn list
 
 ## Catalogue of results files, by line
 
-Top-level `*.md` (509 files) plus the docs-level notes; regenerated 2026-10-09 with `docs/tools/catalog_results_index.py` (zero unclassified). `*` = a CORRECTED / RETRACTED / WITHDRAWN / SUPERSEDED / VOID /
+Top-level `*.md` (510 files) plus the docs-level notes; regenerated 2026-10-09 with `docs/tools/catalog_results_index.py` (zero unclassified). `*` = a CORRECTED / RETRACTED / WITHDRAWN / SUPERSEDED / VOID /
 STALE marker in the first 12 lines (a correction block further down also supersedes the body).
 Files starting with `_` are raw per-seed dumps; names ending `_PREREG` are pre-registrations and
 `_GATES` task gates.
@@ -218,9 +219,9 @@ Files starting with `_` are raw per-seed dumps; names ending `_PREREG` are pre-r
 
 `CONTEXT_STEP_DESIGN`*, `CTXSTEP_HSR_PILOT`, `CTXSTEP_HS_RECIPE`, `CTXSTEP_PILOT1`, `CTXSTEP_PILOT2`, `CTXSTEP_PILOT3`, `CTXSTEP_PREREG`, `TEXTWORLD_PREREG`, `TEXTWORLD_RESULTS`*
 
-**New objects, what/where and the what-to-where leak** (9)
+**New objects, what/where and the what-to-where leak** (10)
 
-`GAIN_PHASE_PREREG`, `GAIN_PHASE_RESULTS`, `LEAK_PREREG`, `LEAK_RESULTS`, `TW_AMBIG_PREREG`, `TW_LANDMARK_PREREG`, `TW_NORMSTEP_PREREG`, `TW_NORMSTEP_RESULTS`*, `TW_STATECHANGE_PREREG`
+`GAIN_PHASE_PREREG`, `GAIN_PHASE_RESULTS`, `LEAK_PREREG`, `LEAK_RESULTS`, `TW_AMBIG_PREREG`, `TW_LANDMARK_PREREG`, `TW_NORMSTEP_PREREG`, `TW_NORMSTEP_RESULTS`*, `TW_STATECHANGE_PREREG`, `TW_STATECHANGE_RESULTS`
 
 **Indirect Indexing** (5)
 

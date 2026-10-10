@@ -1,0 +1,61 @@
+void check: DirOnly state clauses have exactly zero net step and the cancellations are no-ops -> OK
+
+floors (eval stream): constant all 0.5139 T1 0.5118; reversal-copy T1 0.6074; best uniform location-free rule 'revcopy_state' (all 0.6099) -> T2drop F1 = 0.2108; best rule on T2drop alone 'last_dropped' F2 = 0.6486; stale map (last saw) T2drop 0.0000
+
+== per arm (n=8), re-scored (registered) [eval mode]: all | T1 | T1s | T2take | T2drop | T3 | SOLVED | T=2048 ==
+  MapWM     0.9937 [0.9857]  0.9948 [0.9879]  0.9928 [0.9859]  0.9971 [0.9770]  0.9827 [0.9789]  0.9912 [0.9829]  7/8  [0.9644]
+  NormStep  0.9608 [0.9422]  0.9701 [0.9539]  0.9670 [0.9518]  0.8716 [0.8351]  0.9792 [0.9623]  0.9704 [0.9481]  5/8  [0.9178]
+  DirOnly   0.9702 [0.9705]  0.9698 [0.9706]  0.9717 [0.9722]  1.0000 [1.0000]  0.9262 [0.9224]  0.9972 [0.9972]  8/8  [0.9685]
+  RoPE      0.5158 [0.5157]  0.5135 [0.5127]  0.5291 [0.5269]  0.9966 [0.9944]  0.0105 [0.0206]  0.4926 [0.4907]  0/8  [0.5233]
+  MapWM     shift/clause (moves, in-plane): state 0.0284 (take 0.0231, drop 0.0337), aside 0.0209; R state 0.171 aside 0.195; L_sc -0.0059 [rs -0.0054]; drift state 0.0531 aside 0.0730 rad
+  NormStep  shift/clause (moves, in-plane): state 0.0273 (take 0.0314, drop 0.0231), aside 0.0261; R state 0.148 aside 0.219; L_sc -0.0015 [rs -0.0014]; drift state 0.0597 aside 0.1003 rad
+  DirOnly   shift/clause (moves, in-plane): state 0.0000 (take 0.0000, drop 0.0000), aside 0.0000; R state 0.000 aside 0.000; L_sc +0.0000 [rs +0.0000]; drift state 0.0000 aside 0.0000 rad
+
+== A LOCATION: MapWM - RoPE on T1 (unchanged-cell revisits), re-scored accuracy ==
+  d +0.4812, perm p 0.0002; SOLVED 7/8 vs 0/8, Fisher p 0.0014; RoPE within 0.01 of the constant floor on T1: 8/8
+  REGISTERED A: PATH NEEDED FOR LOCATION: path integration beats index RoPE on unchanged-cell revisits
+
+== C STATE BOUND TO PLACE: T2drop accuracy vs F2 = 0.6486 and F1 = 0.2108 (margin 0.1, sign-flip) ==
+  every path arm <= F1 on T2drop on every seed: False (DirOnly T2drop 0.934 0.930 0.922 0.928 0.920 0.926 0.928 0.924)
+  MapWM: T2drop 0.992 0.992 1.000 0.992 0.996 0.986 0.904 1.000; - F2 +0.3341 (p 0.0078), - F1 +0.7718 (p 0.0078)
+  REGISTERED C (MapWM): STATE BOUND TO PLACE
+  NormStep: T2drop 1.000 0.980 0.988 0.968 0.994 0.984 0.920 1.000; - F2 +0.3306 (p 0.0078), - F1 +0.7683 (p 0.0078)
+  REGISTERED C (NormStep): STATE BOUND TO PLACE
+
+== B STATE VERBS OFF THE MAP: field shift per state clause (the clause's net phase displacement projected on the plane of the two axis half-steps, in moves; OFF <= 0.1 on >= 6/8 seeds, ON > 0.1 on >= 6/8), and the same model's aside shift (paired sign-flip) ==
+  MapWM: state shift 0.023 0.010 0.024 0.042 0.055 0.028 0.010 0.035 -> OFF (8 off / 0 on / 0 undefined of 8); aside shift 0.015 0.012 0.011 0.039 0.004 0.035 0.009 0.041; state - aside +0.0075 moves, sign-flip p 0.3281 -> NOT DISTINGUISHED FROM ASIDES
+     beside it (Amendment 1): R state 0.076 0.066 0.326 0.227 0.129 0.143 0.065 0.339; off-plane dist 0.072 0.069 0.229 0.194 0.116 0.134 0.047 0.259; axis |cos| 0.223 0.358 0.452 0.427 0.432 0.409 0.552 0.079 (flagged > 0.99: 0)
+  REGISTERED B (MapWM): STATE VERBS STAY OFF THE MAP PLANE (within the aside range, <= 0.1 move per clause) (not distinguished from asides)
+  NormStep: state shift 0.077 0.007 0.014 0.016 0.009 0.007 0.003 0.084 -> OFF (6 off / 0 on / 2 undefined of 8); aside shift 0.043 0.011 0.053 0.022 0.038 0.011 0.009 0.023; state - aside +0.0012 moves, sign-flip p 0.9766 -> NOT DISTINGUISHED FROM ASIDES
+     beside it (Amendment 1): R state 0.338 0.065 0.171 0.136 0.081 0.088 0.072 0.229; off-plane dist 0.236 0.075 0.114 0.110 0.040 0.056 0.066 0.169; axis |cos| 0.117 0.407 0.893 0.441 1.000 0.658 0.999 0.111 (flagged > 0.99: 2)
+  REGISTERED B (NormStep): STATE VERBS STAY OFF THE MAP PLANE (within the aside range, <= 0.1 move per clause) (not distinguished from asides) [2/8 seeds undefined, counted neither off nor on]
+
+== D STEP FORM: accuracy on all revisit targets, re-scored ==
+  D1 NormStep - MapWM: d -0.0329, perm p 0.2297; SOLVED 5/8 vs 7/8, Fisher p 0.5692
+  REGISTERED D1: NO DIFFERENCE (unmeasured below 0.0848)
+  D2 DirOnly - MapWM: d -0.0235, perm p 0.0014; SOLVED 8/8 vs 7/8, Fisher p 1.0000
+  REGISTERED D2: WORSE [FLAG: in eval mode without the dropout-scale correction D2 reads NO DIFFERENCE (unmeasured below 0.0389); registered verdict unchanged]
+
+  SUMMARY (computed, no new test): PREDICTION HOLDS (location needs path integration; learned steps keep state verbs off the map plane, within the aside range and not larger than asides, while state is used)
+  re-score flags on: D2
+
+== secondaries (no verdict) ==
+  functional (net cancellation) MapWM: L_sc -0.0011 -0.0018 +0.0000 +0.0000 -0.0064 -0.0125 -0.0253 +0.0000 mean -0.0059 sign-flip p 0.0625 -> NO COST (unmeasured below 0.0103); re-scored -0.0054 -> NO COST; aside analogue L_aside -0.0124 (calibration, stored runs at >= 0.99: -0.001..-0.012)
+  functional (net cancellation) NormStep: L_sc +0.0004 -0.0078 -0.0011 +0.0028 -0.0028 -0.0032 +0.0000 +0.0000 mean -0.0015 sign-flip p 0.2812 -> NO COST (unmeasured below 0.0100); re-scored -0.0014 -> NO COST; aside analogue L_aside -0.0225 (calibration, stored runs at >= 0.99: -0.001..-0.012)
+  DirOnly - MapWM on T1     : re-scored -0.0250 (p 0.0002); eval mode -0.0172 (p 0.0904)
+  DirOnly - MapWM on T1clean: re-scored +0.0054 (p 0.0256); eval mode +0.0125 (p 0.0256)
+  DirOnly - MapWM on T2take : re-scored +0.0029 (p 0.2000); eval mode +0.0230 (p 0.2000)
+  DirOnly - MapWM on T2drop : re-scored -0.0565 (p 0.0014); eval mode -0.0565 (p 0.0014)
+  DirOnly - MapWM on T3     : re-scored +0.0060 (p 0.8813); eval mode +0.0144 (p 0.8813)
+  NormStep - MapWM on T1     : re-scored -0.0247 (p 0.2308); eval mode -0.0339 (p 0.2249)
+  NormStep - MapWM on T1clean: re-scored -0.0251 (p 0.2323); eval mode -0.0346 (p 0.2267)
+  NormStep - MapWM on T2take : re-scored -0.1255 (p 0.3341); eval mode -0.1419 (p 0.2817)
+  NormStep - MapWM on T2drop : re-scored -0.0035 (p 0.7453); eval mode -0.0166 (p 0.5613)
+  NormStep - MapWM on T3     : re-scored -0.0208 (p 0.2817); eval mode -0.0347 (p 0.2448)
+  MapWM: reliance 0.560; clock channels 33 40 8 9 38 33 23 2; carry_cos -0.45 +0.99 -0.52 -0.92 -0.27 +0.93 +0.84 -0.31; L_sc0 (zeroed) -0.0639; L_sc on all -0.0137; L_aside -0.0124; drift optional words 0.0164
+     step / direction half-step by class: verb 0.807, adverb 0.015, filler 0.018, see 0.545, object 0.233, nothing 0.234, period 0.357, aside 0.268, take_verb 0.325, drop_verb 0.421, the 0.355
+  NormStep: reliance 0.538; clock channels 13 34 35 16 6 28 13 39; carry_cos -0.15 +0.97 +0.95 +0.21 +0.03 -0.31 +0.79 -0.03; L_sc0 (zeroed) -0.0753; L_sc on all -0.0363; L_aside -0.0225; drift optional words 0.0272
+     step / direction half-step by class: verb 0.547, adverb 0.030, filler 0.019, see 0.362, object 0.196, nothing 0.194, period 0.171, aside 0.185, take_verb 0.189, drop_verb 0.235, the 0.278
+  DirOnly: reliance 0.505; clock channels 1 1 0 0 1 0 0 0; carry_cos +nan +nan +nan +nan +nan +nan +nan +nan; L_sc0 (zeroed) +0.0000; L_sc on all +0.0000; L_aside +0.0000; drift optional words 0.0000
+     step / direction half-step by class: verb 0.000, adverb 0.000, filler 0.000, see 0.000, object 0.000, nothing 0.000, period 0.000, aside 0.000, take_verb 0.000, drop_verb 0.000, the 0.000
+  r(final-5% loss, acc) over 32 runs: -0.997

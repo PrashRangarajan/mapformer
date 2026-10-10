@@ -1,0 +1,10 @@
+{
+ "A": "PATH NEEDED FOR LOCATION: path integration beats index RoPE on unchanged-cell revisits",
+ "C_MapWM": "STATE BOUND TO PLACE",
+ "C_NormStep": "STATE BOUND TO PLACE",
+ "B_MapWM": "STATE VERBS STAY OFF THE MAP PLANE (within the aside range, <= 0.1 move per clause) (not distinguished from asides)",
+ "B_NormStep": "STATE VERBS STAY OFF THE MAP PLANE (within the aside range, <= 0.1 move per clause) (not distinguished from asides) [2/8 seeds undefined, counted neither off nor on]",
+ "D1": "NO DIFFERENCE (unmeasured below 0.0848)",
+ "D2": "WORSE [FLAG: in eval mode without the dropout-scale correction D2 reads NO DIFFERENCE (unmeasured below 0.0389); registered verdict unchanged]",
+ "SUMMARY": "PREDICTION HOLDS (location needs path integration; learned steps keep state verbs off the map plane, within the aside range and not larger than asides, while state is used)"
+}

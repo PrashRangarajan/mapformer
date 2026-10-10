@@ -5,14 +5,11 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-09 12:25. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-09 19:00. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- TW_STATECHANGE batch (`TW_STATECHANGE_PREREG.md` + Amendments 1-2): launched 2026-10-09 12:21 (code a106cfe, clean) on
-  GPU 0 ONLY (`DRV_GPUS=0`, user's choice while vsathish held GPU 1), 4 jobs at a time, ~3 s/epoch -> ~45 min/run, 8
-  waves, ETA ~18:30. Log `tw_statechange.log`, runs `runs/tw_statechange/p0`, marker `.tw_statechange_done`. Read results
-  only after the marker AND the artifacts; then TW_STATECHANGE_RESULTS.md, CLAUDE.md row, report (url=).
+- Nothing. TW_STATECHANGE finished 2026-10-09 18:05 (GPU 0 only), written up. Next candidates below; the user chooses.
 
 ## Ready, not launched (each audited + amended; user chooses)
 - TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or
@@ -25,6 +22,9 @@ The user is cost-sensitive (a day of GPU is "a lot") and does not want our jobs 
 are there; check `nvidia-smi` owners before launching and ask if another user is active.
 
 ## Last results (newest first; one line each, numbers in the file)
+- TW_STATECHANGE (`TW_STATECHANGE_RESULTS.md`, REG): A PATH NEEDED FOR LOCATION (+0.481); C STATE BOUND TO PLACE
+  (T2drop 0.983 / 0.979 vs F2 0.649, every seed); B state verbs OFF the map plane (0.028 moves), not distinguished from
+  asides; DirOnly WORSE -0.024 (re-score flag); NormStep 5/8 vs MapWM 7/8 SOLVED, unmeasured. SUMMARY: PREDICTION HOLDS.
 - TW_STATECHANGE pilot (Amendment 2, n=1, seed 150): repro bitwise pass; NormStep binds state to place (T2drop 0.998
   vs last-dropped floor 0.649); MapWM descending (T2drop 0.673); DirOnly 0.928; RoPE stalled 0.515; shift_sc < 0.10.
 - GAIN_PHASE (`GAIN_PHASE_RESULTS.md`, REG): SEPARATE DEFECTS (leak in theta; step fix removes it, score fix does not);
