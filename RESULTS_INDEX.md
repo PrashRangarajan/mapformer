@@ -130,6 +130,7 @@ and none of the 2026-10-01..03 results (3D rank / wrap, what/where, leak).
 
 | what | status | key numbers | file |
 |---|---|---|---|
+| TinyStories word-level pilot: which words move a path-integrated LM (MapWM r4 vs RoPE, 6 layers, d 256) | pilot, readouts declared before training, n=3, no test | val MapWM 1.5053 vs RoPE 1.5050 nats/token (trigram floor 2.935); MapWM step is a discourse clock: clock share 0.79-0.87, largest steps <eos> 5-7x, sentence ends, quotes, clause links, speech verbs; motion verbs 1%, spatial 0%; no opposite pair cancels; uniform clock costs +0.07-0.09 nats, content words +0.02-0.03 | `TINYSTORIES_PILOT_RESULTS.md`, `TINYSTORIES_PILOT.md` |
 | What/where checks: does a trained path model NEED the content x position interaction; is separation forced by map redraw; where does "what" leak into "where" | POST HOC, eval-only on stored checkpoints, each re-run byte-identical | paper torus (`runs/paper2x2/p0`, 8 seeds x 6 arms): object identity removed from the score, path models keep 0.837 (MapWM r2) / 0.974-0.989 (converged arms; cost 0.011-0.025, below the MDE); a shared kernel x content gain gives 0.988-1.000 for those; RoPE / PoPE fall below the 0.598 n-gram floor. Never-redrawn 32x32 map separates like the redrawn torus; a memorised 100-cell map has no relational "where". New-object pilot: zeroing object steps lifts unseen-object accuracy 0.990-0.993 -> 0.9996-0.9999; x2 / x4 code norm costs 0.04 / 0.11-0.14 (n=1) | `docs/WHAT_WHERE_CHECKS.md`, `docs/audits/2026-10-03/` |
 | What/where analysis: the attention score of every positional scheme, from the code; separation probe | ANALYSIS + descriptive probe, post hoc; section 6 CORRECTED 2026-10-03 (key-step phase error; converged arms unchanged) | trained 1-layer path models put most score variance in one shared displacement kernel (interaction share MapWM r4 0.083, MapPoPE r4 0.128, MapEM r4 0.104); PoPE separates at init, not more at the end of training | `docs/WHAT_WHERE_ANALYSIS.md` |
 | NormStep notes: definition, scale theorem, per-move gauge, identity leak | ANALYSIS; gauge and leak checked on weights of seeds 0 and 3 (`docs/audits/2026-10-03/normstep_gauge.py`) | robustness to code norm is a theorem (LN is scale-invariant); opposite actions plus the shared observation step cancel to 0.001 of an action step; object-identity leak spread NormStep 0.0007-0.0009 vs MapWM 0.0038-0.0041 of an action step; not provable that NormStep must leak less (W A = 0 is feasible for MapWM). Predicted risk on language: the LN bias step becomes a word-count clock | `docs/NORMSTEP_NOTES.md` |
@@ -174,7 +175,7 @@ Contradicted by the 2026-09-24 audit and **not yet on CLAUDE.md's withdrawn list
 
 ## Catalogue of results files, by line
 
-Top-level `*.md` (510 files) plus the docs-level notes; regenerated 2026-10-09 with `docs/tools/catalog_results_index.py` (zero unclassified). `*` = a CORRECTED / RETRACTED / WITHDRAWN / SUPERSEDED / VOID /
+Top-level `*.md` (512 files) plus the docs-level notes; regenerated 2026-10-09 with `docs/tools/catalog_results_index.py` (zero unclassified). `*` = a CORRECTED / RETRACTED / WITHDRAWN / SUPERSEDED / VOID /
 STALE marker in the first 12 lines (a correction block further down also supersedes the body).
 Files starting with `_` are raw per-seed dumps; names ending `_PREREG` are pre-registrations and
 `_GATES` task gates.
@@ -231,9 +232,9 @@ Files starting with `_` are raw per-seed dumps; names ending `_PREREG` are pre-r
 
 `AUG_PREREG`, `AUG_RESULTS`, `CROSS_PREREG`, `CROSS_RESULTS`, `DECAY_PREREG`, `DECAY_RESULTS`, `JSBLEN_PREREG`, `JSB_LENGTH_RESULTS`, `JSB_LENGTH_RESULTS_BASE`, `JSB_LENGTH_RESULTS_RANK`, `JSB_PREREG`, `JSB_RESULTS`, `MAESTRO_PLAN`, `MAPPOPE_VS_POPE`, `POPE_WRAPPING`, `RECENCY_T3_PREREG`, `RECENCY_T3_RESULTS`*, `T1_PREREG`, `T1_RESULTS`, `T2_PREREG`, `T2_RESULTS`, `T3GEN_PREREG`, `T3GEN_RESULTS`*, `T3_PREREG`, `T3_RESULTS`, `THEORY_MAPPOPE`, `TORUS_T3_RESULTS`
 
-**PoPE ablation, code and enwik8** (17)
+**PoPE ablation, code and enwik8** (19)
 
-`ABLATE_PREREG`, `ABLATE_RESULTS`*, `BF16_RESULTS`, `CODE_DECAY_RESULTS`*, `CODE_FULLVAL_PREREG`, `CODE_FULLVAL_RESULTS`, `CODE_GATES`, `CODE_PREREG`, `CODE_RESULTS`*, `CODE_RESULTS_OOD`, `ENWIK8_2X2`, `ENWIK8_COMPOSITION_PREREG`, `ENWIK8_HIER`, `ENWIK8_HIERARCHY`, `ENWIK8_LONG`, `ENWIK8_SEEDS`, `LANGUAGE_LANDSCAPE`
+`ABLATE_PREREG`, `ABLATE_RESULTS`*, `BF16_RESULTS`, `CODE_DECAY_RESULTS`*, `CODE_FULLVAL_PREREG`, `CODE_FULLVAL_RESULTS`, `CODE_GATES`, `CODE_PREREG`, `CODE_RESULTS`*, `CODE_RESULTS_OOD`, `ENWIK8_2X2`, `ENWIK8_COMPOSITION_PREREG`, `ENWIK8_HIER`, `ENWIK8_HIERARCHY`, `ENWIK8_LONG`, `ENWIK8_SEEDS`, `LANGUAGE_LANDSCAPE`, `TINYSTORIES_PILOT`, `TINYSTORIES_PILOT_RESULTS`
 
 **Level 1.5 / InEKF / PC / TEM / grid cells (April-August lines)** (56)
 

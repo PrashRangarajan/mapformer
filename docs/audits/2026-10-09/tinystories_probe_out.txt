@@ -1,0 +1,20 @@
+floors (val, nats/token): unigram 5.574, bigram 3.603, trigram 2.935
+Vanilla  s0: val 1.5070 nats/token (best checkpoint, iter 12000)
+   clock share 0.858 | share of step: punct 0.32, quote 0.05, newline/eos 0.06, function 0.32, motion 0.01, spatial 0.00, rest 0.23
+   largest steps (x mean step): '<eos>':5.4 '.':2.8 '!':2.4 '"':2.3 'mr':2.2 '?':2.2 NL:2.0 '“':1.8 'named':1.7 'mrs':1.6 '–':1.5 'once':1.5 'and':1.5 '”':1.5 'upon':1.5 ';':1.4 ',':1.4 'met':1.4 ':':1.4 'agreed':1.3 'until':1.3 'but':1.3 'learned':1.3 'because':1.2 'felt':1.2 'broke':1.2 'suddenly':1.2 'remembered':1.1 'asleep':1.1 'without':1.1
+   opposition (common removed; 0 cancel, 2 same): up/down 1.95  in/out 1.68  inside/outside 1.88  came/went 1.63  come/go 1.95  open/close 1.96  opened/closed 1.89  start/stop 1.93  forward/back 1.94  left/right 1.96  push/pull 1.89  give/take 1.99  on/off 1.83  | random pairs median 1.88, 5th pct 1.14
+   causal (val loss change): mean-step clock +0.0808 | content words -> mean +0.0302 | zero steps +2.8239 | identity swap +2.4e-09 | <eos> step 5.40x mean
+Vanilla  s1: val 1.5057 nats/token (best checkpoint, iter 12000)
+   clock share 0.865 | share of step: punct 0.35, quote 0.06, newline/eos 0.07, function 0.29, motion 0.01, spatial 0.00, rest 0.22
+   largest steps (x mean step): '<eos>':6.1 '.':3.3 '!':2.8 '?':2.6 '"':2.5 'mr':2.5 NL:2.2 '“':2.1 '”':2.1 'mrs':1.6 'and':1.5 'replied':1.4 'chased':1.3 'but':1.3 'once':1.3 'forever':1.3 'because':1.3 'agreed':1.3 '–':1.3 ':':1.3 'anymore':1.2 ';':1.2 'nodded':1.2 'suddenly':1.2 'notice':1.2 'or':1.2 'until':1.2 'together':1.2 'helped':1.2 'asked':1.1
+   opposition (common removed; 0 cancel, 2 same): up/down 1.98  in/out 1.99  inside/outside 1.87  came/went 1.50  come/go 1.98  open/close 1.91  opened/closed 1.88  start/stop 2.00  forward/back 1.96  left/right 1.96  push/pull 1.93  give/take 1.98  on/off 1.98  | random pairs median 1.89, 5th pct 1.10
+   causal (val loss change): mean-step clock +0.0931 | content words -> mean +0.0249 | zero steps +2.8553 | identity swap -6.0e-10 | <eos> step 6.07x mean
+Vanilla  s2: val 1.5033 nats/token (best checkpoint, iter 12000)
+   clock share 0.794 | share of step: punct 0.32, quote 0.05, newline/eos 0.06, function 0.31, motion 0.01, spatial 0.00, rest 0.24
+   largest steps (x mean step): '<eos>':6.8 '.':3.0 '?':2.6 '!':2.4 'mr':2.3 '"':2.3 'once':2.0 '“':2.0 '”':1.9 NL:1.6 '–':1.6 'and':1.5 'mrs':1.5 'agreed':1.4 'but':1.3 'nodded':1.3 ':':1.3 'replied':1.2 'thanked':1.2 'understood':1.2 'smiled':1.2 "let's":1.2 ';':1.2 'because':1.2 'kept':1.2 'found':1.2 'noticed':1.2 'without':1.2 'happened':1.2 'happens':1.1
+   opposition (common removed; 0 cancel, 2 same): up/down 1.91  in/out 1.90  inside/outside 1.96  came/went 1.87  come/go 1.91  open/close 1.96  opened/closed 1.82  start/stop 1.82  forward/back 1.98  left/right 1.71  push/pull 1.96  give/take 1.90  on/off 1.91  | random pairs median 1.82, 5th pct 1.11
+   causal (val loss change): mean-step clock +0.0665 | content words -> mean +0.0183 | zero steps +2.8764 | identity swap +1.2e-09 | <eos> step 6.78x mean
+RoPE     s0: val 1.5041 nats/token (best checkpoint, iter 12000)
+RoPE     s1: val 1.5093 nats/token (best checkpoint, iter 12000)
+RoPE     s2: val 1.5015 nats/token (best checkpoint, iter 12000)
+MapWM - RoPE val (per seed): +0.0029 -0.0036 +0.0018; mean +0.0004 (n = 3, no test claimed)

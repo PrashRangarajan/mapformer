@@ -5,11 +5,11 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-09 19:00. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-09 22:00. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- Nothing. TW_STATECHANGE finished 2026-10-09 18:05 (GPU 0 only), written up. Next candidates below; the user chooses.
+- Nothing. TinyStories pilot finished 2026-10-09 21:45 (GPU 0), probed and written up. Next candidates below.
 
 ## Ready, not launched (each audited + amended; user chooses)
 - TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or
@@ -22,6 +22,10 @@ The user is cost-sensitive (a day of GPU is "a lot") and does not want our jobs 
 are there; check `nvidia-smi` owners before launching and ask if another user is active.
 
 ## Last results (newest first; one line each, numbers in the file)
+- TinyStories word-level pilot (`TINYSTORIES_PILOT_RESULTS.md`, PILOT, n=3): MapWM = RoPE (1.5053 vs 1.5050 nats/token);
+  MapWM's step is a discourse clock (clock share 0.79-0.87; <eos>, sentence ends, quotes, clause links, speech verbs on
+  top; motion verbs 1%, spatial 0%; no opposite pair cancels); uniform clock costs +0.07-0.09 nats. Data in
+  data/tinystories (gitignored), word vocab 8192; trainer train_tinystories.py; runs peak ~8.5 GB (2 per 4090).
 - TW_STATECHANGE (`TW_STATECHANGE_RESULTS.md`, REG): A PATH NEEDED FOR LOCATION (+0.481); C STATE BOUND TO PLACE
   (T2drop 0.983 / 0.979 vs F2 0.649, every seed); B state verbs OFF the map plane (0.028 moves), not distinguished from
   asides; DirOnly WORSE -0.024 (re-score flag); NormStep 5/8 vs MapWM 7/8 SOLVED, unmeasured. SUMMARY: PREDICTION HOLDS.

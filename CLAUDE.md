@@ -44,7 +44,7 @@ replication in a new regime).
 | guards | `GUARDS.md`; `python3 -m mapformer.test_guards` from `/home/prashr`; `python3 -m mapformer.experiment_audit --runs-dir D --control TWIN --control-of ARM` before reading any run dir |
 | void / stale results | `archive/void/` (bannered), `archive_stale/`; code bugs `KNOWN_BUGS.md` |
 | documents | `positional_review.pdf` (review), `axes_measured.pdf` (results paper), `mapformer_math.pdf` (record), `report/report.pdf`, `report/report_short.pdf` -- carry rank separation, Dyck matched depth and torus loop-rank (2026-09-27); 2026-09-30 corrected only where contradicted (sign now has its matched-length control; code full-val) in all but `mapformer_math` (nothing contradicted), rebuilt from source. **They do NOT carry rank 3, H1 part 1, H3, the text world, the context step, 3D rank / wrap, what/where, the leak or NormStep on words** (`docs/WHERE_THINGS_STAND.md`, Known stale); corpus `papers/INDEX.md` (40 papers, read first-hand -- grep, don't re-search) |
-| shared report | https://claude.ai/artifact/LVfYeHhjs1KjwMpg3Pxggc, source `report/language_summary.html` (v19, 2026-10-09: current through TW_STATECHANGE); republish WITH `url=` or the user's link breaks |
+| shared report | https://claude.ai/artifact/LVfYeHhjs1KjwMpg3Pxggc, source `report/language_summary.html` (v20, 2026-10-09: current through the TinyStories pilot); republish WITH `url=` or the user's link breaks |
 | run dirs of the Dyck / Bach / Indirect line | `docs/LOG.md`, block 2026-09-15..20 (`DYCK_T3_RESULTS.md` is an empty artefact) |
 | model aliases | `train_variant.py::VARIANT_MAP`: MapWM-Flat=Vanilla, MapEM-Flat=VanillaEM, MapWM-Hier=Hourglass_k2, MapWM-FlatHG=HourglassFlat3; Plain-* use index RoPE |
 

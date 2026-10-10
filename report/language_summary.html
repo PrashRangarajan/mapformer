@@ -239,6 +239,7 @@ footer{
     <li><strong>Trained path-integrated models keep <em>what</em> apart from <em>where</em>.</strong> Removing object identity from their attention scores leaves 0.97&ndash;0.99 accuracy; index models fall below the no-memory floor. This was checked after the fact, not pre-registered.</li>
     <li><strong>A small leak of <em>what</em> into <em>where</em>, and a one-line fix.</strong> In MapFormer every token moves the position a little, objects included. Normalising the step&rsquo;s input (NormStep) removes the leak and gains +0.011 on unseen objects (8/8, p = 0.0002), as much as an oracle told which tokens are moves. On navigation told in words it neither helps nor hurts. There, the oracle that only lets direction words move is beaten by learned steps: it confuses objects mentioned in passing with objects at the place.</li>
     <li><strong>The model also tracks what changes in the world.</strong> When the story says &ldquo;she dropped the cat&rdquo;, a one-layer path-integrated model files the cat at that place (0.98 on the first return, against 0.65 for the best rule that ignores location) and keeps the sentence from moving its map. Index attention stays at the floor.</li>
+    <li><strong>On real stories it builds a clock of events, not a map.</strong> In a pilot on TinyStories its position ticks at sentences, speech turns and story ends; motion words barely move it, and it predicts no better than an index model.</li>
     <li><strong>The leak and PoPE-style scoring are separate problems, and their fixes combine.</strong> The leak lives in the position itself, so changing how attention is scored leaves it untouched; NormStep removes it under either scoring rule. Together &mdash; moves set the position, the items being compared only set how strongly they attend &mdash; they give the most consistent model on unseen objects: 0.9994, 8 of 8 seeds, none below 0.998.</li>
     <li><strong>Three published results replicate</strong>: MapFormer on Dyck-2, and PoPE on both Indirect Indexing and Bach Chorales.</li>
     <li><strong>A 48-parameter fix matches a 786k-parameter one.</strong> A simple distance penalty in attention repairs long-context failures on Bach, and improved every model on real code (passing a t-test for two of the four, at three seeds).</li>
@@ -474,6 +475,25 @@ footer{
     <li><span class="chip det">8/8 seeds</span><strong>State changes do not move the map.</strong> A whole &ldquo;she dropped the cat&rdquo; sentence shifts the model&rsquo;s position estimate by about 0.03 of a move. Its words do get sizeable steps, but they cancel within the sentence &mdash; the same treatment the model gives asides. The change is stored as <em>what</em> at a <em>where</em>, not as a move.</li>
     <li><span class="chip det">p = 0.0014</span><strong>Learned steps again beat the oracle.</strong> Letting only direction words move costs 0.024 overall and 0.057 on first returns after a drop. This depends on the dropout correction above; without it the gap is not detectable.</li>
     <li><span class="chip warn">Unmeasured</span><strong>NormStep is no better here.</strong> Two of its eight seeds had not converged; one of them learned that a drop puts an object at a place but not that picking it up removes it.</li>
+  </ul>
+
+  <h3>And on real stories?</h3>
+  <p>The scripted text world tells the model where things are. Real narrative mostly does not need that. A pilot trained MapFormer and an index model on TinyStories &mdash; short children&rsquo;s stories full of &ldquo;went&rdquo;, &ldquo;came back&rdquo; and &ldquo;ran into the house&rdquo; &mdash; at word level (6 layers, 8.9M parameters, 3 seeds each), and read which words move MapFormer&rsquo;s position. Readouts were fixed before training; it is a pilot, so no test is claimed.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>what moves the position</th><th>step, &times; an average word</th></tr></thead>
+      <tbody>
+        <tr><td>end of a story</td><td class="num">5&ndash;7</td></tr>
+        <tr><td>sentence ends (. ! ?), quotes, line breaks</td><td class="num">1.6&ndash;3.3</td></tr>
+        <tr><td>&ldquo;once upon&rdquo;, &ldquo;and&rdquo;, &ldquo;but&rdquo;, &ldquo;because&rdquo;, &ldquo;suddenly&rdquo;, &ldquo;replied&rdquo;, &ldquo;nodded&rdquo;</td><td class="num">1.1&ndash;2.0</td></tr>
+        <tr><td>motion verbs and spatial words, as a share of all movement</td><td class="num">1% and 0%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="caption">Validation loss: MapFormer 1.505 nats per word, index model 1.505; the best word-statistics baseline (trigram) 2.94. &ldquo;Step&rdquo;: how far a word advances the position phase, from the model&rsquo;s weights.</p>
+  <ul class="findings">
+    <li><span class="chip warn">Pilot</span><strong>On real stories, path integration builds a clock of events, not a map.</strong> 79&ndash;87% of every word&rsquo;s step is shared, and the position ticks fastest at sentences, speech turns and story ends &mdash; it counts what happens, not where. Opposite words (up/down, came/went, opened/closed) do not cancel any more than random pairs.</li>
+    <li><span class="chip warn">Pilot</span><strong>The variable rate is used, but buys nothing over counting tokens.</strong> Forcing a uniform clock at test time costs 0.07&ndash;0.09 nats per word; the index model, which counts tokens, does as well as MapFormer. The step goes where prediction pays: in these stories, knowing where a character is rarely helps predict the next word.</li>
   </ul>
 </section>
 
