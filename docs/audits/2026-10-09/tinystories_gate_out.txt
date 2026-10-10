@@ -1,0 +1,4 @@
+round trip first val story: PASS (58 tokens)
+decoded: <unk> don't have to be scared of the loud dog , i'll protect you " . the mole felt so safe with the little girl . she was very kind and the mole soon came to trust her . he
+val floors (nats/token): unigram 5.5743 | bigram 3.6032 (l2 0.98) | trigram 2.9351 (l2 0.90, l3 0.90)
+val: 5,397,628 tokens; <unk> 0.00093; vocab 8192
