@@ -74,3 +74,6 @@ aggregator that runs cleanly with zero rows or n=0 everywhere; `ls` one path bef
   (`verify_addition_compile.py`).
 
 Related: [[feedback-convergence-first]], [[feedback-probe-verification]].
+- 2026-10-09, TinyStories pilot: 6 word-level LM runs launched on one 4090 at 20 s spacing; 4 OOM'd. Each peaks at
+  ~8.5 GB, but lib_driver's free-memory check (DRV_MINFREE) passed because runs claim memory after the check. Measure
+  peak memory (`torch.cuda.max_memory_allocated`) in the smoke test before setting DRV_MAXPG; set MINFREE above it.
