@@ -146,3 +146,18 @@ secondary script; r(final loss, acc) per arm.
 **Arms and cost after this amendment.** Ring: R1, R2, R1DF, R1AO, R2S x seeds 20-27 = 40 runs (~1-1.3 h). Escape: E, C, F x
 seeds 0-7 at 600 epochs = 24 runs, 14,400 run-epochs (~5.3 h at SCORE_RANK's rate). Total ~6.5 h wall. Re-run: checks
 (`rank_tests_checks_out.txt`, ALL PASS, C6-C7 new), branch smoke (`rank_tests_smoke_out.txt`, ALL PASS, 28 cases).
+
+## Amendment 2 (2026-10-11, pilot outcomes, read AFTER Amendment 1 was committed; nothing changed by them)
+Pilot `docs/audits/2026-10-11/rank_tests_pilot.sh` at e18683c (clean), 15:43-15:56; output `runs/rank_tests_pilot/pilot_out.txt`.
+It ran the PRE-amendment arms (R1DF with the /2 direction; S rather than F); R1AO, R2S, the rescaled R1DF and F were not
+piloted (each is checked on CPU: C6, C7). n = 1, no verdict:
+| run | class (final-5% loss) | acc T=128 / 512 | epochs to SOLVED | kappa (per head) |
+|---|---|---|---|---|
+| ring R1 s120 | DESCENDING (0.213) | 0.953 / 0.862 | -- | 0.091, 0.142 CLOCK |
+| ring R2 s120 | SOLVED (0.000) | 1.000 / 0.999 | 35 | 0.004, 0.010 CLEAN |
+| ring R1DF s120 (pre-amendment scale) | SOLVED (0.000) | 1.000 / 1.000 | 14 | 0, 0 |
+| escape S s100 (rank 4 from scratch, 300 epochs) | DESCENDING (0.105) | -- | -- | -- |
+Dry runs of the escape path (seed 0, 3 epochs): E losses 0.748 / 0.697 / 0.616, C 0.841 / 0.699 / 0.621 (source 0.587):
+`--init-from` works end to end. Under the withdrawn 300-epoch rule, S unsolved at 300 would also have set 600 epochs.
+Cost: peak GPU memory ~3.1 GB per T = 1024 job, ~1.25 GB per ring job; ring 0.9-1.9 s/epoch, T = 1024 2.0 s/epoch at
+pilot concurrency. Launch settings unchanged (ring 4 per GPU, escape 2 per GPU, DRV_MINFREE 5500).

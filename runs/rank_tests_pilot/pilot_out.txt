@@ -1,0 +1,6 @@
+ring R1    s120: DESCENDING tail 0.2132 | acc T=128 0.9527 T=512 0.8624 | epochs to SOLVED 301 | kappa [0.0906, 0.1421] CLOCK
+ring R2    s120: SOLVED tail 0.0000 | acc T=128 1.0000 T=512 0.9991 | epochs to SOLVED 35 | kappa [0.0039, 0.0103] CLEAN
+ring R1DF  s120: SOLVED tail 0.0000 | acc T=128 1.0000 T=512 1.0000 | epochs to SOLVED 14 | kappa [0.0, 0.0] CLEAN
+escape S s100 (rank 4 from scratch, 300 epochs): DESCENDING tail 0.1049 epochs to SOLVED 301 -> BUDGET RULE: budget becomes 600 epochs (amendment before launch)
+dry run E: 3 epochs, losses [0.7481, 0.697, 0.6158] (source rank-2 s0 final loss ~0.59)
+dry run C: 3 epochs, losses [0.8412, 0.6994, 0.6213] (source rank-2 s0 final loss ~0.59)
