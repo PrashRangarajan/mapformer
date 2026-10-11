@@ -1,0 +1,12 @@
+MapWM_L3_r0.0_e1200_s150: own 1.0000 strip 1.0000 uninf 1.0000 named 0.9075 rel_uninf 0.5099 SOLVED
+MapWM_L3_r1.0_e1200_s150: own 0.9972 strip 0.4512 uninf 0.9974 named 0.9972 rel_uninf 0.5185 SOLVED
+RoPE_L3_r1.0_e1200_s150: own 0.9378 strip 0.4256 uninf 0.4161 named 0.9378 rel_uninf nan STALLED
+RoPE_L3_r1.0_e1800_s150: own 0.9692 strip 0.4174 uninf 0.5948 named 0.9692 rel_uninf nan STALLED
+MapWM_L3_r0.0_e1200_s150: own 1.0000 strip 1.0000 uninf 1.0000 named 0.9075 own_u05 1.0000 | name benefit -0.0925 | rel strip/uninf/named +0.510/+0.510/+0.403 | conflict 0.812/0.007 | SOLVED final loss 0.0016
+MapWM_L3_r1.0_e1200_s150: own 0.9972 strip 0.4512 uninf 0.9974 named 0.9972 own_u05 0.9965 | name benefit -0.0002 | rel strip/uninf/named +0.087/+0.519/+0.519 | conflict 0.996/0.000 | SOLVED final loss 0.0248
+RoPE_L3_r1.0_e1200_s150: own 0.9378 strip 0.4256 uninf 0.4161 named 0.9378 own_u05 0.9352 | name benefit +0.5218 | rel strip/uninf/named +nan/+nan/+nan | conflict 0.568/0.032 | STALLED final loss 0.2490
+RoPE_L3_r1.0_e1800_s150: own 0.9692 strip 0.4174 uninf 0.5948 named 0.9692 own_u05 0.9667 | name benefit +0.3745 | rel strip/uninf/named +nan/+nan/+nan | conflict 0.585/0.009 | STALLED final loss 0.0945
+(a) MapWM 3L r=0 path-integrates: PASS
+(b) RoPE 3L r=1 at 1200: PASS; SOLVED: False
+(b) RoPE 3L r=1 at 1800: PASS; SOLVED: False
+BUDGET: NEITHER -- redesign

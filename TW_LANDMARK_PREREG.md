@@ -338,3 +338,21 @@ unchanged (name benefit >= 0.10 and acc_named >= 0.85).
 - Consequence for a redesign (to be written as its own amendment, with a fresh independent audit, before any batch):
   the index arm needs 3 layers; matched depth puts the path arm at 3 layers too; RoPE 3L was still descending at 900
   epochs, so the budget needs a pilot; overshadowing must be read from in-distribution readouts (O-ID), not conflicts.
+
+## Amendment 4 (2026-10-10, 3-layer budget pilot; the batch is still NOT launched)
+Script `docs/audits/2026-10-10/tw_landmark_budget.sh` (rules committed 7522d75 before launch, clean), seed 150, 2 runs per
+GPU (3.6-3.9 s/epoch, GPUs at 100%; ~2.2 GB per job); output `runs/tw_landmark_pilot/budget3/` (`eval.json`, `eval_out.txt`).
+
+| run | own | strip | uninf | named | name benefit | reliance strip / uninf | class (final loss) |
+|---|---|---|---|---|---|---|---|
+| MapWM 3L r=0, 1200 ep | 1.0000 | 1.0000 | 1.0000 | 0.9075 | -0.093 | 0.510 / 0.510 | SOLVED (0.0016) |
+| MapWM 3L r=1, 1200 ep | 0.9972 | 0.4512 | 0.9974 | 0.9972 | -0.0002 | 0.087 / 0.519 | SOLVED (0.0248) |
+| RoPE 3L r=1, 1200 ep | 0.9378 | 0.4256 | 0.4161 | 0.9378 | +0.522 | -- | STALLED (0.249) |
+| RoPE 3L r=1, 1800 ep | 0.9692 | 0.4174 | 0.5948 | 0.9692 | +0.375 | -- | STALLED (0.0945) |
+
+Rules: (a) PASS; (b) PASS at 1200 and at 1800; SOLVED fails for RoPE 3L at both budgets (final loss 0.249 / 0.0945,
+classed STALLED). **BUDGET: NEITHER -- redesign** (as fixed before launch). Read, no decision (n = 1): at 3 layers, where
+the index model of the same depth relies on names (+0.52 / +0.37), the path model trained with names on every arrival
+path-integrates as strongly as without names (reliance with uninformative names 0.519 vs 0.510) and is at ceiling
+without informative names (uninf 0.9974); its name benefit is saturated by construction, so whether it uses names at all
+is not identified here (stripping is out of distribution, conflicts do not identify name use: Amendment 3).
