@@ -1,0 +1,25 @@
+  e1(0, 8) -> T1 IN 1D HOLDS
+  e1(1, 6) -> T1 IN 1D HOLDS
+  e1(2, 6) -> T1 IN 1D MIXED (2/8 vs 6/8, Fisher p 0.1319)
+  e1(6, 8) -> T1 IN 1D BROKEN (rank 1 = D solves)
+  e1(3, 8) -> T1 IN 1D MIXED (3/8 vs 8/8, Fisher p 0.0256)
+  e1(0, 4) -> T1 IN 1D MIXED (0/8 vs 4/8, Fisher p 0.0769)
+  e2('T1 IN 1D HOLDS', 0, 8) -> DRIFT IS THE OBSTACLE (R1DF 8/8 vs R1 0/8, Fisher p 0.0002)
+  e2('T1 IN 1D HOLDS', 0, 1) -> DRIFT IS NOT THE OBSTACLE (R1DF 1/8)
+  e2('T1 IN 1D HOLDS', 1, 4) -> PARTIAL (R1DF 4/8, Fisher p vs R1 0.2821)
+  e2('T1 IN 1D BROKEN', 7, 8) -> E2 NOT READ (rank 1 does not fail)
+  e2('T1 IN 1D MIXED', 3, 8) -> E2 NOT READ (rank 1 does not fail)
+  e2('T1 IN 1D MIXED', 2, 8) -> DRIFT IS THE OBSTACLE (R1DF 8/8 vs R1 2/8, Fisher p 0.0070)
+  x1(8, 0) -> RESCUES
+  x1(6, 1) -> RESCUES
+  x1(1, 0) -> NO RESCUE
+  x1(4, 1) -> PARTIAL (4/8 vs 1/8, Fisher p 0.2821)
+  x1(6, 3) -> PARTIAL (6/8 vs 3/8, Fisher p 0.3147)
+  x2 -> ESCAPE (faster than from scratch: E 8/8 vs S 1/8, Fisher p 0.0014; epochs ratio 0.20, perm p 0.0002)
+  x2 -> ESCAPE (faster than from scratch: E 8/8 vs S 8/8, Fisher p 1.0000; epochs ratio 0.24, perm p 0.0002)
+  x2 -> RELEARN (no faster than from scratch: E 8/8 vs S 8/8, Fisher p 1.0000; epochs ratio 1.00, perm p 1.0000)
+  x2 -> RELEARN (no faster than from scratch: E 7/8 vs S 7/8, Fisher p 1.0000; epochs ratio 0.96, perm p 0.4670)
+  x3(0, 8) -> BASIN CHOSEN EARLY (S 8/8 vs E 0/8, Fisher p 0.0002)
+  x3(1, 4) -> UNMEASURED AT THIS BUDGET (rank 4 from scratch solves 4/8)
+  x3(2, 6) -> NOT SEPARATED (S 6/8 vs E 2/8, Fisher p 0.1319)
+SMOKE ALL PASS

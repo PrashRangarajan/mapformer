@@ -1,0 +1,28 @@
+PASS C1 s20 non-bottleneck weights equal across MapWM base, R1, R2, R1DF (22 tensors) 
+PASS C1 s20 R1 and R1DF identical (bottleneck included) 
+PASS C2 s20 R2 equals model_rank_perhead.MapFormerWM_PerHead 
+     R1 bottleneck shapes {'action_to_lie.w_in.weight': (2, 128), 'action_to_lie.w_out.0.weight': (32, 1), 'action_to_lie.w_out.1.weight': (32, 1)}; R2 [(4, 128), (32, 2), (32, 2)]
+PASS C1 s27 non-bottleneck weights equal across MapWM base, R1, R2, R1DF (22 tensors) 
+PASS C1 s27 R1 and R1DF identical (bottleneck included) 
+PASS C2 s27 R2 equals model_rank_perhead.MapFormerWM_PerHead 
+     R1 bottleneck shapes {'action_to_lie.w_in.weight': (2, 128), 'action_to_lie.w_out.0.weight': (32, 1), 'action_to_lie.w_out.1.weight': (32, 1)}; R2 [(4, 128), (32, 2), (32, 2)]
+PASS C1 s120 non-bottleneck weights equal across MapWM base, R1, R2, R1DF (22 tensors) 
+PASS C1 s120 R1 and R1DF identical (bottleneck included) 
+PASS C2 s120 R2 equals model_rank_perhead.MapFormerWM_PerHead 
+     R1 bottleneck shapes {'action_to_lie.w_in.weight': (2, 128), 'action_to_lie.w_out.0.weight': (32, 1), 'action_to_lie.w_out.1.weight': (32, 1)}; R2 [(4, 128), (32, 2), (32, 2)]
+PASS C3 R1DF observation and blank rows of the step table are 0 
+PASS C3 R1DF -1 action step = -(+1 action step) 
+PASS C3 gradients reach R1DF's bottleneck and embeddings {'token_emb.weight': True, 'action_to_lie.w_in.weight': True, 'action_to_lie.w_out.0.weight': True, 'action_to_lie.w_out.1.weight': True}
+PASS C4 R1DF drift readout kappa = 0 on both heads kappa [0.0, 0.0]
+     R1 at init: kappa [117.486, 3.73] (untrained, for scale)
+G1 ring stream (p_plus 0.5, T = 128, 400 walks): revisits 0.759 of steps; wrap-only 0.111 of revisits
+G1 floors (CANCEL_PREREG.md, same stream definition): better of best constant and n-gram 1-5 = 0.554 at p_plus 0.5
+PASS C5 Vanilla_r4mi_s0: fp64 logit diff 4.7e-12 < 1e-9; variant Vanilla_r4mi; losses empty 
+PASS C5 Vanilla_r4mi_s1: fp64 logit diff 1.3e-12 < 1e-9; variant Vanilla_r4mi; losses empty 
+PASS C5 Vanilla_r4mi_s2: fp64 logit diff 9.7e-13 < 1e-9; variant Vanilla_r4mi; losses empty 
+PASS C5 Vanilla_r4mi_s3: fp64 logit diff 4.5e-12 < 1e-9; variant Vanilla_r4mi; losses empty 
+PASS C5 Vanilla_r4mi_s4: fp64 logit diff 4.0e-12 < 1e-9; variant Vanilla_r4mi; losses empty 
+PASS C5 Vanilla_r4mi_s5: fp64 logit diff 2.5e-12 < 1e-9; variant Vanilla_r4mi; losses empty 
+PASS C5 Vanilla_r4mi_s6: fp64 logit diff 2.4e-11 < 1e-9; variant Vanilla_r4mi; losses empty 
+PASS C5 Vanilla_r4mi_s7: fp64 logit diff 3.9e-12 < 1e-9; variant Vanilla_r4mi; losses empty 
+ALL PASS
