@@ -5,16 +5,20 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-10 13:20. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-11. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- Nothing. TW_LANDMARK pilot (Amendment 2: criterion (b) FAIL, RoPE 2L learns no name lookup) and existence runs
-  (Amendment 3: RoPE 3L +0.225 PASS; RoPE 2L 1800 ep FAIL; the conflict readout does not identify name use) are done.
-  NEXT (user decides): redesign at 3 layers (path and index), budget pilot, new amendment + independent audit, batch.
+- Nothing. 2026-10-11: independent critical review (`docs/audits/2026-10-11/CRITICAL_REVIEW.md`) of the 10-04..10 work;
+  corrections applied (CORRECTED blocks in TW_STATECHANGE / TINYSTORIES / MAPPOPE_PAIR / SCORE_RANK / GAIN_GRAIN /
+  GAIN_PHASE results, CLAUDE.md rows + withdrawn list, report v21). TW_LANDMARK STOPPED (Amendment 5).
+- STOPPED lines (review E): TW_LANDMARK, gain-phase / brain-scorecard follow-ons, TW_AMBIG, more 1-layer scripted-grammar
+  batches. Do not promote secondaries into CLAUDE.md rows or the report.
+- NEXT (planning, user asked 2026-10-11): rank escape test + 1D ring rank 1 vs 2 (~3-4 GPU-h); trimmed baseline table at
+  matched length (~6-8 GPU-h); RANK_NOWRAP at 8 seeds only if those leave the rank story standing; then the rank paper.
 
 ## Ready, not launched (each audited + amended; user chooses)
-- TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or
+- (STOPPED 2026-10-11 per review) TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or
   ~11 h without DirOnlyRole and RoPE2) + ~3 h pilot. Recommended after state-change.
 - TW_LANDMARK (`TW_LANDMARK_PREREG.md`, e9cd479): named places vs path integration, 2-layer arms, in-distribution probe
   O-ID; 48 runs ~7 h + pilot.

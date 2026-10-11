@@ -1,5 +1,11 @@
 # Does PoPE's score rescue rank 2 on the long-walk torus? -- results (2026-10-05)
 
+**CORRECTED 2026-10-11 (critical review B4).** The registered NO RESCUE stands. The stratum readings are SECONDARIES: the
+short-gap repair (+0.115, p 0.036) is one of three strata (Holm ~0.11). "The rank defect is the periodic code" is not
+separated from "long gaps": rank-2 plain revisits at gap >= 128 also fail (0.749 / 0.792 vs rank 4's 1.000); RANK_NOWRAP
+is the test that would separate them. "No score rule changes the code" generalises from one alternative. "SOLVED iff a
+clean head" (39/40) uses thresholds set post hoc and is close to circular: a description of end states, not a test.
+
 Pre-registration `SCORE_RANK_PREREG.md` (+ Amendment 1 from the code audit, committed d3ebe91 before launch). Runs
 `runs/score_rank/p0` (40 runs, one batch: rank-2 arms seeds 10-21, rank-4 arms 10-17, matched initialisation within
 the 2x2 as stated in Amendment 1). Registered output `SCORE_RANK_ANALYSIS.txt` (`analyze_score_rank.py`, run by the

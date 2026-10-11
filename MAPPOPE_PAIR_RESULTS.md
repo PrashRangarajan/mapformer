@@ -1,5 +1,11 @@
 # MapPoPE's two changes, separated -- results (2026-10-05)
 
+**CORRECTED 2026-10-11 (critical review B3).** (1) "PoPE's score rescues rank 2" holds at T = 128 only; at T = 1024, where
+rank 2 fails, it does not (SCORE_RANK: 3/12 vs 3/12). (2) The COUNT CI [-0.0004, +0.0008] and "about 3% of the total"
+are bounded by the ceiling (both arms 0.9995-0.9997): withdrawn as a precision claim; COUNT is uninformative in
+distribution (OOD +0.003, p 0.82). (3) SCORE is plausibly convergence speed (r(final loss, acc) -0.963); on fresh seeds
+(GAIN_GRAIN) it shrank from +0.024 to +0.009.
+
 Pre-registration `MAPPOPE_PAIR_PREREG.md` (+ Amendment 1 from the code audit, committed 49fb251 before launch). Runs
 `runs/mappope_pair/p0` (72 runs, one batch: rank-2 arms seeds 10-25, rank-4 arms seeds 10-17, all fresh); registered
 output `MAPPOPE_PAIR_ANALYSIS.txt` (`analyze_mappope_pair.py`, run by the driver after a second md5 check); evals

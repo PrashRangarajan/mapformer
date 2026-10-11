@@ -27,6 +27,7 @@ Rules and conventions live in CLAUDE.md (rules 1-29); these files hold the why a
 - [Convergence, floor, power, recipe](feedback_convergence_first.md) -- rules 1-5, 12; lm200 and the 0.415 ceiling.
 - [Validate the task; audit the design](feedback_validate_task_first.md) -- rules 11-13; premise, runtime knobs, split hypotheses.
 - [GPU sharing and cost](feedback_gpu_sharing_and_cost.md) -- shared server; no launches while another user's jobs run; show cost, offer trimmed variants.
+- [Follow-on drift](feedback_follow_on_drift.md) -- 2026-10-11 review: chains of post hoc follow-on batches, promoted secondaries; tie each GPU job to the plan and the main claim.
 - [Batch workflow](feedback_batch_workflow.md) -- rule 29: verification agent per batch, amend before reading, pilots on outside seeds, show cost arithmetic.
 - [Existence before mechanism](feedback_existence_before_mechanism.md) -- rules 14-15; warm-start frozen and trainable; gauges.
 - [Probes, agents and summaries lie confidently](feedback_probe_verification.md) -- rule 9; verify before relaying.

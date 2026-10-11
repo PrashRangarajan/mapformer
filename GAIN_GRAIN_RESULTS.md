@@ -1,5 +1,12 @@
 # Gain granularity between MapEM and MapPoPE -- results (2026-10-05)
 
+**CORRECTED 2026-10-11 (critical review B5).** (1) The 90% CIs printed for S - P / M - P are zero-width: the shift-test
+inversion is degenerate at the ceiling (arms 0.9995-0.9999); the non-inferiority p is from the same machinery. Read (a)
+as "nothing is worse on a task with no headroom", not as evidence that per-frequency gain is unnecessary. (2) "The form
+of the gain matters, not the sign" rests on S - N, a bundle contrast (factorised vs dot product, no offsets, 32k fewer
+parameters, score scale); not established. (3) "~3x faster" is descriptive and confounded; it did not replicate at rank
+4, T = 1024 (GAIN_PHASE D5, x1.03).
+
 Pre-registration `GAIN_GRAIN_PREREG.md` (+ Amendment 1 from the code audit, committed dadb3a3 before launch; the driver
 logged that commit and a clean tree at launch). Runs `runs/gain_grain/p0` (120 runs, one batch, seeds 26-45, n = 20 per
 arm). Registered output `GAIN_GRAIN_ANALYSIS.txt` (`analyze_gain_grain.py`); declared secondaries

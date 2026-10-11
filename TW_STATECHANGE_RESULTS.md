@@ -1,5 +1,18 @@
 # State changes told in words -- results (2026-10-09)
 
+**CORRECTED 2026-10-11 (critical review, `docs/audits/2026-10-11/CRITICAL_REVIEW.md` B7; supersedes the body where they
+conflict).** (1) The task's state verbs are took / grabbed / lifted and dropped / placed / released ("picked up" is
+excluded by design: "up" is a direction word); the body said "She picked up the cat." (fixed in place). (2) **C does not show state
+semantics.** On T2drop the answer is the noun told at that place moments after arrival, so a verb-agnostic rule
+"answer the last noun told at this cell" scores 1.000 on T2drop (0.841 if aside nouns count) on this eval stream; C's
+floor F2 (0.649) is location-free and does not bound that rule. C shows **location + recency among nouns at the place**,
+nearly free for any path model that retrieves by phase (DirOnly 0.926). The stratum that needs the verb is T2take (a
+take empties the cell; the verb-agnostic rule scores 0.000): MapWM 0.997, DirOnly 1.000, NormStep 0.872 -- descriptive,
+no registered decision. (3) A is a sanity check: a one-layer index model cannot integrate direction words. (4) D2
+(DirOnly worse) holds only under the dropout-scale re-score chosen after TW_NORMSTEP; eval mode reads no difference.
+(5) "This is the factorisation TEM claims, now with state changes" overstates a one-layer phase-coincidence mechanism on
+a scripted grammar with at most one change per cell; B means "no more displacement than asides", not "off the map".
+
 Pre-registration `TW_STATECHANGE_PREREG.md` (+ Amendment 1 from the independent code audit, before any run; Amendment 2
 the pilot, before the batch). Runs `runs/tw_statechange/p0` (32 runs, one batch, seeds 50-57 fresh, n = 8 per arm;
 launched 12:21 at a106cfe, clean, on GPU 0 only; done 18:05; md5 guard passed before readouts and analysis). Registered
@@ -7,7 +20,7 @@ output `TW_STATECHANGE_ANALYSIS.txt`, verdicts `TW_STATECHANGE_VERDICTS.json`, r
 `_READOUTS.txt`. Every accuracy below is dropout-scale re-scored (registered); eval-mode values are in the analysis file.
 
 The text world (a torus walk told in English, T = 1024 words, 1 layer) with state-change sentences added: after a move
-the agent may pick up the object at the cell or drop one there ("She picked up the cat."), each with p = 0.4. Strata of
+the agent may take the object at the cell or drop one there ("She took the cat." / "She dropped the cat."), each with p = 0.4. Strata of
 the scored revisits: **T1** cell never changed (pure location); **T2drop** first return after a drop -- the answer differs
 from the last thing seen there, so it needs the location AND the state sentence; T2take (answered by the constant
 'nothing'); T3 later returns.

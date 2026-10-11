@@ -356,3 +356,16 @@ the index model of the same depth relies on names (+0.52 / +0.37), the path mode
 path-integrates as strongly as without names (reliance with uninformative names 0.519 vs 0.510) and is at ceiling
 without informative names (uninf 0.9974); its name benefit is saturated by construction, so whether it uses names at all
 is not identified here (stripping is out of distribution, conflicts do not identify name use: Amendment 3).
+
+## Amendment 5 (2026-10-11): STOPPED. No batch will be run.
+Decided by the owner after an independent critical review (`docs/audits/2026-10-11/CRITICAL_REVIEW.md`, section C).
+Reasons: (1) not identifiable as posed -- the path model is at ceiling without informative names (MapWM 3L r=1 uninf
+0.9974; 2L 0.9996), so name benefit is saturated; stripping names is out of distribution; conflicts do not identify name
+use (Amendment 3); O-ID reads reliance at unnamed cells, where names cannot help, and its null is near-certain for an exact
+integrator. (2) MapFormer's phase is a cumulative sum with no reset: a name can be a second retrieval route but can never
+correct the phase, so cue competition within one representation is absent by construction. (3) Cost at 3 layers is
+~18-19 h, not the 7.5-8 h of the 2-layer design. What the pilots show (n = 1 each, descriptive): a 2-layer index model
+learns no name lookup in 900 or 1800 epochs, a 3-layer one does (+0.22 to +0.52); a 3-layer path model trained with
+names keeps the same theta reliance with informative and with uninformative names (0.519 / 0.519). A well-posed
+successor, if ever wanted: "teleport" moves with no direction word followed by "reached <name>", so only a name
+re-anchors place (CPU gate, ~2 GPU-h pilot); not planned.

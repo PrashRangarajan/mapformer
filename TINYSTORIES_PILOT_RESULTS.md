@@ -1,5 +1,17 @@
 # Which words move a path-integrated language model? TinyStories pilot -- results (2026-10-09)
 
+**CORRECTED 2026-10-11 (critical review B8, D; check 2 there; supersedes the body where they conflict).** (1) `mr` / `mrs`
+do not tick the clock faster: their step is ANTI-PARALLEL to '.' (cosine -0.97 to -1.00 on all three seeds; verified):
+the model cancels the full stop of an abbreviation. "Nothing cancels" is wrong for this pair; it supports a sentence
+counter. (2) "Spatial 0%" is a probe artefact: up/down/in/out/over/there/here were counted as function words first; with
+the full list spatial words carry 1.4% of the step at 2.5% of tokens. Motion verbs: 1.5% of tokens, step 0.62-0.67x the
+average token. Class shares track frequency shares (r(log frequency, step size) +0.25 to +0.33). (3) "About 20x the
+MapWM - RoPE difference" compares a lesion cost with a between-model difference: withdrawn. The substitution costs show
+reliance on the trained step table, not a benefit; RoPE ties MapWM. (4) "Discourse clock" = a token clock (79-87%)
+plus extra ticks at punctuation, line and story boundaries, with one learned cancellation; frequency, tokenizer
+artefacts and multi-story windows (512 words span ~2.6 stories) are not excluded. (5) The step latent is rank 4 shared
+across 8 heads: a map had little room beside a clock.
+
 PILOT, not pre-registered; readouts declared before training in `TINYSTORIES_PILOT.md`. Runs `runs/tinystories/p0`
 (MapWM = Vanilla rank 4, and index RoPE; seeds 0-2; 6 layers, d 256, 8 heads, context 512 words, 12k iterations,
 ~197M tokens). Readouts `docs/audits/2026-10-09/tinystories_probe.py` / `_out.txt`, `runs/tinystories/PROBE.json`.

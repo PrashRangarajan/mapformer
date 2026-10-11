@@ -1,5 +1,12 @@
 # The gain-phase map on the new-object task -- results (2026-10-09)
 
+**CORRECTED 2026-10-11 (critical review B6).** (1) "Two defects, two fixes" is withdrawn: ONE defect was shown (the leak, in
+the step map); the score fix had no measurable effect with either step (D2). D3 SEPARATE DEFECTS is close to by
+construction (S_id reads only W_out W_in, which the gain score does not touch). (2) D1's rotary half fired on SOLVED
+only, and SOLVED (a training-loss threshold) is ~97% leak (Amendment 3): it largely restates the leak. (3) "The only arm
+with no weak seed" is a post hoc variance observation at n = 8. (4) Practical size: ~0.5-1% on unseen-object revisits,
+one layer, MapWM still descending.
+
 Pre-registration `GAIN_PHASE_PREREG.md` (+ Amendments 1-3 from three independent audit rounds, all before launch). Runs
 `runs/gain_phase/p0` (32 runs, one batch, seeds 8-15 fresh, n = 8 per arm, finished 2026-10-09 09:05). Registered output
 `GAIN_PHASE_ANALYSIS.txt` (`analyze_gain_phase.py`), verdicts `GAIN_PHASE_VERDICTS.json`, per-run readouts
