@@ -1,25 +1,29 @@
-  e1(0, 8) -> T1 IN 1D HOLDS
-  e1(1, 6) -> T1 IN 1D HOLDS
-  e1(2, 6) -> T1 IN 1D MIXED (2/8 vs 6/8, Fisher p 0.1319)
-  e1(6, 8) -> T1 IN 1D BROKEN (rank 1 = D solves)
-  e1(3, 8) -> T1 IN 1D MIXED (3/8 vs 8/8, Fisher p 0.0256)
-  e1(0, 4) -> T1 IN 1D MIXED (0/8 vs 4/8, Fisher p 0.0769)
-  e2('T1 IN 1D HOLDS', 0, 8) -> DRIFT IS THE OBSTACLE (R1DF 8/8 vs R1 0/8, Fisher p 0.0002)
-  e2('T1 IN 1D HOLDS', 0, 1) -> DRIFT IS NOT THE OBSTACLE (R1DF 1/8)
-  e2('T1 IN 1D HOLDS', 1, 4) -> PARTIAL (R1DF 4/8, Fisher p vs R1 0.2821)
-  e2('T1 IN 1D BROKEN', 7, 8) -> E2 NOT READ (rank 1 does not fail)
-  e2('T1 IN 1D MIXED', 3, 8) -> E2 NOT READ (rank 1 does not fail)
-  e2('T1 IN 1D MIXED', 2, 8) -> DRIFT IS THE OBSTACLE (R1DF 8/8 vs R1 2/8, Fisher p 0.0070)
-  x1(8, 0) -> RESCUES
-  x1(6, 1) -> RESCUES
-  x1(1, 0) -> NO RESCUE
-  x1(4, 1) -> PARTIAL (4/8 vs 1/8, Fisher p 0.2821)
-  x1(6, 3) -> PARTIAL (6/8 vs 3/8, Fisher p 0.3147)
-  x2 -> ESCAPE (faster than from scratch: E 8/8 vs S 1/8, Fisher p 0.0014; epochs ratio 0.20, perm p 0.0002)
-  x2 -> ESCAPE (faster than from scratch: E 8/8 vs S 8/8, Fisher p 1.0000; epochs ratio 0.24, perm p 0.0002)
-  x2 -> RELEARN (no faster than from scratch: E 8/8 vs S 8/8, Fisher p 1.0000; epochs ratio 1.00, perm p 1.0000)
-  x2 -> RELEARN (no faster than from scratch: E 7/8 vs S 7/8, Fisher p 1.0000; epochs ratio 0.96, perm p 0.4670)
-  x3(0, 8) -> BASIN CHOSEN EARLY (S 8/8 vs E 0/8, Fisher p 0.0002)
-  x3(1, 4) -> UNMEASURED AT THIS BUDGET (rank 4 from scratch solves 4/8)
-  x3(2, 6) -> NOT SEPARATED (S 6/8 vs E 2/8, Fisher p 0.1319)
+  ok  e1(0, 8) -> RANK-D DIFFICULTY IN 1D HOLDS (budget-scoped)
+  ok  e1(1, 6) -> RANK-D DIFFICULTY IN 1D HOLDS (budget-scoped)
+  ok  e1(2, 6) -> RANK-D DIFFICULTY IN 1D MIXED (R1 2/8 vs R2 6/8, Fisher p 0.1319)
+  ok  e1(6, 8) -> RANK-D DIFFICULTY IN 1D BROKEN (rank 1 = D solves)
+  ok  e1(3, 8) -> RANK-D DIFFICULTY IN 1D MIXED (R1 3/8 vs R2 8/8, Fisher p 0.0256)
+  ok  e1(0, 4) -> RANK-D DIFFICULTY IN 1D MIXED (R1 0/8 vs R2 4/8, Fisher p 0.0769)
+  ok  e2(0, 8, 8, 8) -> OBSERVATION STEPS ARE THE OBSTACLE (R1AO 8/8 vs R1 0/8, Fisher p 0.0002; R1DF 8/8 descriptive)
+  ok  e2(0, 8, 0, 8) -> THE ACTION-COMMON COMPONENT (DRIFT) IS THE OBSTACLE (R1DF 8/8 vs R1AO 0/8, Fisher p 0.0002)
+  ok  e2(0, 8, 1, 1) -> NEITHER IS THE OBSTACLE (R1DF 1/8, R1AO 1/8)
+  ok  e2(0, 8, 1, 4) -> PARTIAL (R1 0/8, R1AO 1/8, R1DF 4/8; Fisher R1AO vs R1 p 1.0000, R1DF vs R1AO p 0.2821)
+  ok  e2(3, 8, 8, 8) -> E2 NOT READ (rank 1 does not fail: R1 3/8)
+  ok  e2(0, 4, 0, 8) -> E2 NOT READ (rank 2 does not solve: R2 4/8)
+  ok  e2(1, 7, 4, 8) -> PARTIAL (R1 1/8, R1AO 4/8, R1DF 8/8; Fisher R1AO vs R1 p 0.2821, R1DF vs R1AO p 0.0769)
+  ok  x1(8, 0, 8) -> RESCUES
+  ok  x1(6, 1, 2) -> RESCUES
+  ok  x1(1, 0, 8) -> NO RESCUE
+  ok  x1(1, 0, 3) -> UNMEASURED AT THIS BUDGET (E 1/8, and rank 4 on the trained network solves only 3/8: F)
+  ok  x1(4, 1, 8) -> PARTIAL (4/8 vs 1/8, Fisher p 0.2821)
+  ok  x1(0, 6, 8) -> C SOLVES, E DOES NOT (0/8 vs 6/8, Fisher p 0.0070)
+  ok  x1(6, 4, 8) -> PARTIAL (6/8 vs 4/8, Fisher p 0.6084)
+  ok  x2 -> ESCAPE (the stalled rank-2 step map is a usable start: E 8/8 vs F 1/8, Fisher p 0.0014; epochs ratio E/F 0.10, perm p 0.0002)
+  ok  x2 -> ESCAPE (the stalled rank-2 step map is a usable start: E 8/8 vs F 8/8, Fisher p 1.0000; epochs ratio E/F 0.15, perm p 0.0002)
+  ok  x2 -> RELEARN (no better than a fresh step map on the trained network: E 8/8 vs F 8/8, Fisher p 1.0000; epochs ratio E/F 1.00, perm p 1.0000)
+  ok  x2 -> RELEARN (no better than a fresh step map on the trained network: E 7/8 vs F 7/8, Fisher p 1.0000; epochs ratio E/F 0.97, perm p 0.4670)
+  ok  x3(0, 8) -> BASIN COMMITTED BY THE END OF RANK-2 TRAINING (F 8/8 vs E 0/8, Fisher p 0.0002)
+  ok  x3(2, 6) -> NOT SEPARATED (F 6/8 vs E 2/8, Fisher p 0.1319)
+  ok  mcnemar 6 vs 0 -> (6, 0, 0.03125)
+  epochs_to_solved transient dip -> 101 (want 101)
 SMOKE ALL PASS

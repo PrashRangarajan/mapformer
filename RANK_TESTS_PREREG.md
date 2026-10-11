@@ -97,3 +97,52 @@ plain revisit strata per arm; the T1 head class (`analyze_score_rank.head_stats`
 ## Cost (estimate; the pilot measures)
 Ring: 24 runs x ~10 min at full concurrency ~45 min wall. Escape: 24 runs x 300 epochs = 7,200 run-epochs at ~2,700 per
 hour (SCORE_RANK) ~2.7 h wall (600 epochs: ~5.3 h). Pilot ~30 min. Total ~4 h (or ~6.5 h at 600 epochs).
+
+## Amendment 1 (2026-10-11, after the independent code audit `docs/audits/2026-10-11/rank_tests_audit.md`; written and committed BEFORE the pilot's output was read; no batch run exists)
+The audit was blind (read no pilot output). It found no bug that changes a computed number, four bugs in the pipeline and
+four major design issues. Each finding -> change; where this conflicts with the text above, this amendment governs.
+**Bugs.** B1 `epochs_to_solved` gave a finite epoch to unsolved runs with a transient dip (stored source s1: 829 while
+unsolved) -> counted only for SOLVED runs, else budget + 1 (smoke case added). B2 the escape arms' re-scored accuracy
+(a declared secondary) was not computed -> the driver runs `rescore_hook --scale auto -- eval_noise_refine` per arm.
+B3 no provenance check -> the analysis asserts epochs (ring 300, escape 600), arm / variant, seed, `init_from` (E: the
+lifted file, C: the rank_mi source, F: the fresh file) and `data_seed_offset == 1`. B4 a restarted driver relaunched
+in-flight runs -> it skips any run whose `--output-dir` is in a live python3 process's argv (rule 21).
+**D1 (budget).** At 300 epochs "NO RESCUE" could be a budget artefact (stored rank 4 needs 481-579 epochs under a
+900-epoch schedule). -> **The escape budget is 600 epochs** for every escape arm (the pilot's 300-epoch rule is withdrawn;
+the pilot's S run is reported but decides nothing), and NO RESCUE now also requires that rank 4 can solve within the
+budget on the same trained network (k_F >= 6, below); otherwise **UNMEASURED AT THIS BUDGET**.
+**D2 (relearn unreachable).** E vs S (from scratch) could hardly read RELEARN: E inherits a trained content pathway. ->
+**S is replaced by F**: the same trained rank-2 network with its bottleneck replaced by a FRESH rank-4 bottleneck (the
+exact initial bottleneck `Vanilla_r4mi` draws at the seed; `build_rank_lift.py --fresh`; check C7). Every arm then
+starts from the same trained network; E keeps the stalled rank-2 step map (lifted, function-preserving), F discards it,
+C keeps it at rank 2. Decisions, replacing X1-X3:
+- **X1** RESCUES: k_E >= 6 AND Fisher(E vs C) p < .05. NO RESCUE: k_E <= 2 AND Fisher(E vs C) not < .05 AND k_F >= 6.
+  UNMEASURED AT THIS BUDGET: k_E <= 2, Fisher not < .05, k_F <= 5. C SOLVES, E DOES NOT: Fisher p < .05 with k_C > k_E.
+  Otherwise PARTIAL.
+- **X2** (if RESCUES) ESCAPE (the stalled rank-2 step map is a usable start): Fisher(E vs F) p < .05 with k_E > k_F, OR
+  geometric-mean epochs to SOLVED E / F <= 0.8 with permutation p < .05 on log epochs; else RELEARN.
+- **X3** (if NO RESCUE) BASIN COMMITTED BY THE END OF RANK-2 TRAINING: Fisher(F vs E) p < .05; else NOT SEPARATED.
+**D3 (R1DF confound).** R1DF removed the action-common component AND every observation step; zeroing observation steps
+alone is known to speed convergence (`LEAK_RESULTS.md`). R1DF's initial step was also 0.68x R1's (median). -> New arm
+**R1AO** (rank 1; observation and blank steps 0; both action steps free; same initial weights as R1, check C6); R1DF's
+direction is (e(+1) - e(-1)) / sqrt(2), matching R1's initial step variance. E2, replacing the text above (read only if
+k_R1 <= 2 AND k_R2 >= 6, audit M2): OBSERVATION STEPS ARE THE OBSTACLE: k_R1AO >= 6 and Fisher(R1AO vs R1) p < .05.
+THE ACTION-COMMON COMPONENT (DRIFT) IS THE OBSTACLE: k_R1AO <= 2, k_R1DF >= 6, Fisher(R1DF vs R1AO) p < .05. NEITHER:
+k_R1DF <= 2. Otherwise PARTIAL. Otherwise "E2 NOT READ" with the reason.
+**D4 (sources).** The 8 sources are unsolved at 900 epochs, not all stalled: by `classify_run` 4 STALLED (s0, s5, s6, s7)
+and 4 DESCENDING (s1-s4; s1 final 0.0511, minimum 0.0287). C may solve 1-2 (s1, s4); at k_C >= 4, RESCUES cannot be
+reached (8 vs 4: Fisher p 0.077). -> Stated; declared secondary: exact McNemar on the 8 (E, C) pairs and X1 counts per
+source class.
+**Minor.** M1: new ring arm **R2S** = shared rank 2 (`Vanilla`: per-head rank 2 with 2 latent dims, as R1 has), declared
+contrast R2S vs R1 (Fisher), no verdict. M3: object-step spread / |U| reported beside kappa; the 0.01 kappa threshold is
+borrowed from the T = 1024 torus. M4: labels renamed: E1 "RANK-D DIFFICULTY IN 1D HOLDS / BROKEN / MIXED
+(budget-scoped)" -- a search claim within 300 epochs; X3 "BASIN COMMITTED BY THE END OF RANK-2 TRAINING"; DESCENDING
+counts printed beside each SOLVED count. M5: gate G1 now calls `GridWorldCancel.generate_trajectory` (wrap-only 0.106 of
+revisits; revisits 0.759 of steps); the 0.554 floor is quoted from CANCEL, not recomputed. M6: in float32 the lift changes
+logits by up to 4.6e-3 (rounding through the cumulative sum; float64 <= 2.4e-11); E / F (`Vanilla_r4mi`) and C
+(`Vanilla`) consume different global-RNG draws at construction, so their dropout streams differ (harmless for unpaired
+counts). Cosmetic: R1DF / R1AO override `get_position_state`; the md5 guard covers lib_driver.sh, the driver and the
+secondary script; r(final loss, acc) per arm.
+**Arms and cost after this amendment.** Ring: R1, R2, R1DF, R1AO, R2S x seeds 20-27 = 40 runs (~1-1.3 h). Escape: E, C, F x
+seeds 0-7 at 600 epochs = 24 runs, 14,400 run-epochs (~5.3 h at SCORE_RANK's rate). Total ~6.5 h wall. Re-run: checks
+(`rank_tests_checks_out.txt`, ALL PASS, C6-C7 new), branch smoke (`rank_tests_smoke_out.txt`, ALL PASS, 28 cases).

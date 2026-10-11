@@ -12,18 +12,22 @@ import numpy as np
 import torch
 
 from mapformer.environment_cancel import GridWorldCancel
-from mapformer.model_ring_rank import MapFormerWM_Ring_R1, MapFormerWM_Ring_R2, MapFormerWM_Ring_R1DF
+from mapformer.model import MapFormerWM
+from mapformer.model_ring_rank import MapFormerWM_Ring_R1, MapFormerWM_Ring_R2, MapFormerWM_Ring_R1DF, MapFormerWM_Ring_R1AO
 from mapformer.train import train
 from mapformer.train_cancel import evaluate
 
-ARMS = {"R1": MapFormerWM_Ring_R1, "R2": MapFormerWM_Ring_R2, "R1DF": MapFormerWM_Ring_R1DF}
+ARMS = {"R1": MapFormerWM_Ring_R1, "R2": MapFormerWM_Ring_R2, "R1DF": MapFormerWM_Ring_R1DF,
+        "R1AO": MapFormerWM_Ring_R1AO, "R2S": MapFormerWM}   # R2S = shared rank 2 (Vanilla): per-head rank 2, 2 latent dims
 EVAL_SEED = 10 ** 6
 
 
 def build(arm, env, size):
     kw = dict(vocab_size=env.unified_vocab_size, d_model=128, n_heads=2, n_layers=1, grid_size=size)
-    if arm == "R1DF":
+    if arm in ("R1DF", "R1AO"):
         kw["action_ids"] = (env.action_offset + 0, env.action_offset + 1)     # +1, -1 (environment_cancel)
+    if arm == "R2S":
+        kw["bottleneck_r"] = 2
     return ARMS[arm](**kw)
 
 

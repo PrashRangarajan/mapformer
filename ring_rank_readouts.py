@@ -45,3 +45,14 @@ def drift_kappa(m, V, n_obs_types=16, p_empty=0.5, weighted=True, action_offset=
 
 def head_class(kappas, thr=0.01):
     return "CLEAN" if min(kappas) <= thr else "CLOCK"
+
+
+@torch.no_grad()
+def object_spread(m, n_obs_types=16, action_offset=0, obs_offset=2):
+    """Per head: the spread of object steps around their mean, || sd over objects || / || U || (unweighted), which kappa
+    cannot see (audit M3: a zero-mean object leak reads kappa ~ 0)."""
+    A = step_angles(m)
+    U = (A[action_offset] - A[action_offset + 1]) / 2
+    objs = A[obs_offset:obs_offset + n_obs_types]
+    sd = objs.std(0)
+    return [float(np.linalg.norm(sd[h]) / max(np.linalg.norm(U[h]), 1e-12)) for h in range(A.shape[1])]
