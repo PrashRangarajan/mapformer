@@ -32,6 +32,12 @@ the dropout-scale re-score (every arm moves <= 0.0001).
   slightly toward p_plus 0.9 (-0.028, -0.032, -0.046), where wrap-only revisits are the majority (0.74 of revisits at 0.9
   vs 0.11 at 0.5): the dial also changes how much the task needs the periodic code.
 
+## Post hoc (CPU, after the batch): the same on the torus
+`docs/audits/2026-10-12/torus_wrap_probe.py` / `_out.txt`, the matched-length sign batch (`runs/sign_matched`, 2D torus,
+T = 1024, 900 epochs, n = 8 each): share of channels where an action and its opposite cancel mod 2 pi (within 0.1 rad):
+**Signed 0.98, Abs 0.11, Pos 0.03** (median |wrap| 0.010 / 1.112 / 1.238 rad). The non-negative arms never find the wrap
+solution on the torus either; their 0/8 and 1/8 there is the same learnability failure.
+
 ## What it means
 - **A sign constraint on a rotary step is a learnability handicap, not a representational one, and it shows up within one
   task family and one model.** The non-negative step can represent the map, training does not find it (no channel-wise
