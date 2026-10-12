@@ -29,6 +29,12 @@ Howard's real, non-wrapping rates (decays, gates), not for rotations. This is it
 imaginary (rotary) slot, Howard's Cases II and III coincide representationally and differ only in how easily training
 finds a map.
 
+## Update 2026-10-12: the clock side (`CLOCK_SIDE_RESULTS.md`, registered)
+On k-back recency (k_max 128, T = 1024, 300 epochs) every Case II contrast reads UNMEASURED: Abs / CARoPE / Pos - Signed
++0.08 / +0.17 / +0.08 (perm p 0.16-0.53), no arm converged (0/40 SOLVED; r(loss, acc) -0.99), monotone arms directionally
+ahead; the index fails (RoPE - Signed -0.45, p 0.001). C3's gap stays open: a converged, below-ceiling clock-side contrast
+needs a longer budget (or a registered speed readout).
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
