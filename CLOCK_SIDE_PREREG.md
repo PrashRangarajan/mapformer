@@ -97,3 +97,11 @@ cuda:0) and the test directions. Findings -> changes; this amendment governs whe
   on under --fast-attn in every arm (as RECENCY) and runs are not bitwise deterministic; per-k readouts (~13 targets per
   offset on the re-evaluation) are descriptive only.
 Cost: 40 runs x 300 epochs at ~3-4 s/epoch, 4 at a time on GPU 0: ~2.5 h, plus the re-evaluation (~5 min).
+
+## Amendment 3 (2026-10-12, interpretation only; written while the batch runs, before any batch result was read; no code change)
+The independent RING_DIAL audit (`docs/audits/2026-10-12/ring_dial_audit.md` M1) showed that a non-negative ROTARY step is not
+representationally monotone: angles wrap mod 2 pi, so setting the second token's step to 2 pi / omega minus the first's
+reproduces any signed code exactly (constructed in the real modules). Abs_r4, Pos_r4 and CARoPE_r4 can therefore represent
+every signed solution, and Signed_r4 every monotone one. Every D1 / D1c / D1p label in this batch is a statement about
+LEARNABILITY under each parameterisation within 300 epochs, not about what the arms can represent; "Case II vs Case III"
+in Howard's sense (real, non-wrapping rates) is not separated by rotary arms. The decision rules are unchanged.
