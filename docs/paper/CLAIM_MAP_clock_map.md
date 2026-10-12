@@ -1,0 +1,37 @@
+# Claim map: "a learned path-integrated phase is a map or a clock" (2026-10-12)
+
+Working thesis for a paper: **a learned additive (path-integrated) phase is a MAP when its increments cancel and a CLOCK
+when they do not; it beats the token index exactly when the task needs a map, and on clock-like data the model learns a
+clock that does no better than counting tokens.** Each claim below is mapped to its evidence, its status and its gap.
+Status words as in `docs/WHERE_THINGS_STAND.md`: REG (pre-registered batch), citable (CLAUDE.md row), POST HOC, PILOT,
+WITHDRAWN. Prior art: `docs/lit/LIT_CLOCK_MAP.md` (being written).
+
+## Claims
+
+| # | claim | evidence (numbers) | status | file | gap |
+|---|---|---|---|---|---|
+| C1 | Signed increments make the interval sum a net displacement (same place at different times collides: a map); monotone ones make it a path length (a clock) | by construction | definition | `.claude-memory/project_clock_vs_map.md` | prior art (C1 is likely known; see lit) |
+| C2 | Forcing a clock destroys a map task, at the training length | torus trained and tested at T = 1024: Abs - Signed -0.177 (p 0.0002), 0/8 vs 8/8 SOLVED; opposite moves cancel only when signed (0.06 vs 1.92-1.97). (The often-quoted crossover -0.280 is OUT OF DISTRIBUTION: trained at T = 128, read at 1024) | REG | `SIGN_MATCHED_RESULTS.md` (`SIGN_ABLATION.md` for the OOD figure) | replication of Grazzi / Sarrof / Selective RoPE in a new regime: say so |
+| C3 | A clock costs nothing where a clock is enough, and a signed phase can act as one | k-back recency, trained at T = 1024: at the training length monotone arms 0.961-1.000 vs signed 1.000 (near ceiling; no registered contrast at this length); the registered -0.004 is read at T = 2048 (OUT OF DISTRIBUTION). The unconstrained signed model runs a clock there (C4). The index (RoPE) fails the task (0.234): it counts tokens, not content (C5) | REG, but the clock-side contrast is OOD or at ceiling | `RECENCY_RESULTS.md` | a matched-length clock-side contrast below ceiling; "recency NEEDS a clock" is withdrawn (a rewind solves it) |
+| C4 | The free phase chooses map or clock per task | growth exponent alpha of the unconstrained arm 0.591 (torus) vs 0.967 (recency), +0.376, se 0.009; alpha is a re-description of opposition (r +0.9995) | REG (H2) | `RECENCY_RESULTS.md`, `LOCALISATION.md` | alpha is a statistic, not a lever |
+| C5 | What a clock counts matters | recency at the training length (T = 1024), eval-only intervention on the trained signed model: a constant step on content tokens vs on all tokens, magnitude-matched, 0.783 vs 0.189 (+0.594, 8/8); the index arms (which count tokens) sit at 0.234 | citable; the matched pair was designed after a failed control (labelled post hoc in the file) | `RECENCY_GATE_ABLATION.md` | one task; an intervention, not trained arms |
+| C6 | Where a map is needed, path integration beats the index at matched length | torus +0.243 (8/8, converged recipe); Match-Query 0.730 vs 0.154 (n = 5); Dyck at matched depth +0.353 / +0.130 / +0.045 / +0.024 at 1-4 layers; navigation in words 0.969 vs 0.505; on Dyck the accumulated distance tracks stack depth (r 0.755) not token distance (0.278) | REG / citable (Match-Query not pre-reg., n = 5; the depth probe POST HOC) | `PAPER2X2_RESULTS.md`, `MATCH_QUERY_SCALE.md`, `DYCK_MDEPTH_RESULTS.md`, `TEXTWORLD_RESULTS.md`, `CROSS_RESULTS.md` | baselines (LSTM / Mamba-like / deeper RoPE) on the torus |
+| C7 | A within-task dial: as steps stop cancelling, the index stops needing depth | biased 1D walk: index needs 3 layers at p_plus 0.5 / 0.75 / 0.9 (0.9 knife-edge, gap 0.0115 vs 0.01), 1 layer at p_plus 1.0 (a clock); path 1 layer solves every cell | REG secondary; the registered primary fell in NO branch | `CANCEL_RESULTS.md` | the only within-task dial; a clean registered readout would strengthen it |
+| C8 | On clock-like natural data the learned phase is a clock and buys nothing over the index | TinyStories: alpha 1.00, R^2(phase ~ token index) 0.999 (3/3); MapWM = RoPE (1.5053 vs 1.5050). Code (9 layers, 2048): alpha 0.99-1.02, R^2 0.994-0.998, 75-92% of each byte's step shared; path integration costs +0.0056 bpc at matched length (p 0.024, n = 3). Bach: alpha ~1.00. With the clock removed, TinyStories' content part shows no cancelling structure (real order = shuffled); code's shows a weak one (real order slower on 5/6) | POST HOC / PILOT; code n = 3 | `docs/audits/2026-10-12/alpha_language_out.txt`, `TINYSTORIES_PILOT_RESULTS.md`, `docs/audits/2026-10-05/code_step_table_out.txt`, `CODE_FULLVAL_RESULTS.md` | **confound: clock tasks use 6-9-layer models, map tasks 1 layer**; n = 3 |
+| C9 | Map and clock can coexist in separate channels given rank | text world: 4/8 seeds run a per-step clock in 31-38 of 64 channels alongside the map, solving as well | REG secondary | `TEXTWORLD_RESULTS.md`; theory `THEORY_KERNEL.md` Thm 1 (scoped) | -- |
+| C10 | When a map fails, it fails by a clock leaking into it | rank-D heads that fail end with a drifting (CLOCK) head (39/40 on SCORE_RANK; thresholds set post hoc); 1D ring: the two slow rank-1 seeds are the drifting ones; drift forbidden by construction solves ~2x faster | descriptive; REG secondaries | `SCORE_RANK_RESULTS.md`, `RANK_TESTS_RESULTS.md` | **rank = D is NOT hard in 1D (REG)**: no causal or general claim |
+
+## Do not claim (withdrawn or failed)
+- Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
+- Recency needs a clock (a signed rewind solves it).
+- alpha causes out-of-distribution degradation (route not established; low-frequency account refuted).
+- The forget gate is a clock (untested); the InEKF wrap bounds the accumulator (false).
+- Rank = D is hard because of the clock (fails in 1D).
+
+## Gaps, cheapest first
+1. **Prior art** (`docs/lit/LIT_CLOCK_MAP.md`, agent running): which of C1-C5 are published.
+2. **The cross-task confound in C8.** Map tasks are 1-layer, clock tasks 6-9 layers. A same-size comparison: MapWM vs RoPE
+   at the TinyStories size on a map task (or 1-layer on a clock task), or a registered within-task dial (C7 with a clean
+   readout). GPU, ~1-3 h.
+3. **Baselines for C6** (the trimmed baseline table, ~8-10 h).
+4. Statistical status of C8 (n = 3, pilot): either run as a registered small batch or present as descriptive.

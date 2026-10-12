@@ -1,0 +1,12 @@
+== TinyStories (word level, 6 layers, MapWM r4; trained at 512) ==
+  TinyStories MapWM s0         alpha 0.999 | range at 512    170.56, at 2048    679.92 | R^2(S ~ t) 0.999 | content part (clock removed): alpha 0.573 real order vs 0.583 shuffled
+  TinyStories MapWM s1         alpha 1.002 | range at 512    139.07, at 2048    553.78 | R^2(S ~ t) 0.999 | content part (clock removed): alpha 0.561 real order vs 0.569 shuffled
+  TinyStories MapWM s2         alpha 1.006 | range at 512    131.52, at 2048    529.71 | R^2(S ~ t) 0.999 | content part (clock removed): alpha 0.621 real order vs 0.579 shuffled
+  clock reference (every step +1): alpha 1.000 by construction
+== code (byte level, 9 layers, trained and tested at 2048) ==
+  code Vanilla s0              alpha 0.998 | range at 512    343.05, at 2048   1429.03 | R^2(S ~ t) 0.994 | content part (clock removed): alpha 0.818 real order vs 0.864 shuffled
+  code Vanilla s1              alpha 0.997 | range at 512    380.00, at 2048   1518.97 | R^2(S ~ t) 0.997 | content part (clock removed): alpha 0.785 real order vs 0.871 shuffled
+  code Vanilla s2              alpha 0.990 | range at 512    426.07, at 2048   1725.54 | R^2(S ~ t) 0.995 | content part (clock removed): alpha 0.751 real order vs 0.870 shuffled
+  code MapPoPE-Flat s0         alpha 1.016 | range at 512    202.71, at 2048    807.77 | R^2(S ~ t) 0.996 | content part (clock removed): alpha 0.768 real order vs 0.848 shuffled
+  code MapPoPE-Flat s1         alpha 0.992 | range at 512    356.98, at 2048   1443.73 | R^2(S ~ t) 0.997 | content part (clock removed): alpha 0.803 real order vs 0.794 shuffled
+  code MapPoPE-Flat s2         alpha 0.995 | range at 512    195.75, at 2048    791.68 | R^2(S ~ t) 0.998 | content part (clock removed): alpha 0.773 real order vs 0.803 shuffled
