@@ -1,0 +1,5 @@
+Signed_r4  epoch to loss<2.0 median 230, <1.0 301, <0.5 301 | loss at 100/200/300 2.77 / 2.31 / 1.40 | reached <1.0: 3/8
+Abs_r4     epoch to loss<2.0 median 176, <1.0 272, <0.5 301 | loss at 100/200/300 2.74 / 1.52 / 0.93 | reached <1.0: 4/8
+CARoPE_r4  epoch to loss<2.0 median 180, <1.0 254, <0.5 301 | loss at 100/200/300 2.69 / 1.64 / 0.71 | reached <1.0: 5/8
+Pos_r4     epoch to loss<2.0 median 178, <1.0 297, <0.5 301 | loss at 100/200/300 2.72 / 1.72 / 1.03 | reached <1.0: 4/8
+RoPE       epoch to loss<2.0 median 301, <1.0 301, <0.5 301 | loss at 100/200/300 2.59 / 2.48 / 2.44 | reached <1.0: 0/8
