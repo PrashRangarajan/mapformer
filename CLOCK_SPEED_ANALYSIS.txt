@@ -1,0 +1,9 @@
+== CLOCK_SPEED: k-back recency, k_max 128, T 1024, 300 epochs; AUC = mean training loss (chance 2.77) ==
+  Signed_r4  AUC 2.235 +/- 0.289 | epoch to <2.0 median 210, <1.0 301 | loss 100/200/300 2.76/2.06/1.06 | acc 0.699 (2T 0.687) | SOLVED 0/16
+  Abs_r4     AUC 2.039 +/- 0.199 | epoch to <2.0 median 172, <1.0 270 | loss 100/200/300 2.72/1.49/0.90 | acc 0.723 (2T 0.690) | SOLVED 0/16
+  CARoPE_r4  AUC 2.121 +/- 0.266 | epoch to <2.0 median 170, <1.0 257 | loss 100/200/300 2.69/1.43/0.80 | acc 0.720 (2T 0.619) | SOLVED 0/8
+  REGISTERED S1, PRIMARY (Abs - Signed, the sign alone, n = 16): UNMEASURED: paired mean d -0.197 (exact sign-flip p 0.0533, 95% CI [-0.390, -0.000]; 12/16 seeds faster than Signed)
+  REGISTERED S2, secondary contrast (CARoPE - Signed, first 8 seeds): UNMEASURED: paired mean d -0.018 (exact sign-flip p 0.8984, 95% CI [-0.370, +0.365]; 4/8 seeds faster than Signed)
+  secondary: Abs_r4 - Signed AUC unpaired d -0.197 (perm p 0.0383, 95% CI [-0.380, -0.015])
+  secondary: CARoPE_r4 - Signed AUC unpaired d -0.018 (perm p 0.9128, 95% CI [-0.350, +0.320])
+  secondary: r(AUC, accuracy) over 40 runs -0.850

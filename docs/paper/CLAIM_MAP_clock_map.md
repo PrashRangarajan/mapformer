@@ -46,6 +46,12 @@ Three times the training does not help the non-negative rotary step on the ring 
 seeds); no run, solved or not, finds the cancelling (wrapped) map (2-11% of channels vs 82% signed). The sign handicap is
 not speed: training settles on a non-cancelling code that extrapolates worse.
 
+## Update 2026-10-12: learning speed on the clock (`CLOCK_SPEED_RESULTS.md`, registered)
+On k-back recency, the non-negative rotary step (Abs) learns faster than the signed one on 12/16 paired seeds (loss AUC
+-0.197, exact sign-flip p 0.053: UNMEASURED by the registered rule); CARoPE no difference on fresh seeds. With the ring
+companion (signed faster on 8/8 at every p, AUC +0.23 to +0.35, p 0.0078 each): an asymmetric learnability result -- clear
+where a map is needed, a trend the other way where a content clock is needed. Do NOT claim a double dissociation.
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
