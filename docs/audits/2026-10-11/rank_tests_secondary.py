@@ -27,7 +27,7 @@ for arm in ("R1", "R2", "R1DF", "R1AO", "R2S"):
         rows[(arm, s)] = (solved, cls, k, acc, classify_run(b["losses"])["tail"], object_spread(m))
     r = [rows[(arm, s)] for s in range(20, 28)]
     iff = sum((x[0] and x[1] == "CLEAN") or (not x[0] and x[1] != "CLEAN") for x in r)
-    print(f"  {arm:5s} kappa (min head) {[round(min(x[2]), 4) for x in r]} | classes {[x[1][:2] for x in r]} | "
+    print(f"  {arm:5s} kappa (min head) {[round(min(x[2]), 4) for x in r]} | classes {[x[1] for x in r]} | "
           f"SOLVED iff CLEAN on {iff}/8 (threshold 0.01 borrowed from the T = 1024 torus) | object-step spread / |U| (max head) "
           f"{[round(max(x[5]), 4) for x in r]} | r(final loss, acc T=128) {np.corrcoef([x[4] for x in r], [x[3] for x in r])[0, 1]:+.3f}")
 rescore_hook.install("auto")

@@ -1,0 +1,44 @@
+== ring ==
+  R1    kappa (min head) [0.0399, 0.0003, 0.0575, 0.0005, 0.0001, 0.0002, 0.001, 0.0002] | classes ['CLOCK', 'CLEAN', 'CLOCK', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN'] | SOLVED iff CLEAN on 7/8 (threshold 0.01 borrowed from the T = 1024 torus) | object-step spread / |U| (max head) [0.309, 0.0024, 1.1602, 0.0028, 0.0027, 0.0024, 0.5208, 0.0027] | r(final loss, acc T=128) -0.991
+/home/prashr/.local/lib/python3.10/site-packages/numpy/lib/_function_base_impl.py:3045: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[:, None]
+/home/prashr/.local/lib/python3.10/site-packages/numpy/lib/_function_base_impl.py:3046: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[None, :]
+  R2    kappa (min head) [0.0075, 0.0054, 0.0027, 0.003, 0.0026, 0.0033, 0.0042, 0.0034] | classes ['CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN'] | SOLVED iff CLEAN on 8/8 (threshold 0.01 borrowed from the T = 1024 torus) | object-step spread / |U| (max head) [0.0119, 0.0073, 0.0038, 0.0101, 0.005, 0.0113, 0.0052, 0.0026] | r(final loss, acc T=128) +nan
+  R1DF  kappa (min head) [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] | classes ['CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN'] | SOLVED iff CLEAN on 8/8 (threshold 0.01 borrowed from the T = 1024 torus) | object-step spread / |U| (max head) [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] | r(final loss, acc T=128) +nan
+  R1AO  kappa (min head) [0.0, 0.0001, 0.0001, 0.001, 0.0004, 0.0005, 0.0001, 0.0006] | classes ['CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN'] | SOLVED iff CLEAN on 8/8 (threshold 0.01 borrowed from the T = 1024 torus) | object-step spread / |U| (max head) [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] | r(final loss, acc T=128) +nan
+  R2S   kappa (min head) [0.0022, 0.0026, 0.0071, 0.0068, 0.0051, 0.0038, 0.1303, 0.0037] | classes ['CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLEAN', 'CLOCK', 'CLEAN'] | SOLVED iff CLEAN on 8/8 (threshold 0.01 borrowed from the T = 1024 torus) | object-step spread / |U| (max head) [0.0028, 0.0021, 0.02, 0.0059, 0.0048, 0.0036, 0.616, 0.0039] | r(final loss, acc T=128) -1.000
+  R1    acc T=128 eval mode 0.9932 | re-scored (200 traj) 0.9929 | per seed re-scored [0.993, 1.0, 0.95, 1.0, 1.0, 1.0, 1.0, 1.0]
+  R2    acc T=128 eval mode 1.0000 | re-scored (200 traj) 1.0000 | per seed re-scored [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+  R1DF  acc T=128 eval mode 1.0000 | re-scored (200 traj) 1.0000 | per seed re-scored [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+  R1AO  acc T=128 eval mode 1.0000 | re-scored (200 traj) 1.0000 | per seed re-scored [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+  R2S   acc T=128 eval mode 0.9936 | re-scored (200 traj) 0.9936 | per seed re-scored [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.949, 1.0]
+  r(final-5% loss, acc T=128) over all 40 ring runs: -0.990
+== escape ==
+  E s0: unsolved CLOCK new/old W_out cols 2.797
+  E s1: SOLVED CLEAN new/old W_out cols 0.876
+  E s2: SOLVED CLEAN new/old W_out cols 1.499
+  E s3: SOLVED CLEAN new/old W_out cols 2.462
+  E s4: unsolved CLOCK new/old W_out cols 2.486
+  E s5: unsolved CLOCK new/old W_out cols 2.125
+  E s6: unsolved CLOCK new/old W_out cols 1.633
+  E s7: unsolved CLOCK new/old W_out cols 1.357
+  E: SOLVED iff CLEAN on 8/8
+  C s0: unsolved CLOCK
+  C s1: SOLVED CLEAN
+  C s2: unsolved CLOCK
+  C s3: unsolved CLOCK
+  C s4: unsolved CLOCK
+  C s5: unsolved CLOCK
+  C s6: unsolved CLOCK
+  C s7: unsolved CLOCK
+  C: SOLVED iff CLEAN on 8/8
+  F s0: unsolved CLEAN new/old W_out cols 1.429
+  F s1: SOLVED CLEAN new/old W_out cols 0.843
+  F s2: unsolved CLEAN new/old W_out cols 1.295
+  F s3: unsolved CLEAN new/old W_out cols 1.165
+  F s4: unsolved CLEAN new/old W_out cols 1.124
+  F s5: unsolved CLEAN new/old W_out cols 1.244
+  F s6: SOLVED CLEAN new/old W_out cols 0.773
+  F s7: unsolved CLEAN new/old W_out cols 0.865
+  F: SOLVED iff CLEAN on 2/8

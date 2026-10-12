@@ -44,7 +44,7 @@ replication in a new regime).
 | guards | `GUARDS.md`; `python3 -m mapformer.test_guards` from `/home/prashr`; `python3 -m mapformer.experiment_audit --runs-dir D --control TWIN --control-of ARM` before reading any run dir |
 | void / stale results | `archive/void/` (bannered), `archive_stale/`; code bugs `KNOWN_BUGS.md` |
 | documents | `positional_review.pdf` (review), `axes_measured.pdf` (results paper), `mapformer_math.pdf` (record), `report/report.pdf`, `report/report_short.pdf` -- carry rank separation, Dyck matched depth and torus loop-rank (2026-09-27); 2026-09-30 corrected only where contradicted (sign now has its matched-length control; code full-val) in all but `mapformer_math` (nothing contradicted), rebuilt from source. **They do NOT carry rank 3, H1 part 1, H3, the text world, the context step, 3D rank / wrap, what/where, the leak or NormStep on words** (`docs/WHERE_THINGS_STAND.md`, Known stale); corpus `papers/INDEX.md` (40 papers, read first-hand -- grep, don't re-search) |
-| shared report | https://claude.ai/artifact/LVfYeHhjs1KjwMpg3Pxggc, source `report/language_summary.html` (v21, 2026-10-11: corrected after the critical review); republish WITH `url=` or the user's link breaks |
+| shared report | https://claude.ai/artifact/LVfYeHhjs1KjwMpg3Pxggc, source `report/language_summary.html` (v22, 2026-10-11: rank tests added); republish WITH `url=` or the user's link breaks |
 | run dirs of the Dyck / Bach / Indirect line | `docs/LOG.md`, block 2026-09-15..20 (`DYCK_T3_RESULTS.md` is an empty artefact) |
 | model aliases | `train_variant.py::VARIANT_MAP`: MapWM-Flat=Vanilla, MapEM-Flat=VanillaEM, MapWM-Hier=Hourglass_k2, MapWM-FlatHG=HourglassFlat3; Plain-* use index RoPE |
 
@@ -96,8 +96,10 @@ r=2's initial weights at each seed, differing only in the bottleneck; SOLVED wit
 | 2 | our shared r=2, per-head r=2, block-diagonal r=4 | 0/8, 2/8, 2/8 |
 | 3 | per-head r=3 (`RANK3_RESULTS.md`; acc 0.987 vs r=2 0.885, perm p 0.027, Holm 0.054; vs r=4 UNMEASURED) | 6/8 |
 | 3D torus (`RANK_ND_RESULTS.md`, `RANK_WRAP_RESULTS.md`) | rank 3 (= D) 1/8; rank 4 (= D+1) 4/8 on a small wrap-heavy grid (10/side) but **8/8 on grid 18** (few wrap-only revisits): the shortfall was the small-grid regime, not dimension. 2D control rank 2 1/8 vs rank 3 8/8 (p 0.0014). A 100-cell 2D grid is memorised (own map 0.986, unseen 0.273) | -- |
+| 1D ring (`RANK_TESTS_RESULTS.md`, registered: RANK-D DIFFICULTY IN 1D BROKEN) | rank 1 (= D) **7/8** vs rank 2 8/8 (ring 32 cells, T=128, 300 ep; other task and recipe than the torus): rank = D is NOT hard in 1D, so T1's account does not generalise; the 2D/3D measurements stand. Drift-forbidden rank 1 8/8 and ~2x faster (secondary) | -- |
 | 4 | shared r=4, per-head r=4 | 8/8, 8/8 |
 
+**Escape test** (`RANK_TESTS_RESULTS.md`, registered X1 PARTIAL): lifting stalled rank-2 runs to rank 4 solves 3/8 in 600 epochs vs rank 2 continued 1/8 (p 0.57) and a fresh rank-4 step map on the same network 2/8: UNMEASURED at this budget; secondary: lifted runs that stay unsolved keep a drifting (CLOCK) head, fresh step maps are clean.
 Separated: per-head rank FIRES (D - C_bd, both block-diagonal, Fisher and permutation p 0.0070);
 sharing one latent vs per-head latents UNMEASURED (D - C); `W_out` per-entry scale UNMEASURED
 (C_bd - B). Initial angle scale does not explain it (A and B fail at normal scale). A rank-2 solution

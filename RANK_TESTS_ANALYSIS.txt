@@ -1,0 +1,25 @@
+== Experiment 1: per-head rank on the 1D ring (p_plus 0.5, T = 128, 300 epochs; floor 0.554) ==
+  R1    SOLVED 7/8 (DESCENDING 1) | acc T=128 0.9932 (min 0.9517) T=512 0.9759 | epochs to SOLVED [260, 60, 301, 56, 42, 45, 49, 76]
+  R2    SOLVED 8/8 (DESCENDING 0) | acc T=128 1.0000 (min 1.0000) T=512 0.9992 | epochs to SOLVED [30, 57, 63, 50, 40, 38, 50, 49]
+  R1DF  SOLVED 8/8 (DESCENDING 0) | acc T=128 1.0000 (min 1.0000) T=512 1.0000 | epochs to SOLVED [13, 28, 33, 29, 21, 36, 18, 15]
+  R1AO  SOLVED 8/8 (DESCENDING 0) | acc T=128 1.0000 (min 1.0000) T=512 0.9987 | epochs to SOLVED [37, 38, 44, 76, 36, 62, 69, 59]
+  R2S   SOLVED 7/8 (DESCENDING 0) | acc T=128 0.9936 (min 0.9491) T=512 0.9799 | epochs to SOLVED [66, 46, 67, 47, 89, 68, 301, 65]
+  REGISTERED E1: RANK-D DIFFICULTY IN 1D BROKEN (rank 1 = D solves) (R1 7/8 vs R2 8/8, Fisher p 1.0000)
+  REGISTERED E2: E2 NOT READ (rank 1 does not fail: R1 7/8)
+  declared contrast (M1, matched total latent): R2S 7/8 vs R1 7/8, Fisher p 1.0000
+
+== Experiment 2: rank escape (T = 1024 torus; budget 600 epochs) ==
+  sources (rank_mi shared rank 2, 900 epochs): ['STALLED', 'DESCENDING', 'DESCENDING', 'DESCENDING', 'DESCENDING', 'STALLED', 'STALLED', 'STALLED']
+  E (Vanilla_r4mi) SOLVED 3/8 (DESCENDING 5) | final-5% loss [np.float64(0.194), np.float64(0.021), np.float64(0.019), np.float64(0.017), np.float64(0.056), np.float64(0.205), np.float64(0.275), np.float64(0.351)] | epochs to SOLVED [601, 462, 461, 433, 601, 601, 601, 601]
+  C (Vanilla     ) SOLVED 1/8 (DESCENDING 2) | final-5% loss [np.float64(0.522), np.float64(0.006), np.float64(0.349), np.float64(0.379), np.float64(0.187), np.float64(0.413), np.float64(0.498), np.float64(0.58)] | epochs to SOLVED [601, 443, 601, 601, 601, 601, 601, 601]
+  F (Vanilla_r4mi) SOLVED 2/8 (DESCENDING 4) | final-5% loss [np.float64(0.116), np.float64(0.022), np.float64(0.159), np.float64(0.159), np.float64(0.172), np.float64(0.11), np.float64(0.014), np.float64(0.06)] | epochs to SOLVED [601, 560, 601, 601, 601, 601, 434, 601]
+  REGISTERED X1: PARTIAL (3/8 vs 1/8, Fisher p 0.5692) (E 3/8 vs C 1/8, Fisher p 0.5692; F 2/8)
+  REGISTERED X2: NOT READ (X1 is not RESCUES)
+  REGISTERED X3: NOT READ (X1 is not NO RESCUE)
+  secondary: paired McNemar E vs C (E only 2, C only 0) exact p 0.5000; by source class: DESCENDING E 3/4 C 1/4, STALLED E 0/4 C 0/4
+  secondary: E held-out accuracy T=1024 eval mode mean 0.9687 min 0.9021
+  secondary: E held-out accuracy T=1024 re-scored mean 0.9689 min 0.9022
+  secondary: C held-out accuracy T=1024 eval mode mean 0.8983 min 0.8549
+  secondary: C held-out accuracy T=1024 re-scored mean 0.8984 min 0.8551
+  secondary: F held-out accuracy T=1024 eval mode mean 0.9752 min 0.9595
+  secondary: F held-out accuracy T=1024 re-scored mean 0.9752 min 0.9595

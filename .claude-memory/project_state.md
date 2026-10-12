@@ -9,12 +9,11 @@ Updated 2026-10-11. Goes stale fast: check `git log`, `.done` markers, the logs 
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- RANK_TESTS batch (`RANK_TESTS_PREREG.md` + Amendments 1-2): launched 2026-10-11 16:00 (code 9299470), both GPUs.
-  Ring (R1, R2, R1DF, R1AO, R2S x seeds 20-27, 300 ep) then escape (E lifted r4, C r2 continued, F fresh r4 bottleneck;
-  seeds 0-7; 600 ep). ETA ~6.5 h (~22:30). Log `rank_tests.log`, runs `runs/rank_tests/`, marker `.rank_tests_done`;
-  outputs RANK_TESTS_ANALYSIS.txt / _VERDICTS.json, secondaries docs/audits/2026-10-11/rank_tests_secondary_out.txt.
-  Then: RANK_TESTS_RESULTS.md (registered verdicts first; secondaries labelled), CLAUDE.md row only if citable.
-- After it: plan item 3 (trimmed baseline table, ~8-10 h) and conditional RANK_NOWRAP (`docs/plans/2026-10-11_next_gpu.md`).
+- Nothing. RANK_TESTS done 2026-10-11 21:55 (`RANK_TESTS_RESULTS.md`): E1 RANK-D DIFFICULTY IN 1D BROKEN (rank 1 7/8 on the
+  ring); X1 PARTIAL, unmeasured at 600 epochs (E 3/8, C 1/8, F 2/8). Report v22.
+- NEXT (plan `docs/plans/2026-10-11_next_gpu.md`): item 3, trimmed baseline table (~8-10 h); RANK_NOWRAP was conditional on
+  1-2 leaving the rank story standing -- the 2D/3D measurements stand but T1's explanation did not generalise to 1D;
+  the user decides whether NOWRAP (wrap vs long gaps on 2D) is still worth ~13-15 h.
 
 ## Ready, not launched (each audited + amended; user chooses)
 - (STOPPED 2026-10-11 per review) TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or
@@ -27,6 +26,9 @@ The user is cost-sensitive (a day of GPU is "a lot") and does not want our jobs 
 are there; check `nvidia-smi` owners before launching and ask if another user is active.
 
 ## Last results (newest first; one line each, numbers in the file)
+- RANK_TESTS (`RANK_TESTS_RESULTS.md`, REG): 1D ring rank 1 = D solves 7/8 (vs R2 8/8): "rank = D is hard" is not general;
+  escape test PARTIAL / unmeasured at 600 ep (fresh rank-4 step map on the trained nets also only 2/8). Secondary: lifted
+  unsolved runs keep a CLOCK head, fresh step maps are CLEAN.
 - TinyStories word-level pilot (`TINYSTORIES_PILOT_RESULTS.md`, PILOT, n=3): MapWM = RoPE (1.5053 vs 1.5050 nats/token);
   MapWM's step is a discourse clock (clock share 0.79-0.87; <eos>, sentence ends, quotes, clause links, speech verbs on
   top; motion verbs 1%, spatial 0%; no opposite pair cancels); uniform clock costs +0.07-0.09 nats. Data in

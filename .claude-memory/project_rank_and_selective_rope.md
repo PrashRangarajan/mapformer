@@ -136,3 +136,8 @@ represent and a wider bottleneck mainly lets more content drive the phase. Unres
 3/12 SOLVED; r4 8/8 under both score rules). PoPE fixes short-gap revisits (+0.115) but not wrap-only revisits (-0.015):
 the rank-2 defect is in the periodic code wrap-around needs. 'SOLVED iff a clean head' (theory T1) held on 39/40 runs as a
 declared secondary.
+
+2026-10-11 RANK_TESTS (registered): on a 1D ring (T=128) per-head rank 1 (= D) solves 7/8 -- "rank = D is hard" is NOT
+general; T1's drift account holds for the failures (the 2 slow seeds drift; drift-forbidden rank 1 is ~2x faster) but
+training usually avoids drift at rank 1. Escape test (lift stalled rank 2 -> 4) unmeasured at 600 epochs (fresh rank-4
+step map on the same networks also 2/8). See [[project-state]].
