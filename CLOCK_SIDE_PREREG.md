@@ -49,3 +49,18 @@ re-score of the primary (one layer); r(final loss, acc); the growth exponent alp
 Pilot (calibration) -> Amendment 1 (setting chosen, gate) -> independent code audit (rule 29) -> Amendment 2 -> batch on
 GPU 0 only while another user holds GPU 1 (user's permission 2026-10-12). Cost estimate: 32 runs x 300 epochs at
 2-4 s/epoch, 4 concurrent on one GPU: ~1.5-2.5 h.
+
+## Amendment 1 (2026-10-12, calibration pilot and gate; before the audit and the batch)
+Calibration (`docs/audits/2026-10-12/clock_side_calib.sh`, d0ef56c clean, seed 100, GPU 0), accuracy at the training length:
+| setting | Signed_r4 | CARoPE_r4 (disclosed, not used for the choice) |
+|---|---|---|
+| k_max 128, T 1024 | **0.493** (final loss 1.77) | 0.771 (0.88) |
+| k_max 128, T 2048 | 0.924 (0.24) | 0.950 (0.41) |
+| k_max 256, T 2048 | 0.061 (2.77, nothing learned) | 0.061 (2.77) |
+By the registered rule the batch uses **k_max 128, T 1024** (the first setting with Signed in [0.30, 0.95]). Eval targets per
+run at T = 1024: ~205 (per-seed accuracy SE ~0.03). Gate (`CLOCK_SIDE_GATES.md`, `validate_recency.py`, 800 episodes,
+min_gap 128): chance 0.0625, marginal 0.0716, most-recent 0.0709 (floor 0.0698), word n-gram orders 1 / 2 / 3 / 5: 0.065 /
+0.065 / 0.079 / 0.082, oracle 1.000. The strict gate rule (every order within 0.01 of chance) flags orders 3 and 5 (n = 2638
+scored targets; likely n-gram overfitting); the **best trivial predictor is 0.082**, reported as the floor. Constants set:
+`analyze_clock_side.py` T = 1024, K_MAX = 128; `run_clock_side.sh` K_MAX=128, T=1024 (GPU 0 only, 4 per GPU).
+Note: one pilot seed shows the monotone arm ahead (0.77 vs 0.49); that is the hypothesis's direction, n = 1, no verdict.
