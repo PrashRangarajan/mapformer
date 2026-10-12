@@ -18,7 +18,8 @@ echo "start $(date)" >> "$LOG"
 drv_md5_guard "$REPO/runs/clock_speed" "${GUARD[@]}" || exit 1
 _drv_log "code version: $(cd "$REPO" && git rev-parse HEAD) $(cd "$REPO" && git diff --quiet && echo clean || echo DIRTY); K_MAX $K_MAX T $T GPUs $DRV_GPUS"
 running(){ ps -u "$USER" -o comm=,args= | awk -v o="--output-dir $1" '$1=="python3" && index($0" ", o" ")' | grep -q .; }
-for S in 210 211 212 213 214 215 216 217; do for V in Signed_r4 Abs_r4 CARoPE_r4; do
+for S in $(seq 210 225); do for V in Signed_r4 Abs_r4 CARoPE_r4; do
+  [ "$V" = CARoPE_r4 ] && [ "$S" -gt 217 ] && continue   # Amendment 1: CARoPE n = 8
   OUT="$R/${V}_s${S}"
   [ -f "$OUT/${V}_recency.json" ] && { _drv_log "skip $V s$S (done)"; continue; }
   running "$OUT" && { _drv_log "skip $V s$S (running)"; continue; }
@@ -29,9 +30,9 @@ for S in 210 211 212 213 214 215 216 217; do for V in Signed_r4 Abs_r4 CARoPE_r4
 done; done
 sleep 60
 while ps -u "$USER" -o comm=,args= | awk '$1=="python3" && /mapformer[.]train_recency/ && /runs\/clock_speed\/p0/' | grep -q .; do sleep 60; done
-REQ=(); for S in 210 211 212 213 214 215 216 217; do for V in Signed_r4 Abs_r4 CARoPE_r4; do REQ+=("$R/${V}_s${S}/${V}_recency.json" "$R/${V}_s${S}/${V}_recency.pt"); done; done
+REQ=(); for S in $(seq 210 225); do for V in Signed_r4 Abs_r4 CARoPE_r4; do [ "$V" = CARoPE_r4 ] && [ "$S" -gt 217 ] && continue; REQ+=("$R/${V}_s${S}/${V}_recency.json" "$R/${V}_s${S}/${V}_recency.pt"); done; done
 drv_require "${REQ[@]}" || drv_fail "missing runs"
 drv_md5_guard "$REPO/runs/clock_speed" "${GUARD[@]}" || drv_fail "code changed before the analysis"
 python3 -u -m mapformer.analyze_clock_speed > "$REPO/CLOCK_SPEED_ANALYSIS.txt" 2>&1 || drv_fail analyze
-[ "${#REQ[@]}" -eq 48 ] || drv_fail "expected 48 artifacts"
+[ "${#REQ[@]}" -eq 80 ] || drv_fail "expected 80 artifacts"
 drv_done "$REPO/.clock_speed_done" "$REPO/CLOCK_SPEED_ANALYSIS.txt" "$REPO/CLOCK_SPEED_VERDICTS.json"

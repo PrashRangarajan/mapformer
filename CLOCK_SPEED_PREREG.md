@@ -32,3 +32,18 @@ loss there was ~0.5; a 0.10 AUC difference is about a tenth of the distance from
 ## Process
 Independent code check (rule 29) before launch; no pilot (the task, arms and recipe ran in CLOCK_SIDE; the readout is
 computed from saved loss curves, smoke-tested on CLOCK_SIDE's runs as fabricated input). Cost ~2 h on GPU 0.
+
+## Amendment 1 (2026-10-12, after the independent check `docs/audits/2026-10-12/clock_speed_audit.md`; before launch)
+- **D2 (power).** Only S1 (Abs - Signed) isolates the sign, the same contrast as the ring; S2 also changes the
+  parameterisation and initial step scale. S1 fired in only ~35% of the check's simulations at n = 8. -> **Signed_r4 and
+  Abs_r4 run on seeds 210-225 (n = 16); S1 is THE primary contrast** (exact sign-flip at n = 16). CARoPE_r4 stays at seeds
+  210-217; S2 is a secondary contrast on those 8 paired seeds. 40 runs.
+- **D1 (NO DIFFERENCE).** The point-estimate rule is replaced: NO DIFFERENCE requires the 95% paired CI (inverting the
+  sign-flip test on a fixed grid) to lie within [-0.10, +0.10]. At n = 16 with CLOCK_SIDE's per-seed sd (0.22-0.33) this is
+  still hard to reach; stated.
+- **D3 (matched readouts).** The ring results (`RING_DIAL`, `RING_BUDGET`) used SOLVED counts; the same loss AUC will be
+  computed post hoc from the saved ring curves as a companion (descriptive).
+- **Minor.** Dropout inflates training loss by ~0.15-0.23 depending on the arm (the check's measurement on CLOCK_SIDE), and
+  about half of an AUC difference comes from epochs 201-300: AUC measures progress within this budget. Tested on
+  CLOCK_SIDE's curves (seeds 200-207, n = 8): S1 UNMEASURED (-0.268, p 0.086), S2 fires (-0.291, p 0.0078) -- disclosed; the
+  batch uses fresh seeds. Cost: 12,000 run-epochs -> ~2.9 h on GPU 0.
