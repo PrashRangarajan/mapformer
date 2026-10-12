@@ -37,3 +37,27 @@ line where it would change a label; the opposition score ||D(+1) + D(-1)|| / mea
 ## Process and cost
 Pilot (seed 130: Signed_r4 and Abs_r4 at p_plus 0.5 and 0.9; timing and pipeline; disclosed in an amendment), independent
 code audit (rule 29), batch on GPU 0 (another user holds GPU 1). ~54 runs x 5-10 min, 6 at a time: ~1-1.5 h.
+
+## Amendment 1 (2026-10-12, after the independent code audit `docs/audits/2026-10-12/ring_dial_audit.md`; before the batch)
+**Pilot (seed 130, disclosed; read before the audit was written into this amendment).** Signed_r4 1.000 / 1.000 at p_plus
+0.5 / 0.9; Abs_r4 1.000 / 0.979 (T = 128); at T = 512 Signed 0.999 / 0.981, Abs 0.928 / 0.841. A post hoc probe found no
+clean per-channel wrap in the pilot Abs model (median |wrap(step(+1) + step(-1))| 0.79 rad vs Signed 0.02-0.03).
+**M1 (decisive): Abs is not monotone for a rotary phase.** Angles wrap mod 2 pi: Delta(-1) = 2 pi / omega - Delta(+1) gives the
+signed code exactly with non-negative steps (constructed by the audit in the real modules, 6e-4 over 512 steps). Any Abs
+deficit is therefore a SEARCH / learnability failure, and Abs is not Howard's Case II. The original prediction ("monotone
+fails on the map") is withdrawn. **The question becomes a LEARNABILITY dial: does the non-negative parameterisation find the
+map as reliably as the signed one, and does that depend on how much the task needs cancellation?** (Records stating that a
+monotone rotary step "cannot represent a -1 action" are corrected: CLAUDE.md sign row, memory, claim map, lit note.)
+**M2.** p_plus 1.0 is true by construction (constant action token) and is dropped; the dial is **p_plus 0.5 / 0.75 / 0.9**.
+**M3.** **n = 8** (seeds 30-37) and SOLVED (Fisher) is co-primary with accuracy.
+**Arms.** Signed_r4 and Abs_r4 (RoPE dropped: CANCEL measured one-layer index at these p_plus with n = 8). 2 x 3 x 8 = 48 runs.
+**Decisions (replace DM / DD / DC / DIAL / DI), per p_plus, d = Abs - Signed:** ABS LEARNS WORSE: accuracy fires negative
+(perm p < .05 and |d| >= 0.05) OR Fisher p < .05 with fewer Abs SOLVED. ABS LEARNS BETTER: the mirror. ABS LEARNS AS WELL:
+neither, and the 95% CI (perm2_ci on a fixed grid [-0.5, 0.5], audit B2) lies within [-0.02, +0.02]. UNMEASURED otherwise.
+DIAL summary prints the three labels (no new test).
+**M4 / B1.** Every run is re-scored (dropout scale, CPU, same stream); a label that differs under the re-score carries a
+FLAG with the re-scored label. Secondaries: wrap-aware opposition (median |wrap(step(+1) + step(-1))| over channels with a
+step > 0.05 rad, share below 0.1 rad) beside the raw opposition; accuracy at T = 512 (OOD); floors printed.
+**Minor.** The dial also changes the wrap-only revisit share (0.11 / 0.74 / 1.00 at p 0.5 / 0.9 / 1.0; stated); md5 guard adds
+data_parallel.py, environment.py, rescore_hook.py; the driver waits for CLOCK_SIDE to finish (shared slots on GPU 0).
+Cost: 48 runs x ~5-10 min, 6 at a time on GPU 0: ~1 h; re-score on CPU ~10 min.
