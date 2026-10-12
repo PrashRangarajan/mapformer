@@ -5,15 +5,18 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-11. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-12 01:45. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
-## Running
-- Nothing. RANK_TESTS done 2026-10-11 21:55 (`RANK_TESTS_RESULTS.md`): E1 RANK-D DIFFICULTY IN 1D BROKEN (rank 1 7/8 on the
-  ring); X1 PARTIAL, unmeasured at 600 epochs (E 3/8, C 1/8, F 2/8). Report v22.
-- NEXT (plan `docs/plans/2026-10-11_next_gpu.md`): item 3, trimmed baseline table (~8-10 h); RANK_NOWRAP was conditional on
-  1-2 leaving the rank story standing -- the 2D/3D measurements stand but T1's explanation did not generalise to 1D;
-  the user decides whether NOWRAP (wrap vs long gaps on 2D) is still worth ~13-15 h.
+## Running (autonomous, user away; user OK'd GPU use 2026-10-12; vsathish holds GPU 1 with ~39 jobs -> GPU 0 only)
+- CLOCK_SIDE batch (`CLOCK_SIDE_PREREG.md` + Amendments 1-2, audit `docs/audits/2026-10-12/clock_side_audit.md`): launched
+  01:32 at 9f91be0 on GPU 0; 40 runs (Signed/Abs/CARoPE/Pos/RoPE x seeds 200-207) on k-back recency k_max 128 T 1024,
+  then the ~1,690-target re-evaluation and analysis; marker `.clock_side_done`; log `clock_side.log`. ETA ~04:15.
+- RING_DIAL (`RING_DIAL_PREREG.md`): pilot done (n=1: Abs solves the ring at p 0.5 too, 1.000 -- against the prediction;
+  post hoc probe shows no clean per-channel wrap; mechanism open); independent audit running; then Amendment 1 and the batch
+  (54 runs, GPU 0, ~1-1.5 h) after CLOCK_SIDE.
+- Framing work (2026-10-12): `docs/paper/CLAIM_MAP_clock_map.md`; prior art `docs/lit/LIT_CLOCK_MAP.md`,
+  `docs/lit/LIT_HOWARD_TRANSFORMER.md` (Howard's three integrator cases <-> rotary families: not found stated).
 
 ## Ready, not launched (each audited + amended; user chooses)
 - (STOPPED 2026-10-11 per review) TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or
