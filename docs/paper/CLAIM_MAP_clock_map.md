@@ -41,6 +41,11 @@ where steps cancel: SOLVED 2/8 and 1/8 vs 8/8 at p_plus 0.5 / 0.75 (Fisher p 0.0
 not find the wrap solution (4-7% of channels cancel mod 2 pi vs 63-82% for Signed). No graded dial. This supports C2 as a
 LEARNABILITY claim within a task, and the rotary-slot statement (Cases II and III coincide representationally).
 
+## Update 2026-10-12: budget (`RING_BUDGET_RESULTS.md`, registered PARTIAL)
+Three times the training does not help the non-negative rotary step on the ring (3/8 at 900 vs 3/8 at 300 epochs, same
+seeds); no run, solved or not, finds the cancelling (wrapped) map (2-11% of channels vs 82% signed). The sign handicap is
+not speed: training settles on a non-cancelling code that extrapolates worse.
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).

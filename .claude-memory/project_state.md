@@ -5,16 +5,16 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-12 07:30. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-12 09:30. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- Nothing. Autonomous session 2026-10-12 (user away, GPU 0 only): CLOCK_SIDE (all Case II contrasts UNMEASURED, nothing
-  converged; INDEX FAILS) and RING_DIAL (Abs LEARNS WORSE at p 0.5 / 0.75 on SOLVED; UNMEASURED at 0.9; Abs never finds the
-  wrap solution) are done and written up. Key correction: non-negative ROTARY steps can represent signed codes mod 2 pi; the
-  sign result is learnability (CLAUDE.md, memory, claim map fixed).
-- NEXT (user decides; each 7-20 h on one GPU): CLOCK_SIDE at a converging budget; the baseline table; or write the paper
-  from `docs/paper/CLAIM_MAP_clock_map.md`.
+- Nothing (09:30). Autonomous session 2026-10-12 (user away; GPU 0 only, vsathish on GPU 1) ran and wrote up: CLOCK_SIDE
+  (Case II contrasts UNMEASURED, nothing converged; INDEX FAILS), RING_DIAL (non-negative rotary step learns the map worse
+  where steps cancel: 2/8, 1/8 vs 8/8), RING_BUDGET (3x budget does not help: 3/8 vs 3/8; no run finds the wrap solution).
+  Key correction: non-negative ROTARY steps can represent signed codes mod 2 pi; the sign result is LEARNABILITY.
+- NEXT (user decides): paper outline from `docs/paper/CLAIM_MAP_clock_map.md`; CLOCK_SIDE at a converging budget (~7 h,
+  GPU 0); baseline table (~8-10 h both GPUs). Push pending (commits since a16d178 not pushed).
 
 ## Ready, not launched (each audited + amended; user chooses)
 - (STOPPED 2026-10-11 per review) TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or

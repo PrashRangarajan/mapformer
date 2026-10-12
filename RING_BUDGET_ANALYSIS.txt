@@ -1,0 +1,19 @@
+== RING_BUDGET (amended): Abs_r4, ring p_plus 0.5, seeds 40-47, 900 epochs and a 300-epoch twin ==
+  e900 s40: SOLVED     tail 0.002 min 0.002 loss@300 0.205 | acc 1.0000 [re-scored 1.0000] T=512 0.7777 | epochs to SOLVED 452 | wrap median 0.524 rad, share cancelling 0.10
+  e900 s41: STALLED    tail 0.070 min 0.068 loss@300 0.138 | acc 0.9857 [re-scored 0.9857] T=512 0.4386 | epochs to SOLVED 901 | wrap median 0.493 rad, share cancelling 0.08
+  e900 s42: DESCENDING tail 0.129 min 0.125 loss@300 0.286 | acc 0.9691 [re-scored 0.9693] T=512 0.8549 | epochs to SOLVED 901 | wrap median 0.790 rad, share cancelling 0.07
+  e900 s43: SOLVED     tail 0.002 min 0.002 loss@300 0.138 | acc 1.0000 [re-scored 1.0000] T=512 0.8426 | epochs to SOLVED 414 | wrap median 0.440 rad, share cancelling 0.04
+  e900 s44: DESCENDING tail 0.215 min 0.209 loss@300 0.329 | acc 0.9510 [re-scored 0.9509] T=512 0.8522 | epochs to SOLVED 901 | wrap median 0.355 rad, share cancelling 0.06
+  e900 s45: STALLED    tail 0.195 min 0.194 loss@300 0.266 | acc 0.9443 [re-scored 0.9446] T=512 0.7161 | epochs to SOLVED 901 | wrap median 1.056 rad, share cancelling 0.04
+  e900 s46: SOLVED     tail 0.000 min 0.000 loss@300 0.175 | acc 0.9999 [re-scored 0.9999] T=512 0.8360 | epochs to SOLVED 393 | wrap median 0.347 rad, share cancelling 0.07
+  e900 s47: DESCENDING tail 0.056 min 0.053 loss@300 0.142 | acc 0.9893 [re-scored 0.9893] T=512 0.9065 | epochs to SOLVED 901 | wrap median 0.579 rad, share cancelling 0.06
+  e300 s40: STALLED    tail 0.150 min 0.149 loss@300 0.150 | acc 0.9573 [re-scored 0.9574] T=512 0.8598 | epochs to SOLVED 301 | wrap median 1.174 rad, share cancelling 0.04
+  e300 s41: STALLED    tail 0.098 min 0.096 loss@300 0.098 | acc 0.9818 [re-scored 0.9817] T=512 0.9890 | epochs to SOLVED 301 | wrap median 0.798 rad, share cancelling 0.03
+  e300 s42: STALLED    tail 0.252 min 0.248 loss@300 0.252 | acc 0.9455 [re-scored 0.9454] T=512 0.8706 | epochs to SOLVED 301 | wrap median 0.628 rad, share cancelling 0.07
+  e300 s43: SOLVED     tail 0.003 min 0.002 loss@300 0.003 | acc 1.0000 [re-scored 1.0000] T=512 0.8358 | epochs to SOLVED 165 | wrap median 0.846 rad, share cancelling 0.09
+  e300 s44: DESCENDING tail 0.301 min 0.294 loss@300 0.302 | acc 0.8953 [re-scored 0.8952] T=512 0.7422 | epochs to SOLVED 301 | wrap median 0.481 rad, share cancelling 0.11
+  e300 s45: SOLVED     tail 0.012 min 0.011 loss@300 0.013 | acc 0.9981 [re-scored 0.9981] T=512 0.7478 | epochs to SOLVED 182 | wrap median 1.170 rad, share cancelling 0.05
+  e300 s46: SOLVED     tail 0.008 min 0.006 loss@300 0.008 | acc 1.0000 [re-scored 1.0000] T=512 0.7953 | epochs to SOLVED 181 | wrap median 1.052 rad, share cancelling 0.02
+  e300 s47: DESCENDING tail 0.197 min 0.189 loss@300 0.196 | acc 0.9600 [re-scored 0.9601] T=512 0.6988 | epochs to SOLVED 301 | wrap median 0.210 rad, share cancelling 0.07
+  REGISTERED: PARTIAL (3/8 vs 3/8, Fisher p 1.0000)
+  secondary: classes at 900 ['SOLVED', 'STALLED', 'DESCENDING', 'SOLVED', 'DESCENDING', 'STALLED', 'SOLVED', 'DESCENDING']; mean acc 900 0.9799 vs 300 0.9673; T=512 0.7781 vs 0.8174
