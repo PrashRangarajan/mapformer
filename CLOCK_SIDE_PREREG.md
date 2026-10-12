@@ -64,3 +64,36 @@ min_gap 128): chance 0.0625, marginal 0.0716, most-recent 0.0709 (floor 0.0698),
 scored targets; likely n-gram overfitting); the **best trivial predictor is 0.082**, reported as the floor. Constants set:
 `analyze_clock_side.py` T = 1024, K_MAX = 128; `run_clock_side.sh` K_MAX=128, T=1024 (GPU 0 only, 4 per GPU).
 Note: one pilot seed shows the monotone arm ahead (0.77 vs 0.49); that is the hypothesis's direction, n = 1, no verdict.
+
+## Amendment 2 (2026-10-12, after the independent code audit `docs/audits/2026-10-12/clock_side_audit.md`; before the batch)
+The audit (blind to the calibration results) verified the arms, matched initialisation (Signed / Abs / CARoPE / Pos share
+initial weights at a seed; RoPE differs), identical training and eval streams across arms at a seed, min_gap 128 at T and
+2T, --fast-attn validity for every arm (logits <= 9.5e-7, gradient cosine 1.000), the driver (dry run: 32 unique launches on
+cuda:0) and the test directions. Findings -> changes; this amendment governs where it conflicts with the text above.
+- **M1 (power).** ~213 eval targets per run made NO DIFFERENCE practically unreachable (a true null read UNMEASURED 85-93% in
+  the audit's simulation). -> **Primary readout = a re-evaluation of every saved checkpoint on 512 sequences (~1,690 targets
+  per run)** at T = 1024 from a fresh stream (`eval_clock_side.py`: `train_recency.evaluate` unchanged, np RandomState(7000 +
+  seed), the same items for every arm at a seed; tested on the two calibration checkpoints: n 1691). The in-training eval
+  (~213 targets) is printed beside it.
+- **M2 (arms).** The composite of CARoPE and Pos changes more than the sign (CARoPE's step is bounded in (0, 1) and starts
+  as a near-uniform token clock; both move slower per update), and RECENCY's composite also included Abs. -> **Abs_r4 is
+  added** (`|W_out W_in x|`, the same parameterisation as Signed with the sign removed; 8 runs) and is the **primary
+  contrast D1 = Abs_r4 - Signed_r4**. CARoPE_r4 - Signed_r4 (D1c) and Pos_r4 - Signed_r4 (D1p) are each registered
+  separately with the same branches; no composite. 5 arms x 8 seeds = 40 runs.
+- **M3 (what a Case II advantage can mean).** A signed step can represent every monotone solution (RECENCY's amendment), so
+  CASE II ADVANTAGE can only reflect search or training speed. -> The label always carries "[search / training speed: the
+  signed arm can represent every monotone solution]" and the count of monotone runs still DESCENDING at 300 epochs. A
+  2x-budget rerun is a candidate follow-up, not part of this batch.
+- **M4 (dropout scale).** One layer below ceiling is where eval mode under-reports. -> The re-evaluation also scores every
+  run under the 1/(1-p) re-score (`rescore_hook`, same process); if a D1 label differs between eval mode and the re-score,
+  the line carries a FLAG with the re-scored label (calibration checkpoints: 0.4926 / 0.4950, 0.8114 / 0.8072).
+- **B1 / B2.** Secondaries added to `analyze_clock_side.py`: SOLVED / STALLED / DESCENDING counts, eval n per run, the floor,
+  paired-by-seed differences with the exact sign-flip test (the audit's pairing point), Fisher on SOLVED, r(final loss,
+  acc) overall and per arm. Provenance: T, k_max and min_gap are asserted from each run's log header and checkpoint,
+  epochs from the loss curve. The growth-exponent secondary is dropped (not needed for any decision).
+- **Gate.** At 8,000 episodes (`CLOCK_SIDE_GATES_8000.md`) the gate PASSES: n-gram orders 0.058-0.069, marginal 0.0666,
+  most-recent 0.0724, oracle 1.000; the 800-episode flags were noise. Floor (best trivial predictor) **0.072**.
+- **Minor.** "RECENCY's registered composite" in the text above was inexact (it averaged three arms including Abs); TF32 is
+  on under --fast-attn in every arm (as RECENCY) and runs are not bitwise deterministic; per-k readouts (~13 targets per
+  offset on the re-evaluation) are descriptive only.
+Cost: 40 runs x 300 epochs at ~3-4 s/epoch, 4 at a time on GPU 0: ~2.5 h, plus the re-evaluation (~5 min).
