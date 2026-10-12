@@ -4,7 +4,7 @@ Working thesis for a paper: **a learned additive (path-integrated) phase is a MA
 when they do not; it beats the token index exactly when the task needs a map, and on clock-like data the model learns a
 clock that does no better than counting tokens.** Each claim below is mapped to its evidence, its status and its gap.
 Status words as in `docs/WHERE_THINGS_STAND.md`: REG (pre-registered batch), citable (CLAUDE.md row), POST HOC, PILOT,
-WITHDRAWN. Prior art: `docs/lit/LIT_CLOCK_MAP.md` (being written).
+WITHDRAWN. Prior art: `docs/lit/LIT_CLOCK_MAP.md` (2026-10-12; summary in the section below).
 
 ## Claims
 
@@ -35,3 +35,26 @@ WITHDRAWN. Prior art: `docs/lit/LIT_CLOCK_MAP.md` (being written).
    readout). GPU, ~1-3 h.
 3. **Baselines for C6** (the trimmed baseline table, ~8-10 h).
 4. Statistical status of C8 (n = 3, pilot): either run as a registered small batch or present as descriptive.
+
+## Prior art (`docs/lit/LIT_CLOCK_MAP.md`, 2026-10-12; two claims spot-checked in `papers/txt/`)
+- **C1 is published**: Howard et al. 2014 (J Neurosci 34:4692) -- one integrator with a constant rate (time), a speed rate
+  (path length: different routes to one place differ) and a signed velocity rate ("like a bead on a wire": the same code
+  for a position). The clock / map table is Howard's three cases applied to a rotary phase. Cite as the frame.
+- **C2 (sign) is published as theory and in architectures**: Sarrof 2024, Grazzi 2025, Khavari 2025 (proofs); Selective
+  RoPE and Mamba-3 (signed content-dependent rotation); MapFormer itself (CoPE "cannot represent ... its inverse ...
+  even in 1D", `papers/txt/mapformer.txt:586`; its Fig. 9). Ours: the sign ablated on its own at matched length on
+  navigation -- a replication in a new regime.
+- **C3 "a signed phase can emulate a clock" is trivial** (the signed range contains the monotone one); keep only as a remark.
+- **C6 depth substitution is known qualitatively** (Liu 2023 prefix sums, Yao 2021, PaTH, MapFormer). Ours: the matched-depth
+  exchange rate (1 path layer ~ 3 attention layers) and navigation told in words.
+- **C8 must be scoped**: CoPE (monotone, content-counting) beats RoPE in distribution on language and code perplexity
+  (`papers/txt/cope.txt` Table 5); Grazzi's signed DeltaNet helps code and math. So "on clock-like data a learned phase
+  buys nothing" is at OUR scale only, and our TinyStories "sentence clock" is close to what CoPE was built to learn.
+- **Drop** "beats the index EXACTLY when the task needs a map" and "no better than counting tokens" as general claims.
+- **"A monotone phase cannot be a map"** holds per channel in a rotary score, not for a population (two monotone channels
+  read as a ratio give net displacement: Howard's own construction).
+- **Plausibly new (empirical)**: the matched-length sign ablation on navigation; the free phase's per-task growth exponent
+  (0.59 vs 0.97) and its use on language checkpoints; the step-table decompositions on code / Bach / TinyStories; the
+  matched-depth exchange rate; navigation in words. **Plausibly new as a statement, may be called obvious**: Howard's
+  rate alpha(t) = the selective-SSM step = MapFormer's content-dependent step, with sign separating his speed and
+  velocity cases.
