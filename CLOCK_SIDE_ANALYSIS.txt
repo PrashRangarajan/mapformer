@@ -1,0 +1,15 @@
+== CLOCK_SIDE: k-back recency, k_max 128, trained and tested at T = 1024; floor (best trivial) 0.072 ==
+  Signed_r4  acc 0.6384 +/- 0.2669 (min 0.1766; re-scored 0.6378; in-training eval 0.6434) | n/run 1672 | SOLVED 0 STALLED 2 DESCENDING 6
+  Abs_r4     acc 0.7231 +/- 0.1706 (min 0.4536; re-scored 0.7209; in-training eval 0.7307) | n/run 1672 | SOLVED 0 STALLED 2 DESCENDING 6
+  CARoPE_r4  acc 0.8072 +/- 0.1355 (min 0.5436; re-scored 0.8071; in-training eval 0.8234) | n/run 1672 | SOLVED 0 STALLED 1 DESCENDING 7
+  Pos_r4     acc 0.7223 +/- 0.2176 (min 0.2275; re-scored 0.7232; in-training eval 0.7259) | n/run 1672 | SOLVED 0 STALLED 1 DESCENDING 7
+  RoPE       acc 0.1881 +/- 0.0136 (min 0.1658; re-scored 0.1891; in-training eval 0.1937) | n/run 1672 | SOLVED 0 STALLED 8 DESCENDING 0
+  REGISTERED D1 (Abs - Signed, the sign alone): UNMEASURED: d +0.0847 (perm p 0.4897, 95% CI [-0.1723, +0.3437])
+  REGISTERED D1c (CARoPE - Signed): UNMEASURED: d +0.1689 (perm p 0.1587, 95% CI [-0.0751, +0.4139])
+  REGISTERED D1p (Pos - Signed): UNMEASURED: d +0.0840 (perm p 0.5282, 95% CI [-0.1970, +0.3630])
+  REGISTERED D2 INDEX CHECK (RoPE - Signed): INDEX FAILS (d -0.4503, perm p 0.0011)
+  secondary: Abs_r4 - Signed paired by seed +0.0847 (sign-flip p 0.3984; 4/8 seeds > 0); SOLVED 0/8 vs 0/8 (Fisher p 1.0000)
+  secondary: CARoPE_r4 - Signed paired by seed +0.1689 (sign-flip p 0.1016; 5/8 seeds > 0); SOLVED 0/8 vs 0/8 (Fisher p 1.0000)
+  secondary: Pos_r4 - Signed paired by seed +0.0840 (sign-flip p 0.4688; 3/8 seeds > 0); SOLVED 0/8 vs 0/8 (Fisher p 1.0000)
+  secondary: RoPE - Signed paired by seed -0.4503 (sign-flip p 0.0156; 1/8 seeds > 0); SOLVED 0/8 vs 0/8 (Fisher p 1.0000)
+  secondary: r(final-5% loss, acc) over 40 runs -0.987; per arm Signed_r4 -0.99, Abs_r4 -0.98, CARoPE_r4 -0.98, Pos_r4 -0.98, RoPE -0.70

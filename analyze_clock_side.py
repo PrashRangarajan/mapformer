@@ -102,7 +102,7 @@ def main():
     print(f"  REGISTERED D2 INDEX CHECK (RoPE - Signed): {d2(sig, acc['RoPE'])}")
     for arm in ("Abs_r4", "CARoPE_r4", "Pos_r4", "RoPE"):
         dd = [m - g for m, g in zip(acc[arm], sig)]
-        print(f"  secondary: {arm} - Signed paired by seed {np.mean(dd):+.4f} (sign-flip p {signflip_p(dd):.4f}; "
+        print(f"  secondary: {arm} - Signed paired by seed {np.mean(dd):+.4f} (sign-flip p {signflip_p(dd)['p']:.4f}; "
               f"{sum(x > 0 for x in dd)}/8 seeds > 0); SOLVED {sum(solved[arm])}/8 vs {sum(solved['Signed_r4'])}/8 "
               f"(Fisher p {fisher_solved(sum(solved[arm]), 8, sum(solved['Signed_r4']), 8):.4f})")
     allt = [x for arm in ARMS for x in tail[arm]]; alla = [x for arm in ARMS for x in acc[arm]]
