@@ -1,6 +1,6 @@
 ---
 name: project-sign-axis
-description: A monotone phase increment cannot represent a -1 action; the cost SURVIVES a matched-length control (T=1024, -0.177, 0/8 vs 8/8, 2026-09-28). The sign axis is NOT ours.
+description: [CORRECTED 2026-10-12: a non-negative ROTARY step CAN represent a -1 action mod 2 pi -- the sign cost is learnability, not representation; see body end] A monotone phase increment cannot represent a -1 action; the cost SURVIVES a matched-length control (T=1024, -0.177, 0/8 vs 8/8, 2026-09-28). The sign axis is NOT ours.
 metadata:
   type: project
 ---
@@ -67,3 +67,9 @@ and 0.091 (MapPoPE) F1 at L128 D12 -- a monotone code cannot represent push/pop,
 formal language as well as on navigation. This half of T2 stands independently of the PoPE corollary
 that T2 withdrew.
 
+**CORRECTION 2026-10-12 (RING_DIAL audit M1, verified by construction).** For a ROTARY phase, "monotone" is not a
+representational limit: angles wrap mod 2 pi, so a second token's non-negative step 2 pi / omega - Delta(+1) equals
+-Delta(+1) mod 2 pi, and Abs / Pos / CARoPE can reproduce any signed code exactly. The matched-length cost (-0.177, 0/8 vs
+8/8 on the torus) stands as a LEARNABILITY result (search within 900 epochs); the opposition score (1.92-1.97) is not
+wrap-aware and does not show inability. Howard's Case II vs III distinction holds for real (decaying) rates, not for
+rotations. On the 1D ring (T=128) a pilot Abs model solved at p_plus 0.5 (n=1, RING_DIAL pilot).

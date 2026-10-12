@@ -267,3 +267,5 @@ Abstract / search summary only:
 - Gao et al. 2021, path integration of grid cells: https://arxiv.org/abs/2006.10259
 Secondary only: Buzsaki & Tingley 2018 (PMC6166479; full text blocked by a browser check), Burgess 2008.
 Citation list scanned: Semantic Scholar citations of 2411.12537 (111 titles, 2026-10-12).
+
+**Correction 2026-10-12.** F2 ("monotone cannot be a map") is false for ROTARY phases: non-negative steps wrap mod 2 pi and can reproduce any signed code (`docs/audits/2026-10-12/ring_dial_audit.md` M1). It holds for real-valued (decaying) rates, Howard's setting. MapFormer's "CoPE cannot represent its inverse" concerns CoPE's sigmoid-gated counts used as interpolated positions, not a wrapping rotation.

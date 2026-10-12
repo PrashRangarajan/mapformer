@@ -21,12 +21,21 @@ WITHDRAWN. Prior art: `docs/lit/LIT_CLOCK_MAP.md` (2026-10-12; summary in the se
 | C9 | Map and clock can coexist in separate channels given rank | text world: 4/8 seeds run a per-step clock in 31-38 of 64 channels alongside the map, solving as well | REG secondary | `TEXTWORLD_RESULTS.md`; theory `THEORY_KERNEL.md` Thm 1 (scoped) | -- |
 | C10 | When a map fails, it fails by a clock leaking into it | rank-D heads that fail end with a drifting (CLOCK) head (39/40 on SCORE_RANK; thresholds set post hoc); 1D ring: the two slow rank-1 seeds are the drifting ones; drift forbidden by construction solves ~2x faster | descriptive; REG secondaries | `SCORE_RANK_RESULTS.md`, `RANK_TESTS_RESULTS.md` | **rank = D is NOT hard in 1D (REG)**: no causal or general claim |
 
+## Correction 2026-10-12 (RING_DIAL audit M1; applies to C1, C2, C8)
+For a ROTARY phase the clock / map split is NOT representational: a non-negative step wraps mod 2 pi, so the second
+token's step 2 pi / omega - Delta(+1) reproduces the signed code exactly. Signed and non-negative rotary arms can represent
+the same codes; C2's matched-length cost is learnability (search within the budget), and C1's "monotone = clock" holds for
+Howard's real, non-wrapping rates (decays, gates), not for rotations. This is itself a candidate contribution: in the
+imaginary (rotary) slot, Howard's Cases II and III coincide representationally and differ only in how easily training
+finds a map.
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
 - alpha causes out-of-distribution degradation (route not established; low-frequency account refuted).
 - The forget gate is a clock (untested); the InEKF wrap bounds the accumulator (false).
 - Rank = D is hard because of the clock (fails in 1D).
+- A non-negative rotary phase cannot represent a map (it can, by wrapping; the sign result is learnability).
 
 ## Gaps, cheapest first
 1. **Prior art** (`docs/lit/LIT_CLOCK_MAP.md`, agent running): which of C1-C5 are published.
