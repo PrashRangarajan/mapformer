@@ -5,15 +5,16 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-12 04:35. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-12 07:30. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
-## Running (autonomous, user away; GPU 0 only -- vsathish holds GPU 1)
-- RING_DIAL batch (`RING_DIAL_PREREG.md` + Amendment 1: learnability dial, Signed vs Abs at p_plus 0.5/0.75/0.9, n=8):
-  started 04:24 on GPU 0 after CLOCK_SIDE; marker `.ring_dial_done`; ETA ~05:30.
-- Done today: CLOCK_SIDE (`CLOCK_SIDE_RESULTS.md`): all Case II contrasts UNMEASURED (nothing converged at 300 ep; monotone
-  directionally ahead), INDEX FAILS. Correction: non-negative ROTARY steps can represent signed codes mod 2 pi (records fixed).
-- Framing: `docs/paper/CLAIM_MAP_clock_map.md`; prior art `docs/lit/LIT_CLOCK_MAP.md`, `LIT_HOWARD_TRANSFORMER.md`.
+## Running
+- Nothing. Autonomous session 2026-10-12 (user away, GPU 0 only): CLOCK_SIDE (all Case II contrasts UNMEASURED, nothing
+  converged; INDEX FAILS) and RING_DIAL (Abs LEARNS WORSE at p 0.5 / 0.75 on SOLVED; UNMEASURED at 0.9; Abs never finds the
+  wrap solution) are done and written up. Key correction: non-negative ROTARY steps can represent signed codes mod 2 pi; the
+  sign result is learnability (CLAUDE.md, memory, claim map fixed).
+- NEXT (user decides; each 7-20 h on one GPU): CLOCK_SIDE at a converging budget; the baseline table; or write the paper
+  from `docs/paper/CLAIM_MAP_clock_map.md`.
 
 ## Ready, not launched (each audited + amended; user chooses)
 - (STOPPED 2026-10-11 per review) TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or

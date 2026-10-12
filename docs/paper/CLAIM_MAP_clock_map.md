@@ -35,6 +35,12 @@ On k-back recency (k_max 128, T = 1024, 300 epochs) every Case II contrast reads
 ahead; the index fails (RoPE - Signed -0.45, p 0.001). C3's gap stays open: a converged, below-ceiling clock-side contrast
 needs a longer budget (or a registered speed readout).
 
+## Update 2026-10-12: the ring dial (`RING_DIAL_RESULTS.md`, registered)
+Within one task family and one model, a non-negative rotary step (which CAN represent the map by wrapping) learns it worse
+where steps cancel: SOLVED 2/8 and 1/8 vs 8/8 at p_plus 0.5 / 0.75 (Fisher p 0.007 / 0.0014); UNMEASURED at 0.9. Abs does
+not find the wrap solution (4-7% of channels cancel mod 2 pi vs 63-82% for Signed). No graded dial. This supports C2 as a
+LEARNABILITY claim within a task, and the rotary-slot statement (Cases II and III coincide representationally).
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
