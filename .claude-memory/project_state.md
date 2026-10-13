@@ -5,15 +5,14 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-13 01:45. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-13 13:50. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- FACTORIAL (`FACTORIAL_PREREG.md` + Amendment 1) on GPU 0: seed 503 deep cells launched 01:37; ETA ~05:00-06:00 on 10-13.
-  Marker `.factorial_done`, output `FACTORIAL_ANALYSIS.txt`.
-- Done 2026-10-13 01:34: CLOCK_SPEED_REP (GPU 1; `CLOCK_SPEED_REP_RESULTS.md`): S1 UNMEASURED on fresh seeds (-0.106, p 0.19);
-  pooled post hoc p 0.018 (not upgrading; no third batch). Clock side stays unestablished; learnability effect asymmetric.
-- Done 2026-10-12: CLOCK_SIDE, RING_DIAL, RING_BUDGET, CLOCK_SPEED (`docs/SESSION_2026-10-12_autonomous.md`).
+- Nothing (2026-10-13 13:50). Done overnight: FACTORIAL (`FACTORIAL_RESULTS.md`, REG n=4): index RoPE at 4 layers or looped x4
+  does NOT catch up with 1-layer path integration on the torus (0.86 vs 1.00; depth helps short-gap revisits only).
+  CLOCK_SPEED_REP (`CLOCK_SPEED_REP_RESULTS.md`): clock side stays UNMEASURED (fresh seeds -0.106, p 0.19).
+- NEXT (user decides): write the paper from `docs/paper/CLAIM_MAP_clock_map.md`; push (many commits unpushed).
 
 ## Ready, not launched (each audited + amended; user chooses)
 - (STOPPED 2026-10-11 per review) TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or

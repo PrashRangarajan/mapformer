@@ -1,0 +1,30 @@
+  RoPE_L1   acc T=1024 0.7193 (per seed [0.719, 0.731, 0.688, 0.739]) | SOLVED 0/4 | classes ['STALLED', 'STALLED', 'STALLED', 'STALLED']
+  Path_L1   acc T=1024 1.0000 (per seed [1.0, 1.0, 1.0, 1.0]) | SOLVED 4/4 | classes ['SOLVED', 'SOLVED', 'SOLVED', 'SOLVED']
+  RoPE_L4   acc T=1024 0.8595 (per seed [0.814, 0.87, 0.874, 0.881]) | SOLVED 0/4 | classes ['STALLED', 'STALLED', 'STALLED', 'STALLED']
+  RoPE_Loop acc T=1024 0.8641 (per seed [0.868, 0.861, 0.86, 0.868]) | SOLVED 0/4 | classes ['STALLED', 'STALLED', 'STALLED', 'STALLED']
+  floors (RANK_MI stream): blank 0.507, best n-gram 0.576
+  REGISTERED C0 (Path_L1 - RoPE_L1): PATH WINS AT ONE LAYER: d +0.2807 (perm p 0.0286; n = 4 vs 4, only large splits readable)
+  REGISTERED C1 (depth): INDEX (RoPE_L4) DOES NOT CATCH UP: Path_L1 - RoPE_L4 +0.1405 (perm p 0.0286); SOLVED RoPE_L4 0/4 vs Path_L1 4/4 (Fisher p 0.0286) [within 900 epochs; RoPE_L4 still DESCENDING 0/4]
+  REGISTERED C3 (RoPE_L4): HELPS: RoPE_L4 - RoPE_L1 +0.1402 (perm p 0.0286)
+  REGISTERED C2 (loop): INDEX (RoPE_Loop) DOES NOT CATCH UP: Path_L1 - RoPE_Loop +0.1359 (perm p 0.0286); SOLVED RoPE_Loop 0/4 vs Path_L1 4/4 (Fisher p 0.0286) [within 900 epochs; RoPE_Loop still DESCENDING 0/4]
+  REGISTERED C3 (RoPE_Loop): HELPS: RoPE_Loop - RoPE_L1 +0.1448 (perm p 0.0286)
+  secondary strata L1 RoPE|500|1024: all 0.719, plain_lag<128 0.768, plain_lag>=128 0.456, wrap 0.483
+  secondary strata L1 RoPE|501|1024: all 0.731, plain_lag<128 0.785, plain_lag>=128 0.486, wrap 0.480
+  secondary strata L1 RoPE|502|1024: all 0.688, plain_lag<128 0.735, plain_lag>=128 0.470, wrap 0.470
+  secondary strata L1 RoPE|503|1024: all 0.739, plain_lag<128 0.787, plain_lag>=128 0.508, wrap 0.495
+  secondary strata L1 Vanilla_r4|500|1024: all 1.000, plain_lag<128 1.000, plain_lag>=128 1.000, wrap 1.000
+  secondary strata L1 Vanilla_r4|501|1024: all 1.000, plain_lag<128 1.000, plain_lag>=128 1.000, wrap 1.000
+  secondary strata L1 Vanilla_r4|502|1024: all 1.000, plain_lag<128 1.000, plain_lag>=128 1.000, wrap 1.000
+  secondary strata L1 Vanilla_r4|503|1024: all 1.000, plain_lag<128 1.000, plain_lag>=128 1.000, wrap 1.000
+  secondary strata L4 RoPE|500|1024: all 0.814, plain_lag<128 0.900, plain_lag>=128 0.367, wrap 0.381
+  secondary strata L4 RoPE|501|1024: all 0.870, plain_lag<128 0.957, plain_lag>=128 0.475, wrap 0.472
+  secondary strata L4 RoPE|502|1024: all 0.874, plain_lag<128 0.957, plain_lag>=128 0.485, wrap 0.482
+  secondary strata L4 RoPE|503|1024: all 0.881, plain_lag<128 0.958, plain_lag>=128 0.506, wrap 0.494
+  secondary strata LOOP RoPELooped|500|1024: all 0.868, plain_lag<128 0.939, plain_lag>=128 0.496, wrap 0.521
+  secondary strata LOOP RoPELooped|501|1024: all 0.861, plain_lag<128 0.940, plain_lag>=128 0.500, wrap 0.500
+  secondary strata LOOP RoPELooped|502|1024: all 0.860, plain_lag<128 0.937, plain_lag>=128 0.501, wrap 0.496
+  secondary strata LOOP RoPELooped|503|1024: all 0.868, plain_lag<128 0.937, plain_lag>=128 0.531, wrap 0.521
+  secondary own (training) map RoPE_L1: acc T=1024 0.7767 vs held-out 0.7193
+  secondary own (training) map Path_L1: acc T=1024 1.0000 vs held-out 1.0000
+  secondary own (training) map RoPE_L4: acc T=1024 0.8971 vs held-out 0.8595
+  secondary own (training) map RoPE_Loop: acc T=1024 0.8619 vs held-out 0.8641

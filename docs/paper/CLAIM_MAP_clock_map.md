@@ -57,6 +57,11 @@ On 16 fresh seeds S1 (Abs - Signed, loss AUC on recency) reads UNMEASURED again:
 batch's effect. Pooled post hoc -0.151 (p 0.018; pre-committed not to upgrade; no third batch). The clock side stays
 unestablished: the learnability effect is ASYMMETRIC (clear for maps, small and unestablished for content clocks).
 
+## Update 2026-10-13: C6 on the torus vs depth (`FACTORIAL_RESULTS.md`, registered, n = 4)
+Index RoPE at 4 layers (0.860) or looped x4 (0.864) does not catch up with 1-layer path integration (1.000) on the torus at
+T = 1024 (0/4 vs 4/4 SOLVED each); depth helps only short-gap revisits. Unlike Dyck (3-4 layers suffice), the torus needs
+more than 4 layers of index attention.
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
