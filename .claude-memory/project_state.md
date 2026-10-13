@@ -9,27 +9,21 @@ Updated 2026-10-13 14:00. Goes stale fast: check `git log`, `.done` markers, the
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- Nothing (2026-10-13 14:00, before a compaction). GPUs idle (vsathish's jobs gone).
+- WRAP_EXISTENCE batch (launched 2026-10-13 15:29 at 5b577bb, both GPUs, `run_wrap_existence.sh`, log `wrap_existence.log`):
+  56 runs (7 arms x seeds 600-607), ~75 min; marker `.wrap_existence_done`, output `WRAP_EXISTENCE_ANALYSIS.txt` /
+  `_VERDICTS.json`. Prereg `WRAP_EXISTENCE_PREREG.md` + Amendment 1 (check `docs/audits/2026-10-13/wrap_existence_audit.md`).
+  After it: write `WRAP_EXISTENCE_RESULTS.md` (registered first: P0, E1 per construction, E2 PRIMARY AO_bal vs SO_bal,
+  E3), fill the outline's 4.2 paragraph, update claim map / CLAUDE.md sign row if E2 is readable.
+- Pilot (seed 690, `runs/wrap_existence_pilot`, never pooled): SO solved; AO scratch 0.809; min-norm and gauge
+  constructions exact frozen but LOST in warm-up -- the check showed this is ill-conditioning (antiparallel action latents,
+  W_out 1825), NOT the class: the balanced construction held 400 CPU steps. My "path-length sensitivity" reading of the pilot
+  was confounded and is withdrawn.
 
-## In progress (user asked 2026-10-13): (1) the WRAP EXISTENCE TEST, then (2) a workshop-paper outline
-- (1) Rule 14 on the learnability claim. Build a FULL wrap solution for Abs_r4 on the ring (p_plus 0.5): take the 8 SOLVED
-  Signed_r4 RING_DIAL runs (`runs/ring_dial/p0/Signed_r4_p0.5_s30-37`), convert their step map to non-negative form
-  (per channel Delta' = (omega * Delta) mod 2 pi / omega; observation steps 0 via w_in orthogonal to the observation
-  embeddings, as in the audit's construction `docs/audits/2026-10-12/wrap_construction_t2.py`), load into Abs_r4 with every
-  other weight copied. Check FROZEN accuracy (should match Signed); then warm-start TRAINABLE for 300 epochs (RING_DIAL
-  recipe): does Abs keep the solution (SOLVED, wrap share stays high)? Keeps it -> the failure is SEARCH (training never
-  finds a stable solution that exists); drifts away -> the wrap solution is not a stable basin under Abs's
-  parameterisation. Needs a short prereg + independent check (rule 29); ~1 h GPU.
-- (1b) FIRST ATTEMPT (2026-10-13 14:10, `docs/audits/2026-10-13/wrap_existence_build.py` / `_out.txt`): converting the 8 solved
-  Signed_r4 ring models to Abs_r4 is exact for the action angles (error <= 5e-3 rad) BUT requires observation steps = 0, and
-  the trained signed models RELY on their observation steps: zeroing them drops accuracy 1.000 -> 0.47-0.96 (the Abs copy
-  equals that). Wrapping observation steps too is not expressible in the rank-4 bottleneck. REVISED PLAN: train a signed
-  rank-4 ring model with observation steps forced to 0 and actions free (like RANK_TESTS' R1AO, which solved 8/8 at
-  per-head rank 1) -- new class needed (rank-4 shared, step table over actions only); convert exactly to the non-negative
-  form (|.| with obs 0); check frozen accuracy = the signed one; then warm-start trainable 300 epochs. Add an arm: the same
-  non-negative obs-free model FROM SCRATCH (does Abs with obs steps zero learn the map?). Short prereg + check (rule 29).
-- (2) Outline for a workshop paper (4-6 pp) from `docs/paper/CLAIM_MAP_clock_map.md`; journal version later needs the
-  recurrent/CoPE/Selective-RoPE baselines on the torus, factorial at n = 8, one scale check (~2 GPU days).
+## In progress (user asked 2026-10-13): (1) the WRAP EXISTENCE TEST (running), (2) workshop-paper outline (drafted)
+- (1) History: first attempt `docs/audits/2026-10-13/wrap_existence_build.py` (trained Signed_r4 ring models rely on
+  observation steps; zeroed 0.47-0.96) -> observation-step-free classes SignedAO_r4 / AbsAO_r4 (`model_wrap_exist.py`).
+- (2) `docs/paper/OUTLINE_workshop.md` (drafted 2026-10-13; 4.2's existence paragraph waits for the batch); Figure 1
+  `docs/paper/figs/fig_factorial_strata.{py,pdf,png}`. Next: Figure 2 (wrap share), then a draft if the user wants.
 
 ## Ready, not launched (each audited + amended; user chooses)
 - (STOPPED 2026-10-11 per review) TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or
