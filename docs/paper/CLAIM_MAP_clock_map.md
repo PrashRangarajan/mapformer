@@ -52,6 +52,11 @@ On k-back recency, the non-negative rotary step (Abs) learns faster than the sig
 companion (signed faster on 8/8 at every p, AUC +0.23 to +0.35, p 0.0078 each): an asymmetric learnability result -- clear
 where a map is needed, a trend the other way where a content clock is needed. Do NOT claim a double dissociation.
 
+## Update 2026-10-13: replication (`CLOCK_SPEED_REP_RESULTS.md`, registered)
+On 16 fresh seeds S1 (Abs - Signed, loss AUC on recency) reads UNMEASURED again: -0.106 (p 0.19, 10/16), about half the first
+batch's effect. Pooled post hoc -0.151 (p 0.018; pre-committed not to upgrade; no third batch). The clock side stays
+unestablished: the learnability effect is ASYMMETRIC (clear for maps, small and unestablished for content clocks).
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).

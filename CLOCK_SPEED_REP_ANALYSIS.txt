@@ -1,0 +1,5 @@
+== CLOCK_SPEED_REP: fresh seeds 230-245, Signed_r4 vs Abs_r4, AUC = mean training loss over 300 epochs ==
+  Signed_r4  AUC 2.271 +/- 0.269 | epoch to <2.0 / <1.0 median 213 / 296 | loss 100/200/300 2.76/2.18/0.93 | acc 0.684 (2T 0.660)
+  Abs_r4     AUC 2.165 +/- 0.231 | epoch to <2.0 / <1.0 median 187 / 301 | loss 100/200/300 2.74/1.86/1.07 | acc 0.683 (2T 0.657)
+  REGISTERED S1 (Abs - Signed, n = 16 fresh seeds): UNMEASURED: paired mean d -0.106 (exact sign-flip p 0.1871, 95% CI [-0.270, +0.055]; 10/16 seeds faster than Signed)
+  POST HOC pooled (CLOCK_SPEED + this batch, n = 32 paired seeds; does NOT change the registered verdict): mean d -0.151, sign-flip p 0.0177 (Monte Carlo); 22/32 seeds faster than Signed
