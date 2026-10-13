@@ -5,16 +5,15 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-12 11:15. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-12 20:45. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- Nothing (11:15). Autonomous session 2026-10-12 (user away; GPU 0 only): CLOCK_SIDE (UNMEASURED, nothing converged; INDEX
-  FAILS), RING_DIAL (non-negative rotary step learns the map worse: 2/8, 1/8 vs 8/8), RING_BUDGET (3x budget no help, 3/8 vs
-  3/8; never finds the wrap solution), CLOCK_SPEED (Abs faster on the content clock 12/16, p 0.053: UNMEASURED). Correction:
-  non-negative rotary steps CAN represent signed codes mod 2 pi -- the sign result is learnability. Ring AUC companion:
-  signed faster 8/8 at every p. Asymmetric learnability; no double dissociation claimed.
-- NEXT (user decides): paper outline from `docs/paper/CLAIM_MAP_clock_map.md`; push (commits since a16d178 unpushed).
+- FACTORIAL (`FACTORIAL_PREREG.md` + Amendment 1): index RoPE at 1 layer / 4 layers / looped x4 vs MapWM r4 at 1 layer, torus
+  T = 1024, 900 epochs, --fast-attn, seeds 500-503 (16 runs), GPU 0 only (vsathish on GPU 1). Launched 2026-10-12 20:38 at
+  4041da9; ETA ~05:00 on 10-13. Log `factorial.log`, marker `.factorial_done`, output `FACTORIAL_ANALYSIS.txt`.
+  Expected (stated): index does not catch up (LOOPED_PILOT reach limits).
+- Done 2026-10-12: CLOCK_SIDE, RING_DIAL, RING_BUDGET, CLOCK_SPEED (summary `docs/SESSION_2026-10-12_autonomous.md`).
 
 ## Ready, not launched (each audited + amended; user chooses)
 - (STOPPED 2026-10-11 per review) TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or
