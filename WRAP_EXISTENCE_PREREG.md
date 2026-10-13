@@ -72,3 +72,45 @@ Pilot on seed 690 (outside the batch): SO, AO, then SO_cont and AO_wrap (the pil
 is exact at a trained scale and the timing; it is reported, never pooled). Independent code check (rule 29) before launch;
 its findings become Amendment 1. 32 runs x ~10 min at 6 per GPU on both GPUs (if free): phase 1 (SO, AO; 16 runs) then
 phase 2 (SO_cont, AO_wrap; 16 runs), ~1 h.
+
+## Amendment 1 (2026-10-13, after the independent check `docs/audits/2026-10-13/wrap_existence_audit.md` and the pilot; before launch)
+Pilot (seed 690, outside the batch; reported, never pooled): SO SOLVED (acc 1.000); AO from scratch 0.809. The registered
+min-norm construction was exact frozen (1.000 = 1.000) but its W_out was 1825 vs the signed 0.39 (steps up to 1199), and its
+continuation lost the solution in the warm-up (loss 0.05 -> 1.05 by epoch 10) while SO_cont stayed at ~0.002; a per-channel
+gauge version (W_out 8.4) lost it faster. The check showed why: in a solved signed model the two action latents are nearly
+antiparallel (cos -0.993 on the pilot, -0.996..-0.999 on RING_DIAL), so keeping W_in forces an ill-conditioned W_out, and
+Adam's per-entry step then moves the phase far (rule 15). With weight decay 0 it collapses too. **A NOT HELD under those
+constructions would be a parameterisation artefact.** Changes:
+- **A1 (primary construction = balanced).** W_in acts only on the two action embeddings (observation steps are 0), so it is a
+  free gauge: re-solve W_in so the action latents are c e1 and c e2 (c = the source's mean action-latent norm), set
+  omega' = max(|omega|, 1) per channel and steps remainder(omega Delta, 2 pi) / omega' in [0, 2 pi); W_out[:, :2] = steps^T / c.
+  Exact (pilot: angle error < 1e-6 rad, frozen 1.000, max |W_out| 1.21, |W_in| 0.27 vs 0.20; held 1.000 for 400 CPU AdamW
+  steps in the check). **New arms: AO_bal** (this construction) and its matched control **SO_bal** (SignedAO_r4 at the same
+  W_in and omega' with the UNWRAPPED signed angle, steps omega Delta / omega'), built by the same function, so AO_bal and
+  SO_bal differ only in the wrap (same torch RNG consumption, same data stream). AO_wrap (min-norm) and AO_wrapg (per-channel
+  gauge) stay as DESCRIPTIVE arms against SO_cont. 7 arms x 8 seeds = 56 runs.
+- **A2 (construction fix).** Wrap in step space, remainder(Delta, 2 pi / |omega|): trained omega crosses 0 (pilot -0.012;
+  RING_DIAL s31-33 too), and the original remainder(omega Delta, 2 pi) / omega was wrong for omega < 0 (synthetic: 2.46 rad).
+- **A3 (E1 per construction)** and E2 gated on that construction's E1 EXISTS (and its control's, for SO_bal). E1 also records
+  the max logit difference (8 trajectories at T = 128 and 512), descriptive.
+- **A4 (E2 per construction; LOST).** PRIMARY: AO_bal vs SO_bal. A run is LOST if its max per-epoch training loss during the
+  continuation is > 0.3, or > 10x its control's max at that seed AND > 0.05. HELD = SOLVED on >= n_s - 1 AND mean accuracy
+  >= control - 0.01 AND LOST on <= 1 seed. NOT HELD = Fisher (SOLVED) p < .05 with the control ahead, OR sign-flip p < .05
+  with d <= -0.05, OR Fisher (not LOST) p < .05 with more LOST in the constructed arm. PARTIAL otherwise. Reachability at
+  small n_s: the sign-flip branch cannot fire below n_s = 6 (min p 0.125 at 4, 0.0625 at 5); Fisher needs 0/4 vs 4/4 at
+  n_s = 4.
+- **A5 (E3 gate).** E3 is UNREADABLE if SO SOLVED < 4 (the smoke read NO SIGN COST with both arms at the floor).
+- **A6 (secondaries).** wrap_share selects channels by |wrap(angle(+1))| > 0.05 (wrap-invariant); the max wrap-aware change
+  of the action angles from construction to the end of training; frozen sensitivity of SO_bal vs AO_bal to omega or W_out x
+  (1 + eps N(0,1)), eps 1e-3 / 1e-2, 3 draws, 200 trajectories (is the wrapped solution more fragile at a matched gauge?).
+- **A7 (driver).** GUARD adds train_variant.py and lie_groups.py; the artifact count is counted (112), not asserted by
+  construction; 5 jobs per GPU; code committed before launch.
+- **Meaning, stated now (from the check):** HELD under an exact construction shows that a stable non-negative solution
+  exists, so the RING_DIAL deficit is search. NOT HELD under the balanced construction, with SO_bal held, means "unstable at
+  the scale training uses". NOT HELD only under an ill-conditioned construction (AO_wrap, AO_wrapg) means nothing about
+  the class.
+- Disclosed, not fixed: optimizer state is fresh in every continuation; SO_cont builds no extra model, so its dropout RNG
+  stream differs from the constructed arms'. The lock fd is inherited by children (a relaunch after a failure is refused
+  until jobs end).
+Smoke (CPU, 2-epoch runs of all 7 arms on 4 seeds from the pilot SO): every construction exact (angle error <= 3e-6 rad,
+frozen = source), every branch executes. Cost: 56 runs at ~10-13 min, 10 at a time on both GPUs: ~75 min.
