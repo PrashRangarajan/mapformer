@@ -5,14 +5,23 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-13 13:50. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-13 14:00. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- Nothing (2026-10-13 13:50). Done overnight: FACTORIAL (`FACTORIAL_RESULTS.md`, REG n=4): index RoPE at 4 layers or looped x4
-  does NOT catch up with 1-layer path integration on the torus (0.86 vs 1.00; depth helps short-gap revisits only).
-  CLOCK_SPEED_REP (`CLOCK_SPEED_REP_RESULTS.md`): clock side stays UNMEASURED (fresh seeds -0.106, p 0.19).
-- NEXT (user decides): write the paper from `docs/paper/CLAIM_MAP_clock_map.md`; push (many commits unpushed).
+- Nothing (2026-10-13 14:00, before a compaction). GPUs idle (vsathish's jobs gone).
+
+## In progress (user asked 2026-10-13): (1) the WRAP EXISTENCE TEST, then (2) a workshop-paper outline
+- (1) Rule 14 on the learnability claim. Build a FULL wrap solution for Abs_r4 on the ring (p_plus 0.5): take the 8 SOLVED
+  Signed_r4 RING_DIAL runs (`runs/ring_dial/p0/Signed_r4_p0.5_s30-37`), convert their step map to non-negative form
+  (per channel Delta' = (omega * Delta) mod 2 pi / omega; observation steps 0 via w_in orthogonal to the observation
+  embeddings, as in the audit's construction `docs/audits/2026-10-12/wrap_construction_t2.py`), load into Abs_r4 with every
+  other weight copied. Check FROZEN accuracy (should match Signed); then warm-start TRAINABLE for 300 epochs (RING_DIAL
+  recipe): does Abs keep the solution (SOLVED, wrap share stays high)? Keeps it -> the failure is SEARCH (training never
+  finds a stable solution that exists); drifts away -> the wrap solution is not a stable basin under Abs's
+  parameterisation. Needs a short prereg + independent check (rule 29); ~1 h GPU.
+- (2) Outline for a workshop paper (4-6 pp) from `docs/paper/CLAIM_MAP_clock_map.md`; journal version later needs the
+  recurrent/CoPE/Selective-RoPE baselines on the torus, factorial at n = 8, one scale check (~2 GPU days).
 
 ## Ready, not launched (each audited + amended; user chooses)
 - (STOPPED 2026-10-11 per review) TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or

@@ -42,3 +42,10 @@ learns a clock (TinyStories, code), with no gain over the index at our scale (Co
 - Push the 24 commits.
 - Whether to firm up the clock side (CLOCK_SPEED at more seeds or a converging budget: ~3-7 h on one GPU) or write.
 - The baseline table (~8-10 h on both GPUs) is still the first thing a reviewer will ask for.
+
+## Added 2026-10-13
+- FACTORIAL (`FACTORIAL_RESULTS.md`, registered, n = 4): index RoPE at 4 layers (0.860) or looped x4 (0.864) does not catch up
+  with 1-layer path integration (1.000) on the torus at T = 1024; depth helps only revisits within 128 moves.
+- CLOCK_SPEED_REP (`CLOCK_SPEED_REP_RESULTS.md`, registered): the clock-side contrast is UNMEASURED again on fresh seeds
+  (-0.106, p 0.19); pooled post hoc p 0.018 does not upgrade (pre-committed); no third batch.
+- Next (user, 2026-10-13): the wrap existence test (plan in `.claude-memory/project_state.md`), then a workshop-paper outline.

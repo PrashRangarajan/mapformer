@@ -9,6 +9,7 @@ Rules and conventions live in CLAUDE.md (rules 1-29); these files hold the why a
 - [Rank, and Selective RoPE](project_rank_and_selective_rope.md) -- per-head rank decides it: rank 2 per head 0-2/8, rank 3 6/8, rank 4 8/8; 2x budget does not rescue rank 2; rank = D hard in 3D too, D+1 fine on large tori; sharing and scale unmeasured.
 - [PoPE/MapFormer asymmetry](project_mappope_asymmetry.md) -- PoPE's encoding helps the path row (Bach); "path integration hurts PoPE" is unmeasured (corrected 2026-10-03).
 - [EM vs WM mechanism](feedback_em_vs_wm_mechanism.md) -- WM is not additive; EM's recency deficit is search.
+- [Paper direction](project_paper_direction.md) -- Howard's three integrator cases = the rotary families; in the rotary slot sign is learnability, not representation; depth can't buy the torus map; venue needs.
 - [Clock vs map](project_clock_vs_map.md) -- signed = map, monotone = clock; the PoPE-decoupling corollary is withdrawn.
 - [Sign of the phase increment](project_sign_axis.md) -- the sign cost survives matched length (2026-09-28); CORRECTED 2026-10-12: rotary non-negative steps CAN represent -1 mod 2 pi, so it is learnability, not representation.
 - [Loop and correction](project_loop_and_correction.md) -- loop main effect survives; Level 1.5 is not inference; PC and Kalman are duals.
