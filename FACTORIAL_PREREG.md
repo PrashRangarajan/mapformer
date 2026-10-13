@@ -41,3 +41,19 @@ and looped models).
 No separate pilot: a 5-epoch timing / memory probe of the deep cells (seed 400, outside the batch) gave 5.5-6.4 s/epoch at 2
 concurrent with --fast-attn, ~2 GB per job (15-16 s/epoch, 7.5 GB without it). Independent code check (rule 29) before
 launch. GPU 0 only (another user holds GPU 1), 4 jobs at a time: ~8 h.
+
+## Amendment 1 (2026-10-12, after the independent check `docs/audits/2026-10-12/factorial_audit.md`; before launch)
+The check ran the full pipeline on CPU (16 tiny runs with the driver's flags, eval, strata, analysis): the cells build as
+claimed (RoPE --n-layers 4: 4 layers, 798,741 params; RoPELooped: one block x4; Vanilla_r4: shared rank 4, 1 layer),
+--fast-attn takes effect in every cell (fast vs explicit 8e-7 in eval mode), the driver and analysis paths match. Changes:
+- **D1 (budget).** Every C1 / C2 label carries "[within 900 epochs; <cell> still DESCENDING k/4]". Prediction, stated now:
+  `LOOPED_PILOT.md` found index RoPE's reach on short-walk tori limited to gaps of 17-32 moves at 4 layers or a loop x4, so
+  DOES NOT CATCH UP is expected at T = 1024.
+- **D2.** CATCHES UP is renamed **INDEX WITHIN 0.02 OF PATH (margin rule, no equivalence test at n = 4)**.
+- **D3 (memorisation).** Secondary: every run also evaluated on its OWN training map (`eval_noise_refine --env-seed <seed>`,
+  T = 1024), printed beside the held-out accuracy.
+- **D4 (scope).** With 1 and 4 layers only, the design asks whether 4 layers (or a loop x4) suffice, not the exchange rate.
+- **D5.** C0-C3 are separate questions; no multiplicity correction is possible or claimed at n = 4.
+- **Minor.** The strata eval cross-checks against the eval JSON (`--check-json`); an empty stratum no longer crashes the
+  analysis; floors are RANK_MI's measured values on the same stream (quoted, not re-measured).
+Smoke re-run: ALL PASS.

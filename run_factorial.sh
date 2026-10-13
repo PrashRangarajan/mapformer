@@ -42,7 +42,13 @@ for spec in "L1:RoPE Vanilla_r4" "L4:RoPE" "LOOP:RoPELooped"; do ROOT=${spec%%:*
     --lengths 512 1024 2048 --n-trials 100 --device "cuda:$G" --title "Factorial $ROOT" --out "$REPO/FACTORIAL_${ROOT}.md" \
     >> "$LOG" 2>&1 || drv_fail "eval $ROOT"
   python3 -u -m mapformer.eval_rank_strata --runs-dir "$R/$ROOT" --variants $VS --seeds 500 501 502 503 --lengths 1024 \
-    --n-trials 100 --device "cuda:$G" --out "$REPO/FACTORIAL_${ROOT}_STRATA.json" >> "$LOG" 2>&1 || drv_fail "strata $ROOT"
+    --n-trials 100 --device "cuda:$G" --check-json "$REPO/FACTORIAL_${ROOT}.json" --out "$REPO/FACTORIAL_${ROOT}_STRATA.json" \
+    >> "$LOG" 2>&1 || drv_fail "strata $ROOT"
+  for S in 500 501 502 503; do        # Amendment 1 (D3): each run on its OWN training map (env seed = run seed), secondary
+    python3 -u -m mapformer.eval_noise_refine --runs-dir "$R/$ROOT" --variants $VS --noises 0.0 --seeds "$S" --env-seed "$S" \
+      --lengths 1024 --n-trials 100 --device "cuda:$G" --title "Factorial $ROOT own map s$S" \
+      --out "$REPO/FACTORIAL_${ROOT}_OWN_s${S}.md" >> "$LOG" 2>&1 || _drv_log "own-map eval $ROOT s$S failed (secondary)"
+  done
 done
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before the analysis"
 python3 -u -m mapformer.analyze_factorial > "$REPO/FACTORIAL_ANALYSIS.txt" 2>&1 || drv_fail analyze

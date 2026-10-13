@@ -18,11 +18,14 @@ def c0(path, rope):
     return f"{lab}: d {d:+.4f} (perm p {p:.4f}; n = 4 vs 4, only large splits readable)"
 
 
-def catch_up(index, path, sol_i, sol_p, name):
+def catch_up(index, path, sol_i, sol_p, name, n_desc=0):
+    """Amendment 1 (audit D1, D2): the 0.02-margin label is renamed (no equivalence test is possible at n = 4) and every
+    label is scoped to the 900-epoch budget with the count of index runs still DESCENDING."""
     d = float(np.mean(path) - np.mean(index)); p = perm2_p(index, path)["p"]; pf = fisher_solved(sol_p, N, sol_i, N)
-    tail = f"Path_L1 - {name} {d:+.4f} (perm p {p:.4f}); SOLVED {name} {sol_i}/4 vs Path_L1 {sol_p}/4 (Fisher p {pf:.4f})"
+    tail = (f"Path_L1 - {name} {d:+.4f} (perm p {p:.4f}); SOLVED {name} {sol_i}/4 vs Path_L1 {sol_p}/4 (Fisher p {pf:.4f}) "
+            f"[within 900 epochs; {name} still DESCENDING {n_desc}/4]")
     if np.mean(index) >= np.mean(path) - 0.02 and sol_i >= 3:
-        return f"INDEX ({name}) CATCHES UP: {tail}"
+        return f"INDEX ({name}) WITHIN 0.02 OF PATH (margin rule, no equivalence test at n = 4): {tail}"
     if (d >= 0.05 and p < .05) or (pf < .05 and sol_p > sol_i):
         return f"INDEX ({name}) DOES NOT CATCH UP: {tail}"
     return f"UNMEASURED (n = 4): {tail}"
@@ -40,7 +43,7 @@ def smoke():
         ok &= want in got; print(f"  {'ok ' if want in got else 'BAD'} {got}")
     one = [0.998, 0.999, 0.997, 0.998]; low = [0.73, 0.72, 0.74, 0.73]
     chk(c0(one, low), "PATH WINS")
-    chk(catch_up([0.99, 0.995, 0.99, 0.985], one, 4, 4, "RoPE_L4"), "CATCHES UP")
+    chk(catch_up([0.99, 0.995, 0.99, 0.985], one, 4, 4, "RoPE_L4"), "WITHIN 0.02 OF PATH")
     chk(catch_up(low, one, 0, 4, "RoPE_L4"), "DOES NOT CATCH UP")
     chk(catch_up([0.999, 0.80, 0.998, 0.70], one, 2, 4, "RoPE_L4"), "UNMEASURED")
     chk(helps([0.9, 0.92, 0.91, 0.9], low, "RoPE_L4"), "HELPS")
@@ -68,17 +71,29 @@ def main():
     print(f"  REGISTERED C0 (Path_L1 - RoPE_L1): {c0(acc['Path_L1'], acc['RoPE_L1'])}")
     for cell in ("RoPE_L4", "RoPE_Loop"):
         tag = "C1 (depth)" if cell == "RoPE_L4" else "C2 (loop)"
-        print(f"  REGISTERED {tag}: {catch_up(acc[cell], acc['Path_L1'], sum(solved[cell]), sum(solved['Path_L1']), cell)}")
+        print(f"  REGISTERED {tag}: {catch_up(acc[cell], acc['Path_L1'], sum(solved[cell]), sum(solved['Path_L1']), cell, cls[cell].count('DESCENDING'))}")
         print(f"  REGISTERED C3 ({cell}): {helps(acc[cell], acc['RoPE_L1'], cell)}")
     for root in ("L1", "L4", "LOOP"):
         try:
             S = json.load(open(f"{REPO}/FACTORIAL_{root}_STRATA.json"))
             for k, v in S.items():
                 if k.endswith("|1024"):
-                    print(f"  secondary strata {root} {k}: " + ", ".join(f"{st} {v[st]['acc']:.3f}" for st in v if isinstance(v[st], dict)))
+                    parts = [f"{st} {v[st]['acc']:.3f}" for st in v if isinstance(v[st], dict) and v[st].get("acc") is not None]
+                    print(f"  secondary strata {root} {k}: " + ", ".join(parts))
         except FileNotFoundError:
             pass
-    json.dump({"acc": acc, "solved": solved, "cls": cls}, open(f"{REPO}/FACTORIAL_VERDICTS.json", "w"), indent=1)
+    own = {}
+    for cell, (root, var, nl) in CELLS.items():                     # Amendment 1 (D3): own (training) map, secondary
+        vals = []
+        for sd in SEEDS:
+            try:
+                J = json.load(open(f"{REPO}/FACTORIAL_{root}_OWN_s{sd}.json")); vals.append(float(J[f"0.0|{var}|1024"][0][1]))
+            except (FileNotFoundError, KeyError, IndexError):
+                pass
+        if vals:
+            own[cell] = vals
+            print(f"  secondary own (training) map {cell}: acc T=1024 {np.mean(vals):.4f} vs held-out {np.mean(acc[cell]):.4f}")
+    json.dump({"acc": acc, "solved": solved, "cls": cls, "own_map": own}, open(f"{REPO}/FACTORIAL_VERDICTS.json", "w"), indent=1)
 
 
 if __name__ == "__main__":
