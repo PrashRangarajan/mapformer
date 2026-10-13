@@ -66,8 +66,10 @@ encoding / sequence models. Check deadlines and page limits before drafting; not
 - Torus at matched length (`SIGN_MATCHED_RESULTS.md`, REG): Abs - Signed -0.177 (p 0.0002), SOLVED 0/8 vs 8/8.
 - Ring dial (`RING_DIAL_RESULTS.md`, REG): Abs SOLVED 2/8 and 1/8 vs 8/8 at p_plus 0.5 / 0.75 (Fisher p 0.007 / 0.0014);
   0.9 unmeasured. 3x budget: 3/8 vs 3/8 (`RING_BUDGET_RESULTS.md`, REG PARTIAL).
-- Fig. 2: wrap-aware opposition: share of channels where opposite moves cancel mod 2 pi: signed 82% (ring) / 98% (torus)
-  vs non-negative 2-11% on every run, solved or not (secondary / post hoc).
+- Fig. 2 (`docs/paper/figs/fig_wrap_share.py`, wrap-invariant selection; post hoc re-description of the stored
+  checkpoints): share of channels where opposite moves cancel mod 2 pi, mean per group: signed 0.79 / 0.78 / 0.64 (ring
+  p_plus 0.5 / 0.75 / 0.9) and 0.98 (torus) vs non-negative 0.03-0.11 on every run, SOLVED or not -- the non-negative runs
+  that solve do so without the wrapped (cancelling) code.
 - Learning speed on the ring: signed faster on 8/8 paired seeds at every p (loss AUC, p 0.0078; POST HOC).
 - Existence (rule 14; `WRAP_EXISTENCE_PREREG.md`, PENDING): constructed non-negative solution frozen = signed; held or not
   under training; non-negative from scratch in an observation-step-free class. Write this paragraph from its verdicts:
@@ -105,6 +107,6 @@ result; "beats the index exactly when the task needs a map" as a general law; an
 
 ## Before drafting
 1. WRAP_EXISTENCE verdicts (running 2026-10-13) fill 4.2's last paragraph.
-2. Figures 1-2 from existing artifacts (`FACTORIAL_*_STRATA.json`; wrap probes) -- CPU only.
+2. Figures 1-2 drafted (`docs/paper/figs/`); a framework figure (Table 1 as a diagram) is optional.
 3. Optional for a stronger workshop version: factorial at n = 8 (~8 h GPU). Required only for a journal version: torus
    baselines (LSTM, Mamba-like, CoPE, Selective RoPE) and one scale check (~2 GPU days).

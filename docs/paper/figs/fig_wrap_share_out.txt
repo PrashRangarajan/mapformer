@@ -1,0 +1,9 @@
+ring p+ 0.5   Signed_r4 n=8 share mean 0.79 (range 0.59-0.92); SOLVED 8/8
+ring p+ 0.5   Abs_r4    n=8 share mean 0.06 (range 0.02-0.16); SOLVED 2/8
+ring p+ 0.75  Signed_r4 n=8 share mean 0.78 (range 0.64-0.86); SOLVED 8/8
+ring p+ 0.75  Abs_r4    n=8 share mean 0.03 (range 0.02-0.04); SOLVED 1/8
+ring p+ 0.9   Signed_r4 n=8 share mean 0.64 (range 0.44-0.91); SOLVED 8/8
+ring p+ 0.9   Abs_r4    n=8 share mean 0.06 (range 0.02-0.10); SOLVED 4/8
+torus T 1024  Signed_r4 n=8 share mean 0.98 (range 0.90-1.00); SOLVED 8/8
+torus T 1024  Abs_r4    n=8 share mean 0.11 (range 0.00-0.27); SOLVED 0/8
+torus T 1024  Pos_r4    n=8 share mean 0.03 (range 0.00-0.12); SOLVED 1/8
