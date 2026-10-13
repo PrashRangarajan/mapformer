@@ -20,6 +20,14 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
   recipe): does Abs keep the solution (SOLVED, wrap share stays high)? Keeps it -> the failure is SEARCH (training never
   finds a stable solution that exists); drifts away -> the wrap solution is not a stable basin under Abs's
   parameterisation. Needs a short prereg + independent check (rule 29); ~1 h GPU.
+- (1b) FIRST ATTEMPT (2026-10-13 14:10, `docs/audits/2026-10-13/wrap_existence_build.py` / `_out.txt`): converting the 8 solved
+  Signed_r4 ring models to Abs_r4 is exact for the action angles (error <= 5e-3 rad) BUT requires observation steps = 0, and
+  the trained signed models RELY on their observation steps: zeroing them drops accuracy 1.000 -> 0.47-0.96 (the Abs copy
+  equals that). Wrapping observation steps too is not expressible in the rank-4 bottleneck. REVISED PLAN: train a signed
+  rank-4 ring model with observation steps forced to 0 and actions free (like RANK_TESTS' R1AO, which solved 8/8 at
+  per-head rank 1) -- new class needed (rank-4 shared, step table over actions only); convert exactly to the non-negative
+  form (|.| with obs 0); check frozen accuracy = the signed one; then warm-start trainable 300 epochs. Add an arm: the same
+  non-negative obs-free model FROM SCRATCH (does Abs with obs steps zero learn the map?). Short prereg + check (rule 29).
 - (2) Outline for a workshop paper (4-6 pp) from `docs/paper/CLAIM_MAP_clock_map.md`; journal version later needs the
   recurrent/CoPE/Selective-RoPE baselines on the torus, factorial at n = 8, one scale check (~2 GPU days).
 

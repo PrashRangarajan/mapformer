@@ -1,0 +1,8 @@
+s30: Abs steps min 1.14e-02 (>= 0), obs |step| max 2.3e-04, action angle error mod 2pi max 4.0e-06 | acc T=128: signed 1.0000, signed obs-steps-zeroed 0.6581, Abs constructed (frozen) 0.6581
+s31: Abs steps min 4.19e-02 (>= 0), obs |step| max 4.4e-03, action angle error mod 2pi max 4.6e-06 | acc T=128: signed 1.0000, signed obs-steps-zeroed 0.4895, Abs constructed (frozen) 0.4895
+s32: Abs steps min 1.32e-02 (>= 0), obs |step| max 2.1e-04, action angle error mod 2pi max 2.2e-03 | acc T=128: signed 1.0000, signed obs-steps-zeroed 0.9275, Abs constructed (frozen) 0.9275
+s33: Abs steps min 1.76e-02 (>= 0), obs |step| max 6.0e-05, action angle error mod 2pi max 1.6e-03 | acc T=128: signed 1.0000, signed obs-steps-zeroed 0.9583, Abs constructed (frozen) 0.9583
+s34: Abs steps min 2.48e-02 (>= 0), obs |step| max 3.2e-06, action angle error mod 2pi max 1.6e-06 | acc T=128: signed 1.0000, signed obs-steps-zeroed 0.5168, Abs constructed (frozen) 0.5168
+s35: Abs steps min 4.35e-02 (>= 0), obs |step| max 2.1e-05, action angle error mod 2pi max 4.9e-03 | acc T=128: signed 1.0000, signed obs-steps-zeroed 0.4727, Abs constructed (frozen) 0.4727
+s36: Abs steps min 1.15e-02 (>= 0), obs |step| max 2.9e-06, action angle error mod 2pi max 2.1e-06 | acc T=128: signed 1.0000, signed obs-steps-zeroed 0.6981, Abs constructed (frozen) 0.6981
+s37: Abs steps min 1.72e-03 (>= 0), obs |step| max 4.8e-06, action angle error mod 2pi max 1.6e-06 | acc T=128: signed 1.0000, signed obs-steps-zeroed 0.7005, Abs constructed (frozen) 0.7005
