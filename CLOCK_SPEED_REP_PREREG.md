@@ -21,3 +21,13 @@ Secondary: per-arm curves (epoch to running loss < 2.0 / < 1.0, loss at 100 / 20
 
 ## Process and cost
 Independent code check (rule 29) before launch. ~9,600 run-epochs on one GPU at 4 concurrent: ~2.5-3 h.
+
+## Amendment 1 (2026-10-13, after the independent check `docs/audits/2026-10-12/clock_speed_rep_audit.md`; before launch)
+- **R1 (power).** At CLOCK_SPEED's effect size (-0.197) S1 fires with probability ~0.5 at n = 16 (~0.34 at -0.15); NO
+  DIFFERENCE is practically unreachable. An UNMEASURED reading here is NOT a failed replication.
+- **R2 (wording).** CLOCK_SPEED's S1 did not fire, so a firing here reads "fires on fresh seeds", not "replicates".
+- **R3 (optional stopping).** The pooled 32-seed line is POST HOC and never upgrades the registered verdict; there will be no
+  third batch on this contrast.
+- **R4.** The pooled line now prints its actual n and whether its sign-flip p is exact or Monte Carlo (n > 20 is Monte Carlo).
+- **R5.** Provenance: each run's log must show "[fast-attn] SDPA" (asserted). A paired eval-NLL contrast is not added (not
+  needed for the decision).
