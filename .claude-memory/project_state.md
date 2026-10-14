@@ -9,21 +9,15 @@ Updated 2026-10-13 14:00. Goes stale fast: check `git log`, `.done` markers, the
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- WRAP_EXISTENCE batch (launched 2026-10-13 15:29 at 5b577bb, both GPUs, `run_wrap_existence.sh`, log `wrap_existence.log`):
-  56 runs (7 arms x seeds 600-607), ~75 min; marker `.wrap_existence_done`, output `WRAP_EXISTENCE_ANALYSIS.txt` /
-  `_VERDICTS.json`. Prereg `WRAP_EXISTENCE_PREREG.md` + Amendment 1 (check `docs/audits/2026-10-13/wrap_existence_audit.md`).
-  After it: write `WRAP_EXISTENCE_RESULTS.md` (registered first: P0, E1 per construction, E2 PRIMARY AO_bal vs SO_bal,
-  E3), fill the outline's 4.2 paragraph, update claim map / CLAUDE.md sign row if E2 is readable.
-- Pilot (seed 690, `runs/wrap_existence_pilot`, never pooled): SO solved; AO scratch 0.809; min-norm and gauge
-  constructions exact frozen but LOST in warm-up -- the check showed this is ill-conditioning (antiparallel action latents,
-  W_out 1825), NOT the class: the balanced construction held 400 CPU steps. My "path-length sensitivity" reading of the pilot
-  was confounded and is withdrawn.
+- Nothing (2026-10-13 18:30). GPUs idle.
 
-## In progress (user asked 2026-10-13): (1) the WRAP EXISTENCE TEST (running), (2) workshop-paper outline (drafted)
-- (1) History: first attempt `docs/audits/2026-10-13/wrap_existence_build.py` (trained Signed_r4 ring models rely on
-  observation steps; zeroed 0.47-0.96) -> observation-step-free classes SignedAO_r4 / AbsAO_r4 (`model_wrap_exist.py`).
-- (2) `docs/paper/OUTLINE_workshop.md` (drafted 2026-10-13; 4.2's existence paragraph waits for the batch); Figure 1
-  `docs/paper/figs/fig_factorial_strata.{py,pdf,png}`. Next: Figure 2 (wrap share), then a draft if the user wants.
+## Last session's work (2026-10-13): existence test done, outline drafted
+- WRAP_EXISTENCE (`WRAP_EXISTENCE_RESULTS.md`, registered): E1 EXISTS (all constructions); E2 PRIMARY HELD (balanced
+  non-negative construction 8/8 SOLVED, 0/8 LOST vs signed control 8/8); E3 SIGNED LEARNS BETTER (observation-free,
+  from scratch 0/8 vs 8/8, p 0.0002). Secondary: held model drifts off the cancelling code (87% -> 18%); wrapped code more
+  fragile to 1% noise. Ill-conditioned constructions lose and re-find (descriptive). Rule 14 met for the learnability claim.
+- Outline `docs/paper/OUTLINE_workshop.md` with Figures 1-2 (`docs/paper/figs/`). Next if the user wants: a first draft
+  (CPU only); optional factorial at n = 8 (~8 h GPU) for a stronger workshop version.
 
 ## Ready, not launched (each audited + amended; user chooses)
 - (STOPPED 2026-10-11 per review) TW_AMBIG (`TW_AMBIG_PREREG.md`, c6d6a3e): same direction word as action or observation; 64 runs at 1800 ep ~15 h (or
@@ -36,6 +30,7 @@ The user is cost-sensitive (a day of GPU is "a lot") and does not want our jobs 
 are there; check `nvidia-smi` owners before launching and ask if another user is active.
 
 ## Last results (newest first; one line each, numbers in the file)
+- 2026-10-13 WRAP_EXISTENCE: exact non-negative ring solution HELD under training 8/8; from scratch 0/8 vs signed 8/8; held model drifts off the cancelling code (secondary). `WRAP_EXISTENCE_RESULTS.md`
 - RANK_TESTS (`RANK_TESTS_RESULTS.md`, REG): 1D ring rank 1 = D solves 7/8 (vs R2 8/8): "rank = D is hard" is not general;
   escape test PARTIAL / unmeasured at 600 ep (fresh rank-4 step map on the trained nets also only 2/8). Secondary: lifted
   unsolved runs keep a CLOCK head, fresh step maps are CLEAN.

@@ -62,6 +62,14 @@ Index RoPE at 4 layers (0.860) or looped x4 (0.864) does not catch up with 1-lay
 T = 1024 (0/4 vs 4/4 SOLVED each); depth helps only short-gap revisits. Unlike Dyck (3-4 layers suffice), the torus needs
 more than 4 layers of index attention.
 
+## Update 2026-10-13: existence (`WRAP_EXISTENCE_RESULTS.md`, registered)
+Rule 14 met for C2-as-learnability on the ring: an exact non-negative rotary solution (balanced construction, weights within
+~5x the signed scale) is HELD under 300 epochs of training (8/8 SOLVED, 0/8 LOST, 1.000) while the same observation-free
+class from scratch solves 0/8 vs signed 8/8 (p 0.0002). Secondary: the held model drifts off the cancelling code (87% -> 18%
+of channels; T = 512 0.978 vs 0.998), and the wrapped code is more fragile to 1% parameter noise (0.80 vs 0.998, frozen).
+Read: the solution exists and is stable in task terms; training does not find it; the exact map code is not an attractor
+under the non-negative constraint.
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
@@ -69,6 +77,7 @@ more than 4 layers of index attention.
 - The forget gate is a clock (untested); the InEKF wrap bounds the accumulator (false).
 - Rank = D is hard because of the clock (fails in 1D).
 - A non-negative rotary phase cannot represent a map (it can, by wrapping; the sign result is learnability).
+- "The wrapped solution is unstable / fragile under training" (an ill-conditioned construction artefact; the balanced one is held).
 
 ## Gaps, cheapest first
 1. **Prior art** (`docs/lit/LIT_CLOCK_MAP.md`, agent running): which of C1-C5 are published.

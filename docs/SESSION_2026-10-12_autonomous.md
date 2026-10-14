@@ -49,3 +49,6 @@ learns a clock (TinyStories, code), with no gain over the index at our scale (Co
 - CLOCK_SPEED_REP (`CLOCK_SPEED_REP_RESULTS.md`, registered): the clock-side contrast is UNMEASURED again on fresh seeds
   (-0.106, p 0.19); pooled post hoc p 0.018 does not upgrade (pre-committed); no third batch.
 - Next (user, 2026-10-13): the wrap existence test (plan in `.claude-memory/project_state.md`), then a workshop-paper outline.
+- WRAP_EXISTENCE (`WRAP_EXISTENCE_RESULTS.md`, registered): an exact non-negative ring solution is held under training (8/8)
+  but never found from scratch (0/8 vs 8/8): rule 14 met, the sign cost is search; the held model drifts off the cancelling
+  code (secondary). Workshop outline and Figures 1-2 in `docs/paper/`.

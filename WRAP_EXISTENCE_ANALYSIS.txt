@@ -1,0 +1,95 @@
+== per seed: accuracy T = 128 (eval mode) and class; constructed arms frozen -> trained ==
+seed | SO | AO | SO_cont | SO_bal | AO_bal | AO_wrap | AO_wrapg
+600 | 1.0000 SOLVED | 0.9048 STALLED | 1.0000 SOLVED | 1.0000 -> 1.0000 SOLVED (max loss 0.019) | 1.0000 -> 1.0000 SOLVED (max loss 0.041) | 1.0000 -> 0.9999 SOLVED (max loss 1.779) | 1.0000 -> 1.0000 SOLVED (max loss 1.202)
+601 | 1.0000 SOLVED | 0.9486 STALLED | 1.0000 SOLVED | 1.0000 -> 1.0000 SOLVED (max loss 0.042) | 1.0000 -> 1.0000 SOLVED (max loss 0.030) | 1.0000 -> 1.0000 SOLVED (max loss 2.035) | 1.0000 -> 1.0000 SOLVED (max loss 1.114)
+602 | 1.0000 SOLVED | 0.8526 STALLED | 1.0000 SOLVED | 1.0000 -> 1.0000 SOLVED (max loss 0.072) | 1.0000 -> 1.0000 SOLVED (max loss 0.154) | 1.0000 -> 1.0000 SOLVED (max loss 1.408) | 1.0000 -> 1.0000 SOLVED (max loss 0.799)
+603 | 1.0000 SOLVED | 0.9513 STALLED | 1.0000 SOLVED | 1.0000 -> 1.0000 SOLVED (max loss 0.017) | 1.0000 -> 1.0000 SOLVED (max loss 0.046) | 1.0000 -> 1.0000 SOLVED (max loss 1.871) | 1.0000 -> 1.0000 SOLVED (max loss 1.877)
+604 | 1.0000 SOLVED | 0.9069 STALLED | 1.0000 SOLVED | 1.0000 -> 1.0000 SOLVED (max loss 0.039) | 1.0000 -> 1.0000 SOLVED (max loss 0.024) | 1.0000 -> 0.9998 DESCENDING (max loss 1.892) | 1.0000 -> 1.0000 SOLVED (max loss 1.930)
+605 | 1.0000 SOLVED | 0.9301 STALLED | 1.0000 SOLVED | 1.0000 -> 1.0000 SOLVED (max loss 0.028) | 1.0000 -> 1.0000 SOLVED (max loss 0.032) | 1.0000 -> 1.0000 SOLVED (max loss 0.644) | 1.0000 -> 1.0000 SOLVED (max loss 1.011)
+606 | 1.0000 SOLVED | 0.9498 STALLED | 1.0000 SOLVED | 1.0000 -> 1.0000 SOLVED (max loss 0.112) | 1.0000 -> 1.0000 SOLVED (max loss 0.031) | 1.0000 -> 1.0000 SOLVED (max loss 1.816) | 1.0000 -> 1.0000 SOLVED (max loss 0.631)
+607 | 1.0000 SOLVED | 0.9222 STALLED | 1.0000 SOLVED | 1.0000 -> 1.0000 SOLVED (max loss 0.015) | 1.0000 -> 1.0000 SOLVED (max loss 0.036) | 1.0000 -> 0.9999 SOLVED (max loss 1.954) | 1.0000 -> 1.0000 SOLVED (max loss 1.950)
+max per-epoch loss SO_cont: 0.041 0.023 0.052 0.062 0.073 0.057 0.014 0.043
+floor (CANCEL) 0.554
+
+P0: SO SOLVED 8/8 -> E1 / E2 read on seeds [600, 601, 602, 603, 604, 605, 606, 607]
+E1 [SO_bal]: EXISTS -- max |frozen - source| 0.0000, max angle error 6.1e-07 rad, max logit diff T=128 1.3e-04 / T=512 2.4e-03
+E1 [AO_bal]: EXISTS -- max |frozen - source| 0.0000, max angle error 1.2e-06 rad, max logit diff T=128 5.1e-04 / T=512 1.1e-02
+E1 [AO_wrap]: EXISTS -- max |frozen - source| 0.0000, max angle error 1.2e-05 rad, max logit diff T=128 4.9e-03 / T=512 4.2e-02
+E1 [AO_wrapg]: EXISTS -- max |frozen - source| 0.0000, max angle error 1.8e-05 rad, max logit diff T=128 3.5e-03 / T=512 2.5e-02
+E2 [AO_bal vs SO_bal, PRIMARY]: HELD -- AO_bal 1.0000 SOLVED 8/8 LOST 0/8 vs SO_bal 1.0000 SOLVED 8/8 LOST 0/8; paired d +0.0000 (sign-flip p 1.0000, min p 0.0078); Fisher SOLVED p 1.0000, Fisher not-LOST p 1.0000
+E2 [AO_wrap vs SO_cont, descriptive]: NOT HELD -- AO_wrap 1.0000 SOLVED 7/8 LOST 8/8 vs SO_cont 1.0000 SOLVED 8/8 LOST 0/8; paired d -0.0000 (sign-flip p 0.0625, min p 0.0078); Fisher SOLVED p 1.0000, Fisher not-LOST p 0.0002
+E2 [AO_wrapg vs SO_cont, descriptive]: NOT HELD -- AO_wrapg 1.0000 SOLVED 8/8 LOST 8/8 vs SO_cont 1.0000 SOLVED 8/8 LOST 0/8; paired d +0.0000 (sign-flip p 1.0000, min p 0.0078); Fisher SOLVED p 1.0000, Fisher not-LOST p 0.0002
+E3: SIGNED LEARNS BETTER -- AO 0.9208 SOLVED 0/8 vs SO 1.0000 SOLVED 8/8; d -0.0792 (perm p 0.0002); Fisher p 0.0002
+
+== secondaries (declared; no verdict) ==
+wrap share SO      : median |wrap| 0.013 rad, share < 0.1 rad 0.87 (per seed 0.87 0.82 0.84 0.81 0.97 0.89 0.83 0.96)
+wrap share AO      : median |wrap| 0.845 rad, share < 0.1 rad 0.06 (per seed 0.08 0.06 0.00 0.07 0.06 0.08 0.07 0.08)
+wrap share SO_cont : median |wrap| 0.004 rad, share < 0.1 rad 1.00 (per seed 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00)
+wrap share SO_bal  : median |wrap| 0.010 rad, share < 0.1 rad 0.98 (per seed 0.96 1.00 1.00 1.00 0.98 0.97 0.94 0.96)
+wrap share AO_bal  : median |wrap| 2.031 rad, share < 0.1 rad 0.18 (per seed 0.15 0.18 0.18 0.20 0.19 0.17 0.22 0.19)
+wrap share AO_wrap : median |wrap| 1.287 rad, share < 0.1 rad 0.18 (per seed 0.08 0.16 0.38 0.13 0.13 0.19 0.17 0.21)
+wrap share AO_wrapg: median |wrap| 0.162 rad, share < 0.1 rad 0.41 (per seed 0.64 0.08 0.03 0.34 0.84 0.52 0.44 0.38)
+SO_bal wrap share at construction 0.87 -> after training 0.98
+AO_bal wrap share at construction 0.87 -> after training 0.18
+AO_wrap wrap share at construction 0.87 -> after training 0.18
+AO_wrapg wrap share at construction 0.87 -> after training 0.41
+  SO_bal s600: |W_out| max signed 0.37 built 0.37; |W_in| 0.21 -> 0.23; |step| max 1.49 -> 1.44; |omega| max 2.87 -> 2.87; omega < 0: 2; latent cos -0.995
+  SO_bal s601: |W_out| max signed 0.36 built 0.47; |W_in| 0.17 -> 0.24; |step| max 2.11 -> 2.11; |omega| max 2.85 -> 2.85; omega < 0: 2; latent cos -0.996
+  SO_bal s602: |W_out| max signed 0.34 built 0.39; |W_in| 0.15 -> 0.19; |step| max 1.47 -> 1.46; |omega| max 2.98 -> 2.98; omega < 0: 0; latent cos -0.987
+  SO_bal s603: |W_out| max signed 0.38 built 0.38; |W_in| 0.18 -> 0.24; |step| max 1.87 -> 1.87; |omega| max 2.77 -> 2.77; omega < 0: 1; latent cos -0.994
+  SO_bal s604: |W_out| max signed 0.32 built 0.40; |W_in| 0.17 -> 0.27; |step| max 2.10 -> 2.02; |omega| max 2.82 -> 2.82; omega < 0: 1; latent cos -0.998
+  SO_bal s605: |W_out| max signed 0.32 built 0.45; |W_in| 0.19 -> 0.33; |step| max 2.63 -> 2.63; |omega| max 2.93 -> 2.93; omega < 0: 1; latent cos -0.998
+  SO_bal s606: |W_out| max signed 0.33 built 0.38; |W_in| 0.21 -> 0.30; |step| max 2.47 -> 2.02; |omega| max 2.82 -> 2.82; omega < 0: 1; latent cos -0.995
+  SO_bal s607: |W_out| max signed 0.31 built 0.38; |W_in| 0.18 -> 0.28; |step| max 1.94 -> 1.80; |omega| max 2.83 -> 2.83; omega < 0: 0; latent cos -0.998
+  AO_bal s600: |W_out| max signed 0.37 built 1.63; |W_in| 0.21 -> 0.23; |step| max 1.49 -> 6.28; |omega| max 2.87 -> 2.87; omega < 0: 2; latent cos -0.995
+  AO_bal s601: |W_out| max signed 0.36 built 1.38; |W_in| 0.17 -> 0.24; |step| max 2.11 -> 6.28; |omega| max 2.85 -> 2.85; omega < 0: 2; latent cos -0.996
+  AO_bal s602: |W_out| max signed 0.34 built 1.70; |W_in| 0.15 -> 0.19; |step| max 1.47 -> 6.28; |omega| max 2.98 -> 2.98; omega < 0: 0; latent cos -0.987
+  AO_bal s603: |W_out| max signed 0.38 built 1.27; |W_in| 0.18 -> 0.24; |step| max 1.87 -> 6.28; |omega| max 2.77 -> 2.77; omega < 0: 1; latent cos -0.994
+  AO_bal s604: |W_out| max signed 0.32 built 1.24; |W_in| 0.17 -> 0.27; |step| max 2.10 -> 6.28; |omega| max 2.82 -> 2.82; omega < 0: 1; latent cos -0.998
+  AO_bal s605: |W_out| max signed 0.32 built 1.07; |W_in| 0.19 -> 0.33; |step| max 2.63 -> 6.28; |omega| max 2.93 -> 2.93; omega < 0: 1; latent cos -0.998
+  AO_bal s606: |W_out| max signed 0.33 built 1.17; |W_in| 0.21 -> 0.30; |step| max 2.47 -> 6.28; |omega| max 2.82 -> 2.82; omega < 0: 1; latent cos -0.995
+  AO_bal s607: |W_out| max signed 0.31 built 1.33; |W_in| 0.18 -> 0.28; |step| max 1.94 -> 6.28; |omega| max 2.83 -> 2.83; omega < 0: 0; latent cos -0.998
+  AO_wrap s600: |W_out| max signed 0.37 built 1102.40; |W_in| 0.21 -> 0.21; |step| max 1.49 -> 539.47; |omega| max 2.87 -> 2.87; omega < 0: 2; latent cos -0.995
+  AO_wrap s601: |W_out| max signed 0.36 built 3772.56; |W_in| 0.17 -> 0.17; |step| max 2.11 -> 2026.07; |omega| max 2.85 -> 2.85; omega < 0: 2; latent cos -0.996
+  AO_wrap s602: |W_out| max signed 0.34 built 2802.25; |W_in| 0.15 -> 0.15; |step| max 1.47 -> 1881.65; |omega| max 2.98 -> 2.98; omega < 0: 0; latent cos -0.987
+  AO_wrap s603: |W_out| max signed 0.38 built 16320.26; |W_in| 0.18 -> 0.18; |step| max 1.87 -> 9333.42; |omega| max 2.77 -> 2.77; omega < 0: 1; latent cos -0.994
+  AO_wrap s604: |W_out| max signed 0.32 built 653.27; |W_in| 0.17 -> 0.17; |step| max 2.10 -> 241.07; |omega| max 2.82 -> 2.82; omega < 0: 1; latent cos -0.998
+  AO_wrap s605: |W_out| max signed 0.32 built 4556.13; |W_in| 0.19 -> 0.19; |step| max 2.63 -> 968.53; |omega| max 2.93 -> 2.93; omega < 0: 1; latent cos -0.998
+  AO_wrap s606: |W_out| max signed 0.33 built 7517.77; |W_in| 0.21 -> 0.21; |step| max 2.47 -> 4112.33; |omega| max 2.82 -> 2.82; omega < 0: 1; latent cos -0.995
+  AO_wrap s607: |W_out| max signed 0.31 built 1503.60; |W_in| 0.18 -> 0.18; |step| max 1.94 -> 595.67; |omega| max 2.83 -> 2.83; omega < 0: 0; latent cos -0.998
+  AO_wrapg s600: |W_out| max signed 0.37 built 4.62; |W_in| 0.21 -> 0.21; |step| max 1.49 -> 1.49; |omega| max 2.87 -> 4.23; omega < 0: 2; latent cos -0.995
+  AO_wrapg s601: |W_out| max signed 0.36 built 7.57; |W_in| 0.17 -> 0.17; |step| max 2.11 -> 2.11; |omega| max 2.85 -> 2.98; omega < 0: 2; latent cos -0.996
+  AO_wrapg s602: |W_out| max signed 0.34 built 4.35; |W_in| 0.15 -> 0.15; |step| max 1.47 -> 1.47; |omega| max 2.98 -> 4.29; omega < 0: 0; latent cos -0.987
+  AO_wrapg s603: |W_out| max signed 0.38 built 6.53; |W_in| 0.18 -> 0.18; |step| max 1.87 -> 1.87; |omega| max 2.77 -> 3.36; omega < 0: 1; latent cos -0.994
+  AO_wrapg s604: |W_out| max signed 0.32 built 11.63; |W_in| 0.17 -> 0.17; |step| max 2.10 -> 2.10; |omega| max 2.82 -> 2.99; omega < 0: 1; latent cos -0.998
+  AO_wrapg s605: |W_out| max signed 0.32 built 12.38; |W_in| 0.19 -> 0.19; |step| max 2.63 -> 2.63; |omega| max 2.93 -> 2.93; omega < 0: 1; latent cos -0.998
+  AO_wrapg s606: |W_out| max signed 0.33 built 8.97; |W_in| 0.21 -> 0.21; |step| max 2.47 -> 2.47; |omega| max 2.82 -> 2.82; omega < 0: 1; latent cos -0.995
+  AO_wrapg s607: |W_out| max signed 0.31 built 10.00; |W_in| 0.18 -> 0.18; |step| max 1.94 -> 1.94; |omega| max 2.83 -> 3.25; omega < 0: 0; latent cos -0.998
+SO_bal: max wrap-aware action-angle change during training, per solved source: 1.157 2.793 1.793 1.704 1.980 2.676 1.970 2.457 rad
+AO_bal: max wrap-aware action-angle change during training, per solved source: 3.105 3.138 3.132 3.081 3.129 3.137 3.137 3.081 rad
+AO_wrap: max wrap-aware action-angle change during training, per solved source: 3.122 3.123 3.052 3.127 3.121 3.131 3.133 3.116 rad
+AO_wrapg: max wrap-aware action-angle change during training, per solved source: 3.063 3.130 3.136 3.129 3.085 3.127 3.109 3.112 rad
+acc T = 512 (OOD) SO      : 0.9964
+acc T = 512 (OOD) AO      : 0.8297
+acc T = 512 (OOD) SO_cont : 0.9964
+acc T = 512 (OOD) SO_bal  : 0.9982
+acc T = 512 (OOD) AO_bal  : 0.9775
+acc T = 512 (OOD) AO_wrap : 0.9143
+acc T = 512 (OOD) AO_wrapg: 0.9296
+loss AUC AO - SO (scratch, paired): +0.4533 (sign-flip p 0.0078; AO slower on 8/8)
+cross-batch, labelled: RING_DIAL Abs_r4 (with observation steps) SOLVED 2/8 at p_plus 0.5; AO here 0/8
+sensitivity SO_bal frozen, path_integrator.omega x (1 + 0.001 N): mean acc 1.0000 (min 1.0000)
+sensitivity SO_bal frozen, path_integrator.omega x (1 + 0.01 N): mean acc 0.9983 (min 0.9725)
+sensitivity SO_bal frozen, action_to_lie.w_out.weight x (1 + 0.001 N): mean acc 1.0000 (min 1.0000)
+sensitivity SO_bal frozen, action_to_lie.w_out.weight x (1 + 0.01 N): mean acc 0.9747 (min 0.8895)
+sensitivity AO_bal frozen, path_integrator.omega x (1 + 0.001 N): mean acc 1.0000 (min 1.0000)
+sensitivity AO_bal frozen, path_integrator.omega x (1 + 0.01 N): mean acc 0.8017 (min 0.6812)
+sensitivity AO_bal frozen, action_to_lie.w_out.weight x (1 + 0.001 N): mean acc 1.0000 (min 0.9999)
+sensitivity AO_bal frozen, action_to_lie.w_out.weight x (1 + 0.01 N): mean acc 0.8151 (min 0.6423)
+dropout re-score (1/(1-p)) SO      : 1.0000
+dropout re-score (1/(1-p)) AO      : 0.9212
+dropout re-score (1/(1-p)) SO_cont : 1.0000
+dropout re-score (1/(1-p)) SO_bal  : 1.0000
+dropout re-score (1/(1-p)) AO_bal  : 1.0000
+dropout re-score (1/(1-p)) AO_wrap : 0.9999
+dropout re-score (1/(1-p)) AO_wrapg: 1.0000

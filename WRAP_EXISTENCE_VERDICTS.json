@@ -1,0 +1,39 @@
+{
+  "P0": {
+    "n_solved_sources": 8,
+    "sources": [
+      600,
+      601,
+      602,
+      603,
+      604,
+      605,
+      606,
+      607
+    ]
+  },
+  "E1": {
+    "SO_bal": "EXISTS",
+    "AO_bal": "EXISTS",
+    "AO_wrap": "EXISTS",
+    "AO_wrapg": "EXISTS"
+  },
+  "E2": {
+    "AO_bal": {
+      "label": "HELD",
+      "control": "SO_bal",
+      "status": "PRIMARY"
+    },
+    "AO_wrap": {
+      "label": "NOT HELD",
+      "control": "SO_cont",
+      "status": "descriptive"
+    },
+    "AO_wrapg": {
+      "label": "NOT HELD",
+      "control": "SO_cont",
+      "status": "descriptive"
+    }
+  },
+  "E3": "SIGNED LEARNS BETTER"
+}

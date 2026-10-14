@@ -28,7 +28,8 @@ encoding / sequence models. Check deadlines and page limits before drafting; not
      rotary phase; in the rotary slot Cases II and III coincide representationally (wrap mod 2 pi).
   2. On navigation, 1 layer of signed path integration beats index attention at 1 layer, 4 layers and looped x4 (REG).
   3. Sign is learnability: a non-negative rotary step that can represent the map learns it on 0-3/8 seeds vs 8/8, never
-     finds the wrapped code, and is not rescued by 3x training (REG); existence test (PENDING).
+     finds the wrapped code, and is not rescued by 3x training (REG); an exact non-negative solution is held under training
+     (8/8) though never found from scratch (0/8) (REG).
   4. The effect is asymmetric: no established advantage for the non-negative step on a content-clock task (REG, twice
      unmeasured).
   5. On TinyStories / code the learned phase is a clock (growth exponent ~1.0) with no gain over the index at our scale
@@ -71,10 +72,14 @@ encoding / sequence models. Check deadlines and page limits before drafting; not
   p_plus 0.5 / 0.75 / 0.9) and 0.98 (torus) vs non-negative 0.03-0.11 on every run, SOLVED or not -- the non-negative runs
   that solve do so without the wrapped (cancelling) code.
 - Learning speed on the ring: signed faster on 8/8 paired seeds at every p (loss AUC, p 0.0078; POST HOC).
-- Existence (rule 14; `WRAP_EXISTENCE_PREREG.md`, PENDING): constructed non-negative solution frozen = signed; held or not
-  under training; non-negative from scratch in an observation-step-free class. Write this paragraph from its verdicts:
-  HELD -> "the solution exists and is stable; training does not find it"; NOT HELD -> "the wrapped solution is not a stable
-  point at the scale training produces".
+- Existence (rule 14; `WRAP_EXISTENCE_RESULTS.md`, REG): in observation-step-free ring models, a signed solution converted
+  exactly to non-negative steps (balanced construction, weights within ~5x of the signed scale) is held under 300 epochs
+  of training (8/8 SOLVED, never lost), while the same non-negative class from scratch solves 0/8 vs signed 8/8 (p 0.0002).
+  Text: "the solution exists and training keeps it; training does not find it". Add the nuance: the held model drifts off the
+  cancelling code (87% -> 18% of channels) and the wrapped code is more fragile to 1% parameter noise (frozen 0.80 vs 0.998)
+  -- the exact map code is not an attractor under the non-negative constraint. Methods note (appendix D): the naive
+  construction is exact but ill-conditioned (antiparallel action latents) and is lost under Adam; say why the balanced one
+  is the right test.
 ### 4.3 The clock side is asymmetric (Q2, other direction)
 - k-back recency, loss AUC Abs - Signed: -0.197 (p 0.053) and on fresh seeds -0.106 (p 0.19): UNMEASURED twice
   (`CLOCK_SPEED_RESULTS.md`, `CLOCK_SPEED_REP_RESULTS.md`, REG). Index RoPE fails the task (counts tokens, not content;
@@ -106,7 +111,7 @@ Double dissociation; "a monotone rotary phase cannot represent a map"; the OOD c
 result; "beats the index exactly when the task needs a map" as a general law; anything in CLAUDE.md's withdrawn list.
 
 ## Before drafting
-1. WRAP_EXISTENCE verdicts (running 2026-10-13) fill 4.2's last paragraph.
+1. Done: WRAP_EXISTENCE verdicts are in 4.2.
 2. Figures 1-2 drafted (`docs/paper/figs/`); a framework figure (Table 1 as a diagram) is optional.
 3. Optional for a stronger workshop version: factorial at n = 8 (~8 h GPU). Required only for a journal version: torus
    baselines (LSTM, Mamba-like, CoPE, Selective RoPE) and one scale check (~2 GPU days).

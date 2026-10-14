@@ -1,0 +1,6 @@
+SO_bal channels |angle(+1)| in 0.05-0.5: n 30.8 -> 39.9; cancel share 0.94 -> 0.99
+SO_bal channels |angle(+1)| in 0.5-4: n 23.2 -> 14.6; cancel share 0.79 -> 0.96
+SO_bal angle-mass in cancelling channels 0.79 -> 0.97; fast (|omega|>1) channel share 0.67 -> 0.80
+AO_bal channels |angle(+1)| in 0.05-0.5: n 30.8 -> 18.0; cancel share 0.94 -> 0.17
+AO_bal channels |angle(+1)| in 0.5-4: n 23.2 -> 41.8; cancel share 0.79 -> 0.19
+AO_bal angle-mass in cancelling channels 0.79 -> 0.15; fast (|omega|>1) channel share 0.67 -> 0.16

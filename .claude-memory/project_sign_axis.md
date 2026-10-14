@@ -73,3 +73,9 @@ representational limit: angles wrap mod 2 pi, so a second token's non-negative s
 8/8 on the torus) stands as a LEARNABILITY result (search within 900 epochs); the opposition score (1.92-1.97) is not
 wrap-aware and does not show inability. Howard's Case II vs III distinction holds for real (decaying) rates, not for
 rotations. On the 1D ring (T=128) a pilot Abs model solved at p_plus 0.5 (n=1, RING_DIAL pilot).
+
+**Existence (2026-10-13, `WRAP_EXISTENCE_RESULTS.md`, registered):** on the ring with observation-step-free classes, an exact
+non-negative solution (balanced construction: orthogonal action latents, omega' = max(|omega|, 1)) is HELD under training
+(8/8 SOLVED, never lost); from scratch the class solves 0/8 vs signed 8/8. So the sign cost is search. But the held model
+drifts off the cancelling code (87% -> 18% of channels), and the naive wrap construction (keep W_in) is ill-conditioned and
+gets lost under Adam -- do not read that as intrinsic fragility.
