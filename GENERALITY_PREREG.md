@@ -75,3 +75,33 @@ the ring only (5.4 s/epoch).
 Independent code check (rule 29) before launch; its findings become Amendment 1.
 Cost (both GPUs, ~8 jobs at a time): torus 32 x 900 epochs + 32 x 300 epochs at ~2.4-3.5 s/epoch under load; ring 24 x 300
 epochs (CoPEF ~27 min each): ~4-5 h.
+
+## Amendment 1 (2026-10-14, after the independent check `docs/audits/2026-10-14/generality_audit.md`; before launch)
+The check found the code correct (4-action constructions exact to ~1e-6 rad; the 2-action ring path bit-identical to c578b7e;
+CARoPEF and CoPEF faithful; layout, JSON keys and every label reachable; 4-seed smoke clean). Changes:
+- **A1 (B premise, CoPE).** CoPE CAN represent ring cancellation: gates of 17/16 and 15/16 per (move, observation) pair make
+  p_ij mod 2 a function of net displacement, read by a period-2 position table (1.000 revisit accuracy through our CoPE
+  module on real ring trajectories, constructed by the check). So **ring CoPEF vs Signed_r4 is a LEARNABILITY test** (Case II
+  with a wrap, like Abs_r4), not a representational one. CARoPE cannot represent cancellation (steps in (0, 1] rad), so
+  **CARoPEF vs Signed_r4 is a SANITY CHECK** (its only reachable labels are MONOTONE FAILS or UNREADABLE). The prediction stays
+  MONOTONE FAILS; its stated reason is corrected.
+- **A2 (new registered contrast C: monotone content dependence vs the index).** An in-batch index `RoPE` arm on the torus
+  (8 x 900 epochs, --fast-attn) and on the ring (8 x 300). C = CARoPEF vs RoPE (torus, ring) and CoPEF vs RoPE (ring):
+  BETTER THAN INDEX (Fisher p < .05 with the monotone arm ahead, or perm p < .05 with d >= +0.05) / WORSE THAN INDEX (the
+  mirror) / NO GAIN OVER INDEX (SOLVED <= RoPE + 1 and mean <= RoPE + 0.01) / UNMEASURED. Prediction: NO GAIN OVER INDEX for
+  CARoPEF; for CoPEF none stated. NO GAIN with both arms at the floor reads "neither works", not equivalence.
+- **A3 (E2 reading on the torus, fixed now; no threshold changed).** At lr 1e-4 the control's losses are small, so the
+  relative LOST branch reduces to "the loss exceeded 0.05 at some epoch"; the pilot AO_bal did (peak 0.12 at epoch ~35, then
+  0.002-0.014 and SOLVED). Pre-stated reading: on the torus, LOST = "left the solved region at some epoch"; NOT HELD by LOST
+  with SOLVED >= n_s - 1 at the end reads "**perturbed and re-found, not held in place**"; HELD requires staying in the solved
+  region. The per-seed peak epoch and the epoch after which the loss stays below 0.05 are printed. **Ring and torus E2 labels
+  are not directly comparable** (continuation lr 1e-3 vs 1e-4; the torus control is quieter).
+- **A4 (secondaries).** Dropout-scale re-score (one layer): torus AO4, SO4, CARoPEF, RoPE, Signed_r4 at T = 1024 (driver,
+  `rescore_hook`; CoPEAttn added to its KNOWN list) and every ring arm (analysis); report whether any label would change.
+  Relative change of W_out and omega over the continuation, SO_bal vs AO_bal (omega sensitivity grows with T: the check
+  estimates ~10x more phase movement per omega step for AO_bal than SO_bal at T = 1024).
+- **A5 (driver / analysis).** The phase-2 wait now waits for SO4's process to exit (not just the file); the driver refuses to
+  start with modified tracked files; verdicts are written before the secondaries; strata with no samples are skipped;
+  artifacts 152 (torus 9 arms x 8, ring 4 x 8 x 2, constructions 16). The lr 1e-3 pair's HELD is unreachable if its control
+  is itself LOST on >= 2 seeds (descriptive pair only; stated, not fixed).
+- Cost with the RoPE arms: ~5 h on both GPUs.

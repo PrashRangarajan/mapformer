@@ -15,8 +15,9 @@ from mapformer.train_variant import VARIANT_MAP
 
 REPO = "/home/prashr/mapformer"
 TORUS_ARMS = {"SO4": "SignedAO4_r4", "AO4": "AbsAO4_r4", "SO_bal": "SignedAO4_r4", "AO_bal": "AbsAO4_r4",
-              "SO_bal_hi": "SignedAO4_r4", "AO_bal_hi": "AbsAO4_r4", "Signed_r4": "Signed_r4", "CARoPEF": "CARoPEF"}
-RING_ARMS = ("Signed_r4", "CARoPEF", "CoPEF")
+              "SO_bal_hi": "SignedAO4_r4", "AO_bal_hi": "AbsAO4_r4", "Signed_r4": "Signed_r4", "CARoPEF": "CARoPEF",
+              "RoPE": "RoPE"}
+RING_ARMS = ("Signed_r4", "CARoPEF", "CoPEF", "RoPE")
 PAIRS = ((0, 1), (2, 3))
 LOST_ABS, LOST_REL, LOST_MIN = 0.3, 10.0, 0.05
 
@@ -55,6 +56,11 @@ def e2(R, x, ctl, src, status):
           f"{sc.mean():.4f} SOLVED {k_sc}/{ns} LOST {l_sc}/{ns}; paired d {d.mean():+.4f} (sign-flip p {sf['p']:.4f}, min p "
           f"{sf['min_p']:.4f}); Fisher SOLVED p {pf:.4f}, Fisher not-LOST p {pl:.4f}")
     print(f"   max per-epoch loss {x}: {' '.join(f'{mx(x, s):.3f}' for s in src)} | {ctl}: {' '.join(f'{mx(ctl, s):.3f}' for s in src)}")
+    def reentry(arm, s):                                    # Amendment 1: last epoch at which the loss was >= 0.05 (+1)
+        l = R[arm, s]["losses"]; above = np.nonzero(l >= 0.05)[0]
+        return int(above[-1]) + 1 if above.size else 0
+    pk = [f"{int(R[x, s]['losses'].argmax()) + 1}/{reentry(x, s)}" for s in src]
+    print(f"   peak epoch / re-entry epoch (loss < 0.05 from then on) {x}: " + " ".join(pk))
     return lab
 
 
@@ -71,6 +77,24 @@ def mono(task, ref, arm, acc, solved, n):
     else:
         lab = "UNMEASURED"
     print(f"B [{task}] {arm} vs {ref}: {lab} -- {arm} {a.mean():.4f} SOLVED {ka}/{n} vs {ref} {r.mean():.4f} SOLVED {kr}/{n}; "
+          f"d {d:+.4f} (perm p {pp:.4f}); Fisher p {pf:.4f}")
+    return lab
+
+
+def vs_index(task, arm, acc, solved, n):
+    """Amendment 1: does monotone content dependence beat the index? arm vs RoPE (same batch)."""
+    a, r = np.array([acc[arm, s] for s in range(n)]), np.array([acc["RoPE", s] for s in range(n)])
+    ka, kr = int(sum(solved[arm, s] for s in range(n))), int(sum(solved["RoPE", s] for s in range(n)))
+    pf = fisher_solved(ka, n, kr, n); pp = perm2_p(r, a)["p"]; d = a.mean() - r.mean()
+    if (pf < 0.05 and ka > kr) or (pp < 0.05 and d >= 0.05):
+        lab = "BETTER THAN INDEX"
+    elif (pf < 0.05 and kr > ka) or (pp < 0.05 and d <= -0.05):
+        lab = "WORSE THAN INDEX"
+    elif ka <= kr + 1 and a.mean() <= r.mean() + 0.01:
+        lab = "NO GAIN OVER INDEX"
+    else:
+        lab = "UNMEASURED"
+    print(f"C [{task}] {arm} vs RoPE: {lab} -- {arm} {a.mean():.4f} SOLVED {ka}/{n} vs RoPE {r.mean():.4f} SOLVED {kr}/{n}; "
           f"d {d:+.4f} (perm p {pp:.4f}); Fisher p {pf:.4f}")
     return lab
 
@@ -131,12 +155,13 @@ def main():
     print(f"E3: {lab3} -- AO4 {ao.mean():.4f} SOLVED {k_ao}/{n} vs SO4 {so.mean():.4f} SOLVED {k_so}/{n}; d {d3:+.4f} "
           f"(perm p {pp3:.4f}); Fisher p {pf3:.4f}")
 
-    print("\n== B: published monotone methods vs Signed_r4 ==")
+    print("\n== B: published monotone methods ==")
     V["B"] = {}
-    acc = {(x, i): R[x, s]["acc"] for x in ("Signed_r4", "CARoPEF") for i, s in enumerate(seeds)}
-    sol = {(x, i): R[x, s]["solved"] for x in ("Signed_r4", "CARoPEF") for i, s in enumerate(seeds)}
-    for arm in ("CARoPEF",):                                        # CoPEF: ring only (prereg, Process and cost)
-        V["B"][f"torus|{arm}"] = mono("torus T 1024", "Signed_r4", arm, acc, sol, n)
+    tarms = ("Signed_r4", "CARoPEF", "RoPE")
+    acc = {(x, i): R[x, s]["acc"] for x in tarms for i, s in enumerate(seeds)}
+    sol = {(x, i): R[x, s]["solved"] for x in tarms for i, s in enumerate(seeds)}
+    V["B"]["torus|CARoPEF vs Signed_r4 (sanity check)"] = mono("torus T 1024", "Signed_r4", "CARoPEF", acc, sol, n)
+    V["B"]["torus|CARoPEF vs RoPE"] = vs_index("torus T 1024", "CARoPEF", acc, sol, n)
     racc, rsol = {}, {}
     for x in RING_ARMS:
         for i, s in enumerate(seeds):
@@ -144,8 +169,12 @@ def main():
             b = torch.load(f"{d}/{x}.pt", map_location="cpu", weights_only=False)
             racc[x, i] = json.load(open(f"{d}/eval.json"))["eval"]["128"]["acc"]
             rsol[x, i] = classify_run(b["losses"])["registered"] == "SOLVED"
+    V["B"]["ring|CARoPEF vs Signed_r4 (sanity check)"] = mono("ring p_plus 0.5", "Signed_r4", "CARoPEF", racc, rsol, n)
+    V["B"]["ring|CoPEF vs Signed_r4 (learnability)"] = mono("ring p_plus 0.5", "Signed_r4", "CoPEF", racc, rsol, n)
     for arm in ("CARoPEF", "CoPEF"):
-        V["B"][f"ring|{arm}"] = mono("ring p_plus 0.5", "Signed_r4", arm, racc, rsol, n)
+        V["B"][f"ring|{arm} vs RoPE"] = vs_index("ring p_plus 0.5", arm, racc, rsol, n)
+    if not a.no_json:                                       # Amendment 1 (audit m8): verdicts before the secondaries
+        json.dump(V, open(f"{REPO}/GENERALITY_VERDICTS.json", "w"), indent=2)
 
     print("\n== secondaries (declared; no verdict) ==")
     for x in ("SO4", "AO4", "SO_bal", "AO_bal"):
@@ -167,15 +196,39 @@ def main():
         f = f"{a.eval_dir}/GENERALITY_TORUS_{x}_STRATA.json"
         if os.path.exists(f):
             st = json.load(open(f)); rows = [v for k, v in st.items() if k.endswith("|1024")]
-            print(f"strata {x:9s}: " + "; ".join(f"{k} {np.mean([r[k]['acc'] for r in rows]):.3f}"
+            print(f"strata {x:9s}: " + "; ".join(f"{k} {np.mean([r[k]['acc'] for r in rows if r[k]['acc'] is not None]):.3f}"
                                                  for k in ("plain_lag<128", "plain_lag>=128", "wrap")))
     auc = np.array([R["AO4", s]["losses"].mean() - R["SO4", s]["losses"].mean() for s in seeds])
     print(f"loss AUC AO4 - SO4 (paired): {auc.mean():+.4f} (sign-flip p {signflip_p(auc)['p']:.4f}; AO4 slower on "
           f"{int((auc > 0).sum())}/{n})")
     print("cross-batch, labelled: SIGN_MATCHED Abs_r4 (observation steps free, no fast-attn) 0/8 SOLVED, Signed_r4 8/8; "
           "FACTORIAL RoPE 1 layer 0.719 (0/4)")
-    if not a.no_json:
-        json.dump(V, open(f"{REPO}/GENERALITY_VERDICTS.json", "w"), indent=2)
+    # Amendment 1 secondaries: dropout re-score (torus from the driver's _RS files; ring here), omega / W_out drift
+    for x in ("AO4", "SO4", "CARoPEF", "RoPE", "Signed_r4"):
+        f = f"{a.eval_dir}/GENERALITY_TORUS_{x}_RS.json"
+        if os.path.exists(f):
+            rs = json.load(open(f))[f"0.0|{TORUS_ARMS[x]}|1024"]
+            print(f"re-scored torus {x:9s}: {np.mean([r[1] for r in rs]):.4f} (eval mode {np.mean([R[x, s]['acc'] for s in seeds]):.4f})")
+    from mapformer import rescore_hook
+    from mapformer.environment_cancel import GridWorldCancel
+    from mapformer.train_cancel import evaluate
+    rescore_hook.install("auto"); te = GridWorldCancel(size=32, seed=10000, p_plus=0.5)
+    for x in RING_ARMS:
+        rs = []
+        for s in seeds:
+            b = torch.load(f"{a.root}/ring/{x}_s{s}/{x}.pt", map_location="cpu", weights_only=False)
+            m = VARIANT_MAP[x](vocab_size=b["config"]["vocab_size"], d_model=128, n_heads=2, n_layers=1, grid_size=32)
+            m.load_state_dict(b["model_state_dict"]); rs.append(evaluate(m, te, 128, 400, "cpu", seed=10 ** 6)[0])
+        print(f"re-scored ring {x:9s}: {np.mean(rs):.4f} (eval mode {np.mean([racc[x, i] for i in range(n)]):.4f})")
+    for x in ("SO_bal", "AO_bal"):
+        dw, do = [], []
+        for s in src:
+            V0 = TORUS_ARMS[x]; b0 = torch.load(f"{a.root}/torus/init/s{s}/{x}/{V0}.pt", map_location="cpu", weights_only=False)
+            sd0 = b0["model_state_dict"]; sd1 = R[x, s]["model"].state_dict()
+            rel = lambda k: float((sd1[k] - sd0[k]).norm() / sd0[k].norm())
+            dw.append(rel("action_to_lie.w_out.weight")); do.append(rel("path_integrator.omega"))
+        if dw:
+            print(f"{x}: relative change over the continuation |dW_out|/|W_out| {np.mean(dw):.4f}, |d omega|/|omega| {np.mean(do):.4f}")
 
 
 if __name__ == "__main__":

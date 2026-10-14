@@ -15,7 +15,10 @@ by the heads; gates g_ij = sigmoid(q_i.k_j / sqrt(d_h)) (masked keys -> 0), p_ij
 clamped to npos_max - 1, position logit = linear interpolation of q_i . e[floor p], q_i . e[ceil p] with e = pos_emb
 (1, d_h, npos_max), zeros at init; added to the attention logits. No rotary position. Pre-LN block as the repo's
 CoPEBaseline (model_baselines_extra.py), whose attention materialises (B, H, T, T, d_h) and uses p = sum_{k=j+1}^{i} with
-gates on unmasked logits -- not the paper's; this module replaces it for the new batch. npos_max = the context length.
+gates on unmasked logits -- not the paper's; this module replaces it for the new batch. npos_max = 2048 (the torus context;
+on the ring, 255 tokens, positions above 254 are never indexed and their table entries never move). NOTE (GENERALITY audit
+finding 1): CoPE CAN represent ring cancellation -- gates 17/16 and 15/16 per (move, observation) pair make p_ij mod 2 a
+function of net displacement, read by a period-2 position table (1.000 revisit accuracy, constructed).
 """
 import math
 

@@ -16,7 +16,8 @@ import sys
 import torch.nn as nn
 
 KNOWN = {"mapformer.model.WMTransformerLayer", "mapformer.model.EMTransformerLayer",
-         "mapformer.model_pope.WMTransformerLayer_PoPE", "mapformer.model_codes.EMPosOnlyLayer"}
+         "mapformer.model_pope.WMTransformerLayer_PoPE", "mapformer.model_codes.EMPosOnlyLayer",
+         "mapformer.model_mono_baselines.CoPEAttn"}
 STATS = {"hooked": 0, "fired": 0, "skipped": set()}
 
 
