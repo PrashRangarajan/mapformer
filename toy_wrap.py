@@ -89,6 +89,9 @@ def set_init(model, kind, rng, clamp_omega=True):
         a = torch.from_numpy(rng.uniform(0.2, 2 * math.pi - 0.2, C)).float()
         if kind == "offband":
             b = torch.from_numpy(rng.uniform(0.2, 2 * math.pi - 0.2, C)).float()
+        elif kind in ("absmag", "same"):                  # this seed's default-init angles: |.| of them, or as they are (signed)
+            A0 = model.angles_init_abs if kind == "absmag" else model.angles_init
+            a, b = A0[0].clone(), A0[1].clone()
         elif kind in ("low", "high"):                     # iid a+, a-: low U(0.05, 1.5) (sigma < pi); high U(1.7, 4.5) (sigma > pi)
             lo, hi = (0.05, 1.5) if kind == "low" else (1.7, 4.5)
             a = torch.from_numpy(rng.uniform(lo, hi, C)).float(); b = torch.from_numpy(rng.uniform(lo, hi, C)).float()
@@ -103,7 +106,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", choices=["signed", "abs"], required=True)
     ap.add_argument("--seed", type=int, required=True)
-    ap.add_argument("--init", default="random", choices=["random", "band", "offband", "omega1", "low", "high"])
+    ap.add_argument("--init", default="random", choices=["random", "band", "offband", "omega1", "low", "high", "absmag", "same"])
     ap.add_argument("--freeze-omega", action="store_true")
     ap.add_argument("--no-omega-clamp", action="store_true")
     ap.add_argument("--init-scale", type=float, default=1.0, help="multiply W_out at random init")
@@ -125,6 +128,9 @@ def main():
         with torch.no_grad():
             m.omega.copy_(m.omega.abs().clamp_min(1.0))
     elif a.init != "random":
+        if a.init in ("absmag", "same"):                    # THIS seed's default-init angles, in the balanced gauge
+            with torch.no_grad():
+                m.angles_init = (m.w_out(m.z) * m.omega).detach(); m.angles_init_abs = m.angles_init.abs()
         set_init(m, a.init, rng, clamp_omega=not a.no_omega_clamp)
     if a.freeze_omega:
         m.omega.requires_grad_(False)
