@@ -70,6 +70,16 @@ of channels; T = 512 0.978 vs 0.998), and the wrapped code is more fragile to 1%
 Read: the solution exists and is stable in task terms; training does not find it; the exact map code is not an attractor
 under the non-negative constraint.
 
+## Update 2026-10-14: mechanism and generality (`MECHANISM_RESULTS.md`, `GENERALITY_RESULTS.md`, registered)
+- MECHANISM (ring): the |.| constraint removes the path through zero. Signed steps cancel through zero even from |.|'s
+  start (7/8; 98% opposite-sign channels, none wrap); a non-negative step started with move-angle sums past pi learns the map
+  8/8 by wrapping, with no sign cost from that start (M6), vs 0/8 from a small start and 2/8 from a large sub-pi start.
+  The exploratory toy's stronger "start, not constraint" did not transfer (signed escapes the |.| start in the transformer).
+- TORUS existence: from scratch 0/8 vs 8/8; the exact non-negative solution is perturbed and re-found (8/8 SOLVED at the end),
+  not held in place (6/8 LOST at lr 1e-4).
+- Published methods: faithful CARoPE fails both tasks and is no better than index RoPE (torus worse, -0.055); faithful CoPE
+  fails the ring (0/8) although it can represent it, and beats the index by +0.157 there.
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
@@ -77,7 +87,8 @@ under the non-negative constraint.
 - The forget gate is a clock (untested); the InEKF wrap bounds the accumulator (false).
 - Rank = D is hard because of the clock (fails in 1D).
 - A non-negative rotary phase cannot represent a map (it can, by wrapping; the sign result is learnability).
-- "The wrapped solution is unstable / fragile under training" (an ill-conditioned construction artefact; the balanced one is held).
+- "The wrapped solution is unstable / fragile under training" (an ill-conditioned construction artefact; the balanced one is held on the ring, re-found on the torus).
+- "The sign cost is only the start, not the constraint" (toy only; in the transformer signed escapes the |.| start through zero).
 
 ## Gaps, cheapest first
 1. **Prior art** (`docs/lit/LIT_CLOCK_MAP.md`, agent running): which of C1-C5 are published.

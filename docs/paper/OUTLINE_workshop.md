@@ -28,8 +28,10 @@ encoding / sequence models. Check deadlines and page limits before drafting; not
      rotary phase; in the rotary slot Cases II and III coincide representationally (wrap mod 2 pi).
   2. On navigation, 1 layer of signed path integration beats index attention at 1 layer, 4 layers and looped x4 (REG).
   3. Sign is learnability: a non-negative rotary step that can represent the map learns it on 0-3/8 seeds vs 8/8, never
-     finds the wrapped code, and is not rescued by 3x training (REG); an exact non-negative solution is held under training
-     (8/8) though never found from scratch (0/8) (REG).
+     finds the wrapped code, and is not rescued by 3x training (REG); an exact non-negative solution is held (ring) or
+     re-found (torus) under training though never found from scratch (REG). Mechanism: the constraint removes the path
+     through zero; a start with move-angle sums past pi makes the non-negative step learn the map 8/8 (REG).
+  3b. Published monotone methods (faithful CARoPE, CoPE) do not learn these maps; CARoPE is no better than index RoPE (REG).
   4. The effect is asymmetric: no established advantage for the non-negative step on a content-clock task (REG, twice
      unmeasured).
   5. On TinyStories / code the learned phase is a clock (growth exponent ~1.0) with no gain over the index at our scale
@@ -80,6 +82,14 @@ encoding / sequence models. Check deadlines and page limits before drafting; not
   -- the exact map code is not an attractor under the non-negative constraint. Methods note (appendix D): the naive
   construction is exact but ill-conditioned (antiparallel action latents) and is lost under Adam; say why the balanced one
   is the right test.
+### 4.2b Why: the constraint removes the path through zero (`MECHANISM_RESULTS.md`, REG; Fig. 3 to make)
+- Signed steps reach the cancelling map through zero, even from the |.| start (7/8; 98% opposite-sign channels, none wrap).
+- A non-negative step's only cancelling solution is the wrap (sum = 2 pi): reached from a start with sums > pi (8/8, no sign
+  cost: M6), not from a small start (0/8) or a large sub-pi start (2/8; partial mobility control).
+- Design implication: initialise a Case-II rotary step near the wrap, not near index RoPE. Toy (appendix, exploratory)
+  reproduces the asymmetry without a transformer; its stronger claim did not transfer -- say so.
+- Torus: same existence picture (0/8 from scratch; exact solution perturbed and re-found, 8/8) (`GENERALITY_RESULTS.md`).
+- Published methods: faithful CARoPE fails and is no better than index; faithful CoPE fails the ring though representable.
 ### 4.3 The clock side is asymmetric (Q2, other direction)
 - k-back recency, loss AUC Abs - Signed: -0.197 (p 0.053) and on fresh seeds -0.106 (p 0.19): UNMEASURED twice
   (`CLOCK_SPEED_RESULTS.md`, `CLOCK_SPEED_REP_RESULTS.md`, REG). Index RoPE fails the task (counts tokens, not content;

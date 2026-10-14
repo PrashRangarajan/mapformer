@@ -1,0 +1,51 @@
+== per seed: accuracy T = 128 (eval mode) and class ==
+seed | SO | AO | SO_same | SO_absmag | AO_absmag | AO_high | SO_high | AO_mid
+800 | 1.0000 SOLV | 0.9068 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.8649 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.9683 SOLV
+801 | 1.0000 SOLV | 0.8939 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.9219 STAL | 1.0000 SOLV | 1.0000 SOLV | 1.0000 SOLV
+802 | 1.0000 SOLV | 0.9095 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.8609 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.9169 STAL
+803 | 1.0000 SOLV | 0.9655 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.8600 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.9209 STAL
+804 | 1.0000 SOLV | 0.9871 STAL | 1.0000 SOLV | 0.8659 STAL | 0.9326 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.9760 DESC
+805 | 1.0000 SOLV | 0.8883 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.8574 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.8899 STAL
+806 | 1.0000 SOLV | 0.8798 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.8887 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.9277 STAL
+807 | 1.0000 SOLV | 0.9245 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.9451 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.9509 STAL
+SO        : mean 1.0000, SOLVED 8/8
+AO        : mean 0.9194, SOLVED 0/8
+SO_same   : mean 1.0000, SOLVED 8/8
+SO_absmag : mean 0.9832, SOLVED 7/8
+AO_absmag : mean 0.8915, SOLVED 0/8
+AO_high   : mean 1.0000, SOLVED 8/8
+SO_high   : mean 1.0000, SOLVED 8/8
+AO_mid    : mean 0.9438, SOLVED 2/8
+
+M1 (SO_absmag vs SO_same): UNMEASURED -- SO_absmag 0.9832 SOLVED 7/8 vs SO_same 1.0000 SOLVED 8/8; d -0.0168 [95% CI -0.040, +0.000] (perm p 1.0000; paired sign-flip p 1.0000, descriptive); Fisher p 1.0000
+M2 (AO_high vs AO_absmag): RESCUES -- AO_high 1.0000 SOLVED 8/8 vs AO_absmag 0.8915 SOLVED 0/8; d +0.1085 [95% CI +0.085, +0.135] (perm p 0.0002; paired sign-flip p 0.0078, descriptive); Fisher p 0.0002
+M2b (AO_high vs AO_mid): SUM ABOVE PI BEATS A LARGE SUB-PI START -- AO_high 1.0000 SOLVED 8/8 vs AO_mid 0.9438 SOLVED 2/8; d +0.0562 [95% CI +0.030, +0.085] (perm p 0.0014; paired sign-flip p 0.0156, descriptive); Fisher p 0.0070
+M3 (SO_same vs SO): NO DIFFERENCE DETECTED -- SO_same 1.0000 SOLVED 8/8 vs SO 1.0000 SOLVED 8/8; d +0.0000 [95% CI +0.000, +0.000] (perm p 1.0000; paired sign-flip p 1.0000, descriptive); Fisher p 1.0000
+M3 (AO_absmag vs AO): NO DIFFERENCE DETECTED -- AO_absmag 0.8915 SOLVED 0/8 vs AO 0.9194 SOLVED 0/8; d -0.0280 [95% CI -0.065, +0.010] (perm p 0.1565; paired sign-flip p 0.1172, descriptive); Fisher p 1.0000
+M4 (AO vs SO): SIGNED LEARNS BETTER -- AO 0.9194 SOLVED 0/8 vs SO 1.0000 SOLVED 8/8; d -0.0806 [95% CI -0.105, -0.055] (perm p 0.0002; paired sign-flip p 0.0078, descriptive); Fisher p 0.0002
+M5 (AO_absmag vs SO_absmag): SIGN COST AT THE |.| START -- AO_absmag 0.8915 SOLVED 0/8 vs SO_absmag 0.9832 SOLVED 7/8; d -0.0918 [95% CI -0.135, -0.045] (perm p 0.0030; paired sign-flip p 0.0234, descriptive); Fisher p 0.0014
+M6 (AO_high vs SO_high): NO EFFECT DETECTED -- AO_high 1.0000 SOLVED 8/8 vs SO_high 1.0000 SOLVED 8/8; d +0.0000 [95% CI +0.000, +0.000] (perm p 1.0000; paired sign-flip p 1.0000, descriptive); Fisher p 1.0000
+
+== secondaries (declared; no verdict) ==
+wrap share SO        : 0.86 (per seed 0.77 0.98 0.87 0.94 0.89 0.89 0.82 0.75); acc 4T 0.9989; loss AUC 0.085
+wrap share AO        : 0.07 (per seed 0.11 0.06 0.07 0.04 0.18 0.02 0.03 0.07); acc 4T 0.7332; loss AUC 0.557
+wrap share SO_same   : 0.96 (per seed 1.00 0.85 0.87 0.96 1.00 1.00 1.00 0.98); acc 4T 0.9946; loss AUC 0.069
+wrap share SO_absmag : 0.89 (per seed 0.86 0.83 0.94 0.88 0.92 0.94 0.78 0.98); acc 4T 0.9814; loss AUC 0.107
+wrap share AO_absmag : 0.04 (per seed 0.03 0.04 0.02 0.00 0.09 0.03 0.11 0.05); acc 4T 0.7725; loss AUC 0.690
+wrap share AO_high   : 0.23 (per seed 0.16 0.21 0.27 0.23 0.19 0.10 0.52 0.16); acc 4T 0.9951; loss AUC 0.294
+wrap share SO_high   : 0.34 (per seed 0.08 0.45 0.27 0.21 0.25 1.00 0.23 0.27); acc 4T 0.9964; loss AUC 0.286
+wrap share AO_mid    : 0.05 (per seed 0.22 0.12 0.00 0.00 0.03 0.00 0.00 0.00); acc 4T 0.9801; loss AUC 0.413
+SO        : median initial |a(+1) - a(-1)| 0.286 rad; final cancelling share, large vs small initial difference 0.82 vs 0.92; initial opposite-sign share per seed 0.53 0.36 0.34 0.72 0.91 0.66 0.75 0.47
+SO_same   : median initial |a(+1) - a(-1)| 0.286 rad; final cancelling share, large vs small initial difference 0.94 vs 0.98; initial opposite-sign share per seed 0.53 0.36 0.34 0.72 0.91 0.66 0.75 0.47
+SO_absmag : median initial |a(+1) - a(-1)| 0.140 rad; final cancelling share, large vs small initial difference 0.82 vs 0.99; initial opposite-sign share per seed 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
+SO_high   : median initial |a(+1) - a(-1)| 0.858 rad; final cancelling share, large vs small initial difference 0.41 vs 0.28; initial opposite-sign share per seed 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
+SO: r(initial opposite-sign share, loss AUC) over seeds -0.30
+SO_high: share of (move, channel) angles < 0 at the end 0.387 (0 = the signed model stayed non-negative)
+dropout re-score (1/(1-p)) SO        : 1.0000 (eval mode 1.0000)
+dropout re-score (1/(1-p)) AO        : 0.9198 (eval mode 0.9194)
+dropout re-score (1/(1-p)) SO_same   : 1.0000 (eval mode 1.0000)
+dropout re-score (1/(1-p)) SO_absmag : 0.9832 (eval mode 0.9832)
+dropout re-score (1/(1-p)) AO_absmag : 0.8923 (eval mode 0.8915)
+dropout re-score (1/(1-p)) AO_high   : 1.0000 (eval mode 1.0000)
+dropout re-score (1/(1-p)) SO_high   : 1.0000 (eval mode 1.0000)
+dropout re-score (1/(1-p)) AO_mid    : 0.9437 (eval mode 0.9438)

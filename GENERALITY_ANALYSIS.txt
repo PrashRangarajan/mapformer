@@ -1,0 +1,84 @@
+== A: torus, per seed: accuracy T = 1024 (held-out map) and class ==
+seed | SO4 | AO4 | SO_bal | AO_bal | SO_bal_hi | AO_bal_hi
+700 | 1.0000 SOLVED | 0.8743 STALLED | 1.0000 SOLVED | 1.0000 SOLVED | 1.0000 SOLVED | 1.0000 SOLVED
+701 | 1.0000 SOLVED | 0.7072 STALLED | 1.0000 SOLVED | 1.0000 SOLVED | 0.9999 SOLVED | 1.0000 SOLVED
+702 | 1.0000 SOLVED | 0.9458 DESCENDING | 1.0000 SOLVED | 1.0000 SOLVED | 1.0000 SOLVED | 0.9989 SOLVED
+703 | 1.0000 SOLVED | 0.8793 STALLED | 1.0000 SOLVED | 1.0000 SOLVED | 1.0000 SOLVED | 0.9499 STALLED
+704 | 1.0000 SOLVED | 0.8923 STALLED | 1.0000 SOLVED | 1.0000 SOLVED | 1.0000 SOLVED | 0.9602 DESCENDING
+705 | 0.9999 SOLVED | 0.9074 STALLED | 1.0000 SOLVED | 1.0000 SOLVED | 1.0000 SOLVED | 0.9924 SOLVED
+706 | 1.0000 SOLVED | 0.8765 STALLED | 1.0000 SOLVED | 1.0000 SOLVED | 1.0000 SOLVED | 1.0000 SOLVED
+707 | 1.0000 SOLVED | 0.9600 DESCENDING | 1.0000 SOLVED | 1.0000 SOLVED | 1.0000 SOLVED | 0.9998 SOLVED
+
+P0: SO4 SOLVED 8/8 -> E1 / E2 on seeds [700, 701, 702, 703, 704, 705, 706, 707]
+E1 [SO_bal]: EXISTS -- max |frozen - source| 0.0000, max angle error 5.8e-07 rad
+E1 [AO_bal]: EXISTS -- max |frozen - source| 0.0000, max angle error 1.4e-06 rad
+E2 [AO_bal vs SO_bal, PRIMARY, lr 1e-4]: NOT HELD -- AO_bal 1.0000 SOLVED 8/8 LOST 6/8 vs SO_bal 1.0000 SOLVED 8/8 LOST 0/8; paired d +0.0000 (sign-flip p 1.0000, min p 0.0078); Fisher SOLVED p 1.0000, Fisher not-LOST p 0.0070
+   max per-epoch loss AO_bal: 0.168 0.110 0.173 0.143 0.131 0.155 0.208 0.117 | SO_bal: 0.017 0.005 0.014 0.016 0.006 0.014 0.007 0.004
+   peak epoch / re-entry epoch (loss < 0.05 from then on) AO_bal: 29/153 40/121 19/204 52/149 13/119 13/148 36/164 23/139
+E2 [AO_bal_hi vs SO_bal_hi, descriptive, lr 1e-3]: NOT HELD -- AO_bal_hi 0.9876 SOLVED 6/8 LOST 8/8 vs SO_bal_hi 1.0000 SOLVED 8/8 LOST 0/8; paired d -0.0123 (sign-flip p 0.0391, min p 0.0078); Fisher SOLVED p 0.4667, Fisher not-LOST p 0.0002
+   max per-epoch loss AO_bal_hi: 0.623 0.455 0.586 0.603 0.611 0.458 0.631 0.559 | SO_bal_hi: 0.205 0.165 0.162 0.168 0.195 0.183 0.151 0.147
+   peak epoch / re-entry epoch (loss < 0.05 from then on) AO_bal_hi: 66/280 22/294 19/256 31/300 69/300 23/289 35/299 74/300
+E3: SIGNED LEARNS BETTER -- AO4 0.8803 SOLVED 0/8 vs SO4 1.0000 SOLVED 8/8; d -0.1197 (perm p 0.0002); Fisher p 0.0002
+
+== B: published monotone methods ==
+B [torus T 1024] CARoPEF vs Signed_r4: MONOTONE FAILS -- CARoPEF 0.6666 SOLVED 0/8 vs Signed_r4 0.9999 SOLVED 8/8; d -0.3334 (perm p 0.0002); Fisher p 0.0002
+C [torus T 1024] CARoPEF vs RoPE: WORSE THAN INDEX -- CARoPEF 0.6666 SOLVED 0/8 vs RoPE 0.7219 SOLVED 0/8; d -0.0553 (perm p 0.0396); Fisher p 1.0000
+B [ring p_plus 0.5] CARoPEF vs Signed_r4: MONOTONE FAILS -- CARoPEF 0.7410 SOLVED 0/8 vs Signed_r4 1.0000 SOLVED 8/8; d -0.2590 (perm p 0.0002); Fisher p 0.0002
+B [ring p_plus 0.5] CoPEF vs Signed_r4: MONOTONE FAILS -- CoPEF 0.8871 SOLVED 0/8 vs Signed_r4 1.0000 SOLVED 8/8; d -0.1129 (perm p 0.0002); Fisher p 0.0002
+C [ring p_plus 0.5] CARoPEF vs RoPE: UNMEASURED -- CARoPEF 0.7410 SOLVED 0/8 vs RoPE 0.7301 SOLVED 0/8; d +0.0109 (perm p 0.3852); Fisher p 1.0000
+C [ring p_plus 0.5] CoPEF vs RoPE: BETTER THAN INDEX -- CoPEF 0.8871 SOLVED 0/8 vs RoPE 0.7301 SOLVED 0/8; d +0.1570 (perm p 0.0002); Fisher p 1.0000
+
+== secondaries (declared; no verdict) ==
+wrap share SO4    : 1.00 (per seed 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00)
+wrap share AO4    : 0.18 (per seed 0.06 0.38 0.21 0.14 0.15 0.09 0.28 0.09)
+wrap share SO_bal : 0.95 (per seed 1.00 0.95 0.94 0.97 0.95 0.89 0.99 0.89)
+wrap share AO_bal : 0.69 (per seed 0.71 0.69 0.71 0.63 0.72 0.78 0.65 0.66)
+SO_bal wrap share at construction 1.00 -> after training 0.95
+  SO_bal s700: |W_out| 0.54 -> 0.44; |omega| max 0.77 -> 1.00; latent cond 9617
+  SO_bal s701: |W_out| 0.56 -> 0.75; |omega| max 0.96 -> 1.00; latent cond 7033
+  SO_bal s702: |W_out| 0.54 -> 0.53; |omega| max 0.68 -> 1.00; latent cond 20963
+  SO_bal s703: |W_out| 0.48 -> 0.58; |omega| max 0.77 -> 1.00; latent cond 2605
+  SO_bal s704: |W_out| 0.58 -> 0.57; |omega| max 0.71 -> 1.00; latent cond 6386
+  SO_bal s705: |W_out| 0.52 -> 0.52; |omega| max 0.82 -> 1.00; latent cond 5144
+  SO_bal s706: |W_out| 0.52 -> 0.48; |omega| max 0.70 -> 1.00; latent cond 76248
+  SO_bal s707: |W_out| 0.53 -> 0.56; |omega| max 0.92 -> 1.00; latent cond 6937
+AO_bal wrap share at construction 1.00 -> after training 0.69
+  AO_bal s700: |W_out| 0.54 -> 1.55; |omega| max 0.77 -> 1.00; latent cond 9617
+  AO_bal s701: |W_out| 0.56 -> 1.46; |omega| max 0.96 -> 1.00; latent cond 7033
+  AO_bal s702: |W_out| 0.54 -> 1.25; |omega| max 0.68 -> 1.00; latent cond 20963
+  AO_bal s703: |W_out| 0.48 -> 1.47; |omega| max 0.77 -> 1.00; latent cond 2605
+  AO_bal s704: |W_out| 0.58 -> 1.40; |omega| max 0.71 -> 1.00; latent cond 6386
+  AO_bal s705: |W_out| 0.52 -> 1.39; |omega| max 0.82 -> 1.00; latent cond 5144
+  AO_bal s706: |W_out| 0.52 -> 1.39; |omega| max 0.70 -> 1.00; latent cond 76248
+  AO_bal s707: |W_out| 0.53 -> 1.23; |omega| max 0.92 -> 1.00; latent cond 6937
+acc T = 2048 (OOD) SO4      : 0.9971; SOLVED 8/8; classes SOLV SOLV SOLV SOLV SOLV SOLV SOLV SOLV
+acc T = 2048 (OOD) AO4      : 0.7686; SOLVED 0/8; classes STAL STAL DESC STAL STAL STAL STAL DESC
+acc T = 2048 (OOD) SO_bal   : 0.9998; SOLVED 8/8; classes SOLV SOLV SOLV SOLV SOLV SOLV SOLV SOLV
+acc T = 2048 (OOD) AO_bal   : 0.9948; SOLVED 8/8; classes SOLV SOLV SOLV SOLV SOLV SOLV SOLV SOLV
+acc T = 2048 (OOD) SO_bal_hi: 0.9952; SOLVED 8/8; classes SOLV SOLV SOLV SOLV SOLV SOLV SOLV SOLV
+acc T = 2048 (OOD) AO_bal_hi: 0.9479; SOLVED 6/8; classes SOLV SOLV SOLV STAL DESC SOLV SOLV SOLV
+acc T = 2048 (OOD) Signed_r4: 0.9898; SOLVED 8/8; classes SOLV SOLV SOLV SOLV SOLV SOLV SOLV SOLV
+acc T = 2048 (OOD) CARoPEF  : 0.6248; SOLVED 0/8; classes STAL STAL STAL STAL STAL STAL STAL STAL
+acc T = 2048 (OOD) RoPE     : 0.5477; SOLVED 0/8; classes STAL STAL STAL STAL STAL STAL STAL STAL
+strata SO4      : plain_lag<128 1.000; plain_lag>=128 1.000; wrap 1.000
+strata AO4      : plain_lag<128 0.928; plain_lag>=128 0.709; wrap 0.585
+strata SO_bal   : plain_lag<128 1.000; plain_lag>=128 1.000; wrap 1.000
+strata AO_bal   : plain_lag<128 1.000; plain_lag>=128 1.000; wrap 1.000
+strata SO_bal_hi: plain_lag<128 1.000; plain_lag>=128 1.000; wrap 1.000
+strata AO_bal_hi: plain_lag<128 1.000; plain_lag>=128 0.991; wrap 0.865
+strata Signed_r4: plain_lag<128 1.000; plain_lag>=128 1.000; wrap 0.999
+strata CARoPEF  : plain_lag<128 0.703; plain_lag>=128 0.491; wrap 0.490
+strata RoPE     : plain_lag<128 0.774; plain_lag>=128 0.468; wrap 0.471
+loss AUC AO4 - SO4 (paired): +0.5372 (sign-flip p 0.0078; AO4 slower on 8/8)
+cross-batch, labelled: SIGN_MATCHED Abs_r4 (observation steps free, no fast-attn) 0/8 SOLVED, Signed_r4 8/8; FACTORIAL RoPE 1 layer 0.719 (0/4)
+re-scored torus AO4      : 0.8798 (eval mode 0.8803)
+re-scored torus SO4      : 1.0000 (eval mode 1.0000)
+re-scored torus CARoPEF  : 0.6687 (eval mode 0.6666)
+re-scored torus RoPE     : 0.7244 (eval mode 0.7219)
+re-scored torus Signed_r4: 0.9999 (eval mode 0.9999)
+re-scored ring Signed_r4: 1.0000 (eval mode 1.0000)
+re-scored ring CARoPEF  : 0.7477 (eval mode 0.7410)
+re-scored ring CoPEF    : 0.8884 (eval mode 0.8871)
+re-scored ring RoPE     : 0.7388 (eval mode 0.7301)
+SO_bal: relative change over the continuation |dW_out|/|W_out| 0.0839, |d omega|/|omega| 0.0948
+AO_bal: relative change over the continuation |dW_out|/|W_out| 0.0744, |d omega|/|omega| 0.0747

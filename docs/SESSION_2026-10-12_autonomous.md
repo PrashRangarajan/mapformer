@@ -52,3 +52,6 @@ learns a clock (TinyStories, code), with no gain over the index at our scale (Co
 - WRAP_EXISTENCE (`WRAP_EXISTENCE_RESULTS.md`, registered): an exact non-negative ring solution is held under training (8/8)
   but never found from scratch (0/8 vs 8/8): rule 14 met, the sign cost is search; the held model drifts off the cancelling
   code (secondary). Workshop outline and Figures 1-2 in `docs/paper/`.
+- 2026-10-14: MECHANISM (`MECHANISM_RESULTS.md`): the |.| constraint removes the path through zero; a start with move-angle
+  sums past pi lets the non-negative step learn the map 8/8. GENERALITY (`GENERALITY_RESULTS.md`): torus existence (perturbed
+  and re-found; 0/8 from scratch), faithful CARoPE / CoPE fail the maps, CARoPE no better than index.

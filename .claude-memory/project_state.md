@@ -8,20 +8,17 @@ metadata:
 Updated 2026-10-13 14:00. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
-## Running (user asked 2026-10-13: "do 1 and 2" = mechanism + generality)
-- GENERALITY (`GENERALITY_PREREG.md` + Amendment 1; launched 2026-10-14 01:05 at 04adccb, `run_generality.sh`, log
-  `generality.log`, marker `.generality_done`, output `GENERALITY_ANALYSIS.txt` / `_VERDICTS.json`): torus existence with
-  observation-free 4-move models (SO4 / AO4 scratch; SO_bal / AO_bal continuation at lr 1e-4 PRIMARY, 1e-3 descriptive),
-  faithful CARoPE (torus + ring) and CoPE (ring only: ~8 h/run on the torus), in-batch index RoPE; seeds 700-707; ~5 h+.
-  Pilot s690: torus SO4 solves, AO4 stalls 0.46; AO_bal at lr 1e-4 peaked 0.12 then re-solved (A3 pre-states the reading).
-  The check showed CoPE CAN represent ring cancellation (learnability test) and CARoPE vs Signed is a sanity check.
-- MECHANISM (`MECHANISM_PREREG.md` + Amendment 1; launched 01:12 at 85be14d, `run_wrap_mech.sh`, log `wrap_mech.log`, marker
-  `.wrap_mech_done`): ring, 8 arms x seeds 800-807 -- swapped starts (SO_absmag, AO_high, SO_high, AO_mid) with gauge
-  controls. Hypothesis from the exploratory toy (`toy_wrap.py`, `runs/toy_wrap/summary.txt`): the |.| constraint costs
-  learning through the START it imposes (opposite moves rotating the same way by small angles); signed from that start fails
-  0/8 in the toy, |.| from a start whose move-angle sums exceed pi solves 11/11, a large sub-pi start fails 0/8 for both.
-- Shares the machine: both drivers count the same GPU slots; do NOT edit any module either imports until both markers exist.
-- After: write `GENERALITY_RESULTS.md`, `MECHANISM_RESULTS.md`; update the outline (mechanism section), claim map, CLAUDE.md.
+## Running
+- Nothing (2026-10-14 14:45). GPUs idle.
+
+## Last results (2026-10-14): "do 1 and 2" done
+- MECHANISM (`MECHANISM_RESULTS.md`, reg): |.| removes the path through zero; signed escapes the |.| start through zero (7/8);
+  |.| from a start with move-angle sums > pi learns 8/8 by wrapping (M2 RESCUES, M2b sum not size, M6 no sign cost from there);
+  M5 sign cost at the small start. Toy's "start not constraint" did not transfer (stated).
+- GENERALITY (`GENERALITY_RESULTS.md`, reg): torus E3 0/8 vs 8/8; E2 NOT HELD = perturbed and re-found (8/8 SOLVED at end);
+  CARoPE fails, worse than index on torus; CoPE (ring) fails though representable, beats index +0.157.
+- Next if the user wants: workshop draft (CPU); Fig. 3 (mechanism); optional: start manipulation on the torus, CARoPE with a
+  near-wrap init (tests the design implication on a published method).
 
 ## Last session's work (2026-10-13): existence test done, outline drafted
 - WRAP_EXISTENCE (`WRAP_EXISTENCE_RESULTS.md`, registered): E1 EXISTS (all constructions); E2 PRIMARY HELD (balanced

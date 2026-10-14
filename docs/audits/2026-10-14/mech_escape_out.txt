@@ -1,0 +1,6 @@
+SO        : opposite-sign channels at end 0.99; cancelling 0.86; of cancelling, by wrapping (|raw sum| > pi) 0.00
+SO_same   : opposite-sign channels at end 0.99; cancelling 0.96; of cancelling, by wrapping (|raw sum| > pi) 0.00
+SO_absmag : opposite-sign channels at end 0.98; cancelling 0.89; of cancelling, by wrapping (|raw sum| > pi) 0.00
+SO_high   : opposite-sign channels at end 0.27; cancelling 0.34; of cancelling, by wrapping (|raw sum| > pi) 0.88
+AO_high   : opposite-sign channels at end 0.00; cancelling 0.23; of cancelling, by wrapping (|raw sum| > pi) 1.00
+AO_mid    : opposite-sign channels at end 0.00; cancelling 0.05; of cancelling, by wrapping (|raw sum| > pi) 1.00

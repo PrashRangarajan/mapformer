@@ -1,0 +1,40 @@
+{
+  "P0": {
+    "n_solved_sources": 8,
+    "sources": [
+      700,
+      701,
+      702,
+      703,
+      704,
+      705,
+      706,
+      707
+    ]
+  },
+  "E1": {
+    "SO_bal": "EXISTS",
+    "AO_bal": "EXISTS"
+  },
+  "E2": {
+    "AO_bal": {
+      "label": "NOT HELD",
+      "control": "SO_bal",
+      "status": "PRIMARY, lr 1e-4"
+    },
+    "AO_bal_hi": {
+      "label": "NOT HELD",
+      "control": "SO_bal_hi",
+      "status": "descriptive, lr 1e-3"
+    }
+  },
+  "E3": "SIGNED LEARNS BETTER",
+  "B": {
+    "torus|CARoPEF vs Signed_r4 (sanity check)": "MONOTONE FAILS",
+    "torus|CARoPEF vs RoPE": "WORSE THAN INDEX",
+    "ring|CARoPEF vs Signed_r4 (sanity check)": "MONOTONE FAILS",
+    "ring|CoPEF vs Signed_r4 (learnability)": "MONOTONE FAILS",
+    "ring|CARoPEF vs RoPE": "UNMEASURED",
+    "ring|CoPEF vs RoPE": "BETTER THAN INDEX"
+  }
+}
