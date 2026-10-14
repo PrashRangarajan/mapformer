@@ -63,3 +63,42 @@ at 8 seeds per cell when it finishes (exploratory).
 No pilot beyond the toy (the arms reuse WRAP_EXISTENCE's classes and recipe; the start construction is checked on CPU). An
 independent code check (rule 29) before launch. 48 ring runs, ~10-25 min each depending on load; run alongside GENERALITY on
 both GPUs: ~1.5-2 h of the shared budget.
+
+## Amendment 1 (2026-10-14, after the independent check `docs/audits/2026-10-14/mechanism_audit.md`; before launch)
+The check found the code correct (starts exact to <= 1e-6 rad; AO's default angles = |SO's| exactly; every other weight and
+the RNG state identical across arms; stats calls in the right order). Changes:
+- **A1 (toy table corrected; all toy runs, `runs/toy_wrap/summary.txt`, SOLVED = retrieval acc >= 0.99, exploratory):**
+  | start | signed | non-negative |
+  |---|---|---|
+  | default | 6/12 (median 0.946) | 0/12 (0.516); x3 scale 0/11 (0.626) |
+  | its default angles, balanced gauge ("same") | 3/8 (0.854) | -- |
+  | |default angles| ("absmag") | **0/8 (0.406)** | 0/8 (0.385) |
+  | small, same direction U(0.05, 1.5) | 0/11 | 0/11 |
+  | large but sum < pi, U(0.9, 1.5) ("mid", new) | **0/8** | **0/8** |
+  | large, sum > pi, U(1.7, 4.5) ("high") | 8/8 | 11/11 (+8/8 without the omega clamp) |
+  | exact wrapped / iid U(0.2, 2 pi - 0.2) | -- | 8/8 / 9/9 |
+  The toy's signed default solves only half its seeds; the asymmetry is clearer in accuracy. "High" beats the signed default,
+  so it carries an advantage beyond undoing |.|. signed_high and abs_high are bit-identical in the toy (the constraint never
+  binds from that start). Toy accuracies are cell retrieval, not comparable with the batch's (floor 0.554).
+- **A2 (gates; reverse labels; effect sizes).** M1 UNREADABLE if SO_same SOLVED < 4; M2 / M2b UNREADABLE if SO SOLVED < 4.
+  Every contrast has both directions (HURTS / HELPS, RESCUES / WORSE, ...) and "NO EFFECT DETECTED" (SOLVED within 1 and
+  |d| <= 0.01; not equivalence, rule 5), with the permutation 95% CI of d and a paired sign-flip p (descriptive).
+- **A3 (matched-start sign contrasts, new):** **M5 = AO_absmag vs SO_absmag** (identical angles, gauge and weights: does the
+  constraint cost anything once the start is matched?) and a new arm **SO_high** (SignedAO_r4 from AO_high's exact angles)
+  with **M6 = AO_high vs SO_high**. Prediction: NO EFFECT DETECTED for both (the cost goes through the start).
+- **A4 (mobility control, new arm AO_mid):** a(+1), a(-1) iid U(0.9, 1.5): sums below pi, ~5x the default magnitude. The
+  check measured that a large start moves angles 13-22x more per Adam step (via W_in and omega), so a RESCUE could be a
+  hotter optimiser on the phases. **M2b = AO_high vs AO_mid**; the toy's mid fails for both signs (0/8, 0/8), which is why
+  the arm is added. AO_mid's mobility is ~5x, not the full 13-22x, so the separation is partial; stated.
+- **Reading, restated.** M1 HURTS + M2 RESCUES + M2b (sum above pi beats mid) + M5 / M6 NO EFFECT DETECTED: the non-negative
+  step's learnability cost acts through the start it imposes (same-direction small rotations of opposite moves); report the
+  start effects as d with CIs, not "the whole cost". If M5 or M6 shows a sign cost at a matched start, the cost is split
+  between start and constraint, by those d. Mixed M1 / M2: report each as falls; no combined claim. A gauge-control DIFFERS
+  (M3) means the balanced gauge itself changes learning and M1 / M2 apply to the gauge arms only.
+- **Disclosed:** the gauge arms are effectively rank 2 (W_out[:, 2:] and W_in[2:] are 0 with exactly zero gradient); the
+  initial opposite-sign share at default init varies 0.34-0.91 across seeds 800-807 (set by the cosine of the two move
+  latents), now a secondary vs loss AUC; the initial max |W_out| per arm is printed (AO_high / SO_high up to 7.6, AO_mid up to
+  2.5, gauge arms 0.7, default 0.5). Dropout-scale re-score added as a secondary. No GPU pilot of AO_high (the toy and the
+  smoke stand in; AO_high's warm-up is visible in its loss curve). The batch shares the machine with GENERALITY; no module
+  either batch imports will be edited while they run.
+- Arms: 8 (SO, AO, SO_same, SO_absmag, AO_absmag, AO_high, SO_high, AO_mid) x seeds 800-807 = 64 ring runs; artifacts 128.

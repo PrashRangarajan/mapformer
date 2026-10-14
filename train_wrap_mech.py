@@ -7,6 +7,9 @@ epochs, 1 layer, 2 heads, d 128). Observation-step-free models (SignedAO_r4 / Ab
   SO_absmag          SignedAO_r4 started at |default-init angles| (the start the |.| constraint imposes), balanced gauge
   AO_absmag          AbsAO_r4 started at |default-init angles| in the balanced gauge (gauge control for AO; same angles as AO)
   AO_high            AbsAO_r4 started with large move angles: a(+1), a(-1) iid U(1.7, 4.5) rad per channel (sum > pi)
+  SO_high            SignedAO_r4 from the SAME large angles as AO_high (Amendment 1: matched-start sign contrast)
+  AO_mid             AbsAO_r4 started with a(+1), a(-1) iid U(0.9, 1.5) (sum < pi, ~5x the default magnitude; Amendment 1
+                     mobility control)
 Balanced gauge (`set_move_angles`): W_in re-solved so the two move latents are c e1, c e2 (c = this init's mean move-latent
 norm), omega' = max(|omega|, 1), W_out[:, :2] = (target angle / omega') / c, W_out[:, 2:] = 0 -- WRAP_EXISTENCE Amendment 1's
 construction applied at initialisation. Every other weight is the seed's default init (identical across arms at a seed).
@@ -24,7 +27,7 @@ from mapformer.model_wrap_exist import MapFormerWM_SignedAO_r4, MapFormerWM_AbsA
 from mapformer.train import train
 from mapformer.train_cancel import evaluate
 
-ARMS = ("SO", "AO", "SO_same", "SO_absmag", "AO_absmag", "AO_high")
+ARMS = ("SO", "AO", "SO_same", "SO_absmag", "AO_absmag", "AO_high", "SO_high", "AO_mid")
 EVAL_SEED = 10 ** 6
 
 
@@ -75,13 +78,16 @@ def main():
         err = set_move_angles(model, ang0)
     elif a.arm in ("SO_absmag", "AO_absmag"):
         err = set_move_angles(model, ang0.abs())
-    elif a.arm == "AO_high":
-        g = np.random.RandomState(a.seed + 7919)
-        err = set_move_angles(model, torch.from_numpy(g.uniform(1.7, 4.5, ang0.shape)).float())
+    elif a.arm in ("AO_high", "SO_high", "AO_mid"):
+        g = np.random.RandomState(a.seed + 7919)                     # same draw for AO_high and SO_high at a seed
+        lo, hi = (0.9, 1.5) if a.arm == "AO_mid" else (1.7, 4.5)
+        err = set_move_angles(model, torch.from_numpy(g.uniform(lo, hi, ang0.shape)).float())
     init_angles = action_angles(model)
     assert len(model.layers) == 1
     print(f"{a.arm} seed={a.seed} params={sum(p.numel() for p in model.parameters()):,} init angle err {err} "
-          f"init |angle| mean {float(init_angles.abs().mean()):.3f} init wrap {wrap_share(model)}", flush=True)
+          f"init |angle| mean {float(init_angles.abs().mean()):.3f} init wrap {wrap_share(model)} | init |W_out| max "
+          f"{float(model.action_to_lie.w_out.weight.abs().max()):.3f} |W_in| max {float(model.action_to_lie.w_in.weight.abs().max()):.3f}",
+          flush=True)
     losses = train(model, env, n_epochs=a.epochs, lr=a.lr, batch_size=a.batch_size, n_steps=a.n_steps,
                    n_batches=a.n_batches, device=a.device, schedule="cosine", data_workers=a.data_workers)
     torch.save({"model_state_dict": model.state_dict(), "losses": losses, "variant": a.arm, "seed": a.seed,

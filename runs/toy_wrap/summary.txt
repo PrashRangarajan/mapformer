@@ -1,0 +1,16 @@
+abs    absmag   x1.0 clamp=True  n= 8 SOLVED  0/ 8 acc median 0.385 [0.04, 0.58] weighted cancel 0.03
+abs    band     x1.0 clamp=True  n= 8 SOLVED  8/ 8 acc median 1.000 [1.00, 1.00] weighted cancel 0.51
+abs    high     x1.0 clamp=False n= 8 SOLVED  8/ 8 acc median 1.000 [1.00, 1.00] weighted cancel 0.35
+abs    high     x1.0 clamp=True  n=11 SOLVED 11/11 acc median 1.000 [1.00, 1.00] weighted cancel 0.36
+abs    low      x1.0 clamp=True  n=11 SOLVED  0/11 acc median 0.461 [0.36, 0.60] weighted cancel 0.00
+abs    mid      x1.0 clamp=True  n= 8 SOLVED  0/ 8 acc median 0.239 [0.13, 0.41] weighted cancel 0.00
+abs    offband  x1.0 clamp=True  n= 9 SOLVED  9/ 9 acc median 1.000 [1.00, 1.00] weighted cancel 0.30
+abs    omega1   x1.0 clamp=True  n= 1 SOLVED  0/ 1 acc median 0.646 [0.65, 0.65] weighted cancel 0.06
+abs    random   x1.0 clamp=True  n=12 SOLVED  0/12 acc median 0.516 [0.17, 0.70] weighted cancel 0.03
+abs    random   x3.0 clamp=True  n=11 SOLVED  0/11 acc median 0.626 [0.45, 0.76] weighted cancel 0.10
+signed absmag   x1.0 clamp=True  n= 8 SOLVED  0/ 8 acc median 0.406 [0.02, 0.69] weighted cancel 0.17
+signed high     x1.0 clamp=True  n= 8 SOLVED  8/ 8 acc median 1.000 [1.00, 1.00] weighted cancel 0.36
+signed low      x1.0 clamp=True  n=11 SOLVED  0/11 acc median 0.460 [0.38, 0.54] weighted cancel 0.01
+signed mid      x1.0 clamp=True  n= 8 SOLVED  0/ 8 acc median 0.239 [0.13, 0.41] weighted cancel 0.00
+signed random   x1.0 clamp=True  n=12 SOLVED  6/12 acc median 0.946 [0.63, 1.00] weighted cancel 0.66
+signed same     x1.0 clamp=True  n= 8 SOLVED  3/ 8 acc median 0.854 [0.70, 1.00] weighted cancel 0.63
