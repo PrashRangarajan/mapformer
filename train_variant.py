@@ -226,6 +226,9 @@ VARIANT_MAP = {
     # GENERALITY (2026-10-13): published monotone methods, faithful (model_mono_baselines.py)
     "CARoPEF": __import__("mapformer.model_mono_baselines", fromlist=["x"]).MapFormerWM_CARoPEF,
     "CoPEF": __import__("mapformer.model_mono_baselines", fromlist=["x"]).CoPEF,
+    # WRAP_COPE (2026-10-14): CoPE with a sinusoidal table init, near the wrap (Hi) or below it (Lo)
+    "CoPEF_Hi": __import__("mapformer.model_mono_baselines", fromlist=["x"]).CoPEF_Hi,
+    "CoPEF_Lo": __import__("mapformer.model_mono_baselines", fromlist=["x"]).CoPEF_Lo,
     "Abs_r2": MapFormerWM_Abs_r2,
     "Vanilla_r5": MapFormerWM_r5,
     "Vanilla_r7": MapFormerWM_r7,

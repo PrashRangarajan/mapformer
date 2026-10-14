@@ -128,3 +128,35 @@ class CoPEF(nn.Module):
         for layer in self.layers:
             x = layer(x, mask_log)
         return self.out_proj(self.out_norm(x))
+
+
+class CoPEF_Sin(CoPEF):
+    """CoPEF with a SINUSOIDAL position table at init (WRAP_COPE_PREREG.md): pos_emb[2m, p] = A cos(omega_m p),
+    pos_emb[2m+1, p] = A sin(omega_m p), m = 0 .. d_h/2 - 1, omega_m evenly spaced in BAND (deterministic: no RNG, so every
+    other weight equals CoPEF's at a seed). With gates ~0.49 at init a (move, observation) pair advances the count by ~1 and
+    an out-and-back by ~2, i.e. by an angle ~2 omega in each table channel. 'hi' puts that past pi (omega in [0.6, 0.95] pi:
+    the near-wrap start that rescued the non-negative rotary step in MECHANISM_RESULTS.md); 'lo' keeps it below pi
+    (omega in [0.1, 0.45] pi), same amplitude. A = 0.1 gives table logits on the scale of the content logits (q.k / sqrt(d)
+    std ~0.35 at init). The paper initialises the table at zero (CoPEF)."""
+    BAND = None
+    AMP = 0.1
+
+    def __init__(self, vocab_size, *a, **kw):
+        super().__init__(vocab_size, *a, **kw)
+        lo, hi = self.BAND
+        with torch.no_grad():
+            for layer in self.layers:
+                pe = layer.attn.cope.pos_emb                                          # (1, d_h, npos)
+                dh, npos = pe.shape[1], pe.shape[2]
+                om = math.pi * torch.linspace(lo, hi, dh // 2)
+                p = torch.arange(npos, dtype=torch.float32)
+                pe[0, 0::2] = self.AMP * torch.cos(om[:, None] * p[None])
+                pe[0, 1::2] = self.AMP * torch.sin(om[:, None] * p[None])
+
+
+class CoPEF_Hi(CoPEF_Sin):
+    BAND = (0.6, 0.95)
+
+
+class CoPEF_Lo(CoPEF_Sin):
+    BAND = (0.1, 0.45)

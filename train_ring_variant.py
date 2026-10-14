@@ -15,7 +15,7 @@ from mapformer.train import train
 from mapformer.train_cancel import evaluate
 from mapformer.train_variant import VARIANT_MAP
 
-ARMS = ("Signed_r4", "Abs_r4", "RoPE", "CARoPEF", "CoPEF")
+ARMS = ("Signed_r4", "Abs_r4", "RoPE", "CARoPEF", "CoPEF", "CoPEF_Hi", "CoPEF_Lo")
 EVAL_SEED = 10 ** 6
 
 
