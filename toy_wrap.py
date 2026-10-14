@@ -92,8 +92,8 @@ def set_init(model, kind, rng, clamp_omega=True):
         elif kind in ("absmag", "same"):                  # this seed's default-init angles: |.| of them, or as they are (signed)
             A0 = model.angles_init_abs if kind == "absmag" else model.angles_init
             a, b = A0[0].clone(), A0[1].clone()
-        elif kind in ("low", "high"):                     # iid a+, a-: low U(0.05, 1.5) (sigma < pi); high U(1.7, 4.5) (sigma > pi)
-            lo, hi = (0.05, 1.5) if kind == "low" else (1.7, 4.5)
+        elif kind in ("low", "high", "mid"):              # iid a+, a-: low U(0.05, 1.5); mid U(0.9, 1.5) (sum < pi, large); high U(1.7, 4.5)
+            lo, hi = {"low": (0.05, 1.5), "mid": (0.9, 1.5), "high": (1.7, 4.5)}[kind]
             a = torch.from_numpy(rng.uniform(lo, hi, C)).float(); b = torch.from_numpy(rng.uniform(lo, hi, C)).float()
         else:
             b = (2 * math.pi - a) if model.mode == "abs" else -a
@@ -106,7 +106,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", choices=["signed", "abs"], required=True)
     ap.add_argument("--seed", type=int, required=True)
-    ap.add_argument("--init", default="random", choices=["random", "band", "offband", "omega1", "low", "high", "absmag", "same"])
+    ap.add_argument("--init", default="random", choices=["random", "band", "offband", "omega1", "low", "high", "absmag", "same", "mid"])
     ap.add_argument("--freeze-omega", action="store_true")
     ap.add_argument("--no-omega-clamp", action="store_true")
     ap.add_argument("--init-scale", type=float, default=1.0, help="multiply W_out at random init")
