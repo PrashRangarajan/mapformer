@@ -160,3 +160,16 @@ class CoPEF_Hi(CoPEF_Sin):
 
 class CoPEF_Lo(CoPEF_Sin):
     BAND = (0.1, 0.45)
+
+
+class CoPEF_LoS(CoPEF_Sin):
+    """WRAP_COPE Amendment 1: the Lo band with the amplitude scaled so the mean knot-to-knot step of the table,
+    |e(p+1) - e(p)| = 2 A |sin(omega / 2)|, equals CoPEF_Hi's (slope-matched control: CoPE interpolates linearly between
+    integer knots, so the table's steepness sets the gradient reaching the gates)."""
+    BAND = (0.1, 0.45)
+
+    def __init__(self, vocab_size, *a, **kw):
+        dh = (kw.get("d_model", 128) if "d_model" in kw else 128) // kw.get("n_heads", 2)
+        step = lambda lo, hi: float(torch.sin(math.pi * torch.linspace(lo, hi, dh // 2) / 2).abs().mean())
+        self.AMP = 0.1 * step(*CoPEF_Hi.BAND) / step(*self.BAND)
+        super().__init__(vocab_size, *a, **kw)

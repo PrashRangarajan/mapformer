@@ -35,3 +35,23 @@ learned table's power in the Hi band vs the Lo band at the end (does training ke
 ## Process and cost
 Pilot (seed 990, outside the batch): CoPEF_Hi and CoPEF_Lo (reported, never pooled). Independent code check before launch.
 24 runs at ~9-15 min, both GPUs: ~30-45 min.
+
+## Amendment 1 (2026-10-14, after the independent check `docs/audits/2026-10-14/wrap_cope_audit.md`; before launch)
+The check confirmed: arms differ only in `pos_emb`; CoPE matches Listing 1; the init arithmetic holds (gates ~0.49, an
+out-and-back advances the count ~2); smoke clean. Pilot (seed 990, outside the batch, never pooled): Hi 0.970, Lo 0.975, both
+unsolved (final loss 0.16 / 0.19), both above GENERALITY's default CoPEF (0.887). Changes:
+- **BLOCKER fixed:** the driver called `analyze_wrap_mech` (a sed slip); it now runs `analyze_wrap_cope --root "$R" --seeds
+  900-907`.
+- **Slope confound, new arm CoPEF_LoS:** CoPE interpolates linearly between integer knots, so the table's knot-to-knot step
+  sets the gradient reaching the gates; Hi's is ~2.2x Lo's. CoPEF_LoS = the Lo band with amplitude scaled (0.224) so its mean
+  knot step matches Hi's (1.11 vs 1.05). **W1b = CoPEF_Hi vs CoPEF_LoS**, same labels. Reading: Hi beats Lo AND LoS -> the band
+  (past pi) matters; Hi beats Lo but not LoS -> table steepness, not the wrap.
+- **Below-ceiling readout:** both pilot arms end unsolved near 0.97, so SOLVED may not separate; registered **W1n / W1bn**: held-
+  out NLL at T = 128 (from eval.json), Hi vs Lo and Hi vs LoS, unpaired permutation: LOWER NLL / HIGHER NLL / NO DIFFERENCE
+  DETECTED (p < .05).
+- **Floor gate:** every W label is UNREADABLE if both arms' mean accuracy is below floor + 0.05 (0.604).
+- **Secondaries:** the DFT now also reports power near pi (> 0.95 pi: the period-2 construction; the pilot tables carry
+  0.72-0.74 of their power there, seen incidentally by the check); rescore_hook STATS printed. Disclosed: Lo's "below pi" is
+  an init statement (gates move); accuracy at 4T reads table entries beyond the trained counts (p > ~255), which keep their
+  init (sinusoid for Hi / Lo / LoS, zeros for CoPEF) -- not comparable across arms.
+- Arms 4 x 8 = 32 runs, 64 artifacts; ~40-60 min on both GPUs.
