@@ -28,9 +28,9 @@ def _ao_variant(mode):
             self.register_buffer("act", torch.tensor(action_ids, dtype=torch.long), persistent=False)
 
         def step_table(self):
-            """(V, H, nb) per-token step before omega: the two actions' steps (after the sign constraint), 0 otherwise."""
+            """(V, H, nb) per-token step before omega: the actions' steps (after the sign constraint), 0 otherwise."""
             e = self.token_emb.weight
-            v = self.action_to_lie(e[self.act].view(1, 2, -1))[0]          # (2, H, nb)
+            v = self.action_to_lie(e[self.act].view(1, len(self.act), -1))[0]   # (A, H, nb)
             out = torch.zeros(e.shape[0], *v.shape[1:], device=e.device, dtype=v.dtype)
             out[self.act] = v
             return out
@@ -58,20 +58,34 @@ MapFormerWM_SignedAO_r4 = _ao_variant("signed")
 MapFormerWM_AbsAO_r4 = _ao_variant("abs")
 
 
+class MapFormerWM_SignedAO4_r4(MapFormerWM_SignedAO_r4):
+    """2D torus (environment.GridWorld): the four move tokens 0-3 carry steps, every other token 0 (TORUS_EXIST)."""
+    def __init__(self, vocab_size, *a, action_ids=(0, 1, 2, 3), **kw):
+        super().__init__(vocab_size, *a, action_ids=action_ids, **kw)
+
+
+class MapFormerWM_AbsAO4_r4(MapFormerWM_AbsAO_r4):
+    """The same with |.| per channel."""
+    def __init__(self, vocab_size, *a, action_ids=(0, 1, 2, 3), **kw):
+        super().__init__(vocab_size, *a, action_ids=action_ids, **kw)
+
+
 def action_angles(m):
-    """(2, C) per-channel angle step omega * step of the +1 and -1 actions."""
+    """(A, C) per-channel angle step omega * step of each action (ring: +1, -1; torus: 0-3)."""
     with torch.no_grad():
-        st = m.step_table()[m.act].reshape(2, -1)
+        st = m.step_table()[m.act].reshape(len(m.act), -1)
         return st * m.path_integrator.omega.reshape(-1)
 
 
-def wrap_share(m, big=0.05, tol=0.1):
-    """Over channels with |wrap(omega step(+1))| > big (wrap-invariant selection, Amendment 1): median
-    |wrap(angle(+1) + angle(-1))| and the share below tol rad (0 = the two actions cancel mod 2 pi; RING_DIAL's wrap-aware
-    opposition, on the AO step table)."""
-    A = action_angles(m).double()
-    sel = torch.angle(torch.exp(1j * A[0])).abs() > big
-    w = torch.angle(torch.exp(1j * (A[0] + A[1])))[sel].abs()
+def wrap_share(m, big=0.05, tol=0.1, pairs=((0, 1),)):
+    """Over (action, opposite) pairs and channels with |wrap(angle(a))| > big (wrap-invariant selection, Amendment 1): median
+    |wrap(angle(a) + angle(opposite))| and the share below tol rad (0 = the pair cancels mod 2 pi; RING_DIAL's wrap-aware
+    opposition, on the AO step table). Ring: pairs ((0, 1),); torus: ((0, 1), (2, 3)) (environment.ACTION_DELTAS)."""
+    A = action_angles(m).double(); ws = []
+    for i, j in pairs:
+        sel = torch.angle(torch.exp(1j * A[i])).abs() > big
+        ws.append(torch.angle(torch.exp(1j * (A[i] + A[j])))[sel].abs())
+    w = torch.cat(ws)
     if w.numel() == 0:
         return float("nan"), float("nan")
     return float(w.median()), float((w < tol).double().mean())
@@ -96,13 +110,14 @@ def wrap_construct(signed, vocab_size, action_ids, mode="min", **kw):
     assert mode in MODES, mode
     cls = MapFormerWM_SignedAO_r4 if mode == "signed_balanced" else MapFormerWM_AbsAO_r4
     m = cls(vocab_size, action_ids=action_ids, **kw)
+    nA = len(action_ids)
     sd = {k: v.detach().clone() for k, v in signed.state_dict().items()}
     with torch.no_grad():
         om = signed.path_integrator.omega.detach().reshape(-1).double()                  # (C,)
         e = signed.token_emb.weight.detach().double()
         W_in = signed.action_to_lie.w_in.weight.detach().double()                        # (r, d)
-        lat = e[signed.act] @ W_in.T                                                     # (2, r)
-        D = lat @ signed.action_to_lie.w_out.weight.detach().double().T                  # (2, C) signed steps
+        lat = e[signed.act] @ W_in.T                                                     # (A, r)
+        D = lat @ signed.action_to_lie.w_out.weight.detach().double().T                  # (A, C) signed steps
         if mode in ("min", "gauge"):
             tgt = torch.remainder(D, 2 * math.pi / om.abs())                             # >= 0, same angle mod 2 pi
             k = torch.ones_like(om)
@@ -112,20 +127,21 @@ def wrap_construct(signed, vocab_size, action_ids, mode="min", **kw):
             W_out = (torch.linalg.pinv(lat) @ tgt).T                                     # (C, r) min-norm
         else:
             r = W_in.shape[0]; c = float(lat.norm(dim=1).mean())
-            L = torch.zeros(2, r, dtype=lat.dtype); L[0, 0] = c; L[1, 1] = c
+            assert nA <= r, (nA, r)
+            L = torch.zeros(nA, r, dtype=lat.dtype); L[torch.arange(nA), torch.arange(nA)] = c
             W_in = (torch.linalg.pinv(e[signed.act]) @ L).T                              # (r, d): e_act W_in^T = L
             om_new = om.abs().clamp_min(1.0)
             ang = om * D
             if mode == "balanced":
                 ang = torch.remainder(ang, 2 * math.pi)
-            steps = ang / om_new                                                         # (2, C)
-            W_out = torch.zeros(om.numel(), r, dtype=lat.dtype); W_out[:, :2] = steps.T / c
+            steps = ang / om_new                                                         # (A, C)
+            W_out = torch.zeros(om.numel(), r, dtype=lat.dtype); W_out[:, :nA] = steps.T / c
             sd["action_to_lie.w_in.weight"] = W_in.to(signed.action_to_lie.w_in.weight.dtype)
     sd["action_to_lie.w_out.weight"] = W_out.to(signed.action_to_lie.w_out.weight.dtype)
     sd["path_integrator.omega"] = om_new.reshape(signed.path_integrator.omega.shape).to(signed.path_integrator.omega.dtype)
     m.load_state_dict(sd)
     with torch.no_grad():
-        Da = m.step_table()[m.act].reshape(2, -1).double()
+        Da = m.step_table()[m.act].reshape(nA, -1).double()
         om2 = m.path_integrator.omega.detach().reshape(-1).double()
         err = float(torch.angle(torch.exp(1j * (om2 * Da - om * D))).abs().max())
     rep = {"mode": mode, "angle_err_max": err, "step_min": float(Da.min()),
@@ -136,5 +152,6 @@ def wrap_construct(signed, vocab_size, action_ids, mode="min", **kw):
            "step_absmax_signed": float(D.abs().max()), "step_absmax_built": float(Da.abs().max()),
            "omega_absmax_signed": float(om.abs().max()), "omega_absmax_built": float(om2.abs().max()),
            "n_omega_negative": int((om < 0).sum()),
-           "latent_cos_signed": float(torch.nn.functional.cosine_similarity(lat[0], lat[1], dim=0))}
+           "latent_cos_signed": float(torch.nn.functional.cosine_similarity(lat[0], lat[1], dim=0)),
+           "latent_cond_signed": float(torch.linalg.cond(lat))}
     return m, rep

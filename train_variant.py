@@ -220,6 +220,12 @@ VARIANT_MAP = {
     "Abs_r4": MapFormerWM_Abs_r4,
     "Pos_r4": MapFormerWM_Pos_r4,
     "CARoPE_r4": MapFormerWM_CARoPE_r4,
+    # TORUS_EXIST (2026-10-13): observation-step-free rank-4 models on the 2D torus (only the four moves have steps)
+    "SignedAO4_r4": __import__("mapformer.model_wrap_exist", fromlist=["x"]).MapFormerWM_SignedAO4_r4,
+    "AbsAO4_r4": __import__("mapformer.model_wrap_exist", fromlist=["x"]).MapFormerWM_AbsAO4_r4,
+    # GENERALITY (2026-10-13): published monotone methods, faithful (model_mono_baselines.py)
+    "CARoPEF": __import__("mapformer.model_mono_baselines", fromlist=["x"]).MapFormerWM_CARoPEF,
+    "CoPEF": __import__("mapformer.model_mono_baselines", fromlist=["x"]).CoPEF,
     "Abs_r2": MapFormerWM_Abs_r2,
     "Vanilla_r5": MapFormerWM_r5,
     "Vanilla_r7": MapFormerWM_r7,
