@@ -112,9 +112,12 @@ solves 0/8 against 8/8, with 3/8 |.| runs still descending at 900 epochs; softpl
 confound). On the ring, |.| solves 2/8 and 1/8 at p_plus 0.5 and 0.75 against 8/8 (Fisher p 0.007, 0.0014); at 0.9 the
 contrast is unmeasured (4/8 vs 8/8; accuracy -0.046). Three times the training leaves |.| at 3/8. The ring accuracy gap is
 small (-0.03; |.| reaches 0.95-0.97, above the 0.554 floor and the one-layer index model's 0.72-0.73 at p_plus 0.5), so the
-ring evidence is the SOLVED criterion (threshold sensitivity not shown); the accuracy evidence is the torus. Post hoc,
-unsolved ring models lose accuracy with the gap since the last visit (appendix Fig. C1; sign-flip p 0.0078 in each
-observation-step-free batch); signed models are at 1.000 in every stratum.
+ring evidence is the SOLVED criterion; the accuracy evidence is the torus. Post hoc, that criterion matters at p_plus 0.5:
+with a loss threshold of 0.1 instead of 0.05, |.| solves 4/8 vs 8/8 (Fisher p 0.077), while at 0.02 or under an accuracy
+criterion (>= 0.99) it stays at 2/8; at p_plus 0.75 (1-2/8 vs 8/8) and in every observation-step-free and torus contrast
+the reading holds under all four criteria (appendix C). Also post hoc, unsolved ring models lose accuracy with the gap
+since the last visit (appendix Fig. C1; sign-flip p 0.0078 in each observation-step-free batch); signed models are at
+1.000 in every stratum.
 
 The codes show what is missing (Fig. 1, post hoc): signed models cancel opposite moves mod 2 pi in 64-98% of channels (group
 means), |.| and softplus models in 3-11%, including the runs that solve. Observation-step-free versions fail the same way:
@@ -147,7 +150,8 @@ We vary only the initial move angles of observation-step-free ring models; every
 | large, the two angles summing to less than pi | -- | 2/8 |
 | large, summing to more than pi | 8/8 | **8/8** |
 
-*Table 2. SOLVED, ring p_plus 0.5, 300 epochs, n = 8 per cell.*
+*Table 2. SOLVED, ring p_plus 0.5, 300 epochs, n = 8 per cell. Post hoc, each contrast below reads the same at loss
+thresholds 0.02 and 0.1 and under accuracy >= 0.99 (appendix C).*
 
 Four registered contrasts read Table 2. (i) From the same start the sign matters: 0/8 vs 7/8 (Fisher p 0.0014; accuracy
 -0.092 [-0.135, -0.045]). (ii) A start past pi rescues |.|: 8/8 vs 0/8 (+0.109 [+0.085, +0.135], p 0.0002). (iii) The sum,
@@ -163,22 +167,29 @@ channels end opposite-signed against 82% with free latents. From the default sta
 
 **What fits loosely (post hoc, eval-only).**
 - *The |.| start is small in most channels, not all:* per-channel sums span 0.01-6.58 rad (5% start past pi). Of the
-  channels whose step does not collapse, the 20 (over 8 runs) that start with sums between pi and 3 pi / 2 end with none
+  channels whose step does not collapse to zero, the 20 (over 8 runs) that start with sums between pi and 3 pi / 2 end with none
   cancelling: being past pi is not sufficient per channel.
 - *Rescued models use the wrap sparingly:* from past pi, |.| models solve with 23% of channels cancelling (signed 34%; 7% at
-  the start by chance); capture falls gently with distance from 2 pi (0.34 within 0.25 rad, 0.08 at 2-3 rad). Close to the
-  per-channel flow's 28%, so the |.| rescue may be per-channel capture of a sufficient minority rather than a collective
-  move (not compared channel by channel). What the other 77% do is unknown.
+  the start by chance); capture falls gently with distance from 2 pi (0.34 within 0.25 rad, 0.08 at 2-3 rad). The share is
+  close to the one-channel flow's 28% (Sec. 3), but channel by channel the flow does not predict which channels cancel: run from
+  each channel's own start it predicts 33%, agrees with the trained models barely above chance (Cohen's kappa +0.09), and
+  captures 95% of the channels starting within 0.5 rad of 2 pi where the models cancel 28%; 59% of the models' cancelling
+  channels are ones it does not capture. So the one-channel flow does not explain the rescue; whether the rescue is
+  collective is untested. What the other 77% do is unknown.
 - *A competing account, the wall:* 44% of channels in |.| models from the same-direction start end with the forward-move
   angle within 0.05 rad of zero, against 17% for signed models from that start and 0.2% and 1.4% for |.| from the large
-  starts. This fits P4: steps that the loss pushes toward zero settle there. Unknown: whether those channels started near
-  zero, whether attention reads them (unweighted channel counts misled us once, Sec. 4.2), and whether the gradient at the
-  wall points into it.
+  starts. This would fit P4 if the loss pushed those steps toward zero. It does not clearly do so. Counted per move step,
+  collapse is common to every |.| arm from a small start (24-42% on the ring, 60-70% on the torus, softplus included) and
+  smaller in signed controls from the default start (10-17%, 34-40%). It is partly inherited: 77-81% of the |.| steps that start within 0.05 rad of zero
+  end there (signed 29-35%). Attention reads the collapsed |.| channels (usage weight 0.39-1.1 times the others'). But at the end
+  of training the loss gradient points into the wall for only 51-57% of the collapsed steps (eval mode), which a rule
+  fixed before the check reads as mixed, not as P4.
 - *Start size:* a start nearer the wrap also moves 13-22x faster per Adam step; the sub-pi control (~5x) separates sum from
   size only partly.
 
 So the signed step has a collective route through zero that the barrier removes (registered); why the barrier step fails
-from a small start (an unreachable wrap, P3; the wall, P4; or both) is not separated.
+from a small start (an unreachable wrap, P3; the wall, P4; or both) is not separated, and neither the one-channel flow nor
+the end-of-training gradient decides it.
 
 ### 4.4 The start lever does not transfer to the torus
 
@@ -204,13 +215,17 @@ advances it by (0, 4] < 2 pi). It scores 0.667 on the torus, below index RoPE's 
 ring (unmeasured). CoPE can represent ring cancellation (a periodic position table read at a gated count; constructed),
 contrary to MapFormer's statement that it "cannot represent an action and its inverse", but solves 0/8 (0.887 vs signed
 1.000, p 0.0002; 1 of 32 runs over three ring batches, pooled post hoc), while its gated count beats the index by +0.157. On
-the line CoPE still fails (1/16 vs 0/16 on the ring) while signed steps solve it 8/8 and the index does not (0.772): the wrap
-is not CoPE's obstacle. That obstacle is unidentified; the precision its count needs is a plausible account (appendix H).
+the line CoPE still fails at the registered criterion (1/16 vs 0/16 on the ring) while signed steps solve it 8/8 and the
+index does not (0.772), so removing the wrap does not make CoPE learnable. Post hoc, at a loss threshold of 0.1 half the
+line runs pass (8/16 vs 2/16 on the ring, Fisher p 0.054; accuracy >= 0.99: 7/16 vs 2/16), so whether the wrap adds to
+CoPE's difficulty is unmeasured. CoPE's obstacle is unidentified; the precision its count needs is a plausible account
+(appendix H).
 
 ## 5. Related work
 
 **Integrators and position.** Howard et al. (2014) drive leaky integrators by a constant, speed or signed-velocity rate,
-with the decay real and the rate given. GridPE derives RoPE from a velocity-controlled oscillator. TEM and TEM-t
+with the decay real and the rate given. GridPE (Li et al. 2024) builds a position embedding for given coordinates from
+grid-cell velocity-controlled-oscillator models and Fourier features, recovering RoPE in one dimension. TEM and TEM-t
 (Whittington et al. 2020, 2022) put an action-driven recurrent position code into a memory model and a transformer;
 MapFormer (Rambaud et al.) makes it a path-integrated rotary phase.
 
@@ -219,18 +234,20 @@ Non-negative: CARoPE and, as a gated count read through a table, CoPE (Golovneva
 multiplicative and additive slots; its non-negative content phase is an additive bias in the real slot, as in FoX.
 
 **Sign and state tracking.** Sarrof et al. (2024) and Grazzi et al. (2025) prove that recurrences with real non-negative
-eigenvalues cannot track parity or count modulo m (Khavari et al. 2025: the sign must be input-dependent in the same layer).
-Rotations by non-negative angles are not covered: Grazzi et al. implement Z_m with rotations by 2 pi w / m >= 0, and Mamba-3
-writes parity as R(pi x_t). We give the same advice, allow a sign, for a different reason.
+eigenvalues cannot track parity or count modulo m (Khavari et al. 2025: in diagonal SSMs, input dependence and negative
+eigenvalues must occur in the same layer). Rotations by non-negative angles are not covered: Grazzi et al. implement Z_m
+with rotations by 2 pi w / m >= 0, and Mamba-3 writes parity as R(pi x_t). We give the same advice, allow a sign, for a
+different reason.
 
 **Sign-constrained parameterisations and initialisation.** A reparameterised weight cannot change sign under gradient flow
 (Woodworth et al. 2020; Amid and Warmuth 2020: w = |u| is gradient descent on the non-negative orthant). The LRU (Orvieto
 et al. 2023) parameterises phases as positive and needs them initialised near zero to learn PathX. For networks obeying Dale's
-law the same question, constraint or starting point, has been asked (Cornford et al. 2021; Li et al. 2023 attribute the
-deficit to the spectrum at initialisation). Here, with inverse pairs sharing a channel, the constraint removes only relative
-signs (Lemma 1); on the ring the useful start lay past the wrap, and on the torus no start we tried helped. To our knowledge
-neither the relative-sign gauge nor the loss of the through-zero route for inverse pairs has been stated; we claim their
-conjunction and the measurements, not any single ingredient.
+law the same question, constraint or starting point, has been asked (Cornford et al. 2021; Li et al. 2023 find the
+spectrum at initialisation matters more than the sign constraint, though both contribute). Here, with inverse pairs
+sharing a channel, the constraint removes only relative signs (Lemma 1); on the ring the useful start lay past the wrap,
+and on the torus no start we tried helped. To our knowledge neither the relative-sign gauge nor the loss of the
+through-zero route for inverse pairs has been stated; we claim their conjunction and the measurements, not any single
+ingredient.
 
 **Depth.** Shallow transformers can represent solvable automata but learn such shortcuts unreliably (Liu et al. 2023; Hahn
 and Rofin 2024); Selective RoPE and PaTH (Yang et al.) solve parity or Flip-Flop in one layer. Appendix K compares one
@@ -241,12 +258,62 @@ signed path layer with deeper index attention on our torus.
 "Does not learn" is scoped to our budgets and one recipe per task; 3x the ring budget did not help, and learning rate,
 weight decay from scratch, optimiser and depth were not varied for the sign contrast. Small models (one layer, 2 heads,
 d = 128, a rank-4 latent shared across heads), synthetic tasks, n = 8, no recurrent or SSM baselines, no exp(.)-type (LRU)
-parameterisation. On the ring the evidence is mainly a loss criterion. On the torus the barrier class has less latent slack:
-the signed cancelling code needs one latent dimension per inverse pair, the wrapped code also the 2 pi k / omega offsets,
-and per-head rank is known to decide torus learnability for signed steps; this is uncontrolled. Softplus carries an
+parameterisation. On the ring the evidence is mainly a loss criterion, and at p_plus 0.5 it does not survive a looser
+threshold (0.1; post hoc). On the torus the barrier class has less latent slack: the signed cancelling code needs one
+latent dimension per inverse pair, the wrapped code also the 2 pi k / omega offsets, and per-head rank is known to decide
+torus learnability for signed steps; this is uncontrolled. Softplus carries an
 initialisation confound. The mechanism is shown on the ring only, with its |.| side unresolved; on the torus the large start
 also slows the signed model. Lemma 1's prediction is pending. The torus sign batch had no independent pre-launch check.
 CARoPE and CoPE were tested at one layer, CoPE on the ring and line only. Natural text is not studied.
+
+## References
+
+Titles and author lists checked against arXiv, OpenReview, Crossref or ACL Anthology metadata on 2026-10-15
+(`papers/new_2026-10-15/`); venues marked * are taken from the literature note and were not re-checked.
+
+- Amid, E. and Warmuth, M. K. Reparameterizing mirror descent as gradient descent. NeurIPS 2020*; arXiv:2002.10487.
+- Cornford, J., Kalajdzievski, D., Leite, M., Lamarquette, A., Kullmann, D. M. and Richards, B. A. Learning to live with
+  Dale's principle: ANNs with separate excitatory and inhibitory units. ICLR 2021.
+- Golovneva, O., Wang, T., Weston, J. and Sukhbaatar, S. Contextual position encoding: learning to count what's important
+  (CoPE). arXiv:2405.18719, 2024.
+- Grazzi, R., Siems, J., Zela, A., Franke, J. K. H., Hutter, F. and Pontil, M. Unlocking state-tracking in linear RNNs
+  through negative eigenvalues. ICLR 2025*; arXiv:2411.12537.
+- Hahn, M. and Rofin, M. Why are sensitive functions hard for transformers? ACL 2024 (long papers); arXiv:2402.09963.
+- Howard, M. W., MacDonald, C. J., Tiganj, Z., Shankar, K. H., Du, Q., Hasselmo, M. E. and Eichenbaum, H. A unified
+  mathematical framework for coding time, space, and sequences in the hippocampal region. J. Neurosci. 34(13):4692-4707,
+  2014.
+- Khavari, B., Shakerinava, M., Khullar, J., Huang, J., Rivest, F., Ravanbakhsh, S. and Chandar, S. Parity requires unified
+  input dependence and negative eigenvalues in SSMs. ICML 2025 Workshop on Methods and Opportunities at Small Scale;
+  arXiv:2508.07395.
+- Lahoti, A., Li, K. Y., Chen, B., Wang, C., Bick, A., Kolter, J. Z., Dao, T. and Gu, A. Mamba-3: improved sequence modeling
+  using state space principles. ICLR 2026; arXiv:2603.15569.
+- Li, B., Wu, Y., Huang, N. and Zhang, W. GridPE: a grid cell-inspired unified position embedding for arbitrary-dimensional
+  spaces. arXiv:2406.07049 (v3), 2024.
+- Li, P., Cornford, J., Ghosh, A. and Richards, B. Learning better with Dale's law: a spectral perspective. NeurIPS 2023.
+- Lin, Z., Nikishin, E., He, X. O. and Courville, A. Forgetting Transformer: softmax attention with a forget gate (FoX).
+  ICLR 2025; arXiv:2503.02130.
+- Liu, B., Ash, J. T., Goel, S., Krishnamurthy, A. and Zhang, C. Transformers learn shortcuts to automata. ICLR 2023;
+  arXiv:2210.10749.
+- Movahedi, S., Carstensen, T., Afzal, A., Hutter, F., Orvieto, A. and Cevher, V. Selective rotary position embedding.
+  ICLR 2026; arXiv:2511.17388.
+- Orvieto, A., Smith, S. L., Gu, A., Fernando, A., Gulcehre, C., Pascanu, R. and De, S. Resurrecting recurrent neural
+  networks for long sequences (LRU). ICML 2023*; arXiv:2303.06349.
+- Rambaud, V., Mascarenhas, S. and Lakretz, Y. MapFormer: self-supervised learning of cognitive maps with input-dependent
+  positional embeddings. arXiv:2511.19279 (v4, 10 May 2026).
+- Sarrof, Y., Veitsman, Y. and Hahn, M. The expressive capacity of state space models: a formal language perspective.
+  NeurIPS 2024; arXiv:2405.17394.
+- Veisi, A., Fartoot, D. and Amirzadeh, H. Context-aware rotary position embedding (CARoPE). arXiv:2507.23083, 2025.
+- Whittington, J. C. R., Muller, T. H., Mark, S., Chen, G., Barry, C., Burgess, N. and Behrens, T. E. J. The
+  Tolman-Eichenbaum Machine: unifying space and relational memory through generalization in the hippocampal formation
+  (TEM). Cell 183(5):1249-1263, 2020.
+- Whittington, J. C. R., Warren, J. and Behrens, T. E. J. Relating transformers to models and neural representations of the
+  hippocampal formation (TEM-t). ICLR 2022; arXiv:2112.04035.
+- Woodworth, B., Gunasekar, S., Lee, J. D., Moroshko, E., Savarese, P., Golan, I., Soudry, D. and Srebro, N. Kernel and
+  rich regimes in overparametrized models. COLT 2020*; arXiv:2002.09277.
+- Yang, S., Shen, Y., Wen, K., Tan, S., Mishra, M., Ren, L., Panda, R. and Kim, Y. PaTH attention: position encoding via
+  accumulating Householder transformations. NeurIPS 2025; arXiv:2505.16381.
+- Zhang, Y., Chen, Z., Liu, Y., Qin, Z., Yuan, H., Xu, K., Yuan, Y., Gu, Q. and Yao, A. C.-C. Group representational
+  position encoding (GRAPE). ICLR 2026; arXiv:2512.07805.
 
 ## Figures and tables
 
@@ -256,7 +323,8 @@ CARoPE and CoPE were tested at one layer, CoPE on the ring and line only. Natura
   and torus; filled = SOLVED. Signed means 0.79 / 0.78 / 0.64 / 0.98; |.| 0.06 / 0.03 / 0.06 / 0.11; softplus (torus) 0.03.
 - **Fig. 2** (`docs/paper/figs/fig_mechanism.png`; Sec. 4.3; post hoc). Move angles (a(+1), a(-1)) of every rotary channel at
   the start (grey) and after training (dots), 8 ring runs per panel. Cancelling lines: blue a(-1) = -a(+1) (through zero;
-  needs opposite signs), red a(+1) + a(-1) = +-2 pi (wrapping). Shading: outside the non-negative quadrant; dotted: sum = pi.
+  needs opposite signs), red a(+1) + a(-1) = +-2 pi (wrapping). Shading: outside the non-negative quadrant (the barrier
+  side, closed to |.|); dotted: sum = pi.
   Panels: (a) signed step, same-direction start (7/8 SOLVED; cancelling share 0.06 -> 0.89, almost all through zero);
   (b) |.| step, same start (0/8; 0.04, of which 0.035 is collapsed same-sign channels near the origin, drawn black, not
   cancellation); (c) |.| step, large start with sums below pi (2/8; 0.05, by wrapping); (d) |.| step, start past pi (8/8;
@@ -272,7 +340,11 @@ CARoPE and CoPE were tested at one layer, CoPE on the ring and line only. Natura
   step; learning rates, schedules, epochs, seeds per batch; `--fast-attn`.
 - **B. Floors and gates.** Predict-blank and best action-stream n-gram floors per task.
 - **C. Per-seed tables** for every registered contrast; Fig. C1 and the ring strata table (post hoc; the gap-matched
-  wrap-only deficit varies between batches: -0.063, -0.007, -0.032).
+  wrap-only deficit varies between batches: -0.063, -0.007, -0.032); SOLVED counts and Fisher p for every contrast at loss
+  thresholds 0.02 / 0.05 / 0.1 and accuracy >= 0.99 (post hoc; `docs/audits/2026-10-15/reanalyses/solved_thresholds_out.md`);
+  the collapse, start, usage and gradient table for every barrier arm and the channel-by-channel flow comparison (post hoc,
+  rules fixed in advance in `docs/audits/2026-10-15/reanalyses/PREDICTIONS.md`; `collapse_wall_out.md`,
+  `capture_by_channel_out.txt`).
 - **D. Constructions.** The balanced conversion (P1(a)); why the naive one is exact but ill-conditioned; continuation protocol
   and the LOST rule (a continuation is LOST if its training loss leaves the solved region); ring vs torus continuation
   learning rates.

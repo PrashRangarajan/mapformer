@@ -132,15 +132,51 @@ Checked by reading and by grep (`replicat|drift|fragil|weight decay|exactly thos
 
 ## 8. Not done, or left for the author
 
-- Mock fix 14 (CPU re-analyses), see Section 2.
-- `fig_mechanism.py` panel titles (arm codes) and `FIGS_NOTES.md`'s "Figure 3" label.
+Items marked DONE were closed in the finishing pass (Section 9).
+- DONE: mock fix 14 (CPU re-analyses), Section 9.
+- DONE: `fig_mechanism.py` panel titles and `FIGS_NOTES.md`'s "Figure 3" label.
 - Source files the mock review flags as not bannered: `WRAP_EXISTENCE_RESULTS.md` (87% -> 18% drift secondary, now
   withdrawn by ACCOUNTS T1), `MECHANISM_RESULTS.md` ("Design implication", withdrawn by TORUS_START), `SIGN_MATCHED_RESULTS.md`
   and CLAUDE.md's sign row ("replication in a new regime"). Not edited here.
 - Appendices A-D and F-I remain plans; J and K are written.
-- Citations to verify before submission: Li et al. 2023's claim; Cornford 2021 and Khavari 2025 author lists; GridPE;
-  Hahn-Rofin venue.
+- DONE: citations (Li et al. 2023's claim, Cornford 2021 and Khavari 2025 author lists, GridPE, Hahn-Rofin venue); a
+  reference list now ends the main text. Still not re-checked: the venues of Amid-Warmuth, Orvieto, Woodworth, Grazzi
+  (marked * in the list).
 - GAUGE (4.5) to be filled from its registered analysis only.
 
 Sources (web, for one citation): [NeurIPS 2023 poster page](https://nips.cc/virtual/2023/poster/70321),
 [MLAnthology entry](https://mlanthology.org/neurips/2023/li2023neurips-learning).
+
+## 9. Finishing pass (2026-10-15; CPU only, no training)
+
+Main text now 3,931 words by the same count (was 3,611): the re-analysis results below (~250 words) and rewrapped
+citations. Every new number is post hoc and labelled so; the registered numbers are unchanged.
+
+**Citations, checked first-hand** (downloads and metadata in `papers/new_2026-10-15/`, `SOURCES.txt` there):
+| item | draft 4 said | found | change |
+|---|---|---|---|
+| Li et al. 2023 | "attribute the deficit to the spectrum at initialisation" | P. Li, J. Cornford, A. Ghosh, B. Richards, NeurIPS 2023: "the spectrum is more impactful than sign constraints on performance - though both contribute" (`li2023_neurips/paper.txt:79-80`) | "find the spectrum at initialisation matters more than the sign constraint, though both contribute" |
+| Cornford et al. 2021 | (no list) | J. Cornford, D. Kalajdzievski, M. Leite, A. Lamarquette, D. M. Kullmann, B. A. Richards; ICLR 2021 poster (OpenReview eU776ZYxEpz; agrees with Li et al.'s ref. [10]) | reference entry |
+| Khavari et al. 2025 | "the sign must be input-dependent in the same layer" | B. Khavari, M. Shakerinava, J. Khullar, J. Huang, F. Rivest, S. Ravanbakhsh, S. Chandar; ICML 2025 workshop (MOSS); claim: for diagonal SSMs a single layer must have both input dependence and negative eigenvalues | "in diagonal SSMs, input dependence and negative eigenvalues must occur in the same layer" |
+| GridPE | "derives RoPE from a velocity-controlled oscillator" | B. Li, Y. Wu, N. Huang, W. Zhang, arXiv:2406.07049 (v1 2024, v3 2026): VCO grid-cell phase (Eqs. 1-3) + random Fourier features, reducing to RoPE in 1D; embeds given coordinates (images, point clouds) | "builds a position embedding for given coordinates from grid-cell velocity-controlled-oscillator models and Fourier features, recovering RoPE in one dimension" |
+| Hahn-Rofin venue | ACL 2024, unverified | ACL 2024 long papers (2024.acl-long.800) | none |
+Also checked against arXiv / OpenReview / Crossref metadata: every other entry's title and authors (TEM via Crossref, TEM-t
+and Liu via OpenReview). `docs/lit/LIT_REPRESENTABILITY_2026-10-14.md` Section 5 statuses updated.
+
+**Mock fix 14, re-analyses** (`docs/audits/2026-10-15/reanalyses/`; predictions and decision rules in `PREDICTIONS.md`
+written before any run; each probe checked on constructed cases first; outcome appended there):
+- R1 `solved_thresholds.py` -> `solved_thresholds_out.md`. All 47 arms reproduce their registered SOLVED counts at 0.05.
+  RING_DIAL p_plus 0.5 at loss < 0.1: 4/8 vs 8/8 (Fisher 0.077; does not fire); every other sign contrast, every Table 2
+  contrast and T2 F1 fire at 0.02, 0.05, 0.1 and acc >= 0.99. CoPE line vs ring: 1/16 vs 0/16 registered, 8/16 vs 2/16 at
+  0.1 (p 0.054), 7/16 vs 2/16 at acc >= 0.99. Draft: 4.1, Table 2 caption, 4.6, Limitations, appendix plan C.
+- R2 `capture_by_channel.py` -> `capture_by_channel_out.txt`. The one-channel flow from each AO_high channel's own start
+  predicts 0.329 cancelling vs 0.230 observed; kappa +0.086; near 2 pi flow 0.95 vs model 0.28; 59% of cancelling
+  channels not captured by the flow. Draft: 4.3 second bullet and closing sentence.
+- R3 `collapse_wall.py` -> `collapse_wall_out.md`. Collapse per move step in every barrier arm and signed control;
+  ring AO arms: inherited from small starts (77-81% of near-zero starts end collapsed; signed 29-35%), read by attention
+  (usage ratio 0.39-1.10), gradient into the wall for 51-57%: MIXED by the pre-stated rule. Draft: 4.3 third bullet.
+  Gradient in eval mode (no dropout) on the ring eval stream; torus gradients not computed (collapse fractions only).
+None needed training.
+
+**Figure.** `fig_mechanism.py` panel titles now (a)-(d) in draft 4's words; the shading is labelled "barrier side: closed
+to |.|"; re-rendered PNG/PDF; `fig_mechanism_out.txt` byte-identical. Draft Fig. 2 caption names the shading the same way.

@@ -1,4 +1,5 @@
-"""Figure 3 of the workshop outline (the mechanism; MECHANISM batch, ring 32, p_plus 0.5, T = 128, 300 epochs, seeds 800-807).
+"""Fig. 2 of the workshop draft (DRAFT4_workshop.md Sec. 4.3; MECHANISM batch, ring 32, p_plus 0.5, T = 128, 300 epochs,
+seeds 800-807). Panel titles use the draft's terms (2026-10-15 relabel; arm codes only in the output text).
 Per rotary channel (64 per run, 8 runs per arm), the pair of move angles (a(+1), a(-1)) = omega * step, at the start
 (eval.json init_angles) and at the end of training (action_angles of the checkpoint).
 
@@ -23,8 +24,8 @@ from mapformer.model_wrap_exist import action_angles
 
 R = "/home/prashr/mapformer/runs/wrap_mech/p0"; HERE = os.path.dirname(os.path.abspath(__file__))
 SEEDS = range(800, 808); TP = 2 * np.pi
-ARMS = [("SO_absmag", "signed, small same-sign start"), ("AO_absmag", "|.|, the same start"),
-        ("AO_mid", "|.|, large start, sums < pi"), ("AO_high", "|.|, large start, sums > pi")]
+ARMS = [("SO_absmag", "(a) signed step, same-direction start"), ("AO_absmag", "(b) |.| step, the same start"),
+        ("AO_mid", "(c) |.| step, large start, sums < pi"), ("AO_high", "(d) |.| step, start past pi")]
 BOX = {"AO_mid": (0.9, 1.5), "AO_high": (1.7, 4.5)}   # iid U(lo, hi) start of both move angles
 ARROW_SEED = 800                                    # init -> final segments drawn for one seed (64 channels)
 
@@ -80,7 +81,7 @@ for ax, (arm, desc) in zip(axs.flat, ARMS):
     ax.scatter(F[:, 0][d["via0"]], F[:, 1][d["via0"]], s=3.5, color="C0", lw=0, zorder=5)
     ax.scatter(F[:, 0][d["viaw"]], F[:, 1][d["viaw"]], s=3.5, color="C3", lw=0, zorder=5)
     share = d["share"]                                                  # registered wrap share
-    ax.set_title(f"{arm}: {d['solved']}/8 SOLVED\n{desc}", fontsize=6.3, pad=2)
+    ax.set_title(f"{desc}\n{d['solved']}/8 SOLVED", fontsize=6.3, pad=2)
     ax.text(0.97, 0.03, f"cancel {share:.2f}", transform=ax.transAxes, fontsize=5.8, ha="right", va="bottom")
     ax.set_xlim(lo, hi); ax.set_ylim(lo, hi); ax.set_aspect("equal")
     ticks = [-np.pi, 0, np.pi, TP]
@@ -91,12 +92,13 @@ for ax in axs[1]:
     ax.set_xlabel("a(+1)  [rad]", fontsize=6.5, labelpad=1)
 for ax in axs[:, 0]:
     ax.set_ylabel("a(-1)  [rad]", fontsize=6.5, labelpad=1)
-H = [plt.Line2D([], [], color="C0", lw=0.9, alpha=0.45, label="a(-1) = -a(+1)"),
-     plt.Line2D([], [], color="C3", lw=0.9, alpha=0.45, label="a(+1) + a(-1) = +-2pi"),
+H = [plt.Line2D([], [], color="C0", lw=0.9, alpha=0.45, label="a(-1) = -a(+1) (through zero)"),
+     plt.Line2D([], [], color="C3", lw=0.9, alpha=0.45, label="a(+1) + a(-1) = +-2pi (wrap)"),
+     plt.Rectangle((0, 0), 1, 1, color="0.93", lw=0, label="barrier side: closed to |.|"),
      plt.Line2D([], [], color="0.5", lw=0.5, ls=":", label="sum = pi"),
      plt.Line2D([], [], color="0.55", marker=".", ls="", ms=3, label="start (- - start box)"),
-     plt.Line2D([], [], color="k", marker=".", ls="", ms=3, label="end, not cancelling"),
-     plt.Line2D([], [], color="C0", marker=".", ls="", ms=3.5, label="end, cancels through 0"),
+     plt.Line2D([], [], color="k", marker=".", ls="", ms=3, label="end, other (incl. collapsed)"),
+     plt.Line2D([], [], color="C0", marker=".", ls="", ms=3.5, label="end, cancels through zero"),
      plt.Line2D([], [], color="C3", marker=".", ls="", ms=3.5, label="end, cancels by wrapping")]
 fig.legend(handles=H, loc="lower center", ncol=2, fontsize=5.6, frameon=False, bbox_to_anchor=(0.5, 0.0),
            handlelength=1.6, columnspacing=0.8, handletextpad=0.4)

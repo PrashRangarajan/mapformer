@@ -1,0 +1,1245 @@
+                                               GridPE: A Grid Cell-Inspired Unified Position
+                                               Embedding for Arbitrary-Dimensional Spaces
+
+
+                                                Boyang Li                      Yulin Wu                           Nuoxian Huang
+                                            New York University             Peking University                 Imperial College London
+                                            boyang.li@nyu.edu          cover.wu@stu.pku.edu.cn              n.huang25@imperial.ac.uk
+arXiv:2406.07049v3 [cs.NE] 3 Jun 2026
+
+
+
+
+                                                                                  Wenjia Zhang
+                                                                                 Tongji University
+                                                                           wenjiazhang@tongji.edu.cn
+
+
+
+                                                                                      Abstract
+                                                 Understanding spatial relationships across all dimensions is fundamental for intelli-
+                                                 gent systems. However, existing positional embeddings, such as Rotary Positional
+                                                 Embedding (RoPE), lack theoretical guarantees for high-dimensional spatiotempo-
+                                                 ral tasks like video understanding and robotic navigation. Inspired by the hexag-
+                                                 onal periodic coding of grid cells in mammalian spatial cognition, we propose
+                                                 GridPE—a novel positional embedding framework that integrates computational
+                                                 neuroscience principles with harmonic analysis. Our approach builds upon Random
+                                                 Fourier Features and leverages principles from neuroscience to construct efficient
+                                                 embeddings. Theoretically, we prove that any translation-invariant spatial function
+                                                 can be approximated by a finite sum of Fourier bases, which naturally reduces to
+                                                 RoPE in the one-dimensional case. We then derive the directions and quantities
+                                                 of frequency vectors at each scale in any Euclidean dimension, along with the
+                                                 optimal ratio between different scales, from a bioavailability perspective. These
+                                                 derivations are equivalent to the relationship between the centroid and the vertices
+                                                 of a regular simplex in that dimension. We validate GridPE across a range of spatial
+                                                 modeling tasks, including 2D image classification (ImageNet100) and 3D point
+                                                 cloud recognition (ModelNet40). Our theoretical analysis establishes GridPE as a
+                                                 unified framework for positional embedding in arbitrary-dimensional spaces, while
+                                                 empirical results demonstrate its superiority over existing methods.
+
+
+                                        1    Introduction
+                                        Understanding spatial relation plays a crucial role in constructing an internal model of the world,
+                                        enabling systematic organization of knowledge across various domains of behavior [1]. This capability
+                                        is therefore essential for intelligent systems to structure knowledge within complex, high-dimensional
+                                        cognitive maps [2]. Meanwhile, the Transformer architecture—thanks to its self-attention mechanism
+                                        and distinctive network organization—excels at processing and representing such high-dimensional,
+                                        complex topological relationships, which likely underlies its success across a wide range of tasks [3].
+                                        However, the Transformer itself is not inherently equipped to understand the positional information of
+                                        input units, which is critical for many tasks. As a result, substantial research has focused on enhancing
+                                        position embedding to enable Transformers to better capture this information [4–7]. Among these
+                                        advancements, Rotary Position Embedding (RoPE) [5] has gained significant attention. By applying a
+                                        rotational matrix to the query and key vectors, RoPE helps Transformers capture the relative positional
+                                        relationships between tokens. Due to its excellent performance in long-context comprehension, RoPE
+                                        has been widely adopted in major large language models, such as LLaMA and Qwen [8, 9]. However,
+                                        RoPE was originally designed for language tasks in 1D space. While some efforts have been made
+                               Scale 1                Scale m                Dimension             Regular Simplex
+                                                                                                     (Per Scale)     1D
+
+               Input Unit 1                                          𝒙𝟏 = 𝑥"," , … , 𝑥",$   ∈ ℝ$
+
+
+               Input Unit 2                                          𝒙𝟐 = 𝑥(," , … , 𝑥(,$ ∈ ℝ$                       2D
+
+               Input Unit 3                                          𝒙𝟑 = 𝑥*," , … , 𝑥*,$ ∈ ℝ$
+      Input
+       Size
+               Input Unit 4                                          𝒙𝟒 = 𝑥,," , … , 𝑥,,$ ∈ ℝ$                       3D
+
+
+
+
+               Input Unit N                                          𝒙𝑵 = 𝑥&," , … , 𝑥&,$ ∈ ℝ$
+
+                                          Query/Key                         Position 𝑥              Wave Vector 𝜔
+
+
+
+
+                                      #
+                                𝑒 !𝝎!,!𝐱
+                                    ⋮           Scale 1
+                                   #
+                               𝑒 !𝝎!,$%!𝐱
+                                    ⋮
+                                    '
+                                𝑒 !$&,!𝒙
+                                    ⋮           Scale m
+                                  #
+                              𝑒 !𝝎&%!,(%!𝐱
+
+                                                                                                         Query/Key
+              Query/Key               Rotation Matrix Interpretation of Fourier Basis
+                                                                                                        With Position
+
+Figure 1: Overview of GridPE: a Fourier-based positional embedding framework for arbitrary
+dimensions, inspired by grid cells and constructed using simplex geometry.
+
+
+to extend it to high-dimensional position embeddings for complex spatiotemporal tasks—such as
+image recognition, video processing, 3D object detection, and multimodal applications [8, 10–13]—a
+unified theoretical approach remains absent.
+This challenge is closely tied to a fundamental question in neuroscience—how does the mammalian
+brain represent spatial features and relationships in multi-dimensional euclidean space? The idea of
+a “cognitive map” was first proposed by Tolman to describe an internal representation that enables
+flexible navigation and behavior [1]. Decades later, this concept found its neural substrate in the
+discovery of grid cells—neurons in the medial entorhinal cortex (MEC) that fire in spatially periodic
+patterns. These cells form a regular hexagonal lattice across the environment, activating whenever the
+animal is near a vertex of this internal grid and effectively tiling space with repeating receptive fields.
+This spatial code is thought to support multi-scale self-localization, encode metric distances, and
+facilitate vector-based navigation and path integration [14–19]. Due to their close association with
+spatial representation, the principles of grid cell firing have been widely adopted by AI researchers,
+extending beyond neuroscience to fields such as robotics navigation system design [20], reinforcement
+learning agent trajectory planning [21], and positional encoding for geospatial data [22–24].
+While many studies heuristically apply grid-cell-like patterns in 2D without a principled spectral or
+kernel-based foundation, our method grounds positional embedding design in Random Fourier Fea-
+tures [25] and velocity-controlled oscillation theory (VCO) [26, 27], enabling biologically inspired
+representations in arbitrary dimensions. To support this intuition, we first prove that, from the view-
+point of translation invariance, the activation intensity of grid populations within a high-dimensional
+Euclidean space (e.g., 1D, 2D, or 3D spaces) can be expressed as a sum of Fourier basis functions. In
+the one-dimensional scenario, this expression naturally reduces to RoPE. Building on this, we extend
+the periodic coding of space by grid cells as described in the VCO theory, and derive the directions
+and quantities of frequency vectors at each scale in any Euclidean dimension. These wave vectors
+can be understood as analogous to the directions and quantities from the centroid to the vertices of
+a regular simplex in that dimension, where each scale corresponds to a different configuration of
+vectors. Figure 1 illustrates how the geometry of a regular simplex gives rise to the wave vectors
+
+
+                                                                2
+used in constructing the positional embedding. From a bioavailability perspective, we also determine
+the optimal ratio between different scales, which ensures the most efficient representation of spatial
+information. This yields a scalable and generalizable positional embedding framework that improves
+upon existing methods and enhances performance across diverse tasks and dimensions.
+To evaluate the proposed approach, we conducted experiments on two benchmark tasks: image
+classification on the ImageNet-100 dataset and point cloud classification on the ModelNet-40 dataset.
+We compared our method against existing positional embedding techniques. The experimental results
+show that our approach consistently improves the performance of the state-of-the-art self-attention
+mechanisms by preserving strong extrapolation capabilities across dimensions, underscoring the
+promise of incorporating insights from neuroscience into the design of artificial intelligence systems.
+
+2     Related Work
+Positional Embedding for Length Extrapolation. In the context of 1D sequence length extrapola-
+tion, sinusoidal positional encodings (PEs), first introduced in the Transformer model, face challenges
+when extrapolating to longer sequences beyond those seen positions during training. Several methods
+have been proposed to address this limitation. For instance, integrating shift invariance into absolute
+positional encodings (APEs) [28] or improving smoothness through continuous functions [29] have
+been suggested to enhance extrapolation for longer sequence lengths. While absolute positional
+encodings (APEs) map each position to a unique representation, relative positional encodings (RPEs)
+capture the relative distances between tokens, which allows for better generalization to unseen
+sequence lengths. Further simplifications of RPEs, such as T5-Bias [6] and ALiBi [7], reduce compu-
+tational complexity while maintaining extrapolation capabilities. However, despite their strengths
+in handling sequence length variations, RPEs generally decouple positional information from se-
+mantic content, limiting their ability to effectively model complex relationships between positions
+in a sequence. Methods like RoPE offer an advantage by utilizing Fourier-based distance-attention
+functions to model relative positions in a more nuanced way [4, 30, 31]. This approach has been
+widely adopted in large language models (LLMs) due to its ability to represent relative positional
+information effectively, while also maintaining strong extrapolation performance.
+
+Extending RoPE to High-Dimensional Data. Several works have explored extending RoPE to
+high-dimensional spaces, with a primary focus on image and video large models. One straightforward
+approach involves flattening the high-dimensional inputs into a 1D sequence, enabling the direct
+application of 1D RoPE. However, despite improvements in indexing and attention mechanisms
+proposed by variants such as TAD-RoPE [32], these extensions still struggle to capture the rich
+spatiotemporal structures inherent in modalities in video [8]. Building on this, some approaches
+address the high-dimensional nature of the data by treating each dimension independently and
+applying separate rotations to each. For instance, the axial RoPE proposed by Su et al [5] provides a
+theoretical formulation for 2D RoPE, which has been implemented in several models to enhance their
+spatial representation. Examples include EVA-02 [33], which incorporates 2D axial RoPE into a
+language-aligned vision model, and Unified-IO [13], which employs 2D RoPE for novel multi-modal
+modeling to capture both spatial and temporal information. Additionally, models like Qwen2-VL’s
+M-RoPE [8] and VideoRoPE [11] extend RoPE to 3D, aiming to improve the understanding of
+spatiotemporal relationships, with a particular focus on resolution scaling. However, despite their
+success in spatial representation learning, these methods face limitations when it comes to modeling
+distances between positions in arbitrary directions in the high-dimensional space, thereby constraining
+their ability to fully capture the complex spatial relationships inherent in high-dimensional data.
+Another approach considers treating multiple axes as a unified entity for rotation, as demonstrated
+by RoPE-Mixed [10]. This method allows for modeling diagonal distances but lacks a rigorous
+theoretical justification for its effectiveness, particularly in determining the required number and
+directions of wave vectors for higher dimensions.
+
+3     Preliminaries
+3.1   Grid Cell Modeling Based on VCO Theory
+
+In this work, we model grid cells based on the velocity-controlled oscillation (VCO) theory [26, 27].
+Under VCO, each presynaptic input to a grid cell generates an oscillation whose instantaneous
+
+
+                                                  3
+frequency shifts with the agent’s velocity projected onto that input’s preferred direction, superimposed
+on a baseline frequency [34, 21]:
+                                         dΦ
+                                            = ωd = ωs + β v⊤ ω                                         (1)
+                                         dt
+Here, ωd = dΦ/dt is the instantaneous oscillation frequency, and ωs the baseline frequency. The
+vectors v and ω ∈ R2 represent the agent’s velocity and a preferred direction (with magnitude
+as spatial frequency), respectively, while β scales the effect of velocity. When we integrate the
+modulated frequency ωd over the time t, we obtain the oscillation phase:
+                                 Z t
+                                      ωs + β v⊤ ω dt = ωs t + β ω ⊤ x(t)
+                                                  
+                         Φ(t) =                                                                (2)
+                                     0
+
+where x(t) is the displacement vector from time 0 to time t. Evaluating Equation 2 at a fixed time t0
+lets us reinterpret the phase as a function of space alone, i.e., Φ as a function of x. We therefore write:
+                                 Φ(x) = Φ(t) t=t0 = ωs t0 + β ω ⊤ x,                                   (3)
+
+Here, x = x(t0 ) indicates the displacement vector from time 0 to time t0 . Equation 3 emphasizes
+Φ’s dependence on the displacement x. As a result, all points with the same projection ω ⊤ x share
+the same phase, creating a parallel “stripe” of activation across space. By summing several such
+stripe patterns—each generated by a different presynaptic cell’s preferred direction ω i —we obtain
+the familiar hexagonal grid of grid cell firing as shown in Figure 2. Equivalently, this process can be
+written as a sum of Fourier basis functions [35]:
+                              n                         n
+                              X                         X ci                            
+                     g(x) =         ci cos (Φi (x)) =             ejΦi (x) + e−jΦi (x)                 (4)
+                              i=1                       i=1
+                                                              2
+
+Here, n is the number of presynaptic inputs (n = 3 in Figure 2), Φi (x) denotes the spatial phase
+of the i-th oscillatory input at position x, and ci is its corresponding weight. Because negative
+frequencies add no new information about spatial periodicity or phase relationships, we retain only
+positive-frequency components. Moreover, since each presynaptic input has its own baseline theta
+frequency ωs , we absorb that dependence into c̃(ω) and fix t = t0 , treating these coefficients as
+constants. Here, c̃(ω) captures the time-independent complex amplitude for each Fourier basis, and
+we omit the parameter β, which can be integrated into the wave vector ω. For notational convenience,
+we then replace the sum over input indices i with a sum over their corresponding wave vectors ω.
+Combining these choices, the grid cell’s activation at location x can be written as:
+                                    X             ⊤              ci
+                           g(x) =       c̃(ω) e jω x , c̃(ω) = e jωs t0 ,                        (5)
+                                                                 2
+                                     ω∈Ω
+
+Previous research typically uses three Fourier bases with directional preferences forming 120◦
+angles [35, 36]. This configuration results in a hexagonal lattice structure, which efficiently and
+uniformly covers two-dimensional space, minimizing overlap and maximizing the distinctiveness
+of each cell’s spatial representation. An illustration of this hexagonal firing pattern can be found in
+Figure 2. This geometric efficiency is crucial for spatial navigation and representation, providing a
+regular, repeating pattern that enhances the precise encoding of an animal’s environment and location.
+
+
+3.2   Translational Invariance of the Grid Cell
+
+Grid cells represent not only absolute locations in the Euclidean space but also relative spatial shifts
+between locations, enabling the encoding of free vectors and facilitating vector-based navigation.
+The inner product of grid cell representations sheds light on this capability. At a fixed time point,
+the representation of a grid cell at location x is given by Equation 5. If two locations differ by d,
+i.e. x − y = d, then the functional inner product between g(x) and its shifted version g(y) over the
+entire space is:
+                                                                  Z +∞
+                                 XX                           ⊤            ⊤   ⊤
+                 ⟨g(x), g(y)⟩ =           c(ω 1 ) c(ω 2 )∗ ejω2 d      ej(ω1 −ω2 )x dx               (6)
+                                    ω1 ω2                             −∞
+
+
+
+                                                    4
+       𝑻
+                                                𝟑
+                                                        𝑻
+                                                                                         Inner product h(d) = g(x), g(x + d)
+    𝒆𝒋𝝎𝟑 𝒙                                     # 𝒄𝒊 𝒆𝒋𝝎𝒊 𝒙                                                                           h(d)
+                                               𝒊(𝟏
+                           𝒄𝟑                                           2000
+
+                                          𝑻
+                                      𝒆𝒋𝝎𝟐 𝒙                            1500
+
+
+
+
+                                                                 h(d)
+                                𝒄𝟐                                      1000
+                      𝒄𝟏
+                                                                        500
+
+
+                𝑻                                                         0
+             𝒆𝒋𝝎𝟏 𝒙
+                                                                               20   15      10      5       0      5       10   15    20
+                                                                                                 Relative displacement d
+Figure 2: Illustration of VCO theory. Black
+neurons represent presynaptic cells with                         Figure 3: Decay of h(d) with displacement d,
+simple dendritic oscillations, while the or-                     assuming uniformly distributed frequency compo-
+ange neuron is a grid cell whose grid-like                       nents ω. The function shows periodic behavior
+firing pattern emerges from the summation                        with decaying amplitude as the distance increases.
+of three oscillations with different preferred
+directions.
+
+
+In n-dimensional space, a standard result from Fourier analysis gives:
+                           Z +∞
+                                      ⊤    ⊤
+                                 ej(ω1 −ω2 )x dx = (2π)n δ(ω 1 − ω 2 ),                                                                (7)
+                                     −∞
+where δ(·) is the Dirac delta function, which is nonzero only when ω 1 = ω 2 . Substituting this into
+Equation 6, we obtain:
+                                                   X        2    ⊤
+                       ⟨g(x), g(x + d)⟩ = (2π)n       |c(ω)| ejω d = h(d)                         (8)
+                                                                     ω
+Therefore, for a given grid cell, the inner product of its activation map and its shifted version represents
+the shift vector, independent of specific locations. Grid cells in the mammalian brain span multiple
+scales and orientations [37]. Consequently, their joint response to an offset vector d can be modeled
+by integrating the frequency-tuned activations of individual cells. This generalizes the discrete sum in
+Equation 8 into a continuous integral over the population, aggregating responses across the frequency
+domain. Summing these over the entire population yields a translationally invariant kernel:
+                                                 Z
+                                                             2     ⊤
+                              k(x, y) = (2π)n        |c(ω)| ejω (x−y) dω                                 (9)
+                                                             ω
+Grid cells suggest that the brain represents Euclidean space via multi-dimensional Fourier analysis,
+much like the auditory system processes sound waves and the visual system processes light waves.
+By superimposing oscillations across multiple spatial frequencies, the grid-cell network achieves
+an efficient, high-resolution encoding of space [38, 19]. This mechanism underlies the brain’s
+remarkable precision in building the “cognitive map” Tolman first postulated [1]. Moreover, as
+illustrated in Figure 3, the translational-invariant kernel h(d) decays with increasing ∥d∥, showing
+how the influence of a shift vector naturally wanes with spatial separation.
+
+4    Method
+We propose GridPE, a grid cell-inspired positional embedding that approximates shift-invariant
+attention kernels using structured Fourier embeddings. We first describe the theoretical construction
+of the embedding and then explain its spectral design based on coverage and symmetry.
+GridPE Construction. We construct shift-invariant positional embeddings f (q, x1 ) and f (k, x2 )
+whose inner product approximates any radial attention kernel of the form h(q, k, d), where d =
+x1 − x2 ∈ Rn denotes the relative displacement. For any tolerance ε > 0, we construct S frequency
+                                                                (s)
+scales, each scale defined by a set of equal-norm vectors {ω i }n+1          n
+                                                                     i=1 ⊂ R , whose directions form a
+regular (n + 1)-simplex. With these vectors, we can build a positional embedding f such that:
+                           h(q, k, x1 − x2 ) = ⟨f (q, x1 ), f (k, x2 )⟩ + O(ε)                     (10)
+
+
+                                                                 5
+We fix the query q for exposition, as the treatment for the key k is symmetric. The embedding is
+defined by separating content and position:
+                                                 h                           i
+            f (q, x) = c(q) ⊙ z(x),      z(x) = z (1) (x) ∥ · · · ∥ z (S) (x) ∈ CS(n+1)     (11)
+
+where c(q) and z(x) are finite-dimensional content and position vectors, respectively. Each positional
+block is given by:
+                              h    (s) ⊤               (s)  ⊤
+                                                              i
+                   z (s) (x) = ej(ω1 ) x , . . . , ej(ωn+1 ) x ,    s = 1, . . . , S.             (12)
+Each scale contributes the minimal set of n + 1 Fourier bases required to span Rn with maximal rota-
+tional and reflectional symmetry. Concatenating S such scales yields a shift-invariant approximation
+of h with accuracy O(ε). The complex exponentials in Equation 12 can equivalently be rewritten
+using real 2 × 2 rotation matrices (as in RoPE), allowing the embedding to remain entirely in the real
+domain.
+Implications and Roadmap. GridPE provides a Fourier-based approximation to shift-invariant
+attention kernels using a biologically inspired set of wave vectors. The next two subsections detail:
+(1) how these kernels are approximated via structured Fourier bases; and (2) how simplex-based
+wave vector arrangements achieve efficient, symmetric spectral coverage in Rn , echoing geometric
+principles observed in grid cell representations.
+
+4.1   Grid Cell-inspired Fourier Embedding
+
+Inspired by the structured spatial coding of grid cells and the translation invariance exhibited by grid
+cell populations, we view their wave vectors as a natural foundation for position embedding. To
+bridge this biological insight with neural attention mechanisms, we modulate query and key vectors
+using position-dependent functions, analogous to RoPE [5]:
+                                  qx1 = f (q, x1 ),       kx2 = f (k, x2 )                          (13)
+where f combines the input vectors with positional information. To ensure that attention depends
+only on the relative displacement d = x1 − x2 , we impose the following constraint:
+                                   ⟨f (q, x1 ), f (k, x2 )⟩ = h(q, k, d)                            (14)
+We assume that f (q, x1 ) and f (k, x2 ) reside in an infinite-dimensional space, with no approximation
+incurred by the expansion. The inner product then takes the form:
+                                                         ∞
+                                                         X
+                            ⟨f (q, x1 ), f (k, x2 )⟩ =         fi (q, x1 ) fi (k, x2 )              (15)
+                                                         i=0
+
+The infinite-dimensional embedding f (q, x1 ) ∈ R∞ is the projection of a square-integrable function
+γ(q, ·) ∈ L2 (Rn ) onto a set of orthonormal basis functions {ϕi (· − x1 )}, centered at spatial location
+x1 , where the placeholder · denotes the spatial integration variable. Specifically, we define:
+                                   fi (q, x1 ) = ⟨γ(q, ·), ϕi (· − x1 )⟩.                           (16)
+This representation enables us to relate inner products between embeddings to those between the
+underlying functions. By Parseval’s identity, the positional shift can be equivalently transferred from
+the basis functions to the function γ(q, ·), resulting in an inner product between the shifted functions
+γ(q, · + x1 ) and γ(k, · + x2 ). We thus obtain:
+                              Z                                      Z
+   ⟨f (q, x1 ), f (k, x2 )⟩ =    γ(q, x + x1 ) γ(k, x + x2 )∗ dx =       γ(q, x + d) γ(k, x)∗ dx (17)
+                            Rn                                               Rn
+where the second equality follows from a change of variables x 7→ x − x2 , which makes the
+dependence on the relative displacement d explicit. Here, ∗ denotes complex conjugation, ensuring
+conjugate symmetry of the inner product, and for real-valued γ, we have γ ∗ = γ. This integral realizes
+the same relative attention kernel h(q, k, d) as defined in Equation 14. Since h(q, k, d) is translation-
+invariant by construction, we further assume it is radial. By Bochner’s theorem, such kernels
+correspond to the Fourier transform of a probability distribution p(ω), and can be approximated using
+random Fourier features (RFF) [39]. Specifically, the kernel admits the representation:
+                                               Z
+                                                                 ⊤
+                                h(q, k, d) =       p(q,k) (ω) ejω d dω                              (18)
+                                                 Rn
+
+
+                                                      6
+To focus on the spatial component, we treat the query and key as fixed. Let Γ(q, ω) denote the Fourier
+transform of γ(q, x). By Parseval’s theorem, the inner product in Equation 17 can be equivalently
+written in the frequency domain as:
+                   Z                               Z
+                                                           ⊤
+                        γ(q, x + d) γ(k, x)∗ dx =      ejω d Γ(q, ω) Γ(k, ω)∗ dω                 (19)
+                   Rn                                        Rn
+
+Combining Equations 17, 18, and 19, we obtain:
+                                            p(q,k) (ω) = Γ(q, ω)Γ(k, ω)∗                           (20)
+Viewed in the Fourier basis, γ(q, x) is characterized by its spectrum Γ(q, ω), which serves as the
+coordinate of γ under the orthonormal Fourier basis. The Equation 20 can thus be seen as a rank-1
+outer product for each frequency ω. This structure admits the decomposition:
+                                         p(q,k) (ω) = λ(ω) ψ(q, ω) ψ(k, ω)∗                        (21)
+where λ(ω) ≥ 0 is the spectral density and p ψ(q, ω) ∈ C is a normalized eigenfunction. Combining
+Equations 21 and 20, we obtain Γ(q, ω) = λ(ω) ψ(q, ω). Accordingly, the positional embedding
+γ(q, x) in Equation 19 can be expressed as:
+                          Z                          Z p
+                                         jω ⊤ x                              ⊤
+                γ(q, x) =      Γ(q, ω) e        dω =        λ(ω) ψ(q, ω) ejω x dω            (22)
+                               Rn                                 Rn
+
+Assuming a separable form ψ(q, ω) = C(q) p(ω), where C(q) and p(ω) represent the content-
+dependent and spectral components, respectively, we substitute this expression into Equation 22 to
+obtain the factorized representation γ(q, x) = C(q) Z(x), with:
+                             Z
+                                          ⊤                            p
+                    Z(x) =       ρ̃(ω) ejω x dω, where ρ̃(ω) = p(ω) λ(ω).                     (23)
+                                    Rn
+
+Under this factorization, Equation 17 becomes:
+                                                                       Z
+                                                                                       2     ⊤
+                 ⟨f (q, x1 ), f (k, x2 )⟩ = C(q) C(k)∗ (2π)n                |ρ̃(ω)| ejω d dω .     (24)
+                                                                         Rn
+                                                       |                       {z          }
+                                                                       position-dependent term
+
+Rather than sampling ρ̃(ω), we approximate it using a structured set of wave vectors inspired by
+the multi-scale tiling patterns of grid cell populations [40, 41], which correspond to the translation-
+invariant kernel in Equation 9, introduced in Subection 3.2. We select a finite set of m wave vectors,
+each defined by a specific scale and orientation, and construct a feature map z(x) ∈ Cm that serves
+as a finite-dimensional approximation of the original infinite-dimensional embedding f (x):
+                 (1) ⊤             (1) ⊤                (S) ⊤              (S) ⊤      PS
+   z(x) = ej(ω1 ) x , . . . , ej(ωm1 ) x ∥ · · · ∥ ej(ω1 ) x , . . . , ej(ωmS ) x ∈ C s=1 ms . (25)
+            
+             |            {z             }          |             {z            }
+                        z (1) (x)                                          z (S) (x)
+
+In the finite-dimensional setting, we approximate the embedding f (q, x) as the elementwise product
+c(q) ⊙ z(x), where c(q) encodes content and z(x) captures positional structure through complex
+exponentials. Each complex exponential is expanded into its sine and cosine components, yielding a
+real-valued feature vector z(x) ∈ Rn compatible with rotary position encoding (RoPE) [5], where
+relative phase shifts are implemented as 2D blockwise rotations. The number and directions of wave
+vectors ω per scale are adapted to the ambient spatial dimensionality, following principles derived
+from grid cell coding, as detailed in the next subsection.
+
+4.2   ω-Components of GridPE
+
+Periodic grids in n-dimensional space are constructed by superposing sinusoidal components defined
+by multiple wave vectors that satisfy two key criteria: coverage and maximum symmetry, while
+minimizing cell count. Coverage ensures that the grid tiles space completely, supporting full posi-
+tional resolution. Maximum symmetry promotes invariance under the largest group of geometric
+transformations (e.g., rotations and reflections), resulting in isotropic encoding. Together, these
+criteria guide wave vector selection in arbitrary n-dimensional spaces, favoring lattice structures with
+dense tiling and high geometric symmetry.
+
+                                                         7
+Coverage. To ensure spatial coverage, we analyze the relationship between wave vectors and grid
+point locations. Grid cell firing patterns can be modeled as the superposition of spatially synchronized
+oscillations, where each wave vector ω i imposes a planar constraint ω ⊤  i x = 2πki .
+To formalize this, let x ∈ Rn denote a spatial location where the phases of all oscillations align.
+Collecting the constraints from each wave vector yields a linear system of the form Ωx = 2πk,
+where Ω ∈ RN ×n stacks the wave vectors row-wise, and k = [k1 , . . . , kN ]⊤ ∈ ZN contains the
+corresponding integer phase indices. This system admits a unique solution only if rank(Ω) = n, in
+which case the grid spans the full space without degeneracy. If the rank is less than n, the solution
+becomes underdetermined, leading to ambiguous or incomplete spatial coverage.
+
+Maximum Symmetry. Full coverage alone does not guarantee high symmetry, which depends
+critically on the arrangement of wave vectors. Let the number of wave vectors be M . When
+M = n, the grid can cover the space but typically exhibits limited symmetry. For instance, in
+2D, two orthogonal vectors (90◦ ) generate a square grid with fourfold rotational symmetry, while
+three wave vectors arranged at 120◦ produce a hexagonal grid with sixfold symmetry. To maximize
+symmetry, wave vectors should have equal magnitudes and be uniformly distributed in direction. This
+corresponds to a regular simplex in n-dimensional reciprocal space. In this setting, each vector points
+from the centroid to a vertex of the simplex, producing the highest possible symmetry group in real
+space. Thus, to achieve both coverage and maximum symmetry, the number of wave vectors should
+be M = n + 1, arranged as a regular simplex. While in 1D, symmetry is more restricted, with the
+symmetry group limited to translation and reflection, making a single wave vector sufficient.
+                                                                                   ⊤
+For GridPE (n ≥ 2), each scale employs M = n + 1 complex exponentials ejωi x , where the wave
+vectors ω i point from the centroid to the vertices of a regular simplex in reciprocal space. In the
+1D case, this reduces to the RoPE form with M = 1. The construction of these wave vectors is
+detailed in Appendix B. This simplex-based frequency organization induces an isotropic and periodic
+spatial representation, aligning with the high symmetry observed in biological grid cells. To further
+avoid ambiguity across scales and ensure efficient spatial representation, we derive the optimal
+ratio between wave vector magnitudes across consecutive √ scales in n-dimensional space based on
+the economy principle. The resulting optimal ratio is n e, which provides theoretical guidance for
+selecting the base frequency, as detailed in Appendix C.
+
+
+5     Experiment and Result
+
+5.1   Experiment Setup
+
+In this section, we validate the effectiveness of our GridPE on two distinct tasks: 2D image clas-
+sification and 3D point-cloud classification. The ImageNet100 and ModelNet40 datasets are used
+as representative benchmarks for these two tasks. We push GridPE’s limits by scaling the input
+dimensionality through higher image resolutions and larger point counts.
+
+Baseline. For comparison, we choose several baseline position embedding methods: 1) Learned
+Positional Embedding [42], which directly maps the positional information of each input token into
+an embedding space; 2) RoPE-axial [5], where RoPE is extended to higher-dimensional spaces in
+a per-dimension fashion; and 3) Rope-Mixed [10], which incorporates diagonal distances suitable
+for vision models. These baselines are selected to provide a comprehensive evaluation of GridPE’s
+performance against widely used position embedding strategies in both 2D and 3D vision tasks.
+
+Implementation Details. We use the ViT-S model [43] for 2D image classification and the PCT
+model [44] for 3D point cloud classification. For the 2D task, the DeiT training recipe [45] is
+employed using the ImageNet-100 dataset [46]. The model is trained for 150 epochs with a batch
+size of 32, and the learning rate is set to 5 × 10−4 , with a cosine annealing scheduler. Both Top-1
+and Top-5 accuracies are used as evaluation metrics. For the 3D task, we use the ModelNet-40
+dataset [47]. The PCT model is trained for 100 epochs with a learning rate of 5 × 10−5 , and Top-1
+accuracy is used for evaluation. The Adam optimizer is used for both tasks, and standard train/test
+splits from each dataset are followed. All models are trained under identical configurations, with the
+only difference being the positional embedding technique. All experiments used RTX 4090 GPUs
+(24GB), with 2D tasks requiring approximately 128 GPU-hours and 3D tasks around 8 GPU-hours.
+
+
+                                                   8
+Table 1: Top-1 and Top-5 accuracy (%) of ViT-S models with different positional embeddings on
+ImageNet-100 for 2D image classification under varying image resolutions.
+       Evaluation    Learnable-PE [43]     RoPE-Axial [5]    RoPE-Mixed [10]         GridPE
+       Resolution
+                     Top-1      Top-5      Top-1    Top-5    Top-1      Top-5     Top-1    Top-5
+          160        49.70      75.94      55.68    81.38    55.16      80.06     57.24    81.64
+          192        56.06      81.24      63.32    86.40    61.78      85.12     63.42    87.08
+          224        59.82      83.92      66.90    88.64    65.02      87.90     67.34    89.34
+          256        60.54      85.18      67.96    89.24    65.76      88.60     68.54    89.96
+          320        61.88      86.10      66.04    88.80    64.82      88.20     67.20    90.12
+          384        61.12      85.74      63.06    87.14    61.44      86.94     64.82    88.42
+          448        59.76      84.54      60.06    85.52    58.96      84.74     61.46    86.52
+          512        57.24      82.70      57.32    83.50    54.44      81.78     58.72    84.06
+
+
+
+
+5.2 Experiments on the 2D Image Classification Task
+All ViT-S models were trained at a input size of 224×224 and then evaluated at various resolutions
+to assess the robustness of different positional embedding methods for spatial interpolation and
+extrapolation. As shown in Table 1, GridPE outperforms ohter positional embeddings across a wide
+range of resolutions. While all methods benefit from modest resolution increases, most exhibit
+performance drops as resolution continues to grow. Learnable-PE degrades more gradually under
+extrapolation, yet its accuracy remains consistently lower. In contrast, GridPE consistently achieves
+the highest accuracy across resolutions and maintains robust performance even under substantial
+resolution shifts. This advantage likely stems from GridPE’s structured construction of frequency
+vectors, which encode spatial positions using directionally balanced and geometrically symmetric
+bases. Such design enables more accurate modeling of relative spatial relationships, especially
+under unseen resolutions. In contrast, RoPE relies on axis-aligned or narrowly distributed frequency
+directions, limiting its ability to capture diverse spatial patterns. Learnable-PE, lacking any inductive
+bias toward spatial structure, correspondingly yields lower accuracy. To further evaluate robustness
+under different training configurations, we additionally report results using alternative training input
+sizes. The performance trends are visualized in subfigures 5a–5e of Figure 5 in Appendix D.1,
+offering a more intuitive understanding of these comparisons.
+
+
+
+5.3   Experiments on the 3D Point Net Classification Task
+
+We evaluate several positional embedding strategies on the PCT model for 3D point cloud classifica-
+tion, including learnable positional embedding and RoPE-Axial. RoPE-Mixed, originally designed
+for 2D tasks, has not been thoroughly explored in 3D—particularly in terms of wave vector design.
+To address this, we use the original PCT model (without positional encoding) as a fair baseline.
+When loading the ModelNet-40 dataset, we first uniformly sample each point cloud to 2048 points.
+During training, 512 points are selected as input to balance computational efficiency and enable
+evaluation of extrapolation capability. To amplify fine-grained geometric variations, we apply a scale
+factor to compensate for the small numerical differences inherent in point cloud coordinates. As
+shown in Table 2, the Learnable-P shows the most pronounced accuracy drop under both interpolation
+and extrapolation settings. Original PCT model offers minor gains but remains sensitive to input size,
+while RoPE-Axial provides slightly improved stability. In contrast, GridPE consistently achieves the
+highest accuracy across all input points and demonstrates better resilience to input density variations.
+Compared to 2D images with regular pixel grids, 3D point clouds lack a fixed spatial structure and
+exhibit greater variation in local density and scale. In this context, methods like RoPE-Axial and
+GridPE benefit from explicitly encoding geometric relationships through frequency-based constraints.
+GridPE, in particular, constructs directionally symmetric bases that better reflect spatial periodicity
+and orientation in unstructured 3D space, enabling more robust generalization under varying point
+distributions. These results highlight GridPE’s superior ability to capture relative spatial structures
+in 3D settings. Subfigures 5b–5f of Figure 5 in Appendix D.1 further illustrate performance trends
+under different training input sizes, confirming the robustness of GridPE in 3D settings.
+
+                                                   9
+Table 2: The test accuracy of PCT model variants with different position embedding methods across
+different input point numbers on the ModelNet-40 dataset for 3D point cloud classification.
+                Points    No-PE[44]     Learnable-PE[44]     RoPE-Axial[5]     GridPE
+                   256      0.8059           0.8225              0.8464         0.8501
+                   384      0.8821           0.8902              0.8942         0.8951
+                   512      0.8857           0.9007              0.9052         0.9052
+                   640      0.8825           0.8918              0.9020         0.9020
+                   768      0.8610           0.8748              0.8857         0.8890
+                   896      0.8460           0.8456              0.8732         0.8776
+                  1024      0.8177           0.8270              0.8513         0.8558
+                  1152      0.7824           0.7885              0.8124         0.8282
+                  1280      0.7484           0.7464              0.7735         0.7934
+                  1408      0.7010           0.6994              0.7196         0.7561
+                  1536      0.6584           0.6442              0.6787         0.7204
+                  1664      0.6155           0.5904              0.6337         0.6864
+                  1792      0.5737           0.5450              0.5895         0.6487
+                  1920      0.5458           0.5061              0.5571         0.6058
+                  2048      0.5012           0.4656              0.5263         0.5721
+
+
+5.4   Ablation Studies and Analysis
+
+In this subsection, we investigate two aspects: (1) the reasons behind GridPE’s superior performance
+in high-dimensional tasks and (2) the key hyperparameters that most affect its behavior.
+Attention Map Analysis. To better understand GridPE’s effectiveness, we analyze attention maps
+using two metrics—attention distance and entropy—following a previously established method [10].
+As detailed in Appendix D.2, GridPE exhibits stable attention behavior across block layers and
+resolutions, consistently integrating local and global context. This pattern emerges across both 2D
+and 3D settings, highlighting GridPE’s ability to preserve structured and spatially aware attention
+even under significant variations in scale or input modality. Among the baselines, RoPE-Axial shows
+a similar trend but with less smooth transitions across layers, while other positional embeddings often
+exhibit erratic or overly concentrated attention profiles, limiting their generalization under resolution
+or density shifts.
+Ablation on Hyperparameters. To further understand GridPE’s robustness, we conduct ablation
+studies on two key factors: the number of frequency scales, which are tied to attention heads under a
+fixed embedding size, and the orientation of wave vectors. Results are provided in Appendix D.3.
+We find that performance peaks when the allocation of scales to attention heads is balanced, as
+opposed to extreme setups where too few heads handle many scales or where too many heads receive
+overly coarse scale information—both of which can dilute scale-specific representations and reduce
+spatial sensitivity. Moreover, randomly oriented wave vectors consistently outperform fixed-direction
+variants, underscoring the importance of directional diversity in capturing complex spatial patterns.
+This effect reflects GridPE’s multi-scale design, where randomly rotated simplex-based vectors
+provide symmetric and diverse spatial coverage across frequency bands.
+
+6     Conclusion
+In this paper, we present GridPE, a novel positional embedding method inspired by grid cells,
+tailored for spaces with Euclidean translation invariance. GridPE encodes relative relationships in a
+metric space via absolute position embeddings in arbitrary dimensions, making it well-suited for tasks
+involving spatial and temporal structure. Theoretical analysis shows the method’s broad applicability,
+and experiments on high-dimensional classification tasks demonstrate its competitive accuracy and
+strong extrapolation. While GridPE is effective in Euclidean domains, it is not directly applicable to
+non-Euclidean or topologically irregular structures. Nevertheless, it provides a scalable framework
+connecting neuroscience-inspired representations with practical machine learning applications.
+
+
+
+
+                                                   10
+References
+ [1] Edward C Tolman. Cognitive maps in rats and men. Psychological review, 55(4):189, 1948.
+ [2] Timothy EJ Behrens, Timothy H Muller, James CR Whittington, Shirley Mark, Alon B Baram,
+     Kimberly L Stachenfeld, and Zeb Kurth-Nelson. What is a cognitive map? organizing knowl-
+     edge for flexible behavior. Neuron, 100(2):490–509, 2018.
+ [3] Raphael Reinauer, Matteo Caorsi, and Nicolas Berkouk. Persformer: A transformer architecture
+     for topological machine learning. arXiv preprint arXiv:2112.15210, 2021.
+ [4] Yang Li, Si Si, Gang Li, Cho-Jui Hsieh, and Samy Bengio. Learnable fourier features for
+     multi-dimensional spatial positional encoding. Advances in Neural Information Processing
+     Systems, 34:15816–15829, 2021.
+ [5] Jianlin Su, Murtadha Ahmed, Yu Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu. Roformer:
+     Enhanced transformer with rotary position embedding. Neurocomputing, 568:127063, 2024.
+ [6] Colin Raffel, Noam Shazeer, Adam Roberts, Katherine Lee, Sharan Narang, Michael Matena,
+     Yanqi Zhou, Wei Li, and Peter J Liu. Exploring the limits of transfer learning with a unified
+     text-to-text transformer. Journal of machine learning research, 21(140):1–67, 2020.
+ [7] Ofir Press, Noah A Smith, and Mike Lewis. Train short, test long: Attention with linear biases
+     enables input length extrapolation. arXiv preprint arXiv:2108.12409, 2021.
+ [8] Peng Wang, Shuai Bai, Sinan Tan, Shijie Wang, Zhihao Fan, Jinze Bai, Keqin Chen, Xuejing
+     Liu, Jialin Wang, Wenbin Ge, et al. Qwen2-vl: Enhancing vision-language model’s perception
+     of the world at any resolution. arXiv preprint arXiv:2409.12191, 2024.
+ [9] Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timo-
+     thée Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, et al. Llama: Open
+     and efficient foundation language models. arXiv preprint arXiv:2302.13971, 2023.
+[10] Byeongho Heo, Song Park, Dongyoon Han, and Sangdoo Yun. Rotary position embedding for
+     vision transformer. In European Conference on Computer Vision, pages 289–305. Springer,
+     2024.
+[11] Xilin Wei, Xiaoran Liu, Yuhang Zang, Xiaoyi Dong, Pan Zhang, Yuhang Cao, Jian Tong,
+     Haodong Duan, Qipeng Guo, Jiaqi Wang, et al. Videorope: What makes for good video rotary
+     position embedding? arXiv preprint arXiv:2502.05173, 2025.
+[12] Hang Ji, Tao Ni, Xufeng Huang, Tao Luo, Xin Zhan, and Junbo Chen. Ropetr: Improving
+     temporal camera-only 3d detection by integrating enhanced rotary position embedding. arXiv
+     preprint arXiv:2504.12643, 2025.
+[13] Jiasen Lu, Christopher Clark, Sangho Lee, Zichen Zhang, Savya Khosla, Ryan Marten, Derek
+     Hoiem, and Aniruddha Kembhavi. Unified-io 2: Scaling autoregressive multimodal models with
+     vision language audio and action. In Proceedings of the IEEE/CVF Conference on Computer
+     Vision and Pattern Recognition, pages 26439–26455, 2024.
+[14] Anatoli Gorchetchnikov and Stephen Grossberg. Space, time and learning in the hippocampus:
+     how fine spatial and temporal scales are expanded into population codes for behavioral control.
+     Neural Networks, 20(2):182–193, 2007.
+[15] Edvard I Moser, Emilio Kropff, and May-Britt Moser. Place cells, grid cells, and the brain’s
+     spatial representation system. Annu. Rev. Neurosci., 31(1):69–89, 2008.
+[16] Andrea Banino, Caswell Barry, Benigno Uria, Charles Blundell, Timothy Lillicrap, Piotr
+     Mirowski, Alexander Pritzel, Martin J Chadwick, Thomas Degris, Joseph Modayil, et al. Vector-
+     based navigation using grid-like representations in artificial agents. Nature, 557(7705):429–433,
+     2018.
+[17] Ruiqi Gao, Jianwen Xie, Song-Chun Zhu, and Ying Nian Wu. Learning grid cells as vector rep-
+     resentation of self-position coupled with matrix representation of self-motion. In International
+     Conference on Learning Representations, 2019.
+
+
+                                                 11
+[18] Daniel Bush, Caswell Barry, Daniel Manson, and Neil Burgess. Using grid cells for navigation.
+     Neuron, 87(3):507–520, 2015.
+[19] David C Rowland, Yasser Roudi, May-Britt Moser, and Edvard I Moser. Ten years of grid cells.
+     Annual review of neuroscience, 39(1):19–40, 2016.
+[20] Miaolong Yuan, Bo Tian, Vui Ann Shim, Huajin Tang, and Haizhou Li. An entorhinal-
+     hippocampal model for simultaneous cognitive map building. In Proceedings of the AAAI
+     Conference on Artificial Intelligence, volume 29, 2015.
+[21] Changmin Yu, Timothy EJ Behrens, and Neil Burgess. Prediction and generalisation over
+     directed actions by grid cells. arXiv preprint arXiv:2006.03355, 2020.
+[22] Gengchen Mai, Krzysztof Janowicz, Bo Yan, Rui Zhu, Ling Cai, and Ni Lao. Multi-
+     scale representation learning for spatial feature distributions using grid cells. arXiv preprint
+     arXiv:2003.00824, 2020.
+[23] Gengchen Mai, Yao Xuan, Wenyun Zuo, Yutong He, Jiaming Song, Stefano Ermon, Krzysztof
+     Janowicz, and Ni Lao. Sphere2vec: A general-purpose location representation learning over a
+     spherical surface for large-scale geospatial predictions. ISPRS Journal of Photogrammetry and
+     Remote Sensing, 202:439–462, 2023.
+[24] Gengchen Mai, Krzysztof Janowicz, Yingjie Hu, Song Gao, Bo Yan, Rui Zhu, Ling Cai, and
+     Ni Lao. A review of location encoding for geoai: methods and applications. International
+     Journal of Geographical Information Science, 36(4):639–673, 2022.
+[25] Ali Rahimi and Benjamin Recht. Random features for large-scale kernel machines. Advances
+     in neural information processing systems, 20, 2007.
+[26] Neil Burgess, Caswell Barry, and John O’keefe. An oscillatory interference model of grid cell
+     firing. Hippocampus, 17(9):801–812, 2007.
+[27] Michael E Hasselmo. Grid cell mechanisms and function: contributions of entorhinal persistent
+     spiking and phase resetting. Hippocampus, 18(12):1213–1229, 2008.
+[28] Shun Kiyono, Sosuke Kobayashi, Jun Suzuki, and Kentaro Inui. Shape: Shifted absolute
+     position embedding for transformers. arXiv preprint arXiv:2109.05644, 2021.
+[29] Benyou Wang, Donghao Zhao, Christina Lioma, Qiuchi Li, Peng Zhang, and Jakob Grue
+     Simonsen. Encoding word order in complex embeddings. arXiv preprint arXiv:1912.12333,
+     2019.
+[30] Liang Zhao, Xiachong Feng, Xiaocheng Feng, Weihong Zhong, Dongliang Xu, Qing Yang,
+     Hongtao Liu, Bing Qin, and Ting Liu. Length extrapolation of transformers: A survey from the
+     perspective of positional encoding. arXiv preprint arXiv:2312.17044, 2023.
+[31] Jianqiao Zheng, Sameera Ramasinghe, and Simon Lucey. Rethinking positional encoding.
+     arXiv preprint arXiv:2107.02561, 2021.
+[32] Mingze Gao, Jingyu Liu, Mingda Li, Jiangtao Xie, Qingbin Liu, Bo Zhao, Xi Chen, and Hui
+     Xiong. Tc-llava: Rethinking the transfer from image to video understanding with temporal
+     considerations. arXiv preprint arXiv:2409.03206, 2024.
+[33] Yuxin Fang, Quan Sun, Xinggang Wang, Tiejun Huang, Xinlong Wang, and Yue Cao. Eva-02:
+     A visual representation for neon genesis. Image and Vision Computing, 149:105171, 2024.
+[34] Fabio Anselmi, Micah M Murray, and Benedetta Franceschiello. A computational model for
+     grid maps in neural populations. Journal of computational neuroscience, 48(2):149–159, 2020.
+[35] Suogui Dang, Yining Wu, Rui Yan, and Huajin Tang. Why grid cells function as a metric for
+     space. Neural Networks, 142:128–137, 2021.
+[36] Hugh T Blair, Adam C Welday, and Kechen Zhang. Scale-invariant memory representations
+     emerge from moire interference between grid fields that produce theta oscillations: a computa-
+     tional model. Journal of Neuroscience, 27(12):3211–3229, 2007.
+
+
+                                                 12
+[37] Alexander Mathis, Andreas VM Herz, and Martin Stemmler. Optimal population codes for
+     space: grid cells outperform place cells. Neural computation, 24(9):2280–2317, 2012.
+
+[38] Matthew Tancik, Pratul Srinivasan, Ben Mildenhall, Sara Fridovich-Keil, Nithin Raghavan,
+     Utkarsh Singhal, Ravi Ramamoorthi, Jonathan Barron, and Ren Ng. Fourier features let
+     networks learn high frequency functions in low dimensional domains. Advances in neural
+     information processing systems, 33:7537–7547, 2020.
+
+[39] Salomon Bochner. Harmonic analysis and the theory of probability. Courier Corporation, 2005.
+
+[40] Ben Sorscher, Gabriel Mel, Surya Ganguli, and Samuel Ocko. A unified theory for the origin
+     of grid cells through the lens of pattern formation. Advances in neural information processing
+     systems, 32, 2019.
+
+[41] Ulises Rodríguez-Domínguez and Jeremy B Caplan. A hexagonal fourier model of grid cells.
+     Hippocampus, 29(1):37–45, 2019.
+
+[42] Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. Bert: Pre-training of deep
+     bidirectional transformers for language understanding. In Proceedings of the 2019 conference of
+     the North American chapter of the association for computational linguistics: human language
+     technologies, volume 1 (long and short papers), pages 4171–4186, 2019.
+
+[43] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai,
+     Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, et al.
+     An image is worth 16x16 words: Transformers for image recognition at scale. arXiv preprint
+     arXiv:2010.11929, 2020.
+
+[44] Meng-Hao Guo, Jun-Xiong Cai, Zheng-Ning Liu, Tai-Jiang Mu, Ralph R Martin, and Shi-Min
+     Hu. Pct: Point cloud transformer. Computational visual media, 7:187–199, 2021.
+
+[45] Hugo Touvron, Matthieu Cord, Matthijs Douze, Francisco Massa, Alexandre Sablayrolles, and
+     Hervé Jégou. Training data-efficient image transformers & distillation through attention. In
+     International conference on machine learning, pages 10347–10357. PMLR, 2021.
+
+[46] Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. Imagenet: A large-
+     scale hierarchical image database. In 2009 IEEE conference on computer vision and pattern
+     recognition, pages 248–255. Ieee, 2009.
+
+[47] Zhirong Wu, Shuran Song, Aditya Khosla, Fisher Yu, Linguang Zhang, Xiaoou Tang, and
+     Jianxiong Xiao. 3d shapenets: A deep representation for volumetric shapes. In Proceedings of
+     the IEEE conference on computer vision and pattern recognition, pages 1912–1920, 2015.
+
+[48] Hanne Stensola, Tor Stensola, Trygve Solstad, Kristian Frøland, May-Britt Moser, and Edvard I
+     Moser. The entorhinal grid map is discretized. Nature, 492(7427):72–78, 2012.
+
+[49] Xue-Xin Wei, Jason Prentice, and Vijay Balasubramanian. A principle of economy predicts the
+     functional architecture of grid cells. Elife, 4:e08362, 2015.
+
+[50] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez,
+     Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. Advances in neural information
+     processing systems, 30, 2017.
+
+
+A    Limitations and Future Work
+Limitations. While GridPE shows strong performance across structured Euclidean tasks, several
+limitations remain:
+
+1. Geometric generality. The current formulation assumes a fixed, simplex-based basis configura-
+   tion in Euclidean space, which may not generalize effectively to topologically irregular domains
+   such as graphs or curved manifolds.
+
+
+                                                13
+2. Empirical coverage. All experiments are conducted on classification tasks within standard
+   Euclidean domains (e.g., images and point clouds). Although GridPE theoretically supports spatial
+   encoding in arbitrary dimensions via Fourier basis superposition, we have not yet empirically
+   validated this potential in more complex scenarios such as video, spatio-temporal data, or multi-
+   modal tasks, primarily due to computational constraints.
+
+Future Work. Several promising directions can be explored to extend the applicability and impact
+of GridPE:
+
+1. Non-Euclidean extension. Extending GridPE to irregular or non-Euclidean domains may require
+   manifold-aware frequency design or spectral learning techniques, in order to preserve directional
+   symmetry and resolution consistency when modeling curved or graph-based spatial structures.
+2. Cross-domain composition. Real-world tasks often involve combinations of multiple Euclidean
+   subspaces—for example, 2D visual frames with 1D temporal sequences in video, or two distinct
+   2D spaces such as geographic context and trajectory patterns in human mobility analysis. These
+   heterogeneous subspaces differ in semantics and structure, posing challenges for unified frequency-
+   based modeling that can capture both intra-space patterns and inter-space interactions.
+
+Overall, we believe that GridPE provides a principled foundation for positional embedding in
+continuous and structured domains. With further development, it may serve as a stepping stone
+toward more generalizable and interpretable spatial representations—ultimately contributing to
+cognitive map models of how agents perceive and internalize the structure of the external world.
+
+B    Derivation of Wave Vectors Based on Regular Simplex
+This section aims to construct a regular simplex in the n-dimensional hyperplane, starting from the
+standard orthogonal basis in Rn+1 . We then derive the dimensionality reduction method for its wave
+vectors while maintaining the geometric properties of the regular simplex.
+In Rn+1 , the standard orthogonal basis consists of vectors e1 , e2 , . . . , en+1 , where each basis vector
+ei is defined as:
+                                      ei = (0, 0, . . . , 1, . . . , 0)                                 (26)
+with the 1 appearing in the i-th coordinate and 0 elsewhere. These vectors form n+1 linearly
+independent points in Rn+1 , defining the vertices of a simplex. However, they do not yet satisfy the
+geometric conditions of a regular simplex: their centroid does not lie at the origin, and they span the
+full (n+1)-dimensional space rather than an n-dimensional hyperplane.
+To construct a regular simplex, we first translate the standard basis vectors so that their centroid is
+positioned at the origin. This is achieved by introducing an offset vector:
+                                       L = (1, 1, . . . , 1) ∈ Rn+1                                    (27)
+The translated points are then defined as:
+                                                            1
+                                           vi = ei −           L                                       (28)
+                                                           n+1
+This translation ensures the centroid lies at the origin and the vectors lie on the n-dimensional
+hyperplane defined by:
+                                            n+1
+                                            X
+                                                xi = 0                                       (29)
+                                                i=1
+which corresponds to the hyperplane orthogonal to the normal vector ν = (1, 1, . . . , 1). We now
+reinterpret the translated points vi as frequency vectors and denote them by ω i , i.e., ω i := vi . These
+vectors emanate from the origin, lie on the same hyperplane, and together form a regular simplex
+centered at the origin.
+                                                         1
+                                           ω i = ei −       L                                         (30)
+                                                      n+1
+Thus, the translated vectors ω i are linearly independent, centered at the origin, and lie in the same
+hyperplane, forming a regular simplex. These vectors live in Rn+1 and are used to construct the wave
+
+
+                                                      14
+vector matrix Ω(n+1) :                                                  
+                                           ω11           ···     ω1,n+1
+                                  (n+1)   ..            ..         ..
+                                Ω       = .                                                         (31)
+                                                                         
+                                                            .        .   
+                                          ωn+1,1         ···    ωn+1,n+1
+To reduce these (n+1)-dimensional wave vectors to n dimensions while preserving their geometric
+structure, we perform singular value decomposition (SVD) on the wave vector matrix:
+                                          Ω(n+1) = UΣW⊤                                              (32)
+              (n+1)×(n+1)
+Here, U ∈ R                 , Σ is diagonal, and W is the right singular matrix. We take the first n
+columns of U:
+                                         U(n) = [u1 , . . . , un ]                                   (33)
+which form an orthonormal basis for the hyperplane. We then project the original (n+1)-dimensional
+wave vectors onto this subspace to obtain the reduced matrix:
+                                         Ω(n) = Ω(n+1) U(n)                                          (34)
+This guarantees that the resulting n-dimensional wave vectors preserve both magnitude and an-
+gular relationships, enabling isotropic and stable spatial representation. Here, Ω(n) ∈ R(n+1)×n
+represents the set of projected wave vectors in n-dimensional space, reduced from the original
+(n+1)-dimensional simplex construction.
+
+C    Optimal Ratio of Scale under Economy Principle
+Neuroscience evidence indicates that the medial entorhinal cortex consists of several modules. Within
+each module, the direction and period of grid cells remain consistent, but the scales gradually
+decrease along the ventral-dorsal axis [48], transitioning from coarse, low-frequency to granular,
+high-frequency spatial information. This hierarchical spatial organization reduces the number of
+required grid cells while maintaining fine spatial resolution, embodying the economy principle [49].
+The challenge is to determine the optimal scale ratio that achieves fine resolution with fewer grid cells,
+similar to minimizing parameters in positional embeddings for neural networks. The relationship
+between scale scales and wave vectors mirrors the frequency in Transformers, and insights from grid
+cell theory can help optimize positional embeddings for efficient spatial resolution. Recall that in the
+original Transformer positional encoding [50], spatial frequency is defined as ωk = 1/100002k/d ,
+where d represents the dimensionality of the embedding space, forming a geometric series of wave
+lengths. The rationale behind this choice remains unclear, and we anticipate that computational
+theories of grid cells can provide insights into frequency determination.
+We provide a generalized derivation based on the proof in [49], aiming to represent n-dimensional
+Euclidean space with the least number of grid cells, in line with the principle of economy. Suppose
+there are m discrete grid scales. The period of the i-th module layer (i.e., the distance between
+adjacent grid vertices) is denoted by λi , and the period increases with i. Each grid field is modeled as
+a hyperspherical region of diameter li , centered at a grid vertex.
+In 2D space, this corresponds to a circular region activating a grid cell. To ensure unambiguous
+spatial representation, the periodicity of the finer scale must not exceed the spatial span of the coarser
+ones. This geometric relationship is illustrated in Figure 4, where the firing field diameter li and
+period λi of adjacent modules are shown in two dimensions. The scale ratio of adjacent layers is
+defined as ri = λi+1 /λi > 1, and for the first layer we let r1 = λ1 /l1 . To cover the entire space
+without gaps, multiple grid cells with different phases are required. The larger the ratio λi /li , the
+more grid cells are needed. If at least d cells must correspond to a spatial location, the total number
+of grid cells across all layers is denoted as N :
+                                                   m     n
+                                                  X        λi
+                                            N=        d                                               (35)
+                                                  i=1
+                                                           li
+
+Additionally, the condition li ≤ λi−1 must be satisfied. Otherwise, the grid cell system cannot
+accurately determine the current location when cells from both layer i and i + 1 fire simultaneously.
+
+
+                                                    15
+Figure 4: Illustration of the relationship between firing field diameter and periodicity. For two grid
+cells with adjacent discrete scales, the periodicity of the smaller scale must be less than the diameter
+of the larger one; otherwise, spatial disambiguation is not guaranteed.
+
+
+This is because the larger firing field contains more than one smaller field, as shown in Figure 4. The
+condition leads to the inequality li ≤ λi /r. If the grid cell system is required to represent the space
+at a given constant spatial resolution R, that is, we predefined the measurement relationship between
+the largest scale and the smallest firing field unit:
+                                        n       m−1
+                                                                 !n
+                                     λm            Y λi+1 λ1
+                             R=              =                      = (rn )m                        (36)
+                                      l1           i=1
+                                                        λi   l 1
+
+
+
+Here we set λ0 = l1 . By denoting rn = ρ, we obtain:
+                                     m     n
+                                     X   λi
+                              N =d                     ≥ dmrn = dρ logρ R                          (37)
+                                      i=1
+                                              li
+
+Differentiating this expression,
+                       √           we find that the minimal number of grid cells is achieved when ρ = e,
+which implies r = n e. This value defines the maximum allowable ratio between adjacent scales
+for efficient spatial tiling for n-dimensional space. Based on this, we derive a constraint relating the
+frequency base and the encoding dimension d for GridPE. Let M denote the number of Fourier bases
+per scale. The scale ratio induced by the hierarchical representation is:
+                                                   2M (k+1)
+                                            base       d            2M
+                                    R=              2M k      = base d .                           (38)
+                                             base    d
+
+
+                                     √
+To ensure this ratio does not exceed n e and thus avoid overlap or gaps between scales, we require:
+                                    2M   √                                 d
+                                base d ≤ n e           ⇒      base ≤ e 2M n .                      (39)
+
+This establishes a theoretical upper bound on the scale base as a function of the embedding dimension
+d, the number of Fourier bases M , and the spatial dimension n.
+
+
+                                                      16
+ D                   Additional Experimental Results
+
+ D.1                      Extrapolation Performance under Varying Input Size
+
+ Figure 5a–5e report the Top-1/Top-5 accuracy of different positional embedding methods on ViT-S
+ across a range of image resolutions, while Figure 5b–5f present the Top-1 accuracy of PCT models
+ with varying numbers of 3D input points. Together, these subfigures provide a comparative view of
+ how positional embedding methods perform across input scales in both 2D and 3D tasks. Covering
+ diverse training input sizes, the subfigures enable analysis of how the initial resolution influences
+ model robustness under interpolation and extrapolation scenarios. Notably, the relative performance
+ gains of GridPE tend to decrease as the training input size increases—possibly because larger initial
+ resolutions reduce the extent of input-scale discrepancy specifically under extrapolation settings,
+ thereby attenuating the benefits of GridPE’s extrapolation capability.
+
+
+                                 GridPE Top-1         Rope_Mixed Top-1      Rope_Axial Top-1   Learnable-PE Top-1
+                                 GridPE Top-5         Rope_Mixed Top-5      Rope_Axial Top-5   Learnable-PE Top-5
+                                                 Accuracy vs Input Size (Top-1 and Top-5)                                                                               Accuracy vs Number of Input Points
+               90                                                                                                                             0.9                                                              No-PE
+                                                                                                                                                                                                               Learnable-PE
+               85                                                                                                                                                                                              GridPE
+               80
+                                                                                                                                              0.8                                                              Rope-Axial
+
+
+                                                                                                                               Accuracy (%)
+               75
+Accuracy (%)
+
+
+
+
+                                                                                                                                              0.7
+               70
+               65
+                                                                                                                                              0.6
+               60
+               55                                                                                                                             0.5
+               50
+                    160    192      224         256                320              384            448              512                               256 384 512 640 768 896 1024 1152 1280 1408 1536 1664 1792 1920 2048
+                                                                    Input Size                                                                                                   Number of Points
+
+                           (a) 2D – Accuracy at 224 input size                                                                                           (b) 3D – Accuracy at 512 input points
+                                 GridPE Top-1         Rope_Mixed Top-1      Rope_Axial Top-1   Learnable-PE Top-1
+                                 GridPE Top-5         Rope_Mixed Top-5      Rope_Axial Top-5   Learnable-PE Top-5
+                                                 Accuracy vs Input Size (Top-1 and Top-5)                                                                                Accuracy vs Number of Input Points
+               90                                                                                                                             0.900                                                            No-PE
+                                                                                                                                                                                                               Learnable-PE
+                                                                                                                                              0.875                                                            GridPE
+               80                                                                                                                             0.850
+                                                                                                                                                                                                               Rope-Axial
+                                                                                                                               Accuracy (%)
+
+
+
+
+                                                                                                                                              0.825
+Accuracy (%)
+
+
+
+
+               70                                                                                                                             0.800
+
+                                                                                                                                              0.775
+               60
+                                                                                                                                              0.750
+
+                                                                                                                                              0.725
+               50
+                                                                                                                                              0.700
+
+                    160    192      224         256                320              384            448              512                                256 384 512 640 768 896 1024 1152 1280 1408 1536 1664 1792 1920 2048
+                                                                    Input Size                                                                                                   Number of Points
+
+                           (c) 2D – Accuracy at 256 input size                                                                                           (d) 3D – Accuracy at 768 input points
+                                 GridPE Top-1         Rope_Mixed Top-1      Rope_Axial Top-1   Learnable-PE Top-1
+                                 GridPE Top-5         Rope_Mixed Top-5      Rope_Axial Top-5   Learnable-PE Top-5
+                                                 Accuracy vs Input Size (Top-1 and Top-5)                                                                               Accuracy vs Number of Input Points
+               90                                                                                                                             0.90
+
+
+               80                                                                                                                             0.85
+
+
+                                                                                                                                              0.80
+                                                                                                                               Accuracy (%)
+
+
+
+
+               70
+Accuracy (%)
+
+
+
+
+                                                                                                                                              0.75
+               60
+                                                                                                                                              0.70
+               50                                                                                                                                                                                              No-PE
+                                                                                                                                              0.65                                                             Learnable-PE
+               40                                                                                                                                                                                              GridPE
+                                                                                                                                              0.60                                                             Rope-Axial
+                    160    192      224         256                320              384            448              512                               256 384 512 640 768 896 1024 1152 1280 1408 1536 1664 1792 1920 2048
+                                                                    Input Size                                                                                                   Number of Points
+
+                           (e) 2D – Accuracy at 320 input size                                                                                           (f) 3D – Accuracy at 1024 input points
+ Figure 5: Comparison of accuracy (%) using different positional embedding methods under various
+ input sizes for 2D (ViT-S) and 3D (PCT) tasks.
+
+
+
+
+                                                                                                                          17
+      (a) Input size = 160   (b) Input size = 192         (c) Input size = 224   (d) Input size = 256
+
+
+
+
+      (e) Input size = 320    (f) Input size = 384        (g) Input size = 448   (h) Input size = 512
+
+Figure 6: Mean attention distance per block on ViT-S for 2D image classification across input
+resolutions.
+
+
+D.2     Comparative Study of Positional Embedding Schemes in Attention Maps
+
+We quantify the effect of different positional embeddings under multi-scale inputs using two metrics:
+attention distance, which measures how far each query attends on average and reflects the model’s
+effective receptive field, and attention entropy, which captures how evenly the attention weights are
+distributed across tokens.
+2-D Image Classification. Figures 6 and 7 reveal a common coarse trend: blocks closest to the
+input and the classifier token attend farther away, whereas intermediate blocks stay local. The key
+difference is how smoothly each embedding traverses this local–global axis. GridPE and RoPE-axial
+exhibit monotonic, layer-by-layer changes in both attention distance and entropy, signalling a stable
+multi-scale integration of context. By contrast, the ViT with learnable position embeddings exhibits
+a uniformly large attention distance, signalling limited adaptability to varying resolutions, whereas
+RoPE-mixed shows sharp block-to-block fluctuations, indicating unstable attention allocation. In
+comparison, GridPE decomposes position into hierarchical frequency bands, allowing the model
+to reuse geometric priors at unseen resolutions and thereby achieve superior accuracy and scale
+generalisation on ViT-S.
+3-D Point-Cloud Classification. The 3-D experiments reveal an even more pronounced contrast
+between models, as illustrated in Figures. 8 and 9. Learnable-PE exhibits very large attention distances
+combined with vanishing entropy—its attention either scatters over distant points or collapses onto
+a few tokens, failing to capture fine-grained geometry or coherent global structure. On the other
+hand, Pct without position embedding shows extremely low distance and entropy, overly fixating
+on immediate neighbors and thereby sacrificing neighborhood diversity. In contrast, GridPE and
+Rope-Axial strike a more favorable balance. They maintain low attention distances—anchoring
+queries to spatially adjacent points—while also exhibiting a higher entropy profile. This combination
+of locality and structured distribution allows the model to capture both fine-grained geometry and
+broader context. Importantly, this pattern remains stable across varying point densities, resulting in
+substantially better extrapolation and higher classification accuracy, highlighting the advantage of
+using advanced positional embedding method for spatial understanding in point-cloud data.
+
+D.3     Impact of Scale Numbers and Directional Selection in GridPE
+
+To complement the findings presented in the main text, we provide additional ablation studies here.
+These include detailed comparisons on the number of positional embedding scales and the impact of
+using random versus fixed directional vectors across scales. All other experimental settings remain
+consistent with the main experiments. The observed trends and conclusions remain stable, reinforcing
+the robustness and flexibility of GridPE under varying parameter configurations. The following Table
+3 reports accuracy scores across different setups for further reference.
+
+
+
+                                                     18
+    (a) Input size = 160   (b) Input size = 192        (c) Input size = 224   (d) Input size = 256
+
+
+
+
+    (e) Input size = 320   (f) Input size = 384        (g) Input size = 448   (h) Input size = 512
+Figure 7: Mean attention entropy per block on ViT-S for 2D image classification across input
+resolutions.
+
+
+
+
+Table 3: Effect of Scale Count and Direction Selection on Top-1 and Top-5 Accuracy in a 2D Image
+Classification Task
+    Scale & Num Head         160     192      224      256     320     384     448      512
+                                         Top-1 Accuracy
+    64 & 1 (Random)         50.28 55.94 59.60 60.96 60.06 57.20 54.94 52.68
+    64 & 1 (Fixed)          49.06 55.58 58.92 59.92 58.70 56.30 52.90 50.58
+    32 & 2 (Random)         54.60 61.18 65.38 65.98 64.10 61.58 57.38 54.22
+    32 & 2 (Fixed)          51.48 59.64 63.52 64.88 63.12 60.82 58.72 56.36
+    16 & 4 (Random)         57.26 63.42 67.34 68.58 67.20 64.82 61.46 58.72
+    16 & 4 (Fixed)          56.42 62.78 66.62 68.16 67.24 64.60 61.94 58.88
+    8 & 8 (Random)          57.38 64.36 68.06 69.52 68.10 63.44 58.14 53.70
+    8 & 8 (Fixed)           55.44 62.70 65.70 67.74 66.96 62.00 57.02 51.88
+    4 & 16 (Random)         55.30 62.28 65.98 66.94 67.40 65.94 63.20 58.18
+    4 & 16 (Fixed)          54.20 61.24 64.42 66.30 67.06 64.90 60.32 54.20
+    2 & 32 (Random)         47.78 53.84 58.40 58.52 59.50 58.30 56.98 54.28
+    2 & 32 (Fixed)          48.30 54.18 58.40 58.74 59.56 58.48 56.68 54.94
+    1 & 64 (Random)         43.16 49.24 55.36 54.66 55.98 54.20 52.58 50.50
+    1 & 64 (Fixed)          44.52 50.24 54.76 55.06 56.74 54.80 53.68 50.82
+                                         Top-5 Accuracy
+    64 & 1 (Random)         77.12 82.18 84.92 85.78 85.54 84.34 82.14 80.60
+    64 & 1 (Fixed)          77.14 81.32 83.66 84.46 83.78 82.96 81.18 78.92
+    32 & 2 (Random)         80.42 85.86 87.76 88.50 87.96 85.32 83.74 81.34
+    32 & 2 (Fixed)          79.08 84.22 87.04 87.92 87.34 85.50 84.26 82.88
+    16 & 4 (Random)         81.68 87.08 89.32 89.96 90.12 88.42 86.52 85.04
+    16 & 4 (Fixed)          82.06 86.38 88.92 89.48 89.56 88.12 86.56 84.10
+    8 & 8 (Random)          82.30 86.90 89.54 90.12 89.86 87.10 83.32 80.06
+    8 & 8 (Fixed)           81.34 86.18 89.04 89.68 89.12 86.18 83.10 79.82
+    4 & 16 (Random)         80.34 85.94 88.12 88.98 89.48 88.22 86.28 83.48
+    4 & 16 (Fixed)          79.54 84.56 87.12 88.08 88.82 87.26 84.74 80.06
+    2 & 32 (Random)         74.88 80.06 83.52 84.06 85.00 84.36 82.78 81.10
+    2 & 32 (Fixed)          74.82 79.52 82.78 83.72 84.46 83.40 82.46 81.42
+    1 & 64 (Random)         71.44 77.42 81.02 81.80 83.20 81.60 80.06 78.50
+    1 & 64 (Fixed)          72.52 77.66 81.12 81.92 82.78 82.24 81.10 79.66
+
+
+
+                                                  19
+(a) Input point = 256              (b) Input point = 384              (c) Input point = 512
+
+
+
+
+(d) Input point = 640              (e) Input point = 768              (f) Input point = 896
+
+
+
+
+(g) Input point = 1024            (h) Input point = 1152             (i) Input point = 1280
+
+
+
+
+(j) Input point = 1408            (k) Input point = 1536             (l) Input point = 1664
+
+
+
+
+(m) Input point = 1792            (n) Input point = 1920             (o) Input point = 2048
+       Figure 8: Mean attention distance per block layer across input point counts.
+
+
+
+
+                                            20
+(a) Input point = 256              (b) Input point = 384             (c) Input point = 512
+
+
+
+
+(d) Input point = 640              (e) Input point = 768             (f) Input point = 896
+
+
+
+
+(g) Input point = 1024            (h) Input point = 1152            (i) Input point = 1280
+
+
+
+
+(j) Input point = 1408            (k) Input point = 1536            (l) Input point = 1664
+
+
+
+
+(m) Input point = 1792            (n) Input point = 1920            (o) Input point = 2048
+          Figure 9: Mean attention entropy per block across input point counts.
+
+
+
+
+                                            21
+

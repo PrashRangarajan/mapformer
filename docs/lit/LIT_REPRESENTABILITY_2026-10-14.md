@@ -170,7 +170,8 @@ measured. Five errors in the framing:
   (|W_out W_in x|). The analogy is per channel, not exact.
 - **Dale's-law networks [abstract]** (Cornford et al., ICLR 2021; Li et al., NeurIPS 2023): sign-constrained weights are
   known to impair learning. Li et al. argue the cause is the spectrum at initialisation, not the sign constraint
-  itself. This is a "start vs constraint" question like our 2x2 in another setting. Read before citing.
+  itself. [Checked 2026-10-15 against the NeurIPS PDF (`papers/new_2026-10-15/li2023_neurips/paper.txt:29-32, 79-87`):
+  "the spectrum is more impactful than sign constraints on performance - though both contribute".] This is a "start vs constraint" question like our 2x2 in another setting. Read before citing.
 
 **Phase initialisation decides learnability for complex/rotary phases: published, opposite direction.**
 - **LRU, Orvieto et al. 2023 [read]** (`2303.06349/paper.txt:71, 752-783`): eigenvalue phase parameterised
@@ -253,7 +254,7 @@ measured. Five errors in the framing:
 | rambaud2025 | V. Rambaud, S. Mascarenhas, Y. Lakretz. MapFormer. arXiv:2511.19279 (v4, 10 May 2026). | read |
 | sarrof2024 | Y. Sarrof, Y. Veitsman, M. Hahn. The expressive capacity of state space models: a formal language perspective. NeurIPS 2024; arXiv:2405.17394. | read |
 | grazzi2025 | R. Grazzi, J. Siems, A. Zela, J. K. H. Franke, F. Hutter, M. Pontil. Unlocking state-tracking in linear RNNs through negative eigenvalues. ICLR 2025; arXiv:2411.12537. | read |
-| khavari2025 | Khavari et al. Parity requires unified input dependence and negative eigenvalues in SSMs. arXiv:2508.07395. | abstract (complete the author list from arXiv) |
+| khavari2025 | B. Khavari, M. Shakerinava, J. Khullar, J. Huang, F. Rivest, S. Ravanbakhsh, S. Chandar. Parity requires unified input dependence and negative eigenvalues in SSMs. ICML 2025 Workshop on Methods and Opportunities at Small Scale; arXiv:2508.07395. | verified 2026-10-15 (arXiv metadata; claim: for diagonal SSMs, input dependence and negative eigenvalues must occur in the same layer, `papers/new_2026-10-15/2508.07395/paper.txt`) |
 | lahoti2026 | Lahoti et al. Mamba-3. arXiv:2603.15569. | read (complete the author list and title from arXiv) |
 | movahedi2026 | Movahedi et al. Selective RoPE. ICLR 2026; arXiv:2511.17388. | read |
 | zhang2026grape | Zhang et al. GRAPE. ICLR 2026; arXiv:2512.07805. | read (partial) |
@@ -261,12 +262,13 @@ measured. Five errors in the framing:
 | golovneva2024 | O. Golovneva, T. Wang, J. Weston, S. Sukhbaatar. Contextual position encoding: learning to count what's important. arXiv:2405.18719. | read |
 | yang2025path | Yang et al. PaTH attention: position encoding via accumulating Householder transformations. arXiv:2505.16381. | read |
 | liu2023 | B. Liu, J. T. Ash, S. Goel, A. Krishnamurthy, C. Zhang. Transformers learn shortcuts to automata. ICLR 2023; arXiv:2210.10749. | **read (this note)** |
-| hahn2024 | M. Hahn, M. Rofin. Why are sensitive functions hard for transformers? ACL 2024; arXiv:2402.09963. | read (Sec. 1); venue from memory, verify |
-| orvieto2023 | A. Orvieto, S. L. Smith, A. Gu, A. Fernando, C. Gulcehre, R. Pascanu, S. De. Resurrecting recurrent neural networks for long sequences. ICML 2023; arXiv:2303.06349. | read (Sec. 3.4, App. E); author list from memory, verify |
-| woodworth2020 | B. Woodworth, S. Gunasekar, J. D. Lee, E. Moroshko, P. Savarese, I. Golan, D. Soudry, N. Srebro. Kernel and rich regimes in overparametrized models. COLT 2020; arXiv:2002.09277. | read (Sec. 1, App. B); last four authors from memory, verify |
+| hahn2024 | M. Hahn, M. Rofin. Why are sensitive functions hard for transformers? ACL 2024; arXiv:2402.09963. | read (Sec. 1); venue verified 2026-10-15 (ACL Anthology 2024.acl-long.800) |
+| orvieto2023 | A. Orvieto, S. L. Smith, A. Gu, A. Fernando, C. Gulcehre, R. Pascanu, S. De. Resurrecting recurrent neural networks for long sequences. ICML 2023; arXiv:2303.06349. | read (Sec. 3.4, App. E); author list verified 2026-10-15 (arXiv); venue not re-checked |
+| woodworth2020 | B. Woodworth, S. Gunasekar, J. D. Lee, E. Moroshko, P. Savarese, I. Golan, D. Soudry, N. Srebro. Kernel and rich regimes in overparametrized models. COLT 2020; arXiv:2002.09277. | read (Sec. 1, App. B); author list verified 2026-10-15 (arXiv); venue not re-checked |
 | amid2020 | E. Amid, M. K. Warmuth. Reparameterizing mirror descent as gradient descent. NeurIPS 2020; arXiv:2002.10487. | read |
-| cornford2021 | J. Cornford, D. Kalajdzievski, M. Leite, A. Lamarquette, D. M. Kullmann, B. Richards. Learning to live with Dale's principle: ANNs with separate excitatory and inhibitory units. ICLR 2021. | abstract; author list from memory, verify |
-| gridpe | Li et al. GridPE. arXiv:2406.07049. | abstract (LIT_CLOCK_MAP) |
+| cornford2021 | J. Cornford, D. Kalajdzievski, M. Leite, A. Lamarquette, D. M. Kullmann, B. A. Richards. Learning to live with Dale's principle: ANNs with separate excitatory and inhibitory units. ICLR 2021 (poster). | abstract; authors, title, venue verified 2026-10-15 (OpenReview eU776ZYxEpz) |
+| li2023 | P. Li, J. Cornford, A. Ghosh, B. Richards. Learning better with Dale's law: a spectral perspective. NeurIPS 2023. | read (abstract, Sec. 1), 2026-10-15, `papers/new_2026-10-15/li2023_neurips/` |
+| gridpe | B. Li, Y. Wu, N. Huang, W. Zhang. GridPE: a grid cell-inspired unified position embedding for arbitrary-dimensional spaces. arXiv:2406.07049 (v3, 3 Jun 2026). | read (Secs. 1, 3.1), 2026-10-15: VCO grid-cell model (phase = integrated velocity-modulated frequency, Eqs. 1-3) + random Fourier features; reduces to RoPE in 1D; embeds given coordinates (images, point clouds), no learned integration |
 
 ---
 

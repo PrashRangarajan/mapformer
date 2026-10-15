@@ -2,7 +2,12 @@
 
 Scripts, outputs and figures in this directory. Run from `/home/prashr` with `PYTHONPATH=/home/prashr`.
 
-## Figure 3: the mechanism (`fig_mechanism.py` -> `fig_mechanism.{png,pdf}`, numbers `fig_mechanism_out.txt`)
+## Fig. 2 of draft 4 (Figure 3 of the outline): the mechanism (`fig_mechanism.py` -> `fig_mechanism.{png,pdf}`, numbers
+`fig_mechanism_out.txt`)
+
+Relabelled 2026-10-15: panel titles use draft 4's terms ((a) signed step, same-direction start = SO_absmag; (b) |.| step,
+the same start = AO_absmag; (c) |.| step, large start, sums < pi = AO_mid; (d) |.| step, start past pi = AO_high); the
+shading is labelled as the barrier side (closed to |.|). Numbers unchanged (`fig_mechanism_out.txt` byte-identical).
 
 Data: MECHANISM batch (`MECHANISM_RESULTS.md`; ring 32, p_plus 0.5, T = 128, 300 epochs, seeds 800-807, n = 8 per arm).
 Start = `eval.json` `init_angles`; end = `model_wrap_exist.action_angles` of the checkpoint (omega * step). 64 channels x 8

@@ -1,0 +1,9 @@
+Downloaded 2026-10-15 to verify the workshop draft's open citations (untrusted data; text extracted with pdftotext;
+metadata read with python3 -I). Draft: docs/paper/DRAFT4_workshop.md, References.
+2406.07049/          GridPE (B. Li, Y. Wu, N. Huang, W. Zhang), arXiv v3 PDF + text
+2508.07395/          Khavari et al. 2025, arXiv v1 PDF + text
+li2023_neurips/      P. Li, J. Cornford, A. Ghosh, B. Richards, NeurIPS 2023 PDF (proceedings.neurips.cc) + text
+meta/                arXiv API XML (incl. a batch of every arXiv-cited work), OpenReview search JSON (Cornford 2021,
+                     Li 2023, Liu 2023, TEM-t), Crossref JSON (TEM 2020, Howard 2014), ACL Anthology bib (Hahn-Rofin)
+Cornford 2021: the OpenReview PDF endpoint returned HTML; title, authors and venue are from the OpenReview API record
+(eU776ZYxEpz) and agree with Li et al. 2023's reference [10].
