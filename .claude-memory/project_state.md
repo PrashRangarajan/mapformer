@@ -9,7 +9,11 @@ Updated 2026-10-13 14:00. Goes stale fast: check `git log`, `.done` markers, the
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- Nothing on GPU (2026-10-15 08:00). Next: draft-3 assembly agent, then mock review.
+- GAUGE (`GAUGE_PREREG.md` + Amendment 1, 66b2ef4): scheduled to start 21:00 (2026-10-15) by `runs/gauge_start_at_21.sh`;
+  `run_gauge.sh` REFUSES if tracked files are modified at start -- keep the tree committed. ~1 h. Pilot: AO on +1/+2 unsolved
+  (0.745) -- prediction at risk, disclosed. Marker `.gauge_done`, output `GAUGE_ANALYSIS.txt`.
+- Draft 4 revision agent running (writes docs/paper/DRAFT4_workshop.md, DRAFT4_changes.md, APPENDIX_theory_v2.md).
+- Mock review of draft 3: `docs/paper/MOCK_REVIEW_draft3.md` (6/10).
 
 ## Last results (2026-10-15): TORUS_START (`TORUS_START_RESULTS.md`)
 - Past-pi start does NOT rescue on the torus (0/8; TS1 NO EFFECT); the large start drags signed to 2/8; sign cost replicates
