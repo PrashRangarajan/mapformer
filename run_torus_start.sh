@@ -14,15 +14,17 @@ SEEDS=(1200 1201 1202 1203 1204 1205 1206 1207); ARMS=(SO4 AO4 AO4_high SO4_high
 GUARD=(train_torus_start.py model_torus_start.py model_wrap_exist.py model_sign.py model.py lie_groups.py train.py environment.py
        data_parallel.py eval_noise_refine.py eval_rank_strata.py train_variant.py analyze_torus_start.py stats_core.py lib_driver.sh
        run_torus_start.sh)
-echo "start $(date); waiting for .accounts_done" >> "$LOG"
+echo "start $(date)" >> "$LOG"
+(cd "$REPO" && git status --porcelain --untracked-files=no | grep -q .) && { _drv_log "REFUSED: tracked files modified (commit first)"; exit 1; }
+drv_md5_guard "$R" "${GUARD[@]}" || exit 1                    # Amendment 1: pinned BEFORE the wait
+_drv_log "code version: $(cd "$REPO" && git rev-parse HEAD) clean; GPUs $DRV_GPUS; waiting for .accounts_done"
 while [ ! -f "$REPO/.accounts_done" ]; do
   grep -q "FAILED\|ABORT\|REFUSED" "$REPO/accounts.log" && { _drv_log "ACCOUNTS failed; starting anyway after its jobs exit"; break; }
   sleep 120
 done
 while ps -u "$USER" -o comm=,args= | awk '$1=="python3" && /runs\/accounts\//' | grep -q .; do sleep 60; done
-(cd "$REPO" && git status --porcelain --untracked-files=no | grep -q .) && { _drv_log "REFUSED: tracked files modified (commit first)"; exit 1; }
-drv_md5_guard "$R" "${GUARD[@]}" || exit 1
-_drv_log "code version: $(cd "$REPO" && git rev-parse HEAD) clean; GPUs $DRV_GPUS"
+drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed during the wait"
+_drv_log "ACCOUNTS finished; launching"
 running(){ ps -u "$USER" -o comm=,args= | awk -v o="--output-dir $1" '$1=="python3" && index($0" ", o" ")' | grep -q .; }
 for S in "${SEEDS[@]}"; do for A in "${ARMS[@]}"; do
   OUT="$R/${A}_s$S"

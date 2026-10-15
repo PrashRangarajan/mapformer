@@ -50,7 +50,9 @@ def main():
     losses = train(model, env, n_epochs=a.epochs, lr=a.lr, batch_size=a.batch_size, n_steps=a.n_steps,
                    n_batches=a.n_batches, device=a.device, schedule="cosine", data_workers=a.data_workers)
     torch.save({"model_state_dict": model.state_dict(), "losses": losses, "variant": a.arm, "seed": a.seed,
-                "config": {"args": dict(vars(a)), "vocab_size": env.unified_vocab_size}}, out / f"{a.arm}.pt")
+                "config": {"args": dict(vars(a)), "vocab_size": env.unified_vocab_size, "d_model": 128, "n_heads": 2,
+                           "n_layers": 1, "grid_size": 64, "n_obs_types": 16, "p_empty": 0.5, "n_landmarks": 0,
+                           "n_steps": a.n_steps}}, out / f"{a.arm}.pt")
     model.eval()
     te = GridWorld(size=64, n_obs_types=16, p_empty=0.5, n_landmarks=0, seed=10000)
     ev = {}

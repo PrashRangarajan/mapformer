@@ -38,3 +38,15 @@ Secondaries: wrap share (pairs (0,1), (2,3)) at the end; strata; accuracy at 204
 No pilot beyond the CPU construction checks (the classes and recipe are GENERALITY's). Independent code check (rule 29)
 before launch. The driver waits for the running ACCOUNTS batch to finish. 40 torus runs, ~30-45 min each at ~8 concurrent
 on both GPUs: ~4 h overnight.
+
+## Amendment 1 (2026-10-14, after the independent check `docs/audits/2026-10-14/torus_start_audit.md`; before launch)
+The check confirmed: recipe, environment and evaluation identical to GENERALITY's torus runs; SO4 / AO4 bit-equal to
+GENERALITY's classes at init on all 8 seeds; starts exact (<= 9.5e-7 rad); only W_in, W_out, omega differ between arms; RNG
+state identical; latents c I_4 (no degeneracy); CPU smoke clean. Changes:
+- **Gates on every contrast:** TS1, TS2, TS4 UNREADABLE if SO4 SOLVED < 4; TS3 UNREADABLE if SO4_high SOLVED < 4 (the smoke
+  read NO EFFECT DETECTED with all arms at the floor).
+- **Driver:** the clean-tree check and the first md5 pin run BEFORE the wait for ACCOUNTS (an edit during the wait can no
+  longer abort the night or be pinned unreviewed); a second md5 check runs just before launch.
+- **Checkpoint config** now carries d_model / n_heads / n_layers / grid_size / env keys for the shared reload tools.
+- **Disclosed:** cost is ~6-8 h (not 4); RESCUES can fire on accuracy alone (d >= 0.05) with few runs SOLVED -- the SOLVED
+  counts are reported beside it; with no gauge-control arm, TS1 is read together with TS2.

@@ -52,14 +52,16 @@ def main():
         print(f"{x:9s}: mean {np.mean([R[x, s]['acc'] for s in seeds]):.4f}, SOLVED {sum(R[x, s]['solved'] for s in seeds)}/{n}")
     k_so = sum(R["SO4", s]["solved"] for s in seeds)
     V = {}
-    names = {"TS1": ("AO4_high", "AO4", {"BETTER": "RESCUES ON THE TORUS"}, True),
-             "TS2": ("AO4_high", "AO4_mid", {"BETTER": "SUM PAST PI BEATS A LARGE SUB-PI START"}, True),
-             "TS3": ("AO4_high", "SO4_high", {"WORSE": "SIGN COST AT THE LARGE START"}, False),
-             "TS4": ("AO4", "SO4", {"WORSE": "SIGNED LEARNS BETTER"}, False)}
-    for key, (x, ref, ren, gated) in names.items():
+    k_soh = sum(R["SO4_high", s]["solved"] for s in seeds)
+    # Amendment 1: every contrast gated (TS1, TS2, TS4 on SO4 SOLVED >= 4; TS3 on SO4_high SOLVED >= 4)
+    names = {"TS1": ("AO4_high", "AO4", {"BETTER": "RESCUES ON THE TORUS"}, ("SO4", k_so)),
+             "TS2": ("AO4_high", "AO4_mid", {"BETTER": "SUM PAST PI BEATS A LARGE SUB-PI START"}, ("SO4", k_so)),
+             "TS3": ("AO4_high", "SO4_high", {"WORSE": "SIGN COST AT THE LARGE START"}, ("SO4_high", k_soh)),
+             "TS4": ("AO4", "SO4", {"WORSE": "SIGNED LEARNS BETTER"}, ("SO4", k_so))}
+    for key, (x, ref, ren, (garm, gk)) in names.items():
         lab, txt = compare(R, seeds, x, ref); lab = ren.get(lab, lab)
-        if gated and k_so < 4:
-            lab = f"UNREADABLE (SO4 SOLVED {k_so} < 4)"
+        if gk < 4:
+            lab = f"UNREADABLE ({garm} SOLVED {gk} < 4)"
         V[key] = lab
         print(f"{key} ({x} vs {ref}): {lab} -- {txt}")
     if not a.no_json:
