@@ -17,6 +17,11 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
 - TORUS_START (`TORUS_START_PREREG.md`, 46be0be): past-pi start on the torus, 5 arms x seeds 1200-1207, `run_torus_start.sh`
   (waits for .accounts_done; marker .torus_start_done). Rule-29 check running; amend, then launch overnight (user OK'd GPU
   overnight 2026-10-14).
+- DONE 2026-10-14 night: Fig. 3 + ring strata (`docs/paper/figs/FIGS_NOTES.md`); lit (`docs/lit/LIT_REPRESENTABILITY_2026-10-14.md`:
+  representability published -- Grazzi Thm 3, Mamba-3 -- claim only learnability; Liu gridworld = bounded line, torus
+  construction needs abs. positions + T-growing width; cite Woodworth 2020 / Amid & Warmuth 2020 for the zero wall, LRU for
+  phase init); theory appendix (`docs/paper/APPENDIX_theory.md`: T1 gauge bitwise-verified; P1-P7; corrections: CoPE line
+  margin <= P/(D_max+1), CARoPE return bound (0, 3]). CLAUDE.md sign row corrected (learnability, not replication).
 - Writing agents (user: "delegate agents for writing"), each to its own new file: lit/representability + Liu first-hand
   (`docs/lit/LIT_REPRESENTABILITY_2026-10-14.md`), theory appendix with T1 relative-sign gauge and proofs
   (`docs/paper/APPENDIX_theory.md`), Fig. 3 + ring strata (`docs/paper/figs/`, FIGS_NOTES.md). Then one agent assembles
