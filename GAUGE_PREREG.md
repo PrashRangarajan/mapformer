@@ -31,3 +31,21 @@ angles have the SAME sign at the end (the corollary says the signed model need n
 ## Process and cost
 Pilot (seed 1390, outside the batch): SO / AO / RoPE on +1/+2 (reported, never pooled). Independent code check before launch.
 40 ring runs, ~10-15 min each: ~1 h on both GPUs.
+
+## Amendment 1 (2026-10-15, after the independent check `docs/audits/2026-10-15/gauge_audit.md` and the pilot; before launch)
+The check found the code correct ((1,-1) reproduces environment_cancel bitwise; (1,2) bookkeeping right; at a seed the m and p
+cells share the move sequence and the initial weights; all labels reachable; smoke clean). Changes:
+- **Reading renamed (MAJOR).** T1 is a statement about what a step can REPRESENT; this test reads LEARNABILITY, so it cannot
+  refute T1. New reading: SUPPORTED (the learnability cost follows the relative sign) if G1 = NO SIGN COST, G2 = SIGNED LEARNS
+  BETTER and **G3 (new): AO_p solves more than AO_m** (Fisher p < .05); NOT SUPPORTED (a sign cost without opposite moves; T1
+  stands) if G1 = SIGNED LEARNS BETTER; UNREADABLE if a gate fails; otherwise as falls.
+- **The tasks differ in more than relative sign (MAJOR).** On +1/-1, 87.5% of revisits are backtracks (net displacement 0,
+  median gap 12); on +1/+2 every revisit is a lap (median gap 23, all gaps >= 16). New declared secondary: accuracy by revisit
+  type (backtrack / lap) and gap (< 16 / >= 16) for every cell, so +1/+2 can be compared with the LAP stratum of +1/-1.
+- **Pilot (seed 1390, +1/+2 only, never pooled):** SO_p 1.000 (SOLVED), **AO_p 0.745 (unsolved)**, RoPE_p 0.657. The task needs
+  integration (index fails) and the signed model learns it; the non-negative model did not in the pilot. The registered
+  prediction (G1 NO SIGN COST) is kept and is stated now to be at risk.
+- **Minor:** the same-sign share is computed on wrapped angles (gauge- and 2 pi-invariant) and printed with its initial value;
+  the predict-blank floor (~0.50) is printed; the premise wording is fixed (a(+2) = 2 a(+1) mod 2 pi has one sign in every
+  channel only up to the representative chosen; the |.| class contains the solution via wrapping, Appendix P1).
+- Runs tonight (user: GPU runs overnight).

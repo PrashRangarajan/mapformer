@@ -52,12 +52,60 @@ def main():
         V[key] = lab
         print(f"{key} ({x} vs {ref}): {lab} -- {av.mean():.4f} SOLVED {ka}/{n} vs {rv.mean():.4f} SOLVED {kr}/{n}; d {d:+.4f} "
               f"[95% CI {ci['lo']:+.3f}, {ci['hi']:+.3f}] (perm p {pp:.4f}); Fisher p {pf:.4f}")
-    V["reading"] = ("GAUGE PREDICTION CONFIRMED" if (V["G1"] == "NO SIGN COST" and V["G2"] == "SIGNED LEARNS BETTER") else
-                    ("REFUTED" if V["G1"] == "SIGNED LEARNS BETTER" else "AS FALLS"))
+    ka_p = sum(R["AO_p", s]["solved"] for s in seeds); ka_m = sum(R["AO_m", s]["solved"] for s in seeds)
+    pf3 = fisher_solved(ka_m, n, ka_p, n)
+    V["G3"] = "AO SOLVES +1/+2 MORE" if (pf3 < 0.05 and ka_p > ka_m) else "NO DIFFERENCE DETECTED"
+    print(f"G3 (AO_p vs AO_m, SOLVED): {V['G3']} -- {ka_p}/{n} vs {ka_m}/{n} (Fisher p {pf3:.4f})")
+    # Amendment 1: T1 is representational; this test reads LEARNABILITY. The reading cannot refute T1.
+    if V["G1"].startswith("UNREADABLE") or V["G2"].startswith("UNREADABLE"):
+        V["reading"] = "UNREADABLE"
+    elif V["G1"] == "NO SIGN COST" and V["G2"] == "SIGNED LEARNS BETTER" and V["G3"] == "AO SOLVES +1/+2 MORE":
+        V["reading"] = "SUPPORTED (the learnability cost follows the relative sign)"
+    elif V["G1"] == "SIGNED LEARNS BETTER":
+        V["reading"] = "NOT SUPPORTED (a sign cost without opposite moves; T1 is representational and stands)"
+    else:
+        V["reading"] = "AS FALLS"
     print(f"Reading: {V['reading']}")
     if not a.no_json:
         json.dump(V, open(f"{REPO}/GAUGE_VERDICTS.json", "w"), indent=2)
     print("\n== secondaries (declared; no verdict) ==")
+    print("floor: predict blank ~0.50 (p_empty 0.5); CANCEL's measured +1/-1 floor 0.554")
+    # Amendment 1: accuracy by revisit type (backtrack: unwrapped net displacement 0 since the last visit; lap: +-32k, k != 0)
+    # and gap, re-evaluated on a fresh stream (np seed 10**6, 200 trajectories, eval mode)
+    from mapformer.environment_steps import GridWorldSteps
+    from mapformer.train_variant import VARIANT_MAP
+    from mapformer.model_wrap_exist import MapFormerWM_AbsAO_r4
+    import torch.nn.functional as F
+    def build(c, b):
+        arm = c.split("_")[0]; kw = dict(vocab_size=b["config"]["vocab_size"], d_model=128, n_heads=2, n_layers=1, grid_size=32)
+        if arm == "RoPE":
+            m = VARIANT_MAP["RoPE"](**kw)
+        else:
+            m = (MapFormerWM_SignedAO_r4 if arm == "SO" else MapFormerWM_AbsAO_r4)(
+                action_ids=(b["config"]["action_offset"], b["config"]["action_offset"] + 1), **kw)
+        m.load_state_dict(b["model_state_dict"]); return m.eval()
+    for c in CELLS:
+        deltas = (1, -1) if c.endswith("_m") else (1, 2)
+        acc = {}
+        for s in seeds:
+            m = build(c, R[c, s]["blob"]); te = GridWorldSteps(size=32, seed=10000, p_first=0.5, deltas=deltas)
+            np.random.seed(10 ** 6)
+            with torch.no_grad():
+                for _ in range(200):
+                    tok, _, rev = te.generate_trajectory(128)
+                    lp = m(tok[None, :-1]).argmax(-1)[0]
+                    acts = (tok[0::2] - te.action_offset).numpy(); up = np.cumsum(np.array(deltas)[acts])   # unwrapped pos
+                    last = {}
+                    for t in range(128):
+                        cell = int(up[t] % 32)
+                        if cell in last:
+                            gap = t - last[cell]; kind = "backtrack" if up[t] == up[last[cell]] else "lap"
+                            gb = "gap<16" if gap < 16 else "gap>=16"
+                            hit = int(lp[2 * t] == tok[2 * t + 1])
+                            for key in (kind, gb):
+                                acc.setdefault(key, []).append(hit)
+                        last[cell] = t
+        print(f"{c:7s} strata: " + "; ".join(f"{k} {np.mean(v):.3f} (n {len(v)})" for k, v in sorted(acc.items())))
     for c in ("SO_p", "SO_m"):
         same = []
         for s in seeds:
@@ -65,9 +113,10 @@ def main():
             m = MapFormerWM_SignedAO_r4(vocab_size=b["config"]["vocab_size"], d_model=128, n_heads=2, n_layers=1, grid_size=32,
                                         action_ids=(b["config"]["action_offset"], b["config"]["action_offset"] + 1))
             m.load_state_dict(b["model_state_dict"]); A = action_angles(m).double().numpy()
-            sel = np.abs(np.angle(np.exp(1j * A[0]))) > 0.05
-            same.append(float((np.sign(A[0]) == np.sign(A[1]))[sel].mean()) if sel.any() else float("nan"))
-        print(f"{c}: share of channels whose two move angles have the SAME sign at the end {np.nanmean(same):.2f} "
+            W = np.angle(np.exp(1j * A))                                  # Amendment 1: wrapped to (-pi, pi]
+            sel = np.abs(W[0]) > 0.05
+            same.append(float((np.sign(W[0]) == np.sign(W[1]))[sel].mean()) if sel.any() else float("nan"))
+        print(f"{c}: share of channels whose two (wrapped) move angles have the SAME sign at the end {np.nanmean(same):.2f} (init ~0.50-0.70) "
               f"(per seed {' '.join(f'{v:.2f}' for v in same)})")
 
 
