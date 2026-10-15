@@ -1,17 +1,18 @@
 # A monotone rotary phase can represent a map but does not learn one: sign, wrapping and the path through zero
 
-*Draft 1, 2026-10-14. Workshop length (~5 pages + appendix). Every number is from a pre-registered batch unless marked
+*Draft 2, 2026-10-14 (theory review `docs/audits/2026-10-14/theory_review/THEORY_REVIEW.md` and CoPE diagnosis
+`docs/audits/2026-10-14/cope_diagnosis/COPE_DIAGNOSIS.md` folded in). Workshop length (~5 pages + appendix). Every number is from a pre-registered batch unless marked
 (post hoc) or (pilot); the source file is named in `docs/paper/CLAIM_MAP_clock_map.md`. Pending: WRAP_COPE (Sec. 5.4).*
 
 ## Abstract
 
 Rotary position encodings accumulate a phase, theta_t = omega * sum_{u <= t} Delta_u. The step Delta can be a constant (index
-RoPE), a non-negative function of content (CoPE, CARoPE, GRAPE-AP) or a signed function of content (MapFormer, Selective
-RoPE, Mamba-3). These are the three cases of Howard et al.'s (2014) neural integrator -- elapsed time, path length and
+RoPE), a non-negative function of content (CARoPE; CoPE's gated counts play the same role) or a signed function of
+content (MapFormer, Selective RoPE, Mamba-3). These are the three cases of Howard et al.'s (2014) neural integrator -- elapsed time, path length and
 position -- carried into the imaginary (rotary) slot. We study what the sign of the step buys on tasks that need a map, where
-opposite moves must cancel. In the rotary slot a non-negative step can represent any signed code, because angles wrap mod
-2 pi. Yet on a 1D ring and a 2D torus, at the training length, non-negative steps learn the map on 0-3 of 8 seeds against 8 of
-8 for signed steps, and three times the training does not help. An exact non-negative solution exists at a trained weight
+opposite moves must cancel. In the rotary slot a non-negative step can represent a signed code by wrapping mod 2 pi (exactly, when no more
+tokens step than the rank of the step map). Yet on a 1D ring and a 2D torus, at the training length, non-negative steps learn
+the map on 0-3 of 8 seeds against 8 of 8 for signed steps within our budgets, and three times the training does not help. An exact non-negative solution exists at a trained weight
 scale and training keeps (ring) or re-finds (torus) it, so the failure is one of search. The mechanism is specific: a signed
 step reaches the cancelling code by moving one move's angle through zero, which it does even from the start a non-negative
 step would have (7/8); a non-negative step cannot cross zero, so its only cancelling solution is the wrap, which training
@@ -23,8 +24,9 @@ path integration beats index attention at one layer, four layers and a four-time
 
 A rotary position code is an integrator. Index RoPE adds a constant per token, so the phase difference between two tokens is
 their distance in tokens; content-dependent variants let each token set its own step. Two such families exist: steps that
-are non-negative by construction -- CoPE's sigmoid gates, CARoPE's (0, 1) rate, GRAPE-AP's non-negative frequencies -- and
-steps that may be negative -- MapFormer's path-integrated phase, Selective RoPE, Mamba-3's data-dependent rotation.
+are non-negative by construction -- CARoPE's (0, 1) rate, and in a different slot CoPE's sigmoid-gated counts -- and steps
+that may be negative -- MapFormer's path-integrated phase, Selective RoPE, Mamba-3's data-dependent rotation (whose angle is
+Delta_t theta_t with Delta_t >= 0 and theta_t signed, so the sign sits in theta_t).
 
 Neuroscience has named these three cases. Howard et al. (2014) drive one bank of integrators by a rate alpha(t): a constant
 rate yields elapsed time, a speed yields path length, a signed velocity yields position ("like a bead on a wire": different
@@ -54,20 +56,27 @@ alpha_t is the step: the selective-SSM Delta_t, MapFormer's W_out W_in x_t.
 | case (Howard) | rate alpha_t | the interval sum measures | rotary family | examples |
 |---|---|---|---|---|
 | I | constant | elapsed tokens | index RoPE | RoPE |
-| II | non-negative, content-dependent | path length (a content clock) | monotone content phase | CoPE, CARoPE, GRAPE-AP |
-| III | signed, content-dependent | net displacement (a map) | signed content phase | MapFormer, Selective RoPE, Mamba-3 |
+| II | non-negative, content-dependent | path length (a content clock) | monotone content phase | CARoPE; CoPE (a gated count read through a learned table, not a rotation) |
+| III | signed, content-dependent | net displacement (a map) | signed content phase | MapFormer, Selective RoPE, Mamba-3 (sign in theta_t) |
+| II, real s | non-negative rate, decaying | a forgetting bias, not a phase | additive / decay biases | GRAPE-AP, FoX, ALiBi-like |
 
-**Remark (wrapping).** For real s, Cases II and III differ in what they can represent: a non-negative rate cannot undo a step.
-In the rotary slot they do not: angles live mod 2 pi, so a step 2 pi / omega - Delta reproduces -Delta exactly in every channel
-where it is used, and a non-negative rotary code can represent any signed one (constructed in Sec. 4.3). If the sign matters
-in practice, it must matter for learning. The cost of wrapping is that the two opposite moves' angles must sum to 2 pi rather
-than to 0.
+The identification is exact for the position factor of the attention score; rotary attention has no counterpart of
+Howard's input gain f(t), and GRAPE-AP / FoX belong to the real-s (decay) slot, where non-negativity is required.
+
+**Proposition 1 (wrapping).** For real s, Cases II and III differ in what they can represent: a non-negative rate cannot undo
+a step. In the rotary slot, per channel, a step (omega Delta mod 2 pi) / omega >= 0 reproduces any signed angle mod 2 pi. Under
+a rank-r step map W_out W_in this holds for every token at once when at most r tokens have non-zero steps (the move-only
+models of Secs. 4.3-4.4; exact). With more stepping tokens than r, wrapping changes the rank and a generic signed code has no
+exact rank-r non-negative counterpart (sketch, appendix). So "non-negative rotary steps can represent the map" is a statement
+about move-only codes; our main sign arms let observations step as well, and the move-only versions show the same failure
+(Sec. 4.2). If the sign matters, it matters for learning. The cost of wrapping is that the two opposite moves' angles must
+sum to 2 pi rather than to 0.
 
 ## 3. Setup
 
 **Model.** MapFormer-WM (Rambaud et al.): one transformer layer, 2 heads, d = 128, whose query-key rotation is the
 path-integrated phase theta = omega * cumsum(W_out W_in x_t), shared rank 4. The sign arms differ only in the step: Signed
-(as is), |.| (Abs: the sign removed and nothing else), softplus (GRAPE-AP-like). For the mechanism we use
+(as is), |.| (Abs: the sign removed and nothing else), softplus (a non-negative rate in the rotary slot). For the mechanism we use
 observation-step-free versions in which only the move tokens have steps (so a non-negative copy of a signed solution needs no
 wrapped observation steps). Index RoPE uses the canonical frequency ladder; deeper and looped index models for Sec. 4.1.
 **Tasks.** A 2D torus walk (64 x 64, T = 1024 moves interleaved with observations; the model predicts the observation at
@@ -87,7 +96,10 @@ On the torus at T = 1024, one layer of signed path integration scores 1.000 (4/4
 0.576). Depth and looping lift the index model only on revisits within 128 moves (0.74-0.79 -> 0.90-0.96); long-gap and
 wrap-around revisits stay at the floor at every depth (Fig. 1). The same holds when the walk is told in English: path 0.969
 vs index 0.505 (p 0.0002, 7/8 vs 0/8). On Dyck-2 at matched depth one path layer is worth about three index layers (appendix);
-on the torus four are not enough.
+on the torus four are not enough *to be learned*: constant-depth transformer constructions for gridworld-type automata exist
+(Liu et al. 2023, via prefix sums; read at abstract level -- to verify), so this is learnability within 900 epochs, not
+capacity. The precision such constructions need grows with the walk length, which is consistent with depth helping short-gap
+revisits only.
 
 ### 4.2 Non-negative steps do not learn the map
 On the torus at the training length, the non-negative step costs -0.177 in accuracy (p 0.0002; SOLVED 0/8 vs 8/8; softplus
@@ -106,8 +118,13 @@ antiparallel), and Adam loses it within ten epochs -- the right existence test h
 On the ring the constructed non-negative model trained for another 300 epochs stays solved on 8/8 seeds and never leaves the
 solved region; on the torus it is knocked out early (peak loss 0.11-0.21 vs <= 0.017 for a matched signed copy) and re-finds
 the solution (8/8 SOLVED, 1.000 at the end). The same classes from scratch solve 0/8 (ring and torus). A solution exists and
-is stable in task terms; training does not find it. (Training also moves the held ring model off the exact cancelling code,
-87% -> 18% of channels; on the torus 100% -> 69%.)
+is stable in task terms; training does not find it. Training also moves the held ring model off the exact cancelling code (87% -> 18% of channels; torus 100% -> 69%).
+*Proposition 2 (rescaling).* Multiplying a channel's angles by (1 + eps) leaves the signed cancelling code a(-1) = -a(+1)
+unchanged but moves the wrapped one a(+1) + a(-1) = 2 pi: a revisit's phase error becomes 2 pi eps n, n = backward moves in the
+interval -- the wrapped code's error grows with distance travelled, the signed code's with net displacement. AdamW's decoupled
+weight decay is such a rescaling at every step, which accounts for the drift (in the toy, weight decay 0 keeps 0.99 of
+channels cancelling vs 0.43; transformer test pending) and, with the longer torus intervals, for the torus knock-out. The
+frozen fragility probe (1% noise on omega: wrapped 0.80, signed 0.998) is the same proposition.
 
 ### 4.4 Why: the constraint removes the path through zero
 We vary only the initial move angles of observation-step-free ring models (every other weight identical at a seed; Table 2).
@@ -126,20 +143,41 @@ step completely (8/8 vs 0/8, +0.109 [0.085, 0.135]), and from that start the sig
 by wrapping (100% / 88% of their cancelling channels have raw sums past pi). (iii) It is the sum, not the size: a large start
 whose sums stay below pi solves 2/8 (vs 8/8; p 0.007). The large start also makes the angles move faster under Adam (13-22x
 per step), which the sub-pi control matches only partly (~5x).
-So the constraint does not forbid the map; it removes the route to it from small starts. A signed step reaches cancellation
-through zero; a non-negative one must reach the wrap, and does so when it starts past the midpoint.
+What is proved and what is an account. *Proposition 3 (cut circle).* On the torus of angles (R / 2 pi Z)^2 the signed and
+non-negative models have the same loss: (a, 2 pi - a) is the point (a, -a). The constraint removes no solution; it cuts each
+channel's circle at zero, so from a small same-direction start the nearest cancelling point lies behind the cut and the only
+one on the near side is the wrap a(+1) + a(-1) = 2 pi. *Proposition 4 (sticky wall).* With a = |s|, dL/ds = sign(s) dL/da:
+where the loss wants an angle smaller, s is pushed into zero from both sides, so non-negative angles collapse toward the wall
+rather than bounce (observed: the |.| models' move angles shrink). *Proposition 5 (mirror).* Every revisit interval on an
+even ring has even length, so the attractive part of the retrieval objective is exactly symmetric under a(+1) + a(-1) ->
+2 pi - (a(+1) + a(-1)): a start with sums past pi is on the wrap's side of the mirror. These give the geometry. They do not give
+the dynamics: one-channel gradient flow does not reproduce "past pi flows to the wrap" (only channels within ~0.5 rad of 2 pi
+are captured) nor the signed model's escape (12% of channels). The run-level outcome is collective: success needs enough
+channels to cancel, and for signed steps one latent direction (z(-1) -> -z(+1)) cancels every channel at once, a route that
+does not exist under |.| (it yields a(-1) = a(+1), a clock). We therefore state the mechanism as an account built on
+Propositions 3-5: the constraint removes the path through zero; a start past the mirror restores a path to the wrap.
 *Design implication (one task):* initialise a Case-II rotary step near the wrap, not near index RoPE.
 
 ### 4.5 Published monotone methods
 Implemented faithfully (CARoPE: per-head rate in (0, 1), channel i steps f^i, initialised at index RoPE; CoPE: Listing 1 of
-the paper), neither learns the maps. CARoPE cannot represent cancellation (its per-token steps are at most 1 rad); it scores
+the paper), neither learns the maps. CARoPE cannot represent cancellation (*Proposition 6*: every token, observations included, advances channel i by
+f^i in (0, 1], so the shortest loop -- out and back, with two observations -- advances it by a total in (0, 4] < 2 pi, never
+0 mod 2 pi; each channel is a clock or blind); it scores
 0.667 on the torus, *below* index RoPE's 0.722 (p 0.04), and equals the index on the ring (0.741 vs 0.730). CoPE can represent
 ring cancellation (a period-2 position table read at the gated count; constructed) but learns it on 0/8 seeds (0.887 vs signed
 1.000, p 0.0002), though its content-gated count beats the index by +0.157. Starting CoPE's position table near the wrap
 does not rescue it measurably (8 seeds per arm, bimodal; sinusoidal starts trend better, 0.87-0.94 vs 0.84, all contrasts
-unmeasured): in CoPE the wrap sits in a free per-count table, which training moves to period 2 from any start; the monotone
-part is the gate, which must become slightly asymmetric between the two moves. The start lever applies to monotone rotary
-steps, where the step itself must carry the wrap.
+unmeasured). A post hoc diagnosis of all 40 CoPE runs explains why (predictions written before the checkpoints were opened):
+in one layer every gate is a fixed table over (head, query type, key type), and a periodic position table reads every return
+correctly only if each out-and-back advances the count by a whole period P (P = 2 or 3, since gates are below 1 -- the init
+already gives P = 2) and the +1 move advances it by an odd multiple of P/32, to ~1e-3. CoPE thus gets opposite-move
+cancellation for free at init -- the rotary "path through zero" problem does not arise -- but the 32-cell wrap becomes a fine
+lattice on the gate difference, with a loss barrier between lattice points. The runs fall into three regimes: on the lattice
+(9/40, 0.97-1.00, all SOLVED runs), off it (11/40, ~0.95: local revisits 0.99, wrap-only at the floor) and with observation
+gates that depend on observation identity (20/40, a regime the account does not derive). Snapping only the move gates of the
+off-lattice runs to the lattice (eval-only) lifts wrap-only accuracy from 0.63 to 0.90; the straight path to the lattice rises
+in loss before it falls in 11/11. So CoPE's failure is search, with a different obstacle from the rotary one; the start lever
+applies to monotone rotary steps.
 
 ### 4.6 The other direction is not established
 If sign is a matter of fit, a non-negative step might learn a content clock faster than a signed one. On k-back recency it
@@ -158,7 +196,8 @@ MapFormer argues that CoPE cannot represent an inverse -- true for its counts re
 rotary phase. Depth and prefix sums: Liu et al. (2023), PaTH.
 
 ## 6. Limitations
-Small models (one layer on the map tasks), synthetic map tasks, one optimiser recipe per task, fixed budgets (learnability is
+The mechanism is an account built on exact geometric facts (Props. 3-5), not a derived dynamics; "training does not find it"
+is budget- and recipe-scoped. Small models (one layer on the map tasks), synthetic map tasks, one optimiser recipe per task, fixed budgets (learnability is
 budget-scoped, although 3x did not help); the mechanism is shown on the ring only; the large start is also a more mobile
 start; n = 4 in the depth factorial; no recurrent baselines; CoPE tested on the ring only (its gated count is quadratic and
 costs ~8 h per torus run). The clock side is unestablished.
