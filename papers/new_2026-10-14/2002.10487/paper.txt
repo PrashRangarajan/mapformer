@@ -1,0 +1,873 @@
+                                                               Reparameterizing Mirror Descent
+                                                                     as Gradient Descent
+
+
+                                                                         Ehsan Amid∗ and Manfred K. Warmuth
+                                                                              Google Research, Brain Team
+                                                                                  Mountain View, CA
+                                                                          {eamid, manfred}@google.com
+arXiv:2002.10487v2 [cs.LG] 22 Jun 2020
+
+
+
+
+                                                                                           Abstract
+                                                      Most of the recent successful applications of neural networks have been based
+                                                      on training with gradient descent updates. However, for some small networks,
+                                                      other mirror descent updates learn provably more efficiently when the target is
+                                                      sparse. We present a general framework for casting a mirror descent update as
+                                                      a gradient descent update on a different set of parameters. In some cases, the
+                                                      mirror descent reparameterization can be described as training a modified network
+                                                      with standard backpropagation. The reparameterization framework is versatile
+                                                      and covers a wide range of mirror descent updates, even cases where the domain
+                                                      is constrained. Our construction for the reparameterization argument is done for
+                                                      the continuous versions of the updates. Finding general criteria for the discrete
+                                                      versions to closely track their continuous counterparts remains an interesting open
+                                                      problem.
+
+
+                                         1       Introduction
+                                         Mirror descent (MD) [Nemirovsky and Yudin, 1983, Kivinen and Warmuth, 1997] refers to a family
+                                         of updates which transform the parameters w ∈ C from a convex domain C ∈ Rd via a link function
+                                         (a.k.a. mirror map) f : C → Rd before applying the descent step. The continuous-time mirror
+                                         descent (CMD) update, which can be seen as the limit case of (discrete-time) MD, corresponds to
+                                         the solution of the following ordinary differential equation (ODE) [Nemirovsky and Yudin, 1983,
+                                         Warmuth and Jagota, 1998, Raginsky and Bouvrie, 2012]:
+                                                       f (w(t + h)) − f (w(t)) h→0 •    
+                                                                                = f w(t) = −η ∇L(w(t)) ,                               (CMD)           (1)
+                                                                  h                                     
+                                                                       w(t + 1) = f −1 f (w(t)) − η∇L(w(t)) .                          (MD)            (2)
+                                                  •
+
+                                         Here f := ∂f  ∂t is the time derivative of the link function and the vanilla discretized MD update
+                                         is obtained by setting the step size h equal to 1. The main link functions investigated in the past
+                                         are f (w) = w and f (w) = log(w) leading to the gradient descent (GD) and the unnormalized
+                                         exponentiated gradient (EGU) family of updates2 . These two link functions are associated with the
+                                         squared Euclidean and the relative entropy divergences, respectively. For example, the classical
+                                         Perceptron and Winnow algorithms are motivated using the identity and log links, respectively, when
+                                         the loss is the hinge loss. A number of papers discuss the difference between the two updates [Kivinen
+                                         and Warmuth, 1997, Kivinen et al., 2006, Nie et al., 2016, Ghai et al., 2019] and their rotational
+                                         invariance properties have been explored in [Warmuth et al., 2014]. In particular, the Hadamard
+                                             ∗
+                                              An earlier version of this manuscript (with additional results on the matrix case) appeared as "Interpolating
+                                         Between Gradient Descent and Exponentiated Gradient Using Reparameterized Gradient Descent".
+                                            2
+                                              The normalized version is called EG and the two-sided version EGU± . More about this later.
+
+
+                                         Preprint. Under review.
+problem is a paradigmatic linear problem that shows that EGU can converge dramatically faster
+than GD when the instances are dense and the target weight vector is sparse [Kivinen et al., 1997,
+Vishwanathan and Warmuth, 2005]. This property is linked to the strong-convexity of the relative
+entropy w.r.t. the L1 -norm3 [Shalev-Shwartz et al., 2012], which motivates the discrete EGU update.
+
+Contributions Although other MD updates can be drastically more efficient than GD updates on
+certain classes of problems, it was assumed that such MD updates are not realizable using GD. In this
+paper, we show that in fact a large number of MD updates (e.g. EGU, and those motivated by the
+Burg and Inverse divergences) can be reparameterized as GD updates. Concretely, our contributions
+can be summarized as follows.
+• We cast continuous MD updates as minimizing a trade off between a Bregman momentum and the
+  loss. We also derive the dual, natural gradient, and the constraint versions of the updates.
+• We then provide a general framework that allows reparameterizing one CMD update by another. It
+  requires the existence of a certain reparameterization function and a condition on the derivatives of
+  the two link functions as well as the reparameterization function.
+• Specifically, we show that on certain problems, the implicit bias of the GD updates can be
+  controlled by considering a family of tempered updates (parameterized by a temperature τ ∈ R)
+  that interpolate between GD (with τ = 0) and EGU (with τ = 1), while covering a wider class of
+  updates.
+
+We conclude the paper with a number of open problems for future research directions.
+
+Previous work There has been an increasing amount of of interest recently in determining the
+implicit bias of learning algorithms [Gunasekar et al., 2017, 2018, Vaskevicius et al., 2019]. Here,
+we mainly focus on the MD updates. The special case of reparameterizing continuous EGU as
+continuous GD was already known [Akin, 1979, Amid and Warmuth, 2020]. In this paper, we
+develop a more general framework for reparameterizing one CMD update by another. We give a large
+variety of examples for reparameterizing the CMD updates as continuous GD updates. The main new
+examples we consider are based on the tempered versions of the relative entropy divergence [Amid
+et al., 2019]. The main open problem regarding the CMD updates is whether the discretization of
+the reparameterized updates track the discretization of the original (discretized) MD updates. The
+strongest methodology for showing this would be to prove the same regret bounds for the discretized
+reparameterized update as for the original. This has been done in a case-by-case basis for the EG
+family [Amid and Warmuth, 2020]. For more discussion see the conclusion section, where we also
+discuss how our reparameterization method allows exploring the effect of the structure of the network
+on the implicit bias.
+
+Some basic notation We use , , and superscript for element-wise product, division, and
+power, respectively. We let w(t) denote the weight or parameter vector as a function of time t.
+Learning proceeds in steps. During step s, we start with weight vector w(s) = ws and go to
+w(s + 1) = ws+1 while processing a batch of examples. We also write the Jacobian of vector valued
+function q as Jq and use HF to denote the Hessian of a scalar function F . Furthermore, we let
+∇w F (w(t)) denote the gradient of function F (w) evaluated at w(t) and often drop the subscript w.
+
+2       Continuous-time Mirror Descent
+For a strictly convex, continuously-differentiable function F : C → R with convex domain C ⊆ Rd ,
+the Bregman divergence between w,  e w ∈ C is defined as
+                              e w) := F (w)−F
+                          DF (w,         e    (w)−f (w)> (w−w)
+                                                          e    ,
+where f := ∇F (w) denotes the gradient of F , sometimes called the link function4 . Trading off the
+divergence to the last parameter ws with the current loss lets us motivate the iterative mirror descent
+    3
+    Whereas the squared Euclidean divergence (which motivates GD) is strongly-convex w.r.t. the L2 -norm.
+    4
+    The gradient of a scalar function is a special case of a Jacobian, and should therefore be denoted by
+a row vector. However, in this paper we use the more common column vector notation for gradients, i.e.
+             ∂F >
+∇F (w) := ( ∂w ) .
+
+
+                                                   2
+(MD) updates [Nemirovsky and Yudin, 1983, Kivinen and Warmuth, 1997]:
+                                ws+1 = argmin 1/η DF (w, ws ) + L(w) ,                                      (3)
+                                                    w
+
+where η > 0 is often called the learning rate. Solving for ws+1 yields the so-called prox or implicit
+update [Rockafellar, 1976]:
+                         f (ws+1 ) = f (ws ) − η ∇L(ws+1 ) .                                                (4)
+This update is typically approximated by the following explicit update that uses the gradient at the
+old parameter ws instead (denoted hear as the MD update):
+                         f (ws+1 ) = f (ws ) − η ∇L(ws ) .                         (MD)                     (5)
+We now show that the CMD update (1) can be motivated similarly by replacing the Bregman
+divergence in the minimization problem (3) with a “momentum” version which quantifies the rate
+of change in the value of Bregman divergence as w(t) varies over time. For the convex function F ,
+we define the Bregman momentum between w(t), w0 ∈ C as the time differential of the Bregman
+divergence induced by F ,
+             •                 •                                             > •
+                                               > •
+            DF (w(t), w0 ) = F (w(t)) − f (w0 ) w(t) = f (w(t)) − f (w0 ) w(t) .
+Theorem 1. The CMD update5
+                                 •    
+                                f w(t) = −η ∇L(w(t)) , with w(s) = ws ,
+is the solution of the following functional:
+                                       n     •
+                                                                   o
+                                min      1/η D (w(t), w ) + L(w(t)) .                                       (6)
+                                               F       s
+                                 curve w(t)
+
+
+Proof. Setting the derivatives w.r.t. w(t) to zero, we have
+                  ∂                         > •           
+                         f (w(t)) − f (ws ) w(t) + η L(w(t))
+                ∂w(t)
+                                                            •
+                                        ∂ w(t)
+                                        •                        
+                     = HF (w(t)) w(t) +        f (w(t)) − f (ws ) + η ∇L(w(t))
+                                        ∂w(t)
+                        •    
+                     = f w(t) + η ∇L(w(t)) = 0 ,
+                                                                                                   •
+                                            •                                                      w(t)
+where we use the fact that w(t) and w(t) are independent variables [Burke, 1985] & thus ∂∂w(t) = 0.
+
+Note that the implicit update (4) and the explicit update (5) can both be realized as the backward and
+the forward Euler approximations of (1), respectively. Alternatively, (3) can be obtained from (6) via
+a simple discretization of the momentum term (see Appendix C).
+
+                        > ∗            of Bregman momentum in terms of the dual of F function.
+We can provide an alternative definition
+                                                                                            > ∗
+                                                                                                If
+F ∗ (w∗ ) = supw∈C
+               e     we  w   −F  (w)
+                                   e    denotes the Fenchel dual of F and w = argsupw∈C
+                                                                                     e  (we  w  −
+    e then the following relation holds between the pair of dual variables (w, w∗ ):
+F (w)),
+                           w = f ∗ (w∗ ) ,              w∗ = f (w) ,    and f ∗ = f −1 .                    (7)
+                                                ∗
+Taking the derivative of w(t) and w (t) w.r.t. t yields:
+           •                                                •
+  •                                   •∗              • ∗            •
+ w(t) = f ∗ w∗ (t) = HF ∗ w∗ (t) w (t) , (8) w (t) = f w(t) = HF w(t) w(t) .
+                                                                  
+                                                                                                            (9)
+This pairing allows rewriting the Bregman momentum in its dual form:
+               •                    •
+                                                    ∗   ∗           ∗       ∗ >        ∗   •   ∗
+              DF (w(t), w0 ) = DF ∗ (w0 , w (t)) = (w (t) − w0 ) HF ∗ (w (t)) w (t) .                      (10)
+An expanded derivation is given in Appendix A. Using (9), we can rewrite the CMD update (1) as
+                            •
+                           w(t) = −η HF−1 (w(t)) ∇L(w(t)) ,                       (NGD)                    (11)
+                                                                                     Rt               
+   5
+       An equivalent integral form of the CMD update is w(t) = f −1 f (ws ) − η z=s ∇L(w(z)) dz .
+
+
+                                                                3
+i.e. a natural gradient descent (NGD) update [Amari, 1998] w.r.t. the Riemannian metric HF . Using
+∇L(w) = HF ∗ (w∗ )∇w∗ L◦f ∗ (w∗ ) and HF (w) = HF−1∗ (w∗ ), the CMD update (1) can be written
+equivalently in the dual domain w∗ as an NGD update w.r.t. the Riemannian metric HF ∗ , or by
+applying (8) as a CMD with the link f ∗ :
+   • ∗                                                  •
+
+  w (t) = −η HF−1∗ (w∗ (t)) ∇w∗ L◦f ∗ (w∗ (t)) , (12) f ∗ (w∗ (t)) = −η ∇w∗ L◦f ∗ (w∗ (t)) . (13)
+The equivalence of the primal-dual updates was already shown in [Warmuth and Jagota, 1998] for the
+continuous case and in [Raskutti and Mukherjee, 2015] for the discrete case (where it only holds in
+one direction). We will show that the equivalence relation is a special case of the reparameterization
+theorem, introduced in the next section. In the following, we discuss the projected CMD updates for
+the constrained setting.
+                                                                            
+Proposition 1. The CMD update with      the additional constraint  ψ  w(t)   = 0 for some function
+       d      m
+ψ : R → R s.t. {w ∈ C| ψ w(t) = 0} is non-empty, amounts to the projected gradient update
+     •                                        •
+
+    f w(t) = −η Pψ (w(t))∇L(w(t)) & f ∗ (w∗ (t)) = −η Pψ (w(t))> ∇L◦f ∗ (w∗ (t)) , (14)
+            
+
+                                     −1
+where Pψ := Id − Jψ> Jψ HF−1 Jψ>         Jψ HF−1 is the projection matrix onto the tangent space of
+F at w(t) and Jψ (w(t)). Equivalently, the update can be written as a projected natural gradient
+descent update
+    •                                                  •   ∗
+    w(t) = −ηPψ> (w(t))HF−1 (w(t))∇L(w(t)) & w (t) = −ηPψ HF−1∗ (w∗ (t))∇L◦f ∗ (w∗ (t)). (15)
+Example 1 ((Normalized) EG). The unnormalized EG update is motivated using the link function
+f (w) = log w. Adding the linear constraint ψ(w) = w> 1 − 1 to the unnormalized EG update
+results in the (normalized) EG update [Kivinen and Warmuth, 1997]. Since Jψ (w) = 1> and
+                                            >
+HF (w)−1 = diag(w), Pψ = I − 11      diag(w)
+                                 1>diag(w)1
+                                             = I − 1w> and the projected CMD update (15) (the
+continuous EG update) and its NGD form become
+                 •
+
+                log(w) = −η (I − 1w> ) ∇L(w) = −η (∇L(w) − 1 w> ∇L(w)) ,
+                     •
+                     w = −η (diag(w)∇L(w) − w w> ∇L(w)) .
+
+3       Reparameterization
+We now establish the main result of the paper.
+Theorem 2. Let F and G be strictly convex, continuously-differentiable functions with domains in
+Rd and Rk , respectively, s.t. k ≥ d. Let q : Rk → Rd be a reparameterization function expressing
+parameters w of F uniquely as q(u) where u lies in the domain of G. Then the CMD update on
+parameter w for the convex function F (with link f (w) = ∇F (w)) and loss L(w),
+                                        •
+
+                                        f (w(t)) = −η ∇L(w(t)) ,
+coincides with the CMD update on parameters u for the convex function G (with link g(u) := ∇G(u))
+and the composite loss L◦q,
+                                   •                         
+                                  g (u(t)) = −∇u L◦q u(t) ,
+provided that range(q) ⊆ dom(F ) holds and we have
+                         HF−1 (w) = Jq (u) HG
+                                            −1
+                                               (u) Jq (u)> , for all w = q(u) .
+                                                               •   •              •
+Proof. Note that (dropping t for simplicity) we have w = ∂w
+                                                         ∂u
+                                                            u = Jq (u) u and ∇u L ◦ q(u) =
+      >
+Jq (u) ∇L(w). The CMD update on u with the link function g(u) can be written in the NGD form
+    •
+             −1
+as u = −η HG    (u)∇u L◦q(u) . Thus,
+                                    •
+                                            −1
+                                    u = −η HG  (u) Jq (u)> ∇w L(w) .
+Multiplying by Jq (u) from the left yields
+                                •
+                                             −1
+                               w = −η Jq (u)HG  (u)Jq (u)> ∇w L(w) .
+Comparing the result to (11) concludes the proof.
+
+
+                                                   4
+In the following examples, we will mainly consider reparameterizing a CMD update with the link
+function f (w) as a GD update on u, for which we have HG = Ik .
+Example 2 (EGU as GD). The continuous-time EGU can be reparameterized as continuous GD
+with the reparameterization function w = q(u) = 1/4 u u = 1/4 u 2 , i.e.
+                  •
+                                                 •
+              log(w) = −η ∇L(w) equals u = −η ∇L◦q (u) = −η/2 u                     ∇L(w)
+                                              | {z }
+                                                            ∇u    L (1/4 u   2)
+
+
+This is proven by verifying the condition of Theorem 2:
+      Jq (u)Jq (u)> = 1/2 diag(u) (1/2 diag(u))> = diag(1/4 u 2 ) = diag(w) = HF−1 (w) .
+Example 3 (Reduced EG in 2-dimension). Consider the 2-dimensional normalized weights w =
+[ ω, 1 − ω]> where 0 ≤ ω ≤ 1. The normalized reduced EG update [Warmuth and Jagota, 1998] is
+                                            w
+motivated by the link function f (w) = log 1−w , thus HF (w) = w1 + 1−w
+                                                                     1       1
+                                                                        = w(1−w) . This update
+can be reparameterized as a GD update on u ∈ R via ω = q(u) = 1/2(1 + sin(u)) i.e.
+        •
+              w                        •                                           cos(u)
+      log(       ) = −η ∇w L(w) equals u = −η                 ∇u L◦q (u) = −η             ∇L(w) .
+             1−w                                              | {z }                2
+                                                           ∇u L    1/2(1+sin(u))
+
+
+This is verified by checking the condition of Theorem 2: Jq (u) = 1/2 cos(u) and
+                        1             1             1
+      Jq (u)Jq (u)> = cos2 (u) =                        1 − sin(u) = w(1 − w) = HF−1 (w) .
+                                                                   
+                                         1 + sin(u)
+                        4             2              2
+Open problem The generalization of the reduced EG link function to d > 2 dimensions becomes
+f (w) = log 1−Pw d−1    which utilizes the first (d − 1)-dimensions w s.t. [w> , wd ]> ∈ ∆d−1 .
+                 i=1 wi
+Reparameterizing the CMD update using this link as CGD is open. The update can be reformulated
+as
+    •
+                   1         1              −1
+                                        11>       ∇L(w) = −η diag(w) − ww> ∇ L(w) .
+                                                                                 
+    w = −η diag         +    Pd−1
+                   w      1 − i=1 wi
+
+Later, we will give an d-dimensional version of EG using a projection onto a constraint.
+Example 4 (Burg updates as GD). The update associated with the negative Burg entropy F (w) =
+  Pd
+− i=1 log wi and link f (w) = −1 w is reparameterized as GD with w = q(u) := exp(u), i.e.
+                  •
+                                             •
+            (−1       w) = −η ∇L(w) equals u = −η ∇L◦q (u) = −η exp(u) ∇L(w) ,
+                                                  | {z }
+                                                           ∇u L (exp(u))
+
+This is verified by the condition of Theorem 2: HF (w) = diag(1 w)2 , Jq (u) = diag(exp(u)),
+and
+                      Jq (u)Jq (u)> = diag(exp(u))2 = diag(w)2 = HF−1 (w) .
+Example 5 (EGU as Burg). The reparameterization step can be chained, and applied in reverse,
+when the reparameterization function q is invertible. For instance, we can first apply the inverse repa-
+rameterization of the Burg update as GD from Example 4, i.e. u = q −1 (w) = log w. Subsequently,
+applying the reparameterization of EGU as GD from Example 2, i.e. v = q̃(u) = 1/4 u 2 , results in
+the reparameterization of EGU as Burg update, that is,
+                                  • 
+  •
+                                    1
+log(v) = −η ∇L(v) equals −              = −η ∇w L◦ q̃◦q −1 (w) = −η(log(w) (2w)) ∇L(v) .
+                                    w          |        {z       }
+                                                     ∇w L(1/4(log w)     2)
+
+
+
+For completeness, we also provide the constrained reparameterized updates (proof in Appendix B).
+Theorem 3. The constrained CMD update (14) coincides with the reparameterized projected gradient
+update on the composite loss,
+                            •     
+                           g u(t) = −η Pψ◦q (u(t))∇u L ◦ q(u(t)) ,
+                       >           −1 >
+                                          −1         −1
+where Pψ◦q := Ik − Jψ◦q    Jψ◦q HG   Jψ◦q     Jψ◦q HG    is the projection matrix onto the tangent
+                           :=   >
+space at u(t) and Jψ◦q (u)    Jq (u)Jψ (w).
+
+
+                                                       5
+Example 6 (EG as GD). We now extend the reparameterization of the EGU update as GD in
+Example 2 to the normalized case in terms of a projected GD update. Combining q(u) = 1/4 u 2
+                                                                                  uu>
+with ψ(w) = 1> w − 1, we have Jψ◦q (u) = 1/2 diag(u) 1> = u> and Pψ◦q (u) = I − kuk  2 . Thus,
+
+
+          •      uu> 
+                        ∇u L◦q(u) = −η/2 u − uu> ∇u L(1/4 u 2 ) with w(t) = 1/4 u(t) 2
+                                                     
+      u = −η I −      2
+                 kuk
+equals the normalized EG update in Example 2. Note that similar ideas was explored in an evolution-
+ary game theory context in [Sandholm, 2010].
+
+4         Tempered Updates
+In this section, we consider a richer class of examples derived using
+the tempered relative entropy divergence [Amid et al., 2019], pa-
+rameterized by a temperature τ ∈ R. As we will see, the tempered
+updates allow interpolating between many well-known cases. We
+start with the tempered logarithm link function [Naudts, 2002]:
+                                       1
+               fτ (w) = logτ (w) =          (w1−τ − 1) ,         (16)
+                                     1−τ
+for w ∈ Rd≥0 and τ ∈ R. The logτ function is shown in Figure 1 for
+different values of τ ≥ 0. Note that τ = 1 recovers the standard log Figure 1: log (x), for differ-
+function as a limit point. The logτ (w) link function is the gradient ent τ ≥ 0. τ
+of the convex function
+            X                    1                 X            1               1         1 
+Fτ (w) =          wi logτ wi +       (1 − wi2−τ ) =                      wi2−τ −     wi +        .
+             i
+                               2−τ                     i
+                                                            (1−τ )(2−τ )         1−τ      2−τ
+The convex function Fτ induces the following tempered Bregman divergence6 :
+                               X                               we2−τ − wi2−τ 
+                 DFτ (w,
+                       e w) =        w       ei − w
+                                     ei logτ w     ei logτ wi − i
+                                 i
+                                                                    2−τ
+                                  1 X w    ei2−τ − wi2−τ                    
+                            =                                 ei − wi ) wi1−τ .
+                                                           − (w                                        (17)
+                               1−τ i            2−τ
+For τ = 0, we obtain the squared Euclidean
+                                  P                        e w) = 12 kw
+                                           divergence DF0 (w,           e − wk22 and for τ = 1,
+the relative entropy DF1 (w,
+                           e w) = i (w ei log( /wi ) − w
+                                              w
+                                              ei       ei + wi ) (See [Amid et al., 2019] for an
+extensive list of examples).
+In the following, we derive the CMD updates using the time derivative of (17) as the tempered
+Bregman momentum. Notice that the link function logτ (x) is only defined for x ≥ 0 when τ > 0. In
+order to have a weight w ∈ Rd , we use the ±-trick [Kivinen and Warmuth, 1997] by maintaining
+two non-negative weights w+ and w− and setting w = w+ − w− . We call this the tempered EGU±
+updates, which contain the standard EGU± updates as a special case of τ = 1. As our second main
+result, we show that that continuous tempered EGU± updates interpolate between continuous-time
+GD and continuous EGU (for τ ∈ [0, 1]). Furthermore, these updates can be simulated by continuous
+GD on a new set of parameters u using a simple reparameterization. We show that reparameterizing
+the tempered updates as GD updates on the composite loss L◦q changes the implicit bias of the GD,
+making the updates to converge to the solution with the smallest L2−τ -norm for arbitrary τ ∈ [0, 1].
+
+4.1           Tempered EGU and Reparameterization
+
+We first introduce the generalization of the EGU update using the tempered Bregman divergence (17).
+Let w(t) ∈ Rd≥0 . The tempered EGU update is motivated by
+                                         n     •                       o
+                             argmin        1/η D
+                                                 Fτ w(t), w0 + L(w(t)) .
+                               curve w(t)∈Rd
+                                           ≥0
+
+This results in the CMD update
+                                            •
+
+                                           logτ w(t) = −∇L(w(t)) .                                     (18)
+      6
+          The second form is more commonly known as β-divergence [Cichocki and Amari, 2010] with β = 2 − τ .
+
+
+                                                        6
+                                                                           2/19/2020         Untitled Diagram.drawio
+
+
+
+An equivalent integral version of this update is
+
+
+
+
+                                                                                       ...
+                                Z t
+                                                 
+   w(t) = expτ logτ w0 − η         ∇w L(w(z)) dz ,                  (19)
+                                        0
+                                            1
+where expτ (x) := [1 + (1 − τ )x]+1−τ is the inverse of tem-
+pered logarithm (16). Note that τ = 1 is a limit case which
+
+
+
+
+                                                                                       ...
+recovers the standard exp function and the update (18) be-
+comes the standard EGU update. Additionally, the GD update
+(on the non-negative orthant) is recovered at τ = 0. As a
+result, the tempered EGU update (18) interpolates between Figure 2: A reparameterized linear
+                                                                                       2
+GD and EGU for τ ∈ [0, 1] and generalize beyond for values neuron where wi = |ui | 2−τ as a two-
+                    7
+of τ > 1 and τ < 0. We now show the reparameterization layer sparse network: value of τ = 0
+of the tempered EGU update (18) as GD. This corresponds to reduces to GD while τ = 1 simulates
+continuous-time gradient descent on the network of Figure 2. the EGU update.
+Proposition 2. The tempered continuous EGU update can
+be reparameterized continuous-time GD with the reparameterization function
+                                   2 − τ  2−τ
+                                            2       2
+                   w = qτ (u) =                |u| 2−τ , for u ∈ Rd and τ 6= 2 .            (20)
+                                     2
+That is
+  •
+                                                                              τ
+                                                                    2 − τ  2−τ
+                              •                                                       τ                                1/1
+
+logτ (w) = −η∇L(w) equals u = −η ∇L◦qτ (u) = −η sign(u)                          |u| 2−τ ∇L(w).
+                                       | {z }                          2
+                                               2
+                                             2−τ     2 
+                                                2−τ
+                                        ∇u L     2      |u|   2−τ
+
+
+
+
+Proof. This is verified by checking the condition of Theorem 2. The lhs is
+                (HFτ (w) (w))−1 = (Jlogτ (w))−1 = (diag(w)−τ )−1 = diag(w)τ .
+Note that the Jacobian of qτ is
+                               τ
+                    2 − τ  2−τ                         τ                                                τ
+        Jqτ (u) =                 diag sign(u) |u| 2−τ = diag(sign(u) qτ (u)                               2    ).
+                        2
+Thus the rhs Jqτ (u)Jq>τ (u) of the condition equals diag w τ as well.
+                                                             
+
+
+4.2        Minimum-norm Solutions
+
+We apply the (reparameterized) tempered EGU update on the under-determined linear regression
+problem. For this, we first consider the ±-trick on (18), in which we set w(t) = w+ (t) − w− (t)
+where              •                                 •
+
+                 logτ w+ (t) = −η ∇w L(w(t)) , logτ w− (t) = +η ∇w L(w(t)) .                (21)
+                                               n                                         ±
+Note that using the ±-trick, we have w(t) ∈ R . We call the updates (21) the tempered EGU . The
+reparameterization of the tempered EGU± updates as GD can be written by applying Proposition 2,
+  •                                           •                                         
+ u+(t) = −η ∇u+ L qτ (u+ (t))−qτ (u− (t)) , u−(t) = −η ∇u− L qτ (u+ (t))−qτ (u− (t)) , (22)
+and setting w(t) = qτ (u+ (t)) − qτ (u− (t)).
+The strong convexity of the Fτ function w.r.t. the L2−τ -norm (see [Amid et al., 2019]) suggests that
+the updates motivated by the tempered Bregman divergence (17) yield the minimum L2−τ -norm
+solution in certain settings. We verify this by considering the following under-determined linear
+regression problem. Let {xn , yn }N                      d
+                                     n=1 where xn ∈ R , yn ∈ R denote the set of input-output
+                      N ×d
+pairs and let X ∈ R         be the design matrix for which the n-th row is equal to x>  n . Also, let
+y ∈ R denote the vector of targets. Consider the tempered EGU± updates (21) on the weights
+       N
+
+w(t) = w+ (t) − w− (t) where w+ (t), w− (t) ≥ 0 and w+ (0) = w− (0) = w0 . Following (19), we
+have
+                                Z t                                               Z t
+                                    X > δ(z) dz , w− (t) = expτ logτ w0 + η           X > δ(z) dz ,
+                                                                                                 
+ w+ (t) = expτ logτ w0 − η
+                                 0                                                 0
+                                   
+where δ(t) = X w+ (t) − w− (t) .
+      7
+          For example, τ = 2 corresponds to the Burg updates (Example 4).
+
+
+                                                         7
+Theorem 4. Consider the underdetermined linear regression problem where N < d. Let E = {w ∈
+Rd | Xw = y} be the set of solutions with zero error. Given w(∞) ∈ E, then the tempered EGU±
+updates (21) with temperature 0 ≤ τ ≤ 1 and initial solution w0 = α1 ≥ 0 converge to the minimum
+L2−τ -norm solution in E in the limit α → 0.
+
+Proof. We show that the solution of the tempered EGU± satisfies the dual feasibility and complemen-
+tary slackness KKT conditions for the following optimization problem (omitting t for simplicity):
+       min kw+ − w− k2−τ 2−τ , for 0 ≤ τ ≤ 1,    s.t. X(w+ − w− ) = y and w+ , w− ≥ 0 .
+     w+ ,w−
+Imposing the constraints using a set of Lagrange multipliers ν+ , ν− ≥ 0 and λ ∈ R, we have
+                  n                                                                          o
+                                             >                               >         >
+                    kw+ − w− k2−τ
+                                                                       
+  min sup                          2−τ   + λ    X(w  +  −   w − )  − y   − w + ν+ −  w − ν −   .
+    w ν+ ,ν− ≥0,λ
+
+The
+ set of KKT conditions are
+w+ , w− ≥ 0 , Xw = y ,
+  + sign(w) |w| (1−τ ) − X > λ < 0 , − sign(w) |w| (1−τ ) + X > λ < 0 ,
+    sign(w) |w| (1−τ ) − X > λ          w+ = 0 , sign(w) |w| (1−τ ) − X > λ
+                                                                             
+                                                                                   w− = 0 ,
+where w = w+ − w− . The first condition is imposed by the form of the updates and the second
+condition is satisfied by the assumption at t → ∞. Using w0 = α1 with α → 0, we have
+                                       Z t                               Z t
+                                1                                                 1
+                                            X > δ(z) dz = − (1 − τ ) η X
+                                                        
+        w+ (t) = expτ −            −η                                        δ(z) + 1−τ ,
+                             1−τ         0                                0
+                                       Z t                               Z t
+                                1                                                 1
+                                            X > δ(z) dz = + (1 − τ ) η X
+                                                         
+        w− (t) = expτ −            +η                                        δ(z) + 1−τ .
+                             1−τ         0                                0
+                          R∞
+Setting λ = −(1 − τ ) η 0 δ(z) satisfies the remaining KKT conditions.
+Corollary 1. Under the assumptions of Theorem 4, the reparameterized tempered EGU± updates (22)
+also recover the minimum L2−τ -norm solution where w(t) = qτ (u+ (t)) − qτ (u− (t)).
+This corollary shows that reparameterizing the loss in terms of the parameters u changes the implicit
+bias of the GD updates. Similar results were observed before in terms of sparse signal recovery [Vaske-
+vicius et al., 2019] and matrix factorization [Gunasekar et al., 2017]. Here, we show that this is a
+direct result of the dynamics induced by the reparameterization Theorem 2.
+
+5   Conclusion and Future Work
+In this paper, we discussed the continuous-time mirror descent updates and provided a general
+framework for reparameterizing these updates. Additionally, we introduced the tempered EGU±
+updates and their reparameterized forms. The tempered EGU± updates include the two commonly
+used gradient descent and exponentiated gradient updates, and interpolations between them. For the
+underdetermined linear regression problem we showed that under certain conditions, the tempered
+EGU± updates converge to the minimum L2−τ -norm solution. The current work leads to many
+interesting future directions:
+• The focus is this paper was to develop the reparameterization method in full generality. Our repa-
+  rameterization equivalence theorem holds only in the continuous-time and the equivalence relation
+  breaks down after discretization. However, in many important cases the discretized reparameterized
+  updates closely track the discretized original updates [Amid and Warmuth, 2020]. This was done
+  by proving the same on-line worst case regret bounds for the discretized reparameterized updates
+  and the originals. A key research direction is to find general conditions for which this is true.
+• Perhaps the most important application of the current work is reparameterizing the weights of deep
+  neural networks for achieving sparse solutions or obtaining an implicit form of regularization that
+  mimics a trade-off between the ridge and lasso methods (e.g. elastic net regularization [Zou and
+  Hastie, 2005]). Here the deep open question is the following: Are sparse networks (as in Figure 2)
+  required, if the goal is to obtain sparse solutions efficiently?
+• A more general treatment of the underdetermined linear regression case requires analyzing the
+  results for arbitrary start vectors. Also, developing a matrix form of the reparameterization theorem
+  is left for future work.
+
+
+                                                  8
+Broader Impact
+The result of the paper suggests that the mirror descent updates can be effectively used in neural
+networks by running backpropagation on the reparameterized form of the neurons. This may have a
+potential use case for training these networks more efficiently. This is a theoretical paper and the
+broader ethical impact discussion is not applicable.
+
+References
+Ethan Akin. The geometry of population genetics, volume 31 of Lecture Notes in Biomathematics.
+  Springer-Verlag, Berlin-New York, 1979.
+Shun-ichi Amari. Natural gradient works efficiently in learning. Neural Computation, 10(2):251–276,
+  1998.
+E. Amid, M. K. Warmuth, R. Anil, and K. Tomer. Robust bi-tempered logistic loss based on
+  Bregman divergences. In Proceedings of the 32nd International Conference on Neural Information
+  Processing Systems, NeurIPS’19, Cambridge, MA, USA, 2019.
+Ehsan Amid and Manfred K. Warmuth. Winnowing with gradient descent. In Conference on Learning
+  Theory (COLT), 2020.
+William L. Burke. Applied Differential Geometry. Cambridge University Press, 1985.
+Nicolo Cesa-Bianchi, Yishay Mansour, and Gilles Stoltz. Improved second-order bounds for predic-
+  tion with expert advice. Machine Learning, 66(2-3):321–352, 2007.
+Andrzej Cichocki and Shun-ichi Amari. Families of alpha-beta-and gamma-divergences: Flexible
+  and robust measures of similarities. Entropy, 12(6):1532–1568, 2010.
+U. Ghai, E. Hazan, and S. Singer. Exponentiated gradient vs. meets gradient descent. arXiv preprint
+  arXiv:1902.01903, 2019.
+Suriya Gunasekar, Blake E Woodworth, Srinadh Bhojanapalli, Behnam Neyshabur, and Nati Srebro.
+  Implicit regularization in matrix factorization. In Advances in Neural Information Processing
+  Systems (NeurIPS), pages 6151–6159, 2017.
+Suriya Gunasekar, Jason D Lee, Daniel Soudry, and Nati Srebro. Implicit bias of gradient descent on
+  linear convolutional networks. In Advances in Neural Information Processing Systems (NeurIPS),
+  pages 9461–9471, 2018.
+J. Kivinen, M. K. Warmuth, and P. Auer. The Perceptron algorithm vs. Winnow: linear vs. logarith-
+   mic mistake bounds when few input variables are relevant. Artificial Intelligence, 97:325–343,
+   December 1997.
+Jyrki Kivinen and Manfred K. Warmuth. Exponentiated gradient versus gradient descent for linear
+  predictors. Information and Computation, 132(1):1–63, 1997.
+Jyrki Kivinen, Manfred K Warmuth, and Babak Hassibi. The p-norm generalization of the LMS
+  algorithm for adaptive filtering. IEEE Transactions on Signal Processing, 54(5):1782–1793, 2006.
+N Littlestone and MK Warmuth. The weighted majority algorithm. Information and Computation,
+  108(2):212–261, 1994.
+Jan Naudts. deformed exponentials and logarithms in generalized thermostatistics. physica a, 316:
+  323–334, 2002. URL http://arxiv.org/pdf/cond-mat/0203489.
+A. Nemirovsky and D. Yudin. Problem Complexity and Method Efficiency in Optimization. Wiley &
+  Sons, New York, 1983.
+Jiazhong Nie, Wojciech Kotłowski, and Manfred K Warmuth. Online PCA with optimal regret. The
+   Journal of Machine Learning Research, 17(1):6022–6070, 2016.
+
+
+                                                 9
+Maxim Raginsky and Jake Bouvrie. Continuous-time stochastic mirror descent on a network:
+ Variance reduction, consensus, convergence. In 2012 IEEE 51st IEEE Conference on Decision and
+ Control (CDC), pages 6793–6800. IEEE, 2012.
+Garvesh Raskutti and Sayan Mukherjee. The information geometry of mirror descent. IEEE
+ Transactions on Information Theory, 61(3):1451–1457, 2015.
+R Tyrrell Rockafellar. Monotone operators and the proximal point algorithm. SIAM journal on
+  control and optimization, 14(5):877–898, 1976.
+William H Sandholm. Population games and evolutionary dynamics. MIT Press, 2010.
+Shai Shalev-Shwartz et al. Online learning and online convex optimization. Foundations and Trends®
+  in Machine Learning, 4(2):107–194, 2012.
+Tomas Vaskevicius, Varun Kanade, and Patrick Rebeschini. Implicit regularization for optimal sparse
+  recovery. In Advances in Neural Information Processing Systems (NeurIPS), pages 2968–2979,
+  2019.
+S.V.N. Vishwanathan and M.K. Warmuth. Leaving the span. In Proceedings of the 18th Annual
+  Conference on Learning Theory (COLT), 2005.
+M. K. Warmuth and A. Jagota.             Continuous and discrete time nonlinear gradient de-
+ scent: relative loss bounds and convergence. In R. Greiner E. Boros, editor, Electronic
+ Proceedings of Fifth International Symposium on Artificial Intelligence and Mathematics.
+ Electronic,http://rutcor.rutgers.edu/˜amai, 1998.
+M. K. Warmuth, W. Kotłowski, and S. Zhou. Kernelization of matrix updates. Journal of Theoretical
+ Computer Science, 558:159–178, 2014. Special issue for the 23nd International Conference on
+ Algorithmic Learning Theory (ALT’12).
+Hui Zou and Trevor Hastie. Regularization and variable selection via the elastic net. Journal of the
+  royal statistical society: series B (statistical methodology), 67(2):301–320, 2005.
+
+
+
+
+                                                10
+A       Dual Form of Bregman Momentum
+The dual form of Bregman momentum given in (10) can be obtained by first forming the dual
+Bregman divergence in terms of the dual variables w∗ (t) and ws∗ and taking the time derivative, that
+is,
+    •              •
+                          ∗    ∗        ∂ ∗ ∗
+                                            F (w0 ) − F ∗ (w∗ (t)) − f ∗ (w∗ (t))> w0∗ − w∗ (t)
+                                                                                                  
+  DF (w(t), w0 ) = DF ∗ (w0 , w (t)) =
+                                        ∂t
+                       •
+                                                      •   ∗                                •   ∗
+                  = −F ∗ (w∗ (t)) + f ∗ (w∗ (t))> w (t) + (w∗ (t) − w0∗ )> HF ∗ (w∗ (t)) w (t)
+                                  >               • ∗
+                  = w∗ (t) − w0∗ HF ∗ (w∗ (t)) w (t) ,
+                                •
+                                                              •   ∗
+where we use the fact that F ∗ (w∗ (t)) = f ∗ (w∗ (t))> w (t).
+
+B       Constrained Updates and Reparameterization
+We first provide a proof for Proposition 1. Then, we prove Theorem 3.
+                                                                       
+Proposition 1. The CMD update with
+                                    the additional constraint ψ w(t) = 0 for some function
+ψ : Rd → Rm s.t. {w ∈ C| ψ w(t) = 0} is non-empty, amounts to the projected gradient update
+     •                                     •
+
+    f w(t) = −η Pψ (w(t))∇L(w(t)) & f ∗ (w∗ (t)) = −η Pψ (w(t))> ∇L◦f ∗ (w∗ (t)) , (14)
+           
+
+                                 −1
+where Pψ := Id − Jψ> Jψ HF−1 Jψ>     Jψ HF−1 is the projection matrix onto the tangent space of
+F at w(t) and Jψ (w(t)). Equivalently, the update can be written as a projected natural gradient
+descent update
+    •                                                 •   ∗
+    w(t) = −ηPψ> (w(t))HF−1 (w(t))∇L(w(t)) & w (t) = −ηPψ HF−1∗ (w∗ (t))∇L◦f ∗ (w∗ (t)). (15)
+
+
+
+Proof of Proposition 1. We use a Lagrange multiplier λ(t) ∈ Rm in (6) to enforce the constraint
+ψ(w(t)) = 0 for all t ≥ 0,
+                         n    •
+                                                                       o
+                     min 1/η DF (w(t), ws ) + L(w(t)) + λ(t)> ψ(w(t)) .                    (23)
+                     w(t)
+
+Setting the derivative w.r.t. w(t) to zero, we have
+                            •
+
+                            f (w(t)) + η ∇w L(w(t)) + Jψ (w(t))> λ(t) = 0 ,                        (24)
+where Jψ (w(t)) is the Jacobian of the function ψ(w(t)). In order to solve for λ(t), first note that
+•                                                             •
+                        •                                                      •
+ψ(w(t)) = Jψ (w(t)) w(t) = 0. Using the equality f (w(t)) = HF (w(t))w(t) and multiplying
+both sides by Jψ (w(t))HF−1 (w(t)) yields (ignoring t)
+                   •
+            Jψ
+               
+               (w) w + η Jψ (w)HF−1 (w)∇L(w) + Jψ (w)HF−1 (w)Jψ> (w)λ(t) = 0
+Assuming that the inverse exists, we can written
+                                              −1
+                  λ = −η Jψ (w)HF−1 (w)Jψ> (w)    Jψ (w)HF−1 (w)∇L(w) .
+                                                                                   •
+                                                                                                     •
+Plugging in for λ(t) yields (15). Multiplying both sides by HF (w) and using f (w) = HF (w)w
+yields (14).
+
+Theorem 3. The constrained CMD update (14) coincides with the reparameterized projected
+gradient update on the composite loss,
+                            •     
+                           g u(t) = −η Pψ◦q (u(t))∇u L ◦ q(u(t)) ,
+                       >           −1 >
+                                           −1       −1
+where Pψ◦q := Ik − Jψ◦q    Jψ◦q HG    Jψ◦q     Jψ◦q HG  is the projection matrix onto the tangent
+                           :=  >
+space at u(t) and Jψ◦q (u)    Jq (u)Jψ (w).
+
+
+                                                   11
+Proof of Theorem 3. Similar to the proof of Proposition 1, we use a Lagrange multiplier λ(t) ∈ Rm
+to enforce the constraint ψ ◦ q(u(t)) = 0 for all t ≥ 0,
+                         n      •                                            o
+                   min 1/η DG (u(t), us ) + L◦q(u(t)) + λ(t)> ψ◦q(u(t)) .
+                     u(t)
+
+Setting the derivative w.r.t. u(t) to zero, we have
+                            •
+                                                         >
+                            g (w(t)) + η ∇u L◦q(w(t)) + Jψ◦q (u(t))λ(t) = 0 ,
+where Jψ◦q (u(t)) := Jq> (u)∇ψ(w(t)).            In order to solve for λ(t), we use the fact that
+    •                                                           •
+                                 •                                                      •
+ψ ◦ q(u(t)) = Jψ◦q (u(t)) u(t) = 0. Using the equality g (u(t)) = HG (u(t))u(t) and multi-
+                                 −1
+plying both sides by Jψ◦q (u(t))HG  (u(t)) yields (ignoring t)
+                 •
+                                 −1                       −1     >
+         Jψ◦q (u) u + η Jψ◦q (w)HG  (u)∇L◦q(u) + Jψ◦q (w)HG  (w)Jψ◦q (u)λ(t) = 0 .
+The rest of the proof follows similarly by solving for λ(t) and rearranging the terms. Finally, applying
+the results of Theorem 2 concludes the proof.
+
+C       Discretized Updates
+In this section, we discuss different strategies for discretizing the CMD updates and provide examples
+for each case.
+The most straight-forward discretization of the unconstrained CMD update (1) is the forward Euler
+(i.e. explicit) discretization, given in (5). Note that this corresponds to a (approximate) minimizer of
+the discretized form of (6), that is,
+                                  n                                             o
+                         argmin 1/η DF (w, ws ) − DF (ws , ws ) + L(w) .
+                            w                            |     {z    }
+                                                           =0
+
+An alternative way of discretizing is to apply the approximation on the equivalent natural gradient
+form (11), which yields
+                               ws+1 − ws = −η HF−1 (ws ) ∇L(ws ) .
+Despite being equivalent in continuous-time, the two approximations may correspond to different
+updates after discretization. As an example, for the EG update motivated by f (w) = log w link, the
+latter approximation yields                                     
+                                  ws+1 = ws        1 − η ∇L(ws ) ,
+which corresponds to the unnormalized prod update, introduced by Cesa-Bianchi et al. [2007] as a
+Taylor approximation of the original EG update.
+The situation becomes more involved for discretizing the constrained updates. As the first approach,
+it is possible to directly discretize the projected CMD update (14)
+                                                 
+                              f w es+1 − f ws = −η Pψ (ws )∇L(ws ) .
+However, note that the new parameter w ew+1 may fall outside the constraint set Cψ := {w ∈
+C| ψ w) = 0}. As a result, a Bregman projection [Shalev-Shwartz et al., 2012] into Cψ may need
+to be applied after the update, that is
+                                     ws+1 = argmin DF (w, w
+                                                          es+1 ) .                                 (25)
+                                              w∈Cψ
+
+As an example, for the normalized EG updates with the additional constraint that w> 1 = 1, we have
+Pψ (w) = Id − 1w> and the approximation yields
+                                                                             
+                  log w es+1 − log ws = −η ∇L(ws ) − 1 Ews [∇L(ws )] ,
+where Ews [∇L(ws )] = ws> ∇L(ws ). Clearly, w
+                                            es+1 may not necessarily satisfy w >
+                                                                             es+1 1 = 1.
+Therefore, we apply
+                                            wes+1
+                                  ws+1 =            ,
+                                           kw
+                                            es+1 k1
+
+                                                   12
+which corresponds to the Bregman projection onto the unit simplex using the relative entropy
+divergence [Kivinen and Warmuth, 1997].
+An alternative approach for discretizing the constrained update would be to first discretize the
+functional objective with the Lagrange multiplier (23) and then (approximately) solve for the update.
+That is,
+                             n                                                        o
+           ws+1 = argmin 1/η DF (w, ws ) − DF (ws , ws ) + L(w) + λ> ψ(w) .
+                                                                
+                       w                           |    {z    }
+                                                         =0
+
+Note that in this case, the update satisfies the constraint ψ(ws+1 ) = 0 because of directly using the
+Lagrange multiplier. For the normalized EG update, this corresponds to the original normalized EG
+update in [Littlestone and Warmuth, 1994],
+                                                                     
+                                           ws exp − η ∇L(ws )
+                               ws+1 =                                .
+                                         kws exp − η ∇L(ws ) k1
+Finally, it is also possible to discretized the projected natural gradient update (15). Again, a Bregman
+projection into Cψ may need to be required after the update, that is,
+                         es+1 − ws = −ηPψ (ws )> HF−1 (ws )∇L(w(t)) ,
+                         w
+followed by (25). For the normalized EG update, the first step corresponds to
+                                                                        
+                     ws+1 = ws        1 − η ∇L(ws ) − 1 Ews [∇L(ws )] ,
+                                                                                       >
+which recovers to the approximated EG update of Kivinen and Warmuth [1997]. Note that ws+1 1=1
+and therefore, no projection step is required in this case.
+
+
+
+
+                                                  13
+

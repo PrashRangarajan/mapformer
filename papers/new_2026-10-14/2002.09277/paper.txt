@@ -1,0 +1,2306 @@
+                                             Kernel and Rich Regimes in Overparametrized Models
+
+                                              Blake Woodworth Suriya Gunasekar                       Jason D. Lee            Edward Moroshko
+                                              Toyota Technological     Microsoft Research        Princton University          Technion
+                                              Institute at Chicago     suriya@ttic.edu        jasonlee@princeton.edu edward.moroshko@gmail.com
+                                                blake@ttic.edu
+
+                                                 Pedro Savarese              Itay Golan               Daniel Soudry            Nathan Srebro
+                                                Toyota Technological          Technion                  Technion              Toyota Technological
+arXiv:2002.09277v3 [cs.LG] 27 Jul 2020
+
+
+
+
+                                                Institute at Chicago    itaygolan@gmail.com            daniel.soudry@         Institute at Chicago
+                                                savarese@ttic.edu                                      technion.ac.il           nati@ttic.edu
+
+                                                                                                Abstract
+                                                  A recent line of work studies overparametrized neural networks in the “kernel regime,” i.e., when
+                                              during training the network behaves as a kernelized linear predictor, and thus, training with gradient
+                                              descent has the effect of finding the corresponding minimum RKHS norm solution. This stands in contrast
+                                              to other studies which demonstrate how gradient descent on overparametrized networks can induce rich
+                                              implicit biases that are not RKHS norms. Building on an observation by Chizat et al. [6], we show how
+                                              the scale of the initialization controls the transition between the “kernel” (aka lazy) and “rich” (aka
+                                              active) regimes and affects generalization properties in multilayer homogeneous models. We provide a
+                                              complete and detailed analysis for a family of simple depth-D linear networks that exhibit an interesting
+                                              and meaningful transition between the kernel and rich regimes, and highlight an interesting role for the
+                                              width of the models. We further demonstrate this transition empirically for matrix factorization and
+                                              multilayer non-linear networks.
+
+
+                                         1    Introduction
+                                         A string of recent papers study neural networks trained with gradient descent in the “kernel regime.” They
+                                         observe that, in a certain regime, networks trained with gradient descent behave as kernel methods [7, 15, 24].
+                                         This allows one to prove convergence to zero error solutions in overparametrized settings [1, 2, 4, 6, 8, 9,
+                                         16, 25]. This also implies that the learned function is the the minimum norm solution in the corresponding
+                                         RKHS [4, 6, 19], and more generally that models inherit the inductive bias and generalization behavior of the
+                                         RKHS. This suggests that, in a certain regime, deep models can be equivalently replaced by kernel methods
+                                         with the “right” kernel, and deep learning boils down to a kernel method with a fixed kernel determined by
+                                         the architecture and initialization, and thus it can only learn problems learnable by appropriate kernel.
+                                             This contrasts with other recent results that show how in deep models, including infinitely overparametrized
+                                         networks, training with gradient descent induces an inductive bias that cannot be represented as an RKHS
+                                         norm. For example, analytic and/or empirical results suggest that gradient descent on deep linear convo-
+                                         lutional networks implicitly biases toward minimizing the Lp bridge penalty, for p = 2/depth ≤ 1, in the
+                                         frequency domain [13]; on an infinite width single input  R ReLU network infinitesimal weight decay biases
+                                         towards minimizing the second order total variations |f 00 (x)|dx of the learned function [21], further, em-
+                                         pirically it has been observed that this bias is implicitly induced by gradient descent without explicit weight
+                                         decay [21, 23]; and gradient descent on a overparametrized matrix factorization, which can be thought of
+                                         as a two layer linear network, induces nuclear norm minimization of the learned matrix and can ensure low
+                                         rank matrix recovery [3, 12, 17]. None of these natural inductive biases are Hilbert norms, and therefore
+                                         they cannot be captured by any kernel. This suggests that training deep models with gradient descent can
+                                         behave very differently from kernel methods, and have richer inductive biases.
+                                             So, does the kernel approximation indeed capture the behavior of deep learning in a relevant and inter-
+                                         esting regime, or does the success of deep learning come from escaping this regime to have richer inductive
+                                         biases that exploits the multilayer nature of neural networks? In order to understand this, we must first
+                                         understand when each of these regimes hold, and how the transition between the “kernel regime” and the
+                                         “rich regime” happens.
+
+
+                                                                                                 1
+    Early investigations of the kernel regime emphasize the number of parameters (“width”) going to infinity
+as leading to this regime (see e.g., [7, 15, 24]). However, Chizat et al. [6] identified the scale of the model
+at initialization as a quantity controlling entry into the kernel regime. Their results suggest that for any
+number of parameters (any width), a homogeneous model can be approximated by a kernel when its scale at
+initialization goes to infinity (see the survey in Section 3). Considering models with increasing (or infinite)
+width, the relevant regime (kernel or rich) is determined by how the scaling at initialization behaves as the
+width goes to infinity. In this paper we elaborate and expand of this view, carefully studying how the scale
+of initialization affects the model behaviour for D-homogeneous models.
+
+Our Contributions In Section 4 we analyze in detail a simple 2-homogeneous model for which we can
+exactly characterize the implicit bias of training with gradient descent as a function of the scale, α, of
+initialization. We show: (a) the implicit bias transitions from the `2 norm in the α → ∞ limit to `1 in
+the α → 0 limit; (b) consequently, for certain problems e.g., high dimensional sparse regression, using a
+small initialization can be necessary for good generalization; and (c) we highlight how the “shape” of the
+initialization, i.e., the relative scale of the parameters, affects the α → ∞ bias but not the α → 0 bias. In
+Section 5 we extend this analysis to analogous D-homogeneous models, showing that the order of homogeneity
+or the “depth” of the model hastens the transition into the `1 regime. In Section 6, we analyze asymmetric
+matrix factorization models, and show that the “width” (i.e., the inner dimension of the factorization) has
+an interesting role to play in controlling the transition between kernel and rich behavior which is distinct
+from the scale. In Section 7, we show qualitatively similar behavior for deep ReLU networks.
+
+
+2    Setup and preliminaries
+We consider models f : Rp × X → R which map parameters w ∈ Rp and examples x ∈ X to predictions
+f (w, x) ∈ R. We denote the predictor implemented by the parameters w as F (w) ∈ {f : X → R}, such
+that F (w)(x) = f (w, x). Much of our focus will be on models, such a linear networks, which are linear in x
+(but not in the parameters w), in which case F (w) is a linear functional in the dual space X ∗ and can be
+represented as a vector βw with f (w, x) = hβw , xi. Such models are essentially alternate parametrizations
+of linear models, but as we shall see that the specific parametrization is crucial.
+    We focus on models that are D-positive homogeneous in the parameters w, for some integer D ≥ 1,
+meaning that for any c ∈ R+ , F (c · w) = cD F (w). We refer to such models simply as D-homogeneous. Many
+interesting model classes have this property, including multi-layer ReLU networks with fully connected and
+convolutional layers, layered linear networks, and matrix factorization, where D corresponds to the depth of
+the network.                            PN                   2
+    We use L(w) = L̃(F (w)) = n=1 (f (w, xn ) − yn ) to denote the squared loss of the model over a training
+set (x1 , y1 ), . . . , (xN , yN ). We consider minimizing the loss L(w) using gradient descent with infinitesimally
+small stepsize, i.e., gradient flow dynamics
+
+                                               ẇ(t) = −∇L(w(t)).                                               (1)
+
+We are particularly interested in the scale of initialization and capture it through a scalar parameter α ∈ R+ .
+For scale α, we will denote by wα,w0 (t) the gradient flow path (1) with the initial condition wα,w0 (0) = αw0 .
+We consider underdetermined/overparameterized models (typically N  p), where there are many global
+minimizers of L(w) with L(w) = 0. Often, the dynamics of gradient flow converge to global minimizers
+of L(w) which perfectly fits the data—this is often observed empirically in large neural network learning,
+though proving this is challenging and is not our focus. Rather, we want to understand which of the many
+                                                 ∞
+minimizers gradient flow converges to, i.e., wα,w    0
+                                                       := limt→∞ wα,w0 (t) or, more importantly, the predictor
+     ∞
+F (wα,w0 ) reached by gradient flow depending on the scale α.
+
+
+3    The Kernel Regime
+Locally, gradient descent/flow depends solely on the first-order approximation w.r.t. w:
+
+                    f (w, x) = f (w(t), x) + hw − w(t), ∇w f (w(t), x)i + O(kw − w(t)k2 ).                      (2)
+
+
+                                                         2
+That is, gradient flow operates on the model as if it were an affine model f (w, x) ≈ f0 (x)+ w, φw(t) (x) with
+feature map φw(t) (x) = ∇w f (w(t), x), corresponding to the tangent kernel Kw(t) (x, x0 ) = h∇w f (w(t), x), ∇w f (w(t), x0 )i.
+Of particular interest is the tangent kernel at initialization, Kw(0) [15, 24].
+    Previous work uses “kernel regime” to describe a situation in which the tangent kernel Kw(t) does not
+change over the course of optimization or, less formally, where it does not change significantly, i.e., where
+∀t, Kw(t) ≈ Kw(0) . For D homogeneous models with initialization wα (0) = αw0 , Kwα (0) = α2(D−1) K0 ,
+where we denote K0 = Kw0 . Thus, in the kernel regime, training the model f (w, x) is exactly equivalent
+to training an affine model fK (w, x) = αD f (w(0), x) + φw(0) (x), w − w(0) with kernelized gradient de-
+scent/flow with the kernel Kw(0) and a “bias term” of f (w(0), x). Minimizing the loss of this affine model
+using gradient flow reaches the solution nearest to the initialization where distance is measured with respect
+                                                          ∞
+to the RKHS norm determined by K0 . That is, F (wα           ) = arg minh kh − F (αw0 )kK0 s.t. h(X) = y. To
+avoid handling this bias term, and in particular its large scale as α increases, Chizat et al. [6] suggest using
+“unbiased” initializations such that F (w0 ) = 0, so that the bias term vanishes. This is often achieved by
+replicating units with opposite signs at initialization (see, e.g., Section 4).
+    But when does the kernel regime happen? Chizat et al. [6] showed that for any homogeneous1 model
+satisfying some technical conditions, the kernel regime is reached when α → ∞. That is, as we increase
+the scale of initialization, the dynamics converge to the kernel gradient flow dynamics for the initial kernel
+K0 . In Sections 4 and 5, for our specific models, we prove this limit as a special case of our more general
+analysis for all α > 0, and we also demonstrate it empirically for matrix factorization and deep networks
+in Sections 6 and 7. In Section 6, we additionally show how increasing the “width” of certain asymmetric
+matrix factorization models can also lead to the kernel regime, even when the initial scale α goes to zero at
+an appropriately slow rate.
+    In contrast to the kernel regime, and as we shall see in later sections, the α → 0 small initialization
+limit often leads to very different and rich inductive biases, e.g., inducing sparsity or low-rank structure
+[12, 13, 17], that allow for generalization in settings where kernel methods would not. We will refer to
+the limit of this distinctly non-kernel behavior as the “rich limit.” This regime is also called the “active,”
+“adaptive,” or “feature-learning” regime since the tangent kernel Kw(t) changes over the course of training,
+in a sense adapting to the data. We argue that this rich limit is the one that truly allows us to exploit the
+power of depth, and thus is the more relevant regime for understanding the success of deep learning.
+
+
+4     Detailed Study of a Simple Depth-2 Model
+Consider the class of linear functions over X = Rd , with squared parameterization as follows:
+                          Xd                                              w
+                                      2      2
+             f (w, x) =             (w+,i − w−,i                         +
+                                                 )xi = hβw , xi , w = [ w− ] ∈ R2d , and βw = w+
+                                                                                               2    2
+                                                                                                 − w−                     (3)
+                              i=1
+
+where z2 for z ∈ Rd denotes elementwise squaring. The model can be thought of as a “diagonal” linear neural
+network (i.e., where the weight matrices have diagonal structure) with 2d units. A “standard” diagonal linear
+network would have d units, with each unit connected to just a single  P input unit with weight ui and the
+output with weight vi , thus implementing the model f ((u, v), x) = i ui vi xi which is illustrated in Figure
+9(a) in Appendix B. However, we also show in Appendix B that if |ui | = |vi | at initialization, then their
+magnitudes will remain equal and their signs will not flip throughout training. Therefore, we can equivalently
+parametrize the model in terms of a single shared input and output weight wi for each hidden unit, yielding
+the model f (w, x) = w2 , x .
+    The reason for using an “unbiased model” with two weights w+ and w− (i.e.,. 2d units, see illustration in
+Figure 9(b) in Appendix B) is two-fold. First, it ensures that the image of F (w) is all (signed) linear functions,
+and thus the model is truly equivalent to standard linear regression. Second, it allows for initialization at
+F (αw0 ) = 0 (by choosing w+ (0) = w− (0)) without this being a saddle point from which gradient flow will
+never escape.2
+   1 Chizat et al. did not consider only homogeneous models, and instead of studying the scale of initialization they studied
+
+scaling the output of the model. For homogeneous models, the dynamics obtained by scaling the initialization are equivalent
+to those obtained by scaling the output, and so here we focus on homogeneous models and on scaling the initialization.
+   2 Our results can be generalized to “biased" initialization (i.e., where w
+                               P                                                 − 6= w+ at initialization), or the asymmetric
+parametrization f ((u, v), x) = i ui vi xi , however this complicates the presentation without adding much insight.
+
+
+                                                              3
+           (a) Generalization                             (b) Norms of solution                          (c) Sample complexity
+
+
+Figure 1: In (a) the population error of the gradient flow solution vs. α in the sparse regression problem described
+                                ∞
+in Section 4. In (b), we plot kβα,1 k1 − kβ`∗1 k1 in blue and kβα,1
+                                                                ∞
+                                                                    k2 − kβ`∗2 k2 in red vs. α. In (c), the largest α such
+        ∞
+that βα,1 achieves population error at most 0.025 is shown. The dashed line indicates the number of samples needed
+by β`∗1 .
+
+    The model (3) is perhaps the simplest non-trivial D-homogeneous model for D > 1, and we chose it
+for studying the role of scale of initialization because it already exhibits distinct and interesting kernel and
+rich behaviors, and we can also completely understand both the implicit regularization and the transition
+between regimes analytically.
+    We study the underdetermined N  d case where there are many possible solutions Xβ = y. We will
+      ∞
+use βα,w  0
+            to denote the solution reached by gradient flow when initialized at w+ (0) = w− (0) = αw0 . We
+will start by focusing on the special case where w0 = 1. In this case, the tangent kernel at initialization is
+Kw(0) (x, x0 ) = 8α2 hx, x0 i, which is just a scaling of the standard inner product kernel, so kβkKw(0) ∝ kβk2 .
+                                ∞
+Thus, in the kernel regime, βα,1    will be the minimum `2 norm solution, β`∗2 := arg minXβ=y kβk2 . Following
+                                                                                    ∞
+Chizat et al. [6] and the discussion in Section 3, we thus expect that limα→∞ βα,1      = β`∗2 .
+    In contrast, from Corollary 2 in Gunasekar et al. [12], as α → 0, gradient flow leads instead to a rich limit
+                                    ∞
+of `1 minimization, i.e., limα→0 βα,1    = β`∗1 := arg minXβ=y kβk1 . Comparing this with the kernel regime, we
+already see two distinct behaviors and, in high dimensions, two very different inductive biases. In particular,
+the rich limit `1 bias is not an RKHS norm for any choice of kernel. We have now described the asymptotic
+regimes where α → 0 or α → ∞, but can we characterize and understand the transition between the two
+regimes as α scales from very small to very large? The following theorem does just that.
+                                                                                    ∞
+Theorem 1 (Special case: w0 = 1). For any 0 < α < ∞, if the gradient flow solution βα,1 for the squared
+                                              ∞
+parameterization model in eq. (3) satisfies Xβα,1 = y, then
+                                                ∞
+                                               βα,1 = arg min Qα (β) s.t. Xβ = y,                                                 (4)
+                                                           β
+
+                     Pd         
+                                    βi
+                                                         Rz             u
+                                                                                           √                         z
+                                                                                                                          
+where Qα (β) = α2       i=1 q       α2       and q(z) =    0
+                                                               arcsinh   2       du = 2 −       4 + z 2 + z arcsinh   2       .
+
+A General Approach for Deriving the Implicit Bias Once given an expression for Qα , it is straight-
+forward to analyze the dynamics of βα,1 and show that it is the minimum Qα solution to Xβ = y. However,
+a key contribution of this work is in developing a method for determining what the implicit bias is when we
+                                                                                                         ∞
+do not already have a good guess. First, we analyze the gradient flow dynamics and show that if Xβα,1       =y
+        ∞           >
+then βα,1 = bα (X ν) for a certain function bα and vector ν. It is not necessary to be able to calculate ν,
+which would be very difficult, even for our simple examples. Next, we suppose that there is some function
+                                                                          ∗
+Qα such that (4) holds. The KKT optimality conditions for (4) are   Xβ = y and      ∃ν s.t. ∇Qα (β ∗ ) = X > ν.
+Therefore, if indeed βα,1 = β and Xβα,1 = y then ∇Qα βα,1 = ∇Qα bα (X ν) = X > ν. We solve the
+                       ∞       ∗         ∞                      ∞                  >
+
+differential equation ∇Qα = b−1 α to yield Qα . Theorem 1 in Appendix C is proven using this method.
+    In light of Theorem 1, the function Qα (referred to as the “hypentropy” function in Ghai et al. [11]) can be
+understood as an implicit regularizer which biases the gradient flow solution towards one particular zero-error
+solution out of the many possibilities. As α ranges from 0 to ∞, the Qα regularizer interpolates between the
+`1 and `2 norms, as illustrated in Figure 3(a) (the line labelled D = 2 depicts the coordinate function q). As
+
+
+                                                                    4
+α → ∞ we havePthat   βi /α2 → 0, and so the behaviour of Qα (β) is governed by q(z) = Θ(z 2 ) around z = 0,
+thus Qα (β) ∝ i βi . On the other hand when α → 0, |βi /α2 | → ∞ is determined by q(z) = Θ(|z| log|z|) as
+                   2
+                            1                    1
+                                                        P             βi                        2
+|z| → ∞. In this regime log(1/α 2 ) Qα (β) ∝ log(1/α2 )  i |βi | log| α2 | = kβk1 + O(1/ log(1/α )). The following
+                                                                                              ∞
+Theorem, proven in Appendix D, quantifies the scale of α which guarantees that βα,1              approximates the
+minimum `1 or `2 norm solution:
+Theorem 2. For any 0 <  < d, under the setting of Theorem 1 with w0 = 1,
+                n                − 2+                      o
+        α ≤ min 2(1 + )kβ`∗1 k1     2
+                                        , exp −d/(kβ`∗1 k1 )    =⇒ kβα,1∞
+                                                                            k1 ≤ (1 + ) kβ`∗1 k1
+                        q
+                                                             ∞ 2
+                   α ≥ 2(1 + )(1 + 2/)kβ`∗2 k2 =⇒ kβα,1       k2 ≤ (1 + ) kβ`∗2 k22
+
+   Looking carefully at Theorem 2, we notice a certain asymmetry between reaching the kernel regime
+versus the rich limit: polynomially large α suffices to approximate β`∗2 to a very high degree of accuracy,
+but exponentially small α is needed to approximate β`∗1 .3 This suggests an explanation for the difficulty of
+empirically demonstrating rich limit behavior in matrix factorization problems [3, 12]: since the initialization
+may need to be exceedingly small, conducting experiments in the truly rich limit may be infeasible for
+computational reasons.
+
+Generalization In order to understand the effect of the initialization on generalization, consider a simple
+sparse regression problem, where√x1 , . . . , xN ∼ N (0, I) and yn ∼ N (hβ ∗ , xn i , 0.01) where β ∗ is r∗ -sparse
+with non-zero entries equal to 1/ r∗ . When N ≤ d, gradient flow will generally reach a zero training error
+solution, however, not all of these solutions will generalize the same. In the rich limit, N = Ω(r∗ log d)
+samples suffices for β`∗1 to generalize well. On the other hand, even though we can fit the training data
+perfectly well, the kernel regime solution β`∗2 would not generalize at all with this sample size (N = Ω(d)
+samples would be needed), see Figure 1(c). Thus, in this case good generalization requires using very small
+initialization, and generalization will tend to improve as α decreases. From an optimization perspective this
+is unfortunate because w = 0 is a saddle point, so taking α → 0 will likely increase the time needed to escape
+the vicinity of zero.
+    Thus, there seems to be a tension between generalization and optimization: a smaller α might improve
+generalization, but it makes optimization trickier. This suggests that one should operate just on the edge of
+the rich limit, using the largest α that still allows for generalization. This is borne out by our experiments
+with deep, non-linear neural networks (see Section 7), where standard initializations correspond to being
+right on the edge of entering the kernel regime, where we expect models to both generalize well and avoid
+serious optimization difficulties. Given the extensive efforts put into designing good initialization schemes,
+this gives further credence to the idea that models will perform best when trained in the intermediate regime
+between rich and kernel behavior.
+    This tension can also be seen through a tradeoff between the sample size and the largest α we can use
+and still generalize. In Figure 1(c), for each sample size N , we plot the largest α for which the gradient
+                 ∞
+flow solution βα,1  achieves population risk below some threshold. As N approaches the minimum number
+of samples for which β`∗1 generalizes (the vertical dashed line), α must become extremely small. However,
+generalization is much easier if the number of samples is only slightly larger, and much larger α suffices.
+
+The “Shape” of w0 and the Implicit Bias So far, we have discussed the implicit bias in the special
+case w0 = 1, but we can also characterize it for non-uniform initialization w0 :
+Theorem 1 (General case). For any 0 < α < ∞ and w0 with no zero entries, if the gradient flow solution
+ ∞                ∞
+βα,w0
+      satisfies Xβα,w0
+                       = y, then
+                                         ∞
+                                        βα,w0
+                                              = arg min Qα,w0 (β) s.t. Xβ = y,                                               (5)
+                                                        β
+                       Pd      2 2       βi
+                                                                     √                         z
+                                                                                                    
+where Qα,w0 (β) =         i=1 α w0,i q α2 w0,i
+                                           2         and q(z) = 2 −       4 + z 2 + z arcsinh   2       .
+   3 Theorem 2 only shows that exponentially small α is sufficient for approximating β ∗ and is not a proof that it is necessary.
+                                                                                      `1
+However, Lemma 2 in Appendix D proves that α ≤ d−Ω(1/) is indeed necessary for Qα to be proportional to the `1 norm for
+every unit vector simultaneously. This indicates that α must be exponentially small to approximate β`∗1 for certain problems.
+
+
+                                                               5
+                                                                                 2
+    Consider the asymptotic behavior of Qα,w0 . For small z, q(z) = z4 + O(z 4 ) so for α → ∞
+                                      d                                d
+                                      X                      βi  X βi2
+                                            α2 w0,i
+                                                2
+                                                                                    + O α−6
+                                                                                            
+                        Qα,w0 (β) =                 q           2   =        2 w2
+                                                                                                            (6)
+                                      i=1
+                                                            α2 w0,i   i=1
+                                                                          4α    0,i
+                                                                                                        
+In other words, in the α → ∞ limit, Qα,w0 (β) is proportional to a quadratic norm weighted by diag 1/w02 .
+On the other hand, for large |z|, q(z) = |z| log|z| + O(1/|z|) so as α → 0
+                                             d                     d
+                1                     1     X
+                                                 2 2
+                                                         β  X
+                                                            i
+                                                                      |βi | + O 1/ log(1/α2 )
+                                                                                              
+                   2
+                      Qα,w0 (β) =        2
+                                                α w0,i q 2 2    =                                           (7)
+            log(1/α )             log(1/α ) i=1          α w0,i   i=1
+
+So, in the α → 0 limit, Qα,w0 (β) is proportional to kβk1 regardless of the shape of the initialization w0 !
+The specifics of the initialization, w0 , therefore affect the implicit bias in the kernel regime (and in the
+intermediate regime) but not in the rich limit.
+    For wide neural networks with i.i.d. initialized units, the analogue of the “shape” is the distribution used
+to initialize each unit, including the relative scale of the input weights, output weights, and biases. Indeed,
+as was explored by Williams et al. [23] and as we elaborate in Section 7, changing the unit initialization
+distribution changes the tangent kernel at initialization and hence the kernel regime behavior. However, we
+also demonstrate empirically that changing the initialization distribution (“shape”) does not change the rich
+regime behavior. These observations match the behavior of Qα,w0 analyzed above.
+
+Explicit Regularization From the geometry of gradient descent, it is tempting to imagine that its implicit
+bias would be minimizing the Euclidean norm from initialization:
+                                                         
+              R
+             βα,w0
+                   := F arg minkw − αw0 k22 s.t. L(w) = 0 = arg min Rα,w0 (β) s.t. Xβ = y             (8)
+                              w                                              β
+
+                            where Rα,w0 (β) = minkw − αw0 k22 s.t. F (w) = β.                               (9)
+                                                            w
+It is certainly the case for standard linear regression f (w, x) = hw, xi, where
+                                                    ∞         R
+from standard analysis, it can be shown that βα,w       0
+                                                          = βα,w 0
+                                                                   so the bias is
+captured by Rα,w0 . But does this characterization fully explain the implicit
+bias for our 2-homogeneous model? Perhaps the behavior in terms of Qα,w0
+can also be explained by Rα,w0 ? Focusing on the special case w0 = 1, it is
+easy to verify that the limiting behavior when α → 0 and α → ∞ of the two
+approaches match. We can also P calculate Rα,1 (β), which decomposes over the     Figure 2: q(z) and r(z).
+coordinates, as: Rα,1 (β) = i r(βi /α2 ) where r(z) is the unique real root of
+           4      3            2 2            2       2    4
+pz (u) = u − 6u + (12 − 2z )u − (8 + 10z )u + z + z .
+    This function r(z) is shown next to q(z) in Figure 2. They are similar but not the same since r(z) is
+algebraic (even radical), while q(z) is transcendental. Thus, Qα,1 (β) 6= Rα,1 (β) and they are not simple
+rescalings of each other either. Furthermore, while α needs to be exponentially small in order for Qα,1 to
+approximate the `1 norm, the algebraic Rα,1 (β) approaches kβk1 polynomially in terms of the scale of α.
+Therefore, the bias of gradient descent and the transition from the kernel regime to the rich limit is more
+complex and subtle than what is captured simply by distances in parameter space.
+
+
+5    Higher Order Models
+So far, we considered a 2-homogeneous model, corresponding to a simple depth-2 “diagonal” network. Deeper
+models correspond to higher order homogeneity (e.g., a depth-D ReLU network is D-homogeneous), moti-
+vating us to understand the effect of the order of homogeneity on the transition between the regimes. We
+therefore generalize our model and consider:
+                                        D    D                                   D    D
+                       FD (w) = βw,D = w+ − w−                  and fD (w, x) = w+ − w− ,x                 (10)
+As before, this is just a linear regression model with an unconventional parametrization, equivalent to a
+depth-D matrix factorization model with commutative measurement matrices, as studied by Arora et al. [3],
+
+
+                                                                6
+                                                                                                          10-1
+                                                                                                          10-2                                   N L1
+                           D=2                                                                                                                   D=2
+                           D=3                  1
+                                                                                      1.0                 10-3
+                                                                                                                                                 D=3
+                           D=5                  D=2
+                                                                                                          10-4                                   D=5
+                                                                                      0.8
+                                                                                                                                                 D=8
+                                                                                                       α D 10
+                           D=10                                                                                 -5
+                                                D=3
+                           D=100                D=5                                                       10-6
+                                                                                      0.6
+                                                D=10
+                                                                                                          10-7
+                                                D=100                                 0.4
+                                                                                                          10-8
+                                                1/   d
+                                                                                      0.2                 10-9
+                                                                                                          10-10
+                                                                                                                     100   200       300   400          500
+                                           -8            -6     -4           -2
+                                                                                            log(αD )
+                                                                                                                                 N
+             (a) Regularizer                             (b) Approximation ratio                            (c) Sparse regression simulation
+
+                                                                                  D
+                                                               Qα (e1 )
+Figure 3: (a) qD (z) for several values of D. (b) The ratio QD (1 d /k1d k2 )
+                                                                              as a function of α, where e1 = [1, 0, 0, . . . , 0] is
+                                                                         α
+the first standard basis vector and 1d = [1, 1, . . . , 1] is the all ones vector in Rd . This captures
+                                                                                                  √     the transition between
+approximating the `2 norm (where the ratio is 1) and the `1 norm (where the ratio is 1/ d). (c) A sparse regression
+simulation as in Figure 1, using different order models. The y-axis is the largest αD (the scale of β at initialization)
+that leads to recovery of the planted predictor to accuracy 0.025. The vertical dashed line indicates the number of
+samples needed in order for β`∗1 to approximate the plant.
+
+or a depth-D diagonal linear network. We can again study the effect of the scale of α on the implicit bias.
+      ∞
+Let βα,D denote the limit of gradient flow on w when w+ (0) = w− (0) = α1. In Appendix E we prove:
+                                             ∞
+Theorem 3. For any 0 < α < ∞ and D ≥ 3, if Xβα,D = y, then
+                                       ∞
+                                     βα,D = arg minβ QDα (β) s.t. Xβ = y
+
+                        d
+where QD           D                 D
+                                                   h−1
+                     P                           R
+         α (β) = α      i=1 qD (βi /α ) and qD =    D is the antiderivative of the unique inverse of hD (z) =
+           D              D
+        − D−2          − D−2                                    ∞
+(1 − z)       − (1 + z)       on [−1, 1]. Furthermore, limα→0 βα,D = β`∗1 and limα→∞ βα,D∞
+                                                                                             = β`∗2 .
+    In the two extremes, we again get β`∗2 in the kernel regime, and more interestingly, for any depth D ≥ 2,
+we get the β`∗1 in the rich limit, as has also been observed by Arora et al. [3]. That the rich limit solution
+does not change with D is surprising, and disagrees with what would be obtained with explicit regularization
+(regularizing kwk2 is equivalent to kβk2/D regularization), nor implicitly on with the logistic loss (which
+again corresponds to kβk2/D , see, e.g., [12, 18]).
+    Although the two extremes do not change as we go beyond D = 2, what does change is the intermediate
+regime, particularly the sharpness of the transition into the extreme regimes, as illustrated in Figures 3(a)-
+3(c). The most striking difference is that, even at order D = 3, the scale of α needed to approximate `1 is
+polynomial rather then exponential, yielding a much quicker transition to the rich limit versus the D = 2 case
+above. This allows near-optimal sparse regression with reasonable initialization scales as soon as D > 2, and
+increasing D hastens the transition to the rich limit. This may explain the empirical observations regarding
+the benefit of depth in deep matrix factorization [3].
+
+
+6     The Effect of Width
+The kernel regime was first discussed in the context of the high (or infinite) width of a network, but our
+treatment so far, following [6], identified the scale of the initialization as the crucial parameter for entering
+the kernel regime. So is the width indeed a red herring? Actually, the width indeed plays an important role
+and allows entering the kernel regime more naturally.
+    The fixed-width models so far only reach the kernel regime when the initial scale of parameters goes to
+infinity. To keep this from exploding both the outputs of the model and F (w(0)) itself, we used Chizat
+and Bach’s “unbiasing” trick. However, using unbiased models with F (αw0 ) = 0 conceals the unnatural
+nature of this regime: although the final output may not explode, outputs of internal units do explode in
+the scaling leading to the kernel regime. Realistic models are not trained like this. We will now use a “wide”
+generalization of our simple linear model to illustrate how increasing the width can induce kernel regime
+
+
+                                                                     7
+behavior in a more natural setting where both the initial output and the outputs of all internal units, do not
+explode and can even vanish.
+    Consider an (asymmetric) matrix factorization model, i.e., a linear model over matrix-valued observa-
+tions4 X ∈ Rd×d described by f ((U, V), X) = UV> , X where U, V ∈ Rd×k , and we refer to k ≥ d as
+the “width.” We are interested in understanding the behaviour as k → ∞ and the scaling of initialization α
+of each individual parameter changes with k. Let MU,V = F (U, V) = UV> denote the underlying linear
+                                                                                  PN                         2
+predictor. We consider minimizing the squared loss L(U, V) = L̃(MU,V ) = n=1 (hXn , MU,V i − yn ) on
+N samples using gradient flow on the parameters U and V. This formulation includes a number of special
+cases such as matrix completion, matrix sensing, and two layer linear neural networks.
+    We want to understand how the scale and width jointly affect the implicit bias. Since the number of
+parameters grows with k, it now makes less sense to capture the scale via the magnitude of individual param-
+eters. Instead, we will capture scale via σ = d1 kMU,V kF , i.e., the scale of the model itself at initialization.
+The initial predictions are also of order σ, e.g., when X is Gaussian and has unit Frobenius norm. We will
+now show that the model remains in the kernel regime depending on the relative scaling of k and σ. Unlike
+the D-homogeneous models of Sections 4 and 5, MU,V can be in the kernel regime when σ remains bounded,
+or even when it goes to zero.
+
+"Lifted" symmetric factorization Does the scale of MU,V indeed capture the relevant notion of pa-
+rameter scale? In case of a symmetric matrix factorization model MW = WW> , MW captures the en-
+tire behaviour of the model since the dynamics on MW(t) induced by gradient flow on W(t) given by
+ṀW(t) = ∇L̃(MW(t) )MW(t) + MW(t) ∇L̃(MW(t) ) depends only on MW(t) and not on W(t) itself [12].
+    For the asymmetric model MU,V , this is no longer the case, and the dynamics of MU(t),V(t) do depend
+on the specific factorization U(t), V(t) and not only on the product MU,V . Instead, we can consider an
+                                                               U ][ U ]> = [         UU> M
+                                                                                     U,V              1       n  0   X
+equivalent “lifted” symmetric problem defined by M̄U,V = [ V        V        M>        > ] and X̄n = 2 [ X> 0 ]
+                                                                               U,V VV                      n
+
+with f¯((U, V), X̄) = M̄U,V , X̄ . The dynamics over M̄U,V —which on the off diagonal blocks are equivalent
+to those of MU,V —are now fully determined by M̄U,V itself; that is, by the combination of the “observed”
+part MU,V as well as the “unobserved” diagonal blocks UU> and VV> . To see how this plays out in terms
+                                                                        2
+of the width, consider initializing U(0)√ and V(0) with i.i.d. N (0, α ) entries. The off-diagonal    entries
+                                                                                                          √ of
+M̄U,V , and thus σ, will scale with α k while the diagonal entries of M̄U,V will scale with α2 k = σ k.
+                                      2
+
+    By analogy to the models studied in Sections 4 and 5, we can infer that the relevant scale for the√problem
+is that of the entire lifted matrix M̄U,V , which determines the dynamics, and which is a factor of k larger
+than the scale of the actual predictor MU,V . We now show that in the special case where the√measurements
+X1 , . . . , XN commute with each other, the implicit bias is indeed precisely captured by σ k—when this
+quantity goes to zero, we enter the rich limit; when this quantity goes to infinity, we enter the kernel regime;
+and in the transition we have behavior similar to the 2-homogeneous model from Section 4.
+
+Matrix Sensing with Diagonal/Commutative Measurements Consider the special case where X1 ,
+. . . , XN are all diagonal, or more generally commutative, matrices. The diagonal elements of MU,V (the only
+                                                     Pk
+relevant part when X is diagonal) are [MU,V ]ii = j=1 Uij Vij , and so the diagonal case can be thought of
+as an (asymmetric) “wide” analogue to the 2-homogeneous model we considered in Section 4, i.e., a “wide
+parallel linear network” where each input unit Xii has its own set of k hidden (Ui1 , Vi1 ), . . . , (Uik , Vik ) units.
+This is depicted in Figure 4. We consider initializing U(0)
+and V(0) with i.i.d. N (0, α2 ) entries, so MU(0),V(0) will be of
+                      √
+magnitude σ = α2 k, and take k → ∞, scaling α as a function
+of k.
+       Theorem 4, proven in Appendix F, completely characterizes
+the implicit bias of the model, which corresponds to minimizing          Figure 4: A wide parallel network
+Qµ applied to its spectrum (the “Schatten-Qµ -norm”). This
+corresponds to an implicit bias which approximates the trace norm for small µ and the Frobenius norm for
+large µ. In the diagonal case, this is just the minimum Qµ solution, but unlike the “width-1” model of Section
+4, this is obtained without an “unbiasing” trick.
+  4 X need not be square; the results and empirical observations extend for non-square matrices.
+
+
+
+
+                                                             8
+                                                         √
+Theorem 4. Let k → ∞, σ(k) → 0, and µ2 := 12 limk→∞ σ(k) k, and suppose X1 , . . . , XN commute. If
+MU,V (t) converges to a zero error solution M∗U,V , then
+                               M∗U,V = arg min Qµ (spectrum(M)) s.t. L(M) = 0
+                                            M
+
+
+Non-Commutative  √       Measurements   √ We might expect that in the general case, there is also a transition
+around σ  1/ k: (a) if σ = ω(1/ k), then M̄U,V → ∞ · I and the model should                √ remain in the kernel
+regime, even in cases where σ = kMU,V kF → 0; (b) on the other hand, if σ = o(1/ √            k) then kM̄U,V kF → 0
+and the model should approach some rich limit; (c) at the transition, when σ = Θ(1/ k), M̄U,V will          √remain
+bounded and we should be in an intermediate regime. In light of Theorem 4, if 0 < µ2 := 12 lim σ k < ∞
+exists, we expect an implicit bias resembling Qµ . Geiger√ et al. [10] also study
+                                                                               √     such a transition using different
+arguments, but they focus on the extremes σ = o(1/ k) and σ = ω(1/ k) and not on the transition. Here,
+we understand the scaling directly in terms of how the width affects the magnitude of the symmetrized model
+M̄U,V .
+    For the√symmetric matrix factorization model with non-commutative measurements, we can analyze the
+case ω(1/ k) = σ = o(1) and prove it, unsurprisingly, leads to the kernel regime (see Theorem 5 and
+Corollary G in Appendix G, which closely follow the approach of Chizat et al. [6]). It would be more
+interesting to characterize the implicit bias across the full range of the intermediate regime, however, even
+just the rich limit in this setting has defied generic analysis so far (q.v., the still unresolved conjecture of [12]),
+and analyzing the intermediate regime is even harder (in particular, the limit of the intermediate regime
+describes the rich limit). Nevertheless, we now describe empirical evidence that the behavior of Theorem 4
+may also hold for non-commutative measurements.
+
+Low-Rank Matrix Completion Matrix completion is a natural and commonly-studied instance of the
+general matrix factorization model where the measurements Xn = ein e>        jn are indicators of single entries
+of the matrix (note: these measurements do not commute), and so yn corresponds to observed entries of
+an unknown matrix Y∗ . When N < d2 , there are many minimizers of the squared loss which correspond
+to matching Y∗ on all of the observed entries, and imputing arbitrary values for the unobserved entries.
+Generally, there is no hope of “generalizing” to unseen entries of Y∗ , which need not have any relation to the
+observed entries. However, when Y∗ is rank-r for r  d, the minimum nuclear norm solution will recover
+Y∗ when N = Ω̃(d1.2 r) [5]. While Theorem 4 does not apply for these non-commutative measurements,
+                                                                                               √            our
+experiments described in Figure 5 indicate the same behavior appears to hold: when σ = o(1/ k), the nuclear
+norm is nearly minimized and MU,V converges to Y∗ . On the other hand, the kernel regime corresponds to
+                                                                    ∗                 2
+implicit Frobenius norm regularization, which does not recover √ Y until N = Ω(d ). Therefore, in order to
+recover Y∗ , it is necessary to choose an initialization with σ k  1.
+
+Conclusion In this section, we provide evidence that both the scale, σ, and width, k, of asymmetric
+matrix factorization models have a role to play in the implicit bias. In particular, we show that the scale
+of the equivalent “lifted” or “symmetrized” model M̄U,V is the relevant parameter. Under     √ many natural
+initialization schemes for U and V, e.g., with i.i.d. Gaussian entries, the scale of M̄U,V is k times larger
+than the scale of MU,V . Consequently, wide factorizations can reach the kernel regime even while MU,V
+remains bounded, even without resorting to “unbiasing.” On the other hand, reaching the rich limit requires
+an even smaller initialization for large k.
+
+
+7     Neural Network Experiments
+In Sections 4 and 5, we intentionally focused on the simplest possible models in which a kernel-to-rich
+transition can be observed, in order to isolate this phenomena and understand it in detail. In those simple
+models, we were able to obtain a complete analytic description of the transition. Obtaining such a precise
+description in more complex models is too optimistic at this point, but we demonstrate the same phenomena
+empirically for realistic non-linear neural networks.
+    Figures 6(a) and 6(b) use a synthetic dataset to show that non-linear ReLU networks remain in the kernel
+regime when the initialization is large; that they exit from the kernel regime as the initialization becomes
+
+
+                                                          9
+Figure 5: Matrix Completion We generate rank-1 ground truth Y∗ = u∗ (v ∗ )> where u∗ , v ∗ ∼ N (0, I10×10 ) and
+observe N = 60 random entries. We minimize the squared loss on the observed entries of the model F (U, V ) = U V >
+with U, V ∈ Rd×k using gradient descent with small stepsize 10−5 . We initialize U(0)ij , V(0)ij ∼ N (0, α2 ). For the
+solution, Mα,k , reached by gradient descent, the left heatmap depicts the excess nuclear norm kMα,k k∗ − kY∗ k∗ (this
+is conjectured to be zero in the rich limit); and the right heatmap depicts the root mean squared difference between
+the entries Mα,k and U(0)V(0)> corresponding to unobserved entries              ∗
+                                                                         √ of Y (in the √ kernel regime, the unobserved
+                                                                 2
+entries do not move). Both exhibit a phase transition around α  √  k = σ  k   1. For σ  k  1 the excess nuclear norm
+is approximately zero, corresponding to the rich limit. For σ k  1, the unobserved entries do not change, which
+corresponds to the kernel regime. This phase transition appears to sharpen somewhat as k increases.
+smaller; and that exiting from the kernel regime can allow for smaller test error. For MNIST data, Figure 6(c)
+shows that previously published successes with training very wide depth-2 ReLU networks without explicit
+regularization [e.g., 20] relies on the initialization being small, i.e., being outside of the kernel regime. In
+fact, the 2.4% test error reached for large initialization is no better than what can be achieved with a linear
+model over a random feature map. Turning to a more realistic network, Figure 6(d) shows similar behavior
+when training a VGG11-like network on CIFAR10.
+    Interestingly, in all experiments, when α ≈ 1, the models both achieve good test error and are just
+about to enter the kernel regime, which may be desirable due to the learning vs. optimization tradeoffs
+discussed in Section 4. Not coincidentally, α = 1 corresponds to using the standard out-of-the-box Uniform
+He initialization. Given the extensive efforts put into designing good initialization schemes, this gives further
+credence to the idea that model will perform best when trained just outside of the kernel regime.
+
+Univariate 2-layer ReLU Networks Consider a two layer width-k ReLU network with univariate input
+x ∈ R given by f ((w, b), x) = w2 σ(w1 x + b1 ) + b2 where w1 ∈ Rk×1 , w2 ∈ R1×k and b1 ∈ Rk×1 , b2 ∈ R
+are the weights and bias parameters, respectively, for the two layers. This setting is the simplest non-linear
+model which has been explored in detail both theoretically and empirically [21, 23]. Savarese et al. [21]
+show that for an infinite width, univariate ReLU network, the minimal `2 parameter norm solution for a 1D
+regression problem, i.e., arg minw kwk22 s.t. ∀n, f ((w, b), xn ) = yn is given by a linear spline interpolation.
+We hypothesize that this bias to corresponds to the rich limit in training univariate 2-layer networks. In
+contrast, [Theorem 5 and Corollary 6, 23] shows that the kernel limit corresponds to different cubic spline
+interpolations, where the exact form of interpolation depends on the relative scaling of weights across the
+
+
+                                                          10
+                       0.30                                                                              0.8
+                                                                                                                                                           D=2
+                                                                                                         0.7                                               D=3
+                       0.25                                                                                                                                D=5
+                                                                                                         0.6
+
+
+
+
+                                                                                     Gradient distance
+                       0.20                                                                              0.5
+                                           zero pred
+           Test loss
+
+                       0.15                D=2                                                           0.4
+                                           D=3
+                                           D=5                                                           0.3
+                       0.10
+                                                                                                         0.2
+                       0.05                                                                              0.1
+                       0.00                                                                              0.0
+                                     10 4 10 3 10 2 10 1         100   101     102                          10 5 10 4 10 3 10 2 10 1 100             101   102
+                                                          D                                                                            D
+
+                                           (a) Test RMSE vs scale                                                       (b) Grad distance vs scale
+
+                                   3.0                                                                       55
+                                   2.5                                                                       50
+
+
+
+                                                                                            Test Error (%)
+                  Test Error (%)
+
+
+
+
+                                                                                                             45
+                                   2.0
+                                                                                                             40
+                                   1.5                                                                       35
+                                   1.0 1                                                                     30
+                                     10          100       101           102                                      0.8     1.0   1.2   1.4   1.6      1.8   2.0
+
+                                         (c) MNIST test error vs scale                                            (d) CIFAR10 test error vs scale
+
+
+Figure 6: Synthetic Data: We generated a small regression training set in R2 by sampling 10 points uniformly from
+the unit circle, and labelling them with a 1 hidden layer teacher network with 3 hidden units. We trained depth-D,
+ReLU networks with 30 units per layer with squared loss using full GD and a small stepsize 0.01. The weights of
+the network are set using the Uniform He initialization, and then multiplied by α. The model is trained until ≈ 0
+training loss. Shown in (a) and (b) are the test error and the “grad distance” vs. the depth-adjusted scale of the
+initialization, αD . The grad distance is the cosine distance between the tangent kernel feature map at initialization
+versus at convergence. MNIST: We trained a depth-2, 5000 hidden unit ReLU network with cross-entropy loss using
+SGD until it reached 100% training accuracy. The stepsizes were optimally tuned w.r.t. validation error for each α
+individually. In (c), the dashed line shows the test error of the resulting network vs. α and the solid line shows the
+test error of the explicitly trained kernel predictor. CIFAR10: We trained a VGG11-like deep convolutional network
+with cross-entropy loss using SGD and a small stepsize 10−4 for 2000 epochs; all models reached 100% training
+accuracy. In (d), the dashed line shows the final test error vs. α. The solid line shows the test error of the explicitly
+trained kernel predictor. See Appendix A for further details about all of the experiments.
+layers. We explored the transition between the two regimes as the scale of initialization changes. We again
+consider a unbiased model as suggested by Chizat et al. [6] to avoid large outputs for large α.
+    In Figure 7, we fix the width of the network to k = 10000 and empirically plot the functions learned with
+different initialization w(0) = αw0 for fixed w0 . Additionally, we also demonstrate the effect of changing
+w0 , by relatively scaling of layers without changing the output as shown in Figure 7-(b,c). First, as we
+suspected, we see that the rich limit of α → 0 indeed corresponds to linear spline interpolation and is indeed
+independent of the specific choice w0 as long as the outputs are unchanged. In contrast, as was also observed
+by [23], the kernel limit (large α), does indeed change as the relative scaling of the two layers changes, leading
+to what resembles different cubic splines.
+
+Acknowledgements This work was supported by NSF Grant 1764032. BW is supported by a Google
+PhD Research Fellowship. DS was supported by the Israel Science Foundation (grant No. 31/1031). This
+work was partially done while the authors were visiting the Simons Institute for the Theory of Computing.
+
+
+
+                                                                                     11
+  1.2
+                                            =0.0001                                            =0.01                                           =0.0001
+                                            =0.01     1.0                                      =0.1                                            =0.01
+                                                                                               =1      1.0
+                                            =0.1                                                                                               =0.1
+  1.0                                       =1                                                 =10                                             =1
+                                            =10       0.8                                                                                      =10
+                                                                                                       0.8
+  0.8
+
+                                                      0.6                                              0.6
+  0.6
+
+
+  0.4                                                 0.4                                              0.4
+
+
+  0.2                                                 0.2                                              0.2
+
+
+  0.0                                                                                                  0.0
+                                                      0.0
+        1.5    1.0   0.5 0.0    0.5   1.0     1.5            1.5   1.0   0.5 0.0   0.5   1.0   1.5           1.5   1.0   0.5 0.0   0.5   1.0     1.5
+
+
+
+              (a) w0 = (w10 , b01 , w20 )               (b) w0 = (k−0.5 w10 , k−0.5 b01 , k0.5 w20 )   (c) w0 = (k−0.25 w10 , k−0.25 b01 , k0.25 w20 )
+
+
+Figure 7: Each subplot has functions learned by univariate ReLU network of width k = 10000 with initialization
+w(0) = αw0 , forpsome fixed w0 . In Figure (a), w0 are fixed by a standard initialization scheme as w10 , b01 ∼ N (0, 1)
+      0
+and w2 ∼ N (0, 2/k) for second layer. In (b) and (c), the relative scaling of the layers in w0 is changed without
+changing the scale of the output.
+References
+ [1] Zeyuan Allen-Zhu, Yuanzhi Li, and Zhao Song. A convergence theory for deep learning via over-
+     parameterization. arXiv preprint arXiv:1811.03962, 2018.
+
+ [2] Zeyuan Allen-Zhu, Yuanzhi Li, and Yingyu Liang. Learning and generalization in overparameterized
+     neural networks, going beyond two layers. In Advances in neural information processing systems, pages
+     6155–6166, 2019.
+ [3] Sanjeev Arora, Nadav Cohen, Wei Hu, and Yuping Luo. Implicit regularization in deep matrix factor-
+     ization. In Advances in Neural Information Processing Systems, pages 7411–7422, 2019.
+
+ [4] Sanjeev Arora, Simon S Du, Wei Hu, Zhiyuan Li, and Ruosong Wang. Fine-grained analysis of
+     optimization and generalization for overparameterized two-layer neural networks. arXiv preprint
+     arXiv:1901.08584, 2019.
+ [5] Emmanuel J Candès and Benjamin Recht. Exact matrix completion via convex optimization. Founda-
+     tions of Computational mathematics, 9(6):717–772, 2009.
+ [6] Lenaic Chizat, Edouard Oyallon, and Francis Bach. On lazy training in differentiable programming. In
+     Advances in Neural Information Processing Systems, pages 2933–2943, 2019.
+ [7] Amit Daniely. SGD learns the conjugate kernel class of the network. In Advances in Neural Information
+     Processing Systems, pages 2422–2430, 2017.
+
+ [8] Simon S Du, Jason D Lee, Haochuan Li, Liwei Wang, and Xiyu Zhai. Gradient descent finds global
+     minima of deep neural networks. arXiv preprint arXiv:1811.03804, 2018.
+ [9] Simon S. Du, Xiyu Zhai, Barnabas Poczos, and Aarti Singh. Gradient descent provably optimizes
+     over-parameterized neural networks. In International Conference on Learning Representations, 2019.
+
+[10] Mario Geiger, Stefano Spigler, Arthur Jacot, and Matthieu Wyart. Disentangling feature and lazy
+     learning in deep neural networks: an empirical study. arXiv preprint arXiv:1906.08034, 2019.
+
+
+
+                                                                             12
+[11] Udaya Ghai, Elad Hazan, and Yoram Singer. Exponentiated gradient meets gradient descent. arXiv
+     preprint arXiv:1902.01903, 2019.
+[12] Suriya Gunasekar, Blake E Woodworth, Srinadh Bhojanapalli, Behnam Neyshabur, and Nati Srebro.
+     Implicit regularization in matrix factorization. In Advances in Neural Information Processing Systems,
+     pages 6151–6159, 2017.
+
+[13] Suriya Gunasekar, Jason D Lee, Daniel Soudry, and Nati Srebro. Implicit bias of gradient descent on
+     linear convolutional networks. In Advances in Neural Information Processing Systems, pages 9461–9471,
+     2018.
+[14] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Delving deep into rectifiers: Surpassing
+     human-level performance on imagenet classification. In Proceedings of the IEEE international conference
+     on computer vision, pages 1026–1034, 2015.
+[15] Arthur Jacot, Franck Gabriel, and Clément Hongler. Neural tangent kernel: Convergence and gener-
+     alization in neural networks. In Advances in neural information processing systems, pages 8571–8580,
+     2018.
+
+[16] Yuanzhi Li and Yingyu Liang. Learning overparameterized neural networks via stochastic gradient
+     descent on structured data. In Advances in Neural Information Processing Systems, pages 8157–8166,
+     2018.
+[17] Yuanzhi Li, Tengyu Ma, and Hongyang Zhang. Algorithmic regularization in over-parameterized matrix
+     sensing and neural networks with quadratic activations. In Conference On Learning Theory, pages 2–47,
+     2018.
+[18] Kaifeng Lyu and Jian Li. Gradient descent maximizes the margin of homogeneous neural networks.
+     arXiv preprint arXiv:1906.05890, 2019.
+[19] Song Mei, Theodor Misiakiewicz, and Andrea Montanari. Mean-field theory of two-layers neural net-
+     works: dimension-free bounds and kernel limit. In Conference on Learning Theory, pages 2388–2464,
+     2019.
+[20] Behnam Neyshabur, Ryota Tomioka, and Nathan Srebro. In search of the real inductive bias: On the
+     role of implicit regularization in deep learning. arXiv preprint arXiv:1412.6614, 2014.
+[21] Pedro Savarese, Itay Evron, Daniel Soudry, and Nathan Srebro. How do infinite width bounded norm
+     networks look in function space? In Conference on Learning Theory, pages 2667–2690, 2019.
+[22] Martin J Wainwright. High-dimensional statistics: A non-asymptotic viewpoint, volume 48. Cambridge
+     University Press, 2019.
+[23] Francis Williams, Matthew Trager, Daniele Panozzo, Claudio Silva, Denis Zorin, and Joan Bruna.
+     Gradient dynamics of shallow univariate relu networks. In Advances in Neural Information Processing
+     Systems, pages 8376–8385, 2019.
+[24] Greg Yang. Scaling limits of wide neural networks with weight sharing: Gaussian process behavior,
+     gradient independence, and neural tangent kernel derivation. arXiv preprint arXiv:1902.04760, 2019.
+[25] Difan Zou, Yuan Cao, Dongruo Zhou, and Quanquan Gu. Stochastic gradient descent optimizes over-
+     parameterized deep ReLU networks. arXiv preprint arXiv:1811.08888, 2018.
+
+
+
+A     Neural Network Experiment Details
+Here, we provide further details about the neural network experiments.
+
+
+
+                                                    13
+                                      70                                         = 0.75
+                                                                                 =1
+                                      60                                         = 1.25
+                                                                                 = 1.5
+
+
+                     Test error [%]
+                                      50                                         = 1.75
+                                                                                 = 2.0
+                                      40                                        Last layer
+
+                                      30
+                                      20
+                                           0   250 500 750 1000 1250 1500 1750 2000
+                                                           Epoch
+                                      Figure 8: Training curves for the CIFAR10 experiments
+
+
+Synthetic Experiments We construct a synthetic training set with N = 10 points drawn uniformly from
+the unit circle in R2 and labelled by a teacher model with 1 hidden layer of 3 units. We train fully connected
+ReLU networks with depths 2, 3, and 5 with 30 units per layer to minimize the square loss using full gradient
+descent with constant stepsize 0.01 until the training loss is below 10−9 . We use Uniform He initialization
+for the weights and then multiply them by α.
+    Here, we describe the details of the neural network implementations for the MNIST and CIFAR10 ex-
+periments.
+
+MNIST Since our theoretical results hold for the squared loss and gradient flow dynamics, here we em-
+pirically assess whether different regimes can be observed when training neural networks following standard
+practices.
+    We train a fully-connected neural network with a single hidden
+                                                                q layer composed of 5000 units on the
+                                                                      2
+MNIST dataset, where weights are initialized as αw0 , w0 ∼ N 0, nin , nin denoting the number of units
+in the previous layer, as suggested by He et al. [14]. SGD with a batch size of 256 is used to minimize the
+cross-entropy loss over the 60000 training points, and error over the 10000 test samples are used as measure
+of generalization. For each value of α, we search over learning rates (0.5, 0.01, 0.05, . . . ) and use the one
+which resulted in best generalization.
+    There is a visible phase transition in Figure 6(c) in terms of generalization (≈ 1.4% error for α ≤ 2, and
+≈ 2.4% error for α ≥ 50), even though every network reached 100% training accuracy and less than 10−5
+cross-entropy loss. The black line indicates the test error (2.7%) when training only the output layer of
+the network, as a proxy for the performance of a linear predictor with features given by a fixed, randomly-
+initialized hidden layer.
+
+CIFAR10 We trained a VGG11-like architecture, which is as follows: 64-M-128-M-256-256-M-512-512-
+M-512-512-M-FC (numbers represent the number of channels in a convolution layers with no bias, M is a
+maxpooling layer, and FC is a fully connected layer). Weights were initialized using Uniform He initialization
+multiplied by α. No data augmentation was used, and training done using SGD with batch size of 128 and
+learning rate of 0.0001. All experiments ran for 2000 epochs, and reached 100% train accuracy except
+when training only the last layer, which reached 50.38% train accuracy with LR = 0.001 (chosen after
+hyperparameter tuning).
+    In addition, to approximate the test error in the kernel regime, we experimented with freezing the bottom
+layers and only training the output layer for both datasets (the solid lines in Figures 6(c) and 6(d)).
+    Figure 8 illustrates some of the optimization difficulties that arise from using smaller α as discussed in
+Section 4.
+
+
+                                                               14
+                                                                                    w+,1          +
+                             u1                                      x[1]           w−,1          −
+                  x[1]
+                                                v1                                  w+,2          +
+                             u2                                      x[2]           w−,2          −
+                  x[2]                          v2
+                                                                                                              ŷ
+                                                           ŷ                       w+,3          +
+                                                v3                   x[3]
+                             u3
+                  x[3]                          v4                                  w−,3          −
+                                                                                    w+,4
+                             u4                                      x[4]                         +
+                  x[4]                                                              w−,4          −
+                         (a) A biased diagonal network                 (b) An unbiased diagonal network
+
+                                          Figure 9: Diagonal linear networks.
+
+B     Diagonal Linear Neural Networks
+                                   P
+Consider the model f ((u, v), x) = i ui vi xi as described in Section 4, and suppose that |ui (0)| = |vi (0)|,
+i.e., the input and output weights for each hidden unit are initialized to have the same magnitude. Now,
+consider the gradient flow dynamics on the weights when minimizing the squared loss:
+                     d
+                        |u(t)| = −sign(u(t))u̇(t)                                                                  (11)
+                     dt
+                                     N    d
+                                                                    !2
+                                                          (n)
+                                    X    X
+                                                                (n)
+                               = −2          ui (t)vi (t)xi − y        sign(u(t)) ◦ v(t) ◦ x(n)                    (12)
+                                      n=1   i=1
+
+where a ◦ b denotes the element-wise multiplication of vectors a and b, and sign(a) is the vector whose ith
+entry is sign(ai ). Similarly,
+                     d
+                        |v(t)| = −sign(v(t))v̇(t)                                                                  (13)
+                     dt
+                                     N    d
+                                                                  !2
+                                                          (n)
+                                    X    X
+                               = −2          ui (t)vi (t)xi − y(n) sign(v(t)) ◦ u(t) ◦ x(n)                        (14)
+                                      n=1   i=1
+
+Therefore, if |ui (0)| = |vi (0)|, then sign(ui (0))vi (0) = sign(vi (0))ui (0), so the dynamics on |ui | and |vi | are
+the same, and their magnitudes will remain equal throughout training. Furthermore, the signs of the weights
+cannot change, since |ui (t)| = |vi (t)| = 0 implies u̇i (t) = v̇i (t) = 0.
+
+
+C     Proof of Theorem 1
+We prove Theorem 1 using the general approach outlined in Section 4.
+Theorem 1 (General case). For any 0 < α < ∞ and w0 with no zero entries, if the gradient flow solution
+ ∞                ∞
+βα,w0
+      satisfies Xβα,w0
+                       = y, then
+                                       ∞
+                                      βα,w0
+                                            = arg min Qα,w0 (β) s.t. Xβ = y,                                        (5)
+                                                       β
+                     Pd       2 2       βi
+                                                                      √                          z
+                                                                                                      
+where Qα,w0 (β) =        i=1 α w0,i q α2 w0,i
+                                          2         and q(z) = 2 −          4 + z 2 + z arcsinh   2       .
+                                                                                            ∞
+Proof. We begin by calculating the gradient flow dynamics on w, since the linear predictor βα,w 0
+                                                                                                  is given
+                                                                                         
+by F applied to the limit of the gradient flow dynamics on w. Recalling that X̃ = X −X ,
+                                                              
+                  ẇα (t) = −∇L(wα (t)) = −∇ kX̃wα (t)2 − yk22 = −2X̃ > rα (t) ◦ wα (t)               (15)
+
+where the residual rα (t) , X̃wα (t)2 − y, and a ◦ b denotes the element-wise product of a and b. It is easily
+confirmed that these dynamics have a solution:
+                                                               Z t         
+                                 wα (t) = wα (0) ◦ exp −2X̃ >       rα (s)ds                             (16)
+                                                                                0
+
+
+                                                                15
+Since wα,+ (0) = wα,− (0) = αw0 we can then express βα,w0 (t) as
+
+                  βα,w0 (t) = wα,+ (t)2 − wα,− (t)2
+                                                  Z t                   Z t         
+                            = α2 w02 ◦ exp −4X >        rα (s)ds − exp 4X >     rα (s)ds
+                                                     0                       0                         (17)
+                                                   Z t         
+                            = 2α2 w02 ◦ sinh −4X >      rα (s)ds
+                                                         0
+
+                     ∞                                                 ∞
+Supposing also that βα,w0
+                          is a global minimum with zero error, i.e., Xβα,w0
+                                                                            = y. Thus,
+                                               ∞
+                                             Xβα,w0
+                                                    =y
+                                                   ∞
+                                                                                                       (18)
+                                                  βα,w0
+                                                        = bα (X > ν)
+                                          R∞
+for bα (z) = 2α2 w02 ◦ sinh(z) and ν = −4 0 rα (s)ds. Following our general approach detailed in Section 4,
+we conclude                                                                  
+                                                                    1
+                                 ∇Qα,w0 (β) = b−1
+                                               α  (β) = arcsinh           ◦ β                          (19)
+                                                                  2α2 w02
+where we write 1/w0 to denote the vector whose ith element is 1/w0,i . Integrating this expression, we have
+that                                                                !
+                                                d
+                                               X
+                                                    2 2        βi
+                                   Qα,w0 (β) =     α w0,i q       2                                    (20)
+                                               i=1
+                                                            α2 w0,i
+where                              Z z        
+                                              t          p                   z 
+                          q(z) =      arcsinh    dt = 2 − 4 + z 2 + z arcsinh                          (21)
+                                    0         2                               2
+
+
+
+D       Proof of Theorem 2
+Lemma 1. For any β ∈ Rd ,
+                                                                                               
+                                                     p                   1
+                                                                       − 2                d
+                    α ≤ α1 (, kβk1 , d) := min 1,       kβk1 , (2kβk1 )      , exp −
+                                                                                        2kβk1
+
+guarantees that
+                                                      1
+                                (1 − ) kβk1 ≤              Qα (β) ≤ (1 + ) kβk1
+                                                  ln(1/α2 )
+Proof. We consider only the special case w0 = 1 and will drop the subscript for brevity. First, we show that
+Qα (β) = Qα (|β|). Observe that g(x) = x arcsin(x/2) is even because x and arcsin(x/2) are odd. Therefore,
+                                             d
+                                                     r
+                                                     βi2
+                                                                             
+                                         2
+                                             X               βi            βi
+                             Qα (β) = α       2 − 4 + 4 + 2 arcsinh
+                                          i=1
+                                                     α       α            2α2
+                                           d
+                                                 r
+                                                     β2
+                                                               
+                                          X                     βi
+                                    = α2      2 − 4 + i4 + g      2
+                                          i=1
+                                                     α          α                                      (22)
+                                                 s
+                                           d               2          
+                                        2
+                                          X          |βi |          βi
+                                    =α        2− 4+ 4 +g
+                                          i=1
+                                                      α             α2
+                                     = Qα (|β|)
+
+
+
+
+                                                             16
+Therefore, we can rewrite
+                 1                 1
+                   2
+                      Qα (β) =           Qα (|β|)
+             ln(1/α )          ln(1/α2 )
+                                d               p
+                                      2α2          4α4 + βi2
+                                                                                           
+                               X                                  |βi |               |βi |
+                             =               −               +            arcsinh
+                               i=1
+                                   ln(1/α2 )      ln(1/α2 )    ln(1/α2 )              2α2
+                                d               p                                       r             !
+                               X      2α2          4α4 + βi2      |βi |        |βi |             βi2         (23)
+                             =               −               +            ln          + 1+ 4
+                               i=1
+                                   ln(1/α2 )      ln(1/α2 )    ln(1/α2 )       2α2               4α
+                                                                                      q             
+                                                                                                    2
+                                                                           ln   |βi |
+                                                                                      +     α 4 + βi
+                                d               p
+                               X      2α2          4α4 + βi2                    2                 4   
+                             =            2)
+                                             −           2)
+                                                             + |βi | 1 +
+                                                                                             2)
+                                                                                                       
+                               i=1
+                                   ln(1/α         ln(1/α                           ln(1/α             
+
+
+Using the fact that                                 p
+                                            |a| ≤    a2 + b2 ≤ |a| + |b|                                     (24)
+we can bound for α < 1
+                                                                                                      
+                                    d                                                   |βi | 2 |βi |
+                   1                X     2α  2
+                                                        2α 2                   ln        2 +α + 2
+                         Qα (β) ≤                −              + |βi | 1 +                            
+               ln(1/α2 )          i=1
+                                       ln(1/α 2)     ln(1/α  2)                          ln(1/α2 )
+                                   d                             !
+                                  X              ln |βi | + α2
+                                =     |βi | 1 +
+                                                     ln(1/α2 )
+                                  i=1                                                                        (25)
+                                                                    !
+                                                      ln |βi | + α2
+                                ≤ kβk1 1 + max
+                                               i∈[d]    ln(1/α2 )
+                                                                !
+                                               ln kβk1 + α2
+                                ≤ kβk1 1 +
+                                                   ln(1/α2 )
+                     n p                     o
+                                          −1
+So, for any α ≤ min 1, kβk1 , (2kβk1 ) 2 , then
+                                                                                    !
+                                     1                         ln kβk1 + α2
+                                           Qα (β) ≤ kβk1    1+
+                                 ln(1/α2 )                         ln(1/α2 )
+                                                                                                             (26)
+                                                                          
+                                                               ln (2kβk1 )
+                                                    ≤ kβk1 1 +
+                                                                ln(1/α2 )
+                                                    ≤ kβk1 (1 + )
+
+   On the other hand, using (23) and (24) again,
+                                          d
+                                                 2α2       |βi | + 2α2
+                                                                                               
+                          1              X                                           ln (|βi |)
+                                Qα (β) ≥                −               + |βi | 1 +
+                      ln(1/α2 )          i=1
+                                              ln(1/α2 )     ln(1/α2 )               ln(1/α2 )
+                                                                                                             (27)
+                                          d                           
+                                         X              ln (|βi |) − 1
+                                       =     |βi | 1 +
+                                         i=1
+                                                          ln(1/α2 )
+
+Using the inequality ln(x) ≥ 1 − x1 , this can be further lower bounded by
+                                                         d
+                                          1             X               1
+                                            2
+                                               Qα (β) ≥     |βi | −
+                                      ln(1/α )                      ln(1/α2 )
+                                                        i=1                                                  (28)
+                                                                     d
+                                                        = kβk1 −
+                                                                 ln(1/α2 )
+
+                                                          17
+                                    
+                                d
+Therefore, for any α ≤ exp − 2kβk 1
+                                       then
+
+                                       1
+                                            Qα (β) ≥ kβk1 (1 − )                                                     (29)
+                                  ln(1/α2 )
+                            n p                                   o
+                                               −1             d
+We conclude that for α ≤ min 1, kβk1 , (2kβk1 ) 2 , exp − 2kβk 1
+                                                                      that
+
+                                                                     1
+                                          (1 − ) kβk1 ≤                   Qα (β) ≤ (1 + ) kβk1                      (30)
+                                                                 ln(1/α2 )
+
+
+                                                                 1   1
+Lemma 2. Fix any  > 0 and d ≥ max e, 124 . Then for any α ≥ d− 4 − 8 , Qα,1 (β) 6∝ kβk1 in the sense
+                                        
+
+that there exist vectors v, w such that
+
+                                                          Qα,1 (v)           Qα,1 (w)
+                                                                   ≥ (1 + )
+                                                           kvk1               kwk1
+
+Proof. First, recall that
+                                          r                                   
+                         1                            1        1              1
+                q                 =2−           4+         +      arcsinh
+                        cα2                         c2 α 4   cα2            2cα2
+                                                                                    r          !!
+                                       1           2
+                                                        p
+                                                             2  4
+                                                                               1            1
+                                  =             2cα − 4c α + 1 + ln                + 1+ 2 4                           (31)
+                                      cα2                                    2cα2         4c α
+                                                                                          r          !!
+                                       1           2
+                                                        p                     1         1            1
+                                  =             2cα − 4c2 α4 + 1 + ln              + ln   + c2 α 4 +
+                                      cα2                                    cα2        2            2
+
+Thus,                                                                                                        
+                                                     1                       1                               1
+                                  − 1 + ln                    ≤ cα2 q                 ≤ 3cα2 − 1 + ln                 (32)
+                                                    cα2                     cα2                             cα2
+Now, consider the ratio
+
+                                                                 α2 q α12           α2 q α12
+                                                                                            
+                                       Qα,1 (e1 )                              1
+                                                 =                       =√     √                               (33)
+                                      Qα,1       1d
+                                                               α2 dq α21√d      d α2 dq 21√
+                                                k1d k2                                    α d
+
+Using (32), we conclude
+
+                                      √                          −1 + ln α12
+                                                                             
+                                               Qα,1 (e1 )
+                                          d               ≥ √                  
+                                              Qα,1 k11ddk2   3 dα2 − 1 + ln α21√d
+                                                                    −1 + ln α12
+                                                                                
+                                                            = √                                                       (34)
+                                                             3 dα2 − 1 + ln α12 − 12 ln(d)
+                                                                               
+                                                                              √
+                                                                     ln(d) − 6 dα2
+                                                            =1+ √                      
+                                                                6 dα2 − 2 + 2 ln α21√d
+
+
+
+
+                                                                            18
+                                                      1   1
+   Fix any  > 0 and d ≥ max e, 124 , and set α = d− 4 − 8 . Then,
+                            
+
+                                                                      1
+                                             1         d 4
+                                   2d ≥ 6 and4              ln d ≥ 6
+                                                        2
+                                                    1
+                                        1        d 4          6
+                                =⇒ 2d 4 − 6 +        ln d − ≥ 0
+                                                 2          
+                                      1     1            6 −1          1
+                                =⇒        −      ln d − d 4 ≥ 6d− 4 − 2                                               (35)
+                                           2           
+                                    1         6     1          1      1
+                                =⇒    ln d − d− 4 ≥ 6d− 4 − 2 +        ln d
+                                                                    2
+                                                   √               √
+                                                                                                                 
+                                                 2               2                                            1
+                                =⇒ ln (d) − 6α d ≥  6α d − 2 + 2 ln                                          √
+                                                                                                            α2 d
+                                                                                                   
+This implies that the second term of (34) is at least . We conclude that for any  > 0 and d ≥ max e, 124 ,
+       1   1
+α = d− 4 − 8 implies that
+                                        Qα,1 (e1 )               ke k
+                                                    ≥ (1 + ) 11 1                                     (36)
+                                      Qα,1     1d              k k1ddk2 k1
+                                                           k1d k2
+
+Consequently, for at least one of these two vectors, Q is not proportional to the `1 norm up to accuracy O()
+for this value of α. Since
+                                              d Qα,1 (e1 )
+                                                             ≥0                                        (37)
+                                             dα Q        1d
+                                                  α,1 k1d k2
+
+this conclusion applies also for larger α.
+
+Lemma 3. For any β ∈ Rd ,                                                                           
+                                                                                   p               1
+                                             α ≥ α2 (, kβk2 , d) :=                   kβk2 1 + − 4
+
+guarantees that
+                                            (1 − )kβk22 ≤ 4α2 Qα,1 (β) ≤ (1 + )kβk22
+
+Proof. The regularizer Qα,1 can be written
+                                                                  d Z βi /α2                     
+                                                              2
+                                                                  X                              t
+                                             Qα,1 (β) = α                               arcsinh     dt                  (38)
+                                                                  i=1         0                  2
+
+             R z/α2             t
+                                    
+Let φ(z) =    0
+                      arcsinh   2       dt, then
+
+                                              φ(0) = 0
+                                                         1           z 
+                                             φ0 (0) =       arcsinh          =0
+                                                         α2          2α2 z=0
+
+                                                                  1                           1
+                                            φ00 (0) =                                   =
+                                                                                             2α4
+                                                              q
+                                                                        2
+                                                         α4       4 + αz 4                                              (39)
+                                                                           z=0
+
+                                                                   −z
+                                            φ000 (0) =                    2   3/2           =0
+                                                         α8 4 + αz 4
+                                                                                       z=0
+                                                                   3z 2                            1
+                                           φ0000 (z) =             2 5/2
+                                                                                       −               2   3/2
+                                                         α12 4 + αz 4                       α8 4 + αz 4
+
+
+
+
+                                                                              19
+Also, note that
+                                                                  |2z 2 − 4α4 |
+                                                |φ0000 (z)| =              2 5/2
+                                                                α12 4 + αz 4                                          (40)
+                                                    z 2 + 2α4
+                                                ≤
+                                                      16α12
+Therefore, by Taylor’s theorem, for some ξ with |ξ| ≤ |z|
+
+                                 z2     φ0000 (ξ) 4
+                              φ(z) −
+                                   4
+                                     =           z
+                                4α         4!
+                                                                                                                      (41)
+                                 z2             φ0000 (ξ) 4  z 6 + 2α4 z 4    z 2 z 4 + 2α4 z 2
+                       =⇒ φ(z) − 4 ≤ sup                 z ≤         12
+                                                                           =
+                                4α     |ξ|≤|z|     4!           384α         4α4      96α8
+
+Therefore, for any β ∈ Rd ,
+                                                                            d
+                                                                            X                 βi2
+                                   4α2 Qα,1 (β) − kβk22 = 4α4                      φ(βi ) −
+                                                                            i=1
+                                                                                              4α4
+                                                                            d
+                                                                            X                 βi2
+                                                                ≤ 4α4              φ(βi ) −
+                                                                                              4α4
+                                                                            i=1                                       (42)
+                                                                    d
+                                                                    X            β 4 + 2α4 βi2
+                                                                ≤           βi2 · i
+                                                                      i=1
+                                                                                     96α8
+                                                                                     βi4 + 2α4 βi2
+                                                                ≤ kβk22 max
+                                                                               i         96α8
+                  p               1
+                                     
+Therefore, α ≥        kβk2 1 + − 4      ensures
+
+                                       (1 − )kβk22 ≤ 4α2 Qα,1 (β) ≤ (1 + )kβk22                                     (43)
+
+
+
+Theorem 2. For any 0 <  < d, under the setting of Theorem 1 with w0 = 1,
+                n                − 2+                      o
+        α ≤ min 2(1 + )kβ`∗1 k1     2
+                                        , exp −d/(kβ`∗1 k1 )    =⇒ kβα,1∞
+                                                                            k1 ≤ (1 + ) kβ`∗1 k1
+                        q
+                                                             ∞ 2
+                   α ≥ 2(1 + )(1 + 2/)kβ`∗2 k2 =⇒ kβα,1       k2 ≤ (1 + ) kβ`∗2 k22
+
+Proof. We prove the `1 and `2 statements separately.
+                                                                                                                                           
+                                             ∞
+`1 approximation First, we will prove that kβα,1 k1 < (1 + 2) kβ`∗1 k1 . By Lemma 1, since α ≤ α1                                 ∗
+                                                                                                                   2+ , (1 + 2) kβ`1 k1 , d   ,
+for all β with kβk1 ≤ (1 + 2) kβ`∗1 k1 we have
+                                                                                                 
+                                                       1                                    
+                                1−           kβk1 ≤           Qα,1 (β) ≤                 1+             kβk1          (44)
+                                   2+              ln(1/α2 )                               2+
+
+
+
+
+                                                                 20
+Let β be such that Xβ = y and kβk1 = (1 + 2)kβ`∗1 k1 . Then
+                                                       
+                           1                        
+                                 Qα,1 (β) ≥ 1 −           kβk1
+                       ln(1/α2 )                 2+
+                                                       
+                                                    
+                                          = 1−            (1 + 2)kβ`∗1 k1
+                                                 2+
+                                                     
+                                                  
+                                             1 − 2+                 1
+                                          ≥           (1 + 2)           Q (β`∗1 )
+                                                                        2 ) α,1
+                                             1+                 ln(1/α                                                    (45)
+                                                        2+
+                                              1 + 2     1
+                                            =                  Qα,1 (β`∗1 )
+                                               1 +  ln(1/α2 )
+                                                  1
+                                            >           Qα,1 (β`∗1 )
+                                              ln(1/α2 )
+                                                  1             ∞
+                                            ≥           Qα,1 (βα,1   )
+                                              ln(1/α2 )
+                    ∞
+Therefore, β 6= βα,1  . Furthermore, let β be any solution Xβ = y with kβk1 > (1 + 2)kβ`∗1 k1 . It is easily
+confirmed that there exists c ∈ (0, 1) such that the point β 0 = (1 − c)β + cβ`∗1 is satisfies both Xβ 0 = y and
+kβ 0 k1 = (1 + 2)kβ`∗1 k1 . By the convexity of Q, this implies Qα,1 (β) ≥ Qα,1 (β 0 ) > Qα,1 (βα,1
+                                                                                                  ∞
+                                                                                                     ). Thus a β
+                                                         1
+with a large `1 norm cannot be a solution, even if ln(1/α2 ) Qα,1 (β) 6≈ kβk1 .
+             ∞
+     Since kβα,1 k1 < (1 + 2)kβ`∗1 k1 , we conclude
+
+                                      ∞             1        1             ∞
+                                    kβα,1 k1 ≤                    Qα,1 (βα,1   )
+                                                 1 − 2+ ln(1/α2 )
+                                                    1        1
+                                               ≤                  Qα,1 (β`∗1 )
+                                                 1 − 2+ ln(1/α2 )                                                         (46)
+                                                        
+                                                   1 + 2+
+                                               ≤            kβ`∗1 k1
+                                                   1 − 2+
+                                               = (1 + )kβ`∗1 k1
+                                                                                                                
+                    ∞
+   Next, we prove kβα,1 k2 < (1 + 2) kβ`∗2 k2 . By Lemma 3, since α ≥ α2                               ∗
+                                                                                        2+ , (1 + 2) kβ`2 k2       , for all β
+with kβk2 ≤ (1 + 2) kβ`∗2 k2 we have
+                                                                                       
+                                                                                    
+                           kβk22    1−             ≤ 4α Qα,1 (β) ≤ kβk22
+                                                       2
+                                                                            1+                                             (47)
+                                         2+                                        2+
+Let β be such that Xβ = y and kβk2 = (1 + 2)kβ`∗2 k2 . Then,
+                                                       
+                                                   
+                            4α2 Qα,1 (β) ≥ 1 −            kβk22
+                                                2+
+                                                       
+                                                   
+                                         = 1−             (1 + 2)kβ`∗2 k22
+                                                2+
+                                                    
+                                                 
+                                            1 − 2+
+                                         ≥           (1 + 2)4α2 Qα,1 (β`∗2 )                                            (48)
+                                                 
+                                            1 + 2+
+                                              1 + 2 2
+                                            =       4α Qα,1 (β`∗2 )
+                                               1+
+                                            > 4α2 Qα,1 (β`∗2 )
+                                                         ∞
+                                            ≥ 4α2 Qα,1 (βα,1 )
+                   ∞
+Therefore, β 6= βα,1 . Furthermore, let β be any solution Xβ = y with kβk2 > (1 + 2)kβ`∗2 k2 . It is
+easily confirmed that there exists c ∈ (0, 1) such that the point β 0 = (1 − c)β + cβ`∗2 satisfies Xβ 0 = y and
+
+
+                                                           21
+kβ 0 k2 = (1 + 2)kβ`∗2 k2 . By the convexity of Qα,1 , this implies Qα,1 (β) ≥ Qα,1 (β 0 ) > Qα,1 (β`∗2 ). Thus a β
+with a large `2 norm cannot be a solution, even if 4α2 Qα,1 (β) 6≈ kβk22 .
+              ∞
+     Since kβα,1 k2 < (1 + 2)kβ`∗2 k2 , we conclude
+
+                                            ∞ 2        1     2       ∞
+                                          kβα,1 k2 ≤      4α Qα,1 (βα,1 )
+                                                    1 − 2+
+                                                       1     2       ∗
+                                                  ≤       4α Qα,1 (β`2 )
+                                                    1 − 2+                                                    (49)
+                                                            
+                                                       1 + 2+
+                                                  ≤             kβ`∗2 k22
+                                                       1 − 2+
+                                                  = (1 + )kβ`∗2 k22
+
+
+
+
+E     Proof of Theorem 3
+Lemma 4. For D > 2 and the D-homogeneous model (10),
+                                     Z t
+                                                                         α2−D
+                              ∀t X >     r(τ )dτ  ≤
+                                                  0              ∞      D(D − 2)
+                                                D    D
+Proof.   For the order-D unbiased model β(t) = w+ − w− , the gradient flow dynamics are
+                                      dL
+                            ẇ+ (t) = −   = −DX > r(t) ◦ w+
+                                                          D−1
+                                                              (t), w+ (0) = α1                                 (50)
+                                     dw+
+                                                              Z t             1
+                                                                           − D−2
+                                          2−D               >
+                            =⇒ w+ (t) = α     1 + D(D − 2)X        r(τ )dτ                                     (51)
+                                                                             0
+
+Where ◦ denotes elementwise multiplication, r(t) = Xβ(t) − y, and where all exponentiation is elementwise.
+Similarly,
+                                       dL
+                             ẇ− (t) = −  = DX > r(t) ◦ w−
+                                                         D−1
+                                                             (t), w− (0) = α1                                  (52)
+                                      dw−
+                                                              Z t             1
+                                                                           − D−2
+                                          2−D               >
+                            =⇒ w− (t) = α     1 − D(D − 2)X        r(τ )dτ                                     (53)
+                                                                             0
+
+First, we observe that ∀t ∀i w+ (t)i ≥ 0 and ∀t ∀i w− (t)i ≥ 0. This is because at time 0, w+ (0)i = w− (0)i =
+α > 0; the gradient flow dynamics are continuous; and w+ (t)i = 0 =⇒ ẇ+ (t)i = 0 and w− (t)i = 0 =⇒
+ẇ− (t)i = 0.
+    Consequently,                                                     Z            t
+                             0 ≤ w+ (t)2−D
+                                       i   = α2−D + D(D − 2) X >                         r(τ )dτ
+                                                                                 0                 i
+                                                                Z t         
+                                       2−D    2−D              >
+                             0 ≤ w− (t)i   =α     − D(D − 2) X       r(τ )dτ                                   (54)
+                                                                                 0                 i
+                                                       Z t        
+                                     2−D              >
+                               =⇒ −α     ≤ D(D − 2) X       r(τ )dτ ≤ α2−D
+                                                                       0             i
+which concludes the proof.
+                                             ∞
+Theorem 3. For any 0 < α < ∞ and D ≥ 3, if Xβα,D = y, then
+                                       ∞
+                                     βα,D = arg minβ QDα (β) s.t. Xβ = y
+                        d
+where QD           D                 D
+                                                   h−1
+                     P                           R
+         α (β) = α      i=1 qD (βi /α ) and qD =    D is the antiderivative of the unique inverse of hD (z) =
+           D              D
+        − D−2          − D−2                                    ∞
+(1 − z)       − (1 + z)       on [−1, 1]. Furthermore, limα→0 βα,D = β`∗1 and limα→∞ βα,D∞
+                                                                                             = β`∗2 .
+
+
+                                                           22
+                                              D    D
+Proof. For the order-D unbiased model β(t) = w+ − w− , the gradient flow dynamics are
+                                     dL
+                               ẇ(t) =  = −DX̃ > r(t) ◦ wD−1 , w(0) = α1                                         (55)
+                                    dw
+                                                           Z t             1
+                                                                        − D−2
+                                        2−D               >
+                            =⇒ w(t) = α     + D(D − 2)X̃        r(τ )dτ                                          (56)
+                                                                             0
+                                                                               Z t                  D
+                                                                                                 − D−2
+                                         D             D−2                  >
+                          =⇒ β(t) = α            1+α         D(D − 2)X                r(τ )dτ
+                                                                                 0
+                                                                                     Z t                   D
+                                                                                                        − D−2
+                                              D             D−2                  >
+                                         −α           1−α         D(D − 2)X                   r(τ )dτ            (57)
+                                                                                          0
+
+where X̃ = [X − X] and r(t) = Xβ(t) − y. Supposing β(t) converges to a zero-error solution,
+                       Xβ(∞) = y       and      β(∞) = αD hD (X > ν(∞))                         (58)
+                             ∞
+where ν(∞) = −αD−2 D(D − 2) 0 r(τ )dτ and the function hD is applied elementwise and is defined
+                           R
+
+                                                              D                       D
+                                    hD (z) = (1 − z)− D−2 − (1 + z)− D−2                                         (59)
+By Lemma 4, kX > νk∞ ≤ 1, so the domain of hD is the interval [−1, 1], upon which it is monotonically
+increasing from hD (−1) = −∞ to hD (1) = ∞. Therefore, there exists an inverse mapping h−1       D (t) with
+domain [−∞, ∞] and range [−1, 1].
+    This inverse mapping unfortunately does not have a simple closed form. Nevertheless, it is the root of a
+rational equation. Following the general approach outlined in Section 4, we conclude:
+                                                  X Z βi /αD
+                                    QDα (β) = α D
+                                                              h−1
+                                                               D (t)dt                                  (60)
+                                                         i        0
+
+
+                                                                          ∞                         ∞
+Rich Limit Next, we show that if gradient flow reaches a solution Xβα,D         = y, then limα→0 βα,D    = β`∗1
+for any D. This is implied by the work of Arora et al. [3], but we include it here for an alternative, simpler
+proof for our special case, and for completeness’s sake.
+    The KKT conditions for β = β`∗1 are Xβ = y and ∃ν sign(β) = X > ν (where sign(0) = [−1, 1]). The
+first condition is satisfied by assumption. Define ν as above. We will demonstrate that the second condition
+holds too in the limit as α → 0.
+    First, by Lemma 4, kX > νk∞ ≤ 1 for all α and D. Thus, for any coordinates i such that limα→0 [βα,D∞
+                                                                                                          ]i =
+                                                                         ∞
+0, the second KKT condition holds. Consider now i for which limα→0 [βα,D     ]i > 0. As shown above,
+                                                                 D
+                                                             − D−2                                    D
+                                                                                                   − D−2
+                          ∞
+                    lim [βα,D ]i = lim αD 1 − [X > ν]i                − αD 1 + [X > ν]i                     >0   (61)
+                   α→0            α→0
+                                                                              D
+                                                                           − D−2
+                                             lim αD 1 − [X > ν]i
+                                                                       
+                                     =⇒                                              >0                          (62)
+                                             α→0
+
+This and [X > ν]i ≤ 1 implies limα→0 [X > ν]i = 1, and thus the positive coordinates satisfy the second KKT
+condition. An identical argument can be made for the negative coordinates.
+
+                                                                               ∞                        ∞
+Kernel Regime Finally, we show that if gradient flow reaches a solution Xβα,D     = y, then limα→∞ βα,D     =
+ ∗
+β`2 for any D.
+   First, since X and y are finite, there exists a solution β ∗ whose entries are all finite, and thus all the
+            ∞
+entries of βα,D , which is the QDα -minimizing solution, will be finite.
+   The KKT conditions for β = β`∗2 are Xβ = y and ∃µ β = X > µ. The first condition is satisfied by
+assumption. Defining ν as above, we have
+                           ∞
+                                                       − D                    − D
+                    lim [βα,D ]i = lim αD 1 − [X > ν]i D−2 − αD 1 + [X > ν]i D−2 < ∞                      (63)
+                  α→∞            α→∞
+                                                 =⇒ lim [X > ν]i = 0                                             (64)
+                                                       α→∞
+
+
+
+                                                             23
+                                  D
+Consequently, defining µ = 2Dα
+                            D−2 ν, and observing that for small z,
+
+                                               D              D    2D
+                                (1 − z)− D−2 − (1 + z)− D−2 =         z + O(z 3 )                              (65)
+                                                                  D−2
+we conclude
+                            ∞
+                                                        − D                  − D
+                          [βα,D ]i       αD 1 − [X > ν]i D−2 − αD 1 + [X > ν]i D−2
+                      lim          = lim
+                     α→∞ [X > µ]i   α→∞                      [X > µ]i
+                                                                         
+                                             2D
+                                         αD D−2  [X > ν]i + O([X > ν]3i )
+                                   = lim         2DαD
+                                                                                                               (66)
+                                    α→∞                    >
+                                                  D−2 [X ν]i
+                                      = 1 + lim O([X > ν]2i )
+                                               α→∞
+                                      =1
+                                                   ∞
+Thus, the KKT conditions are satisfied for limα→∞ βα,D = β`∗2 .
+
+
+F     Proof of Theorem 4
+Here, we prove Theorem 4:
+                                                         √
+Theorem 4. Let k → ∞, σ(k) → 0, and µ2 := 12 limk→∞ σ(k) k, and suppose X1 , . . . , XN commute. If
+MU,V (t) converges to a zero error solution M∗U,V , then
+
+                              M∗U,V = arg min Qµ (spectrum(M)) s.t. L(M) = 0
+                                               M
+
+Proof. As k → ∞, M̄U(0),V(0) → 2µ2 I, so the four d × d submatrices of the lifted matrix M̄U(0),V(0) have
+diagonal structure. The dynamics on M̄U(t),V(t) are linear combination of terms of the form M̄U(t),V(t) Xn +
+Xn M̄U(t),V(t) , and each of these terms will share this same block-diagonal structure, which is therefore
+maintained throughout the course of optimization. We thus restrict our attention to just the main diagonal
+of M̄U(t),V(t) and the diagonal of MU(t),V(t) ,all other entries will remain zero. In fact, we only need to
+track ∆(t) := 12 diag U(t)U(t)> + V(t)V(t)> ∈ Rd and δ(t) = diag U(t)V(t)> ∈ Rd , with the goal of
+understanding limt→∞ δ(t).
+    Since the dynamics of M̄U(t),V(t) depend only on the observations and M̄U(t),V(t) itself, and not on the
+underlying parameters, we can understand the implicit bias√via analyzing any initialization
+                                                                                      √       U(0), V(0) that
+gives M̄U(0),V(0) = 2µ2 I. A convenient choice is U(0) = [ 2µI, 0] and V(0) = [0, 2µI] so that δ(0) = 0
+and ∆(0) = 2µ2 1. Let X ∈ RN ×d denote the matrix whose nth row is diag(Xn ), and let r(t) be the vector of
+residuals with rn (t) = M̄U(t),V(t) , X̄n − yn . A simple calculation then shows that the dynamics are given
+                                 ˙
+by δ̇(t) = −4X > r(t) ◦ ∆(t) and ∆(t)   = −4X > r(t) ◦ δ(t) which have as a solution
+                                      Z t                                           Z t      
+             δ(t) = 2µ2 sinh − 4X > r(s)ds            and      ∆(t) = 2µ2 cosh − 4X > r(s)ds             (67)
+                                           0                                                0
+
+This solution for δ(t) is identical to the one derived in the proof of Theorem 1, so if indeed δ reaches
+a zero-error solution, then using the same argument as for Theorem 1 we conclude that diag(M∞    U,V ) =
+limt→∞ δ(t) = arg minδ Qµ (δ) s.t. X δ = y.
+
+
+G     Kernel Regime in Matrix Factorization
+Here, we provide additional kernel regime results in the context of matrix factorization model in Section 6.
+Recall the notation for f ((U, V), X), MU,V and their “lifted” space representations f¯((U, V), X), M̄U,V ,
+respectively, from Section 6. Let W = [ VU ] be the concatenation of U and V, let X ∈ RN ×d2 be the matrix
+
+whose nth row is vec(Xn ), let y ∗ ∈ RN be the vector of targets y1 , . . . , yN , and let y(t) = X vec MU(t),V(t)
+                                                                                                                   
+
+be the vector of predictions at time t, where U(t), V(t) follow the gradient flow dynamics.
+
+
+                                                         24
+   Consider the tangent kernel model for the factorized problem in the “lifted" space f¯((U, V), X) =
+¯
+f (W, X)
+                    fTK (WTK , X) = f¯(W(0), X) + ∇f¯(W(0), X), WTK − W(0)                        (68)
+Let yTK = [fTK (WTK , Xn )]N n=1 ∈ R
+                                       N
+                                          denote the tangent kernel model’s vector of predictions and let
+              UTK (t)
+WTK (t) = [ VTK (t) ] denote gradient flow path wrt the linearized model in (68). The following theorem
+establishes the conditions under which W(t) ≈ WTK (t).
+Theorem 5. Let k ≥ d and let λI  X X >  ΛI. Fix γ ≥ 0 and µ > 4Λγ                                     >
+                                                                           λ , and suppose that W(0)W(0) − µI op ≤
+                               q                  
+                      µλ
+γ and ky(0) − y ∗ k ≤ √ Λ
+                            1 − (1 + µγ )/(1 + 4Λ
+                                                λ
+                                                  ) . Then
+                                                       q
+                                                          Λ + λ4 ky(0) − y ∗ k
+                             sup kW(T ) − W(0)kF ≤                √              and
+                            T ∈R+                               λ µ
+                                              q                              √ q
+                                             Λ 1 + 4Λ λ
+                                                         ky(0) − y ∗ k
+                                                                       2
+                                                                            2 Λ 1 + µγ ky(0) − y ∗ k
+              sup kW(T ) − WTK (T )kF ≤                                  +            √
+             T ∈R+                                    λ2 µ3/2                        λ µ
+    The proof of Theorem 5 follows a similar approach as the proof of [6, Theorem 2.4], except we do not
+make the assumption that F̄ (W(0)) = 0 (see Section G.1).
+    Additionally, using Theorem 5, we can show the following corollary on the kernel regime for matrix
+factorization based on the scale of initialization α and the width of the factorization k (proof in Section G.2).
+ Let λI  X X >  ΛI, and ky ∗ k ≤ Y . If U(0), V(0) have i.i.d. N 0, α2 entries for α2 ≥ Ω(k −1 ), then with
+                                                                            
+
+probability at least 1 − 2 exp(−d) over the randomness in the initialization.
+                                                                      
+                                      U(T )       U(0)             1
+                               sup            −            ≤O     √ +α                                       (69)
+                              T ∈R+   V(T )       V(0) F         α k
+                                                                                 
+                                   U(T )      UTK (T )              1         1
+                           sup            −                ≤O             +   √   + α                        (70)
+                          T ∈R+   V(T )       VTK (T ) F         α3 k 3/2    α k
+
+    From Corollary G, we can infer that the gradient flow over matrix factorization model remains in the   √
+kernel regime whenever the scale of the initialization of the prediction matrix MU(0),V(0) given by σ = α2 k
+                  √
+satisfies σ = ω(1/ k). In particular, unlike width 1 diagonal network model in Section 4 (where the kernel
+regime is reached only as scale of initialization α → ∞), with a √   width k model, we see that kernel regime
+can happen even when σ → 0 as long as σ to zero slower than 1/ k (or α goes to zero slower than 1/k).
+
+G.1     Proof of Theorem 5
+In order to prove Theorem 5, we require the following lemmas. We use yTK (t) ∈ RN denote the tangent
+kernel model’s vector of predictions at corresponding to WTK (t).
+Lemma 5. Suppose that the weights are initialized such that W(0)W(0)> − µI op ≤ γ and the measure-
+ments satisfy 0 ≺ λI  X X >  ΛI. If sup0≤t≤T kW(t) − W(0)kF ≤ R, then for all t ≤ T
+                                                                             √
+                     ky(t) − y ∗ k ≤ ky(0) − y ∗ k exp −2µλt + 4Λ γ + R2 + 2R µ + γ t ,
+                                                                                   
+
+                   kyTK (t) − y ∗ k ≤ kyTK (0) − y ∗ k exp(−2µλt + 4Λγt).
+Proof. First, consider the dynamics of y(t):
+                            d                 N
+                   y 0 (t) =   W(t)W(t)> , Xn n=1
+                           dt
+                           hD               EiN
+                         = 2Ẇ(t)W(t)> , Xn
+                                               n=1
+                              " N                                      #N                                   (71)
+                               X
+                                             >                >
+                                                     
+                         = −4      W(t)W(t) , Xm − ym W(t)W(t) , Xn Xm
+                               m=1                                                        n=1
+                         = −Σ(t)(y(t) − y ∗ )
+
+                                                       25
+where the symmetric matrix Σ(t) ∈ RN ×N has entries
+
+                                 Σ(t)m,n := 4 W(t)W(t)> , Xn Xm .
+                                                               
+                                                                                                   (72)
+
+This matrix can also be written:
+
+                                        Σ(t) = 4X (Id×d ⊗ W(t)W(t)> )X >                           (73)
+
+where ⊗ denotes the Kronecker product. Therefore, for t ≤ T
+
+                Σ(t) − 4µX X > op
+               = 4 X Id×d ⊗ W(t)W(t)> − µId×d ⊗ Id×d X > op
+                                                    
+
+                                                                   2
+               ≤ 4 Id×d ⊗ W(t)W(t)> − µId×d ⊗ Id×d op kX kop
+               ≤ 4Λ W(t)W(t)> − µId×d op
+                                                                                                 (74)
+               ≤ 4Λ W(0)W(0)> − µId×d op + W(t)W(t)> − W(0)W(0)> op
+                                                                                
+                                                  >
+               ≤ 4Λ γ + (W(t) − W(0))(W(t) − W(0))     + 2 (W(t) − W(0))W(0)> op
+                                                    op
+                         2
+                                        
+               ≤ 4Λ γ + R + 2RkW(0)kop
+                               √
+               ≤ 4Λ γ + R2 + 2R µ + γ
+                                      
+
+Therefore, for all t ≤ T , y 0 (t) = −Σ(t)(y(t) − y ∗ ) for
+                                                                  √
+                                   Σ(t)  2µλ − 4Λ γ + R2 + 2R µ + γ .
+                                                                          
+                                                                                                   (75)
+                          √       
+If µλ > 2Λ γ + R2 + 2R µ + γ , then applying [6, Lemma B.1] completes the first half of the proof.
+                                    2
+Otherwise, noting that ky(t) − y ∗ k is non-increasing in t implies ky(t) − y ∗ k ≤ ky(0) − y ∗ k.
+    Similarly, the dynamics of yTK are
+
+                      0         d                                             N
+                     yTK (t) =     W(0)W(0)> , Xn + 2 hWTK (t) − W(0), Xn W(0)i n=1
+                               dt
+                               h D                  EiN
+                             = 2 ẆTK (t), Xn W(0)
+                                                       n=1
+                                  " N                                   #N                         (76)
+                                   X
+                                                               >
+                             = −4     (yTK (t)m − ym ) W(0)W(0) , Xn Xm
+                                    m=1                                        n=1
+                             = −Σ(0)(yTK (t) − y ∗ )
+
+From here, we can follow the same argument to show that
+
+                                                 Σ(0)  2µλ − 4Λγ.                                 (77)
+
+Applying [6, Lemma B.1] again concludes the proof.
+
+Lemma 6. Suppose that the weights are initialized such that W(0)W(0)> − µI op ≤ γ and that the
+measurements satisfy λI  X X >  ΛI. Suppose in addition that
+                                                                 s
+                                                                   1 + µγ
+                                                                          !
+                              4Λγ                 ∗     µλ
+                         µ>         and ky(0) − y k ≤ √       1−        λ
+                                                                           .
+                               λ                          Λ        1 + 4Λ
+
+Then,                                                  q
+                                                        Λ + λ4 ky(0) − y ∗ k
+                                   supkW(t) − W(0)kF ≤          √
+                                   t≥0                        λ µ
+
+                                                              26
+Proof. To begin, define                             r
+                                                             µλ √
+                                           R :=         µ+      − µ + γ.                             (78)
+                                                             4Λ
+Since µ > 4Λγ
+           λ , R > 0. Note that with this choice
+                                                                     √
+                                 2µλ − 4Λ γ + R2 + 2R
+                                                                               
+                                                                         µ+γ        = µλ             (79)
+
+Let T = inf{t | kW(t) − W(0)kF > R}, and suppose towards contradiction that T < ∞. Then
+
+                                R ≤ kW(T ) − W(0)kF
+                                     Z T
+                                  =      Ẇ(t)dt
+                                           0
+                                                           F
+                                          N
+                                      Z T X
+                                  ≤                   (y(t)n − yn )Xn W(t)              dt
+                                       0        n=1                                 F
+                                      Z T
+                                  =             (Id×d ⊗ W(t))X > (y(t) − y) 2 dt
+                                       0
+                                      Z T                                                            (80)
+                                  ≤            kW(t)kop kX kop ky(t) − yk2 dt
+                                       0
+                                   √ Z T             
+                                  ≤ Λ     kW(0)kop + R ky(t) − ykdt
+                                                0
+                                      √        √               
+                                                                   Z T
+                                  ≤  Λ µ+γ+R      ky(t) − ykdt
+                                                0
+                                   √
+                                      r
+                                         µλ T
+                                           Z
+                                  = Λ µ+      ky(t) − ykdt
+                                         4Λ 0
+
+From here, we apply Lemma 5 and (79) to conclude that
+                                r                          Z T
+                                         µλ
+                            R ≤ µΛ +         ky(0) − y ∗ k      exp(−µλt)dt
+                                          4                 0
+                                r                          Z ∞
+                                         µλ
+                              < µΛ +         ky(0) − y ∗ k      exp(−µλt)dt
+                                          4                 0
+                                 q
+                                   Λ + λ4 ky(0) − y ∗ k
+                              =            √
+                                         λ µ                                                         (81)
+                                 q
+                                   Λ + λ4 µλ
+                                                     s
+                                                         1 + µγ
+                                                                 !
+                              ≤     √     √     1−            λ
+                                  λ µ       Λ           1 + 4Λ
+                                r
+                                       µλ √
+                              = µ+          − µ+γ
+                                       4Λ
+                              =R
+
+This is a contradiction, so we conclude T = ∞. We conclude the proof by pointing out that the same line of
+reasoning from the righthand side of (80) through to (81) applies even when T = ∞.
+Theorem 5. Let k ≥ d and let λI  X X >  ΛI. Fix γ ≥ 0 and µ > 4Λγ                           >
+                                                                 λ , and suppose that W(0)W(0) − µI op ≤
+
+
+
+
+                                                             27
+                               q                   
+                      µλ               γ
+γ and ky(0) − y ∗ k ≤ √ Λ
+                            1 −   (1 + µ )/(1 +  λ
+                                                4Λ )  . Then
+                                                                       q
+                                                    Λ + λ4 ky(0) − y ∗ k
+                                       sup kW(T ) − W(0)kF ≤√            and
+                           T ∈R+                          λ µ
+                                           q                          √ q
+                                                 λ
+                                          Λ 1 + 4Λ ky(0) − y ∗ k
+                                                                 2
+                                                                     2 Λ 1 + µγ ky(0) − y ∗ k
+                sup kW(T ) − WTK (T )kF ≤                          +          √
+               T ∈R+                            λ2 µ3/2                      λ µ
+
+Proof. Our proof follows the approach of Chizat et al. [6] closely, but it is specialized to our particular setting
+and formulation. We also do not require that F (W(0)) = 0.
+   Consider for some T
+
+           kW(T ) − WTK (T )kF
+              Z T
+            =     Ẇ(t) − ẆTK (t)dt
+                    0
+                                                    F
+                   N
+               Z T X
+           ≤                  (y(t)n − yn )Xn W(t) − (yTK (t)n − yn )Xn W(0)             dt
+                0       n=1                                                          F
+               Z T
+           =            (Id×d ⊗ W(t))X > (y(t) − y ∗ ) − (Id×d ⊗ W(0))X > (yTK (t) − y ∗ ) F dt
+                0
+               Z T
+           =            (Id×d ⊗ (W(t) − W(0)))X > (y(t) − y ∗ ) − (Id×d ⊗ W(0))X > (yTK (t) − y(t)) F dt
+                0
+            √ Z T
+           ≤ Λ    kW(t) − W(0)kop ky(t) − y ∗ k2 + kW(0)kop kyTK (t) − y(t)k2 dt
+               0
+            √ Z ∞
+           ≤ Λ    kW(t) − W(0)kop ky(t) − y ∗ k2 + kW(0)kop kyTK (t) − y(t)k2 dt                               (82)
+                        0
+
+By Lemma 6,                                                                         q
+                                                                                        Λ + λ4 ky(0) − y ∗ k
+                            supkW(t) − W(0)kop ≤ supkW(t) − W(0)kF ≤                            √              (83)
+                             t                               t                                λ µ
+                                 √                ∗
+                                     Λ+ λ
+                                        4 ky(0)−y   k
+By Lemma 5, for R =                        √
+                                         λ µ          , we have
+                                                                                         √
+                                 ky(t) − y ∗ k ≤ ky(0) − y ∗ k exp −2µλt + 4Λ γ + R2 + 2R µ + γ t
+                                                                                               
+                                                                                                               (84)
+                            kyTK (t) − y ∗ k ≤ ky(0) − y ∗ k exp(−2µλt + 4Λγt)
+                                           r γ 
+                                             1+ µ
+Since µ > 4Λγ
+           λ  and ky(0) − y ∗
+                              k ≤ µλ
+                                  √
+                                    Λ
+                                        1 −  1+ λ
+                                                  , this further implies
+                                                                  4Λ
+
+
+
+                                                   ky(t) − y ∗ k ≤ ky(0) − y ∗ k exp(−µλt)
+                                                                                                               (85)
+                                                kyTK (t) − y ∗ k ≤ ky(0) − y ∗ k exp(−µλt)
+
+Finally,
+                        kyTK (t) − y(t)k ≤ ky(t) − y ∗ k + kyTK (t) − y ∗ k ≤ 2ky(0) − y ∗ k exp(−µλt)         (86)
+
+
+
+
+                                                                       28
+Combining the above inequalities, we have
+
+                  W(T ) − W̄(T ) F
+                    √ Z ∞
+                  ≤ Λ      kW(t) − W(0)kop ky(t) − y ∗ k2 + kW(0)kop kȳ(t) − y(t)k2 dt
+                        0
+                          q                                                
+                                                    2
+                    √ Z T       Λ + λ4 ky(0) − y ∗ k     √
+                  ≤ Λ                   √            + 2 µ + γky(0) − y ∗ k exp(−µλt)dt
+                        0              λ µ
+                       √                                                                               (87)
+                    √                           √
+                                                                     
+                                        ∗ 2
+                          Λ+ λ4 ky(0)−y  k                       ∗
+                      Λ          √
+                                λ µ         + 2   µ + γky(0) − y   k
+                  ≤
+                                            µλ
+                     q                            √ q
+                    Λ 1 + 4Λλ
+                              ky(0) − y ∗ k
+                                            2
+                                                 2 Λ 1 + µγ ky(0) − y ∗ k
+                  =                           +            √
+                           λ2 µ3/2                        λ µ
+
+
+
+G.2     Proof of Corollary G
+Finally, we prove Corollary G using the following:
+Lemma 7 (cf. Theorem 6.1 [22]). Let W ∈ Rd×k with d ≤ k and with Wi,j ∼ N (0, σ 2 ), then
+                                                          √ i
+                                                                             
+                                 h
+                                         >    2         2                   d
+                                P kW W − σ kIkop ≥ 8σ kd ≤ 2 exp −
+                                                                            2
+
+   Let λI  X X >  ΛI, and ky ∗ k ≤ Y . If U(0), V(0) have i.i.d. N 0, α2 entries for α2 ≥ Ω(k −1 ), then
+                                                                             
+
+with probability at least 1 − 2 exp(−d) over the randomness in the initialization.
+                                                                  
+                                      U(T )     U(0)           1
+                               sup           −          ≤O     √ +α                                   (69)
+                              T ∈R+  V(T )      V(0) F       α k
+                                                                              
+                                   U(T )     UTK (T )           1          1
+                           sup            −             ≤O            +   √    + α                    (70)
+                          T ∈R+    V(T )     VTK (T ) F      α3 k 3/2   α k
+
+
+                                show the relationship between k and the quantities involved in the statement
+Proof. All that is needed is to
+                            U
+of Theorem 5. Let W :=           ∈ R2d×k . By Lemma 7,
+                            V
+                             h                    √   i
+                            P WW> − α2 kI op < 8α2 2kd ≥ 1 − 2 exp(−d)                                  (88)
+                                                                              √
+For the remainder of the proof, we condition on the event WW> − α2 kI op < 8α2 2kd. Next, we bound
+
+
+
+
+                                                     29
+             2
+ky(0) − y ∗ k :
+                                   2                           2
+                        ky(0) − y ∗ k ≤ 2Y 2 + 2ky(0)k
+                                                        N
+                                                        X                           2
+                                       = 2Y 2 + 2             W(0)W(0)> , X̄n
+                                                        n=1
+                                                        N
+                                       (a)              X                                        2
+                                        = 2Y 2 + 2            W(0)W(0)> − α2 kI, X̄n
+                                                        n=1
+                                                        N
+                                                        X                                2           2            (89)
+                                       ≤ 2Y 2 + 2             W(0)W(0)> − α2 kI F X̄n F
+                                                        n=1
+                                                                                         N
+                                                                                    2    X 1             2
+                                       = 2Y 2 + 4d W(0)W(0)> − α2 kI op                          kXn kF
+                                                                                         n=1
+                                                                                             2
+                                                     √   2
+                                                               2
+                                       ≤ 2Y 2 + 2d 8α2 2kd kX kF
+                                       ≤ 2Y 2 + 256kd3 α4 Λ2 ,
+where for (a), we used that X̄n is zero on the diagonal. In order to apply Theorem 5 using
+                                             √
+                                     γ = 8α2 2kd      and      µ = α2 k,                                          (90)
+
+we require that                                         √
+                               2           4Λγ   32α2 Λ 2kd         2048Λ2 d
+                              α k=µ>           =             ⇐⇒ k >                                               (91)
+                                            λ         λ                λ2
+and                                                                                
+                                                                              √
+                                                s                    v
+                                                       γ
+                                                         !           u
+                                                  1+ µ        2             8   2kd
+                                       µλ                    α λk   u 1+ k 
+                       ky(0) − y ∗ k ≤ √     1−        λ
+                                                           = √ 1 − t          λ                                 (92)
+                                         Λ        1 + 4Λ        Λ        1 + 4Λ
+
+By (89), this is implied by
+                                                       √
+                                               v          
+                                                      8√2d
+                                                u
+                  p                       2
+                                         α λk  u 1 +    k 
+                   2Y 2 + 256kd3 α4 Λ2 ≤ √ 1 −                                                                   (93)
+                                                t
+                                                        λ 
+                                            Λ      1 + 4Λ
+                                                 (                                      2                    )
+                                          8192Λ2 d 512d3 Λ3 4 + 16Λ
+                                                                 λ                                   Y
+                               ⇐= k ≥ max         ,                                          ,     √              (94)
+                                             λ2            λ2                                    2
+                                                                                               2α Λ(λ + 4Λ)
+                           2
+This is because k ≥ 8192Λ
+                       λ2
+                          d
+                            ensures
+                                 √
+                          v                      s
+                          u 1 + 8√2d
+                          u                                       s
+                                                          λ
+                                  k                  1 + 8Λ                   1           1
+                                             ≤                =        1−          ≤1−                            (95)
+                          t
+                                                                                8Λ
+                                    λ
+                               1 + 4Λ                     λ
+                                                     1 + 4Λ                 2+ λ       4 + 16Λ
+                                                                                            λ
+
+Consider two cases: either 2Y 2 ≤ 256kd3 α4 Λ2 or it is not. In the first case,
+                                         √
+                                v           
+                                        8√2d
+                                 u
+                                 t1 + k 
+                       2
+                      α λk      u                      α2 λk
+                       √ 1 −             λ
+                                                ≥  √
+                                                      Λ 4 + 16Λ
+                                                                
+                         Λ           1 + 4Λ                   λ
+                                                                 √       √
+                                                                           512d3 Λ3 4 + 16Λ
+                                                                                            
+                                                             α2 λ k                      λ                        (96)
+                                                         ≥√           ·
+                                                            Λ 4 + 16Λ
+                                                                   λ
+                                                                                  λ
+                                                          √
+                                                         = 512kd3 α4 Λ2
+                                                          p
+                                                         ≥ 2Y 2 + 256kd3 α4 Λ2
+
+                                                                  30
+                                                                                                               2
+                                                                                           512d3 Λ3 (4+ 16Λ
+                                                                                                         λ )
+   For the first inequality, we used (95), for the second inequality we used k ≥                   λ2              . Otherwise,
+2Y 2 > 256kd3 α4 Λ2 and
+                                                   √
+                                         v             
+                                                  8  2d
+                                          u
+                                          t1 + k 
+                                                   √
+                               α2 λk     u                     α2 λk
+                                √ 1 −              λ 
+                                                          ≥√
+                                                              Λ 4 + 16Λ
+                                                                        
+                                  Λ            1 + 4Λ                 λ
+                                                                                                                           (97)
+                                                                   ≥ 2Y
+                                                                     p
+                                                                   > 2Y 2 + 256kd3 α4 Λ2
+                                                   Y
+For the second inequality, we used that k ≥ 2α2 √Λ(λ+4Λ)  .
+   Therefore, for k sufficiently large (94), by Theorem 5
+                                                      q
+                                                        Λ + λ4 ky(0) − y ∗ k
+                            sup kW(T ) − W(0)kF ≤               √
+                           T ∈R+                              λ µ
+                                                      q        √
+                                                        Λ + λ4 2Y 2 + 256kd3 α4 Λ2
+                                                   ≤               √
+                                                                  λ α2 k                                                   (98)
+                                                       √            √       
+                                                      2 Λ 2Y + 16 kd3 α4 Λ2
+                                                   ≤               √
+                                                                 λα k
+                                                        √
+                                                      4Y Λ 32d3/2 Λ3/2 α
+                                                   ≤    √ +
+                                                      λα k            λ
+
+and
+                   sup W(T ) − W̄(T ) F
+                   T ∈R+
+                               q                    √ q
+                           Λ            λ
+                                   1 + 2Λ          2 Λ 1 + µγ ky(0) − y ∗ k
+                                          ky(0) − y ∗ k
+                                                          2
+
+                     ≤                           +         √
+                               λ2 µ3/2                    λ µ
+                                                     √ q      √           √                                              (99)
+                                                    2 Λ 1 + 8√k2d 2Y + 512kd3 α4 Λ2
+                                               
+                       2Λ 2Y 2 + 512kd3 α4 Λ2
+                     ≤                 3/2
+                                                 +                 √
+                             λ2 (α2 k)                            λ α2 k
+                                                      √
+                        4ΛY 2       1024d3 Λ3 α 8Y Λ 64d3/2 Λ3/2 α
+                     ≤ 2 3 3/2 +           √     +    √ +
+                       λ α k            λ2 k       λα k          λ
+It is clear from (98) and (99) that there is some scalar c which depends only on Λ, λ, d, and Y such that
+                                                                    
+                                                              1
+                               sup kW(T ) − W(0)kF ≤ c √ + α , and
+                              T ∈R+                          α k
+                                                                                                    (100)
+                                                               1       1
+                              sup W(T ) − W̄(T ) F ≤ c 3 3/2 + √ + α
+                             T ∈R+                           α k     α k
+
+
+
+
+                                                              31
+
