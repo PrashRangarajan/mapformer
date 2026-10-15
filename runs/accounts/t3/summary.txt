@@ -1,0 +1,6 @@
+abs absmag cell n=8 MAP SOLVED 0/8; acc_cell median 0.385; acc_obs median 0.385; opposite-sign channels 0.00
+abs absmag obs n=8 MAP SOLVED 0/8; acc_cell median 0.515; acc_obs median 0.649; opposite-sign channels 0.00
+abs random obs n=8 MAP SOLVED 0/8; acc_cell median 0.444; acc_obs median 0.599; opposite-sign channels 0.00
+signed absmag cell n=8 MAP SOLVED 0/8; acc_cell median 0.406; acc_obs median 0.406; opposite-sign channels 0.23
+signed absmag obs n=8 MAP SOLVED 0/8; acc_cell median 0.658; acc_obs median 0.753; opposite-sign channels 0.27
+signed random obs n=8 MAP SOLVED 2/8; acc_cell median 0.982; acc_obs median 0.986; opposite-sign channels 0.74
