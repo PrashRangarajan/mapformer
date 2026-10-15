@@ -83,3 +83,6 @@ papers/_fetch.out
 .run_*.lock
 # per-run-dir completion markers (judge by the artifacts, rule 20)
 .done
+
+# flock single-instance files (drivers name them .<batch>.lock, not only .run_*)
+*.lock

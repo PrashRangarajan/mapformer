@@ -1,0 +1,31 @@
+{
+  "arm": "AO_bal",
+  "mode": "balanced",
+  "variant": "AbsAO4_r4",
+  "construction": {
+    "mode": "balanced",
+    "angle_err_max": 9.935305171675371e-07,
+    "step_min": 0.00020849885186180472,
+    "w_out_absmax_signed": 0.5757865309715271,
+    "w_out_absmax_built": 1.4037230014801025,
+    "w_in_absmax_signed": 0.6407132744789124,
+    "w_in_absmax_built": 1.7347691059112549,
+    "step_absmax_signed": 3.8075969016276576,
+    "step_absmax_built": 6.282975673675537,
+    "omega_absmax_signed": 0.7146815657615662,
+    "omega_absmax_built": 1.0,
+    "n_omega_negative": 4,
+    "latent_cos_signed": -0.9999814856896967,
+    "latent_cond_signed": 6386.039551382614
+  },
+  "source_acc": 1.0,
+  "frozen_acc": 1.0,
+  "source_wrap": [
+    0.0003309249877929687,
+    1.0
+  ],
+  "frozen_wrap": [
+    0.00033098856081206285,
+    1.0
+  ]
+}

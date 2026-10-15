@@ -1,0 +1,40 @@
+{
+  "eval": {
+    "128": {
+      "acc": 1.0,
+      "nll": 6.104537398890007e-08
+    },
+    "512": {
+      "acc": 0.998515625,
+      "nll": 0.01169350288577766
+    }
+  },
+  "final_loss": 0.0035134960504464145,
+  "wrap": [
+    0.04439007442256533,
+    0.5555555555555556
+  ],
+  "construction": {
+    "gauge": true,
+    "angle_err_max": 2.9327601305022403e-06,
+    "abs_step_min": 8.487701416015625e-05,
+    "w_out_absmax_signed": 0.3865538537502289,
+    "w_out_absmax_wrapped": 8.421750635953066,
+    "step_absmax_signed": 2.758282522665388,
+    "step_absmax_wrapped": 2.758283853530884,
+    "omega_absmax_signed": 2.9191765785217285,
+    "omega_absmax_wrapped": 2.9191765785217285,
+    "n_omega_negative": 1
+  },
+  "source_acc": 1.0,
+  "frozen_acc": 1.0,
+  "frozen_wrap": [
+    0.01379612485040862,
+    0.8166666666666667
+  ],
+  "source_wrap": [
+    0.017185360193252563,
+    0.7962962962962963
+  ],
+  "init": "/home/prashr/mapformer/runs/wrap_existence_pilot/SO_s690/SO.pt"
+}
