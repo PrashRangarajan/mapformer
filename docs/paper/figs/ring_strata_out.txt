@@ -1,0 +1,29 @@
+stream: 400 trajectories x 128 moves; revisits 38847; wrap-only 4134 (0.106); wrap-only gap range 32-124
+  plain gap 2-7    n  12183  constant-predictor floor 0.497
+  plain gap 8-31   n  17420  constant-predictor floor 0.496
+  plain gap 32-128 n   5110  constant-predictor floor 0.496
+  plain, all       n  34713  constant-predictor floor 0.496
+  wrap-only        n   4134  constant-predictor floor 0.493
+  all revisits     n  38847  constant-predictor floor 0.496
+check: overall revisit accuracy reproduces eval.json acc(128) for every run (max |diff| 5.1e-05)
+
+| batch | arm | SOLVED | plain gap 2-7 | plain gap 8-31 | plain gap 32-128 | plain, all | wrap-only | all revisits |
+|---|---|---|---|---|---|---|---|---|
+| (stream) | n targets | -- | 12183 | 17420 | 5110 | 34713 | 4134 | 38847 |
+| (stream) | constant floor | -- | 0.497 | 0.496 | 0.496 | 0.496 | 0.493 | 0.496 |
+| RING_DIAL | Signed_r4 | 8/8 | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) |
+| RING_DIAL | Abs_r4 | 2/8 | 0.992 (0.97-1.00) | 0.975 (0.93-1.00) | 0.957 (0.91-1.00) | 0.978 (0.94-1.00) | 0.923 (0.80-1.00) | 0.973 (0.93-1.00) |
+| WRAP_EXISTENCE | SO | 8/8 | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) |
+| WRAP_EXISTENCE | AO | 0/8 | 0.961 (0.89-1.00) | 0.916 (0.85-0.97) | 0.881 (0.81-0.93) | 0.927 (0.86-0.97) | 0.872 (0.80-0.93) | 0.921 (0.85-0.95) |
+| MECHANISM | SO | 8/8 | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) |
+| MECHANISM | AO | 0/8 | 0.978 (0.92-1.00) | 0.918 (0.85-1.00) | 0.873 (0.77-1.00) | 0.932 (0.89-1.00) | 0.811 (0.75-0.88) | 0.919 (0.88-0.99) |
+| MECHANISM | AO_high | 8/8 | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) |
+
+POST HOC, per run: wrap-only minus plain revisits re-weighted to the wrap-only gap distribution (8-move bins, 32-127; bins with both kinds); mean over runs, range, paired sign-flip p over runs (descriptive):
+  RING_DIAL       Signed_r4  wrap-only 1.000 vs plain matched 1.000: +0.000 (+0.000..+0.000), 0/8 runs negative, sign-flip p nan
+  RING_DIAL       Abs_r4     wrap-only 0.923 vs plain matched 0.956: -0.032 (-0.193..+0.021), 4/8 runs negative, sign-flip p 0.3125
+  WRAP_EXISTENCE  SO         wrap-only 1.000 vs plain matched 1.000: +0.000 (+0.000..+0.000), 0/8 runs negative, sign-flip p nan
+  WRAP_EXISTENCE  AO         wrap-only 0.872 vs plain matched 0.878: -0.007 (-0.080..+0.016), 2/8 runs negative, sign-flip p 0.8750
+  MECHANISM       SO         wrap-only 1.000 vs plain matched 1.000: +0.000 (+0.000..+0.000), 0/8 runs negative, sign-flip p nan
+  MECHANISM       AO         wrap-only 0.811 vs plain matched 0.874: -0.063 (-0.155..+0.014), 6/8 runs negative, sign-flip p 0.0312
+  MECHANISM       AO_high    wrap-only 1.000 vs plain matched 1.000: +0.000 (+0.000..+0.000), 0/8 runs negative, sign-flip p nan
