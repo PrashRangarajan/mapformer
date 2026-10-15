@@ -19,7 +19,17 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
   CARoPE fails, worse than index on torus; CoPE (ring) fails though representable, beats index +0.157.
 - WRAP_COPE (`WRAP_COPE_RESULTS.md`, reg, 2026-10-14 17:54): near-wrap CoPE table start UNMEASURED (all contrasts; bimodal);
   every arm's table ends period-2 -- in CoPE the wrap is in a free table, so the start lever is for rotary steps only.
-- Draft 1: `docs/paper/DRAFT_workshop.md` (Sec. 4.5 updated). Next: Fig. 3 (mechanism), an end-to-end read (rule 28);
+- THEORY REVIEW (`docs/audits/2026-10-14/theory_review/THEORY_REVIEW.md`): per-claim A-D verdicts. Proved: wrapping when <= r
+  tokens step (Prop 1), cut circle / sticky wall / pi-mirror (Props 3-5), rescaling sensitivity (Prop 2), CARoPE can't cancel
+  (Prop 6). Mechanism dynamics NOT derivable per channel -> stated as an account (collective; signed has one latent route
+  z(-) -> -z(+)). Depth result is learnability (Liu 2023 constant-depth gridworld; abstract-level, verify). GRAPE-AP is real-s.
+- COPE DIAGNOSIS (`docs/audits/2026-10-14/cope_diagnosis/COPE_DIAGNOSIS.md`, post hoc): one-layer gates are a table; solution =
+  gate lattice (period P = 2/3, +1 move odd multiple of P/32, ~1e-3); regimes lattice 9 / off-lattice 11 / obs-dependent 20;
+  eval-only gate snap lifts wrap-only 0.63 -> 0.90; barrier 11/11. Search, different obstacle from rotary.
+- Draft 2 (`docs/paper/DRAFT_workshop.md`) has both folded in.
+- Proposed tests (not run; each needs a prereg): AO_bal ring continuation with weight decay 0 (drift account, ~15 min GPU);
+  signed with frozen move latents from the |.| start (collective-route account, ~1 GPU-h); toy with observation-retrieval
+  target (toy vs transformer difference, CPU); CoPE on a non-wrapping line / sep-keys (~1.6 GPU-h each). Next: Fig. 3 (mechanism), an end-to-end read (rule 28);
   optional: the start manipulation on the torus (does a past-pi start rescue AbsAO4?).
 
 ## Last session's work (2026-10-13): existence test done, outline drafted
