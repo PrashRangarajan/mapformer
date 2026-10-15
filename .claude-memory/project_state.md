@@ -9,7 +9,11 @@ Updated 2026-10-13 14:00. Goes stale fast: check `git log`, `.done` markers, the
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- Nothing (2026-10-14 14:45). GPUs idle.
+- ACCOUNTS (`ACCOUNTS_PREREG.md` + Amendment 1; launched 2026-10-14 19:54 at adf3c08; `run_accounts.sh`, log `accounts.log`,
+  marker `.accounts_done`, output `ACCOUNTS_ANALYSIS.txt` / `_VERDICTS.json`): T1 weight decay vs drift (usage-weighted wrap
+  share), T2 frozen move latents (collective-route account), T4 CoPE on a non-wrapping line (16 seeds CoPE arms). ~3 h.
+- T3 toy (CPU, `runs/accounts/t3/run_t3.sh`, marker `runs/accounts/t3/.done`, summary `summarize_t3.py`): observation target.
+- After: ACCOUNTS_RESULTS.md; fold into draft (Props 2, the mechanism account, CoPE lattice account).
 
 ## Last results (2026-10-14): "do 1 and 2" done
 - MECHANISM (`MECHANISM_RESULTS.md`, reg): |.| removes the path through zero; signed escapes the |.| start through zero (7/8);
