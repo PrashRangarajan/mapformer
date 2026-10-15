@@ -1,0 +1,13 @@
+(a) m = 1 stepping tokens (1 non-zero step rows in the signed table; 0/64 channels with opposite-signed steps): built |.| table min 3.69e-18 (>= 0), max angle error mod 2 pi 7.38e-14, max |logit diff| 7.45e-14 (logit scale 2.2)
+(a) m = 2 stepping tokens (2 non-zero step rows in the signed table; 56/64 channels with opposite-signed steps): built |.| table min 8.31e-19 (>= 0), max angle error mod 2 pi 6.52e-14, max |logit diff| 2.92e-14 (logit scale 2.2)
+(a) m = 3 stepping tokens (3 non-zero step rows in the signed table; 39/64 channels with opposite-signed steps): built |.| table min 1.27e-19 (>= 0), max angle error mod 2 pi 6.56e-14, max |logit diff| 4.14e-14 (logit scale 2.2)
+(a) m = 4 stepping tokens (4 non-zero step rows in the signed table; 53/64 channels with opposite-signed steps): built |.| table min 1.92e-18 (>= 0), max angle error mod 2 pi 3.77e-14, max |logit diff| 7.66e-14 (logit scale 1.7)
+(b) r = 1: numerator of b2(channel 1) - b2(channel 2) = 2*pi*(alpha1*l1*v2 - alpha1*l2*v1 - alpha2*k1*v2 + alpha2*k2*v1 - 2*pi*k1*l2 + 2*pi*k2*l1); monomials in alpha: [(1, 0), (0, 1), (0, 0)] (no alpha1*alpha2 term: affine)
+    coefficients: alpha1 -> -2*pi*(-l1*v2 + l2*v1), alpha2 -> 2*pi*(-k1*v2 + k2*v1), 1 -> -4*pi**2*(k1*l2 - k2*l1)
+    vanishing alpha-coefficients force k2 = k1 v2/v1 (and l2 = l1 v2/v1); then b2 = v2/v1 (< 0 when v1 v2 < 0): excluded by b2 >= 0
+    alpha = [3.577 0.873]: min |b2(ch1) - b2(ch2)| over integer wraps |k| <= 5 / 20 / 80: 4.28e-05 / 1.27e-05 / 7.89e-09  (never 0; shrinks with K -> approximation at large angles)
+    alpha = [ 0.193 -3.727]: min |b2(ch1) - b2(ch2)| over integer wraps |k| <= 5 / 20 / 80: 1.01e-03 / 2.06e-06 / 1.76e-08  (never 0; shrinks with K -> approximation at large angles)
+    alpha = [-0.555 -0.71 ]: min |b2(ch1) - b2(ch2)| over integer wraps |k| <= 5 / 20 / 80: 3.74e-04 / 3.29e-06 / 9.29e-09  (never 0; shrinks with K -> approximation at large angles)
+(c) m = 2: K=10: max_c min_k err 0.1742 rad, |angle| <= 102; K=100: max_c min_k err 0.0254 rad, |angle| <= 1017; K=1000: max_c min_k err 0.0023 rad, |angle| <= 10166; K=10000: max_c min_k err 0.0002 rad, |angle| <= 101664
+(c) m = 3: K=10: max_c min_k err 1.1457 rad, |angle| <= 102; K=100: max_c min_k err 0.2622 rad, |angle| <= 1017; K=1000: max_c min_k err 0.0809 rad, |angle| <= 10166; K=10000: max_c min_k err 0.0649 rad, |angle| <= 101664
+(c) m = 4: K=10: max_c min_k err 1.5299 rad, |angle| <= 115; K=100: max_c min_k err 0.7729 rad, |angle| <= 1151; K=1000: max_c min_k err 0.3093 rad, |angle| <= 11511; K=10000: max_c min_k err 0.1503 rad, |angle| <= 115111

@@ -1,0 +1,7 @@
+P3: 60 starts in (0, pi)^2: max |grid distance - min(S, 2pi - S)/sqrt2| (signed) 0.0002, |grid distance - (2pi - S)/sqrt2| (quadrant) 0.0002 (grid step 0.0251); the two coincide iff S >= pi
+P4: AO_s800: max |dL/ds - sign(s) dL/da| = 0.00e+00 (scale 1.20e+00); entries with s < 0: 69/128 (on those the gradient on s is the negated gradient on a)
+P5 p_plus 0.5: 58148 revisit queries; same-cell move counts all even: True; max |V_s(Pm a) - V_s(a)| 5.6e-16; max |V_s(mirror_S a) - V_s(a)| 7.4e-03 (on the lattice delta N in pi Z: 4.5e-16); all-keys term max change 0.06
+P5 p_plus 0.5 + mirrored walks: 116296 revisit queries; same-cell move counts all even: True; max |V_s(Pm a) - V_s(a)| 8.9e-16; max |V_s(mirror_S a) - V_s(a)| 8.9e-16 (on the lattice delta N in pi Z: 3.6e-16); all-keys term max change 0.06
+P5 p_plus 0.75: 57667 revisit queries; same-cell move counts all even: True; max |V_s(Pm a) - V_s(a)| 2.0e-15; max |V_s(mirror_S a) - V_s(a)| 4.6e-01 (on the lattice delta N in pi Z: 2.1e-15); all-keys term max change 0.18
+P5 (v) SO_s800: Pm built exactly (max |a' - (pi - a)| 6.2e-15); source |a| < pi in 128/128 entries, image angles >= 0 in 128/128; on the 53 opposite-sign channels source sums S in [-0.385, 0.598], image sums 2 pi - S in [5.686, 6.668]
+    all causal scores: even-g max |S' - S| 1.0e-10; odd-g max |S' + S| 1.0e-10 (score scale 121.1); control without the reflection: even-g max |S' - S| 45.2

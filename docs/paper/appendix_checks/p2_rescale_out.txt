@@ -1,0 +1,11 @@
+(a) 106602 same-cell pairs (400 walks), 0.787 at displacement 0; max |measured - predicted| phase error under (1 + eps) rescaling, eps in {1e-3, 1e-2}: signed 2.9e-14, wrapped 1.0e-13 rad
+    n- over same-cell pairs: mean 20.4, rms 26.6, max 95; predicted wrapped-code rms error at eps = 0.01: 2 pi eps rms(n-) = 1.67 rad; signed code at d = 0 pairs: 0
+(b) constructions from SO_s800: AO_bal angle error 6.9e-07, SO_bal 1.9e-07
+    omega x (1 + 0) in every channel: revisit accuracy wrapped (AO_bal) 1.000, signed (SO_bal) 1.000
+    omega x (1 + 0.0001) in every channel: revisit accuracy wrapped (AO_bal) 1.000, signed (SO_bal) 1.000
+    omega x (1 + 0.001) in every channel: revisit accuracy wrapped (AO_bal) 1.000, signed (SO_bal) 1.000
+    omega x (1 + 0.003) in every channel: revisit accuracy wrapped (AO_bal) 0.941, signed (SO_bal) 1.000
+    omega x (1 + 0.01) in every channel: revisit accuracy wrapped (AO_bal) 0.700, signed (SO_bal) 1.000
+    omega x (1 + 0.03) in every channel: revisit accuracy wrapped (AO_bal) 0.485, signed (SO_bal) 0.866
+(c) ring continuation: sum(lr) = 16.10; wd * sum(lr) = 0.805; unopposed decay factor per tensor exp(-wd sum lr) = 0.447; an angle is a product of 4 decayed tensors (token_emb, W_in, W_out, omega): 0.040
+(c) torus continuation: sum(lr) = 1.61; wd * sum(lr) = 0.080; unopposed decay factor per tensor exp(-wd sum lr) = 0.923; an angle is a product of 4 decayed tensors (token_emb, W_in, W_out, omega): 0.725

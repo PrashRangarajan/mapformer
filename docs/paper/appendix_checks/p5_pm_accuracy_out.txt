@@ -1,0 +1,1 @@
+SO_s800 revisit accuracy 1.000; its mirror image Pm (sums 2 pi - S, non-negative angles) 0.850 (no retraining)

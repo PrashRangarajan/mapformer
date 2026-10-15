@@ -1,0 +1,5 @@
+(1) signed       rate: max |ODE propagator - exp(-i omega (Phi_t - Phi_s))| over all pairs = 9.93e-15
+(1) non-negative rate: max |ODE propagator - exp(-i omega (Phi_t - Phi_s))| over all pairs = 2.90e-14
+(1) constant     rate: max |ODE propagator - exp(-i omega (Phi_t - Phi_s))| over all pairs = 1.10e-14
+(2) max |rotary score (model._apply_rope) - sum_c Re(conj(q~_c) k~_c G_c(t,s))| = 3.55e-15
+(3) real s = 0.3: propagator exp(-s (Phi_t - Phi_s)) in (0, 1] for a non-negative rate (monotone forgetting); its log is the additive bias -s (Phi_t - Phi_s) (GRAPE-AP's b_h with theta_h = s); min over pairs 8.933e-03 > 0

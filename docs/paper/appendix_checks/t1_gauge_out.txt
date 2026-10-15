@@ -1,0 +1,9 @@
+channels flipped: 35 of 64
+(a) SO_s800 float32: move angles flipped in 70 entries; max|logit diff| flip+reflect 0.00e+00 (logit scale 21.6); flip only (control) 6.62e+00
+    float64: flip+reflect 0.00e+00
+(b) AO_s800 (|.|), sign carried by omega, float64: flip+reflect 0.00e+00; flip only 2.20e+01
+(c) random 2-layer Signed_r4, all tokens step, q/k biases N(0, 0.5), float64: flip+reflect 0.00e+00; flip only 2.30e-01
+(d) AO_s800 rewritten as SignedAO with steps D|S| (D: 35 channels negative): table residual 4.44e-16; rows sign-coherent: True; logits max diff 1.22e-11
+(e) SO_s800: 53/64 channels have opposite-signed move angles; the same weights in the |.| class change the logits by up to 3.55e+01; no channel-sign gauge can remove an opposite-sign row (it multiplies both entries by the same sign)
+(d2) signed model with sign-coherent rows (steps D|S|, omega, no reflection) vs the |.| model with |S| and omega' = D omega: angle tables max diff 0.0e+00; logits max diff 0.00e+00 (the |.| class contains it exactly: omega carries the channel sign)
+(f) MapEM (A_P = rotated q0_pos . rotated k0_pos): flip + reflect q0_pos, k0_pos 0.00e+00; flip only 4.74e-05
