@@ -92,6 +92,11 @@ period-2 (power near pi 0.40-0.68): in CoPE the wrap is in a free table; the sta
   channels -- withdrawn; weight decay is not involved.
 - T4: CoPE fails on a non-wrapping line too (1/16 vs ring 0/16; signed 8/8): the wrap is not CoPE's obstacle (precision is).
 
+## Update 2026-10-15: TORUS_START (`TORUS_START_RESULTS.md`, registered)
+The past-pi start does NOT rescue the non-negative step on the torus (0/8 vs 1/8; TS1 NO EFFECT DETECTED) and the same large
+start drags the signed model to 2/8 (vs 8/8 default); most large-start runs still descending at 900 epochs. The start lever is
+a ring result; the sign cost replicates (1/8 vs 8/8).
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
@@ -102,6 +107,7 @@ period-2 (power near pi 0.40-0.68): in CoPE the wrap is in a free table; the sta
 - "The wrapped solution is unstable / fragile under training" (an ill-conditioned construction artefact; the balanced one is held on the ring, re-found on the torus).
 - "The held non-negative model drifts off the cancelling code" (unused channels; ACCOUNTS T1).
 - "Weight decay drives the drift" and "the wrap is CoPE's obstacle" (ACCOUNTS T1, T4).
+- "Initialise a monotone rotary step near the wrap" as a general design rule (ring only; fails on the torus).
 - "A near-wrap start rescues CoPE" (unmeasured; WRAP_COPE).
 - "The sign cost is only the start, not the constraint" (toy only; in the transformer signed escapes the |.| start through zero).
 

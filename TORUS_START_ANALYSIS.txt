@@ -1,0 +1,25 @@
+== per seed: accuracy T = 1024 (held-out map) and class ==
+1200 | SO4 0.9999 SOLV | AO4 0.8005 STAL | AO4_high 0.9338 DESC | SO4_high 0.9219 DESC | AO4_mid 0.9366 DESC
+1201 | SO4 1.0000 SOLV | AO4 0.8378 STAL | AO4_high 0.7943 STAL | SO4_high 1.0000 SOLV | AO4_mid 0.9079 STAL
+1202 | SO4 1.0000 SOLV | AO4 0.9979 SOLV | AO4_high 0.9751 DESC | SO4_high 0.9255 DESC | AO4_mid 0.8239 STAL
+1203 | SO4 1.0000 SOLV | AO4 0.8991 STAL | AO4_high 0.9306 DESC | SO4_high 0.9052 DESC | AO4_mid 0.9062 DESC
+1204 | SO4 1.0000 SOLV | AO4 0.9482 STAL | AO4_high 0.9508 DESC | SO4_high 0.7447 STAL | AO4_mid 0.8403 STAL
+1205 | SO4 1.0000 SOLV | AO4 0.8745 STAL | AO4_high 0.8761 STAL | SO4_high 0.9266 DESC | AO4_mid 0.9494 DESC
+1206 | SO4 1.0000 SOLV | AO4 0.8823 STAL | AO4_high 0.9148 DESC | SO4_high 1.0000 SOLV | AO4_mid 0.9390 DESC
+1207 | SO4 1.0000 SOLV | AO4 0.9274 STAL | AO4_high 0.8278 STAL | SO4_high 0.9284 DESC | AO4_mid 0.9900 DESC
+SO4      : mean 1.0000, SOLVED 8/8
+AO4      : mean 0.8960, SOLVED 1/8
+AO4_high : mean 0.9004, SOLVED 0/8
+SO4_high : mean 0.9190, SOLVED 2/8
+AO4_mid  : mean 0.9116, SOLVED 0/8
+TS1 (AO4_high vs AO4): NO EFFECT DETECTED -- AO4_high 0.9004 SOLVED 0/8 vs AO4 0.8960 SOLVED 1/8; d +0.0045 [95% CI -0.060, +0.070] (perm p 0.8852); Fisher p 1.0000
+TS2 (AO4_high vs AO4_mid): UNMEASURED -- AO4_high 0.9004 SOLVED 0/8 vs AO4_mid 0.9116 SOLVED 0/8; d -0.0112 [95% CI -0.075, +0.050] (perm p 0.7054); Fisher p 1.0000
+TS3 (AO4_high vs SO4_high): UNREADABLE (SO4_high SOLVED 2 < 4) -- AO4_high 0.9004 SOLVED 0/8 vs SO4_high 0.9190 SOLVED 2/8; d -0.0186 [95% CI -0.090, +0.055] (perm p 0.6186); Fisher p 0.4667
+TS4 (AO4 vs SO4): SIGNED LEARNS BETTER -- AO4 0.8960 SOLVED 1/8 vs SO4 1.0000 SOLVED 8/8; d -0.1040 [95% CI -0.150, -0.060] (perm p 0.0002); Fisher p 0.0014
+
+== secondaries (declared; no verdict) ==
+SO4      : wrap share 1.00; strata lag<128 1.000, lag>=128 1.000, wrap-only 1.000; acc 2048 0.9929; loss AUC 0.226
+AO4      : wrap share 0.13; strata lag<128 0.939, lag>=128 0.730, wrap-only 0.632; acc 2048 0.7885; loss AUC 0.708
+AO4_high : wrap share 0.10; strata lag<128 0.949, lag>=128 0.777, wrap-only 0.534; acc 2048 0.8416; loss AUC 0.827
+SO4_high : wrap share 0.19; strata lag<128 0.970, lag>=128 0.716, wrap-only 0.627; acc 2048 0.8696; loss AUC 0.765
+AO4_mid  : wrap share 0.05; strata lag<128 0.950, lag>=128 0.809, wrap-only 0.621; acc 2048 0.8580; loss AUC 0.720

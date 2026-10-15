@@ -9,8 +9,11 @@ Updated 2026-10-13 14:00. Goes stale fast: check `git log`, `.done` markers, the
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- TORUS_START (launched 2026-10-15 01:40 automatically after ACCOUNTS; `torus_start.log`, marker `.torus_start_done`,
-  output `TORUS_START_ANALYSIS.txt`): ~6-8 h. After: TORUS_START_RESULTS.md, then a draft-3 assembly agent + mock review.
+- Nothing on GPU (2026-10-15 08:00). Next: draft-3 assembly agent, then mock review.
+
+## Last results (2026-10-15): TORUS_START (`TORUS_START_RESULTS.md`)
+- Past-pi start does NOT rescue on the torus (0/8; TS1 NO EFFECT); the large start drags signed to 2/8; sign cost replicates
+  (1/8 vs 8/8). The start lever is ring-only; "initialise near the wrap" withdrawn as a general rule.
 
 ## Last results (2026-10-15): ACCOUNTS (`ACCOUNTS_RESULTS.md`)
 - T2 SUPPORTED (collective latent escape); T1: no drift in used channels (old 87->18% withdrawn), weight decay irrelevant;
