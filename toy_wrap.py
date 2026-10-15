@@ -60,12 +60,24 @@ class Toy(nn.Module):
         return torch.exp(self.log_beta) * q @ k.transpose(1, 2)
 
 
-def loss_acc(model, mv, pos):
+def obs_of(pos, seed_rng, size=32, n_types=16, p_empty=0.5):
+    """ACCOUNTS T3: an observation map per trajectory (as environment_cancel: occupied with prob 1 - p_empty, a type in
+    0..15, else blank = 16) and the observation at every move's cell."""
+    B = pos.shape[0]
+    occ = seed_rng.random_sample((B, size)) >= p_empty
+    om = np.where(occ, seed_rng.randint(0, n_types, (B, size)), n_types)
+    return torch.from_numpy(np.take_along_axis(om, pos.numpy(), 1))
+
+
+def loss_acc(model, mv, pos, obs=None):
+    """target 'cell' (obs None): correct keys are earlier moves at the same cell. target 'obs' (ACCOUNTS T3): correct keys are
+    earlier moves whose cell shows the same observation as the query's cell (what the transformer task rewards); queries
+    are still the revisits."""
     B, T = mv.shape
     logits = model(mv)
     causal = torch.ones(T, T, dtype=torch.bool).tril(-1)    # keys strictly earlier
-    same = (pos[:, :, None] == pos[:, None, :]) & causal
-    q = same.any(-1)                                        # queries whose cell was visited before
+    q = ((pos[:, :, None] == pos[:, None, :]) & causal).any(-1)   # queries whose cell was visited before
+    same = ((pos[:, :, None] == pos[:, None, :]) if obs is None else (obs[:, :, None] == obs[:, None, :])) & causal
     lg = logits.masked_fill(~causal, float("-inf"))
     lse = torch.logsumexp(lg, -1)
     good = torch.logsumexp(lg.masked_fill(~same, float("-inf")), -1)
@@ -109,6 +121,7 @@ def main():
     ap.add_argument("--init", default="random", choices=["random", "band", "offband", "omega1", "low", "high", "absmag", "same", "mid"])
     ap.add_argument("--freeze-omega", action="store_true")
     ap.add_argument("--no-omega-clamp", action="store_true")
+    ap.add_argument("--target", default="cell", choices=["cell", "obs"])
     ap.add_argument("--init-scale", type=float, default=1.0, help="multiply W_out at random init")
     ap.add_argument("--T", type=int, default=128)
     ap.add_argument("--p-plus", type=float, default=0.5)
@@ -139,20 +152,24 @@ def main():
     sch = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: (s + 1) / warm if s < warm else
                                             0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * min(1, (s - warm) / (a.steps - warm)))))
     ev_rng = np.random.RandomState(10 ** 6); emv, epos = walks(256, a.T, p_plus=a.p_plus, rng=ev_rng)
+    eobs = obs_of(epos, ev_rng) if a.target == "obs" else None
     hist = []; t0 = time.time()
     for step in range(a.steps + 1):
         if step % a.log_every == 0 or step == a.steps:
             with torch.no_grad():
-                l, acc = loss_acc(m, emv, epos)
-            hist.append({"step": step, "loss": float(l), "acc": float(acc), "wrap_share": wrap_stats(m)})
+                l, acc = loss_acc(m, emv, epos, eobs)
+                acc_cell = loss_acc(m, emv, epos)[1] if eobs is not None else acc
+            hist.append({"step": step, "loss": float(l), "acc": float(acc), "acc_cell": float(acc_cell),
+                         "wrap_share": wrap_stats(m)})
             print(f"{step:6d} loss {float(l):.4f} acc {float(acc):.4f} wrap {hist[-1]['wrap_share']:.2f} ({time.time() - t0:.0f}s)", flush=True)
         if step == a.steps:
             break
         mv, pos = walks(a.batch, a.T, p_plus=a.p_plus, rng=rng)
-        l, _ = loss_acc(m, mv, pos)
+        l, _ = loss_acc(m, mv, pos, obs_of(pos, rng) if a.target == "obs" else None)
         opt.zero_grad(); l.backward(); opt.step(); sch.step()
     A = m.angles().detach()
-    res = {"args": vars(a), "hist": hist, "final_acc": hist[-1]["acc"], "final_wrap_share": hist[-1]["wrap_share"],
+    res = {"args": vars(a), "hist": hist, "final_acc": hist[-1]["acc"], "final_acc_cell": hist[-1]["acc_cell"],
+           "final_wrap_share": hist[-1]["wrap_share"],
            "angles": A.tolist(), "omega": m.omega.detach().tolist(), "w": F.softplus(m.u).detach().tolist(),
            "beta": float(torch.exp(m.log_beta))}
     if a.out:

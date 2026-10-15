@@ -56,6 +56,7 @@ def main():
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--data-workers", type=int, default=3)
     ap.add_argument("--n-trials", type=int, default=400)
+    ap.add_argument("--weight-decay", type=float, default=0.05, help="AdamW decoupled weight decay (ACCOUNTS T1)")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--output-dir", required=True)
     a = ap.parse_args()
@@ -94,6 +95,7 @@ def main():
     print(f"{a.arm} p_plus={a.p_plus} seed={a.seed} params={sum(p.numel() for p in model.parameters()):,}", flush=True)
     losses = train(model, env, n_epochs=a.epochs, lr=a.lr, batch_size=a.batch_size, n_steps=a.n_steps,
                    n_batches=a.n_batches, device=a.device, schedule="cosine", data_workers=a.data_workers,
+                   weight_decay=a.weight_decay,
                    data_seed_offset=OFFSET if cont else 0)
     torch.save({"model_state_dict": model.state_dict(), "losses": losses, "variant": a.arm, "seed": a.seed,
                 "config": {"args": dict(vars(a)), "vocab_size": env.unified_vocab_size,

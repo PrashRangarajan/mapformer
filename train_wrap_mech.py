@@ -10,6 +10,9 @@ epochs, 1 layer, 2 heads, d 128). Observation-step-free models (SignedAO_r4 / Ab
   SO_high            SignedAO_r4 from the SAME large angles as AO_high (Amendment 1: matched-start sign contrast)
   AO_mid             AbsAO_r4 started with a(+1), a(-1) iid U(0.9, 1.5) (sum < pi, ~5x the default magnitude; Amendment 1
                      mobility control)
+  SO_same_fz / SO_absmag_fz   as SO_same / SO_absmag with the two MOVE LATENTS frozen (ACCOUNTS T2): W_in fixed and the move
+                     embeddings detached in the step path (they still train through the content path), so only W_out and
+                     omega can move the angles -- channel by channel; the collective route z(-1) -> -z(+1) is closed
 Balanced gauge (`set_move_angles`): W_in re-solved so the two move latents are c e1, c e2 (c = this init's mean move-latent
 norm), omega' = max(|omega|, 1), W_out[:, :2] = (target angle / omega') / c, W_out[:, 2:] = 0 -- WRAP_EXISTENCE Amendment 1's
 construction applied at initialisation. Every other weight is the seed's default init (identical across arms at a seed).
@@ -27,7 +30,7 @@ from mapformer.model_wrap_exist import MapFormerWM_SignedAO_r4, MapFormerWM_AbsA
 from mapformer.train import train
 from mapformer.train_cancel import evaluate
 
-ARMS = ("SO", "AO", "SO_same", "SO_absmag", "AO_absmag", "AO_high", "SO_high", "AO_mid")
+ARMS = ("SO", "AO", "SO_same", "SO_absmag", "AO_absmag", "AO_high", "SO_high", "AO_mid", "SO_same_fz", "SO_absmag_fz")
 EVAL_SEED = 10 ** 6
 
 
@@ -74,14 +77,16 @@ def main():
         st = model.action_to_lie.w_out(model.action_to_lie.w_in(model.token_emb.weight[model.act]))      # (2, C) signed
         ang0 = st * model.path_integrator.omega.reshape(-1)
     err = None
-    if a.arm in ("SO_same",):
+    if a.arm in ("SO_same", "SO_same_fz"):
         err = set_move_angles(model, ang0)
-    elif a.arm in ("SO_absmag", "AO_absmag"):
+    elif a.arm in ("SO_absmag", "AO_absmag", "SO_absmag_fz"):
         err = set_move_angles(model, ang0.abs())
     elif a.arm in ("AO_high", "SO_high", "AO_mid"):
         g = np.random.RandomState(a.seed + 7919)                     # same draw for AO_high and SO_high at a seed
         lo, hi = (0.9, 1.5) if a.arm == "AO_mid" else (1.7, 4.5)
         err = set_move_angles(model, torch.from_numpy(g.uniform(lo, hi, ang0.shape)).float())
+    if a.arm.endswith("_fz"):
+        model.freeze_latent = True; model.action_to_lie.w_in.weight.requires_grad_(False)
     init_angles = action_angles(model)
     assert len(model.layers) == 1
     print(f"{a.arm} seed={a.seed} params={sum(p.numel() for p in model.parameters()):,} init angle err {err} "

@@ -30,7 +30,8 @@ def _ao_variant(mode):
         def step_table(self):
             """(V, H, nb) per-token step before omega: the actions' steps (after the sign constraint), 0 otherwise."""
             e = self.token_emb.weight
-            v = self.action_to_lie(e[self.act].view(1, len(self.act), -1))[0]   # (A, H, nb)
+            ea = e[self.act].detach() if getattr(self, "freeze_latent", False) else e[self.act]   # ACCOUNTS T2
+            v = self.action_to_lie(ea.view(1, len(self.act), -1))[0]            # (A, H, nb)
             out = torch.zeros(e.shape[0], *v.shape[1:], device=e.device, dtype=v.dtype)
             out[self.act] = v
             return out
