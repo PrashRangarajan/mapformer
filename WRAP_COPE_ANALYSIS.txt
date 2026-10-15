@@ -1,0 +1,34 @@
+== per seed: accuracy T = 128 (eval mode) and class ==
+900 | CoPEF 0.9443 STAL | CoPEF_Hi 1.0000 SOLV | CoPEF_Lo 1.0000 SOLV | CoPEF_LoS 0.9732 DESC
+901 | CoPEF 0.9481 DESC | CoPEF_Hi 0.9641 DESC | CoPEF_Lo 0.9429 STAL | CoPEF_LoS 0.9503 STAL
+902 | CoPEF 0.9520 DESC | CoPEF_Hi 0.9694 DESC | CoPEF_Lo 0.9687 DESC | CoPEF_LoS 0.9992 DESC
+903 | CoPEF 0.8700 STAL | CoPEF_Hi 0.6269 STAL | CoPEF_Lo 0.6272 STAL | CoPEF_LoS 0.9401 STAL
+904 | CoPEF 0.7128 STAL | CoPEF_Hi 0.9997 DESC | CoPEF_Lo 0.8253 STAL | CoPEF_LoS 0.9380 DESC
+905 | CoPEF 0.9988 SOLV | CoPEF_Hi 0.9972 SOLV | CoPEF_Lo 0.9764 DESC | CoPEF_LoS 0.9723 DESC
+906 | CoPEF 0.5806 STAL | CoPEF_Hi 0.8411 STAL | CoPEF_Lo 0.7476 STAL | CoPEF_LoS 0.8296 STAL
+907 | CoPEF 0.7117 STAL | CoPEF_Hi 0.9036 DESC | CoPEF_Lo 0.8485 STAL | CoPEF_LoS 0.9397 STAL
+CoPEF    : mean 0.8398, SOLVED 1/8
+CoPEF_Hi : mean 0.9128, SOLVED 2/8
+CoPEF_Lo : mean 0.8671, SOLVED 1/8
+CoPEF_LoS: mean 0.9428, SOLVED 0/8
+W1 (CoPEF_Hi vs CoPEF_Lo): UNMEASURED -- CoPEF_Hi 0.9128 SOLVED 2/8 vs CoPEF_Lo 0.8671 SOLVED 1/8; d +0.0457 [95% CI -0.095, +0.180] (perm p 0.4869); Fisher p 1.0000
+W1b (CoPEF_Hi vs CoPEF_LoS): UNMEASURED -- CoPEF_Hi 0.9128 SOLVED 2/8 vs CoPEF_LoS 0.9428 SOLVED 0/8; d -0.0300 [95% CI -0.135, +0.060] (perm p 0.6510); Fisher p 0.4667
+W2 (CoPEF_Hi vs CoPEF): UNMEASURED -- CoPEF_Hi 0.9128 SOLVED 2/8 vs CoPEF 0.8398 SOLVED 1/8; d +0.0730 [95% CI -0.075, +0.220] (perm p 0.3245); Fisher p 1.0000
+W3 (CoPEF_Lo vs CoPEF): UNMEASURED -- CoPEF_Lo 0.8671 SOLVED 1/8 vs CoPEF 0.8398 SOLVED 1/8; d +0.0273 [95% CI -0.120, +0.180] (perm p 0.6973); Fisher p 1.0000
+W1n (CoPEF_Hi vs CoPEF_Lo, held-out NLL at T = 128): NO DIFFERENCE DETECTED -- 0.2887 vs 0.4577, d -0.1690 (perm p 0.4404)
+W1bn (CoPEF_Hi vs CoPEF_LoS, held-out NLL at T = 128): NO DIFFERENCE DETECTED -- 0.2887 vs 0.2038, d +0.0849 (perm p 0.6963)
+
+== secondaries (declared; no verdict) ==
+CoPEF    : acc 4T 0.7419; loss AUC 0.854
+CoPEF_Hi : acc 4T 0.8543; loss AUC 0.648
+CoPEF_Lo : acc 4T 0.7482; loss AUC 0.773
+CoPEF_LoS: acc 4T 0.8906; loss AUC 0.565
+CoPEF    : table power share (counts 0-255) in the Hi band 0.25, Lo band 0.10, near pi (> 0.95 pi) 0.40
+CoPEF_Hi : table power share (counts 0-255) in the Hi band 0.20, Lo band 0.05, near pi (> 0.95 pi) 0.52
+CoPEF_Lo : table power share (counts 0-255) in the Hi band 0.11, Lo band 0.09, near pi (> 0.95 pi) 0.55
+CoPEF_LoS: table power share (counts 0-255) in the Hi band 0.07, Lo band 0.06, near pi (> 0.95 pi) 0.68
+dropout re-score CoPEF    : 0.8420 (eval mode 0.8398)
+dropout re-score CoPEF_Hi : 0.9140 (eval mode 0.9128)
+dropout re-score CoPEF_Lo : 0.8688 (eval mode 0.8671)
+dropout re-score CoPEF_LoS: 0.9431 (eval mode 0.9428)
+rescore_hook STATS: hooked 32, fired 12800, skipped []

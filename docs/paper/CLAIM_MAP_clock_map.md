@@ -80,6 +80,11 @@ under the non-negative constraint.
 - Published methods: faithful CARoPE fails both tasks and is no better than index RoPE (torus worse, -0.055); faithful CoPE
   fails the ring (0/8) although it can represent it, and beats the index by +0.157 there.
 
+## Update 2026-10-14: WRAP_COPE (`WRAP_COPE_RESULTS.md`, registered): UNMEASURED
+A near-wrap (or any sinusoidal) start of CoPE's position table does not measurably rescue CoPE on the ring (Hi 0.913 2/8, Lo
+0.867 1/8, slope-matched Lo 0.943 0/8, zeros 0.840 1/8; all contrasts unmeasured, bimodal seeds). Every arm's table ends
+period-2 (power near pi 0.40-0.68): in CoPE the wrap is in a free table; the start lever is for monotone rotary steps.
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
@@ -88,6 +93,7 @@ under the non-negative constraint.
 - Rank = D is hard because of the clock (fails in 1D).
 - A non-negative rotary phase cannot represent a map (it can, by wrapping; the sign result is learnability).
 - "The wrapped solution is unstable / fragile under training" (an ill-conditioned construction artefact; the balanced one is held on the ring, re-found on the torus).
+- "A near-wrap start rescues CoPE" (unmeasured; WRAP_COPE).
 - "The sign cost is only the start, not the constraint" (toy only; in the transformer signed escapes the |.| start through zero).
 
 ## Gaps, cheapest first

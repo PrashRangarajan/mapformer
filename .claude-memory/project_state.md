@@ -17,8 +17,10 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
   M5 sign cost at the small start. Toy's "start not constraint" did not transfer (stated).
 - GENERALITY (`GENERALITY_RESULTS.md`, reg): torus E3 0/8 vs 8/8; E2 NOT HELD = perturbed and re-found (8/8 SOLVED at end);
   CARoPE fails, worse than index on torus; CoPE (ring) fails though representable, beats index +0.157.
-- Next if the user wants: workshop draft (CPU); Fig. 3 (mechanism); optional: start manipulation on the torus, CARoPE with a
-  near-wrap init (tests the design implication on a published method).
+- WRAP_COPE (`WRAP_COPE_RESULTS.md`, reg, 2026-10-14 17:54): near-wrap CoPE table start UNMEASURED (all contrasts; bimodal);
+  every arm's table ends period-2 -- in CoPE the wrap is in a free table, so the start lever is for rotary steps only.
+- Draft 1: `docs/paper/DRAFT_workshop.md` (Sec. 4.5 updated). Next: Fig. 3 (mechanism), an end-to-end read (rule 28);
+  optional: the start manipulation on the torus (does a past-pi start rescue AbsAO4?).
 
 ## Last session's work (2026-10-13): existence test done, outline drafted
 - WRAP_EXISTENCE (`WRAP_EXISTENCE_RESULTS.md`, registered): E1 EXISTS (all constructions); E2 PRIMARY HELD (balanced

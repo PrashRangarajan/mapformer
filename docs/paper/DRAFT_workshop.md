@@ -135,8 +135,11 @@ Implemented faithfully (CARoPE: per-head rate in (0, 1), channel i steps f^i, in
 the paper), neither learns the maps. CARoPE cannot represent cancellation (its per-token steps are at most 1 rad); it scores
 0.667 on the torus, *below* index RoPE's 0.722 (p 0.04), and equals the index on the ring (0.741 vs 0.730). CoPE can represent
 ring cancellation (a period-2 position table read at the gated count; constructed) but learns it on 0/8 seeds (0.887 vs signed
-1.000, p 0.0002), though its content-gated count beats the index by +0.157. [WRAP_COPE pending: does a near-wrap position-table
-start rescue CoPE?]
+1.000, p 0.0002), though its content-gated count beats the index by +0.157. Starting CoPE's position table near the wrap
+does not rescue it measurably (8 seeds per arm, bimodal; sinusoidal starts trend better, 0.87-0.94 vs 0.84, all contrasts
+unmeasured): in CoPE the wrap sits in a free per-count table, which training moves to period 2 from any start; the monotone
+part is the gate, which must become slightly asymmetric between the two moves. The start lever applies to monotone rotary
+steps, where the step itself must carry the wrap.
 
 ### 4.6 The other direction is not established
 If sign is a matter of fit, a non-negative step might learn a content clock faster than a signed one. On k-back recency it
