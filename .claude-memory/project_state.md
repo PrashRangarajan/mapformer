@@ -9,24 +9,12 @@ Updated 2026-10-13 14:00. Goes stale fast: check `git log`, `.done` markers, the
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- ACCOUNTS (`ACCOUNTS_PREREG.md` + Amendment 1; launched 2026-10-14 19:54 at adf3c08; `run_accounts.sh`, log `accounts.log`,
-  marker `.accounts_done`, output `ACCOUNTS_ANALYSIS.txt` / `_VERDICTS.json`): T1 weight decay vs drift (usage-weighted wrap
-  share), T2 frozen move latents (collective-route account), T4 CoPE on a non-wrapping line (16 seeds CoPE arms). ~3 h.
-- T3 toy (CPU, `runs/accounts/t3/run_t3.sh`, marker `runs/accounts/t3/.done`, summary `summarize_t3.py`): observation target.
-- After: ACCOUNTS_RESULTS.md; fold into draft (Props 2, the mechanism account, CoPE lattice account).
-- TORUS_START (`TORUS_START_PREREG.md`, 46be0be): past-pi start on the torus, 5 arms x seeds 1200-1207, `run_torus_start.sh`
-  (waits for .accounts_done; marker .torus_start_done). Rule-29 check running; amend, then launch overnight (user OK'd GPU
-  overnight 2026-10-14).
-- DONE 2026-10-14 night: Fig. 3 + ring strata (`docs/paper/figs/FIGS_NOTES.md`); lit (`docs/lit/LIT_REPRESENTABILITY_2026-10-14.md`:
-  representability published -- Grazzi Thm 3, Mamba-3 -- claim only learnability; Liu gridworld = bounded line, torus
-  construction needs abs. positions + T-growing width; cite Woodworth 2020 / Amid & Warmuth 2020 for the zero wall, LRU for
-  phase init); theory appendix (`docs/paper/APPENDIX_theory.md`: T1 gauge bitwise-verified; P1-P7; corrections: CoPE line
-  margin <= P/(D_max+1), CARoPE return bound (0, 3]). CLAUDE.md sign row corrected (learnability, not replication).
-- Writing agents (user: "delegate agents for writing"), each to its own new file: lit/representability + Liu first-hand
-  (`docs/lit/LIT_REPRESENTABILITY_2026-10-14.md`), theory appendix with T1 relative-sign gauge and proofs
-  (`docs/paper/APPENDIX_theory.md`), Fig. 3 + ring strata (`docs/paper/figs/`, FIGS_NOTES.md). Then one agent assembles
-  draft 3 (retitle; cite Mamba-3 / Grazzi for representability; claim learnability + mechanism + regime; cut 4.6; toy and CoPE
-  diagnosis to appendix), then a mock review. Plan: `docs/plans/2026-10-14_next_steps.md`.
+- TORUS_START (launched 2026-10-15 01:40 automatically after ACCOUNTS; `torus_start.log`, marker `.torus_start_done`,
+  output `TORUS_START_ANALYSIS.txt`): ~6-8 h. After: TORUS_START_RESULTS.md, then a draft-3 assembly agent + mock review.
+
+## Last results (2026-10-15): ACCOUNTS (`ACCOUNTS_RESULTS.md`)
+- T2 SUPPORTED (collective latent escape); T1: no drift in used channels (old 87->18% withdrawn), weight decay irrelevant;
+  T4: CoPE fails the line too (wrap not the obstacle); T3 toy: observation target not the difference.
 
 ## Last results (2026-10-14): "do 1 and 2" done
 - MECHANISM (`MECHANISM_RESULTS.md`, reg): |.| removes the path through zero; signed escapes the |.| start through zero (7/8);

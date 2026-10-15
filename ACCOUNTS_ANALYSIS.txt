@@ -1,0 +1,27 @@
+== T1: weight decay and the drift off the wrapped code (ring continuations) ==
+AO_bal_wd  : usage-weighted wrap share 0.99 -> 0.98 (per seed 0.97 0.98 0.98 0.98 0.97 0.98 0.98 0.98); unweighted 0.87 -> 0.18; acc 1.0000, 4T 0.9775; SOLVED 8/8; max loss 0.041 0.030 0.154 0.046 0.024 0.032 0.031 0.036
+AO_bal_wd0 : usage-weighted wrap share 0.99 -> 0.98 (per seed 0.97 0.97 0.98 0.98 0.98 0.98 0.97 0.98); unweighted 0.87 -> 0.24; acc 1.0000, 4T 0.9845; SOLVED 8/8; max loss 0.118 0.035 0.184 0.027 0.029 0.070 0.058 0.040
+SO_bal_wd  : usage-weighted wrap share 0.99 -> 1.00 (per seed 0.99 1.00 1.00 1.00 1.00 1.00 1.00 0.99); unweighted 0.87 -> 0.98; acc 1.0000, 4T 0.9982; SOLVED 8/8; max loss 0.019 0.042 0.072 0.017 0.039 0.028 0.112 0.015
+SO_bal_wd0 : usage-weighted wrap share 0.99 -> 0.97 (per seed 0.97 0.97 0.98 0.97 0.97 0.97 0.97 0.98); unweighted 0.87 -> 0.38; acc 1.0000, 4T 0.9888; SOLVED 8/8; max loss 0.065 0.035 0.075 0.045 0.039 0.027 0.079 0.029
+D1 (AO_bal_wd0 - AO_bal_wd, final wrapw share, paired): NO EFFECT DETECTED -- mean -0.003 (sign-flip p 0.0859, min p 0.0078); per seed -0.00 -0.00 -0.00 -0.00 +0.00 -0.00 -0.01 -0.00
+D2 (SO_bal_wd0 - SO_bal_wd, final wrapw share, paired): NO EFFECT DETECTED -- mean -0.024 (sign-flip p 0.0078, min p 0.0078); per seed -0.02 -0.03 -0.02 -0.03 -0.03 -0.02 -0.02 -0.02
+D1u (unweighted, secondary) (AO_bal_wd0 - AO_bal_wd, final wrap share, paired): NO EFFECT DETECTED -- mean +0.058 (sign-flip p 0.0078, min p 0.0078); per seed +0.08 +0.05 +0.01 +0.01 +0.12 +0.06 +0.05 +0.09
+D2u (unweighted, secondary) (SO_bal_wd0 - SO_bal_wd, final wrap share, paired): UNMEASURED -- mean -0.597 (sign-flip p 0.0078, min p 0.0078); per seed -0.60 -0.70 -0.56 -0.60 -0.59 -0.64 -0.53 -0.53
+
+== T2: is the signed escape from the |.| start collective? (frozen move latents) ==
+SO_same      : mean 1.0000, SOLVED 8/8; opposite-sign channels at the end 1.00 (per seed 1.00 1.00 0.98 0.98 1.00 1.00 1.00 1.00)
+SO_absmag    : mean 0.9852, SOLVED 7/8; opposite-sign channels at the end 0.82 (per seed 1.00 1.00 1.00 0.41 1.00 1.00 0.19 1.00)
+SO_same_fz   : mean 0.9912, SOLVED 7/8; opposite-sign channels at the end 0.54 (per seed 0.51 0.73 0.22 0.38 0.45 0.77 0.68 0.54)
+SO_absmag_fz : mean 0.9102, SOLVED 1/8; opposite-sign channels at the end 0.15 (per seed 0.21 0.15 0.09 0.18 0.14 0.16 0.04 0.21)
+F1 (SO_absmag_fz vs SO_absmag): WORSE -- SO_absmag_fz 0.9102 SOLVED 1/8 vs SO_absmag 0.9852 SOLVED 7/8; d -0.0750 [95% CI -0.130, -0.020] (perm p 0.0089; paired sign-flip p 0.0312, descriptive); Fisher p 0.0101
+F2 (SO_same_fz vs SO_same): NO EFFECT DETECTED -- SO_same_fz 0.9912 SOLVED 7/8 vs SO_same 1.0000 SOLVED 8/8; d -0.0088 [95% CI -0.020, +0.000] (perm p 1.0000; paired sign-flip p 1.0000, descriptive); Fisher p 1.0000
+T2 reading (collective-route account): SUPPORTED
+
+== T4: CoPE on a line that never wraps ==
+CoPEF_line     : acc 0.9142 (per seed 0.836 0.868 0.867 0.824 0.988 1.000 0.848 0.620 1.000 0.886 0.999 1.000 0.894 1.000 0.998 1.000), SOLVED 1/16
+Signed_r4_line : acc 1.0000 (per seed 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000), SOLVED 8/8
+RoPE_line      : acc 0.7723 (per seed 0.696 0.780 0.781 0.787 0.782 0.782 0.795 0.774), SOLVED 0/8
+CoPEF_ring     : acc 0.8727 (per seed 0.850 0.872 0.799 0.874 0.834 1.000 0.797 0.666 0.915 0.861 0.957 0.896 0.823 0.974 0.848 1.000), SOLVED 0/16
+L1 (CoPEF line vs CoPEF ring, SOLVED, n = 16 each): NO EFFECT DETECTED -- 1/16 vs 0/16 (Fisher p 1.0000)
+L2 (CoPEF line vs Signed_r4 line): SIGNED LEARNS BETTER -- 0.9142 1/16 vs 1.0000 8/8; d -0.0858 (perm p 0.0233); Fisher p 0.0000
+secondary: line revisit targets that are blank 0.503 (predict-blank floor)

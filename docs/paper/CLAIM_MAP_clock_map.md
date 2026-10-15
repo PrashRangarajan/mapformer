@@ -85,6 +85,13 @@ A near-wrap (or any sinusoidal) start of CoPE's position table does not measurab
 0.867 1/8, slope-matched Lo 0.943 0/8, zeros 0.840 1/8; all contrasts unmeasured, bimodal seeds). Every arm's table ends
 period-2 (power near pi 0.40-0.68): in CoPE the wrap is in a free table; the start lever is for monotone rotary steps.
 
+## Update 2026-10-15: ACCOUNTS (`ACCOUNTS_RESULTS.md`, registered)
+- T2 SUPPORTED: the signed escape from the |.| start is collective (frozen move latents 1/8 vs 7/8; free 82% vs frozen 15%
+  opposite-sign channels); no cost from the default start.
+- T1: the held non-negative model's used channels stay 98% cancelling (usage-weighted); "87% -> 18% drift" counted unused
+  channels -- withdrawn; weight decay is not involved.
+- T4: CoPE fails on a non-wrapping line too (1/16 vs ring 0/16; signed 8/8): the wrap is not CoPE's obstacle (precision is).
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
@@ -93,6 +100,8 @@ period-2 (power near pi 0.40-0.68): in CoPE the wrap is in a free table; the sta
 - Rank = D is hard because of the clock (fails in 1D).
 - A non-negative rotary phase cannot represent a map (it can, by wrapping; the sign result is learnability).
 - "The wrapped solution is unstable / fragile under training" (an ill-conditioned construction artefact; the balanced one is held on the ring, re-found on the torus).
+- "The held non-negative model drifts off the cancelling code" (unused channels; ACCOUNTS T1).
+- "Weight decay drives the drift" and "the wrap is CoPE's obstacle" (ACCOUNTS T1, T4).
 - "A near-wrap start rescues CoPE" (unmeasured; WRAP_COPE).
 - "The sign cost is only the start, not the constraint" (toy only; in the transformer signed escapes the |.| start through zero).
 
