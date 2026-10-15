@@ -1,0 +1,2 @@
+runs with a NONE query type: sinusoidal table starts (Hi, Lo, LoS) 9/24 vs zero starts (WRAP_COPE CoPEF + GENERALITY) 11/16: SignificanceResult(statistic=np.float64(0.2727272727272727), pvalue=np.float64(0.10534026796540702))
+heads with both move gates < 0.1 at the end: OFF 18/32 vs LATTICE 0/21: SignificanceResult(statistic=inf, pvalue=np.float64(1.1620230283271134e-05))

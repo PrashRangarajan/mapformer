@@ -1,0 +1,8 @@
+class | n | |kappa| init median | |kappa| final median | init move gates median (larger, smaller) | final move gates median
+LATTICE  |  21 | 0.476 | 1.010 | 0.533, 0.473 | 0.353, 0.0657
+ALIASED  |   9 | 0.583 | 2.011 | 0.560, 0.486 | 0.468, 0.1176
+OFF      |  32 | 0.703 | 0.554 | 0.527, 0.462 | 0.084, 0.0082
+noTable  |   3 | 0.210 | 1.511 | 0.473, 0.454 | 0.627, 0.0748
+nonP     |  95 | 0.496 | 1.703 | 0.510, 0.447 | 0.388, 0.0205
+OFF heads: final |kappa| < init |kappa| in 17/32; both move gates < 0.1 at the end in 18/32
+LATTICE heads: both move gates < 0.1 at the end in 0/21

@@ -1,0 +1,8 @@
+revisits_per_seq   ring        97.02   torus       318.62   ratio     3.28
+gap_mean           ring        20.48   torus        78.91   ratio     3.85
+gap_rms            ring        29.21   torus       186.10   ratio     6.37
+wrapped_ms_last    ring     10094.64   torus    348272.09   ratio    34.50
+wrapped_ms_all     ring     23472.29   torus    432023.25   ratio    18.41
+share_zero_disp    ring         0.86   torus         0.93   ratio     1.08
+disp_rms_last      ring        11.91   torus        23.89   ratio     2.01
+lr-weighted (continuation lr ring 1e-3, torus 1e-4; torus_hi 1e-3): torus/ring = 3.45; torus_hi/ring = 34.50

@@ -1,0 +1,8 @@
+/home/prashr/mapformer/docs/audits/2026-10-14/cope_diagnosis/v0_verify.py:38: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  print("max |q.e (forward) - Z table|:", float((zq - zt).abs().max()))
+construction increments (h0, a0): {'alpha': 1.0625, 'beta': 0.9375, 'sigma': 1.0, 'delta': 0.0625, 'kappa': 1.0, 'kappa_dist_odd': 0.0, 'cbar': 0.1, 'tau': 0.0, 'g_plus': 0.9625, 'g_minus': 0.8375}
+construction func_eval acc 1.0000 loss 0.0089; strata {'all': (1.0, 9714), 'local': (1.0, 8560), 'wrap_only': (1.0, 1154), 'local N[1,8)': (1.0, 3063), 'local N[8,32)': (1.0, 4248), 'local N[32,64)': (1.0, 952), 'local N[64,129)': (1.0, 297)}
+max |gate(forward) - gate(table)|: 0.0
+max |q.e (forward) - Z table|: 0.0
+score() acc 0.944294 vs eval.json 0.944294; snap with own gates acc 0.944294 nll 0.164554 vs 0.164554

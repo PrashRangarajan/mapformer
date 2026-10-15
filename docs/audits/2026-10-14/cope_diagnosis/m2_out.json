@@ -1,0 +1,2162 @@
+[
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 900,
+  "a": 0,
+  "run_acc": 0.9442942826987927,
+  "run_cls": "STAL",
+  "regime": "ALIASED",
+  "heads": [
+   [
+    "OFF",
+    2,
+    15.79
+   ],
+   [
+    "ALIASED",
+    2,
+    11.99
+   ]
+  ],
+  "acc_local": 0.9965277777777778,
+  "n_local": 17280,
+  "acc_wrap": 0.5014720314033366,
+  "n_wrap": 2038,
+  "nll_local": 0.013157990887917703,
+  "nll_wrap": 1.0308792232672446
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 900,
+  "a": 1,
+  "run_acc": 0.9442942826987927,
+  "run_cls": "STAL",
+  "regime": "OFF",
+  "heads": [
+   [
+    "OFF",
+    2,
+    15.766
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9959272643836402,
+  "n_local": 17433,
+  "acc_wrap": 0.5147900763358778,
+  "n_wrap": 2096,
+  "nll_local": 0.019948025669428306,
+  "nll_wrap": 1.773086285600008
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 901,
+  "a": 0,
+  "run_acc": 0.948104100702757,
+  "run_cls": "DESC",
+  "regime": "OFF",
+  "heads": [
+   [
+    "OFF",
+    2,
+    16.67
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9913194444444444,
+  "n_local": 17280,
+  "acc_wrap": 0.5667320902845927,
+  "n_wrap": 2038,
+  "nll_local": 0.039305068251808364,
+  "nll_wrap": 1.5941373276982596
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 901,
+  "a": 1,
+  "run_acc": 0.948104100702757,
+  "run_cls": "DESC",
+  "regime": "OFF",
+  "heads": [
+   [
+    "OFF",
+    2,
+    16.61
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9950094648081226,
+  "n_local": 17433,
+  "acc_wrap": 0.5725190839694656,
+  "n_wrap": 2096,
+  "nll_local": 0.02893817654568939,
+  "nll_wrap": 1.5976119001092965
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 902,
+  "a": 0,
+  "run_acc": 0.9519911447473421,
+  "run_cls": "DESC",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9689814814814814,
+  "n_local": 17280,
+  "acc_wrap": 0.8483807654563298,
+  "n_wrap": 2038,
+  "nll_local": 0.08224524930279259,
+  "nll_wrap": 0.41944380863134306
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 902,
+  "a": 1,
+  "run_acc": 0.9519911447473421,
+  "run_cls": "DESC",
+  "regime": "OFF",
+  "heads": [
+   [
+    "noTable",
+    2,
+    null
+   ],
+   [
+    "OFF",
+    2,
+    17.363
+   ]
+  ],
+  "acc_local": 0.9862903688407044,
+  "n_local": 17433,
+  "acc_wrap": 0.6273854961832062,
+  "n_wrap": 2096,
+  "nll_local": 0.04061107996760863,
+  "nll_wrap": 0.9856508289294305
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 903,
+  "a": 0,
+  "run_acc": 0.8700285736350297,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.8863425925925926,
+  "n_local": 17280,
+  "acc_wrap": 0.7026496565260059,
+  "n_wrap": 2038,
+  "nll_local": 0.3813149453058178,
+  "nll_wrap": 1.0725264721737409
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 903,
+  "a": 1,
+  "run_acc": 0.8700285736350297,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.8973211724889577,
+  "n_local": 17433,
+  "acc_wrap": 0.6712786259541985,
+  "n_wrap": 2096,
+  "nll_local": 0.34555102759351924,
+  "nll_wrap": 1.1882822202094911
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 904,
+  "a": 0,
+  "run_acc": 0.7127963549308827,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.7126157407407407,
+  "n_local": 17280,
+  "acc_wrap": 0.4803729146221786,
+  "n_wrap": 2038,
+  "nll_local": 0.9918752503906877,
+  "nll_wrap": 1.8576549881661606
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 904,
+  "a": 1,
+  "run_acc": 0.7127963549308827,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.7680835197613721,
+  "n_local": 17433,
+  "acc_wrap": 0.4804389312977099,
+  "n_wrap": 2096,
+  "nll_local": 0.7711765421961679,
+  "nll_wrap": 1.9227606353020288
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 905,
+  "a": 0,
+  "run_acc": 0.9987643833500657,
+  "run_cls": "SOLV",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "LATTICE",
+    2,
+    12.998
+   ],
+   [
+    "OFF",
+    2,
+    15.13
+   ]
+  ],
+  "acc_local": 0.9998263888888889,
+  "n_local": 17280,
+  "acc_wrap": 0.9955839057899902,
+  "n_wrap": 2038,
+  "nll_local": 0.0006635247621664346,
+  "nll_wrap": 0.011513126541398239
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 905,
+  "a": 1,
+  "run_acc": 0.9987643833500657,
+  "run_cls": "SOLV",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "LATTICE",
+    2,
+    17.01
+   ]
+  ],
+  "acc_local": 0.9979349509550852,
+  "n_local": 17433,
+  "acc_wrap": 1.0,
+  "n_wrap": 2096,
+  "nll_local": 0.0052722597347677974,
+  "nll_wrap": 0.0009672556178553977
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 906,
+  "a": 0,
+  "run_acc": 0.580636857414987,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.6068287037037037,
+  "n_local": 17280,
+  "acc_wrap": 0.4941118743866536,
+  "n_wrap": 2038,
+  "nll_local": 1.2862055854121233,
+  "nll_wrap": 1.9656687507678237
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 906,
+  "a": 1,
+  "run_acc": 0.580636857414987,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.5759765961108243,
+  "n_local": 17433,
+  "acc_wrap": 0.48759541984732824,
+  "n_wrap": 2096,
+  "nll_local": 1.3181279907628456,
+  "nll_wrap": 1.9956891949053939
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 907,
+  "a": 0,
+  "run_acc": 0.7117151903621901,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.7247685185185185,
+  "n_local": 17280,
+  "acc_wrap": 0.5981354268891069,
+  "n_wrap": 2038,
+  "nll_local": 0.8625095732625964,
+  "nll_wrap": 1.3185002814239883
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF",
+  "seed": 907,
+  "a": 1,
+  "run_acc": 0.7117151903621901,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.7101474215568175,
+  "n_local": 17433,
+  "acc_wrap": 0.7275763358778626,
+  "n_wrap": 2096,
+  "nll_local": 0.9668117910815881,
+  "nll_wrap": 1.0616409029774796
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 900,
+  "a": 0,
+  "run_acc": 1.0,
+  "run_cls": "SOLV",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "LATTICE",
+    2,
+    17.001
+   ],
+   [
+    "LATTICE",
+    2,
+    12.999
+   ]
+  ],
+  "acc_local": 1.0,
+  "n_local": 17280,
+  "acc_wrap": 1.0,
+  "n_wrap": 2038,
+  "nll_local": 6.500225057177157e-05,
+  "nll_wrap": 5.792860275783097e-05
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 900,
+  "a": 1,
+  "run_acc": 1.0,
+  "run_cls": "SOLV",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "LATTICE",
+    2,
+    16.998
+   ],
+   [
+    "OFF",
+    2,
+    18.52
+   ]
+  ],
+  "acc_local": 1.0,
+  "n_local": 17433,
+  "acc_wrap": 1.0,
+  "n_wrap": 2096,
+  "nll_local": 2.0122472453979074e-05,
+  "nll_wrap": 0.00027195100467616883
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 901,
+  "a": 0,
+  "run_acc": 0.9641156331248231,
+  "run_cls": "DESC",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "OFF",
+    2,
+    19.351
+   ],
+   [
+    "LATTICE",
+    3,
+    21.0
+   ]
+  ],
+  "acc_local": 0.9965856481481481,
+  "n_local": 17280,
+  "acc_wrap": 0.8738959764474975,
+  "n_wrap": 2038,
+  "nll_local": 0.01018406152662171,
+  "nll_wrap": 0.5249972785439417
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 901,
+  "a": 1,
+  "run_acc": 0.9641156331248231,
+  "run_cls": "DESC",
+  "regime": "OFF",
+  "heads": [
+   [
+    "OFF",
+    2,
+    18.777
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9883554178856192,
+  "n_local": 17433,
+  "acc_wrap": 0.5825381679389313,
+  "n_wrap": 2096,
+  "nll_local": 0.04276429025703047,
+  "nll_wrap": 1.3434107602997825
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 902,
+  "a": 0,
+  "run_acc": 0.969367003887044,
+  "run_cls": "DESC",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "LATTICE",
+    2,
+    16.999
+   ]
+  ],
+  "acc_local": 1.0,
+  "n_local": 17280,
+  "acc_wrap": 1.0,
+  "n_wrap": 2038,
+  "nll_local": 4.2583264760080676e-05,
+  "nll_wrap": 0.0006890545376771935
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 902,
+  "a": 1,
+  "run_acc": 0.969367003887044,
+  "run_cls": "DESC",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "LATTICE",
+    2,
+    11.007
+   ],
+   [
+    "OFF",
+    2,
+    16.439
+   ]
+  ],
+  "acc_local": 0.9970171513795675,
+  "n_local": 17433,
+  "acc_wrap": 0.4570610687022901,
+  "n_wrap": 2096,
+  "nll_local": 0.008303079128844761,
+  "nll_wrap": 1.4716008154854836
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 903,
+  "a": 0,
+  "run_acc": 0.6268695137333642,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.5869791666666667,
+  "n_local": 17280,
+  "acc_wrap": 0.49607458292443574,
+  "n_wrap": 2038,
+  "nll_local": 1.3224638656201984,
+  "nll_wrap": 1.9096177520707498
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 903,
+  "a": 1,
+  "run_acc": 0.6268695137333642,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.6983881144954971,
+  "n_local": 17433,
+  "acc_wrap": 0.4880725190839695,
+  "n_wrap": 2096,
+  "nll_local": 0.9752788969819053,
+  "nll_wrap": 2.0021968890009947
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 904,
+  "a": 0,
+  "run_acc": 0.9997168378510567,
+  "run_cls": "DESC",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "LATTICE",
+    3,
+    10.998
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9999421296296296,
+  "n_local": 17280,
+  "acc_wrap": 0.9985279685966634,
+  "n_wrap": 2038,
+  "nll_local": 0.00012996327332467567,
+  "nll_wrap": 0.0038697524492845715
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 904,
+  "a": 1,
+  "run_acc": 0.9997168378510567,
+  "run_cls": "DESC",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "LATTICE",
+    3,
+    12.997
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9999426375265301,
+  "n_local": 17433,
+  "acc_wrap": 0.9971374045801527,
+  "n_wrap": 2096,
+  "nll_local": 0.0001558745321836079,
+  "nll_wrap": 0.006145096305897065
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 905,
+  "a": 0,
+  "run_acc": 0.997245604551188,
+  "run_cls": "SOLV",
+  "regime": "ALIASED",
+  "heads": [
+   [
+    "ALIASED",
+    2,
+    18.011
+   ],
+   [
+    "OFF",
+    2,
+    15.512
+   ]
+  ],
+  "acc_local": 0.9993055555555556,
+  "n_local": 17280,
+  "acc_wrap": 0.9676153091265947,
+  "n_wrap": 2038,
+  "nll_local": 0.004164925383839272,
+  "nll_wrap": 0.11867809961614745
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 905,
+  "a": 1,
+  "run_acc": 0.997245604551188,
+  "run_cls": "SOLV",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "LATTICE",
+    2,
+    17.004
+   ],
+   [
+    "ALIASED",
+    2,
+    18.006
+   ]
+  ],
+  "acc_local": 0.9996558251591808,
+  "n_local": 17433,
+  "acc_wrap": 0.9890267175572519,
+  "n_wrap": 2096,
+  "nll_local": 0.0011643887774283113,
+  "nll_wrap": 0.021542561156858042
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 906,
+  "a": 0,
+  "run_acc": 0.8410688084021932,
+  "run_cls": "STAL",
+  "regime": "OFF",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "OFF",
+    2,
+    15.665
+   ]
+  ],
+  "acc_local": 0.996875,
+  "n_local": 17280,
+  "acc_wrap": 0.4313052011776251,
+  "n_wrap": 2038,
+  "nll_local": 0.030799755529230942,
+  "nll_wrap": 2.181799636882071
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 906,
+  "a": 1,
+  "run_acc": 0.8410688084021932,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.7785808524063558,
+  "n_local": 17433,
+  "acc_wrap": 0.4747137404580153,
+  "n_wrap": 2096,
+  "nll_local": 0.7575814628413229,
+  "nll_wrap": 1.9256252321336447
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 907,
+  "a": 0,
+  "run_acc": 0.9036476433186604,
+  "run_cls": "DESC",
+  "regime": "OFF",
+  "heads": [
+   [
+    "OFF",
+    2,
+    19.633
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9816550925925925,
+  "n_local": 17280,
+  "acc_wrap": 0.5942100098135427,
+  "n_wrap": 2038,
+  "nll_local": 0.059776420647004114,
+  "nll_wrap": 1.3135532676639863
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Hi",
+  "seed": 907,
+  "a": 1,
+  "run_acc": 0.9036476433186604,
+  "run_cls": "DESC",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9136121149543969,
+  "n_local": 17433,
+  "acc_wrap": 0.47853053435114506,
+  "n_wrap": 2096,
+  "nll_local": 0.2521871524315638,
+  "nll_wrap": 1.4324148146538704
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 900,
+  "a": 0,
+  "run_acc": 1.0,
+  "run_cls": "SOLV",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "LATTICE",
+    2,
+    15.0
+   ]
+  ],
+  "acc_local": 1.0,
+  "n_local": 17280,
+  "acc_wrap": 1.0,
+  "n_wrap": 2038,
+  "nll_local": 0.0001262807876702307,
+  "nll_wrap": 0.0003612908841090774
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 900,
+  "a": 1,
+  "run_acc": 1.0,
+  "run_cls": "SOLV",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "ALIASED",
+    2,
+    21.992
+   ],
+   [
+    "LATTICE",
+    2,
+    17.0
+   ]
+  ],
+  "acc_local": 1.0,
+  "n_local": 17433,
+  "acc_wrap": 1.0,
+  "n_wrap": 2096,
+  "nll_local": 7.91606473296455e-05,
+  "nll_wrap": 0.0005888229077527176
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 901,
+  "a": 0,
+  "run_acc": 0.9429299559811568,
+  "run_cls": "STAL",
+  "regime": "OFF",
+  "heads": [
+   [
+    "OFF",
+    2,
+    16.471
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9972222222222222,
+  "n_local": 17280,
+  "acc_wrap": 0.49656526005888124,
+  "n_wrap": 2038,
+  "nll_local": 0.009296502284331898,
+  "nll_wrap": 2.0840209674115737
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 901,
+  "a": 1,
+  "run_acc": 0.9429299559811568,
+  "run_cls": "STAL",
+  "regime": "OFF",
+  "heads": [
+   [
+    "OFF",
+    2,
+    17.637
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9963288016979293,
+  "n_local": 17433,
+  "acc_wrap": 0.48520992366412213,
+  "n_wrap": 2096,
+  "nll_local": 0.014739822808180142,
+  "nll_wrap": 1.8211262182524528
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 902,
+  "a": 0,
+  "run_acc": 0.968671969521456,
+  "run_cls": "DESC",
+  "regime": "OFF",
+  "heads": [
+   [
+    "noTable",
+    2,
+    null
+   ],
+   [
+    "OFF",
+    2,
+    15.791
+   ]
+  ],
+  "acc_local": 0.993287037037037,
+  "n_local": 17280,
+  "acc_wrap": 0.9371933267909716,
+  "n_wrap": 2038,
+  "nll_local": 0.021456382309867496,
+  "nll_wrap": 0.232679842606516
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 902,
+  "a": 1,
+  "run_acc": 0.968671969521456,
+  "run_cls": "DESC",
+  "regime": "OFF",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "OFF",
+    2,
+    16.268
+   ]
+  ],
+  "acc_local": 0.997189238799977,
+  "n_local": 17433,
+  "acc_wrap": 0.5591603053435115,
+  "n_wrap": 2096,
+  "nll_local": 0.01323736481328975,
+  "nll_wrap": 1.5426636643979683
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 903,
+  "a": 0,
+  "run_acc": 0.6271526758823075,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.6457175925925925,
+  "n_local": 17280,
+  "acc_wrap": 0.48822374877330715,
+  "n_wrap": 2038,
+  "nll_local": 1.0817862646482106,
+  "nll_wrap": 1.9232111470609303
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 903,
+  "a": 1,
+  "run_acc": 0.6271526758823075,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.6424023403889175,
+  "n_local": 17433,
+  "acc_wrap": 0.4823473282442748,
+  "n_wrap": 2096,
+  "nll_local": 1.0840328222279372,
+  "nll_wrap": 1.9384419900144785
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 904,
+  "a": 0,
+  "run_acc": 0.8253146961155302,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.8541087962962963,
+  "n_local": 17280,
+  "acc_wrap": 0.52747791952895,
+  "n_wrap": 2038,
+  "nll_local": 0.5104307955730907,
+  "nll_wrap": 1.8061289841279944
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 904,
+  "a": 1,
+  "run_acc": 0.8253146961155302,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.8670337864968738,
+  "n_local": 17433,
+  "acc_wrap": 0.5305343511450382,
+  "n_wrap": 2096,
+  "nll_local": 0.46117186836783053,
+  "nll_wrap": 1.7661954197869991
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 905,
+  "a": 0,
+  "run_acc": 0.9763945735835458,
+  "run_cls": "DESC",
+  "regime": "ALIASED",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "ALIASED",
+    2,
+    17.997
+   ]
+  ],
+  "acc_local": 0.9813078703703704,
+  "n_local": 17280,
+  "acc_wrap": 0.943081452404318,
+  "n_wrap": 2038,
+  "nll_local": 0.04254664012301466,
+  "nll_wrap": 0.12536521798738098
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 905,
+  "a": 1,
+  "run_acc": 0.9763945735835458,
+  "run_cls": "DESC",
+  "regime": "ALIASED",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "ALIASED",
+    2,
+    17.99
+   ]
+  ],
+  "acc_local": 0.9815292835427064,
+  "n_local": 17433,
+  "acc_wrap": 0.9255725190839694,
+  "n_wrap": 2096,
+  "nll_local": 0.04484369101857342,
+  "nll_wrap": 0.18087039112386713
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 906,
+  "a": 0,
+  "run_acc": 0.7476252992509074,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.7950231481481481,
+  "n_local": 17280,
+  "acc_wrap": 0.4970559371933268,
+  "n_wrap": 2038,
+  "nll_local": 0.7471552158111692,
+  "nll_wrap": 1.84298772772754
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 906,
+  "a": 1,
+  "run_acc": 0.7476252992509074,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "noTable",
+    2,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.7620604600470372,
+  "n_local": 17433,
+  "acc_wrap": 0.4804389312977099,
+  "n_wrap": 2096,
+  "nll_local": 0.8006492578126096,
+  "nll_wrap": 1.8434338345430537
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 907,
+  "a": 0,
+  "run_acc": 0.8485597343424203,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.875636574074074,
+  "n_local": 17280,
+  "acc_wrap": 0.4857703631010795,
+  "n_wrap": 2038,
+  "nll_local": 0.4902541604643521,
+  "nll_wrap": 2.0149030967828496
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_Lo",
+  "seed": 907,
+  "a": 1,
+  "run_acc": 0.8485597343424203,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.8818333046520966,
+  "n_local": 17433,
+  "acc_wrap": 0.7013358778625954,
+  "n_wrap": 2096,
+  "nll_local": 0.46366620209376525,
+  "nll_wrap": 1.1093175631763639
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 900,
+  "a": 0,
+  "run_acc": 0.973151079877468,
+  "run_cls": "DESC",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "LATTICE",
+    2,
+    21.003
+   ]
+  ],
+  "acc_local": 0.9997106481481481,
+  "n_local": 17280,
+  "acc_wrap": 0.9906771344455348,
+  "n_wrap": 2038,
+  "nll_local": 0.0008427341593350893,
+  "nll_wrap": 0.024670598647316216
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 900,
+  "a": 1,
+  "run_acc": 0.973151079877468,
+  "run_cls": "DESC",
+  "regime": "OFF",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "OFF",
+    2,
+    16.504
+   ]
+  ],
+  "acc_local": 0.9958125394367006,
+  "n_local": 17433,
+  "acc_wrap": 0.5486641221374046,
+  "n_wrap": 2096,
+  "nll_local": 0.02446817995193538,
+  "nll_wrap": 1.4845288889111599
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 901,
+  "a": 0,
+  "run_acc": 0.950343655880763,
+  "run_cls": "STAL",
+  "regime": "ALIASED",
+  "heads": [
+   [
+    "OFF",
+    2,
+    17.388
+   ],
+   [
+    "ALIASED",
+    2,
+    22.007
+   ]
+  ],
+  "acc_local": 0.9914351851851851,
+  "n_local": 17280,
+  "acc_wrap": 0.7536800785083415,
+  "n_wrap": 2038,
+  "nll_local": 0.02312229318331639,
+  "nll_wrap": 0.48058941257773596
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 901,
+  "a": 1,
+  "run_acc": 0.950343655880763,
+  "run_cls": "STAL",
+  "regime": "OFF",
+  "heads": [
+   [
+    "OFF",
+    2,
+    16.196
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9885848677794986,
+  "n_local": 17433,
+  "acc_wrap": 0.4847328244274809,
+  "n_wrap": 2096,
+  "nll_local": 0.033620822771200314,
+  "nll_wrap": 1.9744531736598065
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 902,
+  "a": 0,
+  "run_acc": 0.9992277395937911,
+  "run_cls": "DESC",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "LATTICE",
+    2,
+    19.004
+   ]
+  ],
+  "acc_local": 0.9997685185185186,
+  "n_local": 17280,
+  "acc_wrap": 0.9882237487733072,
+  "n_wrap": 2038,
+  "nll_local": 0.0007137442629048383,
+  "nll_wrap": 0.041143749452531346
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 902,
+  "a": 1,
+  "run_acc": 0.9992277395937911,
+  "run_cls": "DESC",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "LATTICE",
+    2,
+    19.0
+   ]
+  ],
+  "acc_local": 1.0,
+  "n_local": 17433,
+  "acc_wrap": 0.9990458015267175,
+  "n_wrap": 2096,
+  "nll_local": 4.217533628432119e-05,
+  "nll_wrap": 0.0026880503089853304
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 903,
+  "a": 0,
+  "run_acc": 0.940098334491724,
+  "run_cls": "STAL",
+  "regime": "OFF",
+  "heads": [
+   [
+    "OFF",
+    2,
+    15.738
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9941550925925926,
+  "n_local": 17280,
+  "acc_wrap": 0.4847890088321884,
+  "n_wrap": 2038,
+  "nll_local": 0.0219029454291698,
+  "nll_wrap": 1.9988085202062986
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 903,
+  "a": 1,
+  "run_acc": 0.940098334491724,
+  "run_cls": "STAL",
+  "regime": "OFF",
+  "heads": [
+   [
+    "OFF",
+    2,
+    15.778
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9965008891183388,
+  "n_local": 17433,
+  "acc_wrap": 0.46803435114503816,
+  "n_wrap": 2096,
+  "nll_local": 0.013799968153411304,
+  "nll_wrap": 1.9779268391096572
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 904,
+  "a": 0,
+  "run_acc": 0.9379617473678791,
+  "run_cls": "DESC",
+  "regime": "OFF",
+  "heads": [
+   [
+    "OFF",
+    2,
+    14.5
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9859953703703703,
+  "n_local": 17280,
+  "acc_wrap": 0.6157998037291462,
+  "n_wrap": 2038,
+  "nll_local": 0.05337393959247307,
+  "nll_wrap": 1.4680801423165024
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 904,
+  "a": 1,
+  "run_acc": 0.9379617473678791,
+  "run_cls": "DESC",
+  "regime": "OFF",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "OFF",
+    2,
+    12.377
+   ]
+  ],
+  "acc_local": 0.9775712728732863,
+  "n_local": 17433,
+  "acc_wrap": 0.5257633587786259,
+  "n_wrap": 2096,
+  "nll_local": 0.07483243052887723,
+  "nll_wrap": 1.683350103138549
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 905,
+  "a": 0,
+  "run_acc": 0.9722758514170978,
+  "run_cls": "DESC",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "LATTICE",
+    2,
+    17.003
+   ],
+   [
+    "OFF",
+    2,
+    17.162
+   ]
+  ],
+  "acc_local": 0.9998263888888889,
+  "n_local": 17280,
+  "acc_wrap": 1.0,
+  "n_wrap": 2038,
+  "nll_local": 0.00032733328742869653,
+  "nll_wrap": 9.553656059748521e-05
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 905,
+  "a": 1,
+  "run_acc": 0.9722758514170978,
+  "run_cls": "DESC",
+  "regime": "OFF",
+  "heads": [
+   [
+    "OFF",
+    2,
+    17.556
+   ],
+   [
+    "OFF",
+    2,
+    16.156
+   ]
+  ],
+  "acc_local": 0.9999426375265301,
+  "n_local": 17433,
+  "acc_wrap": 0.4880725190839695,
+  "n_wrap": 2096,
+  "nll_local": 0.00020771165922270514,
+  "nll_wrap": 2.1148919152906376
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 906,
+  "a": 0,
+  "run_acc": 0.8295878703632198,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.8795138888888889,
+  "n_local": 17280,
+  "acc_wrap": 0.514720314033366,
+  "n_wrap": 2038,
+  "nll_local": 0.40707767210161383,
+  "nll_wrap": 1.7686568239647338
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 906,
+  "a": 1,
+  "run_acc": 0.8295878703632198,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.8636494005621522,
+  "n_local": 17433,
+  "acc_wrap": 0.44083969465648853,
+  "n_wrap": 2096,
+  "nll_local": 0.44730423532665486,
+  "nll_wrap": 1.9736694355962046
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 907,
+  "a": 0,
+  "run_acc": 0.9396607202615389,
+  "run_cls": "STAL",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "OFF",
+    2,
+    16.604
+   ],
+   [
+    "LATTICE",
+    2,
+    17.005
+   ]
+  ],
+  "acc_local": 1.0,
+  "n_local": 17280,
+  "acc_wrap": 0.9995093228655545,
+  "n_wrap": 2038,
+  "nll_local": 2.9226040065316388e-05,
+  "nll_wrap": 0.004892495407991091
+ },
+ {
+  "batch": "WRAP_COPE",
+  "arm": "CoPEF_LoS",
+  "seed": 907,
+  "a": 1,
+  "run_acc": 0.9396607202615389,
+  "run_cls": "STAL",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9203808868238399,
+  "n_local": 17433,
+  "acc_wrap": 0.5443702290076335,
+  "n_wrap": 2096,
+  "nll_local": 0.2895411747760072,
+  "nll_wrap": 1.842603840545608
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 700,
+  "a": 0,
+  "run_acc": 0.9802816176281308,
+  "run_cls": "?",
+  "regime": "ALIASED",
+  "heads": [
+   [
+    "ALIASED",
+    2,
+    13.991
+   ],
+   [
+    "OFF",
+    2,
+    16.259
+   ]
+  ],
+  "acc_local": 0.9976851851851852,
+  "n_local": 17280,
+  "acc_wrap": 0.6879293424926398,
+  "n_wrap": 2038,
+  "nll_local": 0.01064077379063444,
+  "nll_wrap": 0.6153558900230964
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 700,
+  "a": 1,
+  "run_acc": 0.9802816176281308,
+  "run_cls": "?",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "LATTICE",
+    2,
+    21.004
+   ],
+   [
+    "OFF",
+    2,
+    16.224
+   ]
+  ],
+  "acc_local": 0.9997705501061206,
+  "n_local": 17433,
+  "acc_wrap": 0.958969465648855,
+  "n_wrap": 2096,
+  "nll_local": 0.001652925262716738,
+  "nll_wrap": 0.1154850596799866
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 701,
+  "a": 0,
+  "run_acc": 0.9714006229567277,
+  "run_cls": "?",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "LATTICE",
+    2,
+    15.004
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9975694444444444,
+  "n_local": 17280,
+  "acc_wrap": 0.9955839057899902,
+  "n_wrap": 2038,
+  "nll_local": 0.00637161771995608,
+  "nll_wrap": 0.006454263154681555
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 701,
+  "a": 1,
+  "run_acc": 0.9714006229567277,
+  "run_cls": "?",
+  "regime": "OFF",
+  "heads": [
+   [
+    "OFF",
+    2,
+    16.284
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9998279125795905,
+  "n_local": 17433,
+  "acc_wrap": 0.49570610687022904,
+  "n_wrap": 2096,
+  "nll_local": 0.0007594258204139576,
+  "nll_wrap": 1.624156020531957
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 702,
+  "a": 0,
+  "run_acc": 0.9003784075990424,
+  "run_cls": "?",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.890625,
+  "n_local": 17280,
+  "acc_wrap": 0.6501472031403337,
+  "n_wrap": 2038,
+  "nll_local": 0.3872632865649616,
+  "nll_wrap": 1.359340618307462
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 702,
+  "a": 1,
+  "run_acc": 0.9003784075990424,
+  "run_cls": "?",
+  "regime": "OFF",
+  "heads": [
+   [
+    "OFF",
+    2,
+    22.546
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9838237824815006,
+  "n_local": 17433,
+  "acc_wrap": 0.5300572519083969,
+  "n_wrap": 2096,
+  "nll_local": 0.05860061978873873,
+  "nll_wrap": 1.2176073813546122
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 703,
+  "a": 0,
+  "run_acc": 0.8222771385177748,
+  "run_cls": "?",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.7977430555555556,
+  "n_local": 17280,
+  "acc_wrap": 0.6668302257114819,
+  "n_wrap": 2038,
+  "nll_local": 0.7079177227109563,
+  "nll_wrap": 1.2097333378918922
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 703,
+  "a": 1,
+  "run_acc": 0.8222771385177748,
+  "run_cls": "?",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9007055584236793,
+  "n_local": 17433,
+  "acc_wrap": 0.5233778625954199,
+  "n_wrap": 2096,
+  "nll_local": 0.34135054898285344,
+  "nll_wrap": 1.819839216945253
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 704,
+  "a": 0,
+  "run_acc": 0.8255463742373929,
+  "run_cls": "?",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.8512152777777777,
+  "n_local": 17280,
+  "acc_wrap": 0.5088321884200196,
+  "n_wrap": 2038,
+  "nll_local": 0.46267449879544276,
+  "nll_wrap": 1.6458274593615174
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 704,
+  "a": 1,
+  "run_acc": 0.8255463742373929,
+  "run_cls": "?",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.8825216543337349,
+  "n_local": 17433,
+  "acc_wrap": 0.44799618320610685,
+  "n_wrap": 2096,
+  "nll_local": 0.37204485383843555,
+  "nll_wrap": 1.8516718828819607
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 705,
+  "a": 0,
+  "run_acc": 0.8557160141066235,
+  "run_cls": "?",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9092592592592592,
+  "n_local": 17280,
+  "acc_wrap": 0.4842983316977429,
+  "n_wrap": 2038,
+  "nll_local": 0.32609465838512525,
+  "nll_wrap": 1.78083138054893
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 705,
+  "a": 1,
+  "run_acc": 0.8557160141066235,
+  "run_cls": "?",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.8889462513623587,
+  "n_local": 17433,
+  "acc_wrap": 0.49904580152671757,
+  "n_wrap": 2096,
+  "nll_local": 0.3773006292251755,
+  "nll_wrap": 1.87795900376287
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 706,
+  "a": 0,
+  "run_acc": 0.7809612067855948,
+  "run_cls": "?",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.7395833333333334,
+  "n_local": 17280,
+  "acc_wrap": 0.5122669283611384,
+  "n_wrap": 2038,
+  "nll_local": 0.9101429299332415,
+  "nll_wrap": 1.775746512730351
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 706,
+  "a": 1,
+  "run_acc": 0.7809612067855948,
+  "run_cls": "?",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.8872253771582631,
+  "n_local": 17433,
+  "acc_wrap": 0.49952290076335876,
+  "n_wrap": 2096,
+  "nll_local": 0.36238706031775425,
+  "nll_wrap": 1.7879580982666612
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 707,
+  "a": 0,
+  "run_acc": 0.9601256210260767,
+  "run_cls": "?",
+  "regime": "NONE",
+  "heads": [
+   [
+    "nonP",
+    null,
+    null
+   ],
+   [
+    "nonP",
+    null,
+    null
+   ]
+  ],
+  "acc_local": 0.9615162037037037,
+  "n_local": 17280,
+  "acc_wrap": 0.5691854759568205,
+  "n_wrap": 2038,
+  "nll_local": 0.1168691391844263,
+  "nll_wrap": 1.3070958621166289
+ },
+ {
+  "batch": "GENERALITY",
+  "arm": "CoPEF",
+  "seed": 707,
+  "a": 1,
+  "run_acc": 0.9601256210260767,
+  "run_cls": "?",
+  "regime": "LATTICE",
+  "heads": [
+   [
+    "ALIASED",
+    2,
+    20.001
+   ],
+   [
+    "LATTICE",
+    2,
+    16.998
+   ]
+  ],
+  "acc_local": 0.9999426375265301,
+  "n_local": 17433,
+  "acc_wrap": 0.9976145038167938,
+  "n_wrap": 2096,
+  "nll_local": 0.00033478798653928187,
+  "nll_wrap": 0.005832673876168207
+ }
+]

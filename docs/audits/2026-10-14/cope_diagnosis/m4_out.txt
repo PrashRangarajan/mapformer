@@ -1,0 +1,54 @@
+== regime pair (query +1, query -1) vs run accuracy ==
+LATTICE/LATTICE    n  6 acc mean 0.9945 min 0.9694 max 1.0000 | CoPEF:905, CoPEF_Hi:900, CoPEF_Hi:902, CoPEF_Hi:904, CoPEF_Lo:900, CoPEF_LoS:902
+ALIASED/LATTICE    n  2 acc mean 0.9888 min 0.9803 max 0.9972 | CoPEF_Hi:905, CoPEF:700
+ALIASED/ALIASED    n  1 acc mean 0.9764 min 0.9764 max 0.9764 | CoPEF_Lo:905
+LATTICE/OFF        n  4 acc mean 0.9702 min 0.9641 max 0.9732 | CoPEF_Hi:901, CoPEF_LoS:900, CoPEF_LoS:905, CoPEF:701
+LATTICE/NONE       n  2 acc mean 0.9499 min 0.9397 max 0.9601 | CoPEF_LoS:907, CoPEF:707
+OFF/OFF            n  5 acc mean 0.9476 min 0.9380 max 0.9687 | CoPEF:901, CoPEF_Lo:901, CoPEF_Lo:902, CoPEF_LoS:903, CoPEF_LoS:904
+ALIASED/OFF        n  2 acc mean 0.9473 min 0.9443 max 0.9503 | CoPEF:900, CoPEF_LoS:901
+NONE/OFF           n  4 acc mean 0.8993 min 0.8411 max 0.9520 | CoPEF:902, CoPEF_Hi:906, CoPEF_Hi:907, CoPEF:702
+NONE/NONE          n 14 acc mean 0.7618 min 0.5806 max 0.8700 | CoPEF:903, CoPEF:904, CoPEF:906, CoPEF:907, CoPEF_Hi:903, CoPEF_Lo:903, CoPEF_Lo:904, CoPEF_Lo:906, CoPEF_Lo:907, CoPEF_LoS:906, CoPEF:703, CoPEF:704, CoPEF:705, CoPEF:706
+
+== init state (rebuilt) vs final regime ==
+WRA CoPEF     s900 acc 0.944 ALIASED/OFF     | init h0a0: s 1.083 kap -0.624 tau 0.059 h0a1: s 1.015 kap -1.413 tau 0.077 h1a0: s 0.961 kap +0.476 tau 0.092 h1a1: s 1.087 kap +0.496 tau 0.099
+WRA CoPEF     s901 acc 0.948 OFF    /OFF     | init h0a0: s 1.068 kap +0.895 tau 0.041 h0a1: s 1.004 kap -0.416 tau 0.072 h1a0: s 1.029 kap +0.773 tau 0.052 h1a1: s 1.014 kap -0.316 tau 0.051
+WRA CoPEF     s902 acc 0.952 NONE   /OFF     | init h0a0: s 0.963 kap +0.024 tau 0.073 h0a1: s 1.002 kap +0.373 tau 0.061 h1a0: s 1.046 kap -0.050 tau 0.052 h1a1: s 0.930 kap +0.781 tau 0.065
+WRA CoPEF     s903 acc 0.870 NONE   /NONE    | init h0a0: s 0.981 kap -0.313 tau 0.041 h0a1: s 1.035 kap -1.959 tau 0.069 h1a0: s 0.924 kap +0.155 tau 0.049 h1a1: s 0.819 kap +0.916 tau 0.073
+WRA CoPEF     s904 acc 0.713 NONE   /NONE    | init h0a0: s 1.006 kap -0.520 tau 0.045 h0a1: s 1.010 kap -0.391 tau 0.066 h1a0: s 1.030 kap -0.417 tau 0.087 h1a1: s 1.078 kap -0.092 tau 0.048
+WRA CoPEF     s905 acc 0.999 LATTICE/LATTICE | init h0a0: s 0.986 kap +1.513 tau 0.057 h0a1: s 0.938 kap -0.137 tau 0.118 h1a0: s 0.913 kap +0.935 tau 0.064 h1a1: s 1.096 kap +0.583 tau 0.053
+WRA CoPEF     s906 acc 0.581 NONE   /NONE    | init h0a0: s 0.961 kap -0.539 tau 0.064 h0a1: s 0.982 kap +0.210 tau 0.042 h1a0: s 0.890 kap +0.907 tau 0.046 h1a1: s 0.996 kap +1.092 tau 0.106
+WRA CoPEF     s907 acc 0.712 NONE   /NONE    | init h0a0: s 0.957 kap +0.913 tau 0.046 h0a1: s 0.930 kap -0.191 tau 0.048 h1a0: s 0.966 kap +0.226 tau 0.049 h1a1: s 1.174 kap +0.923 tau 0.083
+WRA CoPEF_Hi  s900 acc 1.000 LATTICE/LATTICE | init h0a0: s 1.083 kap -0.624 tau 0.059 h0a1: s 1.015 kap -1.413 tau 0.077 h1a0: s 0.961 kap +0.476 tau 0.092 h1a1: s 1.087 kap +0.496 tau 0.099
+WRA CoPEF_Hi  s901 acc 0.964 LATTICE/OFF     | init h0a0: s 1.068 kap +0.895 tau 0.041 h0a1: s 1.004 kap -0.416 tau 0.072 h1a0: s 1.029 kap +0.773 tau 0.052 h1a1: s 1.014 kap -0.316 tau 0.051
+WRA CoPEF_Hi  s902 acc 0.969 LATTICE/LATTICE | init h0a0: s 0.963 kap +0.024 tau 0.073 h0a1: s 1.002 kap +0.373 tau 0.061 h1a0: s 1.046 kap -0.050 tau 0.052 h1a1: s 0.930 kap +0.781 tau 0.065
+WRA CoPEF_Hi  s903 acc 0.627 NONE   /NONE    | init h0a0: s 0.981 kap -0.313 tau 0.041 h0a1: s 1.035 kap -1.959 tau 0.069 h1a0: s 0.924 kap +0.155 tau 0.049 h1a1: s 0.819 kap +0.916 tau 0.073
+WRA CoPEF_Hi  s904 acc 1.000 LATTICE/LATTICE | init h0a0: s 1.006 kap -0.520 tau 0.045 h0a1: s 1.010 kap -0.391 tau 0.066 h1a0: s 1.030 kap -0.417 tau 0.087 h1a1: s 1.078 kap -0.092 tau 0.048
+WRA CoPEF_Hi  s905 acc 0.997 ALIASED/LATTICE | init h0a0: s 0.986 kap +1.513 tau 0.057 h0a1: s 0.938 kap -0.137 tau 0.118 h1a0: s 0.913 kap +0.935 tau 0.064 h1a1: s 1.096 kap +0.583 tau 0.053
+WRA CoPEF_Hi  s906 acc 0.841 OFF    /NONE    | init h0a0: s 0.961 kap -0.539 tau 0.064 h0a1: s 0.982 kap +0.210 tau 0.042 h1a0: s 0.890 kap +0.907 tau 0.046 h1a1: s 0.996 kap +1.092 tau 0.106
+WRA CoPEF_Hi  s907 acc 0.904 OFF    /NONE    | init h0a0: s 0.957 kap +0.913 tau 0.046 h0a1: s 0.930 kap -0.191 tau 0.048 h1a0: s 0.966 kap +0.226 tau 0.049 h1a1: s 1.174 kap +0.923 tau 0.083
+WRA CoPEF_Lo  s900 acc 1.000 LATTICE/LATTICE | init h0a0: s 1.083 kap -0.624 tau 0.059 h0a1: s 1.015 kap -1.413 tau 0.077 h1a0: s 0.961 kap +0.476 tau 0.092 h1a1: s 1.087 kap +0.496 tau 0.099
+WRA CoPEF_Lo  s901 acc 0.943 OFF    /OFF     | init h0a0: s 1.068 kap +0.895 tau 0.041 h0a1: s 1.004 kap -0.416 tau 0.072 h1a0: s 1.029 kap +0.773 tau 0.052 h1a1: s 1.014 kap -0.316 tau 0.051
+WRA CoPEF_Lo  s902 acc 0.969 OFF    /OFF     | init h0a0: s 0.963 kap +0.024 tau 0.073 h0a1: s 1.002 kap +0.373 tau 0.061 h1a0: s 1.046 kap -0.050 tau 0.052 h1a1: s 0.930 kap +0.781 tau 0.065
+WRA CoPEF_Lo  s903 acc 0.627 NONE   /NONE    | init h0a0: s 0.981 kap -0.313 tau 0.041 h0a1: s 1.035 kap -1.959 tau 0.069 h1a0: s 0.924 kap +0.155 tau 0.049 h1a1: s 0.819 kap +0.916 tau 0.073
+WRA CoPEF_Lo  s904 acc 0.825 NONE   /NONE    | init h0a0: s 1.006 kap -0.520 tau 0.045 h0a1: s 1.010 kap -0.391 tau 0.066 h1a0: s 1.030 kap -0.417 tau 0.087 h1a1: s 1.078 kap -0.092 tau 0.048
+WRA CoPEF_Lo  s905 acc 0.976 ALIASED/ALIASED | init h0a0: s 0.986 kap +1.513 tau 0.057 h0a1: s 0.938 kap -0.137 tau 0.118 h1a0: s 0.913 kap +0.935 tau 0.064 h1a1: s 1.096 kap +0.583 tau 0.053
+WRA CoPEF_Lo  s906 acc 0.748 NONE   /NONE    | init h0a0: s 0.961 kap -0.539 tau 0.064 h0a1: s 0.982 kap +0.210 tau 0.042 h1a0: s 0.890 kap +0.907 tau 0.046 h1a1: s 0.996 kap +1.092 tau 0.106
+WRA CoPEF_Lo  s907 acc 0.849 NONE   /NONE    | init h0a0: s 0.957 kap +0.913 tau 0.046 h0a1: s 0.930 kap -0.191 tau 0.048 h1a0: s 0.966 kap +0.226 tau 0.049 h1a1: s 1.174 kap +0.923 tau 0.083
+WRA CoPEF_LoS s900 acc 0.973 LATTICE/OFF     | init h0a0: s 1.083 kap -0.624 tau 0.059 h0a1: s 1.015 kap -1.413 tau 0.077 h1a0: s 0.961 kap +0.476 tau 0.092 h1a1: s 1.087 kap +0.496 tau 0.099
+WRA CoPEF_LoS s901 acc 0.950 ALIASED/OFF     | init h0a0: s 1.068 kap +0.895 tau 0.041 h0a1: s 1.004 kap -0.416 tau 0.072 h1a0: s 1.029 kap +0.773 tau 0.052 h1a1: s 1.014 kap -0.316 tau 0.051
+WRA CoPEF_LoS s902 acc 0.999 LATTICE/LATTICE | init h0a0: s 0.963 kap +0.024 tau 0.073 h0a1: s 1.002 kap +0.373 tau 0.061 h1a0: s 1.046 kap -0.050 tau 0.052 h1a1: s 0.930 kap +0.781 tau 0.065
+WRA CoPEF_LoS s903 acc 0.940 OFF    /OFF     | init h0a0: s 0.981 kap -0.313 tau 0.041 h0a1: s 1.035 kap -1.959 tau 0.069 h1a0: s 0.924 kap +0.155 tau 0.049 h1a1: s 0.819 kap +0.916 tau 0.073
+WRA CoPEF_LoS s904 acc 0.938 OFF    /OFF     | init h0a0: s 1.006 kap -0.520 tau 0.045 h0a1: s 1.010 kap -0.391 tau 0.066 h1a0: s 1.030 kap -0.417 tau 0.087 h1a1: s 1.078 kap -0.092 tau 0.048
+WRA CoPEF_LoS s905 acc 0.972 LATTICE/OFF     | init h0a0: s 0.986 kap +1.513 tau 0.057 h0a1: s 0.938 kap -0.137 tau 0.118 h1a0: s 0.913 kap +0.935 tau 0.064 h1a1: s 1.096 kap +0.583 tau 0.053
+WRA CoPEF_LoS s906 acc 0.830 NONE   /NONE    | init h0a0: s 0.961 kap -0.539 tau 0.064 h0a1: s 0.982 kap +0.210 tau 0.042 h1a0: s 0.890 kap +0.907 tau 0.046 h1a1: s 0.996 kap +1.092 tau 0.106
+WRA CoPEF_LoS s907 acc 0.940 LATTICE/NONE    | init h0a0: s 0.957 kap +0.913 tau 0.046 h0a1: s 0.930 kap -0.191 tau 0.048 h1a0: s 0.966 kap +0.226 tau 0.049 h1a1: s 1.174 kap +0.923 tau 0.083
+GEN CoPEF     s700 acc 0.980 ALIASED/LATTICE | init h0a0: s 1.050 kap +0.410 tau 0.075 h0a1: s 0.966 kap +0.379 tau 0.038 h1a0: s 1.161 kap -0.542 tau 0.063 h1a1: s 1.140 kap +0.340 tau 0.065
+GEN CoPEF     s701 acc 0.971 LATTICE/OFF     | init h0a0: s 0.886 kap -0.847 tau 0.051 h0a1: s 1.038 kap +0.945 tau 0.062 h1a0: s 0.974 kap +0.859 tau 0.094 h1a1: s 1.021 kap -0.277 tau 0.056
+GEN CoPEF     s702 acc 0.900 NONE   /OFF     | init h0a0: s 1.058 kap +0.215 tau 0.078 h0a1: s 0.970 kap -0.304 tau 0.065 h1a0: s 1.031 kap +0.779 tau 0.108 h1a1: s 0.986 kap -0.145 tau 0.079
+GEN CoPEF     s703 acc 0.822 NONE   /NONE    | init h0a0: s 0.850 kap -0.112 tau 0.117 h0a1: s 0.977 kap -0.684 tau 0.102 h1a0: s 1.037 kap -0.805 tau 0.062 h1a1: s 0.962 kap +0.061 tau 0.053
+GEN CoPEF     s704 acc 0.826 NONE   /NONE    | init h0a0: s 0.978 kap -0.822 tau 0.052 h0a1: s 0.952 kap +1.293 tau 0.073 h1a0: s 1.076 kap -1.072 tau 0.060 h1a1: s 1.003 kap +1.472 tau 0.055
+GEN CoPEF     s705 acc 0.856 NONE   /NONE    | init h0a0: s 1.009 kap -1.816 tau 0.063 h0a1: s 1.036 kap -0.226 tau 0.043 h1a0: s 0.970 kap +0.401 tau 0.054 h1a1: s 0.919 kap +1.459 tau 0.063
+GEN CoPEF     s706 acc 0.781 NONE   /NONE    | init h0a0: s 0.929 kap +1.523 tau 0.117 h0a1: s 1.106 kap -0.488 tau 0.072 h1a0: s 0.979 kap +2.192 tau 0.074 h1a1: s 0.918 kap -0.757 tau 0.062
+GEN CoPEF     s707 acc 0.960 NONE   /LATTICE | init h0a0: s 0.920 kap -0.646 tau 0.044 h0a1: s 0.955 kap +0.006 tau 0.046 h1a0: s 0.978 kap -1.340 tau 0.053 h1a1: s 1.026 kap +0.083 tau 0.074
+
+init over all heads/query types (n 160): kappa mean +0.130 sd 0.779 max|.| 2.192; sigma mean 0.9960 sd 0.0683

@@ -1,0 +1,27 @@
+revisit-pair gaps: all even? True; share of same-cell weight at gap 2: 0.059, gap 4: 0.055; displacement-0 share of same weight 0.801
+V on the sum axis (delta fixed), the same-cell part Vs, the all-keys part Va, and V = Vs - Va:
+ delta 0.000: 0.00:+1.000/+1.000/-0.000  0.26:+0.067/+0.017/+0.050  0.52:-0.036/-0.006/-0.029  0.79:+0.003/-0.011/+0.014  1.05:-0.039/-0.010/-0.029  1.31:-0.037/-0.010/-0.027  1.57:-0.019/-0.010/-0.009  1.83:-0.031/-0.010/-0.021  2.09:-0.041/-0.011/-0.030  2.36:-0.020/-0.011/-0.009  2.62:-0.034/-0.010/-0.023  2.88:-0.041/-0.011/-0.031  3.14:-0.013/-0.011/-0.003  3.40:-0.041/-0.011/-0.031  3.67:-0.034/-0.011/-0.023  3.93:-0.020/-0.011/-0.009  4.19:-0.041/-0.011/-0.031  4.45:-0.031/-0.011/-0.021  4.71:-0.019/-0.011/-0.009  4.97:-0.037/-0.010/-0.027  5.24:-0.039/-0.010/-0.029  5.50:+0.003/-0.010/+0.013  5.76:-0.036/-0.010/-0.025  6.02:+0.067/-0.010/+0.078  6.28:+1.000/-0.010/+1.010
+ delta 0.100: 0.00:+0.614/+0.447/+0.167  0.26:+0.035/+0.043/-0.008  0.52:-0.013/-0.001/-0.012  0.79:-0.032/-0.008/-0.024  1.05:-0.033/-0.009/-0.024  1.31:-0.014/-0.010/-0.004  1.57:-0.045/-0.010/-0.035  1.83:-0.020/-0.010/-0.010  2.09:-0.020/-0.010/-0.010  2.36:-0.046/-0.010/-0.036  2.62:-0.021/-0.010/-0.011  2.88:-0.029/-0.010/-0.019  3.14:-0.041/-0.011/-0.030  3.40:-0.029/-0.011/-0.019  3.67:-0.022/-0.011/-0.011  3.93:-0.046/-0.011/-0.036  4.19:-0.020/-0.011/-0.010  4.45:-0.020/-0.011/-0.010  4.71:-0.045/-0.010/-0.034  4.97:-0.014/-0.010/-0.004  5.24:-0.033/-0.010/-0.022  5.50:-0.032/-0.010/-0.021  5.76:-0.013/-0.010/-0.002  6.02:+0.035/-0.010/+0.045  6.28:+0.614/-0.010/+0.624
+ delta 0.196: 0.00:+1.000/+0.215/+0.785  0.26:+0.067/+0.091/-0.024  0.52:-0.036/+0.019/-0.055  0.79:+0.003/+0.001/+0.002  1.05:-0.039/-0.006/-0.033  1.31:-0.037/-0.009/-0.029  1.57:-0.019/-0.010/-0.010  1.83:-0.031/-0.010/-0.021  2.09:-0.041/-0.010/-0.031  2.36:-0.020/-0.010/-0.010  2.62:-0.034/-0.010/-0.023  2.88:-0.041/-0.010/-0.031  3.14:-0.013/-0.010/-0.003  3.40:-0.041/-0.011/-0.031  3.67:-0.034/-0.011/-0.023  3.93:-0.020/-0.010/-0.009  4.19:-0.041/-0.010/-0.031  4.45:-0.031/-0.010/-0.021  4.71:-0.019/-0.010/-0.009  4.97:-0.037/-0.010/-0.027  5.24:-0.039/-0.010/-0.029  5.50:+0.003/-0.010/+0.013  5.76:-0.036/-0.010/-0.025  6.02:+0.067/-0.010/+0.078  6.28:+1.000/-0.010/+1.010
+dV/d(sum) along a+ = a- + 2*delta (sum S; positive = flows up toward the wrap at S = 2 pi):
+ delta 0.02: --++-+-++-+-++-+-+-+--+-+-++-+-+--++   (S from 0.2 to 2pi-0.2 in 36 steps)
+ delta 0.1: --+-+-+--+-+-+--+-+-++-+-+-++-+-+-++   (S from 0.2 to 2pi-0.2 in 36 steps)
+ delta 0.3: --+-+-+--+-+-+--+-+-++-+-+-++-+-+-++   (S from 0.2 to 2pi-0.2 in 36 steps)
+--- gradient flow on V (plain gradient); per start, 40 channels: share ending cancelled (|wrap(a+ + a-)| < 0.1 with |wrap(a+)| > 0.05), of those by wrap (|raw sum| > pi), and share ending at the wall/origin
+ signed absmag (small, same dir: |N(0,0.6)|)   cancelled 0.12  by wrap 0.00  opposite-sign 0.12  at wall/origin 0.00  init sum>pi 0.00
+ signed default signed (small, N(0,0.6))       cancelled 0.47  by wrap 0.00  opposite-sign 0.55  at wall/origin 0.00  init sum>pi 0.00
+ signed mid U(0.9,1.5)                         cancelled 0.00  by wrap nan  opposite-sign 0.00  at wall/origin 0.00  init sum>pi 0.00
+ signed high U(1.7,4.5)                        cancelled 0.28  by wrap 1.00  opposite-sign 0.00  at wall/origin 0.00  init sum>pi 1.00
+ abs    absmag (small, same dir: |N(0,0.6)|)   cancelled 0.00  by wrap nan  opposite-sign 0.00  at wall/origin 0.12  init sum>pi 0.00
+ abs    default signed (small, N(0,0.6))       cancelled 0.00  by wrap nan  opposite-sign 0.00  at wall/origin 0.23  init sum>pi 0.00
+ abs    mid U(0.9,1.5)                         cancelled 0.00  by wrap nan  opposite-sign 0.00  at wall/origin 0.00  init sum>pi 0.00
+ abs    high U(1.7,4.5)                        cancelled 0.28  by wrap 1.00  opposite-sign 0.00  at wall/origin 0.00  init sum>pi 1.00
+--- gradient flow on V (sign-normalised (Adam-like)); per start, 40 channels: share ending cancelled (|wrap(a+ + a-)| < 0.1 with |wrap(a+)| > 0.05), of those by wrap (|raw sum| > pi), and share ending at the wall/origin
+ signed absmag (small, same dir: |N(0,0.6)|)   cancelled 0.10  by wrap 0.00  opposite-sign 0.12  at wall/origin 0.03  init sum>pi 0.00
+ signed default signed (small, N(0,0.6))       cancelled 0.50  by wrap 0.00  opposite-sign 0.55  at wall/origin 0.00  init sum>pi 0.00
+ signed mid U(0.9,1.5)                         cancelled 0.00  by wrap nan  opposite-sign 0.00  at wall/origin 0.00  init sum>pi 0.00
+ signed high U(1.7,4.5)                        cancelled 0.28  by wrap 1.00  opposite-sign 0.00  at wall/origin 0.00  init sum>pi 1.00
+ abs    absmag (small, same dir: |N(0,0.6)|)   cancelled 0.00  by wrap nan  opposite-sign 0.00  at wall/origin 0.12  init sum>pi 0.00
+ abs    default signed (small, N(0,0.6))       cancelled 0.00  by wrap nan  opposite-sign 0.00  at wall/origin 0.23  init sum>pi 0.00
+ abs    mid U(0.9,1.5)                         cancelled 0.00  by wrap nan  opposite-sign 0.00  at wall/origin 0.00  init sum>pi 0.00
+ abs    high U(1.7,4.5)                        cancelled 0.28  by wrap 1.00  opposite-sign 0.00  at wall/origin 0.00  init sum>pi 1.00

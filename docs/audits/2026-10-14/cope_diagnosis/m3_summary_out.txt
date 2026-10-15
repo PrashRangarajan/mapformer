@@ -1,0 +1,17 @@
+== OFF, no NONE: n 11 ==
+  S0: acc mean 0.9567 (min 0.940) | local 0.9950 | wrap-only 0.629 | nll 0.153 | acc >= 0.99: 0/11
+  S1: acc mean 0.9581 (min 0.942) | local 0.9966 | wrap-only 0.628 | nll 0.148 | acc >= 0.99: 0/11
+  S2: acc mean 0.9820 (min 0.929) | local 0.9919 | wrap-only 0.897 | nll 0.063 | acc >= 0.99: 3/11
+  S3: acc mean 0.9804 (min 0.929) | local 0.9903 | wrap-only 0.896 | nll 0.068 | acc >= 0.99: 4/11
+  S3 - S0 acc: mean +0.0237, positive in 9/11; per run: CoPEF:900 +0.047, CoPEF:901 +0.040, CoPEF_Hi:901 +0.024, CoPEF_Lo:901 +0.038, CoPEF_Lo:902 +0.026, CoPEF_LoS:900 +0.026, CoPEF_LoS:901 +0.038, CoPEF_LoS:903 +0.039, CoPEF_LoS:904 -0.001, CoPEF_LoS:905 +0.027, CoPEF:701 -0.042
+  path barrier (max interior NLL - max(end NLLs)) > 0 in 11/11; CoPEF:900 0.166->1.140->0.029, CoPEF:901 0.190->0.416->0.057, CoPEF_Hi:901 0.104->0.508->0.038, CoPEF_Lo:901 0.212->0.796->0.067, CoPEF_Lo:902 0.107->0.485->0.023, CoPEF_LoS:900 0.094->0.218->0.009, CoPEF_LoS:901 0.142->0.733->0.036, CoPEF_LoS:903 0.221->0.582->0.066, CoPEF_LoS:904 0.200->1.429->0.194, CoPEF_LoS:905 0.112->0.244->0.000, CoPEF:701 0.082->0.254->0.226
+== has NONE: n 20 ==
+  S0: acc mean 0.8109 (min 0.582) | local 0.8395 | wrap-only 0.566 | nll 0.640 | acc >= 0.99: 0/20
+  S1: acc mean 0.8112 (min 0.582) | local 0.8399 | wrap-only 0.566 | nll 0.639 | acc >= 0.99: 0/20
+  S2: acc mean 0.8107 (min 0.582) | local 0.8359 | wrap-only 0.595 | nll 0.640 | acc >= 0.99: 0/20
+  S3: acc mean 0.8141 (min 0.582) | local 0.8393 | wrap-only 0.598 | nll 0.630 | acc >= 0.99: 0/20
+== LATTICE/ALIASED only: n 9 ==
+  S0: acc mean 0.9913 (min 0.969) | local 0.9976 | wrap-only 0.938 | nll 0.022 | acc >= 0.99: 6/9
+  S1: acc mean 0.9938 (min 0.978) | local 0.9978 | wrap-only 0.960 | nll 0.015 | acc >= 0.99: 7/9
+  S2: acc mean 0.9771 (min 0.839) | local 0.9877 | wrap-only 0.887 | nll 0.082 | acc >= 0.99: 7/9
+  S3: acc mean 0.9812 (min 0.839) | local 0.9897 | wrap-only 0.908 | nll 0.071 | acc >= 0.99: 8/9

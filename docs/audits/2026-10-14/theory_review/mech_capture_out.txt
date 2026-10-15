@@ -1,0 +1,3 @@
+AO_high |S0-2pi| in [0,0.25): n=88 canc 0.34 | |S0-2pi| in [0.25,0.5): n=84 canc 0.21 | |S0-2pi| in [0.5,1.0): n=126 canc 0.25 | |S0-2pi| in [1.0,1.5): n=103 canc 0.19 | |S0-2pi| in [1.5,2.0): n=67 canc 0.19 | |S0-2pi| in [2.0,3.0): n=37 canc 0.08
+SO_high |S0-2pi| in [0,0.25): n=88 canc 0.43 | |S0-2pi| in [0.25,0.5): n=84 canc 0.52 | |S0-2pi| in [0.5,1.0): n=125 canc 0.42 | |S0-2pi| in [1.0,1.5): n=103 canc 0.21 | |S0-2pi| in [1.5,2.0): n=67 canc 0.22 | |S0-2pi| in [2.0,3.0): n=37 canc 0.11
+1-channel linear flow (abs, plain GD) [0,0.25): n=14 canc 1.00 | [0.25,0.5): n=25 canc 1.00 | [0.5,1.0): n=26 canc 0.00 | [1.0,1.5): n=20 canc 0.00 | [1.5,2.0): n=22 canc 0.00 | [2.0,3.0): n=13 canc 0.00

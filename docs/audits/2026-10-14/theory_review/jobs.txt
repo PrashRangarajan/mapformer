@@ -1,0 +1,44 @@
+--mode signed --init absmag --seed 10 --log-beta0 -4 --out toy_runs/signed_absmag_lb-4_s10.json
+--mode abs --init absmag --seed 10 --log-beta0 -4 --out toy_runs/abs_absmag_lb-4_s10.json
+--mode signed --init absmag --seed 11 --log-beta0 -4 --out toy_runs/signed_absmag_lb-4_s11.json
+--mode abs --init absmag --seed 11 --log-beta0 -4 --out toy_runs/abs_absmag_lb-4_s11.json
+--mode signed --init absmag --seed 12 --log-beta0 -4 --out toy_runs/signed_absmag_lb-4_s12.json
+--mode abs --init absmag --seed 12 --log-beta0 -4 --out toy_runs/abs_absmag_lb-4_s12.json
+--mode signed --init absmag --seed 13 --log-beta0 -4 --out toy_runs/signed_absmag_lb-4_s13.json
+--mode abs --init absmag --seed 13 --log-beta0 -4 --out toy_runs/abs_absmag_lb-4_s13.json
+--mode signed --init absmag --seed 14 --log-beta0 -4 --out toy_runs/signed_absmag_lb-4_s14.json
+--mode abs --init absmag --seed 14 --log-beta0 -4 --out toy_runs/abs_absmag_lb-4_s14.json
+--mode signed --init absmag --seed 15 --log-beta0 -4 --out toy_runs/signed_absmag_lb-4_s15.json
+--mode abs --init absmag --seed 15 --log-beta0 -4 --out toy_runs/abs_absmag_lb-4_s15.json
+--mode signed --init random --seed 10 --log-beta0 -4 --out toy_runs/signed_random_lb-4_s10.json
+--mode abs --init random --seed 10 --log-beta0 -4 --out toy_runs/abs_random_lb-4_s10.json
+--mode signed --init random --seed 11 --log-beta0 -4 --out toy_runs/signed_random_lb-4_s11.json
+--mode abs --init random --seed 11 --log-beta0 -4 --out toy_runs/abs_random_lb-4_s11.json
+--mode signed --init random --seed 12 --log-beta0 -4 --out toy_runs/signed_random_lb-4_s12.json
+--mode abs --init random --seed 12 --log-beta0 -4 --out toy_runs/abs_random_lb-4_s12.json
+--mode signed --init random --seed 13 --log-beta0 -4 --out toy_runs/signed_random_lb-4_s13.json
+--mode abs --init random --seed 13 --log-beta0 -4 --out toy_runs/abs_random_lb-4_s13.json
+--mode abs --init band --seed 20 --wd 0.05 --out toy_runs/abs_band_wd05_s20.json
+--mode abs --init band --seed 20 --wd 0 --out toy_runs/abs_band_wd0_s20.json
+--mode abs --init band --seed 20 --wd 0 --freeze-omega --out toy_runs/abs_band_wd0_fo_s20.json
+--mode abs --init band --seed 20 --wd 0.05 --freeze-omega --out toy_runs/abs_band_wd05_fo_s20.json
+--mode signed --init band --seed 20 --wd 0.05 --out toy_runs/signed_band_wd05_s20.json
+--mode signed --init band --seed 20 --wd 0 --out toy_runs/signed_band_wd0_s20.json
+--mode abs --init band --seed 21 --wd 0.05 --out toy_runs/abs_band_wd05_s21.json
+--mode abs --init band --seed 21 --wd 0 --out toy_runs/abs_band_wd0_s21.json
+--mode abs --init band --seed 21 --wd 0 --freeze-omega --out toy_runs/abs_band_wd0_fo_s21.json
+--mode abs --init band --seed 21 --wd 0.05 --freeze-omega --out toy_runs/abs_band_wd05_fo_s21.json
+--mode signed --init band --seed 21 --wd 0.05 --out toy_runs/signed_band_wd05_s21.json
+--mode signed --init band --seed 21 --wd 0 --out toy_runs/signed_band_wd0_s21.json
+--mode abs --init band --seed 22 --wd 0.05 --out toy_runs/abs_band_wd05_s22.json
+--mode abs --init band --seed 22 --wd 0 --out toy_runs/abs_band_wd0_s22.json
+--mode abs --init band --seed 22 --wd 0 --freeze-omega --out toy_runs/abs_band_wd0_fo_s22.json
+--mode abs --init band --seed 22 --wd 0.05 --freeze-omega --out toy_runs/abs_band_wd05_fo_s22.json
+--mode signed --init band --seed 22 --wd 0.05 --out toy_runs/signed_band_wd05_s22.json
+--mode signed --init band --seed 22 --wd 0 --out toy_runs/signed_band_wd0_s22.json
+--mode abs --init band --seed 23 --wd 0.05 --out toy_runs/abs_band_wd05_s23.json
+--mode abs --init band --seed 23 --wd 0 --out toy_runs/abs_band_wd0_s23.json
+--mode abs --init band --seed 23 --wd 0 --freeze-omega --out toy_runs/abs_band_wd0_fo_s23.json
+--mode abs --init band --seed 23 --wd 0.05 --freeze-omega --out toy_runs/abs_band_wd05_fo_s23.json
+--mode signed --init band --seed 23 --wd 0.05 --out toy_runs/signed_band_wd05_s23.json
+--mode signed --init band --seed 23 --wd 0 --out toy_runs/signed_band_wd0_s23.json

@@ -1,0 +1,46 @@
+CoPE on the ring: predictions written BEFORE any learned gate, table or stratified accuracy was measured.
+Written 2026-10-14 18:05 PDT. Inputs read so far: code (model_mono_baselines.py, environment_cancel.py,
+train_cancel.py, train_ring_variant.py), WRAP_COPE_ANALYSIS.txt (per-seed accuracy and class only),
+GENERALITY eval.json accuracies, generality_audit finding 1, the c3.py construction. No checkpoint opened.
+
+Structural facts (derivations in COPE_DIAGNOSIS.md, Sec. 1):
+ F1. One layer, no other position signal: q_i, k_j are functions of token identity only. Every gate is a table
+     G[h, a, kappa] = sigmoid(q_{a,h}.k_{kappa,h}/8) over (head h, query type a, key type kappa); zero variance
+     across queries of a type. The revisit targets are predicted at ACTION-token queries (a in {+1, -1}).
+ F2. For obs key o_s and query a_t (N = t - s moves, n+ / n- of them +1 / -1, D = n+ - n-):
+       p = n+ alpha_a + n- beta_a + sum_u eps_u,  alpha_a = G[a,+] + cbar_a, beta_a = G[a,-] + cbar_a,
+     eps_u = deviation of obs gate from its mean cbar_a. Equivalently p = N sigma + D delta,
+     sigma = (alpha+beta)/2, delta = (alpha-beta)/2.
+ F3. The same logit is the gate and the content score (gate = sigmoid(content logit)).
+ F4. Exact solution family (period-P table, wrap-consistent, injective on Z_32): alpha + beta = P,
+     alpha = k P / 32 with k odd. Gates lie in (0,1) so alpha+beta < 4: P = 2 or 3 only. P = 2 means the four
+     gates average 1/2 -- which is the init (q.k ~ 0). Nearest solutions to init: |alpha - beta| = 1/8 (k = 15, 17).
+ F5. Parity is free: with sigma = 1, any delta, p mod 2 = D mod 2 + D delta. At delta = 0 (init gates) a period-2
+     table separates odd-D keys from returns but not even-D keys (parity + recency regime).
+
+Predictions (for every run; SOLVED = registered class):
+ P1 (structural check) gate variance across queries of one type = 0 to float precision. [a check, cannot fail
+    unless the probe is wrong]
+ P2 sigma_a,h = 1 (p of a D = 0 return on an even knot) in the head(s) that carry position, in ALL runs (solved
+    or not): |sigma - 1| < 1/(2 Nbar) ~ 0.01 at least. This is why every arm's table ends period-2.
+ P3 SOLVED runs: in at least one head, for each query type, delta on the lattice: |2 delta| = |alpha-beta| near
+    odd/16 (predicted 1/8, i.e. k = 15 or 17), within ~1e-3, and |sigma - 1| < ~1e-3.
+    Unsolved runs: delta OFF the lattice -- either ~0 (parity regime) or between 0 and 1/16 (a local, non-wrapping map).
+ P4 Obs-gate spread across the 17 observation types (incl. blank) is small in SOLVED runs:
+    sd tau < 1/(32 sqrt(N)) ~ 0.003-0.004; larger in unsolved runs.
+ P5 Effective tables z_{a,h}(p) = q_{a,h}.e(p) have a period-2 component (peak on even knots) in ALL runs, solved or
+    not.
+ P6 Error strata: unsolved runs with off-lattice delta fail mostly on WRAP-ONLY revisits (every earlier visit of the
+    cell at unwrapped |D| >= 32) and on revisits with large N; runs at delta ~ 0 fail on revisits where even-D
+    competitors exist. Solved runs: flat across strata.
+ P7 Gate-snap (eval-only intervention: replace each run's gate table by the nearest lattice point -- alpha+beta = 2,
+    alpha - beta = +/- 1/8 -- leaving content logits, table and everything else): accuracy rises toward 1 in
+    unsolved runs whose table is a clean period-2 triangle. If it does not, the obstacle is not (only) the gates.
+ P8 Constructed landscape (theory check, no learned weights): along delta from 0 to 1/16 at fixed table amplitude,
+    wrap-only revisits are lost around delta = 1/32 (32 delta = 1 mod 2) while local revisits improve, so the loss
+    along this path has a barrier between a small-delta local optimum and the lattice point.
+
+Comparison with the rotary obstacle (stated before data): NOT the same obstacle. Opposite-move cancellation
+(alpha + beta = one period) is satisfied AT INIT in CoPE (gates 1/2); the rotary "no path through zero" problem
+has no analogue. What CoPE lacks is the RING wrap: 32 alpha = 0 mod P with a period P <= 3, forcing the map into
+1/16-count fractional offsets on top of a parity code (a high-frequency code with gate precision ~1/(16 N)).

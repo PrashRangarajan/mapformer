@@ -1,0 +1,10 @@
+abs_absmag_lb-4          n=6 SOLVED(acc>=0.99) 0/6 acc median 0.000 [0.00,0.58] wrap share end 0.07 (step500 0.03) opp-sign end 0.00 median |sum err| 0.237 init loss 3.30
+abs_band_wd05_fo         n=4 SOLVED(acc>=0.99) 4/4 acc median 1.000 [1.00,1.00] wrap share end 0.54 (step500 0.92) opp-sign end 0.00 median |sum err| 0.070 init loss 1.24
+abs_band_wd05            n=4 SOLVED(acc>=0.99) 4/4 acc median 1.000 [1.00,1.00] wrap share end 0.43 (step500 0.64) opp-sign end 0.00 median |sum err| 0.199 init loss 1.24
+abs_band_wd0_fo          n=4 SOLVED(acc>=0.99) 4/4 acc median 1.000 [1.00,1.00] wrap share end 0.99 (step500 0.99) opp-sign end 0.00 median |sum err| 0.001 init loss 1.24
+abs_band_wd0             n=4 SOLVED(acc>=0.99) 4/4 acc median 1.000 [1.00,1.00] wrap share end 0.99 (step500 1.00) opp-sign end 0.00 median |sum err| 0.012 init loss 1.24
+abs_random_lb-4          n=4 SOLVED(acc>=0.99) 0/4 acc median 0.000 [0.00,0.57] wrap share end 0.08 (step500 0.03) opp-sign end 0.00 median |sum err| 0.263 init loss 3.30
+signed_absmag_lb-4       n=6 SOLVED(acc>=0.99) 0/6 acc median 0.524 [0.35,0.97] wrap share end 0.52 (step500 0.48) opp-sign end 0.52 median |sum err| 0.000 init loss 3.30
+signed_band_wd05         n=4 SOLVED(acc>=0.99) 4/4 acc median 1.000 [1.00,1.00] wrap share end 0.98 (step500 1.00) opp-sign end 1.00 median |sum err| 0.002 init loss 1.24
+signed_band_wd0          n=4 SOLVED(acc>=0.99) 4/4 acc median 1.000 [1.00,1.00] wrap share end 1.00 (step500 1.00) opp-sign end 1.00 median |sum err| 0.000 init loss 1.24
+signed_random_lb-4       n=4 SOLVED(acc>=0.99) 2/4 acc median 0.992 [0.81,1.00] wrap share end 0.62 (step500 0.59) opp-sign end 0.67 median |sum err| 0.000 init loss 3.29
