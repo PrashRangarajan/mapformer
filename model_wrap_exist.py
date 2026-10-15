@@ -30,11 +30,19 @@ def _ao_variant(mode):
         def step_table(self):
             """(V, H, nb) per-token step before omega: the actions' steps (after the sign constraint), 0 otherwise."""
             e = self.token_emb.weight
-            ea = e[self.act].detach() if getattr(self, "freeze_latent", False) else e[self.act]   # ACCOUNTS T2
+            ea = self.frozen_act_emb if getattr(self, "freeze_latent", False) else e[self.act]   # ACCOUNTS T2
             v = self.action_to_lie(ea.view(1, len(self.act), -1))[0]            # (A, H, nb)
             out = torch.zeros(e.shape[0], *v.shape[1:], device=e.device, dtype=v.dtype)
             out[self.act] = v
             return out
+
+        def freeze_move_latents(self):
+            """ACCOUNTS T2 (Amendment 1): the move latents z = W_in e(move) become constants -- a buffer copy of the move
+            embeddings feeds the step path (the embeddings still train through the content path) and W_in gets no grad (so
+            AdamW applies no decay to it either)."""
+            self.register_buffer("frozen_act_emb", self.token_emb.weight[self.act].detach().clone(), persistent=True)
+            self.freeze_latent = True
+            self.action_to_lie.w_in.weight.requires_grad_(False)
 
         def delta_of(self, tokens):
             return self.step_table()[tokens]
@@ -90,6 +98,33 @@ def wrap_share(m, big=0.05, tol=0.1, pairs=((0, 1),)):
     if w.numel() == 0:
         return float("nan"), float("nan")
     return float(w.median()), float((w < tol).double().mean())
+
+
+@torch.no_grad()
+def usage_weights(m, tokens, action_offset=0, n_actions=2):
+    """ACCOUNTS Amendment 1 (eval-only): per rotary channel (head h, block c -> index h * nb + c, the order of action_angles),
+    mean |q_c| over move-token positions (the queries that predict observations) times mean |k_c| over observation-token
+    positions (the keys), from the first layer's projections in eval mode. A channel whose q or k slice is ~0 cannot
+    influence the score, whatever its angle."""
+    m.eval(); layer = m.layers[0]
+    h = layer.norm1(m.token_emb(tokens)); B, T, _ = h.shape
+    Q = layer.q_proj(h).view(B, T, layer.n_heads, layer.d_head)
+    K = layer.k_proj(h).view(B, T, layer.n_heads, layer.d_head)
+    qn = torch.sqrt(Q[..., 0::2] ** 2 + Q[..., 1::2] ** 2); kn = torch.sqrt(K[..., 0::2] ** 2 + K[..., 1::2] ** 2)  # (B,T,H,nb)
+    is_act = (tokens >= action_offset) & (tokens < action_offset + n_actions)
+    wq = qn[is_act].mean(0); wk = kn[~is_act].mean(0)                  # (H, nb)
+    return (wq * wk).reshape(-1)
+
+
+def wrap_share_weighted(m, w, big=0.05, tol=0.1, pairs=((0, 1),)):
+    """Usage-weighted cancelling share: sum of w over cancelling channels / sum of w, over (pair, channel) with
+    |wrap(angle(a))| > big."""
+    A = action_angles(m).double(); num = den = 0.0
+    for i, j in pairs:
+        sel = torch.angle(torch.exp(1j * A[i])).abs() > big
+        canc = torch.angle(torch.exp(1j * (A[i] + A[j]))).abs() < tol
+        num += float((w.double() * (sel & canc)).sum()); den += float((w.double() * sel).sum())
+    return num / den if den > 0 else float("nan")
 
 
 MODES = ("min", "gauge", "balanced", "signed_balanced")

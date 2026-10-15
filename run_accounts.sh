@@ -16,8 +16,8 @@ GUARD=(train_wrap_exist.py train_wrap_mech.py train_ring_variant.py model_wrap_e
        train.py data_parallel.py environment.py analyze_accounts.py analyze_wrap_mech.py stats_core.py lib_driver.sh
        run_accounts.sh rescore_hook.py)
 echo "start $(date)" >> "$LOG"
-drv_md5_guard "$R" "${GUARD[@]}" || exit 1
 (cd "$REPO" && git status --porcelain --untracked-files=no | grep -q .) && { _drv_log "REFUSED: tracked files modified (commit first)"; exit 1; }
+drv_md5_guard "$R" "${GUARD[@]}" || exit 1
 _drv_log "code version: $(cd "$REPO" && git rev-parse HEAD) clean; GPUs $DRV_GPUS"
 running(){ ps -u "$USER" -o comm=,args= | awk -v o="--output-dir $1" '$1=="python3" && index($0" ", o" ")' | grep -q .; }
 go(){  # out-dir, then the module and its args
@@ -37,8 +37,10 @@ done
 for S in 1000 1001 1002 1003 1004 1005 1006 1007; do for A in SO_same SO_absmag SO_same_fz SO_absmag_fz; do
   go "$R/t2/${A}_s$S" mapformer.train_wrap_mech --arm "$A" --seed "$S"
 done; done
-for S in 1100 1101 1102 1103 1104 1105 1106 1107; do
-  for A in CoPEF Signed_r4 RoPE; do go "$R/t4/${A}_line_s$S" mapformer.train_ring_variant --arm "$A" --p-plus 0.5 --size 256 --seed "$S"; done
+for S in 1100 1101 1102 1103 1104 1105 1106 1107 1108 1109 1110 1111 1112 1113 1114 1115; do
+  if [ "$S" -le 1107 ]; then for A in Signed_r4 RoPE; do
+    go "$R/t4/${A}_line_s$S" mapformer.train_ring_variant --arm "$A" --p-plus 0.5 --size 256 --seed "$S"; done; fi
+  go "$R/t4/CoPEF_line_s$S" mapformer.train_ring_variant --arm CoPEF --p-plus 0.5 --size 256 --seed "$S"
   go "$R/t4/CoPEF_ring_s$S" mapformer.train_ring_variant --arm CoPEF --p-plus 0.5 --size 32 --seed "$S"
 done
 sleep 60
@@ -48,13 +50,13 @@ for S in 600 601 602 603 604 605 606 607; do for A in AO_bal SO_bal; do for W in
   REQ+=("$R/t1/${A}_${W}_s$S/eval.json" "$R/t1/${A}_${W}_s$S/$A.pt"); done; done; done
 for S in 1000 1001 1002 1003 1004 1005 1006 1007; do for A in SO_same SO_absmag SO_same_fz SO_absmag_fz; do
   REQ+=("$R/t2/${A}_s$S/eval.json" "$R/t2/${A}_s$S/$A.pt"); done; done
-for S in 1100 1101 1102 1103 1104 1105 1106 1107; do
-  for A in CoPEF Signed_r4 RoPE; do REQ+=("$R/t4/${A}_line_s$S/eval.json" "$R/t4/${A}_line_s$S/$A.pt"); done
-  REQ+=("$R/t4/CoPEF_ring_s$S/eval.json" "$R/t4/CoPEF_ring_s$S/CoPEF.pt")
+for S in 1100 1101 1102 1103 1104 1105 1106 1107 1108 1109 1110 1111 1112 1113 1114 1115; do
+  if [ "$S" -le 1107 ]; then for A in Signed_r4 RoPE; do REQ+=("$R/t4/${A}_line_s$S/eval.json" "$R/t4/${A}_line_s$S/$A.pt"); done; fi
+  REQ+=("$R/t4/CoPEF_line_s$S/eval.json" "$R/t4/CoPEF_line_s$S/CoPEF.pt" "$R/t4/CoPEF_ring_s$S/eval.json" "$R/t4/CoPEF_ring_s$S/CoPEF.pt")
 done
 drv_require "${REQ[@]}" || drv_fail "missing runs"
 NF=0; for f in "${REQ[@]}"; do [ -f "$f" ] && NF=$((NF + 1)); done
-[ "$NF" -eq 192 ] || drv_fail "expected 192 artifacts, found $NF"
+[ "$NF" -eq 224 ] || drv_fail "expected 224 artifacts, found $NF"
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before the analysis"
 CUDA_VISIBLE_DEVICES="" python3 -u -m mapformer.analyze_accounts > "$REPO/ACCOUNTS_ANALYSIS.txt" 2>&1 || drv_fail analyze
 drv_done "$REPO/.accounts_done" "$REPO/ACCOUNTS_ANALYSIS.txt" "$REPO/ACCOUNTS_VERDICTS.json"

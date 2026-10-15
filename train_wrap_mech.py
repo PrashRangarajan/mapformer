@@ -86,7 +86,7 @@ def main():
         lo, hi = (0.9, 1.5) if a.arm == "AO_mid" else (1.7, 4.5)
         err = set_move_angles(model, torch.from_numpy(g.uniform(lo, hi, ang0.shape)).float())
     if a.arm.endswith("_fz"):
-        model.freeze_latent = True; model.action_to_lie.w_in.weight.requires_grad_(False)
+        model.freeze_move_latents()
     init_angles = action_angles(model)
     assert len(model.layers) == 1
     print(f"{a.arm} seed={a.seed} params={sum(p.numel() for p in model.parameters()):,} init angle err {err} "
