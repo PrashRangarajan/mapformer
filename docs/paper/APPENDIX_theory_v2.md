@@ -13,7 +13,7 @@ v1 is kept. Sources: the theory review (`docs/audits/2026-10-14/theory_review/TH
 `docs/paper/appendix_checks/`; its output sits beside it as `*_out.txt`. All checks are CPU-only and eval-only, and none
 trains a model. The checkpoints used are `runs/wrap_mech/p0/{SO,AO}_s800` (MECHANISM, ring) and
 `runs/generality/ring/CARoPEF_s70x`. Nothing here is registered, and nothing changes a registered verdict. Statements that
-cite registered batches (ACCOUNTS, MECHANISM, WRAP_EXISTENCE) say so; post hoc readouts are marked.*
+cite registered batches (ACCOUNTS, MECHANISM, WRAP_EXISTENCE, GAUGE) say so; post hoc readouts are marked.*
 
 ## Notation and conventions
 
@@ -111,7 +111,7 @@ Not checked by script: (a) is the construction used, per channel, in P1 and in `
 
 *Status.* T1 is an elementary identity, J R(phi) J = R(-phi) applied per channel. It is stated as a lemma because its
 corollaries say exactly which parameter points the |.| class excludes, and corollary (ii) makes a prediction (tested
-in GAUGE, not confirmed; see the end of this section).
+in GAUGE, not confirmed; see the Test paragraph under T1(ii)).
 
 **Theorem T1.** Take a MapWM model with any number of layers. Fix a set F of channels and form a second model by two changes:
 (a) negate every token's step in each channel c in F; (b) negate output coordinate h * d_head + 2b + 1 of q_proj and k_proj,
@@ -154,7 +154,8 @@ fix the direction of any channel. It removes only the *relative* signs of the to
 greater than r, when X has mixed-sign rows; all of these are sign-coherent. On the torus the four moves form two inverse pairs,
 and the constraint makes all four rotate the same way in each channel.
 
-**Corollary T1(ii): one stepping token, no sign cost (proved; the prediction is untested).** Suppose a single token x steps, so
+**Corollary T1(ii): one stepping token, no representational sign cost (proved; the learnability prediction is untested
+for one stepping token and not confirmed for +1/+2, see the Test below).** Suppose a single token x steps, so
 S = s e_x^T. Then the signed and |.| classes realise the same angle tables: {omega_c |s_c|} = {omega_c s_c} = R^C. There is also
 no cut, because omega_c is a continuous parameter that crosses zero, so any channel's angle moves continuously through 0 in
 either class. Parity, written as R(pi x_t) (Mamba-3 Sec. 3.2, `papers/txt/mamba3.txt:576-578`), and Z_m counting by rotations
@@ -390,10 +391,13 @@ whose forward-move angle ends within 0.05 rad of 0 (mod 2 pi): |.| from the same
 signed from the same start (SO_absmag) 0.166; |.| from a large start with sums below pi (AO_mid) 0.002; |.| from a start past
 pi (AO_high) 0.014. Of AO_absmag's registered 0.04 cancelling share, 0.035 is same-sign channels near the origin, not
 cancellation. This is what P4 predicts if the loss pushes those steps toward zero: they settle at the wall. It is a competing
-(or additional) account of the |.| failure beside P3's unreachable wrap. *Not established:* whether those channels started
-near zero; whether attention reads them (the counts are unweighted, and ACCOUNTS T1 showed unweighted counts can mislead);
-and whether l'(0) > 0 at them. The first-order certificate on trained endpoints (channels pinned at s ~ 0 with l' > 0) would
-test the last; it is post hoc, its predictions must be written first, and it is not done.
+(or additional) account of the |.| failure beside P3's unreachable wrap. *Checked since (post hoc, eval-only, rules fixed in
+advance in `docs/audits/2026-10-15/reanalyses/PREDICTIONS.md`; `collapse_wall_out.md`):* counted per move step, collapse is
+common to every |.| arm from a small start (24-42% on the ring, 60-70% on the torus, softplus included) and smaller in
+signed controls from the default start (10-16%, 34-40%); it is partly inherited (77-81% of |.| steps starting within
+0.05 rad of zero end there; signed 29-35%); attention reads the collapsed channels (usage ratio 0.39-1.10 of the others');
+and at the end of training the loss gradient points into the wall (l'(0) > 0) for only 51-57% of the collapsed steps (eval
+mode, ring), which the pre-stated rule reads as MIXED, not as P4. Torus gradients were not computed.
 
 Checked (`p3_p5_geometry.py`, P4): on AO_s800 (float64, revisit cross-entropy), autograd gives dL/ds = sign(s) dL/da exactly
 (difference 0). 69 of 128 pre-|.| entries are negative.
@@ -476,9 +480,12 @@ channels end opposite-signed. From the default start freezing has no detected ef
   not sufficient per channel.
 - From past pi (AO_high, 8/8 SOLVED) only 23% of channels end cancelling (SO_high 34%; 7% at the start by chance), and the
   final cancel share falls gently with the initial distance from 2 pi (0.34 within 0.25 rad, 0.19-0.25 at 0.5-2 rad, 0.08 at
-  2-3 rad; SO_high 0.43-0.52 -> 0.11). The per-channel flow's 28% is close to the observed 23%. So the |.| rescue may be
-  per-channel capture of a minority of channels that suffices for the task rather than a collective move; a channel-by-channel
-  comparison of predicted and observed capture has not been made. What the other 77% of channels do is not identified.
+  2-3 rad; SO_high 0.43-0.52 -> 0.11). The per-channel flow's 28% is close to the observed 23% in aggregate, but not channel
+  by channel (post hoc, `docs/audits/2026-10-15/reanalyses/capture_by_channel_out.txt`): run from each AO_high channel's own
+  start the flow predicts 0.33 cancelling against 0.23 observed, agrees with the trained models barely above chance
+  (Cohen's kappa +0.09; SO_high +0.20), captures 95% of the channels starting within 0.5 rad of 2 pi where the models cancel
+  28%, and does not capture 59% of the models' cancelling channels. So per-channel capture does not explain the rescue;
+  whether it is collective is untested. What the other 77% of channels do is not identified.
 - From the small start, the wall (P4, trained-model data above) is a competing account of the failure.
 
 So the run-level result (8/8 vs 2/8 vs 0/8) needs enough channels to reach a cancelling code, and the start shifts how many
@@ -611,9 +618,9 @@ What P7 does not cover (from the diagnosis):
 | P1(e) | r >= 2, m > r, mixed-sign rows: exact representation generically fails | conjecture (sketch) | -- |
 | P2 | rescaling error eps phi_raw: 0 (signed, d = 0) vs 2 pi eps n- (wrapped); AdamW decay = rescaling | proved (mathematics only; the drift account is withdrawn, ACCOUNTS T1) | `p2_rescale.py` |
 | P3 | cut circle: same loss on the torus; distances min(sigma, 2pi - sigma)/sqrt2 vs (2pi - sigma)/sqrt2; paths cross sigma = pi | proved | `p3_p5_geometry.py` |
-| P4 | sticky wall: attracting kink; GD chatter <= eta M | proved (reduced coordinate); trained-model collapse 44% (post hoc), causal role untested | `p3_p5_geometry.py`, `fig_mechanism_out.txt` |
+| P4 | sticky wall: attracting kink; GD chatter <= eta M | proved (reduced coordinate); trained-model collapse 44% (post hoc); end-of-training gradient into the wall for 51-57% of collapsed steps, MIXED by the pre-stated rule (post hoc), so its causal role is not established | `p3_p5_geometry.py`, `fig_mechanism_out.txt` |
 | P5 | even gaps; Pm negates even-g phases; model-level even-g scores invariant, odd-g negated; sigma-mirror conditions | proved, scope stated | `p3_p5_geometry.py`, `p5_pm_accuracy.py` |
-| R | signed escapes the \|.\| start through zero, collectively; \|.\| reaches the map reliably only from past pi | account; signed collective route tested (ACCOUNTS T2, SUPPORTED); \|.\| side open (loose fit) | review's `potential.py`, `mech_capture.py`; `ACCOUNTS_RESULTS.md` |
+| R | signed escapes the \|.\| start through zero, collectively; \|.\| reaches the map reliably only from past pi | account; signed collective route tested (ACCOUNTS T2, SUPPORTED); \|.\| side open (loose fit; the per-channel flow does not predict which channels cancel, kappa +0.09, post hoc) | review's `potential.py`, `mech_capture.py`; `ACCOUNTS_RESULTS.md` |
 | P6 | CARoPE: no channel cancels; every channel a clock or blind | proved | `p6_carope.py` |
 | P7 | CoPE lattice family, precision, line removes the lattice target (smaller margin) | proved under the stated setup; the line also fails (ACCOUNTS T4), so the lattice is not the main obstacle | `p7_cope.py` |
 
@@ -640,6 +647,9 @@ What P7 does not cover (from the diagnosis):
 10. T1(i): qualified "as real numbers, same latent", which removes an apparent contradiction with P1(a).
 11. P1(a): stated to cover the full |.| arms (observation steps annihilated), with the ring_dial M1 construction.
 12. P3: the angle sum is written sigma (v1 used S, which is also the step table).
+13. P4 and Remark R (2026-10-15 end-to-end read): the post hoc re-analyses (`docs/audits/2026-10-15/reanalyses/`) replace
+    the "not established / not done" statements: the wall gradient check reads MIXED; the per-channel flow does not
+    predict, channel by channel, which channels cancel. T1(ii)'s heading now records the GAUGE result.
 
 ## Reproduce
 

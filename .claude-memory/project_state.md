@@ -10,7 +10,10 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
 
 ## Running
 - Nothing running (GAUGE finished 2026-10-15 22:40).
-- Draft 4 (`docs/paper/DRAFT4_workshop.md`) complete incl. finishing pass (a9d6c4c) and Sec. 4.5 (GAUGE). Next: end-to-end read, venue choice.
+- Draft 4 (`docs/paper/DRAFT4_workshop.md`) complete incl. Sec. 4.5 (GAUGE) and the end-to-end read (`docs/paper/READ_draft4.md`:
+  shareable with co-authors; not submittable: main text 4,302 words vs ~3,500, appendices A-D, F-I still plans; title and
+  contribution 3 lean on an account GAUGE did not confirm). Venues: `docs/paper/VENUES_2026-10-15.md` (ICLR 2027 workshop
+  list out 29 Nov 2026, papers ~1 Feb 2027; CCN 2027 4 Feb; CPAL Spotlight 18 Jan; Cosyne abstracts 18 Oct 2026).
 - Mock review of draft 3: `docs/paper/MOCK_REVIEW_draft3.md` (6/10).
 
 ## Last results (2026-10-15): GAUGE (`GAUGE_RESULTS.md`): AS FALLS

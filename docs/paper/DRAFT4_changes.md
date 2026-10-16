@@ -185,3 +185,46 @@ to |.|"; re-rendered PNG/PDF; `fig_mechanism_out.txt` byte-identical. Draft Fig.
 - Sec. 4.5 written from the registered analysis: cost replicates on +1/-1; +1/+2 unmeasured (harder for both arms);
   prediction not confirmed. Contribution 3, the abstract and Limitations no longer state Lemma 1's learnability corollary
   as a prediction pending test. Appendix T1 status and check table updated.
+
+## 2026-10-15 end-to-end read
+
+Rule-28 read of the whole draft and appendix v2 after the GAUGE fill; every main-text number re-checked against its results
+file (CORRECTED / AUDIT blocks first) and the 2026-10-15 re-analysis outputs. No new claim, no new computation, no verdict
+moved. Report: `docs/paper/READ_draft4.md`. Main text (Abstract to end of Limitations, `wc -w`) 4,157 -> 4,302 words.
+Numbers found correct and left alone: every 4.1, 4.2, 4.3 (Table 1), 4.4, 4.5, 4.6 figure, Fig. 1 and Fig. 2 captions,
+appendices J and K, except the items below.
+
+**Draft (`DRAFT4_workshop.md`).**
+| # | where | old -> new | source / reason |
+|---|---|---|---|
+| D1 | Sec. 1, last paragraph | "...why barrier steps fail from small starts." -> adds "nor why they also struggle on a ring walked by +1/+2 moves, where no step need cross zero (Sec. 4.5)" | `GAUGE_RESULTS.md` Consequences: the barrier account does not explain |.| on +1/+2 |
+| D2 | Contribution 4 | "learn reliably only from past the wrap" -> "only from a start whose opposite angles sum past pi" | `MECHANISM_RESULTS.md` M2/M2b: the start's sums are past pi, not past 2 pi; matches the abstract |
+| D3 | Contribution 5 | "CoPE although it can represent them" -> "...the ring map" | `GENERALITY_RESULTS.md`: CoPE run on the ring only; representability constructed for the ring |
+| D4 | Sec. 3, Three integrators | key index s -> t'; q~_c, k~_c defined; "Howard's propagator with s = i omega" -> "with an imaginary rate constant (his s = i omega ...)" | s was used three ways (pre-|.| step of Sec. 2 / P4, key position, Howard's Laplace variable); q~ was undefined in the main text |
+| D5 | Lemma 1(ii) | "So no cost is predicted where a map code with sign-coherent rows exists" -> "So the barrier excludes no map code where one with sign-coherent rows exists ... That it then costs no learnability is a prediction, not a consequence; Sec. 4.5 tests it on +1/+2 and does not confirm it" | `GAUGE_RESULTS.md`: G1 UNMEASURED; "must not be stated as a prediction the data bear out" |
+| D6 | Sec. 3, P3 | "nearest non-blind cancelling point" -> "nearest cancelling point (Sec. 2)" | "blind" is defined only in the appendix; Sec. 2's definition of cancelling already excludes it |
+| D7 | Sec. 3, collective route | z(+1), z(-1) defined as the moves' latents W_in x | undefined symbol |
+| D8 | Tables | 4.3's "Table 2" -> "Table 1" (three places); caption "Table 2" added to the GAUGE table in 4.5; Figures-and-tables list updated | the draft had a Table 2 and no Table 1; the 4.5 table had no caption |
+| D9 | 4.3, wall bullet | signed default-start collapse "10-17%" -> "10-16%" | `collapse_wall_out.md`: ring signed default-start arms 0.104 / 0.107 / 0.156 / 0.157 / 0.145; 0.171 is SO_absmag (same-direction start) |
+| D10 | 4.3, closing sentence | "(an unreachable wrap, P3; the wall, P4; or both)" -> "(...; both; or neither, since |.| also struggles where no zero crossing is needed, Sec. 4.5)" | GAUGE: the list implied one of the barrier accounts must be the reason |
+| D11 | 4.5 heading | "(registered; `GAUGE_RESULTS.md`)" -> "(registered)" | file name in a heading (mock fix 12, no internal process language) |
+| D12 | 4.5 | "(a third ring batch)" -> "(a third observation-step-free ring batch)" | ring sign batches number five; the AO inverse-pair ones are WRAP_EXISTENCE E3, MECHANISM M4, GAUGE G2 |
+| D13 | 4.5 | G3 added ("no difference detected, Fisher p 1.00"); the laps comparison labelled "Descriptively (post hoc reading of a declared secondary)"; "equal" -> "about equal" | `GAUGE_RESULTS.md` table and strata paragraph |
+| D14 | 4.6 | "1 of 32 runs over three ring batches" -> "1 of 32 runs at the paper's initialisation over three ring batches" | WRAP_COPE ran 24 more CoPE runs at other table starts (2/8, 1/8, 0/8) |
+| D15 | Sec. 5 | "the useful start lay past the wrap" -> "past pi, on the wrap's side" | as D2; appendix P5 scope |
+| D16 | Appendix K | long-gap / wrap-only 0.37-0.53 "at or below the blank floor" -> "near or below" | `FACTORIAL_RESULTS.md`: up to 0.53 vs floor 0.507 |
+| D17 | Abstract, 4.3, Sec. 3, Limitations | over-long lines rewrapped; no wording change beyond the rows above | formatting |
+
+**Appendix (`APPENDIX_theory_v2.md`).**
+| # | where | old -> new | source / reason |
+|---|---|---|---|
+| A1 | header | registered batches cited: adds GAUGE | T1(ii) Test cites it |
+| A2 | T1 Status | "see the end of this section" -> "see the Test paragraph under T1(ii)" | the Test sits between T1(ii) and T1(iii) |
+| A3 | T1(ii) heading | "(proved; the prediction is untested)" -> "no representational sign cost (proved; the learnability prediction is untested for one stepping token and not confirmed for +1/+2, see the Test below)" | `GAUGE_RESULTS.md` |
+| A4 | P4, Trained models | "Not established: whether those channels started near zero; whether attention reads them; whether l'(0) > 0 ... it is not done" -> the R3 results: collapse 24-42% ring / 60-70% torus vs signed 10-16% / 34-40%; 77-81% inherited (signed 29-35%); usage ratio 0.39-1.10; gradient into the wall 51-57%, MIXED by the pre-stated rule; torus gradients not computed | `docs/audits/2026-10-15/reanalyses/collapse_wall_out.md`, `PREDICTIONS.md` (post hoc) |
+| A5 | Remark R, second bullet | "the |.| rescue may be per-channel capture ...; a channel-by-channel comparison ... has not been made" -> flow predicts 0.33 vs 0.23 observed, kappa +0.09 (SO_high +0.20), 95% vs 28% near 2 pi, 59% of cancelling channels not captured; "per-channel capture does not explain the rescue; whether it is collective is untested" | `capture_by_channel_out.txt` (post hoc) |
+| A6 | Summary table, P4 and R rows | P4: "causal role untested" -> "gradient check MIXED (post hoc), causal role not established"; R: adds "the per-channel flow does not predict which channels cancel, kappa +0.09, post hoc" | as A4, A5 |
+| A7 | Corrections in v2 | item 13 added recording A3-A6 | -- |
+
+Judgement calls (cuts to ~3,500 words, title after GAUGE, softplus representability, torus floors in 4.1, unbannered source
+files) are listed, not applied, in `READ_draft4.md`.
