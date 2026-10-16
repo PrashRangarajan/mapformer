@@ -174,3 +174,6 @@ batch; the overall reading matches an independent reimplementation over all 1024
 - **MINOR 6.** Evaluations run on the first GPU of DRV_GPUS, not a hard-coded cuda:0.
 - Selftest re-run: every cell label (incl. NON-NEGATIVE LEARNS BETTER and SO 4/8 -> UNMEASURED) and every reading (incl.
   DEFAULT NOT REPLICATED, REFERENCE UNMEASURED) reached.
+- **Torus pilot (Amendment 1 MAJOR 3; seed 1490, outside the batch, never pooled; 2026-10-16 03:12-04:07):** SO SOLVED (final
+  5% loss 0.0008); AO DESCENDING (tail 0.122, still falling at epoch 900). Launch rule met (pilot SO SOLVED): launched as
+  registered.
