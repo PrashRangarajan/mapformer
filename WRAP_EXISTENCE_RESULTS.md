@@ -1,5 +1,9 @@
 # Can a non-negative rotary step hold the ring map? (rule 14 existence) -- results (2026-10-13)
 
+> **CORRECTED 2026-10-16 (banner only; body unchanged).** The secondary "87% -> 18% of channels" drift and the reading
+> "training moves the held model off the cancelling code / not an attractor" are WITHDRAWN: weighted by attention usage the
+> held |.| model keeps 98% of its cancelling code; the drift was in unused channels (`ACCOUNTS_RESULTS.md` T1).
+
 Pre-registration `WRAP_EXISTENCE_PREREG.md` + Amendment 1 (independent check `docs/audits/2026-10-13/wrap_existence_audit.md`).
 Batch 15:29-18:02 at 5b577bb on both GPUs; ring 32 cells, p_plus 0.5, T = 128, 300 epochs (+300 for continuations), seeds
 600-607 (n = 8). Registered output `WRAP_EXISTENCE_ANALYSIS.txt`, `WRAP_EXISTENCE_VERDICTS.json`. Models: SignedAO_r4 /

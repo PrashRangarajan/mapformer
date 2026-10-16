@@ -1,0 +1,3 @@
+p_plus 0.5: revisits 194102  blank 0.4967  retrace 0.8596  (share of revisits inside a retrace 0.720)
+p_plus 0.75: revisits 192221  blank 0.4967  retrace 0.7582  (share of revisits inside a retrace 0.520)
+p_plus 0.9: revisits 192008  blank 0.4987  retrace 0.6118  (share of revisits inside a retrace 0.228)

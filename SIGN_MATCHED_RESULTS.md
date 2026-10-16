@@ -1,5 +1,10 @@
 # The sign ablation at matched length -- results (2026-09-28)
 
+> **CORRECTED 2026-10-16 (banner only; body unchanged; corrections of 2026-10-12 / 10-14).** "A replication in a new regime"
+> is WITHDRAWN: Sarrof / Grazzi prove a representational cost for real non-negative eigenvalues, which does not reach the
+> rotary slot; a non-negative rotary step can represent the signed code by wrapping (`docs/audits/2026-10-12/ring_dial_audit.md`
+> M1), so this is a LEARNABILITY result (`docs/lit/LIT_REPRESENTABILITY_2026-10-14.md`). The opposition score is not wrap-aware.
+
 Pre-registration `SIGN_MATCHED_PREREG.md`; runs `runs/sign_matched`; full output
 `SIGN_MATCHED_ANALYSIS.txt` (`python3 -m mapformer.analyze_sign_matched`); eval `SIGN_MATCHED.md` /
 `.json`; strata `SIGN_MATCHED_STRATA.json`; probe `SIGN_MATCHED_PROBE.md` / `.json` (registered, constrained

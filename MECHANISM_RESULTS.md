@@ -1,5 +1,9 @@
 # Why a non-negative rotary step does not learn the map -- results (2026-10-14)
 
+> **CORRECTED 2026-10-16 (banner only; body unchanged).** "A start fixes it completely" and the "Design implication"
+> (initialise near the wrap) are WITHDRAWN as general statements: on the torus the past-pi start does not rescue the |.| step
+> (0/8 vs 1/8) and drags the signed model to 2/8 (`TORUS_START_RESULTS.md`). The start lever is a ring result.
+
 Pre-registration `MECHANISM_PREREG.md` + Amendment 1 (independent check `docs/audits/2026-10-14/mechanism_audit.md`). Batch
 01:12-05:07 at 85be14d on both GPUs (alongside GENERALITY); ring 32 cells, p_plus 0.5, T = 128, 300 epochs, observation-step-
 free models (SignedAO_r4 / AbsAO_r4), seeds 800-807, n = 8 per arm. Registered output `MECHANISM_ANALYSIS.txt`,

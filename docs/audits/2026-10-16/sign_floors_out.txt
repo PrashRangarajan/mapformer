@@ -1,0 +1,10 @@
+T=1024 s0: n 31923  blank 0.5123  n-gram best 0.5801 (orders 0-5 0.512 0.512 0.512 0.512 0.580 0.577)  retrace 0.8442  wrap-only share 0.072
+T=1024 s1: n 31836  blank 0.5020  n-gram best 0.5691 (orders 0-5 0.502 0.502 0.502 0.502 0.569 0.566)  retrace 0.8403  wrap-only share 0.074
+T=1024 s2: n 31846  blank 0.5007  n-gram best 0.5710 (orders 0-5 0.501 0.501 0.501 0.501 0.571 0.568)  retrace 0.8372  wrap-only share 0.087
+T=1024 s3: n 32271  blank 0.5076  n-gram best 0.5768 (orders 0-5 0.508 0.508 0.508 0.508 0.577 0.573)  retrace 0.8419  wrap-only share 0.080
+T=1024 s4: n 31736  blank 0.5036  n-gram best 0.5720 (orders 0-5 0.504 0.504 0.504 0.504 0.572 0.568)  retrace 0.8400  wrap-only share 0.080
+T=1024 s5: n 32737  blank 0.5040  n-gram best 0.5730 (orders 0-5 0.504 0.504 0.504 0.504 0.573 0.571)  retrace 0.8490  wrap-only share 0.069
+T=1024 s6: n 31750  blank 0.5047  n-gram best 0.5763 (orders 0-5 0.505 0.505 0.505 0.505 0.576 0.573)  retrace 0.8457  wrap-only share 0.078
+T=1024 s7: n 31828  blank 0.5120  n-gram best 0.5806 (orders 0-5 0.512 0.512 0.512 0.512 0.581 0.577)  retrace 0.8452  wrap-only share 0.092
+T=1024 MEAN over seeds 0-7: blank 0.5059  n-gram 0.5749  retrace 0.8429  best-of 0.8429  wrap-only share 0.079
+
