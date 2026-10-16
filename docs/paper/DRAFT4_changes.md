@@ -180,3 +180,8 @@ None needed training.
 
 **Figure.** `fig_mechanism.py` panel titles now (a)-(d) in draft 4's words; the shading is labelled "barrier side: closed
 to |.|"; re-rendered PNG/PDF; `fig_mechanism_out.txt` byte-identical. Draft Fig. 2 caption names the shading the same way.
+
+## 2026-10-15 23:00: GAUGE result filled (`GAUGE_RESULTS.md`)
+- Sec. 4.5 written from the registered analysis: cost replicates on +1/-1; +1/+2 unmeasured (harder for both arms);
+  prediction not confirmed. Contribution 3, the abstract and Limitations no longer state Lemma 1's learnability corollary
+  as a prediction pending test. Appendix T1 status and check table updated.

@@ -5,15 +5,18 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-13 14:00. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-15 23:00. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- GAUGE (`GAUGE_PREREG.md` + Amendment 1, 66b2ef4): scheduled to start 21:00 (2026-10-15) by `runs/gauge_start_at_21.sh`;
-  `run_gauge.sh` REFUSES if tracked files are modified at start -- keep the tree committed. ~1 h. Pilot: AO on +1/+2 unsolved
-  (0.745) -- prediction at risk, disclosed. Marker `.gauge_done`, output `GAUGE_ANALYSIS.txt`.
-- Draft 4 revision agent running (writes docs/paper/DRAFT4_workshop.md, DRAFT4_changes.md, APPENDIX_theory_v2.md).
+- Nothing running (GAUGE finished 2026-10-15 22:40).
+- Draft 4 (`docs/paper/DRAFT4_workshop.md`) complete incl. finishing pass (a9d6c4c) and Sec. 4.5 (GAUGE). Next: end-to-end read, venue choice.
 - Mock review of draft 3: `docs/paper/MOCK_REVIEW_draft3.md` (6/10).
+
+## Last results (2026-10-15): GAUGE (`GAUGE_RESULTS.md`): AS FALLS
+- Sign cost replicates on +1/-1 (|.| 1/8 vs 8/8); on +1/+2 (same-direction moves) UNMEASURED: |.| 2/8 vs signed 5/8, harder
+  for both; |.| no better on +1/+2 than +1/-1. Lemma 1's learnability corollary not confirmed; draft 4.5 filled, contribution 3
+  and limitations reworded.
 
 ## Last results (2026-10-15): TORUS_START (`TORUS_START_RESULTS.md`)
 - Past-pi start does NOT rescue on the torus (0/8; TS1 NO EFFECT); the large start drags signed to 2/8; sign cost replicates

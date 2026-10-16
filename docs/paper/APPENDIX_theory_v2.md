@@ -5,7 +5,7 @@ for that draft. What changed from v1: a new section B0 (non-negative values vs b
 a lemma with its corollaries qualified; the drift / weight-decay account under P2 is removed (ACCOUNTS T1: no drift in the
 channels attention reads; weight decay changes nothing detected); P4 gains the trained-model data; Remark R is updated with
 ACCOUNTS T2 (the signed collective route, SUPPORTED) and the loose fit on the |.| side; P7 is updated with ACCOUNTS T4 (CoPE
-fails a non-wrapping line too); a pointer to the pending GAUGE test; draft section references updated. Every check pointer of
+fails a non-wrapping line too); a pointer to the GAUGE test (result: `GAUGE_RESULTS.md`); draft section references updated. Every check pointer of
 v1 is kept. Sources: the theory review (`docs/audits/2026-10-14/theory_review/THEORY_REVIEW.md`), the CoPE diagnosis
 (`docs/audits/2026-10-14/cope_diagnosis/COPE_DIAGNOSIS.md`), `ACCOUNTS_RESULTS.md`, `MECHANISM_RESULTS.md`,
 `docs/paper/figs/FIGS_NOTES.md`, `docs/audits/2026-10-12/ring_dial_audit.md` (M1). Every statement is numbered and labelled **proved**,
@@ -110,8 +110,8 @@ Not checked by script: (a) is the construction used, per channel, in P1 and in `
 ## T1. The relative-sign gauge (proved; Lemma 1 in the draft)
 
 *Status.* T1 is an elementary identity, J R(phi) J = R(-phi) applied per channel. It is stated as a lemma because its
-corollaries say exactly which parameter points the |.| class excludes, and corollary (ii) makes a prediction (pending,
-GAUGE; see the end of this section).
+corollaries say exactly which parameter points the |.| class excludes, and corollary (ii) makes a prediction (tested
+in GAUGE, not confirmed; see the end of this section).
 
 **Theorem T1.** Take a MapWM model with any number of layers. Fix a set F of channels and form a second model by two changes:
 (a) negate every token's step in each channel c in F; (b) negate output coordinate h * d_head + 2b + 1 of q_proj and k_proj,
@@ -166,8 +166,12 @@ stepping tokens. Example: a ring walked by moves +1 and +2. The map code a(+2) =
 channel, so it lies in the |.| class without wrapping and can be reached from a small same-sign start without crossing zero.
 The prediction is no sign cost there, against a cost for +1/-1 (an inverse pair).
 
-*Pending test.* `GAUGE_PREREG.md` (registered 2026-10-15; ring 32 cells, observation-step-free SignedAO_r4 / AbsAO_r4, moves
-+1/-1 vs +1/+2, n = 8, seeds 1300-1307; primary G1: |.| vs signed on +1/+2). No result is read here.
+*Test (registered, `GAUGE_RESULTS.md`).* Ring 32 cells, observation-step-free SignedAO_r4 / AbsAO_r4, moves +1/-1 vs
++1/+2, n = 8, seeds 1300-1307. +1/-1: |.| 1/8 vs signed 8/8 (Fisher p 0.0014). +1/+2 (primary G1): |.| 2/8 vs signed 5/8,
+d -0.064 [-0.200, +0.075]: UNMEASURED; |.| on +1/+2 vs +1/-1: 2/8 vs 1/8. The signed model learns a sign-coherent code on
++1/+2 (0.92 of channels same-sign vs 0.01 on +1/-1), so T1(i)'s representational statement is visible in what signed steps
+learn; the learnability prediction is NOT confirmed (the task is harder for both arms), and nothing measured suggests the
+|.| cost needs an inverse pair.
 
 **Corollary T1(iii): the excluded codes (proved).** Up to the gauge, the signed tables that the |.| class excludes (without
 wrapping) are exactly the tables with a row containing entries of strictly opposite sign. For an inverse pair (x, y), every
@@ -599,7 +603,7 @@ What P7 does not cover (from the diagnosis):
 | B0 | Delta mod (2 pi / \|omega\|) is non-negative and the same model; \|.\| and softplus are barrier parameterisations | proved (elementary) | -- |
 | T1 | channel step flip + q/k reflection (rows and biases, every layer; MapEM: q0/k0) leaves all scores unchanged | proved (elementary identity) | `t1_gauge.py` |
 | T1(i) | the \|.\| class realises a signed table exactly as real numbers (same latent) iff its rows are sign-coherent; only relative signs are removed | proved | `t1_gauge.py` (d, d2) |
-| T1(ii) | one stepping token, or any task with a sign-coherent solution code (e.g. moves +1/+2): no representational sign cost | proved; "no learning cost" is a prediction, registered test GAUGE pending | `GAUGE_PREREG.md` |
+| T1(ii) | one stepping token, or any task with a sign-coherent solution code (e.g. moves +1/+2): no representational sign cost | proved; "no learning cost" is a prediction, NOT confirmed: registered GAUGE G1 UNMEASURED (+1/+2 harder for both arms; \|.\| 2/8 vs signed 5/8) | `GAUGE_RESULTS.md` |
 | T1(iii) | excluded codes = opposite-sign rows, which include every through-zero cancelling channel | proved | `t1_gauge.py` (e) |
 | P1(a) | <= r stepping tokens: exact non-negative representation mod 2 pi | proved | `p1_wrap.py` |
 | P1(c) | r = 1, opposite-signed pair, C >= 2: exact representation fails for a.e. alpha | proved (special case) | `p1_wrap.py` |

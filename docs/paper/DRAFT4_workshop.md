@@ -12,7 +12,7 @@ navigation maps (a 2D torus, a 1D ring), barrier steps solve the map on 0-4 of 8
 contrast fires) against 8 of 8 for signed steps. Exact non-negative solutions exist at a trained weight scale and training
 keeps (ring) or re-finds (torus) them; from scratch the class solves 0-1 of 8. A per-channel reflection identity shows that
 the barrier removes only relative signs within a channel: for an inverse pair, the through-zero route to cancellation, not
-the function. On the ring, signed steps leave the barrier's start through zero by a collective move of the move latents
+the function; whether the cost requires an inverse pair is unmeasured (moves +1/+2 are harder for both classes). On the ring, signed steps leave the barrier's start through zero by a collective move of the move latents
 (7/8; 1/8 with them frozen); barrier steps learn reliably only from a start whose opposite angles sum past pi (8/8 vs 0/8),
 which does not help on the torus. Negatives hold within our budgets (300-900 epochs, one recipe per task).
 
@@ -35,7 +35,8 @@ removes; we do not fully explain why barrier steps fail from small starts.
 2. *Existence.* An exact non-negative solution at a trained scale is held (ring) or re-found (torus) under training; from
    scratch the class solves 0-1/8 (Sec. 4.2).
 3. *What the barrier removes* (Lemma 1, a one-line identity): only relative signs within a channel; for an inverse pair, a
-   route, not a function. It predicts no cost when moves step the same way; that test is registered and pending (Sec. 4.5).
+   route, not a function. A registered test of its learnability corollary (moves stepping the same way, Sec. 4.5)
+   replicates the cost on an inverse pair but cannot read the same-direction case: that task is harder for signed steps too.
 4. *A route, on the ring*: signed steps leave the barrier's start through zero, collectively through their shared latents;
    barrier steps learn reliably only from past the wrap, a start that fails on the torus (Secs. 4.3-4.4).
 5. *Published monotone methods* (faithful CARoPE, CoPE) fail these maps too, CoPE although it can represent them (Sec. 4.6).
@@ -199,13 +200,25 @@ large-start arm still descending at 900 epochs. The default-start sign cost repl
 untested account: with 64 cells per axis and two inverse pairs sharing every channel, a random large-angle code is far from
 any map for either sign. The start lever is a ring result, not a design rule.
 
-### 4.5 Does the cost follow the relative sign? (GAUGE; registered, results pending)
+### 4.5 Does the cost follow the relative sign? (registered; `GAUGE_RESULTS.md`)
 
-*Placeholder.* Lemma 1(ii) predicts no cost when the two moves step the same way. Registered design: ring, 32 cells,
-observation-step-free signed and |.| models, the Sec. 4.3 recipe, n = 8 fresh seeds per cell; moves +1/-1 (an inverse pair;
-cost predicted) vs +1/+2 (map code a(+2) = 2 a(+1), sign-coherent; no cost predicted), with index RoPE on +1/+2 to check the
-task needs integration. The prediction is confirmed only if |.| vs signed reads "no sign cost" on +1/+2 and "signed learns
-better" on +1/-1. **[RESULTS PENDING. Fill only from the registered analysis; a pilot is reported only as a pilot.]**
+Lemma 1(ii) says a |.| step can represent a map whose moves step the same way without wrapping or crossing zero. We asked
+whether the learning cost then disappears. Ring of 32 cells, observation-step-free signed and |.| models, the Sec. 4.3
+recipe, n = 8 fresh seeds per cell; moves +1/-1 (an inverse pair) vs +1/+2 (map code a(+2) = 2 a(+1), sign-coherent).
+
+| moves | signed | \|.\| | difference (95% CI) | label |
+|---|---|---|---|---|
+| +1/-1 | 1.000, 8/8 | 0.931, 1/8 | -0.069 [-0.095, -0.045], Fisher p 0.0014 | signed learns better |
+| +1/+2 | 0.947, 5/8 | 0.883, 2/8 | -0.064 [-0.200, +0.075], Fisher p 0.31 | unmeasured |
+
+The cost replicates on the inverse pair (a third ring batch). +1/+2 needs integration (index RoPE 0.649, 0/8; floor
+~0.50), and the signed model learns it with a sign-coherent code (0.92 of channels end with both move angles of one sign,
+against 0.01 on +1/-1): what signed steps learn follows the moves' relative sign, as Lemma 1 allows. But the registered
+prediction is not confirmed. |.| still solves +1/+2 on only 2/8, no more than +1/-1 (1/8), although its code there needs no
+zero crossing; the comparison is unmeasured because +1/+2 is harder for signed steps too (5/8), its revisits being all
+long-gap laps. On laps, the stratum both tasks share, |.| scores 0.893 (+1/-1) and 0.884 (+1/+2); the point estimates of
+the gap are equal (-0.069, -0.064). Nothing here suggests the cost needs an inverse pair, and the barrier-at-zero account
+does not explain |.|'s difficulty on +1/+2. Lemma 1 stands as a statement about representation only.
 
 ### 4.6 Published monotone methods
 
@@ -263,7 +276,7 @@ threshold (0.1; post hoc). On the torus the barrier class has less latent slack:
 latent dimension per inverse pair, the wrapped code also the 2 pi k / omega offsets, and per-head rank is known to decide
 torus learnability for signed steps; this is uncontrolled. Softplus carries an
 initialisation confound. The mechanism is shown on the ring only, with its |.| side unresolved; on the torus the large start
-also slows the signed model. Lemma 1's prediction is pending. The torus sign batch had no independent pre-launch check.
+also slows the signed model. Lemma 1's learnability corollary is untested at our power (Sec. 4.5: the same-direction task is harder for both arms), and the barrier account does not explain the |.| difficulty there. The torus sign batch had no independent pre-launch check.
 CARoPE and CoPE were tested at one layer, CoPE on the ring and line only. Natural text is not studied.
 
 ## References

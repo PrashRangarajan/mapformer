@@ -1,0 +1,28 @@
+== per seed: accuracy T = 128 and class ==
+1300 | SO_m 1.0000 SOLV | AO_m 0.9039 STAL | SO_p 0.9873 STAL | AO_p 0.9874 DESC | RoPE_p 0.6419 STAL
+1301 | SO_m 1.0000 SOLV | AO_m 0.9530 DESC | SO_p 1.0000 SOLV | AO_p 0.9095 STAL | RoPE_p 0.6627 STAL
+1302 | SO_m 1.0000 SOLV | AO_m 0.9573 STAL | SO_p 1.0000 SOLV | AO_p 0.9039 STAL | RoPE_p 0.6545 STAL
+1303 | SO_m 1.0000 SOLV | AO_m 1.0000 SOLV | SO_p 1.0000 SOLV | AO_p 0.5901 STAL | RoPE_p 0.6608 STAL
+1304 | SO_m 1.0000 SOLV | AO_m 0.9220 STAL | SO_p 0.9354 STAL | AO_p 0.7680 STAL | RoPE_p 0.6542 STAL
+1305 | SO_m 1.0000 SOLV | AO_m 0.9282 STAL | SO_p 1.0000 SOLV | AO_p 1.0000 SOLV | RoPE_p 0.6017 STAL
+1306 | SO_m 1.0000 SOLV | AO_m 0.8801 STAL | SO_p 0.6536 DESC | AO_p 0.9078 STAL | RoPE_p 0.6598 STAL
+1307 | SO_m 1.0000 SOLV | AO_m 0.9025 STAL | SO_p 1.0000 SOLV | AO_p 1.0000 SOLV | RoPE_p 0.6595 STAL
+SO_m   : mean 1.0000, SOLVED 8/8, acc 4T 0.9970, loss AUC 0.090
+AO_m   : mean 0.9309, SOLVED 1/8, acc 4T 0.8707, loss AUC 0.537
+SO_p   : mean 0.9470, SOLVED 5/8, acc 4T 0.9132, loss AUC 0.515
+AO_p   : mean 0.8834, SOLVED 2/8, acc 4T 0.8628, loss AUC 0.661
+RoPE_p : mean 0.6494, SOLVED 0/8, acc 4T 0.4679, loss AUC 1.341
+G1 (AO_p vs SO_p): UNMEASURED -- 0.8834 SOLVED 2/8 vs 0.9470 SOLVED 5/8; d -0.0637 [95% CI -0.200, +0.075] (perm p 0.3419); Fisher p 0.3147
+G2 (AO_m vs SO_m): SIGNED LEARNS BETTER -- 0.9309 SOLVED 1/8 vs 1.0000 SOLVED 8/8; d -0.0691 [95% CI -0.095, -0.045] (perm p 0.0014); Fisher p 0.0014
+G3 (AO_p vs AO_m, SOLVED): NO DIFFERENCE DETECTED -- 2/8 vs 1/8 (Fisher p 1.0000)
+Reading: AS FALLS
+
+== secondaries (declared; no verdict) ==
+floor: predict blank ~0.50 (p_empty 0.5); CANCEL's measured +1/-1 floor 0.554
+SO_m    strata: backtrack 1.000 (n 138800); gap<16 1.000 (n 90096); gap>=16 1.000 (n 65360); lap 1.000 (n 16656)
+AO_m    strata: backtrack 0.936 (n 138800); gap<16 0.952 (n 90096); gap>=16 0.902 (n 65360); lap 0.893 (n 16656)
+SO_p    strata: gap>=16 0.947 (n 153872); lap 0.947 (n 153872)
+AO_p    strata: gap>=16 0.884 (n 153872); lap 0.884 (n 153872)
+RoPE_p  strata: gap>=16 0.651 (n 153872); lap 0.651 (n 153872)
+SO_p: share of channels whose two (wrapped) move angles have the SAME sign at the end 0.92 (init ~0.50-0.70) (per seed 0.57 0.93 0.97 0.94 1.00 0.95 1.00 0.98)
+SO_m: share of channels whose two (wrapped) move angles have the SAME sign at the end 0.01 (init ~0.50-0.70) (per seed 0.00 0.04 0.00 0.00 0.00 0.00 0.02 0.00)

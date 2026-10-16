@@ -97,6 +97,14 @@ The past-pi start does NOT rescue the non-negative step on the torus (0/8 vs 1/8
 start drags the signed model to 2/8 (vs 8/8 default); most large-start runs still descending at 900 epochs. The start lever is
 a ring result; the sign cost replicates (1/8 vs 8/8).
 
+## Update 2026-10-15: GAUGE (`GAUGE_RESULTS.md`, registered): AS FALLS
+- G2: the sign cost replicates on +1/-1 (|.| 1/8 vs signed 8/8, Fisher p 0.0014; fresh seeds 1300-1307).
+- G1 (primary, +1/+2): UNMEASURED (|.| 2/8, 0.883 vs signed 5/8, 0.947; d -0.064 [-0.200, +0.075]); G3 |.| +1/+2 vs +1/-1
+  2/8 vs 1/8, no difference. +1/+2 needs integration (RoPE 0.649, 0/8) and is harder for signed too (long-gap laps only).
+- Signed learns a sign-coherent code on +1/+2 (0.92 same-sign channels vs 0.01 on +1/-1).
+- Do not claim: "the cost follows the relative sign" or "no cost without an inverse pair" (Lemma 1's learnability corollary
+  is not confirmed); the barrier-at-zero account does not explain |.|'s difficulty on +1/+2.
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
