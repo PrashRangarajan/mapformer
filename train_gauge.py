@@ -39,6 +39,7 @@ def main():
     ap.add_argument("--batch-size", type=int, default=128)
     ap.add_argument("--n-steps", type=int, default=128)
     ap.add_argument("--lr", type=float, default=1e-3)
+    ap.add_argument("--weight-decay", type=float, default=0.05)   # ROBUST_PREREG.md; 0.05 = train()'s default
     ap.add_argument("--data-workers", type=int, default=3)
     ap.add_argument("--n-trials", type=int, default=400)
     ap.add_argument("--device", default="cuda")
@@ -52,7 +53,8 @@ def main():
     assert len(model.layers) == 1
     print(f"{a.arm} deltas={deltas} seed={a.seed} params={sum(p.numel() for p in model.parameters()):,}", flush=True)
     losses = train(model, env, n_epochs=a.epochs, lr=a.lr, batch_size=a.batch_size, n_steps=a.n_steps,
-                   n_batches=a.n_batches, device=a.device, schedule="cosine", data_workers=a.data_workers)
+                   n_batches=a.n_batches, device=a.device, schedule="cosine", data_workers=a.data_workers,
+                   weight_decay=a.weight_decay)
     torch.save({"model_state_dict": model.state_dict(), "losses": losses, "variant": a.arm, "seed": a.seed,
                 "config": {"args": dict(vars(a)), "vocab_size": env.unified_vocab_size, "deltas": deltas,
                            "action_offset": env.action_offset}}, out / f"{a.arm}.pt")
