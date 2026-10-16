@@ -1,0 +1,2865 @@
+Proceedings of Machine Learning Research 282:622663, 2025   Symmetry and Geometry in Neural Representations
+
+
+
+
+         Complete Characterization of Gauge Symmetries in
+                    Transformer Architectures
+Hong Wang                                                                        hong_wang@ieee.org
+Intel Corporation
+Kelly Wang                                                                        kelly.wang@ieee.org
+
+The Harker School
+
+
+Editors: Francisco Acosta, Simone Azeglio, Chase van de Geijn, Christian Shewmake, Sophia San-
+born, Nina Miolane
+
+
+                                                Abstract
+    Modern Transformers possess redundant parameter symmetries that leave their function
+    unchanged. We establish the complete gauge group structure for the canonical Transformer
+    family, which encompasses standard architectures including GPT-2, BERT, LLaMA, and
+    Qwen. For canonical Transformers with standard multi-head attention, we prove global
+    maximality: the gauge group equals exactly Gmax = ((GL(dk ))h × (GL(dv ))h ) ⋊ Sh on
+    the generic stratum where projection matrices have full column rank and head-wise at-
+    tention controllability holds. For architectures with rotary position embeddings (RoPE)
+    or relative encodings, as used in LLaMA and Qwen, the gauge group becomes GRoPE =
+    ((CRoPE )h × (GL(dv ))h ) ⋊ Sh where CRoPE is the commutant of the position-dependent
+    rotationstypically reducing to (GL(1, C))dk /2 for standard RoPE implementations. We
+    prove maximality through Lhthree key results:
+                                            Lh characterizing the Lie algebra of innitesimal
+    symmetries as gmax = i=1 gl(dk ) ⊕ i=1 gl(dv ) for canonical models, establishing that
+    attention weights must be preserved up to head permutation under gauge equivalence, and
+    demonstrating that querykey and valueoutput transformations necessarily factorize in-
+    dependently. These gauge symmetries persist through LayerNorm and extend to complete
+                                                                     QL    (l)
+    architectures, with the full model gauge group being GModel = l=1 GBlock . Our charac-
+    terization reveals over 1.1 million redundant dimensions in a 110M parameter Transformer
+    Base model. Experiments on pretrained GPT-2 models from 124M to 1.5B parameters con-
+    rm that valid gauge transformations preserve model outputs to machine precision, while
+    invalid transformations produce large errors, empirically supporting maximality. Code:
+    GitHub repo.
+
+1. Introduction
+Neural networks often contain many dierent parameter settings that realize the same func-
+tion. Such symmetries form high-dimensional equivalence classes in parameter space, under-
+mining naive assumptions of unique optima and confounding measures like sharpness. In
+Transformers, the architecture itself induces at directions along which the network and its
+loss remain identical [4; 19]; these symmetries arise from the mechanism rather than from
+training dynamics or regularization. Characterizing them completely is therefore necessary
+for a precise theory of Transformer optimization.
+    This paper establishes the complete parameter symmetry structure of Transformer ar-
+chitectures.    We prove that for the canonical Transformer familyencompassing GPT-2
+[15], BERT [5], and their descendantsthe gauge group of parameter transformations that
+
+
+
+© 2025 H. Wang & K. Wang.
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+preserve the function equals exactly Gmax = ((GL(dk ))
+                                                            h × (GL(d ))h ) ⋊ S on generic pa-
+                                                                     v         h
+rameters. Here h denotes the number of attention heads and dk , dv represent query-key and
+value dimensions respectively. No additional symmetries exist beyond those in this group,
+establishing this characterization as complete and maximal.
+
+   Formally, our main theorem (Theorem 2) shows that for standard multi-head attention
+with h heads and dmodel = hdv , and under mild rank and genericity conditions (Assump-
+tions A1A9), the full symmetry group G(θ) of any such Transformer equals exactly Gmax .
+In other words, any parameter symmetry that preserves the network function must be a
+composition of per-head querykey and valueoutput gauge transformations together with
+a head permutation. By genericity we mean that the set of parameter congurations where
+this classication can fail has Lebesgue measure zero, so random initialization and standard
+training almost surely lie in Θ0 .
+
+   The attention mechanism operates through two independent computational pipelines
+that each contain internal degrees of freedom.        The attention scores depend only on the
+bilinear form QK
+                    ⊤ = XW          ⊤ ⊤
+                             Q (WK ) X .       Any transformation that preserves this product
+leaves the scores unchanged.         Similarly, the value transformation depends only on the
+composed mapping     V WO = XWV WO .           These observations lead directly to gauge sym-
+metries: transforming (WQ , WK ) 7→ (WQ A, WK (A
+                                                        −1 )⊤ ) preserves the query-key product,
+
+while (WV , WO ) 7→ (WV   C, C −1 W   O ) preserves the value-output composition, for any invert-
+ible matrices A and C of appropriate dimensions.
+
+   Our Contributions. Our main contributions are: (1) Complete gauge group char-
+acterization with proof of maximality. We prove Gmax = ((GL(dk ))h ×(GL(dv ))h )⋊Sh
+and establish that no additional symmetries exist through three independent arguments: Lie
+algebra characterization, attention weight identiability, and necessary factorization of trans-
+formations. (2)   Extension to position-encoded architectures. For RoPE and relative
+encodings, we show the query-key sector reduces to the commutant of position rotations
+
+                                       RoPE = ((CRoPE ) × (GL(dv )) ) ⋊ Sh . (3) Multi-layer
+                     d /2 ), yielding G
+(typically (GL(1, C)) k
+                                                       h           h
+
+direct product structure. We prove residual connections and LayerNorm prevent inter-
+                                         l=1 GBlock . (4) Practical implications for
+                                        QL    (l)
+layer gauge coupling, yielding GModel =
+optimization and compression. The gauge structure implies at least h(d2k + d2v ) Hessian
+null directions per layer, enables lossless compression eliminating millions of parameters,
+and supports gauge-aware procedures for gradient projection and model alignment (Algo-
+rithms 23).
+
+   The core maximality proof (Section 3) proceeds via Lie algebra characterization, atten-
+tion weight identiability, and factorization; complete proofs are in Appendix A. Multi-layer
+structure, optimization geometry, experiments, and practical applications are developed in
+Sections 47.
+
+
+2. Transformer Architecture and Mathematical Framework
+We establish notation and architectural conventions for the canonical Transformer family.
+We dene the generic conditions under which global maximality holds and introduce the
+mathematical framework for analyzing both standard multi-head attention and position-
+encoded variants.
+
+
+
+                                                623
+                                                   Wang Wang
+
+
+
+
+2.1. Multi-Head Attention Mechanism
+The canonical Transformer family consists of architectures employing multi-head attention
+with softmax normalization, layer normalization, and feed-forward networks with smooth
+activation functions. This family encompasses GPT-2, BERT, and position-encoded variants
+such as LLaMA and Qwen. We adopt the row-vector convention where data ows as row
+vectors through matrices acting on the right.
+     For input X ∈ R
+                                 n×dmodel representing a sequence of n token embeddings, each attention
+
+head i ∈ {1, . . . , h} computes queries, keys, and values through linear projections:
+
+                                  (i)                     (i)                           (i)
+              Qi = XWQ ∈ Rn×dk ,               Ki = XWK ∈ Rn×dk ,          Vi = XWV ∈ Rn×dv                  (2.1)
+
+            (i)         (i)                      (i)
+where WQ , WK     ∈ Rdmodel ×dk and WV ∈ Rdmodel ×dv .
+     The scaled dot-product attention for head i computes:
+
+                                              Qi K ⊤
+                                                    
+                           Ai (X) = softmax √ i Vi ∈ Rn×dv                                                   (2.2)
+                                                 dk
+where softmax is applied row-wise.               The complete multi-head attention concatenates and
+projects:
+                                                                          h
+                                                                          X
+                                MHA(X) = [A1 (X)∥ · · · ∥Ah (X)]WO =            Ai (X)WO,i                   (2.3)
+                                                                          i=1
+
+where WO ∈ R
+                        (h·dv )×dmodel partitions into blocks W          dv ×dmodel (see Figure 1).
+                                                                  O,i ∈ R
+
+2.2. Assumptions for Global Maximality
+
+       Table 1: Assumptions A1A9: purpose, where used, and architectural examples
+
+Asm.     Mathematical Statement                        Where Used                Architectural Examples
+
+A1       Standard multi-head architecture, no          Thm. 7                    All production models
+         weight sharing
+A2       dmodel = h · dv (canonical dimensions)        Lem. 18                   BERT-Base, GPT-2: 768 = 12×
+                                                                                 64
+A3       Biases absent or transform covariantly        All symmetry state-       Standard implementations
+                                                       ments
+A4           (i)
+         WQ , W K , W V
+                        (i)
+                             have full column
+                                 (i)
+                                                       Prop. 9                   Generic stratum Θ0
+         rank
+A5       LayerNorm in standard Pre-LN or               Lem. 26                   Common implementations
+         Post-LN blocks
+A6       rank([WQ(i) | WK(i) ]) = 2dk , dmodel ≥       Lem. 18                   GPT-2: 768 ≥ 128 = 2 × 64
+         2dk
+A7       Linear independence of bilinear forms         Prop. 9, Lem. 18          Generic Θ0 (Zariski-open)
+                  (i)     (i)
+         { WQ (WK )⊤ }hi=1
+A8       WO has full row rank (square and in-          Lem. 22, Thm. 21          Generic Θ0
+         vertible if A2 holds)
+A9       FFN weights generic; activation non-          Lem. 6, Thm. 7            Standard models
+         polynomial (e.g., GELU)
+
+     The generic stratum Θ0 consists of parameter congurations satisfying assumptions A1
+A9 (Table 1).            These conditions dene a Zariski-open dense subset of the full parameter
+
+
+
+                                                        624
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+              Transformer Block Architecture
+       MHA                 MHA             MHA                          1. Query-Key Gauge
+                                                                        (Qi , Ki ) 7→ (Qi Ai , Ki A−⊤
+                                                                                                   i )
+      Head 1              Head i          Head h                        Ai ∈ GL(dk ) per head
+     Q1 , K1 , V1        Qi , Ki , Vi    Qh , Kh , Vh
+                                                                        2. Head Permutation
+          ↓                   ↓               ↓                         σ ∈ Sh reorders heads
+
+
+                                                                        3. Value-Output Gauge
+                      Concatenate → WO
+                                                                        (Vi , WO,i ) 7→ (Vi Ci , Ci−1 WO,i )
+                                                                        Ci ∈ GL(dv ) per head
+
+  Gauge transformations preserve MHA(X) for all inputs X
+
+
+
+
+Figure 1: Gauge symmetries in multi-head attention. Left: Architectural structure showing
+           parallel attention heads with query, key, and value projections followed by concate-
+           nation and output projection. Right: Three independent gauge transformations
+           that preserve the function: query-key transformations preserve attention scores
+           through inverse-transpose coupling, value-output transformations preserve head
+           contributions through inverse coupling, and head permutations exploit exchange-
+           ability.
+
+
+
+
+space Θ: concretely, the complement is a nite union of determinantal varieties (rank drops
+in the projection matrices from A4 and A6 and in WO from A8) together with polynomial
+                                                                                (i)     (i) ⊤ h
+constraints encoding linear dependence among the bilinear forms { WQ (WK )                   }i=1 (A7).
+Consequently Θ \ Θ0 has Lebesgue measure zero.
+Key dependencies. A7 yields analytic independence of attention score families (Proposi-
+tion 9), which together with A4 and A8 drives both attention weight identiability (Lemma 18)
+and head-wise factorization (Theorem 21). When biases are present, A3 requires covariant
+transformation under gauge actions; the exact laws are in Proposition 11.
+
+2.3. Position-Encoded Architectures (RoPE)
+For architectures with rotary position embeddings, position-dependent rotations are applied
+after the linear projections at the token level. For tokens at positions m and n,
+
+                          QRoPE (m) = Q R(m),           K RoPE (n) = K R(n),                          (2.4)
+
+where R(m)      ∈ SO(dk ) is block-diagonal with 2 × 2 rotation blocks of angles mθj .                 The
+attention score depends only on the relative rotation:
+
+                             1                     1
+                      ℓmn = √ qm R(m)(kn R(n))⊤ = √ qm R(m − n)kn⊤ ,                                  (2.5)
+                             dk                    dk
+since R(m)R(n)
+                    ⊤ = R(m − n). Any gauge transform A ∈ GL(d ) that preserves attention
+                                                              k
+must commute with all R(m), hence
+
+                      CRoPE = {A ∈ GL(dk ) | AR(m) = R(m)A for all m}.                                (2.6)
+
+
+
+                                                  625
+                                           Wang Wang
+
+
+
+
+    Standard RoPE uses distinct frequencies θj ; when multiple planes share a frequency (non-
+generic), the commutant enlarges on that collision block to GL(r, C).
+    For standard RoPE with 2 × 2 rotation blocks and distinct frequencies, the commutant
+consists of block-diagonal matrices where each block has form aI2 + bJ with J the 90
+                                                                                            ◦
+
+rotation. This yields CRoPE ∼
+                            = (GL(1, C))dk /2 with real dimension dk , giving the reduced
+gauge group GRoPE formally stated in Corollary 4.
+
+
+3. Global Maximality of the Gauge Group
+We now establish the complete gauge group structure for the canonical Transformer family.
+Our proof strategy proceeds through three stages: constructing the gauge group candidate,
+proving these transformations preserve the function, and establishing no additional symme-
+tries exist.
+
+
+
+Denition 1 (Standard Gauge Transformations) The standard gauge group Gmax con-
+sists of transformations parametrized by (Ai , Ci ) ∈ GL(dk ) × GL(dv ) for each head i ∈
+{1, . . . , h} and permutations σ ∈ Sh , acting as:
+
+                              (i)    (i)           (σ(i))         (σ(i))
+                                                               (A−1   ⊤
+                                                                        
+                           (WQ , WK ) 7→ WQ                 Ai , W K
+                                                                  i )     ,                (3.1)
+
+                             (i)            (σ(i))
+                                                   Ci , Ci−1 WO,σ(i) .
+                                                                    
+                           (WV , WO,i ) 7→ WV                                              (3.2)
+
+
+We index (Ai , Ci ) by the target head i. With this action the composition law coincides with
+the standard wreath product ((GL(dk ))h × (GL(dv ))h ) ⋊ Sh .
+
+Theorem 2 (Global Maximality on the Generic Stratum) For the canonical Trans-
+former family satisfying assumptions A1A4, A6A8, the gauge group on the generic stratum
+Θ0 equals exactly Gmax = ((GL(dk ))h × (GL(dv ))h ) ⋊ Sh . No additional parameter symme-
+tries exist beyond those in this group.
+
+Proof sketch.        We establish equality via bidirectional containment. The forward direction
+Gmax ⊆ G(θ) is by direct verication.
+   For the reverse G(θ) ⊆ Gmax : (i) Lie algebra. Preserving Qi Ki and Vi WO,i forces
+                                                                      ⊤
+   (i)      (i)         (i)         (i) ⊤          (i)      (i)
+δWQ = WQ Xi , δWK = −WK Xi and δWV = WV Yi , δWO,i = −Yi WO,i , hence
+                            i=1 gl(dv ). (ii) Identiability. By analytic independence of
+        Lh                Lh
+gmax =     i=1 gl(dk ) ⊕
+attention weight families (Proposition 9) and uniqueness of analytic mixture representa-
+tions, attention weights match up to a head permutation (Lemma 18).        (iii) Factoriza-
+tion. For each head, preservation of Vi WO,i and Qi Ki⊤ yields equal minimal-rank factoriza-
+tions. By uniqueness of minimal-rank factorizations under A4 and A8, there exist unique
+                                            ′(i)            (i)
+                                                              ′ = C −1 W           ′(i)    (i)
+Ci ∈ GL(dv ) and Ai ∈ GL(dk ) with WV              = WV Ci , WO,i  i     O,i and WQ = WQ Ai ,
+
+          i ) (Theorem 21). (iv) No cross-head mixing. By the block-diagonality
+  ′(i)         (i)
+WK = WK (A−1 ⊤
+
+argument (Lemma 22), transformations cannot mix parameters across heads except via per-
+mutations.       In the canonical case dmodel      = h dv , this forces WO = P WO with P a block
+permutation, hence P = I after reindexing.
+    Complete proofs appear in Appendices B.1B.6. □
+
+
+
+                                                    626
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+Corollary 3 (Gauge Dimension) The continuous gauge group dimension for canonical
+Transformers is h(d2k + d2v ) per layer. For standard congurations with h = 12 heads and
+dk = dv = 64, this yields 12 × (642 + 642 ) = 98, 304 continuous degrees of freedom per
+attention layer.
+Corollary 4 (Gauge Group for RoPE Architectures) For architectures with rotary
+position embeddings, the gauge group becomes GRoPE = ((CRoPE )h × (GL(dv ))h ) ⋊ Sh where
+CRoPE is the commutant of position rotations. For standard RoPE with 2 × 2 rotation blocks,
+CRoPE ∼= (GL(1, C))dk /2 has real dimension dk , reducing gauge freedom from d2k to dk per
+head in the query-key sector.
+4. Architectural Extensions and Multi-Layer Structure
+Having established global maximality for multi-head attention, we extend our analysis to
+complete Transformer architectures. We prove that LayerNorm preserves gauge symmetries,
+characterize the combined attention-FFN block structure, and establish that multi-layer
+Transformers have a direct product gauge group with no inter-layer coupling.
+
+4.1. LayerNorm Preserves Gauge Symmetry
+Corollary 5 (LayerNorm compatibility) Since MHA's output is gauge-invariant and
+LayerNorm acts on that tensor (Post-LN: X + MHA(X); Pre-LN: LN(X)), LayerNorm
+preserves the symmetry in both variants. See Appendix C for proof.
+4.2. Feed-Forward Networks and Block Structure
+Feed-forward networks in Transformer blocks possess limited symmetry structure due to
+non-linear activations.
+
+Lemma 6 (FFN Gauge Structure) The gauge group of the feed-forward network with
+GELU activation consists only of hidden unit permutations: GFFN = Sdf f where df f is the
+hidden dimension.
+     Since MHA and FFN operate on disjoint parameters and residual connections prevent
+coupling, their gauge groups combine as a direct product: GBlock = GMHA × GFFN .
+
+4.3. Multi-Layer Direct Product Structure
+Theorem 7 (Layer-Local Product on Generic Stratum) For any parameters, GModel ⊆
+QL     (ℓ)
+  ℓ=1 GBlock .
+            If assumptions A1A6 hold (including no parameter tying across layers, As-
+sumption A1) and parameters are in generic position, then equality holds:
+                                              L
+                                                      (ℓ)
+                                              Y
+                                   GModel =         GBlock .
+                                              ℓ=1
+
+Proof [Proof Sketch] Inclusion always holds by construction. For equality, residual connec-
+tions force any transformation on the block output at layer ℓ to apply identically to the
+untouched residual stream, which is impossible unless the transformation is the identity. By
+Lemma 26, LayerNorm is not equivariant under general linear scalings M ̸= I on the generic
+stratum. Consequently, a layer's gauge action cannot propagate across layers, yielding the
+layerwise direct product. Complete proof in Appendix C.
+
+
+
+
+                                            627
+                                        Wang Wang
+
+
+
+
+5. Implications for Optimization and Loss Landscape Geometry
+The gauge structure has direct consequences for optimization geometry, creating at direc-
+tions in the loss landscape and explaining empirical phenomena in Transformer training.
+
+5.1. Hessian Nullspace Structure
+Proposition 8 (Hessian Nullspace from Gauge Symmetry) At any critical point θ∗ ∈
+Θ0 , the Hessian ∇2 L(θ∗ ) has nullspace dimension at least h(d2k + d2v ) per layer, with null
+directions corresponding to the Lie algebra gmax of gauge transformations.
+    Since gauge transformations preserve the network function, they preserve the loss: L(g(θ)) =
+L(θ) for all g ∈ Gmax . Along any one-parameter subgroup gt = exp(tX) where X ∈ gmax ,
+the loss remains constant, yielding zero curvature in these directions. For an L-layer model,
+                                           2    2
+the nullspace dimension is at least L · h(dk + dv ).
+
+5.2. Optimization in Quotient Space
+The gradient ∇L(θ) is orthogonal to gauge orbits at every point, so gradient descent naturally
+respects the gauge without explicit constraints.   Optimization eectively proceeds on the
+quotient Θ0 /Gmax of gauge-inequivalent congurations; its eective dimension is dimeff     =
+dim(Θ) − L h(d2k + d2v ).
+   This dimension reduction partially explains why Transformers with hundreds of millions
+of parameters can be trained eectivelythe true degrees of freedom are substantially fewer
+than the raw parameter count.
+
+5.3. Mode Connectivity and Flat Minima
+Critical points of Transformer training form continuous manifolds rather than isolated points.
+Within each connected component of the gauge orbit, all points represent identical func-
+tions with identical loss. This provides a geometric explanation for the prevalence of at
+minima observed empirically and the phenomenon of linear mode connectivity between in-
+dependently trained models. Two parameter congurations that dier by an element of the
+                       0
+identity component Gmax are connected by a at path in the loss landscape with constant
+loss value; parameters related only by elements in the discrete components of Gmax (e.g.,
+permutations) are not connected by such gauge-induced continuous paths.
+
+
+6. Experimental Validation
+We validate our theoretical predictions on pretrained GPT-2 checkpoints obtained from
+Hugging Face, spanning GPT-2 (124M parameters), GPT-2-Medium (355M), GPT-2-Large
+(774M), and GPT-2-XL (1.5B). All experiments use single-precision (FP32) arithmetic with
+deterministic settings: xed random seeds, dropout disabled, and evaluation mode for all
+layers.   For each model, we extract per-head projection matrices (WQ , WK , WV , WO ) and
+corresponding biases, apply gauge transformations drawn from Gmax with well-conditioned
+matrices, and measure relative errors between original and transformed attention outputs
+and logits. Full implementation details and extended results appear in Appendix F.
+   For valid gauge transformations, attention and logit outputs agree up to oating-point
+roundo. Across all four GPT-2 models, relative attention-output errors are tightly concen-
+trated around 10
+                  −6 : medians are approximately 1.2×10−6 , with maxima below 3×10−6 (tens
+    FP32
+of εmach ). Logit-level relative errors remain below 3.1 × 10
+                                                             −5 (a few hundred εFP32 ) across
+                                                                                mach
+
+
+                                             628
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+all checkpoints. As a stricter end-to-end test, we apply the KV gauge-xing transformation
+given by Algorithm 1 and compare generation behavior before and after: for every GPT-2
+size, greedy decoding produces identical token sequences, conrming functional equivalence
+at FP32 precision.
+
+   These experiments operate on full multi-head attention blocks and are consistent with
+the direct-product structure
+
+
+
+                            Gmax = (GL(dk ))h × (GL(dv ))h ⋊ Sh ,
+                                                          
+
+
+in which querykey and valueoutput sectors transform independently and heads may be
+permuted without changing the attention map.          The observed invariance under arbitrary
+per-head gauges implies invariance of each individual sector when the others are held xed.
+
+   To probe maximality, we construct families of deliberately invalid transformations that
+violate the structure of Gmax : (i) asymmetric querykey transforms using independent ma-
+trices for WQ and WK , (ii) transforms that apply A instead of A
+                                                                         −⊤ to the key sector, and
+
+(iii) value transformations without the compensating inverse on WO .           On all four GPT-2
+checkpoints, these invalid modications produce relative logit errors between 10
+                                                                                        1 and 104 ,
+
+and the resulting generations diverge completely from the original model. The sharp gap
+between O(10
+               −6 )O(10−5 ) errors for valid transformations and O(101 )O(104 ) errors for
+
+invalid ones provides strong empirical evidence that Gmax captures exactly the symmetries
+of the attention mechanism in pretrained Transformers.
+
+
+7. Practical Implications and Applications
+7.1. Quantifying Parameter Redundancy
+Gauge symmetries introduce over 1.18M continuously redundant dimensions in a 110M pa-
+rameter Transformer Base model and over 300M for L=96, h=96, dk =dv =128; Appendix H.1
+                                                               2     2
+gives the derivation and the full-model scaling ratio L · h(dk + dv )/dtotal .
+
+
+7.2. Model Compression via Gauge-Fixing
+Deterministic gauge-xing yields an exact, lossless canonical representative:      per head it
+          GL(dk ) × GL(dv ) to residual O(dk ) × O(dv ), eliminating h dv (d2v +1) + dk (d2k +1)
+                                                                                                
+reduces
+continuous degrees of freedom per layer. The QR construction, bias handling, and residual
+orthogonal freedom are formalized in Proposition 44, Algorithm 1, and Appendix H.
+
+
+7.3. Gauge-Aware Optimization
+Projecting gradients onto the gauge-orthogonal complement, ∇proj L = ∇L − Πg ∇L, elimi-
+nates redundant updates along gauge orbits and focuses optimization on function-changing
+directions; see Algorithm 2 and Appendix H for implementation details.
+
+
+7.4. Model Merging and Averaging
+Gauge alignment before averaging  canonicalising both models, nding the optimal head
+permutation via the Hungarian algorithm, and applying per-head Q/K Procrustes alignment
+for Ai  enables meaningful parameter interpolation and explains why naive averaging of
+independently trained models fails; see Algorithm 3.
+
+
+
+                                               629
+                                         Wang Wang
+
+
+
+
+7.5. Implications for Architecture Design
+Multi-query and grouped-query attention reduce gauge freedom by coupling heads, a trade-
+o now quantiable through the dimension of the resulting gauge group.
+
+
+8. Related Work
+Permutation symmetries in fully connected and convolutional networks [9; 13; 14; 3] are sub-
+stantially smaller than the continuous gauge groups identied here. For Transformers, van
+Nierop [17] observed gauge invariance from a physics perspective without proving complete-
+ness; Entezari et al. [7] studied permutation invariance for mode connectivity; da Silva et al.
+[4]; Zhang et al. [19] demonstrated symmetry eects on sharpness and model fusion; and
+Henry et al. [10] analyzed unnormalized attention with fundamentally dierent geometry.
+Prior work on symmetry-induced at directions [12], mode connectivity [8; 6], and model
+merging [1; 18] implicitly leveraged symmetries through weight matching; our maximality
+proof makes those observations precise.
+
+
+9. Conclusion
+We have established the complete gauge group structure of Transformer architectures, prov-
+ing global maximality for the canonical family under mild generic conditions. The gauge
+group Gmax = ((GL(dk ))
+                          h × (GL(d ))h ) ⋊ S captures all parameter redundancies in stan-
+                                   v         h
+dard multi-head attention, with no additional symmetries beyond those we identify; this
+is proved through three independent arguments  Lie algebra characterization, attention
+weight identiability, and necessary factorization  and extends through LayerNorm and
+                                         QL    (l)
+residual connections to yield GModel =    l=1 GBlock for multi-layer architectures.
+   The gauge structure reveals over one million continuously redundant dimensions in stan-
+dard models, corresponding to at directions in the loss landscape and enabling practical
+advances in lossless compression, gauge-orthogonal optimization, and principled model merg-
+ing. Experiments on pretrained GPT-2 models from 124M to 1.5B parameters show that
+valid gauge transformations preserve outputs to machine precision, whereas invalid transfor-
+                            1   4
+mations induce errors of 10 10 .
+
+   Open questions include how gauge structure changes under mixture-of-experts or state-
+space architectures, and whether complexity measures dened on the quotient Θ0 /Gmax
+better predict generalization than raw parameter counts. The main theorem identies Gmax
+as the exact gauge group of standard multi-head attention under the stated generic condi-
+tions.
+
+
+References
+ [1] Samuel K. Ainsworth, Jonathan Hayase, and Siddhartha Srinivasa. Git re-basin: Merg-
+     ing models modulo permutation symmetries. In International Conference on Learning
+     Representations, 2023. URL https://openreview.net/forum?id=CQsmMYmlP5T.
+
+ [2] Elizabeth S. Allman, Catherine Matias, and John A. Rhodes. Identiability of parame-
+     ters in latent structure models with many observed variables. The Annals of Statistics,
+     37(6A):30993132, 2009. doi: 10.1214/09-AOS689. URL https://doi.org/10.1214/
+     09-AOS689.
+
+                                              630
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+ [3] Taco S. Cohen and Max Welling.            Group equivariant convolutional networks.           In
+    Proceedings of the 33rd International Conference on Machine Learning, volume 48
+    of Proceedings of Machine Learning Research, pages 29902999. PMLR, 2016. URL
+    https://proceedings.mlr.press/v48/cohenc16.html.
+
+ [4] Marvin F. da Silva, Felix Dangel, and Sageev Oore. Hide & seek: Transformer sym-
+    metries obscure sharpness & Riemannian geometry nds it.      Proceedings of the
+                                                                             In
+    42nd International Conference on Machine Learning (ICML 2025), volume 267 of
+    Proceedings of Machine Learning Research, pages 5559155613. PMLR, 2025. URL
+    https://proceedings.mlr.press/v267/silva25a.html. Spotlight Poster.
+
+ [5] Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova.                    BERT: Pre-
+    training of deep bidirectional transformers for language understanding. In Proceedings
+    of the 2019 Conference of the North American Chapter of the Association for Compu-
+    tational Linguistics: Human Language Technologies, pages 41714186. Association for
+    Computational Linguistics, 2019. URL https://aclanthology.org/N19-1423.
+
+
+ [6] Felix Draxler, Kambis Veschgini, Manfred Salmhofer, and Fred Hamprecht. Essentially
+    no barriers in neural network energy landscape. In Proceedings of the 35th International
+    Conference on Machine Learning, volume 80 of Proceedings of Machine Learning Re-
+    search, pages 13091318. PMLR, 2018. URL https://proceedings.mlr.press/v80/
+    draxler18a.html.
+
+ [7] Rahim Entezari, Hanie Sedghi, Olga Saukh, and Behnam Neyshabur.                      The role of
+    permutation invariance in linear mode connectivity of neural networks. In International
+    Conference on Learning Representations, 2022. URL https://openreview.net/forum?
+    id=dNigytemkL.
+
+ [8] Timur    Garipov,    Pavel   Izmailov,   Dmitrii   Podoprikhin,    Dmitry     P.   Vetrov,   and
+    Andrew     G.   Wilson.       Loss   surfaces,    mode   connectivity,   and   fast   ensembling
+    of   DNNs.       Advances in Neural Information Processing Systems, pages
+                     In
+    88038812, 2018.    URL https://proceedings.neurips.cc/paper/2018/hash/
+    be3087e74e9100d4bc4c6268cdbe8456-Abstract.html.
+
+ [9] Robert Hecht-Nielsen. On the algebraic structure of feedforward network weight spaces.
+    In Advanced Neural Computers, pages 129135. Elsevier, 1990. URL https://doi.org/
+    10.1016/B978-0-444-88400-8.50019-4.
+
+[10] Nathan W. Henry, Giovanni Luca Marchetti, and Kathlén Kohn. Geometry of lightning
+    self-attention: Identiability and dimension. In International Conference on Learning
+    Representations (ICLR), 2025. URL https://openreview.net/forum?id=XtY3xYQWcW.
+    Poster.
+
+
+[11] Pavel Izmailov, Dmitrii Podoprikhin, Timur Garipov, Dmitry Vetrov, and Andrew Gor-
+    don Wilson.      Averaging weights leads to wider optima and better generalization.
+    In Proceedings of the 34th Conference on Uncertainty in Articial Intelligence (UAI
+    2018), pages 876885. AUAI Press, 2018.             URL    https://www.auai.org/uai2018/
+    proceedings/papers/313.pdf.
+
+                                                631
+                                       Wang Wang
+
+
+
+
+[12] Daniel Kunin, Javier Sagastuy-Brena, Surya Ganguli, Daniel L.K. Yamins, and Hidenori
+    Tanaka. Neural mechanics: Symmetry and broken conservation laws in deep learning
+    dynamics. In International Conference on Learning Representations, 2021. URL https:
+    //openreview.net/forum?id=q8qLAbQBupm.
+
+[13] V¥ra Kurková and Paul C. Kainen. Functionally equivalent feedforward neural networks.
+    Neural Computation, 6(3):543558, 1994. URL https://doi.org/10.1162/neco.1994.
+    6.3.543.
+
+[14] Yann LeCun, Léon Bottou, Yoshua Bengio, and Patrick Haner. Gradient-based learn-
+    ing applied to document recognition. Proceedings of the IEEE, 86(11):22782324, 1998.
+    URL https://doi.org/10.1109/5.726791.
+
+
+[15] Alec Radford, Jerey Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever.
+    Language models are unsupervised multitask learners.        Technical report, OpenAI,
+    2019.   URL https://cdn.openai.com/better-language-models/language_models_
+    are_unsupervised_multitask_learners.pdf.
+
+[16] Henry Teicher. Identiability of nite mixtures. The Annals of Mathematical Statistics,
+    34(4):12651269, 1963.   doi:   10.1214/aoms/1177703862.   URL https://doi.org/10.
+    1214/aoms/1177703862.
+
+[17] Leo van Nierop. Transformer models are gauge invariant: A mathematical connection
+    between AI and particle physics, 2024. URL https://arxiv.org/abs/2412.14543.
+
+
+[18] Mitchell Wortsman, Gabriel Ilharco, Samir Ya Gadre, Rebecca Roelofs, Raphael
+    Gontijo-Lopes, Ari S Morcos, Hongseok Namkoong, Ali Farhadi, Yair Carmon, Si-
+    mon Kornblith, and Ludwig Schmidt.         Model soups:    Averaging weights of multi-
+    ple ne-tuned models improves accuracy without increasing inference time.       In Pro-
+    ceedings of the 39th International Conference on Machine Learning, volume 162 of
+    Proceedings of Machine Learning Research, pages 2396523998. PMLR, 2022. URL
+    https://proceedings.mlr.press/v162/wortsman22a.html.
+
+[19] Binchi Zhang, Zaiyi Zheng, Zhengzhang Chen, and Jundong Li. Beyond the permuta-
+    tion symmetry of transformers: The role of rotation for model fusion. In Proceedings
+    of the 42nd International Conference on Machine Learning (ICML 2025), volume 267
+    of Proceedings of Machine Learning Research, pages 7709077106. PMLR, 2025. URL
+    https://proceedings.mlr.press/v267/zhang25dk.html. Spotlight Poster.
+
+
+Appendix A. Mathematical Framework and Complete Assumptions
+This appendix provides complete justications for all assumptions and establishes the math-
+ematical framework underlying our gauge group characterization.
+
+
+A.1. Complete Statements of Assumptions A1A9
+For convenience we restate here the structural and genericity assumptions used throughout
+the paper. They coincide with the entries of Table 1 in the main text.
+
+
+
+                                            632
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+A1     Standard multi-head architecture, no weight sharing. Each layer uses inde-
+                                (i)      (i)   (i)
+     pendent parameters {WQ , WK , WV                , WO,i }hi=1 ; there is no parameter sharing across
+     heads or layers.
+
+
+A2     Canonical dimensions. The model dimension satises dmodel = h dv , so that the
+     concatenated value map V         ∈ Rn×hdv and the output projection WO ∈ R(hdv )×dmodel have
+     compatible shapes in the canonical case.
+
+
+A3     Biases absent or transform covariantly. Either biases are omitted, or whenever
+     gauge transformations are applied we transform all bias vectors covariantly so that the
+     network function is preserved (cf. Proposition 11).
+
+
+A4     Full column rank of per-head projections. For each head i, the matrices WQ(i) ∈
+                     (i)                        (i)
+     Rdmodel ×dk , WK ∈ Rdmodel ×dk and WV ∈ Rdmodel ×dv have full column rank.
+
+A5     Standard LayerNorm blocks. LayerNorm is applied in either the standard Pre-LN
+     or Post-LN conguration, with learned ane parameters (γ, β) that are not constrained
+     or tied across layers.
+
+
+A6     Sucient width for attention identiability. For each head i we have rank [WQ(i) |
+      (i)                                                            (i) (i)
+     WK ] = 2dk and dmodel ≥ 2dk , ensuring that the bilinear forms XWQ (WK )⊤ X ⊤ can
+     be separated.
+
+
+A7     Linear independence of querykey bilinear forms. The matrices {WQ(i) (WK(i) )⊤ }hi=1
+     are linearly independent as elements of R model
+                                                        d    ×dmodel on the generic stratum Θ .
+                                                                                             0
+
+A8     Full row rank of the output projection. The output matrix WO ∈ R(hdv )×dmodel
+     has full row rank (and is square and invertible in the canonical case dmodel = hdv ).
+
+
+A9     Generic feed-forward blocks. Feed-forward weight matrices are in generic posi-
+     tion and the nonlinearity is non-polynomial (e.g. GELU, ReLU), ruling out accidental
+     additional symmetries in the FFN.
+
+
+A.2. Linear Independence of Attention Weight Maps
+Proposition 9 (Analytic Independence of Attention Weights) Assume A1A9 and
+x a sequence length n. For each head i ∈ {1, . . . , h}, the row-wise attention map
+                                
+                                                                       (i)  (i) ⊤ ⊤
+          αi (X) = softmax Si (X) ∈ Rn×n ,          Si (X) = √1d XWQ WK           X ,
+                                                                        k
+
+
+is real-analytic in X . On a Zariski-open dense set of parameters    (the generic stratum), the
+family {αi (·)}hi=1 is linearly independent as functions: if hi=1 ci αi (X) ≡ 0 for all X , then
+                                                            P
+ci = 0 for all i.
+
+Proof Each Si (X) is quadratic in X , hence analytic; row-wise softmax is analytic, so αi is
+analytic. Linearize at S = 0 for the row-wise softmax acting on an n × n matrix S :
+
+
+                              softmax(S) = n1 Jn + n1 SPn + O(∥S∥2 ),
+
+                                                      633
+                                                   Wang Wang
+
+
+
+
+where Jn    = 11⊤ and Pn = In − n1 Jn is the centering projector.                    Applying this to Si (X)
+yields
+
+                         αi (X) = n1 Jn + n1 Si (X)Pn + O(∥X∥4 ).
+          P                                            P
+   Assume  i ci αi (X) ≡ 0. The constant term gives      i ci = 0. The quadratic term gives
+                                    X                  
+                                               ci Si (X) Pn = 0       for all X.
+                                           i
+                     P
+   Write S(X) =      i ci Si (X) and note S(X)Pn = 0 if and only if every row of S(X) is
+                                1        ⊤
+                                                      P        (i) (i) ⊤
+constant.   Since S(X)jk = √ Xj M Xk with M :=           i ci WQ (WK )   (a bilinear form;
+                                dk
+symmetry not required), row constancy (S(X)Pn = 0) means Sjk = Sjℓ for all j, k, ℓ, i.e.
+
+
+                           Xj M Xk⊤ = Xj M Xℓ⊤ ⇒ Xj M (Xk − Xℓ )⊤ = 0.
+
+As Xj and (Xk − Xℓ ) can independently span R model (as X varies), this forces M
+                                                                  d                                       = 0.
+                                                                       (i) (i) ⊤ h
+On the generic stratum (Assumption A7), the family of bilinear forms {WQ (WK ) }i=1 is
+linearly independent, hence M = 0 implies ci = 0 for all i.
+
+
+
+
+Remark 10 (Constructive Variant) If each WO,i has full row rank with a right inverse
+                      (j)
+and dim j̸=i Null(WV ) ≥ dv , one can recover αi by stacked probe inputs; we use the
+         T
+analytic route to avoid ε-scaling while retaining rigor.
+
+A.3. Bias Transformations and Ane Projections
+Proposition 11 (Covariant Bias Transformation) Consider multi-head attention un-
+der the row-vector convention with optional ane biases
+
+                      (i)          (i) ⊤                 (i)          (i) ⊤           (i)     (i) ⊤
+            Qi = XWQ + 1 bQ ,                  Ki = XWK + 1 bK ,              Vi = XWV + 1 bV         ,
+
+and a single output bias bO ∈ Rdmodel added after projection of concatenated heads. Assume
+the standard gauge action in Denition 1:
+               (i)   (i)     (i)                    (i)     (i)        (i)
+                                                   WQ Ai , WK (A−1 ⊤           −1
+                                                                                     
+            (WQ , WK , WV , WO,i ) 7→                           i ) , WV Ci , Ci WO,i ,
+
+with APi ∈ GL(dk ), Ci ∈ GL(dv ), and keep the global output bias bO in the usual place, i.e.
+         h
+         i=1 αi (X) Vi WO,i + 1 bO . Then invariance of the MHA function for all inputs X
+Y =                              ⊤
+
+forces the biases to transform as
+              ′(i)   (i)               ′(i)      (i)                   ′(i)   (i)
+             bQ = bQ Ai ,            bK = bK (A−1 ⊤
+                                               i ) ,                  bV = bV Ci ,     b′O = bO .
+
+Conversely, with these bias laws, MHA is invariant under the gauge action. On the generic
+stratum (Assumptions A2, A4, A8), these transformations are unique.
+
+Proof
+
+                                                        634
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+Querykey sector.                Requiring equality of score bilinears for all X ,
+
+        (i)          ′(i) ⊤            (i)                              ′(i) ⊤ ⊤                     (i)            (i) ⊤           (i)       (i) ⊤ ⊤
+ XWQ Ai + 1 bQ                  XWK (A−1 ⊤
+                                      i ) + 1 bK                                       =        XWQ + 1 bQ                      XWK + 1 bK                  ,
+
+and matching the terms linear in X (the identity must hold for all X ) gives
+
+                                              ′(i) ⊤           (i) ⊤                ′(i) ⊤                   (i) ⊤
+                                      Ai bK            = bK ,                   bQ           (A−1
+                                                                                               i ) = bQ ,
+
+hence
+                                            ′(i)         (i)                                 ′(i)      (i)
+                                         bK = bK (A−1 ⊤
+                                                   i ) ,                                bQ = bQ Ai .
+                                                                         −1
+The quadratic terms cancel because Ai (Ai                                     ) = I , and the remaining constant term is then
+satised. Uniqueness on the generic stratum follows by the same coecient matching and
+the full-column-rank assumption A4.
+
+Valueoutput sector.                  Write the (per-head) ane value map and the global output:
+
+                                                                                      h
+                                      (i)              (i) ⊤
+                                                                                      X
+                     Vi = XWV + 1 bV                           ,          Y =                 αi (X) Vi WO,i + 1 b⊤
+                                                                                                                  O.
+                                                                                      i=1
+
+Under the gauge action,
+
+                    (i)            (i)                                                                          (i)                 ′(i) ⊤
+                  (WV , WO,i ) 7→ WV Ci , Ci−1 WO,i ,                                           Vi′ = XWV Ci + 1 bV
+                                                   
+                                                                                                                                             ,
+
+and the transformed output is
+
+                                  h
+                                                                   (i)                ′(i) ⊤                                   ⊤
+                                  X
+                      Y′ =              αi (X) XWV Ci + 1 bV                                        Ci−1 WO,i + 1 b′O .
+                                  i=1
+
+Since αi (X) are row-stochastic, αi (X)1 = 1 for all i and X . Thus the bias contribution is
+X -independent, and equality Y ′ = Y for all X gives
+                            h                   h
+                               ′(i)⊤ −1            (i)⊤
+                            X                   X
+                                            ′⊤
+                              bV Ci WO,i + bO =   bV WO,i + b⊤
+                                                             O.                                                                                    (A.1)
+                            i=1                                                         i=1
+
+Dene row vectors
+        ′(1)⊤                           ′(h)⊤                                                    (1)⊤                         (h)⊤ 
+  u′ := bV C1−1                                    Ch−1 ∈ R1×(hdv ) ,                                                                    ∈ R1×(hdv ) .
+                                                       
+                                ···     bV                                                   u := bV                 ···    bV
+                                                                                    ⊤ ⊤
+                                                                        ⊤
+                                                                                          ∈ R(hdv )×dmodel , (A.1) is
+                                                                                        
+With the standard block stacking WO =                                   WO,1 · · · WO,h
+
+                                                u′ WO + b′⊤         ⊤
+                                                         O = uWO + bO .                                                                            (A.2)
+
+
+   Uniqueness and the role of bO . The global output bias bO is added after all head-wise
+gauge operations and is not transformed by Denition 1; we therefore treat it as gauge-inert
+              ′
+and set bO = bO . With this convention, (A.2) reduces to (u
+                                                                                                         ′ − u) W
+                                                                        O = 0. By A8, WO has
+                                                                            ′(i) (i)
+full row rank, so its left nullspace is trivial; hence u = u, which yields bV = bV Ci for each
+                                                        ′
+
+head i. (In the canonical case A2, WO is square and invertible, and the same conclusion
+follows immediately.)
+
+
+
+                                                                              635
+                                               Wang Wang
+
+
+
+
+Suciency.      Substituting bQ
+                               ′(i)      (i)     ′(i)   (i)
+                                      = bQ Ai , bK = bK (A−1 ⊤   ′(i)   (i)       ′
+                                                          i ) , bV = bV Ci , and bO = bO into
+the expanded expressions shows the ane cross-terms cancel and all constants match, so
+the MHA function is preserved.
+
+
+
+
+Remark 12 (Broadcasting and placement of bO ) The vectors b(i)  (i) (i)
+                                                           Q , bK , bV are broad-
+cast across the sequence length via 1 b⊤ . The attention weights satisfy αi (X)1 = 1, so the
+bias contribution is independent of X . The output bias bO is a single dmodel -vector added after
+concatenation and projection; it is therefore unaected by head-wise Ci (hence b′O = bO ).
+
+A.4. Extended Geometric Intuition
+Example 1 (Concrete
+                  Gauge Transformation with Complete
+                                                     Calculations) For WQ =
+               2 1                                          2 1
+I2 and WK =         , consider the transformation with A =        . Setting WQ′ = WQ A
+               1 3                                          0 1
+and WK′ = W (A−1 )⊤ yields:
+             K                                             
+                           1/2 −1/2                    1/2 0
+   First, compute A =
+                   −1                   and (A ) =
+                                              −1 ⊤              .
+                            0     1                    −1/2 1
+   Then:
+                                                
+                            ′         2 1      2 1
+                         WQ = I2 ·          =                                     (A.3)
+                                      0 1      0 1
+                                                        
+                            ′    2 1       1/2 0       1/2 1
+                         WK   =         ·           =                             (A.4)
+                                 1 3       −1/2 1       −1 3
+
+   Direct computation veries:
+                                                        
+                                       2 1     1/2 −1    2 1
+                   WQ′ (WK
+                         ′ ⊤
+                           ) =              ·          =             ⊤
+                                                               = WQ WK                     (A.5)
+                                       0 1      1  3     1 3
+
+   The attention scores remain identical despite the parameter transformation.
+
+A.5. Technical Remarks and Contextual Notes
+Remark 13 (Architectural Scope) Global maximality requires dmodel = h · dv , satised
+by BERT-Base (768 = 12 × 64) and GPT-2 (768 = 12 × 64). For architectures where this
+dimensional relationship does not hold exactly, continuous maximality of the gauge group is
+established, though the discrete structure may dier from the pure permutation group Sh .
+
+Remark 14 (Generic Stratum and Optimization Trajectories) The generic stratum
+Θ0 where our results hold has full Lebesgue measure in the parameter space. Since optimiza-
+tion trajectories are absolutely continuous with respect to Lebesgue measure, they avoid the
+measure-zero exceptional set with probability one. Thus the characterization holds outside a
+measure-zero exceptional set, not only at initialization.
+
+Remark 15 (Essential Nature of Architectural Constraints) Several architectural choices
+that appear conventional are actually mathematically essential for gauge symmetry preserva-
+tion:
+
+                                                  636
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+  1. LayerNorm placement after the output projection WO rather than before is necessary.
+     If LayerNorm operated on concatenated head outputs before projection, the value-output
+     transformations Ci would change individual head statistics, breaking gauge invariance.
+
+  2. The absence of weight sharing across heads is crucial. Shared parameters would couple
+     gauge transformations across heads, preventing the direct product structure.
+                                     √
+  3. The standard scaling factor 1/ dk stabilizes dot-product magnitudes and gradients.
+     By contrast, gauge invariance itself follows from preserving QK ⊤ under (WQ , WK ) 7→
+     (WQ A, WK (A−1 )⊤ ) and does not depend on this scaling.
+
+Remark 16 (Practical Implications of Gauge Structure) The extensive at direc-
+tions from gauge symmetry help explain several empirical phenomena:
+
+    The prevalence of wide minima in Transformer optimization despite high parameter
+     counts
+
+    Success of model averaging after gauge alignment [11; 18]
+
+    Eectiveness of lottery ticket pruning within gauge equivalence classes
+
+    Convergence to similar performance from diverse initializations
+
+Appendix B. Complete Proofs for Gauge Group Maximality
+This section provides the full proof of Theorem 2. We rst show that every element of the
+proposed gauge group Gmax preserves the multi-head attention map (suciency). We then
+characterize all innitesimal symmetries at a generic parameter via the Lie algebra of Gmax
+and identiability of attention maps, and nally upgrade these local statements to a global
+classication, proving that no additional symmetries exist and that Gmax is maximal on the
+generic stratum Θ0 .
+
+
+B.1. Proof of Suciency
+Lemma 17 (Every transformation in Gmax preserves MHA) For all g ∈ Gmax , θ ∈
+Θ0 , and inputs X ∈ Rn×dmodel , we have MHA(X; g(θ)) = MHA(X; θ).
+
+Proof   Consider transformations with identity permutation rst.       For each head   i, the
+query-key transformation preserves attention scores:
+
+                                         (i)              (i)
+                        Q′i (Ki′ )⊤ = XWQ Ai · (A−1 ⊤     ⊤ ⊤
+                                                 i ) (WK ) X                           (B.1)
+
+                                         (i)            (i)
+                                  = XWQ Ai (A−1 ⊤     ⊤ ⊤
+                                             i ) (WK ) X                               (B.2)
+
+                                      (i)       (i)
+                                  = XWQ Idk (WK )⊤ X ⊤                                 (B.3)
+
+                                      (i)   (i)
+                                  = XWQ (WK )⊤ X ⊤ = Qi Ki⊤                            (B.4)
+
+
+                                                                                                ⊤
+                                                                                                    √
+   Since softmax operates element-wise on each row, the attention weights αi (X) = softmax(Qi Ki /      dk )
+remain unchanged.
+
+
+
+                                               637
+                                                  Wang Wang
+
+
+
+
+   The value-output transformation preserves each head's contribution:
+
+                           A′i (X)WO,i
+                                   ′
+                                       = αi (X)Vi′ WO,i
+                                                    ′
+                                                                                                         (B.5)
+                                                                (i)
+                                            = αi (X)XWV Ci · Ci−1 WO,i                                   (B.6)
+                                                      (i)
+                                            = αi (X)XWV WO,i = Ai (X)WO,i                                (B.7)
+
+   For permutations σ ∈ Sh , we have:
+
+                                                   h
+                                                   X
+                          MHA(X; g(θ)) =                 Aσ−1 (i) (X)WO,σ−1 (i)                          (B.8)
+                                                   i=1
+                                                   h
+                                                   X
+                                              =          Aj (X)WO,j = MHA(X; θ)                          (B.9)
+                                                   j=1
+
+where we substituted j = σ
+                                  −1 (i).
+
+
+
+B.2. Proof of Attention Weight Identiability
+Lemma 18 (Attention-weight identiability via analytic independence) Assume
+A1A9. If MHA(X; θ) = MHA(X; θ′ ) for all X in a nonempty open set U ⊆ Rn×dmodel ,
+then there exists σ ∈ Sh such that, for all X ∈ U and all i,
+                      ′
+         αi (X; θ) = ασ(i) (X; θ′ )         and Vi (X; θ)WO,i (θ) = Vσ(i)
+                                                                     ′
+                                                                          (X; θ′ )WO,σ(i)
+                                                                                   ′
+                                                                                          (θ′ ).
+Proof We have an identity of analytic mixtures on an open set U :
+                          h
+                          X                                  h
+                                                             X
+                                αi (X; θ) Fi (X; θ) =                 αj′ (X; θ′ ) Fj′ (X; θ′ ),
+                          i=1                                j=1
+
+                           ⊤
+                              √              (i)        (i)
+where αi (X) = softmax Qi Ki / dk with Qi = XWQ , Ki = XWK , and Fi (X) = Vi WO,i
+               (i)
+with Vi = XWV .
+                                                                        h                ′   h
+   By Proposition 9 (using A7), the families {αi (·)}i=1 and {αj (·)}j=1 are linearly indepen-
+dent analytic functions on U . On the same generic stratum, the maps {Fi (·)} and {Fj (·)}
+                                                                                                         ′
+
+are pairwise distinct by full-rank assumptions (A4, A8), i.e., equality Fi ≡ Fj (or Fi ≡ Fj )
+                                                                                                     ′       ′
+
+would impose polynomial constraints on parameters and hence is non-generic.
+   By uniqueness of analytic mixture representations [16; 2], there exists σ ∈ Sh with
+
+                                  ′
+                     αi (·; θ) = ασ(i) (·; θ′ )    and
+                                                                         ′
+                                                            Fi (·; θ) = Fσ(i) (·; θ′ )       on U,
+
+hence everywhere by the identity theorem for real-analytic functions.
+
+
+
+B.3. Proof of Lie Algebra Characterization
+Lemma 19 (Lie algebra equals gmax ) For θ ∈ Θ0 , the Lie algebra of the gauge group
+G(θ) equals
+                                                  h
+                                                  M                    h
+                                                                       M
+                                    gmax =              gl(dk ) ⊕             gl(dv ).
+                                                  i=1                   i=1
+
+Proof We establish g(θ) = gmax by bidirectional inclusion.
+
+                                                          638
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+Forward inclusion gmax ⊆ g(θ) .
+                                                   
+                                                            By Lemma 17, every element of Gmax preserves MHA.
+Dierentiating the one-parameter subgroups t 7→ exp(tXi ) and t 7→ exp(tYi ) at t = 0 yields
+the generators
+
+           (i)    (i)                 (i)                   (i)                      (i)           (i)
+       δWQ = WQ Xi ,            δWK = − WK Xi⊤ ,                             δWV = WV Yi ,               δWO,i = − Yi WO,i ,
+
+for arbitrary Xi ∈ gl(dk ) and Yi ∈ gl(dv ).                       Hence gmax is contained in the Lie algebra of
+symmetries.
+
+Reverse inclusion g(θ) ⊆ gmax .
+                                                       
+                                            Let gt be a smooth one-parameter family of gauge
+transformations with g0          = id and MHA(X; gt (θ)) = MHA(X; θ) for all X and all t. By
+Lemma 18, attention weights are preserved up to a head permutation. Since permutations
+form a discrete subgroup, any C
+                                                 1 path g is contained in the identity component, so (after
+                                                         t
+a single reindexing) the permutation is constant and equals id for t near 0. Therefore the
+rst-order invariance decomposes head-wise :
+
+
+                   δ Qi Ki⊤
+                                                                         
+                                     = 0          and         δ Vi WO,i        = 0               for each head i.
+
+
+      Querykey sector. Dierentiating Qi (t)Ki (t)⊤ = Qi Ki⊤ at t = 0 gives, for all inputs X ,
+                                     (i)         (i)                          (i)          (i)
+                              X δWQ (WK )⊤ X ⊤ + X WQ (δWK )⊤ X ⊤ = 0.                                                    (B.10)
+
+
+Let
+                                          (i)         (i)           (i)             (i)
+                     B := δWQ (WK )⊤ + WQ (δWK )⊤ ∈ Rdmodel ×dmodel .
+Then (B.10) reads XBX
+                                 ⊤ = 0 for all X . Fix arbitrary u, v ∈ Rdmodel and take X whose
+                   ⊤     ⊤
+rst two rows are u and v (remaining rows zero). The (1, 2) entry of XBX
+                                                                         ⊤ is u⊤ Bv , so
+
+u⊤ Bv = 0 for all u, v , which forces B = 0.
+      Thus
+                                                (i)         (i)                 (i)          (i)
+                                          δWQ (WK )⊤ = − WQ (δWK )⊤ .
+                                                                     (i) ⊤
+Post-multiplying by a xed left inverse of (WK )                                    (e.g., the MoorePenrose pseudoinverse
+transpose) and using full column rank (A4) gives
+
+                                          (i)               (i)
+                                 δWQ = WQ Xi                       for some Xi ∈ gl(dk ).
+
+
+                                          (i)                (i)
+Substituting back yields δWK                    = − WK Xi⊤ .
+      Valueoutput sector. The same argument applied to δ Vi WO,i = 0 shows
+                                                                 
+
+                        (i)         (i)
+                 δWV = WV Yi ,                          δWO,i = − Yi WO,i                  for some Yi ∈ gl(dv ).
+
+
+      No cross-head or cross-sector couplings appear. Hence every innitesimal symmetry has
+the stated block-diagonal form, so g(θ) ⊆ gmax .
+
+
+
+
+Corollary 20 (Identity component) The connected component of the identity of the
+gauge group equals
+                                                                        h              h
+                                      G(θ)0 =                GL(dk )0         × GL(dv )0 .
+
+                                                                   639
+                                                      Wang Wang
+
+
+
+
+Proof The generators from Lemma 19 integrate to the ows
+  (i)         (i)                (i)              (i)                  ⊤               (i)                (i)
+WQ (t) = WQ (0) etXi ,         WK (t) = WK (0) e−tXi ,                             WV (t) = WV (0) etYi ,                  WO,i (t) = e−tYi WO,i (0),
+
+which preserve Qi Ki
+                        ⊤ and V W                                                                                                    0
+                               i O,i for all t.                     Since matrix exponentials generate GL(dk )
+and GL(dv )
+             0 and the ows decouple across heads and sectors, the identity component is
+
+the stated direct product. Conversely, any g in the identity component has tangent at the
+identity in gmax , so G(θ)
+                              0 is precisely the group obtained by exponentiating g
+                                                                                                                        max .
+
+
+
+B.4. Proof of Factorization Theorem
+Theorem 21 (Every gauge transformation factorizes) Every gauge transformation
+factors as independent querykey and valueoutput transformations, composed with a head
+permutation.
+
+Proof By Lemma 18, there exists σ ∈ Sh such that, after reindexing heads by σ ,
+                       h
+                       X                                    h
+                                                            X
+                              αi (X) Vi WO,i =                      αi (X) Vi′ WO,i
+                                                                                ′
+                                                                                             for all X.
+                        i=1                                 i=1
+
+                                                                       h
+By Proposition 9 (using A7), the family {αi (·)}i=1 is linearly independent on the generic
+stratum, hence for each head i,
+
+
+                                   Vi WO,i = Vi′ WO,i
+                                                  ′
+                                                                               for all X.
+
+
+Valueoutput sector (column-space argument; A4 and A8 only).          Recall Vi =
+  (i)          (i)′
+XWV and Vi = XWV . The identity Vi WO,i = Vi WO,i for all X implies the parameter
+          ′                                 ′ ′
+
+identity
+                                                      (i)
+                                                       ′                       (i)′
+                                   Li := WV WO,i = WV WO,i .
+            (i)
+By A4,  WV has full column rank dv .                    By A8,             WO,i has full row rank dv , hence WO,i :
+Rdmodel → Rdv is surjective. Therefore
+                                                              (i)                           (i) 
+                               Im(Li ) = Im WV WO,i                            = Im WV               ,
+
+                                   (i)′                                                        (i)             (i)′
+and similarly Im(Li ) = Im WV               . Thus the column spaces of WV                               and WV        coincide. Since
+both have full column rank dv (A4), there exists a unique Ci ∈ GL(dv ) with
+
+                                                      (i)′             (i)
+                                                 WV            = W V Ci .
+
+                                       (i)′    ′           ′      −1
+Substituting back into Li = WV                WO,i yields WO,i = Ci WO,i .
+
+Querykey sector (column-space argument; A4 only).                                                       Identiability also gives
+Q′i (Ki′ )⊤ = Qi Ki⊤ for all X , i.e.
+                                                (i)          (i)                (i)′     (i)′
+                               Mi := WQ (WK )⊤ = WQ (WK )⊤ .
+
+                                                               640
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+             (i)                                                          (i) ⊤
+By A4, WK          has full column rank dk , hence (WK )                              : Rdmodel → Rdk is surjective. Thus
+
+                                                              (i)         (i)                (i) 
+                                  Im(Mi ) = Im WQ (WK )⊤
+                                                                                  
+                                                                                       = Im WQ ,
+
+                                      (i)′                                                           (i)        (i)′
+and likewise Im(Mi ) = Im WQ                   . Therefore the column spaces of WQ                          and WQ      coincide.
+Since both have full column rank dk (A4), there exists a unique Ai ∈ GL(dk ) with
+
+                                                          (i)′              (i)
+                                                       WQ         = W Q Ai .
+
+                                          (i)′         (i)′
+Substituting back into Mi = WQ                   (WK )⊤ then gives
+
+                                                       (i)′           (i)
+                                                 WK           = WK (A−1 ⊤
+                                                                     i ) .
+
+   Combining the two sectors and restoring the permutation σ proves that every gauge
+transformation factors as claimed.
+
+
+
+B.5. Proof of Block-Diagonality (No Cross-Head Mixing)
+Lemma 22 (Transformations cannot mix heads except by permutation) Let P ∈
+GL(hdv ) act on concatenated values as [V1 · · · Vh ] 7→ [V1 · · · Vh ]P with compensating WO 7→
+P −1 WO . If this preserves MHA for all inputs, then P is a block permutation times a block-
+diagonal matrix:
+
+                       P = Πσ diag(C1 , . . . , Ch )                 with σ ∈ Sh , Ci ∈ GL(dv ).
+
+Proof Partition P into dv × dv blocks Pji . The transformed value block for head i is
+                                    h
+                                    X                                                 h
+                                                                                      X
+                           Vi′ =          Vj Pji         and
+                                                                     ′
+                                                                    WO,i =              (P −1 )ik WO,k ,
+                                    j=1                                               k=1
+
+         ′
+where WO,i is the i-th block row of P
+                                                       −1 W
+                                                                 O and WO,k is the k -th block row of WO .
+   By Lemma 18, attention weights are preserved up to a permutation. Reindex heads by
+that permutation (x it to id near t = 0 if needed), so the head-wise mixture decomposition
+is aligned. Then by Theorem 21, for each head i there exists Ci ∈ GL(dv ) such that the
+valueoutput pair transforms within head i:
+
+                     h                                              h
+                            (j)                  (i)
+                     X                                              X
+                           WV Pji = WV Ci ,                           (P −1 )ik WO,k = Ci−1 WO,i .                        (B.11)
+                     j=1                                            k=1
+
+
+   Introduce the block-row selector matrices Ek                                 ∈ Rdv ×(hdv ) so that WO,k = Ek WO and
+write the second equality in (B.11) as
+
+
+                                     h
+                                    X             
+                                       (P −1 )ik Ek WO = Ci−1 Ei WO .
+                                      k=1
+
+
+                                                                    641
+                                            Wang Wang
+
+
+
+
+By Assumption A8,   WO has full row rank and hence admits a right inverse WO+ with
+    +
+WO WO = Ihdv . Right-multiplying by WO+ yields
+                                    h
+                                    X
+                                      (P −1 )ik Ek = Ci−1 Ei .                                         (B.12)
+                                    k=1
+
+Since the Ek have disjoint support and are linearly independent as matrices, (B.12) forces
+
+
+                           (P −1 )ik = 0 (k ̸= i),          (P −1 )ii = Ci−1 .
+
+Thus P
+        −1 is block-diagonal with diagonal blocks C −1 , i.e. P = diag(C , . . . , C ). Undoing
+                                                    i                   1           h
+the initial head reindexing reintroduces a (block) permutation Πσ , completing the claim.
+
+
+
+Remark 23 (Dimensional regimes) The proof uses only A8 (full row rank of WO ) to
+cancel WO via a right inverse; no head isolation (A6) is required. In the canonical case (A2:
+dmodel = hdv ), WO is square and invertible, so WO+ = WO−1 .
+
+B.6. Completeness of the Gauge Group Characterization
+Theorem 24 (No Additional Symmetries Exist) The gauge group Gmax = ((GL(dk ))h ×
+(GL(dv ))h ) ⋊ Sh contains all parameter symmetries of the multi-head attention mechanism.
+No additional continuous or discrete symmetries exist beyond those identied in this group.
+
+Proof We prove completeness by showing that any purported additional symmetry would
+violate one of our three established constraints.
+       Suppose there exists a parameter transformation ϕ : Θ0 → Θ0 preserving the multi-head
+attention function that is not in Gmax . Then ϕ must satisfy:
+
+
+                     MHA(X; ϕ(θ)) = MHA(X; θ)              ∀X ∈ Rn×dmodel , θ ∈ Θ0                     (B.13)
+
+
+       By Lemma 18 (Attention Weight Identiability), this invariance implies that attention
+weights are preserved up to head permutation.              Therefore, ϕ must include a permutation
+component σ ∈ Sh .
+       After accounting for this permutation, consider the continuous component of ϕ.                     By
+Lemma 19 (Lie Algebra Characterization), any continuous one-parameter family of sym-
+                                                      Lh                 Lh
+metries has its tangent vectors in        gmax =         i=1 gl(dk ) ⊕         i=1 gl(dv ).   This completely
+determines the continuous symmetries.
+       By Theorem 21 (Factorization), any gauge transformation must factor into independent
+query-key and value-output transformations. This forces:
+
+                                          (i)   (i)           (i)        (i)
+                         ϕ|query-key : (WQ , WK ) 7→ (WQ Ai , WK (A−1 ⊤
+                                                                   i ) )                               (B.14)
+
+                                          (i)                 (i)
+                      ϕ|value-output : (WV , WO,i ) 7→ (WV Ci , Ci−1 WO,i )                            (B.15)
+
+
+for some (Ai , Ci ) ∈ GL(dk ) × GL(dv ).
+       By Lemma 22 (Block-Diagonality), transformations cannot mix parameters across heads
+except through permutations. This eliminates any additional discrete symmetries beyond
+Sh .
+
+                                                   642
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+    Therefore, any symmetry ϕ must have the form:
+
+
+     ϕ = ((A1 , . . . , Ah ), (C1 , . . . , Ch ), σ) ∈ ((GL(dk ))h × (GL(dv ))h ) ⋊ Sh = Gmax      (B.16)
+
+
+    This contradicts our assumption that ϕ ∈
+                                           / Gmax . Therefore, no additional symmetries
+exist.
+
+
+
+Corollary 25 (Gauge Group is Maximal) Among all groups acting on the parameter
+space that preserve the multi-head attention function, Gmax is the unique maximal group on
+the generic stratum Θ0 .
+
+Proof     Any group H of parameter symmetries satises H                ⊆ G(θ) for all θ ∈ Θ0 .          By
+Theorem 24, G(θ) = Gmax . Therefore H ⊆ Gmax , establishing maximality.
+
+
+
+Appendix C. Architectural Extensions
+C.1. LayerNorm Obstruction to Inter-Layer Coupling
+Lemma 26 (LayerNorm Obstruction) Let LNγ,β (x) = γ ⊙ xb + β with
+                            Px                                               √
+                     x
+                     b :=        ,     P := I − d1 11⊤ ,       σ(x) := ∥P x∥/ d.
+                            σ(x)
+
+Assume γ ∈ Rd has pairwise distinct, nonzero entries and β ∈ Rd is generic in the sense that
+(i) µ(β) := d1 1⊤ β ̸= 0 and (ii) each coordinate of P β is nonzero.1 If M ∈ GL(d) satises
+
+                 LNγ,β (M x) = M LNγ,β (x)        for all x in a nonempty open set,
+
+then M = I .
+
+Proof Write Γ := diag(γ) and U := {u ∈ Rd : 1⊤ u = 0}.
+  Step 0 (bias xed). For any constant vector x = c1 we have P x = 0 and by denition
+LN(x) = β . Equivariance on such inputs yields
+
+                                        LN(M c1) = M β = β,
+
+hence
+                                                M β = β.                                            (C.1)
+
+    Step 1 (centering invariance ⇒ M 1 ∈ span{1} and P M = M P ). For any u ∈ U and
+any c ∈ R, LN(u + c1) = LN(u). By equivariance,
+
+
+                         LN(M (u + c1)) = LN(M u + c M 1) = M LN(u),
+
+so the left-hand side is independent of c. Since LN(z) depends only on P z , we must have
+P (M u + c M 1) independent of c, hence P M 1 = 0 and therefore
+
+                      M1 = λ 1       for some λ ̸= 0,       and       P M = M P.                    (C.2)
+
+ 1. These conditions are generic (Zariski-open); drawing (γ, β) at random satises them almost surely.
+
+                                                   643
+                                           Wang Wang
+
+
+
+
+   Step 2 (equivariance equation on U ). For u ∈ U we have LN(u) = γ ⊙ (u/σ(u)) + β and,
+using P M = M P ,
+
+                                          PMu            Mu
+                       LN(M u) = γ ⊙             +β =γ⊙        + β.
+                                          σ(M u)        σ(M u)
+Equivariance gives
+                              Mu          u
+                         Γ          = MΓ                         (∀u ∈ U \ {0}).                   (C.3)
+                             σ(M u)      σ(u)
+Rearranging,                                                
+                                                     σ(u)
+                                    M Γu =          σ(M u)       ΓM u.                             (C.4)
+
+The left-hand side is linear in u; the right-hand side is linear in u multiplied by the scalar
+r(u) := σ(u)/σ(M u). For (C.4) to hold on a nonempty open cone in U , r(u) must be
+constant there (analyticity), hence on all of U :
+                                    σ(M u)
+                                           ≡ c (constant).
+                                     σ(u)
+Therefore M is conformal on U : ∥M u∥ = c ∥u∥ for all u ∈ U .
+   Step 3 (orthogonality on U and commutation with Γ).                     With σ(M u)   = c σ(u), (C.3)
+becomes
+                               Γ M u = c M Γu                 (∀u ∈ U ).                           (C.5)
+
+Polarizing the identity ∥M (u ± v)∥
+                                   2 = c2 ∥u ± v∥2 shows M | preserves inner products up to
+                                                            U
+            2
+the factor c , hence M |U = c Q for some Q ∈ O(U ). Plugging this into (C.5) gives ΓQ = QΓ
+on U . Since γ has pairwise distinct entries, the commutant of Γ in GL(d) is the diagonal
+algebra in the standard basis; because U is Γ-invariant and Q ∈ O(U ), this forces
+
+
+                          Q = diag(ε1 , . . . , εd ) U       with εj ∈ {±1}.
+
+
+Now (C.5) with i = j implies γi εi = c εi γi , hence c = 1. Thus M |U = Q is orthogonal and
+diagonal with signs.
+   Step 4 (bias excludes sign ips on U ). Decompose β = µ(β)1 + P β . Using (C.1) and
+(C.2),
+                         M β = λ µ(β) 1 + M (P β) = µ(β)1 + P β.
+Projecting onto   U gives M (P β) = P β .        Since   M |U = diag(εj )|U and P β has no zero
+coordinates, each εj must equal +1. Hence
+
+
+                                            M |U = I|U .                                           (C.6)
+
+
+   Step 5 (constant direction xed). Projecting M β = β onto span{1} yields λ µ(β) = µ(β),
+so λ = 1 because µ(β) ̸= 0. Together with (C.6) this gives M = I .
+
+
+
+Remark 27 (Parameter tying and non-generic cases) If parameters are tied across
+layers, or if the genericity conditions on (γ, β) fail (e.g., µ(β) = 0 or some coordinate
+of P β vanishes), the centralizer can enlarge along these measure-zero loci. Our multi-layer
+direct-product result therefore asserts generic equality and explicitly excludes tied/degenerate
+congurations.
+
+                                                 644
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+C.2. LayerNorm Compatibility Analysis
+Proof [Proof of Corollary 5] We show that the gauge group Gmax remains a symmetry of the
+complete Transformer block including LayerNorm by analyzing both Pre-LN and Post-LN
+congurations.
+   Post-LN Conguration: The block computes:
+
+                                 Y = LN(X + MHA(X))                                   (C.7)
+
+
+   Under any gauge transformation g ∈ Gmax :
+
+
+                               MHA(X; g(θ)) = MHA(X; θ)                               (C.8)
+
+
+by Theorem 2. Therefore, the input to LayerNorm is:
+
+
+                          X + MHA(X; g(θ)) = X + MHA(X; θ)                            (C.9)
+
+
+   Since LayerNorm is a deterministic function of its input:
+
+
+                                              z − µ(z)1
+                                LN(z) = γ ⊙             +β                           (C.10)
+                                                 σ(z)
+
+where µ(z) and σ(z) are the mean and standard deviation computed over the dmodel dimen-
+sion, the block output remains invariant.
+   Pre-LN Conguration: The block computes:
+
+                                 Y = X + MHA(LN(X))                                  (C.11)
+
+
+   Let Z = LN(X). The gauge transformation acts only on MHA parameters, not on the
+normalized input. Since Theorem 2 establishes invariance for any input:
+
+
+                               MHA(Z; g(θ)) = MHA(Z; θ)                              (C.12)
+
+
+   The residual connection adds the unchanged X , preserving the total output.
+
+
+
+
+Remark 28 (Architectural Constraint) If LayerNorm operated on the concatenated
+head outputs before projection, the value-output transformations Ci would change the statis-
+tics of individual heads, breaking gauge invariance. Thus LayerNorm must be applied after
+WO to preserve gauge invariance.
+
+C.3. Feed-Forward Network Gauge Structure
+Lemma 29 (FFN gauge group is generically Sdf f ) For a one-hidden-layer FFN block
+with a non-polynomial activation (e.g., GELU) and generic weights (i.e., outside a measure-
+zero exceptional set), the only gauge transformations of the hidden layer that preserve the
+block's function are hidden-unit permutations. In particular, the FFN gauge group is GFFN =
+Sdf f on the generic stratum.
+
+                                            645
+                                         Wang Wang
+
+
+
+
+Proof The FFN computes
+
+                           FFN(Z) = GELU(ZW1 + b1 )W2 + b2 .                             (C.13)
+
+
+Consider a hidden-layer reparameterization M ∈ GL(df f ) acting as
+
+
+                     W1 7→ W1 M,         b1 7→ b1 M,       W2 7→ M −1 W2 .               (C.14)
+
+
+For functional invariance under such a gauge transformation we require
+
+
+                              GELU(HM )M −1 = GELU(H)                                    (C.15)
+
+
+for all pre-activations H = ZW1 + b1 .
+   Using the scalar form
+
+                                                         
+                                            x           x
+                         GELU(x) = x Φ(x) =    1 + erf √      ,                          (C.16)
+                                            2            2
+
+we see that   GELU is non-polynomial and not homogeneous: for generic x and λ ̸= 1,
+GELU(λx) ̸= λ GELU(x). In particular, the invariance condition already rules out any
+nontrivial global scaling M = λI with λ ̸= 1.
+   On the other hand, for permutation matrices P ∈ Sdf f , GELU commutes element-wise:
+
+
+                                GELU(HP ) = GELU(H)P.                                    (C.17)
+
+
+Under the corresponding reparameterization W1          7→ W1 P , b1 7→ b1 P , W2 7→ P ⊤ W2 , the
+output becomes
+
+                      GELU(H)P (P ⊤ W2 ) + b2 = GELU(H)W2 + b2 ,
+                              
+                                                                                         (C.18)
+
+so permutations preserve the function.
+   Moreover, for non-polynomial activations and generic weights, the hidden units produce
+linearly independent real-analytic features of the input. Classical identiability results for
+single-hidden-layer networks then imply that any functional equivalence between two such
+networks arises only up to hidden-unit permutations (and, in some formulations, trivial
+rescalings that can be absorbed into W2 ); see, for example, [13].      Since the GELU-based
+invariance condition GELU(HM )M
+                                −1 = GELU(H) already rules out nontrivial scalings,
+
+the only remaining admissible reparameterizations of the form
+
+
+                      W1 7→ W1 M,        b1 7→ b1 M,       W2 7→ M −1 W2
+
+that preserve the FFN function for all inputs are permutation matrices M           = P ∈ Sdf f .
+Hence GFFN = Sdf f on the generic stratum.
+
+
+
+
+C.4. Multi-Layer Direct Product Structure
+Theorem 30 (No inter-layer gauge coupling) In an L-layer Transformer, gauge trans-
+formations cannot couple parameters across dierent layers.
+
+                                              646
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+Proof    Consider a potential coupling where layer l's output is scaled by M               ∈ GL(dmodel )
+to aect layer l + 1.
+   Residual incompatibility: Layer l + 1 receives:
+                                     (l+1)
+                                   Hinput = H (l) + Block(l) (H (l) )                                (C.19)
+
+                                               (l)
+   If we transform to produce M · Block              (H (l) ), the total becomes:
+                     H (l) + M · Block(l) (H (l) ) ̸= M · (H (l) + Block(l) (H (l) ))                (C.20)
+
+unless M = I or acts on both terms, which is impossible since H
+                                                                            (l) comes from the previous
+
+layer.
+   LayerNorm non-equivariance: LayerNorm computes:
+                                                        x − µ(x)
+                                     LN(x) = γ ⊙                 +β                                  (C.21)
+                                                          σ(x)
+   For M ̸= I :
+                                       LN(M x) ̸= M · LN(x)                                          (C.22)
+
+because M changes the statistics non-uniformly.
+   Concrete demonstration: Consider M = diag(2, 1, . . . , 1) and x1 = [1, 0, . . . , 0]⊤ with
+dmodel = 768. Then M x1 = [2, 0, . . . , 0]⊤ with:
+                             µ(M x1 ) = 2/768 ≈ 0.0026                                               (C.23)
+                                        p
+                             σ(M x1 ) = (768 − 1) · 4/7682 ≈ 0.0721                                  (C.24)
+
+   The rst component of LN(M x1 ) equals (2 − 2/768)/0.0721 ≈ 27.71.
+   For LN(x1 ):
+
+                                   µ(x1 ) = 1/768 ≈ 0.0013                                           (C.25)
+                                            p
+                                   σ(x1 ) = 767/7682 ≈ 0.0361                                        (C.26)
+
+   The rst component equals (1 − 1/768)/0.0361 ≈ 27.67.
+   Thus    M · LN(x1 ) has rst component 2 × 27.67 = 55.34, while LN(M x1 ) has rst
+component 27.71. Since 27.71 ̸= 55.34, LayerNorm blocks inter-layer gauge propagation.
+
+
+
+Appendix D. RoPE Commutant and Reduced Gauge Group
+Proposition 31 (RoPE commutant on each 2D plane) Let R(θ) =                                cos θ − sin θ
+                                                                                                           
+                                                                                       ∈   sin θ cos θ
+SO(2) and let Hj = {R(ωj p) : p ∈ Z} ⊂ SO(2) act on the j -th 2D rotational plane of the
+RoPE map. If ωj /π ∈
+                   / Q (the standard RoPE case), then the commutant in GL(2, R) is
+             Comm(Hj ) = { aI2 + bJ : a, b ∈ R, J = 01 −1     ∼
+                                                          
+                                                        0 } = GL(1, C).
+
+Proof     Since   ωj /π is irrational, the subgroup Hj is dense in SO(2).               Thus commuting
+with Hj is equivalent to commuting with all of SO(2).                Complexify the real 2D rotation
+                                             2 ∼ C, where R(θ) acts as multiplication by eiθ . By
+representation via the isomorphism R           =
+Schur's lemma (irreducibility over C), the commutant is the full scalar algebra C; viewed
+over R this is precisely {aI2 + bJ}.
+
+
+
+
+                                                      647
+                                         Wang Wang
+
+
+
+
+Theorem 32 (RoPE gauge group reduction) With dk /2 independent 2D planes, the
+querykey commutant is
+                                              dk /2
+                                    CRoPE ∼
+                                              Y
+                                          =           GL(1, C),
+                                              j=1
+
+hence has real dimension dk . Consequently,
+
+                          GRoPE = (CRoPE )h × (GL(dv ))h ⋊ Sh .
+                                                        
+
+
+Remark 33 (Intuition) RoPE couples the query and key coordinates across positions by
+applying position-dependent rotations on each 2D plane. The only linear maps that remain as
+gauge symmetries are therefore those that commute with all such rotations, which is exactly
+the commutant CRoPE described above; this is what reduces the querykey gauge freedom from
+GL(dk ) to a dk -dimensional subgroup.
+
+Remark 34 (Frequency collisions) If r > 1 planes share identically the same frequency
+schedule (non-generic), the isotypic component has multiplicity r and the commutant en-
+larges to GL(r, C) on that block. Standard RoPE uses distinct frequencies, yielding r = 1
+generically.
+
+Appendix E. Optimization Implications
+E.1. Complete Hessian Nullspace Analysis
+Proposition 35 (Hessian nullspace structure) At any critical point θ∗ ∈ Θ0 , the Hes-
+sian ∇2 L(θ∗ ) has nullspace dimension at least h(d2k + d2v ) per layer, with null directions
+corresponding to gmax .
+
+Proof Since gauge transformations preserve the network function, they preserve the loss:
+
+                             L(g(θ)) = L(θ) ∀g ∈ Gmax , θ ∈ Θ0                           (E.1)
+
+
+   Consider a one-parameter subgroup gt = exp(tX) where X ∈ gmax . The loss remains
+constant along this curve:
+                                  L(gt (θ∗ )) = L(θ∗ ) ∀t ∈ R                            (E.2)
+
+   Taking derivatives:
+                              d
+                                     L(gt (θ∗ )) = ∇L(θ∗ ) · vX = 0                      (E.3)
+                              dt t=0
+   Taking the second derivative:
+
+
+                             d2
+                                     L(gt (θ∗ )) = vX
+                                                    ⊤ 2
+                                                      ∇ L(θ∗ )vX = 0                     (E.4)
+                             dt2 t=0
+Remark. The Hessian equality above uses that ∇L(θ∗ ) = 0. At noncritical points θ, invari-
+ance still gives ∇L(θ) · vX = 0 for all X ∈ gmax , but the second derivative along a gauge
+               d2                   ⊤ ∇2 L(θ) v +∇L(θ)·θ ′′ (0), so the Hessian need not vanish
+orbit satises
+               dt2 t=0
+                       L(gt (θ)) = vX          X
+along vX unless ∇L(θ) = 0.
+
+
+
+                                              648
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+   The generators of gmax are:
+
+                      (i,k)       (i)       (i)            (i)     (i)
+                                                                   ⊤
+                     Xpq    : δWQ = WQ Epq ,            δWK = −WK Epq                 (E.5)
+
+                       (i,v)      (i)       (i)
+                     Yrs     : δWV = WV Ers ,           δWO,i = −Ers WO,i             (E.6)
+
+
+   These directions are linearly independent by the free action of Gmax on Θ0 . Hence they
+                                        2     2
+span a null subspace of dimension h(dk + dv ) per layer.
+
+
+
+
+Remark 36 (Quotient Non-degeneracy) If the Hessian restricted to the gauge-orthogonal
+(horizontal) subspace is non-degenerate at θ∗ (i.e., the quotient Hessian on Θ/Gmax is non-
+singular), then the nullspace dimension equals exactly h(d2k + d2v ) per layer.
+
+E.2. Gradient Orthogonality and Quotient Space Dynamics
+Proposition 37 (Gradient orthogonality to gauge orbits)
+   The gradient ∇L(θ) is orthogonal to gauge orbits: for any X ∈ gmax ,
+
+                                        ⟨∇L(θ), vX ⟩ = 0                              (E.7)
+
+
+Proof   The invariance L(gt (θ)) = L(θ) holds for all t. Dierentiating at t = 0 yields the
+orthogonality condition.
+
+
+
+
+Theorem 38 (Optimization in quotient space)
+   Gradient descent on the parameter space Θ is equivalent to optimization on the quotient
+space Θ/Gmax of gauge-inequivalent congurations.
+
+Proof Since gradients are orthogonal to gauge orbits, the gradient ow equation:
+                                         dθ
+                                            = −∇L(θ)                                  (E.8)
+                                         dt
+preserves the gauge orbit.   The ow factors through the quotient map π : Θ → Θ/Gmax ,
+inducing a ow on the quotient space with eective dimension:
+
+
+                 dime = dim(Θ) − dim(Gmax ) = dim(Θ) − L · h(d2k + d2v )             (E.9)
+
+
+
+
+Remark 39 (Formal quotient viewpoint) Theorem 38 is stated in the standard formal
+sense used in the optimization and geometry literature: passing from Θ to the quotient
+Θ0 /Gmax means identifying parameters that dier only by a gauge transformation and con-
+sidering gradient ow on the corresponding equivalence classes. A fully rigorous treatment
+would require endowing Θ0 /Gmax with a manifold structure and working with Riemannian
+gradients on this quotient; we do not pursue these technical details here, since they do not
+aect the practical implications.
+
+                                                  649
+                                               Wang Wang
+
+
+
+
+Theorem 40 (Mode Connectivity via the Identity Component) Let G0max denote
+the identity component of Gmax . If θ2 = g(θ1 ) with g ∈ G0max and θ1 , θ2 ∈ Θ0 , then there
+exists a continuous path γ : [0, 1] → Θ0 with γ(0) = θ1 , γ(1) = θ2 , and L(γ(t)) = L(θ1 ) for
+all t ∈ [0, 1].
+Proof                                      0
+          For θ2 = g(θ1 ) with g ∈ Gmax , we construct the path through the one-parameter
+subgroup connecting the identity to g .
+    Since Gmax = ((GL(dk ))
+                                      h × (GL(d ))h ) ⋊ S , we rst handle the continuous part. Any
+                                                 v        h
+                                                        h           h
+element (A1 , . . . , Ah , C1 , . . . , Ch ) ∈ (GL(dk )) × (GL(dv )) in the identity component can
+be written as:
+                                    (Ai , Ci ) = (exp(Xi ), exp(Yi ))                                (E.10)
+
+for some (Xi , Yi ) ∈ gl(dk ) × gl(dv ).
+    Dene the path:
+
+   γ(t) = gt (θ1 ) where gt = ((exp(tX1 ), . . . , exp(tXh )), (exp(tY1 ), . . . , exp(tYh )), id)   (E.11)
+
+    By the proof of Corollary 20, these ows preserve the multi-head attention function:
+
+                             MHA(X; γ(t)) = MHA(X; θ1 )            ∀t ∈ [0, 1]                       (E.12)
+
+    Therefore:
+                                     L(γ(t)) = L(θ1 ) ∀t ∈ [0, 1]                                    (E.13)
+
+    For elements outside the identity component (e.g., nontrivial permutations or reections),
+see the remark below.
+
+
+Remark.    Elements outside      G0max (e.g., nontrivial permutations or reections) lie in dis-
+connected components of        Gmax and therefore do not admit a continuous path of gauge
+transformations from the identity. Theorem 40 thus applies only to gauge transformations
+in the identity component.
+
+E.3. Gauge-Aware Optimization
+Denition 41 (Gauge-Fixed Optimization) A gauge-xing condition Ψ : Θ → Rdim(Gmax )
+with Ψ(θ) = 0 selects a unique representative from each gauge orbit. Constrained optimiza-
+tion on the gauge slice {θ : Ψ(θ) = 0} eliminates redundant parameters.
+Denition 42 (Gauge-Invariant Gradient) The gauge-invariant gradient projects the
+full gradient onto the orthogonal complement of gauge orbits:
+                                           ∇inv L = ∇L − Πg ∇L                                       (E.14)
+
+where Πg denotes projection onto the Lie algebra gmax at the current parameters.
+Proposition 43 (Natural Gradient and Gauge Structure) The natural gradient, us-
+ing the Fisher information metric, automatically accounts for gauge structure by inducing a
+Riemannian metric on the quotient space Θ/Gmax . The Fisher metric is degenerate along
+gauge directions with zero eigenvalues corresponding to gmax .
+Proof The Fisher information matrix Fij = E[∂i log p(y|x, θ)∂j log p(y|x, θ)] depends only
+on the conditional distribution p(y|x, θ), which is invariant under gauge transformations.
+Therefore, F vX = 0 for any gauge direction vX .
+
+
+
+
+                                                    650
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+E.4. Canonical Forms and Model Merging
+Proposition 44 (Deterministic Canonical Form; Partial Slice) On the generic stra-
+tum Θ0 (Assumptions A1A4), there exists a deterministic gauge-xing that sets, for each
+head i:
+         (i)         (i)
+   1. (WV )⊤ WV = Idv            ( orthonormal value columns  reduces GL(dv ) to O(dv ));
+         (i)         (i)
+   2. (WQ )⊤ WQ = Idk            ( orthonormal query columns  reduces GL(dk ) to O(dk ));
+                                     (i)
+   3. Heads are ordered by ∥WK ∥F in descending order                    ( breaks Sh ).
+
+This gauge-xing reduces the valueoutput sector from GL(dv ) to O(dv ) and the querykey
+sector from GL(dk ) to O(dk ) per head, removing dv (d2v +1) + dk (d2k +1) continuous degrees of
+freedom per head while leaving a residual dv (d2v −1) + dk (d2k −1) orthogonal freedom.
+
+Proof Querykey sector. Since WQ(i) has full column rank (A4), compute the thin QR
+factorization with positive diagonal
+
+                                                  (i)     (i)    (i)
+                                              WQ = QQ RQ ,
+
+         (i)                                                            (i)
+where QQ       ∈ Rdmodel ×dk has orthonormal columns and RQ ∈ GL(dk ) is upper triangular
+               (i)                            (i) −1
+with diag(RQ ) > 0. Choose Ai := (RQ )                  and dene
+
+
+                 f (i) := W (i) Ai = Q(i) ,
+                 W                                  f (i) := W (i) (A−1 )⊤ = W (i) (R(i) )⊤ .
+                                                    W
+                   Q       Q          Q               K       K      i        K      Q
+
+         (i) ⊤ f (i)                                         (i)     (i)
+Then (W
+      f )
+        Q      WQ = Idk and the bilinear form Qi Ki⊤ = XWQ (WK )⊤ X ⊤ is preserved, since
+                                                         (i)    (i)          (i) (i) −1 ⊤
+we have applied exactly the gauge transformation (WQ , WK ) 7→ (WQ Ai , WK (Ai ) ).
+                                                                         (i)
+The positive-diagonal QR convention xes the sign ambiguity of QQ , but a residual O(dk )
+                                      ′             (i) ′ ⊤    (i) ′
+freedom remains: for any orthogonal A ∈ O(dk ), (QQ A ) (QQ A ) = Idk , so the orthonormal-
+columns condition does not uniquely determine the gauge.
+                                                                (i)    (i)    (i)                       (i)
+    Valueoutput sector. Analogously, compute WV = QV RV                            (thin QR with diag(RV     )>
+                       (i)
+0) and choose Ci := (RV )−1 :
+
+                     f (i) := W (i) Ci = Q(i) ,
+                     W                                  fO,i := C −1 WO,i = R(i) WO,i .
+                                                        W
+                       V       V          V                      i           V
+
+         (i) ⊤ f (i)
+Then (W
+      f
+        V   ) WV = Idv and Vi WO,i is preserved, since this corresponds to the standard
+                                       (i)            (i)    −1
+valueoutput gauge transformation (WV , WO,i ) 7→ (WV Ci , Ci WO,i ). As in the querykey
+                       ′                                    (i)
+case, any orthogonal C ∈ O(dv ) applied on the right of W f preserves the orthonormal-
+                                                            V
+columns condition, so a residual O(dv ) freedom remains.
+    Ordering. In canonical form, we drop tildes and write the resulting parameters again
+     (i)   (i)  (i)                                            (i)
+as WQ , WK , WV     , WO,i . Generically the Frobenius norms ∥WK ∥F are distinct (ties occur
+                                                                                       (i)
+on a measure-zero set).        Sorting heads in descending order of ∥WK ∥F therefore yields a
+unique permutation that xes the Sh freedom. If an exact tie occurs, we break it using any
+
+
+
+                                                        651
+                                              Wang Wang
+
+
+
+
+xed deterministic rule (e.g., a lexicographic order on additional invariants), which preserves
+determinism of the canonical representative.
+   These steps reduce the continuous GL(dv ) freedom per head to O(dv ) and the GL(dk )
+freedom to O(dk ); the discrete Sh freedom is xed generically by head ordering.
+
+
+Conclusion. The orthonormal-columns conditions reduce each GL(dv ) and GL(dk ) to resid-
+ual orthogonal groups O(dv ) and O(dk ), respectively, but cannot eliminate these orthogo-
+nal freedoms entirely. Geometrically, requiring W W = I constrains only the symmetric
+                                                    ⊤
+                                         d(d+1)
+part of the Lie algebra gl(d) (dimension        ), leaving the antisymmetric part so(d) (di-
+                                            2
+         d(d−1)
+mension         ) unconstrained. An alternative gauge-xing via Gram balancing (setting
+            2
+   (i) ⊤  (i)      (i)    (i)
+(WQ ) WQ = (WK )⊤ WK ) achieves the same reduction from GL(dk ) to O(dk ). Hence the
+canonical form is unique up to head permutations and the residual O(dk ) × O(dv ) per head
+(plus tie cases when norms coincide).
+
+
+
+Remark 45 (Residual discrete symmetries) On the measure-zero locus where two or
+                                   (i)
+more heads share identical ∥WK ∥F , residual permutations among those tied heads remain;
+a xed tie-break removes this ambiguity deterministically.
+
+Proposition 46 (Gauge-Aligned Averaging) For models θ1 , θ2 ∈ Θ0 with identical ar-
+chitecture, meaningful averaging requires gauge alignment:
+
+                           θ1 + g ∗ (θ2 )
+                  θavg =                  ,            g ∗ ∈ arg min     ∥θ1 − g(θ2 )∥F .
+                                2                               g∈Gmax
+
+
+Proof Dierent trainings typically land at gauge-equivalent representatives of (near-)identical
+functions.   The minimization over Gmax decomposes into continuous (Ai , Ci ) parts and a
+discrete permutation component, by the factorization and block-diagonality results of Ap-
+pendix B. In particular, the canonical slice (Proposition 44) reduces the continuous part
+from GL(dk ) × GL(dv ) to O(dk ) × O(dv ) per head, so the minimizer involves a permutation
+alignment between canonical representatives together with residual orthogonal adjustments
+within each head.
+                                                                                             (i)          (i)
+   Concretely, map both models to canonical form head-wise (orthonormalize WQ                      and WV
+                                                                   (i)
+via thin QR with positive diagonals, and transport WK      and WO,i accordingly) to obtain
+
+canonical parameters θ1 , θ2 . The alignment problem over heads becomes a linear assignment
+                     e    e
+with cost
+
+
+             Dij =   W       f (j) 2 +
+                     f (i) − W                     W       f (j) 2 +
+                                                   f (i) − W                        fO,2,j 2 ,
+                                                                           fO,1,i − W
+                                                                           W
+                       K,1     K,2 F                 V,1     V,2 F                         F
+
+(or any xed gauge-invariant metric on canonical blocks). The optimal permutation σ solving
+this assignment (e.g., via the Hungarian algorithm) yields the discrete part of                    g∗.   The
+residual O(dk ) × O(dv ) freedom per head may be further reduced by Procrustes alignment
+                               1
+                                                   
+if desired. Averaging θavg =
+                               2   θe1 + σ · θe2       then respects the dominant gauge structure and
+remains close (in Frobenius norm) to each model's orbit representative.
+
+
+
+
+                                                        652
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+Appendix F. Experimental Validation Details
+Appendix G. GPT-2: Assumption Verication, Gauge Invariance, and
+            Canonicalization
+This section validates the gauge symmetry framework on the complete GPT-2 model family
+using publicly available HuggingFace checkpoints. We consider GPT-2 Small (124M), GPT-
+2 Medium (355M), GPT-2 Large (774M), and GPT-2 XL (1.5B parameters). For each model
+we:
+
+
+
+  1. verify structural assumptions on the learned attention weights (Assumptions A1A3,
+       A4, A7, A8);
+
+
+  2. test gauge invariance using random valid and invalid transformations;
+
+
+  3. apply a canonicalization procedure that xes the V /O gauge and balances the Q/K
+        sector; and
+
+
+  4. check end-to-end exactness of the canonicalized model at the logit and generation
+        levels.
+
+
+
+      All computations use IEEE single-precision arithmetic (FP32, εmach
+                                                                             FP32 = 2−23 ≈ 1.19 ×
+
+10−7 ) on NVIDIA H100 GPUs. Unless otherwise stated, reported errors are relative Frobe-
+nius norms of the form
+                                             ∥Y ′ − Y ∥F
+                                                           ,
+                                            ∥Y ∥F + εFP32
+                                                      mach
+
+where Y and Y
+                    ′ are the original and transformed outputs. Gauge transformations are always
+
+applied to pretrained weights; no random or synthetic models are used.
+
+
+G.1. Experimental Setup
+Pretrained models. We load GPT-2 checkpoints from HuggingFace via the GPT2LMHeadModel
+interface and extract the attention projections WQ , WK , WV , WO and associated biases on a
+per-head basis. The relevant architectural hyperparameters are summarized in Table 2. We
+retain the native FP32 weights and do not perform any netuning or re-initialization.
+
+
+
+                  Model            Params     Layers L    Heads h   dmodel     dk   dv
+                  GPT-2 Small       124M         12            12    768       64   64
+                  GPT-2 Medium      355M         24            16   1024       64   64
+                  GPT-2 Large       774M         36            20   1280       64   64
+                  GPT-2 XL           1.5B        48            25   1600       64   64
+
+
+Table 2: GPT-2 congurations used for empirical validation. All models share dk = dv = 64
+            and a standard context length of 1024 tokens.
+
+
+
+
+                                                  653
+                                                   Wang Wang
+
+
+
+
+Assumption verication.            For every layer ℓ and head i we compute singular values and
+condition numbers of the query, key, value, and output projections using torch.linalg.svdvals.
+                                         (ℓ,i)     (ℓ,i)     (ℓ,i)
+Assumption A4 requires that WQ                   , WK , WV           ∈ Rdmodel ×dk have full column rank; As-
+                                 (ℓ,i)
+sumption A8 requires that WO      ∈ Rdv ×dmodel have full row rank. Assumption A7 concerns
+                                             (ℓ)     (ℓ,i)   (ℓ,i)
+linear independence of the bilinear forms Mi     = WQ (WK )⊤ across heads.
+Gauge invariance tests.         To probe gauge invariance we sample random, well-conditioned
+transformations A ∈ GL(dk ) and C ∈ GL(dv ) for each test. The implementation constructs
+A and C as small perturbations of random orthogonal matrices, ensuring that A and C
+are invertible with bounded condition numbers. For each model we perform 20 tests; each
+test selects one (ℓ, i) pair (cycling over layers and heads) and a random input vector x ∼
+N (0, Idmodel ), then compares
+
+                                                   ⊤
+                                   logit = qk          ,     output = vWO
+
+with their gauge-transformed counterparts
+
+                         ′
+                     logit   = (qA)(kA−⊤ )⊤ ,                output
+                                                                       ′
+                                                                           = (vC)(C −1 WO ),
+
+where q = xWQ , k = xWK , and v = xWV . We record relative errors for both the scalar
+attention logit and the value-output product.
+
+Invalid transformations.           We also evaluate three families of deliberately invalid transfor-
+mations:
+
+
+   1.   Asymmetric Q/K transform : distinct matrices applied to Q and K , breaking the A−⊤
+        compatibility condition.
+
+
+   2.   Wrong inverse : using the same matrix A for both Q and K instead of (A−1 )⊤ , again
+                                                ⊤
+        violating the invariance condition on qk .
+
+
+   3.   V /O mismatch : transforming V by a nontrivial C but leaving WO unchanged, so that
+        vWO is not preserved.
+
+For each model we apply a single instance of each invalid transform and measure the relative
+error in the attention logit.
+
+Canonicalization and exactness.                    Finally, we apply a canonicalization procedure that
+(i) orthonormalizes the value projections WV so that WV WV
+                                                                            ⊤     ≈ Idv for each head, and (ii)
+balances the Q/K sector by whitening the associated covariance matrices. This procedure
+corresponds to a particular choice of gauge in the maximal symmetry group and is imple-
+mented via SPD matrix square roots and their inverses (see Appendix E.3.1 for algorithmic
+details). We then compare the original and canonicalized models on ten natural-language
+prompts using:
+
+
+    teacher-forced logit comparisons at every position, and
+
+    greedy decoding (temperature 0) to check that generated tokens match exactly.
+
+                                                           654
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+G.2. Assumption Verication on Pretrained Weights
+
+Projection matrices (A4, A8).         Table 3 summarizes the singular-value ranges and mean
+condition numbers for the projection matrices across all layers and heads. For each entry
+we report the range of the minimum singular value σmin and the mean condition number κ.
+
+
+
+
+                      Model              Matrix    σmin range     mean κ
+
+                      GPT-2 Small         WQ       [0.36, 5.79]    4.00
+                      GPT-2 Small         WK       [0.44, 5.33]    4.36
+                      GPT-2 Small         WV       [0.41, 3.44]    2.88
+                      GPT-2 Small         WO       [0.28, 3.31]    4.87
+                      GPT-2 Medium        WQ       [0.37, 4.33]    5.43
+                      GPT-2 Medium        WK       [0.40, 4.41]    5.08
+                      GPT-2 Medium        WV       [0.57, 3.64]    2.64
+                      GPT-2 Medium        WO       [0.12, 3.67]    4.38
+                      GPT-2 Large         WQ       [0.46, 2.38]    3.12
+                      GPT-2 Large         WK       [0.45, 2.48]    3.01
+                      GPT-2 Large         WV       [0.28, 1.58]    2.29
+                      GPT-2 Large         WO       [0.31, 2.04]    2.58
+                      GPT-2 XL            WQ       [0.50, 2.00]    3.28
+                      GPT-2 XL            WK       [0.49, 2.23]    3.08
+                      GPT-2 XL            WV       [0.26, 1.59]    2.04
+                      GPT-2 XL            WO       [0.31, 1.75]    2.52
+
+Table 3: Singular-value ranges and mean condition numbers for projection matrices in pre-
+           trained GPT-2 models.    All matrices have full rank, with σmin   ≥ 0.12 in every
+           case and mean condition numbers between 2.0 and 5.5, indicating that the learned
+           projections are well-conditioned for gauge transformations.
+
+
+
+
+     Across all four models every instance of WQ , WK , WV has full column rank and every
+instance of WO has full row rank. The smallest singular values are substantially bounded
+away from zero, and no rank-decient projection matrices are observed. Assumptions A4
+and A8 therefore hold uniformly on the pretrained GPT-2 family.
+
+
+
+
+Bilinear-form independence (A7).     For each layer ℓ we form the bilinear-form matrices
+  (ℓ)      (ℓ,i) (ℓ,i)                                                         2
+Mi      = WQ (WK )⊤ ∈ Rdmodel ×dmodel and stack them into a matrix in Rh×dmodel . We
+then compute its rank, minimum singular value, and condition number.         The results are
+summarized in Table 4.
+
+
+
+                                             655
+                                             Wang Wang
+
+
+
+
+       Model               all layers full rank?    full-rank layers    minℓ σmin    maxℓ κ
+       GPT-2 Small                 Yes                   12/12            26.04      13.13
+       GPT-2 Medium                    No                22/24            23.93      15.92
+       GPT-2 Large                     No                30/36            7.51       9.37
+       GPT-2 XL                        No                32/48            7.70       8.28
+
+Table 4: Bilinear-form independence (Assumption A7) for pretrained GPT-2 models. Full-
+         rank layers counts how many layers have stacked bilinear forms of rank exactly h.
+
+
+
+
+   For GPT-2 Small all layers satisfy Assumption A7 exactly:              the h bilinear forms are
+linearly independent in every layer.        For the larger models we observe a small number of
+layers (2 out of 24 for GPT-2 Medium, 6 out of 36 for GPT-2 Large, and 16 out of 48 for
+GPT-2 XL) where the numerical rank of the stacked bilinear forms falls slightly below h.
+However, even in these layers the smallest nonzero singular values remain large (σmin ≥ 7.5)
+and condition numbers are modest (κ ≤ 16). We interpret these cases as benign, training-
+induced near-degeneracies (e.g., two heads learning almost identical bilinear forms) rather
+than structural violations of the generic Assumption A7. Empirically, they have no adverse
+eect on gauge invariance or canonicalization, as shown below.
+
+
+G.3. Gauge Invariance on Pretrained GPT-2
+Per-model summary. Table 5 reports mean and maximum relative errors for attention
+outputs and logits under random valid gauge transformations, computed over the 20 tests
+per model.
+
+
+
+ Model              mean output error         max output error    mean logit error     max logit error
+
+ GPT-2 Small             1.26 × 10−6             1.63 × 10−6           1.78 × 10−6      1.23 × 10−5
+ GPT-2 Medium            1.21 × 10−6             2.16 × 10−6           2.03 × 10−6      2.11 × 10−5
+ GPT-2 Large             1.20 × 10−6             1.94 × 10−6           2.05 × 10−6      1.14 × 10−5
+ GPT-2 XL                1.24 × 10−6             2.50 × 10−6           2.38 × 10−6      2.04 × 10−5
+
+
+Table 5: Relative errors under valid gauge transformations on pretrained GPT-2 models
+         (20 tests per model). Errors are relative Frobenius norms for outputs and scalar
+         relative errors for logits.
+
+
+
+
+   Across all models, the mean relative attention-output error lies in the range 1.21.3×10
+                                                                                                −6 ,
+
+while the maximum error is at most 2.5 × 10
+                                           −6 . For logits the mean relative error is on
+
+the order of 2 × 10
+                   −6 and the maximum error is at most 2.1 × 10−5 . In terms of FP32
+                  FP32                                           FP32
+machine epsilon εmach , these correspond to roughly 1021 εmach for attention outputs and
+                 FP32
+up to about 180 εmach for logits, well within the expected accumulation band for deep matrix
+computations in single precision. We did not observe any numerical instabilities or outliers
+beyond these ranges.
+
+
+
+                                                 656
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+Distributional analysis.        To characterize the error distribution, we aggregate the 20 tests
+per model (80 tests total) and compute empirical percentiles. The results appear in Table 6.
+
+
+
+Quantity                min            median        90th            95th             99th          max
+Attention outputs    7.47×10   −7
+                                     1.22×10  −6
+                                                   1.53×10  −6
+                                                                 1.63×10    −6
+                                                                                   2.23×10   −6
+                                                                                                  2.50×10−6
+Logits                   0           7.57×10−7     4.31×10−6     9.11×10−6         2.06×10−5      2.11×10−5
+
+
+Table 6: Distribution of relative errors under valid gauge transformations, aggregated over
+           all four GPT-2 models (80 tests total).
+
+
+
+
+   For attention outputs, the median relative error is 1.22 × 10           ≈ 10 εFP32
+                                                                             −6
+                                                                                  mach , the 95th
+percentile is 1.63 × 10
+                       −6        FP32                                 −6         FP32
+                          ≈ 14 εmach , and the maximum is 2.50 × 10 ≈ 21 εmach . For logits,
+the median relative error is 7.6 × 10
+                                     −7 ≈ 6 εFP32 , the 95th percentile is 9.1 × 10−6 ≈ 76 εFP32 ,
+                                               mach                                          mach
+and the maximum is 2.1 × 10
+                              −5 ≈ 177 εFP32 . Errors are tightly clustered with no heavy tails:
+                                          mach
+99% of tests lie below 2.3 × 10
+                                 −6 for attention outputs and below 2.1 × 10−5 for logits.
+
+
+Invalid transformations.            The invalid transformations produce errors that are large in
+absolute terms and orders of magnitude above the valid-gauge regime. Table 7 summarizes
+the relative errors in the attention logit for each invalid transform.
+
+
+
+           Model                Asymmetric Q/K           Wrong inverse       V /O mismatch
+           GPT-2 Small                  4011.7              2824.9                  120.5
+           GPT-2 Medium                 2935.2              1018.5                   31.7
+           GPT-2 Large                   24.9               2319.2                   26.3
+           GPT-2 XL                     398.2                353.9                   4.0
+
+
+Table 7: Relative errors in the attention logit under three families of invalid transformations.
+                                0         3
+           All errors are O(10 )O(10 ), in stark contrast to the 10
+                                                                                 −6 10−5 errors observed
+
+           for valid transforms.
+
+
+
+
+   Even the mildest invalid transformation (V /O mismatch on GPT-2 XL) produces a
+relative error of ≈ 4.0, while asymmetric or mis-matched Q/K transforms often produce
+errors in the thousands. The dramatic separation between the valid-gauge error band and the
+invalid-transform errors provides strong empirical evidence that the gauge group identied
+in the theory is indeed maximal: perturbations outside this group almost always produce
+O(1)O(103 ) changes in the attention logits.
+
+G.4. Canonicalization Eects
+We now quantify the eect of the canonicalization procedure on the learned attention weights.
+For each model we track:
+
+
+
+    the Frobenius norm ∥WV⊤ WV − Idv ∥F (value orthonormality);
+
+                                                   657
+                                             Wang Wang
+
+
+
+
+    the Q/K imbalance ∥SQ − SK ∥F /∥SQ ∥F , where SQ and SK are empirical covariances
+     of Q and K ;
+
+
+
+
+    the condition numbers of SQ and SK .
+
+
+
+   Table 8 reports layer- and head-averaged metrics before and after canonicalization.
+
+
+
+
+                       ∥WV⊤ WV − I∥F             Q/K imbalance           κ(SQ )           κ(SK )
+ Model               before      after         before      after      before   after   before   after
+
+ GPT-2 Small          82.8    1.51 × 10−6      0.507    1.25 × 10−2   25.6     20.9    39.8     20.4
+ GPT-2 Medium         76.5    1.46 × 10−6      0.453    1.69 × 10−2   87.1     65.0    96.3     66.4
+ GPT-2 Large          8.8     1.46 × 10−6      0.563    8.80 × 10−3   11.5     6.9      10.3    6.8
+ GPT-2 XL             8.2     1.47 × 10−6      0.546    9.45 × 10−3   14.0     9.6      14.2    9.4
+
+
+
+Table 8: Canonicalization metrics averaged over layers and heads in pretrained GPT-2 mod-
+           els.
+
+
+
+
+   On all four models the value projections are far from orthonormal in the pretrained
+checkpoints: the mean value of ∥WV WV
+                                         ⊤ − I∥F ranges from ≈ 8 to ≈ 83, with per-layer
+values reaching as high as 216 on GPT-2 Small and 166 on GPT-2 Medium. Canonicalization
+reduces this quantity to ≈ 1.5 × 10
+                                    −6 across all models, consistent with numerical roundo
+
+in FP32.
+
+   The Q/K imbalance metric exhibits similar improvement. Pretrained models have mean
+imbalance in the range 0.450.56, with some layers exceeding 3.2 (GPT-2 Small) or 9.9
+(GPT-2 Large). After canonicalization the mean imbalance falls into the 0.0090.017 range,
+a 3060× reduction.
+
+   Finally, canonicalization systematically reduces the condition numbers of the Q/K co-
+variance matrices.   For GPT-2 Small and Medium the mean condition numbers decrease
+from (κ(SQ ), κ(SK )) ≈ (26, 40) and (87, 96) to (21, 20) and (65, 66), respectively. For GPT-
+2 Large and XL they decrease from roughly (12, 10) and (14, 14) to (6.9, 6.8) and (9.6, 9.4).
+In all cases the conditioned covariances remain well within numerically stable regimes while
+exhibiting substantially improved symmetry.
+
+
+G.5. Exactness of the Canonicalized Model
+To conrm that canonicalization is a pure gauge choice that leaves the inputoutput behav-
+ior unchanged, we compare the original and canonicalized models on ten diverse natural-
+language prompts. Table 9 summarizes the logit-level and generation-level results.
+
+
+
+                                                658
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+  Model                mean logit dierence   max logit dierence     greedy decode match
+
+  GPT-2 Small               1.50 × 10−5             1.34 × 10−4              100%
+  GPT-2 Medium              2.32 × 10−5             1.91 × 10−4              100%
+  GPT-2 Large               1.18 × 10−6             4.20 × 10−5              100%
+  GPT-2 XL                  1.20 × 10−6             3.05 × 10−5              100%
+
+Table 9: Exactness verication between original and canonicalized GPT-2 models. Dier-
+          ences are measured in absolute logits under teacher forcing; generation match re-
+          ports the fraction of prompts for which greedy decoding produces identical token
+          sequences.
+
+
+
+
+   For all four GPT-2 models we obtain a 100% greedy-decoding match rate: canonicalized
+models produce exactly the same token sequences as the original checkpoints on all ten
+prompts. At the logit level the overall maximum dierence ranges from 3.1 × 10
+                                                                                    −5 (GPT-2
+
+XL) to 1.9 × 10
+                 −4 (GPT-2 Medium), corresponding to at most ≈ 1.6 × 103 εFP32 . Average
+                                                                               mach
+logit dierences are much smaller, between 1.2 × 10
+                                                       −6 and 2.3 × 10−5 .
+
+   These results demonstrate that the canonicalization procedure is functionally exact up to
+FP32 numerical precision: it leaves the sequence distribution unchanged while substantially
+improving the conditioning and symmetry properties of the learned attention parameters.
+
+
+G.6. Summary
+The GPT-2 experiments provide a comprehensive, real-world validation of the gauge sym-
+metry framework:
+
+
+
+    Pretrained GPT-2 weights satisfy the structural assumptions (A4, A7, A8) with sig-
+     nicant numerical margin, apart from a handful of benign, near-degenerate layers in
+     the largest models.
+
+
+    Valid gauge transformations preserve attention outputs and logits to within O(10)
+     O(200) FP32 machine epsilons, with tightly concentrated error distributions and no
+     outliers.
+
+
+    Invalid transformations produce relative errors in the range O(1)O(103 ), empirically
+     reinforcing the maximality of the gauge group characterized in the theory.
+
+
+    Canonicalization dramatically improves value orthonormality, Q/K balance, and co-
+     variance conditioning while preserving both logits and generated sequences up to FP32
+     numerical precision.
+
+
+
+   Together, these ndings show that the theoretical gauge structure is not only mathe-
+matically exact but also faithfully realized in production-scale transformer language models
+with hundreds of millions to billions of parameters.
+
+
+
+                                              659
+                                            Wang Wang
+
+
+
+
+Appendix H. Practical Implementation Details
+H.1. Redundancy Counts and Scaling
+                                                                        2     2
+The number of continuously redundant dimensions per layer is h(dk + dv ), the dimension of
+the Lie algebra gmax (Corollary 3). For a standard Transformer Base model with L = 12
+layers,h = 12 heads, and dk = dv = 64, this gives 12 × 12 × (642 + 642 ) = 1,179,648
+redundant dimensions out of 110M total parameters. For a model with L = 96, h = 96,
+dk = dv = 128, this gives 96 × 96 × 2 × 1282 ≈ 302M redundant dimensions.
+                                 2    2
+   The redundancy ratio L · h(dk + dv )/dtotal decreases with model scale when head dimen-
+sions remain xed while the number of heads and layers increase.
+
+H.2. Gauge-Fixing Algorithms
+To reduce gauge redundancy, we x parameters to a canonical form using numerically stable
+per-head QR factorizations. This construction reduces the continuous GL(dk ) and GL(dv )
+freedoms to residual orthogonal groups O(dk ) × O(dv ) per head and then breaks the remain-
+ing Sh permutation symmetry by a deterministic head ordering. When biases are present,
+we transform them covariantly (Proposition 11) to preserve exact functional invariance.
+
+
+Algorithm 1 Gauge-Fixing to Canonical Form (QR-based)
+                                      (i)   (i)   (i)                             (i)   (i)   (i)
+ 1: Input: MHA parameters {WQ , WK , WV , WO,i }hi=1 (optional biases {bQ , bK , bV } and
+    global bO ) with full column rank (A4)
+ 2: Output: Canonical parameters with continuous gauge freedom reduced to O(dk ) × O(dv ) per
+    head
+
+ 3: Per-head canonicalization (apply the following steps for each head i ∈ {1, . . . , h}):
+ 4:   QueryKey canonicalization
+                                           (i)
+ 5:     Compute a thin QR factorization WQ = QQ RQ .
+ 6:     Enforce the positive-diagonal convention for RQ by ipping column/row signs so
+    diag(RQ ) > 0.
+               (i)                (i)   (i)
+ 7:     Set WQ ← QQ (now (WQ )⊤ WQ = Idk ).
+                   (i)   (i)
+ 8:       Set WK ← WK RQ    ⊤
+                                 (preserves Qi Ki⊤ and reduces the GL(dk ) gauge freedom to O(dk )).
+ 9:       // (If present) transform Q/K biases covariantly
+              (i)            (i)    (i) −1
+10:       if bQ exists then bQ ← bQ RQ      end if                                      ▷ Prop. 11
+             (i)               (i)   (i)
+11:       if bK exists then bK ← bK R⊤
+                                     Q end if                                         ▷ Prop. 11
+12:   ValueOutput canonicalization
+                                              (i)
+13:     Compute a thin QR factorization WV = QV RV .
+14:     Enforce the positive-diagonal convention for RV (make diag(RV ) > 0).
+                (i)                 (i)    (i)
+15:     Set WV ← QV        (now (WV )⊤ WV = Idv ).
+16:     Set WO,i ← RV WO,i (preserves Vi WO,i and reduces the GL(dv ) gauge freedom to O(dv )).
+17:     // (If present) transform V/O biases covariantly
+            (i)             (i)   (i) −1
+18:     if bV exists then bV ← bV RV      end if                                      ▷ Prop. 11
+19:                     ▷ Global output bias bO is added after projection and remains unchanged
+
+20: Break permutation symmetry (generic case)
+                            (i)
+21: Compute norms[i] ← ∥WK ∥F for i = 1, . . . , h.
+22: Let σ ← ArgSort(norms, descending).
+23: Reorder all head-indexed parameters by σ (ties can be broken lexicographically).
+
+
+                                                  660
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+Remark 47 (Positive-diagonal QR convention) Many QR implementations may return
+R with mixed signs on the diagonal. To enforce the positive-diagonal convention (which
+yields a unique factorization), set sj = sign(R[j, j]) (take sj = 1 if R[j, j] = 0), then update
+Q[:, j] ← sj Q[:, j] and R[j, :] ← sj R[j, :]. Apply this to (QQ , RQ ) and (QV , RV ).
+
+Remark 48 (Why this is a deterministic partial slice) With WQ(i) and WV(i) reduced
+to column-orthonormal forms via a xed positive-diagonal QR convention, any further gauge
+                                                              (i)    (i)             (i)    (i)
+transformation (Ai , Ci ) ∈ GL(dk )×GL(dv ) that preserves (WQ )⊤ WQ = Idk and (WV )⊤ WV =
+Idv must satisfy Ai ∈ O(dk ) and Ci ∈ O(dv ). Thus the continuous gauge group is reduced
+from GL(dk ) × GL(dv ) to O(dk ) × O(dv ) per head, exactly as in Proposition 44. Ordering by
+    (i)
+∥WK ∥F removes the residual Sh ambiguity; ties occur on a measure-zero set and are broken
+lexicographically.
+
+Remark 49 (Complexity) Each thin
+                               QR costs O(dmodel dk ) or O(dmodel dv ). The per-
+                                                   2                2
+
+layer cost is O h(dmodel d2k + dmodel d2v ) and is typically negligible relative to a forward pass.
+
+H.3. Gauge-Aware Optimization
+Projecting gradients onto directions orthogonal to the gauge orbits eliminates updates that
+do not change the model's function.        Conceptually, this is motivated by Proposition 37
+(gradients are orthogonal to gauge orbits) and Theorem 38 (optimization proceeds on the
+quotient).   The routine below implements a practical approximate projection used in our
+experiments.
+
+
+Algorithm 2 Approximate Gauge-Orthogonal Gradient Projection
+  Input: Gradient ∇L = {∇W (i) L, ∇W (i) L, ∇W (i) L, ∇WO,i L}hi=1
+                            Q       K         V
+  Output: Projected gradient ∇⊥ L
+
+  Per head i = 1, . . . , h:
+     QueryKey projection
+               (i)
+      Xi ← (WQ )† ∇W (i) L
+                             Q
+                   (i)
+       Yi ← − (WK )† ∇W (i) L
+                                 K
+       Zi ← 12 (Xi + Yi⊤ )                                                        // symmetrize
+                              (i)
+       ∇⊥ (i) L ← ∇W (i) L − WQ Zi
+        WQ          Q
+                              (i)
+       ∇⊥ (i) L ← ∇W (i) L + WK Zi⊤
+        W    K           K
+
+
+     ValueOutput projection
+               (i)
+       Ui ← (WV )† ∇W (i) L
+                             V
+       Vi ← − ∇WO,i L (WO,i )†
+       Ti ← 21 (Ui + Vi )
+                                     (i)
+       ∇⊥ (i) L ← ∇W (i) L − WV Ti
+        WV         V
+
+       ∇⊥
+        WO,i L ← ∇WO,i L + Ti WO,i
+
+
+
+                                               661
+                                                                      Wang Wang
+
+
+
+
+Remark 50 (Exact Euclidean projection via Sylvester equations) The exact Frobenius-
+orthogonal projection onto the gauge-orthogonal subspace solves, per head, a Sylvester equa-
+                                                                        (i)
+tion. For the querykey sector, the optimal Zi minimizing ∥∇W (i) L − WQ Zi ∥2F + ∥∇W (i) L +
+                                                                                                          Q                  K
+  (i)
+WK Zi⊤ ∥2F satises
+                                 (i)                 (i)               (i)                                    (i)
+                             GQ Zi + Zi GK = (WQ )⊤ ∇W (i) L − (∇W (i) L)⊤ WK ,
+                                                                                     Q                K
+
+
+           (i)             (i)         (i)                (i)                 (i)         (i)
+where GQ := (WQ )⊤ WQ and GK := (WK )⊤ WK . An analogous equation holds for the
+                                             (i)                (i)           (i)               (i)
+valueoutput sector with GV := (WV )⊤ WV and GO := WO,i WO,i           ⊤ . The symmetrization
+
+heuristic in Algorithm 2 avoids the O(d3k +d3v ) Sylvester solves per head at the cost of a small
+approximation error.
+
+H.4. Model Merging via Gauge Alignment
+Independent trainings land at dierent points on the same gauge orbit.                                              Aligning gauges
+before averaging yields meaningful interpolations. The procedure below xes both models
+to a canonical gauge, matches heads, and ne-tunes per-head alignment.
+
+
+Algorithm 3 Gauge Alignment for Model Merging
+  Input: Two models θ1 , θ2 with the same architecture
+  Output: Practically gauge-aligned model θ2′ approximating close alignment with θ1
+
+  Step 1: Gauge-x both models to canonical form
+        θ1 ←     GaugeFix(θ1);                     θ2 ←    GaugeFix(θ2)
+  Step 2: Find optimal head permutation (Hungarian algorithm)
+                     (i)           (j)                     (i)               (j)
+        Dij ← ∥WQ,1 − WQ,2 ∥F + ∥WK,1 − WK,2 ∥F
+        σ←   HungarianAlgorithm   (D); permute heads of θ2 by σ
+  Step 3: Per-head ne alignment (querykey Procrustes)
+                                                                       (i)          (i)
+        for i = 1, . . . , h: Ai ← arg minA ∥WQ,1 − WQ,2 A∥F ; apply (Ai , Idv ) to head i of θ2
+
+
+H.5. Computational Complexity
+All op counts below are per layer and for dense operations; batch size multiplies costs by B ,
+and multi-layer models scale linearly in L. We use the canonical dimensions dmodel = h dv
+when helpful for intuition, but the formulas hold without this identity.
+   For typical values (n=512, dmodel =768, h=12, dk =dv =64), the QR-based gauge-xing
+and the gauge-orthogonal gradient projection add a small fraction of the FLOPs of a single
+                                                           2
+forward pass (dominated by the n dmodel attention term), and are therefore negligible in
+practice for common sequence lengths.
+
+
+
+
+                                                                              662
+ Complete Characterization of Gauge Symmetries in Transformer Architectures
+
+
+
+
+Table 10: Computational complexity of gauge operations versus standard operations (per
+         layer).
+
+
+
+           Operation                              Complexity per Layer
+                                                 O h(d2k dmodel + d2v dmodel )
+                                                                              
+           Gauge transformation
+           Gauge-xing (QR-based)                O h(dmodel d2k + dmodel d2v )
+           Gradient projection                   O h(d2k dmodel + d2v dmodel ) 
+           Model alignment                     O h3 + h(dmodel d2k + dmodel  d2v )
+                                                   O n2 dmodel + nd2model
+                                                                          
+           Forward pass (attention + MLP)
+
+
+
+
+                                         663
+

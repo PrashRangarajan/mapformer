@@ -1,0 +1,1224 @@
+                                                          Cheap Orthogonal Constraints in Neural Networks:
+                                                     A Simple Parametrization of the Orthogonal and Unitary Group
+
+
+                                                                              Mario Lezcano-Casado 1 David Martı́nez-Rubio 2
+
+
+                                                                   Abstract                                  Recurrent Neural Networks (RNNs). In RNNs the eigenval-
+arXiv:1901.08428v3 [cs.LG] 30 May 2019
+
+
+
+
+                                                                                                             ues of the gradient of the recurrent kernel explode or vanish
+                                              We introduce a novel approach to perform first-                exponentially fast with the number of time-steps whenever
+                                              order optimization with orthogonal and uni-                    the recurrent kernel does not have unitary eigenvalues (Ar-
+                                              tary constraints. This approach is based on a                  jovsky et al., 2016). This behavior is the same as the one
+                                              parametrization stemming from Lie group theory                 encountered when computing the powers of a matrix, and
+                                              through the exponential map. The parametrization               results in very slow convergence (vanishing gradient) or a
+                                              transforms the constrained optimization problem                lack of convergence (exploding gradient).
+                                              into an unconstrained one over a Euclidean space,
+                                              for which common first-order optimization meth-                In the seminal paper (Arjovsky et al., 2016), they note that
+                                              ods can be used. The theoretical results presented             unitary matrices have properties that would solve the ex-
+                                              are general enough to cover the special orthogo-               ploding and vanishing gradient problems. These matrices
+                                              nal group, the unitary group and, in general, any              form a group called the unitary group and they have been
+                                              connected compact Lie group. We discuss how                    studied extensively in the fields of Lie group theory and Rie-
+                                              this and other parametrizations can be computed                mannian geometry. Optimization methods over the unitary
+                                              efficiently through an implementation trick, mak-              and orthogonal group have found rather fruitful applications
+                                              ing numerically complex parametrizations usable                in RNNs in recent years (cf. Section 2).
+                                              at a negligible runtime cost in neural networks.               In parallel to the work on unitary RNNs, there has been an in-
+                                              In particular, we apply our results to RNNs with               creasing interest for optimization over the orthogonal group
+                                              orthogonal recurrent weights, yielding a new ar-               and the Stiefel manifold in neural networks (Harandi & Fer-
+                                              chitecture called EXPRNN. We demonstrate how                   nando, 2016; Ozay & Okatani, 2016; Huang et al., 2017;
+                                              our method constitutes a more robust approach to               Bansal et al., 2018). As shown in these papers, orthogonal
+                                              optimization with orthogonal constraints, show-                constraints in linear and CNN layers can be rather beneficial
+                                              ing faster, accurate, and more stable convergence              for the generalization of the network as they act as a form
+                                              in several tasks designed to test RNNs. 1                      of implicit regularization. The main problem encountered
+                                                                                                             while using these methods in practice was that optimiza-
+                                                                                                             tion with orthogonality constraints was neither simple nor
+                                         1. Introduction                                                     computationally cheap. We aim to close that bridge.
+
+                                         Training deep neural networks presents many difficulties.           In this paper we present a simple yet effective way to ap-
+                                         One of the most important is the exploding and vanishing            proach problems that present orthogonality or unitary con-
+                                         gradient problem, as first observed and studied in (Bengio          straints. We build on results from Riemannian geometry
+                                         et al., 1994). This problem arises from the ill-conditioning        and Lie group theory to introduce a parametrization of these
+                                         of the function defined by a neural network as the number           groups, together with theoretical guarantees for it.
+                                         of layers increase. This issue is particularly problematic in       This parametrization has several advantages, both theoreti-
+                                            1
+                                              Mathematical Institute, University of Oxford, Oxford, United
+                                                                                                             cal and practical:
+                                         Kingdom 2 Department of Computer Science, University of Oxford,
+                                         Oxford, United Kingdom. Correspondence to: Mario Lezcano              1. It can be used with general purpose optimizers.
+                                         Casado <mario.lezcanocasado@maths.ox.ac.uk>.
+                                                                                                               2. The parametrization does not create additional minima
+                                         Proceedings of the 36 th International Conference on Machine             or saddle points in the main parametrization region.
+                                         Learning, Long Beach, California, PMLR 97, 2019. Copyright
+                                         2019 by the author(s).                                                3. It is possible to use a structured initializer to take ad-
+                                            1
+                                              Implementation can be found at https://github.com/                  vantage of the structure of the eigenvalues of the or-
+                                         Lezcano/expRNN                                                           thogonal matrix.
+                                      Cheap Orthogonal Constraints in Neural Networks
+
+ 4. Other approaches need to enforce hard orthogonality           used in practice are similar to those used in the real case,
+    constraints, ours does not.                                   cf. (Manton, 2002; Abrudan et al., 2008).
+
+Most previous approaches fail to satisfy one or many of           Unitary RNNs. The idea of parametrizing the matrix that
+these points. The parametrization in (Helfrich et al., 2018)      defines an RNN by a unitary matrix was first proposed
+and (Maduranga et al., 2018) comply with most of these            in (Arjovsky et al., 2016). Their parametrization centers on
+points but they suffer degeneracies that ours solves (cf. Re-     a matrix-based fast Fourier transform-like (FFT) approach.
+mark in Section 4.2). We compare our architecture with            As pointed out in (Jing et al., 2017), this representation,
+other methods to optimize over SO(n) and U(n) in the              although efficient in memory, does not span the whole space
+remarks in Sections 3 and 4.                                      of unitary matrices, giving the model reduced expressive-
+                                                                  ness. This second paper solves this issue in the same way
+High-level idea The matrix exponential maps skew-                 it is solved when computing the FFT—using log(n) iter-
+symmetric matrices to orthogonal matrices transforming            ated butterfly operations. A different approach to perform
+an optimization problem with orthogonal constraints into          this optimization was presented in (Wisdom et al., 2016;
+an unconstrained one. We use Padé approximants and the           Vorontsov et al., 2017). Although not mentioned explic-
+scale-squaring trick to compute machine-precision approx-         itly in either of the papers, this second approach consists
+imations of the matrix exponential and its gradient. We           of a retraction-based Riemannian gradient descent via the
+can implement the parametrization with negligible overhead        Cayley transform. The paper (Hyland & Rätsch, 2017) pro-
+observing that it does not depend on the batch size.              poses to use the exponential map on the complex case, but
+Structure of the Paper In Section 3, we introduce the             they do not perform an analysis of the algorithm or provide
+parametrization and present the theoretical results that          a way to approximate the map nor the gradients. A third
+support the efficiency of the exponential parametrization.        approach has been presented in (Mhammedi et al., 2017)
+In Section 4, we explain the implementation details of            via the use of Householder reflections. Finally, in (Helfrich
+the layer. Finally, in Section 5, we present the numeri-          et al., 2018) and the follow-up (Maduranga et al., 2018), a
+cal experiments confirming the numerical advantages of this       parametrization of the orthogonal group via the use of the
+parametrization.                                                  Cayley transform is proposed. We will have a closer look at
+                                                                  these methods and their properties in Sections 3 and 4.
+2. Related Work
+                                                                  3. Parametrization of Compact Lie Groups
+Riemannian gradient descent. There is a vast literature
+on optimization methods on Riemannian manifolds, and in           For a much broader introduction to Riemannian geometry
+particular for matrix manifolds, both in the deterministic        and Lie group theory see Appendix A. We will restrict
+and the stochastic setting. Most of the classical convergence     our attention to the special orthogonal 2 and unitary case,
+results from the Euclidean setting have been adapted to           but the results in this section can be generalized to any
+the Riemannian one (Absil et al., 2009; Bonnabel, 2013;           connected compact matrix Lie group equipped with a bi-
+Boumal et al., 2016; Zhang et al., 2016; Sato et al., 2017).      invariant metric. We prove the results for general connected
+On the other hand, the problem of adapting popular opti-          compact matrix Lie groups in Appendix C.
+mization algorithms like RMSPROP (Tieleman & Hinton,
+2012), ADAM (Kingma & Ba, 2014) or ADAGRAD (Duchi                 3.1. The Lie algebras of SO(n) and U(n)
+et al., 2011) is a topic of current research (Kumar Roy et al.,    We are interested in the study of parametrizations of the
+2018; Becigneul & Ganea, 2019).                                   special orthogonal group
+Optimization over the Orthogonal and Unitary groups.
+The first formal study of optimization methods on manifolds              SO(n) = {B ∈ Rn×n | B | B = I, det(B) = 1}
+with orthogonal constraints (Stiefel manifolds) is found in
+the thesis (Smith, 1993). These ideas were later simplified       and the unitary group
+in the seminal paper (Edelman et al., 1998), where they
+were generalized to Grassmannian manifolds and extended                        U(n) = {B ∈ Cn×n | B ∗ B = I}.
+to get the formulation of the conjugate gradient algorithm
+and the Newton method for these manifolds. After that,            These two sets are compact and connected Lie groups. Fur-
+optimization with orthogonal constraints has been a central       thermore, when seen as submanifolds of Rn×n (resp. Cn×n )
+topic of study in the optimization community. A rather in         equipped with the metric induced from the ambient space
+depth literature review of existing methods for optimization         2
+                                                                      Note that we consider just matrices with determinant equal
+with orthogonality constraints can be found in (Jiang & Dai,      to one, since the full group of orthogonal matrices O(n) is not
+2015). When it comes to the unitary case, the algorithms          connected, and hence, not amenable to gradient descent algorithms.
+                                       Cheap Orthogonal Constraints in Neural Networks
+
+hX, Y i = tr(X | Y ) (resp. tr(X ∗ Y )), they inherit a bi-      3.3. From Riemannian to Euclidean optimization
+invariant metric, meaning that the metric is invariant with
+                                                                 In this section we describe some properties of the expo-
+respect to left and right multiplication by matrices of the
+                                                                 nential parametrization which make it a sound choice for
+group. This is clear given that the matrices of the two groups
+                                                                 optimization with orthogonal constraints in neural networks.
+are isometries with respect to the metric on the ambient
+space.                                                           Fix G to be SO(n) or U(n) equipped with the metric3
+                                                                 hX, Y i = tr(X ∗ Y ) and let g be its Lie algebra (the space
+We call the tangent space at the identity element of the group
+                                                                 of skew-symmetric or skew-Hermitian matrices). The expo-
+the Lie algebra of the group. For the two groups of interest,
+                                                                 nential parametrization satisfies the following properties.
+their Lie algebras are given by
+                                                                 It can be used with general purpose optimizers. The
+           so(n) = {A ∈ Rn×n | A + A| = 0},                      exponential parametrization allows us to pullback an opti-
+           u(n) = {A ∈ Cn×n | A + A∗ = 0},                       mization problem from the group G back to the Euclidean
+                                                                 space. If we have a problem
+That is, the skew-symmetric and the skew-Hermitian matri-
+ces respectively. Note that these two spaces are isomorphic                                   min f (B)                     (1)
+                                                                                              B∈G
+to a vector space. For example, for so(n), the isomorphism
+is given by                                                      this is equivalent to solving
+                         n(n−1)
+                  α: R      2     → so(n)                                                  min f (exp(A)).                  (2)
+                             A 7→ A − A|                                                   A∈g
+
+                            n(n−1)                               We noted in Section 3.1 that g is isomorphic to a Euclidean
+where we identify A ∈ R 2 with an upper triangular               vector space, and as such we can use regular gradient de-
+matrix with zeros in the diagonal.                               scent optimizers like ADAM or ADAGRAD to approximate a
+                                                                 solution to problem (2).
+3.2. Parametrizing SO(n) and U(n)
+                                                                 A rather natural question to ask is whether using gradient-
+In the theory of Lie groups there exists a tight connection      based methods to approximate the solution of problem (2)
+between the structure of the Lie algebra and the geometry        would give a sensible solution to problem (1), given that pre-
+of the Lie group. One of the most important tools that is        composing with the exponential map might change the ge-
+used to study one in terms of the other is the Lie exponential   ometry of the problem. If the parametrization is, for example
+map. The Lie exponential map on matrix Lie groups with a         not locally unique, this might degrade the gradient flow and
+bi-invariant metric is given by the exponential of matrices.     affect the performance of the gradient descent algorithm. In
+If we denote the group by G (which would be SO(n) or             this section we will show theoretically that this parametriza-
+U(n) in this case) and its Lie algebra by g, we have the         tion has rather desirable properties for a parametrization of
+mapping exp : g → G defined as                                   a manifold. We will confirm that these properties have a
+                                                                 positive effect on the convergence of the gradient descent al-
+              exp(A) := I + A + 12 A2 + · · ·                    gorithms when compared with other parametrizations when
+                                                                 applied to real problems in Section 5.
+This mapping is not surjective in general. On the other
+hand, there are particular families of Lie groups in which       It does not change the minimization problem. It is
+the exponential map is, in fact, surjective. Compact Lie         clear that a minimizer Bb for problem (1) and a minimizer A
+                                                                                                                           b
+groups are one of such families.                                 for problem (2) will be related by the equation B = exp(A),
+                                                                                                                 b        b
+Theorem 3.1. The Lie exponential map on a connected,             since the exponential map is surjective, so if we find a so-
+compact Lie group is surjective.                                 lution to the second problem we will have a solution to the
+                                                                 first one.
+
+Proof. We give a short self-contained proof of this classical    It acts as a change of metric on the group. If the
+result in Appendix C. We give an alternative, less abstract      parametrization did not induce a change of metric on the
+proof of this fact for the groups SO(n) and U(n) as a corol-     manifold it could mean that it would induce saddle points,
+lary of Proposition 3.2 in Appendix D.                           which would potentially slow down the convergence of the
+                                                                 optimization algorithm.
+                                                                 A map φ : M → N with N a Riemannian manifold induces
+Both SO(n) and U(n) are compact and connected, so this
+                                                                 a metric on a differentiable manifold M whenever it is an
+result applies to them. As such, the exponential of matrices
+gives a complete parametrization of these groups.                   3
+                                                                        Note that in the real case we have that A∗ = A| .
+                                      Cheap Orthogonal Constraints in Neural Networks
+
+immersion, that is, its differential is injective. The Lie        Definition 3.3 (Retraction). A retraction r for a manifold
+exponential is not just an immersion, it is bi-analytic on an     M is defined as a family of functions rx : Tx M → M for
+open neighborhood around the origin. The image of this            every x ∈ M such that
+neighborhood is sufficiently large to cover almost all the Lie
+                                                                             rx (0) = x       and       (drx )0 = Id.
+group.
+Proposition 3.2. Let G be SO(n) or U(n). The exponen-             In other words, retractions are a first order approximation
+tial map is analytic, invertible, with analytic inverse on a      of the Riemannian exponential map. A study of the con-
+bounded open neigborhood V of the origin and exp(V )              vergence properties of first and second-order optimization
+covers almost all G in the sense that the whole group lies in     algorithms when using retractions can be found in (Boumal
+the closure of exp(V ).                                           et al., 2016). In the case of G, we have that a way to form
+Proof. See Appendix D.                                           retractions is to choose a function φ : g → G such that it is
+                                                                  a first order approximation of the exponential of matrices
+This proposition assures that, as long as the optimization        and its image lies in G. Then, the update rule is given by
+problem stays in the neighborhood V , the representation of
+the matrices in G is unique, so this parametrization is not                       B ← Bφ(−ηB ∗ grad f (B)).
+creating spurious minima. Furthermore, given that it is a         Remark. For the special orthogonal and the unitary group,
+diffemorphism, it is not creating saddle points on V either.      one such function is the Cayley map
+Additionally, on this neighborhood, we have the adjoint of                                                     −1
+d exp with respect to the metric, that is,                                       φ(A) = (I + 12 A)(I − 12 A)        .
+                                                                  This justifies theoretically the optimization methods used
+            hd exp(X), Y i = hX, d exp∗ (Y )i.
+                                                                  in (Wisdom et al., 2016; Vorontsov et al., 2017) and ex-
+This is the map that induces the new metric on G, through         tends their work, given that all their architectures can still be
+the pushforward of the canonical metric from the Lie algebra      applied with different retractions for these manifolds. In Sec-
+into the Lie group. As such, the optimization process using       tion 4.2 we give examples of more involved retractions, and
+our parametrization can be seen as Riemannian gradient            in Section 4.3 we explain why it is computationally cheap
+descent using this new metric, and all the existent results       to use machine-accuracy approximants to compute the ex-
+developed for optimization over manifolds apply to this           ponential map both in our approach and in the Riemannian
+setting.                                                          gradient descent approach. Examples of other retractions
+Remark. We saw empirically that whenever the initializa-          and a deeper treatment of these objects can be found in Ap-
+tion of the skew-symmetric matrix starts in V , the optimiza-     pendix B.
+tion path throughout all the training epochs does not leave V .   The update rule for the exponential parametrization induces
+For this reason, in practice the exponential parametrization      a retraction-like map for A ∈ g
+behaves as a change of metric on the Lie group.
+                                                                               eA ← exp(A − η∇(f ◦ exp)(A)),
+The induced metric is different to the classic one. The
+                                                                  where the gradient is the gradient with respect to the Eu-
+standard first order optimization technique to solve prob-
+                                                                  clidean metric, that is, the regular gradient, given that f ◦exp
+lem (1) is given by Riemannian gradient descent (Absil et al.,
+                                                                  is defined on a Euclidean space. A natural question that
+2009). In the Riemannian setting, we have the Riemannian
+                                                                  arises is whether this new update rule defines a retraction. It
+exponential map expB which maps lines that pass through
+                                                                  turns out that this map is not a retraction for SO(n) or U(n).
+the origin on the tangent space TB G to geodesics on G that
+pass through B. In the special orthogonal or unitary case,
+when we choose the metric induced by the canonical metric         Proposition 3.4. The step-update map induced by the ex-
+on the ambient space, for a function defined on the ambient       ponential parametrization is not a retraction for SO(n) if
+space, this translates to the update rule                         n > 2 nor for U(n) if n > 1.
+                                                                  Proof. It is a corollary of Theorem C.12, where we give
+              B ← B exp(−ηB ∗ grad f (B))                         necessary and sufficient conditions for this map to be a
+for a learning rate η > 0, where exp is the exponential of        retraction when defined on a compact, connected matrix Lie
+matrices and grad f (B) denotes the gradient of the function      group.                                                  
+restricted to G. We deduce this formula in Example C.1.
+                                                                  This tells us that the metric induced by the log map on
+Computing the Riemannian exponential map exactly is com-          SO(n) and U(n) is intrinsically different to the canonical
+putationally expensive in many practical situations. For          metric on these manifolds when seen as submanifolds of
+this reason, approximations are in order. Retractions are of      Rn×n (resp. Cn×n ). In particular, it changes the geodesic
+particular interest.                                              flow defined by the metric.
+                                      Cheap Orthogonal Constraints in Neural Networks
+
+4. Numerical Implementation                                      Remark. Given that the Cayley transform is a degree 1
+                                                                 Padé approximant of the exponential, if we choose this ap-
+As an application of this framework we show how to model         proximant without the scale-squaring trick we essentially
+an orthogonal (or unitary) recurrent neural network with it,     recover the parametrization proposed in (Helfrich et al.,
+that is, an RNN whose recurrent matrix is orthogonal (or         2018). The Cayley transform suffers from the fact that, if
+unitary). We also show how to implement numerically the          the optimum has −1 as an eigenvalue, the weights of the
+ideas of the last section.                                       corresponding skew-symmetric matrix will tend to infinity.
+                                                                 The parametrization in (Helfrich et al., 2018) is the Cay-
+4.1. Exponential RNN Architecture                                ley transform multiplied by a diagonal matrix D, but the
+Given a sequence of inputs (xt ) ⊆ Rd , we define an orthog-     parametrization still has the same problem, it just moves
+onal exponential RNN (EXPRNN) with hidden size p > 0             it to a different eigenvalue. Proposition 3.2 assures that
+as                                                               the exponential parametrization does not suffer from this
+                                                                 problem.
+             ht+1 = σ(exp(A)ht + T xt+1 )
+                                                                 The follow-up work (Maduranga et al., 2018) mitigates this
+where A ∈ Skew(p), T ∈ Rp×d , and σ is some fixed non-           problem learning the diagonal of D as well, but by doing
+linearity. In our experiments we chose the modrelu non-          so it loses the local unicity of the parametrization. Proposi-
+linearity, as introduced in (Arjovsky et al., 2016). Note that   tion 3.2 assures that the exponential parametrization is not
+generalizing this architecture to the complex unitary case       only locally unique, but also differentiable with differen-
+simply accounts for considering A to be skew-Hermitian           tiable inverse, thus inducing a metric.
+rather than skew-symmetric. We stayed with the real case
+                                                                 Remark. It is straightforward to show that a degree n Padé
+because we did not observe any improvement in the empiri-
+                                                                 approximant combined with the scaling-squaring trick also
+cal results when using the complex case.
+                                                                 maps the skew-symmetric matrices to the special orthogonal
+                                                                 matrices. This constitutes a much more precise retraction
+4.2. Approximating the exponential of matrices
+                                                                 than the Cayley map at almost no extra computational cost.
+There is a myriad of methods to approximate the exponen-         This observation can be used to improve the precision of the
+tial of a matrix (Moler & Van Loan, 2003). Riemannian            method proposed in (Wisdom et al., 2016; Vorontsov et al.,
+gradient descent over SO(n) requires that the result of the      2017).
+approximation is orthogonal. If not, the error would accu-
+mulate after each step making the resulting matrix deviate       Exact approximation. Combining the methods above we
+from the orthogonality constraint exponentially fast in the      can get an efficient approximation of the exponential to
+number of steps. On the other hand, the approximation            machine-precision. The best one known to the authors is
+of the exponential in our parametrization does not require       based on the paper (Al-Mohy & Higham, 2009b). It ac-
+orthogonality. This allows many other approximations of          counts for an efficient use of the scaling-squaring trick and
+the exponential function. The requirement is removed be-         a Padé approximant. This is the algorithm that we use on
+cause the orthogonal matrix is implicitly represented as an      the experiments section to approximate the exponential.
+exponential of a skew-symmetric matrix. The loss of orthog-      Exact gradients. A problem often encountered in practice
+onality in Riemannian gradient descent is due to storing an      is that of biased gradients. Even though an approximation
+orthogonal matrix and updating it directly.                      might be good, it can significantly bias the gradient. An
+                                                                 example of this would be trying to approximate the function
+Padé approximants. Padé approximants are rational ap-
+proximations of the form exp(A) ≈ pn (A)qn (A)−1 for             f ≡ 0 on [0, 1] by the functions fn (x) = sin(2πnx)
+                                                                                                                n    . Even
+polynomials pn , qn of degree n. A Padé approximant of de-      though fn → f uniformly, their derivatives do not converge
+gree n agrees with the Taylor expansion of the exponential       to zero. This problem is rather common when using in-
+to degree 2n. The Cayley transform is the Padé approximant      volved parametrizations, for example, those coming from
+of degree 1. These methods and their implementations are         Chebyshev polynomials. On the other hand, the gradient
+described in detail in (Higham, 2009).                           can be implemented separately using a machine-precision
+                                                                 formula.
+Scale-squaring trick. The error of the Padé approximant         Proposition 4.1. Let A ∈ Skew(n). For a function
+                  2n+1
+scales as O(kAk         ). If kAk > 1 and we have an approx-     f : Rn×n → R, denote the matrix B = eA . We have that
+imant φ, the scale-squaring trick accounts for computing
+        2k                                                       ∇(f ◦exp)(A) = B(d exp)−A ( 12 (∇f (B)| B−B | ∇f (B))).
+φ( 2Ak ) for the first k ∈ N such that kAk
+                                         2k
+                                             < 12 . Most types
+of approximants, like Padé’s or a truncated Taylor expansion
+of the exponential, can be coupled with the scale-squaring       Proof. It follows from the discussion in Example C.1
+trick to reduce the error (Higham, 2009).                        and Proposition C.11 in the supplementary material.
+                                     Cheap Orthogonal Constraints in Neural Networks
+                                                                      q
+The differential of the exponential of matrices (d exp)A can    si = − 1−cos(u i)
+                                                                        1+cos(ui ) , thus biasing the eigenvalues towards 0.
+be approximated to machine-precision computing the expo-
+nential of a 2n × 2n matrix (Al-Mohy & Higham, 2009a).          We chose as the initial vector h0 = 0 for simplicity, as we
+We use this algorithm in conjunction with Proposition 4.1       did not observe any empirical improvement when using the
+to implement the gradients.                                     initialization given in (Arjovsky et al., 2016).
+
+4.3. Parametrizations are computationally cheap.                5. Experiments
+At first sight, one may think that an exact computation of      In this section we compare the performance of our
+the exponential and its gradient in neural networks is rather   parametrization for orthogonal RNNs with the following
+expensive. This is not the case when the exponential is         approaches:
+just used as a parametrization. The value—and hence the
+gradient—of a parametrization does not depend on the train-       • Long short-term memory (LSTM).
+ing examples used to compute the stochastic gradient. For           (Hochreiter & Schmidhuber, 1997)
+this reason, in order to compute the gradient of a function       • Unitary RNN (URNN).
+∇(f ◦ φ)(A) with B = φ(A), we can first let the auto-               (Arjovsky et al., 2016)
+differentiation engine compute the stochastic gradient of
+f with respect to B, that is, ∇f (B). The value ∇f (B)            • Efficient Unitary RNN (EURNN).
+depends on the batch size and the number of appearances             (Jing et al., 2017)
+of B as a subexpression in the neural network (think of           • Cayley Parametrization (SCORNN).
+a recurrent kernel in an LSTM). We can use ∇f (B) to                (Helfrich et al., 2018)
+compute—just once per batch—the gradient ∇(f ◦ φ)(A),             • Riemannian Gradient Descent (RGD).
+for example with the formula given in Proposition 4.1 for           (Wisdom et al., 2016)
+φ = exp. This allows the user to implement rather complex
+parametrizations, like the one we showed, without a notice-     We use three tasks that have become standard to measure
+able runtime penalty. For instance, for an RNN with batch       the performance of RNNs and their ability to deal with long-
+size b, sequences of average length `, and a hidden size of     term dependencies. These are the copying memory task,
+n, in each iteration one needs to compute bln matrix-vector     the pixel-permuted MNIST task, and the speech prediction
+products at the cost of O(n2 ) operations each. The overhead    on the TIMIT dataset (Arjovsky et al., 2016; Wisdom et al.,
+incurred using the exponential parametrization is the compu-    2016; Henaff et al., 2016; Mhammedi et al., 2017; Helfrich
+tation of two matrix exponentials that run in O(n3 ), which     et al., 2018).
+is negligible in comparison. In practice, with an EXPRNN
+                                                                In Appendix E, we enumerate the hyperparameters used for
+of size 512, we did not observe any noticeable time penalty
+                                                                the experiments. The sizes of the hidden layer were chosen
+when using this parametrization trick with respect to not
+                                                                to match the number of learnable parameters of the other
+imposing orthogonality constraints at all.
+                                                                architectures.
+4.4. Intialization                                              Remark. We found empirically that having a learning rate
+                                                                for the orthogonal parameters that is 10 times larger than that
+For the initialization of the layer with a matrix A0 ∈          of the non-orthogonal parameters yields a good performance
+Skew(p), we drew ideas from both (Henaff et al., 2016)          in practice.
+and (Helfrich et al., 2018). Both initializations sample
+blocks of the form                                              For the other experiments, we executed the code that the
+                                                              other authors provided with the best hyperparameters that
+                          0    si                               they reported and a batch of 128. The results for EURNN are
+                                    .
+                         −si 0                                  those reported in (Jing et al., 2017), and for RGD and URNN
+                                                                are those reported in (Helfrich et al., 2018).
+for si i.i.d. and then form A0 as a block-diagonal matrix
+with these blocks.                                              The code with the exact configuration and seeds to repli-
+                                                                cate these results, and a plug-and-play implementation of
+The Henaff initialization consists of sampling si ∼             EXPRNN and the exponential framework can be found in
+U[−π, π]. This defines a block-diagonal orthogonal matrix       https://github.com/Lezcano/expRNN.
+eA with uniformly distributed blocks on the corresponding
+torus of block-diagonal 2 × 2 rotations. We sometimes
+                                                                5.1. Copying memory task
+found that the sampling presented in (Helfrich et al., 2018)
+performed better. This initialization, which we call Cay-       The copying memory task was first proposed in (Hochreiter
+ley, accounts for sampling ui ∼ U[0, π2 ] and then setting      & Schmidhuber, 1997). The task can be defined as fol-
+                                                                    Cheap Orthogonal Constraints in Neural Networks
+
+
+                        0.04
+                                                                                    Baseline                          0.020                                                        Baseline
+                                                                                    EURNN                                                                                          EURNN
+                                                                                    LSTM                                                                                           LSTM
+                                                                                    scoRNN                                                                                         scoRNN
+                        0.03                                                        expRNN                                                                                         expRNN
+                                                                                                                      0.015
+        Cross entropy
+
+
+
+
+                                                                                                      Cross entropy
+                        0.02                                                                                          0.010
+
+
+
+
+                        0.01                                                                                          0.005
+
+
+
+
+                        0.00                                                                                          0.000
+                               0   500   1000   1500     2000       2500   3000   3500     4000                               0   500   1000   1500     2000       2500   3000   3500     4000
+                                                       Iterations                                                                                     Iterations
+
+
+
+
+            Figure 1. Cross entropy of the different algorithms in the copying problem for L = 1000 (left) and L = 2000 (right).
+                                         N
+lows. Let A = {ak }k=1 be an alphabet and let <blank>,                                            5.2. Pixel-by-Pixel MNIST
+<start> be two symbols not contained in A. For a se-
+                                                                                                  In this task we use the MNIST dataset of hand-written num-
+quence length of K and a spacing of length L, the input
+                                                K                                                 bers (LeCun & Cortes, 2010) of images of size 28×28, only
+sequence would be K ordered characters (bk )k=1 sampled
+                                                                                                  this time the images are flattened and are processed as an
+i.i.d. uniformly at random from A, followed by L repeti-
+                                                                                                  array of 784 pixels, which is treated as a stream that is fed
+tions of the character <blank>, the character <start>
+                                                                                                  to the RNN, as described in (Le et al., 2015). In the unper-
+and finally K − 1 repetitions of the character <blank>
+                                                                                                  muted task, the stream is processed in a row-by-row fashion,
+again. The output for this sequence would be K + L times
+                                                                                                  while in the permuted task, a random permutation of the
+the <blank> character and then the sequence of characters
+     K                                                                                            784 elements is chosen at the beginning of the experiment,
+(bk )k=1 . In other words, the system has to recall the initial
+                                                                                                  and all the pixels of all the images in the experiment are
+K characters and reproduce them after detecting the input of
+                                                                                                  permuted according to this permutation. The final output
+the character <start>, which appears L time-steps after
+                                                                                                  of the RNN is processed as the encoding of the number and
+the end of the input characters. For example, for N = 4,
+                                                                                                  used to solve the corresponding classification task.
+K = 5, L = 10, if we represent <blank> with a dash and
+<start> with a colon, and the alphabet A = {1, . . . , 4},                                        In this experiment we observed that EXPRNN is able to satu-
+the following sequences could be an element of the dataset:                                       rate the capacity of the orthogonal RNN model for this task
+                                                                                                  much faster than any other parametrization, as per Table 1.
+                                                                                                  We conjecture that coupling the exponential parametrization
+                                                                                                  with an LSTM cell or a GRU cell would yield a superior
+                               Input: 14221----------:----
+                                                                                                  architecture. We leave this for future research.
+                         Output: ---------------14221
+                                                                                                  5.3. TIMIT Speech Dataset
+                                                                                                  We performed speech prediction on audio data with our
+The loss function for this task is the cross entropy. The stan-                                   model. We used the TIMIT speech dataset (S Garofolo et al.,
+dard baseline for this task is the output of K + L <blank>                                        1992) which is a collection of real-world speech recordings.
+symbols, followed by the remaining K symbols being out-                                           The task accounts for predicting the log-magnitude of in-
+put at random. This strategy yields a cross entropy of                                            coming frames of a short-time Fourier transform (STFT) as
+K log(N )/(L + 2K).                                                                               it was first proposed in (Wisdom et al., 2016).
+We observe that the training of SCORNN is unstable, which                                         We use the separation in train / test proposed in the orig-
+is probably due to the degeneracies explained in the remark                                       inal paper, having 3640 utterances for the training set, a
+in Section 4. In the follow-up paper (Maduranga et al.,                                           validation set of size 192, and a test set of size 400. The
+2018), SCURNN presents the same instabilities as its pre-                                         validation / test division and the whole preprocessing of the
+decessor. As explained in Section 4, EXPRNN does not                                              dataset was done according to (Wisdom et al., 2016). The
+suffer of this, and can be observed in our experiments as                                         preprocessing goes as follows: The data is sampled at 8kHz
+a smoother convergence. In the more difficult problem,                                            and then cut into time frames of the same size. These frames
+L = 2000, EXPRNN is the only architecture that is able to                                         are then transformed into the log-magnitude Fourier space
+fully converge to the correct answer.                                                             and finally, they are normalized according to a per-training
+                                                                        Cheap Orthogonal Constraints in Neural Networks
+
+
+                        1.00                                                                                              1.00
+
+
+
+
+                        0.95                                                                                              0.95
+        Test Accuracy
+
+
+
+
+                                                                                                          Test Accuracy
+                        0.90                                                                                              0.90
+
+
+                                                                                  LSTM n=256                                                                               LSTM n=256
+                                                                                  scoRNN n=170                                                                             scoRNN n=170
+                        0.85                                                      scoRNN n=360                            0.85                                             scoRNN n=360
+                                                                                  scoRNN n=512                                                                             scoRNN n=512
+                                                                                  expRNN n=170                                                                             expRNN n=170
+                                                                                  expRNN n=360                                                                             expRNN n=360
+                                                                                  expRNN n=512                                                                             expRNN n=512
+                        0.80                                                                                              0.80
+                               0         10       20     30            40    50      60          70                              0    10   20   30            40      50      60          70
+                                                              Epochs                                                                                 Epochs
+
+
+
+                                              Figure 2. Test losses for several models on pixel-by-pixel MNIST (left) and P - MNIST (right).
+
+
+Table 1. Best test accuracy at the MNIST and P - MNIST tasks.                                         Table 2. Test MSE at the end of the epoch with the lowest validation
+                                                                                                      MSE for the TIMIT task.
+ M ODEL                            N          # PARAMS           MNIST              P - MNIST
+                                                                                                       M ODEL                        N     # PARAMS            VAL . MSE           T EST MSE
+ EXPRNN                            170        ≈ 16K              0.980              0.949
+ EXPRNN                            360        ≈ 69K              0.984              0.962              EXPRNN                        224   ≈ 83K               5.34                5.30
+ EXPRNN                            512        ≈ 137K             0.987              0.966              EXPRNN                        322   ≈ 135K              4.42                4.38
+                                                                                                       EXPRNN                        425   ≈ 200K              5.52                5.48
+ SCORNN                            170        ≈ 16K              0.972              0.948
+ SCORNN                            360        ≈ 69K              0.981              0.959              SCORNN                        224   ≈ 83K               9.26                8.50
+ SCORNN                            512        ≈ 137K             0.982              0.965              SCORNN                        322   ≈ 135K              8.48                7.82
+                                                                                                       SCORNN                        425   ≈ 200K              7.97                7.36
+ LSTM                              128        ≈ 68K              0.819              0.795
+ LSTM                              256        ≈ 270K             0.888              0.888              LSTM                          84    ≈ 83K               15.42               14.30
+ LSTM                              512        ≈ 1058K            0.919              0.918              LSTM                          120   ≈ 135K              13.93               12.95
+                                                                                                       LSTM                          158   ≈ 200K              13.66               12.62
+ RGD                               116        ≈ 9K               0.947              0.925
+ RGD                               512        ≈ 137K             0.973              0.947              EURNN                         158   ≈ 83K               15.57               18.51
+                                                                                                       EURNN                         256   ≈ 135K              15.90               15.31
+ URNN                          512            ≈ 9K               0.976              0.945              EURNN                         378   ≈ 200K              16.00               15.15
+ URNN                          2170           ≈ 69K              0.984              0.953
+                                                                                                       RGD                           128   ≈ 83K               15.07               14.58
+ EURNN                             512        ≈ 9K               −                  0.937              RGD                           192   ≈ 135K              15.10               14.50
+                                                                                                       RGD                           256   ≈ 200K              14.96               14.69
+
+set, test set, and validation set basis.
+                                                                                                      the average MSE of a batch, hence reporting a lower MSE
+The results for this experiment are shown in Table 2. Again,
+                                                                                                      than the correct one. Even in this unfavorable scenario, our
+the exponential parametrization beats—by a large margin—
+                                                                                                      parametrization is able to get results that are twice as good—
+other methods of parametrization over the orthogonal group,
+                                                                                                      the MSE loss function is a quadratic function—as those from
+and also the LSTM architecture. The results in Table 2 are
+                                                                                                      the other architectures.
+those reported in (Helfrich et al., 2018).
+As a side note, we must say that the results in this experi-                                          6. Conclusion and Future Work
+ment should be interpreted under the following fact: We had
+access to two of the implementations for the tests for the                                            In this paper we have presented three main ideas. First, a
+other architectures regarding this experiment, and neither                                            simple approach based on classic Lie group theory to per-
+of them correctly handled sequences with different lengths                                            form optimization over compact Lie groups, in particular
+present in this experiment. We suspect that the other im-                                             SO(n) and U(n), proving its soundness and providing em-
+plementations followed a similar approach, given that the                                             pirical evidence of its superior performance. Second, an
+results that they get are of the same order. In particular,                                           implementation trick that allows for the implementation of
+the implementation released by Wisdom, which is the only                                              arbitrary parametrizations at a negligible runtime cost. Fi-
+publicly available implementation of this experiment, di-                                             nally, we sketched how to improve some existing methods
+vides by a larger number than it should when computing                                                to perform optimization on Lie groups using Riemannian
+                                     Cheap Orthogonal Constraints in Neural Networks
+
+gradient descent. Any of these three ideas is of indepen-       Becigneul, G. and Ganea, O.-E. Riemannian adaptive
+dent interest and could have more applications within neural      optimization methods. In International Conference
+networks.                                                         on Learning Representations, 2019. URL https://
+                                                                  openreview.net/forum?id=r1eiqi09K7.
+The investigation of how to couple these ideas with the
+LSTM architecture to improve its performance is left for
+                                                                Bengio, Y., Simard, P., and Frasconi, P. Learning long-term
+future work.                                                      dependencies with gradient descent is difficult. IEEE
+Additionally, it could be of interest to see how orthogonal       transactions on neural networks, 5(2):157–166, 1994.
+constraints help with learning in deep feed forward networks.
+In order to make this last point formal, one would have         Bonnabel, S. Stochastic gradient descent on riemannian
+to generalize the results presented here to homogeneous           manifolds. IEEE Transactions on Automatic Control, 58
+Riemannian manifolds, like the Stiefel manifold.                  (9):2217–2229, 2013.
+
+                                                                Boumal, N., Absil, P.-A., and Cartis, C. Global rates of
+Acknowledgements                                                  convergence for nonconvex optimization on manifolds.
+                                                                  IMA Journal of Numerical Analysis, 2016.
+We would like to thank the help of Prof. Raphael Hauser
+and Jaime Mendizabal for the useful conversations, Daniel       do Carmo, M. Riemannian Geometry. Mathematics (Boston,
+Feinstein for the proofreading, Prof. Terry Lyons for the         Mass.). Birkhäuser, 1992.  ISBN 9783764334901.
+computing power, and Kyle Helfrich for helping us setting         URL https://books.google.co.uk/books?
+up the experiments.                                               id=uXJQQgAACAAJ.
+The work of MLC was supported by the Oxford-James
+Martin Graduate Scholarship and the “la Caixa” Banking          Duchi, J., Hazan, E., and Singer, Y. Adaptive subgradient
+Foundation (LCF/BQ/EU17/11590067). The work of DMR                methods for online learning and stochastic optimization.
+was supported by EP/N509711/1 from the EPSRC MPLS                Journal of Machine Learning Research, 12(Jul):2121–
+division, grant No 2053152.                                       2159, 2011.
+
+                                                                Edelman, A., Arias, T. A., and Smith, S. T. The geometry
+References                                                        of algorithms with orthogonality constraints. SIAM jour-
+Abrudan, T. E., Eriksson, J., and Koivunen, V. Steepest           nal on Matrix Analysis and Applications, 20(2):303–353,
+  descent algorithms for optimization under unitary matrix        1998.
+  constraint. IEEE Transactions on Signal Processing, 56
+                                                                Hall, B. Lie Groups, Lie Algebras, and Representations:
+ (3):1134–1147, 2008.
+                                                                 An Elementary Introduction. Graduate Texts in Mathe-
+                                                                  matics. Springer International Publishing, 2015. ISBN
+Absil, P.-A., Mahony, R., and Sepulchre, R. Optimization
+                                                                  9783319134673. URL https://books.google.
+  algorithms on matrix manifolds. Princeton University
+                                                                  es/books?id=didACQAAQBAJ.
+  Press, 2009.
+                                                                Harandi, M. and Fernando, B. Generalized backpropa-
+Al-Mohy, A. H. and Higham, N. J. Computing the fréchet           gation, étude de cas: Orthogonality. arXiv preprint
+  derivative of the matrix exponential, with an application       arXiv:1611.05927, 2016.
+  to condition number estimation. SIAM Journal on Matrix
+  Analysis and Applications, 30(4):1639–1657, 2009a.            Helfrich, K., Willmott, D., and Ye, Q. Orthogonal recurrent
+                                                                  neural networks with scaled Cayley transform. In Dy, J.
+Al-Mohy, A. H. and Higham, N. J. A new scaling and                and Krause, A. (eds.), Proceedings of the 35th Interna-
+  squaring algorithm for the matrix exponential. SIAM             tional Conference on Machine Learning, volume 80 of
+  Journal on Matrix Analysis and Applications, 31(3):970–         Proceedings of Machine Learning Research, pp. 1969–
+  989, 2009b.                                                    1978, Stockholmsmssan, Stockholm Sweden, 10–15 Jul
+                                                                  2018. PMLR. URL http://proceedings.mlr.
+Arjovsky, M., Shah, A., and Bengio, Y. Unitary evolution          press/v80/helfrich18a.html.
+  recurrent neural networks. In International Conference
+  on Machine Learning, pp. 1120–1128, 2016.                     Henaff, M., Szlam, A., and LeCun, Y. Recurrent orthogonal
+                                                                  networks and long-memory tasks. In Proceedings of the
+Bansal, N., Chen, X., and Wang, Z. Can we gain more               33rd International Conference on International Confer-
+  from orthogonality regularizations in training deep cnns?       ence on Machine Learning-Volume 48, pp. 2034–2042.
+  arXiv preprint arXiv:1810.09102, 2018.                          JMLR. org, 2016.
+                                       Cheap Orthogonal Constraints in Neural Networks
+
+Higham, N. J. The scaling and squaring method for the              Moler, C. and Van Loan, C. Nineteen dubious ways to
+  matrix exponential revisited. SIAM review, 51(4):747–             compute the exponential of a matrix, twenty-five years
+  764, 2009.                                                        later. SIAM review, 45(1):3–49, 2003.
+
+Hochreiter, S. and Schmidhuber, J. Long short-term memory.         Ozay, M. and Okatani, T. Optimization on submani-
+  Neural computation, 9(8):1735–1780, 1997.                          folds of convolution kernels in cnns. arXiv preprint
+                                                                     arXiv:1610.07008, 2016.
+Huang, L., Liu, X., Lang, B., Yu, A. W., Wang, Y., and
+  Li, B. Orthogonal weight normalization: Solution to              S Garofolo, J., Lamel, L., M Fisher, W., Fiscus, J., S. Pallett,
+  optimization over multiple dependent stiefel manifolds in          D., L. Dahlgren, N., and Zue, V. Timit acoustic-phonetic
+  deep neural networks. arXiv preprint arXiv:1709.06079,             continuous speech corpus. Linguistic Data Consortium,
+  2017.                                                              11 1992.
+
+Hyland, S. L. and Rätsch, G. Learning unitary operators           Sato, H., Kasai, H., and Mishra, B.       Riemannian
+ with help from u (n). In Thirty-First AAAI Conference on            stochastic variance reduced gradient. arXiv preprint
+ Artificial Intelligence, 2017.                                      arXiv:1702.05594, 2017.
+
+Jiang, B. and Dai, Y.-H. A framework of constraint preserv-        Smith, S. T. Geometric Optimization Methods for Adaptive
+   ing update schemes for optimization on stiefel manifold.          Filtering. PhD thesis, Harvard University, Cambridge,
+   Mathematical Programming, 153(2):535–575, 2015.                   MA, USA, 1993. UMI Order No. GAX93-31032.
+
+Jing, L., Shen, Y., Dubcek, T., Peurifoy, J., Skirlo, S., LeCun,   Tieleman, T. and Hinton, G. Lecture 6.5-rmsprop: Divide
+   Y., Tegmark, M., and Soljačić, M. Tunable efficient             the gradient by a running average of its recent magnitude.
+   unitary neural networks (eunn) and their application to           COURSERA: Neural networks for machine learning, 4
+   rnns. In International Conference on Machine Learning,            (2):26–31, 2012.
+   pp. 1733–1741, 2017.                                            Vorontsov, E., Trabelsi, C., Kadoury, S., and Pal, C. On
+Kingma, D. and Ba, J. Adam: A method for stochastic                  orthogonality and learning recurrent networks with long
+  optimization. arXiv preprint arXiv:1412.6980, 2014.                term dependencies. In International Conference on Ma-
+                                                                     chine Learning, pp. 3570–3578, 2017.
+Kumar Roy, S., Mhammedi, Z., and Harandi, M. Geome-
+  try aware constrained optimization techniques for deep           Wisdom, S., Powers, T., Hershey, J., Le Roux, J., and Atlas,
+  learning. In The IEEE Conference on Computer Vision               L. Full-capacity unitary recurrent neural networks. In
+  and Pattern Recognition (CVPR), June 2018.                        Advances in Neural Information Processing Systems, pp.
+                                                                    4880–4888, 2016.
+Le, Q. V., Jaitly, N., and Hinton, G. E. A simple way
+                                                                   Zhang, H., Reddi, S. J., and Sra, S. Riemannian svrg: Fast
+  to initialize recurrent networks of rectified linear units.
+                                                                     stochastic optimization on riemannian manifolds. In Ad-
+  arXiv preprint arXiv:1504.00941, 2015.
+                                                                     vances in Neural Information Processing Systems, pp.
+LeCun, Y. and Cortes, C. MNIST handwritten digit database.           4592–4600, 2016.
+  http://yann.lecun.com/exdb/mnist/, 2010. URL http:
+  //yann.lecun.com/exdb/mnist/.
+
+Maduranga, K. D. G., Helfrich, K., and Ye, Q. Complex
+ unitary recurrent neural networks using scaled cayley
+ transform. arXiv preprint arXiv:1811.04142, 2018.
+
+Manton, J. H. Optimization algorithms exploiting unitary
+ constraints. IEEE Transactions on Signal Processing, 50
+ (3):635–650, 2002.
+
+Mhammedi, Z., Hellicar, A., Rahman, A., and Bailey, J.
+ Efficient orthogonal parametrisation of recurrent neural
+ networks using householder reflections. In International
+ Conference on Machine Learning, pp. 2401–2409, 2017.
+
+Milnor, J. Curvatures of left invariant metrics on lie groups.
+ Adv. Math., 21:293–329, 1976.
+                                      Cheap Orthogonal Constraints in Neural Networks
+
+A. Riemannian Geometry and Lie Groups
+In this section we aim to give a short summary of the basics of classical Riemannian geometry and Lie group theory
+needed for our proofs in following sections. The standard reference for classical Riemannian geometry is do Carmo’s
+book (do Carmo, 1992). An elementary introduction to Lie group theory with an emphasis on concrete examples from
+matrix theory can be found in (Hall, 2015).
+
+A.1. Riemannian geometry
+A Riemannian manifold is an n-dimensional smooth manifold M equipped with a smooth metric h·, ·ip : Tp M × Tp M → R
+which is a positive definite inner product for every p ∈ M. We will omit the dependency on the point p whenever it is clear
+                                                                                                      Rbp
+from the context. Given a metric, we can define the length of a curve γ on the manifold as L(γ) := a hγ 0 (t), γ 0 (t)i dt.
+The distance between two points is the infimum of the lengths of the piece-wise smooth curves on M connecting them.
+When the manifold is connected, this defines a distance function that turns the manifold into a metric space.
+An affine connection ∇ on a smooth manifold is a bilinear application that maps two vector fields X, Y to a new one ∇X Y
+such that it is linear in X, and linear and Leibnitz in Y .
+Connections give a notion of variation of a vector field along another vector field. In particular, the covariant derivative is
+the restriction of the connection to a curve. In particular, we can define the notion of parallel transport of vectors. We say
+that a vector field Z is parallel along a curve γ if ∇γ 0 Z = 0 where γ 0 := dγ( dtd
+                                                                                     ). Given initial conditions (p, v) ∈ T M
+there exists locally a unique parallel vector field Z along γ such that Z(p) = v. Z(γ(t)) is sometimes referred to as the
+parallel transport of v along γ.
+We say that a connection is compatible with the metric if for any two parallel vector fields X, Y along γ, their scalar product
+is constant. In other words, the connection preserves the angle between parallel vector fields. We say that a connection is
+torsion-free if ∇X Y − ∇Y X = [X, Y ] := XY − Y X. In a Riemannian manifold, there exists a unique affine connection
+such that it is compatible with the metric and that is also torsion-free. We call this distinguished connection the Levi-Civita
+connection.
+A geodesic is defined as a curve such that its tangent vectors are covariantly constant along itself, ∇γ 0 γ 0 = 0. It is not true
+in general that given two points in a manifold there exists a geodesic that connects them. However, the Hopf-Rinow theorem
+states that this is indeed the case if the manifold is connected and complete as a metric space. The manifolds that we will
+consider are all connected and complete.
+At every point p in our manifold we can define the Riemannian exponential map expp : Tp M → M, which maps a vector
+v to γ(1) where γ is the geodesic such that γ(0) = p, γ 0 (0) = v. In a complete manifold, another formulation of the
+Hopf-Rinow theorem says that the exponential map is defined on the whole tangent space for every p ∈ M. We also
+have that the Riemannian exponential map maps diffeomorphically a neighborhood around zero on the tangent space to a
+neighborhood of the point on which it is defined.
+A map between two Riemannian manifolds is called a (local) isometry if it is a (local) diffeomorphism and its differential
+respects the metric.
+
+A.2. Lie groups
+A Lie group is a smooth manifold equipped with smooth group multiplication and inverse. Examples of Lie groups are the
+Euclidean space equipped with its additive group structure and the general linear group GL of a finite dimensional vector
+space given by the invertible linear endomorphisms of the space equipped with the composition of morphisms. We say that
+a Lie group is a matrix Lie group if it is a closed subgroup of some finite-dimensional general linear group.
+Lie groups act on themselves via the left translations given by Lg (x) = gx for g, x ∈ G. A vector field X is called left
+invariant if (dLg )(X) = X ◦ Lg . A left invariant vector field is uniquely determined by its value at the identity of the group.
+This identification gives us a way to identify the tangent space at a point of the group with the tangent space at the identity.
+We call the tangent space at the identity the Lie algebra of G and we denote it by g.
+For every vector v ∈ g there exists a unique curve γ : R → G such that γ is the integral curve of the left-invariant vector
+field defined by v such that γ(0) = e. This curve is a Lie group homomorphism and we call it the Lie exponential. It is also
+the integral curve of the right-invariant vector field with initial vector v.
+                                      Cheap Orthogonal Constraints in Neural Networks
+
+We say that cg (x) = gxg −1 for g, x ∈ G is an inner automorphism of G. Its differential at the identity is the adjoint
+representation of G, Ad : G → GL(g) defined as Adg (X) := (dcg )e (X) for g ∈ G, X ∈ g. The differential at the identity
+of Ad is called the adjoint representation of g, ad : g → End(g) defined as adX (Y ) := (d Ad)e (X)(Y ). We say that
+adX (Y ) is the Lie bracket of g and we denote it by [X, Y ]. For a matrix Lie group we have Adg (X) = gXg −1 and
+adX (Y ) = XY − Y X.
+A (complex) representation of a group is a continuous group homomorphism ρ : G → GL(n, C). An injective representation
+is called faithful. The inclusion is a faithful representation for any matrix Lie group. On a compact Lie group, ρ(g) is
+diagonalizable for every g ∈ G.
+A Riemannian metric on G is said to be bi-invariant if it turns left and right translations into isometries. We have that every
+compact Lie group admits a bi-invariant metric. An example of a bi-invariant metric on the group of orthogonal matrices
+with positive determinant SO(n) is that inherited from Rn×n , namely the canonical metric hX, Y i = tr(X | Y ). The same
+happens in the unitary case, but changing the transpose for a conjugate transpose hX, Y i = tr(X ∗ Y ). Furthermore, every
+Lie group that admits a bi-invariant metric is a homogeneous Riemannian manifold—there exists an isometry between that
+takes any point to any other point—, and hence, complete.
+
+B. Retractions
+We take a deeper look into the concept of a retraction, which helps understanding the correctness of the approach used to
+optimize on SO(n) and U(n) presented in (Wisdom et al., 2016; Vorontsov et al., 2017).
+The concept of a retraction is a relaxation of that of the Riemannian exponential map.
+Definition B.1 (Retraction). A retraction is a map
+                                                      r: TM → M
+                                                         (x, v) 7→ rx (v)
+such that
+                                            rx (0) = x      and      (drx )0 = Id
+where Id is the identity map.
+
+In other words, when M is a Riemannian manifold, r is a first order approximation of the Riemannian exponential map.
+It is clear that the exponential map is a retraction. For manifolds embedded in the Euclidean space with the metric induced
+by that of the Euclidean space, the following proposition gives us a simple way to construct a rather useful family of
+retractions—those used in projected gradient descent.
+Proposition B.2. Let M be an embedded submanifold of Rn , then for a differentiable surjective projection π : Rn → M,
+that is, π ◦ π = π, the map
+                                             r: TM → M
+                                                      (x, v) 7→ π(x + v)
+is a retraction, where we are implicitly identifying Tx M ⊆ Tx Rn ∼= Rn .
+
+Proof. From π being a surjective projection we have that π(x) = x for every x ∈ M, which implies the first condition of
+the definition of retraction.
+Another way of seeing the above is saying that π|M = Id. This implies that, for every x ∈ M, (dπ)x = Id|Tx M . By the
+chain rule, since the differential of v 7→ x + v is the identity as well we get the second condition.
+
+This proposition lets us see projected Riemannian gradient descent as an specific case of Riemannian gradient descent with
+a specific retraction. A corollary of this proposition that allows r to be defined just in those vectors of the form x + v with
+(x, v) = T M lets us construct specific examples of retractions:
+Example B.3 (Sphere). The function
+                                                                  x+v
+                                                      rx (v) =
+                                                                 kx + vk
+for v ∈ Tx Sn is a retraction.
+                                     Cheap Orthogonal Constraints in Neural Networks
+
+Example B.4 (Special orthogonal group). Recall that for A ∈ SO(n),
+
+                                     TA (SO(n)) = {X ∈ Rn×n | A| X + X | A = 0},
+
+then, for an element of T SO(n) we can define the map given by Proposition B.2. In this case, the projection π(X) for a
+matrix with singular value decomposition X = U ΣV | is π(X) = U V | .
+This projection is nothing but the orthogonal projection from Rn×n onto SO(n) when equipped with the canonical metric.
+
+The two examples above are examples of orthogonal projections. The manifolds being considered are embedded into a
+Euclidean space and they inherit its metric. The projections here are orthogonal projections on the ambient space. On the
+other hand, Proposition B.2 does not require the projections to be orthogonal.
+Different examples of retractions can be found in (Absil et al., 2009), Example 4.1.2.
+
+C. Comparing Riemannian gradient descent and the exponential parametrization
+The proofs in this section are rather technical and general so that they apply to a wide variety of manifolds such as SO(n),
+U(n), or the symplectic group. Even though we do not explore applications of optimizing over other compact matrix Lie
+groups, we state the results in full generality. Having this in mind, we will first motivate this section with the concrete
+example that we study in the applications of this paper: SO(n).
+Example C.1. Let f : Rn×n → R be a function defined on the space of matrices. Our task is to solve the problem
+
+                                                         min     f (B).
+                                                       B∈SO(n)
+
+
+A simple way to approach this problem would be to apply Riemannian gradient descent to it. Let A be a skew-symmetric
+matrix an let B = eA ∈ SO(n), where eA denotes the exponential of matrices. We will suppose that we are working with
+the canonical metric on Rn×n , namely hX, Y i = tr(X | Y ). We will denote by ∇f (B) the gradient of the function f at
+the matrix B, and by grad f (B) ∈ TB SO(n) the gradient associated to the restriction f |SO(n) with respect to the induced
+metric.
+Riemannian gradient descent works by following the geodesic defined by the direction − grad f (B) at the point B. In the
+words of the Riemannian exponential map at B, if we have a learning rate η > 0, the update rule will be given by
+
+                                                B ← expB (−η grad f (B)).
+
+The tangent space to SO(n) at a matrix B is
+
+                                      TB SO(n) = {X ∈ Rn×n | B | X + X | B = 0}
+
+and it is easy to check that the orthogonal projection with respect to the canonical metric onto this space is given by
+
+                                              πB : Rn×n → TB SO(n)
+                                                       X 7→ 21 (X − BX | B)
+Since the gradient on the manifold is just the tangent component of the gradient on the ambient space, we have that
+
+                                         grad f (B) = 21 (∇f (B) − B∇f (B)| B),
+
+and since multiplying by an orthogonal matrix constitutes an isometry, in order to compute the Riemannian exponential map
+we can transport the vector from TB G to TI G, compute the exponential at the identity using the exponential of matrices and
+then transport the result back. In other words,
+
+                                     expB (X) = B exp(B | X)          ∀X ∈ TB SO(n).
+
+Putting everything together, the Riemannian gradient descent update rule for SO(n) is given by
+                                                                 |
+                                                 B ← eA e−ηB grad f (B) .
+                                       Cheap Orthogonal Constraints in Neural Networks
+
+The other update rule that we have is the one given by the exponential parametrization
+                                                    B ← eA−η∇(f ◦exp)(A) .
+This is nothing but the gradient descent update rule applied to the problem
+                                                        min      f (exp(A)).
+                                                     A∈Skew(n)
+
+
+Both of these rules follow geodesic flows for two metrics whenever A is in a neighborhood of the identity on which
+exp is a diffeomorphism (cf., Appendix D). A natural question that arises is whether these metrics are the same. A less
+restrictive question would be whether this second optimization procedure defines a retraction or whether their gradient flow
+is completely different.
+In the sequel, we will see that for SO(n) these two optimization methods give raise to two rather different metrics. We will
+explicitly compute the quantity ∇(f ◦ exp)(A), and we will give necessary and sufficient conditions equivalent under which
+these two optimization methods agree.
+
+C.1. Optimization on Lie Groups with Bi-invariant Metrics
+In this section we expose the theoretical part of the paper. The first part of this section is classic and can be found, for
+example, in Milnor (Milnor, 1976). We present it here for completeness. The results Proposition C.11 and Theorem C.12
+are novel.
+                                                       ∗
+Remark. Throughout this section the operator (−) will have two different meanings. It can be either the pullback of a
+form along a function or the adjoint of a linear operator on a vector space with an inner product. Although the two can be
+distinguished in many situations, we will explicitly mention to which one we are referring whenever it may not be clear
+from the context. Note that when we are on a matrix Lie group equipped with the product hX, Y i = tr(X ∗ Y ), the adjoint
+of a linear operator is exactly its conjugate transpose, hence the notation.
+When we deal with an abstract group we will denote the identity element as e. If the group is a matrix Lie group, we will
+sometimes refer to it as I.
+
+We start by recalling the definition of our object of study.
+Definition C.2 (Invariant metric on a Lie Group). A Riemannian metric on a Lie group G is said to be left (resp. right)
+invariant if it makes left (resp. right) translations into isometries. Explicitly, it is so if for every g ∈ G, and the metric α we
+have that αg = L∗g−1 αe (resp. αg = Rg∗−1 αe ).
+A bi-invariant metric is a metric that is both left and right-invariant.
+
+We can construct a bi-invariant metric on a Lie group by using the averaging trick.
+Proposition C.3 (Bi-invariant metric on compact Lie groups). A compact Lie group G admits a bi-invariant metric.
+
+Proof. Let n be the dimension of G and let µe be a non-zero n-form at g. This form is unique up to a multiplicative constant.
+We can then extend it to the whole G by pulling it back along Rg defining µg := Rg∗−1 µe . This makes it into a right-invariant
+n-form on the manifold, which we call the right Haar measure.
+Let (·, ·) be an inner product on g. We can turn this inner product into an Ad-invariant inner product on g by averaging it
+over the elements of the group using the right Haar measure
+                                                     Z
+                                           hu, vi =     (Adg (u), Adg (v)) µ(dg).
+                                                        G
+
+Note that this integral is well defined since G is compact. The Ad-invariance follows from the right-invariance of µ
+                                                      Z
+                                hAdh (u), Adh (v)i =    (Adgh (u), Adgh (v)) µ(dg) = hu, vi.
+                                                           G
+
+
+Finally, we can extend this product to the whole group by pulling back the inner product along Lg , that is, if we denote
+the metric by α, αg = L∗g−1 αe . This automatically makes it into a left-invariant metric. But since it is Ad-invariant at the
+                                       Cheap Orthogonal Constraints in Neural Networks
+
+identity, we have that for every g, h ∈ G
+
+                                Rg∗ αhg = Rg∗ L∗g−1 h−1 αe = Ad∗g−1 L∗h−1 αe = L∗h−1 αe = αh
+
+and the metric is also right-invariant, finishing the proof.
+
+If the group is abelian, the construction above is still valid without the need of the averaging trick, since Ad is the identity
+map, so every inner product is automatically Ad-invariant.
+It turns out that these examples and their products exhaust all the Lie groups that admit a bi-invariant metric. We include this
+result for completeness, even though we will not use it.
+Theorem C.4 (Classification of groups with bi-invariant metrics). A Lie group admits a bi-invariant metric if and only
+if it is isomorphic to G × H with G compact and H abelian.
+
+Proof. (Milnor, 1976) Lemma 7.5.
+
+Lie groups, when equipped with a bi-invariant metric are rather amenable from the Riemannian geometry perspective. This
+is because it is possible to reduce many computations on them to matrix algebra, rather than the usual systems of differential
+equations that one encounters when dealing with arbitrary Riemannian manifolds.
+The following proposition will come in handy later.
+Lemma C.5. If an inner product on g is Ad-invariant then
+
+                                       hY, adX (Z)i = −hadX (Y ), Zi          ∀X, Y, Z ∈ g.
+
+In other words, the adjoint of the map adX with respect to the inner product is − adX . We say that ad is skew-adjoint and
+we write ad∗X = − adX .
+
+Proof. We have that, by definition
+                                                           d
+                                              adX (Y ) =      (Adexp(tX) (Y )) |0 ,
+                                                           dt
+so, deriving the equation
+                                           hAdexp(tX) (Y ), Adexp(tX) (Z)i = hY, Zi
+with respect to t we get the result.
+
+With this result in hand, we can prove a rather useful relation between the geometry of the Lie group and its algebraic
+structure.
+Proposition C.6. Let G be a Lie group equipped with a bi-invariant metric. If X, Y are left-invariant vector fields, we have
+that their Levi-Civita connection and their sectional curvature are given by
+                                                              1
+                                                       ∇X Y =   [X, Y ]
+                                                              2
+                                                             1          2
+                                                   κ(X, Y ) = k[X, Y ]k .
+                                                             4
+The sectional curvature formula holds whenever X and Y are orthonormal.
+
+Proof. For left-invariant vector fields X, Y, Z, the Koszul formula gives
+                             1
+              h∇X Y, Zi =      (XhY, Zi + Y hX, Zi − ZhX, Y i + h[X, Y ], Zi − h[X, Z], Y i − h[Y, Z], Xi).
+                             2
+The three first terms on the right vanish, since the angle between invariant vector fields is constant. Reordering the last three
+terms, using Lemma C.5, the fact that the Lie bracket is antisymmetric, and since invariant vector fields form a basis of the
+Lie algebra, the formula for the connection follows. Now, the curvature tensor is given by
+                                                               1                                              1
+     R(X, Y )Z = ∇X ∇Y Z − ∇Y ∇X Z − ∇[X,Y ] Z =                 ([X, [Y, Z]] − [Y, [X, Z]] − 2[[X, Y ], Z]) = [Z, [X, Y ]].
+                                                               4                                              4
+                                     Cheap Orthogonal Constraints in Neural Networks
+
+So the sectional curvature for X, Y orthonormal is given by
+                                                                          1          2
+                                        κ(X, Y ) = hR(X, Y )Y, Xi =         k[X, Y ]k .
+                                                                          4
+
+On a matrix Lie group equipped with a metric we have three different notions of exponential maps, namely the Lie
+exponential map, the Riemannian exponential map and the exponential of matrices. We will now show that if we consider
+the Riemannian exponential map at the identity element, these three concepts agree whenever the metric is bi-invariant.
+Proposition C.7 (Equivalence of Riemannian and Lie exponential). Let G be a Lie group equipped with a bi-invariant
+metric. Then, the Riemannian exponential at the identity expe and the Lie exponential exp agree.
+
+Proof. Fix a vector Xe ∈ g and consider the curve γ(t) = exp(tXe ). This curve is the integral curve of the invariant vector
+field defined by Xe , this is γ 0 (t) = X(γ(t)). For this reason, by Proposition C.6
+                                                                1
+                                                   ∇γ 0 γ 0 =     [X, X] = 0.
+                                                                2
+so exp(tXe ) is a geodesic and the result readily follows.
+Proposition C.8 (Equivalence of Lie exponential and exponential of matrices). Let G be a matrix Lie group, that is, a
+closed subgroup of GL(n, C). Then the matrix exponential expM and the Lie exponential exp agree.
+
+Proof. The matrix exponential exptX can be expressed as the solution of the matrix differential equation
+
+                                            γ 0 (t) = Xγ(t)        γ(0) = I, t ∈ R
+
+for X ∈ Cn×n = gl(n, C). This is exactly the equation that defines the Lie exponential map as the integral curve of a
+right-invariant vector field, that is, the Lie exponential.
+
+Finally, all these equivalences give a short proof of the fact that the Lie exponential map is surjective on a connected Lie
+group with a bi-invariant metric.
+Theorem C.9 (Lie exponential surjectivity). Let G be a connected Lie group equipped with a bi-invariant metric. The Lie
+exponential is surjective.
+
+Proof. As the Lie exponential is defined in the whole Lie algebra, so is the map expe . Since the metric is bi-invariant,
+we have that at a point (g, v) ∈ T G, expg (v) = Lg (expe ((dLg− 1 )g (v))) and since left-translations are diffeomorphisms,
+the Riemannian exponential is defined in the whole tangent bundle. Therefore, by the Hopf-Rinow theorem, this implies
+that there exists a geodesic between any two points. Since the geodesics starting at the identity are given by the curves
+γ(t) = exp(tXe ) for Xe ∈ g, the result follows.
+
+Now that we have all the necessary tools, we shall return to the problem of studying the metric induced by the exponential
+parametrization.
+As we have seen, the problem that we are interested in solving is
+
+                                                          min f (g),
+                                                          g∈G
+
+where G is a matrix Lie group equipped with an bi-invariant metric. The exponential parametrization maps this problem
+back to the Lie algebra
+                                                   min f (exp(X)).
+                                                      X∈g
+
+Since g is a vector space, putting a basis on it we have that we can use all the classical toolbox developed for Euclidean
+spaces to approach a solution for this problem. In particular, in the context of neural networks, we are interested in studying
+first-order optimization methods that approach a solution to this problem, in particular, gradient descent methods. The
+gradient descent update step for this problem with learning rate η > 0 is given by
+
+                                                X ← X − η∇(f ◦ exp)(X),
+                                      Cheap Orthogonal Constraints in Neural Networks
+
+where the gradient is defined with respect to the metric, that is, it is the vector such that
+
+                                          d(f ◦ exp)X (Y ) = h∇(f ◦ exp)(X), Y i.
+
+To study this optimization method, we first have to make sense of the gradient ∇(f ◦ exp)(X). To do so, we will make use
+of the differential of the exponential map.
+Proposition C.10. The differential of the exponential map on a matrix Lie group is given by the formula
+                                                         ∞         k
+                                                         X (− adX )
+                                   (d exp)X (Y ) = eX                      (Y )       ∀X, Y ∈ g.
+                                                                (k + 1)!
+                                                         k=0
+
+
+Proof. (Hall, 2015) Theorem 5.4.
+
+An analogous formula still holds in the general case, but the proof is more delicate. The powers of the adjoint representation
+are to be thought as the composition of endomorphisms on g. For this reason, this formula can be also expressed as
+                                                         1         1
+                                  (d exp)X (Y ) = eX (Y − [X, Y ] + [X, [X, Y ]] − . . .).
+                                                         2         6
+Yet another way of looking at this expression is by defining the function
+                                                   φ : End(g) → End(g)
+                                                                      1 − e−X
+                                                               X 7→
+                                                                         X
+so that
+                                                 (d exp)X = dLeX ◦ φ(adX ).
+In this case, the fraction that defines φ is just a formal expression to refer to the formal series defined in Proposition C.10.
+From this we can compute the gradient of f ◦ exp.
+Proposition C.11. Let f : G → R be a function defined on a matrix Lie group equipped with a bi-invariant metric. For a
+matrix A ∈ g let B = eA . We have
+                                                                               ∞       k
+                                                                               X (adA )
+                        ∇(f ◦ exp)(A) = B(d exp)−A (B −1 ∇f (B)) =                              (e−A ∇f (B)).
+                                                                                     (k + 1)!
+                                                                               k=0
+
+
+Proof. Let U ∈ g. By the chain rule, we have
+
+                                         (d(f ◦ exp))A (U ) = (df )B ◦ (d exp)A (U ).
+
+In terms of the gradient of f with respect to the metric this is equivalent to
+
+                                        (d(f ◦ exp))A (U ) = h∇f (B), (d exp)A (U )i
+                                                                           ∗
+                                                               = h(d exp)A (∇f (B)), U i
+
+which gives
+                                                                           ∗
+                                            ∇(f ◦ exp)(A) = (d exp)A (∇f (B)).
+Now we just have to compute the adjoint of the differential of the exponential function. This is now simple since
+                                                        ∗                         ∗
+                                                (d exp)A = (dLeA ◦ φ(adA ))
+                                                                      ∗
+                                                            = φ(adA ) ◦ dLe−A
+                                                            = φ(ad∗A ) ◦ dLe−A
+                                                            = φ(ad−A ) ◦ dLe−A ,
+
+where the second equality follows from the product being left-invariant, the third one from φ being analytic and the last one
+from Lemma C.5.
+                                       Cheap Orthogonal Constraints in Neural Networks
+
+Now we can explicitly define the update rule for the exponential parametrization
+
+                                             rb: T G → G
+                                                                                           .
+                                            (eA , U ) 7→ exp(A + φ(ad−A )(e−A U ))
+
+We can then study the gradient flow induced by the exponential parametrization by means of rb. If rb were a retraction, then
+the flow induced by the exponential parametrization would have similar properties as that of Riemannian gradient descent,
+as shown in (Boumal et al., 2016). It turns out that the exponential parametrization induces a different flow.
+Theorem C.12. Let G be a connected matrix Lie group equipped with a bi-invariant metric. The function rb is a retraction if
+and only if G is abelian.
+
+Proof. It is clear that rbg (0) = g for every g ∈ G. Let A ∈ g and B = eA and let U ∈ TB G. By the chain rule we have that
+                                                                                  ∗
+                                             (db
+                                               rB )0 (U ) = (d exp)A ((d exp)A (U )).
+
+The map rb is a retraction if and only if
+                                                                     ∗
+                                                  (d exp)A ((d exp)A (U )) = U
+holds for every U ∈ TB G. This is equivalent to having
+                                                                ∗
+                                             h(d exp)A ((d exp)A (U )), Hi = hU, Hi
+
+for every H ∈ TB G. Taking adjoints and since the metric is left-invariant, using the formula for the adjoint of the differential
+of the exponential map computed in Proposition C.11, or equivalently
+
+                                 h(d exp)−A (X), (d exp)−A (Y )i = hX, Y i               ∀X, Y ∈ g.
+
+In other words, rb is a retraction if and only if the Lie exponential map is a local isometry.
+Now, the Lie exponential maps g into G, but g equipped with its metric is flat, so it has constant sectional curvature zero. On
+                                                                                  2
+the other hand, the sectional curvature of G is given by κ(X, Y ) = 14 k[X, Y ]k . Recall that a Lie group is abelian if and
+only if its Lie bracket is zero.
+If the Lie bracket is zero, (d exp)A = (dLeA )e , and it is an isometry.
+Conversely, if it is an isometry, it preserves the sectional curvature, so the Lie bracket has to be identically zero, hence the
+group is Abelian.
+
+In the abelian case, we do not only have that rb is a retraction, but also that the update rule for the exponential parametrization
+agrees with that of Riemannian gradient descent. Recall that the Riemannian gradient descent rule for a gradient U and a
+step-size η is given by
+                                                                    −A
+                                                            eA e−ηe U .
+On an abelian group we have that eX eY = eX+Y . Furthermore, since the adjoint representation is zero, (d exp)A (U ) =
+eA U . Putting these two things together we have
+                                                                    −A                −A
+                                            rb(eA , −ηU ) = eA−ηe        U
+                                                                             = eA e−ηe     U
+                                                                                               .
+
+
+D. Maximal Normal Neighborhood of the Identity
+Definition D.1 (Normal Neighborhood). Let V ⊆ Tp M be a neighborhood of 0 such that the Riemannian exponential
+map expp is a diffeomorphism. Then we say that expp V is a normal neighborhood of p.
+
+Given that on a matrix Lie group (d exp)I = Id, by the inverse function theorem, there exists a normal neighborhood around
+the identity matrix. In this section we will prove that the maximal open normal neighborhood of SO(n) (resp. U(n)) covers
+almost all the group. By almost all the group we mean that the closure of the normal neighborhood is equal to the group.
+We do so by studying at which points we have that the map exp is no longer an immersion, or in other words, we look at
+                                     Cheap Orthogonal Constraints in Neural Networks
+
+the points A ∈ g at which det((d exp)A ) = 0. We will prove so for the group GL(n, C), so that the arguments readily
+generalize to any matrix Lie group.
+Recall the definition of the matrix-valued function φ defined on the space of endomorphisms of the Lie algebra of GL(n, C).
+Specifically, since gl(n, C) ∼
+                             = Cn×n , we have that End(gl(n, C)) ∼
+                                                                          2   2
+                                                                     = Cn ×n
+                                                2    2       2   2
+                                         φ : Cn ×n → Cn ×n
+                                                                       ∞
+                                                                     X (−A) .     k
+                                                           1 − e−A
+                                                    A 7→           =
+                                                              A        (k + 1)!
+                                                                      k=0
+
+Using this function, we can factorize the differential of the exponential function on a matrix Lie group as
+
+                                                    (d exp)A = eA φ(adA ).
+
+Let us now compute the maximal normal neighborhood of the identity. This result is classic, but the proof here is a
+simplification of the classical one using an approximation argument.
+Theorem D.2. Let G be a compact and connected matrix Lie group. The exponential function is analytic, with analytic
+inverse on a bounded open neighborhood of the origin given by
+
+                                             U = {A ∈ g | |Im(λi (A))| < π}.
+
+Proof. Given that LeA is a diffemorphism, we are interested in studying when the matrix defined by the function φ(adA )
+stops being full-rank and when is it injective.
+First, note that if the eigenvalues of A are λi , then the eigenvalues of g(A) with g a complex analytic function well-defined
+on {λi } are {g(λi )}. This is clear for diagonalizable matrices. Since these are dense in Cn×n , given that eigenvalues are
+continuous functions of the matrix, it readily generalizes to arbitrary matrices.
+            2   2
+Let A ∈ Cn ×n and let λi,j for 1 ≤ i, j ≤ n be its eigenvalues. Then, φ is non-singular when φ(λi,j ) 6= 0 for every λi,j .
+Equivalently, when λi,j 6= 2πki for k ∈ Z\{0}.
+Let us now compute the eigenvalues of adA using the same trick as above. Let A ∈ Cn×n and suppose that it is
+diagonalizable with eigenvalues {λi }. Let ui be the eigenvectors of A and vi the eigenvectors of A| —which is also
+diagonalizable with the same eigenvalues—. Since
+
+                                             adA (ui ⊗ vj ) = (λi − λj )ui ⊗ vj
+
+we have that {ui ⊗ vj } are the eigenvectors of adA with eigenvalues λi,j := λi − λj . Now, using the same continuity
+argument as above have that these are the eigenvalues of adA for every A ∈ Cn×n .
+From all this, we draw that (d exp)A is singular whenever A has two eigenvalues that differ by a non-zero integer multiple
+of 2πi.
+Finally, on a compact matrix Lie group every matrix is diagonalizable over the complex numbers, so the exponential acts
+on the eigenvalues, but the complex variable function ez is injective on {z ∈ C | |Im(z)| < π}, so the Lie exponential is
+injective on this domain as well.
+
+Let us look at the particular cases that we are interested in. If we set G = SO(n), we have that its Lie algebra are the
+skew-symmetric matrices. Skew-symmetric matrices have purely imaginary eigenvalues. Furthermore, since they are real
+matrices, their eigenvalues come in conjugate pairs. As such, we have that the exponential map is singular on every matrix
+in the boundary of the set U defined in Theorem D.2.
+Special orthogonal matrices are those matrices which are similar to block-diagonal matrices with diagonal blocks of the
+form                                                                 
+                                                       cos θ    sin θ
+                                                B=
+                                                      − sin θ cos θ
+for θ ∈ (−π, π]. On SO(2n + 1), there is an extra block with a single 1.
+                                     Cheap Orthogonal Constraints in Neural Networks
+
+Similarly, skew-symmetric matrices are those matrices which are similar to block-diagonal matrices with diagonal blocks of
+the form                                                         
+                                                           0 θ
+                                                    A=              .
+                                                           −θ 0
+On so(2n + 1) there is an extra block with a single zero.
+This outlines an elementary proof of the fact that the Lie exponential is surjective on SO(n) and U(n).
+In both cases this shows that the boundary of U has measure zero and that f (U ) = G.
+Remark. The reader familiar with Lie group theory will have noticed that this proof is exactly the standard one for the
+surjectivity of the exponential map using the Torus theorem, where one proves that all the maximal tori in a compact Lie
+group are conjugated and that every element of the group lies in some maximal torus, arriving then to the same conclusion
+but in much more generality.
+
+E. Hyperparameters for the Experiments
+The batch size across all the experiments was 128. The learning rates for the orthogonal parameters are 10 times less those
+for the non-orthogonal parameters. We fixed the seed of both Numpy and Pytorch to be 5544 for all the experiments for
+reproducibility. This is the same seed that was used in the experiments in (Helfrich et al., 2018). In Table 3 we refer to the
+optimizer and learning rate for the non-orthogonal part of the neural network simply as optimizer and learning rate.
+
+
+                                   Table 3. Hyperparameters for the Experiments in Section 5.
+ Dataset                         Size    Optimizer     Learning Rate      Orthogonal optimizer    Orthogonal Learning Rate
+                                                                 −4
+ Copying Problem L = 1000                                  2 · 10                                          2 · 10−5
+                                 190     RMSPROP                                RMSPROP
+ Copying Problem L = 2000                                  2 · 10−4                                        2 · 10−5
+                                 170                       7 · 10−4                                        7 · 10−5
+ MNIST                           360                       5 · 10−4                                        5 · 10−5
+                                 512                       3 · 10−4                                        3 · 10−5
+                                         RMSPROP                                RMSPROP
+                                 170                        10−3                                            10−4
+ P - MNIST                       360                       7 · 10−4                                        7 · 10−5
+                                 512                       5 · 10−4                                        5 · 10−5
+                                 224                        10−3                                            10−4
+ TIMIT                           322       ADAM            7 · 10−4             RMSPROP                    7 · 10−5
+                                 425                       7 · 10−4                                        7 · 10−5
+

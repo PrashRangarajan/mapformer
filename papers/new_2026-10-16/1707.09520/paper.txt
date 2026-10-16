@@ -1,0 +1,698 @@
+                                                 Orthogonal Recurrent Neural Networks with Scaled Cayley Transform
+
+
+                                                                               Kyle E. Helfrich * 1 Devin Willmott * 1 Qiang Ye 1
+                                                                    Abstract                              oversteps the local minimum. This issue significantly di-
+                                                                                                          minishes RNNs’ ability to learn time-based dependencies,
+                                                Recurrent Neural Networks (RNNs) are designed             particularly in problems with long input sequences.
+                                                to handle sequential data but suffer from vanish-
+                                                ing or exploding gradients. Recent work on Uni-           A variety of architectures have been introduced to overcome
+arXiv:1707.09520v3 [stat.ML] 19 Jun 2018
+
+
+
+
+                                                tary Recurrent Neural Networks (uRNNs) have               this difficulty. The current preferred RNN architectures are
+                                                been used to address this issue and in some cases,        those that introduce gating mechanisms to control when in-
+                                                exceed the capabilities of Long Short-Term Mem-           formation is retained or discarded, such as LSTMs (Hochre-
+                                                ory networks (LSTMs). We propose a simpler                iter & Schmidhuber, 1997) and GRUs (Cho et al., 2014),
+                                                and novel update scheme to maintain orthogonal            at the cost of additional trainable parameters. More re-
+                                                recurrent weight matrices without using complex           cently, the unitary evolution RNN (uRNN) (Arjovsky et al.,
+                                                valued matrices. This is done by parametrizing            2016) uses a parametrization that forces the recurrent weight
+                                                with a skew-symmetric matrix using the Cayley             matrix to remain unitary throughout training, and exhibits
+                                                transform; such a parametrization is unable to rep-       superior performance to LSTMs on a variety of testing prob-
+                                                resent matrices with negative one eigenvalues, but        lems. For clarity, we follow the convention of Wisdom et al.
+                                                this limitation is overcome by scaling the recur-         (2016) and refer to this network as the restricted-capacity
+                                                rent weight matrix by a diagonal matrix consisting        uRNN.
+                                                of ones and negative ones. The proposed training          Since the introduction of uRNNs, orthogonal and unitary
+                                                scheme involves a straightforward gradient calcu-         RNN schemes have increased in both popularity and com-
+                                                lation and update step. In several experiments, the       plexity. Wisdom et al. (2016) use a multiplicative update
+                                                proposed scaled Cayley orthogonal recurrent neu-          method detailed in Tagare (2011) and Wen & Yin (2013)
+                                                ral network (scoRNN) achieves superior results            to expand uRNNs’ capacity to include all unitary matrices.
+                                                with fewer trainable parameters than other unitary        These networks are referred to as full-capacity uRNNs. Jing
+                                                RNNs.                                                     et al. (2016) and Mhammedi et al. (2017) parametrize the
+                                                                                                             space of unitary/orthogonal matrices with Givens rotations
+                                                                                                             and Householder reflections, respectively, but typically opti-
+                                           1. Introduction                                                   mize over a subset of this space by restricting the number of
+                                                                                                             parameters. Another complex parametrization has also been
+                                           Deep neural networks have been used to solve numerical            explored in Hyland & Gunnar (2017). There is also work
+                                           problems of varying complexity. RNNs have parameters              using unitary matrices in GRUs (i.e. in GORU of Jing et al.
+                                           that are reused at each time step of a sequential data point      (2017)) or near-unitary matrices in RNNs by restricting the
+                                           and have achieved state of the art performance on many se-        singular values of the recurrent matrix to an interval around
+                                           quential learning tasks. Nearly all optimization algorithms       1 (see Vorontsov et al. (2017)). For other work in addressing
+                                           for neural networks involve some variant of gradient descent.     the vanishing and exploding gradient problem, see Henaff
+                                           One major obstacle to training RNNs with gradient descent         et al. (2017) and Le et al. (2015).
+                                           is due to vanishing or exploding gradients, as described in
+                                           Bengio et al. (1993) and Pascanu et al. (2013). This prob-        In this paper, we consider RNNs with a recurrent weight
+                                           lem refers to the tendency of gradients to grow or decay          matrix taken from the set of all orthogonal matrices. To
+                                           exponentially in size, resulting in gradient descent steps that   construct the orthogonal weight matrix, we parametrize
+                                           are too small to be effective or so large that the network        it with a skew-symmetric matrix through a scaled Cayley
+                                                                                                             transform. This scaling allows us to avoid the singularity
+                                              *
+                                                Equal contribution 1 Department of Mathematics, Univer-      issue occurring for −1 eigenvalues that may arise in the
+                                           sity of Kentucky, Lexington, Kentucky, USA. Correspondence
+                                                                                                             standard Cayley transform. By tuning this scaling matrix,
+                                           to: Kyle Helfrich <kyle.helfrich@uky.edu>, Devin Willmott
+                                           <devin.willmott@uky.edu>.                                         the network can reach an appropriate orthogonal matrix
+                                                                                                             using a relatively simple gradient descent update step. The
+                                           Proceedings of the 35 th International Conference on Machine      resulting method achieves superior performance on various
+                                           Learning, Stockholm, Sweden, PMLR 80, 2018. Copyright 2018        sequential data tasks.
+                                           by the author(s).
+                            Orthogonal Recurrent Neural Networks with Scaled Cayley Transform
+
+The method we present in this paper works entirely with real     Wisdom et al. (2016) note that this representation has only
+matrices, and as such, our results deal only with orthogonal     7n parameters, which is insufficient to represent all unitary
+and skew-symmetric matrices. However, the method and all         matrices for n > 7. In response, they present the full-
+related theory remain valid for unitary and skew-Hermitian       capacity uRNN, which uses a multiplicative update step that
+matrices in the complex case. The experimental results in        is able to reach all unitary matrices of order n.
+this paper indicate that state of the art performance can be
+                                                                 The full-capacity uRNN aims to construct a unitary ma-
+achieved without using complex matrices to optimize along
+                                                                 trix W (k+1) from W (k) by moving along a curve on the
+the Stiefel manifold.
+                                                                 Stiefel manifold {W ∈ Cn×n | W ∗ W = I}. For the
+                                                                 network optimization, it is necessary to use a curve that is
+2. Background                                                    in a descent direction of the cost function L := L(W ). In
+                                                                 Tagare (2011), Wen & Yin (2013), Wisdom et al. (2016), and
+2.1. Recurrent Neural Networks
+                                                                 Vorontsov et al. (2017), a descent direction is constructed
+A recurrent neural network (RNN) is a function with input        as B (k) W (k) , which is a representation of the derivative
+parameters U ∈ Rn×m , recurrent parameters W ∈ Rn×n ,            operator DL(W (k) ) in the tangent space of the Stiefel man-
+recurrent bias b ∈ Rn , output parameters V ∈ Rp×n , and         ifold at W (k) . Then, with B (k) W (k) defining the direction
+output bias c ∈ Rp where m is the data input size, n is the      of a descent curve, an update along the Stiefel manifold is
+number of hidden units, and p is the output data size. From      obtained using the Cayley transform as
+an input sequence x = (x1 , x2 , ..., xT ) where xi ∈ Rm , the                               −1               
+RNN returns an output sequence y = (y1 , y2 , ..., yT ) where                          λ                  λ
+                                                                    W (k+1) = I + B (k)              I − B (k) W (k) (1)
+each yi ∈ Rp is given recursively by                                                   2                  2
+
+               ht = σ (U xt + W ht−1 + b)                        where λ is the learning rate.
+                yt = V h t + c
+                                                                 3. Scaled Cayley Orthogonal RNN
+where h = (h0 , . . . , hT −1 ), hi ∈ Rn is the hidden layer
+state at time i and σ(·) is the activation function, which is    3.1. Cayley Transform
+often a pointwise nonlinearity such as a hyperbolic tangent
+                                                                 The Cayley transform gives a representation of orthogonal
+function or rectified linear unit (Nair & Hinton, 2010).
+                                                                 matrices without −1 eigenvalues using skew-symmetric
+                                                                 matrices (i.e., matrices where AT = −A):
+2.2. Unitary RNNs
+                                                                                 −1                             −1
+                                                                  W = (I + A)         (I − A) , A = (I + W )         (I − W ) .
+A real matrix W is orthogonal if it satisfies W T W = I. The
+complex analog of orthogonal matrices are unitary matrices,      This bijection parametrizes the set of orthogonal matri-
+which satisfy W ∗ W = I, where ∗ denotes the conjugate           ces without −1 eigenvalues with skew-symmetric matrices.
+transpose. Orthogonal and unitary matrices have the desir-       This direct and simple parametrization is attractive from a
+able property that kW xk2 = kxk2 for any vector x. This          machine learning perspective because it is closed under addi-
+property motivates the use of orthogonal or unitary matrices     tion: the sum or difference of two skew-symmetric matrices
+in RNNs to avoid vanishing and exploding gradients, as           is also skew-symmetric, so we can use gradient descent
+detailed in Arjovsky et al. (2016).                              algorithms like RMSprop (Tieleman & Hinton, 2012) or
+Arjovsky et al. (2016) follow the framework of the previous      Adam (Kingma & Ba, 2014) to train parameters.
+section for their restricted-capacity uRNN, but introduce a      However, this parametrization cannot represent orthogonal
+parametrization of the recurrent matrix W using a product        matrices with −1 eigenvalues, since in this case I +W is not
+of simpler matrices. This parameterization is given by a         invertible. Theoretically, we can still represent matrices with
+product consisting of diagonal matrices with complex norm        eigenvalues that are arbitrarily close to −1; however, it can
+1, complex Householder reflection matrices, discrete Fourier     require large entries of A. For example, a 2x2 orthogonal
+transform matrices, and a fixed permutation matrix with the      matrix W with eigenvalues ≈ −0.99999 ± 0.00447i and its
+resulting product being unitary. The Efficient Unitary RNN       parametrization A by the Cayley transform is given below,
+(EURNN) by Jing et al. (2016) and orthogonal RNN (oRNN)          where α = 0.99999.
+by Mhammedi et al. (2017) parametrize in a similar manner                            √                                     
+                                                                                             2
+with products of Givens rotation matrices and Householder         W = √ −α 2 − 1 − α , A ≈ −447.212            0      447.212
+                                                                                                                         0
+reflection matrices, respectively. This can also be seen in                 1−α         −α
+the parametrization through matrix exponentials in Hyland
+& Gunnar (2017), which does not appear to perform as well        Gradient descent algorithms will learn this A matrix very
+as the restricted-capacity uRNN.                                 slowly, if at all. This difficulty can be overcome through a
+                            Orthogonal Recurrent Neural Networks with Scaled Cayley Transform
+
+suitable diagonal scaling according to results from Kahan                                 ∂L(W (A(k) ))
+                                                                        A(k+1) = A(k) − λ
+(2006).                                                                                        ∂A
+                                                                                             −1            
+                                                                          (k+1)         (k+1)
+Theorem 3.1 Every orthogonal matrix W can be expressed                  W       = I +A              I − A(k+1) D
+as
+                                                                                         ∂L
+             W = (I + A)−1 (I − A)D                               The skew-symmetry of ∂A   ensures that A(k+1) will be skew-
+                                                                  symmetric and, in turn, W (k+1) will be orthogonal.
+where A = [aij ] is real-valued, skew-symmetric with
+|aij | ≤ 1, and D is diagonal with all nonzero entries equal      The orthogonality of the recurrent matrix is maintained
+to ±1.                                                            to the order of machine precision, see section 5.5.1. The
+                                                                  scoRNN also maintains stable hidden state gradients in the
+We call the transform in Theorem 3.1 the scaled Cayley
+                                                                  sense that the gradient norm does not change significantly
+transform. Then, with an appropriate choice of D, the
+                                                                  in time, see section 5.5.2 for experimental results. This is
+scaled Cayley transform can reach any orthogonal matrix
+                                                                  achieved with small overhead computational costs over the
+including those with −1 eigenvalues. Further, it ensures that
+                                                                  standard RNN, see section 5.5.3 for experimental results
+the skew-symmetric matrix A that generates the orthogonal
+                                                                  concerning computational efficiency.
+matrix will be bounded.
+                                                                  The scoRNN, full-capacity uRNN, EURNN, and oRNN
+Our proposed network, the scaled Cayley orthogonal recur-
+                                                                  models all have the theoretical capacity to optimize over
+rent neural network (scoRNN), is based on this theorem.
+                                                                  all orthogonal or unitary recurrent matrices, but their opti-
+We parametrize the recurrent weight matrix W through a
+                                                                  mization schemes are different. The full-capacity uRNN
+skew-symmetric matrix A, which results in n(n−1) 2    trainable   performs a multiplicative update that moves W along the
+weights. The recurrent matrix W is formed by the scaled           tangent space of the Stiefel manifold, which is shown to
+Cayley transform: W = (I + A)−1 (I − A)D. The scoRNN              be a descent direction. The scoRNN, the EURNN, and
+then operates identically to the set of equations given in Sec-   the oRNN use three different representations of orthogonal
+tion 2.1, but during training we update the skew-symmetric        matrices. The euRNN and oRNN express an orthogonal
+matrix A using gradient descent, while D is fixed through-        matrix as a long product of simple orthogonal matrices
+out the training process. The number of −1s on the diagonal       (Givens rotations and Householder reflections resp.) while
+of D, which we call ρ, is considered a hyperparameter in          the scoRNN uses a single rational transformation. They all
+this work and is manually chosen based on the task.               use the steepest descent with respect to their correspond-
+                                                                  ing parametrizations. Here, different parametrizations have
+3.2. Update Scheme                                                different nonlinearities and hence different optimization
+To update the recurrent parameter matrix A as described           difficulties. We note that EURNN and oRNN are usually im-
+in Section 3.1, we must find the gradients of A by back-          plemented in a reduced capacity setting that uses a truncated
+propagating through the Cayley transform. The following           product. In our testing, it appears that increasing capacity
+theorem describes these gradients. A proof is given in the        in EURNN and oRNN may not improve their performance.
+supplemental material.                                            Similar to the EURNN and oRNN, scoRNN may also be
+Theorem 3.2 Let L = L(W ) : R      n×n
+                                        → R be some differ-       implemented by restricting the A matrix to a banded skew-
+entiable loss function for an RNN with the recurrent weight       symmetric matrix with bandwidth ` to reduce the number
+matrix W . Let W = W (A) := (I + A) (I − A) D
+                                              −1                  of trainable parameters. Although this may work well for
+where A ∈ R     n×n
+                     is skew-symmetric and D ∈ Rn×n is            particular tasks, such a modification introduces an additional
+a fixed diagonal matrix consisting of -1 and 1 entries. Then      hyperparameter and reduces representational capacity for
+the gradient of L = L(W (A)) with respect to A is                 the recurrent weight matrix without any reduction in the
+                                                                  dimension of the hidden state.
+                       ∂L
+                          =VT −V                           (2)
+                       ∂A                                         4. Other Architecture Details
+                      −T
+                       ∂L
+                                        ∂L h ∂L i
+where V := (I + A)    ∂W        D + W T , ∂A = ∂Ai,j ∈            The basic architecture of scoRNN is very similar to the
+           ∂L
+                h
+                   ∂L
+                        i                                         standard RNN as presented in Section 2.1. From a network
+Rn×n , and ∂W = ∂W        ∈ Rn×n .
+                    i,j                                           layer perspective, one can think of the application of the
+At each training step of scoRNN, we first use the standard        recurrent weight in a three layer process. Let ht ∈ Rn be
+backpropagation algorithm to compute ∂W  ∂L
+                                             and then use         the current state of the scoRNN at a particular time step, t.
+                          ∂L
+Theorem 3.2 to compute ∂A . We then update A with gradi-          We then pass ht through the following layers:
+                                                                                                     (1)
+ent descent (or a related optimization method), and recon-                • Layer 1: ht → Dht =: ht
+                                                                                        (1)            (1)     (2)
+struct W as follows:                                                      • Layer 2: ht → (I − A) ht =: ht
+                                 Orthogonal Recurrent Neural Networks with Scaled Cayley Transform
+
+                       (2)              −1    (2)     (3)
+        • Layer 3: ht → (I + A) ht =: ht                            5. Experiments
+Note that the above scheme is the same as taking ht → W ht
+as discussed previously.                                            In the following experiments, we compare the scoRNN
+                                                                    against LSTM and several other orthogonal and unitary
+                                                                    RNN models. Code for these experiments is available at
+4.1. MODRELU Activation Function
+                                                                    https://github.com/SpartinStuff/scoRNN.
+The modReLU function was first implemented by Ar-                   For each experiment, we found optimal hyperparameters
+jovsky et al. (2016) to handle complex valued functions             for scoRNN using a grid search. For other models, we used
+and weights. Unlike previous methods, our method only               the best hyperparameter settings as reported for the same
+uses real-valued functions and weights. Nevertheless, we            testing problems, when applicable, or performed a grid
+have found that the modReLU function in the real case               search to find hyperparameters. For the LSTM, the forget
+also performed better than other activation functions. The          gate bias was tuned over the integers −4 to 4 with it set to
+function is defined as                                              1.0 unless otherwise noted.
+                           z
+      σmodReLU (z) =          σReLU (|z| + b)                       5.1. Copying Problem
+                          |z|
+                          (
+                              z                                     This experiment follows descriptions found in Jing et al.
+                             |z| (|z| + b) if |z| + b ≥ 0
+                      =                                             (2016), Arjovsky et al. (2016), and Wisdom et al. (2016),
+                             0               if |z| + b < 0
+                                                                    and tests an RNN’s ability to reproduce a sequence seen
+                                                                    many timesteps earlier. In the problem setup, there are 10
+where b is a trainable bias. In the real case, this simplifies to
+                                                                    input classes, which we denote using the digits 0-9, with 0
+sign(z)σReLU (|z|+b). To implement this activation function
+                                                                    being used as a ’blank’ class and 9 being used as a ’marker’
+in scoRNN, we replace the computation of ht in Section 2.1
+                                                                    class. The RNN receives an input sequence of length T +20.
+with
+                                                                    This sequence consists of entirely zeros, except for the first
+                      zt = U xt + W ht−1                            ten elements, which are uniformly sampled from classes
+                                                                    1-8, and a 9 placed ten timesteps from the end. The goal
+                      ht = σmodReLU (zt )
+                                                                    for the machine is to output zeros until it sees a 9, at which
+                                                                    point it should output the ten elements from the beginning
+We believe that the improved performance of the modReLU
+                                                                    of the input sequence. Thus, information must propagate
+over other activation functions, such as ReLU, is because it
+                                                                    from the beginning to the end of the sequence for a machine
+admits both positive and negative activation values, which
+                                                                    to successfully learn this task, making it critical to avoid
+appears to be important for the state transition in orthogonal
+                                                                    vanishing/exploding gradients.
+RNNs. This is similar to the hyperbolic tangent function but
+does not have vanishing gradient issues.                            A baseline strategy with which to compare machine perfor-
+                                                                    mance is that of outputting 0 until the machine sees a 9,
+4.2. Initialization                                                 and then outputting 10 elements randomly sampled from
+                                                                    classes 1-8. The expected cross-entropy for such a strategy
+Modifying the initialization of our parameter matrices, in
+                                                                    is 10Tlog (8)
+                                                                           +20 . In practice, it is common to see gated RNNs
+particular our recurrent parameter matrix A, had an effect
+                                                                    such as LSTMs converge to this local minimum.
+on performance. The most effective initialization method
+we found uses a technique inspired by Henaff et al. (2017).         We use hyperparameters and hidden unit sizes as reported in
+We initialize all of the entries of A to be 0 except for 2x2        experiments in Arjovsky et al. (2016), Wisdom et al. (2016),
+blocks along the diagonal, which are given as                       and Jing et al. (2016). This results in an LSTM with n = 68,
+                                                                  a restricted-capacity uRNN with n = 470, a full-capacity
+         B1                                                       uRNN with n = 128, and a tunable EURNN with n = 512
+               .                                 0     sj           and capacity L = 2. As indicated in Mhammedi et al.
+  A=
+                ..          where Bj = −s
+                            
+                                                   j   0            (2017), we were unable to obtain satisfactory performance
+                     Bbn/2c
+                                                                    for the oRNN on this task. To match the ≈ 22k trainable
+            q
+              1−cos (tj )                                           parameters in the LSTM and uRNNs, we use a scoRNN
+with sj =     1+cos (tj ) and tj is sampled uniformly from          with n = 190. We found the best performance with the
+ π
+ 0, 2 . The Cayley transform of this A will have eigen-             scoRNN came from ρ = n/2, which gives an initial W
+values equal to ±eitj for each j, which will be distributed         with eigenvalues distributed uniformly on the unit circle.
+uniformly along the right unit half-circle. Multiplication
+                                                                    Figure 1 compares each model’s performance for T = 1000
+by the scaling matrix D will reflect ρ of these eigenvalues
+                                                                    and T = 2000, with the baseline cross-entropy given as
+across the imaginary axis. We use this method to initialize
+                                                                    a dashed line. In both cases, cross entropy for the LSTM,
+scoRNN’s A matrix in all experiments listed in section 5.
+                            Orthogonal Recurrent Neural Networks with Scaled Cayley Transform
+
+
+
+
+            Figure 1. Cross entropy of each machine on the copying problem with T = 1000 (left) and T = 2000 (right).
+
+
+restricted-capacity uRNN, and EURNN remains at the base-          uRNN. We tested both the tunable-style EURNN and FFT-
+line or does not entirely converge over the entire experi-        style EURNN with n = 512, and found better results from
+ment. For the T = 1000 test, the full-capacity uRNN and           the tunable-style (≈ 3k parameters) for sequence lengths
+scoRNN converge immediately to zero entropy solutions,            T = 200 and T = 400, and from the FFT-style (≈ 7k pa-
+with the full-capacity uRNN converging slightly faster. For       rameters) for sequence length T = 750. The best hyperpa-
+T = 2000, the full-capacity uRNN remains at the base-             rameters for the oRNN were in accordance with Mhammedi
+line for several thousand iterations, but is eventually able to   et al. (2017) which was n = 128 with 16 reflections with
+find a correct solution. In contrast, the scoRNN error has a      a learning rate of 0.01, ≈2.6k parameters. We found that
+smooth convergence that bypasses the baseline, but does so        performance decreased when matching the number of reflec-
+more slowly than the full-capacity uRNN.                          tions to the hidden size to increase the number of parameters.
+
+5.2. Adding Problem
+We examined a variation of the adding problem as proposed
+by Arjovsky et al. (2016) which is based on the work of
+Hochreiter & Schmidhuber (1997). This variation involves
+passing two sequences concurrently into the RNN, each of
+length T . The first sequence is a sequence of digits sam-
+pled uniformly with values ranging in a half-open interval,
+U[0, 1). The second sequence is a marker sequence con-
+sisting of all zeros except for two entries that are marked
+by one. The first 1 is located uniformly within the interval
+[1, T2 ) of the sequence and the second 1 is located uniformly
+within the interval [ T2 , T ) of the sequence. The label for
+each pair of sequences is the sum of the two entries that
+are marked by one, which forces the machine to identify
+relevant information in the first sequence among noise. As
+the sequence length increases, it becomes more crucial to         Figure 2. Test set MSE for each machine on the adding problem
+avoid vanishing/exploding gradients. Naively predicting           with sequence lengths of T = 200 (top), T = 400 (middle), and
+one regardless of the sequence gives an expected mean             T = 750 (bottom).
+squared error (MSE) of approximately 0.167. This will be
+considered as the baseline.                                       The test set MSE results for sequence lengths T = 200,
+The number of hidden units for the LSTM, scoRNN and               T = 400, and T = 750 can be found in Figure 2. A training
+uRNNs were adjusted so that each had approximately 15k            set size of 100,000 and a testing set size of 10,000 were
+trainable parameters. This results in n = 170 for the             used for each sequence length. For each case, the networks
+scoRNN, n = 60 for the LSTM, n = 120 for the Full-                start at or near the baseline MSE, except for the EURNN
+Capacity uRNN, and n = 950 for the restricted-capacity            for T = 750, and drop towards zero after a few epochs.
+                                                                  As the sequence length increases, the number of epochs
+                           Orthogonal Recurrent Neural Networks with Scaled Cayley Transform
+
+before the drop increases. We found the best settings for
+                                                                Table 1. Results for unpermuted and permuted pixel-by-pixel
+the scoRNN were ρ = n/2 for T = 200 and ρ = 7n/10 for
+                                                                MNIST experiments. Evaluation accuracies are based on the best
+T = 400 and T = 750. The forget bias for the LSTM was 2         test accuracy at the end of every epoch. Asterisks indicate reported
+for sequence length 200, 4 for sequence length 400, and 0       results from (Jing et al., 2016) and (Mhammedi et al., 2017).
+for sequence length 750. As can be seen, the LSTM error
+drops precipitously across the board. Although the oRNN
+begins to drop below the baseline before scoRNN, it has a
+much more irregular descent curve, and jumps back to the                                                  P ERMUTED
+                                                                M ODEL                   N         #
+                                                                                                 MNIST      MNIST
+baseline after several epochs.                                                         PARAMS T EST ACC . T EST ACC .
+                                                                SCO RNN            170 ≈ 16K     0.973       0.943
+5.3. Pixel-by-Pixel MNIST                                       SCO RNN            360 ≈ 69K     0.983       0.962
+                                                                SCO RNN            512 ≈ 137K    0.985       0.966
+We ran two experiments based around classifying samples         LSTM               128 ≈ 68K     0.987       0.920
+from the well-known MNIST dataset (LeCun et al.). Follow-       LSTM               256 ≈ 270K    0.989       0.929
+ing the implementation of Le et al. (2015), each pixel of the   LSTM               512 ≈ 1, 058K 0.985       0.920
+image is fed into the RNN sequentially, resulting in a single   R ESTRICTED U RNN 512 ≈ 16K      0.976       0.945
+pixel sequence length of 784. In the first experiment, which    R ESTRICTED U RNN 2170 ≈ 69K     0.984       0.953
+                                                                F ULL U RNN        116 ≈ 16K     0.947       0.925
+we refer to as unpermuted MNIST, pixels are arranged in         F ULL U RNN        512 ≈ 270K    0.974       0.947
+the sequence row-by-row. In the second, which we call           EURNN              512   ≈ 9K       -        0.937∗
+permuted MNIST, a fixed permutation is applied to training      O RNN              256 ≈ 11K     0.972∗         -
+and testing sequences.
+All scoRNN machines were trained with the RMSprop opti-
+mization algorithm. Input and output weights used a learn-      unitary RNNs. On permuted MNIST, the 512 hidden unit
+ing rate of 10−3 , while the recurrent parameters used a        scoRNN achieves a test-set accuracy of 96.6%, outperform-
+learning rate of 10−4 (for n = 170) or 10−5 (for n = 360        ing all other machines. We believe this is a state of the art
+and n = 512). For unpermuted MNIST, we found ρ to be            result.
+optimal at n/10, while the best value of ρ for permuted
+MNIST was n/2. We suspect that the difference of these          5.4. TIMIT Speech Dataset
+two values comes from the different types of dependencies
+in each: unpermuted MNIST has mostly local dependencies,        To see how the models performed on audio data, speech pre-
+while permuted MNIST requires learning many long-term           diction was performed on the TIMIT dataset (Garofolo et al.,
+dependencies, which appear to be more easily modeled            1993), a collection of real-world speech recordings. Exclud-
+when the diagonal of D has a higher proportion of −1s.          ing the dialect SA sentences and using only the core test
+                                                                set, the dataset consisted of 3,696 training and 192 testing
+Each experiment used a training set of 55,000 images and a      audio files. Similar to experiments in Wisdom et al. (2016),
+test set of 10,000 testing images. Each machine was trained     audio files were downsampled to 8kHz and a short-time
+for 70 epochs, and test set accuracy, the percentage of test    Fourier transform (STFT) was applied with a Hann win-
+images classified correctly, was evaluated at the conclusion    dow of 256 samples and a window hop of 128 samples (16
+of each epoch. Figure 3 shows test set accuracy over time,      milliseconds). The result is a set of frames, each with 129
+and the best performance over all epochs by each machine        complex-valued Fourier amplitudes. The log-magnitude of
+is given in Table 1.                                            these amplitudes is used as the input data for the machines.
+In both experiments, the 170 hidden unit scoRNN gives sim-      For each model, the hidden layer sizes were adjusted such
+ilar performance to both of the 512 hidden unit uRNNs using     that each model had approximately equal numbers of train-
+a much smaller hidden dimension and, in the case of the         able parameters. For scoRNN, we used the Adam optimizer
+full-capacity uRNN, an order of magnitude fewer parame-         with learning rate 10−3 to train input and output parameters,
+ters. Matching the number of parameters (≈ 69k), the 2170       and RMSprop with a learning rate of 10−3 (for n = 224) or
+restricted-capacity uRNN performance was comparable to          10−4 (for n = 322, 425) to train the recurrent weight matrix.
+the 360 hidden unit scoRNN for unpermuted MNIST, but            The number of negative eigenvalues used was ρ = n/10.
+performed worse for permuted MNIST, and required a much         The LSTM forget gate bias was initialized to -4.
+larger hidden size and a significantly longer run time, see     The loss function used for training was the mean squared er-
+5.5.3. As in experiments presented in Arjovsky et al. (2016)    ror (MSE) between the predicted and actual log-magnitudes
+and Wisdom et al. (2016), orthogonal and unitary RNNs           of the next time frame over the entire sequence. Table
+are unable to outperform the LSTM in the unpermuted case.       2 contains the MSE on validation and testing sets, which
+However, the 512 hidden unit scoRNN outperforms all other       shows that all scoRNN models achieve a smaller MSE than
+                            Orthogonal Recurrent Neural Networks with Scaled Cayley Transform
+
+
+
+
+Figure 3. Test accuracy for unpermuted and permuted MNIST over time. All scoRNN models and the best performing LSTM, restriced
+capacity uRNN, and full-capacity uRNN are shown.
+
+
+                                                                  Due to the accumulation of rounding errors over a large
+Table 2. Results for the TIMIT speech dataset. Evaluation based
+                                                                  number of repeated matrix multiplications, the recurrent
+on MSE and various audio metrics
+                                                                  weight may not remain unitary throughout training. To in-
+                                                                  vestigate this, we ran the scoRNN and full-capacity uRNN
+    M ODEL             N        #       VALID .    E VAL .        with equal hidden unit sizes of n = 512 on the unpermuted
+                             PARAMS      MSE       MSE            MNIST experiment and checked for loss of orthogonality
+    SCO RNN          224     ≈ 83K       9.26       8.50          at each epoch. The results of this experiment are shown in
+    SCO RNN          322     ≈ 135K      8.48       7.82
+    SCO RNN          425     ≈ 200K      7.97       7.36
+                                                                  Figure 4. As can be seen, the recurrent weight matrix for
+    LSTM              84     ≈ 83K      15.42      14.30          the full-capacity uRNN becomes less unitary over time, but
+    LSTM             120     ≈ 135K     13.93      12.95          the orthogonality recurrent weight matrix for scoRNN is not
+    LSTM             158     ≈ 200K     13.66      12.62          affected by roundoff errors.
+    R EST. U RNN     158     ≈ 83K      15.57      18.51
+    R EST. U RNN     256     ≈ 135K     15.90      15.31          This can become particularly apparent when performing op-
+    R EST. U RNN     378     ≈ 200K     16.00      15.15          erations using a graphics processing unit (GPU) which have
+    F ULL U RNN      128     ≈ 83K      15.07      14.58          a much lower machine precision than a standard computer
+    F ULL U RNN      192     ≈ 135K     15.10      14.50          processing unit (CPU).
+    F ULL U RNN      256     ≈ 200K     14.96      14.69
+
+
+all LSTM and unitary RNN models. Similar to Wisdom
+et al. (2016), we reconstructed audio files using the pre-
+dicted log-magnitudes from each machine and evaluated
+them on several audio metrics. We found that the scoRNN
+predictions achieved better scores on the signal-to-noise
+ratio metric SegSNR (Brookes et al., 1997), but performed
+slightly worse than the full-capacity uRNN predictions on
+STOI (Taal et al., 2011) and PESQ (Rix et al., 2001), both
+metrics used to measure human intelligibility and perception.
+                                                                  Figure 4. Unitary scores kW ∗ W − IkF for the full-capacity
+                                                                                                        
+
+                                                                  uRNN recurrent weight matrix and orthogonality scores
+                                                                     W T W − I F for the scoRNN recurrent weight matrix using
+5.5. Further Analysis
+                                                                  a GPU on the pixel-by-pixel MNIST experiment.
+5.5.1. L OSS OF O RTHOGONALITY
+                                                                  5.5.2. VANISHING G RADIENTS
+In the scoRNN architecture, the recurrent weight matrix is
+parameterized with a skew-symmetric matrix through the            As discussed in Arjovsky et al. (2016), the vanish-
+Cayley transform. This ensures the computed recurrent             ing/exploding gradient problem is caused by rapid growth
+                                                                                                               ∂L
+weight matrix in floating point arithmetic is orthogonal to       or decay of the gradient of the hidden state ∂h t
+                                                                                                                    as we move
+the order of machine precision after each update step. Un-        earlier in the sequence (that is, as t decreases). To see if
+like scoRNN, the full-capacity uRNN maintains a unitary           vanishing/exploding gradients affect the scoRNN model, we
+recurrent weight matrix by a multiplicative update scheme.        examined hidden state gradients in the scoRNN and LSTM
+                               Orthogonal Recurrent Neural Networks with Scaled Cayley Transform
+
+models on the adding problem experiment (see section 5.2)
+                                                                         Table 3. Timing results for the unpermuted MNIST dataset.
+with sequence length T = 500.
+The norms of these gradients are shown at two different
+points in time during training in Figure 5. As can be seen,               Model              n      # params      Minutes Per Epoch
+LSTM gradient norms decrease steadily as we move away
+                                                                          RNN               116      ≈ 16k               2.3
+from the end of the sequence. The right half of Figure 5
+                                                                          scoRNN            170      ≈ 16k               5.3
+shows that this vanishing effect is exacerbated by training
+                                                                          Rest. uRNN        512      ≈ 16k               8.2
+after 300 iterations.
+                                                                          Full uRNN         116      ≈ 16k              10.8
+In contrast, scoRNN gradients decay by less than an order                 LSTM              128      ≈ 68k               5.0
+of magnitude at the beginning of training, remaining near                 scoRNN            360      ≈ 69k               7.4
+10−2 for all timesteps. Even after 300 iterations of training,            Rest. uRNN       2,170     ≈ 69k              50.1
+scoRNN hidden state gradients decay only slightly, from                   RNN               360      ≈ 137k              2.3
+10−3 at t = 500 to 10−4 at t = 0. This allows information                 scoRNN            512      ≈ 137k             11.2
+to easily propagate from beginning of the sequence to end.                Full uRNN         360      ≈ 137k             25.8
+                                                                          RNN               512      ≈ 270k              2.4
+                                                                          LSTM              256      ≈ 270k              5.2
+                                                                          Full uRNN         512      ≈ 270k             27.9
+                                                                          LSTM              512     ≈ 1, 058k            5.6
+
+
+                                                                         The RNN and LSTM models were fastest, and hidden sizes
+                                                                         largely did not affect time taken per epoch; we suspect
+                                                                         this is because these models were built in to Tensorflow.
+                                                                         The LSTMs are of similar speed to the n = 170 scoRNN,
+                                                                         while they are approximately twice as fast as the n = 512
+                                                                         scoRNN. Matching the number of hidden parameters, the
+                             ∂L                                          scoRNN model with n = 170 is approximately 1.5 times
+Figure 5. Gradient norms k ∂h    k for scoRNN and LSTM models
+                               t                                         faster than the restricted-capacity uRNN with n = 512,
+during training on the adding problem. The x-axis shows different
+values of t. The left plot shows gradients at the beginning of           and twice as fast as the full-capacity uRNN with n = 116.
+training, and the right shows gradients after 300 training iterations.   This relationship can also be seen in the scoRNN and full-
+                                                                         capacity uRNN models with ≈ 137k parameters, where the
+                                                                         scoRNN takes 11.2 minutes per epoch as compared to 25.8
+5.5.3. C OMPLEXITY AND S PEED                                            minutes for the full-capacity uRNN.
+The scoRNN architecture is similar in complexity and mem-
+ory usage to a standard RNN except for the additional mem-               6. Conclusion
+ory requirement of storing the n(n − 1)/2 entries of the
+                                                                         There has been recent promising work with RNN architec-
+skew-symmetric matrix A and the additional complexity of
+                                                                         tures using unitary and orthogonal recurrent weight ma-
+forming the recurrent weight matrix W from A with the
+                                                                         trices to address the vanishing/exploding gradient prob-
+scaled Cayley transform. We note that the recurrent weight
+                                                                         lem. The unitary/orthogonal RNNs are typically imple-
+matrix is generated from the skew-symmetric A matrix only
+                                                                         mented with complex valued matrices or in restricted capac-
+once per training iteration; this O(n3 ) computational cost
+                                                                         ity. The scoRNN developed in this paper uses real valued
+is comparable to one training iteration of a standard RNN,
+                                                                         orthogonal recurrent weight matrices with a simpler im-
+which is O(BT n2 ) where T is the length of the sequences
+                                                                         plementation scheme, with the representational capacity to
+and B is the mini-batch size, when BT is comparable to n.
+                                                                         reach all orthogonal matrices through the Cayley transform
+To experimentally quantify potential differences between                 parametrization. The resulting model’s additive update step
+scoRNN and other models, the real run-time for the unper-                with respect to this parametrization maintains the orthog-
+muted MNIST experiment were recorded and are included                    onality of the recurrent weight matrix in the presence of
+in Table 3. All models were run on the same machine, which               roundoff errors. Results from our experiments show that
+has an Intel Core i5-7400 processor and an nVidia GeForce                scoRNN is among the top performers in all tests with a
+GTX 1080 GPU. The scoRNN and LSTM models were run                        smooth and stable convergence curve. This superior perfor-
+in Tensorflow, while the full and restricted capacity uRNNs              mance is achieved, in some cases, with a smaller hidden
+were run using code provided in Wisdom et al. (2016).                    state dimension than other models.
+                            Orthogonal Recurrent Neural Networks with Scaled Cayley Transform
+
+Acknowledgements                                                 Kahan, W. Is there a small skew cayley transform with zero
+                                                                   diagonal? Linear algebra and its applications, 417(2-3):
+This research was supported in part by NSF Grants DMS-             335–341, 2006.
+1317424 and DMS-1620082.
+                                                                 Kingma, D. and Ba, J. Adam: A method for stochastic
+References                                                         optimization. arXiv preprint arXiv:1412.6980, 2014.
+Arjovsky, M., Shah, A., and Bengio, Y. Unitary evolution         Le, Q. V., Jaitly, N., and Hinton, G. E. A simple way to
+  recurrent neural networks. In Proceedings of the 33rd            initialize recurrent networks of rectified linear units, 2015.
+  International Conference on Machine Learning (ICML               URL https://arxiv.org/abs/1504.00941.
+  2016), volume 48, pp. 1120–1128, New York, NY, 2016.
+  JMLR.                                                          LeCun, Y., Cortes, C., and Burges, C. J. C. The mnist
+                                                                   database. URL http://yann.lecun.com/exdb/
+Bengio, Y., Frasconi, P., and Simard, P. The problem of            mnist/.
+  learning long-term dependencies in recurrent networks.
+  In Proceedings of 1993 IEEE International Conference           Mhammedi, Z., Hellicar, A., Rahman, A., and Bailey, J.
+  on Neural Networks (ICNN ’93), pp. 1183–1195, San               Efficient orthogonal parameterisation of recurrent neural
+  Francisco, CA, 1993. IEEE Press.                                networks using householder reflections. In Proceedings of
+                                                                  the 34th International Conference on Machine Learning
+Brookes, M. et al. Voicebox: Speech processing toolbox for        (ICML 2017), Sydney, Australia, 2017. PMLR: 70.
+  matlab. Software, available [Mar. 2011] from www. ee. ic.
+  ac. uk/hp/staff/dmb/voicebox/voicebox. html, 47, 1997.         Nair, V. and Hinton, G. E. Rectified linear units improve
+                                                                   restricted boltzmann machines. In 27th International
+Cho, K., van Merrienboer, B., Bahdanau, D., and Ben-
+                                                                   Conference on Machine Learning (ICML 2010), Haifa,
+  gio, Y. On the properties of neural machine transla-
+                                                                   Israel, 2010.
+  tion: Encoder-decoder approaches, 2014. URL https:
+  //arxiv.org/abs/1409.1259.                                     Pascanu, R., Mikolov, T., and Bengio, Y. On the difficulty of
+                                                                   training recurrent neural networks. In 30th International
+Garofolo, J., Lamel, L., Fisher, W., Fiscus, J., Pallett, D.,
+                                                                   Conference on Machine Learning (ICML 2013), Atlanta,
+  Dahlgren, N., and Zue, V. Timit acoustic-phonetic contin-
+                                                                   GA, 2013.
+  uous speech corpus ldc93s1. Technical report, Philadel-
+  phia: Linguistic Data Consortium, Philadelphia, PA,            Rix, A. W., Beerends, J. G., Hollier, M. P., and Hekstra,
+ 1993.                                                             A. P. Perceptual evaluation of speech quality (pesq)-a
+Henaff, M., Szlam, A., and LeCun, Y. Recurrent orthogonal          new method for speech quality assessment of telephone
+  networks and long-memory tasks. In Proceedings of                networks and codecs. In Acoustics, Speech, and Signal
+  the 33rd International Conference on Machine Learning            Processing, 2001. Proceedings.(ICASSP’01). 2001 IEEE
+  (ICML 2017), volume 48, New York, NY, 2017. JMLR:                International Conference on, volume 2, pp. 749–752.
+  W&CP.                                                            IEEE, 2001.
+
+Hochreiter, S. and Schmidhuber, J. Long short-term memory.       Taal, C. H., Hendriks, R. C., Heusdens, R., and Jensen,
+  Neural Computation, 9(8):1735–1780, 1997.                        J. An algorithm for intelligibility prediction of time–
+                                                                   frequency weighted noisy speech. IEEE Transactions on
+Hyland, S. L. and Gunnar, R. Learning unitary operators            Audio, Speech, and Language Processing, 19(7):2125–
+ with help from u(n). In Proceedings of the 31st AAAI Con-         2136, 2011.
+  ference on Artificial Intelligence (AAI 2017), pp. 2050–
+  2058, San Francisco, CA, 2017.                                 Tagare, H. D. Notes on optimization on stiefel manifolds.
+                                                                   Technical report, Yale University, 2011.
+Jing, L., Shen, Y., Dubček, T., Peurifoy, J., Skirlo, S.,
+   Tegmark, M., and Soljačić, M. Tunable efficient uni-        Tieleman, T. and Hinton, G. Lecture 6.5-rmsprop: Divide
+   tary neural networks (eunn) and their application to rnn,       the gradient by a running average of its recent magnitude.
+   2016.                                                           COURSERA: Neural networks for machine learning, 4
+                                                                   (2):26–31, 2012.
+Jing, L., Gülçehre, C., Peurifoy, J., Shen, Y., Tegmark, M.,
+   Soljačić, M., and Bengio, Y. Gated orthogonal recurrent     Vorontsov, E., Trabelsi, C., Kadoury, S., and Pal, C. On
+   units: On learning to forget. 2017. URL https://                orthogonality and learning recurrent networks with long
+   arxiv.org/abs/1706.02761.                                       term dependencies, 2017.
+                           Orthogonal Recurrent Neural Networks with Scaled Cayley Transform
+
+Wen, Z. and Yin, W. A feasible method for optimization
+ with orthogonality constraints. In Mathematical Program-
+ ming, volume 142(1-2), pp. 397–434. 2013.
+Wisdom, S., Powers, T., Hershey, J., Roux, J. L., and Atlas,
+ L. Full-capacity unitary recurrent neural networks. In
+ Lee, D. D., Sugiyama, M., Luxburg, U. V., Guyon, I., and
+ Garnett, R. (eds.), Advances in Neural Information Pro-
+ cessing Systems 29, pp. 4880–4888. Curran Associates,
+ Inc., 2016.
+       Orthogonal Recurrent Neural Networks with Scaled Cayley Transform
+
+
+
+
+Supplemental Material: Proof of Theorem 3.2
+                                                                                 "          T                                              #
+For completeness, we restate and prove Theorem 3.2.                ∂L                 ∂L                  −1
+                                                                        = − tr           D        (I + A)      (Ei,j − Ej,i + Ei,j Z − Ej,i Z)
+Theorem 3.2 Let L = L(W ) : Rn×n → R be some differ-              ∂Ai,j               ∂W
+entiable loss function for an RNN with the recurrent weight                      "       T                      #
+                                              −1                                    ∂L                 −1
+matrix W . Let W = W (A) := (I + A) (I − A) D                           = − tr          D     (I + A) Ei,j
+where A ∈ R     n×n
+                     is skew-symmetric and D ∈ Rn×n is                             ∂W
+a fixed diagonal matrix consisting of -1 and 1 entries. Then
+                                                                               "        T                      #
+                                                                                   ∂L                 −1
+the gradient of L = L(W (A)) with respect to A is                        + tr          D     (I + A) Ej,i
+                                                                                  ∂W
+                                                                               "        T                         #
+                       ∂L                                                          ∂L                 −1
+                          =VT −V                           (3)           − tr          D     (I + A) Ei,j Z
+                       ∂A                                                         ∂W
+                                                                               "        T                         #
+                  −T ∂L           T
+                                     ∂L h ∂L i                                    ∂L                 −1
+where V := (I + A)    ∂W    D + W    , ∂A = ∂Ai,j ∈                      + tr          D     (I + A) Ej,i Z
+                h       i                                                         ∂W
+           ∂L      ∂L
+Rn×n , and ∂W = ∂W  i,j
+                          ∈ Rn×n                                             
+                                                                                         T               !T 
+                                                                                   ∂L                  −1
+Proof: Let Z := (I + A)−1 (I − A). We consider the                      = −           D      (I + A)            
+                ∂L
+                                                                                   ∂W
+(i, j) entry of ∂A . Taking the derivative with respect to Ai,j                                                    i,j
+where i 6= j we obtain:
+                                                                            "         T              #
+                                                                                ∂L                  −1
+                                                                         +           D     (I + A)
+                                                                                ∂W
+                                                                                                         i,j
+            n                    n
+                                                                                                         !T          
+   ∂L      X     ∂L ∂Wk,l       X     ∂L        ∂Zk,l                           
+                                                                                   ∂L
+                                                                                         T
+        =                   =              Dl,l                          −            D     (I + A)
+                                                                                                      −1
+                                                                                                                 ZT 
+  ∂Ai,j         ∂Wk,l ∂Ai,j          ∂Wk,l      ∂Ai,j                             ∂W
+          k,l=1                k,l=1
+             "       T       #                                                                                        i,j
+                 ∂L        ∂Z                                               "           T               #
+        = tr        D                                                              ∂L                 −1
+                ∂W       ∂Ai,j                                           + Z           D     (I + A)
+                                                                                  ∂W
+                                                                                                             i,j
+                                                                          "                  T                  #
+Using the identity (I + A) Z = I − A and taking the deriva-                            ∂L                     −1
+                                                                        = (I + Z)           D     (I + A)
+tive with respect to Ai,j to both sides we obtain:                                     ∂W
+                                                                                                                    i,j
+                                                                                                         !T                  
+                                                                                        T
+                                                                                   ∂L                 −1
+                                                                                                                  I + ZT 
+                                                                                                                            
+                                                                         −            D     (I + A)
+           ∂Z      ∂A         ∂Z       ∂A                                         ∂W
+                +       Z +A       =−                                                                                          i,j
+          ∂Ai,j   ∂Ai,j      ∂Ai,j    ∂Ai,j                               "                                      #
+                                                                                             T
+                                                                                         ∂L
+                                                                        = (D + W )                (I + A)−1
+and rearranging we get:                                                                  ∂W
+                                                                                                                   i,j
+                                                                                                              
+                                                                                      −T ∂L
+                                                                                                 D + WT
+                                                                                                             
+                                                                         − (I + A)
+                                                                                        ∂W                     i,j
+         ∂Z               −1         ∂A      ∂A
+              = − (I + A)                 +       Z
+        ∂Ai,j                       ∂Ai,j   ∂Ai,j
+                                                                                                ∂L            ∂L
+                                                                  Using the above formulation, ∂Aj,j
+                                                                                                     = 0 and ∂A i,j
+                                                                                                                    =
+                                                                     ∂L            ∂L
+Let Ei,j denote the matrix whose (i, j) entry is 1 with           − ∂A j,i
+                                                                           so that ∂A  is a skew-symmetric matrix. Finally,
+all others being 0. Since A is skew-symmetric, we have            by the definition of V we get the desired result. 
+ ∂A
+∂Ai,j = Ei,j − Ej,i . Combining everything, we have:
+

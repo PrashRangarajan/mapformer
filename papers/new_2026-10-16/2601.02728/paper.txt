@@ -1,0 +1,682 @@
+                                        CRoPE:
+                                        Efficient Parametrization of Rotary Positional Embedding
+
+                                            Beicheng Lou∗                     Zifei Xu∗                      Vivian W. H. Wong
+                                            Stanford University               d-Matrix                       University of Florida
+                                            Stanford, CA 94305                Santa Clara, CA 95054          Gainesville, FL 32611
+                                            beichenglou@stanford.edu          xuzifei@d-matrix.ai            vivian.wong@ufl.edu
+
+
+
+                                                                                   Abstract
+arXiv:2601.02728v2 [cs.LG] 1 Apr 2026
+
+
+
+
+                                                   Rotary positional embedding has become the state-of-the-art approach
+                                                   to encode position information in transformer-based models. While it
+                                                   is often succinctly expressed in complex linear algebra, we note that the
+                                                   actual implementation of Q/K/V-projections is not equivalent to a complex
+                                                   linear transformation. We argue that complex linear transformation is a
+                                                   more natural parametrization and saves near 50% parameters within the
+                                                   attention block. We show empirically that removing such redundancy has
+                                                   negligible impact on the model performance. Our modification achieves
+                                                   more efficient parameter usage, as well as a cleaner interpretation of the
+                                                   representation space.
+
+
+
+
+                                        1     Introduction
+
+                                        Transformer has become the state-of-the-art architecture for large language and time series
+                                        modeling tasks (Vaswani et al., 2023; OpenAI, 2024; DeepSeek-AI, 2025; Team, 2025). At its
+                                        core, it uses the attention mechanism to route information through the most relevant paths
+                                        and allow different parts of the input to interact synergistically. Unlike recurrent neural
+                                        networks, the attention mechanism does not inherently encode token order, so positional
+                                        information must be explicitly injected.
+                                        Positional embedding is crucial for transformer since its birth (Dufter et al., 2021). The choice
+                                        of positional embedding scheme also significantly affects training dynamics (Kazemnejad
+                                        et al., 2023). As models scale and generalize to longer contexts, careful treatment of positional
+                                        encoding becomes increasingly important (Peng et al., 2023).
+                                        However, positional embedding schemes have never been perfect (Chen et al., 2021; Ke et al.,
+                                        2021). Early absolute embeddings made it hard for models to disentangle position from
+                                        semantic content (Vaswani et al., 2023; Devlin et al., 2019). Relative embeddings mitigated
+                                        this but required extra parameters (Dai et al., 2019; Raffel et al., 2023; He et al., 2021). Rotary
+                                        positional embedding (RoPE) removes the explicit parameterization, yet implicitly still
+                                        reserves half of the embedding space for positional information (Su et al., 2023). The search
+                                        for more efficient encoding schemes is not finished.
+                                        In this paper, we revisit a complex-valued formulation of RoPE that appears equivalent to
+                                        the original work at first glance (Wang et al., 2020), but with a fundamental difference in
+                                        the function space. From this perspective, we argue that a more natural parameterization
+                                        of attention would require 50% fewer parameters within the Q/K/V-projections, with
+                                        minimal performance loss. The ratio of saved parameters drops below 50% when counting
+                                        other components such as feedforward and embedding layers, but remains significant and
+                                        can be invested elsewhere.
+
+                                             ∗ Equal contribution
+
+
+
+                                                                                        1
+2     Background and related work
+2.1   Absolute and relative positional embedding
+
+Essentially, positional embedding maps i = 1, 2, ..., L input embeddings to L output embed-
+dings, where each output embedding attends to preceding input embeddings with different
+weighting.
+For any two input embeddings xm , xn ∈ RD , ∈ RD , m, n ∈ Z+ , we want
+                                 attn(m → n) = f ( xm , xn , m, n)                                     (1)
+so that the attention weights can be calculated from
+                                             exp attn(m → n)
+                                   am,n =                                                              (2)
+                                            ∑ j exp attn(m → j)
+and the output embedding is a weighted average according to the attention weights:
+                                                    L
+                                         om = ∑ am,j vj                                                (3)
+                                                   j =1
+
+where vj is embeddings derived from x j .
+In absolute positional embedding(Vaswani et al., 2023; Devlin et al., 2019), one simply
+chooses:
+                      f ( xm , xn , m, n) = ( xm + pm ) T WqT Wk ( xn + pn )         (4)
+There could be other variations, but the impact is less significant.
+In relative positional embedding(Dai et al., 2019; Raffel et al., 2023; He et al., 2021), one
+forces the function to be only a function of m − n. One common choice is:
+                     f ( xm , xn , m − n) = ( xm + pm−n ) T WqT Wk ( xn + pm−n )                       (5)
+
+2.2   Rotary Positional Embedding
+In RoPE(Su et al., 2023), one has a rotation matrix that performs position-dependent rotations
+to each 2-by-2 subspace in the following form:
+             cos(mθ1 )   − sin(mθ1 )       0              0        ···        0             0
+                                                                                                  
+            sin(mθ1 )    cos(mθ1 )        0              0        ···        0             0      
+           
+                0            0        cos(mθ2 )     − sin(mθ2 )   ···        0             0      
+                                                                                                   
+           
+      Rm =      0            0        sin(mθ2 )      cos(mθ2 )    ···        0             0      
+                                                                                                      (6)
+                ..           ..           ..             ..       ..         ..            ..     
+           
+                 .            .            .              .          .        .             .
+                                                                                                   
+                                                                                                   
+                0            0            0              0        ···    cos(mθ L )   − sin(mθ L )
+                 0            0            0              0        ···    sin(mθ L )    cos(mθ L )
+and Eq. 1 simply becomes:
+                                                     T
+                             f ( xm , xn , m − n) = xm WqT Rm
+                                                            T
+                                                              Rn Wk xn
+                                                      T
+                                                   = xm WqT Rm
+                                                             T
+                                                               −n Wk xn                                (7)
+The remaining procedure from Eq. 2 onwards is the same as in the original absolute posi-
+tional embedding case.
+
+2.3   Related work
+
+Since our work described a method that achieved similar performance with significantly
+fewer parameters, it could be reminiscent of other pruning or compression work. Typical
+pruning methods rely on the information in hidden states or hessian information (Frantar
+& Alistarh, 2023b; Sun et al., 2024). There is a detailed tradeoff between the number of
+
+
+                                                    2
+parameters pruned and the performance decay, and the optimal choice is highly dependent
+on the specific utility function. In our work, the parameter efficiency is obtained through
+an architectural inductive bias, which is both convenient and safe from noise in data.
+Architecture search could also lower the number of parameters (Real et al., 2020; Liu et al.,
+2019), but it requires huge effort and is subject to noise in data. In the end, it may not arrive
+at the same architectural inductive bias we manually introduced. Since it works on the
+architecture level, it is fully compatible with any additional memory saving optimization,
+e.g. quantization (Lin et al., 2024; Frantar & Alistarh, 2023a; Saxena et al., 2025). Similarly,
+one could always perform pruning and compression starting from our parametrization.
+There are other approaches to improve parameter efficiency at run time instead of in
+architecture design. In mixture-of-expert architectures (Shazeer et al., 2017; Lou et al., 2021;
+Fedus et al., 2022; Gale et al., 2022), some blocks of the model can be entirely skipped
+during run time. In contrast, our modification applies to a more minuscule scale and is fully
+compatible with MoE. It is also possible to skip some part of network and therefore run
+through fewer parameters through early exit (Schuster et al., 2022). Similarly, it can also be
+applied on top of our modifications.
+Various other papers aim to modify RoPE in different scenarios. YARN (Peng et al., 2023)
+discussed how to finetune an existing model to work on longer sequence lengths than
+what it was trained for. Our modification introduces a different parametrization with
+simpler function space and could potentially make the finetuning dynamics better. Our
+modification can also be viewed as intra-matrix weight tying in a structured way that
+respects Cauchy-Riemann symmetry (Trabelsi et al., 2018).
+
+3     Complex Rotary Positional Embedding (CRoPE)
+
+3.1   Origin
+Since RoPE involves rotation in various 2-dimensional subspaces, it can be easily cast to a
+complex form as below:
+                                                                                         
+              qn,1            qn,1 + qn,2 i                    k n,1            k n,1 + k n,2 i
+             qn,2        qn,3 + qn,4 i                    k n,2       k n,3 + k n,4 i 
+       qn =  .  → q̃n =          ..      ,          kn =  .  → k̃n =            ..            (8)
+                                                                                         
+             ..                                             .. 
+                                                                                                
+                                    .                                                .       
+              qn,D          qn,D−1 + qn,D i                    k n,D         k n,D−1 + k n,D i
+
+One can rewrite the rotation matrix as a diagonal matrix that applies position-dependent
+phase:
+                                     imθ1
+                                                          ···
+                                                                               
+                                      e           0                    0
+                                     0         eimθ2     ···          0       
+                              R̃m =  .                                                              (9)
+                                                                              
+                                                  ..      ..           ..
+                                     ..
+                                                                               
+                                                   .         .          .      
+                                        0         0       ···        eimθD/2
+
+Note that
+                                         T
+                                        qm kn = Re[q̃†m k̃n ]                                       (10)
+and therefore Eq. 1 now becomes
+
+                              f ( xm , xn , m − n) = Re[q̃†m R̃∗m−n k̃n ]                           (11)
+
+Note that Eq. 11 is exactly equivalent to Eq. 7.
+One might be tempted to write the input embedding xm , xn in complex forms too and have
+
+                          f˜( xm , xn , m − n) = Re[ x̃†m W̃q† R̃∗m−n W̃k x̃n ]                     (12)
+
+However, Eq. 12 is no longer equivalent to Eq. 11.
+
+
+                                                   3
+Figure 1: Main difference between RoPE (left) and CRoPE (right): the latter has a smaller
+function space despite having same number of parameters in the embedding
+
+
+To see how the complex form of Eq. 12 is not equivalent to the original RoPE, unlike the case
+for Eq. 11, one simply needs to count the degrees of freedom, i.e. the number of parameters,
+as illustrated in Fig. 1.
+Namely, if one casts RoPE to a complex form, the formulation naturally invites the use of
+a complex W̃ matrix, which only has 50% of the parameters compared to the original W
+matrix.
+
+3.2   Detailed look into function space
+
+While CRoPE arises naturally under the interpretation of the embedding as complex num-
+bers, its function space is only half the size of the original RoPE. To see which half is missing,
+we consider the case of D = 2.
+
+
+
+
+Figure 2: Main difference between RoPE (left) and CRoPE (right): the latter has a smaller
+function space despite having same number of parameters in the embedding
+
+As illustrated in Fig. 2(a), the 2-by-2 matrix can be decomposed into four bases: σ0 , σ1 , σ2 , σ3 .
+Each of them can have a distinctive geometric interpretation. σ0 is the identity mapping.
+σ1 reflects the vector about the line at 45 degrees. σ2 rotates the vector in the plane by 90
+degrees. σ3 reflects the vector about the x-axis. The function space of CRoPE only utilizes
+σ0 , σ2 . As illustrated in Fig. 2(b) on the left, this corresponds to rotation in addition to
+length scaling. Meanwhile, CRoPE is missing out on reflections, as illustrated in Fig. 2(b)
+on the right. Both transformations on the left and on the right are capable of mapping a
+
+
+                                                 4
+single vector to anywhere in the 2D plane. Their expressive power differs when multiple
+vectors are considered at the same time. Having the capability of reflection for sure adds
+to the expressivity to the model. Whether that expressivity is worth the parameters is
+a different story, which depends on interpretation, tasks and various other factors. For
+example, there used to be works on adding parameters for activation, which also contribute
+to better model expressivity. However, it was later realized that the benefits were marginal
+and the state-of-the-art architectures today no longer have activations parametrized.
+
+4     Illustrative Example
+While reflections are definitely a useful thing to have and contribute to model expressivity,
+the question here is whether it is necessary to have, because the parameters we saved here
+can be potentially used for more dimensions to apply rotations in.
+To answer that, we take a step back and review what each layer of attention is able to
+achieve. In these simple examples, we can analytically work out a functional solution for all
+the model parameters. As the dimension approaches infinity, these analytical solutions can
+be near perfect.
+
+4.1   Simple token comparison
+
+One basic mechanisms is token comparison, e.g. attending to similar tokens.
+In absolute positional encoding, this can be achieved by increasing the scale of embedding
+weights. Namely, we can have ∥ xi ∥ ≫ ∥ pi ∥ in Eq. 4 and Wt∈{q,k} = I. Therefore,
+
+                       f ( xm , xn , m, n) = ( xm + pm ) T WqT Wk ( xn + pn )            (13)
+                                           T
+                                        ≈ xm xn                                          (14)
+which takes larger value when the tokens xm and xn are similar.
+In RoPE, this can be achieved by encoding the token embedding in the dimensions with
+longest wavelengths. Namely, in Eq. 7, say θ1 , θ2 , ..., θ L are arranged in ascending order.
+For a given window length w, there exists a threshold length lt such that θ1 ≫ w when
+                                                                                 l
+l ≥ lt . One can simply use the dimensions with l > lt for the token embedding and uses
+Wt∈{q,k} = I. Then Eq. 7 becomes:
+                                                    T
+                            f ( xm , xn , m − n) = xm WqT Rm
+                                                           T
+                                                             −n Wk xn                    (15)
+                                                  T
+                                               ≈ xm xn                                   (16)
+
+In CRoPE, this mechanism can be achieved in the same way.
+
+4.2   Simple position comparison
+
+Another fundamental mechanisms is position comparison, e.g. attending to near positions.
+In absolute positional encoding, this can be achieved by reducing the scale of embedding
+weights. Namely, we can have ∥ xi ∥ ≪ ∥ pi ∥ in Eq. 4 and Wt∈{q,k} = I. Therefore,
+
+                       f ( xm , xn , m, n) = ( xm + pm ) T WqT Wk ( xn + pn )            (17)
+                                           T
+                                        ≈ pm pn                                          (18)
+which takes larger value when the position encodings pm and pn are similar, i.e. when m
+and n are close. To the limit of large size of dimensions D,
+                                          T
+                                     lim pm pn = δ(m − n)                                (19)
+                                    D →∞
+
+In RoPE, this can be achieved by setting the token embeddings to constant. This is easy
+when the embedding mapping involves a bias vector x = We x prev + be , where we can set
+
+
+                                                 5
+We = 0 and be = 1. When the embedding mapping does not contain a bias term, it is still
+possible if the model can figure out some linear combination of features that effectively
+renders a constant vector. As long as x ≈ 1, we will have:
+                                                      T
+                              f ( xm , xn , m − n) = xm WqT Rm
+                                                             T
+                                                               −n Wk xn                            (20)
+                                                       D/2
+                                                  ≈ ∑ cos[(m − n)θi ]                              (21)
+                                                       i =1
+which also approaches δ(m − n) as D → ∞.
+
+4.3   Token-dependent position comparison
+
+One key mechanism attention needs to have is to blend the information of token and
+position. The most basic task is to have a token-dependent position comparison. For
+example, consider the case illustrated in Fig. 3, where the text input is shown on the left
+and the ideal attention weights are shown on the right. At the i-th token, the ideal attention
+weight depends on the token value. If the token is ”next”, then we need the attention
+weights to focus on position i + 1. If the token is ”nexnext”, then we need the attention
+weights to focus on position i + 2. The scenario illustrated here is simplistic, but it can be
+easily generalized to other scenarios, e.g. when the input embedding is in some abstract
+space instead of simple words, or when causal masks are in place. The key here is to make
+sure that each head has the capability to interact the token information with the positional
+information, which is the cornerstone for a stacked model to function.
+
+
+
+
+Figure 3: Illustrative task of token-dependent position attending, with the input shown
+on the left and desired attention weights on the right. Depending on the token value, the
+desired attention weights focus on the i + 1-th token (a) and the i + 2-th token, respectively.
+
+In absolute positional embedding, the functional parameter setting cannot be easily pre-
+scribed manually. First and foremost, this task definition relies on relative position, which is
+already hard for absolute positional embedding. While it is possible to prescribe a set of
+weights that function for a specific position i, it is not possible to achieve this functionality
+for ∀i ∈ Z+ . Furthermore, the relative weighting between token information and positional
+information is fixed in the input embedding, which makes the task impossible for a single
+layer of attention. Namely, we need:
+         ( xi + pi )T WqT Wk ( xi+1 + pi+1 ) ≫ ( xi + pi )T WqT Wk ( x j + p j ),   ∀ j ̸= i + 1   (22)
+Note that the values of xi+1 and x j can be arbitrary, which requires
+                                        Wk ( x j + p j ) ≈ Wk p j                                  (23)
+
+
+                                                   6
+whereas we also need:
+                                       Wq ( xi + pi ) ≈ Wq xi                                      (24)
+This creates a tension between the weighting of token information and the weighting of
+position information in the embedding.
+In contrast, RoPE can easily achieve this task within one layer of attention. In complex
+notation, we simply need:
+                       −iθ1                   −2iθ1                            
+                         e                         e                               1
+                       e−iθ2                  e−2iθ2                          1
+                  (n)                   (nn)                        (n)    (nn)
+                q̃i =  .  ,         q̃i    =  . ,             k̃ j = k̃ j   =  .  ∀j         (25)
+                                                                               
+                       ..                          ..                          .. 
+                        e−iθD/2                  e − 2iθ D/2                       1
+
+ where the superscript (n) corresponds to the case where the token is ”next” in Fig. 3(a),
+and the superscript (nn) corresponds to the case where the token is ”nexnext” in Fig. 3(b).
+Then the attention is exactly as desired:
+                                        (n)
+                                lim q̃m R̃∗m−n k̃n = δ(m + 1 − n)
+                                D →∞
+                                       (nn)
+                               lim q̃m        R̃∗m−n k̃n = δ(m + 2 − n)                            (26)
+                               D →∞
+
+                                                        (n)                (n)               (n)
+This is equivalent to the real form where qi                  ∈ RD has qi,2t = cos(θt ) and qi,2t+1 =
+                  (nn)              (nn)                           (nn)
+− sin(θt ), while qi   ∈ RD has qi,2t = cos(2θt ) and qi,2t+1 = − sin(2θt ). That can easily
+result from a choice of projection matrix as detailed in the appendix.
+Recall that in general, q in RoPE when cast to complex form cannot be expressed as q̃i =
+W̃q x̃i because the function space of CRoPE is only half that of RoPE. Here we note that the
+perfect solution to this illustrative task lies exactly within the CRoPE subspace. Namely,
+for this particular task, half of the function space of RoPE, as well as half the parameters
+involved, is indeed redundant.
+While this toy problem is simplistic, it is a minimal example to illustrate the advantage of
+RoPE over conventional absolute positional embedding. We have shown that the same
+advantage can be obtained by constraining ourselves to the function subspace of CRoPE
+instead. Note that this example is only for illustration. How well it can extrapolate to deeper
+networks may be beyond analytical work and invite for empirical study.
+
+5     Experiments
+5.1   Model Architecture
+
+We use a decoder-only Transformer with pre-norm RMSNorm (ϵ = 10−6 ) and RoPE (θ =
+5000). Unless noted otherwise, all models use 16 layers, 8 attention heads, hidden size
+dmodel = 1024, and a SwiGLU FFN with intermediate size dff = 1024. We apply per-head
+QK-Norm and tie the token embedding and output projection.
+
+CRoPE parameterization. The projection matrix W will have weights tied as following:
+for all even indices i, j, Wi,j = Wi+1,j+1 , Wi+1,j = −Wi,j+1 .
+We implement CRoPE with BlockLinear. With tied=True, it enforces the structure above;
+with tied=False, each 2 × 2 block has four independent entries and is equivalent to a
+standard linear layer. All computation remains real-valued.
+
+CRoPE variants. We vary where CRoPE is applied in attention, as shown in Figure 4 (left).
+We also include parameter-matched dense baselines: half rope qk, which halves dense
+Q and K to dmodel /2, and half rope all, which additionally halves V and the output
+projection.
+
+
+                                                    7
+       Mode Q, K       V, Out              Savings
+       none   Untied   Untied               0%
+       qk     Tied     Untied               25%
+       qkv    Tied     Untied (out only)   37.5%
+       all    Tied     Tied                 50%
+
+
+
+
+Figure 4: Left: CRoPE placement modes and theoretical attention-parameter savings. Right:
+Total parameter counts for each RoPE/CRoPE variant. Embedding and FFN parameters are
+identical across configurations, so all reductions come from attention.
+
+
+5.2   Dataset
+
+We pre-train on FineWeb-Edu dataset (Lozhkov et al., 2024) with sequence length of 512.
+In addition to the validation loss on FineWeb-Edu dataset, we evaluate zero-shot perfor-
+mance on three benchmarks through lm eval (Gao et al., 2024): HellaSwag (Zellers et al.,
+2019), MMLU (Hendrycks et al., 2021), and GSM8K (Cobbe et al., 2021).
+
+5.3   Training Settings
+
+All runs use Muon (Jordan et al., 2024) with weight decay 0.1. Details in appendix.
+
+6     Results
+
+6.1   Training Dynamics and Parameter Efficiency
+
+We first verify that the tested variants realize the intended parameter counts. As shown
+in Figure 4 (right), embedding and FFN parameters remain fixed across models, while
+attention parameters decrease according to the applied CRoPE constraint. In particular, the
+measured reductions for crope qk, crope qkv, and crope all exactly match the expected
+attention-parameter savings of 25%, 37.5%, and 50%, respectively. crope qk and crope all
+share same parameter counts with half rope qk and half rope all, as expected.
+
+
+
+
+Figure 5: Training loss (left) and validation loss (right) over optimization steps for all
+variants. Insets zoom into the final 200 steps to highlight the final performance ordering,
+training-loss insets are smoothed for readability. Solid lines denote CRoPE variants, dashed
+lines denote standard or half-width RoPE baselines, and parameter-matched models share
+the same color.
+
+Given these parameter-matched comparisons, Figure 5 shows that all variants optimize
+stably under the same training schedule. The full-capacity rope baseline achieves the lowest
+validation loss overall, as expected. More importantly, among reduced-parameter models,
+
+
+                                                     8
+Figure 6: Zero-shot downstream evaluation on MMLU (accuracy), GSM8K (flexible-extract),
+and HellaSwag (normalized accuracy). Error bars denote standard error. Colors and markers
+follow the parameter-matching convention from Figure 5.
+
+
+
+CRoPE consistently outperforms its dense half-width counterparts: crope all converges
+below half rope all, and crope qk likewise outperforms half rope qk. crope qkv even
+outperforms half rope qk with less parameters. This suggests that the gains are not solely
+due to parameter count, but also to the complex-linear structure, which yields a more
+parameter-efficient attention parameterization than simply shrinking dense projections.
+
+
+6.2   Downstream Evaluation
+
+To test whether the validation-loss trends translate to downstream capability, we evaluate
+all models zero-shot on HellaSwag, MMLU, and GSM8K (Figure 6).
+On HellaSwag, the full rope baseline performs best, reaching 0.331 normalized accuracy.
+Importantly, CRoPE nearly matches this result at 0.329, with crope all close behind at 0.327.
+Both substantially outperform the parameter-matched dense baseline half rope all, which
+achieves 0.320.
+In contrast, results on MMLU and GSM8K are tightly clustered across all variants. MMLU
+accuracy falls in a narrow range from 0.229 to 0.232, with overlapping standard errors
+indicating no clear difference between configurations. GSM8K flexible-extract scores are
+likewise uniformly low, ranging from 0.012 to 0.015. This limited spread is expected at this
+model scale, where zero-shot mathematical reasoning remains weak.
+Overall, the downstream results are consistent with the validation-loss trends. CRoPE pre-
+serves task performance while substantially reducing attention parameters, and it compares
+favorably to naive dense width reduction, especially on tasks such as HellaSwag where the
+baseline model exhibits meaningful signal.
+
+
+7     Conclusion
+
+In conclusion, we have shown that rewriting RoPE in complex form naturally leads to
+CRoPE, in which the Q/K/V projections are implemented as complex-linear transforma-
+tions, reducing the number of attention parameters by 25% in qk, 37.5% in qkv, and up
+to 50% in all. We show empirically that these savings come with little to no noticeable
+degradation in model quality: training remains stable, CRoPE consistently outperforms
+parameter-matched dense half rope baselines, and downstream zero-shot performance
+remains competitive with standard RoPE. Our study therefore provides a new perspective
+on implementing weights in the complex form.
+
+
+                                             9
+References
+Pu-Chin Chen, Henry Tsai, Srinadh Bhojanapalli, Hyung Won Chung, Yin-Wen Chang, and
+  Chun-Sung Ferng. A Simple and Effective Positional Encoding for Transformers, Novem-
+  ber 2021. URL http://arxiv.org/abs/2104.08698. arXiv:2104.08698 [cs] Read Status:
+  New Read Status Date: 2025-05-16T03:03:03.572Z.
+
+Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz
+  Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, Christopher
+  Hesse, and John Schulman. Training verifiers to solve math word problems, 2021. URL
+  https://arxiv.org/abs/2110.14168.
+
+Zihang Dai, Zhilin Yang, Yiming Yang, Jaime Carbonell, Quoc V. Le, and Ruslan Salakhutdi-
+  nov. Transformer-XL: Attentive Language Models Beyond a Fixed-Length Context, June
+  2019. URL http://arxiv.org/abs/1901.02860.
+
+DeepSeek-AI. DeepSeek-V3 Technical Report, February 2025. URL http://arxiv.org/abs/
+ 2412.19437. arXiv:2412.19437 [cs].
+
+Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. BERT: Pre-training
+  of Deep Bidirectional Transformers for Language Understanding, May 2019. URL http:
+  //arxiv.org/abs/1810.04805.
+
+Philipp Dufter, Martin Schmitt, and Hinrich Schütze. Position Information in Transformers:
+  An Overview, September 2021. URL http://arxiv.org/abs/2102.11090.
+
+William Fedus, Barret Zoph, and Noam Shazeer. Switch Transformers: Scaling to Trillion
+ Parameter Models with Simple and Efficient Sparsity, June 2022. URL http://arxiv.org/
+ abs/2101.03961.
+
+Elias Frantar and Dan Alistarh. Sparsegpt: Massive language models can be accurately
+  pruned in one-shot, March 2023a. URL http://arxiv.org/abs/2301.00774.
+
+Elias Frantar and Dan Alistarh. Sparsegpt: Massive language models can be accurately
+  pruned in one-shot, 2023b. URL https://arxiv.org/abs/2301.00774.
+
+Trevor Gale, Deepak Narayanan, Cliff Young, and Matei Zaharia. MegaBlocks: Efficient
+  Sparse Training with Mixture-of-Experts, November 2022. URL http://arxiv.org/abs/
+  2211.15841.
+
+Leo Gao, Jonathan Tow, Baber Abbasi, Stella Biderman, Sid Black, Anthony DiPofi, Charles
+  Foster, Laurence Golding, Jeffrey Hsu, Alain Le Noac’h, Haonan Li, Kyle McDonell,
+  Niklas Muennighoff, Chris Ociepa, Jason Phang, Laria Reynolds, Hailey Schoelkopf,
+  Aviya Skowron, Lintang Sutawika, Eric Tang, Anish Thite, Ben Wang, Kevin Wang, and
+  Andy Zou. The language model evaluation harness, 07 2024. URL https://zenodo.org/
+  records/12608602.
+
+Pengcheng He, Xiaodong Liu, Jianfeng Gao, and Weizhu Chen. DeBERTa: Decoding-
+  enhanced BERT with Disentangled Attention, October 2021. URL http://arxiv.org/abs/
+  2006.03654.
+
+Dan Hendrycks, Collin Burns, Steven Basart, Andy Zou, Mantas Mazeika, Dawn Song,
+ and Jacob Steinhardt. Measuring massive multitask language understanding, 2021. URL
+ https://arxiv.org/abs/2009.03300.
+
+Keller Jordan, Yuchen Jin, Vlado Boza, Jiacheng You, Franz Cesista, Laker Newhouse, and
+  Jeremy Bernstein. Muon: An optimizer for hidden layers in neural networks, 2024. URL
+  https://kellerjordan.github.io/posts/muon/.
+
+Amirhossein Kazemnejad, Inkit Padhi, Karthikeyan Natesan Ramamurthy, Payel Das, and
+ Siva Reddy. The Impact of Positional Encoding on Length Generalization in Transformers,
+ November 2023. URL http://arxiv.org/abs/2305.19466. arXiv:2305.19466 [cs].
+
+
+                                            10
+Guolin Ke, Di He, and Tie-Yan Liu. Rethinking Positional Encoding in Language Pre-
+ training, March 2021. URL http://arxiv.org/abs/2006.15595.
+Ji Lin, Jiaming Tang, Haotian Tang, Shang Yang, Wei-Ming Chen, Wei-Chen Wang, Guangx-
+   uan Xiao, Xingyu Dang, Chuang Gan, and Song Han. Awq: Activation-aware weight
+   quantization for llm compression and acceleration, 2024. URL https://arxiv.org/abs/
+   2306.00978.
+Hanxiao Liu, Karen Simonyan, and Yiming Yang. DARTS: Differentiable Architecture
+ Search, April 2019. URL http://arxiv.org/abs/1806.09055. arXiv:1806.09055 [cs].
+Beicheng Lou, Nathan Zhao, and Jiahui Wang. Meta-learning from sparse recovery. In Fifth
+  Workshop on Meta-Learning at the Conference on Neural Information Processing Systems, 2021.
+  URL https://openreview.net/forum?id=ODs0nDkjncI.
+Anton Lozhkov, Loubna Ben Allal, Leandro von Werra, and Thomas Wolf. Fineweb-edu: the
+ finest collection of educational content, 2024. URL https://huggingface.co/datasets/
+ HuggingFaceFW/fineweb-edu.
+OpenAI. Gpt-4 technical report, 2024. URL https://arxiv.org/abs/2303.08774.
+Bowen Peng, Jeffrey Quesnelle, Honglu Fan, and Enrico Shippole. Yarn: Efficient context
+  window extension of large language models, November 2023. URL http://arxiv.org/
+  abs/2309.00071.
+Colin Raffel, Noam Shazeer, Adam Roberts, Katherine Lee, Sharan Narang, Michael Matena,
+  Yanqi Zhou, Wei Li, and Peter J. Liu. Exploring the Limits of Transfer Learning with
+  a Unified Text-to-Text Transformer, September 2023. URL http://arxiv.org/abs/1910.
+  10683.
+Esteban Real, Chen Liang, David R. So, and Quoc V. Le. AutoML-Zero: Evolving Machine
+  Learning Algorithms From Scratch, June 2020. URL http://arxiv.org/abs/2003.03384.
+  arXiv:2003.03384 [cs] Read Status: New Read Status Date: 2025-05-16T03:19:24.309Z.
+Utkarsh Saxena, Sayeh Sharify, Kaushik Roy, and Xin Wang. Resq: Mixed-precision
+  quantization of large language models with low-rank residuals, 2025. URL https:
+ //arxiv.org/abs/2412.14363.
+Tal Schuster, Adam Fisch, Jai Gupta, Mostafa Dehghani, Dara Bahri, Vinh Q. Tran, Yi Tay,
+  and Donald Metzler. Confident Adaptive Language Modeling, October 2022. URL
+  http://arxiv.org/abs/2207.07061.
+Noam Shazeer, Azalia Mirhoseini, Krzysztof Maziarz, Andy Davis, Quoc Le, Geoffrey
+ Hinton, and Jeff Dean. Outrageously Large Neural Networks: The Sparsely-Gated
+ Mixture-of-Experts Layer, January 2017. URL http://arxiv.org/abs/1701.06538.
+Jianlin Su, Yu Lu, Shengfeng Pan, Ahmed Murtadha, Bo Wen, and Yunfeng Liu. Roformer:
+   Enhanced transformer with rotary position embedding, November 2023. URL http:
+   //arxiv.org/abs/2104.09864.
+Mingjie Sun, Zhuang Liu, Anna Bair, and J. Zico Kolter. A simple and effective pruning
+ approach for large language models, 2024. URL https://arxiv.org/abs/2306.11695.
+Gemini Team. Gemini: A Family of Highly Capable Multimodal Models, May 2025. URL
+ http://arxiv.org/abs/2312.11805. arXiv:2312.11805 [cs].
+Chiheb Trabelsi, Olexa Bilaniuk, Ying Zhang, Dmitriy Serdyuk, Sandeep Subramanian,
+ Joao Felipe Santos, Soroush Mehri, Negar Rostamzadeh, Yoshua Bengio, and Christopher J
+ Pal. Deep complex networks. In International Conference on Learning Representations, 2018.
+ URL https://openreview.net/forum?id=H1T2hmZAb.
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N.
+ Gomez, Lukasz Kaiser, and Illia Polosukhin. Attention is all you need, 2023. URL
+ https://arxiv.org/abs/1706.03762.
+
+
+                                             11
+Benyou Wang, Donghao Zhao, Christina Lioma, Qiuchi Li, Peng Zhang, and Jakob Grue
+  Simonsen. Encoding word order in complex embeddings, June 2020. URL http://arxiv.
+  org/abs/1912.12333.
+Rowan Zellers, Ari Holtzman, Yonatan Bisk, Ali Farhadi, and Yejin Choi. Hellaswag: Can a
+  machine really finish your sentence?, 2019. URL https://arxiv.org/abs/1905.07830.
+
+
+A     Appendix
+
+A.1   Details for Illustrative Examples
+
+In the example of simple token comparison, one uses the dimensions with l > lt for the
+token embedding. For Eq. 16, the token embedding is simply:
+                                             0
+                                           
+                                           .. 
+                                           . 
+                                          0
+                                           
+                                       x=                                       (27)
+                                           x lt 
+                                           . 
+                                           .. 
+                                           xD
+where Wt∈{q,k} = I. Namely, the model simply needs to learn to store token-specific
+information into low-frequency bases that are almost independent of position.
+In the example of token-dependent position comparison, Eq. 26 results from the following
+choice of projection matrix:
+                                                                                            0
+                                                                                               
+                                                                             a1
+                                                                                
+                                                                                             ′
+                                                                                         a1 
+              −iθ1
+                e         e−2iθ1    ...     e−iθ1     e−2iθ1
+                                                                          0           0 
+                                                                           a                 
+              e−iθ2      e−2iθ2            e−iθ2       − 2iθ                 2          ′ 
+                                    ...               e       2 
+                                                                                  (nn)  a2 
+                                                                                
+       W̃q =  .
+                                                                 (n)       0
+                                                                 , x̃i = 
+                                                                           .  , x̃i  =
+                                                                                         0        (28)
+             
+                            ..      ..        ..          ..                                   
+              ..            .         .       .           .              .           . 
+                                                                           .           .. 
+               e−iθD/2   e−2iθD/2   ...    e−iθD/2   e−2iθD/2             a                  
+                                                                             D/4         0 
+                                                                             0
+                                                                                          a′D/4
+
+ Here q̃i = W̃q x̃i , where x̃i is the embedding of the i-th token in complex form. at and a′t are
+the degrees of freedom to encode the token information. As long as ∑t at = ∑t a′t , we can
+get Eq. 26 to hold.
+
+A.2   Details for Training Settings
+
+We apply a 50-step linear warmup, then cosine decay from 2 × 10−3 to 4 × 10−4 . The batch
+size is 64 sequences, and each run is trained for 30,000 steps. Training uses bfloat16 autocast
+with distributed data-parallel execution launched via torchrun.
+
+
+
+
+                                                     12
+

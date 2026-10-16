@@ -1,0 +1,48 @@
+{
+  "eval": {
+    "128": {
+      "acc": 1.0,
+      "nll": 0.0
+    },
+    "512": {
+      "acc": 0.9997291666666667,
+      "nll": 0.001446665802419529
+    }
+  },
+  "final_loss": 2.0540341286726276e-05,
+  "wrap": [
+    0.6832519585834905,
+    0.21311475409836064
+  ],
+  "construction": {
+    "mode": "balanced",
+    "angle_err_max": 5.008208529881789e-07,
+    "step_min": 8.496789632772561e-06,
+    "w_out_absmax_signed": 0.3756929337978363,
+    "w_out_absmax_built": 1.2675728797912598,
+    "w_in_absmax_signed": 0.18418990075588226,
+    "w_in_absmax_built": 0.23921114206314087,
+    "step_absmax_signed": 1.8681996481741514,
+    "step_absmax_built": 6.283167362213135,
+    "omega_absmax_signed": 2.774153232574463,
+    "omega_absmax_built": 2.774153232574463,
+    "n_omega_negative": 1,
+    "latent_cos_signed": -0.993717818246421,
+    "latent_cond_signed": 17.814946184580762
+  },
+  "source_acc": 1.0,
+  "frozen_acc": 1.0,
+  "frozen_wrap": [
+    0.01324368616472047,
+    0.8076923076923077
+  ],
+  "source_wrap": [
+    0.013243570923805237,
+    0.8076923076923077
+  ],
+  "logit_diff_max": {
+    "128": 0.0002837181091308594,
+    "512": 0.0034198760986328125
+  },
+  "init": "/home/prashr/mapformer/runs/wrap_existence/p0/SO_s603/SO.pt"
+}

@@ -1,0 +1,372 @@
+                                                                SINUSOIDAL FREQUENCY ESTIMATION BY GRADIENT DESCENT
+
+                                                                                    Ben Hayes, Charalampos Saitis, György Fazekas
+
+                                                                            Centre for Digital Music, Queen Mary University of London
+
+
+                                                                       ABSTRACT                                      proliferation of models applying differentiable digital signal pro-
+                                                                                                                     cessing (DDSP) [14] – a family of techniques which allow neural
+arXiv:2210.14476v2 [eess.SP] 18 Nov 2022
+
+
+
+
+                                           Sinusoidal parameter estimation is a fundamental task in appli-           networks to directly control digital signal processors – highlights
+                                           cations from spectral analysis to time-series forecasting. Esti-          the need for a method for sinusoidal frequency estimation by gra-
+                                           mating the sinusoidal frequency parameter by gradient descent             dient descent.
+                                           is, however, often impossible as the error function is non-convex
+                                                                                                                         Applications of DDSP have included providing high level con-
+                                           and densely populated with local minima. The growing family of
+                                                                                                                     trols for harmonic-plus-noise synthesizers [14], controlling digi-
+                                           differentiable signal processing methods has therefore been un-
+                                                                                                                     tal synthesis methods with neural networks [15, 16], modelling
+                                           able to tune the frequency of oscillatory components, preventing
+                                                                                                                     [17] and controlling [18] audio effects and direct filter design
+                                           their use in a broad range of applications. This work presents a
+                                                                                                                     [19]. Yet, despite success at these complex tasks, DDSP-based
+                                           technique for joint sinusoidal frequency and amplitude estimation
+                                                                                                                     models have so far been unable to predict sinusoidal frequency
+                                           using the Wirtinger derivatives of a complex exponential surro-
+                                                                                                                     parameters. Aspects of the problem have been acknowledged in
+                                           gate and any first order gradient-based optimizer, enabling end-
+                                                                                                                     the literature. Turian & Henry [20] showed that frequency domain
+                                           to-end training of neural network controllers for unconstrained
+                                                                                                                     distances lack a stable and informative frequency gradient, whilst
+                                           sinusoidal models.
+                                                                                                                     Engel et al. [21] used a parameter regression pretraining scheme
+                                              Index Terms— differentiable signal processing, machine                 to circumvent issues with local minima when optimizing sinu-
+                                           learning, sinusoidal parameter estimation                                 soidal frequencies. Caspe et al. [16] similarly note that gradient
+                                                                                                                     descent fails to tune the modulation frequencies of a differentiable
+                                                                                                                     FM synthesizer due to ripple in the error function.
+                                                                 1. INTRODUCTION
+                                                                                                                         In this work, we propose a simple surrogate to the sinusoidal
+                                                                                                                     oscillator with gradients that allow first-order gradient based op-
+                                           Estimating sinusoidal parameters from a signal is a crucial step
+                                                                                                                     timization. With this approach, we take a first step towards end-
+                                           in numerous signal processing algorithms, and a wealth of tech-
+                                                                                                                     to-end learning of neural network controllers for a broader family
+                                           niques have been proposed in both the single and multiple sinu-
+                                                                                                                     of differentiable audio synthesizers and signal processors.
+                                           soid formulations. Most seek the maximum likelihood (ML) es-
+                                           timate of sinusoidal model parameters in the presence of white
+                                           Gaussian noise, the statistical properties of which are well estab-             2. SINUSOIDAL FREQUENCY ESTIMATION
+                                           lished [1].
+                                                                                                                     We are concerned with modelling the class of discrete-time sig-
+                                               Estimators of sinusoidal frequency must circumvent the non-
+                                                                                                                     nals that can be expressed as:
+                                           linearity of the model and non-convexity of the corresponding ob-
+                                           jective as a function of the frequency parameter. The most com-                                      X
+                                           mon approach is thus to apply a multi-stage algorithm in which                          xn = vn +          αk cos (ωk n + φk ) ,          (1)
+                                                                                                                                                k∈K
+                                           an initial frequency estimate is obtained through search heuris-
+                                           tics [2, 3, 4], spectral peak interpolation [5], discrete-time Fourier    where vn ∼ N 0, σ 2 , and αk , ωk , φk are the amplitude, fre-
+                                                                                                                                             
+                                           transform (DTFT) decorrelation [6], or other procedures [7, 8, 9],        quency, and phase parameters, respectively, of unordered sinu-
+                                           and then refined using an optimization method. Alternate ap-              soidal components with index set K ⊆ N. Following the stan-
+                                           proaches include iteratively updating a model-based relaxation of         dard ML derivations, finding estimates α̂k , ω̂k , φ̂k is equivalent
+                                           the problem [10, 8], linearizing the problem using delay operators        to minimizing the mean squared error of the model. In many ap-
+                                           [11, 12], or defining a surrogate model where an equivalence can          plications of machine learning to audio, we are concerned with
+                                           be drawn between solutions [13].                                          other formulations of the error. These can be accounted for by
+                                               Such methods achieve accurate estimates but are unsuitable for        expressing the likelihood in terms of other signal representations,
+                                           use in the context of end-to-end models fit by gradient descent,          such as the discrete Fourier transform (DFT).
+                                           where integrating derivative-free operations or complex heuris-              It is well established that when ωk and φk are known, this
+                                           tics is challenging and often unstable. In particular, the recent         problem is linear in αk [22] – a property which, for example, al-
+                                                                                                                     lows DDSP models to directly predict harmonic amplitudes [14].
+                                                 Ben Hayes is supported by UK Research and Innovation [grant num-
+                                           ber EP/S022694/1]. This research utilised Queen Mary’s Apocrita HPC fa-   When φ is unknown, an optimal estimate can be found by evaluat-
+                                           cility, supported by QMUL Research-IT. http://doi.org/10.5281/            ing the DTFT at the known frequencies ωk . In the case where fre-
+                                           zenodo.438045                                                             quency is unknown, however, the optimization problem is more
+                              2
+                                                                                                                 N +1                    2
+       ∑Nn=1 (xn − x̂n ) (MSE)                                    ∑Nn=1 |xn − x̂n | (MAE)                   ∑k=1
+                                                                                                              2
+                                                                                                                 |Xk | − X̂k                  (DFT-MSE)
+
+
+
+
+             Loss (N = 32)
+             Loss (N = 2048)
+             Ground truth                   (a)                                                  (b)                                                    (c)
+
+ 0.0               0.2              0.4                  0.0          0.2          0.4                          0.0              0.2              0.4
+                                                       Normalised Frequency f 0 (cycles/sample)
+
+Fig. 1. The (a) mean squared error, (b) mean absolute error, and (c) DFT modulus mean squared error loss computed between two
+sinusoidal signals (N = 32 and N = 2048) as a function of the predicted frequency. Spectral leakage results in local minima across
+the full parameter range at lower N , while higher N reveals the lack of informative frequency gradient, preventing effective first order
+optimization.
+
+challenging. Substituting Eqn. 1 into the mean squared error, for
+example, it is clear that the minimization objective is highly non-                                                           
+convex (as illustrated in Fig. 1), consisting of a sum of second                              ∂             1       ∂     ∂                   n n−1
+                                                                                                   sn (z) =            +j          sn (z) =     z̄            (3)
+order intermodulation products.                                                               ∂ z̄          2       ∂x    ∂y                  2
+    As only the global minimum1 represents a viable model fit,
+                                                                                    for z = x + jy . Where L is the loss between a signal produced by
+such a loss surface is problematic for gradient based optimizers:
+                                                                                                      ∂ z̄ is then the direction of steepest descent [23].
+                                                                                    s and a target, − ∂L
+unless parameter estimates are initialized in the main basin of
+                                                                                    Unlike the frequency parameter of a real sinusoid, the surrogate
+the function, optimization will converge on an incorrect solution.
+                                                                                    parameter allows both the frequency and amplitude decay of the
+Further, as Turian & Henry [20] note, the gradient of audio loss
+                                                                                    signal to be varied. As illustrated in Fig. 2, an optimizer can thus
+functions is generally uninformative with respect to frequency.
+                                                                                    move the parameter inside the unit circle, creating an exponential
+This is intuitive, considering the orthogonality of sinusoids on an
+                                                                                    amplitude decay, before moving it back out at the correct angle
+infinite time horizon. As N → ∞, the ripple reduces in magni-
+                                                                                    from the real line.
+tude until, in the limit, the loss is zero when ω̂ = ω and constant
+for all other ω̂ . The effect of increasing N is illustrated in blue in                The frequency estimate represented by the minimum is given
+Fig. 1.                                                                             by the complex argument of the surrogate parameter ωk∗ = ∠zk∗ ,
+                                                                                    where Z ∗ = {zk∗ ∈ C | k ∈ K} minimizes the loss:
+2.1. Complex exponential surrogate                                                                                                             !2
+                                                                                                                    N
+                                                                                                  ∗
+                                                                                                                    X            X
+Our proposed technique circumvents these issues by defining a                                   Z = arg min               xn −         sn (zk )               (4)
+                                                                                                            Z
+surrogate for a differentiable sinusoidal model. The surrogate                                                      n=1          k∈K
+produces an exponentially decaying sinusoid as the real part of
+                                                                                    It follows that when target amplitudes αk = 1, this gives |zk∗ | =
+an exponentiated complex number:
+                                                                                    1 and ∠zk∗ = ωk , which is equivalent to the ML estimate for
+                                                                                    frequency. In other cases, a linear amplitude parameter α̂k can
+                 sn (zk ) , Re zkn = |zk |n cos n∠zk                         (2)    be introduced to the surrogate, i.e. α̂k sn (zk ). In this way, ωk∗
+                                  
+                                                                                    can give the ML estimate when αk 6= 1 and αk is known, by
+                                                                                    simply setting αˆk = αk . In the case where target amplitudes are
+where Z = {zk ∈ C | k ∈ K} is a set of specific surrogate pa-                       unknown, α̂k can be learned jointly with surrogate parameters.
+rameters with index set K . As the surrogate maps sn : C → R it
+does not have a complex derivative. However, its partial deriva-                    2.1.1. Amplitude estimation
+tives can be computed using Wirtinger’s calculus. A detailed ex-
+planation of these operators is beyond the scope of this paper, but                 Even when an amplitude coefficient is jointly learned, the com-
+we refer the interested reader to the work of Kreuz-Delgado [23]                    plex exponential surrogate and the standard sinusoid may differ
+for an introduction. For present purposes, the conjugate Wirtinger                  in the evolution of their amplitudes across time. However, as-
+derivative of the surrogate is:                                                     suming zk∗ minimizes the least squares objective, we can recover
+    1
+                                                                                    an amplitude estimate by solving the opposite least squares prob-
+      Strictly, there exist K! such minima as all permutations of sinusoidal com-
+                                                                                    lem. Specifically, to recover amplitudes from a surrogate model
+ponents are equivalent under summation. However, we concern ourselves here
+solely with arriving at any of them, leaving study of the symmetries of the loss    consisting of |K| components zk , we define U ∈ RN ×K where
+                                                                                                                                 PK
+surface to future work.                                                             unk = cos ∠zk n and v ∈ RN where v =            k=1 sn (zk ). For
+                               j
+
+                                                                                                                                         Statistic
+
+
+
+
+                                                                         Squared Freq. Error (dB)
+                                                                                                    −40
+                                                                                                                                            mean
+                                                                                                                                            median
+
+                                                                                                    −80                                   Loss Fn
+                                                                                                                                            DFT−MSE
+                                                                                                                                            MSE
+                                                                  1
+                                                                                                    −120
+                                                                                                                                            CRLB
+
+
+                                                                                                    −160
+                                                                                                           0   10      20      30   40
+                                                                                                                    SNR (dB)
+                                                    e jω
+                                                    e− jω
+                                                                        Fig. 3. The results of sinusoidal frequency estimation by gra-
+                                                    Unit circle         dient descent for a single sinusoid in Gaussian white noise, us-
+                                                                        ing both DFT magnitude mean squared error (DFT-MSE) and
+                                                                        time-domain mean squared error (MSE). Both mean and median
+Fig. 2. Directions of negative Wirtinger conjugate derivatives          squared error are plotted for each experiment. Also plotted for
+∂LMSE
+  ∂ z̄ displayed on the complex plane, where LMSE is the mean-          reference is the Cramér-Rao lower bound (CRLB) on unbiased
+squared error taken with a single sinusoid of target frequency ω .      frequency estimators.
+Arrows point in the direction of steepest descent. Our approach
+uses the Wirtinger differential operator with a complex exponen-
+tial as a surrogate for a sinusoidal oscillator to allow frequency
+estimation in a differentiable signal processing framework.             synthesized using the real valued sinusoidal model in Eqn 1. A
+                                                                        single starting parameter estimate was uniformly sampled from
+                                                                        within the unit circle used for all 2000 targets, and the procedure
+some linear signal representation h : RN → RM , such as the             was repeated with 10 different pseudo-random number generator
+identity mapping or a projection into a Fourier basis, the ampli-       seeds. Optimization proceeded for 50k steps using the Adam op-
+tude estimate is given by the ordinary least squares solution:          timizer with a learning rate of 0.0001 and the mean squared error
+                                                                        loss on either the time-domain signal or DFT magnitude spec-
+                              −1
+                                                                        trum.
+                
+            α∗ = H(U )T H(U )     H(U )T h (v) ,                  (5)
+                                                                           Fig. 3 displays the results of this experiment. The mean
+where H : RN ×K → RM ×K applies h to each column of a ma-               and median squared error between the predicted and ground
+trix. In practice, we may wish to select a nonlinear h (e.g. the        truth frequency parameters are plotted on a decibel scale (i.e.
+modulus of the DFT), leading to a nonlinear least squares prob-         10 log10 (MSE)). The dotted black line plots the Cramér-Rao
+lem. However, when the nonlinear solution is reasonably well            lower bound (CRLB) on variance for an unbiased estimator of
+approximated by the linear solution for values of |zk∗ | close to 1,    sinusoidal frequency in Gaussian white noise, as given by Kay
+jointly learning the amplitude factor and multiplying α̂k αk∗ ap-       [1]. Whilst enquiry into the convergence properties of our method
+pears to yield acceptable estimates.                                    – and therefore the underlying bias of the estimator – is beyond
+                                                                        the scope of this paper, this bound is representative of the per-
+                       3. EVALUATION                                    formance of other sinusoidal parameter estimation algorithms.
+                                                                        We thus plot it here to facilitate comparison and to illustrate
+The performance of the surrogate model as a sinusoidal parameter        that the surrogate model with time domain MSE loss is capa-
+estimator was evaluated by fitting the model to sinusoidal signals      ble of achieving an error comparable with non-gradient based
+by gradient descent. All signals were of length N = 4096.               estimators.
+
+3.1. Single sinusoid frequency estimation                                  We note that the mean squared error of the frequency domain
+                                                                        loss (DFT-MSE) does not fall below roughly −83dB, but the
+In the single sinusoid case, we generated target signals with fixed     median squared error continues to fall, implying an increasingly
+amplitude α = 1 and initial phase φ = 0. The frequency parame-          skewed error distribution as the SNR rises. We speculate that this
+ter was sampled at 100 equal steps in the interval [0.1π, 0.9π], and    occurs due to the loss of phase information in taking the modulus
+the signal-to-noise ratio (SNR) at 20 steps in the interval [0, 40]     of the spectrum, and will investigate this hypothesis in future
+dB, for a total of 2000 targets. The corresponding signals were         work.
+                                                                                      tween target and predicted magnitude spectra using a dB scale for
+ Mag. Spec. MSE (dB)
+
+                       −40
+                                                                                      both our surrogate model and the real sinusoidal model baseline.
+                                                                       Model          For comparison, we also plot the errors achieved with randomly
+                       −60
+                                                                                      sampled sinusoidal parameters. Here, as expected, the surrogate
+                                                                          Baseline
+                                                                                      clearly achieves superior performance, outperforming the base-
+                       −80                                                Random
+                                                                                      line in all configurations.
+                                                                          Surrogate
+                                                                                          We note that the performances of both the baseline and ran-
+                       −100                                                           domly sampled parameters improve as the number of components
+                                                                                      increases. We speculate that this effect is due to the proportion-
+                                  2      8      32     2      8   32                  ally smaller expected distance between each model component
+                                      DFT−MSE              MSE
+                                                                                      and any target component for higher values of |K|. Indeed, the
+                                                                                      decrease observed in the metric for both the baseline and random
+                                  Loss / Number of sinusoids                          models is almost exactly proportional to the increase in the num-
+                                                                                      ber of components – that is, on the decibel scale we observe a
+Fig. 4. Violin plots of the results of sinusoidal frequency and                       change of 10 log10 14 ≈ −6.02 for a 4× increase in components.
+amplitude estimation by gradient descent for mixtures of |K| ∈                            Conversely, the surrogate model’s performance slightly de-
+{2, 8, 32} sinusoids, using both DFT magnitude (DFT-MSE) and                          grades as |K| increases. Through informal observation of con-
+time-domain (MSE) mean squared error losses. Plots represent                          verged models, we hypothesize that this occurs due to a greater
+the distribution of mean squared errors between magnitude spec-                       number of a specific class of local minimum, wherein multiple
+tra across 2000 runs.                                                                 model components combine to match a single component in the
+                                                                                      target signal. We leave formal study of this behaviour to future
+                                                                                      work, but note that this phenomenon seems to predominantly
+                                                                       Model          occur only at the expense of quieter signal components.
+ Mag. Spec. MSE (dB)
+
+
+
+
+                                                                                          To illustrate the optimization dynamics of the surrogate, Fig.
+                                                                          Baseline
+                                                                                      5 plots the evolution of the metric throughout optimization for
+                       −30                                                Surrogate
+                                                                                      both the surrogate and baseline model for a randomly selected
+                                                                       Number of      set of target parameters. Here we see that the baseline metric
+                                                                       sinusoids      either does not fall, or falls imperceptibly, as should be expected
+                       −35                                                2           given the properties described in Section 2. The surrogate metric,
+                                                                          8           however, does clearly fall before converging on a final value. It
+                                                                          32          appears to solve the multi-sinusoid problem sequentially – that
+                                                                                      is, it seems to resolve each component one-by-one, causing the
+                              0       5000 10000 15000 20000 25000                    metric to fall to a series of plateaus. This observation may have
+                                                                                      implications for training strategies in DDSP deep learning tasks,
+                                             Optimiser Step
+                                                                                      where a plateau in a metric is typically taken as a signifier that a
+                                                                                      model has converged.
+Fig. 5. The mean squared error between estimated and target
+magnitude spectra, evaluated at every 100th optimizer step for                                               4. CONCLUSION
+baseline and surrogate models trained with time-domain MSE
+loss with |K| ∈ {2, 8, 32}.                                                           This work presented a technique for matching the frequency and
+                                                                                      amplitude parameters of a single- and multi-component sinu-
+                                                                                      soidal model to a target signal by gradient descent. We evaluated
+3.2. Multi-sinusoid frequency and amplitude estimation                                the performance of our method on single and multiple sinusoid
+                                                                                      signals and demonstrated that it clearly outperforms a standard
+In the multi-sinusoid case, targets were generated with phase                         sinusoidal model in the multi-sinusoid case, whilst approaching
+φk = 0, and frequency and amplitude sampled from uniform dis-                         the performance of other, non-gradient based estimators in the
+tributions, ωk ∼ U(0.1π, 0.9π) and αk ∼ U(0.1, 1.0). 2000 sets                        single sinusoid case.
+of target parameters were sampled, and the corresponding signals                          This problem was previously intractable using differentiable
+synthesized using the real valued sinusoidal model. A random set                      signal processing techniques, preventing a variety of applications
+of starting surrogate parameter estimates was uniformly sampled                       of this family of methods, including the modelling of inharmonic
+from the unit circle for each target, and linear amplitude was                        audio signals, unsupervised fundamental frequency detection,
+initialized for each component at α̂k = |K|    1
+                                                 . The experiment                     and more. Our approach now paves the way for these applica-
+was repeated for |K| ∈ {2, 8, 32}. Optimization ran for 100k                          tions to be explored. In particular, we believe our surrogate model
+steps using the same optimizer and losses. As a baseline, the                         is suitable for use as a drop-in replacement for a differentiable
+same procedure was applied, using the same targets and starting                       sinusoidal model, and in future work will explore its capabili-
+estimates, to a differentiable real valued sinusoidal model.                          ties in end-to-end learning with differentiable signal processing.
+    Fig. 4 displays the results of the experiment described in sec-                   We will also conduct further study into the surrogate model’s
+tion 3.2. We plot the distributions of mean squared errors be-                        optimization characteristics.
+                      5. REFERENCES                                 [12] Anastasiia O. Vediakova, Alexey A. Vedyakov, Anton A.
+                                                                         Pyrkin, Alexey A. Bobtsov, and Vladislav S. Gromov, “Fi-
+ [1] Steven Kay, Fundamentals of Statistical Signal Processing:          nite Time Frequency Estimation for Multi-Sinusoidal Sig-
+     Estimation Theory, vol. 1, Pearson, 1st edition, May 1993.          nals,” European Journal of Control, vol. 59, pp. 38–46, May
+                                                                         2021.
+ [2] P. Stoica, R.L. Moses, B. Friedlander, and T. Soderstrom,
+     “Maximum likelihood estimation of the parameters of mul-       [13] R. Kumaresan, L. Scharf, and A. Shaw, “An algorithm for
+     tiple sinusoids from noisy measurements,” IEEE Transac-             pole-zero modeling and spectral analysis,” IEEE Transac-
+     tions on Acoustics, Speech, and Signal Processing, vol. 37,         tions on Acoustics, Speech, and Signal Processing, vol. 34,
+     no. 3, pp. 378–392, Mar. 1989.                                      no. 3, pp. 637–640, June 1986.
+                                                                    [14] Jesse Engel, Lamtharn (Hanoi) Hantrakul, Chenjie Gu, and
+ [3] D. Rife and R. Boorstyn, “Single tone parameter estima-
+                                                                         Adam Roberts, “DDSP: Differentiable Digital Signal Pro-
+     tion from discrete-time observations,” IEEE Transactions
+                                                                         cessing,” in 8th International Conference on Learning Rep-
+     on Information Theory, vol. 20, no. 5, pp. 591–598, Sept.
+                                                                         resentations, Addis Ababa, Ethiopia, Apr. 2020.
+     1974.
+                                                                    [15] Ben Hayes, Charalampos Saitis, and György Fazekas,
+ [4] T. Abatzoglou, “A fast maximum likelihood algorithm                 “Neural Waveshaping Synthesis,” in Proceedings of the
+     for frequency estimation of a sinusoid based on Newton’s            22nd International Society for Music Information Retrieval
+     method,” IEEE Transactions on Acoustics, Speech, and Sig-           Conference, Online, Nov. 2021.
+     nal Processing, vol. 33, no. 1, pp. 77–89, Feb. 1985.
+                                                                    [16] Franco Caspe, Andrew McPherson, and Mark Sandler,
+ [5] D. C. Rife and R. R. Boorstyn, “Multiple Tone Parameter             “DDX7: Differentiable FM Synthesis of Musical Instru-
+     Estimation From Discrete-Time Observations,” Bell System            ment Sounds,” Aug. 2022, arXiv:2208.06169 [cs, eess].
+     Technical Journal, vol. 55, no. 9, pp. 1389–1410, Nov. 1976.
+                                                                    [17] Shahan Nercessian, Andy Sarroff, and Kurt James Werner,
+ [6] Saman S. Abeysekera, “Least-Squares Multiple Frequency              “Lightweight and Interpretable Neural Modeling of an Au-
+     Estimation using Recursive Regression Sum of Squares,” in           dio Distortion Effect Using Hyperconditioned Differen-
+     2018 IEEE International Symposium on Circuits and Sys-              tiable Biquads,” in ICASSP 2021 - 2021 IEEE Interna-
+     tems (ISCAS), May 2018, pp. 1–5.                                    tional Conference on Acoustics, Speech and Signal Process-
+                                                                         ing (ICASSP), Toronto, ON, Canada, June 2021, pp. 890–
+ [7] S. Parthasarathy and D.W. Tufts, “Maximum-likelihood es-            894, IEEE.
+     timation of parameters of exponentially damped sinusoids,”
+     Proceedings of the IEEE, vol. 73, no. 10, pp. 1528–1530,       [18] Christian J Steinmetz, Nicholas J Bryan, and Joshua D
+     1985.                                                               Reiss, “Style Transfer of Audio Effects with Differentiable
+                                                                         Signal Processing,” J. Audio Eng. Soc., vol. 70, no. 9, pp.
+ [8] Fan-Shuo Tseng, Mantsawee Sanpayao, Tsang-Yi Wang,                  14, 2022.
+     and Ming-Xian Zhong, “Low-Complexity High-Resolution
+                                                                    [19] Joseph T. Colonel, Christian J. Steinmetz, Marcus Miche-
+     Frequency Estimation of Multi-Sinusoidal Signals,” IEEE
+                                                                         len, and Joshua D. Reiss, “Direct Design of Biquad Fil-
+     Transactions on Instrumentation and Measurement, vol. 71,
+                                                                         ter Cascades with Deep Learning by Sampling Random
+     pp. 1–12, 2022, Conference Name: IEEE Transactions on
+                                                                         Polynomials,” in ICASSP 2022 - 2022 IEEE International
+     Instrumentation and Measurement.
+                                                                         Conference on Acoustics, Speech and Signal Processing
+                                                                         (ICASSP), May 2022, pp. 3104–3108.
+ [9] P. Vishnu and C.S. Ramalingam, “An Improved LSF-
+     based Algorithm for Sinusoidal Frequency Estimation that       [20] Joseph Turian and Max Henry, “I’m Sorry for Your
+     Achieves Maximum Likelihood Performance,” in 2020 In-               Loss: Spectrally-Based Audio Distances Are Bad at
+     ternational Conference on Signal Processing and Commu-              Pitch,” arXiv:2012.04572 [cs, eess], Dec. 2020, arXiv:
+     nications (SPCOM), Bangalore, India, July 2020, pp. 1–5,            2012.04572.
+     IEEE.
+                                                                    [21] Jesse Engel, Rigel Swavely, and Adam Roberts, “Self-
+[10] Y. Bresler and A. Macovski, “Exact maximum likelihood               supervised Pitch Detection by Inverse Audio Synthesis,” in
+     parameter estimation of superimposed exponential signals            Proceedings of the International Conference on Machine
+     in noise,” IEEE Transactions on Acoustics, Speech, and              Learning, 2020, p. 9.
+     Signal Processing, vol. 34, no. 5, pp. 1081–1089, Oct. 1986.
+                                                                    [22] Julius O. Smith, Spectral Audio Signal Processing, W3K
+[11] Vladislav S. Gromov, Alexey A. Vedyakov, Anastasiia O.              Publishing, 2011.
+     Vediakova, Alexey A. Bobtsov, and Anton A. Pyrkin, “First-
+                                                                    [23] Ken Kreutz-Delgado, “The Complex Gradient Operator and
+     order frequency estimator for a pure sinusoidal signal,” in
+                                                                         the CR-Calculus,” June 2009, arXiv:0906.4835 [math].
+     2017 25th Mediterranean Conference on Control and Au-
+     tomation (MED), July 2017, pp. 7–11, ISSN: 2473-3504.
+

@@ -1,0 +1,838 @@
+                                                                   On the Expressiveness and Length Generalization of
+                                                                   Selective State-Space Models on Regular Languages
+                                                             Aleksandar Terzić1, 2 , Michael Hersche1 , Giacomo Camposampiero1, 2 ,
+                                                                     Thomas Hofmann2 , Abu Sebastian1 , Abbas Rahimi1
+                                                                                                     1
+                                                                                                IBM Research - Zurich
+                                                                                                     2
+                                                                                                       ETH Zürich
+                                                                     {aleksandar.terzic1, michael.hersche, giacomo.camposampiero1}@ibm.com,
+                                                                             thomas.hofmann@inf.ethz.ch, {ase, abr}@zurich.ibm.com
+                                                                      Abstract                                  ing explicit mappings of FSA dynamics onto RNN weights,
+                                                                                                                as surveyed in (Svete and Cotterell 2023). In practice, RNNs
+arXiv:2412.19350v2 [cs.LG] 4 Jul 2025
+
+
+
+
+                                          Selective state-space models (SSMs) are an emerging alterna-
+                                          tive to the Transformer, offering the unique advantage of par-        learn to emulate various FSA and often generalize to se-
+                                          allel training and sequential inference. Although these mod-          quences much longer than those seen in training (Delétang
+                                          els have shown promising performance on a variety of tasks,           et al. 2023). However, in contrast to the Transformer, RNNs
+                                          their formal expressiveness and length generalization proper-         cannot be parallelized across the sequence length.
+                                          ties remain underexplored. In this work, we provide insight              Recently, a novel family of sequence models has emerged:
+                                          into the workings of selective SSMs by analyzing their ex-            linear state-space models (SSMs) (Gu, Goel, and Ré 2022;
+                                          pressiveness and length generalization performance on reg-            Gupta, Gu, and Berant 2022; Smith, Warrington, and Linder-
+                                          ular language tasks, i.e., finite-state automaton (FSA) emu-          man 2023; Orvieto et al. 2023). SSMs provide an alternative
+                                          lation. We address certain limitations of modern SSM-based            sequence processing backbone that can be executed in par-
+                                          architectures by introducing the Selective Dense State-Space
+                                          Model (SD-SSM), the first selective SSM that exhibits per-
+                                                                                                                allel during training and sequentially during inference. As a
+                                          fect length generalization on a set of various regular language       key driver for higher computational efficiency, many (selec-
+                                          tasks using a single layer. It utilizes a dictionary of dense tran-   tive) SSMs utilize diagonal rather than dense transition ma-
+                                          sition matrices, a softmax selection mechanism that creates a         trices (Gupta, Gu, and Berant 2022; Gu et al. 2022; Smith,
+                                          convex combination of dictionary matrices at each time step,          Warrington, and Linderman 2023; Orvieto et al. 2023; Gu
+                                          and a readout consisting of layer normalization followed by a         and Dao 2023; De et al. 2024), allowing parallel scans for
+                                          linear map. We then proceed to evaluate variants of diagonal          efficient training while remaining effective in many tasks
+                                          selective SSMs by considering their empirical performance             of interest. The most recent variants based on diagonal se-
+                                          on commutative and non-commutative automata. We explain               lective SSMs outperform the Transformer on several bench-
+                                          the experimental results with theoretical considerations.             marks, including language modeling (Gu and Dao 2023).
+                                        Code — https://github.com/IBM/selective-dense-state-                       Although formal limits on the expressiveness of selective
+                                          space-model                                                           SSMs have recently been derived in the literature (Zubić
+                                                                                                                et al. 2024; Orvieto et al. 2024; Merrill, Petty, and Sabharwal
+                                                                                                                2024; Cirone et al. 2024; Sarrof, Veitsman, and Hahn 2024;
+                                                              1     Introduction                                Grazzi et al. 2024), the performance of selective SSMs on
+                                        Large language models (LLMs) are most often based on                    FSA emulation has not been sufficiently explored. In this
+                                        the Transformer architecture (Vaswani et al. 2017), a neu-              work, we experimentally and analytically study the capabil-
+                                        ral network that is highly parallelizable across a sequence of          ities of SSMs and selective SSMs to generalize to longer
+                                        tokens. The parallelizability, coupled with hardware-aware              sequences than seen during training on a set of various FSA
+                                        implementations of the model (Dao 2024), have allowed                   emulation tasks. Our contributions are as follows:
+                                        for efficient training over large corpora of long sequences.               In Sec. 3, we introduce the first selective SSM capable
+                                        However, despite empirical breakthroughs in natural lan-                of perfect (≥ 99.9%) length generalization on FSA emula-
+                                        guage processing (NLP), recent theoretical studies demon-               tion using a single layer. We call this model SD-SSM, the
+                                        strate that the Transformer has limited expressiveness, in              Selective Dense State-Space Model. SD-SSM utilizes a dic-
+                                        particular when faced with state-tracking problems such as              tionary of dense unstructured transition matrices, a softmax
+                                        deciding the truth value of regular language expressions, i.e.,         selection mechanism that creates a convex combination of
+                                        emulating finite-state automata (FSA) (Hahn 2020; Bhat-                 a fixed number of transition matrices at each step, and fi-
+                                        tamishra, Ahuja, and Goyal 2020; Merrill and Sabharwal                  nally applies a readout consisting of layer normalization fol-
+                                        2023).                                                                  lowed by a linear map. We identify that a common design
+                                           On the other hand, nonlinear recurrent neural networks               choice, the presence of a nonlinear readout, prevents SD-
+                                        (RNNs) can emulate any FSA; this can be seen by consider-               SSM from achieving full accuracy on a challenging FSA
+                                                                                                                emulation task. We compare the model with the standard
+                                        Copyright © 2025, Association for the Advancement of Artificial
+                                        Intelligence (www.aaai.org). All rights reserved.
+                                                                                                                RNN and the LSTM (Hochreiter and Schmidhuber 1997)
+in terms of the minimal sample length required to general-                                         1
+ize in length and find that SD-SSM exhibits better length
+generalization. Moreover, running SD-SSM with a parallel
+algorithm yields a notable speed-up over its sequential im-                0         Even                    Odd           0
+plementation.
+   In Sec. 4, we take a closer look at selective SSMs with                                         1
+diagonal complex transition matrices. We evaluate them on
+a set of FSA emulation tasks and analyze the effects of dif-
+ferent architectural design choices on their performance on        Figure 1: The parity automaton with Q={Even, Odd} and
+a commutative and non-commutative automaton. We find               Σ = {0, 1}. The automaton starts in the Even state, toggles
+that perfect in-domain accuracy can be achieved on both au-        on input 1, and makes no transition on input 0.
+tomata, but length generalization is significantly worse on
+the non-commutative one. We explain our experimental re-
+sults with such systems by demonstrating that, under an as-        where Q is a finite set of states, Σ is a finite input alphabet,
+sumption on the mapping of FSA to selective SSMs, single-          δ : Q × Σ → Q is the transition function, qinit ∈ Q is a
+layer selective diagonal SSMs are restricted to emulating          designated initial state, and F ⊆ Q is the set of accepting
+commutative automata.                                              states. In this work, we are not interested in the set F , and
+                                                                   qinit is only of limited interest. This leads us to the definition
+                     2   Background                                of a semi-automaton, which is a 3-tuple (Q, Σ, δ) with Q, Σ,
+                                                                   and δ defined as above.
+In this section we provide an overview of selective SSMs
+                                                                      A rich body of work connects semiautomata with alge-
+and FSA, and present an exact mapping of any FSA to the
+                                                                   braic semigroups (Straubing 1994; Krohn and Rhodes 1965;
+weights of a selective SSM.
+                                                                   Liu et al. 2023; Merrill, Petty, and Sabharwal 2024). A semi-
+State-Space Models (SSMs) and Selective SSMs                       group is a set with an associative binary operation defined
+                                                                   on it. Every semiautomaton induces a transformation semi-
+As their backbone, SSMs implement the standard linear              group consisting of a set of functions ρ : Q → Q defined
+time-invariant system of equations:                                for each σ ∈ Σ by the transition function δ(·, σ). The asso-
+                     xt = Axt−1 + But                       (1)    ciative binary operation on this set is function composition.
+                     yt = Cxt + Dut                         (2)    See, for example, the parity automaton shown in Figure 1.
+                                                                      The corresponding transformation semigroup consists of
+With A ∈ Rn×n , B ∈ Rn×d , C ∈ Rd×n and D ∈ Rd×d                   two elements, these being the transition functions corre-
+Since any real n × n matrix is diagonalizable up to an arbi-       sponding to the two inputs, δ(·, 0) and δ(·, 1). The transition
+trarily small perturbation of its entries, the above system can    function δ(·, 0) corresponds to the identity operation, since
+be equivalently represented using complex diagonal transi-         no matter in which state q the automaton is in, δ(q, 0) = q. If
+tion matrices (Orvieto et al. 2023). The diagonal form is sig-     the states are one-hot encoded, δ(·, 0) is equivalently to the
+nificantly more efficient to evaluate. Because the system is       2 × 2 identity matrix. Meanwhile, δ(·, 1) can be equivalently
+linear in the hidden state xt , the sequence (x1 , ..., xT ) can   represented as a 2 × 2 matrix with zeros on the diagonal and
+be computed using parallel algorithms (Martin and Cundy            ones in the off-diagonal entries. This matrix toggles the one-
+2018; Gu et al. 2021).                                             hot encoded state. Using matrix representation, the function
+   Selective SSMs (Gu and Dao 2023) implement the fol-             composition can be equivalently represented as matrix mul-
+lowing system of equations:                                        tiplication. Therefore, the final state of the automaton can be
+                  xt = A(ut )xt−1 + b(ut )                  (3)    obtained by evaluating the chain of matrix products corre-
+                                                                   sponding to the given sequence of inputs. For a deeper dis-
+                  yt = c(xt ) + d(ut )                      (4)    cussion of the topic, we recommend (Liu et al. 2023).
+With A(ut ) ∈ Rn×n , b : Rd → Rn , c : Rn → Rd ,
+and d : Rd → Rd . In contrast to standard SSMs, selective          Mapping an FSA to a Selective SSM
+SSMs generate the matrix A dynamically as a function of            Any FSA can be mapped to a selective SSM. To see this, we
+the input ut . While most SSMs can be diagonalized, selec-         show a mapping procedure that is conceptually equivalent
+tive SSMs can only be diagonalized if all A(ut ) matrices          to those of (Merrill, Petty, and Sabharwal 2024; Liu et al.
+are simultaneously diagonalizable. This is a more restric-         2023). For each q ∈ Q, encode it using enc : Q → R|Q|
+tive condition than diagonalizability, as it requires that the     such that the encodings of different states are orthogonal.
+product A(ut )A(ut′ ) commutes ∀t, t′ ∈ [1, T ]. This system       Orthogonality is a sufficient, but not a necessary, condition
+can also be evaluated in parallel using the parallel scan algo-    for mapping an FSA to a selective SSM. Given the encod-
+rithm (Blelloch 1990; Martin and Cundy 2018; Gu and Dao            ing of the states, we can now map the transition function
+2023).                                                             δ : Q × Σ → Q to the transition matrices A(ut ) from
+                                                                   Eq. (3). In this mapping, each symbol in the input alpha-
+Finite-State Automata (FSA)                                        bet σ ∈ Σ has an associated transition matrix A(σ) de-
+A deterministic finite-state automaton (FSA) is an abstract        fined by the transition function δ(·, σ) : Q → Q. The map-
+model of computation defined as a 5-tuple (Q, Σ, δ, qinit , F ),   ping between this function and A(σ) is defined via the sum
+A(σ) = q∈Q enc(δ(q, σ)) · enc(q)T .                                                  𝑢!
+         P
+   We now have all the ingredients needed to map any FSA
+to Eq. (3). This is achieved by setting x0 = qinit , identifying                  Linear
+the inputs ut as elements of the alphabet Σ and thus setting
+A(ut ) = A(σ) as above, and setting B = 0. By induction,                         Softmax
+one can see that xt = enc(qt ) with qt achieved by t-fold                                                 ×        𝐵
+                                                                                   …
+repeated application of the transition function δ onto qinit
+                                                                            𝐴"   ×                             𝑥!                      𝑦!
+given a sequence of inputs (σ1 , ..., σt ).                                                                +           Norm   Linear
+
+
+
+
+                                                                           …
+   3       Experimental Analysis of SD-SSM on                               𝐴#           ×
+
+
+                  Regular Languages                                                  +
+
+This section presents our first contribution. We start with                                  𝐴(𝑢! )
+an empirical study of different sequence models on various                       OpNorm               ×
+
+FSA emulation tasks. The models are evaluated in terms of
+                                                                           Transition Selection       Recurrence         Readout
+their length generalization capabilities. We then propose a
+novel selective SSM, SD-SSM, that successfully learns to
+emulate the dynamics of complex FSAs using a single layer.                Figure 2: The SD-SSM model consists of three main steps.
+                                                                          Firstly, the dense transition matrices for all time steps are
+Task Description and Experimental Setup                                   generated using a softmax selection mechanism and operator
+                                                                          normalization inspired by (Fan, Chi, and Rudnicky 2024).
+The investigated tasks involve tracking the state transi-                 The second step is the linear recurrence from Eq. (3). The
+tions of different FSAs. The experimental code is based                   final step is the readout, consisting of layer normalization
+on (Delétang et al. 2023) and (Liu et al. 2023). We evalu-               followed by a linear map.
+ate our models on seven different FSAs. Parity, Even Pairs,
+Cycle, and Arithmetic are taken from (Delétang et al. 2023).
+We further define three automata based on the Cayley di-
+agrams of different algebraic groups. C2 × C4 , the direct                the accuracy vs. length curve. Except for the Transformer,
+product of cyclic groups C2 and C4 , is a commutative, solv-              we report all results using a single layer.
+able group with eight states. D4 , the dihedral group with                   As shown in Table 1, none of the aforementioned mod-
+eight elements, is a non-commutative, solvable group. A5                  els achieve perfect length generalization on all of the tasks.
+is the group of even permutations of five elements, a non-                In fact, the models often fail already on in-domain lengths.
+solvable group with 60 states. The tasks are described in                 As a particularly important example consider Mamba, the
+Appendix A1 .                                                             most recently investigated model and one that has shown the
+    At each training step, we uniformly sample a sequence                 most promise as an alternative to the Transformer as LLM
+length l between 1 and the maximum training length L. We                  backbone. On the Arithmetic task, the best Mamba model
+then generate a random input sequence (σ1 , . . . , σl ) and use          achieves an in-domain accuracy of 91.6%. It exhibits an ac-
+it to emulate the automaton. The models are trained to min-               curacy of below 99% for the first time with sequences of
+imize the cross-entropy loss between their output at the fi-              length 22. The performance then rapidly drops with longer
+nal step and the final state of the emulated automaton. As                sequences, yielding the low accuracy (20.1%) reported in
+in (Delétang et al. 2023), we train the model for a fixed num-           Table 1. We ran hyperparameter search in which we varied
+ber of steps and report the test accuracy of the model at the             the state size, the learning rate, the weight decay factor, and
+final training step. The hyperparameters for reproducing the              trained for 106 steps with a batch size of 128. The Mamba
+experiments are reported in Appendix B.                                   model described above is the best out of 96 runs.
+                                                                             Additional results with two layers of S4D, H3, Mamba, as
+Modern SSMs Fail to Emulate FSAs                                          well as S4 (Gu, Goel, and Ré 2022) and Hyena (Poli et al.
+We start the discussion by evaluating prominent sequence                  2023) are reported in Appendix C. While the models often
+models from the literature on various tasks using the ex-                 exhibit better length generalization with two layers than with
+perimental setup described above. Our evaluation includes                 a single one, none of them achieve significant length gener-
+the standard nonlinear RNN (Elman 1990), the Trans-                       alization on FSA emulation.
+former (Vaswani et al. 2017; Ruoss et al. 2023), S4D (Gu
+et al. 2022), H3 (Fu et al. 2023), Mamba (Gu and Dao
+2023), as well as the block-diagonal selective SSM Regu-                  SD-SSM Learns to Emulate FSA
+larLRNN (Fan, Chi, and Rudnicky 2024). All models are
+trained on sequences of length up to 40 and are tested on                 We now present an architecture that successfully learns to
+sequences of length 1 up to 500. We train the models using                emulate a wide range of different FSA dynamics using a
+3 random seeds and report the maximum/average area under                  single layer. We call the model SD-SSM, standing for Se-
+                                                                          lective Dense State-Space Model. The model architecture is
+   1
+       The appendix is available in the preprint (Terzić et al. 2024).   presented in Figure 2. It can be conceptually separated into
+  Task            RNN        Transformer       S4D           H3          Mamba        RegularLRNN     C Diagonal     SD-SSM (ours)
+  (Delétang et al. 2023)
+  Parity         100 / 100   52.3 / 50.4    50.1 / 50.0   50.0 / 50.0   50.3 / 50.1    100 / 100       99.3 / 72.4     100 / 100
+  Even Pairs 100 / 100        100 / 100     50.4 / 50.3   51.0 / 50.5   100 / 100      100 / 100       54.5 / 54.3     100 / 100
+  Cycle          100 / 100   73.6 / 52.9    33.6 / 29.2   20.1 / 20.0   21.1 / 21.0    100 / 100       99.6 / 90.4     100 / 100
+  Arithmetic 100 / 100       25.5 / 23.5    20.1 / 20.0   20.1 / 20.0   20.1 / 20.1    33.3 / 30.2     22.1 / 21.7     99.9 / 98.5
+  (Liu et al. 2023)
+  C2 × C4        100 / 100         —            —             —             —          100 / 99.4      79.2 / 60.4     100 / 93.3
+  D4             100 / 100         —            —             —             —          100 / 100       32.6 / 29.8     99.9 / 99.9
+  A5             100 / 100         —            —             —             —          100 / 100        8.3 / 8.2      100 / 100
+
+Table 1: Maximum/average length generalization accuracy (%) on FSA emulation tasks over three random seeds using single-
+layer models, except the Transformer, which uses five layers. The Transformer results are taken from (Ruoss et al. 2023) and
+use randomize RoPE positional encodings. While they evaluate on sequences of length 50 to 500 and we evaluate on length
+1 to 500, the failure of the model is still evident. We denote the selective SSM defined by (Fan, Chi, and Rudnicky 2024)
+as RegularLRNN. The complex (C) diagonal model is a diagonal selective SSM which we defined in Sec. 4. Our SD-SSM
+achieves near-perfect average accuracy on all investigated automata.
+
+
+three different phases:                                                 what (Fan, Chi, and Rudnicky 2024) used, has a negative
+                                                                        impact on the generalization properties of our model.
+                             k
+                             X                                             We compare our matrix generation with RegularLRNN,
+         A(ut ) = OpNorm(          softmax(Sut )[i]Ai )     (5)         which generates transition matrices as A(u) = W2 σ(W1 u).
+                             i=1                                        Their transition matrices are block-diagonal, and we assume
+         xt+1 = A(ut )xt + But                              (6)         that the block size equals the square root of the state dimen-
+         yt = C(LayerNorm(xt ))                             (7)         sionality, as was also the case in their experiments. The to-
+                                                                        tal number√ of parameters in their transition matrix generator
+In the first phase, the transition matrices A(ut ) are generated        is then dn n + n3 , while our generation incurs a cost of
+for each input ut in parallel. This is achieved by passing the          k(d + n2 ). For a fixed k, our generation method is more
+input embeddings through a linear layer (S) and then pro-               parameter efficient.
+cessing the resulting vector using the softmax function. The               The results on FSA emulation using a one-layer SD-SSM
+outputs of the softmax are used to weigh a dictionary of k-             are reported in Table 1. As shown, on all of the tasks we
+many trainable dense transition matrices labeled A1 , ..., Ak .         investigate, the best SD-SSM achieves perfect (≥ 99.9%)
+In our experiments, we use between 5 and 20 transition ma-              accuracy using only one layer. We do observe that SD-SSM
+trices (see Appendix B).                                                exhibits higher variability on the C2 × C4 automaton com-
+   The weighted matrices are summed together and then                   pared to RegularLRNN. RegularLRNN with one layer does
+modified using an operator normalization procedure (Op-                 however not perform well on Arithmetic.
+Norm). Operator normalization is required for the stabil-
+ity of the system, preventing the eigenvalues of the transi-
+tion matrices from growing beyond 1. The avenue we pur-
+                                                                        Nonlinear Readout Hurts State Tracking
+sue is heavily inspired by the concurrent work of (Fan,
+Chi, and Rudnicky 2024), which normalizes the generated
+A(ut ) matrices before applying the recursion in Eq. (3).               We additionally ablate the SD-SSM readout. Apart from the
+Their normalization scheme consists of normalizing the                  desire for simplicity, the SD-SSM’s readout also emerged
+columns of A(ut ) by setting each column vector ai thereof              from the observation that a more complex readout has detri-
+to ai /max(1, lp (ai )), with lp (·) denoting the standard lp -         mental effects on the length generalization. On the Arith-
+norm operation. We adopt a version of the column-wise                   metic task, we conducted extensive experiments in which
+normalization scheme in our SD-SSM. Concretely, we di-                  the linear layer in SD-SSM’s readout was replaced by a stan-
+vide each column of A by its lp -norm, ai ← ai /lp (ai ).               dard two-layer MLP with the ReLU non-linearity. The hid-
+While (Fan, Chi, and Rudnicky 2024) finds that p = 1.2                  den layer of the MLP was configured to consist of 64 units,
+works well across all tasks, we varied p ∈ [1.0, 1.5] across            equal to the state size of the model. We varied the learning
+the tasks via a hyperparameter search.                                  rate in {2e-5, 1e-4, 5e-4}, the p parameter in lp normaliza-
+   The final two phases consist of executing the recurrence             tion in {1.1, 1.2, 1.3}, and we experimented with two reg-
+in Eq. (3), followed by a readout of the state value. The read-         ularization techniques, weight decay in {0, 1e-4, 1e-3} and
+out consists of Layer Normalization (Ba, Kiros, and Hinton              dropout in {0.1, 0.2, 0.5} on the intermediate activations of
+2016) followed by a linear layer. We find the design of the             the MLP readout. The best accuracy was achieved by using
+readout to be especially important for length generalization.           weight decay. The model achieves an accuracy of 71.9%,
+In the experiments that we present in the following subsec-             significantly below 99.9% achieved by the linear readout
+tion, we see that the typically used MLP readout, such as               SD-SSM. Further results are shown in Appendix C.
+                                 Training Length                     4    A Limitation of Diagonal Selective SSMs
+        Model            4       5         6         7      8       To better understand the need for dense transition matrices,
+         RNN            7.1     26.1      85.4   99.4      99.9     we start this section by evaluating diagonal selective SSMs
+                                                                    on the previously used set of regular language tasks. We ob-
+        LSTM            14.7    66.9      97.6   99.9      100      serve that it exhibits significantly lower scores than its dense
+   SD-SSM (ours)        31.5    83.3      97.2   99.4      100      counterpart, SD-SSM. We then take a closer look at the per-
+                                                                    formance of different architectural variants of a diagonal se-
+Table 2: Maximum length generalization accuracy (%) on              lective SSM on two selected automata, one being commu-
+sequences up to length 500 over three random seeds. The             tative and the other being non-commutative with respect to
+models were trained to emulate the A5 automaton with very           the inputs. We find that diagonal selective SSMs tend to per-
+short sequences (4 to 8) using a state size of 128.                 form significantly better on the commutative automaton. We
+                                                                    explain our experimental findings by drawing a connection
+                                                                    between the presented FSA→selective SSM mapping and
+                                 Sequence Length                    results from linear system theory.
+   Compute Mode          64       128          256        512
+                                                                    Diagonal Selective SSMs Fail to Emulate FSAs
+      Recurrent        1.82 s    6.40 s     21.93 s      77.27 s
+                                                                    We first present and evaluate a selective SSM that utilizes
+       Parallel        1.91 s    4.55 s     11.67 s      26.68 s
+                                                                    complex-valued diagonal transition matrices on the full set
+                                                                    of FSA tasks, motivated by the prominence of such models
+Table 3: Forward + backward pass runtime (seconds) re-              in modern literature (Gupta, Gu, and Berant 2022; Orvieto
+quired to evaluate one batch (16) with SD-SSM using a se-           et al. 2023). The models we use in our experiments are vari-
+quential or a parallel algorithm. The model uses one layer          ations on the following, general model:
+and a state size of 64.
+                                                                                             o         i
+                                                                            ÃRe,Im (ut ) = WRe,Im (σ(WRe,Im (ut )))            (8)
+
+Length Efficiency Analysis                                                  Ã(ut )[m] = (ÃRe (ut )[m] + iÃIm (ut )[m])       (9)
+                                                                            A(ut )[m] = β Ã(ut )[m]/|Ã(ut )[m]|              (10)
+We further consider a more demanding experimental setup.
+                                                                            xt+1 = A(ut ) ⊙ xt + But                           (11)
+We compare how well RNN, LSTM, and SD-SSM extrap-
+olate to longer sequences when trained on very short se-                    yt = Woy (σ(Wiy (Re(xt ) ⊕ Im(xt )))               (12)
+quences. Concretely, the initial state of the network is chosen
+uniformly at random from the set of automaton states, and                    i
+                                                                    with WRe,Im     ∈ Rn×d , WRe,Im
+                                                                                                 o
+                                                                                                        ∈ Rn×n , Wiy ∈ R2n×2n ,
+the model is trained to predict the automaton state after con-         y
+                                                                    Wo ∈ R      d×2n
+                                                                                     , B ∈ C  n×d
+                                                                                                    , β ∈ [0, 1], ⊙ denoting the
+suming an input of a short length, up to 8. As the training         element-wise product, σ(·) an element-wise activation func-
+sequences are very short, we observe overfitting: the train-        tion, in our case ReLU, | · | the element-wise absolute value
+ing loss will often notably increase after having plateaued at      function, and a ⊕ b denoting the concatenation of the two
+a low value. Thus, we validate the models on sequences up to        vectors a and b.
+length 40 and report the accuracy obtained on sequences up             The entries along the diagonal of the presented model’s
+to length 500. Further details on this experimental setup are       transition matrices are complex numbers whose real and
+outlined in Appendix B. Table 2 shows favorable results for         imaginary parts are generated as functions of the input using
+SD-SSM in this challenging task. For very short sequences,          a two-layer MLP. They are constrained to be on the complex
+it exhibits better length generalization compared to the RNN        circle of radius β, where β is a hyperparameter.
+and the LSTM with the same state size. Further results are             At the readout, we concatenate the real and the imaginary
+provided in Appendix C.                                             parts of the state vector and then further process this vec-
+                                                                    tor using a two-layer MLP. While the nonlinear readout was
+SD-SSM Can Leverage Parallel Scans                                  detrimental in SD-SSM, we find that the C diagonal model
+                                                                    exhibits better accuracy with a nonlinear readout instead.
+SD-SSM’s linear recurrence over the hidden state allows us             We evaluate the C Diagonal model on the previously used
+to use the parallel scan algorithm to compute the sequence of       tasks and report the results in Table 1. On Parity and Cy-
+states x1 , . . . , xt . Table 3 reports the combined forward and   cle, the model achieves almost perfect length generalization
+backward pass runtime (in seconds) of a single layer SD-            on the evaluated sequences, significantly better than Mamba
+SSM on an NVIDIA V100 with different sequence lengths               which uses real-valued diagonal transition matrices. How-
+(L), a state size of 64, and a batch size of 16 in PyTorch.         ever, on Even Pairs, the C diagonal model achieves perfect
+We use the implementation of the parallel scan algorithm            accuracy on in-domain lengths, but fails drastically as soon
+from (Fan, Chi, and Rudnicky 2024). The parallel algorithm          as the sequence length is increased beyond the training do-
+allows SD-SSM to be trained more efficiently than in se-            main. On Arithmetic, it fails on in-domain lengths, dropping
+quential mode, despite its use of unstructured matrices.            below 99% already at sequence length 8.
+                                                                    The model exhibits significantly better length generalization
+                                                                    once the B matrix is introduced, although it is only with a
+                                                                    nonlinear readout that the model learns to emulate the au-
+                                                                    tomaton even on in-domain lengths. The best length gener-
+                                                                    alization accuracy on D30 is significantly lower than what
+                                                                    could be achieved on the C2 × C30 automaton. Further re-
+                                                                    sults with more layers of the C diagonal SSM with nonlinear
+                                                                    readout and B ̸= 0 are provided in Appendix C. Introducing
+                                                                    more layers did not improve the model’s length generaliza-
+        (a) C2×4 Automaton            (b) D4 Automaton              tion. In contrast, SD-SSM achieves perfect length general-
+                                                                    ization on both tasks.
+Figure 3: Cayley diagrams of C2 × C4 and the D4 automata,
+both with two actions: toggle (blue) and move (red) (Carter
+2009). C2 × C4 is commutative. Starting at any state, ap-
+                                                                    Theoretical Characterization of Diagonal Selective
+plying toggle followed by move results in the same state as         SSMs
+move followed by toggle. The same does not hold for D4 .            Various recent works have derived different bounds on the
+                                                                    computational capacity of diagonal selective SSMs (Mer-
+                       Variants of C Diagonal            SD-SSM
+                                                                    rill, Petty, and Sabharwal 2024; Sarrof, Veitsman, and Hahn
+                                                                    2024). However, an explanation for the behavior on com-
+   B = 0?              Yes                   No           No        mutative vs. non-commutative FSAs, as shown in Table 4,
+  Readout     Linear     Nonlin.    Linear    Nonlin.    Linear     is missing. We present an analysis of systems with diago-
+  C2 × C30     100           87.6   65.8          81.7    100       nal transition matrices using a restrictive assumption. The
+    D30        8.35          8.35   11.3          61.0    100       assumption is that models implement a mapping consistent
+                                                                    with the one described in Sec. 2, for which the B matrix is
+Table 4: Maximum length generalization accuracy (%) of              irrelevant. Single-layer diagonal selective SSMs that do not
+variants of the C diagonal selective SSM and our SD-SSM.            utilize the B matrix are restricted to commutative automata:
+                                                                    Proposition 1. Given a sequence of inputs (u1 , ..., uT ),
+                                                                    let the transition matrices (A(u1 ), ..., A(uT )) be simultane-
+Performance on Commutative and                                      ously diagonalizable. Under the described mapping of FSA
+Non-Commutative Automata                                            to a single-layer selective SSMs which sets x0 = enc(qinit ),
+We investigated in more depth the behavior of diagonal se-          b(ut ) = 0, and whose transition matrices are simultane-
+lective SSMs on the C2 × C30 and D30 automata. Both                 ously diagonalizable, the selective SSM can only emulate
+C2 × C30 and D30 are solvable groups, but C2 × C30 is               commutative automata.
+commutative and D30 is not. According to recent theoreti-
+                                                                    Proof. If the selective SSM is parametrized according to the
+cal results on the expressive capacity of diagonal selective
+                                                                    mapping shown in Sec. 2, then it is equivalent to the follow-
+SSMs (Merrill, Petty, and Sabharwal 2024; Sarrof, Veits-
+                                                                    ing system:
+man, and Hahn 2024), both can be emulated by diagonal se-
+lective SSMs. Smaller versions of the automata, each with 8                                xt+1 = A(ut )xt                    (13)
+instead of 60 states, are shown in Figure 3. As the automata        We assumed that the matrices A(ut ) are simultaneously di-
+have long diameters, i.e., the expected number of random            agonalizable. This means that there exist a single invertible
+actions required to visit each state of the automaton is large,     matrix W ∈ Cn×n such that all transition matrices can be
+we train the models on these two tasks with sequences up to         expressed as A(ut ) = W Λ(ut )W −1 , with the diagonal ma-
+length 90 and report the average accuracy on sequences up           trix Λ(ut ) ∈ Cn×n . If we insert the above decomposition
+to length 600.                                                      into the reduced system xt+1 = A(ut )xt , we obtain the
+   We train four different complex diagonal selective SSM           form xt+1 = W Λ(ut )W −1 xt . The dynamics of this sys-
+variants on C2 × C30 and D30 FSA emulation. The two cen-            tem are unchanged if we change the representation basis by
+tral architectural choices we ablate are the use of the B ma-       multiplying the system from the left with W −1 . By setting
+trix in the transition as well as the use of a nonlinear readout.   x̃t = W −1 xt , we see that the above system is equivalent to
+We report the results obtained with the best-performing seed        the diagonal system x̃t+1 = Λ(ut )x̃t . Therefore, if we in-
+for each model in Table 4.                                          terpret Eq. (13) as implementing the dynamics of an FSA,
+   Firstly, we observe that all models learn to emulate C2 ×        if this system admits an equivalent diagonal representation
+C30 perfectly on in-domain lengths. Their length general-           then the final automaton state is invariant to the order in
+ization is however significantly affected by the architectural      which the inputs are presented.
+choices. Models that do not utilize the B matrix tend to learn
+solutions that exhibit better length generalization than their
+counterparts which include the B matrix.                              The mapping we impose is reminiscent of several other
+   The results are significantly different on D30 . Without the     mappings from literature (Merrill, Petty, and Sabharwal
+B matrix, the models completely fail to learn the dynamics          2024; Liu et al. 2023). In fact, if a model based on Eq. (3)
+of the automaton, exhibiting very low in-domain accuracy.           implements a mapping different from the one we describe in
+Sec. 2, then it is not necessarily commutative. This can be        obey limitations similar to it. (Delétang et al. 2023) presents
+seen by unrolling Eq. (1) for several time steps.                  experimental study of the Transformer (Vaswani et al. 2017),
+                                                                   RNN (Elman 1990), LSTM (Hochreiter and Schmidhu-
+    x1 = A1 x0 + b(u1 )
+                                                                   ber 1997), Stack-RNN (Joulin and Mikolov 2015), Tape-
+    x2 = A2 A1 x0 + A2 b(u1 ) + b(u2 )                             RNN (Suzgun et al. 2019) and other architectures in formal
+    x3 = A3 A2 A1 x0 + A3 A2 b(u1 ) + A3 b(u2 ) + b(u3 )           language transduction. We extend their analysis by consider-
+                                                                   ing SSM-based architectures. (Merrill, Petty, and Sabharwal
+with the abbreviation A(ut ) =: At . Since the product of
+                                                                   2024) derives a bound on diagonal selective SSMs with log-
+diagonal matrices commutes, it is exactly the terms contain-
+                                                                   arithmic precision representation, placing them in the T C 0
+ing b(ut ) that break the commutativity. However, while the
+                                                                   circuit complexity class. This complexity class encompasses
+model that utilizes the B matrix learns to emulate the non-
+                                                                   the presented Cn × Cm and Dn groups. Their experimen-
+commutative automaton in our experiments, it only general-
+                                                                   tal results do not evaluate the length-generalization aspect
+izes to a limited degree.
+                                                                   of SSMs and selective SSMs. (Sarrof, Veitsman, and Hahn
+                                                                   2024) show that a stack of complex diagonal SSM layers can
+                    5   Related Work                               emulate any automaton in T C 0 . Their experimental results
+State-Space Models                                                 only evaluate Mamba and the Transformer, and the commu-
+Early SSMs build on the HiPPO theory of optimal projec-            tativeness of the automata is not a central aspect of their
+tions (Gu et al. 2020). The S4 model (Gu, Goel, and Ré            work.
+2022) is an early example of an SSM used in a deep neu-
+ral network, and it significantly advanced the state-of-the-                            6    Conclusion
+art on a collection of long-range modeling tasks compared
+                                                                   In this work, motivated by the inability of a wide range of se-
+to the Transformer. Diagonal SSMs emerged from a desire
+                                                                   quence models to emulate arbitrary automata, we have pre-
+for more efficient parallelizable computation in the form of
+                                                                   sented SD-SSM. It utilizes a dictionary of dense transition
+DSS (Gupta, Gu, and Berant 2022) and S4D (Gu et al. 2022).
+                                                                   matrices, combined at each time step using a softmax se-
+S5 introduces effective simplified MIMO SSMs (Smith,
+                                                                   lection mechanism and operator normalization, and a read-
+Warrington, and Linderman 2023). The LRU (Orvieto et al.
+                                                                   out which consists of layer normalization followed by a lin-
+2023) is a simplified and effective linear SSM utilizing
+                                                                   ear map. SD-SSM is the first selective state-space model to
+complex-valued transition matrices. The H3 (Fu et al. 2023)
+                                                                   achieve perfect length generalization on a diverse set of FSA
+presents advancements towards realistic language model-
+                                                                   emulation tasks using a single layer.
+ing using SSMs, but shows that such models perform best
+                                                                      We then evaluated more efficient selective SSMs with di-
+when interleaved with attention layers. Mamba (Gu and Dao
+                                                                   agonal complex valued transition matrices on a set of FSA
+2023) is the first selective SSM to outperform the Trans-
+                                                                   emulation tasks. We observed that they exhibit significantly
+former (Vaswani et al. 2017) in a range of important NLP
+                                                                   worse length generalization than their dense counterparts.
+tasks including language modeling. (Fan, Chi, and Rud-
+                                                                   We probed deeper into this result by investigating their per-
+nicky 2024) presents a block-diagonal selective SSM which
+                                                                   formance on two similar automata which differ in one cru-
+achieves perfect length generalization on three out of the
+                                                                   cial property: commutativity with respect to the inputs. Our
+four regular language tasks from (Delétang et al. 2023).
+                                                                   experimental analysis confirms that diagonal selective SSMs
+Compared to previous work, we are the first to demonstrate
+                                                                   exhibit a significantly higher degree of length generaliza-
+that all finite-state automata from (Delétang et al. 2023), and
+                                                                   tion on the commutative automaton compared to the non-
+others from (Liu et al. 2023), can be emulated with single
+                                                                   commutative one. We explain the results by drawing a con-
+layer selective SSM utilizing a linear readout. We addition-
+                                                                   nection between a general mapping of FSA dynamics onto
+ally provide experimental results with various single- and
+                                                                   selective SSM weights and linear system theory. Assum-
+multi-layer complex-valued diagonal SSMs on FSA emula-
+                                                                   ing that the selective SSMs do not implement an unintuitive
+tion.
+                                                                   mapping of FSA dynamics, we observe that they indeed can-
+Formal Analysis of Sequence Models                                 not model non-commutative automata.
+                                                                      We list some potential avenues for future work. Firstly,
+The ability of neural networks to model various formal             SD-SSM’s softmax selection mechanism allows the use of
+models of computation is a long-standing area of re-               temperature scaling and annealing strategies, which could
+search (Siegelmann and Sontag 1995; Minsky 1967). One              lead to more interpretable and efficient models. Secondly,
+of the first models studied was the RNN, which can imple-          general mappings of T C 0 non-commutative automata to di-
+ment the dynamics of any FSA, with (Svete and Cotterell            agonal selective SSMs can be investigated further. Finally,
+2023) reviewing three different exact mappings of FSA to           the model could be evaluated on more natural data to re-
+RNNs. The presented mappings are due to (Minsky 1954;              veal whether the increased formal expressiveness translates
+Dewdney 1977; Indyk 1995). Recently, many such studies             to other real-world applications.
+of the Transformer model have emerged. A survey of various
+bounds on the Transformer’s expressiveness can be found in
+(Strobl et al. 2024). Particularly interesting is the study due                       Acknowledgments
+to (Merrill and Sabharwal 2023), which conjectures that any        We would like to thank Nicolas Menet for providing inputs
+model architecture as parallelizable as the Transformer will       on the theoretical discussion of this work.
+                        References                                Gu, A.; Dao, T.; Ermon, S.; Rudra, A.; and Re, C. 2020.
+Ba, J. L.; Kiros, J. R.; and Hinton, G. E. 2016. Layer Nor-       HiPPO: Recurrent Memory with Optimal Polynomial Pro-
+malization. arXiv preprint arXiv:1607.06450.                      jections. In Advances in Neural Information Processing Sys-
+                                                                  tems (NeurIPS), volume 33, 1474–1487.
+Bhattamishra, S.; Ahuja, K.; and Goyal, N. 2020. On
+the Ability and Limitations of Transformers to Recognize          Gu, A.; Goel, K.; Gupta, A.; and Ré, C. 2022. On the Param-
+Formal Languages. In Proceedings of the 2020 Confer-              eterization and Initialization of Diagonal State Space Mod-
+ence on Empirical Methods in Natural Language Process-            els. In Advances in Neural Information Processing Systems
+ing (EMNLP), 7096–7116. Association for Computational             (NeurIPS), volume 35, 35971–35983.
+Linguistics.                                                      Gu, A.; Goel, K.; and Ré, C. 2022. Efficiently Modeling
+Blelloch, G. E. 1990. Prefix Sums and Their Applications.         Long Sequences with Structured State Spaces. In Interna-
+                                                                  tional Conference on Learning Representations (ICLR).
+Carter, N. C. 2009. Visual group theory. Classroom resource
+materials. Washington, D.C.: Mathematical Association of          Gu, A.; Johnson, I.; Goel, K.; Saab, K.; Dao, T.; Rudra,
+America.                                                          A.; and Ré, C. 2021. Combining Recurrent, Convolutional,
+                                                                  and Continuous-time Models with Linear State-Space Lay-
+Cirone, N. M.; Orvieto, A.; Walker, B.; Salvi, C.; and Lyons,
+                                                                  ers. In Advances in Neural Information Processing Systems
+T. 2024. Theoretical Foundations of Deep Selective State-
+                                                                  (NeurIPS), volume 34, 572–585.
+Space Models. arXiv preprint arXiv:2402.19047.
+Dao, T. 2024. FlashAttention-2: Faster Attention with Better      Gupta, A.; Gu, A.; and Berant, J. 2022.             Diagonal
+Parallelism and Work Partitioning. In International Confer-       State Spaces are as Effective as Structured State Spaces.
+ence on Learning Representations (ICLR).                          In Advances in Neural Information Processing Systems
+                                                                  (NeurIPS), volume 35, 22982–22994.
+De, S.; Smith, S. L.; Fernando, A.; Botev, A.; Cristian-
+Muraru, G.; Gu, A.; Haroun, R.; Berrada, L.; Chen, Y.;            Hahn, M. 2020. Theoretical Limitations of Self-Attention in
+Srinivasan, S.; Desjardins, G.; Doucet, A.; Budden, D.;           Neural Sequence Models. Transactions of the Association
+Teh, Y. W.; Pascanu, R.; De Freitas, N.; and Gulcehre, C.         for Computational Linguistics, 8: 156–171.
+2024. Griffin: Mixing Gated Linear Recurrences with Lo-           Hochreiter, S.; and Schmidhuber, J. 1997. Long Short-Term
+cal Attention for Efficient Language Models. arXiv preprint       Memory. Neural Computation, 9(8): 1735–1780.
+arXiv:2402.19427.                                                 Indyk, P. 1995. Optimal simulation of automata by neural
+Delétang, G.; Ruoss, A.; Grau-Moya, J.; Genewein, T.; Wen-       nets. In STACS 95, 337–348. Berlin, Heidelberg: Springer
+liang, L. K.; Catt, E.; Cundy, C.; Hutter, M.; Legg, S.; Ve-      Berlin Heidelberg.
+ness, J.; and Ortega, P. A. 2023. Neural Networks and the         Joulin, A.; and Mikolov, T. 2015. Inferring algorithmic pat-
+Chomsky Hierarchy. In The Eleventh International Confer-          terns with stack-augmented recurrent nets. In Advances
+ence on Learning Representations (ICLR).                          in Neural Information Processing Systems (NeurIPS),
+Dewdney, A. K. 1977. Threshold matrices and the state as-         190–198. Cambridge, MA, USA: MIT Press.
+signment problem for neural nets. In Proceedings of the 8th       Krohn, K.; and Rhodes, J. 1965. Algebraic Theory of Ma-
+SouthEastern Conference on Combinatorics, Graph Theory            chines. I. Prime Decomposition Theorem for Finite Semi-
+and Computing, 227–245.                                           groups and Machines. Transactions of the American Math-
+Elman, J. L. 1990. Finding Structure in Time. Cognitive           ematical Society, 116: 450–464.
+Science, 14(2): 179–211.                                          Liu, B.; Ash, J. T.; Goel, S.; Krishnamurthy, A.; and Zhang,
+Fan, T.-H.; Chi, T.-C.; and Rudnicky, A. I. 2024. Advanc-         C. 2023. Transformers Learn Shortcuts to Automata. In The
+ing Regular Language Reasoning in Linear Recurrent Neu-           Eleventh International Conference on Learning Representa-
+ral Networks. In Proceedings of the 2024 Conference of            tions (ICLR).
+the North American Chapter of the Association for Com-
+                                                                  Martin, E.; and Cundy, C. 2018. Parallelizing Linear Recur-
+putational Linguistics: Human Language Technologies (Vol-
+                                                                  rent Neural Nets Over Sequence Length. In International
+ume 2: Short Papers), 45–53. Association for Computational
+                                                                  Conference on Learning Representations (ICLR).
+Linguistics.
+Fu, D. Y.; Dao, T.; Saab, K. K.; Thomas, A. W.; Rudra, A.;        Merrill, W.; Petty, J.; and Sabharwal, A. 2024. The Illusion
+and Ré, C. 2023. Hungry Hungry Hippos: Towards Lan-              of State in State-Space Models. In International Conference
+guage Modeling with State Space Models. In International          on Machine Learning (ICML).
+Conference on Learning Representations (ICLR).                    Merrill, W.; and Sabharwal, A. 2023. The Parallelism Trade-
+Grazzi, R.; Siems, J.; Franke, J. K.; Zela, A.; Hutter, F.; and   off: Limitations of Log-Precision Transformers. Transac-
+Pontil, M. 2024. Unlocking State-Tracking in Linear RNNs          tions of the Association for Computational Linguistics, 11:
+Through Negative Eigenvalues. In NeurIPS 2024 Workshop            531–545.
+on Mathematics of Modern Machine Learning.                        Minsky, M. 1954. Neural Nets and the Brain Model Prob-
+Gu, A.; and Dao, T. 2023. Mamba: Linear-Time Sequence             lem. Ph.D. thesis, Princeton University, Austin.
+Modeling with Selective State Spaces. arXiv preprint              Minsky, M. L. 1967. Computation: finite and infinite ma-
+arXiv:2312.00752.                                                 chines. USA: Prentice-Hall, Inc.
+Orvieto, A.; De, S.; Gulcehre, C.; Pascanu, R.; and Smith,
+S. L. 2024. Universality of Linear Recurrences Followed by
+Non-linear Projections: Finite-Width Guarantees and Bene-
+fits of Complex Eigenvalues. In International Conference
+on Machine Learning (ICML). PMLR.
+Orvieto, A.; Smith, S. L.; Gu, A.; Fernando, A.; Gulcehre,
+C.; Pascanu, R.; and De, S. 2023. Resurrecting Recurrent
+Neural Networks for Long Sequences. In International Con-
+ference on Machine Learning (ICML). PMLR.
+Poli, M.; Massaroli, S.; Nguyen, E.; Fu, D. Y.; Dao, T.; Bac-
+cus, S.; Bengio, Y.; Ermon, S.; and Ré, C. 2023. Hyena Hi-
+erarchy: Towards Larger Convolutional Language Models.
+arXiv preprint arXiv:2302.10866.
+Ruoss, A.; Delétang, G.; Genewein, T.; Grau-Moya, J.;
+Csordás, R.; Bennani, M.; Legg, S.; and Veness, J. 2023.
+Randomized Positional Encodings Boost Length General-
+ization of Transformers. In Proceedings of the 61st Annual
+Meeting of the Association for Computational Linguistics
+(Volume 2: Short Papers), 1889–1903.
+Sarrof, Y.; Veitsman, Y.; and Hahn, M. 2024. The Expres-
+sive Capacity of State Space Models: A Formal Language
+Perspective. arXiv preprint: 2405.17394.
+Siegelmann, H.; and Sontag, E. 1995. On the Computational
+Power of Neural Nets. Journal of Computer and System
+Sciences, 50(1): 132–150.
+Smith, J. T. H.; Warrington, A.; and Linderman, S. W. 2023.
+Simplified State Space Layers for Sequence Modeling. In
+The Eleventh International Conference on Learning Repre-
+sentations (ICLR).
+Straubing, H. 1994. Finite automata, formal logic, and cir-
+cuit complexity. CHE: Birkhauser Verlag.
+Strobl, L.; Merrill, W.; Weiss, G.; Chiang, D.; and Angluin,
+D. 2024. What Formal Languages Can Transformers Ex-
+press? A Survey. Transactions of the Association for Com-
+putational Linguistics, 12.
+Suzgun, M.; Gehrmann, S.; Belinkov, Y.; and Shieber, S. M.
+2019. Memory-Augmented Recurrent Neural Networks
+Can Learn Generalized Dyck Languages. arXiv preprint
+arXiv:1911.03329.
+Svete, A.; and Cotterell, R. 2023. Efficiently Represent-
+ing Finite-state Automata With Recurrent Neural Networks.
+arXiv preprint arXiv:2310.05161v3.
+Terzić, A.; Hersche, M.; Camposampiero, G.; Hofmann, T.;
+Sebastian, A.; and Rahimi, A. 2024. On the Expressiveness
+and Length Generalization of Selective State-Space Models
+on Regular Languages. arXiv preprint.
+Vaswani, A.; Shazeer, N.; Parmar, N.; Uszkoreit, J.; Jones,
+L.; Gomez, A. N.; Kaiser, L.; and Polosukhin, I. 2017. At-
+tention Is All You Need. In Advances in Neural Information
+Processing Systems (NeurIPS), volume 30.
+Zubić, N.; Soldá, F.; Sulser, A.; and Scaramuzza, D.
+2024. Limits of Deep Learning: Sequence Modeling
+through the Lens of Complexity Theory. arXiv preprint
+arXiv:2405.16674.
+                 A    Task Description                            transformation groups can be emulated by diagonal selective
+Parity                                                            SSMs (Merrill, Petty, and Sabharwal 2024; Sarrof, Veits-
+                                                                  man, and Hahn 2024). On the contrary, automata with non-
+Parity is one of the simplest regular languages with Q =          solvable transformation groups cannot be emulated by diag-
+{Even, Odd} and Σ = {0, 1}. Given a sequence of binary            onal selective SSMs (Merrill, Petty, and Sabharwal 2024).
+inputs, the corresponding output is Even if the number of            The Cayley diagram of the C2 × C5 group is shown in
+ones in the sequence is even, otherwise it is Odd. The au-        Figure A.5.
+tomaton starts in state qinit = Even.
+                                                                                                      1
+Even Pairs
+The Even Pairs task consists of determining whether the                                               A
+
+
+number of 01 and 10 substrings in a longer binary string is                           5
+                                                                                                                      2
+                                                                                              E               B
+equal. For example, given a string 0101, it contains two 01
+substrings and one 10 substring. As the number of these sub-
+strings is not equal, this string is not part of the Even Pairs                                   D       C
+
+
+regular language. On the other hand, 01000 contains one 01                                4                       3
+
+substring and one 10 substring, meaning that this string is
+part of the language. This task effectively reduces to detect-    Figure A.5: The C2 × Cn group, visualized as a Cayley dia-
+ing whether the start and end of the string are equal symbols,    gram (Carter 2009) with n = 5. There are two actions, Move
+which might explain the relatively high accuracy that certain     on current cycle and toggle between the two concentric cy-
+models obtain in this task.                                       cles. Starting at any state, applying toggle followed by move
+                                                                  results in the same final state as when applying move fol-
+Cycle                                                             lowed by toggle.
+Originally called Cycle Navigation, this is an FSA consisting
+of five enumerated states Q = {1, 2, 3, 4, 5} and the input
+alphabet Σ = {L, R, S}, standing for Left, Right, and Stay.       Dihedral Group Dn
+It is illustrated in Figure A.4.
+                                                                  The Dn group consists of all symmetries of a regular n-
+                                                                  gon (Carter 2009). When visualized, its structure looks very
+                               1                                  similar to the C2 × Cn group, with the exception that the
+                                                                  two cycles now point in opposite directions. This group is
+                       5                2
+                                                                  also solvable, but is crucially not commutative.
+
+                                                                                                      1
+
+
+
+                           4        3                                                                 A
+
+                                                                                      5
+                                                                                                                      2
+                                                                                              E               B
+
+Figure A.4: The Cycle automaton starts in state qinit = 1.
+The state graph is traversed using three actions, Left, Right,
+                                                                                                  D       C
+and Stay. In the given sketch, these three actions respectively
+correspond to the green, blue, and red arrows.                                            4                       3
+
+
+
+
+                                                                  Figure A.6: The Dn automaton, visualized with n = 5.
+Arithmetic                                                        There are two actions, Move on current cycle and toggle be-
+The inputs of the Arithmetic task are digits between 0 and        tween the two concentric cycles. The FSA is not commuta-
+4 interleaved with the operations +, − and ∗. The task is         tive. Starting at state 1, applying move followed by toggle
+to compute the result modulo 5. For example, 2 * 4 + 1 - 2        results in state B. However, starting from state 1, applying
+evaluates to 2. Obtaining the final state of the automaton thus   toggle followed by move results in state E.
+reduces to evaluating an expression in modular arithmetic.
+
+Direct Product of Cyclic Groups C2 and Cn                         Alternating Group A5
+Having reviewed the definitions of the FSAs from (Delétang       The A5 group consists of all even permutations of a set of
+et al. 2023), we now explain the set of FSAs derived              five elements, resulting in 60 states. Even permutations are
+from the structure of different algebraic groups. As already      those that can be obtained by applying an even number of
+mentioned, these examples were generated using the code           transpositions, i.e., pairwise swaps of elements. If we imag-
+from (Liu et al. 2023).                                           ine five objects enumerated with numbers 0 to 4, the initial
+   The direct product of the cyclic groups C2 and Cn , de-        state can be represented by (0, 1, 2, 3, 4). Starting from this
+noted as C2 × Cn , is a solvable, commutative group (Carter       state, every other state of the A5 automaton can be reached
+2009). Recent results show that automata with solvable            by applying two actions: Swap and Cycle. Swap swaps the
+positions of the first two pairs elements in the current state.                                            LR.
+                              swap                                                 Parity Check            5e-4
+For example, (0, 1, 2, 3, 4) −−→ (1, 0, 3, 2, 4). Cycle cycli-
+                                                          cycle                    Even Pairs              1e-3
+cally shifts the elements to the right: (0, 1, 2, 3, 4) −−→                        Cycle Navigation        5e-4
+(4, 0, 1, 2, 3). The permutations are enumerated according to                      Modular Arithmetic      1e-4
+the Python library sympy.combinatorics.permutations. A5 is                         C2 × C4                 5e-3
+the smallest nonsolvable group. A visualization of the group                       D4                      1e-4
+can be found in (Carter 2009).                                                     A5                      1e-3
+               B    Experimental Setup                            Table B.7: Learning rates for C Diagonal in Table 1. The
+Our experimental framework is based on the code                   state size is 64.
+by (Delétang et al. 2023). The code is modified to work with
+the PyTorch framework, and was extended by adding novel                     Task                    k     LR       lp
+models and tasks. We used a modified version of the gener-                  Parity Check            8     1e-4     1.2
+ative code from (Liu et al. 2023) to define the C2 × Cn , Dn ,              Even Pairs              8     2e-5     1.4
+and A5 FSAs.                                                                Cycle Navigation        8     2e-5     1.3
+                                                                            Modular Arithmetic      18    1e-4     1.2
+Experiment Hyperparameters                                                  C2 × C4                 6     2e-5     1.3
+Table B.5 through Table B.8 show the hyperparameters re-                    D4                      6     1e-4     1.2
+quired to reproduce our main experimental results. All mod-                 A5                      6     2e-5     1.3
+els were trained using the Adam optimizer with β1 = 0.9,
+β2 = 0.999, batch size 128, and 1,000,000 training steps.         Table B.8: SD-SSM hyperparameters for Table 1. We denote
+For S4, S4D, Hyena, and Mamba results, we sweeped the             the number of transition matrices (A1 , ..., Ak ) with k.
+learning rate in {1e-5, 1e-4, 1e-3, 1e-2}, weight decay in
+{0, 1e-4, 1e-3, 1e-2} and state size in {128, 256}. SD-SSM,                 Length     RNN       LSTM       SD-SSM
+the C diagonal models, the RNN, and the LSTM were al-                       4          0.001     0.0025     0.0025
+ways trained without regularization. Unless explicitly stated               5          0.001     0.0025     0.01
+otherwise, the state size is 64.                                            6          0.001     0.0025     0.0075
+                                                                            7          0.0025    0.0025     0.001
+                                 State   LR      WD                         8          0.0025    0.0025     0.0001
+        Parity Check             128     1e-4    0.0
+        Even Pairs               128     1e-2    0.0              Table B.9: Learning rates for RNN, LSTM and SD-SSM re-
+        Cycle Navigation         256     1e-4    0.0              sults in Table 2. For SD-SSM, we used k = 6 transition
+        Modular Arithmetic       256     1e-3    0.0              matrices, state size 64, and l1.2 column norm.
+
+Table B.5: Mamba hyperparameters for Table 1. The embed-                    Task         B = 0?      Readout      LR
+ding size is 64.                                                                                     Linear       1e-3
+                                                                                         Yes
+                                                                                                     Nonlin.      1e-3
+                                                                            C2 × C30
+                                                                                                     Linear       1e-3
+                                                                                         No
+            Task                     LR      WD                                                      Nonlin.      1e-2
+            Parity Check             1e-4    0.0                                                     Linear       1e-4
+                                                                                         Yes
+            Even Pairs               2e-4    0.0                                                     Nonlin.      1e-4
+                                                                            D30
+            Cycle Navigation         1e-4    0.0                                                     Linear       5e-4
+                                                                                         No
+            Modular Arithmetic       2e-4    1e-4                                                    Nonlin.      5e-3
+            C2 × C4                  5e-4    1e-4
+                                                                  Table B.10: Leraning rates for C diagonal results in Table 4.
+            D4                       1e-4    1e-4
+                                                                  The state size is 64.
+            A5                       1e-4    1e-4
+
+Table B.6: RegularLRNN (Fan, Chi, and Rudnicky 2024)                                 Task        LR       lp
+hyperparameters for Table 1. The embedding size and the                              C2 × C30    5e-5     1.1
+state size are both 64. Block size is 8 in each case.                                D30         5e-5     1.15
+
+                                                                  Table B.11: Hyperparameters for SD-SSM results in Table 4.
+                                                                  We used k = 10 transition matrices and state size 64.
+Details on the Length Efficiency Analysis
+The experimental setup in the Length Efficiency Analysis in
+Sec. 3 differs from the experimental setup used in the rest       order for input-output examples to cover all states of the au-
+of the experiments. As the input lengths are very short, in       tomaton, we chose the initial state uniformly at random. This
+  Task         1 Layer     2 Layers     3 Layers    4 Layers       search, we ran experiments with the number of transition
+  C2 × C30     1e-2        5e-4         5e-4        5e-4           matrices in {18, 36}, learning rate in {2e-5, 1e-4, 5e-4} and
+  D30          5e-3        5e-4         1e-3        1e-4           weight decay in {0, 1e-4, 1e-3}. The best result (71.9%) was
+                                                                   obtained with k = 18 transition matrices, lr = 1e-4 and wd
+Table B.12: Learning rates for C diagonal results in Ta-           = 1e-3. Increasing the weight decay further, to 1e-2, again
+ble C.15. The state size is 64. The model uses an MLP read-        resulted in a drastic performance drop to 21.5%. In the third
+out with intermediate size 128, and B ̸= 0.                        search, we increased the learning rates and used k = 10
+                                                                   transition matrices. Concretely, the learning rate was set to
+                                                                   values in {0.001, 0.0025, 0.005} and weight decay was set
+stands in contrast with the other experiments, which always        to values in {1e-5, 1e-4 and 1e-3}. In this search, p was in
+used a fixed initial state. The set of states Q was encoded into   {1.15, 1.25, 1.3}. The best result of 67.3% was achieved in
+a matrix X ∈ R|Q|×d with d = 512 and each element of       √the    the centre of the grid, with lr=0.0025 and wd=1e-4. Finally,
+matrix X randomly generated i.i.d. as Xi,j ∼ N (0, 1/ d).          we experimented with dropout on the hidden layer of the
+This ensures that each row of X is in expectation of unit l2       MLP readout. The hyperparameter search was run with 18
+norm and that the rows are highly likely to be orthogonal          transition matrices, learning rate in {2e-5, 1e-4, 5e-4} and
+to each other. The initial state is chosen uniformly at ran-       dropout in {0.1, 0.2, 0.5}, and resulted in the best accuracy
+dom, and is projected to a lower dimensionality (128 in our        of 57.3% with lr=5e-4 and dropout=0.5
+case) using a trainable linear projection. The state is pro-
+vided as the initial state of the model, x0 , after which the      Average Accuracies in the Length Efficiency
+model is emulated for a short number of steps by consum-           Analysis
+ing a randomly generated input sequence. The final state of        In the Length Efficiency Analysis in Sec. 3, we reported the
+the model, xT , is projected to 512 dimensions using a linear      best accuracy achieved over three random seeds in Table 2.
+layer M , and the matrix-vector product X(M xT ) defines           Here, we additionally report the average accuracy over three
+the output logits of the model. The model is trained to mini-      seeds in Table C.14. While in Table 2 we could observe that
+mize the cross-entropy loss between the output logits and the      SD-SSM exhibits better length generalization when the best
+true final state of the automaton. As the training sequences       seed is selected, here we can see that it does exhibit higher
+are very short, we observed overfitting. For this reason, we       variability across seeds compared to the the other models.
+validate the models on sequences up to length 40 and re-
+port the accuracy obtained on sequences up to length 500.          Results with Multiple Layers of the C Diagonal
+This stands in contrast with the experimental setup used for       Model
+all other experiments, in which we evaluate the final model
+after a fixed number of training steps as in (Delétang et al.     Finally, we report the best and average length generalization
+2023).                                                             accuracy of the C diagonal model with 2, 3, and 4 layers
+                                                                   on the C2 × C30 and D30 automata in Table C.15. In both
+                                                                   tasks, with every number of layers investigated, 100% in-
+                  C    Further Results                             domain accuracy could be achieved. However, we can see
+Modern Sequence Models Fail to Emulate FSA                         that increasing the number of layers beyond one tends to
+With Two Layers                                                    have a detrimental effect on the length generalization of the
+We report results with two layers of S4, S4D, Hyena,               models.
+H3, and Mamba on the set of regular language tasks
+from (Delétang et al. 2023) in Table C.13. While the results
+are often better with two layers, the models still do not ex-
+hibit significant length generalization on this set of tasks.
+
+SD-SSM with Nonlinear Readout on Arithmetic
+The SD-SSM with a nonlinear readout replaces the linear
+map in Figure 2 with a two-layer MLP with the ReLU acti-
+vation function. The intermediate size of the MLP is equal
+to the state size (64). We ran an extensive hyperparameter
+search over different grids before concluding that the MLP
+readout negatively impacts single-layer SD-SSM’s perfor-
+mance on Arithmetic.
+   We initially started a hyperparameter search with 6 tran-
+sition matrices, learning rate in {1e-4, 5e-4} and weight de-
+cay in {0, 1e-4, 1e-3, 1e-2}. The best result of 63.9% was
+obtained with lr=1e-4 and wd=1e-3. Notably, increasing the
+weight decay factor past 1e-3 resulted in a drastic perfor-
+mance drop to 20.6%. Without weight decay, the best result
+we could obtain was 29.2%. In the second hyperparameter
+  Layers       Task           S4           S4D            H3             Hyena          Mamba       RegularLRNN       SD-SSM
+              Parity          —         50.1 / 50.0   50.0 / 50.0      50.1 / 50.0    50.3 / 50.1        100 / 100    100 / 100
+            Even Pairs        —         50.4 / 50.3   51.0 / 50.5      99.9 / 79.3     100 / 100         100 / 100    100 / 100
+     1
+              Cycle           —         33.6 / 29.2   20.1 / 20.0      20.1 / 20.0    21.1 / 21.0       100 / 100     100 / 100
+            Arithmetic        —         20.1 / 20.0   20.1 / 20.1      20.1 / 20.1    20.1 / 20.1       33.3 / 30.2   99.9 / 98.5
+              Parity      50.0 / 50.0   50.1 / 49.9   50.1 / 50.0      50.1 / 50.0    55.6 / 53.8             —           —
+            Even Pairs        —         67.2 / 60.1   63.8 / 59.8      76.2 / 67.6     100 / 100              —           —
+     2
+              Cycle           —         50.3 / 50.1   20.0 / 19.9      20.2 / 19.9    59.5 / 40.9             —           —
+            Arithmetic    20.1 / 20.1   21.5 / 20.5   20.2 / 20.0      20.2 / 20.0    23.5 / 23.0             —           —
+
+Table C.13: Maximum/Average length generalization accuracy (%) on sequences up to length 500 over 3 random seeds. Various
+sequence models with 1 and 2 layers. The models were trained on sequences up to length 40.
+
+
+
+
+                                                                    Training Length
+                         Model              4             5                6              7               8
+                          RNN            7.1 / 6.3    26.1 / 21.5     85.4 / 78.3     99.4 / 98.3   99.9 / 99.5
+                         LSTM           14.7 / 11.1   66.9 / 45.7     97.6 / 95.4     99.9 / 99.9   100 / 99.9
+                      SD-SSM (ours)     31.5 / 15.0   83.3 / 41.3     97.2 / 92.1     99.4 / 95.0   100 / 100
+
+Table C.14: Maximum/Average length generalization accuracy (%) on sequences up to length 500 over three random seeds.
+The models were trained to emulate the A5 automaton with very short sequences (4 to 8) using a state size of 128. SD-SSM
+used k = 6 transition matrices.
+
+
+
+
+                                                                     Layers
+                              Task               1             2               3              4
+                              C2 × C30      81.7 / 35.4   24.6 / 23.9     29.4 / 27.7     30.2 / 28.8
+                              D30           61.0 / 28.6   29.2 / 28.4     24.7 / 20.3     25.9 / 23.9
+
+Table C.15: Maximum/Average accuracy (%) on sequences up to length 600 over three random seeds of the C diagonal model
+with B ̸= 0 and the nonlinear readout, with different model depth. The models were trained on sequences up to length 90.
+

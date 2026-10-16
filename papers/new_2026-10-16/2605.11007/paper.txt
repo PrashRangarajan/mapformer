@@ -1,0 +1,1893 @@
+                                                    The Transformer as a Polar State Estimator
+
+
+                                                                                    Peter Racioppo
+                                                                                 Independent Researcher
+                                                                                    Los Angeles, CA
+                                                                                pcracioppo@gmail.com
+arXiv:2605.11007v4 [cs.LG] 7 Sep 2026
+
+
+
+
+                                                                                       Abstract
+
+                                                    We show that the core components of the Transformer—attention, residual connec-
+                                                    tions, and normalization—arise naturally from a single geometric state estimation
+                                                    problem. Modeling the latent state in polar coordinates naturally separates radial
+                                                    and hyperspherical dynamics, yielding a precision-weighted filtering procedure in
+                                                    which normalization enforces the hyperspherical constraint, attention aggregates
+                                                    directional evidence, and the residual connection implements an incremental state
+                                                    update. The standard Transformer block with rotary positional encodings is recov-
+                                                    ered by discarding the geometric correction terms of the resulting state estimator,
+                                                    showing that its architecture follows from the underlying estimation problem rather
+                                                    than from independent design choices. The proposed Polar Transformer retains
+                                                    these geometric corrections.
+
+
+
+                                        1    Introduction
+
+                                        Despite its empirical success, the Transformer block lacks a unified interpretation. Attention, residual
+                                        connections, and normalization are typically introduced as independent design choices, even though
+                                        they consistently appear together across modern Transformer variants.
+                                        A useful way to view self-attention is as a batch state-estimator: each token provides a noisy
+                                        observation of a latent state, and self-attention aggregates observations from other tokens to estimate
+                                        this underlying state. The key question is how to model uncertainty in these observations. A fixed
+                                        ambient covariance assigns the same uncertainty to every state and requires a choice of frame in
+                                        which to express it; we instead define the measurement noise locally at each state, which requires no
+                                        such choice. In particular, we decompose measurement noise into a radial component along the state
+                                        and a tangential component in the orthogonal directions.
+                                        We define a Radial–Tangential (RT) dynamical model, combining linear state dynamics with measure-
+                                        ment noise that decomposes into Gaussian noise in the radial direction and the local tangent plane.
+                                        Under the local-consensus assumption that transported observations remain close to the current latent
+                                        state, the likelihood decouples into separate radial and tangential components to first order. The
+                                        resulting tangential objective is a weighted least-squares problem over the transported directional
+                                        observations, whose closed-form solution is a precision-weighted directional consensus, implemented
+                                        by attention. The RT Filter then combines this directional estimate with the radial estimate to form
+                                        a state update in the ambient space. In this framework, normalization enforces the hyperspherical
+                                        constraint, attention computes the directional consensus, and the residual connection implements the
+                                        resulting ambient-space state update.
+                                        We show that the standard Transformer block (excluding the FFN, which lies outside the present
+                                        interpretation) arises as an approximate implementation of the RT-Filter. This model also gives token
+                                        magnitude a probabilistic interpretation as directional confidence: because angular uncertainty scales
+                                        as 1/m2 , higher-magnitude tokens are more resistant to reorientation.
+
+
+                                        Preprint.
+The proposed Polar Transformer retains the geometric filtering update together with the additional
+architectural modifications implied by the RT Filter while preserving efficient parallel computation.
+Our main contributions are as follows:
+      1. Radial–Tangential Model: A dynamical model with state-dependent measurement uncer-
+         tainty and closed-form covariance propagation.
+      2. Radial–Tangential Filter: A geometric filter induced by this model that unifies attention,
+         normalization, and residual connections as components of a Bayesian state estimator.
+      3. Transformer as Geometric Filtering: A derivation of the Transformer as an approximation
+         of the RT-Filter.
+      4. Polar Transformer: A Transformer architecture that retains the first-order geometric
+         corrections of the RT-Filter while preserving efficient parallel computation.
+
+2     Related Work
+2.1   Attention as Estimation and Filtering
+
+The Transformer architecture [Vaswani et al., 2017] has been interpreted through kernel regres-
+sion [Tsai et al., 2019], associative memory [Ramsauer et al., 2021], and probabilistic inference.
+Probabilistic formulations derive attention from latent statistical models, including MAP estimation,
+Bayesian inference, and Gaussian processes, [Gabbur et al., 2021, Bianchessi et al., 2026, Bui et al.,
+2024], but do not derive it from continuous-time latent dynamics.
+Closely related are filtering and state-space interpretations of sequence models. Recent work has
+shown that Transformers can approximate Kalman filtering [Goel and Bartlett, 2024], derive linear
+attention from information-form filtering [Shaj et al., 2026], and unify attention with structured
+state-space models [Gu et al., 2020, 2022, Dao and Gu, 2024]. Robust Filter Attention (RFA)
+[Racioppo, 2026] formulates self-attention as approximate maximum-likelihood estimation under
+a linear stochastic differential equation, using isotropic uncertainty to obtain precision-weighted
+attention. Geometric filtering has also been studied for nonlinear manifold-valued state spaces
+through manifold formulations of the Kalman filter [He et al., 2021]. Our work extends this filtering
+perspective to hyperspherical latent states with state-dependent uncertainty while preserving closed-
+form covariance propagation and O(d) inference. Unlike recurrent state-space models, the RT-
+Filter performs parallel batch state estimation over transported observations with geometry-aware
+uncertainty propagation.
+
+2.2   Positional Encoding and Temporal Transport
+
+Relative positional encoding methods introduce inductive biases for temporal relationships between
+tokens. RoPE [Su et al., 2024] represents relative position through complex rotations, ALiBi [Press
+et al., 2022] applies a distance-dependent bias, xPos [Sun et al., 2022, 2023] combines rotation
+with exponential decay, and RoPER [Harik and Jayasiri, 2022] extends rotary embeddings to value
+vectors. More recently, LieRE [Ostmeier et al., 2025] generalizes RoPE by replacing its fixed block-
+diagonal generator with a learned Lie algebra, yielding a more expressive family of homogeneous
+rotational embeddings. Existing positional encodings specify transport, decay, or positional bias
+independently. In contrast, the RT model derives transport, decay, and value rotation from a single
+stochastic dynamical model: RoPE emerges as deterministic transport, while value rotation and
+counter-rotation arise naturally from Bayesian state estimation.
+
+2.3   Geometric Perspectives and Normalization
+
+Recent work increasingly interprets Transformer representations through hyperspherical geometry.
+Molina interprets normalized token representations as trajectories on the hypersphere [Molina,
+2023], while nGPT maintains unit-normalized embeddings and residual updates throughout the
+network [Loshchilov et al., 2025]. Geshkovski et al. formulate self-attention as an interacting particle
+system on the sphere [Geshkovski et al., 2025], and RiemannFormer formulates attention in tangent
+spaces connected by parallel transport, enabling geometrically consistent comparisons between
+representations at different points on the manifold [Ji, 2025].
+
+
+                                                   2
+Our work provides a complementary probabilistic perspective in which the hyperspherical state space
+arises from Bayesian state estimation. XSA [Zhai, 2026] and GeoNorm [Zheng et al., 2026] use
+related tangent-space projections, but here the projection is derived from the RT filtering equations
+and forms part of a unified interpretation of attention, normalization, and residual updates.
+
+3     Methods
+Robust Filter Attention (RFA) [Racioppo, 2026] models each token as a noisy observation of a latent
+state evolving under a linear dynamical model. Past observations are transported to the query time
+by the state transition matrix and weighted by their predicted precision, so that attention measures
+consistency under the dynamics. Rotational transport recovers RoPE, while the predicted precision
+supplies a distance-dependent positional bias. RFA obtains a closed-form estimator by assuming
+isotropic measurement covariance. In this work, we generalize the measurement model to distinguish
+uncertainty along the latent state from uncertainty orthogonal to it, while retaining the dynamical
+filtering framework of RFA. Appendix A reviews RFA.
+
+3.1   Dynamical Model
+
+Consider the linear dynamical model with Gaussian measurement noise
+                               ẋ(t) = Ax(t),                z i = Cx(ti ) + v i ,                     (1)
+where A is Hurwitz, C is invertible, and v i ∼ N (0, Ri ). Given the sequence of noisy observations
+{z j }j≤i , our objective is to estimate the latent state x(ti ). We consider the case of deterministic
+dynamics (no process noise), and leave the stochastic case to future work.
+We assume that A is diagonalizable, A = SΛS −1 , with Λ diagonal. Passing to the eigenbasis,
+xs = S −1 x, we assume
+                                          Λ = −µI + iΛΩ ,                                           (2)
+where −µI governs isotropic contraction and ΛΩ is a constant real diagonal matrix generating
+isometric transport. These dynamics separate the latent state into a radial magnitude and a directional
+component. In polar form,
+                                    u̇ = iΛΩ u,      ṁ = −µm,                                      (3)
+where xs = mu with m = ∥xs ∥ and u = xs /∥xs ∥. We model measurement uncertainty relative
+to this local geometry rather than with respect to a fixed global coordinate frame. In particular,
+uncertainty may differ along the radial direction and the directions orthogonal to it. Define the
+orthogonal projectors P R (u) = uu† , P T (u) = I − P R (u), which project onto the radial direction
+and its orthogonal tangent space, respectively. We model the latent-space measurement covariance as
+                  ΛR (u) = ηr2 P R (u) + ηt2 P T (u),               Ri = CSΛR (ui )S † C † ,           (4)
+where ηr2 and ηt2 are the radial and tangential measurement variances, respectively. This decomposi-
+tion is illustrated in Figure 1. Given a measurement z i , we express it in the eigenbasis as
+                                           x̂s,i = S −1 C −1 z i .                                     (5)
+Each observation x̂s,j provides a noisy estimate of the latent state at time tj . Letting ∆tij = ti − tj ,
+we propagate each observation to the current time according to
+                                           x̂s,ij = eΛ∆tij x̂s,j .                                     (6)
+The transported observation is therefore a noisy estimate of the current latent state,
+                            x̂s,ij = xs (ti ) + r ij ,          r ij ∼ N (0, Σij ) ,                   (7)
+where Σij denotes the measurement covariance propagated from tj to ti . Writing x̂s,j = m̂j ûj and
+x̂s,ij = m̂ij ûij , where magnitude and direction are defined by m̂ = ∥x̂∥ and û = x̂/∥x̂∥, gives
+                  m̂ij = e−µ∆tij m̂j ,        ûij = Φ(∆tij )ûj ,            Φ(τ ) = eiΛΩ τ .         (8)
+Letting P ij = Σ−1ij , the latent state is estimated by maximum likelihood, or equivalently, by
+minimizing the precision-weighted sum of squared Mahalanobis distances
+                                X                 †                 
+                    L(xs,i ) =       xs,i − x̂s,ij P ij xs,i − x̂s,ij + const.               (9)
+                                  j≤i
+
+
+                                                         3
+However, unlike the Euclidean case, P ij is now a function of xs,i . The following sections show that
+a closed-form estimator can still be obtained.
+
+
+
+
+(a) Noise decomposes into a radial compo-                         (b) The latent state x(t) = m(t)u(t) (blue)
+nent (red) and an isotropic component in the                      is decomposed into a direction on the unit
+tangent space (blue).                                             sphere (gold) and a radial magnitude (gray).
+              Figure 1: Illustration of the Radial–Tangential model in three dimensions.
+
+
+3.2   Covariance Structure and Propagation
+
+The RT covariance model is the minimal rotation-equivariant extension of isotropic covariance,
+introducing independent radial and tangential variances. The following proposition formalizes this.
+Proposition 1 (Rotation-equivariant covariance decomposition). Let Σ(u) be a covariance map on
+the unit sphere satisfying rotation equivariance, Σ(Qu) = QΣ(u)Q† for all Q ∈ SO(d). Then, for
+some nonnegative scalars σr2 , σt2 ∈ R+ , Σ(u) admits the unique decomposition
+                                    Σ(u) = σr2 P R (u) + σt2 P T (u).
+
+Because the directional component of the dynamics is isometric, and the isotropic contraction rescales
+the covariance uniformly, the RT covariance family is closed under transport. This closure allows the
+propagated precision to be evaluated analytically and the resulting estimator to retain a closed form.
+Proposition 2 (Covariance propagation under isometric transport). Let Σj be an RT covariance at
+time tj , and let Φij be an isometric transport operator satisfying Φ†ij Φij = I, u(ti ) = Φij u(tj ).
+Then the transported covariance Σij = Φij Σj Φ†ij retains the RT form
+                               2                            2
+                        Σij = σΣr (ti , tj )P R (u(ti )) + σΣt (ti , tj )P T (u(ti )),
+       2               2
+where σΣr (ti , tj ), σΣt (ti , tj ) ∈ R+ are the transported radial and tangential variances.
+For the homogeneous model with u̇ = iΛΩ u, the propagated variances reduce to
+                            2
+                           σΣr,ij = e−2µ∆tij ηr2 ,         2
+                                                          σΣt,ij = e−2µ∆tij ηt2 .
+
+3.3   Likelihood Decomposition
+
+Because the propagated RT precision P ij has a closed form, the negative log-likelihood likewise
+decomposes into radial and tangential components.
+Proposition 3 (Radial–tangential decomposition). Let xs,i = mi ui and let the propagated precision
+           −2                 −2
+be P ij = σΣr,ij P R (ui ) + σΣt,ij P T (ui ). Then the negative log-likelihood
+                                      X                   †                    
+                       L(mi , ui ) =        mi ui − x̂s,ij P ij mi ui − x̂s,ij                (10)
+                                         j
+
+decomposes as
+                                  L(mi , ui ) = LR (mi , ui ) + LT (ui ),                                (11)
+
+
+                                                      4
+where
+                       X u†i x̂s,ij − mi 2                   X m̂2ij                    2
+                                                                                             
+                LR =              2               ,   LT =        2       1 − u†i ûij           .   (12)
+                         j
+                                 σΣr,ij                      j
+                                                                 σΣt,ij
+
+Local consensus approximation. Although the likelihood decomposes into radial and tangential
+components, LR still depends on both mi and ui . In the local consensus regime, where x̂s,ij remains
+close to xs,i , this coupling vanishes to first order, enabling separate optimization of LR and LT .
+Proposition 4 (First-order perturbation and likelihood decoupling). Assume the filter operates in a
+local regime satisfying
+                                  x̂s,ij − xs,i = O(εmi ),         ε ≪ 1.
+Then the likelihood decouples to first order,
+                               L(mi , ui ) = LR (mi ) + LT (ui ) + O(ε2 ).
+Under the same regime as in Proposition 4, the directional likelihood becomes
+                                       X
+                            LT (ui ) =      κij ∥ui − ûij ∥2 + O(ε2 ),                              (13)
+                                              j
+where κij = m̂2ij /σΣt,ij
+                    2
+                          . Thus, directional estimation reduces to a weighted least squares problem.
+
+3.4   The RT-Filter
+
+Since Proposition 4 shows that radial–tangential coupling contributes only second-order terms,
+minimizing the radial and tangential objectives separately provides a first-order approximation to the
+joint optimization. The RT-Filter therefore performs a first-order block-coordinate optimization step,
+updating the radial and tangential components in parallel.
+Directional Estimation. From Eq. 13, the directional likelihood reduces, to first order, to
+                                X                 2                m̂2ij
+                       LT (u) ≈    κij ∥u − ûij ∥ ,        κij = 2      .
+                                                                  σΣt,ij
+                                      j≤i
+Parameterizing the estimate by the tangent-space perturbation u = ûi + ∆u, gives
+                                        X                           2
+                                min         κij ∥∆u − (ûij − ûi )∥ .
+                              ∆u∈Tûi S d−1
+                                              j≤i
+The first-order solution is ∆ui = P T (ûi ) (ūi − ûi ) ≈ ūi − ûi , where the consensus direction is
+                                    X                              κij
+                              ūi =     Aij ûij ,       Aij = P             .
+                                                                   j ′ κij
+                                                                           ′
+                                     j
+
+Radial Estimation. Holding the directional estimate fixed at ûi , minimizing the radial term
+     P |û† x̂ −mi |2
+LR = j i σs,ij2       , yields a precision-weighted estimator for the magnitude
+              Σr,ij
+               X −1 X
+        m̄i =       ρij          ρij cij m̂ij ,           2
+                                                ρij = 1/σΣr,ij ,      cij = Re(û†i ûij ),
+                   j≤i          j≤i
+where cij projects the transported magnitude onto the current directional estimate.
+
+Robustification. Robustness is obtained by replacing the quadratic directional likelihood with a
+robust M-estimator, κij → wij κij , where wij decreases with the precision-weighted squared residual.
+For the exponential kernel, wij = exp(−d2ij /τ d), with temperature τ , while a Student-t kernel gives
+a heavier-tailed alternative (Appendix C.2.1). The residual is
+                                  2                   2
+           d2ij = κ̃ij ûi − ûij ,      ûi − ûij = ∥ûi ∥2 + ∥ûij ∥2 − 2 Re û†i ûij ,
+                                                                                         
+                                                                                                  (14)
+where κ̃ij includes the additional query-side measurement variance used to evaluate the residual
+(Appendix C.2.1). The resulting attention weights are
+                                                     wij κij
+                                       Aij = P                    ,
+                                                 j ′ ≤i wij κij
+                                                            ′   ′
+
+recovering the dimension-normalized Softmax kernel for exponential weighting when τ = 1, and
+yielding a heavier-tailed estimator under Student-t weighting. An analogous robustification may be
+applied to the radial estimator (Appendix C.2.1).
+
+
+                                                      5
+Filtering Update. We take a block-coordinate optimization step on the radial and tangential
+likelihoods to obtain the radial and directional corrections
+                          ∆mi = m̄i − m̂i ,          ∆ui = P T (ûi ) (ūi − ûi ) .
+Since x = mu, the differential of the polar embedding F (m, u) = mu gives
+                                     ∆x̂i = α m̂i ∆ui + β ∆mi ûi ,
+where α, β ∈ R are step sizes, yielding the first-order RT-Filter update, x̂+
+                  +
+                                                                            i = x̂i + ∆x̂i . The
+resulting geometric update is illustrated in Fig. 2.
+
+3.5   The Transformer as an Approximate RT-Filter
+
+We now implement the above geometric filter as a Transformer with a single attention head; the
+multi-head case is derived in Appendix D. The exact RT-Filter maintains a single latent directional
+state ui for each token. The Transformer relaxes this representation by allowing separate query,
+key, and value representations: ui −→ (q i , ki , v i ). The current normalized observation ûi is the
+query, while the transported observation ûij is the transported key, both of which appear in the robust
+weights wij . The values carry the observations v̂ ij that are aggregated to form the filtered estimate
+v̄ i . Given input observations in the latent basis Z, the queries, keys, and values are defined as usual:
+                            Q = W q Z,          K = W k Z,           V = W v Z.
+The input projections W q , W k , W v absorb the change of basis from the residual stream to the
+eigenbasis S −1 C −1 , while W o absorbs the inverse transformation CS back to the residual stream.
+In the RT-Filter, u is a unit vector in the latent eigenbasis. In the implementation, RMSNorm realizes
+this constraint
+       √        at a learned radius r rather than unit radius, giving ∥q i ∥ = ∥ki ∥ = ∥v i ∥ = r, where
+r = s d, with s the learned RMSNorm scale. The normalization may be applied either before or
+after the QKV projections. Normalizing after the projections enforces the constraint directly in the
+latent eigenbasis, whereas standard pre-norm enforces it in the ambient basis, which is equivalent if
+and only if the QKV projections are norm-preserving, i.e., unitary. With pre-projection normalization,
+we may define the magnitude estimate as m̂i = ∥z i ∥; for post-normalization, we may use m̂i = ∥v i ∥.
+
+Robust Filter Attention. The directional estimator is isotropic RFA (Appendix A), specialized to
+purely rotational transport. Writing the transport of Eq. 8 in the eigenbasis as elementwise rotations,
+                                 −                            +
+                               Φ̃ [k, i] = e−iωk ti ,       Φ̃ [k, i] = eiωk ti ,
+
+
+
+
+(a) Transported observations {ûij }j≤i form a               (b) The filter takes a tangent-space step toward ū,
+precision-weighted point cloud on the hypersphere.           followed by retraction to the hypersphere.
+
+Figure 2: The RT-Filter: transported observations form a precision-weighted consensus, followed by
+a tangent-space update and hyperspherical retraction.
+
+
+                                                        6
+each representation is rotated once into the stationary frame,
+                             −                     −                     −
+                      Q̃ = Φ̃ ⊙ Q,            K̃ = Φ̃ ⊙ K,       Ṽ = Φ̃ ⊙ V ,
+                             iΛΩ ∆tij
+so that pairwise transport e          is replaced by N backward rotations and a single forward rotation
+per query. This is algebraically identical to RoPE. The standard Transformer applies RoPE to Q and
+K only, aggregating unrotated values, V̄ = V A⊤ , and so omits the transport of the observations
+being averaged. The squared query–key residual of Eq. 14 is
+                            ∥Rqk [i, j]∥2 = ∥q i ∥2 + ∥kj ∥2 − 2 Re q̃ †i k̃j ,
+                                                                             
+
+Defining a temperature τ , the attention matrix is then
+                                                                             
+                           A = Softmaxcausal log(κ) − τ1d ∥Rqk [i, j]∥2 .
+                                            P
+The RT-Filter directional estimate ūi = j Aij ûij is then formed in value coordinates by aggregat-
+ing in the stationary frame and rotating back to the original frame,
+                                                   +
+                                           V̄ = Φ̃ ⊙ Ṽ A⊤ .
+                                                             
+
+
+The Residual Update. Writing x̂s,i = m̂ri ûi , ∥ûi ∥ = r, the polar embedding F (m, u) =
+mu/r has differential dxs = ur dm + m    r du. Choosing αi = α/m̂i makes the ambient directional
+update independent of the current magnitude. Expressing the filtered estimate in Transformer value
+coordinates, and suppressing the radial correction (β = 0), gives
+                                                    α
+                                    x̂+
+                                      s,i ≈ x̂s,i +   P T (v̂ i )v̄ i .
+                                                    r
+Mapping back to the residual stream basis gives
+                                                     α
+                               z+
+                                i ≈ W oW v zi +        W o P T (v̂ i )v̄ i .
+                                                     r
+In the identity-mapping regime W o W v ≈ I, absorbing α/r into W o , and neglecting the tangent
+space projection P T we obtain the Transformer residual update,
+                                         z+i ≈ z i + W o v̄ i .
+Thus, RMSNorm implements the hyperspherical parameterization, attention forms the filtered esti-
+mate, and the residual connection takes a step toward that estimate.
+
+3.6   The Polar Transformer
+
+The Polar Transformer retains the tangent-space and radial corrections suppressed by the standard
+Transformer approximation. Using the same hyperspherical parameterization and again choosing
+αi = α/m̂i , the first-order update is
+                                               α                  β
+                               x̂+
+                                 s,i = x̂s,i +   P T (v̂ i )v̄ i + ∆mi v̂ i ,
+                                               r                  r
+where ∆mi = m̄i − m̂i . Mapping back to the residual stream yields
+                                          1
+                             z+
+                                                                              
+                              i = z i + W o αP T (v̂ i )v̄ i + β∆mi v̂ i ,                    (15)
+                                          r
+The tangent-space projection is identical in form to that of Exclusive Self-Attention (XSA) [Zhai,
+2026]. With multiple heads, however, the directional objective separates by head while the hyper-
+spherical constraint remains global; Appendix D derives the resulting coupled update. Figure 5
+summarizes the relationship between the RT-Filter and the two Transformer implementations. An
+implementation is described in Appendix F.
+
+4     Conclusion
+We presented a geometric interpretation of the Transformer in which attention, residual connections,
+and normalization arise as components of a unified state-estimation procedure on a hyperspherical
+latent space. This perspective is formalized through the Radial–Tangential (RT) model, whose
+uncertainty structure admits closed-form covariance propagation and yields the RT-Filter. We
+showed that the standard Transformer with rotary positional embeddings emerges as a simplified
+implementation of this estimator, while retaining its geometric corrections leads naturally to the
+proposed Polar Transformer.
+
+
+                                                  7
+References
+Arthur S. Bianchessi, Yasmin C. Aguirre, Rodrigo C. Barros, and Lucas S. Kupssinskü. Bayesian
+  attention mechanism: A probabilistic framework for positional encoding and context length
+  extrapolation. In The Fourteenth International Conference on Learning Representations, 2026.
+  URL https://openreview.net/forum?id=dXJB9O8fLd.
+Long Minh Bui, Tho Tran Huu, Duy Dinh, Tan Minh Nguyen, and Trong Nghia Hoang. Revisiting
+  kernel attention with correlated Gaussian process representation. In Proceedings of the Fortieth
+  Conference on Uncertainty in Artificial Intelligence, UAI ’24. JMLR.org, 2024.
+Tri Dao and Albert Gu. Transformers are SSMs: generalized models and efficient algorithms through
+  structured state space duality. In Proceedings of the 41st International Conference on Machine
+  Learning, ICML’24. JMLR.org, 2024.
+Prasad Gabbur, Manjot Bilkhu, and Javier Movellan. Probabilistic attention for interactive segmen-
+  tation. In Proceedings of the 35th International Conference on Neural Information Processing
+  Systems, NIPS ’21, Red Hook, NY, USA, 2021. Curran Associates Inc. ISBN 9781713845393.
+Borjan Geshkovski, Cyril Letrouit, Yury Polyanskiy, and Philippe Rigollet. A mathematical perspec-
+  tive on Transformers. Bulletin of the American Mathematical Society, 62:427–479, 04 2025. doi:
+  10.1090/bull/1863.
+Gautam Goel and Peter Bartlett. Can a Transformer represent a Kalman filter? In Alessandro Abate,
+  Mark Cannon, Kostas Margellos, and Antonis Papachristodoulou, editors, Proceedings of the 6th
+  Annual Learning for Dynamics &; Control Conference, volume 242 of Proceedings of Machine
+  Learning Research, pages 1502–1512. PMLR, 15–17 Jul 2024. URL https://proceedings.
+  mlr.press/v242/goel24a.html.
+Albert Gu, Tri Dao, Stefano Ermon, Atri Rudra, and Christopher Ré. HiPPO: Recurrent memory with
+  optimal polynomial projections. In Proceedings of the 34th International Conference on Neural
+  Information Processing Systems, NIPS ’20, Red Hook, NY, USA, 2020. Curran Associates Inc.
+  ISBN 9781713829546.
+Albert Gu, Karan Goel, and Christopher Re. Efficiently modeling long sequences with structured
+  state spaces. In International Conference on Learning Representations, 2022. URL https:
+  //openreview.net/forum?id=uYLFoz1vlAC.
+Georges Harik and Varuna Jayasiri. Rotary positional embeddings with relative distances, 2022. URL
+  http://research.labml.ai/RoPER.html.
+Dongjiao He, Wei Xu, and Fu Zhang. Kalman filters on differentiable manifolds, 2021. URL
+  https://arxiv.org/abs/2102.03804.
+Zhongping Ji. RiemannFormer: A framework for attention in curved spaces, 2025. URL https:
+  //arxiv.org/abs/2506.07405.
+Bruce G. Lindsay. Composite likelihood methods. In N. U. Prabhu, editor, Statistical Inference from
+  Stochastic Processes, volume 80 of Contemporary Mathematics, pages 221–239. 1988.
+Ilya Loshchilov, Cheng-Ping Hsieh, Simeng Sun, and Boris Ginsburg. nGPT: Normalized Trans-
+   former with representation learning on the hypersphere. In The Thirteenth International Conference
+   on Learning Representations, 2025. URL https://openreview.net/forum?id=se4vjm7h4E.
+Raul Molina. Traveling words: A geometric interpretation of Transformers, 2023. URL https:
+  //arxiv.org/abs/2309.07315.
+Sophie Ostmeier, Brian Axelrod, Maya Varma, Michael Moseley, Akshay S Chaudhari, and Curtis
+  Langlotz. LieRE: Lie rotational positional encodings. In Forty-second International Conference
+  on Machine Learning, 2025. URL https://openreview.net/forum?id=yMJAYbGcCc.
+Ofir Press, Noah Smith, and Mike Lewis. Train short, test long: Attention with linear biases enables
+  input length extrapolation. In International Conference on Learning Representations, 2022. URL
+  https://openreview.net/forum?id=R8sQPpGCv0.
+
+
+                                                 8
+Peter Racioppo. Robust Filter Attention: Self-attention as precision-weighted state estimation. In
+  Forty-third International Conference on Machine Learning, 2026. URL https://openreview.
+  net/forum?id=GhI6lw5QKe.
+Hubert Ramsauer, Bernhard Schäfl, Johannes Lehner, Philipp Seidl, Michael Widrich, Lukas Gru-
+  ber, Markus Holzleitner, Thomas Adler, David Kreil, Michael K Kopp, Günter Klambauer, Jo-
+  hannes Brandstetter, and Sepp Hochreiter. Hopfield networks is all you need. In International
+ Conference on Learning Representations, 2021. URL https://openreview.net/forum?id=
+  tL89RnzIiCd.
+Vaisakh Shaj, Cameron Barker, Aidan Scannell, Andras Szecsenyi, Elliot J. Crowley, and Amos
+  Storkey. Kalman Linear Attention: Parallel Bayesian filtering for efficient language modeling
+  and state tracking. In Forty-third International Conference on Machine Learning, 2026. URL
+  https://openreview.net/forum?id=9h7sSJe4jN.
+Jianlin Su, Murtadha Ahmed, Yu Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu. RoFormer: Enhanced
+   Transformer with rotary position embedding. Neurocomputing, 568:127063, 2024. ISSN 0925-
+   2312. doi: https://doi.org/10.1016/j.neucom.2023.127063. URL https://www.sciencedirect.
+   com/science/article/pii/S0925231223011864.
+Yutao Sun, Li Dong, Barun Patra, Shuming Ma, Shaohan Huang, Alon Benhaim, Vishrav Chaudhary,
+  Xia Song, and Furu Wei. A length-extrapolatable Transformer, 2022. URL https://arxiv.
+  org/abs/2212.10554.
+Yutao Sun, Li Dong, Shaohan Huang, Shuming Ma, Yuqing Xia, Jilong Xue, Jianyong Wang, and
+  Furu Wei. Retentive Network: A successor to Transformer for large language models, 2023. URL
+  https://arxiv.org/abs/2307.08621.
+Yao-Hung Hubert Tsai, Shaojie Bai, Makoto Yamada, Louis-Philippe Morency, and Ruslan Salakhut-
+  dinov. Transformer dissection: A unified understanding for Transformer’s attention via the lens of
+  kernel. In Kentaro Inui, Jing Jiang, Vincent Ng, and Xiaojun Wan, editors, Proceedings of the 2019
+  Conference on Empirical Methods in Natural Language Processing and the 9th International Joint
+  Conference on Natural Language Processing (EMNLP-IJCNLP), pages 4344–4353, Hong Kong,
+  China, November 2019. Association for Computational Linguistics. doi: 10.18653/v1/D19-1443.
+  URL https://aclanthology.org/D19-1443/.
+Cristiano Varin, Nancy Reid, and David Firth. An overview of composite likelihood methods.
+  Statistica Sinica, 21:0–0, 01 2011.
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez,
+  Ł ukasz Kaiser, and Illia Polosukhin. Attention is all you need. In I. Guyon, U. Von
+  Luxburg, S. Bengio, H. Wallach, R. Fergus, S. Vishwanathan, and R. Garnett, edi-
+  tors, Advances in Neural Information Processing Systems, volume 30. Curran Associates,
+  Inc., 2017. URL https://proceedings.neurips.cc/paper_files/paper/2017/file/
+  3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf.
+Songlin Yang, Yikang Shen, Kaiyue Wen, Shawn Tan, Mayank Mishra, Liliang Ren, Rameswar Panda,
+  and Yoon Kim. PaTH attention: Position encoding via accumulating householder transformations.
+  In The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2025. URL
+  https://openreview.net/forum?id=ZBlHEeSvKd.
+Shuangfei Zhai. Exclusive Self Attention, 2026. URL https://arxiv.org/abs/2603.09078.
+Chuanyang Zheng, Jiankai Sun, Yihang Gao, Chi Wang, Yuehao Wang, Jing Xiong, Liliang Ren,
+  Bo Peng, Qingmei Wang, Xiaoran Shang, Mac Schwager, Anderson Schneider, Yuriy Nevmyvaka,
+  and Xiaodong Liu. GeoNorm: Unify pre-norm and post-norm with geodesic optimization, 2026.
+  URL https://arxiv.org/abs/2601.22095.
+
+
+
+
+                                                 9
+Appendix Table of Contents
+    1. Appendix A: Background: Isotropic Filtering and Attention                             11
+         • Reviews isotropic Robust Filter Attention (RFA), deriving attention as a precision-
+           weighted state estimator under linear stochastic dynamics.
+    2. Appendix B: Radial–Tangential Covariance                                              14
+         • Derives the radial–tangential covariance model and establishes its preservation under
+           transport.
+    3. Appendix C: The Radial–Tangential Filter                                              16
+         • Derives the exact RT likelihood, its first-order approximation, and the resulting RT
+           filtering algorithm.
+    4. Appendix D: Extension to Multi-Head Attention                                         22
+         • Extends the RT-Filter from the single-head to the multi-head attention setting.
+    5. Appendix E: Architectural Implications                                                25
+         • Discusses the architectural implications of the RT-Filter.
+    6. Appendix F: Implementation                                                            27
+         • Presents an efficient real-valued implementation of the Polar Transformer.
+    7. Appendix G: Extensions                                                                29
+         • Develops extensions of the RT filtering framework.
+
+
+
+
+                                              10
+A     Background: Isotropic Filtering and Attention
+This appendix reviews the isotropic filtering framework, Robust Filter Attention (RFA) [Racioppo,
+2026], which the proposed radial–tangential framework generalizes. We first derive the Bayesian
+estimator for a linear Gaussian dynamical system and then describe the approximations that yield
+an efficient Transformer implementation. The radial–tangential filter follows the same overall
+construction while replacing isotropic Euclidean filtering with filtering on the product manifold of
+radial and directional components.
+
+A.1     Linear Dynamical Model
+
+RFA models queries and keys as noisy observations of a latent linear stochastic process,
+                      dx(t) = Ax(t) dt + G dw(t),                   z i = Cx(ti ) + v i ,
+where
+                                  v i ∼ N (0, R),            Q = GG⊤ .
+Each past embedding x̂j = C −1 z j serves as a key. It is propagated forward via the state transition
+matrix to form a prediction of the current latent state,
+                                             x̂ij = eA∆tij x̂j ,
+where ∆tij = ti − tj . The query x̂i = C −1 z i provides a reference observation against which these
+predictions are compared.
+Under the SDE, the transported key has prediction error
+                             r ij := x(ti ) − x̂ij ,         r ij ∼ N (0, Σij ) ,
+where the covariance captures both accumulated process noise and the measurement uncertainty of
+the source token,
+                                                        ⊤
+                          Σij = V (∆tij ) + eA∆tij Rc eA ∆tij + σ02 I,
+where Rc = C −1 RC −⊤ , σ02 is a small noise floor and V (∆t) is the solution of the Differential
+Lyapunov Equation,
+                       d
+                          V (s) = AV (s) + V (s)A⊤ + Q,                     V (0) = 0,
+                       ds
+whose solution is                                  Z ∆t
+                                                                    ⊤
+                                    V (∆t) =              eAs QeA s ds.
+                                                    0
+The corresponding precision matrix is P ij = Σ−1
+                                              ij .
+
+For the Polar Transformer, we take the process noise to be zero, Q = 0, so that V (∆t) = 0. We
+leave the extension to nonzero process noise to future work.
+
+A.2     Bayesian State Estimation
+
+Given the transported observations, the objective is to estimate the latent state at time ti . Since all
+transported keys originate from the same stochastic process, they are generally correlated through
+shared process noise. Computing the exact posterior therefore requires the full joint covariance of all
+transported observations.
+RFA instead uses a composite marginal likelihood [Lindsay, 1988, Varin et al., 2011], replacing the
+coupled joint objective with a product of marginal likelihood contributions. The resulting objective is
+the precision-weighted least-squares problem
+                                           X
+                            x̄i = arg min     (x − x̂ij )⊤ P ij (x − x̂ij ),
+                                         x
+                                             j≤i
+
+which yields the precision-weighted estimator
+                                      X         −1 X
+                                x̄i =       P ij       P ij x̂ij .
+                                             j≤i              j≤i
+
+
+                                                        11
+A.3     Robust Estimation
+
+The Gaussian estimator assigns weights according to the predicted covariance alone and therefore
+does not adapt to the realized residuals. RFA therefore replaces the Gaussian likelihood with a
+robust M-estimator, whose influence weights depend on the residual between the latent state and each
+transported key.
+The ideal estimator depends on the latent residual r ij = x(ti ) − x̂ij , which cannot be computed
+during inference because the latent state is unobserved. We therefore use the observable residual
+                                           r̃ ij = x̂i − x̂ij ,
+where x̂i = C −1 z i is the query observation. Replacing the latent state with the noisy query
+observation inflates the residual covariance by the query-side measurement noise,
+                                                                           −1
+                              Σ̃ij = Σij + Rc ,                P̃ ij = Σ̃ij .
+The resulting squared Mahalanobis distance is
+                                         d2ij = r̃ ⊤
+                                                   ij P̃ ij r̃ ij ,
+which replaces dot-product similarity with a consistency test under the uncertainty predicted by the
+dynamical model. The robust estimator takes the form
+                                   X               −1 X
+                             x̄i =        wij P ij                 wij P ij x̂ij ,
+                                         j≤i                  j≤i
+where wij is a data-dependent influence weight that reweights the model-based precision according
+to the observed residual magnitude. Two standard choices are
+                                    
+                                                 d2ij
+                                                     
+                                    
+                                    exp − d , (exponential),
+                                    
+                                    
+                              wij ∝ 
+                                             d2ij −κ
+                                                  
+                                    
+                                     1+                , (power law).
+                                    
+                                    
+                                              ν
+The exponential form recovers standard Softmax attention, while the power-law form yields a
+heavier-tailed estimator, corresponding in the isotropic case to a Student-t likelihood.
+
+A.4     Efficient Transformer Implementation
+
+To make the estimator tractable at Transformer scale, RFA introduces two assumptions that enable an
+efficient implementation.
+
+Simultaneous diagonalization. First, the system matrices are assumed to be simultaneously
+diagonalizable,
+                   A = SΛS −1 ,          Q = SΛQ S † ,       Rc = SΛR S † ,
+where Λ, ΛQ , ΛR are diagonal. In this basis, the dynamics decouple into independent scalar modes,
+                                         V (∆t) = SΛV (∆t)S † ,
+where
+                                                          1 − e2 Re(λk )∆t
+                                  λV,k (∆t) = λQ,k                         .
+                                                            −2 Re(λk )
+The estimator becomes
+                                      X                 −1 X
+                            x̄s,i =          wij ΛP,ij              wij ΛP,ij x̂s,ij ,
+                                       j≤i                    j≤i
+where
+                               x̄s,i = S −1 x̄i ,        x̂s,ij = eΛ∆tij x̂s,j .
+Defining
+                                                     wij ΛP,ij
+                                         Aij = P                  ,
+                                                    j≤i wij ΛP,ij
+the estimator takes the attention form              X
+                                          x̄s,i =         Aij x̂s,ij .
+                                                    j≤i
+
+
+                                                     12
+Isotropic assumption. Although diagonalization decouples the dynamics, storing distinct preci-
+sions for every mode still requires O(N 2 d) memory. RFA therefore assumes isotropic dynamics
+within each attention head,
+                                          Λ = −µI + iΛΩ ,
+where ΛΩ is a real-valued diagonal matrix, and isotropic process and measurement noise, ΛQ =
+σ 2 I, ΛR = η 2 I. In practice, separate key-side and query-side measurement variances, η 2 and γ 2 ,
+are used.
+The above decomposition of Λ allows the dynamics to be factored into isotropic exponential decay
+together with forward and backward rotations,
+                                            +                        −
+            E[i, j] = e−µ|ti −tj | ,  Φ̃ [k, i] = eiωk ti ,        Φ̃ [k, i] = e−iωk ti .
+We compute backward-rotated queries, keys, and values
+                             −                     −                     −
+                    Q̃ = Φ̃ ⊙ Q,           K̃ = Φ̃ ⊙ K,            Ṽ = Φ̃ ⊙ V .
+The propagated covariance reduces to the scalar kernels
+                                      σ2
+                        Σ∆t [i, j] =      (1 − E[i, j]2 ) + η 2 E[i, j]2 + σ02 ,
+                                      2µ
+                                    Σ̃∆t [i, j] = Σ∆t [i, j] + γ 2 ,
+with precisions
+                              P ∆t = 1/Σ∆t ,          P̃ ∆t = 1/Σ̃∆t .
+The squared residual norm becomes
+                                                                               †
+                  ∥Rqk [i, j]∥2 = ∥Qi ∥2 + E[i, j]2 ∥K j ∥2 − 2E[i, j] Re(Q̃i K̃ j ),
+giving the Mahalanobis distance
+                                 D 2 [i, j] = P̃ ∆t [i, j] ∥Rqk [i, j]∥2 .
+For the exponential influence function, the attention logits are
+                                                         P̃ ∆t ⊙ ∥Rqk ∥2
+                                Lexp = log(P ∆t ) −                        ,
+                                                               νs d
+recovering the standard exponential Softmax attention of RFA. Replacing the exponential influence
+function with the Student-t influence function yields the robust attention logits
+                                                                                !
+                                                                P̃ ∆t ⊙ ∥Rqk ∥2
+                      L = log(P ∆t ) − (νs + 1) log 1 +                           ,
+                                                                       νs d
+We apply masked Softmax as usual,
+                           A[i, j] = Softmaxj (L[i, j] + M causal [i, j]) .
+Finally, we apply the decay kernel to the attention matrix,
+                                      Â[i, j] = A[i, j] E[i, j],
+and counter-rotate the aggregated values,
+                                                +         ⊤
+                                                           
+                                       V̄ = Φ̃ ⊙ Ṽ Â .
+The resulting implementation follows a rotate–aggregate–counter-rotate structure: values are first
+transformed into the stationary eigenbasis, aggregated according to the Bayesian estimator, and finally
+counter-rotated back into the original value frame to preserve dynamical consistency.
+
+Recovery of Standard Attention Finally, standard Transformer attention is recovered as a special
+case by assuming zero decay (µ = 0) so that E = 1, zero noise (σ, η, γ = 0) so that P̃ ∆t = P ∆t = α
+are constant, and omitting value rotation. The attention logits reduce to
+                                                α
+                                       L=−          ∥Q − K∥2 .
+                                               νs d
+If the query and key embeddings are normalized, ∥Qi ∥ = ∥K j ∥ = const, then
+                                                                    
+                              ∥Qi − K j ∥2 = const − 2 Re Q†i K j ,
+                                                                                                 
+so the additive constant vanishes under the Softmax normalization, yielding L ∝ Re QK † .
+Identifying the complex eigenbasis with an equivalent real representation (Appendix F), this reduces
+to the standard scaled dot-product attention logits.
+
+
+                                                  13
+B    Radial–Tangential Covariance
+This section derives the radial–tangential covariance model underlying the RT Filter. We first show
+that rotational equivariance uniquely determines the covariance structure, and then establish that this
+structure is preserved under transport.
+
+Equivariant RT covariance. The latent state determines only a radial direction, not preferred
+directions within the tangent space. Rotational equivariance therefore uniquely determines the form
+of the covariance.
+Proposition 1 (Rotation-equivariant covariance decomposition).
+Let Σ(u) be a covariance matrix depending on the state direction u, satisfying the equivariance
+condition
+                                    Σ(Ru) = R Σ(u) R†
+for every rotation matrix R ∈ SO(d). Then Σ has the form
+                                   Σ(u) = σr2 P R (u) + σt2 P T (u),
+where σr2 , σt2 ∈ R+ .
+
+Proof. It suffices to characterize the covariance at a single reference direction, say e1 , since the
+general case then follows by equivariance. The subgroup of rotations fixing e1 consists of matrices
+                                           
+                                       1 0
+                               Q=             ,     R ∈ SO(d − 1).
+                                       0 R
+Equivariance therefore requires
+                                         Q Σ(e1 ) Q† = Σ(e1 )
+for every such Q. Writing
+                                                              b† ,
+                                                               
+                                          Σ(e1 ) =    a
+                                                       b      C
+gives
+                                                               b† R †
+                                                                     
+                                               †         a
+                                  Q Σ(e1 ) Q =                          .
+                                                         Rb    RCR†
+Equating blocks yields
+                                     Rb = b,         RCR† = C
+for every R ∈ SO(d − 1). The first condition forces b = 0, since the only vector fixed by every
+rotation is the zero vector. The second implies C = σt2 I, since the only matrices commuting with
+every rotation are scalar multiples of the identity.
+Defining σr2 = a, we obtain
+                                  Σ(e1 ) = σr2 P R (e1 ) + σt2 P T (e1 ).
+
+Finally, for arbitrary u ∈ S d−1 , choose a rotation Q satisfying Qe1 = u. Applying equivariance,
+                                   Σ(u) = Q Σ(e1 ) Q†
+                                          = σr2 P R (u) + σt2 P T (u),
+which proves the claim.
+
+
+
+
+                                                    14
+Covariance propagation. Having established the covariance structure, we now characterize the
+class of state transports that preserve it (Figure 3).
+Proposition 2 (RT covariance propagation).
+Let Φij be an isometric transport satisfying Φij Φ†ij = I and ui = Φij uj . Let the contraction over
+the interval [tj , ti ] be isotropic, so that
+                                       D ij = γij I,      γij > 0,
+and let T ij = D ij Φij . Then any RT covariance
+                                    Σj = σr2 P R (uj ) + σt2 P T (uj )
+propagates to
+                                       2
+                                           2
+                                           σr P R (ui ) + σt2 P T (ui ) .
+                                                                       
+                                Σij = γij
+
+Proof. Since D ij = γij I, the contraction is isotropic and therefore uniformly rescales the covariance.
+It remains to show that the isometric transport maps the radial and tangential projectors at tj to those
+at ti . Since ui = Φij uj and P R (u) = uu† , the radial projector satisfies
+
+                         Φij P R (uj )Φ†ij = Φij uj u†j Φ†ij = ui u†i = P R (ui ).
+
+Using P T (u) = I − P R (u) and Φij Φ†ij = I, the tangential projector satisfies
+
+                Φij P T (uj )Φ†ij = Φij (I − P R (uj )) Φ†ij = I − P R (ui ) = P T (ui ).
+
+Starting from the RT covariance at tj , Σj = σr2 P R (uj ) + σt2 P T (uj ), covariance propagation gives
+
+                            Σij = T ij Σj T †ij
+                                    2
+                                       Φij σr2 P R (uj ) + σt2 P T (uj ) Φ†ij
+                                                                        
+                                 = γij
+                                    2
+                                        2
+                                        σr P R (ui ) + σt2 P T (ui ) .
+                                                                    
+                                 = γij
+Thus, the covariance remains RT after propagation. Although, in general, Φij and γij may depend
+on the entire path from tj to ti , the propagated covariance retains the RT form and its directional
+dependence is determined by the endpoint ui .
+
+
+
+
+          Figure 3: Covariance propagation under isometric transport: Σij = Φij Σj Φ†ij .
+
+
+
+
+                                                    15
+C     The Radial–Tangential Filter
+This section derives the Radial–Tangential (RT) Filter from the RT likelihood. We first develop
+the exact statistical model and its local first-order approximation, then derive the resulting filtering
+algorithm.
+
+C.1     Statistical Derivation
+
+C.1.1    Radial–tangential Decomposition of the Likelihood
+The RT covariance model induces a corresponding decomposition of the Mahalanobis likelihood into
+radial and tangential contributions.
+Proposition 3 (Radial–tangential decomposition of the RT likelihood).
+Let
+                                          x̂s,ij = m̂ij ûij
+denote a transported observation of the latent state
+                                       xs,i = mi ui ,              ∥ui ∥ = 1,
+define the residual
+                                                 r ij = x̂s,ij − mi ui ,
+and let the precision matrix be
+                                              1                 1
+                                 P ij =      2     P R (ui ) + 2     P T (ui ).
+                                            σΣr,ij            σΣt,ij
+The negative log-likelihood is
+                                            X
+                        L(mi , ui ) =        (mi ui − x̂s,ij )† P ij (mi ui − x̂s,ij ),
+                                             j
+
+which admits the exact decomposition
+                                  L(mi , ui ) = LR (mi , ui ) + LT (ui ),
+where
+                                                      X |u† x̂s,ij − mi |2
+                                                            i
+                                        LR =                      2           ,
+                                                       j
+                                                                 σΣr,ij
+and
+                                                 X m̂2ij                        
+                                    LT =                2        1 − |u†i ûij |2 .
+                                                  j
+                                                       σΣt,ij
+
+Proof. Using
+                                                        1              1
+                                     P ij =            2     PR + 2     PT,
+                                                      σΣr,ij     σΣt,ij
+together with the orthogonality relations
+                            P R P T = P T P R = 0,                    P R + P T = I,
+gives
+                                              1                   1
+                        r †ij P ij r ij =
+                                                              2                   2
+                                             2     ∥P R r ij ∥ + 2     ∥P T r ij ∥ .
+                                            σΣr,ij              σΣt,ij
+For the radial component, P R (ui ) = ui u†i , so
+                                                                  
+                                      P R r ij = ui u†i x̂s,ij − mi .
+
+Therefore
+                                      ∥P R r ij ∥ = |u†i x̂s,ij − mi |2 .
+                                                        2
+
+
+
+
+                                                            16
+For the tangential component, P T (ui ) = I − ui u†i . Since P T (ui )(mi ui ) = 0, the latent state
+drops out:
+                                       P T r ij = P T x̂s,ij .
+Substituting x̂s,ij = m̂ij ûij gives
+                                          P T r ij = m̂ij P T (ui )ûij .
+Hence
+                                      ∥P T r ij ∥ = m̂2ij û†ij P T (ui )ûij .
+                                                 2
+
+
+Using P T (ui ) = I − ui u†i , we obtain
+                                                                        
+                                     ∥P T r ij ∥ = m̂2ij 1 − |u†i ûij |2 .
+                                                2
+
+
+Substituting the radial and tangential contributions into the Mahalanobis objective yields the stated
+decomposition.
+
+
+C.1.2   First-order Perturbation of the RT Likelihood
+Although the RT likelihood admits an exact radial–tangential decomposition, the radial likelihood
+remains coupled to the unknown direction. Under a local perturbation assumption, this coupling
+becomes second order, yielding a first-order decoupled likelihood.
+Proposition 4 (First-order perturbation and likelihood decoupling).
+Consider the joint negative log-likelihood
+                                    L(mi , ui ) = LR (mi , ui ) + LT (ui ),
+where
+                       X u†i x̂s,ij − mi 2                       X m̂2ij                        2
+                                                                                                     
+                LR =                 2            ,      LT =                     1 − u†i ûij           .
+                                    σΣr,ij                           σ2
+                       j≤i                                        j≤i Σt,ij
+
+Define εij = 1 − u†i ûij , and assume the radial and angular perturbations satisfy
+                       mi − m̂ij
+                                 = O(εr ),              εij = O(εt ),           εr , εt ≪ 1.
+                          mi
+Then the joint likelihood admits the expansion
+                       L(mi , ui ) = LR (mi ) + LT (ui ) + O(εr εt ) + O(ε2t ),
+where
+                                                      X (mi − m̂ij )2
+                                        LR (mi ) =              2           .
+                                                               σΣr,ij
+                                                      j≤i
+
+In particular, if the transported observation is close to the latent state in the ambient space,
+                                             x̂s,ij − xs,i = O(εmi ),
+then the induced radial and directional perturbations both have order O(ε), and hence
+                               L(mi , ui ) = LR (mi ) + LT (ui ) + O(ε2 ).
+
+Proof. Since x̂s,ij = m̂ij ûij , we have
+
+                                           u†i x̂s,ij = m̂ij (1 − εij ),
+and therefore
+                            u†i x̂s,ij − mi = (m̂ij − mi ) − m̂ij εij .
+Taking the squared modulus gives
+                               2
+             u†i x̂s,ij − mi       = (mi − m̂ij )2 + 2(mi − m̂ij )m̂ij Re(εij ) + m̂2ij |εij |2 .
+
+
+                                                        17
+Since
+                               mi − m̂ij = O(εr mi ),          εij = O(εt ),
+the coupling term satisfies
+                                  2(mi − m̂ij )m̂ij Re(εij ) = O(εr εt ),
+while m̂2ij |εij |2 = O(ε2t ). Hence
+
+                              LR (mi , ui ) = LR (mi ) + O(εr εt ) + O(ε2t ).
+Thus the radial–directional coupling is O(εr εt ), while the purely angular remainder is O(ε2t ). In
+particular, under the local consensus assumption x̂s,ij − xs,i = O(εmi ), by the reverse triangle
+inequality,
+                              |mi − m̂ij | ≤ x̂s,ij − xs,i = O(εmi ),
+            m −m̂
+and hence imi ij = O(ε). For the directional component, writing xs,i = mi ui and x̂s,ij =
+m̂ij ûij , the same ambient condition gives ∥ui − ûij ∥ = O(ε). Since both directions have unit norm,
+1 − u†i ûij = u†i (ui − ûij ), so εij = 1 − u†i ûij = O(ε). Thus the ambient local-consensus condition
+implies εr = O(ε), εt = O(ε), and therefore both O(εr εt ) and O(ε2t ), are O(ε2 ).
+
+
+
+The first-order decoupling still leaves a nonlinear directional objective on the sphere. The following
+corollary shows that this objective reduces to a weighted least-squares problem to first order.
+Corollary 5 (First-order directional likelihood). Under the assumptions of Proposition 4, the first-
+order directional objective is
+                                  X                                              m̂2ij
+                     LT (ui ) =         κij ∥ui − ûij ∥2 + O(ε2 ),    κij =     2     .
+                                                                                σΣt,ij
+                                  j≤i
+
+Thus, to first order, directional estimation reduces to a weighted least-squares problem on the sphere.
+
+Proof. Since
+                                  1 − |u†i ûij |2 = 2 Re(εij ) + O(ε2 ),
+and
+                                   ∥ui − ûij ∥2 = 2 Re(εij ) + O(ε2 ),
+the two expressions agree to first order. Substituting into LT yields the stated quadratic objective.
+
+C.2     Algorithm Derivation
+
+The first-order approximation separates the objective into radial and directional components, with
+coupling only through second-order terms. This naturally motivates a block-coordinate optimization
+strategy, in which the directional and radial subproblems are optimized separately before being
+combined into a filtering update.
+
+Directional Estimation. By Corollary 5, directional estimation reduces to the weighted least-
+squares objective
+                                        X
+                             LT (u) ≈       κij ∥u − ûij ∥2 .
+                                                  j≤i
+
+To account for higher-order effects neglected by the first-order RT approximation, we regularize the
+                                                                           2
+directional precision by introducing (i) an additive covariance inflation σt,0 , preventing overconfident
+                                                       2
+estimates, and (ii) a directional information floor m∞ , preventing degeneracy of the tangent-space
+Fisher information near vanishing magnitudes,
+                                                     m̂2ij + m2∞
+                                            κij =     2        2 .
+                                                    σΣt,ij  + σt,0
+
+                                                        18
+The resulting precision-weighted consensus is
+                                   X                                 κij
+                             ūi =    Aij ûij ,           Aij = P             .
+                                                                     j ′ κij
+                                                                             ′
+                                        j
+
+Since ūi is generally not unit norm, its normalized direction u∗i = Norm(ūi ) defines the consensus
+direction, while its norm ∥ūi ∥ ∈ [0, 1] is the classical mean resultant length, measuring directional
+concentration. The exact geometric update therefore follows the geodesic toward the consensus
+direction,
+                                                                   ∗
+                                  u+
+                                                                     
+                                   i = Expui αi ∥ūi ∥ Logui (ui ) ,
+so that diffuse directional evidence automatically produces a smaller update, while ∥ūi ∥ → 1 recovers
+spherical linear interpolation (SLERP).
+To obtain a first-order filtering update, we parameterize the estimate locally as
+                                              u = ui + ∆u.
+Substituting into the objective gives
+                                             X                                2
+                              LT (∆u) ≈            κij ∥∆u − (ûij − ui )∥ .
+                                             j≤i
+
+Since the estimate must remain on the complex unit sphere, Re(u†i ∆u) = 0, the perturbation lies in
+the tangent space Tui S d−1 , yielding the constrained least-squares problem
+                                           X                           2
+                                  min          κij ∥∆u − (ûij − ui )∥ .
+                              ∆u∈Tui S d−1
+                                             j≤i
+
+Its minimizer is
+                                    ∆ui = P T (ui ) (ūi − ui ) .
+Since ûij = ui + O(ε), the radial component of ūi − ui is second order, giving
+                                        ∆ui = ūi − ui + O(ε2 ).
+Consequently,
+                         Expui (αi ∆ui ) = Norm(ui + αi ∆ui ) + O(ε2 ),
+showing that the normalized Euclidean update used in Transformer architectures is the first-order
+approximation to the intrinsic geodesic update.
+
+Radial Estimation. Holding the directional estimate fixed, the radial update is obtained by mini-
+mizing
+                                      X |u† x̂s,ij − mi |2
+                                             i
+                               LR =              2          .
+                                       j
+                                                σΣr,ij
+Writing x̂s,ij = m̂ij ûij , and defining
+                                   2        2 −1
+                                                             cij = Re û†i ûij ,
+                                                                               
+                           ρij = (σΣr,ij + σr,0 ) ,
+       2
+where σr,0 is a covariance inflation term, the unique minimizer is
+                                              P
+                                                 j≤i ρij cij m̂ij
+                                       m̄i =      P               .
+                                                    j≤i ρij
+
+Thus, the radial estimate is a precision-weighted average of the transported magnitudes, attenuated by
+their directional agreement with the current estimate. Under the small-angle approximation, cij ≈ 1,
+this reduces to                                  P
+                                                    j ρij m̂ij
+                                          m̄i ≈ P              .
+                                                      j ρij
+To obtain an incremental filtering update, we define the radial correction
+                                             ∆mi = m̄i − m̂i .
+
+
+                                                      19
+C.2.1   Robustification
+The preceding results are derived under Gaussian likelihoods for the radial and directional residuals.
+To improve robustness against model mismatch and outliers, we replace these quadratic likelihoods
+with heavy-tailed M-estimators. This modifies only the penalty applied to the residuals, while leaving
+the underlying RT covariance and precision structure unchanged.
+
+Directional Robust Reweighting. The quadratic directional likelihood may be replaced by a
+heavy-tailed M-estimator based on the squared Mahalanobis distance d2ij (ui ) = κij ∥ui − ûij ∥2 . In
+the RT-Filter, d2ij is evaluated at the current direction estimate ûi . The corresponding M-estimator is
+                                                X
+                                                     ρ d2ij (ui ) ,
+                                                                 
+                                           min
+                                           ui
+                                                j≤i
+                                       ′
+where the influence weights wij = ρ (d2ij ) reweight the directional precisions, κij → wij κij . The
+resulting quadratic surrogate is therefore
+                                       X
+                                              wij κij ∥ui − ûij ∥2 ,
+                                        j≤i
+whose minimizer is the precision-weighted consensus
+                               X                                    wij κij
+                         ūi =      AT,ij ûij ,   AT,ij = P                     .
+                                                                j ′ ≤i wij κij
+                                                                           ′   ′
+                               j≤i
+                                                                                   d2
+                                                                                     
+For the exponential influence function with temperature τ , wij = exp − τijd , which gives the
+attention logits
+                                                           d2ij
+                                       LT,ij = log(κij ) −      .
+                                                           τd
+For τ = 1, this recovers the dimension-normalized Gaussian/Softmax kernel. The corresponding
+M-estimation penalty is, up to an irrelevant additive constant,
+                                                  
+                  ρGauss,τ (s) = τ d 1 − e−s/(τ d) ,       ρ′Gauss,τ (s) = e−s/(τ d) .
+More generally, a Student-t likelihood gives
+                                                   d2ij −(ν+d)/d
+                                                       
+                                    wij = 1 +                      ,
+                                                    ν
+with corresponding penalty
+                                               
+                                      s −ν/d                            s −(ν+d)/d
+                 ρt (s) = d 1 − 1 +               ,       ρ′t (s) = 1 +                .
+                                       ν                                   ν
+Thus the Student-t model produces the attention logits
+                                                                     d2ij
+                                                                         
+                                                  ν+d
+                            LT,ij = log(κij ) −           log 1 +           .
+                                                      d               ν
+In the Polar Transformer, we set ν = νt d, giving
+                                                                      d2ij
+                                                                          
+                           LT,ij = log(κij ) − (νt + 1) log 1 +               .
+                                                                      νt d
+Residual Covariance. The precision κij above is the model-derived tangential precision of the
+transported latent observation. In practice, the residual is formed between the transported key ûij and
+a noisy query ûi rather than the latent ui , so its covariance includes both observation uncertainties.
+                                                                                    2       2
+Introducing independent tangential measurement variances for query and key, ηt,q      and ηt,k , gives
+                                    m̂2ij + m2∞
+                       κ̃ij =    2         2 + σ2 ,
+                                                             2
+                                                            σΣt,ij = e−2µ∆tij ηt,k
+                                                                               2
+                                                                                   .
+                                σΣt,ij + ηt,q   t,0
+Since the latent magnitude mi is unknown, we use the propagated magnitude m̂ij as a plug-in
+estimate. Thus, in the robust influence weight, we evaluate the Mahalanobis distance using
+                                       d2ij = κ̃ij ∥ûi − ûij ∥2 .
+The distinction between κij and κ̃ij therefore affects how the influence weight is evaluated, rather
+than the underlying directional precision structure.
+
+
+                                                      20
+Radial Robust Reweighting. The same M-estimation principle applies to the radial channel.
+Defining the squared radial residual
+                                                                     cij = û†i ûij ,
+                                                         2
+                           d2r,ij = ρ̃ij (cij m̂ij − mi ) ,
+minimizing the resulting M-estimator again yields data-dependent influence weights
+                                                                 ∂
+                             ρij → wr,ij ρij ,      wr,ij ∝            ρ(d2r,ij ).
+                                                               ∂d2r,ij
+Adopting the same Student-t likelihood as in the directional channel yields the attention logits
+                                                                 d2r,ij
+                                                                       
+                        LR,ij = log(ρij ) − (νr + 1) log 1 +             ,
+                                                                  νr
+and attention weights
+                                                                     X
+                      AR,ij = Softmaxj (LR,ij ),             m̄i =         AR,ij cij m̂ij .
+                                                                     j≤i
+
+Since all quantities entering d2r,ij are already computed by the RT Filter, radial robustification
+requires only a small number of additional elementwise operations. The radial estimator can be
+implemented using the same streaming softmax implementation used for directional attention, adding
+only O(N 2 ) scalar arithmetic and no additional pairwise storage while preserving the overall O(N 2 d)
+computational complexity and asymptotic memory footprint. For lower overhead, the directional
+attention weights AT may also be reused as a proxy for AR , reducing the radial estimator to a scalar
+aggregation without requiring a second attention computation.
+
+C.2.2   Filtering Update
+Since R+ is flat while S d−1 is curved, the exponential map on the product manifold acts independently
+on the radial and directional components. The latent state hence may be updated as
+                                      m̂+
+                                        i = m̂i + β(m̄i − m̂i ),
+
+and
+                                    u+
+                                                               
+                                     i = Expûi α Logûi (ūi ) ,
+where α, β ∈ (0, 1] are the directional and radial filtering step sizes, respectively.
+For implementation, it is convenient to express the update directly in the ambient latent space. The
+differential of the embedding
+                                         F (m, u) = mu,
+maps tangent vectors on R+ × S d−1 into ambient coordinates,
+                                          dxs = u dm + m du.
+Defining the radial correction
+                                           ∆mi = m̄i − m̂i ,
+and the tangent-space correction
+                                      ∆ui = P T (ûi ) (ūi − ûi ) ,
+the first-order ambient correction takes a step in both the radial and tangential directions,
+                                   ∆x̂s,i = α m̂i ∆ui + β ∆mi ûi ,
+giving the first-order RT-Filter update
+                                          x̂+
+                                            s,i = x̂s,i + ∆x̂s,i .
+
+In the following section, we show that the standard Transformer residual update is obtained by
+suppressing the radial correction and approximating the directional update.
+
+
+
+
+                                                    21
+D     Extension to Multi-Head Attention
+The derivation in Section 3.5 considers a single latent state on a single hypersphere and therefore
+produces a single attention matrix. Multi-head attention instead uses H attention matrices. This
+appendix shows how the RT-Filter extends to this setting: each head operates on a separate directional
+subspace, while the radial component and hyperspherical constraint are shared across heads.
+
+D.1   Head-Wise Uncertainty and Transport
+
+The single-head model assigns one tangential variance to the entire tangent space. Multi-head
+attention partitions the eigenmodes into H blocks and assigns separate uncertainty and    Ptransport
+parameters to each. Let v (h) denote the restriction of an ambient vector to block h, with h dh = d.
+Each block contains a subset of the conjugate frequency pairs {ωk , −ωk } of Appendix F, so that
+                                       H                             H
+                                                                                 (h)
+                                                (h)
+                                       M                             M
+                             ΛΩ =             ΛΩ ,     Φ(τ ) =             eiΛΩ τ .
+                                       h=1                           h=1
+
+The tangential measurement variance is constant within each block,
+                                          2
+                                         σΣt,ij,h = e−2µh ∆tij ηt,h
+                                                                2
+                                                                    ,
+                             2
+while the radial variance σΣr,ij  remains a single scalar, since the radial direction is shared across
+blocks. This relaxes the tangential isotropy implied by Proposition 1, which retains the radial–
+tangential decomposition but assigns a single variance to the whole tangent space; it enters only
+through the weights of the linearized objective below, so no block decomposition of the tangent space
+itself is required.
+Each block thus has a scalar tangential precision as a function of lag, preserving the O(N 2 ) memory
+complexity of the single-head case. Since Φ is unitary and block diagonal, Proposition 2 applies
+within each block, and the propagated variances are those above. The directional precision therefore
+                  (h)
+becomes κij → κij , yielding a separate attention matrix for each head.
+
+D.2   Separability of the Directional Objective
+
+Lemma 6 (Block separability). Under the block-isotropic assumption, the first-order directional
+objective of Corollary 5 is a sum of independent per-block objectives,
+                            H                   
+                                   (h)                     (h)             (h)            (h) 2
+                            X                                    X
+                 LT (u) =         LT         u(h) ,    LT =            κij       u(h) − ûij      ,
+                            h=1                                  j≤i
+
+each depending only on the coordinates of its own block.
+
+Proof. The squared Euclidean norm is additive over any partition of the coordinates, ∥v∥2 =
+P      (h) 2       (h)
+  h ∥v    ∥ , and κij is constant within block h.
+
+Each head therefore performs the single-head directional estimation of Section 3.5 on its own block,
+with its own precisions and its own Softmax normalization.
+                                                                                                      (h)
+Separability is a property of the first-order objective, not of the exact one. Writing ch = u(h)† ûij ,
+the exact directional likelihood of Proposition 3 contains
+                                        2   X            X
+                                u† ûij =       |ch |2 +      Re(ch c̄h′ ) ,
+                                                 h           h̸=h′
+
+whose cross-block terms are O(1): squaring the inner product couples the blocks irreducibly. The
+first-order approximation of Corollary 5 therefore does two things at once. It reduces directional
+estimation to weighted least squares, which is what makes the estimator a Softmax, and it renders
+the objective a sum of squares, which is what makes the head decomposition well posed. Hence,
+multi-head attention is a consequence of the same local approximation that produces attention itself.
+
+
+                                                      22
+D.3   Normalization and the Head-Wise Residual
+
+The RT-Filter maintains one latent state x̂s,i = m̂i ûi /r on one hypersphere. Multi-head attention
+partitions the coordinates of ûi into dynamically invariant subspaces; it does not introduce a separate
+normalization for each head. Thus normalization acts on the full d-vector before the split, so that
+∥ûi ∥ = r and m̂i is a single per-token scalar. Restricting to block h gives
+                                                                 H
+                           (h)       (h)         (h)                      (h) 2
+                                                                 X
+                         ûi ,      ri :=      ûi     ,                 ri         = r2 .
+                                                                 h=1
+
+                (h)
+The individual ri therefore vary with the token and measure how its direction is distributed across
+the spectral subspaces. Per-head normalization would instead put each block on its own sphere, but
+that is an additional modeling assumption not implied by the dynamical model.
+Since only the tangential variance carries a block index, the directional precision is
+
+                                        (h)      m̂2ij + m2∞
+                                      κij =     2          2     ,
+                                               σΣt,ij,h + σt,0,h
+      (h)                                                          2
+with κ̃ij defined analogously including the query-side variance ηt,q,h . The magnitude m̂ij is the
+global one: the directional mass a token places in a given block is carried instead by the residual,
+which retains both norm terms,
+                                                                   (h)† (h)
+                                                                           
+                        (h)     2       (h) 2      (h) 2
+                      Rqk [i, j] = q i        + kj       − 2 Re q̃ i k̃j      .
+
+The query term is independent of j and is removed by the Softmax, but the key term remains. Under
+the Student-t form, the directional logits and attention matrix are
+                                                                             
+                    (h)                                      1 (h)      (h) 2
+                  LT = log κ(h) − (νt + 1) log 1 +
+                                    
+                                                                 κ̃ ⊙ Rqk        ,
+                                                           νt dh
+                                                                   
+                                 (h)                  (h)
+                               AT = Softmaxj LT + M causal .
+
+D.4   The Hyperspherical Constraint Couples the Head Updates
+                                                                   (h)        P      (h)    (h)
+Each head estimates its own block independently, giving ūi              =      j≤i AT,ij ûij and unconstrained
+         (h)     (h)     (h)
+update δ i = ūi − ûi . The blocks are disjoint coordinates of one direction, so the estimates are
+concatenated, and the tangency requirement is the single scalar condition
+                                      X                        
+                           Re û†i ∆ui =
+                                                      (h)†    (h)
+                                                Re ûi ∆ui          = 0,
+                                                h
+
+which constrains the blocks only through their sum. With the influence weights held at the current
+estimate, head h’s subproblem is quadratic with weight
+                                               X (h) (h)
+                                       attn
+                                     Ph,i   =     wij κij ,
+                                                    j≤i
+
+which is both its accumulated directional evidence and its Softmax normalizer.
+Proposition 7 (Constrained multi-head update). The minimizer of h LT subject to Re(û†i ∆ui ) =
+                                                                 P (h)
+0 is
+                                                                Re û†i δ i
+                                                                            
+                       (h)     (h)     λi    (h)
+                    ∆ui = δ i − attn ûi ,           λi = P        (h) 2
+                                                                                  .
+                                     Ph,i                        r        /P attn
+                                                                          h     i         h,i
+
+
+Proof. Using
+                          (h) (h)             (h)            (h)                  (h)   (h)
+                                                                         X
+                                   attn
+                        wij κij = Ph,i  AT,ij ,            ūi     =           AT,ij ûij ,
+                                                                         j≤i
+
+
+                                                    23
+the block objective can be written, up to an additive constant, as
+                                                                                      2
+                                        (h)  attn                             (h)
+                                       LT = Ph,i  u(h) − ūi                              ,
+                (h)         (h)         (h)         (h)         (h)
+Since u(h) = ûi      + ∆ui . and δ i         = ūi       − ûi , this can be rewritten as
+                                                                                      2
+                                       (h)  attn                    (h)       (h)
+                                      LT = Ph,i  ∆ui                      − δi                .
+                                                                                          
+                                                                       P          (h)† (h)
+The blocks are constrained through the single global tangency condition h Re ûi ∆ui         = 0.
+Introducing a Lagrange multiplier λi ,
+                                                  2        X  (h)†           
+                                       (h)    (h)                         (h)
+                       X
+                             attn
+                 J =       Ph,i   ∆ui − δ i         + 2λi      Re ûi ∆ui       .
+                            h                                                 h
+
+Stationarity in block h gives
+                                                      
+                                    attn     (h)   (h)           (h)
+                                  2Ph,i    ∆ui − δ i     + 2λi ûi = 0,
+
+and hence
+                                              (h)         (h)        λi     (h)
+                                        ∆ui         = δi        −    attn ûi .
+                                                                    Ph,i
+                                                                            attn
+The correction is therefore inversely weighted by the accumulated evidence Ph,i  . Substituting this
+expression into the global constraint gives
+                                                      X ∥û(h) ∥2
+                                     Re û†i δ i − λi      i
+                                                
+                                                           attn = 0.
+                                                         Ph,i
+                                                                h
+
+          (h)         (h)
+Using ∥ûi ∥2 = (ri )2 yields
+                                                          Re û†i δ i
+                                                                          
+                                          λi = P          (h) 2
+                                                                                  ,
+                                                                attn
+                                                      h (ri ) /Ph,i
+as claimed. Strict convexity of the block objectives gives uniqueness.
+
+The correction is therefore allocated in inverse proportion to accumulated evidence: heads with lower
+ attn
+Ph,i  receive a larger radial correction.
+The exact update reduces to a single global orthogonal projection when the accumulated directional
+                                   attn
+evidence is equal across heads, Ph,i    = Wi for all h. In this case, λi /Wi is the same for every head,
+giving ∆ui = P T (ûi )δ i . The standard Transformer omits this projection altogether.
+
+D.5   The Radial Channel
+
+The magnitude and radial direction are global, so the radial channel is not split across heads. Its
+residual depends on the full-vector correlation
+                                                    XH              
+                                  cij = Re û†i ûij =
+                                                              (h)† (h)
+                                                         Re ûi ûij .
+                                                                h=1
+
+The radial logits LR , weights AR , and estimate m̄i are therefore computed once, globally, from this
+correlation and the global radial precisions ρij and ρ̃ij .
+The multi-head RT-Filter thus has H directional estimators, one shared radial estimator, and one
+global hyperspherical constraint.
+
+
+
+
+                                                           24
+E    Architectural Interpretation and Implications
+Magnitude-dependent Precision. Unlike the standard Transformer, the RT-Filter predicts attention
+precision from the estimated latent state, so larger-magnitude tokens contribute more confident
+directional observations. Magnitude therefore acts as a latent confidence variable, modulating
+attention beyond query–key similarity.
+
+Residual Connections. Residual connections implement first-order approximations to intrinsic
+filtering updates on the latent hypersphere. The standard Transformer performs an ambient Euclidean
+update, whereas the Polar Transformer retains the tangent-space correction implied by the underlying
+geometry. Figure 4 illustrates this distinction in two dimensions: the standard Transformer steps
+directly toward the consensus direction, while the Polar Transformer first projects the update onto the
+tangent space.
+
+Normalization. The RT derivation implies that normalization should be performed in the latent
+filtering coordinates, both before and after the filtering update. Standard residual-stream normalization
+is equivalent whenever the learned projections approximately preserve norms, i.e., are close to unitary.
+
+Magnitude Growth Across Layers. Empirically, the residual stream magnitude tends to increase
+across Transformer layers. Under the standard residual update, for a small step αi = α/m̂i ≪ 1,
+                               1                            α
+                          m+     ∥m̂i ûi + α ūi ∥ ≈ m̂i + 2 Re û†i ūi ,
+                                                                         
+                           i =
+                               r                           r
+so magnitude grows in proportion to the agreement between the current direction and the attention
+output. Consistent evidence increases residual magnitude, whereas conflicting evidence does not.
+The magnitude growth of the standard Transformer therefore arises from neglecting the tangent-space
+correction and performing the update in the ambient space.
+Retaining the tangent-space projection removes this growth exactly, since Re(û†i P T (ûi )ūi ) = 0.
+Under the RT-Filter, magnitude evolves only through the radial estimation update,
+                                      m+
+                                       i ≈ m̂i + β(m̄i − m̂i ).
+
+Pre-Norm vs. Post-Norm. In the RT-Filter, magnitude is a meaningful confidence variable since
+κij ∝ m2 . Pre-Norm Transformers preserve this confidence state across layers by normalizing
+only within the attention branch, whereas Post-Norm Transformers renormalize the residual stream
+after every block, discarding the accumulated confidence. Both remain locally consistent with the
+RT-Filter; they differ only in whether the magnitude state persists across depth.
+
+Feedforward Network. The feedforward network lies outside the RT-Filter and may be interpreted
+as a learned nonlinear transformation between successive filtering iterations, updating the latent
+representation before the next prediction and measurement cycle.
+
+Iteratively Reweighted State Estimation. Under the robust RT-Filter, iterative estimation is
+precisely Iteratively Reweighted Least Squares (IRLS), since the influence weights depend on the
+current residuals. Under the learned parameterization, each Transformer layer recomputes these
+weights and refines the latent estimate. Stacking layers therefore corresponds to unrolling an IRLS
+solver in the latent filtering coordinates.
+
+
+
+
+                                                  25
+Figure 4: Two-dimensional illustration of the Transformer and Polar Transformer updates. The
+standard Transformer applies an ambient Euclidean update toward the attention output, while the
+Polar Transformer first projects the update onto the tangent space.
+
+
+
+
+                                     RT Dynamical Model
+                                    Latent probabilistic model
+
+
+                                                    Block-coordinate optimization step
+                                                    L = LR + LT + O(ε2 )
+
+
+                                          RT Filter
+                                    Geometric state estimator
+
+
+
+      Neglect radial update                                            Retain radial update
+  Neglect tangent projection                                           Retain tangent projection
+
+
+
+                  Transformer                                    Polar Transformer
+
+Figure 5: Relationship between the RT dynamical model, the RT Filter, and two Transformer
+implementations.
+
+
+
+
+                                               26
+F     Implementation
+This appendix summarizes the practical implementation of the Polar Transformer.
+
+F.1   Complex-valued Computations
+
+Although the RT model is formulated in a complex latent space, all computations can be implemented
+using standard real-valued linear algebra. In practice, this is implemented by lifting real-valued
+representations to R2d via the identification Cd ∼= R2d , performing all computations in the doubled
+                                               d
+real space, and projecting the result back to R .
+A complex linear map W = W r + iW i is represented by the real block matrix
+                                                 
+                                     W r −W i
+                                                    .
+                                     Wi       Wr
+Since the Transformer input and output are real-valued, only the real-input columns of the input pro-
+jections and the real-output rows of the output projection are required. Consequently, all projections
+may be implemented using ordinary real-valued linear layers Ld×2d q   , Ld×2d
+                                                                          k   , Ld×2d
+                                                                                 v    , L2d×d
+                                                                                          o    , corre-
+sponding to the mappings Q = Lq (Z), K = Lk (Z), V = Lv (Z), followed by ∆Z = Lo (∆V ).
+All computations are therefore implemented using standard real-valued linear algebra.
+The complex correlation between queries and keys is
+                                                        †
+                                            cij = Q̃i K̃ j ,
+whose real and imaginary components are
+                                                                           i
+                                     ⊤          ⊤                 ⊤   K̃ r
+                                                                        ⊤
+                                                            h
+                        Re(cij ) = Q̃r K̃ r + Q̃i K̃ i =        Q̃r   Q̃i    ,
+                                                                      K̃ i
+                                                        h ⊤ ⊤i             
+                                     ⊤          ⊤                     K̃ i
+                        Im(cij ) = Q̃r K̃ i − Q̃i K̃ r = Q̃r Q̃i               .
+                                                                    −K̃ r
+The exact directional likelihood requires the squared modulus of the complex correlation,
+                                   |cij |2 = Re(cij )2 + Im(cij )2 ,
+which is therefore computed using two real matrix multiplications in R2d followed by elementwise
+squaring and summation.
+
+F.2   Rotary Position Embeddings
+
+The rotational component of the RT model is diagonal in the latent basis, with purely imaginary
+eigenvalues λk = iωk . To ensure that the corresponding real system matrix is real-valued, the
+frequencies are learned in conjugate pairs,
+                                 ω = {ω1 , −ω1 , . . . , ωd/2 , −ωd/2 }.
+The transport operator eiΛΩ t therefore reduces to independent two-dimensional rotations acting
+on each real-imaginary pair, making the implementation identical to Rotary Position Embeddings
+(RoPE).
+
+F.3   Initialization
+
+Complex projection matrices are initialized isotropically by sampling their real and imaginary com-
+ponents with equal variance. Equilibrium magnitudes, measurement noise variances, and robustness
+parameters are learned, with these parameters parameterized through a Softplus transformation to
+enforce positivity.
+
+F.4   Algorithm
+
+Algorithm 1 details the implementation of the Polar Transformer for the single-head case.
+
+
+                                                   27
+Algorithm 1 Polar Transformer (Single Head)
+Input: Z ∈ Rd×N
+
+Definitions:
+Real to complex (d → 2d) linear layers: Lq , Lk , Lv ; complex to real (2d → d) linear layer Lo ;
+Angular frequencies ω ∈ Rd ; decay rate µ ∈ R+ ; noise variance parameters
+ 2      2      2      2      2      2
+ηr,q , ηr,k , ηt,q , ηt,k , σt,0 , σr,0 , m2∞ ∈ R+ ; robustness parameters νt , νr ∈ R+ ; step sizes
+α, β ∈ (0, 1]; causal mask M causal ∈ {0, −∞}N ×N .
+
+1. QKV Projections and Normalization:
+Q, K, V ← Lq,k,v (Z)
+m = ∥V ∥col
+Q, K, V , r ← RMSNorm(Q, K, V )
+
+2. QKV Rotation (RoPE):
+  +                     −
+Φ̃ [k, i] = eiωk ti , Φ̃ [k, i] = e−iωk ti
+               −
+Q̃, K̃, Ṽ ← Φ̃ ⊙ (Q, K, V )
+
+3. Estimation Precisions:
+E[i, j] = e−µ|ti −tj | , M̂ [i, j] = m[j] E[i, j]
+           2                              2
+         M̂ [i,j]+m2                    M̂ [i,j]+m2
+κ∆t = η2 E[i,j]2 +σ∞2 , κ̃∆t = η2 E[i,j]2 +η2 ∞+σ2
+                    t,0                      t,q
+         t,k
+                             −1 t,k            t,0                        −1
+             2         2  2                       2
+ρ[i, j] = ηr,k E[i, j] + σr,0     , ρ̃[i, j] = ηr,k   E[i, j]2 + ηr,q
+                                                                  2      2
+                                                                      + σr,0
+
+4. Directional Robust  Estimation:
+                †
+C[i, j] = Re Q̃i K̃ j
+∥Rqk [i, j]∥2 = ∥Qi ∥2 + ∥K j ∥2 − 2C[i, j],              
+LT = log(κ∆t ) − (νt + 1) log 1 + ν1t d κ̃∆t ⊙ ∥Rqk ∥2
+AT = Softmaxj (LT + M causal )
+
+5. Radial Robust Estimation:
+d2r = ρ̃ ⊙ (C ⊙ M̂ − m)2 
+                           d2
+LR = log(ρ) − log 1 + νrr
+AR = Softmaxj (LR + M causal )
+
+6. Aggregation:
+       +
+V̄ = Φ̃ ⊙ (Ṽ A⊤T)      (Directional)
+m̄ = (C ⊙ M̂ )A⊤R        (Radial)
+
+7. Filtering Update:
+∆V T [:, i] ← α P T (V [:, i])V̄ [:, i]
+∆V R [:, i] ← β (m̄[i] − m[i]) V [:, i]
+∆V ← ∆V R + ∆V T
+
+8. Output Projection:
+∆Z ← Lo (∆V )
+
+9. Residual Connection & Normalization:
+Z + ← Z + ∆Z
+U + ← RMSNorm(Z + )
+
+10. Nonlinearity:
+Z out = Z + + FFN(U + )
+
+Return: Z out
+
+
+                                                      28
+G     Extensions
+G.1     Relaxing the Local Consensus Assumption
+
+The RT-Filter of the main text estimates the direction from the tangential channel LT alone, which is
+justified by Proposition 4: under the local consensus assumption, the radial channel’s dependence on
+ui is O(εr εt ) and can be discarded. Here we retain it. Holding the magnitude at its current estimate
+m̂i and collecting every term of LR + LT that depends on the direction, the full directional objective
+is
+                   LD (u) = −2 Re u† hi − u† J i u + const,            cij = u† ûij ,
+                                              
+
+where
+                                                            (τij − ρij )m̂2ij ûij û†ij ,
+                             X                           X
+                    hi = m̂i     ρij m̂ij ûij ,  Ji =
+                              j≤i                            j≤i
+             −2           −2
+and ρij = σΣr,ij , τij = σΣt,ij are the propagated radial and tangential precisions. The linear term
+is the radial channel’s contribution, discarded in the main text; the quadratic term combines both
+channels and vanishes when ρij = τij . The block decomposition is retained, but as a coordinate-
+descent scheme rather than a first-order separation: the radial update of Section C is unchanged, since
+mi enters LR quadratically regardless.
+
+Directional gradient. As in the main text, the filter does not solve the directional problem exactly
+but takes a damped Riemannian-Newton step from the current estimate. We therefore require the
+gradient and Hessian of LD at ûi . Its Euclidean gradient is
+                                       ∇u LD = −2 (hi + J i u) ,
+and, on the unit sphere, the Riemannian gradient is its tangent-space projection, evaluated at the
+current estimate:
+                                    g i = −2P T (ûi ) (hi + J i ûi ) .
+The two terms play different roles. The first is independent of ûi and aggregates the transported
+directions unconditionally; the second applies J i to the current state,
+                                           (τij − ρij )m̂2ij û†ij ûi ûij ,
+                                         X                            
+                              J i ûi =
+                                         j≤i
+
+weighting each observation by the complex correlation û†ij ûi between its direction and the current
+estimate.
+
+Riemannian metric. The Euclidean Hessian of LD is −2J i . For a tangent vector v, the Rieman-
+nian Hessian on the unit sphere is
+                        Hess LD [v] = 2si P T (ûi )v − 2P T (ûi )J i P T (ûi )v,
+where
+           si = Re û†i hi + û†i J i ûi =
+                                            X
+                                              ρij m̂i m̂ij Re(cij ) + (τij − ρij )m̂2ij |cij |2
+                                                                                               
+
+                                            j≤i
+
+is the radial component of the gradient. The curvature is therefore supplied by the constraint rather
+than by LD , which is concave in the ambient space.
+Near consensus the anisotropic term is negligible, since P T (ûi )ûij = O(ε) for each rank-one
+summand of J i , giving P T J i P T = O(ε2 ). Using the local approximations cij = 1 + O(ε) and
+m̂i = m̂ij + O(ε) in si , and defining κij = τij m̂2ij , the metric is isotropic to leading order:
+                                           X 
+                           Hess LD [v] = 2        κij P T (ûi )v + O(ε2 ).
+                                                  j≤i
+
+Away from the local regime the exact Hessian may be indefinite, as is typical for constrained non-
+convex problems, in which case the Newton step need not be a descent direction. We therefore use
+the positive-definite leading-order form throughout, a standard Hessian modification: it agrees with
+the exact metric to O(ε2 ) near consensus, guarantees a descent direction elsewhere, and preserves
+the Softmax normalization.
+
+
+                                                        29
+Resulting update. The corresponding Riemannian Newton step is
+                  X −1                                    X −1 X
+                           hi +J i ûi +O(ε2 ) = P T (ûi )          κij gij ûij +O(ε2 ),
+                                      
+∆ui = P T (ûi )    κij                                       κij
+                   j≤i                                                j≤i     j≤i
+
+where, factoring κij = τij m̂2ij from each summand and writing aij = 1 − ρij /τij ,
+                                                   m̂i
+                                                        + aij û†ij ûi .
+                                                                       
+                                gij = (1 − aij )
+                                                   m̂ij
+The factor gij acts as a gate on the aggregation: it interpolates between unconditional averaging and
+correlation-weighting according to the anisotropy ratio aij , so that each observation’s contribution
+depends on its alignment with the current estimate.
+Since m̂i /m̂ij grows exponentially in the lag, the unnormalized contribution is computed directly as
+                          κij gij = ρij m̂i m̂ij + (τij − ρij )m̂2ij û†ij ûi ,
+                                                                              
+
+in which both terms reuse quantities already formed by the radial and directional channels. No further
+approximation is required: κij remains the normalized attention weight, with robust reweighting
+acting on it as in Appendix C.2.1, while gij modulates the aggregation outside the Softmax.
+The two terms recover two limiting estimation regimes. Under isotropic noise ρij = τij , the
+second vanishes and κij gij = ρij m̂i m̂ij , recovering Euclidean precision-weighted averaging. When
+ρij ≪ τij , the first is negligible and the update approaches
+
+                                                       κij û†ij ûi ûij ,
+                                                    X               
+                                   ∆ui ∝ P T (ûi )
+                                                   j≤i
+
+spectral mode selection: observations reinforce the current direction when aligned with it and are
+suppressed when they disagree. Setting m̂i ≈ m̂ij and cij ≈ 1 removes both the correlation gate and
+the lag dependence, so that the gate collapses to unity gij = 1, recovering the RT-Filter of the main
+text.
+
+Robust directional estimation. The robust construction of Appendix C.2.1 applies unchanged,
+with the exact angular residual                              
+                                d2ij = κ̃ij 1 − |û†i ûij |2
+in place of its chordal approximation. The influence weights reweight κij as before; the gate is
+applied to the aggregation and is not part of the Softmax normalization.
+
+Interpretation. Under the local consensus assumption, ordinary precision-weighted averaging and
+the full directional estimator are locally equivalent. When the observations are instead directionally
+dispersed or multimodal, this approximation can fail. The full estimator can then perform mode
+selection, reinforcing a coherent directional mode rather than averaging incompatible observations
+into an intermediate direction. Thus, the extension is most relevant away from consensus; when the
+attention neighborhood is already concentrated, the gate approaches 1 and the update reduces to the
+main-text RT-Filter.
+
+G.2   Content-Dependent Transport
+
+The RT-Filter derivation extends naturally beyond the homogeneous dynamics considered in the
+main text. The only requirements are an analytic transport map for the scalar radial dynamics and an
+isometric transport operator for the directional dynamics.
+The radial transport need only admit an analytic flow
+                                       m̂ij = Tr (ti , tj , m̂j ),
+recovering the homogeneous model for Tr (ti , tj , m) = e−µ∆tij m.
+For the directional dynamics, Proposition 2 requires only that the transport preserve inner products,
+                                      Φ(ti , tj )† Φ(ti , tj ) = I.
+
+
+                                                   30
+The homogeneous RT model corresponds to the constant transport
+                                     Φ(ti , tj ) = eΛΩ ∆tij ,
+implemented by rotary positional embeddings (RoPE).
+More generally, allowing the transport to depend on the evolving latent state or observed sequence
+yields a context-dependent transport that may be implemented as a product of local unitary rotations,
+                                               Y i
+                                    Φ(i, j) =       Rs (x(ts )),
+                                                s=j+1
+where each Rs (x(ts )) is unitary and parameterized by the local context. One simple diagonal-plus-
+rank-one construction is
+                                 Rs = D s I + eiϕs − 1 v s v †s ,
+                                                               
+
+where D s is diagonal unitary and ∥v s ∥ = 1. The rank-one factor applies a phase rotation along
+v s while leaving its orthogonal complement unchanged, and is therefore unitary. Consequently,
+the product Φ(i, j) is unitary even when the local transformations are content-dependent and
+non-commutative. This construction is related to the data-dependent rank-one transformations
+of PaTH Yang et al. [2025], while explicitly constraining the directional transport to be unitary so
+that inner products and the RT covariance structure are preserved.
+
+G.3   Uncertainty Propagation Across Layers
+
+A natural extension is to propagate the posterior precision of the directional state across layers,
+allowing the uncertainty estimated at one layer to inform subsequent updates. Under the isotropic
+tangent-space model, the attention mechanism predicts the precision
+                                              X
+                                       attn
+                                     Ph,i   =      wh,ij κh,ij .
+                                                 j≤i
+A learned context-length correction factor i−γh , with γh ∈ [0, 1], can optionally be introduced to
+account for correlations among measurements.
+We combine the incoming prior and attention estimate using covariance intersection,
+                          +           −                 attn
+                         Ph,i = ωh Ph,i  + (1 − ωh )Ph,i     ,      ωh ∈ [0, 1],
+which provides a conservative fusion without requiring their cross-covariance. The fused state is
+                     1 h      − −
+                                                               i
+            u+
+             h,i =   +   ωh P    u
+                              h,i h,i + (1 − ω h )P attn
+                                                    h,i  ūh,i   = u−                     −
+                                                                     h,i + αh,i (ūh,i − uh,i ),
+                    Ph,i
+where
+                                                            attn
+                                              (1 − ωh )Ph,i
+                                  αh,i =      −                   attn
+                                                                       .
+                                         ωh Ph,i  + (1 − ωh )Ph,i
+Thus, the propagated precision determines the confidence-dependent residual step, with ωh learned
+per head and layer.
+The residual connection is applied in the ambient basis, whereas the covariance is represented in the
+eigenbasis. Under the assumption that the projections are nearly unitary, the isotropic scalar precision
+is approximately preserved under the projections.
+The precision is propagated across layers as
+                                                 −1
+                         −,(k+1)            +,(k)
+                       Ph,i      = ah /Ph,i + bh      ,            ah , bh > 0,
+where ah and bh provide a learned relaxation of the propagated precision to account for model
+mismatch between layers.
+The incoming state uncertainty can then contribute to the effective query measurement variance.
+Assuming independent measurement and state errors,
+                               2          2     ch
+                              ηeff,h,i = ηt,q + −,       ch ≥ 0,
+                                               Ph,i
+           2
+where ηt,q    is learned per head and layer. This variance enters the robust residual geometry through
+κ̃h,ij , causing lower-confidence queries to incur a flatter residual penalty. A corresponding key-side
+term can be defined similarly.
+
+
+                                                  31
+

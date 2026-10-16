@@ -1,0 +1,1357 @@
+                                         L EARNING S TATE -T RACKING FROM C ODE
+                                         U SING L INEAR RNN S
+                                          Julien Siems∗♡♢† , Riccardo Grazzi∗♣ , Korbinian Pöppel⋆ , Kirill Kalinin♣ ,
+                                          Hitesh Ballani♣ , Babak Rahmani∗♣♠
+                                          Equal contribution∗ , University of Freiburg♡ , Microsoft Research♣ , Prior Labs♢ ,
+                                          ELLIS Institute Tübingen⋆ , Tübingen AI Center♠
+                                          †
+                                           Work done during an internship at Microsoft Research.
+                                          juliensiems@gmail.com t-rgrazzi@microsoft.com                        rahmani.b91@gmail.com
+arXiv:2602.14814v3 [cs.LG] 25 Jun 2026
+
+
+
+
+                                                                                     A BSTRACT
+
+                                                  Over the last years, state-tracking tasks, particularly permutation composition,
+                                                  have become a testbed to understand the limits of sequence-to-sequence architec-
+                                                  tures like Transformers and RNNs (linear and non-linear). However, these are of-
+                                                  ten sequence-to-sequence tasks: learning to map actions (permutations) to states,
+                                                  which is incompatible with the next-token prediction setting commonly used to
+                                                  train language models. We address this gap by converting permutation compo-
+                                                  sition into code via REPL traces that interleave state-reveals through prints and
+                                                  variable transformations. We show that linear RNNs capable of state-tracking
+                                                  excel also in this setting, while Transformers still fail. Motivated by this represen-
+                                                  tation, we investigate why tracking states in code is generally difficult: actions are
+                                                  not always fully observable. We frame this as tracking the state of a probabilistic
+                                                  finite-state automaton with deterministic state reveals and show that linear RNNs
+                                                  can be worse than non-linear RNNs at tracking states in this setup.
+
+
+                                         1    I NTRODUCTION
+                                         State-tracking is fundamental across many domains: In
+                                                                                                              Probabilistic Automata
+                                         order to understand a program state, models must track
+                                         variable states during code execution (Carbonneaux et al.,               with State Reveals
+                                         2025), board configurations in game-playing (Toshni-             Belief states updates, hidden branching
+                                         wal et al., 2022; Harang et al., 2025), and environment          Needs nonlinear renorm. after reveals
+                                         representations in world-modeling (Vafa et al., 2024;                                   Complexity Gap
+                                         2025). Theoretical work has established a divide be-                Deterministic Automata
+                                         tween associative recall, where transformers excel, and
+                                                                                                                     Permutations, parity
+                                         state-tracking, where recurrent neural networks perform
+                                                                                                                 ✓ Solved by linear RNNs
+                                         well (Merrill et al., 2020; Merrill & Sabharwal, 2023).
+                                         Recently, linear RNNs like Mamba (Gu & Dao, 2024;
+                                         Dao & Gu, 2024) and DeltaNet (Yang et al., 2024b; 2025) Figure 1: The State-Tracking Hier-
+                                         were introduced which allow parallelization across the archy. Linear RNNs solve determinis-
+                                         sequence length. While early linear RNNs were inca- tic tasks (blue) but struggle with prob-
+                                         pable of complex state-tracking (Merrill et al., 2024; Sar- abilistic automata (orange). Real-world
+                                         rof et al., 2024), extending the eigenvalues of the state- code often requires belief-state tracking
+                                         transition matrix from [0, 1] to [−1, 1] (Grazzi et al., in the orange region.
+                                         2025; Siems et al., 2025; Peng et al., 2025), or introduc-
+                                         ing recurrent fixed-point self-iteration over linear RNNs enables solving permutation composition
+                                         (Schöne et al., 2025). Yet empirical gains on real-world tasks remain modest (JellyFish042, 2024;
+                                         Grazzi et al., 2025). Concurrently, work on parallelizing nonlinear RNNs has emerged (Lim et al.,
+                                         2024; Gonzalez et al., 2024; Danieli et al., 2025), but benchmarking these architectures solely on
+                                         tasks expressible as Deterministic Finite-State Automata (DFA) obscures their potential, since linear
+                                         RNNs already solve such tasks efficiently (Peng et al., 2025).
+                                         To understand how state-tracking can be learned by language models, we study it through the lens of
+                                         next-token prediction. Current benchmarks typically use a sequence-to-sequence setup—mapping
+
+
+                                                                                            1
+sequences of actions to states, which deviates significantly from the objective used to train language
+models. In this work, we address this gap and present the following contributions:
+• State-Tracking via Next-Token Prediction: We convert permutation composition into code via
+  Python REPL traces that interleave variable transformations with partial state-reveals (print state-
+  ments). This creates a realistic setting where state-tracking must be learned via next-token predic-
+  tion rather than sequence-to-sequence supervision.
+• Linear RNNs vs. Transformers: We show that linear RNNs capable of state-tracking (specifically
+  DeltaNet with extended eigenvalues) excel in this setting even with sparse supervision, whereas
+  Transformers fail to generalize.
+• Probabilistic State-Tracking Limits of linear RNNs: We investigate why tracking states in real
+  code is strictly harder than permutations: actions are often not fully observable. We frame this
+  as tracking the state of a Probabilistic Finite-State Automaton with State Reveals (PFSA-SR) and
+  show concrete adversarial sequences under which the natural linear RNN representations of belief
+  states suffer exponential norm decay.
+
+2    R ELATED W ORK
+Deterministic state tracking. Prior work has largely studied state tracking in deterministic set-
+tings, regular languages and finite-state automaton (FSA) emulation, using length generalization
+as the primary stress test (Hahn, 2020; Bhattamishra et al., 2020; Delétang et al., 2022; Liu et al.,
+2022). These studies reveal sharp, architecture-dependent generalization gaps across the Chomsky
+hierarchy (Delétang et al., 2022) and characterize when sequence models can implement finite-state
+computation under bounded depth and precision (Merrill et al., 2024; Terzic et al., 2025). However,
+architectural improvements on synthetic benchmarks translate to only modest gains in language-
+model evaluations (Grazzi et al., 2025; Siems et al., 2025; JellyFish042, 2024). Moreover, widely
+used setups such as group-word problems (Liu et al., 2022) differ substantially from code execution,
+where supervision is sparse and state evolution often stochastic. Moreover, the standard group-
+word problem benchmarks are sequence-to-sequence: inputs are sequence of actions and outputs
+are sequences of states. This differs significantly from the next-token prediction paradigm used
+to train modern language models. We address this gap by studying probabilistic state tracking in
+code-like data, in particular REPL traces, which interleave actions with partial state reveals in the
+same sequence. Recent work in reinforcement learning under partial observability (Luis et al., 2025;
+Prasanna et al., 2025) and language modeling (Shaj et al., 2026) empirically confirms that standard
+linear recurrent models struggle when uncertainty reasoning is required, motivating explicit prob-
+abilistic mechanisms such as Kalman filtering. Our PFSA-SR framework provides a theoretical
+explanation for these empirical observations.
+
+Transformers and linear RNN expressivity. Transformer expressivity analyses failure modes on
+state-tracking tasks including shortcut learning and poor length extrapolation (Hahn, 2020; Bhat-
+tamishra et al., 2020; Merrill et al., 2024; Delétang et al., 2022; Liu et al., 2023; Strobl et al., 2024).
+In parallel, work on efficient recurrent and SSM-style architectures has explored structured tran-
+sition parameterizations trading efficiency for expressive power (Schlag et al., 2021b; Yang et al.,
+2024b; Fan et al., 2024; Walker et al., 2025; Peng et al., 2025), showing that richer spectra or factor-
+izations unlock new state-tracking behaviors without changing asymptotic cost (Grazzi et al., 2025;
+Siems et al., 2025). These works primarily address deterministic transitions, abstracting away belief
+evolution under uncertainty or sparse supervision.
+
+Probabilistic automata and partial observability. Classical probabilistic finite-state mod-
+els—weighted automata, IO-HMMs, POMDPs—formalize uncertainty via belief-state updates un-
+der partial observations (Rabin, 1963; Bengio & Frasconi, 1994; Åström, 1965; Kaelbling et al.,
+1998). Recent work characterizes recurrent models as restricted probabilistic finite-state systems
+(Svete & Cotterell, 2023; Butoi et al., 2025; Borenstein et al., 2024), but focuses on representa-
+tional capacity of nonlinear RNNs. Our PFSA-SR instead analyzes the failure mode of linear RNNs
+under partial observability induced by hard, support-pruning reveals (e.g., asserts, prints) that deter-
+ministically eliminate inconsistent trajectories, enabling direct comparison of linear and nonlinear
+dynamics for belief-state updates. Also note the concurrent work by Zhao et al. (2026) investigating
+nearly deterministic state-tracking.
+
+
+                                                     2
+                     σ1                       Input:       σ1   σ2   σ3                                >>> a = 1
+                                                                                                       >>> b = 2
+         σ≤1 :   2        1         3                                                                  >>> c = 3
+                                                                                                       >>> print('a', a)
+                                                                                                       a 1
+                                                                                                       >>> a, b = b, a
+                               σ2                                                                      >>> print('a', a)
+                                                       Transformer/RNN                                 a 2
+         σ≤2 :   2        3         1                                                                  >>> b, c = c, b
+                                                                                                       >>> print('c', c)
+                                                                                                       c 1
+                          σ3                                                                           >>> a, c = c, a
+                                                                                                       >>> print('a', a)
+         σ≤3 :   1        3         2        Output: σ≤1        σ≤2 σ≤3                                a 1
+
+
+Figure 2: Three representations of the permutation tracking task. Left: The shell game analogy
+showing cups being swapped to track object positions. Center: The sequence-to-sequence model-
+ing approach from Merrill et al. (2024), where a Transformer/RNN processes input permutations σi
+                                       Qi
+and outputs cumulative states σ≤i = j=1 σj at each position. Right: Our code-based representa-
+tion using Python REPL traces, where variable swaps implement permutations and print statements
+reveal partial cumulative states for next-token prediction training.
+
+
+3    BACKGROUND
+Linear RNNs. Linear RNNs process input sequences through stacked layers. Each layer trans-
+forms input vectors x1 , . . . , xt ∈ Rl into outputs ŷ1 , . . . , ŷt ∈ Rp via the linear recurrence
+           Hi = A(xi )Hi−1 + B(xi ),               ŷi = dec(Hi , xi )          for i ∈ {1, . . . , t} (1)
+where H0 ∈ Rn×d is the initial state, A : Rl → Rn×n produces the state-transition matrix, B :
+Rl → Rn×d injects new information, and dec : Rn×d × Rl → Rp generates outputs. These
+functions are learned, with dec typically containing a feedforward network. Different linear RNN
+variants differ in their implementations of A, B, and dec.
+We focus on DeltaNet (Schlag et al., 2021a;b), recently shown to be parallelizable across the se-
+quence length (Yang et al., 2024b; 2025). DeltaNet parameterizes the recurrence as A(xi ) =
+I − βi ki ki⊤ , B(xi ) = βi ki vi⊤ , dec(Hi , xi ) = ψ(Hi⊤ qi ) where βi ∈ [0, 1] and qi , ki ∈ Rn
+(with ∥qi ∥ = ∥ki ∥ = 1), vi ∈ Rd are learned functions of xi . Here A(xi ) is a Householder
+transformation (Householder, 1958) with eigenvalues 1 (multiplicity n − 1) and 1 − βi (multiplicity
+1). Restricting eigenvalues to [0, 1] limits state-tracking capabilities, but extending to [−1, 1] en-
+ables complex tracking behaviors like parity and permutation composition (Grazzi et al., 2025). The
+linear recurrence enables parallelization across sequence length (Blelloch, 1990; Martin & Cundy,
+2017; Hua et al., 2022; Sun et al., 2023; Yang et al., 2024a).
+
+4    F ROM P ERMUTATION G ROUPS TO VARIABLE T RACKING IN C ODE
+We translate the sequence-to-sequence setup for group-word problems from Merrill et al. (2024) to
+next-token prediction. This setup has been influential in understanding the state-tracking abilities of
+recurrent model (Schöne et al., 2025; Grazzi et al., 2025; Siems et al., 2025; Movahedi et al., 2025)
+and parallels the shell game where cups containing objects are shuffled.
+Sequence-to-sequence modeling: For permutation group Sn ,                                          Swaps              Full Perm.
+                                                                                            1.00
+                                                                          Scaled Accuracy
+
+
+
+
+we sample input permutations σIN = [σ1 , . . . , σm ]. At position
+i ∈ [1, . . . , m], the model predicts the cumulative state σ≤i =                           0.75
+Qi                                                                                          0.50
+  j=1 σj with labels σOUT = [σ≤1 , . . . , σ≤m ]. This provides
+dense supervision by computing loss at every position.                                      0.25
+                                                                                            0.00   1       2      3       4
+Next-token prediction (NTP): We adapt permutation groups
+for NTP using Python REPL traces (Deutsch & Berkeley,                                                  Reveal Spacing (s)
+1964; Van Rossum et al., 1995) that demonstrate variable shuf-            Figure 3: Transformers require
+fling. Figure 2 shows an example for S3 . We interleave com-              dense state supervision to solve
+mands with print statements revealing partial states rather than          REPL traces.      Accuracy drops
+only end of sequence states, providing denser signal while re-            as reveal spacing increases, with
+maining realistic (similar to logging during execution). Full             full permutations failing under any
+reveals would trivialize the task by allowing the model to ig-            sparsity.
+nore prior permutations.
+
+
+                                                       3
+                           100
+
+
+
+
+          Scal. Acc. (%)
+                                                             DeltaNet [ 1, 1]
+                            50                               DeltaNet [0, 1]
+                                                             Transformer
+                               0
+                                   0         50     100
+                                       Command Position
+Figure 4: Left: Per reveal position accuracy averaged across 5 seeds, reveal spacing 16 and num
+commands 128. Only DeltaNet [−1, 1] manages to reliably learn to perform state tracking. Right:
+Final reveal position accuracy when increasing the reveal spacing and num. commands beyond
+training regime, 8 and 64 respectively.
+
+      2                                                                         2                                                                 100
+
+
+
+
+                                                                                                                              Cum. Expl. Var. %
+                                                                                                                                                                            Head
+      1                                                                         1                                                                  50                       0           4
+β
+
+
+
+
+                                                                          β
+                                                                                                                                                                            1           5
+                                                                                                                                                                            2           6
+                                                                                                                                                                            3           7
+      0                                                                         0                                                                   0
+            1              3       5     7   9 11 13 15 17 19 21 23                 0    1   2   3   4   5   6            7                                  10        20          30
+                                             Layer Number                               Layer 12 - Head Number                                          Layer 12 - Num. Components
+Figure 5: Interpretability Analysis: Distribution of β for a sequence of 512 commands with reveal
+spacing 4. Left: β values aggregated per layer across heads. Middle: β per head for layer 12;
+head 3 stands out as the only head in the network to consistently set its β values to 2, making it the
+state-tracking head. Right: Cumulative explained variance of the PCA of the keys. Head 3 again
+stands out, being explainable with much fewer components.
+
+
+4.1            E XPERIMENTS
+
+Transformers require dense state supervision for state-tracking. To examine how supervi-
+sion density affects state-tracking in pretrained Transformer LLMs, we finetune a Qwen3-0.6B-
+Base (Team, 2025) model using standard NTP on Python REPL traces of 64 commands and S5 .
+We consider both elementary swaps and full permutations, and vary the reveal spacing from 1 to
+4, thereby progressively reducing the density of explicit state information available during training.
+As shown in Figure 3, Transformers rely critically on dense supervision: as reveal spacing increases
+and state information becomes sparser, the model rapidly loses the ability to track permutations. For
+full permutations the model does not learn to solve the task.
+Architecture Determines Whether State-Tracking Extrap-                                                                    7
+                                                                                                                          6                                                        80
+olates. We train DeltaNet [−1, 1], a state-tracking capable                                                                                                                         Accuracy (%)
+                                                                                                             Head Index
+
+
+
+
+                                                                                                                          5
+architecture, and two non-state-tracking capable architectures                                                            4
+DeltaNet [0, 1], and Transformer models (all with 280M pa-                                                                3                                                        60
+                                                                                                                          2
+rameters) on a curriculum of 15,000 REPL traces from S5 ,                                                                 1
+with 8, 16, 32, and 64 commands and reveal spacings of 1,                                                                 0                                                        40
+                                                                                                             [-0.0, 1]
+                                                                                                             [-0.1, 1]
+                                                                                                             [-0.2, 1]
+                                                                                                             [-0.3, 1]
+                                                                                                             [-0.4, 1]
+                                                                                                             [-0.6, 1]
+                                                                                                             [-0.7, 1]
+                                                                                                             [-0.8, 1]
+                                                                                                             [-1.9, 1]
+                                                                                                                     1]
+
+
+
+
+2, 4, and 8. We use full permutations rather than elementary
+                                                                                                                 .0,
+                                                                                                              [0
+
+
+
+
+swaps, to get a clearer signal on the difference between trans-                                                                                     Eigenvalue range
+former models and linear RNNs.
+                                                                                                             Figure 6: Intervention analysis:
+The length extrapolation results in Figure 4 (averaged across                                                Scaling the β range per head in
+five seeds) show a clear architectural separation: DeltaNet                                                  layer 12. State prediction accu-
+[−1, 1] learns to state-track perfectly and extrapolates reliably                                            racy degrades only when head 3 is
+across all seeds, whereas the Transformer does not learn to per-                                             scaled, confirming it as the state-
+form state-tracking even when trained from scratch on these                                                  tracking head.
+sequences.
+Interpretability Analysis. Grazzi et al. (2025) showed that to learn state-tracking, at least one head
+must learn to set β values to 2 in one of the layers (to obtain an eigenvalue of -1) and find appropriate
+keys in the right subspace. This was previously demonstrated for a single layer DeltaProduct2 model
+by Siems et al. (2025) for the S4 group. We verify whether DeltaNet[−1, 1] learns to perform state-
+tracking using NTP by leveraging its extended eigenvalue range. Therefore, we pass sequences of
+512 commands with spacing 4 through the model and retrieve the β values using NNsight (Fiotto-
+Kaufman et al., 2024). Figure 5 shows the distribution of β across layers and heads. We observe
+
+
+                                                                                         4
+               (A) Unobservable Branching                                    (B) Approximation                     (C) Inverse Inference
+    Random                           Hidden State                >>> def f(n):                          >>> def f(x):
+    >>> import random                >>> import os               >>>   s = 0                            >>>   a = x
+    >>> a, b = 1, 2                  >>> a, b = 1, 2             >>>   for i in range(1, n+1):          >>>   if a > 3:
+    >>> if random.choice([0,1]):     >>> if os.getenv("SWAP"):   >>>     s += i                         >>>     b = a + 2
+    >>>   a, b = b, a                >>>   a, b = b, a           >>>   return s                         >>>   else:
+    >>> assert a == ?                >>> assert a == ?           >>> a = 1                              >>>     b = a * 2
+                                                                 >>> if f(100) > 5000:                  >>>   c = b + 1
+                                                                 >>>   a = 2                            >>>   return c
+                                                                 >>> assert a == ?                      >>> assert f( ?? ) == 8
+
+                          p≤0.5 / ¬SWAP
+                                                                                    f(100)≤5000
+                                          a=1                                                     a=1               observe            infer
+                                                                                                                     output            input
+                     s                                                       s                                       c=8              x=5
+                                          a=2                                                     a=2
+                           p>0.5 / SWAP                                             f(100)>5000                          reason backward
+
+
+
+
+Figure 7: Sources of probabilistic state transitions in tracking variables during code execution. (A)
+Unobservable branching from randomness or hidden state. (B) Approximation when skipping ex-
+pensive computations. (C) Inverse inference when recovering inputs from outputs.
+
+
+that many β values exceed 1, which results in negative eigenvalues for the generalized Householder.
+Layer 12 stands out, with at least one head consistently estimating most β values at 2 (Fig. 5,
+middle). Furthermore, PCA analysis reveals that the keys of this head lie in a significantly lower-
+dimensional linear subspace than the keys of any other head in the network. We hypothesize that
+this head has learned to be the state-tracking head of the network. Results for the remaining layers
+are in Section A.2.
+To confirm that head 3 in layer 12 is the state-tracking head, we perform an intervention where we
+gradually scale β to restrict the eigenvalue range from [−1, 1] to [0, 1] for each head independently
+with results shown in Fig. 6. We evaluate on sequences with 5 variables, reveal spacing 2, and
+64 commands. Scaling any head except head 3 leaves the state prediction accuracy unchanged.
+However, scaling head 3 causes significant performance degradation, confirming that it alone enables
+state-tracking for the model.
+
+
+5       W HY S TATE -T RACKING FAILS ON R EAL C ODE : F ROM D ETERMINISTIC TO
+        P ROBABILISTIC AUTOMATA WITH S TATE R EVEALS
+
+The preceding experiments establish a clear recipe for learning state-tracking via next-token pre-
+diction: reveal intermediate states through print statements (for learnability) and use an architecture
+with state-tracking capabilities. DeltaNet[−1, 1] satisfies both criteria and generalizes reliably on
+synthetic permutation traces (§4.1). However, this success relies on an idealization that real code
+violates: every transition is fully observable. In our REPL traces, the model sees exactly which
+variables are swapped at each step. Real code execution rarely gives such transparency.
+Figure 7 illustrates three representative sources of transition uncertainty that arise when language
+models execute code. (A) Unobservable branching occurs when code branches on conditions in-
+accessible to the model, whether from explicit randomness, hidden environment state, or external
+API calls. (B) Approximation arises when models skip expensive operations like loops or recursion,
+trading exact computation for efficiency but introducing uncertainty about intermediate states. (C)
+Inverse inference tasks, such as CRUXEval-Input (Gu et al., 2024) or symbolic execution (King,
+1976), require recovering inputs from outputs, which often admits multiple valid solutions.
+In all three cases, a model cannot deterministically compute the next state but must instead maintain
+a distribution over possible states. This probabilistic setting differs fundamentally from the deter-
+ministic permutation tracking studied in prior work on linear RNNs (Sarrof et al., 2024; Merrill
+et al., 2024; Grazzi et al., 2025; Terzic et al., 2025). While probabilistic state-tracking has been
+analyzed for nonlinear RNNs (Svete & Cotterell, 2023; Butoi et al., 2025; Borenstein et al., 2024),
+its implications for linear RNNs remain unexplored.
+
+5.1          P ROBABILISTIC F INITE -S TATE AUTOMATA WITH S TATE R EVEALS
+
+To analyze this formally, we introduce a model that explicitly represents probabilistic transitions
+(e.g. conditional array swaps) coupled with partial state reveals (e.g. outputs of print statements of
+
+
+                                                                                  5
+the array elements). This formulation treats the input sequence as a series of operations where partial
+state observation precedes state evolution.
+
+Definition 1 (PFSA-SR) A Probabilistic Finite-State Automaton with State Reveals (PFSA-SR) is
+a tuple (Q, Σ, δ, ρ, q0 ) where Q is a finite set of states with initial state q0 ∈ Q, Σ is an input
+alphabet, δ : Q × Σ → Dist(Q) is the probabilistic transition kernel, and ρ : Σ → 2Q is the
+reveal function mapping inputs to subsets of Q. The system evolves sequentially: at each time-step
+t, the environment (which has access to the true state qt ) selects an input symbol σt ∈ Σ subject
+to the consistency constraint qt ∈ ρ(σt ). The next state is then sampled from the transition kernel,
+qt+1 ∼ δ(qt , σt ).
+
+The consistency constraint is the defining feature of the reveal mechanism: since the environment
+must choose σt so that qt ∈ ρ(σt ), the observer (who sees only σt ) can eliminate all states outside
+ρ(σt ) from the current belief. This models code-level observations such as print statements and
+asserts, which constrain but do not fully determine the latent state. Two special cases are worth
+noting: (1) reveal-only symbols, where δ(q, σ) places all mass on q for every q (i.e. the state does
+not change), and (2) transition-only symbols, where ρ(σ) = Q (i.e. the reveal is vacuous).
+Belief Update. If we only observe the sequence of symbols, the uncertainty in the transitions pre-
+vents us from directly tracking the state. What we can model is instead the conditional probability
+distribution of the state given the input history, denoted by p(qt | σ1 , . . . , σt ), which we refer to
+as the belief bt . If we know δ and ρ, we can update the belief in two stages. First, the reveal step
+conditions the current belief bt on the reveal ρ(σt ), since we are guaranteed that qt ∈ ρ(σt ). The
+intermediate belief b′t is computed by zeroing out states inconsistent with ρ(σt ) and renormaliz-
+ing. Second, the transition step computes the next belief bt+1 by propagating the corrected belief b′t
+through the transition kernel:
+
+       b′t (q) = bt (q) · I[q ∈ ρ(σt )]/ k∈ρ(σt ) bt (k)  bt+1 (q ′ ) = q∈Q b′t (q) · δ(q, σt )(q ′ )
+                                        P                              P
+
+
+Let m = |Q| be the number of states. We represent the belief bt as a column vector in the unit
+simplex ∆m ⊂ Rm . For each input σ ∈ Σ, we define the reveal matrix Zσ ∈ Rm×m as a diag-
+onal matrix where (Zσ )ii = 1 if state i ∈ ρ(σ) and 0 otherwise. We define the transition matrix
+Tσ ∈ Rm×m as a column-stochastic matrix where (Tσ )ij = δ(j, σ)(i) represents the probability of
+transitioning to state i from state j. The full belief update for input σt is:
+
+                           bt+1 = f (Tσt Zσt bt ),       where f (x) = x/∥x∥1                        (2)
+
+This model captures two key aspects of code execution. First, partial observability: we receive
+reveals that prune possible states (e.g., through print statements) rather than observing the full state.
+Second, probabilistic transitions arise from operations with random choices or external inputs.
+Concrete example: unobservable branching as a PFSA-SR. To illustrate how code execution
+maps to a PFSA-SR, consider the unobservable branching scenario from Figure 7(A). Suppose a
+program maintains a list [a, b] and executes if random() < 0.5: a, b = b, a. We
+model this as a PFSA-SR with Q = S2 = {(a, b), (b, a)}, two states corresponding to the two
+possible orderings. The conditional swap is a transition-only symbol σswap with ρ(σswap ) = Q
+(no information revealed) and δ(q, σswap ) assigning probability 1/2 to each state. A subsequent
+print(a) revealing that a equals its original value is a reveal-only symbol σrev with ρ(σrev ) =
+{(a, b)} (only the identity ordering is consistent) and δ(q, σrev )(q) = 1 (no state change). After
+observing σswap followed by σrev , the belief collapses from [1/2, 1/2] back to [1, 0] via the reveal’s
+support pruning and renormalization.
+Connections to existing models. PFSA-SR subsumes and relates to several classical models. It
+reduces to a DFA when δ is deterministic and the reveals are not informative, i.e. ρ(σ) = Q for
+every σ ∈ Σ. If instead of hard observations we receive soft observations rather than hard con-
+straints, the model is closely related to IO-HMMs (Bengio & Frasconi, 1994) or POMDP (Åström,
+1965; Kaelbling et al., 1998) observation models. If reveals are absent and δ is linear, we recover a
+Weighted Finite Automaton (WFA) viewpoint used in linear RNN theory. Compared to POMDPs
+and IO-HMMs, the essential difference here is the emphasis on hard, support-pruning reveals that
+eliminate some states rather than likelihood-weighted observations.
+
+
+                                                     6
+5.2     T WO R EPRESENTATIONS FOR P ROBABILISTIC P ERMUTATION T RACKING
+
+To ground the PFSA-SR in a concrete but difficult problem, we analyze permutation tracking under
+uncertainty. We want to track the configurations of a list of n distinct elements after a sequence
+of probabilistic permutations, each a convex combination of elements from group Sn . We consider
+two representations for the belief state, which differ in their computational complexity and stability
+under linear recurrence.
+
+5.2.1    J OINT R EPRESENTATION
+The joint representation explicitly enumerates all possible automaton states. For permutation track-
+ing over Sn , the state space contains n! configurations (one for each permutation of the list). The
+belief bt ∈ Rn! is a probability vector over these configurations. Note that this is much less effi-
+cient than the deterministic case, where we can track the state using a linear RNN with an n − 1-
+dimensional state: each permutation in Sn can be represented by a n−1 × n−1 permutation matrix.
+A key limitation of the joint representation in a linear recurrence is the role of the input injection
+term B(xt ) (Eq. 1). In the marginal representation (discussed below), a reveal directly replenishes
+decayed entries via B. In the joint representation, however, a reveal of the form “position i contains
+element j” is consistent with (n−1)! of the n! configurations, and the subset that survives depends
+on the current belief bt , not just the input xt . Since B is a function of the input alone, it cannot
+adaptively identify which configurations to replenish. We return to this point in the stability analysis
+(§5.3), where we show it implies that the joint representation is always numerically unstable under
+repeated partial reveals. We provide a detailed worked example in Section B.1.
+
+5.2.2    M ARGINAL R EPRESENTATION
+As a more tractable alternative, instead of tracking the joint probability of all positions, we track
+the marginal probability of each position independently. Consider a list of elements starting from
+(1, 2, . . . , n). The belief state is an n × n matrix Ht where entry (Ht )ij represents the probability
+that position i contains element j. The starting state is H0 = I. To align with standard state-
+transition notation (left multiplication), rows (i) represent positions in memory and columns (j)
+represent elements/variables.
+This matrix must satisfy two constraints
+                                   P derived from the definition of a permutation: (1) each posi-
+tion contains exactly one element, j (Ht )ij = 1 for all i; and (2) each element exists at exactly one
+          P
+position, i (Ht )ij = 1 for all j. Matrices satisfying these properties form the Birkhoff polytope of
+doubly stochastic matrices. Tracking the distribution over Sn corresponds to moving a point within
+this polytope. By the Birkhoff–von Neumann theorem (Birkhoff, 1946; Von Neumann, 1953), any
+doubly stochastic matrix can be expressed as a convex combination of permutation matrices.
+The marginal representation admits a natural bi-linear recurrence:
+         Ht = Al (xt )Ht−1 Ar (xt ) + B(xt ),      ŷt = dec(Ht , xt )      where t ∈ {1, . . . , T }
+Using the identity (sometimes referred to as Roth’s column lemma) vec(BXA⊤ ) = (A ⊗
+B)vec(X) (Roth, 1934; Henderson & Searle, 1981), we can see that this remains an affine update
+on the vectorized state: vec(Ht ) = (Ar (xt )⊤ ⊗ Al (xt ))vec(Ht−1 ) + vec(B(xt )). We note that
+a similar two-sided recurrence structure is present in the open-source implementation of Kimi Delta
+Attention (KDA) (Team et al., 2025) (code), although the recurrence was not explicitly described in
+the paper.
+For representing the marginal distribution during probabilistic state-tracking, we parameterize the
+recurrence as Al (xt ) = Ps (xt )Dl (xt ) and Ar (xt ) = Dr (xt ), where Dl (xt ), Dr (xt ) are diago-
+nal matrices and Ps (xt ) is a (possibly stochastic) permutation matrix.
+Probabilistic Transitions (Mixing). When the input xt encodes a shuffle (e.g., “swap contents of
+Position a and Position b”), we permute the rows of Ht . If the shuffle is probabilistic, we apply a
+linear mixture of permutation matrices:
+                                                           n!
+                                                           X                n!
+                                                                            X
+                   Ht+1 = Ps (xt )Ht ,        Ps (xt ) =         c i Pi ,         ci = 1
+                                                           i=1              i=1
+
+
+                                                   7
+     Ht+1                                                    Ht               Ht+1           Dl        Ht        Dr           B
+                                                                                                                   
+            
+                                                
+                                                                                                                        
+
+
+             =
+                      c1 
+                                +
+                                      c2 
+                                          
+                                                    
+                                                    
+                                                         
+                                                         
+                                                                  
+                                                                  
+                                                                          
+                                                                          
+                                                                                     =
+                                                                                      
+                                                                                                  
+                                                                                                  
+                                                                                                            
+                                                                                                                    +
+                                                                                                                                  
+                                                                                                                                    
+                                                                                                                   
+
+
+
+    (a) Mixing: convex combination of permutations.                            (b) Reveal: “Position 2 contains Element 3”.
+
+Figure 8: Marginal state updates. (a) Probabilistic mixing applies a convex combination of per-
+mutation matrices. (b) State reveals zero out conflicting row/column via diagonal masks and inject
+certainty via B.
+
+
+where Ps acts on the Positions (rows) and Pi are permutation matrices. The other components are
+set to Dl (xt ) = Dr (xt ) = I and B(xt ) = 0. Note that Ps (xt ) is doubly stochastic by definition,
+so if Ht is doubly stochastic, Ht+1 will be as well.
+State Reveals. If xt encodes the constraint “Position i contains Element j”, we enforce: (1) entry
+(i, j) is confirmed (set to 1); (2) position i cannot contain any other element (zero out row i except
+column j); (3) element j cannot be in any other position (zero out column j except row i). This
+translates into:
+                 Ps (xt ) = I,       Dl (xt ) = I − ei e⊤
+                                                        i ,           Dr (xt ) = I − ej e⊤
+                                                                                         j ,           B(xt ) = ei e⊤
+                                                                                                                    j
+
+where ei is a standard basis vector of Rn . The term Dl Ht Dr preserves probability mass for con-
+figurations compatible with the observation (outside the cross of row i and column j), while B(xt )
+directly injects the certainty of the observed fact. After this update, Ht may leave the Birkhoff poly-
+tope. To recover a valid marginal distribution, we apply the Sinkhorn-Knopp algorithm (Sinkhorn &
+Knopp, 1967) in the decoder (to keep the main recursion linear), which iteratively normalizes rows
+and columns to project back onto the Birkhoff polytope.
+
+5.3         S TABILITY A NALYSIS : W HEN D OES E ACH R EPRESENTATION FAIL ?
+
+We now characterize when linear RNNs can and cannot maintain stable belief tracking under each
+representation. The central issue is that the PFSA-SR belief update (Eq. 2) requires nonlinear renor-
+malization (f (x) = x/∥x∥1 ) after each reveal. A linear RNN must defer this normalization to the
+decoder, propagating the unnormalized state ht through time. We analyze the consequences for each
+representation.
+Joint representation: unstable under partial reveals. Consider the unnormalized linear recur-
+rence that defers normalization:
+                                              ht+1 = Tσt Zσt ht ,             bt = ht /∥ht ∥1                                     (3)
+The “survival probability” at step t is st := ∥Zσt bt ∥1 ∈ (0, 1], representing the fraction of belief
+mass consistent with the reveal. The unnormalized state carries the cumulative product ∥ht ∥1 =
+Qt−1
+  k=0 sk in its magnitude. Since B(xt ) cannot replenish mass in the joint case (as discussed in
+§4.2.1), whenever partial reveals repeatedly prune mass (i.e., sk < 1 for many steps), ∥ht ∥1 shrinks
+exponentially, and the state vanishes in finite precision. This is illustrated in Figure 9.
+This is a known numerical issue in HMM/Bayesian filtering: unnormalized forward messages
+αt (i) = p(y1:t , xt = i) encode the observation-prefix likelihood in their scale and quickly un-
+derflow for long sequences, motivating per-step scaling (“scaled forward-backward”) or log-domain
+implementations (e.g. log-sum-exp) for numerical stability (Rabiner, 1989; Murphy, 2002), both of
+which break the linearity of the recurrence.
+
+Marginal representation: stable with sufficient reveals, unstable under adversarial sequences.
+In contrast, the marginal representation can leverage B(xt ) to replenish decaying entries. When
+a reveal “position i contains element j” occurs, B(xt ) = ei e⊤    j directly injects a 1 at entry (i, j),
+regardless of its prior value. This acts as a “reset” that prevents accumulated decay.
+Stable case: If each position/element pair is revealed periodically, every entry in the marginal matrix
+Ht receives periodic replenishment. The decay between reveals is bounded, and finite precision
+suffices.
+
+                                                                      8
+                                                                                                         
+                         0             1/2    Reveal {2, 3}    0             1/4    Reveal {2, 3}    0 
+      Linear RNN                Mix                                   Mix                                
+                         1/2           1/4                     1/4           1/8                     1/8 
+         (state ht )    
+                        
+                              
+                              
+                                        
+                                        
+                                              
+                                              
+                                                                  
+                                                                  
+                                                                        
+                                                                        
+                                                                                  
+                                                                                  
+                                                                                        
+                                                                                        
+                                                                                                            
+                                                                                                            
+                                                                                                                  
+                                                                                                                  
+                          1/2             1/4                       1/4             1/8                       1/8
+                                                                                                         
+                                                  Reveal {2, 3}                             Reveal {2, 3}
+                         0             1/2     (+ renorm)      0             1/2     (+ renorm)      0 
+          PFSA-SR               Mix                                   Mix                                
+                         1/2           1/4                     1/2           1/4                     1/2 
+         (belief bt )   
+                        
+                              
+                              
+                                        
+                                        
+                                              
+                                              
+                                                                  
+                                                                  
+                                                                        
+                                                                        
+                                                                                  
+                                                                                  
+                                                                                        
+                                                                                        
+                                                                                                            
+                                                                                                            
+                                                                                                                  
+                                                                                                                  
+                          1/2             1/4                       1/2             1/4                       1/2
+
+
+Figure 9: Joint representation instability. A mixing step moves half the mass into state 1 (absorb-
+ing): from states 2 and 3 we transition to state 1 with probability 1/2 and otherwise stay put. The
+reveal keeps {2, 3}. A linear recurrence storing the unnormalized state ht loses mass exponentially
+fast (1/2 → 1/4 → 1/8 → · · · ), so all entries vanish in finite precision. PFSA-SR normalizes after
+each reveal, keeping two entries bounded away from zero (1/2, 1/2).
+
+
+
+                                                                                               
+           ?                R(2, 2)              ?                 R(2, 2)               ?
+  1 0 0   2↔3   1 0 0                 1 0 0     2↔3   1 0 0                  1 0 0      2↔3   1 0     0
+ 0 1 0       0 0.5 0.5           0 1 0         0 0.5 0.25           0 1 0          0 0.5 0.125 
+  0 0 1         0 0.5 0.5             0 0 0.5         0 0.5 0.25             0 0 0.25         0 0.5 0.125
+
+    H0                      H1              H2                    H3                  H4                    H5
+
+Figure 10: Visualizing the exponential decay of unnormalized probability mass in a Linear RNN
+for the marginal state. We start with the identity state (H0 ). A probabilistic mixing of elements 2
+and 3 (H1 ) followed by a deterministic reveal of element 2 at position 2 (H2 ) correctly resets the
+revealed entry to 1 but leaves the unrevealed entry at 0.5. Repeating this cycle (H3 , H4 , H5 ) causes
+the unrevealed mass to decay exponentially (0.5 → 0.25 → 0.125), eventually vanishing in finite
+precision.
+
+
+
+
+Adversarial case: An adversarial reveal sequence can cause specific entries to decay indefinitely.
+Consider n = 3 elements starting at identity H0 = I. The adversary repeatedly: (1) applies a
+probabilistic swap mixing elements 2 and 3, then (2) reveals “position 2 contains element 2”. The
+reveal replenishes entry (2, 2) to 1, but element 3’s mass (at positions 2 and 3) is never directly
+revealed, it can only be inferred by exclusion. Each cycle halves the unrevealed mass (1 → 0.5 →
+0.25 → · · · ) until it vanishes in finite precision. See Figure 10 for an illustration.
+Summary. Under the representations analyzed here, the joint representation is numerically unstable
+for linear RNNs because reveals cannot replenish mass, and the marginal representation can be stable
+if reveals are distributed across all variables but admits adversarial sequences that force exponential
+decay. These constructions provide strong evidence that linear RNNs face an inherent difficulty with
+probabilistic state-tracking: without either nonlinear renormalization in the recurrence or constraints
+on the reveal distribution, stable belief maintenance appears infeasible.
+One might note that finite precision makes the set of representable beliefs finite, so in principle the
+dynamics can be simulated by a DFA (and hence linearized via one-hot encoding). However, this is
+impractical: in the joint case, even a binary discretization of the n!-dimensional belief vector requires
+2n! DFA states; in the marginal case, the belief lives in the Birkhoff polytope of dimension (n−1)2 ,
+                                                            2
+so discretizing each coordinate into k bins yields k (n−1) states (e.g., 1081 for n=10, k=10).
+Linear RNNs suffice for deterministic automata and full state reveals. Finally, we note two
+regimes where Linear RNNs suffice. First, if the system is a Deterministic Finite Automaton (DFA),
+the belief state remains a one-hot vector corresponding to the true state. Since no uncertainty is
+introduced, the normalization constant is always 1, and the update is linear. Second, if the system
+receives Full State Reveals (observing the exact current state), the belief is effectively reset to a
+one-hot vector. This ”hard reset” can be implemented by the linear update ht+1 = 0 · ht + c, which
+zeroes out the history and injects unit mass at the revealed state. Consequently, in a probabilistic
+setting with partial and full reveals, if full state reveals occur frequently, they prevent the exponential
+decay of the state norm caused by partial reveals stabilizing the recurrence.
+
+
+                                                         9
+6    C ONCLUSION
+We study state-tracking in neural sequence models through the lens of code execution, bridging the
+gap between abstract automata benchmarks and the next-token prediction paradigm used to train
+language models.
+Summary of contributions. First, we introduced Python REPL traces as a testbed for state-
+tracking under next-token prediction, showing that linear RNNs with extended eigenvalue spectra
+(DeltaNet[−1, 1]) can learn and generalize reliably with sparse state supervision, while Transform-
+ers fail even with dense reveals. Second, we provided evidence for a barrier facing linear RNNs in
+realistic code settings: when transitions are probabilistic or partially observable, exact belief track-
+ing requires nonlinear renormalization. We formalized this through the PFSA-SR framework and
+exhibited adversarial reveal sequences that cause exponential decay in state norms under the natural
+joint and marginal representations, suggesting that stable belief maintenance is infeasible for linear
+RNNs under finite precision.
+Limitations. Our experiments focus on synthetic permutation groups (Sn ) rather than real-world
+code. While REPL traces are more realistic than prior sequence-to-sequence setups, they still sim-
+plify away parsing, control flow, and memory management.
+Future work. Our findings suggest that probabilistic state-tracking is a promising benchmark for
+evaluating nonlinear RNNs (Hochreiter & Schmidhuber, 1997; Beck et al., 2024) and recent paral-
+lelization efforts (Lim et al., 2024; Gonzalez et al., 2024; Danieli et al., 2025). Extending this work
+to real execution traces, e.g. from CRUXEval or system call logs, and investigating hybrid archi-
+tectures that interleave linear recurrence with periodic nonlinear normalization similar to TTT (Sun
+et al., 2025) and Titans (Behrouz et al., 2025) is left as future work. Concurrent work demonstrates
+that Kalman-style filtering can be parallelized for language modeling (Shaj et al., 2026).
+
+ACKNOWLEDGMENTS
+We would like to thank Jan Tönshoff, Heiner Kremer, Fabian Falck, Alicia Curth, Teodora Pandeva,
+Hari Govind V K, and Andrey Rybalchenko for insightful discussions throughout the project.
+
+AUTHOR C ONTRIBUTIONS
+J.S. proposed to use code execution traces in the form of REPL traces and iterated on the format with
+R.G., K.K. and B.R. Identified failure cases under partial observability in code based on execution
+traces, conceived the possibility for failure of probabilistic state-tracking in linear RNNs for the joint
+representation in this setting. Developed the software implementation, ran the primary experiments,
+and led the manuscript writing. R.G. iterated on the REPL traces format, formalized the proba-
+bilistic finite-state example by J.S, proposed marginal state-representations and made connection to
+prior work on recurrences, and contributed heavily to the manuscript writing. K.P. did preliminary
+experiments on comparing linear and non-linear RNNs comparing their practical probabilistic state
+tracking capabilities. K.K., H.B., and B.R. provided project supervision, iterated on the format of
+the REPL traces, guided the overarching research direction, and contributed to manuscript revisions.
+B.R. provided additional conceptual framing based on parallel work in code world models.
+
+R EFERENCES
+Karl Johan Åström. Optimal control of markov processes with incomplete state information i. Jour-
+  nal of mathematical analysis and applications, 10:174–205, 1965.
+Maximilian Beck, Korbinian Pöppel, Markus Spanring, Andreas Auer, Oleksandra Prudnikova,
+ Michael Kopp, Günter Klambauer, Johannes Brandstetter, and Sepp Hochreiter. xlstm: Extended
+ long short-term memory. Advances in Neural Information Processing Systems, 37:107547–
+ 107603, 2024.
+Ali Behrouz, Peilin Zhong, and Vahab Mirrokni. Titans: Learning to memorize at test time. In The
+  Thirty-ninth Annual Conference on Neural Information Processing Systems, 2025.
+
+
+                                                   10
+Yoshua Bengio and Paolo Frasconi. An input output hmm architecture. Advances in neural infor-
+  mation processing systems, 7, 1994.
+Satwik Bhattamishra, Kabir Ahuja, and Navin Goyal. On the ability and limitations of transformers
+  to recognize formal languages. arXiv preprint arXiv:2009.11264, 2020.
+Garrett Birkhoff. Tres observaciones sobre el algebra lineal. Univ. Nac. Tucuman, Ser. A, 5:147–154,
+  1946.
+Guy E Blelloch. Prefix sums and their applications. 1990.
+Nadav Borenstein, Anej Svete, Robin Chan, Josef Valvoda, Franz Nowak, Isabelle Augenstein,
+  Eleanor Chodroff, and Ryan Cotterell. What languages are easy to language-model? a perspective
+  from learning probabilistic regular languages. In Proceedings of the 62nd Annual Meeting of the
+  Association for Computational Linguistics (Volume 1: Long Papers), pp. 15115–15134, 2024.
+Alexandra Butoi, Ghazal Khalighinejad, Anej Svete, Josef Valvoda, Ryan Cotterell, and Brian
+  DuSell. Training neural networks as recognizers of formal languages. In The Thirteenth In-
+  ternational Conference on Learning Representations, 2025.
+Quentin Carbonneaux, Gal Cohen, Jonas Gehring, Jacob Kahn, Jannik Kossen, Felix Kreuk, Emily
+  McMilin, Michel Meyer, Yuxiang Wei, David Zhang, et al. Cwm: An open-weights llm for
+  research on code generation with world models. arXiv preprint arXiv:2510.02387, 2025.
+Federico Danieli, Pau Rodriguez, Miguel Sarabia, Xavier Suau, and Luca Zappella. Pararnn:
+  Unlocking parallel training of nonlinear rnns for large language models. arXiv preprint
+  arXiv:2510.21450, 2025.
+Tri Dao and Albert Gu. Transformers are ssms: Generalized models and efficient algorithms through
+  structured state space duality. In International Conference on Machine Learning, pp. 10041–
+  10071. PMLR, 2024.
+Grégoire Delétang, Anian Ruoss, Jordi Grau-Moya, Tim Genewein, Li Kevin Wenliang, Elliot Catt,
+  Chris Cundy, Marcus Hutter, Shane Legg, Joel Veness, et al. Neural networks and the chomsky
+  hierarchy. arXiv preprint arXiv:2207.02098, 2022.
+L. Peter Deutsch and Edmund C. Berkeley. The LISP implementation for the PDP-1 computer.
+  1964.
+Ting-Han Fan, Ta-Chung Chi, and Alexander Rudnicky. Advancing regular language reasoning in
+  linear recurrent neural networks. In Proceedings of the 2024 Conference of the North Ameri-
+  can Chapter of the Association for Computational Linguistics: Human Language Technologies
+  (Volume 2: Short Papers), pp. 45–53, 2024.
+Jaden Fiotto-Kaufman, Alexander R. Loftus, Eric Todd, Jannik Brinkmann, Koyena Pal, Dmitrii
+  Troitskii, Michael Ripa, Adam Belfki, Can Rager, Caden Juang, Aaron Mueller, Samuel Marks,
+  Arnab Sen Sharma, Francesca Lucchetti, Nikhil Prakash, Carla E. Brodley, Arjun Guha, Jonathan
+  Bell, Byron C. Wallace, and David Bau. Nnsight and ndif: Democratizing access to open-weight
+  foundation model internals. In International Conference on Learning Representations, 2024.
+Xavier Gonzalez, Andrew Warrington, Jimmy T Smith, and Scott W Linderman. Towards scalable
+  and stable parallelization of nonlinear rnns. Advances in Neural Information Processing Systems,
+  37:5817–5849, 2024.
+Riccardo Grazzi, Julien Siems, Arber Zela, Jörg KH Franke, Frank Hutter, and Massimiliano Pontil.
+  Unlocking State-Tracking in Linear RNNs Through Negative Eigenvalues. In The Thirteenth
+  International Conference on Learning Representations, 2025.
+Albert Gu and Tri Dao. Mamba: Linear-time sequence modeling with selective state spaces. In First
+  Conference on Language Modeling, 2024.
+Alex Gu, Baptiste Roziere, Hugh James Leather, Armando Solar-Lezama, Gabriel Synnaeve, and
+  Sida Wang. Cruxeval: A benchmark for code reasoning, understanding and execution. In Inter-
+  national Conference on Machine Learning, pp. 16568–16621. PMLR, 2024.
+
+
+                                                11
+Michael Hahn. Theoretical limitations of self-attention in neural sequence models. Transactions of
+ the Association for Computational Linguistics, 8:156–171, 2020.
+
+Romain Harang, Jason Naradowsky, Yaswitha Gujju, and Yusuke Miyao. Tracking world states
+  with language models: State-based evaluation using chess. In ICML 2025 Workshop on Assessing
+  World Models, 2025.
+
+Harold V Henderson and Shayle R Searle. The vec-permutation matrix, the vec operator and kro-
+  necker products: A review. Linear and multilinear algebra, 9(4):271–288, 1981.
+
+Sepp Hochreiter and Jürgen Schmidhuber. Long short-term memory. Neural computation, 9(8):
+  1735–1780, 1997.
+
+Alston S Householder. Unitary triangularization of a nonsymmetric matrix. Journal of the ACM
+  (JACM), 5(4):339–342, 1958.
+
+Weizhe Hua, Zihang Dai, Hanxiao Liu, and Quoc Le. Transformer quality in linear time. In Inter-
+ national conference on machine learning, pp. 9099–9117. PMLR, 2022.
+
+JellyFish042. Rwkv-othello. https://github.com/Jellyfish042/RWKV_Othello,
+   2024.
+
+Leslie Pack Kaelbling, Michael L Littman, and Anthony R Cassandra. Planning and acting in
+  partially observable stochastic domains. Artificial intelligence, 101(1-2):99–134, 1998.
+
+James C King. Symbolic execution and program testing. Communications of the ACM, 19(7):
+  385–394, 1976.
+
+Yi Heng Lim, Qi Zhu, Joshua Selfridge, and Muhammad Firmansyah Kasim. Parallelizing non-
+  linear sequential models over the sequence length. In The Twelfth International Conference on
+  Learning Representations, 2024.
+
+Bingbin Liu, Jordan T Ash, Surbhi Goel, Akshay Krishnamurthy, and Cyril Zhang. Transformers
+  learn shortcuts to automata. arXiv preprint arXiv:2210.10749, 2022.
+
+Chenxiao Liu, Shuai Lu, Weizhu Chen, Daxin Jiang, Alexey Svyatkovskiy, Shengyu Fu, Neel Sun-
+  daresan, and Nan Duan. Code execution with pre-trained language models. In Findings of the
+  Association for Computational Linguistics: ACL 2023, pp. 4984–4999, 2023.
+
+Ilya Loshchilov and Frank Hutter. Sgdr: Stochastic gradient descent with warm restarts. In Interna-
+   tional Conference on Learning Representations, 2017a.
+
+Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. In International Confer-
+   ence on Learning Representations, 2017b.
+
+Carlos E Luis, Alessandro Giacomo Bottero, Julia Vinogradska, Felix Berkenkamp, and Jan Peters.
+  Uncertainty representations in state-space layers for deep reinforcement learning under partial
+  observability. Transactions on Machine Learning Research, 2025.
+
+Eric Martin and Chris Cundy. Parallelizing linear recurrent neural nets over sequence length. arXiv
+  preprint arXiv:1709.04057, 2017.
+
+William Merrill and Ashish Sabharwal. The parallelism tradeoff: Limitations of log-precision trans-
+ formers. Transactions of the Association for Computational Linguistics, 11:531–545, 2023.
+
+William Merrill, Gail Weiss, Yoav Goldberg, Roy Schwartz, Noah A Smith, and Eran Yahav. A for-
+ mal hierarchy of rnn architectures. In 58th Annual Meeting of the Association for Computational
+ Linguistics, ACL 2020, pp. 443–459. Association for Computational Linguistics (ACL), 2020.
+
+William Merrill, Jackson Petty, and Ashish Sabharwal. The Illusion of State in State-Space Models.
+ In Proceedings of the 41st International Conference on Machine Learning, pp. 35492–35506,
+ 2024.
+
+
+                                                12
+Sajad Movahedi, Felix Sarnthein, Nicola Muca Cirone, and Antonio Orvieto. Fixed-Point RNNs:
+  From Diagonal to Dense in a Few Iterations. In First Workshop on Scalable Optimization for
+  Efficient and Adaptive Foundation Models, 2025.
+Kevin P Murphy. Hidden semi-markov models (hsmms). 2002.
+Bo Peng, Ruichong Zhang, Daniel Goldstein, Eric Alcaide, Xingjian Du, Haowen Hou, Jiaju Lin,
+  Jiaxing Liu, Janna Lu, William Merrill, et al. Rwkv-7” goose” with expressive dynamic state
+  evolution. arXiv preprint arXiv:2503.14456, 2025.
+Sai Prasanna, André Biedenkapp, and Raghu Rajan. One does not simply estimate state: Com-
+  paring model-based and model-free reinforcement learning on the partially observable mor-
+  dorhike benchmark. In Eighteenth European Workshop on Reinforcement Learning, 2025. URL
+  https://openreview.net/forum?id=lTyiOJwQqu.
+Michael O. Rabin. Probabilistic automata. Information and Control, 6(3):230–245, 1963. ISSN
+ 0019-9958. doi: https://doi.org/10.1016/S0019-9958(63)90290-0.
+Lawrence R Rabiner. A tutorial on hidden markov models and selected applications in speech
+  recognition. PROCEEDINGS OF THE IEEE, 77(2):257, 1989.
+William E. Roth. On direct product matrices. Bulletin of the American Mathematical Society, 40:
+ 461–468, 1934.
+Yash Sarrof, Yana Veitsman, and Michael Hahn. The expressive capacity of state space models:
+  A formal language perspective. Advances in Neural Information Processing Systems, 37:41202–
+  41241, 2024.
+Imanol Schlag, Kazuki Irie, and Jürgen Schmidhuber. Linear transformers are secretly fast weight
+  programmers. In International conference on machine learning, pp. 9355–9366. PMLR, 2021a.
+Imanol Schlag, Tsendsuren Munkhdalai, and Jürgen Schmidhuber. Learning associative inference
+  using fast weight memory. In International Conference on Learning Representations, 2021b.
+Mark Schöne, Babak Rahmani, Heiner Kremer, Fabian Falck, Hitesh Ballani, and Jannes Gladrow.
+ Implicit Language Models are RNNs: Balancing Parallelization and Expressivity. In Forty-second
+ International Conference on Machine Learning, 2025.
+Vaisakh Shaj, Cameron Barker, Aidan Scannell, Andras Szecsenyi, Elliot J Crowley, and Amos
+  Storkey. Kalman linear attention: Parallel bayesian filtering for efficient language modelling and
+  state tracking. arXiv preprint arXiv:2602.10743, 2026.
+Julien Siems, Timur Carstensen, Arber Zela, Frank Hutter, Massimiliano Pontil, and Riccardo
+  Grazzi. Deltaproduct: Improving state-tracking in linear RNNs via householder products. In
+  The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2025.
+Richard Sinkhorn and Paul Knopp. Concerning nonnegative matrices and doubly stochastic matri-
+  ces. Pacific Journal of Mathematics, 21(2):343–348, 1967.
+Lena Strobl, William Merrill, Gail Weiss, David Chiang, and Dana Angluin. What formal lan-
+  guages can transformers express? a survey. Transactions of the Association for Computational
+  Linguistics, 12:543–561, 2024.
+Yu Sun, Xinhao Li, Karan Dalal, Jiarui Xu, Arjun Vikram, Genghan Zhang, Yann Dubois, Xinlei
+  Chen, Xiaolong Wang, Sanmi Koyejo, et al. Learning to (learn at test time): Rnns with expressive
+  hidden states. In Forty-second International Conference on Machine Learning, 2025.
+Yutao Sun, Li Dong, Shaohan Huang, Shuming Ma, Yuqing Xia, Jilong Xue, Jianyong Wang, and
+  Furu Wei. Retentive network: A successor to transformer for large language models. arXiv
+  preprint arXiv:2307.08621, 2023.
+Anej Svete and Ryan Cotterell. Recurrent neural language models as probabilistic finite-state au-
+  tomata. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language
+  Processing, pp. 8069–8086, 2023.
+
+                                                13
+Kimi Team, Yu Zhang, Zongyu Lin, Xingcheng Yao, Jiaxi Hu, Fanqing Meng, Chengyin Liu, Xin
+  Men, Songlin Yang, Zhiyuan Li, et al. Kimi linear: An expressive, efficient attention architecture.
+  arXiv preprint arXiv:2510.26692, 2025.
+Qwen Team. Qwen3 technical report, 2025.
+Aleksandar Terzic, Nicolas Menet, Michael Hersche, Thomas Hofmann, and Abbas Rahimi. Struc-
+  tured sparse transition matrices to enable state tracking in state-space models. In Annual Confer-
+  ence on Neural Information Processing Systems, 2025.
+Shubham Toshniwal, Sam Wiseman, Karen Livescu, and Kevin Gimpel. Chess as a testbed for
+  language model state tracking. In Proceedings of the AAAI Conference on Artificial Intelligence,
+  volume 36, pp. 11385–11393, 2022.
+Keyon Vafa, Justin Y Chen, Ashesh Rambachan, Jon Kleinberg, and Sendhil Mullainathan. Evalu-
+  ating the world model implicit in a generative model. Advances in Neural Information Processing
+  Systems, 37:26941–26975, 2024.
+Keyon Vafa, Peter G Chang, Ashesh Rambachan, and Sendhil Mullainathan. What has a foundation
+  model found? using inductive bias to probe for world models. In International Conference on
+  Machine Learning, 2025.
+Guido Van Rossum, Fred L Drake, et al. Python reference manual, volume 111. Centrum voor
+  Wiskunde en Informatica Amsterdam, 1995.
+John Von Neumann. A certain zero-sum two-person game equivalent to the optimal assignment
+  problem, contributions to the theory of games, vol. 2. Ann. Math. Studies,(28), 1953.
+Benjamin Walker, Lingyi Yang, Nicola Muca Cirone, Cristopher Salvi, and Terry Lyons. Struc-
+  tured linear cdes: Maximally expressive and parallel-in-time sequence models. arXiv preprint
+  arXiv:2505.17761, 2025.
+Songlin Yang and Yu Zhang. Fla: A triton-based library for hardware-efficient implementations
+  of linear attention mechanism, January 2024. URL https://github.com/fla-org/
+  flash-linear-attention.
+Songlin Yang, Bailin Wang, Yikang Shen, Rameswar Panda, and Yoon Kim. Gated linear attention
+  transformers with hardware-efficient training. In Forty-first International Conference on Machine
+  Learning, 2024a.
+Songlin Yang, Bailin Wang, Yu Zhang, Yikang Shen, and Yoon Kim. Parallelizing linear transform-
+  ers with the delta rule over sequence length. Advances in neural information processing systems,
+  37:115491–115522, 2024b.
+Songlin Yang, Jan Kautz, and Ali Hatamizadeh. Gated delta networks: Improving mamba2 with
+  delta rule. In The Thirteenth International Conference on Learning Representations, 2025.
+Yike Zhao, Onno Eberhard, Malek Khammassi, Ali H Sayed, and Michael Muehlebach. Why
+  linear recurrent memory works in partially observable reinforcement learning. arXiv preprint
+  arXiv:2605.31261, 2026.
+
+
+
+
+                                                 14
+A     F ROM P ERMUTATION G ROUPS TO VARIABLE T RACKING IN C ODE
+A.1   E XPERIMENTAL D ETAILS
+
+Model & Training. We train a DeltaNet and Transformer (≈265M parameters) using the imple-
+mentation from flash-linear-attention (Yang & Zhang, 2024). The architecture consists of 18 layers,
+hidden dimension d = 512, 8 heads (dhead = 128), MLP expansion factor 4, and SwiGLU activa-
+tions. Optimization is performed using AdamW (Loshchilov & Hutter, 2017b) with a peak learning
+rate of 5 × 10−4 , a cosine decay schedule (Loshchilov & Hutter, 2017a) (minimum LR ratio 0.2),
+and 5% warmup. We use a per-device batch size of 3 with 12 gradient accumulation steps in BF16
+mixed precision. We trained on single Nvidia A100s for each model.
+Curriculum Learning. To ensure stability, we use a four-stage curriculum of 15,000 samples each.
+We use full permutations on 5 variables (S5 ), progressively increasing the trace length (L) and reveal
+spacing (S):
+                             (L, S) ∈ {(8, 1), (16, 2), (32, 4), (64, 8)}
+
+
+
+
+                                                  15
+A.2   I NTERPRETABILITY
+
+           2                                        2                                         2
+
+
+           1                                        1                                         1
+       β
+
+
+
+
+                                                β
+
+
+
+
+                                                                                          β
+           0                                        0                                         0
+               0    1   2   3   4   5   6   7           0    1   2    3   4   5   6   7           0    1   2   3   4   5   6   7
+                   Layer 1 - Head Number                    Layer 2 - Head Number                     Layer 3 - Head Number
+           2                                        2                                         2
+
+
+           1                                        1                                         1
+       β
+
+
+
+
+                                                β
+
+
+
+
+                                                                                          β
+           0                                        0                                         0
+               0    1   2   3   4   5   6   7           0    1   2    3   4   5   6   7           0    1   2   3   4   5   6   7
+                   Layer 4 - Head Number                    Layer 5 - Head Number                     Layer 6 - Head Number
+           2                                        2                                         2
+
+
+           1                                        1                                         1
+       β
+
+
+
+
+                                                β
+
+
+
+
+                                                                                          β
+           0                                        0                                         0
+               0    1   2   3   4   5   6   7           0    1   2    3   4   5   6   7           0    1   2   3   4   5   6   7
+                   Layer 7 - Head Number                    Layer 8 - Head Number                     Layer 9 - Head Number
+           2                                        2                                         2
+
+
+           1                                        1                                         1
+       β
+
+
+
+
+                                                β
+
+
+
+
+                                                                                          β
+
+
+           0                                        0                                         0
+               0    1   2   3   4   5   6   7           0    1   2    3   4   5   6   7           0    1   2   3   4   5   6   7
+                   Layer 10 - Head Number                   Layer 11 - Head Number                    Layer 12 - Head Number
+           2                                        2                                         2
+
+
+           1                                        1                                         1
+       β
+
+
+
+
+                                                β
+
+
+
+
+                                                                                          β
+
+
+
+
+           0                                        0                                         0
+               0    1   2   3   4   5   6   7           0    1   2    3   4   5   6   7           0    1   2   3   4   5   6   7
+                   Layer 13 - Head Number                   Layer 14 - Head Number                    Layer 15 - Head Number
+           2                                        2                                         2
+
+
+           1                                        1                                         1
+       β
+
+
+
+
+                                                β
+
+
+
+
+                                                                                          β
+
+
+
+
+           0                                        0                                         0
+               0    1   2   3   4   5   6   7           0    1   2    3   4   5   6   7           0    1   2   3   4   5   6   7
+                   Layer 16 - Head Number                   Layer 17 - Head Number                    Layer 18 - Head Number
+           2                                        2                                         2
+
+
+           1                                        1                                         1
+       β
+
+
+
+
+                                                β
+
+
+
+
+                                                                                          β
+
+
+
+
+           0                                        0                                         0
+               0    1   2   3   4   5   6   7           0    1   2    3   4   5   6   7           0    1   2   3   4   5   6   7
+                   Layer 19 - Head Number                   Layer 20 - Head Number                    Layer 21 - Head Number
+
+Figure 11: β distribution per layer per head recorded during a forward pass of a REPL trace. Layer
+12, Head 3 stands out as the state-tracking head.
+
+
+
+
+                                                                     16
+                           100                                                         100                                                           100
+
+
+
+
+       Cum. Expl. Var. %
+
+
+
+
+                                                                   Cum. Expl. Var. %
+
+
+
+
+                                                                                                                                 Cum. Expl. Var. %
+                                                   Head                                                          Head                                                        Head
+                            50                     0           4                        50                       0           4                        50                     0           4
+                                                   1           5                                                 1           5                                               1           5
+                                                   2           6                                                 2           6                                               2           6
+                                                   3           7                                                 3           7                                               3           7
+                            0                                                            0                                                             0
+                                      10      20          30                                      10        20          30                                      10      20          30
+                                 Layer 1 - Num. Components                                   Layer 2 - Num. Components                                     Layer 3 - Num. Components
+                           100                                                         100                                                           100
+       Cum. Expl. Var. %
+
+
+
+
+                                                                   Cum. Expl. Var. %
+
+
+
+
+                                                                                                                                 Cum. Expl. Var. %
+                                                   Head                                                          Head                                                        Head
+                            50                     0           4                        50                       0           4                        50                     0           4
+                                                   1           5                                                 1           5                                               1           5
+                                                   2           6                                                 2           6                                               2           6
+                                                   3           7                                                 3           7                                               3           7
+                            0                                                            0                                                             0
+                                      10      20          30                                      10        20          30                                      10      20          30
+                                 Layer 4 - Num. Components                                   Layer 5 - Num. Components                                     Layer 6 - Num. Components
+                           100                                                         100                                                           100
+       Cum. Expl. Var. %
+
+
+
+
+                                                                   Cum. Expl. Var. %
+
+
+
+
+                                                                                                                                 Cum. Expl. Var. %
+                                                   Head                                                          Head                                                        Head
+                            50                     0           4                        50                       0           4                        50                     0           4
+                                                   1           5                                                 1           5                                               1           5
+                                                   2           6                                                 2           6                                               2           6
+                                                   3           7                                                 3           7                                               3           7
+                            0                                                            0                                                             0
+                                      10      20          30                                      10        20          30                                      10      20          30
+                                 Layer 7 - Num. Components                                   Layer 8 - Num. Components                                     Layer 9 - Num. Components
+                           100                                                         100                                                           100
+       Cum. Expl. Var. %
+
+
+
+
+                                                                   Cum. Expl. Var. %
+
+
+
+
+                                                                                                                                 Cum. Expl. Var. %
+                                                   Head                                                          Head                                                        Head
+                            50                     0           4                        50                       0           4                        50                     0           4
+                                                   1           5                                                 1           5                                               1           5
+                                                   2           6                                                 2           6                                               2           6
+                                                   3           7                                                 3           7                                               3           7
+                            0                                                            0                                                             0
+                                      10      20          30                                      10        20          30                                      10      20          30
+                                 Layer 10 - Num. Components                                  Layer 11 - Num. Components                                    Layer 12 - Num. Components
+                           100                                                         100                                                           100
+       Cum. Expl. Var. %
+
+
+
+
+                                                                   Cum. Expl. Var. %
+
+
+
+
+                                                                                                                                 Cum. Expl. Var. %
+
+
+
+                                                   Head                                                          Head                                                        Head
+                            50                     0           4                        50                       0           4                        50                     0           4
+                                                   1           5                                                 1           5                                               1           5
+                                                   2           6                                                 2           6                                               2           6
+                                                   3           7                                                 3           7                                               3           7
+                            0                                                            0                                                             0
+                                      10      20          30                                      10        20          30                                      10      20          30
+                                 Layer 13 - Num. Components                                  Layer 14 - Num. Components                                    Layer 15 - Num. Components
+                           100                                                         100                                                           100
+       Cum. Expl. Var. %
+
+
+
+
+                                                                   Cum. Expl. Var. %
+
+
+
+
+                                                                                                                                 Cum. Expl. Var. %
+
+
+
+
+                                                   Head                                                          Head                                                        Head
+                            50                     0           4                        50                       0           4                        50                     0           4
+                                                   1           5                                                 1           5                                               1           5
+                                                   2           6                                                 2           6                                               2           6
+                                                   3           7                                                 3           7                                               3           7
+                            0                                                            0                                                             0
+                                      10      20          30                                      10        20          30                                      10      20          30
+                                 Layer 16 - Num. Components                                  Layer 17 - Num. Components                                    Layer 18 - Num. Components
+                           100                                                         100                                                           100
+       Cum. Expl. Var. %
+
+
+
+
+                                                                   Cum. Expl. Var. %
+
+
+
+
+                                                                                                                                 Cum. Expl. Var. %
+
+
+
+
+                                                   Head                                                          Head                                                        Head
+                            50                     0           4                        50                       0           4                        50                     0           4
+                                                   1           5                                                 1           5                                               1           5
+                                                   2           6                                                 2           6                                               2           6
+                                                   3           7                                                 3           7                                               3           7
+                            0                                                            0                                                             0
+                                      10      20          30                                      10        20          30                                      10      20          30
+                                 Layer 19 - Num. Components                                  Layer 20 - Num. Components                                    Layer 21 - Num. Components
+
+Figure 12: Cumulative explained variance of the keys per layer per head recorded during a forward
+pass of a REPL trace. Layer 12, Head 3 stands out as the state-tracking head.
+
+
+B     P ROBABILISTIC S TATE -T RACKING
+B.1   E XAMPLE : L INEAR RNN IMPLEMENTING PROBABILISTIC FINITE - STATE AUTOMATON
+      TRACKING THE JOIN
+
+This section details the explicit arithmetic of a stochastic update on the permutation group S3 and
+discusses the theoretical implications of norm decay in Linear RNNs.
+
+
+                                                                                                       17
+Scenario Setup and Initialization (t = 0). We model the system state Ht ∈ R6 over the per-
+mutation group S3 . The basis vectors (universes) correspond to the six possible permutations of
+[1, 2, 3]: Identity [1, 2, 3] (Index 1), Swap 1-2 [2, 1, 3] (Index 2), Swap 1-3 [3, 2, 1] (Index 3), Swap
+2-3 [1, 3, 2] (Index 4), Cycle Left [2, 3, 1] (Index 5), and Cycle Right [3, 1, 2] (Index 6). We begin at
+Step 0 with perfect certainty at the Identity configuration:
+                                                         T
+                        H0 = [1     0   0   0   0   0]       (Universe 1: [1, 2, 3]).
+
+Step 1: The Stochastic Action (t = 1). The system receives the input ”Try to Swap 1-2” with a
+noise profile defined as a 50% chance of the intended Swap 1-2 and a 50% chance of an accidental
+Swap 1-3. To represent this ambiguity, we construct a ”fuzzy” transition matrix Af uzzy by averaging
+the permutation matrices of the two outcomes: Af uzzy = 0.5 · Aswap12 + 0.5 · Aswap13 . Specifically,
+Aswap12 maps Identity to Index 2, while Aswap13 maps Identity to Index 3. The resulting update is:
+                                                                        
+                                     0     0.5 0.5 0         0     0      1       0
+                                   0.5 0         0     0   0.5 0  0 0.5
+                                   0.5 0         0     0    0    0.5 0 0.5
+                                                                        
+             H1 = Af uzzy H0 =                                           =  .
+                                   0       0     0     0   0.5 0.5   0  0 
+                                   0      0.5 0       0.5 0       0 0  0 
+                                                                      
+                                     0      0    0.5 0.5 0         0      0       0
+The state is now diffused; probability mass is split between Universe 2 ([2, 1, 3]) and Universe 3
+([3, 2, 1]).
+Step 2: The Observation (t = 2). We subsequently receive the observation ”Position 1 contains
+Object 3”. To process this, we construct a diagonal observation matrix Aobs that acts as a filter. We
+check every basis vector: Index 1 ([1, 2, 3]) is false; Index 2 ([2, 1, 3]) is false; Index 3 ([3, 2, 1]) is
+true (keep); Index 6 ([3, 1, 2]) is true (keep). All others are zeroed out. Applying this filter to the
+smeared state H1 :
+                                                                 
+                                           0 0 0 0 0 0               0           0
+                                          0 0 0 0 0 0  0.5  0 
+                                          0 0 1 0 0 0  0.5 0.5
+                                                                 
+                   H2 = Aobs H1 =                               =  .
+                                          0 0 0 0 0 0   0   0 
+                                          0 0 0 0 0 0   0   0 
+                                           0 0 0 0 0 1               0           0
+The model has correctly identified that we are in Universe 3 ([3, 2, 1]). The ambiguity created in Step
+1 was resolved because Universe 2 is inconsistent with the observation. The final vector magnitude is
+0.5, representing the joint probability of the path: P (Path) = P (Slip)×P (Consistent) = 0.5×1.0 =
+0.5.
+The Mechanics of Information Decay. A critical limitation of Linear RNNs when tracking proba-
+bilistic states is the phenomenon of norm decay. Unlike non-linear models (e.g., Transformers with
+Softmax) which re-normalize their internal state, a Linear RNN performs purely multiplicative up-
+dates (Ht = AHt−1 ). In a stochastic setting, transition matrices often have eigenvalues |λ| < 1 due
+to diffusion or filtering. Consequently, ∥Ht ∥ ≈ λt ∥H0 ∥. For example, in a ”Noisy Identity” tran-
+sition where the system retains state with p = 0.9, the norm decays to ≈ 0.00002 after 100 steps.
+While floating-point standards allow for small numbers, the signal eventually vanishes relative to
+numerical noise.
+The Role of B: The Gated Reset. The matrix B, which is typically zero during standard tracking,
+serves as a solution to decay via a Gated Reset Mechanism. Let xt be a binary indicator where
+xt = 1 indicates a ”Reset”. We parameterize the weights as A(xt ) = (1 − xt ) · Astep and B(xt ) =
+xt · Hprior . When a reset is triggered (xt = 1), the history is annihilated (A(xt ) = 0) and the bias
+term injects the prior (B(xt ) = Hprior ). The update becomes:
+                             Ht = 0 · Ht−1 + Hprior = [1/6, . . . , 1/6]T .
+This ”re-inflates” the state vector to full magnitude, readying the system to track a new sequence.
+
+
+
+
+                                                    18
+

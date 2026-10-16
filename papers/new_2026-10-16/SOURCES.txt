@@ -1,0 +1,27 @@
+Downloaded 2026-10-16 for the draft-5 prior-art check (docs/paper/review_draft5/PRIOR_ART.md). Untrusted data;
+text extracted with `pdftotext -layout`; arXiv metadata in meta/arxiv_batch.xml (read with python3 -I).
+Each directory holds paper.pdf and paper.txt.
+
+Relevant (cited or recommended in PRIOR_ART.md):
+2603.01959/      Shakerinava, Khavari, Ravanbakhsh, Chandar. The expressive limits of diagonal SSMs for state-tracking. ICLR 2026
+2609.18966/      Howe. The automaton underneath: the additive input pathway is a parasitic attractor ... (arXiv, Jul 2026)
+2507.05238/      Karuvally et al. Bridging expressivity and scalability with adaptive unitary SSMs (AUSSM). arXiv 2025
+2505.21749/      Ebrahimi, Memisevic. Revisiting bi-linear state transitions in recurrent neural networks. NeurIPS 2025
+1707.09520/      Helfrich, Willmott, Ye. Orthogonal RNNs with scaled Cayley transform (scoRNN). ICML 2018
+1909.09501/      Lezcano-Casado. Trivializations for gradient-based optimization on manifolds. NeurIPS 2019
+1901.08428/      Lezcano-Casado, Martinez-Rubio. Cheap orthogonal constraints in neural networks (expRNN). ICML 2019
+2210.14476/      Hayes, Saitis, Fazekas. Sinusoidal frequency estimation by gradient descent. ICASSP 2023
+wang2026_gauge/  Wang, Wang. Complete characterization of gauge symmetries in transformer architectures. PMLR 282 (NeurReps)
+2606.17830/      Tran et al. Functional equivalence in attention. ICML 2026
+2410.14067/      Ran-Milo et al. Provable benefits of complex parameterizations for structured SSMs. NeurIPS 2024
+2607.10134/      Karypis et al. LeRoPE: learnable RoPE frequencies improve language modeling. arXiv 2026
+2502.10297/      Siems et al. DeltaProduct. NeurIPS 2025 (context only)
+2412.19350/      Terzic et al. Expressiveness and length generalization of selective SSMs on regular languages. AAAI 2025 (context only)
+2602.14814/      Siems et al. Learning state-tracking from code using linear RNNs. arXiv 2026 (context only)
+2605.07755/      Chung, Choi, Kim. Rethinking state tracking in recurrent models through error control dynamics. arXiv 2026 (context only)
+
+Checked, not relevant to the sign / learnability claims:
+2601.02728/      CRoPE (complex-linear Q/K parameterisation; index RoPE)
+2609.34556/      DaRoPE, "RoPE is dead, long live RoPE" (bounded data-aware coordinates on slow bands; no sign axis)
+2605.11007/      The transformer as a polar state estimator
+2610.14030/      Rotate the loop: blockwise conformality for looped transformers (residual map of a looped block)

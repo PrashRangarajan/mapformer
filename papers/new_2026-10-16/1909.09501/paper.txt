@@ -1,0 +1,1375 @@
+                                                              Trivializations for Gradient-Based
+                                                                  Optimization on Manifolds
+
+
+                                                                               Mario Lezcano-Casado
+                                                                             Department of Mathematics
+                                                                                University of Oxford
+arXiv:1909.09501v2 [cs.LG] 24 Oct 2019
+
+
+
+
+                                                                                      Oxford,
+                                                                       mario.lezcanocasado@maths.ox.ac.uk
+
+
+
+                                                                                        Abstract
+
+                                                     We introduce a framework to study the transformation of problems with manifold
+                                                     constraints into unconstrained problems through parametrizations in terms of
+                                                     a Euclidean space. We call these parametrizations trivializations. We prove
+                                                     conditions under which a trivialization is sound in the context of gradient-based
+                                                     optimization and we show how two large families of trivializations have overall
+                                                     favorable properties, but also suffer from a performance issue. We then introduce
+                                                     dynamic trivializations, which solve this problem, and we show how these form
+                                                     a family of optimization methods that lie between trivializations and Riemannian
+                                                     gradient descent, and combine the benefits of both of them. We then show how
+                                                     to implement these two families of trivializations in practice for different matrix
+                                                     manifolds. To this end, we prove a formula for the gradient of the exponential
+                                                     of matrices, which can be of practical interest on its own. Finally, we show how
+                                                     dynamic trivializations improve the performance of existing methods on standard
+                                                     tasks designed to test long-term memory within neural networks.1
+
+
+                                         1       Introduction
+
+                                         Constrained optimization allows to put restrictions on the family of objects being optimized. When
+                                         the restrictions are simple, for example, having a vector with entries in [0, 1] or [−1, 1], simple
+                                         element-wise parametrizations using sigmoid functions or tanh allow the design of powerful models
+                                         such as LSTM [Hochreiter and Schmidhuber, 1997] and GRU [Cho et al., 2014] through the method of
+                                         gating. This kind of vector-regularization is now standard, and most of the advanced neural network
+                                         architectures use it as a basic building block [Bahdanau et al., 2014]. Constraints on matrices, on the
+                                         other hand, are much more challenging.
+                                         Most of the interesting sets of matrices turn out to have a manifold structure. Optimization on
+                                         manifolds is both theoretically and practically challenging due to the inherent complexity of the
+                                         objects involved. Even then, optimization on matrix manifolds has proven to be rather useful in many
+                                         different subfields of machine learning and neural networks (NN). Examples of interesting matrix
+                                         manifolds in the context of gradient-based optimization are the set of positive definite matrices in
+                                         Bayesian statistics [Rasmussen and Williams, 2005], orthogonal matrices within RNNs [Arjovsky
+                                         et al., 2016, Helfrich et al., 2018, Lezcano-Casado and Martínez-Rubio, 2019], NNs with structured
+                                         linear layers via the QR or the SVD decomposition [Berg et al., 2018, Zhang et al., 2018, Kingma and
+                                         Dhariwal, 2018], or invertible matrices in normalizing flows [Berg et al., 2018] and VAEs [Tomczak
+                                         and Welling, 2016].
+
+                                             1
+                                                 An implementation can be found at: https://github.com/Lezcano/expRNN
+
+
+                                         33rd Conference on Neural Information Processing Systems (NeurIPS 2019), Vancouver, Canada.
+In this paper we aim to provide a theoretically sound but also efficiently implementable framework
+to perform optimization on these and other matrix manifolds in the context of gradient-based
+optimization.
+Outline of the paper and summary of the main contributions
+In this paper, we study parametrizations of the form φ : Rn → M.
+We consider the transformation of a constrained optimization problem into an unconstrained one.
+             Initial problem: min f (x)          Unconstrained problem: minn f (φ(y)).
+                               x∈M                                          y∈R
+
+We call this process trivialization and we say that φ is a trivialization map. In Section 4, we show
+that whenever φ is regular enough— a diffeomorphism—these parametrizations act as a change of
+metric on M, and thus, applying gradient descent to this new problem is equivalent to performing
+RGD on the original problem with this new metric, for which standard convergence results hold.
+
+After this, we look at two large families of parametrizations, the Riemannian exponential, and the
+Lie exponential. We analyze these from the point of view of the framework presented before, and
+we point out a problem that they present: they may create saddle points or local minima when near
+certain region in the manifold.
+In Section 5, we introduce dynamic trivializations. They can be described as follows:
+Main idea: Lift the function f to the current tangent space Txi M using a map φxi : Txi M → M
+by considering the trivialization f ◦ φxi (think φxi = expxi , or, for efficiency, any retraction).
+Optimize f ◦ φxi on Txi M for a while using any standard optimization methods like ADAM,
+RMSPROP, or ADAGRAD, since Txi M is a linear space. When we are at a point yk ∈ Txi M on which
+φxi might create saddle-points or local minima, then we consider the current point in the manifold
+xi+1 := φxi (yk ) and we start optimizing the function f ◦ φxi+1 , i.e., lift the problem to Txi+1 M.
+This family of methods has Riemannian gradient descent and classic trivializations as limit cases, and
+in particular, they combine the strengths of the two. Furthermore, we show that these methods give a
+natural generalization of Euclidean optimizers to manifolds.
+In Section 6 we show how to compute the gradients associated to the Lie exponential and some cases
+of the Riemannian exponential for matrix manifolds. To this end, we compute a formula that allows
+for the approximation of the gradient of the exponential of matrices to machine-precision. We also
+show some examples of for how to use this theory to perform optimization on some matrix manifolds.
+In Appendix E we compile an extended list of examples that we hope might be helpful to the reader.
+Finally, in Section 7 we show how dynamic trivializations improve previously developed optimization
+techniques in the context of optimization with orthogonal constraints.
+
+2   Related Work
+Optimization on manifolds. Most of the results on optimization on manifolds have found ana-
+logues in the Riemannian setting [Udriste, 1994, Absil et al., 2009]. Algorithms like conjugate
+gradient descent or the Newton method were first devised for specific families of manifolds [Smith,
+1993, Edelman et al., 1998], and then they were derived for general Riemannian manifolds [Bonnabel,
+2013, Sato and Iwai, 2015, Boumal et al., 2016].
+Optimization methods on manifolds can be classified in two families: Those that follow geodesics, and
+those that follow retractions—i.e., first order approximations to geodesics. In the first family, conver-
+gence rates have been proven for most first order methods, both stochastic and non-stochastic [Zhang
+and Sra, 2016], and even purely first-order accelerated methods [Zhang and Sra, 2018]. When it
+comes to retractions, rates of convergence have been proved in the Lipschitz setting for first and
+second-order methods [Boumal et al., 2016].
+Trivialization. The trick of parametrizing a Lie group with elements in the Lie algebra through
+the Lie exponential map has been commonly used under the name of trivialization in the area of
+differential equations on manifolds [Magnus, 1954, Iserles and Nørsett, 1999, Iserles et al., 2000].
+We borrow the term, as the general idea behind these methods and ours is rather similar.
+Optimization through parametrizations. Parametrizing a manifold in terms of a Euclidean space
+is a common technique in optimization and machine learning. For example when doing computations
+
+
+                                                   2
+on symmetric positive definite matrices [Arsigny et al., 2006, 2007], compact Lie groups [Lezcano-
+Casado and Martínez-Rubio, 2019], the special orthogonal group [Helfrich et al., 2018] or the unitary
+group [Jing et al., 2017, Maduranga et al., 2018]. In [Dreisigmeyer, 2018], it is used through the
+Riemannian exponential to adapt 0th order methods to naturally reductive homogeneous manifolds.
+Our work finds the closest connections in the papers [Lezcano-Casado and Martínez-Rubio, 2019,
+Helfrich et al., 2018, Maduranga et al., 2018] These papers present the use of the Lie exponential
+and the Cayley map for optimization on SO(n). Our framework can be seen as an extension that
+can be implemented on top of them at a negligible execution cost. We also show that this theoretical
+improvement translates into a better convergence in practice in Section 7.
+
+3     Problem Set-Up
+We include a short introduction to the concepts used from differential and Riemannian geometry
+in Appendix A.
+We are interested in approximating the following problem over a connected manifold M
+                                            min f (x).
+                                              x∈M
+A differentiable manifold does not carry intrinsically any metric information. As such, if one is
+interested in talking about concepts like the distance to the optimum, or the steepest descent direction,
+it is necessary to put additional structure on the problem. One way to do this is to consider a
+Riemannian metric g on M, turning M into a Riemannian manifold.
+
+3.1   The classic approach: Riemannian gradient descent
+
+Given a complete metric on M, we can define geodesics γp,v : [0, ∞) → M such that γp,v (0) = p,
+ 0
+γp,v (0) = v for v ∈ Tp M. Then, the Riemannian exponential map is defined simply as the
+map that maps rays starting at the origin in the tangent space to geodesics on M. In symbols,
+expp (tv) := γp,v (t) for t ≥ 0.
+Using the Riemannian exponential, one can define Riemannian gradient descent in an analogous way
+to the Euclidean case:
+                                   xt+1 = expxt (−η∇f (xt )).
+In plain words, the algorithm follows the geodesic defined by the direction of steepest descent
+−∇f (xt ) for a time η > 0. This approach has been extensively studied in the literature and it has
+been proven to enjoy similar convergence properties to its Euclidean counterpart [Absil et al., 2009,
+Bonnabel, 2013, Boumal et al., 2016, Zhang et al., 2016].
+Sometimes it is convenient, due to computational constraints, to use a first order approximation to the
+exponential rather than the exponential map. This idea is encapsulated in the concept of a retraction.
+Definition 3.1 (Retraction). A differentiable map r : T M → M is called a retraction if for every
+p ∈ M, the map rp : Tp M → M satisfies rp (0) = p and (drp )0 = Id.
+The update rule of Riemannian gradient descent along a retraction r is then given by
+                                      xt+1 = rxt (−η∇f (xt )).
+In many cases, this update rule is enough to have the same convergence properties as in Riemannian
+gradient descent along the exponential map [Boumal et al., 2016].
+The main problem of Riemannian gradient descent comes from a practical point of view. On many
+practical problems, it has been empirically proved that algorithms like ADAM [Kingma and Ba, 2014],
+ADAGRAD [Duchi et al., 2011] or RMSPROP [Tieleman and Hinton, 2012] outperform vanilla SGD .
+These algorithms were designed to work on Rn , and although generalizations for product manifolds
+are in order [cf., Becigneul and Ganea, 2019], it is not clear how to generalize them to most manifolds
+used in practice, and thus take advantage of them in the Riemannian setting.
+
+4     Trivializations
+We now introduce trivializations. Trivializations are functions that allow us to transform a constrained
+problem on a manifold to an unconstrained one.
+
+
+                                                   3
+Definition 4.1 (Trivialization). Given a manifold M, we define a trivialization as a surjective map
+                                                    φ : Rn → M.
+Example 4.2. The most simple examples are found when M has a product structure, i.e., for vectors.
+For example, for a fixed n > 0, consider component-wise functions like rectified linear units,
+                                                    n
+parametrizing non-negative vectors relu : Rn → (R+ ) or the sigmoid function σ : Rn → [0, 1]n .
+Having a trivialization in hand, we can transform a constrained optimization problem into an uncon-
+strained one by composing f with φ.
+                                            minn f (φ(y)).
+                                                    y∈R
+
+Remark. When considering a parametrization φ, the gradient ∇f (x) changes into the gradient
+∇(f ◦ φ)(y) for x = φ(y). For a 1-dimensional trivialization, by the chain rule, if φ0 (y) = 0 for
+many y ∈ R, φ will not be a good parametrization, because then ∇(f ◦ φ)(y) = ∇f (φ(y))φ0 (y) = 0,
+even though ∇f (x) might not be zero. As such, not all trivializations are equally good.
+We formalize this intuition for general trivializations in the following theorem.
+Theorem 4.3. Let φ : Rn → M be a diffeomorphism. Then, solving the problem miny∈Rn f (φ(y))
+through gradient descent accounts for solving the problem minx∈M f (x) using Riemannian gradient
+descent for a certain metric on M induced by φ.
+Proof. See Appendix B.
+This result tells us that, if φ is a diffeomorphism, φ will not add local minima or saddle points. It
+will simply act as a change of metric on the manifold. This already explains the good behavior of the
+tanh and sigmoid functions present in an LSTM or GRU in the context of gating.
+At first sight, the situation of φ being a diffeomorphism seems too restrictive for general manifolds.
+We now introduce two parametrizations that are diffeomorphisms in almost all the manifold.2
+
+4.1        The Riemannian trivialization
+
+Consider now the Riemannian exponential map. By the Hopf-Rinow theorem, it is surjective whenever
+(M, g) is connected and complete. As such, in these cases, for any point p ∈ M, the Riemannian
+exponential map expM,p : Tp M(∼= Rn ) → M is an example of a trivialization.
+Geometric intuition about the Riemannian trivialization. A direct corollary of Gauss’ lemma
+says that the metric induced by the exponential parametrization expM,p is a first order approximation
+to the metric on the manifold around the point p [cf. Petersen, 2016, Lemma 5.5.7]. In other words,
+the Riemannian trivialization changes the metric into a new one with the square of the distance to p
+for points near p.
+Let us now look at the behavior of the Riemannian trivialization in global terms.
+Theorem 4.4 (Properties of the Riemannian trivialization). Let (M, g) be a connected, complete
+Riemannian manifold. Fix a point p ∈ M. Let Up ⊆ Tp M be the largest radially convex open
+neighborhood of zero on which expM,p is a diffeomorphism3 then, expM,p (U p ) = M.
+Furthermore, define the cut locus in Tp M as C̃p := U p \Up . If V ∈ Tp M is another open
+neighborhood of the origin that contains a point in C̃p , then expM,p is not a diffeomorphism on V .
+Proof. See Section 5.7.3 in [Petersen, 2016].
+Theorem 4.4 combined with Theorem 4.3 tell us that there exists a radially convex neighborhood of
+zero on which expM,p acts as a change of metric, and that expM,p stops being a diffeomorphism in
+the boundary—and hence, can add minima or saddle points at these points. As the image of U p is
+the whole M, if we write Cp := expM,p (C̃p ), we have that M decomposes in the disjoint union of
+expM,p (Up ) and Cp . The set Cp is called the cut locus of p.
+The cut locus is a remarkably slippery object of study given that, in general, it is not differentiable.
+Nonetheless, we can still measure the relative size of this set in a topological sense, by means of the
+Hausdorff dimension.
+      2
+          This is taken with respect to the canonical Borel measure on the manifold induced by the metric.
+      3
+          A more formal way to define it would be U p := {v ∈ Tp M| expp (tv) is length minimizing for t ∈ [0, 1]}.
+
+
+                                                           4
+Theorem 4.5 (Itoh and Tanaka [1998]). Let M be a connected and complete Riemannian manifold
+of dimension n. For a point p ∈ M the Hausdorff dimension of C̃p is either 0 or n − 1, and the
+Hausdorff dimension of Cp is an integer less than n.
+Putting this result in the more familiar language of measures, we can argue that, although the cut
+locus can introduce problems in practice, the problematic set is not too large.4
+Corollary 4.6. C̃p has Lebesgue measure zero on Tp M.
+
+Proof. By the definition of Hausdorff dimension, a set of dimension n − 1 has n-Hausdorff measure
+0. Finally, just note that the n-Hausdorff measure is a multiple of the Lebesgue measure.
+
+
+4.2       The Lie trivialization
+
+We now introduce a useful trivialization for Lie groups and other matrix manifolds. Recall that for
+a Lie group G we define its Lie algebra as the tangent space to the identity element g := Te G. In
+Lie group theory there is a canonical trivialization given by the Lie exponential. For matrix Lie
+groups, which are the groups that we are interested in, the Lie exponential is exactly the exponential
+of matrices. We will denote the exponential of a matrix A as exp(A) or eA for short.
+For connected and compact Lie groups—e.g., SO(n), U(n), SU(n), Sp(n)—this map is surjective
+and it coincides with the Riemannian trivialization at the identity for a suitable metric. If it is not
+surjective, we can still use it as a trivialization of the image of g under exp. In Section 6.2 we explain
+how to use the exponential parametrization in the whole Lie group, even when it is not surjective.
+Trivializations of this form for compact Lie groups were already studied in [Lezcano-Casado and
+Martínez-Rubio, 2019].
+The following theorem is a generalization for matrix Lie groups of a classic result.
+Theorem 4.7 (Properties of the Lie exponential). Let G be a matrix Lie group, the Lie exponential
+is a diffeomorphism on the set U = {A ∈ g | |Im(λi (A))| < π} with λi (A) the eigenvalues.
+
+Proof. See Appendix C.
+
+This result is the counterpart of Theorem 4.4 for the Lie trivialization on general matrix Lie groups.
+The boundary of this set has similar properties as those of the cut locus for the Riemannian trivial-
+ization for groups like GL(n) or SO(n).5 As such, this trivialization presents the same problem as
+the Riemannian trivialization: It works as a change of metric for points that are close to the identity
+matrix, but it creates local minima and saddle points on some points of the manifold, which we might
+encounter as the optimization method progresses.
+
+
+5         Dynamic Trivializations
+
+In the last section, we have seen rather general families of trivializations that cover most of the
+manifolds used in practice. We have seen how these trivializations act as a change of metric around
+the initial point—p in the case of the Riemannian trivialization and the identity matrix in the case
+of the Lie trivialization—but we have also shown that the optimization process can be affected as it
+deviates from the initial point.
+Note that, in the case of the exponential trivialization, we have a map from any tangent space of M
+onto M, but we are just using one of them as a trivialization. We can leverage the structure of T M in
+order to solve the problem that the trivializations introduced above. Instead of always using expM,p ,
+we can use it just for K optimization steps and then change p to the point on which we find ourselves
+on the manifold after those K steps. This idea is formalized in the following algorithm.
+
+      4
+    The analogous result for Cp with respect to the Borel measure induced by the volume form is also true.
+      5
+    The constant π is tight for matrix manifolds that contain matrices with eigenvalues that are 2πi apart. For
+these manifolds, the matrix exponential fails to be a diffeomorphism on some points of the boundary of U .
+
+
+                                                      5
+                                             Trivialization                                                             Dynamic Trivialization
+
+
+                                                                                                                                       pi+1
+                                                   p                                                                       pi
+
+                                                                                                                                                               φpi+1
+                               φ                                                                         φ pi
+                                                              M                                                                           M
+
+
+                                        y6
+                                   y5                                                                     yi,4
+                                                                                                                                                                         y
+                              y4                                                                     yi,3                       pi+1 := φpi (yi,4 )                yi+1,3 i+1,4
+                         y3                                                                                                                                   yi+1,2
+                                                                                                  yi,2                                                    yi+1,1
+                    y2
+               y1                        Tp M ∼
+                                              = Rn                                         yi,1                  Tpi M ∼
+                                                                                                                       = Rn                                                Tpi+1 M ∼
+                                                                                                                                                                                   = Rn
+          y0                                                                        yi,0                                                              yi+1,0
+
+
+
+
+Figure 1: Example of the trivialization and dynamic trivialization procedure. The dynamic trivializa-
+tion in this example has K = 4.
+
+
+Algorithm 5.1 (Dynamic trivialization through retractions). Given a retraction φ, an integer
+K > 0 or K = ∞, and a starting point p0 , the dynamic trivialization induced by φ is defined as the
+sequence of problems indexed by i = 0, 1, . . .
+                                                                          min f (φpi (y))
+                                                                     y∈Tpi M
+
+where pi+1 := φpi (yi,K ) ∈ M, and yi,k ∈ Tpi M for k = 1, . . . , K, is a sequence of approximations
+given by a Euclidean optimization algorithm—e.g., SGD, ADAM, ADAGRAD, RMSPROP, . . . —applied
+to the i-th problem with starting point yi,0 = 0. We say that pi is the basis at step i.
+Remark. Note that in this case we have dropped the condition of φp : Tp M → M being surjective.
+This is because, as long as M is connected, we can still reach any point in M in the optimization
+process by changing the basis of the dynamic trivialization whenever K < ∞.
+This procedure has two interesting limit cases.
+Generalization of trivializations. For K = ∞, i.e., no change of basis, it reduces to the trivializa-
+tion algorithms described in Section 4 with the trivialization φp0 , provided that φp0 is surjective.
+Generalization of Riemannian gradient descent. In the case K = 1, we are changing the basis
+of the trivialization on every step. When the optimization process used to generate the iterates yi,k
+is regular SGD, this method recovers exactly stochastic Riemannian gradient descent using φ as a
+retraction. For this, just note that by the chain rule and the definition of a retraction
+                                             d(f ◦ φpi )0 = (df )φp (0) ◦ (dφpi )0 = (df )φp (0) = (df )pi .
+                                                                      i                                                i
+
+
+From this it follows that
+                                                                  ∇(f ◦ φpi )(0) = ∇f (pi )
+so the update rule simplifies for a learning rate η > 0 can be rewritten as
+                                                       yi,1 = −η∇f (pi )        pi+1 = φpi (−η∇f (pi ))
+and pi+1 are exactly the iterates given by doing Riemannian SGD using the retraction φ.
+In particular, we have proved that for φ = expM , we recover stochastic Riemannian gradient descent.
+As such, we can see dynamic trivializations as an interpolation between the trivialization method
+using expM and stochastic Riemannian gradient descent.
+More interesting is perhaps the case when we use a different optimizer to generate the iterates yi,k .
+In this case, dynamic trivializations yield a natural generalization to manifolds of the algorithm used
+to generate the iterates, i.e., ADAM, ADAGRAD, RMSPROP, etc.
+
+6   Gradient Computations and Examples
+The last missing piece needed to implement dynamic trivializations is the explicit computation of
+their gradients. We will do so for the two families presented above.
+
+
+                                                                                6
+6.1       The matrix exponential
+
+We first look at the matrix exponential. This function not only defines the Lie trivialization, but it is
+also essential to compute the Riemannian exponential in many matrix manifolds (cf., Appendix E). In
+order to implement the dynamic trivialization algorithm within the context of first-order methods we
+need an approximation of the trivialization map and its gradient.
+The current fastest machine-precision approximation to the matrix exponential was formulated in [Al-
+Mohy and Higham, 2009b]. On the other hand, it is not clear how to compute the gradient of this
+parametrization. The following proposition settles this problem.
+Proposition 6.1 (Gradient of the exponential parametrization). Let f : Rn×n → R be a function
+defined on matrices, and let exp be the matrix exponential, we have
+
+                                ∇(f ◦ exp)(A) = (d exp)A| (∇f (eA )).
+
+Proof. See Appendix D.
+This proposition together with the approximation algorithm for d exp presented in [Al-Mohy and
+Higham, 2009a] allows us to approximate to machine-precision this gradient.
+This formula readily allows for the implementation of the Riemannian dynamic trivialization on many
+matrix manifolds. We give examples of some of these in Appendix E.
+
+6.2       Lie exponential for matrix Lie groups
+
+The Lie exponential on a Lie group G is just defined on the Lie algebra g = Te G. On matrix Lie
+groups, we can identify any tangent space of G with g. Explicitly, if Ã ∈ TB G, then B −1 Ã ∈ g.
+Furthermore, if we choose a left-invariant metric on the Lie group, we can then use left multiplication
+to map the result exp(B −1 Ã) to a neighborhood of B. In symbols, we can define
+
+                                     expB : TB G → G
+                                               Ã 7→ B exp(B −1 Ã)
+We give the gradient of this parametrization in Corollary D.3. This function constitutes a dynamic
+trivialization on any connected matrix Lie group, like, for example, SO(n), U(n), SL(n), or GL+ (n).
+
+6.3       Other retractions
+
+Sometimes one cannot afford to approximate the exponential exactly, as it can be very costly. In this
+case, the standard alternative are retractions Boumal et al. [2016].
+Cayley map. This is one of the most well known retractions to optimize over SO(n) (cf., Absil
+et al. [2009], Helfrich et al. [2018])
+                                   cay : Skew(n) → SO(n)
+                                               A 7→ (I + A)(I − A)−1
+This can be made into a dynamic retraction using the same trick as we did with the exponential,
+considering cayB (A) = B cay(B −1 Ã), for B ∈ SO(n), Ã ∈ TB SO(n).
+Projectors. Another common retraction used in matrix manifolds M ⊆ Rn×n is the one given
+by πM (x + v) for x ∈ M, v ∈ Tx M and πM the projection from Rn×n onto M. For example,
+for M = SO(n), we have that for a matrix B ∈ Rn×n with SVD decomposition B = U ΣV | , its
+projection onto SO(n) is given by πSO(n) (B) = U V | .6 with gradient computed in [cf. Kenney and
+Laub, 1991, Eq. 2.18].
+We workout more useful examples for common manifolds in Appendix E.
+
+    Formally, πSO(n) is well-defined for matrices such that det B > 0, that is, πSO(n) : GL+ (n) → SO(n).
+      6
+
+Note that this function is not a diffeomorphism but a submersion. Theorem 4.3 can be extended to this case.
+
+
+                                                    7
+        Table 1: Best test accuracy at MNIST and           Table 2: Test MSE at the end of the epoch with
+        P - MNIST .                                        the lowest validation MSE for the TIMIT task.
+          M ODEL         N     MNIST     P - MNIST            M ODEL        N     VAL . MSE     T EST MSE
+          DTRIV 1       170     98.3       95.2               DTRIV 1      224       6.55           6.54
+          DTRIV 100     170     98.2       95.1               DTRIV 100    224        4.80          4.77
+          DTRIV ∞       170     98.1       95.0               DTRIV ∞      224       4.75          4.71
+          EXPRNN        170     98.0       94.9               EXPRNN       224        5.34          5.30
+          SCORNN        170     97.2       94.8               SCORNN       224        9.26          8.50
+          SCURNN        116     97.6       94.9               SCURNN       128        9.42          7.23
+          LSTM          128     81.9       79.5               LSTM          84       15.42         14.30
+          RGD           116     94.7       92.5               RGD          128       15.07         14.58
+          DTRIV 1       360     98.4       96.3               DTRIV 1      322       4.56           4.55
+          DTRIV 100     360     98.8       96.4               DTRIV 100    322        3.80          3.76
+          DTRIV ∞       360     98.9       96.5               DTRIV ∞      322       3.39          3.76
+          EXPRNN        360     98.4       96.2               EXPRNN       322        4.42          4.38
+          SCORNN        360     98.1       95.9               SCORNN       322        8.48          7.82
+          SCURNN        250     98.3       96.2               LSTM         120       13.93         12.95
+          LSTM          256     88.8       88.8               RGD          192       15.10         14.50
+          RGD           256     96.1       93.9
+                                                              DTRIV 1      425       4.21           4.17
+          DTRIV 1       512     98.7       96.7               DTRIV 100    425        2.02          1.99
+          DTRIV 100     512     99.1       96.7               DTRIV ∞      425       2.00          1.97
+          DTRIV ∞       512     99.0       96.8               EXPRNN       425        5.52          5.48
+          EXPRNN        512     98.7       96.6               SCORNN       425        7.97          7.36
+          SCORNN        512     98.2       96.5               SCURNN       258        4.40          3.39
+          LSTM          512     91.9       91.8               LSTM         158       13.66         12.62
+          RGD           512     97.3       94.7               RGD          256       14.96         14.69
+
+
+
+7       Experiments
+In this section, we assess the effectiveness of dynamic trivializations (DTRIV) in the context of
+orthogonal optimization. We test the framework with the basis changed every K = 1, 100, ∞ steps.
+We compare it against the most performant previous approaches presented for this task in the
+context of orthogonal optimization and a vanilla LSTM. These approaches are orthogonal exponential
+trivialization [EXPRNN Lezcano-Casado and Martínez-Rubio, 2019], orthogonal and unitary Cayley
+trivializations [SCORNN / SCURNN Helfrich et al., 2018, Maduranga et al., 2018], and Riemannian
+gradient descent [RGD Wisdom et al., 2016].
+The architecture on which we are testing the dynamic trivialization is the same as in the papers above:
+A vanilla RNN with an orthogonal layer parametrized using the Lie trivialization (cf., Section 6.2)
+                                        ht+1 = σ(expB (A)ht + T xt+1 ).
+The update procedure for B was described in Algorithm 5.1 (K = 1, 100, ∞).
+Remark. Note that RGD is equivalent to DTRIV1 together with the optimizer SGD. Furthermore,
+EXPRNN is equivalent DTRIV∞ only that EXPRNN has the basis on the identity matrix and DTRIV∞
+has the basis on the matrix to which it is initialized.
+We test this architecture on two different tasks that have become the standard to test the performance of
+RNNs in the context of long-term recall and long-term memory, namely the pixel-by-pixel MNIST and
+the TIMIT dataset [Arjovsky et al., 2016, Henaff et al., 2016, Mhammedi et al., 2017, Helfrich et al.,
+2018, Maduranga et al., 2018, Lezcano-Casado and Martínez-Rubio, 2019]. We do not present results
+for the copying problem, as task is too simple to draw any meaningful conclusions, as explained
+in Henaff et al. [2016]. 7
+We detail all the hyperparameters and set-up in Appendix F. The code and instructions to replicate
+these experiments can be found in
+
+                                  https://github.com/Lezcano/expRNN
+    7
+        For reference, dynamic trivializations are also able to converge to the correct answer stably, as EXPRNN.
+
+
+                                                          8
+7.1   Pixel-by-pixel MNIST
+
+This task consists of classifying the hand-written images of numbers in the MNIST dataset [LeCun
+and Cortes, 2010] by processing them as a sequence pixel-by-pixel. Each image has 28 × 28 pixels,
+so the sequences are of length 784. The unpermuted task (MNIST) processes the row-by-row flattened
+image, the permuted task (P - MNIST) samples a permutation of size 784 at the beginning and then
+uses it to permute all the images after flattening them. This task was introduced in Le et al. [2015].
+Table 1 is structured so that architectures with the same number of parameters are compared together.
+As we can see, the addition of any dynamic trivialization to the Lie parametrization improves the
+results on this experiment by 0.4% out of the 1.3% possible in the largest size. Moreover, it always
+improves the previous results, suggesting that it is always a better option to use dynamic trivializations
+rather than just plain trivializations. In general, we saw that DTRIV100 and DTRIV∞ gave the highest
+stability and the best results across the experiments.
+
+7.2   TIMIT speech dataset
+
+The TIMIT dataset [S Garofolo et al., 1992] is a set of variable-length real-world speech recordings.
+These recordings are first downsampled to 8kHz and then transformed into log-magnitudes via a
+short-time Fourier transform, giving sequences of 129 complex numbers per step, and a variable
+length between 61 and 490. The task consists of predicting the next log-magnitude given the previous
+ones. This experiment was introduced in Wisdom et al. [2016].
+In this experiment we see a similar behavior of the dynamic trivializations as the one already seen in
+the MNIST and P - MNIST experiments. It also happens in this experiment that DTRIV100 and DTRIV∞
+always improve the performance of their static counterparts with base at the identity and of RGD.
+In the experiments in SCURNN they explicitly mention that they are computing the MSE without
+discarding the zeros used to pad the variable-length sequences [Maduranga et al., 2018]. As such,
+when computing the MSE, they are dividing by an incorrect number—the longest element in the batch
+times the elements in the batch—rather than by the correct one—the sum of the lengths of all the
+elements in the batch. We computed the correct validation and test loss in Table 2.
+
+8     Conclusion and Future Work
+In this paper we have presented a novel way to perform optimization on manifolds that combines
+the strengths of the two most popular optimization techniques used in machine learning and neural
+networks—parametrizations and Riemannian gradient descent. We have shown that, by moving the
+initial point of the parametrization, as the metric is distorted less from the Euclidean one, we can
+achieve an improvement on the convergence of the neural network.
+We leave open an interesting line of research based on applying dynamic trivializations to allow
+optimization on other interesting manifolds. As a first step in this direction, we detail examples of
+some computations for the most common manifolds used in optimization in Appendix E.
+
+Acknowledgements
+We would like to thank the help of Jaime Mendizabal and Momchil Konstantinov for the very useful
+feedback and suggestions and Prof. Andras Juhasz for the computing power.
+The work of MLC was supported by the Oxford-James Martin Graduate Scholarship and the “la
+Caixa” Banking Foundation (LCF/BQ/EU17/11590067).
+
+References
+P.-A. Absil, R. Mahony, and R. Sepulchre. Optimization algorithms on matrix manifolds. Princeton
+   University Press, 2009.
+A. H. Al-Mohy and N. J. Higham. Computing the fréchet derivative of the matrix exponential, with
+  an application to condition number estimation. SIAM Journal on Matrix Analysis and Applications,
+  30(4):1639–1657, 2009a.
+
+
+                                                    9
+A. H. Al-Mohy and N. J. Higham. A new scaling and squaring algorithm for the matrix exponential.
+  SIAM Journal on Matrix Analysis and Applications, 31(3):970–989, 2009b.
+E. Andruchow, G. Larotonda, L. Recht, and A. Varela. The left invariant metric in the general linear
+   group. Journal of Geometry and Physics, 86:241–257, 2014.
+M. Arjovsky, A. Shah, and Y. Bengio. Unitary evolution recurrent neural networks. In International
+ Conference on Machine Learning, pages 1120–1128, 2016.
+V. Arsigny, O. Commowick, X. Pennec, and N. Ayache. A log-euclidean framework for statistics
+   on diffeomorphisms. In International Conference on Medical Image Computing and Computer-
+  Assisted Intervention, pages 924–931. Springer, 2006.
+V. Arsigny, P. Fillard, X. Pennec, and N. Ayache. Geometric means in a novel vector space structure
+   on symmetric positive-definite matrices. SIAM journal on matrix analysis and applications, 29(1):
+   328–347, 2007.
+D. Bahdanau, K. Cho, and Y. Bengio. Neural machine translation by jointly learning to align and
+  translate. arXiv preprint arXiv:1409.0473, 2014.
+G. Becigneul and O.-E. Ganea. Riemannian adaptive optimization methods. In International
+  Conference on Learning Representations, 2019. URL https://openreview.net/forum?id=
+  r1eiqi09K7.
+R. v. d. Berg, L. Hasenclever, J. M. Tomczak, and M. Welling. Sylvester normalizing flows for
+  variational inference. arXiv preprint arXiv:1803.05649, 2018.
+S. Bonnabel. Stochastic gradient descent on riemannian manifolds. IEEE Transactions on Automatic
+   Control, 58(9):2217–2229, 2013.
+S. Bonnabel and R. Sepulchre. Riemannian metric and geometric mean for positive semidefinite
+   matrices of fixed rank. SIAM Journal on Matrix Analysis and Applications, 31(3):1055–1070,
+   2009.
+N. Boumal, P.-A. Absil, and C. Cartis. Global rates of convergence for nonconvex optimization on
+  manifolds. IMA Journal of Numerical Analysis, 2016.
+K. Cho, B. Van Merriënboer, C. Gulcehre, D. Bahdanau, F. Bougares, H. Schwenk, and Y. Bengio.
+  Learning phrase representations using rnn encoder-decoder for statistical machine translation.
+  arXiv preprint arXiv:1406.1078, 2014.
+M. do Carmo. Riemannian Geometry. Mathematics (Boston, Mass.). Birkhäuser, 1992. ISBN
+ 9783764334901. URL https://books.google.co.uk/books?id=uXJQQgAACAAJ.
+D. W. Dreisigmeyer. Direct search methods on reductive homogeneous spaces. Journal of Optimiza-
+  tion Theory and Applications, 176(3):585–604, 2018.
+J. Duchi, E. Hazan, and Y. Singer. Adaptive subgradient methods for online learning and stochastic
+   optimization. Journal of Machine Learning Research, 12(Jul):2121–2159, 2011.
+A. Edelman, T. A. Arias, and S. T. Smith. The geometry of algorithms with orthogonality constraints.
+  SIAM journal on Matrix Analysis and Applications, 20(2):303–353, 1998.
+J. Gallier and J. Quaintance. Differential geometry and Lie groups. a computational perspective.
+   Available in https://www.seas.upenn.edu/~jean/diffgeom-spr-I.pdf, 2019.
+S. Gallot, D. Hulin, and J. Lafontaine. Riemannian Geometry. Springer, 2 edition, 2012.
+B. Hall. Lie Groups, Lie Algebras, and Representations: An Elementary Introduction. Graduate
+  Texts in Mathematics. Springer International Publishing, 2015. ISBN 9783319134673. URL
+  https://books.google.es/books?id=didACQAAQBAJ.
+K. Helfrich, D. Willmott, and Q. Ye. Orthogonal recurrent neural networks with scaled Cayley
+  transform. In Proceedings of the 35th International Conference on Machine Learning, Proceedings
+  of Machine Learning Research, pages 1969–1978. PMLR, 2018.
+
+
+                                                10
+S. Helgason. Differential geometry, Lie groups, and symmetric spaces, volume 80. Academic press,
+  1979.
+M. Henaff, A. Szlam, and Y. LeCun. Recurrent orthogonal networks and long-memory tasks.
+ In Proceedings of the 33rd International Conference on International Conference on Machine
+ Learning-Volume 48, pages 2034–2042. JMLR. org, 2016.
+N. J. Higham. Functions of matrices: theory and computation, volume 104. Siam, 2008.
+E. Hille. On roots and logarithms of elements of a complex banach algebra. Mathematische Annalen,
+  136(1):46–57, 1958.
+S. Hochreiter and J. Schmidhuber. Long short-term memory. Neural computation, 9(8):1735–1780,
+  1997.
+A. Iserles and S. Nørsett. On the solution of linear differential equations in lie groups. Philosophical
+  Transactions of the Royal Society of London. Series A: Mathematical, Physical and Engineering
+  Sciences, 357(1754):983–1019, 1999.
+A. Iserles, H. Z. Munthe-Kaas, S. P. Nørsett, and A. Zanna. Lie-group methods. Acta numerica, 9:
+  215–365, 2000.
+J.-i. Itoh and M. Tanaka. The dimension of a cut locus on a smooth riemannian manifold. Tohoku
+   Mathematical Journal, Second Series, 50(4):571–575, 1998.
+L. Jing, Y. Shen, T. Dubcek, J. Peurifoy, S. Skirlo, Y. LeCun, M. Tegmark, and M. Soljačić. Tunable
+   efficient unitary neural networks (eunn) and their application to rnns. In International Conference
+   on Machine Learning, pages 1733–1741, 2017.
+C. Kenney and A. J. Laub. Polar decomposition and matrix sign function condition estimates. SIAM
+  Journal on Scientific and Statistical Computing, 12(3):488–504, 1991.
+D. Kingma and J. Ba. Adam: A method for stochastic optimization. arXiv preprint arXiv:1412.6980,
+  2014.
+D. P. Kingma and P. Dhariwal. Glow: Generative flow with invertible 1x1 convolutions. In Advances
+  in Neural Information Processing Systems, pages 10215–10224, 2018.
+Q. V. Le, N. Jaitly, and G. E. Hinton. A simple way to initialize recurrent networks of rectified linear
+  units. arXiv preprint arXiv:1504.00941, 2015.
+Y. LeCun and C. Cortes. MNIST handwritten digit database. http://yann.lecun.com/exdb/mnist/,
+  2010. URL http://yann.lecun.com/exdb/mnist/.
+J. Lee. Introduction to Smooth Manifolds. Springer, 2 edition, 2013.
+J. Lee. Introduction to Riemannian Manifolds. Springer, 2 edition, 2018.
+M. Lezcano-Casado and D. Martínez-Rubio. Cheap orthogonal constraints in neural networks: A
+ simple parametrization of the orthogonal and unitary group. arXiv preprint arXiv:1901.08428,
+ 2019.
+K. D. Maduranga, K. E. Helfrich, and Q. Ye. Complex unitary recurrent neural networks using scaled
+  cayley transform. arXiv preprint arXiv:1811.04142, 2018.
+W. Magnus. On the exponential solution of differential equations for a linear operator. Communica-
+  tions on pure and applied mathematics, 7(4):649–673, 1954.
+Z. Mhammedi, A. Hellicar, A. Rahman, and J. Bailey. Efficient orthogonal parametrisation of
+  recurrent neural networks using householder reflections. In International Conference on Machine
+  Learning, pages 2401–2409, 2017.
+B. O’Neill. Semi-Riemannian Geometry With Applications to Relativity. Pure and Applied Mathe-
+  matics. Elsevier Science, 1983. ISBN 9780080570570. URL https://books.google.co.uk/
+  books?id=CGk1eRSjFIIC.
+
+
+                                                  11
+P. Petersen. Riemannian Geometry. Springer, 3 edition, 2016. ISBN 3319266527.
+C. E. Rasmussen and C. K. I. Williams. Gaussian Processes for Machine Learning (Adaptive
+  Computation and Machine Learning). The MIT Press, 2005. ISBN 026218253X.
+W. Rossmann. Lie Groups: An Introduction Through Linear Groups. Oxford graduate texts in
+  mathematics. Oxford University Press, 2006. ISBN 9780199202515. URL https://books.
+  google.co.uk/books?id=bAjulQ65W-UC.
+J. S Garofolo, L. Lamel, W. M Fisher, J. Fiscus, D. S. Pallett, N. L. Dahlgren, and V. Zue. Timit
+   acoustic-phonetic continuous speech corpus. Linguistic Data Consortium, 11 1992.
+H. Sato and T. Iwai. A new, globally convergent riemannian conjugate gradient method. Optimization,
+  64(4):1011–1031, 2015.
+S. T. Smith. Geometric Optimization Methods for Adaptive Filtering. PhD thesis, Harvard University,
+   Cambridge, MA, USA, 1993. UMI Order No. GAX93-31032.
+T. Tieleman and G. Hinton. Lecture 6.5-rmsprop: Divide the gradient by a running average of its
+   recent magnitude. COURSERA: Neural networks for machine learning, 4(2):26–31, 2012.
+J. M. Tomczak and M. Welling. Improving variational auto-encoders using householder flow. arXiv
+   preprint arXiv:1611.09630, 2016.
+C. Udriste. Convex Functions and Optimization Methods on Riemannian Manifolds. Mathematics
+  and Its Applications. Springer Netherlands, 1994. ISBN 9780792330028.
+H.-C. Wang et al. Discrete nilpotent subgroups of Lie groups. Journal of Differential Geometry, 3
+  (3-4):481–492, 1969.
+S. Wisdom, T. Powers, J. Hershey, J. Le Roux, and L. Atlas. Full-capacity unitary recurrent neural
+   networks. In Advances in Neural Information Processing Systems, pages 4880–4888, 2016.
+H. Zhang and S. Sra. First-order methods for geodesically convex optimization. In Conference on
+  Learning Theory, pages 1617–1638, 2016.
+H. Zhang and S. Sra. Towards riemannian accelerated gradient methods.              arXiv preprint
+  arXiv:1806.02812, 2018.
+H. Zhang, S. J. Reddi, and S. Sra. Riemannian svrg: Fast stochastic optimization on riemannian
+  manifolds. In Advances in Neural Information Processing Systems, pages 4592–4600, 2016.
+J. Zhang, Q. Lei, and I. Dhillon. Stabilizing gradients for deep neural networks via efficient svd
+   parameterization. In International Conference on Machine Learning, pages 5801–5809, 2018.
+
+
+
+
+                                                12
+A     Differential and Riemannian Geometry
+
+In this section we give a short introduction to the concepts used in the paper and in the appendix
+of the theories of differential and Riemannian geometry and Lie groups. The standard modern
+introduction to differential geometry is Lee [2013]. This book also gives an introduction to Lie
+groups. Introductory texts in Riemannian geometry are do Carmo [1992], Lee [2018]. Introductory
+references for Lie groups are Rossmann [2006], Hall [2015]. Although not covered in this summary,
+two more advanced texts that cover the classical theory of the cut locus through Jacobi fields are Gallot
+et al. [2012], Petersen [2016].
+
+A.1   Differential Geometry
+
+Let M be an n-dimensional differentiable real manifold. M has an associated global object called
+the tangent bundle T M := tp∈M {p} × Tp M, that is, the disjoint union of all the tangent spaces
+at every point of M. The tangent bundle comes with a structure of a 2n-dimensional differentiable
+manifold. A point in T M consists then of a pair (p, v) with p ∈ M and v ∈ Tp M. On each point,
+we also have the cotangent space Tp∗ M of linear applications from vectors onto the real numbers.
+The disjoint union of all the cotangent spaces is another manifold T ∗ M called the cotangent bundle.
+When considering these bundles, tangent spaces Tp M and cotangent spaces Tp∗ M are sometimes
+called fibres.
+An affine connection ∇ is a bilinear form that, given two vector fields X, Y , assigns a new one ∇X Y ,
+and it is tensorial on the first component and Leibnitz on the second. An affine connection defines a
+notion of parallel vector fields. We say that a vector field Z is parallel along a curve γ : [0, 1] → M
+                                   d
+if ∇γ 0 Z = 0 where γ 0 := dγ( dt    ). For any curve, given an initial vector Z0 , there exists a unique
+parallel vector field Z along it such that Z(0) = Z0 . We say that the vector Z(t) is the parallel
+transport of Z(0) for t ∈ [0, ε).
+
+A.2   Riemannian Geometry
+
+A Riemannian manifold is a differentiable manifold together with a smooth metric gp : Tp M ×
+Tp M → R which is symmetric and positive definite. A metric induces a distinguished connection
+called the Levi-Civita connection. This is the unique connection that is torsion-free, ∇X Y −
+∇Y X = [X, Y ] := XY − Y X, and it is compatible with the metric, DZ (g(X, Y )) = g(∇Z X, Y ) +
+g(X, ∇Z Y ), where DZ denotes the directional derivative in the direction of Z. Whenever we
+talk about a connection on a Riemannian manifold we will always be referring to the Levi-Civita
+connection.
+A Riemannian manifold has a notion of length of a differentiable curve c : [0, 1] → M, L(c) =
+R1 0
+ 0
+   kγ (t)k dt. When the manifold is connected, this allows to put the structure of a metric space
+on the manifold, defining the distance between two points as the length of the shortest piece-wise
+differentiable curve joining these two points.
+Given a connection, we define a geodesic γ : [0, ε) → M as a self-parallel curve, ∇γ 0 γ 0 = 0.
+Geodesics are defined for any starting conditions (p, v) ∈ T M, γ(0) = p, γ 0 (0) = v on an interval
+[0, ε). If a Riemannian manifold is connected and complete, the Hopf-Rinow theorem asserts that
+geodesics not only exist locally, but globally, that is, they can be extended indefinitely taking ε = ∞
+giving γ : [0, ∞) → M. Furthermore, Hopf-Rinow adds that, under the same conditions, there exists
+a geodesic connecting any two given points. When the connection comes from a metric, geodesics
+are the locally length-minimizing curves on M.
+Given a connection, we define the exponential map as expp (v) := γp,v (1) where γp,v is the geodesic
+with initial conditions (p, v). On a connected and complete Riemannian manifold, Hopf-Rinow says
+that the exponential map is defined in the whole tangent bundle.
+A metric induces an isomorphism between the tangent and cotangent bundle α : T M → T ∗ M
+defined as α(X) := g(X, −). α is sometimes called the musical isomorphism. The gradient of a
+function is defined as the vector field associated to the differential form df through this isomorphism
+∇f := α−1 (df ). In other words, it is the vector field such that df = g(∇f, −). As such, the
+gradient depends on the choice of metric. A metric also allows to define the adjoint of a differential
+
+
+                                                   13
+dφ : Tp M → Tφ(p) M at a point p ∈ M as the application dφ∗ : Tφ(p) M → Tp M such that for
+every X ∈ Tp M, Y ∈ Tφ(p) M we have that g(dφ(X), Y )φ(p) = g(X, dφ∗ (Y ))p .
+
+A.3   Lie groups
+
+A Lie group G is a differentiable manifold equipped with a differentiable group structure. Lie groups
+have a distinguished tangent space called the Lie algebra, which is the tangent space at the identity
+g := Te G. Any closed subgroup of a Lie group is itself a Lie group. A (real) matrix manifold is a
+closed subgroup of the general linear group GL(n) = {B ∈ Rn×n | det A 6= 0}. The Lie algebra of
+the general linear group is gl(n) = Rn×n . In general, the general linear group of a vector space V is
+the Lie group formed by the invertible automorphisms of V , GL(V ).
+On a Lie group, one has for every g, x ∈ G the diffeomorphisms given by left translations Lg (x) :=
+gx, right translations Rg (x) := xg, and conjugation cg (x) = gxg −1 . Using left translations, one can
+identify any tangent space with the Lie algebra via the vector space isomorphism (dLg−1 )g : Tg G →
+g. The differential of the conjugation at the identity is called the adjoint representation of G,
+Ad : G → GL(g). The differential of Ad at the identity is the adjoint representation of g, ad : g →
+End(g). For matrix Lie groups, Adg (X) = gXg −1 and adX (Y ) = [X, Y ].
+Given a vector X ∈ g, we can consider the one parameter subgroup with starting vector X, which is
+the unique group homomorphism γX : R → G such that γX    0
+                                                           (0) = X. The Lie exponential is then
+defined for every X ∈ g as exp(X) := γX (1). For matrix Lie groups, the Lie exponential is given
+by the exponential of matrices.
+A Riemannian metric on a Lie group is said to be left (resp. right) invariant if it turns left (resp. right)
+translations into isometries. A metric is said to be bi-invariant if it is both left and right invariant.
+Every Lie group admits a left-invariant metric, given by choosing any inner product in g and pushing it
+forward using Lg−1 . Only compact Lie groups, commutative Lie groups, and products of them admit
+bi-invariant metrics. When a Lie group is equipped with a bi-invariant metric, the Lie exponential
+coincides with the Riemannian exponential at the identity.
+
+
+B     Parametrizations on Manifolds
+
+In this section we look at the problem of how does optimizing f ◦ φ affect the optimization problem,
+depending on the properties of φ. As a disclaimer we would like to mention that, although this section
+and next section are original, most of them would be considered routine in the field of differential
+geometry.
+Consider the optimization problem
+                                                min f (x)                                               (1)
+                                                x∈M
+
+where M is a Riemannian manifold. In this section we will look at parametrizations, which can be
+regarded as a generalization of certain trivializations, when the domain is not necessary Rn but a
+Riemannian manifold.
+Suppose that we have access to a diffeomorphism between Riemannian manifolds
+                                              φ : N → M.
+and denote the metric on N as g2 . We say that φ is a parametrization of M in terms of N .
+We can then consider the problem
+                                              min f (φ(y)).
+                                              y∈N
+
+In order to apply a first-order method to this new problem we first have to compute the gradient of
+this new function f ◦ φ. In order to do so, let us first define some notation.
+Denote by dφ and dφ0 the differential and its dual
+                                           dφ : T N → T M
+                                          dφ0 : T ∗ M → T ∗ N
+
+
+                                                    14
+and denote by α and β the canonical isomorphisms between the tangent and the cotangent bundle
+induced by the metrics
+                                                     ∼
+                                                     =
+                                           α : T M → T ∗M
+                                                     ∼
+                                                     =
+                                           β : T N → T ∗N .
+Finally, denote by dφ∗ the fibre-wise adjoint with respect to the two metrics of dφ
+                                          dφ∗ : T M → T N .
+Proposition B.1. Using the notation above, the following relation holds
+                                          β ◦ dφ∗ = dφ0 ◦ α.
+
+Proof. For Y ∈ T N , X ∈ T M, we have that
+            (dφ0 ◦ α)(X)(Y ) = α(dφ(Y ))(X) = β(dφ∗ (X))(Y ) = (β ◦ dφ∗ )(X)(Y ).
+
+Using this proposition, we can compute the gradient with respect to the new parametrization.
+Corollary B.2. Let φ : N → M be a smooth map between Riemannian manifolds and f be a function
+on M. We have that
+                                    ∇(f ◦ φ) = dφ∗ (∇f ).
+
+Proof. This is direct using the previous proposition since
+                    ∇(f ◦ φ) := β −1 (d(f ◦ φ)) = (β −1 ◦ dφ0 )(df ) = dφ∗ (∇f ).
+
+This motivates the definition of the metric associated to a parametrization φ.
+Definition B.3 (Metric associated to a parametrization). A parametrization between Riemannian
+manifolds φ : N → M induces a metric on M as per
+                  (φ∗ g2 )(X1 , X2 )p := g2 (dφ∗ (X1 ), dφ∗ (X2 ))φ−1 (p)    ∀p ∈ M.
+
+This is a metric since dφ∗ (X) = 0 if and only if X = 0 by the inverse function theorem, given that φ
+is a diffeomorphism.
+Another way of looking at this construction is through the lens of submersions.
+Definition B.4 (Riemannian Submersion). A Riemannian submersion is a surjective map φ : N →
+M such that its differential is surjective at every point and
+                                                         ⊥
+                                       dφ : (ker(dφ)) → T M
+is an isometry.
+This is equivalent to saying that the adjoint dφ∗ should be an isometry. This is exactly the construction
+that we are using, we take the metric that converts φ into a Riemannian submersion.
+We now look at this new metric. We will prove that doing gradient descent using a retraction
+along φ∗ g2 , is not a retraction with respect to g2 , and hence, it constitutes an optimization method
+fundamentally different to the original Riemannian gradient descent.
+Using this metric, gradient descent on M with a step-size η > 0 is given by the map
+                               yt+1 = (φ ◦ expN ,g2 ◦dφ∗ )(−η∇f (yt ))
+where expN ,g2 : T N → N is the Riemannian exponential map on (N , g2 ). Note that since ∇f =
+α−1 ◦ df , this step does not depend on the initial metric on M, as we already observed in the proof
+of Corollary B.2.
+More generally, recall the definition of a retraction.
+Definition B.5 (Retraction). A differentiable map r : T N → N is called a retraction if for every
+p∈N
+                                rp (0) = p       and   (drp )0 = Id.
+In other words, r is an order one approximation to the Riemannian exponential.
+
+
+                                                   15
+As proved in Boumal et al. [2016], under Lipschitzness conditions, it is enough to follow retractions
+rather than the exponential map in order to achieve convergence to a local minimum with Riemannian
+gradient descent. As such, a natural question to ask is whether the function that defines the update
+step defines a retraction.
+Proposition B.6. Let (M, g1 ), (N , g2 ) be Riemannian manifolds. Let φ be a parametrization be-
+tween them and let r : T N → N be a retraction. The map
+                                    φ∗ r := φ ◦ r ◦ dφ∗ : T M → M
+is a retraction if and only if φ is a local isometry.
+
+Proof. It is clear that (φ∗ r)p (0) = p. For the second condition, differentiating, we have that the map
+is a retraction if and only if
+                                          dφ ◦ dφ∗ = IdTp M .
+or equivalently dφ−1 = dφ∗ . Now,
+                                   (dφ ◦ dφ∗ ◦ dφ ◦ dφ∗ )p = IdTp M
+so
+                       (dφ∗ ◦ dφ)φ−1 (p) = (dφ−1 ◦ dφ∗ )φ−1 (p) = IdTφ−1 (p) N .
+
+Finally, since dφ∗ is the adjoint operator with respect to the metrics g2 and g1 , evaluating this last
+expression on two points using the metric
+                        g1 (dφ(u), dφ(v)) = g2 (u, v)       ∀u, v ∈ Tφ−1 (p) N ,
+which is equivalent to φ being a local isometry.
+
+This is not a surprising result, since a retraction is a map that preserves the gradient. The way we have
+defined φ∗ r is such that it preserves the gradient with respect to g2 . If it also preserved the gradient
+with respect to g1 , that would mean that the gradients with respect to the two metrics are the same,
+modulo a transformation through dφ∗ , in other words, dφ should be a local isometry.
+
+C    Proof of Theorem 4.7
+In this section we generalize to general matrix Lie groups the classic proof presented in Theorem
+D.2. in Lezcano-Casado and Martínez-Rubio [2019].
+In order to generalize this proof, we need the following theorem.
+Theorem C.1 (Theorem 4 in Hille [1958]). Let A, B ∈ Cn×n . If there are no two eigenvalues in A
+such that their difference is of the form 2nπi for n > 0 and, if eA = eB , we have that AB = BA.
+With this theorem in hand we can prove the following strengthened result.
+Theorem C.2 (Properties of the Lie exponential). Let G be a closed subgroup of GL(n, C), the
+Lie exponential is a diffeomorphism on the set U = {A ∈ g | |Im(λi (A))| < π} with λi (A) the
+eigenvalues of A.
+
+Proof. The fact that the differential of the exponential is surjective on this domain is classic (cf.,
+Section 1, Proposition 7 in Rossmann [2006]). As such, we just have to prove that the exponential is
+injective on this domain.
+If A ∈ U is diagonalizable, A = CΣC −1 with Σ diagonal, and exp(A) = C exp(Σ)C −1 where
+exp(Σ) is just the element-wise exponential of the diagonal elements.
+By Hille [1958], for any two matrices A, B ∈ U , if eA = eB we have that AB = BA. In particular,
+as they commute, we have that eA e−B = eA−B = I.
+As A, B ∈ U , we have that Im(λi (A − B)) < 2π, and as the eigenvalues of eA−B are 1, and the
+eigenvalues of the exponential of a matrix is the exponential of its eigenvalues, we have that the
+eigenvalues of A − B are all zero. Putting it in Jordan-normal form, we can assume that A − B is
+upper triangular so, as the eigenvalues of A − B are zero, we can assume that A − B is also nilpotent.
+
+
+                                                    16
+Now, if we prove that the only upper triangular nilpotent matrix that is mapped to the identity matrix
+under the exponential is the null matrix, we finish the proof, as this would imply that A = B.
+The set of upper-triangular nilpotent matrices is the Lie algebra of the Lie group of upper triangular
+matrices with ones on the diagonal. Recall the formula for the logarithm
+                                                    ∞                     k
+                                                    X              (B − I)
+                                        log(B) =         (−1)k+1           .
+                                                                      k
+                                                    k=1
+
+Whenever B is upper triangular with ones on the diagonal, B − I is nilpotent, so the series converges.
+As such, all these matrices have one and just one logarithm in U . In particular, the exponential is a
+bijection on this set.
+
+D        Gradient of the Matrix Exponential
+In this section we give a formula for the gradient of the pullback of a function by the matrix
+exponential. The implementation of these formulas in practice and how can they be applied on
+different manifolds is considered in Appendix E.
+We will prove a stronger result, which also applies
+                                             √      to other matrix functions like cos(X), sin(X) and,
+with minor modifications, to functions like X, X 1/n , and log(X).8
+Theorem D.1. Consider a real analytic function
+                                                φ: R → R
+                                                         ∞
+                                                        X   an n
+                                                   x 7→        x
+                                                        n=0
+                                                            n!
+
+with associated matrix function
+                                             φ : Rn×n → Rn×n
+                                                         ∞
+                                                        X   an n
+                                                   X 7→        X
+                                                        n=0
+                                                            n!
+
+We then have that, for the canonical inner product (A1 , A2 ) = tr(A|1 A2 ),
+                                            ∗
+                                       (dφ)X = (dφ)X |         X ∈ Rn×n .
+
+Proof. We can compute the differential of φ as
+                                                    ∞     n
+                                                    X   an X                 
+                                    (dφ)X (E) =                    X i EX n−i .
+                                                    n=0
+                                                          n! i=0
+
+By linearity, it is enough to compute the adjoint of functions of the form X 7→ X i EX n−i .
+Observe that the adjoint of the left multiplication LA (X) = AX is exactly LA|
+                                                    |
+                       hLA (X), Y i := tr((AX) Y ) = tr(X | A| Y ) = hX, LA| (Y )i.
+                                                  ∗
+In the case of right multiplication, we also get RA = RA| .
+Finally, we just have to apply this formula to the functions LX i (E) = X i E and RX n−i (E) =
+EX n−i , and noting that X 7→ X i EX n−i = LX i (RX n−i (E)), and that for any two functions,
+(f ◦ g)∗ = g ∗ ◦ f ∗ , we get the result.
+
+After obtaining this more general result, we thought that this should be folklore in some areas of
+functional analysis and numerical analysis. In fact, this result can be found without proof in Higham
+[2008, p.66].
+    8
+        See the remark after the proof of the theorem.
+
+
+                                                          17
+Remark. The generalization of this result to functions complex functions is direct, modulo computing
+the differential of the analytic function with conjugate coefficients in its Taylor series. In this case,
+one can interpret this theorem by saying that “the adjoint of the differential is the differential of the
+adjoint at the adjoint”, noting the two different meanings of the word adjoint in the sentence.
+In the complex setting, one can formulate the theorem for a holomorphic function defined just on
+an open subset U ⊆ C, and define the function on matrices on the set of matrices such that their
+spectrum is contained in U , hence making sense also of functions like log(X).
+The result still holds true for many other inner product in Cn×n (or Rn×n ), in particular, for those
+for which for every matrix X there exists a matrix Y such that L∗X = LY . If this is the case, we
+write X ∗ := Y and the theorem still holds true, as in this case, RX∗
+                                                                      = RX ∗ . Most of the scalar
+products on matrix spaces that appear in differential geometry have this property. For example,
+if we have a symmetric positive definite matrix G ∈ Rn×n and we define the following product
+                                                            |
+hX, Y i := tr(X | GY ), then we have that X ∗ = (GXG−1 ) .
+We can now state the case of exp(X) as a corollary of Theorem D.1 and Corollary B.2.
+Corollary D.2 (Gradient of the matrix parametrization). Let f : GL(n) → R be a smooth func-
+tion, the gradient of f ◦ exp at a matrix A ∈ gl(n) ∼
+                                                    = Rn×n with respect to the canonical metric at a
+matrix B ∈ GL(n), hA1 , A2 iB = tr(A|1 A2 ) is given by
+
+                               ∇(f ◦ exp)(A) = (d exp)A| (∇f (eA )).
+
+Using the chain rule, we can also compute the gradient with respect to the dynamic Lie trivialization
+expB .
+Corollary D.3. Let f : GL(n) → R be a smooth function, and let B ∈ GL(n). The gradient
+of f ◦ expB at a matrix A ∈ TB GL(n) ∼    = gl(n) ∼ = Rn×n with respect to the canonical metric
+                   |
+hA1 , A2 iB = tr(A1 A2 ) is given by
+                                              |
+                  ∇(f ◦ expB )(A) = (B −1 ) (d exp)(B −1 A)| (B | ∇f (expB (A))).
+
+Remark. These two corollaries still hold if we replace GL(n) by any real matrix Lie group with this
+metric. The complex case is analogous.
+Remark. In Lezcano-Casado and Martínez-Rubio [2019] the following slightly different formula for
+the gradient of the exponential is derived for compact real matrix Lie groups:
+                        ∇(f ◦ exp)(A) = eA (d exp)−A (e−A ∇f (exp(A))).
+
+This formula agrees with the one presented here, as it turns out that multiplication by eA commutes
+with (d exp)−A . This can be seen, for example, modifying the proof of formula for the derivative of
+exponential map in Rossmann [2006, Chapter 1, Theorem 5] to obtain
+                                                  ∞         k
+                                                  X (− adA )
+                               (d exp)A (X) =                      (eA X).
+                                                        (k + 1)!
+                                                  k=0
+
+Finally, if G is a real compact matrix Lie group together with a bi-invariant metric, one has that for
+every A ∈ g, A∗ = −A, where A∗ should be understood in the sense of L∗A = LA∗ . This can be seen,
+for example, considering that a real compact matrix Lie group is either a subgroup of the orthogonal
+group or a conjugate of one. Using this, we finally see that the formula presented in Lezcano-Casado
+and Martínez-Rubio [2019] is equivalent to Corollary D.2.
+
+E    Examples of Matrix Manifolds and Specific Trivializations
+This section has an expository purpose. It is intended as a compilation of useful results for the
+implementation of different trivializations. We will go over the forms that the Lie exponential and
+the Riemannian exponential—geodesics—take in different manifolds that are useful in the field of
+machine learning.
+We will deliberately develop as least theory as possible, but we will still point out the relevant
+literature sources as remarks, for those interested in the theoretical background. At the end, we will
+
+
+                                                   18
+also describe some retractions, which are useful for problems on which computing the geodesics or
+the Lie exponential is too expensive.
+We will put as examples some Lie groups, the sphere and the hyperbolic space, the Stiefel manifold,
+and the space of symmetric positive definite matrices.
+Remark. On some of the manifolds considered below, the metric is not the canonical one given by
+hA1 , A2 iB = tr(A|1 A2 ), but often a left-translation of this one of the form
+                                                    |
+                      hA1 , A2 iB = tr((B −1 A1 ) B −1 A2 )          ∀A1 , A2 ∈ TB M.
+For these metrics, when we compute the gradient, we cannot use Corollary D.2 directly. On the other
+hand, after a similar reasoning, we get that the differential with respect to these metrics is given by
+the formula
+                           ∇(f ◦ exp)(A) = B(d exp)A| (B −1 ∇f (eA )).
+We can also deduce this formula just noting that, for these metrics, left translations are isometries by
+construction.
+
+E.1   Compact matrix Lie groups
+
+On a Lie group, we can identify all the tangent spaces using left multiplication. In particular, we have
+that
+                                  TB G = {BA | A ∈ g}          B∈G
+where g  :=  Te G is the tangent space at the identity: the Lie algebra of G. As such, if we know the
+structure of g we can parametrize any tangent space of G.
+For compact Lie groups, the Lie exponential and the Riemannian exponential agree9 and take the
+form
+              expG,B (Ã) = expB (Ã) = B exp(B −1 Ã) = B exp(A)      A ∈ g.              (2)
+where exp is the exponential of matrices and we still used the identification Ã = BA. For these
+groups, the Riemannian exponential is surjective.
+These Lie groups were already presented in Lezcano-Casado and Martínez-Rubio [2019] in the
+context of optimization for neural networks. In that paper, this trivialization was only considered in
+the static case, namely exp : g → G.
+The gradient of Equation (2) is given by Proposition 6.1.
+Finally, for compact matrix Lie groups, in order to use this formula to implement the dynamic
+trivialization method, we are just missing the expression for the Lie algebra g ⊆ Rn×n of the Lie
+group in which we are interested. We give a list of some of these below.
+Special orthogonal group
+SO(n) = {B ∈ Rn×n | B | B = I, det B = 1}                    so(n) = Skew(n) = {A ∈ Rn×n | A| = −A},
+
+Unitary group
+              U(n) = {B ∈ Cn×n | B ∗ B = I}                  u(n) = {A ∈ Cn×n | A∗ = −A},
+
+Special unitary group
+ SU(n) = {B ∈ Cn×n | B ∗ B = I, det B = 1}                   su(n) = {A ∈ Cn×n | A∗ = −A, tr A = 0}.
+
+Complex torus
+   T(n, C) = {B ∈ Diag(n, C) | |Bii | = 1}               t(n, C) = {A ∈ Diag(n, C) | Aii ∈ iR ⊆ C},
+Remark. We say that T(n, C) is a torus because it is a product of n circles. This can easily be seen
+simply defining the circle as S 1 = {z ∈ C | |z| = 1}, so that T(n, C) ∼
+                                                                       = S 1 × · · · × S 1 . In this case,
+the correspondence between the Lie algebra and the Lie group is given by the Euler formula.
+   9
+     Here we are assuming that we consider the group G together with a bi-invariant metric. For compact matrix
+Lie groups this metric is exactly hA1 , A2 iB = tr(A|1 A2 ). For more on this, we refer the reader Lezcano-Casado
+and Martínez-Rubio [2019, Appendix C.1.].
+
+
+                                                        19
+Real torus The real torus T(2n, R) consists of the 2n × 2n block-diagonal matrices with blocks of
+the form                                       
+                              cos(θ) − sin(θ)
+                                                       θ ∈ [−π, π].
+                              sin(θ) cos(θ)
+Note that is exactly the matrix representation of the complex number eθi . In this case, its Lie algebra
+is given by the block-diagonal matrices with blocks given by
+                                                
+                                          0 −a
+                                                        a ∈ R.
+                                          a 0
+Remark. In the case of the real and complex torus, the exponential is a Riemannian covering map,
+this meaning that, in particular, it is always a local isometry, and it does not create local minima
+or saddle points. For this reason, to optimize on these two manifolds, we would not need to use
+dynamic trivializations, given that a static trivialization would work just fine as a direct corollary
+of Theorem 4.3.
+
+E.2    The groups GL+ (n) and SL(n)
+
+We then look at two more Lie groups on which we can compute the Riemannian exponential.
+These groups are of primal importance for problems that require invertible matrices or the study of
+volume-flows, like normalizing flows.
+These groups are also an important example of groups on which the Riemannian exponential and the
+Lie exponential do not agree, and thus, in this case, we have two different trivialization schemes.
+Furthermore, the Lie exponential is not surjective on these groups, so these are also examples of a
+retraction that could not be used as a static trivialization, but it can be used as a dynamic one.
+Positive general linear group
+                     GL+ (n) = {B ∈ Rn×n | det B > 0}               gl(n) = Rn×n .
+This is the connected component containing the identity matrix of the general linear group
+                                 GL(n) = {B ∈ Rn×n | det B 6= 0}.
+
+Special linear group
+             SL(n) = {B ∈ Rn×n | det B = 1}              sl(n) = {A ∈ Rn×n | tr A = 0}.
+Remark. The orthogonal projection from Rn×n onto sl(n) is given by
+                                    πsl(n) : Rn×n → sl(n)
+                                                 A 7→ A − n1 tr(A)I
+
+We can use this formula to parametrize sl(n), in the same way that we use A 7→ 12 (A − A| ) to
+parametrize so(n) ∼
+                  = Skew(n).
+On these groups have two different trivializations based on the exponential of matrices.
+On the one hand, we still have the dynamic Lie trivialization expB presented in Appendix E.1.
+On the other hand, if G is GL(n) or SL(n) for n > 2 equipped with the metric hÃ1 , Ã2 iB =
+              |
+tr((B −1 Ã1 ) B −1 Ã2 ), we have that the Riemannian trivialization for these groups is given by 10
+                       expG,B (BA) = B exp(A| ) exp(A − A| ) for A ∈ g.
+Note that BA ∈ TB G, as one would expect.
+Remark. This result was first stated in Wang et al. [1969], and a proof of it can be found in Helgason
+[1979, Chapter 6, Exercise A.9]. For the proof for GL(n), see Andruchow et al. [2014, Theorem
+2.14].
+  10
+    This result applies not only to SL(n), but to any semisimple Lie group equipped with the left-invariant
+metric associated to the Killing form.
+
+
+                                                    20
+We can then compute the gradient of this parametrization as we know how to compute the gradient of
+the exponential map with respect to this metric, as detailed at the beginning of Appendix E.
+Remark. It happens that the Lie exponential is not surjective on SL(n) so, in this case, it would not
+be possible to set K = ∞ in the dynamic trivialization algorithm, that is, it would be necessary to
+change the basis of the trivialization. The Lie trivialization is not surjective on GL+ (n, R) either, but
+it is surjective on GL(n, C), with gl(n, C) ∼= Cn×n .
+These are examples for which using dynamic trivializations allow us to use certain parametrizations
+that we would not be able to use in the context of static trivializations.
+The Riemannian exponential on SL(n) and GL(n, R) is surjective with this metric.
+Remark. On these two manifolds, we can also use their polar decomposition as a trivialization to
+optimize over them, see Hall [2015, Proposition 2.19].
+
+E.3     Naturally reductive homogeneous spaces
+
+In this section we touch on a few of the most used manifolds in optimization, namely the Stiefel
+manifold, the sphere, the hyperbolic space, and the symmetric positive definite matrices.
+In this section we will restrict ourselves to expose the formulae for the exponential on these manifolds
+for certain metric. Most of these manifolds fall under the theory of symmetric manifolds, or the more
+general theory of naturally reductive homogeneous spaces. For a derivation of the fomulae in this
+section in the more general context of naturally reductive homogeneous spaces, we refer the reader to
+the self-contained exposition in Gallier and Quaintance [2019, Chapter 22].
+
+E.3.1    Stiefel manifold
+The Stiefel manifold is the manifold of n × k matrices with k ≤ n with orthonormal columns.
+Equivalently, it is the set of orthonormal k-frames on Rn . In symbols we can see the Stiefel manifold
+as a submanifold of Rn×k as follows:
+      St(n, k) := {B ∈ Rn×k | B | B = Ik }     TB St(n, k) = {Ã ∈ Rn×k | B | Ã ∈ so(k)}
+Note that St(n, n) ∼
+                   = O(n). In this case, compare the formula of the tangent space with that given
+for TB SO(n) Lie groups in Appendix E.1, in particular that of so(n).
+If we consider any completion of the frame B into a basis of Rn , that is, a matrix B⊥ ∈ Rn×n−k
+such that (B B⊥ ) ∈ O(n), we have the more computationally amenable description of the tangent
+spaces of St(n, k)
+                TB St(n, k) = {BA + B⊥ A⊥ ∈ Rn×k | A ∈ so(k), A⊥ ∈ Rn−k×k }.
+Note that if n = k, TB St(n, n) = {BA | A ∈ so(n)} and we still recover the same definition
+from Appendix E.1.
+The canonical metric 11 on the Stiefel manifold is given for B ∈ St(n, k), Ã1 , Ã2 ∈ TB St(n, k) by
+                                 hÃ1 , Ã2 iB = tr(Ã|1 (In − 12 BB | )Ã2 )
+
+With the notation as above, consider the QR decomposition QR = (In − BB | )Ã with Q ∈ St(n, k),
+R ∈ Rk×k , then we have that is the we have that the Riemannian exponential is given
+                                                                 
+                                                          A −R      Ik
+                        expSt(n,k),B (Ã) = (B Q) exp                    .
+                                                          R   0      0
+
+Remark. The computational cost of computing geodesics on St(n, k) is then dominated by the
+computation of a thin-QR factorization of a n × k matrix and the computation of a exponential of a
+skew-symmetric 2k × 2k matrix.
+  11
+    We say that this is the canonical metric because it is the one inherited from the quotient structure—as a
+homogeneous space—of St(n, k) as St(n, k) ∼   = O(n)/ O(n − k). If we put the Euclidean metric tr(X | Y ) on
+O(n), this metric is bi-invariant under the action of O(n − k) and descends into the canonical metric on the
+quotient manifold O(n)/ O(n − k) described here. For the exact computations see Edelman et al. [1998].
+
+
+                                                     21
+If 2k > n, a more efficient algorithm is possible. We just have to compute the geodesics on SO(n) as
+per Appendix E.1 and then drop then project the result onto St(n, k) dropping the last n − k columns.
+This process requires the computation of just one exponential of an n × n matrix. This process is
+equivalent to the formula described above.
+Remark. In Edelman et al. [1998, Section 2.2.2] the authors give a formula for the geodesics of
+St(n, k) seen as a submanifold of Rn×k , that is, with the metric hÃ1 , Ã2 i = tr(Ã|1 Ã2 ). In Section
+2.4.1 they also discuss an essential difference between the Euclidean metric and the canonical metric
+on the Stiefel manifold.
+
+E.3.2   The sphere and the hyperbolic plane
+The case of the sphere S n = {x ∈ Rn+1 | kxk = 1} is probably one of the most classical ones. We
+will always consider the round sphere, this is, the sphere as a subset of Rn+1 together with the metric
+inherited from Rn+1 .
+Its tangent space at a point x ∈ S n is simply given by the set of vectors orthogonal to it
+
+                                   Tx S n = {v ∈ Rn | hx, vi = 0}.
+
+and the geodesics are given by
+                                                                        v
+                              expS n ,x (v) = cos(kvk)x + sin(kvk)         .
+                                                                       kvk
+
+To describe the n-dimensional hyperbolic space, first consider the diagonal matrix In,1 with n positive
+ones and a negative one in its diagonal. We will use the following notation
+                                             n
+                                             X
+                  hx, yiH := hx, In,1 yi =         xi yi − xn+1 yn+1     ∀x, y ∈ Rn+1
+                                             i=1
+                        p
+and denote by kxkH =        hx, xiH whenever hx, xiH ≥ 0.
+With this notation, the n-dimensional hyperbolic space Hn can be seen as the submanifold of Rn+1
+defined by
+                            Hn = {x ∈ Rn+1 | hx, xiH = −1, xn+1 > 0}
+with tangent space at x ∈ Hn given by
+
+                                 Tx Hn = {v ∈ Rn+1 | hx, viH = 0}.
+
+The geodesics are then given by
+                                                                           v
+                          expHn ,x (v) = cosh(kvkH )x + sinh(kvkH )           .
+                                                                         kvkH
+
+Remark. The formula for the sphere is just a particular case of the one given for St(n + 1, 1) ∼
+                                                                                               = Sn.
+The reason why the formulas of the geodesics on the sphere and the hyperbolic plane are so similar has
+a geometric meaning. This can be seen in a more general case, considering the oriented Grassmannian
+manifold and the hyperbolic Grassmannian. The sphere and the hyperbolic plane are special cases of
+these manifolds. These manifolds are symmetric spaces and they are dual to each other. For more
+on the duality between symmetric spaces of compact and non-compact type, we refer the reader
+to Helgason [1979, Chapter 5, Example 1] or O’Neill [1983, Chapter 11].
+Remark. In the same spirit as we can compute the geodesics on St(n, k) by taking a geodesic in
+SO(n) and projecting it down to St(n, k), we can also compute the geodesics of the real projective
+plane RPn by computing the geodesic on S n and projecting it down to RPn . The metric induced on
+RPn is called the standard round metric on RPn . If we perform the same process between S 2n+1
+and CPn and, in this case, we would get the Fubini-Study metric. This construction arises naturally
+in the context of principal bundles with invariant metrics.
+
+
+                                                     22
+E.3.3    The symmetric positive definite matrices
+The symmetric positive definite matrices Sym+ (n) do not form a Lie group, as they are not closed
+under matrix multiplication, but they are a symmetric space.
+When seen as a subset of Rn×n , we can endow it with a left-invariant metric defined as hÃ1 , Ã2 iB =
+tr(B −1 A1 B −1 A2 ). The tangent space at a point B ∈ Sym+ (n) is given by
+
+                            TB Sym+ (n) = {B 1/2 AB 1/2 | A ∈ sym(n)}
+where sym(n) is the tangent space at the identity, given by the symmetric matrices
+                                 sym(n) = {A ∈ Rn×n | A| = A}.
+Note that for a symmetric positive definite matrix the square root is well defined, as symmetric
+positive definite matrices are diagonalizable, and the square root is just the matrix whose eigenvalues
+are the (positive) square root of the eigenvalues of the initial matrix.
+Following the notation for Lie groups, if we denote Ã = B 1/2 AB 1/2 , we have that
+
+             expSym+ (n),B (Ã) = B 1/2 exp(B −1/2 ÃB −1/2 )B 1/2 = B 1/2 exp(A)B 1/2 .
+Remark. In this case, this manifold also constitutes an example of a symmetric space since
+Sym+ (n) ∼ = GL+ (n)/ O(n). The metric considered here is the natural one with respect to this
+structure. An introduction to the computational aspects of this manifold can be found in Bonnabel
+and Sepulchre [2009].
+
+E.4     Some retractions
+
+For now we have just mentioned examples regarding either the Lie exponential or the Riemannian
+exponential, but the dynamic trivialization framework allows us to use any function that is a retraction.
+In order to make use of arbitrary retractions, we just have to be able to compute the gradient of the
+function when precomposed with them. We will do so for a few important examples in this section.
+In the case of the two retractions mentioned in Section 6.3, the Cayley map and projectors, their
+derivatives are already implemented in the major deep-learning packages, like Pytorch or Tensorflow.
+The first one just requires an inverse (or, more efficiently and stable, the solution of a system
+of the form AX = B) and the second one just requires the derivatives with respect to the SVD
+decomposition.
+The retraction induced by a projector can be easily implemented for most manifolds. For example, for
+                                      x
+the sphere takes just the form x 7→ kxk , whose derivative can also be computed just using autodiff.
+For the symmetric positive definite matrices, we have the retraction from the symmetric matrices
+into the positive semidefinite matrices given by A 7→ A2 . This one is similar to the frequently used
+from the upper triangular matrices given by the Cholesky decomposition L 7→ LL| . The former
+has the advantage that we have access to A which is the square root of its image. This can be
+helpful, as sometimes the square root of the matrix is needed for some computations, as we have seen
+in Appendix E.3.3. The retraction given by the Cholesky decomposition has the advantage that, if the
+diagonal of the upper-triangular matrix L is strictly positive, then LL| will be positive definite. For
+this reason this retraction is often used to parametrize variance kernels in Bayesian statistics.
+Another retraction for Sym+ (n) is given by the exponential of matrices exp : sym(n) → Sym+ (n)
+which is a diffeomorphism. As such, it provides a rather good, although expensive, option to
+parametrize this manifold.
+For a much more in-depth treatment of retractions, we refer the reader to Absil et al. [2009].
+
+F     Detailed Experiment Set-Up and Hyperparameters
+We tried to reproduce as faithfully as possible the set-up from previous experiments, to achieve a
+fair comparison. The batch size for all the experiments is 128. We fixed the seed to be 5544 of both
+Numpy and Pytorch for reproducibility in the final runs.
+
+
+                                                  23
+The exact architecture to process for a sequence of inputs xt ∈ Rd with a hidden size p is given by
+the formula
+                                  ht+1 = σ(exp(A)ht + T xt+1 )
+with A ∈ Skew(p) and T ∈ Rp×d . σ is the modrelu non-linearity introduced in Arjovsky et al.
+[2016].
+The initialization Henaff refers to initializing the diagonal blocks of the skew-symmetric matrices
+with elements sampled from the uniform distribution U(−π, π) as detailed in Henaff et al. [2016].
+The Cayley initialization
+                   q      refers to sampling the diagonal from a distribution u ∼ U(0, π/2) and then
+                    1−cos(u)
+computing s = −     1+cos(u) as detailed in Helfrich et al. [2018].
+
+As we mentioned in the experiments section, we did not include the copying experiment that was
+usually used in previous papers, given that, as it was demonstrated in Lezcano-Casado and Martínez-
+Rubio [2019], the exponential trivialization converges to the exact solution even when based at the
+identity. The same happens when used with the dynamic trivialization, so we do not think that this
+experiment adds anything to the results.
+
+                                Table 3: Hyperparameters for DTRIV1.
+
+Dataset     Size   Optimizer     Learning Rate    Orthogonal optimizer   Orthogonal Learning Rate
+            170                      10−3                                          10−4
+MNIST       360                      10−3                                          10−4
+            512    RMSPROP
+                                    5 · 10−4            RMSPROP
+                                                                                  7 · 10−5
+            170                     7 · 10−4                                      2 · 10−4
+P - MNIST   360                     7 · 10−4                                      7 · 10−5
+            512                     5 · 10−4                                      5 · 10−5
+            224                      10−3                                           10−4
+TIMIT       322     ADAM             10−3               RMSPROP                     10−4
+            425                      10−3                                           10−4
+
+
+                               Table 4: Hyperparameters for DTRIV100.
+
+Dataset     Size   Optimizer     Learning Rate    Orthogonal optimizer   Orthogonal Learning Rate
+            170                     5 · 10−4                                       10−4
+MNIST       360                     3 · 10−4                                      5 · 10−5
+            512    RMSPROP
+                                    5 · 10−4            RMSPROP
+                                                                                   10−4
+            170                     7 · 10−4                                       10−4
+P - MNIST   360                     5 · 10−4                                      7 · 10−5
+            512                     5 · 10−4                                      5 · 10−5
+            224                      10−3                                         2 · 10−4
+TIMIT       322     ADAM             10−3               RMSPROP                   2 · 10−4
+            425                      10−3                                          10−4
+
+
+
+
+                                                 24
+                               Table 5: Hyperparameters for DTRIV∞.
+
+Dataset     Size   Optimizer     Learning Rate   Orthogonal optimizer   Orthogonal Learning Rate
+            170                    7 · 10−4                                      10−4
+MNIST       360                    5 · 10−4                                      10−4
+            512    RMSPROP
+                                    10−4              RMSPROP
+                                                                                7 · 10−5
+            170                    7 · 10−4                                     2 · 10−4
+P - MNIST   360                    7 · 10−4                                     5 · 10−5
+            512                    3 · 10−4                                     7 · 10−5
+            224                      10−3                                       2 · 10−4
+TIMIT       322     ADAM             10−3             RMSPROP                   2 · 10−4
+            425                      10−3                                       2 · 10−4
+
+
+
+
+                                                 25
+

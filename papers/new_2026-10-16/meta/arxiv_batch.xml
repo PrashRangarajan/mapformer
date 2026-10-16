@@ -1,0 +1,326 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/554m075stQbhrPiCrDVH17eWpgk</id>
+  <title>arXiv Query: search_query=&amp;id_list=2603.01959,2609.18966,2507.05238,2505.21749,1707.09520,1909.09501,1901.08428,2210.14476,2410.14067,2606.17830,2607.10134,2502.10297,2412.19350&amp;start=0&amp;max_results=20</title>
+  <updated>2026-10-16T22:56:16Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=&amp;start=0&amp;max_results=20&amp;id_list=2603.01959,2609.18966,2507.05238,2505.21749,1707.09520,1909.09501,1901.08428,2210.14476,2410.14067,2606.17830,2607.10134,2502.10297,2412.19350" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>20</opensearch:itemsPerPage>
+  <opensearch:totalResults>13</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/1901.08428v3</id>
+    <title>Cheap Orthogonal Constraints in Neural Networks: A Simple Parametrization of the Orthogonal and Unitary Group</title>
+    <updated>2019-05-30T16:01:01Z</updated>
+    <link href="https://arxiv.org/abs/1901.08428v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1901.08428v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We introduce a novel approach to perform first-order optimization with orthogonal and unitary constraints. This approach is based on a parametrization stemming from Lie group theory through the exponential map. The parametrization transforms the constrained optimization problem into an unconstrained one over a Euclidean space, for which common first-order optimization methods can be used. The theoretical results presented are general enough to cover the special orthogonal group, the unitary group and, in general, any connected compact Lie group. We discuss how this and other parametrizations can be computed efficiently through an implementation trick, making numerically complex parametrizations usable at a negligible runtime cost in neural networks. In particular, we apply our results to RNNs with orthogonal recurrent weights, yielding a new architecture called expRNN. We demonstrate how our method constitutes a more robust approach to optimization with orthogonal constraints, showing faster, accurate, and more stable convergence in several tasks designed to test RNNs.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2019-01-24T14:31:48Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Mario Lezcano-Casado</name>
+    </author>
+    <author>
+      <name>David Martínez-Rubio</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2412.19350v2</id>
+    <title>On the Expressiveness and Length Generalization of Selective State-Space Models on Regular Languages</title>
+    <updated>2025-07-04T08:39:27Z</updated>
+    <link href="https://arxiv.org/abs/2412.19350v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2412.19350v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Selective state-space models (SSMs) are an emerging alternative to the Transformer, offering the unique advantage of parallel training and sequential inference. Although these models have shown promising performance on a variety of tasks, their formal expressiveness and length generalization properties remain underexplored. In this work, we provide insight into the workings of selective SSMs by analyzing their expressiveness and length generalization performance on regular language tasks, i.e., finite-state automaton (FSA) emulation. We address certain limitations of modern SSM-based architectures by introducing the Selective Dense State-Space Model (SD-SSM), the first selective SSM that exhibits perfect length generalization on a set of various regular language tasks using a single layer. It utilizes a dictionary of dense transition matrices, a softmax selection mechanism that creates a convex combination of dictionary matrices at each time step, and a readout consisting of layer normalization followed by a linear map. We then proceed to evaluate variants of diagonal selective SSMs by considering their empirical performance on commutative and non-commutative automata. We explain the experimental results with theoretical considerations. Our code is available at https://github.com/IBM/selective-dense-state-space-model.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-12-26T20:53:04Z</published>
+    <arxiv:comment>13 pages, 7 figures, Published in AAAI 2025</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Aleksandar Terzić</name>
+    </author>
+    <author>
+      <name>Michael Hersche</name>
+    </author>
+    <author>
+      <name>Giacomo Camposampiero</name>
+    </author>
+    <author>
+      <name>Thomas Hofmann</name>
+    </author>
+    <author>
+      <name>Abu Sebastian</name>
+    </author>
+    <author>
+      <name>Abbas Rahimi</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2410.14067v2</id>
+    <title>Provable Benefits of Complex Parameterizations for Structured State Space Models</title>
+    <updated>2024-10-31T10:38:47Z</updated>
+    <link href="https://arxiv.org/abs/2410.14067v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2410.14067v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Structured state space models (SSMs), the core engine behind prominent neural networks such as S4 and Mamba, are linear dynamical systems adhering to a specified structure, most notably diagonal. In contrast to typical neural network modules, whose parameterizations are real, SSMs often use complex parameterizations. Theoretically explaining the benefits of complex parameterizations for SSMs is an open problem. The current paper takes a step towards its resolution, by establishing formal gaps between real and complex diagonal SSMs. Firstly, we prove that while a moderate dimension suffices in order for a complex SSM to express all mappings of a real SSM, a much higher dimension is needed for a real SSM to express mappings of a complex SSM. Secondly, we prove that even if the dimension of a real SSM is high enough to express a given mapping, typically, doing so requires the parameters of the real SSM to hold exponentially large values, which cannot be learned in practice. In contrast, a complex SSM can express any given mapping with moderate parameter values. Experiments corroborate our theory, and suggest a potential extension of the theory that accounts for selectivity, a new architectural feature yielding state of the art performance.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.NE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-10-17T22:35:50Z</published>
+    <arxiv:comment>12 pages. Accepted to NeurIPS 2024</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Yuval Ran-Milo</name>
+    </author>
+    <author>
+      <name>Eden Lumbroso</name>
+    </author>
+    <author>
+      <name>Edo Cohen-Karlik</name>
+    </author>
+    <author>
+      <name>Raja Giryes</name>
+    </author>
+    <author>
+      <name>Amir Globerson</name>
+    </author>
+    <author>
+      <name>Nadav Cohen</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2502.10297v7</id>
+    <title>DeltaProduct: Improving State-Tracking in Linear RNNs via Householder Products</title>
+    <updated>2025-10-22T21:10:28Z</updated>
+    <link href="https://arxiv.org/abs/2502.10297v7" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2502.10297v7" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Linear Recurrent Neural Networks (linear RNNs) have emerged as competitive alternatives to Transformers for sequence modeling, offering efficient training and linear-time inference. However, existing architectures face a fundamental trade-off between expressivity and efficiency, dictated by the structure of their state-transition matrices. Diagonal matrices, used in models such as Mamba, GLA, or mLSTM, yield fast runtime but have limited expressivity. To address this, recent architectures such as DeltaNet and RWKV-7 adopted a diagonal plus rank--1 structure, which allows simultaneous token and channel mixing, improving associative recall and, as recently shown, state-tracking when allowing state-transition matrices to have negative eigenvalues. Building on the interpretation of DeltaNet's recurrence as performing one step of online gradient descent per token on an associative recall loss, we introduce DeltaProduct, which instead takes multiple ($n_h$) steps per token. This naturally leads to diagonal plus rank--$n_h$ state-transition matrices, formed as products of $n_h$ generalized Householder transformations, providing a tunable mechanism to balance expressivity and efficiency. We provide a detailed theoretical characterization of the state-tracking capability of DeltaProduct in finite precision, showing how it improves by increasing $n_h$. Our extensive experiments demonstrate that DeltaProduct outperforms DeltaNet in both state-tracking and language modeling, while also showing significantly improved length extrapolation capabilities.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.FL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2025-02-14T16:59:05Z</published>
+    <arxiv:comment>v5: Characterization of DeltaProduct's state-tracking ability. Analysis of hidden state's effective rank. Improved scaling analysis. v6: Added analysis for products of RWKV-7 matrices, v6: Accepted at NeurIPS 2025</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Julien Siems</name>
+    </author>
+    <author>
+      <name>Timur Carstensen</name>
+    </author>
+    <author>
+      <name>Arber Zela</name>
+    </author>
+    <author>
+      <name>Frank Hutter</name>
+    </author>
+    <author>
+      <name>Massimiliano Pontil</name>
+    </author>
+    <author>
+      <name>Riccardo Grazzi</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2606.17830v1</id>
+    <title>Functional Equivalence in Attention: A Comprehensive Study with Applications to Linear Mode Connectivity</title>
+    <updated>2026-06-16T11:59:00Z</updated>
+    <link href="https://arxiv.org/abs/2606.17830v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2606.17830v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Neural network parameter spaces are inherently non-injective, as distinct parameter configurations can realize identical functions through functional equivalence. While this symmetry is well understood in classical fully connected and convolutional models, it becomes substantially more intricate in modern attention-based architectures. Existing analyses of multihead attention have largely focused on the vanilla formulation, overlooking positional encodings that fundamentally reshape architectural symmetries. In this work, we provide a formal study of functional equivalence in Transformers with positional encodings. Focusing on the two most widely used variants--sinusoidal and rotary positional encodings (RoPE)--we show that sinusoidal encodings preserve the equivalence structure of vanilla attention, whereas rotary encodings significantly reduce the symmetry group, thereby enhancing expressivity. This offers a principled explanation for the growing prominence of RoPE in practice. We further examine how positional encodings affect linear mode connectivity, and through an alignment algorithm, empirically demonstrate that the presence and variability of connectivity across Transformer settings crucially depend on the positional encoding.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-06-16T11:59:00Z</published>
+    <arxiv:comment>Published at the International Conference on Machine Learning (ICML 2026)</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Viet-Hoang Tran</name>
+    </author>
+    <author>
+      <name>Vinh Khanh Bui</name>
+    </author>
+    <author>
+      <name>Van-Hoan Trinh</name>
+    </author>
+    <author>
+      <name>Tan Lai Ngoc</name>
+    </author>
+    <author>
+      <name>Tan M. Nguyen</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.18966v1</id>
+    <title>The Automaton Underneath: The Additive Input Pathway Is a Parasitic Attractor for State Tracking in Householder Linear RNN</title>
+    <updated>2026-07-16T02:52:00Z</updated>
+    <link href="https://arxiv.org/abs/2609.18966v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.18966v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Linear RNNs with input-dependent Householder-product transitions (DeltaNet/DeltaProduct-class) can provably represent hard state-tracking automata, yet trained models fail to length-generalize -- a gap recent work attributes to optimization, without a causal account. We give one, in a pre-registered, within-architecture causal ablation: the same model with one term deleted -- the additive input injection $b_t = W_b e_t$. With $b_t$, models fit length 32 and collapse out-of-distribution on parity, $S_4$, $A_5$, and non-solvable $S_5$ word problems (0.20 at position 512 on $S_5$). Without it -- input acting only through the orthogonal transitions -- the same architecture learns the exact automaton: median accuracy 1.00 at 16x the training length, at every width admitted by a representation law we state and test: the minimal number of Householder factors per token equals the maximal reflection length of the task's generators in the format-pinned representation (parity 1, $S_4$ 3, $A_5$ and $S_5$ 4); below it, nothing fits. The contrast with DeltaProduct's $S_4$/$A_5$ at $n_h{=}2$ (group-element classification, $SO(3)$ realization) shows the law is representation-relative: task format is a hidden variable in state-tracking benchmarks. Two pre-registered arms locate the mechanism. (i) Initialized at a verified-exact solution with $W_b{=}0$, Adam grows the additive path and pulls the model off the exact solution; $-b$ controls stay at 1.00. (ii) Our registered prediction that the fit routes through $b_t$ fired its kill criterion: all 49 fitting seeds retain in-domain fit under $W_b{:=}0$ -- and at law-minimal width, zeroing $W_b$ at inference restores exact generalization (parity 5/5, $S_5$ 5/5, $S_4$ 4/5, $A_5$ 4/5). The additive pathway is parasitic: it destabilizes, then conceals, a correctly learned automaton. All 202 runs pre-registered; all numbers regenerate from artifacts.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.NE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-07-16T02:52:00Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Gunner Levi Howe</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2505.21749v2</id>
+    <title>Revisiting Bi-Linear State Transitions in Recurrent Neural Networks</title>
+    <updated>2025-10-24T15:06:33Z</updated>
+    <link href="https://arxiv.org/abs/2505.21749v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2505.21749v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The role of hidden units in recurrent neural networks is typically seen as modeling memory, with research focusing on enhancing information retention through gating mechanisms. A less explored perspective views hidden units as active participants in the computation performed by the network, rather than passive memory stores. In this work, we revisit bilinear operations, which involve multiplicative interactions between hidden units and input embeddings. We demonstrate theoretically and empirically that they constitute a natural inductive bias for representing the evolution of hidden states in state tracking tasks. These are the simplest type of tasks that require hidden units to actively contribute to the behavior of the network. We also show that bilinear state updates form a natural hierarchy corresponding to state tracking tasks of increasing complexity, with popular linear recurrent networks such as Mamba residing at the lowest-complexity center of that hierarchy.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2025-05-27T20:38:19Z</published>
+    <arxiv:comment>Accepted to NeurIPS 2025</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>M. Reza Ebrahimi</name>
+    </author>
+    <author>
+      <name>Roland Memisevic</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2210.14476v2</id>
+    <title>Sinusoidal Frequency Estimation by Gradient Descent</title>
+    <updated>2022-11-18T14:04:11Z</updated>
+    <link href="https://arxiv.org/abs/2210.14476v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2210.14476v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Sinusoidal parameter estimation is a fundamental task in applications from spectral analysis to time-series forecasting. Estimating the sinusoidal frequency parameter by gradient descent is, however, often impossible as the error function is non-convex and densely populated with local minima. The growing family of differentiable signal processing methods has therefore been unable to tune the frequency of oscillatory components, preventing their use in a broad range of applications. This work presents a technique for joint sinusoidal frequency and amplitude estimation using the Wirtinger derivatives of a complex exponential surrogate and any first order gradient-based optimizer, enabling end to-end training of neural network controllers for unconstrained sinusoidal models.</summary>
+    <category term="eess.SP" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.SD" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="eess.AS" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2022-10-26T04:55:04Z</published>
+    <arxiv:comment>Submitted to ICASSP 2023</arxiv:comment>
+    <arxiv:primary_category term="eess.SP"/>
+    <author>
+      <name>Ben Hayes</name>
+    </author>
+    <author>
+      <name>Charalampos Saitis</name>
+    </author>
+    <author>
+      <name>György Fazekas</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/1909.09501v2</id>
+    <title>Trivializations for Gradient-Based Optimization on Manifolds</title>
+    <updated>2019-10-24T19:42:08Z</updated>
+    <link href="https://arxiv.org/abs/1909.09501v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1909.09501v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We introduce a framework to study the transformation of problems with manifold constraints into unconstrained problems through parametrizations in terms of a Euclidean space. We call these parametrizations "trivializations". We prove conditions under which a trivialization is sound in the context of gradient-based optimization and we show how two large families of trivializations have overall favorable properties, but also suffer from a performance issue. We then introduce "dynamic trivializations", which solve this problem, and we show how these form a family of optimization methods that lie between trivializations and Riemannian gradient descent, and combine the benefits of both of them. We then show how to implement these two families of trivializations in practice for different matrix manifolds. To this end, we prove a formula for the gradient of the exponential of matrices, which can be of practical interest on its own. Finally, we show how dynamic trivializations improve the performance of existing methods on standard tasks designed to test long-term memory within neural networks.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2019-09-20T13:41:43Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Mario Lezcano-Casado</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2507.05238v3</id>
+    <title>Bridging Expressivity and Scalability with Adaptive Unitary SSMs</title>
+    <updated>2026-01-18T21:48:07Z</updated>
+    <link href="https://arxiv.org/abs/2507.05238v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2507.05238v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Recent work has revealed that state space models (SSMs), while efficient for long-sequence processing, are fundamentally limited in their ability to represent formal languages-particularly due to time-invariant and real-valued recurrence structures. In this work, we draw inspiration from adaptive and structured dynamics observed in biological neural systems and introduce the Adaptive Unitary State Space Model (AUSSM): a novel class of SSMs that leverages skew-symmetric, input-dependent recurrence to achieve unitary evolution and high expressive power. Using algebraic automata theory, we prove that AUSSM can perform modulo counting and simulate solvable group automata at precision logarithmically bounded in the input length, enabling SSMs to model a broad class of regular languages out of reach for other SSM architectures. To overcome the practical inefficiencies of adaptive recurrence, we develop a separable convolution formulation and a CUDA implementation that enables scalable parallel training. Empirically, we show that AUSSM and its hybrid variant-interleaved with Mamba-outperform prior SSMs on formal algorithmic tasks such as parity and modular arithmetic, and achieve competent performance on real-world long time-series classification benchmarks. Our results demonstrate that adaptive unitary recurrence provides a powerful and efficient inductive bias for both symbolic and continuous sequence modeling. The code is available at https://github.com/arjunkaruvally/AUSSM</summary>
+    <category term="cs.NE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2025-07-07T17:47:16Z</published>
+    <arxiv:primary_category term="cs.NE"/>
+    <author>
+      <name>Arjun Karuvally</name>
+    </author>
+    <author>
+      <name>Franz Nowak</name>
+    </author>
+    <author>
+      <name>Anderson T. Keller</name>
+    </author>
+    <author>
+      <name>Carmen Amo Alonso</name>
+    </author>
+    <author>
+      <name>Terrence J. Sejnowski</name>
+    </author>
+    <author>
+      <name>Hava T. Siegelmann</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2607.10134v1</id>
+    <title>LeRoPE: Learnable RoPE Frequencies Improve Language Modeling</title>
+    <updated>2026-07-11T05:47:23Z</updated>
+    <link href="https://arxiv.org/abs/2607.10134v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2607.10134v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Rotary Positional Encodings (RoPE) are currently the most popular positional encodings used in modern language models. RoPE rotates two-dimensional chunks of query and key vectors, operating as a function of their relative positional offset. The position-wise rates of rotation in RoPE typically follow a geometric sequence specified by a fixed base-frequency hyperparameter. Prior work has improved performance by either increasing this parameter to slow rotation or by applying RoPE to only a subset of QK dimensions. In this work we modify RoPE by learning a scalar per frequency, treating frequencies as learnable parameters rather than hyperparameters. We validate Learned RoPE by training a ladder of language models from scratch, ranging from 52M to 2.5B parameters. We observe and analyze the emergence of a high-norm, positional LeRoPE band. LeRoPE consistently outperforms RoPE and partial RoPE across all scales, with RoPE requiring 3.4% more compute (FLOPs) to match LeRoPE at the largest scale.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-07-11T05:47:23Z</published>
+    <arxiv:comment>27 pages, 10 figures, 12 tables</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Petros Karypis</name>
+    </author>
+    <author>
+      <name>Sean O'Brien</name>
+    </author>
+    <author>
+      <name>Shreyas Kadekodi</name>
+    </author>
+    <author>
+      <name>Rui Zhu</name>
+    </author>
+    <author>
+      <name>Julian McAuley</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/1707.09520v3</id>
+    <title>Orthogonal Recurrent Neural Networks with Scaled Cayley Transform</title>
+    <updated>2018-06-19T14:51:55Z</updated>
+    <link href="https://arxiv.org/abs/1707.09520v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1707.09520v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Recurrent Neural Networks (RNNs) are designed to handle sequential data but suffer from vanishing or exploding gradients. Recent work on Unitary Recurrent Neural Networks (uRNNs) have been used to address this issue and in some cases, exceed the capabilities of Long Short-Term Memory networks (LSTMs). We propose a simpler and novel update scheme to maintain orthogonal recurrent weight matrices without using complex valued matrices. This is done by parametrizing with a skew-symmetric matrix using the Cayley transform. Such a parametrization is unable to represent matrices with negative one eigenvalues, but this limitation is overcome by scaling the recurrent weight matrix by a diagonal matrix consisting of ones and negative ones. The proposed training scheme involves a straightforward gradient calculation and update step. In several experiments, the proposed scaled Cayley orthogonal recurrent neural network (scoRNN) achieves superior results with fewer trainable parameters than other unitary RNNs.</summary>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2017-07-29T14:37:48Z</published>
+    <arxiv:comment>12 pages</arxiv:comment>
+    <arxiv:primary_category term="stat.ML"/>
+    <author>
+      <name>Kyle Helfrich</name>
+    </author>
+    <author>
+      <name>Devin Willmott</name>
+    </author>
+    <author>
+      <name>Qiang Ye</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2603.01959v2</id>
+    <title>The Expressive Limits of Diagonal SSMs for State-Tracking</title>
+    <updated>2026-08-14T17:28:22Z</updated>
+    <link href="https://arxiv.org/abs/2603.01959v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2603.01959v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>State-Space Models (SSMs) have recently been shown to achieve strong empirical performance on a variety of long-range sequence modeling tasks while remaining efficient and highly-parallelizable. However, the theoretical understanding of their expressive power remains limited. In this work, we study the expressivity of input-Dependent Complex-valued Diagonal (DCD) SSMs on sequential state-tracking tasks. We show that single-layer DCD SSMs cannot express state-tracking of any non-Abelian group at finite precision. More generally, we show that $k$-layer DCD SSMs can express state-tracking of a group if and only if that group has a subnormal series of length $k$, with Abelian factors. That is, we identify the precise expressivity range of $k$-layer DCD SSMs within the solvable groups. Empirically, we find that multi-layer models often fail to learn state-tracking for non-Abelian groups, highlighting a gap between expressivity and learnability.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-03-02T15:08:14Z</published>
+    <arxiv:comment>18 pages, 5 figures, 4 tables. Accepted at ICLR 2026</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Mehran Shakerinava</name>
+    </author>
+    <author>
+      <name>Behnoush Khavari</name>
+    </author>
+    <author>
+      <name>Siamak Ravanbakhsh</name>
+    </author>
+    <author>
+      <name>Sarath Chandar</name>
+    </author>
+  </entry>
+</feed>
