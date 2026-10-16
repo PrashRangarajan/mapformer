@@ -105,6 +105,13 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
 - Do not claim: "the cost follows the relative sign" or "no cost without an inverse pair" (Lemma 1's learnability corollary
   is not confirmed); the barrier-at-zero account does not explain |.|'s difficulty on +1/+2.
 
+## Update 2026-10-16: ROBUST (`ROBUST_RESULTS.md`, registered): PARTLY UNMEASURED
+- Cost holds: ring default 1/8 vs 8/8, wd 0 0/8 vs 8/8, lr /3 0/8 vs 6/8; torus 2 layers d 256 2/8 vs 8/8 (acc -0.032, p 0.0005).
+- lr x3: UNMEASURED (4/8 vs 8/8, acc 0.987 vs 1.000). Torus at scale: accuracy gap a quarter of 1-layer (out-of-batch), 6/8
+  |.| descending, SOLVED contrast fails at loss 0.1 (5/8 vs 8/8): part of the cost may be speed at scale.
+- Do not claim: "robust to the recipe" or "the cost does not depend on scale"; say "holds under wd 0 and lr /3 and at 2 layers
+  d 256; shrinks at lr x3 and in accuracy at scale".
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).

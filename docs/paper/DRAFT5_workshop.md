@@ -13,7 +13,7 @@ steps. Exact |.| solutions exist at a trained scale and training keeps (ring) or
 class solves 0-1 of 8. A per-channel identity shows the barrier removes, for an inverse pair, the through-zero route to
 cancellation, not the function. On the ring signed steps take that route collectively; |.| steps learn reliably only from a
 start whose opposite angles sum past pi, which fails on the torus. Where no step need cross zero (moves +1/+2), both classes
-struggle and the comparison is unmeasured. Negatives hold within our budgets (300-900 epochs, one recipe per task).
+struggle and the comparison is unmeasured. The cost holds without weight decay, at a third of the learning rate and in a 2-layer d 256 torus model; it shrinks at three times the learning rate. Negatives hold within our budgets (300-900 epochs).
 
 ## 1. Introduction
 
@@ -122,7 +122,14 @@ The codes show what is missing (Fig. 1, post hoc): signed models cancel opposite
 means), |.| and softplus models in 3-11%, including the runs that solve. Observation-step-free versions fail the same way:
 ring 0/8 vs 8/8 (two batches), torus 0/8 vs 8/8 (-0.120) and 1/8 vs 8/8 (-0.104).
 
-[ROBUST batch pending: recipe robustness on the ring (weight decay 0, lr x3, lr /3) and a 2-layer d 256 torus contrast; fill only from the registered analysis]
+*Recipe and scale (registered, fresh seeds; appendix C).* On the observation-step-free ring the cost holds with weight
+decay 0 (|.| 0/8 vs 8/8, -0.127) and at a third of the learning rate (0/8 vs 6/8, Fisher p 0.007), and replicates at the
+default (1/8 vs 8/8). At three times the learning rate it shrinks and is unmeasured (4/8 vs 8/8, Fisher p 0.077; accuracy
+0.987 vs 1.000). A larger torus model (2 layers, d 256, 8x the parameters) keeps it (2/8 vs 8/8, Fisher p 0.007; accuracy
+0.967 vs 0.999, p 0.0005), but the accuracy gap is a quarter of the one-layer gap (an out-of-batch comparison), 6/8 |.| runs
+were still descending at 900 epochs, and the SOLVED contrast does not survive a 0.1 loss threshold (5/8 vs 8/8; post hoc):
+at scale part of the cost may be speed. In every cell the |.| runs that solve do so without the wrapped code (cancelling
+share 0.04-0.13 vs 0.43-1.00 signed).
 
 ### 4.2 The |.| solution exists and survives training
 
@@ -243,9 +250,9 @@ attention on our torus.
 
 ## 6. Limitations
 
-"Does not learn" is scoped to our budgets and one recipe per task; 3x the ring budget did not help, and learning rate,
-weight decay from scratch, optimiser and depth were not varied for the sign contrast.
-[ROBUST batch pending: recipe robustness on the ring (weight decay 0, lr x3, lr /3) and a 2-layer d 256 torus contrast; fill only from the registered analysis]
+"Does not learn" is scoped to our budgets; 3x the ring budget did not help, and a one-factor recipe check (Sec. 4.1) holds the cost without weight decay and at a third of the learning rate but finds it
+shrinking at three times the learning rate (unmeasured) and, in accuracy, in a 2-layer d 256 torus model whose |.| runs
+were mostly still descending; optimisers, larger learning rates and longer budgets at scale were not tested.
 Small models (one layer, 2 heads, d = 128, a rank-4 latent shared across heads), synthetic tasks, n = 8, no recurrent or SSM
 baselines, no exp(.)-type (LRU) parameterisation. On the ring the evidence is mainly a loss criterion, and at p_plus 0.5 it
 does not survive a looser threshold (0.1; post hoc). On the torus the barrier class has less latent slack (the wrapped code

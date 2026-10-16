@@ -1,0 +1,50 @@
+== ring (+1/-1, 32 cells, T = 128, 300 epochs), per seed: accuracy T = 128 and class ==
+seed | def:SO | def:AO | wd0:SO | wd0:AO | lrx3:SO | lrx3:AO | lrd3:SO | lrd3:AO
+1400 | 1.0000 SOLV | 0.8230 STAL | 1.0000 SOLV | 0.9078 DESC | 1.0000 SOLV | 1.0000 DESC | 1.0000 SOLV | 0.8893 STAL
+1401 | 1.0000 SOLV | 0.9155 STAL | 1.0000 SOLV | 0.6239 STAL | 1.0000 SOLV | 0.9596 STAL | 0.6194 STAL | 0.6221 STAL
+1402 | 1.0000 SOLV | 0.9237 STAL | 1.0000 SOLV | 0.8878 STAL | 1.0000 SOLV | 0.9702 STAL | 1.0000 SOLV | 0.8319 STAL
+1403 | 1.0000 SOLV | 0.9136 STAL | 1.0000 SOLV | 0.8800 STAL | 1.0000 SOLV | 0.9995 SOLV | 1.0000 SOLV | 0.9167 STAL
+1404 | 1.0000 SOLV | 0.9118 STAL | 1.0000 SOLV | 0.9119 STAL | 1.0000 SOLV | 1.0000 SOLV | 1.0000 SOLV | 0.8313 STAL
+1405 | 1.0000 SOLV | 0.8791 STAL | 1.0000 SOLV | 0.8858 STAL | 1.0000 SOLV | 0.9650 STAL | 1.0000 SOLV | 0.8526 STAL
+1406 | 1.0000 SOLV | 0.9211 DESC | 1.0000 SOLV | 0.9110 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.9794 STAL | 0.9062 STAL
+1407 | 1.0000 SOLV | 0.9997 SOLV | 1.0000 SOLV | 0.9735 DESC | 1.0000 SOLV | 0.9998 SOLV | 1.0000 SOLV | 0.8801 STAL
+
+== torus (d 256, 2 layers, T = 1024, 900 epochs), per seed: accuracy T = 1024 and class ==
+1400 | SO 1.0000 SOLV | AO 0.9941 DESC
+1401 | SO 1.0000 SOLV | AO 0.9981 SOLV
+1402 | SO 0.9941 SOLV | AO 0.9705 DESC
+1403 | SO 1.0000 SOLV | AO 0.9454 DESC
+1404 | SO 1.0000 SOLV | AO 0.9935 SOLV
+1405 | SO 1.0000 SOLV | AO 0.9706 DESC
+1406 | SO 1.0000 SOLV | AO 0.9098 DESC
+1407 | SO 1.0000 SOLV | AO 0.9544 DESC
+
+== registered contrasts (AO vs SO per cell) ==
+ring|def (lr 0.001, wd 0.05): SIGNED LEARNS BETTER -- AO 0.9110 SOLVED 1/8 vs SO 1.0000 SOLVED 8/8; d -0.0890 [95% CI -0.125, -0.055] (perm p 0.0002); Fisher p 0.0014
+ring|wd0 (lr 0.001, wd 0): SIGNED LEARNS BETTER -- AO 0.8727 SOLVED 0/8 vs SO 1.0000 SOLVED 8/8; d -0.1273 [95% CI -0.200, -0.075] (perm p 0.0002); Fisher p 0.0002
+ring|lrx3 (lr 0.003, wd 0.05): UNMEASURED -- AO 0.9868 SOLVED 4/8 vs SO 1.0000 SOLVED 8/8; d -0.0132 [95% CI -0.025, -0.005] (perm p 0.0256); Fisher p 0.0769
+ring|lrd3 (lr 0.000333333, wd 0.05): SIGNED LEARNS BETTER -- AO 0.8413 SOLVED 0/8 vs SO 0.9498 SOLVED 6/8; d -0.1086 [95% CI -0.215, +0.010] (perm p 0.0886); Fisher p 0.0070
+torus|d256L2 (d 256, 2 layers, 2 heads): SIGNED LEARNS BETTER -- AO 0.9671 SOLVED 2/8 vs SO 0.9993 SOLVED 8/8; d -0.0322 [95% CI -0.055, -0.015] (perm p 0.0005); Fisher p 0.0070
+
+Reading: PARTLY UNMEASURED (cost in ring|def, ring|wd0, ring|lrd3, torus|d256L2; UNMEASURED ring|lrx3)
+
+== secondaries (declared; no verdict) ==
+floor: predict blank ~0.50 (p_empty 0.5); CANCEL's measured +1/-1 ring floor 0.554; torus always-blank 0.512
+ring|def  SO: acc 4T 0.9958; loss AUC 0.117; SOLVED at loss 0.1 8/8; classes SOLV SOLV SOLV SOLV SOLV SOLV SOLV SOLV; wrap-cancel share 0.85; opposite-sign share 0.99
+ring|def  AO: acc 4T 0.7731; loss AUC 0.607; SOLVED at loss 0.1 1/8; classes STAL STAL STAL STAL STAL STAL DESC SOLV; wrap-cancel share 0.07; opposite-sign share 0.04
+   ring|def threshold sensitivity: SOLVED at loss 0.1 AO 1/8 vs SO 8/8 (Fisher p 0.0014)
+ring|wd0  SO: acc 4T 0.9779; loss AUC 0.150; SOLVED at loss 0.1 8/8; classes SOLV SOLV SOLV SOLV SOLV SOLV SOLV SOLV; wrap-cancel share 0.43; opposite-sign share 0.86
+ring|wd0  AO: acc 4T 0.7584; loss AUC 0.796; SOLVED at loss 0.1 1/8; classes DESC STAL STAL STAL STAL STAL STAL DESC; wrap-cancel share 0.11; opposite-sign share 0.05
+   ring|wd0 threshold sensitivity: SOLVED at loss 0.1 AO 1/8 vs SO 8/8 (Fisher p 0.0014)
+ring|lrx3 SO: acc 4T 0.9998; loss AUC 0.077; SOLVED at loss 0.1 8/8; classes SOLV SOLV SOLV SOLV SOLV SOLV SOLV SOLV; wrap-cancel share 1.00; opposite-sign share 1.00
+ring|lrx3 AO: acc 4T 0.9343; loss AUC 0.453; SOLVED at loss 0.1 4/8; classes DESC STAL STAL SOLV SOLV STAL SOLV SOLV; wrap-cancel share 0.13; opposite-sign share 0.07
+   ring|lrx3 threshold sensitivity: SOLVED at loss 0.1 AO 4/8 vs SO 8/8 (Fisher p 0.0769)
+ring|lrd3 SO: acc 4T 0.9110; loss AUC 0.294; SOLVED at loss 0.1 7/8; classes SOLV STAL SOLV SOLV SOLV SOLV STAL SOLV; wrap-cancel share 0.69; opposite-sign share 0.79
+ring|lrd3 AO: acc 4T 0.7466; loss AUC 0.825; SOLVED at loss 0.1 0/8; classes STAL STAL STAL STAL STAL STAL STAL STAL; wrap-cancel share 0.04; opposite-sign share 0.03
+   ring|lrd3 threshold sensitivity: SOLVED at loss 0.1 AO 0/8 vs SO 7/8 (Fisher p 0.0014)
+torus SO: acc 2T (2048, OOD) 0.9827; loss AUC 0.070; SOLVED at loss 0.1 8/8; classes SOLV SOLV SOLV SOLV SOLV SOLV SOLV SOLV; wrap-cancel share 1.00; opposite-sign share 1.00
+   strata SO: plain_lag<128 1.000; plain_lag>=128 0.999; wrap 0.992
+torus AO: acc 2T (2048, OOD) 0.8876; loss AUC 0.319; SOLVED at loss 0.1 5/8; classes DESC SOLV DESC DESC SOLV DESC DESC DESC; wrap-cancel share 0.11; opposite-sign share 0.06
+   strata AO: plain_lag<128 0.989; plain_lag>=128 0.911; wrap 0.799
+   torus threshold sensitivity: SOLVED at loss 0.1 AO 5/8 vs SO 8/8 (Fisher p 0.2000)
+descriptive, across recipes (same seeds, same initial weights and data stream per seed): AO SOLVED def 1/8, wd0 0/8, lrx3 4/8, lrd3 0/8; SO SOLVED def 8/8, wd0 8/8, lrx3 8/8, lrd3 6/8

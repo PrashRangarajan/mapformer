@@ -5,19 +5,21 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-16 04:10. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-16 15:00. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- ROBUST (`ROBUST_PREREG.md` + Amendment 1, launched 2026-10-16 04:07, ~10 h): ring sign contrast under wd 0 / lr x3 / lr /3
-  + in-batch default (64 runs) and torus at 2 layers d 256 (16 runs, one per GPU). Marker `.robust_done`, log `robust.log`,
-  output `ROBUST_ANALYSIS.txt` / `ROBUST_VERDICTS.json`. Pilot (s1490): torus SO SOLVED, AO DESCENDING.
-- Draft 5 (`docs/paper/DRAFT5_workshop.md`, `APPENDIX_draft5.md`) has ROBUST placeholders in 4.1 and Limitations.
+- Nothing running (ROBUST finished 2026-10-16 14:26).
+- Draft 5 (`docs/paper/DRAFT5_workshop.md`, `APPENDIX_draft5.md`) has ROBUST filled (4.1, Limitations, abstract, appendix C13).
 - Draft 4 (`docs/paper/DRAFT4_workshop.md`) complete incl. Sec. 4.5 (GAUGE) and the end-to-end read (`docs/paper/READ_draft4.md`:
   shareable with co-authors; not submittable: main text 4,302 words vs ~3,500, appendices A-D, F-I still plans; title and
   contribution 3 lean on an account GAUGE did not confirm). Venues: `docs/paper/VENUES_2026-10-15.md` (ICLR 2027 workshop
   list out 29 Nov 2026, papers ~1 Feb 2027; CCN 2027 4 Feb; CPAL Spotlight 18 Jan; Cosyne abstracts 18 Oct 2026).
 - Mock review of draft 3: `docs/paper/MOCK_REVIEW_draft3.md` (6/10).
+
+## Last results (2026-10-16): ROBUST (`ROBUST_RESULTS.md`): PARTLY UNMEASURED
+- Sign cost holds with wd 0, lr /3, and on the torus at 2 layers d 256 (2/8 vs 8/8, but acc gap only -0.032, 6/8 |.| still
+  descending); at lr x3 it shrinks to UNMEASURED (4/8 vs 8/8, -0.013). Own-stream torus retrace floor 0.844; all runs above.
 
 ## Last results (2026-10-15): GAUGE (`GAUGE_RESULTS.md`): AS FALLS
 - Sign cost replicates on +1/-1 (|.| 1/8 vs 8/8); on +1/+2 (same-direction moves) UNMEASURED: |.| 2/8 vs signed 5/8, harder

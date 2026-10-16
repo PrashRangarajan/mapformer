@@ -430,6 +430,51 @@ Rules for the wall check and the channel-by-channel flow were fixed before the r
 
 ---
 
+### C13. Recipe and scale (Sec. 4.1; `ROBUST_RESULTS.md`, `ROBUST_ANALYSIS.txt`; registered, seeds 1400-1407)
+
+Observation-step-free SignedAO / AbsAO. Ring: `train_gauge.py --deltas=1,-1`, 32 cells, T = 128, 300 epochs, four recipes.
+Torus: GENERALITY's recipe at 2 layers, d_model 256 (1.59M parameters), T = 1024, 900 epochs. Reading: PARTLY UNMEASURED.
+
+Registered decisions (AO vs SO; Fisher on SOLVED, permutation on accuracy)
+| cell | recipe | AO acc, SOLVED | SO acc, SOLVED | d [95% CI] | perm p | Fisher p | label |
+|---|---|---|---|---|---|---|---|
+| ring def | lr 1e-3, wd 0.05 | 0.911, 1/8 | 1.000, 8/8 | -0.089 [-0.125, -0.055] | 0.0002 | 0.0014 | **SIGNED LEARNS BETTER** |
+| ring wd0 | lr 1e-3, wd 0 | 0.873, 0/8 | 1.000, 8/8 | -0.127 [-0.200, -0.075] | 0.0002 | 0.0002 | **SIGNED LEARNS BETTER** |
+| ring lrx3 | lr 3e-3, wd 0.05 | 0.987, 4/8 | 1.000, 8/8 | -0.013 [-0.025, -0.005] | 0.026 | 0.077 | **UNMEASURED** |
+| ring lrd3 | lr 3.3e-4, wd 0.05 | 0.841, 0/8 | 0.950, 6/8 | -0.109 [-0.215, +0.010] | 0.089 | 0.0070 | **SIGNED LEARNS BETTER** |
+| torus d256L2 | 2 layers, d 256 | 0.967, 2/8 | 0.999, 8/8 | -0.032 [-0.055, -0.015] | 0.0005 | 0.0070 | **SIGNED LEARNS BETTER** |
+
+Gates passed in every cell (SO >= 4/8). lrx3 is UNMEASURED, not NO SIGN COST: SOLVED differs by 4 (Fisher p 0.077) and the
+accuracy gap (perm p 0.026) is smaller than the registered 0.05 materiality.
+
+Declared secondaries:
+
+| cell | arm | acc 4T (ring 512) / 2T (torus 2048) | loss AUC | SOLVED at loss 0.1 | wrap-cancel | opposite-sign |
+|---|---|---|---|---|---|---|
+| ring def | SO / AO | 0.996 / 0.773 | 0.117 / 0.607 | 8/8 / 1/8 | 0.85 / 0.07 | 0.99 / 0.04 |
+| ring wd0 | SO / AO | 0.978 / 0.758 | 0.150 / 0.796 | 8/8 / 1/8 | 0.43 / 0.11 | 0.86 / 0.05 |
+| ring lrx3 | SO / AO | 1.000 / 0.934 | 0.077 / 0.453 | 8/8 / 4/8 | 1.00 / 0.13 | 1.00 / 0.07 |
+| ring lrd3 | SO / AO | 0.911 / 0.747 | 0.294 / 0.825 | 7/8 / 0/8 | 0.69 / 0.04 | 0.79 / 0.03 |
+| torus | SO / AO | 0.983 / 0.888 | 0.070 / 0.319 | 8/8 / 5/8 | 1.00 / 0.11 | 1.00 / 0.06 |
+
+Per seed (accuracy at the training length, class):
+```
+ring  seed | def:SO | def:AO | wd0:SO | wd0:AO | lrx3:SO | lrx3:AO | lrd3:SO | lrd3:AO
+1400 | 1.0000 SOLV | 0.8230 STAL | 1.0000 SOLV | 0.9078 DESC | 1.0000 SOLV | 1.0000 DESC | 1.0000 SOLV | 0.8893 STAL
+1401 | 1.0000 SOLV | 0.9155 STAL | 1.0000 SOLV | 0.6239 STAL | 1.0000 SOLV | 0.9596 STAL | 0.6194 STAL | 0.6221 STAL
+1402 | 1.0000 SOLV | 0.9237 STAL | 1.0000 SOLV | 0.8878 STAL | 1.0000 SOLV | 0.9702 STAL | 1.0000 SOLV | 0.8319 STAL
+1403 | 1.0000 SOLV | 0.9136 STAL | 1.0000 SOLV | 0.8800 STAL | 1.0000 SOLV | 0.9995 SOLV | 1.0000 SOLV | 0.9167 STAL
+1404 | 1.0000 SOLV | 0.9118 STAL | 1.0000 SOLV | 0.9119 STAL | 1.0000 SOLV | 1.0000 SOLV | 1.0000 SOLV | 0.8313 STAL
+1405 | 1.0000 SOLV | 0.8791 STAL | 1.0000 SOLV | 0.8858 STAL | 1.0000 SOLV | 0.9650 STAL | 1.0000 SOLV | 0.8526 STAL
+1406 | 1.0000 SOLV | 0.9211 DESC | 1.0000 SOLV | 0.9110 STAL | 1.0000 SOLV | 1.0000 SOLV | 0.9794 STAL | 0.9062 STAL
+1407 | 1.0000 SOLV | 0.9997 SOLV | 1.0000 SOLV | 0.9735 DESC | 1.0000 SOLV | 0.9998 SOLV | 1.0000 SOLV | 0.8801 STAL
+torus 1400 SO 1.0000 SOLV | AO 0.9941 DESC     1404 SO 1.0000 SOLV | AO 0.9935 SOLV
+      1401 SO 1.0000 SOLV | AO 0.9981 SOLV     1405 SO 1.0000 SOLV | AO 0.9706 DESC
+      1402 SO 0.9941 SOLV | AO 0.9705 DESC     1406 SO 1.0000 SOLV | AO 0.9098 DESC
+      1403 SO 1.0000 SOLV | AO 0.9454 DESC     1407 SO 1.0000 SOLV | AO 0.9544 DESC
+```
+
+
 ## D. Constructions
 
 ### D1. Per channel (B0, P1.0)

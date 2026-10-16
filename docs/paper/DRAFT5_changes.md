@@ -196,3 +196,9 @@ Lettering kept from draft 4's plan; E stays the separate theory file and is cros
   above the |.| mean 0.821 (3/8 runs below) and softplus 0.781 (4/8); ring retrace 0.860 at p_plus 0.5 lies below |.|
   (0.95-0.97). Sec. 4.1 now prints both; appendix B's "Which stream" note replaced by the computed values; the gates
   sentence ("each above its floor") qualified: one-layer index RoPE is below the retrace floor on the torus and ring.
+
+## 2026-10-16 15:00: ROBUST filled (`ROBUST_RESULTS.md`, registered)
+- Sec. 4.1: new paragraph "Recipe and scale" from the registered analysis (cost holds at wd 0, lr /3, torus 2 layers d 256;
+  unmeasured at lr x3; at scale the accuracy gap is small, 6/8 |.| descending, SOLVED fails at loss 0.1 post hoc).
+- Abstract: "one recipe per task" replaced by the recipe/scale sentence. Limitations: the "one recipe" scope replaced.
+- Appendix C13 added (tables copied from ROBUST_RESULTS.md).
