@@ -5,11 +5,14 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-15 23:00. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-16 04:10. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- Nothing running (GAUGE finished 2026-10-15 22:40).
+- ROBUST (`ROBUST_PREREG.md` + Amendment 1, launched 2026-10-16 04:07, ~10 h): ring sign contrast under wd 0 / lr x3 / lr /3
+  + in-batch default (64 runs) and torus at 2 layers d 256 (16 runs, one per GPU). Marker `.robust_done`, log `robust.log`,
+  output `ROBUST_ANALYSIS.txt` / `ROBUST_VERDICTS.json`. Pilot (s1490): torus SO SOLVED, AO DESCENDING.
+- Draft 5 (`docs/paper/DRAFT5_workshop.md`, `APPENDIX_draft5.md`) has ROBUST placeholders in 4.1 and Limitations.
 - Draft 4 (`docs/paper/DRAFT4_workshop.md`) complete incl. Sec. 4.5 (GAUGE) and the end-to-end read (`docs/paper/READ_draft4.md`:
   shareable with co-authors; not submittable: main text 4,302 words vs ~3,500, appendices A-D, F-I still plans; title and
   contribution 3 lean on an account GAUGE did not confirm). Venues: `docs/paper/VENUES_2026-10-15.md` (ICLR 2027 workshop
