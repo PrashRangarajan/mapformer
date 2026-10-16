@@ -25,6 +25,7 @@ TORUS_CFG = {"d_model": 256, "n_layers": 2, "n_heads": 2, "n_steps": 1024, "lr":
 PAIRS_TORUS = ((0, 1), (2, 3))
 CELLS = ("ring|def", "ring|wd0", "ring|lrx3", "ring|lrd3", "torus|d256L2")
 SLB, NSC, UNM = "SIGNED LEARNS BETTER", "NO SIGN COST", "UNMEASURED"
+NLB = "NON-NEGATIVE LEARNS BETTER"   # Amendment 1 (audit MAJOR 1)
 
 
 def cell_label(ao_acc, so_acc, k_ao, k_so, n):
@@ -35,8 +36,10 @@ def cell_label(ao_acc, so_acc, k_ao, k_so, n):
         lab = f"UNREADABLE (SO SOLVED {k_so} < 4)"
     elif (pf < 0.05 and k_so > k_ao) or (pp < 0.05 and d <= -0.05):
         lab = SLB
-    elif k_ao >= k_so - 1 and ao_acc.mean() >= so_acc.mean() - 0.01:
-        lab = NSC
+    elif (pf < 0.05 and k_ao > k_so) or (pp < 0.05 and d >= 0.05):
+        lab = NLB
+    elif k_so >= 6 and k_ao >= k_so - 1 and ao_acc.mean() >= so_acc.mean() - 0.01:
+        lab = NSC                                       # Amendment 1: only where a cost could have fired (SO >= 6/8)
     else:
         lab = UNM
     return lab, {"d": d, "perm_p": pp, "fisher_p": pf}
@@ -47,11 +50,15 @@ def reading(labels):
     ring = [c for c in CELLS if c.startswith("ring")]
     if labels["ring|def"].startswith("UNREADABLE"):
         return "UNREADABLE (the in-batch default ring reference failed its gate)"
-    nsc = [c for c in CELLS if labels[c] == NSC]
+    if labels["ring|def"] in (NSC, NLB):                 # Amendment 1 (audit MAJOR 2)
+        return f"DEFAULT NOT REPLICATED (ring|def reads {labels['ring|def']})"
+    if labels["ring|def"] == UNM:
+        return "REFERENCE UNMEASURED (ring|def reads UNMEASURED)"
+    nsc = [c for c in CELLS if labels[c] in (NSC, NLB)]
     if nsc:
         r, t = [c for c in nsc if c in ring], [c for c in nsc if c not in ring]
         kind = " AND ".join(x for x, y in (("RECIPE-DEPENDENT", r), ("SCALE-DEPENDENT", t)) if y)
-        return f"{kind} (NO SIGN COST in {', '.join(nsc)})"
+        return f"{kind} ({'; '.join(f'{labels[c]} in {c}' for c in nsc)})"
     if all(labels[c] == SLB for c in CELLS):
         return "ROBUST"
     unr = [c for c in CELLS if labels[c].startswith("UNREADABLE")]
@@ -70,20 +77,23 @@ def selftest():
     n = 8
     hi, lo = [1.0] * n, [0.9] * n
     mid = [0.97, 0.99, 1.0, 0.95, 1.0, 0.98, 0.96, 1.0]
-    cases = {"SLB": (lo, hi, 1, 8), "NSC": (hi, hi, 8, 8), "UNM": (mid, hi, 5, 8), "UNR": (lo, lo, 0, 3)}
+    cases = {"SLB": (lo, hi, 1, 8), "NSC": (hi, hi, 8, 8), "UNM": (mid, hi, 5, 8), "UNR": (lo, lo, 0, 3),
+             "NLB": (hi, lo, 8, 4), "UNM45": (hi, hi, 4, 4)}
     got = {k: cell_label(*v, n)[0] for k, v in cases.items()}
     for k, v in got.items():
         print(f"selftest cell {k}: {v}")
     assert got["SLB"] == SLB and got["NSC"] == NSC and got["UNM"] == UNM and got["UNR"].startswith("UNREADABLE")
+    assert got["NLB"] == NLB and got["UNM45"] == UNM      # Amendment 1: SO 4/8, AO 4/8 at equal accuracy is UNMEASURED
     S, N, U, X = SLB, NSC, UNM, got["UNR"]
     for labs in ((S, S, S, S, S), (S, N, S, S, S), (S, S, S, S, N), (S, N, S, S, N), (S, S, S, X, S), (S, U, S, X, S),
-                 (X, S, S, S, S), (S, S, U, S, U), (S, S, X, X, S)):
+                 (X, S, S, S, S), (S, S, U, S, U), (S, S, X, X, S), (N, S, S, S, S), (U, S, S, S, S),
+                 (S, S, S, got["NLB"], S)):
         L = dict(zip(CELLS, labs))
         print(f"selftest reading {[l[:4] for l in labs]}: {reading(L)}")
     print("selftest passed: every cell label and every reading reached")
 
 
-def ring_runs(root, recipe, seeds, epochs):
+def ring_runs(root, recipe, seeds, epochs, n_batches=98):
     lr, wd = RECIPES[recipe]; R = {}
     for arm in RING_ARMS:
         for s in seeds:
@@ -93,6 +103,8 @@ def ring_runs(root, recipe, seeds, epochs):
             assert (A["arm"], A["seed"], tuple(b["config"]["deltas"])) == (arm, s, (1, -1)), (d, A)
             assert abs(A["lr"] - lr) < 1e-9 and abs(A.get("weight_decay", 0.05) - wd) < 1e-12, (d, A["lr"], A.get("weight_decay"))
             assert A["epochs"] == epochs and len(b["losses"]) == epochs, (d, A["epochs"], len(b["losses"]))
+            want = {"size": 32, "n_steps": 128, "batch_size": 128, "n_batches": n_batches, "data_workers": 3}  # Amendment 1
+            assert all(A.get(k) == v for k, v in want.items()), (d, {k: A.get(k) for k in want})
             k = classify_run(b["losses"]); k10 = classify_run(b["losses"], solved_loss=0.1)
             R[arm, s] = {"acc": ev["eval"]["128"]["acc"], "acc4": ev["eval"]["512"]["acc"], "solved": k["registered"] == "SOLVED",
                          "solved10": k10["registered"] == "SOLVED", "cls": k["cls"], "auc": float(np.mean(b["losses"])),
@@ -108,7 +120,11 @@ def torus_runs(root, ev_dir, seeds, epochs, n_batches=98):
         for s in seeds:
             b = torch.load(f"{root}/torus/{arm}/p0/{V}_s{s}/{V}.pt", map_location="cpu", weights_only=False)
             c = b["config"]
-            bad = {k: (c.get(k), v) for k, v in want.items() if c.get(k) != v}
+            want_x = {"grid_size": 64, "n_obs_types": 16, "n_landmarks": 0, "init_from": None, "data_seed_offset": 0,
+                      "deterministic": False, "p_empty": 0.5}           # Amendment 1 (audit MINOR 5)
+            bad = {k: (c.get(k), v) for k, v in {**want, **want_x}.items() if c.get(k) != v}
+            if c["args"].get("data_workers") != 3:
+                bad["data_workers"] = (c["args"].get("data_workers"), 3)
             assert not bad and b["variant"] == V and b["seed"] == s and c["epochs"] == epochs and len(b["losses"]) == epochs, \
                 (arm, s, bad, c["epochs"], len(b["losses"]))
             acc = {T: dict((x[0], x[1]) for x in ev[f"0.0|{V}|{T}"])[s] for T in (1024, 2048)}
@@ -152,6 +168,7 @@ def main():
     ap.add_argument("--ring-epochs", type=int, default=300)
     ap.add_argument("--torus-epochs", type=int, default=900)
     ap.add_argument("--torus-n-batches", type=int, default=98, help="smoke only")
+    ap.add_argument("--ring-n-batches", type=int, default=98, help="smoke only")
     ap.add_argument("--json-out", default=f"{REPO}/ROBUST_VERDICTS.json")
     ap.add_argument("--no-json", action="store_true")
     ap.add_argument("--selftest", action="store_true")
@@ -159,7 +176,7 @@ def main():
     if a.selftest:
         selftest(); return
     lo, _, hi = a.seeds.partition("-"); seeds = list(range(int(lo), int(hi or lo) + 1)); n = len(seeds)
-    RR = {r: ring_runs(a.root, r, seeds, a.ring_epochs) for r in RECIPES}
+    RR = {r: ring_runs(a.root, r, seeds, a.ring_epochs, a.ring_n_batches) for r in RECIPES}
     TR = torus_runs(a.root, a.eval_dir, seeds, a.torus_epochs, a.torus_n_batches)
 
     print(f"== ring (+1/-1, 32 cells, T = 128, {a.ring_epochs} epochs), per seed: accuracy T = 128 and class ==")

@@ -39,6 +39,7 @@ running(){ ps -u "$USER" -o comm=,args= | awk -v o="--output-dir $1" '$1=="pytho
 declare -A VAR=([SO]=SignedAO4_r4 [AO]=AbsAO4_r4)
 declare -A LR=([def]=1e-3 [wd0]=1e-3 [lrx3]=3e-3 [lrd3]=3.333333e-4)
 declare -A WD=([def]=0.05 [wd0]=0 [lrx3]=0.05 [lrd3]=0.05)
+EVDEV="cuda:${DRV_GPUS%% *}"   # Amendment 1 (audit MINOR 6)
 torus(){  # arm seed
   local A="$1" S="$2" V="${VAR[$1]}" OUT="$R/torus/$1/p0/${VAR[$1]}_s$2" G
   [ -f "$OUT/$V.pt" ] && { _drv_log "skip torus $A s$S (done)"; return 0; }
@@ -72,10 +73,10 @@ NF=0; for f in "${REQ[@]}"; do [ -f "$f" ] && NF=$((NF + 1)); done
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before the evaluation"
 for A in SO AO; do
   python3 -u -m mapformer.eval_noise_refine --runs-dir "$R/torus/$A" --variants "${VAR[$A]}" --noises 0.0 --seeds "${SEEDS[@]}" \
-    --lengths 1024 2048 --n-trials 100 --device cuda:0 --title "ROBUST torus $A (d 256, 2 layers)" \
+    --lengths 1024 2048 --n-trials 100 --device "$EVDEV" --title "ROBUST torus $A (d 256, 2 layers)" \
     --out "$REPO/ROBUST_TORUS_$A.md" >> "$LOG" 2>&1 || drv_fail "eval $A"
   python3 -u -m mapformer.eval_rank_strata --runs-dir "$R/torus/$A" --variants "${VAR[$A]}" --seeds "${SEEDS[@]}" --lengths 1024 \
-    --n-trials 100 --device cuda:0 --check-json "$REPO/ROBUST_TORUS_$A.json" --out "$REPO/ROBUST_TORUS_${A}_STRATA.json" \
+    --n-trials 100 --device "$EVDEV" --check-json "$REPO/ROBUST_TORUS_$A.json" --out "$REPO/ROBUST_TORUS_${A}_STRATA.json" \
     >> "$LOG" 2>&1 || drv_fail "strata $A"
 done
 CUDA_VISIBLE_DEVICES="" python3 -u -m mapformer.analyze_robust > "$REPO/ROBUST_ANALYSIS.txt" 2>&1 || drv_fail analyze

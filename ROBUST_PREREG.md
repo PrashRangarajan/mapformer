@@ -140,3 +140,37 @@ contrast does not depend on it.
 3. Torus at one run per GPU (not "fewer than ring" in general): measured GPU-bound; concurrency lowers throughput.
 4. Readings INSUFFICIENT and ROBUST WHERE READABLE added to the brief's ROBUST / RECIPE-DEPENDENT, and SCALE-DEPENDENT split from
    RECIPE-DEPENDENT, so every combination of cell labels maps to exactly one reading.
+
+## Amendment 1 (2026-10-16, after the independent check `docs/audits/2026-10-16/robust_audit.md`; before launch, no batch result exists)
+The check found the code doing what this file says: the def cell reproduces GAUGE's SO_m / AO_m at seed 1300 bitwise over
+300 epochs (losses, every state-dict tensor, eval.json); weight decay reaches all 24 parameter tensors (one AdamW group) and
+is 0.0 in wd0; lr cells peak at the set lr after a 5% warmup and cosine to 0.1x; the d 256 / 2-layer torus model is really
+2 layers (1,592,469 params; d_head 128, 64 blocks per head, omega 2 pi .. 2 pi / 64; one shared step map, both layers rotated
+identically; non-move steps exactly 0; AO = |SO| exactly); at a seed the two arms share initial weights and every training
+batch; the overall reading matches an independent reimplementation over all 1024 label combinations. Changes:
+- **MAJOR 1 (NO SIGN COST where no cost could fire).** NO SIGN COST now requires the signed arm to solve >= 6/8 (the smallest
+  count at which the SOLVED route can fire with room); a cell with SO 4-5/8 that is not SIGNED LEARNS BETTER reads
+  UNMEASURED. New label NON-NEGATIVE LEARNS BETTER (Fisher p < .05 with AO ahead, or perm p < .05 with d >= +0.05); it counts
+  as a dependence in the reading, as NO SIGN COST does.
+- **MAJOR 2 (the reference must replicate).** After the UNREADABLE branch: DEFAULT NOT REPLICATED if ring|def reads NO SIGN
+  COST or NON-NEGATIVE LEARNS BETTER; REFERENCE UNMEASURED if ring|def reads UNMEASURED. RECIPE- / SCALE-DEPENDENT therefore
+  require ring|def = SIGNED LEARNS BETTER.
+- **MAJOR 3 (no full-budget torus pilot).** A full-budget pilot (seed 1490, SO and AO, the driver's exact torus command, 900
+  epochs, one per GPU, `runs/robust_pilot/`) runs before launch. Launch rule fixed now: launch as registered if the pilot SO
+  is SOLVED (classify_run); otherwise the torus budget is reconsidered before launch and a further amendment says how. The
+  pilot is reported below and never pooled.
+- **MINOR 1 (disclosure).** The lr cells also change the effective decay (AdamW decays by lr x wd per step: x3 and /3) and the
+  cosine floor (0.1 x lr); only wd0 isolates decay. lrx3 / lrd3 read "the recipe's learning rate", not lr alone.
+- **MINOR 2 (power sentence corrected).** Fisher, n = 8 per arm: with SO 5/8, AO 0/8 reaches p 0.026; only SO 4/8 has no AO
+  count that fires (AO 0/8: p 0.077). With the MAJOR 1 change SO 4-5/8 cells can read SIGNED LEARNS BETTER or UNMEASURED only.
+- **MINOR 3 (rule 12).** SCALE-DEPENDENT compares the in-batch d 256 / 2-layer contrast with GENERALITY E3 (1 layer, d 128,
+  seeds 700-707), an out-of-batch reference. The registered decision is the in-batch AO vs SO contrast at d 256; any statement
+  comparing scales is labelled as resting on an out-of-batch reference. No d 128 arm is added (cost ~2 GPU-h).
+- **MINOR 4.** A second layer could partly route around a missing path signal (narrowing the accuracy gap without touching
+  the sign cost); the torus strata secondary (wrap-only, lag >= 128) is where that would show.
+- **MINOR 5.** analyze_robust asserts the remaining config fields (ring: size, n_steps, batch_size, n_batches, data_workers;
+  torus: grid_size, n_obs_types, n_landmarks, init_from, data_seed_offset, deterministic, p_empty, data_workers). Checked on
+  GAUGE's s1300 checkpoints (ring) and GENERALITY's s700 (torus extras).
+- **MINOR 6.** Evaluations run on the first GPU of DRV_GPUS, not a hard-coded cuda:0.
+- Selftest re-run: every cell label (incl. NON-NEGATIVE LEARNS BETTER and SO 4/8 -> UNMEASURED) and every reading (incl.
+  DEFAULT NOT REPLICATED, REFERENCE UNMEASURED) reached.
