@@ -218,3 +218,13 @@ decision p <= 0.5% (SOLVED) and <= 2.2% (accuracy) under the null of equal profi
   another user's job (concurrency 4, not 6).
 - Selftest re-run after the changes: every B1 label and reading reached.
 - GPU: the batch runs on GPU 1 only, beside another user's job, at <= 4 concurrent runs (user's instruction).
+
+## Pilot (seeds 1590-1591, outside the batch, never pooled; 2026-10-16 21:54-23:02 on GPU 1 shared, code 9005a48)
+`runs/lrsweep_pilot/PILOT_ANALYSIS.txt`. Accuracy at T = 128 (class), SO / AO:
+- lr 1e-2: s1590 1.000 SOLVED / 1.000 SOLVED; s1591 0.946 STALLED / 0.851 STALLED.
+- lr 3e-2: both arms at the blank floor or near it (SO 0.496 / 0.496 STALLED; AO 0.757 DESCENDING, 0.496 STALLED).
+- lr 1e-1: every run at the blank floor (0.496, STALLED).
+**Extension rule:** AO is not better at 3e-2 than at 1e-2 (0/2 vs 1/2 SOLVED; mean selection score 1.44 vs 0.36), so the
+grid is NOT extended: rates {1e-3, 3e-3, 1e-2, 3e-2}, 64 runs. 3e-2 breaks the recipe for both arms in the pilot; it stays
+in the grid as the registered upper bracket. Note (descriptive, two seeds): the signed arm also degrades at 1e-2.
+Launched as amended.

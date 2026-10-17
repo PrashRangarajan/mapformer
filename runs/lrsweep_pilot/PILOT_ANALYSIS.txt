@@ -1,0 +1,35 @@
+== LRSWEEP: ring +1/-1, 32 cells, T = 128, 300 epochs, wd 0.05; rates 0.01, 0.03, 0.1; seeds 1590-1591 ==
+per seed: acc T = 128 and class | 0.01:SO | 0.01:AO | 0.03:SO | 0.03:AO | 0.1:SO | 0.1:AO
+1590 | 1.0000 SOLV | 1.0000 SOLV | 0.4960 STAL | 0.7574 DESC | 0.4959 STAL | 0.4959 STAL
+1591 | 0.9460 STAL | 0.8509 STAL | 0.4958 STAL | 0.4959 STAL | 0.4959 STAL | 0.4959 STAL
+
+== B1 (registered primary): each arm at its own best rate (most SOLVED, then lowest mean final-5% loss) ==
+AO best rate 0.01: SOLVED 1/2, acc 0.9254 | SO best rate 0.01: SOLVED 1/2, acc 0.9730 | d = AO - SO -0.0476
+selection-aware p (exact, 6 relabellings of 4 rate profiles, selection redone in each): SOLVED 1.0000, accuracy 0.6667; naive at the selected rates: Fisher 1.0000, perm 0.6667; DECISION p = max: SOLVED 1.0000, accuracy 0.6667
+B1: UNREADABLE (SO SOLVED 1 < 4)
+Reading: UNREADABLE (the signed arm solves < 4/8 at every rate)
+
+== secondaries (declared; no verdict) ==
+floors: predict blank ~0.50 (p_empty 0.5); +1/-1 ring n-gram 0.554; retrace 0.860 (ROBUST, post hoc)
+per rate, per arm: SOLVED | SOLVED@0.1 | acc T | acc 4T | loss AUC | mean sel. score | wrap-cancel | usage-wtd wrap-cancel | opposite-sign | classes
+0.01    SO: 1/2 | 1/2 | 0.9730 | 0.9681 | 0.310 | 0.1304 | 1.00 | 1.00 | 1.00 | SOLV STAL
+0.01    AO: 1/2 | 1/2 | 0.9254 | 0.8270 | 0.724 | 0.3623 | 0.04 | 0.00 | 0.00 | SOLV STAL
+/home/prashr/mapformer/analyze_lrsweep.py:228: RuntimeWarning: Mean of empty slice
+  f"{np.nanmean([x['wrap'] for x in r]):.2f} | {np.nanmean([x['wrapw'] for x in r]):.2f} | "
+/home/prashr/mapformer/analyze_lrsweep.py:229: RuntimeWarning: Mean of empty slice
+  f"{np.nanmean([x['opp'] for x in r]):.2f} | {' '.join(x['cls'][:4] for x in r)}")
+0.03    SO: 0/2 | 0/2 | 0.4959 | 0.4981 | 1.900 | 1.7501 | nan | nan | nan | STAL STAL
+0.03    AO: 0/2 | 0/2 | 0.6266 | 0.5361 | 1.774 | 1.4371 | 0.00 | 0.00 | 0.00 | DESC STAL
+0.1     SO: 0/2 | 0/2 | 0.4959 | 0.4981 | 2.393 | 1.8741 | nan | nan | nan | STAL STAL
+0.1     AO: 0/2 | 0/2 | 0.4959 | 0.4981 | 2.320 | 2.0222 | nan | nan | nan | STAL STAL
+
+per-rate AO vs SO (Holm over the 4 rates within each route; labels by the ROBUST rule on Holm-adjusted p)
+  lr 0.01   : AO 1/2 0.9254 vs SO 1/2 0.9730; d -0.0476; Fisher p 1.0000 (Holm 1.0000); perm p 0.6667 (Holm 1.0000) -> UNREADABLE (SO SOLVED 1 < 4)
+  lr 0.03   : AO 0/2 0.6266 vs SO 0/2 0.4959; d +0.1307; Fisher p 1.0000 (Holm 1.0000); perm p 0.6667 (Holm 1.0000) -> UNREADABLE (SO SOLVED 0 < 4)
+  lr 0.1    : AO 0/2 0.4959 vs SO 0/2 0.4959; d +0.0000; Fisher p 1.0000 (Holm 1.0000); perm p 1.0000 (Holm 1.0000) -> UNREADABLE (SO SOLVED 0 < 4)
+
+threshold sensitivity, B1 with SOLVED at loss 0.1 (selection redone): AO 0.01 1/2 vs SO 0.01 1/2; decision p SOLVED 1.0000, acc 0.6667 -> UNREADABLE (SO SOLVED 1 < 4)
+accuracy at 4T (512) at the B1-selected rates: AO 0.8270 vs SO 0.9681; d -0.1411; selection-aware p 0.3333
+cross-fit: rates chosen on seeds 1590-1590 (AO 0.01, SO 0.01), tested on 1591-1591: AO 0/1 0.8509 vs SO 0/1 0.9460; Fisher p 1.0000, perm p 1.0000
+cross-fit: rates chosen on seeds 1591-1591 (AO 0.01, SO 0.01), tested on 1590-1590: AO 1/1 1.0000 vs SO 1/1 1.0000; Fisher p 1.0000, perm p 1.0000
+SOLVED-vs-lr curve (descriptive): SO 0.01:1 0.03:0 0.1:0; AO 0.01:1 0.03:0 0.1:0
