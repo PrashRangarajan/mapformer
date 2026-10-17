@@ -121,7 +121,7 @@ Observation-step-free versions fail too: ring 0/8 vs 8/8 (two batches), torus 0/
 *Recipe and scale (registered, fresh seeds; appendix C13).* On the observation-step-free ring the cost holds with weight
 decay 0 (0/8 vs 8/8, -0.127), on SOLVED at a third of the learning rate (0/8 vs 6/8, Fisher p 0.007; accuracy p 0.089), and
 at the default (1/8 vs 8/8); at three times the rate it was unmeasured (4/8 vs 8/8). A learning-rate sweep with each
-step at its own best rate (1e-3 to 3e-2, fresh seeds; selection-aware test) keeps it: |.| peaks at 3e-3
+step at its own best rate (1e-3 to 3e-2, fresh seeds, selection-aware) keeps it: |.| peaks at 3e-3
 with 2/8, signed solves 8/8 at 1e-3 (p 0.007; 3/8 |.| runs still descending). A 2-layer d 256 torus model (8x
 the parameters) keeps it (2/8 vs 8/8, Fisher p 0.007; 0.967 vs 0.999, p 0.0005), with a quarter of the one-layer accuracy
 gap (out of batch), 6/8 |.| runs still descending and no SOLVED contrast at loss 0.1 (5/8 vs 8/8, p 0.20; a declared
