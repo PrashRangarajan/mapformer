@@ -5,11 +5,15 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-16 15:00. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-16 23:05. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- Nothing running (ROBUST finished 2026-10-16 14:26).
+- LRSWEEP (`LRSWEEP_PREREG.md` + Amendment 1 + pilot; launched 2026-10-16 23:03 on GPU 1 only, <= 4 runs, beside another
+  user's job; 64 ring runs, seeds 1500-1507, lr 1e-3 / 3e-3 / 1e-2 / 3e-2; ~6-8 h). Marker `.lrsweep_done`, log
+  `lrsweep.log`. Conditional stage 2 (decay-matched, 16 runs) only if B1 = COST AT BEST RATES with AO best >= 1e-2.
+- Draft 6 (`docs/paper/DRAFT6_workshop.md`) carries every review fix; title waits on LRSWEEP. Overall two-paper outline:
+  `docs/paper/OUTLINE_overall.md`. Reproduction audits: sign line and non-sign line both clean (Match-Query not reproducible).
 - Draft 5 (`docs/paper/DRAFT5_workshop.md`, `APPENDIX_draft5.md`) has ROBUST filled (4.1, Limitations, abstract, appendix C13).
 - Draft 4 (`docs/paper/DRAFT4_workshop.md`) complete incl. Sec. 4.5 (GAUGE) and the end-to-end read (`docs/paper/READ_draft4.md`:
   shareable with co-authors; not submittable: main text 4,302 words vs ~3,500, appendices A-D, F-I still plans; title and
