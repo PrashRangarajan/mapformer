@@ -69,7 +69,7 @@ def floors_one(tok, rev):
 
 
 env = GridWorld(size=64, n_obs_types=16, p_empty=0.5, seed=10000)
-for T in (1024,):
+for T in tuple(int(x) for x in os.environ.get("FLOOR_T", "1024").split()):
     rows = []
     for s in SEEDS:
         c = collections.Counter()
