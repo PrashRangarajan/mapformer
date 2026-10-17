@@ -1,5 +1,8 @@
 # Does the sign cost follow the relative sign of the moves? -- results (registered, `GAUGE_PREREG.md` + Amendment 1)
 
+**CORRECTED 2026-10-16** (numbers audit of draft 5, `docs/paper/review_draft5/NUMBERS_AUDIT.md` error 8): on +1/-1, 89.3% of
+revisits are backtracks on the registered eval stream (138,800 of 155,456, `GAUGE_ANALYSIS.txt`); the 87.5% below is the pre-launch audit's sample. Body unchanged.
+
 Batch 2026-10-15 21:00-22:40, 40 runs, seeds 1300-1307; ring 32 cells, observation-step-free SignedAO_r4 (SO) / AbsAO_r4
 (AO, |.| step), RING_DIAL recipe, 300 epochs; moves +1/-1 (`_m`, an inverse pair) vs +1/+2 (`_p`, both forward; revisits
 only from laps). Analysis `analyze_gauge.py` -> `GAUGE_ANALYSIS.txt`, `GAUGE_VERDICTS.json`. Independent code check before

@@ -54,7 +54,7 @@ PILOT / POST HOC and scale-limited (CoPE gains on language at scale).
 **Contributions.**
 1. *Matched-length map advantage, anchored to a map-free floor.* Torus T = 1024: path 1 layer 0.998 (8/8) vs index RoPE
    0.731 (0/8), +0.267, p 0.0002; index sits below the retrace rule 0.843 on every run (REG, n = 8, ML;
-   `SIGN_MATCHED_RESULTS.md`, floors `docs/audits/2026-10-16/sign_floors_out.txt`). At T = 128, +0.243 (REG, n = 8, ML;
+   `SIGN_MATCHED_RESULTS.md`, floors `docs/audits/2026-10-16/sign_floors_out.txt`). At T = 128, +0.243 -- but a map-free retrace rule scores 0.934 there (index 0.805 below it, path r2 0.971 just above; `docs/audits/2026-10-16/paper2x2_T128_floors_out.txt`, post hoc), so T = 128 is not map evidence (REG, n = 8, ML;
    `PAPER2X2_RESULTS.md`).
 2. *A depth exchange rate.* One path layer ~ 3 index layers on Dyck-2 at matched depth (+0.353 / +0.130 / +0.045 /
    +0.024 at 1-4 layers, 8/8 each; REG, n = 8) and on a biased 1D walk (index needs 3 layers wherever steps can cancel;
@@ -140,7 +140,7 @@ Bullet format: claim -- numbers -- n -- status -- ML? -- source.
   (GENERALITY, REG + IC, n = 8) and FACTORIAL 1.000 vs 0.719 (n = 4).
 - Index is below the map-free retrace floor (0.843) on every run; it does not even learn the reversal rule -- POST HOC
   floor on registered checkpoints -- `docs/audits/2026-10-16/sign_floors_out.txt`, `generality_floors_out.txt`.
-- Short walks: position main effect +0.243 (MDE 0.038, 8/8; index 0.805, path r2 0.971, r4 1.000) -- n = 8 -- REG -- ML
+- Short walks: position main effect +0.243 (MDE 0.038, 8/8; index 0.805, path r2 0.971, r4 1.000) -- n = 8 -- REG -- ML. Retrace floor 0.934 on these walks (post hoc): mostly solvable without a map; appendix only
   (T = 128) -- `PAPER2X2_RESULTS.md`. Loss-matched it is -0.004: at matched length the accuracy gap is the fit gap
   (expected; say so). Do NOT cite +0.461 (withdrawn 16-epoch number).
 - Supporting (one sentence each, status flagged): in-context maps (Match-Query) 0.730 +/- 0.247 vs 0.154, chance 0.0625,
