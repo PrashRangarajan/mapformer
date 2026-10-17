@@ -112,6 +112,11 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
 - Do not claim: "robust to the recipe" or "the cost does not depend on scale"; say "holds under wd 0 and lr /3 and at 2 layers
   d 256; shrinks at lr x3 and in accuracy at scale".
 
+## Update 2026-10-17: LRSWEEP (`LRSWEEP_RESULTS.md`, registered): COST AT BEST RATES
+- Each arm at its own best of four rates: |.| 3e-3 2/8 vs signed 1e-3 8/8 (decision p 0.0070 SOLVED, 0.0057 accuracy;
+  selection redone in the null); |.| optimum bracketed; 3/8 |.| runs descending (budget-scoped); ring only.
+- Claim allowed: "the cost holds with each step at its own best of four learning rates (ring)". Not: "at any learning rate".
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).

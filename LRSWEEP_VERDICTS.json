@@ -1,0 +1,118 @@
+{
+  "B1": {
+    "label": "SIGNED LEARNS BETTER",
+    "AO_rate": 0.003,
+    "SO_rate": 0.001,
+    "AO_solved": 2,
+    "SO_solved": 8,
+    "AO_acc": 0.9632822354364559,
+    "SO_acc": 1.0,
+    "d": -0.03671776456354414,
+    "p_k_sel": 0.006060606060606061,
+    "p_acc_sel": 0.00574980574980575,
+    "naive_fisher_p": 0.006993006993006993,
+    "naive_perm_p": 0.0013986013986013986,
+    "p_k": 0.006993006993006993,
+    "p_acc": 0.00574980574980575,
+    "exact": true,
+    "n_relabel": 12870,
+    "SO_lowest_best_rate": 0.001,
+    "AO_desc_at_best": 3,
+    "label_1e3": "SIGNED LEARNS BETTER"
+  },
+  "reading": "COST AT BEST RATES [3 AO run(s) still DESCENDING at AO's best rate: budget-scoped]",
+  "secondaries": {
+    "per_rate": {
+      "0.001": {
+        "label": "SIGNED LEARNS BETTER",
+        "AO_solved": 1,
+        "SO_solved": 8,
+        "d": -0.08307913094962283,
+        "fisher_p": 0.0013986013986013986,
+        "perm_p": 0.0013986013986013986,
+        "fisher_holm": 0.005594405594405594,
+        "perm_holm": 0.005594405594405594
+      },
+      "0.003": {
+        "label": "SIGNED LEARNS BETTER",
+        "AO_solved": 2,
+        "SO_solved": 8,
+        "d": -0.03671776456354414,
+        "fisher_p": 0.006993006993006993,
+        "perm_p": 0.0013986013986013986,
+        "fisher_holm": 0.02097902097902098,
+        "perm_holm": 0.005594405594405594
+      },
+      "0.01": {
+        "label": "UNMEASURED",
+        "AO_solved": 1,
+        "SO_solved": 4,
+        "d": -0.10073493448657556,
+        "fisher_p": 0.28205128205128205,
+        "perm_p": 0.2975912975912976,
+        "fisher_holm": 0.5641025641025641,
+        "perm_holm": 0.5951825951825952
+      },
+      "0.03": {
+        "label": "UNREADABLE (SO SOLVED 1 < 4)",
+        "AO_solved": 0,
+        "SO_solved": 1,
+        "d": 0.025001930651015636,
+        "fisher_p": 1.0,
+        "perm_p": 0.848951048951049,
+        "fisher_holm": 1.0,
+        "perm_holm": 0.848951048951049
+      }
+    },
+    "B1_loss0.1": {
+      "label": "SIGNED LEARNS BETTER",
+      "k_ao": 2,
+      "k_so": 8,
+      "p_k_sel": 0.006060606060606061,
+      "p_acc_sel": 0.00574980574980575,
+      "p_k": 0.006993006993006993,
+      "p_acc": 0.00574980574980575,
+      "naive_fisher_p": 0.006993006993006993,
+      "naive_perm_p": 0.0013986013986013986,
+      "AO_rate": 0.003,
+      "SO_rate": 0.001
+    },
+    "acc4_sel": {
+      "AO": 0.8910852864583334,
+      "SO": 0.9977102864583334,
+      "p_sel": 0.006060606060606061
+    },
+    "crossfit": [
+      {
+        "select_on": [
+          1500,
+          1501,
+          1502,
+          1503
+        ],
+        "AO_rate": 0.003,
+        "SO_rate": 0.001,
+        "AO_solved": 1,
+        "SO_solved": 4,
+        "d": -0.02847710247895585,
+        "fisher_p": 0.14285714285714285,
+        "perm_p": 0.02857142857142857
+      },
+      {
+        "select_on": [
+          1504,
+          1505,
+          1506,
+          1507
+        ],
+        "AO_rate": 0.003,
+        "SO_rate": 0.001,
+        "AO_solved": 1,
+        "SO_solved": 4,
+        "d": -0.04495842664813243,
+        "fisher_p": 0.14285714285714285,
+        "perm_p": 0.14285714285714285
+      }
+    ]
+  }
+}

@@ -5,14 +5,12 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-16 23:05. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-17 05:30. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
-- LRSWEEP (`LRSWEEP_PREREG.md` + Amendment 1 + pilot; launched 2026-10-16 23:03 on GPU 1 only, <= 4 runs, beside another
-  user's job; 64 ring runs, seeds 1500-1507, lr 1e-3 / 3e-3 / 1e-2 / 3e-2; ~6-8 h). Marker `.lrsweep_done`, log
-  `lrsweep.log`. Conditional stage 2 (decay-matched, 16 runs) only if B1 = COST AT BEST RATES with AO best >= 1e-2.
-- Draft 6 (`docs/paper/DRAFT6_workshop.md`) carries every review fix; title waits on LRSWEEP. Overall two-paper outline:
+- Nothing running (LRSWEEP finished 2026-10-17 05:03).
+- Draft 6 (`docs/paper/DRAFT6_workshop.md`) carries every review fix; title stands (LRSWEEP: cost at best rates). Overall two-paper outline:
   `docs/paper/OUTLINE_overall.md`. Reproduction audits: sign line and non-sign line both clean (Match-Query not reproducible).
 - Draft 5 (`docs/paper/DRAFT5_workshop.md`, `APPENDIX_draft5.md`) has ROBUST filled (4.1, Limitations, abstract, appendix C13).
 - Draft 4 (`docs/paper/DRAFT4_workshop.md`) complete incl. Sec. 4.5 (GAUGE) and the end-to-end read (`docs/paper/READ_draft4.md`:
@@ -20,6 +18,11 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
   contribution 3 lean on an account GAUGE did not confirm). Venues: `docs/paper/VENUES_2026-10-15.md` (ICLR 2027 workshop
   list out 29 Nov 2026, papers ~1 Feb 2027; CCN 2027 4 Feb; CPAL Spotlight 18 Jan; Cosyne abstracts 18 Oct 2026).
 - Mock review of draft 3: `docs/paper/MOCK_REVIEW_draft3.md` (6/10).
+
+## Last results (2026-10-17): LRSWEEP (`LRSWEEP_RESULTS.md`): COST AT BEST RATES
+- Each arm at its own best of 4 lr: |.| 2/8 (3e-3, bracketed) vs signed 8/8 (1e-3), p 0.007; the lr objection is answered
+  on the ring. Stage 2 (decay-matched) not triggered. Next: reframe the overall outline (MapFormer already owns "path
+  integration helps"; ours: benchmark floors / matched-length re-measurement, depth exchange rate, failure by search, words).
 
 ## Last results (2026-10-16): ROBUST (`ROBUST_RESULTS.md`): PARTLY UNMEASURED
 - Sign cost holds with wd 0, lr /3, and on the torus at 2 layers d 256 (2/8 vs 8/8, but acc gap only -0.032, 6/8 |.| still

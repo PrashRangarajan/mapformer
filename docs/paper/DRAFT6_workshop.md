@@ -13,9 +13,9 @@ length on synthetic maps (a 2D torus, a 1D ring), barrier steps solve the map on
 accuracy but rarely an exact map. Both barrier classes can represent the map exactly; built |.| solutions are kept (ring) or
 re-found (torus) by training, yet from scratch the class solves 0-1 of 8. The barrier removes the through-zero route by
 which signed steps cancel an inverse pair, but that does not explain the failure: with moves +1/+2, where no step need cross
-zero, |.| still solves 2 of 8 (signed 5 of 8; unmeasured). The cost holds without weight decay, at a third of the learning
-rate and in a 2-layer d 256 torus model; it shrinks at three times the learning rate and, in accuracy, in the larger model.
-Negatives are scoped to our budgets and learning rates.
+zero, |.| still solves 2 of 8 (signed 5 of 8; unmeasured). The cost holds with each step at its own best of four learning rates
+(2 of 8 vs 8 of 8), without weight decay and in a 2-layer d 256 torus model, where its accuracy gap shrinks. Negatives are
+scoped to our budgets.
 
 ## 1. Introduction
 
@@ -64,7 +64,7 @@ forward-step probability p_plus (0.5 is balanced). A line: a 256-cell ring the w
 and tested at the same length; n = 8 seeds per arm unless stated. Every main-text batch but the torus sign batch (Sec. 4.1;
 authors' pre-launch gate, audit after the run) was checked before launch by an independent code-verification agent, an
 automated reviewer blind to results whose findings were amended into the pre-registration. Pilots: outside seeds.
-"Unmeasured": below the registered threshold; "does not learn": within the stated budget and learning rate.
+"Unmeasured": below the registered threshold; "does not learn": within the stated budget.
 
 ## 3. Theory
 
@@ -120,8 +120,9 @@ Observation-step-free versions fail too: ring 0/8 vs 8/8 (two batches), torus 0/
 
 *Recipe and scale (registered, fresh seeds; appendix C13).* On the observation-step-free ring the cost holds with weight
 decay 0 (0/8 vs 8/8, -0.127), on SOLVED at a third of the learning rate (0/8 vs 6/8, Fisher p 0.007; accuracy p 0.089), and
-at the default (1/8 vs 8/8). At three times the rate it shrinks and is unmeasured (4/8 vs 8/8, Fisher p 0.077): |.| SOLVED
-rises with the rate (0/8, 1/8, 4/8), and all other comparisons use the default rate, 1e-3. A 2-layer d 256 torus model (8x
+at the default (1/8 vs 8/8); at three times the rate it was unmeasured (4/8 vs 8/8). A learning-rate sweep with each
+step at its own best rate (1e-3 to 3e-2, fresh seeds; selection-aware test) keeps it: |.| peaks at 3e-3
+with 2/8, signed solves 8/8 at 1e-3 (p 0.007; 3/8 |.| runs still descending). A 2-layer d 256 torus model (8x
 the parameters) keeps it (2/8 vs 8/8, Fisher p 0.007; 0.967 vs 0.999, p 0.0005), with a quarter of the one-layer accuracy
 gap (out of batch), 6/8 |.| runs still descending and no SOLVED contrast at loss 0.1 (5/8 vs 8/8, p 0.20; a declared
 secondary): at scale part of the cost may be speed. In every cell |.| shows little wrapped code, even at lr x3 with 4/8
@@ -239,9 +240,8 @@ ingredient.
 
 ## 6. Limitations
 
-"Does not learn" is scoped to our budgets and learning rates: 3x the ring budget did not help; the cost shrinks at three
-times the learning rate (unmeasured) and, in accuracy, in a larger torus model whose |.| runs were mostly still descending;
-we ran no per-arm learning-rate sweep, other optimisers or longer budgets at scale. Small models (one layer, 2 heads, d =
+"Does not learn" is scoped to our budgets: 3x the ring budget did not help; learning rates were swept on the ring only (each step at its best of four); in a larger torus model the accuracy gap
+shrinks and |.| runs were mostly still descending; no other optimisers or longer budgets at scale. Small models (one layer, 2 heads, d =
 128, a rank-4 latent shared across heads), synthetic tasks, n = 8, no recurrent, SSM or exp(.)-type (LRU) baselines. On the
 ring the evidence is mainly a loss criterion, which at p_plus 0.5 does not survive a looser threshold (0.1; post hoc). On
 the torus the barrier class has less latent slack (the wrapped code also needs the 2 pi k / omega offsets), and per-head

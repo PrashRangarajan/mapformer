@@ -1,0 +1,40 @@
+== LRSWEEP: ring +1/-1, 32 cells, T = 128, 300 epochs, wd 0.05; rates 0.001, 0.003, 0.01, 0.03; seeds 1500-1507 ==
+per seed: acc T = 128 and class | 0.001:SO | 0.001:AO | 0.003:SO | 0.003:AO | 0.01:SO | 0.01:AO | 0.03:SO | 0.03:AO
+1500 | 1.0000 SOLV | 0.9362 STAL | 1.0000 SOLV | 0.9111 STAL | 0.9460 DESC | 0.9936 DESC | 0.4960 STAL | 0.4958 STAL
+1501 | 1.0000 SOLV | 0.8759 STAL | 1.0000 SOLV | 0.9662 DESC | 0.9460 STAL | 0.4960 STAL | 0.4960 STAL | 0.4960 STAL
+1502 | 1.0000 SOLV | 0.8995 STAL | 1.0000 SOLV | 0.9428 STAL | 0.9407 STAL | 0.9703 DESC | 0.4960 STAL | 0.4960 STAL
+1503 | 1.0000 SOLV | 0.9116 STAL | 1.0000 SOLV | 1.0000 SOLV | 1.0000 SOLV | 0.6000 STAL | 0.4960 STAL | 0.4960 STAL
+1504 | 1.0000 SOLV | 0.9415 STAL | 1.0000 SOLV | 0.9686 STAL | 0.9460 STAL | 1.0000 DESC | 0.4960 STAL | 0.8159 DESC
+1505 | 1.0000 SOLV | 1.0000 SOLV | 1.0000 SOLV | 0.9993 SOLV | 1.0000 SOLV | 0.9950 DESC | 0.9998 SOLV | 0.4961 STAL
+1506 | 1.0000 SOLV | 0.8736 STAL | 1.0000 SOLV | 0.9595 DESC | 1.0000 SOLV | 0.9996 SOLV | 0.4960 STAL | 0.4960 STAL
+1507 | 1.0000 SOLV | 0.8971 STAL | 1.0000 SOLV | 0.9587 DESC | 1.0000 SOLV | 0.9184 DESC | 0.4959 DESC | 0.8799 DESC
+
+== B1 (registered primary): each arm at its own best rate (most SOLVED, then lowest mean final-5% loss) ==
+AO best rate 0.003: SOLVED 2/8, acc 0.9633 | SO best rate 0.001: SOLVED 8/8, acc 1.0000 | d = AO - SO -0.0367
+selection-aware p (exact, 12870 relabellings of 16 rate profiles, selection redone in each): SOLVED 0.0061, accuracy 0.0057; naive at the selected rates: Fisher 0.0070, perm 0.0014; DECISION p = max: SOLVED 0.0070, accuracy 0.0057
+B1: SIGNED LEARNS BETTER
+Reading: COST AT BEST RATES [3 AO run(s) still DESCENDING at AO's best rate: budget-scoped]
+
+== secondaries (declared; no verdict) ==
+floors: predict blank ~0.50 (p_empty 0.5); +1/-1 ring n-gram 0.554; retrace 0.860 (ROBUST, post hoc)
+per rate, per arm: SOLVED | SOLVED@0.1 | acc T | acc 4T | loss AUC | mean sel. score | wrap-cancel | usage-wtd wrap-cancel | opposite-sign | classes
+0.001   SO: 8/8 | 8/8 | 1.0000 | 0.9977 | 0.083 | 0.0000 | 0.89 | 0.99 | 0.99 | SOLV SOLV SOLV SOLV SOLV SOLV SOLV SOLV
+0.001   AO: 1/8 | 1/8 | 0.9169 | 0.8242 | 0.544 | 0.3158 | 0.09 | 0.13 | 0.04 | STAL STAL STAL STAL STAL SOLV STAL STAL
+0.003   SO: 8/8 | 8/8 | 1.0000 | 0.9760 | 0.071 | 0.0002 | 1.00 | 1.00 | 1.00 | SOLV SOLV SOLV SOLV SOLV SOLV SOLV SOLV
+0.003   AO: 2/8 | 2/8 | 0.9633 | 0.8911 | 0.416 | 0.1527 | 0.10 | 0.23 | 0.08 | STAL DESC STAL SOLV STAL SOLV DESC DESC
+0.01    SO: 4/8 | 4/8 | 0.9723 | 0.9300 | 0.325 | 0.1352 | 1.00 | 1.00 | 1.00 | DESC STAL STAL SOLV STAL SOLV SOLV SOLV
+0.01    AO: 1/8 | 1/8 | 0.8716 | 0.7682 | 1.027 | 0.6287 | 0.10 | 0.46 | 0.13 | DESC STAL DESC STAL DESC DESC SOLV DESC
+0.03    SO: 1/8 | 1/8 | 0.5590 | 0.5606 | 1.883 | 1.5397 | 1.00 | 1.00 | 1.00 | STAL STAL STAL STAL STAL SOLV STAL DESC
+0.03    AO: 0/8 | 0/8 | 0.5840 | 0.5547 | 1.851 | 1.5592 | 0.05 | 0.02 | 0.00 | STAL STAL STAL STAL DESC STAL STAL DESC
+
+per-rate AO vs SO (Holm over the 4 rates within each route; labels by the ROBUST rule on Holm-adjusted p)
+  lr 0.001  : AO 1/8 0.9169 vs SO 8/8 1.0000; d -0.0831; Fisher p 0.0014 (Holm 0.0056); perm p 0.0014 (Holm 0.0056) -> SIGNED LEARNS BETTER
+  lr 0.003  : AO 2/8 0.9633 vs SO 8/8 1.0000; d -0.0367; Fisher p 0.0070 (Holm 0.0210); perm p 0.0014 (Holm 0.0056) -> SIGNED LEARNS BETTER
+  lr 0.01   : AO 1/8 0.8716 vs SO 4/8 0.9723; d -0.1007; Fisher p 0.2821 (Holm 0.5641); perm p 0.2976 (Holm 0.5952) -> UNMEASURED
+  lr 0.03   : AO 0/8 0.5840 vs SO 1/8 0.5590; d +0.0250; Fisher p 1.0000 (Holm 1.0000); perm p 0.8490 (Holm 0.8490) -> UNREADABLE (SO SOLVED 1 < 4)
+
+threshold sensitivity, B1 with SOLVED at loss 0.1 (selection redone): AO 0.003 2/8 vs SO 0.001 8/8; decision p SOLVED 0.0070, acc 0.0057 -> SIGNED LEARNS BETTER
+accuracy at 4T (512) at the B1-selected rates: AO 0.8911 vs SO 0.9977; d -0.1066; selection-aware p 0.0061
+cross-fit: rates chosen on seeds 1500-1503 (AO 0.003, SO 0.001), tested on 1504-1507: AO 1/4 0.9715 vs SO 4/4 1.0000; Fisher p 0.1429, perm p 0.0286
+cross-fit: rates chosen on seeds 1504-1507 (AO 0.003, SO 0.001), tested on 1500-1503: AO 1/4 0.9550 vs SO 4/4 1.0000; Fisher p 0.1429, perm p 0.1429
+SOLVED-vs-lr curve (descriptive): SO 0.001:8 0.003:8 0.01:4 0.03:1; AO 0.001:1 0.003:2 0.01:1 0.03:0
