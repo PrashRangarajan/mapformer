@@ -1,4 +1,5 @@
-"""Fig. 2 of the workshop draft (DRAFT4_workshop.md Sec. 4.3; MECHANISM batch, ring 32, p_plus 0.5, T = 128, 300 epochs,
+"""Fig. 2 of the workshop draft (shading fixed 2026-10-16: only the mixed-sign quadrants are closed to |.|; omega's sign is
+free, so the all-negative quadrant is open) (DRAFT4_workshop.md Sec. 4.3; MECHANISM batch, ring 32, p_plus 0.5, T = 128, 300 epochs,
 seeds 800-807). Panel titles use the draft's terms (2026-10-15 relabel; arm codes only in the output text).
 Per rotary channel (64 per run, 8 runs per arm), the pair of move angles (a(+1), a(-1)) = omega * step, at the start
 (eval.json init_angles) and at the end of training (action_angles of the checkpoint).
@@ -60,8 +61,10 @@ fig, axs = plt.subplots(2, 2, figsize=(3.4, 3.8), sharex=True, sharey=True)
 lo, hi = -1.5 * np.pi, TP
 for ax, (arm, desc) in zip(axs.flat, ARMS):
     d = data[arm]; I = rep(d["I"]); F = rep(d["F"])
-    ax.add_patch(plt.Rectangle((lo, lo), hi - lo, hi - lo, color="0.93", lw=0, zorder=0))
-    ax.add_patch(plt.Rectangle((0, 0), hi, hi, color="white", lw=0, zorder=0))       # the |.| feasible quadrant
+    # |.| class: omega * |s| with omega free in sign, so both move angles share omega's sign per channel -- quadrants I and
+    # III are open to it; only the two MIXED-sign quadrants (II, IV) are closed (MOCK_REVIEW_draft5 W9; appendix E P3)
+    ax.add_patch(plt.Rectangle((lo, 0), -lo, hi, color="0.92", lw=0, zorder=0))      # quadrant II: a(+1) < 0 < a(-1)
+    ax.add_patch(plt.Rectangle((0, lo), hi, -lo, color="0.92", lw=0, zorder=0))      # quadrant IV: a(-1) < 0 < a(+1)
     x = np.linspace(lo, hi, 2)
     ax.plot(x, -x, color="C0", lw=0.9, alpha=0.45, zorder=1)            # through zero
     ax.plot(x, TP - x, color="C3", lw=0.9, alpha=0.45, zorder=1)        # by wrapping
@@ -94,7 +97,7 @@ for ax in axs[:, 0]:
     ax.set_ylabel("a(-1)  [rad]", fontsize=6.5, labelpad=1)
 H = [plt.Line2D([], [], color="C0", lw=0.9, alpha=0.45, label="a(-1) = -a(+1) (through zero)"),
      plt.Line2D([], [], color="C3", lw=0.9, alpha=0.45, label="a(+1) + a(-1) = +-2pi (wrap)"),
-     plt.Rectangle((0, 0), 1, 1, color="0.93", lw=0, label="barrier side: closed to |.|"),
+     plt.Rectangle((0, 0), 1, 1, color="0.92", lw=0, label="mixed signs: closed to |.|"),
      plt.Line2D([], [], color="0.5", lw=0.5, ls=":", label="sum = pi"),
      plt.Line2D([], [], color="0.55", marker=".", ls="", ms=3, label="start (- - start box)"),
      plt.Line2D([], [], color="k", marker=".", ls="", ms=3, label="end, other (incl. collapsed)"),

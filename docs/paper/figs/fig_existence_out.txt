@@ -1,0 +1,3 @@
+(a) rank 2 torus: r2 from scratch 0/8; r2 continued 1/8; r2 installed (projected) + trained 7/8; r4 from scratch 8/8; r4 continued 7/8; frozen projected r2 acc 0.9955
+(b) |.| step, ring T 128: E3 AO acc 0.9208 SOLVED 0/8 vs SO 1.0000 8/8; E2 HELD: AO_bal 1.0000 SOLVED 8/8 LOST 0/8 vs SO_bal 1.0000 SOLVED 8/8 LOST 0/8 (frozen = source, max |frozen - source| 0.0000)
+(c) |.| step, torus T 1024: E3 AO acc 0.8803 SOLVED 0/8 vs SO 1.0000 8/8; E2 NOT HELD: AO_bal 1.0000 SOLVED 8/8 LOST 6/8 vs SO_bal 1.0000 SOLVED 8/8 LOST 0/8 (frozen = source, max |frozen - source| 0.0000)

@@ -1,0 +1,6 @@
+plain gap 2-7      n  12183  blank 0.4967  retrace 0.9998
+plain gap 8-31     n  17420  blank 0.4962  retrace 0.9427
+plain gap 32-128   n   5110  blank 0.4961  retrace 0.5695
+wrap-only          n   4134  blank 0.4927  retrace 0.4927
+all revisits       n  38847  blank 0.4959  retrace 0.8636
+(ring_floors_out.txt, other stream, p_plus 0.5: blank 0.4967, retrace 0.8596)

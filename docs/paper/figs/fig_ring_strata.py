@@ -1,4 +1,5 @@
-"""Ring revisit accuracy by stratum (plan item 7; POST HOC, eval-only). Reads ring_strata.json (ring_strata.py). Lines: arm
+"""Ring revisit accuracy by stratum (plan item 7; POST HOC, eval-only; per-stratum retrace floor added 2026-10-16 from
+ring_strata_floors.json). Reads ring_strata.json (ring_strata.py). Lines: arm
 means; dots: runs (jittered); hollow markers beside "wrap-only": plain revisits re-weighted to the wrap-only gap distribution.
   cd /home/prashr && PYTHONPATH=/home/prashr python3 mapformer/docs/paper/figs/fig_ring_strata.py"""
 import json, os
@@ -27,12 +28,22 @@ for gi, (keys, lab, col, mk) in enumerate(GROUPS):
             label=f"{lab}  {sum(r['solved'] for r in rs)}/{len(rs)}")
     gm = np.mean([r["plain, wrap-gap-matched"] for r in rs])
     ax.scatter(x[-1] + off + 0.3, gm, s=12, facecolors="none", edgecolors=col, marker=mk, lw=0.8)
-ax.text(x[-1] + 0.3, 0.705, "plain,\ngap-\nmatched", fontsize=5, ha="center", va="bottom", color="0.3")
+ax.text(x[-1] + 0.3, 0.722, "plain,\ngap-\nmatched", fontsize=5, ha="center", va="bottom", color="0.3")
 ax.set_xticks(x); ax.set_xticklabels([l for _, l in ST], fontsize=6)
 ax.set_xlim(-0.35, x[-1] + 0.6); ax.set_ylim(0.70, 1.012); ax.tick_params(labelsize=6, length=2)
 ax.set_ylabel("revisit accuracy (eval mode)", fontsize=6.5)
-ax.text(0.01, 0.01, f"constant-predictor floor {J['floor']['all revisits']:.2f} (off axis)", transform=ax.transAxes,
-        fontsize=5.3, color="0.3", va="bottom")
+# per-stratum retrace floor (ring_strata_floors.py, same stream; post hoc, added 2026-10-16)
+RF = json.load(open(f"{HERE}/ring_strata_floors.json")); off_axis = []
+for j, (k, _) in enumerate(ST):
+    k2 = "plain gap 32-128" if k == "plain gap 32-128" else k
+    r = RF[k2]["retrace"]
+    if r >= 0.70:
+        ax.plot([j - 0.22, j + 0.22], [r, r], color="0.3", lw=0.8, ls=(0, (1, 1.2)), zorder=1)
+    else:
+        off_axis.append(f"{r:.2f}")
+ax.text(x[0] + 0.25, RF["plain gap 2-7"]["retrace"] - 0.004, "retrace", fontsize=5, color="0.3", va="top", ha="left")
+ax.text(0.01, 0.01, f"constant floor {J['floor']['all revisits']:.2f}; retrace at gap 32-127 / wrap-only "
+        f"{' / '.join(off_axis)} (off axis)", transform=ax.transAxes, fontsize=5.0, color="0.3", va="bottom")
 ax.legend(fontsize=5.3, loc="lower left", bbox_to_anchor=(0.0, 0.06), frameon=False, title="arm  SOLVED",
           title_fontsize=5.3, handlelength=1.8)
 fig.tight_layout(pad=0.3)

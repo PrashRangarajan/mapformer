@@ -1,0 +1,55 @@
+Training loss curves (dropout on), per run final-5% mean loss and registered class; median curve at checkpoints.
+
+(a) torus T 1024, shared latent -- RANK_MI (registered)
+  rank 2   Vanilla_s0             epochs 900  final-5% 5.87e-01  min 5.70e-01  STALLED
+  rank 2   Vanilla_s1             epochs 900  final-5% 5.11e-02  min 2.87e-02  DESCENDING
+  rank 2   Vanilla_s2             epochs 900  final-5% 3.08e-01  min 2.83e-01  DESCENDING
+  rank 2   Vanilla_s3             epochs 900  final-5% 3.21e-01  min 3.00e-01  DESCENDING
+  rank 2   Vanilla_s4             epochs 900  final-5% 1.77e-01  min 1.45e-01  DESCENDING
+  rank 2   Vanilla_s5             epochs 900  final-5% 4.04e-01  min 3.91e-01  STALLED
+  rank 2   Vanilla_s6             epochs 900  final-5% 6.75e-01  min 6.65e-01  STALLED
+  rank 2   Vanilla_s7             epochs 900  final-5% 6.05e-01  min 5.96e-01  STALLED
+  rank 2   median first below 0.05 at epoch never
+  rank 2   SOLVED 0/8; median loss at epochs [90, 225, 450, 675, 900]: 1.31e+00 6.96e-01 4.89e-01 4.36e-01 3.51e-01
+  rank 4   Vanilla_r4mi_s0        epochs 900  final-5% 3.89e-03  min 3.82e-04  SOLVED
+  rank 4   Vanilla_r4mi_s1        epochs 900  final-5% 3.10e-03  min 2.11e-04  SOLVED
+  rank 4   Vanilla_r4mi_s2        epochs 900  final-5% 2.76e-03  min 2.67e-04  SOLVED
+  rank 4   Vanilla_r4mi_s3        epochs 900  final-5% 2.51e-03  min 3.86e-04  SOLVED
+  rank 4   Vanilla_r4mi_s4        epochs 900  final-5% 2.15e-03  min 2.35e-04  SOLVED
+  rank 4   Vanilla_r4mi_s5        epochs 900  final-5% 3.53e-03  min 2.17e-04  SOLVED
+  rank 4   Vanilla_r4mi_s6        epochs 900  final-5% 3.98e-03  min 2.05e-04  SOLVED
+  rank 4   Vanilla_r4mi_s7        epochs 900  final-5% 9.51e-03  min 2.65e-03  SOLVED
+  rank 4   median first below 0.05 at epoch 478
+  rank 4   SOLVED 8/8; median loss at epochs [90, 225, 450, 675, 900]: 1.18e+00 1.84e-01 5.75e-02 2.34e-02 2.77e-03
+
+(b) torus T 1024, per-head latents -- RANK_SEP / RANK3 / RANK_MI (reg.)
+  rank 2   Vanilla_r2ph_s0        epochs 900  final-5% 1.05e+00  min 1.03e+00  STALLED
+  rank 2   Vanilla_r2ph_s1        epochs 900  final-5% 6.70e-03  min 3.69e-03  SOLVED
+  rank 2   Vanilla_r2ph_s2        epochs 900  final-5% 3.40e-03  min 3.34e-04  SOLVED
+  rank 2   Vanilla_r2ph_s3        epochs 900  final-5% 9.10e-01  min 8.92e-01  STALLED
+  rank 2   Vanilla_r2ph_s4        epochs 900  final-5% 1.94e-01  min 1.73e-01  DESCENDING
+  rank 2   Vanilla_r2ph_s5        epochs 900  final-5% 2.11e-01  min 1.81e-01  DESCENDING
+  rank 2   Vanilla_r2ph_s6        epochs 900  final-5% 2.48e-01  min 2.07e-01  DESCENDING
+  rank 2   Vanilla_r2ph_s7        epochs 900  final-5% 5.39e-01  min 4.95e-01  STALLED
+  rank 2   median first below 0.05 at epoch never
+  rank 2   SOLVED 2/8; median loss at epochs [90, 225, 450, 675, 900]: 1.23e+00 5.15e-01 4.49e-01 3.04e-01 2.22e-01
+  rank 3   Vanilla_r3ph_s0        epochs 900  final-5% 2.43e-01  min 2.06e-01  DESCENDING
+  rank 3   Vanilla_r3ph_s1        epochs 900  final-5% 2.91e-03  min 2.76e-04  SOLVED
+  rank 3   Vanilla_r3ph_s2        epochs 900  final-5% 2.86e-03  min 4.16e-04  SOLVED
+  rank 3   Vanilla_r3ph_s3        epochs 900  final-5% 1.34e-01  min 1.24e-01  DESCENDING
+  rank 3   Vanilla_r3ph_s4        epochs 900  final-5% 2.90e-03  min 4.56e-04  SOLVED
+  rank 3   Vanilla_r3ph_s5        epochs 900  final-5% 6.19e-03  min 2.99e-03  SOLVED
+  rank 3   Vanilla_r3ph_s6        epochs 900  final-5% 2.96e-03  min 3.12e-04  SOLVED
+  rank 3   Vanilla_r3ph_s7        epochs 900  final-5% 5.06e-03  min 4.66e-04  SOLVED
+  rank 3   median first below 0.05 at epoch 532
+  rank 3   SOLVED 6/8; median loss at epochs [90, 225, 450, 675, 900]: 1.21e+00 2.45e-01 8.62e-02 2.70e-02 3.46e-03
+  rank 4   Vanilla_r4ph_s0        epochs 900  final-5% 3.73e-03  min 4.24e-04  SOLVED
+  rank 4   Vanilla_r4ph_s1        epochs 900  final-5% 1.03e-02  min 3.13e-03  SOLVED
+  rank 4   Vanilla_r4ph_s2        epochs 900  final-5% 4.11e-03  min 1.31e-04  SOLVED
+  rank 4   Vanilla_r4ph_s3        epochs 900  final-5% 4.39e-03  min 4.92e-04  SOLVED
+  rank 4   Vanilla_r4ph_s4        epochs 900  final-5% 2.49e-03  min 2.28e-04  SOLVED
+  rank 4   Vanilla_r4ph_s5        epochs 900  final-5% 7.97e-03  min 2.31e-03  SOLVED
+  rank 4   Vanilla_r4ph_s6        epochs 900  final-5% 4.93e-03  min 3.46e-04  SOLVED
+  rank 4   Vanilla_r4ph_s7        epochs 900  final-5% 3.31e-03  min 3.79e-04  SOLVED
+  rank 4   median first below 0.05 at epoch 523
+  rank 4   SOLVED 8/8; median loss at epochs [90, 225, 450, 675, 900]: 9.93e-01 1.48e-01 7.21e-02 2.46e-02 3.14e-03

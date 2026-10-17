@@ -1,0 +1,9 @@
+floors: best constant 0.5054, reversal-copy 0.5965 (n 6381 targets)
+s0 clock: opposition raw 1.730 -> minus common 0.0071 [omega-scaled 0.0037]; |c|/|N| 0.711; cos(c, verb) +1.000; synonym cos 1.0000; acc full 0.881, non-direction zeroed 0.191, direction zeroed 0.388
+s1 map  : opposition raw 0.083 -> minus common 0.0029 [omega-scaled 0.0026]; |c|/|N| 0.041; cos(c, verb) +0.450; synonym cos 1.0000; acc full 0.998, non-direction zeroed 0.893, direction zeroed 0.505
+s2 clock: opposition raw 1.434 -> minus common 0.0064 [omega-scaled 0.0056]; |c|/|N| 1.144; cos(c, verb) +0.999; synonym cos 0.9999; acc full 0.999, non-direction zeroed 0.665, direction zeroed 0.482
+s3 clock: opposition raw 1.707 -> minus common 0.0022 [omega-scaled 0.0019]; |c|/|N| 0.480; cos(c, verb) +1.000; synonym cos 0.9999; acc full 0.995, non-direction zeroed 0.673, direction zeroed 0.463
+s4 clock: opposition raw 1.768 -> minus common 0.0052 [omega-scaled 0.0047]; |c|/|N| 0.501; cos(c, verb) +1.000; synonym cos 0.9998; acc full 0.999, non-direction zeroed 0.539, direction zeroed 0.445
+s5 map  : opposition raw 0.120 -> minus common 0.0050 [omega-scaled 0.0048]; |c|/|N| 0.060; cos(c, verb) +0.803; synonym cos 0.9996; acc full 1.000, non-direction zeroed 0.898, direction zeroed 0.505
+s6 map  : opposition raw 0.080 -> minus common 0.0117 [omega-scaled 0.0098]; |c|/|N| 0.040; cos(c, verb) +0.835; synonym cos 0.9999; acc full 1.000, non-direction zeroed 0.950, direction zeroed 0.505
+s7 map  : opposition raw 0.119 -> minus common 0.0057 [omega-scaled 0.0038]; |c|/|N| 0.059; cos(c, verb) +0.888; synonym cos 0.9999; acc full 0.882, non-direction zeroed 0.586, direction zeroed 0.498

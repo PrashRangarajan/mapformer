@@ -1,9 +1,86 @@
-ring p+ 0.5   Signed_r4 n=8 share mean 0.79 (range 0.59-0.92); SOLVED 8/8
-ring p+ 0.5   Abs_r4    n=8 share mean 0.06 (range 0.02-0.16); SOLVED 2/8
-ring p+ 0.75  Signed_r4 n=8 share mean 0.78 (range 0.64-0.86); SOLVED 8/8
-ring p+ 0.75  Abs_r4    n=8 share mean 0.03 (range 0.02-0.04); SOLVED 1/8
-ring p+ 0.9   Signed_r4 n=8 share mean 0.64 (range 0.44-0.91); SOLVED 8/8
-ring p+ 0.9   Abs_r4    n=8 share mean 0.06 (range 0.02-0.10); SOLVED 4/8
-torus T 1024  Signed_r4 n=8 share mean 0.98 (range 0.90-1.00); SOLVED 8/8
-torus T 1024  Abs_r4    n=8 share mean 0.11 (range 0.00-0.27); SOLVED 0/8
-torus T 1024  Pos_r4    n=8 share mean 0.03 (range 0.00-0.12); SOLVED 1/8
+Cancelling share per run: usage-weighted (primary) and unweighted (secondary). Denominator excludes (move, channel) entries with |wrap(a)| <= 0.05.
+ring, p_plus 0.5 signed   n=8 SOLVED 8/8; weighted mean 0.79 (range 0.41-0.99); unweighted mean 0.79 (range 0.59-0.92); excluded (collapsed) entries 0.11
+    Signed_r4_p0.5_s30     weighted 0.956 unweighted 0.828 SOLVED
+    Signed_r4_p0.5_s31     weighted 0.525 unweighted 0.704 SOLVED
+    Signed_r4_p0.5_s32     weighted 0.990 unweighted 0.836 SOLVED
+    Signed_r4_p0.5_s33     weighted 0.994 unweighted 0.877 SOLVED
+    Signed_r4_p0.5_s34     weighted 0.471 unweighted 0.763 SOLVED
+    Signed_r4_p0.5_s35     weighted 0.414 unweighted 0.593 SOLVED
+    Signed_r4_p0.5_s36     weighted 0.995 unweighted 0.915 SOLVED
+    Signed_r4_p0.5_s37     weighted 0.964 unweighted 0.821 SOLVED
+ring, p_plus 0.5 |.|      n=8 SOLVED 2/8; weighted mean 0.06 (range 0.00-0.29); unweighted mean 0.06 (range 0.02-0.16); excluded (collapsed) entries 0.29
+    Abs_r4_p0.5_s30        weighted 0.011 unweighted 0.041 SOLVED
+    Abs_r4_p0.5_s31        weighted 0.000 unweighted 0.034 -
+    Abs_r4_p0.5_s32        weighted 0.011 unweighted 0.057 -
+    Abs_r4_p0.5_s33        weighted 0.003 unweighted 0.019 -
+    Abs_r4_p0.5_s34        weighted 0.013 unweighted 0.037 SOLVED
+    Abs_r4_p0.5_s35        weighted 0.005 unweighted 0.022 -
+    Abs_r4_p0.5_s36        weighted 0.292 unweighted 0.158 -
+    Abs_r4_p0.5_s37        weighted 0.176 unweighted 0.146 -
+    solved |.| runs: weighted 0.01, 0.01
+ring, p_plus 0.75 signed   n=8 SOLVED 8/8; weighted mean 0.87 (range 0.55-0.99); unweighted mean 0.78 (range 0.64-0.86); excluded (collapsed) entries 0.11
+    Signed_r4_p0.75_s30    weighted 0.989 unweighted 0.842 SOLVED
+    Signed_r4_p0.75_s31    weighted 0.908 unweighted 0.810 SOLVED
+    Signed_r4_p0.75_s32    weighted 0.963 unweighted 0.857 SOLVED
+    Signed_r4_p0.75_s33    weighted 0.981 unweighted 0.860 SOLVED
+    Signed_r4_p0.75_s34    weighted 0.547 unweighted 0.644 SOLVED
+    Signed_r4_p0.75_s35    weighted 0.885 unweighted 0.786 SOLVED
+    Signed_r4_p0.75_s36    weighted 0.989 unweighted 0.737 SOLVED
+    Signed_r4_p0.75_s37    weighted 0.714 unweighted 0.672 SOLVED
+ring, p_plus 0.75 |.|      n=8 SOLVED 1/8; weighted mean 0.02 (range 0.00-0.07); unweighted mean 0.03 (range 0.02-0.04); excluded (collapsed) entries 0.24
+    Abs_r4_p0.75_s30       weighted 0.021 unweighted 0.039 SOLVED
+    Abs_r4_p0.75_s31       weighted 0.008 unweighted 0.037 -
+    Abs_r4_p0.75_s32       weighted 0.016 unweighted 0.021 -
+    Abs_r4_p0.75_s33       weighted 0.003 unweighted 0.020 -
+    Abs_r4_p0.75_s34       weighted 0.003 unweighted 0.038 -
+    Abs_r4_p0.75_s35       weighted 0.074 unweighted 0.043 -
+    Abs_r4_p0.75_s36       weighted 0.006 unweighted 0.026 -
+    Abs_r4_p0.75_s37       weighted 0.003 unweighted 0.041 -
+    solved |.| runs: weighted 0.02
+ring, p_plus 0.9 signed   n=8 SOLVED 8/8; weighted mean 0.70 (range 0.39-0.99); unweighted mean 0.64 (range 0.44-0.91); excluded (collapsed) entries 0.16
+    Signed_r4_p0.9_s30     weighted 0.587 unweighted 0.526 SOLVED
+    Signed_r4_p0.9_s31     weighted 0.982 unweighted 0.642 SOLVED
+    Signed_r4_p0.9_s32     weighted 0.657 unweighted 0.604 SOLVED
+    Signed_r4_p0.9_s33     weighted 0.684 unweighted 0.640 SOLVED
+    Signed_r4_p0.9_s34     weighted 0.394 unweighted 0.439 SOLVED
+    Signed_r4_p0.9_s35     weighted 0.987 unweighted 0.911 SOLVED
+    Signed_r4_p0.9_s36     weighted 0.631 unweighted 0.630 SOLVED
+    Signed_r4_p0.9_s37     weighted 0.657 unweighted 0.720 SOLVED
+ring, p_plus 0.9 |.|      n=8 SOLVED 4/8; weighted mean 0.10 (range 0.00-0.34); unweighted mean 0.06 (range 0.02-0.10); excluded (collapsed) entries 0.18
+    Abs_r4_p0.9_s30        weighted 0.343 unweighted 0.070 SOLVED
+    Abs_r4_p0.9_s31        weighted 0.014 unweighted 0.060 SOLVED
+    Abs_r4_p0.9_s32        weighted 0.100 unweighted 0.073 -
+    Abs_r4_p0.9_s33        weighted 0.067 unweighted 0.083 SOLVED
+    Abs_r4_p0.9_s34        weighted 0.014 unweighted 0.036 SOLVED
+    Abs_r4_p0.9_s35        weighted 0.075 unweighted 0.037 -
+    Abs_r4_p0.9_s36        weighted 0.002 unweighted 0.020 -
+    Abs_r4_p0.9_s37        weighted 0.166 unweighted 0.100 -
+    solved |.| runs: weighted 0.34, 0.01, 0.07, 0.01
+torus, T 1024    signed   n=8 SOLVED 8/8; weighted mean 0.93 (range 0.64-1.00); unweighted mean 0.98 (range 0.90-1.00); excluded (collapsed) entries 0.35
+    Signed_r4_s0           weighted 0.642 unweighted 0.897 SOLVED
+    Signed_r4_s1           weighted 1.000 unweighted 1.000 SOLVED
+    Signed_r4_s2           weighted 0.869 unweighted 0.978 SOLVED
+    Signed_r4_s3           weighted 1.000 unweighted 1.000 SOLVED
+    Signed_r4_s4           weighted 1.000 unweighted 1.000 SOLVED
+    Signed_r4_s5           weighted 1.000 unweighted 1.000 SOLVED
+    Signed_r4_s6           weighted 1.000 unweighted 1.000 SOLVED
+    Signed_r4_s7           weighted 0.933 unweighted 0.988 SOLVED
+torus, T 1024    |.|      n=8 SOLVED 0/8; weighted mean 0.09 (range 0.00-0.29); unweighted mean 0.11 (range 0.00-0.27); excluded (collapsed) entries 0.68
+    Abs_r4_s0              weighted 0.002 unweighted 0.057 -
+    Abs_r4_s1              weighted 0.000 unweighted 0.000 -
+    Abs_r4_s2              weighted 0.258 unweighted 0.224 -
+    Abs_r4_s3              weighted 0.000 unweighted 0.024 -
+    Abs_r4_s4              weighted 0.286 unweighted 0.275 -
+    Abs_r4_s5              weighted 0.009 unweighted 0.128 -
+    Abs_r4_s6              weighted 0.133 unweighted 0.111 -
+    Abs_r4_s7              weighted 0.036 unweighted 0.061 -
+torus, T 1024    softplus n=8 SOLVED 1/8; weighted mean 0.01 (range 0.00-0.09); unweighted mean 0.03 (range 0.00-0.12); excluded (collapsed) entries 0.62
+    Pos_r4_s0              weighted 0.000 unweighted 0.000 -
+    Pos_r4_s1              weighted 0.000 unweighted 0.000 -
+    Pos_r4_s2              weighted 0.001 unweighted 0.053 -
+    Pos_r4_s3              weighted 0.091 unweighted 0.119 -
+    Pos_r4_s4              weighted 0.000 unweighted 0.000 -
+    Pos_r4_s5              weighted 0.000 unweighted 0.000 -
+    Pos_r4_s6              weighted 0.000 unweighted 0.026 -
+    Pos_r4_s7              weighted 0.000 unweighted 0.043 SOLVED
+    solved softplus runs: weighted 0.00

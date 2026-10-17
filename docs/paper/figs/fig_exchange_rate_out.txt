@@ -1,0 +1,7 @@
+(a) Dyck-2 L32 D12, A2f, n = 8, T12 1x budget: path MapWM 1L 0.9962; index RoPE by layers: 1L 0.6479 (0.643-0.653), 2L 0.8889 (0.862-0.923), 3L 0.9639 (0.945-0.976), 4L 0.9817 (0.955-0.989); MapWM at 2-4L: 0.9998, 0.9997, 0.9999; floor 0.5935
+(b) ring 32 cells, T = 128, fresh seeds 2-7 (n = 6)
+  p_plus 0.5: path 1L 1.0000 (min 1.0000); index 1/2/3L 0.7098 / 0.9488 / 0.9983; retrace floor 0.860
+  p_plus 0.75: path 1L 1.0000 (min 1.0000); index 1/2/3L 0.6775 / 0.9617 / 0.9983; retrace floor 0.758
+  p_plus 0.9: path 1L 1.0000 (min 1.0000); index 1/2/3L 0.8236 / 0.9867 / 0.9989; retrace floor 0.612
+  p_plus 1.0 (no step undone; not drawn): path 1L 1.0000, index 1-3L min 1.0000
+(c) torus T = 1024, n = 4: path 1L 1.0000; index 1L 0.7193 (0.688-0.739), 4L 0.8595 (0.814-0.881), looped x4 0.8641 (0.860-0.868); floors (own stream) blank 0.5094, retrace 0.8441
