@@ -8,7 +8,7 @@ set -uo pipefail
 REPO="$(cd "$(dirname "$0")" && pwd)"
 LOG="$REPO/lrsweep.log"
 source "$REPO/lib_driver.sh"
-DRV_MAXPG=6; DRV_MINFREE=3000; DRV_SPACING=15    # assigned after sourcing (rule 27)
+DRV_MAXPG=4; DRV_MINFREE=3000; DRV_SPACING=15    # assigned after sourcing (rule 27); 4 per GPU: shared with another user (Amendment 1)
 export DRV_GPUS="${DRV_GPUS:-0 1}"
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 drv_lock "$REPO/.run_lrsweep.lock" || exit 1

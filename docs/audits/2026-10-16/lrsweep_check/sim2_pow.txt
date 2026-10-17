@@ -1,0 +1,5 @@
+P1 SO 1.0; AO (.125,.5,.5,.3): sims 2000 (54s) | SOLVED-route rejection: sel 0.417 naive 0.112 decision 0.112 paired-sel 0.222 | label SLB 0.247 NLB 0.000 NSC 0.029 | paired-route SLB 0.337 | mean AO@best SOLVED 4.84
+P2 SO 1.0; AO (.125,.3,.3,.3): sims 2000 (41s) | SOLVED-route rejection: sel 0.768 naive 0.529 decision 0.529 paired-sel 0.532 | label SLB 0.681 NLB 0.000 NSC 0.001 | paired-route SLB 0.692 | mean AO@best SOLVED 3.50
+P3 SO 1.0; AO (.125,.6,.6,.6) [NSC inflation]: sims 2000 (46s) | SOLVED-route rejection: sel 0.225 naive 0.003 decision 0.003 paired-sel 0.101 | label SLB 0.042 NLB 0.000 NSC 0.118 | paired-route SLB 0.137 | mean AO@best SOLVED 5.92
+P4 SO 1.0; AO (.125,.5,.75,.75): sims 2000 (43s) | SOLVED-route rejection: sel 0.069 naive 0.001 decision 0.001 paired-sel 0.025 | label SLB 0.011 NLB 0.000 NSC 0.322 | paired-route SLB 0.035 | mean AO@best SOLVED 6.72
+P5 SO 1.0; AO (.125,.5,.5,.3) seed c2: sims 2000 (39s) | SOLVED-route rejection: sel 0.387 naive 0.165 decision 0.165 paired-sel 0.173 | label SLB 0.289 NLB 0.000 NSC 0.027 | paired-route SLB 0.319 | mean AO@best SOLVED 4.73

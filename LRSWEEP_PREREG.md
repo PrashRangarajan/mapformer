@@ -181,3 +181,40 @@ no launches beside another user's substantial jobs without asking (`feedback_gpu
 <= 6 per GPU, output `runs/lrsweep_pilot/`, analysis `PILOT_ANALYSIS.txt` via `analyze_lrsweep --seeds 1590-1591 --rates
 1e-2,3e-2,1e-1 --no-json`). Its result decides the extension rule above and is recorded here before launch. The batch is not
 to be launched before the pilot and the independent check.
+
+## Amendment 1 (2026-10-16, after the independent check `docs/audits/2026-10-16/lrsweep_audit.md`; before launch, no batch result exists)
+The check found the code doing what this file says: 64 launches with the registered lr / wd / deltas / seeds; the 1e-3 and
+3e-3 cells byte-identical in command line to ROBUST def / lrx3 (94 shared modules md5-identical to ROBUST's; bitwise on CPU
+at one thread); lr reaches the single AdamW group and the cosine schedule at every rate incl. 1e-1 / 3e-1, unclamped; forced
+NaN runs are classed DIVERGED, kept, and crash neither the driver nor the analysis; the selection rule, the 12,870-split
+null and the reading match independent reimplementations; every label and reading reachable, none guaranteed; size of the
+decision p <= 0.5% (SOLVED) and <= 2.2% (accuracy) under the null of equal profiles. Changes:
+- **MAJOR 1 (the CLOSES / NO COST split must not rest on SO's loss tie-break).** The split now compares AO's best rate with
+  the LOWEST rate at which SO reaches its best SOLVED count. "Contradicts ROBUST def / WRAP_EXISTENCE E3" is printed only if
+  the per-rate 1e-3 contrast (naive Fisher / permutation, the ROBUST rule) also reads NO SIGN COST.
+- **MAJOR 2 (weight decay coupled to lr).** AdamW's decay per step is lr x wd, so the decay exponent over the run is ~805 x lr
+  (0.8 at 1e-3, 8 at 1e-2, 24 at 3e-2) and acts on omega, W_out and the LayerNorm gains. Registered conditional stage 2, fixed
+  now: IF B1 reads SIGNED LEARNS BETTER (COST AT BEST RATES) AND AO's selected rate is >= 1e-2, run SO and AO at AO's selected
+  rate with wd = 5e-5 / lr (lr x wd equal to the default's), seeds 1500-1507 (16 runs), and label it with the ROBUST rule
+  (naive Fisher / permutation). If that decay-matched contrast reads SIGNED LEARNS BETTER, the reading stands; if it reads NO
+  SIGN COST or NON-NEGATIVE LEARNS BETTER, the reading becomes "COST AT BEST RATES IS COUPLED DECAY"; if UNMEASURED, the
+  reading is scoped to "AdamW wd 0.05 coupled to lr". Stage-2 code gets its own short independent check before launch. If
+  AO's selected rate is <= 3e-3 the decay is at most 3x the default's and ROBUST's wd-0 cell (0/8 vs 8/8) stands as the
+  decay control. (The audit's option (a), 32 runs at 1e-2 and 3e-2 unconditionally, was not taken: cost on a shared GPU.)
+- **MINOR 1.** NO SIGN COST at B1 is worded "cost not detectable at AO's best tested rate (selection-inflated)": with SO at
+  ceiling and AO's true solve rate 0.75 at two rates it fires ~33% of the time. The cross-fit is reported beside it, not gated.
+- **MINOR 2 (validity statement corrected).** The selection-aware null is exact only if all 16 rate profiles are
+  exchangeable; the within-seed pairing of the arms makes it conservative there. Under B1's broader null (best vs best
+  equal) the selection-aware p alone can be anti-conservative (0.088 in a simulated case); the max(selection-aware, naive)
+  rule is what keeps the false-cost rate <= ~5.2%. With SO at ceiling the decision p reduces to Fisher at the selected rates.
+- **MINOR 3 (power in true solve rates, SO at 1.0).** The cost label fires 25 / 67 / 89 / 99% when AO's true best-rate solve
+  rate is 0.5 / 0.3 / 0.2 / 0.1.
+- **MINOR 4.** UNMEASURED says "the cost may shrink with the rate" only when AO's best rate is above SO's lowest best rate.
+- **MINOR 5.** A DIVERGED run scores accuracy 0.0 (below the 0.50 blank floor); disclosed, not re-scored.
+- **MINOR 6.** The reading carries a "still DESCENDING at AO's best rate: budget-scoped" qualifier when any AO run there is
+  DESCENDING (rule 4).
+- **MINOR 7.** run_record asserts n_trials = 400.
+- **MINOR 8.** The pilot script has no running() guard; it is not restarted. It ran on code at 9005a48, on GPU 1 shared with
+  another user's job (concurrency 4, not 6).
+- Selftest re-run after the changes: every B1 label and reading reached.
+- GPU: the batch runs on GPU 1 only, beside another user's job, at <= 4 concurrent runs (user's instruction).

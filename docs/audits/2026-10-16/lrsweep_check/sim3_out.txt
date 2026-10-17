@@ -1,0 +1,6 @@
+AO (.125,.6,.6,.6): true AO best p 0.60 (x8 = 4.8) | mean AO@best 5.99, cross-fit AO 4.86 | NSC 0.135, NSC + cross-fit guard 0.083 | SLB 0.036
+AO (.125,.5,.75,.75): true AO best p 0.75 (x8 = 6.0) | mean AO@best 6.71, cross-fit AO 5.74 | NSC 0.334, NSC + cross-fit guard 0.212 | SLB 0.007
+AO (.125,.5,.75,.5): true AO best p 0.75 (x8 = 6.0) | mean AO@best 6.25, cross-fit AO 5.27 | NSC 0.222, NSC + cross-fit guard 0.159 | SLB 0.031
+AO (.125,.5,.9,.9): true AO best p 0.90 (x8 = 7.2) | mean AO@best 7.64, cross-fit AO 7.02 | NSC 0.778, NSC + cross-fit guard 0.542 | SLB 0.000
+AO (.125,.5,1,.9) true no cost at best: true AO best p 1.00 (x8 = 8.0) | mean AO@best 8.00, cross-fit AO 7.64 | NSC 1.000, NSC + cross-fit guard 0.798 | SLB 0.000
+AO (.125,.5,.9,.5): true AO best p 0.90 (x8 = 7.2) | mean AO@best 7.25, cross-fit AO 6.66 | NSC 0.575, NSC + cross-fit guard 0.478 | SLB 0.002

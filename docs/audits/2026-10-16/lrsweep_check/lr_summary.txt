@@ -1,0 +1,12 @@
+SO 1e-3: groups [(0.05, 0.001, 24, 204243)] steps 100 first 2.000e-04 peak/lr 1.000000 at step 4 last/lr 0.1002 | saved args lr 0.001 wd 0.05
+SO 3e-3: groups [(0.05, 0.003, 24, 204243)] steps 100 first 6.000e-04 peak/lr 1.000000 at step 4 last/lr 0.1002 | saved args lr 0.003 wd 0.05
+SO 1e-2: groups [(0.05, 0.01, 24, 204243)] steps 100 first 2.000e-03 peak/lr 1.000000 at step 4 last/lr 0.1002 | saved args lr 0.01 wd 0.05
+SO 3e-2: groups [(0.05, 0.03, 24, 204243)] steps 100 first 6.000e-03 peak/lr 1.000000 at step 4 last/lr 0.1002 | saved args lr 0.03 wd 0.05
+SO 1e-1: groups [(0.05, 0.1, 24, 204243)] steps 100 first 2.000e-02 peak/lr 1.000000 at step 4 last/lr 0.1002 | saved args lr 0.1 wd 0.05
+SO 3e-1: groups [(0.05, 0.3, 24, 204243)] steps 100 first 6.000e-02 peak/lr 1.000000 at step 4 last/lr 0.1002 | saved args lr 0.3 wd 0.05
+AO 1e-3: groups [(0.05, 0.001, 24, 204243)] steps 100 first 2.000e-04 peak/lr 1.000000 at step 4 last/lr 0.1002 | saved args lr 0.001 wd 0.05
+AO 3e-3: groups [(0.05, 0.003, 24, 204243)] steps 100 first 6.000e-04 peak/lr 1.000000 at step 4 last/lr 0.1002 | saved args lr 0.003 wd 0.05
+AO 1e-2: groups [(0.05, 0.01, 24, 204243)] steps 100 first 2.000e-03 peak/lr 1.000000 at step 4 last/lr 0.1002 | saved args lr 0.01 wd 0.05
+AO 3e-2: groups [(0.05, 0.03, 24, 204243)] steps 100 first 6.000e-03 peak/lr 1.000000 at step 4 last/lr 0.1002 | saved args lr 0.03 wd 0.05
+AO 1e-1: groups [(0.05, 0.1, 24, 204243)] steps 100 first 2.000e-02 peak/lr 1.000000 at step 4 last/lr 0.1002 | saved args lr 0.1 wd 0.05
+AO 3e-1: groups [(0.05, 0.3, 24, 204243)] steps 100 first 6.000e-02 peak/lr 1.000000 at step 4 last/lr 0.1002 | saved args lr 0.3 wd 0.05

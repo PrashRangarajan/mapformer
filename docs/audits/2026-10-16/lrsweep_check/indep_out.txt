@@ -1,0 +1,5 @@
+selection rule: 3000 random groups (ties forced), mismatches 2
+selection-aware null, n = 4, 60 random datasets: mismatches 0
+n = 8: relabellings 12870 distinct 12870 exact True = C(16,8) 12870 | observed AO set present: True
+n = 8 random dataset: module p 0.451748/0.949650 vs reference 0.451748/0.949650; M 12870 vs 12870
+reading: combinations 205 mismatches 0

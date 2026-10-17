@@ -54,20 +54,28 @@ def label_from(k_ao, k_so, acc_ao, acc_so, p_k, p_acc, n):
     return UNM
 
 
-def reading(lab, r_ao, r_so, rates):
-    """Overall reading, fixed in LRSWEEP_PREREG.md. lab: B1 label; r_ao, r_so: selected rates; rates: the grid."""
+def reading(lab, r_ao, r_so, rates, ao_desc=0, lab_1e3=None):
+    """Overall reading, fixed in LRSWEEP_PREREG.md (+ Amendment 1). lab: B1 label; r_ao: AO's selected rate; r_so: the
+    LOWEST rate at which SO reaches its best SOLVED count (Amendment 1 MAJOR 1: not SO's loss-tie-broken rate);
+    ao_desc: AO runs still DESCENDING at r_ao; lab_1e3: the per-rate label at 1e-3 (ROBUST def's rate)."""
     edge = r_ao == max(rates)
     q = " [AO's best rate is the grid's top rate: the AO optimum is not bracketed; 'best' = best TESTED]" if edge else ""
+    if ao_desc:
+        q += f" [{ao_desc} AO run(s) still DESCENDING at AO's best rate: budget-scoped]"
     if lab.startswith(UNR):
         return "UNREADABLE (the signed arm solves < 4/8 at every rate)" + q
     if lab == SLB:
         return "COST AT BEST RATES" + q
     if lab in (NSC, NLB):
         rev = " (reversed: NON-NEGATIVE LEARNS BETTER)" if lab == NLB else ""
+        sel = " -- cost not detectable at AO's best tested rate (selection-inflated; see the cross-fit)" if lab == NSC else ""
         if r_ao > r_so:
-            return f"COST CLOSES AT HIGHER LR (AO best {r_ao:g} > SO best {r_so:g}){rev}" + q
-        return f"NO COST AT BEST RATES (AO best {r_ao:g}, SO best {r_so:g}){rev}" + q
-    return "UNMEASURED" + q
+            return f"COST CLOSES AT HIGHER LR (AO best {r_ao:g} > SO lowest best {r_so:g}){rev}{sel}" + q
+        con = (" -- contradicts ROBUST def / WRAP_EXISTENCE E3" if lab_1e3 == NSC
+               else f" -- does not contradict ROBUST def (1e-3 per-rate contrast reads {lab_1e3})")
+        return f"NO COST AT BEST RATES (AO best {r_ao:g}, SO lowest best {r_so:g}){rev}{sel}{con}" + q
+    return "UNMEASURED" + (f" (AO best {r_ao:g} > SO lowest best {r_so:g}: the cost may shrink with the rate)"
+                           if r_ao > r_so else "") + q
 
 
 # ------------------------------------------------------------------------------ selection and its permutation null
@@ -137,7 +145,7 @@ def run_record(d, arm, s, lr, epochs, n_batches, tok=None):
     assert (A["arm"], A["seed"], tuple(b["config"]["deltas"])) == (arm, s, (1, -1)), (d, A)
     assert abs(A["lr"] - lr) <= 1e-9 * lr and abs(A.get("weight_decay", 0.05) - 0.05) < 1e-12, (d, A["lr"], A.get("weight_decay"))
     assert A["epochs"] == epochs and len(b["losses"]) == epochs, (d, A["epochs"], len(b["losses"]))
-    want = {"size": 32, "n_steps": 128, "batch_size": 128, "n_batches": n_batches, "data_workers": 3}
+    want = {"size": 32, "n_steps": 128, "batch_size": 128, "n_batches": n_batches, "data_workers": 3, "n_trials": 400}
     assert all(A.get(k) == v for k, v in want.items()), (d, {k: A.get(k) for k in want})
     L = np.asarray(b["losses"], float); div = not np.all(np.isfinite(L))
     k = classify_run(L); k10 = classify_run(L, solved_loss=0.1)
@@ -185,7 +193,15 @@ def analyse(R, rates, seeds, out=print):
                 "p_acc_sel": t["p_acc_sel"], "naive_fisher_p": nf, "naive_perm_p": npp, "p_k": P["p_k"],
                 "p_acc": P["p_acc"], "exact": t["exact"],
                 "n_relabel": t["n_relabel"]}}
-    V["reading"] = reading(lab, r_ao, r_so, rates)
+    ks = S[:n].sum(0); r_so_low = rates[int(np.argmax(ks == ks.max()))]          # Amendment 1 MAJOR 1
+    lab_1e3 = None
+    if 1e-3 in rates:
+        j = rates.index(1e-3); ka, kso = int(S[n:, j].sum()), int(S[:n, j].sum())
+        lab_1e3 = label_from(ka, kso, A[n:, j].mean(), A[:n, j].mean(), fisher_solved(ka, n, kso, n),
+                             perm2_p(A[:n, j], A[n:, j])["p"], n)
+    ao_desc = sum(R[r_ao, "AO", s]["cls"] == "DESCENDING" for s in seeds)
+    V["B1"]["SO_lowest_best_rate"] = r_so_low; V["B1"]["AO_desc_at_best"] = int(ao_desc); V["B1"]["label_1e3"] = lab_1e3
+    V["reading"] = reading(lab, r_ao, r_so_low, rates, ao_desc, lab_1e3)
     out("== B1 (registered primary): each arm at its own best rate (most SOLVED, then lowest mean final-5% loss) ==")
     out(f"AO best rate {r_ao:g}: SOLVED {t['k_ao']}/{n}, acc {t['acc_ao']:.4f} | SO best rate {r_so:g}: SOLVED "
         f"{t['k_so']}/{n}, acc {t['acc_so']:.4f} | d = AO - SO {t['acc_ao'] - t['acc_so']:+.4f}")
