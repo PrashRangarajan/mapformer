@@ -1,0 +1,15 @@
+PoPE-Flat            acc T128 0.6706 T512 0.6226 T1024 0.5986 | STALLED tail 0.9428 AUC 1.0989 | s/epoch median 3.90 (n 60)
+    probe acc 0.6706 verify 0.0e+00 | R1 0.949 R2 0.826 R3+ 0.549 none 0.533 | off1 mass 0.354
+    delta: deadzone 1.000 repinned 1.000 |wrap| 0.000 moved nan (max nan) outside 1.000 | K3>K1 0.000 argmax 1:136
+PoPE-FreeDelta       acc T128 0.8158 T512 0.5249 T1024 0.4009 | STALLED tail 0.8263 AUC 0.9496 | s/epoch median 3.90 (n 60)
+    probe acc 0.8158 verify 0.0e+00 | R1 0.993 R2 0.947 R3+ 0.774 none 0.535 | off1 mass 0.001
+    delta: deadzone 0.008 repinned 0.016 |wrap| 1.591 moved 1.737 (max 3.831) outside 0.008 | K3>K1 1.000 argmax 3:7 8:8 11:61 16:60
+MapPoPE-Flat         acc T128 1.0000 T512 0.9848 T1024 0.9388 | SOLVED tail 0.0001 AUC 0.0308 | s/epoch median 4.15 (n 60)
+    probe acc 1.0000 verify 0.0e+00 | R1 1.000 R2 1.000 R3+ 1.000 none 1.000 | off1 mass 0.019
+    delta: deadzone 0.891 repinned 0.930 |wrap| 0.018 moved nan (max nan) outside 0.891 | C 0.999 C0 0.999 same-cell mass 0.871
+MapPoPE-FreeDelta    acc T128 1.0000 T512 0.9694 T1024 0.9255 | SOLVED tail 0.0002 AUC 0.0361 | s/epoch median 4.40 (n 60)
+    probe acc 1.0000 verify 0.0e+00 | R1 1.000 R2 1.000 R3+ 1.000 none 1.000 | off1 mass 0.040
+    delta: deadzone 0.039 repinned 0.109 |wrap| 1.504 moved 1.823 (max 3.058) outside 0.039 | C 0.675 C0 0.998 same-cell mass 0.881
+MapPoPE-FrozenDelta  acc T128 1.0000 T512 0.9367 T1024 0.8013 | SOLVED tail 0.0118 AUC 0.0942 | s/epoch median 1.70 (n 60)
+    probe acc 1.0000 verify 0.0e+00 | R1 1.000 R2 1.000 R3+ 1.000 none 1.000 | off1 mass 0.000
+    delta: deadzone 0.000 repinned 0.031 |wrap| 1.464 moved 0.000 (max 0.000) outside 0.000 | C 0.665 C0 0.990 same-cell mass 0.927

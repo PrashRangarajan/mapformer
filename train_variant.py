@@ -126,6 +126,8 @@ from .model_pope_ablate import (PoPE_Full, PoPE_NoSigma, PoPE_ReLU, PoPE_NoDelta
 from .model_code_decay import MapFormerWM_RoPE_Decay, MapFormerWM_Decay
 from .model_pope_decay import (MapFormerWM_PoPE_Decay,
                                MapFormerWM_RoPEIndex_PoPE_Decay)
+from .model_pope_delta import (MapFormerWM_RoPEIndex_PoPE_FreeDelta, MapFormerWM_PoPE_FreeDelta,
+                               MapFormerWM_PoPE_FrozenDelta)
 
 VARIANT_MAP = {
     "Vanilla":    MapFormerWM,
@@ -355,6 +357,11 @@ VARIANT_MAP = {
     "MapWM-Decay":   MapFormerWM_Decay,
     "PoPE-Decay":    MapFormerWM_RoPEIndex_PoPE_Decay,
     "MapPoPE-Decay": MapFormerWM_PoPE_Decay,
+    # DELTA_FREE (DELTA_FREE_PREREG.md): PoPE's delta unpinned -- U(-2pi, 0) init, no clamp. The pinned twins
+    # are the unchanged PoPE-Flat / MapPoPE-Flat; every non-delta weight starts bitwise equal to theirs.
+    "PoPE-FreeDelta":      MapFormerWM_RoPEIndex_PoPE_FreeDelta,
+    "MapPoPE-FreeDelta":   MapFormerWM_PoPE_FreeDelta,
+    "MapPoPE-FrozenDelta": MapFormerWM_PoPE_FrozenDelta,   # no gradient route back to delta = 0
 }
 
 
