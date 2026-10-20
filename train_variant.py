@@ -232,6 +232,10 @@ VARIANT_MAP = {
     "CoPEF_Hi": __import__("mapformer.model_mono_baselines", fromlist=["x"]).CoPEF_Hi,
     "CoPEF_Lo": __import__("mapformer.model_mono_baselines", fromlist=["x"]).CoPEF_Lo,
     "CoPEF_LoS": __import__("mapformer.model_mono_baselines", fromlist=["x"]).CoPEF_LoS,
+    # SROPE_TORUS (2026-10-20): faithful Selective RoPE (authors' best LM config) and its no-SiLU variant (model_srope.py)
+    "SRoPE": __import__("mapformer.model_srope", fromlist=["x"]).MapFormerWM_SRoPE,
+    "SRoPE_NoSiLU": __import__("mapformer.model_srope", fromlist=["x"]).MapFormerWM_SRoPE_NoSiLU,
+    "SRoPE_ST": __import__("mapformer.model_srope", fromlist=["x"]).MapFormerWM_SRoPE_ST,   # Amendment 1: their state-tracking config
     "Abs_r2": MapFormerWM_Abs_r2,
     "Vanilla_r5": MapFormerWM_r5,
     "Vanilla_r7": MapFormerWM_r7,

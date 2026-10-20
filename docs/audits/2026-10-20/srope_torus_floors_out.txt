@@ -1,0 +1,20 @@
+T=1024 s1700: n 31364  blank 0.5078  n-gram best 0.5769 (orders 0-5 0.508 0.508 0.508 0.508 0.577 0.574)  retrace 0.8498  wrap-only share 0.071
+T=1024 s1701: n 31738  blank 0.5059  n-gram best 0.5759 (orders 0-5 0.506 0.506 0.506 0.506 0.576 0.572)  retrace 0.8469  wrap-only share 0.082
+T=1024 s1702: n 32185  blank 0.5074  n-gram best 0.5757 (orders 0-5 0.507 0.507 0.507 0.507 0.576 0.572)  retrace 0.8407  wrap-only share 0.082
+T=1024 s1703: n 32274  blank 0.5067  n-gram best 0.5751 (orders 0-5 0.507 0.507 0.507 0.507 0.575 0.572)  retrace 0.8396  wrap-only share 0.084
+T=1024 s1704: n 32169  blank 0.5143  n-gram best 0.5848 (orders 0-5 0.514 0.514 0.514 0.514 0.585 0.581)  retrace 0.8509  wrap-only share 0.083
+T=1024 s1705: n 31748  blank 0.5103  n-gram best 0.5801 (orders 0-5 0.510 0.510 0.510 0.510 0.580 0.577)  retrace 0.8486  wrap-only share 0.082
+T=1024 s1706: n 32406  blank 0.5094  n-gram best 0.5788 (orders 0-5 0.509 0.509 0.509 0.509 0.579 0.575)  retrace 0.8439  wrap-only share 0.080
+T=1024 s1707: n 32890  blank 0.5075  n-gram best 0.5756 (orders 0-5 0.508 0.508 0.508 0.508 0.576 0.572)  retrace 0.8426  wrap-only share 0.076
+T=1024 MEAN over seeds 1700-1707: blank 0.5087  n-gram 0.5779  retrace 0.8454  best-of 0.8454  wrap-only share 0.080
+
+T=2048 s1700: n 75765  blank 0.5133  n-gram best 0.5704 (orders 0-5 0.513 0.513 0.513 0.513 0.570 0.567)  retrace 0.7911  wrap-only share 0.188
+T=2048 s1701: n 76196  blank 0.5070  n-gram best 0.5644 (orders 0-5 0.507 0.507 0.507 0.507 0.564 0.561)  retrace 0.7890  wrap-only share 0.180
+T=2048 s1702: n 76691  blank 0.5019  n-gram best 0.5598 (orders 0-5 0.502 0.502 0.502 0.502 0.560 0.557)  retrace 0.7870  wrap-only share 0.194
+T=2048 s1703: n 77351  blank 0.5091  n-gram best 0.5664 (orders 0-5 0.509 0.509 0.509 0.509 0.566 0.563)  retrace 0.7878  wrap-only share 0.184
+T=2048 s1704: n 76798  blank 0.5080  n-gram best 0.5655 (orders 0-5 0.508 0.508 0.508 0.508 0.566 0.562)  retrace 0.7913  wrap-only share 0.192
+T=2048 s1705: n 76108  blank 0.5082  n-gram best 0.5668 (orders 0-5 0.508 0.508 0.508 0.508 0.567 0.563)  retrace 0.7957  wrap-only share 0.185
+T=2048 s1706: n 76716  blank 0.5093  n-gram best 0.5678 (orders 0-5 0.509 0.509 0.509 0.509 0.568 0.564)  retrace 0.7924  wrap-only share 0.184
+T=2048 s1707: n 77613  blank 0.5116  n-gram best 0.5694 (orders 0-5 0.512 0.512 0.512 0.512 0.569 0.566)  retrace 0.7959  wrap-only share 0.182
+T=2048 MEAN over seeds 1700-1707: blank 0.5086  n-gram 0.5663  retrace 0.7913  best-of 0.7913  wrap-only share 0.186
+
