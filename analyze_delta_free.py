@@ -30,6 +30,10 @@ In this order:
                                           Fisher p < .05, else "path unchanged within noise";
   NOT SUPPORTED (helps both)              mean dI >= TAU_I, p(dI) < .05, and the path arm helped (as above);
   UNMEASURED                              otherwise.
+Amendment 1 (docs/audits/2026-10-20/delta_free_audit.md): "path helped" needs mean dP >= +TAU_P (mirror of "path cost");
+registered secondary P1 (FrozenDelta / FreeDelta - MapPoPE-Flat at T = 1024, Holm over 2, TAU_P1 = 0.03); S4 decay-only
+references; S7 (fast / slow half delta reset on PoPE-FreeDelta); dropout-rescaled dI (descriptive); non-finite accuracies
+refused; every checkpoint's recipe asserted.
 """
 import argparse, importlib.util, json, math, os, re, sys
 from collections import defaultdict
@@ -46,6 +50,15 @@ PI, FI, PP, FP, ZP = "PoPE-Flat", "PoPE-FreeDelta", "MapPoPE-Flat", "MapPoPE-Fre
 ARMS = (PI, FI, PP, FP, ZP)
 INDEX_ARMS, PATH_ARMS = (PI, FI), (PP, FP, ZP)
 TAU_I, TAU_P, ALPHA = 0.05, 0.01, 0.05
+TAU_P1 = 0.03                           # Amendment 1, P1: path-arm T = 1024 cost threshold (~1.3 x PAPER2X2's MapPoPE sd)
+DECAY_ONLY_REPINNED = 0.036             # Amendment 1: re-pinned share of U(-2 pi x 0.4471, 0) (decay alone, no learning)
+# Amendment 1 (MINOR 3): the recipe every checkpoint must carry (config / args), per driver mode
+RECIPES = {
+    "batch": dict(epochs=300, lr=1e-3, schedule="cosine", n_steps=128, batch_size=128, n_batches=98, n_layers=1,
+                  n_heads=2, d_model=128, n_landmarks=0, data_workers=0, fast_attn=False),
+    "smoke": dict(epochs=2, lr=1e-3, schedule="cosine", n_steps=32, batch_size=8, n_batches=2, n_layers=1,
+                  n_heads=2, d_model=128, n_landmarks=0, data_workers=0, fast_attn=False),
+}
 PATH_PREMISE = 0.95
 RETRACE_DEFAULT = 0.934                 # PAPER2X2's stream (seeds 0-7); the batch uses its own stream's mean (--floors)
 LENGTHS = (128, 512, 1024)
@@ -115,7 +128,7 @@ def primary_label(acc, solved, seeds, retrace):
     kPP, kFP = sum(solved[PP][s] for s in seeds), sum(solved[FP][s] for s in seeds)
     pF = fisher_solved(kPP, len(seeds), kFP, len(seeds))
     mPP = float(np.mean([acc[PP][s] for s in seeds])); mPI = float(np.mean([acc[PI][s] for s in seeds]))
-    path_helped = (dP["mean"] > 0 and dP["p_sf"] < ALPHA) or (kFP > kPP and pF < ALPHA)
+    path_helped = (dP["mean"] >= TAU_P and dP["p_sf"] < ALPHA) or (kFP > kPP and pF < ALPHA)   # Amendment 1, MAJOR 1
     path_hurt = (dP["mean"] <= -TAU_P and dP["p_sf"] < ALPHA) or (kFP < kPP and pF < ALPHA)
     index_helped = dI["mean"] >= TAU_I and dI["p_sf"] < ALPHA
     det = {"dI": dI, "dP": dP, "I": I, "solved_PP": kPP, "solved_FP": kFP, "fisher_path": pF,
@@ -151,6 +164,69 @@ def frozen_label(acc, solved, seeds, ref=PP, arm=ZP):
     return UNM, c
 
 
+P1_COST, P1_NONE = "REMOVING THE PIN COSTS MAPPOPE'S LENGTH ROBUSTNESS", "NO OOD COST"
+
+
+def p1_labels(acc1024, seeds):
+    """Registered secondary P1 (Amendment 1, MAJOR 4; robustness, rule 10): X - MapPoPE-Flat at T = 1024 for X in
+    {FrozenDelta, FreeDelta}, exact sign-flip, Holm over the 2. Cost if mean <= -TAU_P1 and Holm p < .05; NO OOD COST if
+    the 90% sign-flip CI's lower end > -TAU_P1; else UNMEASURED."""
+    cs = {X: contrast(acc1024[PP], acc1024[X], seeds) for X in (ZP, FP)}
+    hp = dict(zip(cs, holm([c["p_sf"] for c in cs.values()])))
+    out = {}
+    for X, c in cs.items():
+        c["p_holm"] = hp[X]
+        if c["mean"] <= -TAU_P1 and hp[X] < ALPHA:
+            lab = P1_COST
+        elif c["ci90"][0] > -TAU_P1:
+            lab = P1_NONE
+        else:
+            lab = UNM
+        out[X] = (lab, c)
+    return out
+
+
+def check_finite(acc, seeds):
+    """Amendment 1 (MINOR 2): refuse non-finite accuracies instead of letting NaN fall through to a label."""
+    bad = [(T, a, s) for T in LENGTHS for a in ARMS for s in seeds
+           if not np.isfinite(acc.get(T, {}).get(a, {}).get(s, float("nan")))]
+    if bad:
+        raise SystemExit(f"non-finite or missing accuracies (refusing to label): {bad}")
+
+
+def check_recipe(b, arm, s, recipe):
+    """Amendment 1 (MINOR 3): the checkpoint must carry the registered recipe, its arm, its seed and every epoch."""
+    want = RECIPES[recipe]; c = b["config"]; A = c.get("args") or {}
+    got = {k: c.get(k, A.get(k)) for k in want}
+    got["data_workers"] = A.get("data_workers"); got["fast_attn"] = c.get("fast_attn", A.get("fast_attn"))
+    bad = {k: (got[k], v) for k, v in want.items()
+           if got[k] is None or not (abs(got[k] - v) < 1e-12 if isinstance(v, float) else got[k] == v)}
+    if b.get("variant") != arm or b.get("seed") != s or len(b.get("losses", [])) != want["epochs"]:
+        bad["identity"] = ((b.get("variant"), b.get("seed"), len(b.get("losses", []))), (arm, s, want["epochs"]))
+    if bad:
+        raise SystemExit(f"{arm} s{s}: checkpoint recipe differs from '{recipe}' (got, want): {bad}")
+
+
+def decay_factor(epochs=300, n_batches=98, lr=1e-3, wd=0.05):
+    """prod_k (1 - lr_k wd) under train.py's cosine schedule (5% warmup, cosine to 0.1 x lr): what AdamW's decoupled decay
+    alone does to a parameter over the run (0.4471 for the batch recipe)."""
+    T = epochs * n_batches; warm = max(1, int(0.05 * T)); f = 1.0
+    for st in range(T):
+        x = (st + 1) / warm if st < warm else 0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * min((st - warm) / max(1, T - warm), 1)))
+        f *= 1 - lr * x * wd
+    return f
+
+
+def reset_half(m, half):
+    """S7: a copy of a free-delta model with delta set to 0 on the fast half (c < d/2) or the slow half (c >= d/2)."""
+    import copy
+    m2 = copy.deepcopy(m); lay = m2.layers[0]; n = lay.pope_delta.shape[-1]
+    sl = slice(0, n // 2) if half == "fast" else slice(n // 2, n)
+    with torch.no_grad():
+        lay.pope_delta[:, sl] = 0.0
+    return m2
+
+
 # ------------------------------------------------------------------------------ data
 def parse_seeds(s):
     if "-" in s and "," not in s:
@@ -158,12 +234,13 @@ def parse_seeds(s):
     return [int(x) for x in s.split(",")]
 
 
-def load_raw(path):
+def load_raw(path, what="acc"):
     raw = json.load(open(path)); acc = defaultdict(lambda: defaultdict(dict))
     for k, v in raw.items():
         p, arm, T = k.split("|")
-        for s, a, _nll in v:
-            acc[int(T)][arm][int(s)] = float("nan") if a is None else float(a)
+        for s, a, nll in v:
+            x = a if what == "acc" else nll
+            acc[int(T)][arm][int(s)] = float("nan") if x is None else float(x)
     return acc
 
 
@@ -209,8 +286,10 @@ def phases(m, tok):
 
 
 @torch.no_grad()
-def forward_manual(m, tok):
-    """Layer-0 rebuild of a 1-layer PoPE model with the EFFECTIVE delta (raw for free / frozen, clamped for pinned)."""
+def forward_manual(m, tok, rescale=1.0):
+    """Layer-0 rebuild of a 1-layer PoPE model with the EFFECTIVE delta (raw for free / frozen, clamped for pinned).
+    rescale multiplies o_proj's input (softmax @ V), as DROPOUT_RESCORE's hook does (1 / (1 - p) = the descriptive
+    dropout-scale re-score, Amendment 1 MINOR 4); 1.0 = the model's own eval forward."""
     lay = m.layers[0]; B, L = tok.shape; H, dh = m.n_heads, lay.d_head
     x = m.token_emb(tok); h = lay.norm1(x)
     Q = lay.q_proj(h).view(B, L, H, dh).transpose(1, 2)
@@ -223,7 +302,7 @@ def forward_manual(m, tok):
     S = (torch.matmul(mq * ca, (mk * cK).transpose(-1, -2)) + torch.matmul(mq * sa, (mk * sK).transpose(-1, -2))) / math.sqrt(dh)
     S = S.masked_fill(torch.triu(torch.ones(L, L, dtype=torch.bool), 1), float("-inf"))
     A = F.softmax(S, -1)
-    out = lay.o_proj(torch.matmul(A, V).transpose(1, 2).reshape(B, L, -1))
+    out = lay.o_proj(rescale * torch.matmul(A, V).transpose(1, 2).reshape(B, L, -1))
     x = x + out; x = x + lay.ffn(lay.norm2(x))
     return m.out_proj(m.out_norm(x)), A[0], Q[0], K[0], ang
 
@@ -257,7 +336,7 @@ def coherence(m, Q, K, ang, tq, ts):
 
 
 @torch.no_grad()
-def kernel_checks(m):
+def kernel_checks(m, decay=None):
     """Index arms: share of content pairs (head, action query, observation key) with K(3) > K(1), argmax over D in 1..16,
     with the effective delta. Every arm: the delta distribution."""
     lay = m.layers[0]; H, dh = m.n_heads, lay.d_head
@@ -269,6 +348,13 @@ def kernel_checks(m):
     if hasattr(lay, "pope_delta_init"):
         out["moved_abs_mean"] = float((raw - lay.pope_delta_init).abs().mean())
         out["moved_abs_max"] = float((raw - lay.pope_delta_init).abs().max())
+        if lay.pope_delta.requires_grad:                          # free arms: what decay alone would have done
+            dec = (DECAY if decay is None else decay) * lay.pope_delta_init
+            res = (raw - dec).abs()                                   # (H, d): the learned part
+            n = res.shape[-1]
+            out["decay_resid_quartiles"] = [float(res[:, q * n // 4:(q + 1) * n // 4].mean()) for q in range(4)]
+            wd_ = torch.atan2(torch.sin(dec), torch.cos(dec))
+            out["decay_only_repinned"] = float((wd_.abs() < 0.1).float().mean())
     if hasattr(m, "theta_c"):
         E = m.token_emb.weight
         q = lay.q_proj(lay.norm1(E[:NA])).view(NA, H, dh); k = lay.k_proj(lay.norm1(E[NA:NA + NO])).view(NO, H, dh)
@@ -282,7 +368,7 @@ def kernel_checks(m):
 
 
 @torch.no_grad()
-def probe_run(m, s, T=128, trials=100):
+def probe_run(m, s, T=128, trials=100, rescale=1.0):
     from mapformer.environment import GridWorld
     env = GridWorld(size=64, n_obs_types=16, p_empty=0.5, seed=10000)
     np.random.seed(1234 + s)
@@ -291,8 +377,8 @@ def probe_run(m, s, T=128, trials=100):
         tok, _o, rev = env.generate_trajectory(T)
         locs = env.visited_locations
         inp = tok[None, :-1]
-        logits, A, Q, K, ang = forward_manual(m, inp)
-        if i < 2:
+        logits, A, Q, K, ang = forward_manual(m, inp, rescale)
+        if i < 2 and rescale == 1.0:
             verify = max(verify, float((logits - m(inp)).abs().max()))
         pred = logits[0].argmax(-1).numpy(); tgt = tok[1:].numpy(); msk = rev[1:].numpy()
         a = tok[0::2].numpy(); cell = np.array([x * 1000 + y for x, y in locs]); rc = retrace_class(a)
@@ -321,25 +407,32 @@ def probe_run(m, s, T=128, trials=100):
     return out
 
 
+DECAY = decay_factor()
+
+
 # ------------------------------------------------------------------------------ report
-def analyse(root, raw, seeds, floors, json_out, do_probe, probe_trials=100):
+def analyse(root, raw, seeds, floors, json_out, do_probe, probe_trials=100, recipe="batch"):
     L = []; P = lambda s="": (print(s, flush=True), L.append(s))
-    acc = load_raw(raw)
+    acc = load_raw(raw); nll = load_raw(raw, "nll")
     missing = [(a, s) for a in ARMS for s in seeds if s not in acc[128].get(a, {})]
     if missing:
         raise SystemExit(f"eval JSON lacks {missing}")
+    check_finite(acc, seeds)
+    rc_ = RECIPES[recipe]; dfac = decay_factor(rc_["epochs"], rc_["n_batches"], rc_["lr"])   # this recipe's decay-only factor
     retrace, rsrc = retrace_mean(floors, seeds)
     runs = {}; solved = defaultdict(dict); cls = defaultdict(dict); auc = defaultdict(dict); fin = defaultdict(dict)
     for a in ARMS:
         for s in seeds:
             b = torch.load(f"{root}/p0/{a}_s{s}/{a}.pt", map_location="cpu", weights_only=False)
+            check_recipe(b, a, s, recipe)
             l = np.asarray(b["losses"], float); c = classify_run(l)
             solved[a][s] = c["registered"] == "SOLVED" and bool(np.isfinite(l).all())
             cls[a][s] = c["cls"] if np.isfinite(l).all() else "DIVERGED"
             auc[a][s] = float(np.mean(l)); fin[a][s] = float(l[-max(1, round(0.05 * len(l))):].mean())
             runs[(a, s)] = b
     P(f"# DELTA_FREE analysis (DELTA_FREE_PREREG.md), seeds {seeds[0]}-{seeds[-1]}, n = {len(seeds)}")
-    P(f"retrace floor {retrace:.4f} ({rsrc}); TAU_I {TAU_I}, TAU_P {TAU_P}, alpha {ALPHA}, tests exact sign-flip")
+    P(f"retrace floor {retrace:.4f} ({rsrc}); TAU_I {TAU_I}, TAU_P {TAU_P}, TAU_P1 {TAU_P1}, alpha {ALPHA}, tests exact "
+      f"sign-flip; recipe '{recipe}' asserted on all {len(ARMS) * len(seeds)} checkpoints; decay-only factor {dfac:.4f}")
     P("\n## Per arm (held-out accuracy, mean +/- sd; SOLVED = final-5% training loss < 0.05)")
     for a in ARMS:
         cells = " | ".join(f"T={T} {np.mean([acc[T][a][s] for s in seeds]):.4f} +/- "
@@ -360,13 +453,25 @@ def analyse(root, raw, seeds, floors, json_out, do_probe, probe_trials=100):
     V = {"primary": lab, "details": {k: v for k, v in det.items()}, "seeds": seeds, "retrace": retrace}
     fl, fc = frozen_label(acc[128], solved, seeds)
     V["S1_frozen"] = fl; V["S1_details"] = fc
+    p1 = p1_labels(acc[1024], seeds)
+    V["P1"] = {X: lab for X, (lab, _c) in p1.items()}; V["P1_details"] = {X: c for X, (_l, c) in p1.items()}
+    P("\n## REGISTERED SECONDARY P1 (Amendment 1): path arms vs MapPoPE-Flat at T = 1024 (robustness, rule 10), Holm over 2")
+    for X, (lab, c) in p1.items():
+        P(fmt(f"P1 {X} - MapPoPE-Flat, T=1024", c) + f"; Holm p {c['p_holm']:.4f} -> **{lab}**")
+    P("declared beside P1 (descriptive): the same contrasts at T = 512, loss AUC (bimodal across PAPER2X2 seeds) and "
+      "T = 128 held-out NLL")
+    for X in (ZP, FP):
+        P(fmt(f"  {X} - MapPoPE-Flat, T=512", contrast(acc[512][PP], acc[512][X], seeds)))
+        P(fmt(f"  {X} - MapPoPE-Flat, loss AUC", contrast(auc[PP], auc[X], seeds)))
+        P(fmt(f"  {X} - MapPoPE-Flat, T=128 NLL", contrast(nll[128][PP], nll[128][X], seeds)))
     if json_out:
         json.dump(V, open(json_out, "w"), indent=2, default=float)
 
     P("\n## Declared secondaries (no verdict depends on them)")
     P(fmt("S1 MapPoPE-FrozenDelta - MapPoPE-Flat", fc) + f"; SOLVED {fc['solved_arm']}/8 vs {fc['solved_ref']}/8 "
       f"Fisher p {fc['fisher']:.4f} -> {fl}")
-    P(fmt("S1b MapPoPE-FrozenDelta - MapPoPE-FreeDelta", contrast(acc[128][FP], acc[128][ZP], seeds)))
+    P(fmt("S1b MapPoPE-FrozenDelta - MapPoPE-FreeDelta", contrast(acc[128][FP], acc[128][ZP], seeds))
+      + " [decay + learning vs neither: FP's delta also decays x0.447, ZP's does not]")
     m_below = {a: sum(acc[128][a][s] < retrace for s in seeds) for a in PATH_ARMS}
     m_above = {a: sum(acc[128][a][s] > retrace for s in seeds) for a in INDEX_ARMS}
     P(f"runs below the retrace floor (path arms): {m_below}; above it (index arms): {m_above}")
@@ -405,7 +510,7 @@ def analyse(root, raw, seeds, floors, json_out, do_probe, probe_trials=100):
         for a in ARMS:
             for s in seeds:
                 m, _ = load_run(root, a, s)
-                pr[(a, s)] = {**probe_run(m, s, trials=probe_trials), **kernel_checks(m)}
+                pr[(a, s)] = {**probe_run(m, s, trials=probe_trials), **kernel_checks(m, dfac)}
                 d = abs(pr[(a, s)]["acc"] - acc[128][a][s])
                 if pr[(a, s)]["verify"] > 1e-4 or d > 0.002:
                     P(f"WARNING {a} s{s}: rebuild max |dlogit| {pr[(a, s)]['verify']:.1e}, probe acc - eval acc {d:+.4f}")
@@ -433,6 +538,11 @@ def analyse(root, raw, seeds, floors, json_out, do_probe, probe_trials=100):
             g = lambda k: np.mean([pr[(a, s)].get(k, np.nan) for s in seeds])
             P(f"  {a:20s} deadzone {g('deadzone_share'):.3f} repinned {g('repinned_share'):.3f} |wrap| "
               f"{g('abs_wrapped_mean'):.3f} moved {g('moved_abs_mean'):.3f} outside {g('outside_clamp_share'):.3f}")
+            if a in (FI, FP):
+                q = np.mean([pr[(a, s)]["decay_resid_quartiles"] for s in seeds], 0)
+                P(f"  {'':20s} decay-only reference: re-pinned {g('decay_only_repinned'):.3f} from this arm's own draws "
+                  f"(batch-recipe analytic {DECAY_ONLY_REPINNED}); learned part |delta - {dfac:.4f} x init| by frequency quartile "
+                  f"fast->slow " + " ".join(f"{x:.3f}" for x in q))
         P("S5 index kernel: share K(3) > K(1) per seed; argmax_D in 1..16 pooled:")
         for a in INDEX_ARMS:
             P(f"  {a:20s} " + " ".join(f"{pr[(a, s)]['frac_K3_gt_K1']:.2f}" for s in seeds) + " | argmax "
@@ -443,7 +553,33 @@ def analyse(root, raw, seeds, floors, json_out, do_probe, probe_trials=100):
         for a in PATH_ARMS:
             P(f"  {a:20s} C {np.mean([pr[(a, s)]['C'] for s in seeds]):.3f}  C0 {np.mean([pr[(a, s)]['C0'] for s in seeds]):.3f}"
               f"  same-cell mass {np.mean([pr[(a, s)]['mass_cell'] for s in seeds]):.3f}")
+        P("\nS7 (Amendment 1, eval-only, diagnostic): PoPE-FreeDelta with delta reset to 0 on the fast half (c < 32) or the "
+          "slow half (c >= 32); T = 128 accuracy and R3+ accuracy (means over seeds), and the share of dI each reset removes")
+        s7 = {}
+        for s in seeds:
+            m, _ = load_run(root, FI, s)
+            for half in ("fast", "slow"):
+                s7[(half, s)] = probe_run(reset_half(m, half), s, trials=probe_trials)
+        dI_mean = np.mean([pr[(FI, s)]["acc"] - pr[(PI, s)]["acc"] for s in seeds])
+        for half in ("fast", "slow"):
+            c = contrast({s: pr[(FI, s)]["acc"] for s in seeds}, {s: s7[(half, s)]["acc"] for s in seeds}, seeds,
+                         unpaired=False)
+            P(f"  reset {half:4s}: acc {np.mean([s7[(half, s)]['acc'] for s in seeds]):.4f}  R3+ "
+              f"{np.nanmean([s7[(half, s)]['acc_R3+'] for s in seeds]):.4f}  (FI intact {np.mean([pr[(FI, s)]['acc'] for s in seeds]):.4f}"
+              f" / R3+ {np.nanmean([pr[(FI, s)]['acc_R3+'] for s in seeds]):.4f}; PI {np.mean([pr[(PI, s)]['acc'] for s in seeds]):.4f})"
+              f"; share of dI removed {(-c['mean'] / dI_mean) if dI_mean else float('nan'):+.2f}")
+            P(fmt(f"  S7 reset {half} - FI intact", c))
+        P("\nDropout-scale re-score (descriptive, Amendment 1 MINOR 4; o_proj input x 1/(1-p), DROPOUT_RESCORE's method), "
+          "index arms:")
+        rsc = {}
+        for a in INDEX_ARMS:
+            for s in seeds:
+                m, _ = load_run(root, a, s)
+                rsc[(a, s)] = probe_run(m, s, trials=probe_trials, rescale=1.0 / (1.0 - m.layers[0].dropout.p))["acc"]
+        P(fmt("  dI re-scored", contrast({s: rsc[(PI, s)] for s in seeds}, {s: rsc[(FI, s)] for s in seeds}, seeds)))
         W = {f"{a}|{s}": v for (a, s), v in pr.items()}
+        W.update({f"S7|{h}|{s}": v for (h, s), v in s7.items()})
+        W.update({f"rescored|{a}|{s}": v for (a, s), v in rsc.items()})
     if json_out:
         json.dump({**V, "secondaries": W}, open(json_out, "w"), indent=2, default=float)
     return lab
@@ -481,6 +617,7 @@ def selftest():
              ("supported, path cost", (0.68, 0.80, 0.999, 0.97), {"sdP": 0.005}, f"{SUP} (path cost"),
              ("supported, path cost by SOLVED", (0.68, 0.80, 0.999, 0.999), {"kFP": 1}, f"{SUP} (path cost"),
              ("helps both", (0.68, 0.80, 0.96, 0.99), {"sdP": 0.003}, f"{NS} (helps both"),
+             ("helps both by SOLVED", (0.68, 0.80, 0.97, 0.97), {"kPP": 1, "kFP": 8}, f"{NS} (helps both"),
              ("unmeasured (index gain, noisy)", (0.68, 0.73, 0.999, 0.999), {"sdI": 0.08}, UNM)]
     for name, (a, b, c, d), kw, want in cases:
         acc, sol, S = _synth(a, b, c, d, **kw)
@@ -493,6 +630,47 @@ def selftest():
         pp = kw.pop("_pp", 0.999)
         acc, sol, S = _synth(0.68, 0.80, pp, pp, **kw)
         chk(name, frozen_label(acc, sol, S)[0], want)
+    # Amendment 1, MAJOR 1: a sub-noise ceiling gain on the path arm must not read "helps both"
+    acc, sol, S = _synth(0.68, 0.80, 0.999, 0.999)
+    for s in S:
+        acc[PP][s] = 0.998 if s < 6 else 1.0; acc[FP][s] = 1.0
+    chk("ceiling: FP 1.000 everywhere, PP 0.998 on six seeds", primary_label(acc, sol, S, R)[0], f"{SUP} (path unchanged")
+    # P1 (T = 1024): every label
+    for name, mz, sdz, want in (("P1 costs", 0.85, 0.02, P1_COST), ("P1 no OOD cost", 0.94, 0.005, P1_NONE),
+                                ("P1 unmeasured", 0.92, 0.04, UNM)):
+        a1 = {PP: {s: 0.94 + 0.01 * _Z2[s] for s in S}, ZP: {s: mz + sdz * _Z[s] for s in S},
+              FP: {s: mz + sdz * _Z[s] for s in S}}
+        got = p1_labels(a1, S)
+        chk(name, got[ZP][0], want); chk(name + " (FreeDelta)", got[FP][0], want)
+    # MINOR 2: NaN refused
+    acc2 = {T: {a: {s: 0.5 for s in S} for a in ARMS} for T in LENGTHS}; acc2[128][FI][3] = float("nan")
+    try:
+        check_finite(acc2, S); good = False
+    except SystemExit:
+        good = True
+    acc2[128][FI][3] = 0.5
+    try:
+        check_finite(acc2, S)
+    except SystemExit:
+        good = False
+    ok &= good; print(f"{'ok ' if good else 'BAD'} non-finite accuracy refused, finite accepted")
+    # MINOR 3: recipe assertion
+    cfg0 = dict(RECIPES["batch"]); A0 = {"data_workers": 0, "fast_attn": False}
+    blob = {"variant": FI, "seed": 1600, "losses": [1.0] * 300,
+            "config": {**{k: v for k, v in cfg0.items() if k not in ("data_workers",)}, "args": A0}}
+    try:
+        check_recipe(blob, FI, 1600, "batch"); good = True
+    except SystemExit:
+        good = False
+    for bad_blob in ({**blob, "config": {**blob["config"], "lr": 3e-4}}, {**blob, "seed": 1601},
+                     {**blob, "losses": [1.0] * 299}, {**blob, "config": {**blob["config"], "args": {"data_workers": 3}}}):
+        try:
+            check_recipe(bad_blob, FI, 1600, "batch"); good = False
+        except SystemExit:
+            pass
+    ok &= good; print(f"{'ok ' if good else 'BAD'} recipe assertion: the batch recipe passes, wrong lr / seed / epochs / workers fail")
+    good = abs(decay_factor() - 0.4471) < 1e-4
+    ok &= good; print(f"{'ok ' if good else 'BAD'} decay-only factor {decay_factor():.4f} (audit: 0.4471)")
     # sign-flip CI: the mean is inside; the ends are where the test starts rejecting
     d = np.random.default_rng(3).normal(0.05, 0.04, 8); lo, hi = sf_ci(d)
     good = lo <= d.mean() <= hi and signflip_p(d - hi - 0.002)["p"] < 0.10 and signflip_p(d - hi)["p"] >= 0.10
@@ -551,6 +729,21 @@ def selftest():
         ok &= good; print(f"{'ok ' if good else 'BAD'} retrace_class / coherence / K(3)>K(1) equal kernel_probe's on pinned models")
     except Exception as e:                                       # noqa: BLE001
         ok = False; print(f"BAD kernel_probe comparison failed: {e!r}")
+    # S7: the reset touches only the named half, and only delta
+    mf = mk(FI); n = mf.layers[0].pope_delta.shape[-1]
+    rf, rs = reset_half(mf, "fast"), reset_half(mf, "slow")
+    d0 = mf.layers[0].pope_delta
+    good = (torch.all(rf.layers[0].pope_delta[:, :n // 2] == 0) and torch.equal(rf.layers[0].pope_delta[:, n // 2:], d0[:, n // 2:])
+            and torch.all(rs.layers[0].pope_delta[:, n // 2:] == 0) and torch.equal(rs.layers[0].pope_delta[:, :n // 2], d0[:, :n // 2])
+            and bool(torch.all(d0 != 0)))
+    sa, sb = mf.state_dict(), rf.state_dict()
+    good &= [k for k in sa if not torch.equal(sa[k], sb[k])] == ["layers.0.pope_delta"]
+    ok &= good; print(f"{'ok ' if good else 'BAD'} S7 reset_half zeroes only the named half of delta, original untouched")
+    # rescale: 1.0 is the model's forward; 1/(1-p) multiplies o_proj's input
+    with torch.no_grad():
+        good = torch.equal(forward_manual(mf, tok, 1.0)[0], mf(tok))
+        good &= not torch.equal(forward_manual(mf, tok, 1 / 0.9)[0], mf(tok))
+    ok &= good; print(f"{'ok ' if good else 'BAD'} rescale 1.0 = model forward; 1/(1-p) differs")
     print("SELFTEST", "PASSED" if ok else "FAILED")
     return ok
 
@@ -581,6 +774,7 @@ def main():
     ap.add_argument("--json-out", default=f"{REPO}/DELTA_FREE_VERDICTS.json")
     ap.add_argument("--no-json", action="store_true")
     ap.add_argument("--no-probe", action="store_true")
+    ap.add_argument("--recipe", default="batch", choices=sorted(RECIPES), help="recipe asserted on every checkpoint")
     ap.add_argument("--probe-trials", type=int, default=100, help="= the eval's --n-trials (the probe re-scores its stream)")
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--power", action="store_true")
@@ -591,7 +785,7 @@ def main():
     if a.power:
         power(); return
     analyse(a.root, a.raw, parse_seeds(a.seeds), a.floors, None if a.no_json else a.json_out, not a.no_probe,
-            a.probe_trials)
+            a.probe_trials, a.recipe)
 
 
 if __name__ == "__main__":

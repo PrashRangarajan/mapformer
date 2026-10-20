@@ -1,0 +1,6 @@
+sum lr 16.097; decay-only factor D = 0.4471
+PoPE-FreeDelta       mean|d - init| 1.737  mean|d - D init| 0.169 (median 0.066)  |resid| by channel quartile fast->slow [0.406, 0.087, 0.098, 0.085]  outside [-2pi, 0] 0.0078  range [-4.169, +0.100]
+MapPoPE-FreeDelta    mean|d - init| 1.823  mean|d - D init| 0.221 (median 0.175)  |resid| by channel quartile fast->slow [0.349, 0.177, 0.18, 0.177]  outside [-2pi, 0] 0.0391  range [-3.904, +0.090]
+MapPoPE-FrozenDelta  mean|d - init| 0.000  mean|d - D init| 1.851 (median 1.920)  |resid| by channel quartile fast->slow [1.866, 1.885, 1.872, 1.781]  outside [-2pi, 0] 0.0000  range [-6.234, -0.032]
+PoPE-Flat            raw min +0.000 max +0.0029 dead zone 1.000
+MapPoPE-Flat         raw min -0.418 max +0.0052 dead zone 0.891

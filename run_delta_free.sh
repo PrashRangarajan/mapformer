@@ -36,7 +36,7 @@ drv_lock "$REPO/.run_delta_free.lock" || exit 1          # one lock for every mo
 _drv_log "start mode=$MODE seeds=${SEEDS[*]} gpus=${DRV_GPUS:-cpu}"
 if [ "$MODE" = batch ]; then                             # clean tree BEFORE any wait (a batch must run committed code)
   (cd "$REPO" && git status --porcelain --untracked-files=no | grep -q .) && { _drv_log "REFUSED: tracked files modified (commit first)"; exit 1; }
-  (cd "$REPO" && git ls-files --error-unmatch analyze_delta_free.py run_delta_free.sh model_pope_delta.py DELTA_FREE_PREREG.md > /dev/null 2>&1) ||
+  (cd "$REPO" && git ls-files --error-unmatch analyze_delta_free.py run_delta_free.sh model_pope_delta.py DELTA_FREE_PREREG.md docs/audits/2026-10-20/delta_free_floors_out.txt > /dev/null 2>&1) ||
     { _drv_log "REFUSED: analyze_delta_free.py / run_delta_free.sh / model_pope_delta.py / DELTA_FREE_PREREG.md not committed"; exit 1; }
 fi
 cd "$REPO/.."
@@ -49,7 +49,7 @@ for m in sorted(k for k, v in sys.modules.items() if k.startswith('mapformer.') 
 " 2>> "$LOG")
 [ "${#GUARD[@]}" -ge 20 ] || { _drv_log "ABORT: module list for the md5 guard has ${#GUARD[@]} entries"; exit 1; }
 printf '%s\n' "${GUARD[@]}" | grep -qx model_pope_delta.py || { _drv_log "ABORT: model_pope_delta.py not in the guard"; exit 1; }
-GUARD+=(lib_driver.sh run_delta_free.sh)
+GUARD+=(lib_driver.sh run_delta_free.sh docs/audits/2026-10-20/delta_free_floors_out.txt)   # floors: Amendment 1
 drv_md5_guard "$R" "${GUARD[@]}" || exit 1
 _drv_log "code version: $(cd "$REPO" && git rev-parse HEAD) ($(cd "$REPO" && git status --porcelain --untracked-files=no | wc -l) tracked files modified); md5 guard over ${#GUARD[@]} files"
 
@@ -90,11 +90,11 @@ if [ "$MODE" = pilot ]; then
 fi
 if [ "$MODE" = smoke ]; then
   CUDA_VISIBLE_DEVICES="" python3 -u -m mapformer.analyze_delta_free --root "$R" --raw "${RAW%.md}.json" \
-    --seeds 1680-1687 --floors none --probe-trials "$EVAL_TRIALS" --json-out "$R/SMOKE_VERDICTS.json" > "$R/SMOKE_ANALYSIS.txt" 2>&1 || drv_fail analyze
+    --seeds 1680-1687 --floors none --probe-trials "$EVAL_TRIALS" --recipe smoke --json-out "$R/SMOKE_VERDICTS.json" > "$R/SMOKE_ANALYSIS.txt" 2>&1 || drv_fail analyze
   drv_done "$MARK" "$R/SMOKE_ANALYSIS.txt" "$R/SMOKE_VERDICTS.json"; exit 0
 fi
 drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before the analysis"
-CUDA_VISIBLE_DEVICES="" python3 -u -m mapformer.analyze_delta_free --root "$R" --raw "${RAW%.md}.json" --seeds 1600-1607 \
+CUDA_VISIBLE_DEVICES="" python3 -u -m mapformer.analyze_delta_free --root "$R" --raw "${RAW%.md}.json" --seeds 1600-1607 --recipe batch \
   --floors "$REPO/docs/audits/2026-10-20/delta_free_floors_out.txt" --json-out "$REPO/DELTA_FREE_VERDICTS.json" \
   > "$REPO/DELTA_FREE_ANALYSIS.txt" 2>&1 || drv_fail analyze
 drv_done "$MARK" "$REPO/DELTA_FREE_ANALYSIS.txt" "$REPO/DELTA_FREE_VERDICTS.json" "${RAW%.md}.json"

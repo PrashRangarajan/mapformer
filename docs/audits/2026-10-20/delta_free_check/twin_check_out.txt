@@ -1,0 +1,12 @@
+ok  T1 PoPE-Flat vs PoPE-FreeDelta s1670: losses equal True ([2.8004740476608276, 2.439422905445099]), tensors differing [], delta stayed interior True
+ok  T3 real twins differ: [2.7927144169807434, 2.4458202123641968] vs [2.800507664680481, 2.4394716024398804]
+ok  T1 PoPE-Flat vs PoPE-FreeDelta s1671: losses equal True ([2.8865151405334473, 2.407743752002716]), tensors differing [], delta stayed interior True
+ok  T3 real twins differ: [2.888684332370758, 2.4067397117614746] vs [2.8863943219184875, 2.407642960548401]
+ok  T1 MapPoPE-Flat vs MapPoPE-FreeDelta s1670: losses equal True ([2.7879396080970764, 2.4295580983161926]), tensors differing [], delta stayed interior True
+ok  T3 real twins differ: [2.7685171961784363, 2.436292052268982] vs [2.7878971695899963, 2.4298751950263977]
+ok  T1 MapPoPE-Flat vs MapPoPE-FreeDelta s1671: losses equal True ([2.811146855354309, 2.376207113265991]), tensors differing [], delta stayed interior True
+ok  T3 real twins differ: [2.8134971261024475, 2.3733819723129272] vs [2.8110987544059753, 2.3762177228927612]
+ok  T2 frozen s1672: unmoved True, AdamW state entries 0, grad None, init = free draw
+ok  T2 frozen s1673: unmoved True, AdamW state entries 0, grad None, init = free draw
+ok  T4 dead zone absorbing: p after push +0.00494, after 3000 zero-grad steps +0.005572, ever back <= 0: False
+ALL OK

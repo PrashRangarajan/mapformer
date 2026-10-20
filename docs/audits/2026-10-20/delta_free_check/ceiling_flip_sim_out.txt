@@ -1,0 +1,4 @@
+FP=1.000 every seed true dI 0.08 {'PEAK-PINNING SUPPORTED (path unchanged within noise)': 0.816, 'UNMEASURED': 0.144, 'NOT SUPPORTED (helps both)': 0.039, 'NOT SUPPORTED (helps neither: the index gain is below 0.05 at one-sided 95%)': 0.001}
+FP=1.000 every seed true dI 0.12 {'PEAK-PINNING SUPPORTED (path unchanged within noise)': 0.961, 'NOT SUPPORTED (helps both)': 0.036, 'UNMEASURED': 0.003}
+FP resampled like PP true dI 0.08 {'PEAK-PINNING SUPPORTED (path unchanged within noise)': 0.839, 'UNMEASURED': 0.159, 'NOT SUPPORTED (helps both)': 0.002}
+FP resampled like PP true dI 0.12 {'PEAK-PINNING SUPPORTED (path unchanged within noise)': 0.989, 'UNMEASURED': 0.007, 'NOT SUPPORTED (helps both)': 0.004}

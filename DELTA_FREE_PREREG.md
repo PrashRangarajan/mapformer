@@ -231,3 +231,116 @@ at 4 of our runs at once; 1.7 s/epoch for one run alone. Wall per run 19.2-21.3 
 **Projected batch:** 40 runs / 4 slots = 10 waves x ~20.5 min = **~3.4 h** on one shared GPU, + eval (~8 min for 40
 checkpoints) + CPU analysis with probe (~5 min): **~3.6 h wall** (~1.8 h if both GPUs are allowed, `DRV_GPUS="0 1"`, 4 per
 GPU). If the other user's job ends, expect it shorter (one run alone: 1.7 s/epoch).
+
+## Amendment 1 (2026-10-20, before launch; no batch result exists)
+Source: independent code check (rule 29), `docs/audits/2026-10-20/delta_free_audit.md` (scripts and outputs in
+`docs/audits/2026-10-20/delta_free_check/`), blind to batch results. **No BLOCKER.** The check verified:
+- the arms and command lines equal PAPER2X2's;
+- the pinned arms reproduce the parent commit bitwise (also on CPU);
+- twins stay bitwise identical through training when delta is held inside the clamp interior, so the only forward
+  difference is the clamp;
+- the frozen delta never moves and has no optimiser state;
+- the clamp is absent from every code path the new arms use;
+- the analysis uses the effective delta throughout;
+- selftest and a CPU end-to-end run pass.
+
+Five MAJOR and five MINOR points. The coordinator decided each, and every change below is fixed before any batch result.
+This amendment supersedes the body where they differ.
+
+1. **"Path helped" needs a size (MAJOR 1).** Primary branches 4 / 5: the path arm is helped iff mean dP >= +TAU_P (0.01)
+   with p(dP) < .05, or FP solves more with Fisher p < .05. This mirrors "path cost". Before, a sub-noise +0.001 at
+   ceiling with 6/8 seeds strictly above gave p 0.031, and flipped 3.6-3.9% of simulated SUPPORTED batches to
+   NOT SUPPORTED (helps both). With PP at ~0.999, "helps both" is unreachable by accuracy; it stays reachable by SOLVED.
+   - New selftest cases: FP 1.000 on every seed with PP 0.998 on six seeds reads SUPPORTED (path unchanged); "helps both
+     by SOLVED" (PP 1/8, FP 8/8).
+   - Re-run power table, sd 0.05 / 0.08, SUPPORTED / UNMEASURED / NOT SUPPORTED:
+
+     | true dI | sd 0.05 | sd 0.08 |
+     |---|---|---|
+     | 0 | 0.001 / 0.21 / 0.79 | 0.02 / 0.52 / 0.47 |
+     | +0.03 | 0.11 / 0.63 / 0.26 | 0.11 / 0.75 / 0.15 |
+     | +0.05 | 0.47 / 0.47 / 0.05 | 0.30 / 0.66 / 0.04 |
+     | +0.08 | 0.93 / 0.07 / 0.001 | 0.64 / 0.36 / 0.003 |
+     | +0.126 | 1.00 / 0 / 0 | 0.97 / 0.04 / 0 |
+2. **What "free" means: option A, the recipe is kept (MAJOR 2).** Free = U(-2 pi, 0) init, unclamped, learnable under the
+   same AdamW weight decay as every other parameter. Decay alone multiplies delta by 0.4471 over the run. `train.py` is not
+   changed.
+   - On the pilot (seed 1690, outside the batch), decay accounts for most of the free deltas' movement: mean |delta - init|
+     1.74 / 1.82 vs a decay-only 1.74. The learned part |delta - 0.4471 x init| is 0.169 (index) / 0.221 (path), mostly in
+     the fastest quartile of channels (0.41 / 0.35 vs 0.09-0.18 elsewhere). The body's pilot sentence "free arms moved far
+     from their draw ... and did NOT return to the pin" therefore describes decay, and is withdrawn as a reading.
+   - Decay pulls free deltas toward the pin: toward raw 0, carrying draws in (-2 pi, -pi) through +/- pi. On slow
+     channels this turns kernels toward the pinned arm's recency shape. This is **conservative for the primary**: it pulls
+     FI toward PI. But S3 (FI's OOD cost) and S5 (kernel shape) partly read a schedule effect.
+   - **S1b (ZP - FP) mixes decay with learning.** It reads "decay + learning vs neither", not "learning vs none". The
+     output line says so. S1 (ZP - PP) is unaffected.
+   - **S4 additions:**
+     - for FI and FP, the learned part |delta - decay x init| by frequency quartile, fast to slow;
+     - the decay-only re-pinned share, from each run's own draw, beside the measured re-pinned share;
+     - the analytic decay-only value for the batch recipe, 0.036 (the re-pinned share of U(-2.81, 0)).
+
+     The decay factor is computed from the asserted recipe. Pilot values: index re-pinned 0.016 vs decay-only 0.016; path
+     0.109 vs 0.016 (descriptive, n = 1).
+3. **Wording: the pin, not the clamp (MAJOR 3).**
+   - **Pinned** = zero init held at 0 by the clamp's dead zone. The clamp passes the gradient at exactly 0, and an entry
+     pushed above 0 never returns.
+   - **Free** = U(-2 pi, 0) init with the clamp removed. In the pilot the clamp would have been inactive for >= 96% of the
+     free entries, so FI is close to "PoPE with the PoPE paper's alternative init".
+   - The batch does not separate the init from the clamp. Any SUPPORTED reading licenses "the pin (zero-init delta held
+     at 0 by the clamp's dead zone)", never "the clamp".
+   - [-2 pi, 0] spans a full period, so the pinned class can represent every free solution (delta mod 2 pi). Any verdict
+     is about learnability, not capacity.
+   - S3's predicted OOD index cost may be the zero-init effect the PoPE paper reports.
+   - No `PoPE-ZeroFree` arm is added (cost: 8 runs, ~40 min wall).
+4. **Registered secondary P1, the path side out of distribution (MAJOR 4).** It is motivated by the outside-seed pilot
+   (ZP 0.801 vs PP 0.939 at T = 1024). No primary decision depends on it.
+   - Contrast: for X in {MapPoPE-FrozenDelta, MapPoPE-FreeDelta}, X - MapPoPE-Flat at T = 1024 accuracy, exact sign-flip
+     over the 8 paired seeds, Holm over the two.
+   - Labels:
+     - **REMOVING THE PIN COSTS MAPPOPE'S LENGTH ROBUSTNESS** if mean <= -0.03 and Holm p < .05;
+     - **NO OOD COST** if the 90% sign-flip CI's lower end > -0.03;
+     - otherwise **UNMEASURED**.
+   - TAU_P1 = 0.03 is ~1.3 x PAPER2X2's MapPoPE-Flat T = 1024 sd.
+   - Declared beside it, descriptive: the same contrasts at T = 512; loss AUC (bimodal across PAPER2X2 seeds, 0.026-0.097:
+     descriptive only); T = 128 held-out NLL.
+   - It is a robustness result (rule 10). The licensed wording is "the pin keeps MapPoPE's readout robust to length". "The
+     path phase uses the pin to solve the task" stays untested: T = 128 is at ceiling. An FP reading carries item 2's decay
+     qualifier.
+   - P1's labels go into `DELTA_FREE_VERDICTS.json` with the primary, before the other secondaries.
+5. **Licensed wording on SUPPORTED (MAJOR 5).** The sentence becomes: "freeing delta raises the index model by dI [90%
+   CI], concentrated in R3+ (S2), and leaves the path model at ceiling; the delta x phase interaction is I". It replaces
+   "freeing delta reverses the interaction" everywhere in the body.
+   - At ceiling I ~ -dI, so the interaction clause is not independent evidence.
+   - The score x phase interaction under free delta is not measured: no RoPE / Vanilla arms (cost: 16 runs, ~1.4 h).
+6. **S7, declared, eval-only, diagnostic (MINOR 1).** On each PoPE-FreeDelta checkpoint, delta is reset to 0 on the fast
+   half (c < 32) and, separately, on the slow half (c >= 32). Readouts:
+   - T = 128 accuracy and R3+ accuracy on the registered eval stream;
+   - the contrast with FI intact;
+   - the share of dI each reset removes.
+
+   Peak pinning predicts the fast-half reset removes most of dI and the slow half little. The alternative is that a free
+   delta turns slow channels into a signed content gain. Implemented in `analyze_delta_free.py` (`reset_half`, selftest:
+   only the named half of delta changes).
+7. **Hygiene (MINOR 2, 3, 5) and re-score (MINOR 4).**
+   - Non-finite or missing accuracies at any length now stop the analysis (SystemExit) before labelling.
+   - Every checkpoint is checked against the registered recipe; a mismatch is a SystemExit, not an assert. Checked fields:
+     epochs 300, lr 1e-3, cosine, n_steps 128, batch 128, n_batches 98, 1 layer, 2 heads, d 128, no landmarks,
+     `data_workers` 0, `fast_attn` False, variant = arm, seed = s, 300 losses. The smoke asserts its own tiny recipe. The
+     pilot checkpoints pass the batch assertion.
+   - The floors file `docs/audits/2026-10-20/delta_free_floors_out.txt` is in the driver's md5 guard and in its
+     committed-file check.
+   - Added selftest cases: ceiling, helps-both-by-SOLVED, NaN refusal, the recipe assertion (passes the batch recipe;
+     fails on wrong lr / seed / epochs / workers), the decay factor 0.4471, every P1 label for both arms, S7's reset, the
+     re-score hook.
+   - **Dropout-rescaled dI** (MINOR 4) is printed as descriptive, eval-only. Method: o_proj input x 1/(1-p), as in
+     `DROPOUT_RESCORE.md`. Both index arms are below ceiling there.
+
+**Status after the amendment:**
+- `analyze_delta_free --selftest`: SELFTEST PASSED, every primary, S1 and P1 label reached.
+- CPU smoke re-run end to end through the driver (`MODE=smoke`): 40 tiny runs, eval, analysis, probe, S7 and re-score all
+  ran; no warnings; probe = eval accuracy exactly; rebuild max |dlogit| 0.0e+00.
+- The driver is unchanged in its scheduling: `DRV_MAXPG=4`, `DRV_GPUS` required, one lock.
+- The edited files must be committed before the batch (the batch mode refuses a dirty tree).
+
+Launch, after commit:
+`cd /home/prashr/mapformer && DRV_GPUS="1" setsid nohup bash run_delta_free.sh > /dev/null 2>&1 &`
