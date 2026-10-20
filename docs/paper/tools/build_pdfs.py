@@ -8,7 +8,8 @@ h3 { font-size: 11.5pt; margin: 12pt 0 4pt; } h4 { font-size: 10.5pt; }
 table { border-collapse: collapse; margin: 8pt 0; font-size: 8.8pt; width: 100%; }
 th, td { border: 0.5pt solid #888; padding: 2.5pt 4pt; vertical-align: top; } th { background: #eee; }
 code { font-family: 'DejaVu Sans Mono', monospace; font-size: 8.5pt; } pre { font-size: 7.5pt; background: #f5f5f5; padding: 6pt; white-space: pre-wrap; }
-img.fig { width: 100%; margin: 6pt 0 2pt; } blockquote { color: #333; border-left: 2pt solid #bbb; margin-left: 0; padding-left: 8pt; }
+img, img.fig { max-width: 100%; height: auto; display: block; margin: 6pt auto 2pt; }
+img.fig { width: 100%; } blockquote { color: #333; border-left: 2pt solid #bbb; margin-left: 0; padding-left: 8pt; }
 """
 def build(srcs, out, title):
     html = []
