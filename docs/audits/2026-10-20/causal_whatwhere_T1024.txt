@@ -1,0 +1,72 @@
+# What/where causal test at T = 1024 (causal_whatwhere_T1024.py; post hoc, eval-only)
+
+Checkpoints: SIGN_MATCHED (torus, trained and tested at T = 1024, 1 layer, rank 4, n = 8). Floors on these walks (docs/audits/2026-10-16/sign_floors_out.txt): blank 0.506, n-gram 0.575, retrace 0.843.
+
+| arm | max dlogit rebuilt vs model | via tables | intact | stored eval | max abs diff |
+|---|---|---|---|---|---|
+| Signed_r4 | 0.0e+00 | 0.0e+00 | 0.9983 | 0.9983 | 0.0000 |
+| Abs_r4 | 0.0e+00 | 0.0e+00 | 0.8210 | 0.8211 | 0.0007 |
+| Pos_r4 | 0.0e+00 | 0.0e+00 | 0.7805 | 0.7805 | 0.0003 |
+| RoPE | 0.0e+00 | 0.0e+00 | 0.7311 | 0.7311 | 0.0000 |
+
+## Accuracy, held-out map, T = 1024, mean +/- sd over seeds
+
+| condition | Signed_r4 | Abs_r4 | Pos_r4 | RoPE |
+|---|---|---|---|---|
+| intact | 0.998 +/- 0.004 | 0.821 +/- 0.119 | 0.780 +/- 0.193 | 0.731 +/- 0.008 |
+| position-only (object identity removed, type kept) | 0.966 +/- 0.029 | 0.544 +/- 0.243 | 0.476 +/- 0.462 | 0.479 +/- 0.027 |
+| position-only, sharpness-matched | 0.974 +/- 0.025 | 0.555 +/- 0.239 | 0.483 +/- 0.472 | 0.481 +/- 0.024 |
+| shared kernel x content gain | 0.998 +/- 0.004 | 0.584 +/- 0.133 | 0.675 +/- 0.299 | 0.439 +/- 0.034 |
+| additive position + content | 0.895 +/- 0.151 | 0.350 +/- 0.139 | 0.512 +/- 0.092 | 0.492 +/- 0.019 |
+| one global mean (type removed too) | 0.113 +/- 0.190 | 0.295 +/- 0.199 | 0.302 +/- 0.241 | 0.399 +/- 0.077 |
+| content-only (no rotation) | 0.505 +/- 0.005 | 0.399 +/- 0.163 | 0.385 +/- 0.218 | 0.490 +/- 0.040 |
+
+## Paired change vs intact (per seed): mean, sd, exact-t MDE, t-test p, seeds lower
+
+| condition | arm | delta | sd | MDE | p | lower |
+|---|---|---|---|---|---|---|
+| position-only (object identity removed, type kept) | Signed_r4 | -0.032 | 0.027 | 0.031 | 0.0116 | 8/8 |
+| position-only (object identity removed, type kept) | Abs_r4 | -0.277 | 0.205 | 0.236 | 0.00651 | 8/8 |
+| position-only (object identity removed, type kept) | Pos_r4 | -0.305 | 0.278 | 0.320 | 0.0173 | 8/8 |
+| position-only (object identity removed, type kept) | RoPE | -0.252 | 0.027 | 0.031 | 2.57e-08 | 8/8 |
+| position-only, sharpness-matched | Signed_r4 | -0.025 | 0.022 | 0.026 | 0.0166 | 8/8 |
+| position-only, sharpness-matched | Abs_r4 | -0.266 | 0.186 | 0.214 | 0.00489 | 8/8 |
+| position-only, sharpness-matched | Pos_r4 | -0.297 | 0.287 | 0.331 | 0.0221 | 8/8 |
+| position-only, sharpness-matched | RoPE | -0.250 | 0.027 | 0.031 | 3.05e-08 | 8/8 |
+| shared kernel x content gain | Signed_r4 | -0.000 | 0.000 | 0.000 | 0.164 | 5/8 |
+| shared kernel x content gain | Abs_r4 | -0.237 | 0.122 | 0.141 | 0.000925 | 8/8 |
+| shared kernel x content gain | Pos_r4 | -0.106 | 0.126 | 0.145 | 0.0495 | 8/8 |
+| shared kernel x content gain | RoPE | -0.293 | 0.037 | 0.043 | 9.13e-08 | 8/8 |
+| additive position + content | Signed_r4 | -0.104 | 0.152 | 0.175 | 0.0948 | 8/8 |
+| additive position + content | Abs_r4 | -0.471 | 0.185 | 0.213 | 0.000176 | 8/8 |
+| additive position + content | Pos_r4 | -0.268 | 0.165 | 0.191 | 0.00252 | 8/8 |
+| additive position + content | RoPE | -0.239 | 0.022 | 0.025 | 9.54e-09 | 8/8 |
+| one global mean (type removed too) | Signed_r4 | -0.885 | 0.189 | 0.218 | 3.32e-06 | 8/8 |
+| one global mean (type removed too) | Abs_r4 | -0.526 | 0.179 | 0.207 | 7.22e-05 | 8/8 |
+| one global mean (type removed too) | Pos_r4 | -0.479 | 0.113 | 0.130 | 6.39e-06 | 8/8 |
+| one global mean (type removed too) | RoPE | -0.332 | 0.078 | 0.090 | 6.11e-06 | 8/8 |
+| content-only (no rotation) | Signed_r4 | -0.494 | 0.005 | 0.006 | 2.31e-15 | 8/8 |
+| content-only (no rotation) | Abs_r4 | -0.422 | 0.240 | 0.277 | 0.00161 | 8/8 |
+| content-only (no rotation) | Pos_r4 | -0.395 | 0.301 | 0.348 | 0.00758 | 8/8 |
+| content-only (no rotation) | RoPE | -0.241 | 0.039 | 0.045 | 5e-07 | 8/8 |
+
+## graded: P + l (S - P)  [l = 0 position-only, 1 intact]
+
+| l | Signed_r4 | Abs_r4 | Pos_r4 | RoPE |
+|---|---|---|---|---|
+| 0 | 0.966 +/- 0.029 | 0.544 +/- 0.243 | 0.476 +/- 0.462 | 0.479 +/- 0.027 |
+| 0.25 | 0.993 +/- 0.009 | 0.582 +/- 0.227 | 0.481 +/- 0.470 | 0.487 +/- 0.037 |
+| 0.5 | 0.997 +/- 0.005 | 0.624 +/- 0.198 | 0.488 +/- 0.474 | 0.500 +/- 0.038 |
+| 0.75 | 0.998 +/- 0.004 | 0.717 +/- 0.138 | 0.524 +/- 0.451 | 0.574 +/- 0.031 |
+| 1 | 0.998 +/- 0.004 | 0.821 +/- 0.119 | 0.780 +/- 0.193 | 0.731 +/- 0.008 |
+| 1.5 | 0.943 +/- 0.067 | 0.362 +/- 0.242 | 0.436 +/- 0.126 | 0.451 +/- 0.072 |
+| 2 | 0.528 +/- 0.230 | 0.260 +/- 0.185 | 0.416 +/- 0.141 | 0.412 +/- 0.062 |
+
+## Score variance within action-query rows (calibration set), mean over heads and seeds
+
+| arm | SS(P)/SS(S) | SS(P+C)/SS(S) | SS(I)/SS(S) | SS(S - gain fit)/SS(S) | beta |
+|---|---|---|---|---|---|
+| Signed_r4 | 0.925 | 0.940 | 0.061 | 0.048 | 1.04 |
+| Abs_r4 | 0.644 | 0.811 | 0.187 | 0.101 | 1.27 |
+| Pos_r4 | 0.577 | 0.828 | 0.174 | 0.103 | 1.33 |
+| RoPE | 0.618 | 0.658 | 0.353 | 0.315 | 1.29 |
