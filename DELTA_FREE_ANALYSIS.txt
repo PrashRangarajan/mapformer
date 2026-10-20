@@ -1,0 +1,94 @@
+# DELTA_FREE analysis (DELTA_FREE_PREREG.md), seeds 1600-1607, n = 8
+retrace floor 0.9381 (own stream, mean over seeds 1600-1607); TAU_I 0.05, TAU_P 0.01, TAU_P1 0.03, alpha 0.05, tests exact sign-flip; recipe 'batch' asserted on all 40 checkpoints; decay-only factor 0.4471
+
+## Per arm (held-out accuracy, mean +/- sd; SOLVED = final-5% training loss < 0.05)
+PoPE-Flat            T=128 0.6492 +/- 0.0627 | T=512 0.6146 +/- 0.0395 | T=1024 0.5992 +/- 0.0235 | SOLVED 0/8 | final loss 0.8729 (0.7361-0.9684)
+PoPE-FreeDelta       T=128 0.7709 +/- 0.0427 | T=512 0.5356 +/- 0.1077 | T=1024 0.4416 +/- 0.1341 | SOLVED 0/8 | final loss 0.7810 (0.6579-0.9475)
+MapPoPE-Flat         T=128 0.9994 +/- 0.0016 | T=512 0.9803 +/- 0.0187 | T=1024 0.9331 +/- 0.0287 | SOLVED 8/8 | final loss 0.0020 (0.0001-0.0097)
+MapPoPE-FreeDelta    T=128 0.9811 +/- 0.0409 | T=512 0.9011 +/- 0.1535 | T=1024 0.8312 +/- 0.1675 | SOLVED 6/8 | final loss 0.0894 (0.0001-0.5100)
+MapPoPE-FrozenDelta  T=128 0.9987 +/- 0.0012 | T=512 0.9288 +/- 0.0672 | T=1024 0.8323 +/- 0.1147 | SOLVED 8/8 | final loss 0.0114 (0.0001-0.0296)
+per seed T=128: PoPE-Flat 0.6211 0.6200 0.5717 0.5896 0.7409 0.7180 0.7022 0.6302; PoPE-FreeDelta 0.6859 0.7905 0.7442 0.8183 0.7847 0.7957 0.8003 0.7476; MapPoPE-Flat 1.0000 1.0000 1.0000 1.0000 1.0000 1.0000 0.9956 1.0000; MapPoPE-FreeDelta 1.0000 1.0000 0.9996 0.9662 0.9997 0.8840 0.9990 1.0000; MapPoPE-FrozenDelta 1.0000 1.0000 1.0000 0.9975 0.9984 0.9973 0.9976 0.9990
+
+## PRIMARY: delta x phase interaction at T = 128
+dI = PoPE-FreeDelta - PoPE-Flat (index)      +0.1217 (sd 0.0635; MDE house 0.0628 / exact-t 0.0732; 8/8 +) sign-flip p 0.0078, t p 0.0010, unpaired perm p 0.0012; 90% sign-flip CI [+0.0764, +0.1674]
+dP = MapPoPE-FreeDelta - MapPoPE-Flat (path) -0.0184 (sd 0.0412; MDE house 0.0408 / exact-t 0.0475; 1/8 +) sign-flip p 0.3125, t p 0.2478, unpaired perm p 0.2186; 90% sign-flip CI [-0.0495, +0.0010]
+I = dP - dI (PAPER2X2 orientation)           -0.1401 (sd 0.0730; MDE house 0.0722 / exact-t 0.0841; 0/8 +) sign-flip p 0.0078, t p 0.0010; 90% sign-flip CI [-0.1864, -0.0924]
+path SOLVED pinned 8/8 vs free 6/8, Fisher p 0.4667; ub(dI) +0.1674; index helped True, path helped False, path hurt False
+**PRIMARY: PEAK-PINNING SUPPORTED (path unchanged within noise)**
+
+## REGISTERED SECONDARY P1 (Amendment 1): path arms vs MapPoPE-Flat at T = 1024 (robustness, rule 10), Holm over 2
+P1 MapPoPE-FrozenDelta - MapPoPE-Flat, T=1024 -0.1008 (sd 0.1229; MDE house 0.1217 / exact-t 0.1417; 2/8 +) sign-flip p 0.0469, t p 0.0535, unpaired perm p 0.0258; 90% sign-flip CI [-0.1899, -0.0114]; Holm p 0.0938 -> **UNMEASURED**
+P1 MapPoPE-FreeDelta - MapPoPE-Flat, T=1024  -0.1019 (sd 0.1916; MDE house 0.1897 / exact-t 0.2209; 3/8 +) sign-flip p 0.1953, t p 0.1764, unpaired perm p 0.0763; 90% sign-flip CI [-0.2514, +0.0096]; Holm p 0.1953 -> **UNMEASURED**
+declared beside P1 (descriptive): the same contrasts at T = 512, loss AUC (bimodal across PAPER2X2 seeds) and T = 128 held-out NLL
+  MapPoPE-FrozenDelta - MapPoPE-Flat, T=512  -0.0515 (sd 0.0739; MDE house 0.0732 / exact-t 0.0852; 1/8 +) sign-flip p 0.0469, t p 0.0892, unpaired perm p 0.0328; 90% sign-flip CI [-0.1059, -0.0064]
+  MapPoPE-FrozenDelta - MapPoPE-Flat, loss AUC +0.0398 (sd 0.0431; MDE house 0.0427 / exact-t 0.0497; 7/8 +) sign-flip p 0.0469, t p 0.0349, unpaired perm p 0.0278; 90% sign-flip CI [+0.0122, +0.0677]
+  MapPoPE-FrozenDelta - MapPoPE-Flat, T=128 NLL +0.0019 (sd 0.0050; MDE house 0.0050 / exact-t 0.0058; 6/8 +) sign-flip p 0.2891, t p 0.3102, unpaired perm p 0.4342; 90% sign-flip CI [-0.0015, +0.0050]
+  MapPoPE-FreeDelta - MapPoPE-Flat, T=512    -0.0792 (sd 0.1634; MDE house 0.1617 / exact-t 0.1883; 4/8 +) sign-flip p 0.2031, t p 0.2125, unpaired perm p 0.0948; 90% sign-flip CI [-0.1976, +0.0074]
+  MapPoPE-FreeDelta - MapPoPE-Flat, loss AUC +0.1219 (sd 0.2213; MDE house 0.2190 / exact-t 0.2551; 7/8 +) sign-flip p 0.0312, t p 0.1631, unpaired perm p 0.0430; 90% sign-flip CI [+0.0106, +0.2931]
+  MapPoPE-FreeDelta - MapPoPE-Flat, T=128 NLL +0.0760 (sd 0.1703; MDE house 0.1686 / exact-t 0.1964; 5/8 +) sign-flip p 0.2969, t p 0.2473, unpaired perm p 0.2149; 90% sign-flip CI [-0.0024, +0.2046]
+
+## Declared secondaries (no verdict depends on them)
+S1 MapPoPE-FrozenDelta - MapPoPE-Flat        -0.0007 (sd 0.0016; MDE house 0.0015 / exact-t 0.0018; 1/8 +) sign-flip p 0.2500, t p 0.2307, unpaired perm p 0.3473; 90% sign-flip CI [-0.0017, +0.0003]; SOLVED 8/8 vs 8/8 Fisher p 1.0000 -> NO COST (a loss of 0.01 excluded at one-sided 95%)
+S1b MapPoPE-FrozenDelta - MapPoPE-FreeDelta  +0.0177 (sd 0.0402; MDE house 0.0398 / exact-t 0.0464; 3/8 +) sign-flip p 0.4688, t p 0.2545, unpaired perm p 0.4502; 90% sign-flip CI [-0.0004, +0.0476] [decay + learning vs neither: FP's delta also decays x0.447, ZP's does not]
+runs below the retrace floor (path arms): {'MapPoPE-Flat': 0, 'MapPoPE-FreeDelta': 1, 'MapPoPE-FrozenDelta': 0}; above it (index arms): {'PoPE-Flat': 0, 'PoPE-FreeDelta': 0}
+I relative to PAPER2X2's score x phase interaction +0.154 (cross-batch, descriptive): I = -0.1401; I <= -0.154 would mean freeing delta undoes at least the whole pinned interaction
+
+### S3 out of distribution (trained at 128; robustness, rule 10). Holm over the 6 tests
+T=512 dI                                     -0.0790 (sd 0.1165; MDE house 0.1153 / exact-t 0.1343; 2/8 +) sign-flip p 0.1094, t p 0.0964, unpaired perm p 0.0727; 90% sign-flip CI [-0.1591, +0.0009]; Holm p 0.5469
+T=512 dP                                     -0.0792 (sd 0.1634; MDE house 0.1617 / exact-t 0.1883; 4/8 +) sign-flip p 0.2031, t p 0.2125, unpaired perm p 0.0948; 90% sign-flip CI [-0.1976, +0.0074]; Holm p 0.7812
+T=512 I                                      -0.0002 (sd 0.1940; MDE house 0.1920 / exact-t 0.2236; 4/8 +) sign-flip p 1.0000, t p 0.9978; 90% sign-flip CI [-0.1360, +0.1255]; Holm p 1.0000
+T=1024 dI                                    -0.1576 (sd 0.1357; MDE house 0.1343 / exact-t 0.1564; 1/8 +) sign-flip p 0.0156, t p 0.0134, unpaired perm p 0.0009; 90% sign-flip CI [-0.2518, -0.0658]; Holm p 0.0938
+T=1024 dP                                    -0.1019 (sd 0.1916; MDE house 0.1897 / exact-t 0.2209; 3/8 +) sign-flip p 0.1953, t p 0.1764, unpaired perm p 0.0763; 90% sign-flip CI [-0.2514, +0.0096]; Holm p 0.7812
+T=1024 I                                     +0.0557 (sd 0.2613; MDE house 0.2587 / exact-t 0.3012; 6/8 +) sign-flip p 0.5469, t p 0.5653; 90% sign-flip CI [-0.1241, +0.2334]; Holm p 1.0000
+
+### S6 training: loss AUC (mean per-epoch loss), final-5% loss, run classes; r(final loss, acc) per length
+PoPE-Flat            AUC 1.0543 final 0.8729 classes {'STALLED': 8} bimodality {'solved_frac': 0.0, 'bimodality_coef': 0.3450429814966315, 'mixed': False}
+PoPE-FreeDelta       AUC 0.9234 final 0.7810 classes {'STALLED': 8} bimodality {'solved_frac': 0.0, 'bimodality_coef': 0.3968109767478924, 'mixed': False}
+MapPoPE-Flat         AUC 0.0459 final 0.0020 classes {'SOLVED': 8} bimodality {'solved_frac': 1.0, 'bimodality_coef': 0.697674418604651, 'mixed': False}
+MapPoPE-FreeDelta    AUC 0.1678 final 0.0894 classes {'SOLVED': 6, 'STALLED': 2} bimodality {'solved_frac': 0.75, 'bimodality_coef': 0.6361072622720171, 'mixed': True}
+MapPoPE-FrozenDelta  AUC 0.0857 final 0.0114 classes {'SOLVED': 8} bimodality {'solved_frac': 1.0, 'bimodality_coef': 0.3657663482591254, 'mixed': False}
+AUC FI - PI                                  -0.1310 (sd 0.0771; MDE house 0.0764 / exact-t 0.0889; 0/8 +) sign-flip p 0.0078, t p 0.0020, unpaired perm p 0.0106; 90% sign-flip CI [-0.1848, -0.0738]
+AUC FP - PP                                  +0.1219 (sd 0.2213; MDE house 0.2190 / exact-t 0.2551; 7/8 +) sign-flip p 0.0312, t p 0.1631, unpaired perm p 0.0430; 90% sign-flip CI [+0.0106, +0.2931]
+AUC ZP - PP                                  +0.0398 (sd 0.0431; MDE house 0.0427 / exact-t 0.0497; 7/8 +) sign-flip p 0.0469, t p 0.0349, unpaired perm p 0.0278; 90% sign-flip CI [+0.0122, +0.0677]
+r(final loss, acc) T=128: -0.971 over 40 runs
+r(final loss, acc) T=512: -0.919 over 40 runs
+r(final loss, acc) T=1024: -0.835 over 40 runs
+
+### S2 / S4 / S5 probe (eval-only, CPU; T = 128 eval stream, 100 walks; layer 0 rebuilt with the effective delta)
+verify: max |dlogit| 0.0e+00; max |probe acc - eval acc| 0.0000
+S2 accuracy by retrace stratum (mean over seeds; share of targets):
+  PoPE-Flat            R1 0.9347 (0.193)  R2 0.8538 (0.163)  R3+ 0.5259 (0.520)  none 0.4577 (0.125)
+  PoPE-FreeDelta       R1 0.9739 (0.193)  R2 0.9711 (0.163)  R3+ 0.7061 (0.520)  none 0.4715 (0.125)
+  MapPoPE-Flat         R1 1.0000 (0.193)  R2 1.0000 (0.163)  R3+ 1.0000 (0.520)  none 0.9958 (0.125)
+  MapPoPE-FreeDelta    R1 0.9987 (0.193)  R2 0.9922 (0.163)  R3+ 0.9861 (0.520)  none 0.9236 (0.125)
+  MapPoPE-FrozenDelta  R1 0.9998 (0.193)  R2 0.9997 (0.163)  R3+ 0.9997 (0.520)  none 0.9920 (0.125)
+S2 dI by stratum (sign-flip, Holm over 4) and its share-weighted contribution to dI:
+  dI R1                                      +0.0392 (sd 0.0824; MDE house 0.0816 / exact-t 0.0950; 7/8 +) sign-flip p 0.2109, t p 0.2202, unpaired perm p 0.1316; 90% sign-flip CI [-0.0194, +0.0881]; Holm p 0.2109; contribution +0.0076
+  dI R2                                      +0.1173 (sd 0.0737; MDE house 0.0729 / exact-t 0.0849; 8/8 +) sign-flip p 0.0078, t p 0.0028, unpaired perm p 0.0053; 90% sign-flip CI [+0.0618, +0.1633]; Holm p 0.0312; contribution +0.0191
+  dI R3+                                     +0.1802 (sd 0.0909; MDE house 0.0899 / exact-t 0.1047; 8/8 +) sign-flip p 0.0078, t p 0.0008, unpaired perm p 0.0017; 90% sign-flip CI [+0.1166, +0.2436]; Holm p 0.0312; contribution +0.0933
+  dI none                                    +0.0138 (sd 0.0151; MDE house 0.0150 / exact-t 0.0174; 5/8 +) sign-flip p 0.0625, t p 0.0363, unpaired perm p 0.2499; 90% sign-flip CI [+0.0024, +0.0259]; Holm p 0.1250; contribution +0.0017
+S4 delta: dead-zone share (raw >= 0), re-pinned share (|wrap(delta_eff)| < 0.1), mean |wrap|, mean |delta - init|, share outside [-2pi, 0] (means over seeds):
+  PoPE-Flat            deadzone 0.997 repinned 0.997 |wrap| 0.000 moved nan outside 0.997
+  PoPE-FreeDelta       deadzone 0.006 repinned 0.012 |wrap| 1.525 moved 1.619 outside 0.007
+                       decay-only reference: re-pinned 0.034 from this arm's own draws (batch-recipe analytic 0.036); learned part |delta - 0.4471 x init| by frequency quartile fast->slow 0.447 0.151 0.126 0.100
+  MapPoPE-Flat         deadzone 0.959 repinned 0.977 |wrap| 0.011 moved nan outside 0.959
+  MapPoPE-FreeDelta    deadzone 0.034 repinned 0.061 |wrap| 1.453 moved 1.687 outside 0.034
+                       decay-only reference: re-pinned 0.034 from this arm's own draws (batch-recipe analytic 0.036); learned part |delta - 0.4471 x init| by frequency quartile fast->slow 0.371 0.218 0.154 0.132
+  MapPoPE-FrozenDelta  deadzone 0.000 repinned 0.038 |wrap| 1.568 moved 0.000 outside 0.000
+S5 index kernel: share K(3) > K(1) per seed; argmax_D in 1..16 pooled:
+  PoPE-Flat            0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 | argmax 1:1074 7:14
+  PoPE-FreeDelta       0.50 0.50 0.50 1.00 1.00 0.50 1.00 1.00 | argmax 3:262 4:132 5:1 6:11 7:195 8:253 10:64 11:22 12:64 16:84
+S5 attention on the newest observation (offset 1, max over heads), index arms: PoPE-Flat 0.287; PoPE-FreeDelta 0.003
+S5 path target coherence C / C0 (best head, most recent same-cell observation key):
+  MapPoPE-Flat         C 0.987  C0 0.993  same-cell mass 0.909
+  MapPoPE-FreeDelta    C 0.616  C0 0.798  same-cell mass 0.809
+  MapPoPE-FrozenDelta  C 0.614  C0 0.884  same-cell mass 0.876
+
+S7 (Amendment 1, eval-only, diagnostic): PoPE-FreeDelta with delta reset to 0 on the fast half (c < 32) or the slow half (c >= 32); T = 128 accuracy and R3+ accuracy (means over seeds), and the share of dI each reset removes
+  reset fast: acc 0.4308  R3+ 0.4300  (FI intact 0.7709 / R3+ 0.7061; PI 0.6492); share of dI removed +2.79
+  S7 reset fast - FI intact                  -0.3401 (sd 0.0999; MDE house 0.0989 / exact-t 0.1152; 0/8 +) sign-flip p 0.0078, t p 0.0000; 90% sign-flip CI [-0.4110, -0.2670]
+  reset slow: acc 0.4666  R3+ 0.4644  (FI intact 0.7709 / R3+ 0.7061; PI 0.6492); share of dI removed +2.50
+  S7 reset slow - FI intact                  -0.3043 (sd 0.0701; MDE house 0.0694 / exact-t 0.0808; 0/8 +) sign-flip p 0.0078, t p 0.0000; 90% sign-flip CI [-0.3488, -0.2553]
+
+Dropout-scale re-score (descriptive, Amendment 1 MINOR 4; o_proj input x 1/(1-p), DROPOUT_RESCORE's method), index arms:
+  dI re-scored                               +0.1368 (sd 0.0375; MDE house 0.0371 / exact-t 0.0432; 8/8 +) sign-flip p 0.0078, t p 0.0000, unpaired perm p 0.0006; 90% sign-flip CI [+0.1105, +0.1630]

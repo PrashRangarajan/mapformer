@@ -117,6 +117,12 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
   selection redone in the null); |.| optimum bracketed; 3/8 |.| runs descending (budget-scoped); ring only.
 - Claim allowed: "the cost holds with each step at its own best of four learning rates (ring)". Not: "at any learning rate".
 
+## Update 2026-10-20: DELTA_FREE (`DELTA_FREE_RESULTS.md`, registered): PEAK-PINNING SUPPORTED
+- Freeing PoPE's phase offset raises the index arm +0.122 at T = 128 (8/8, p 0.0078), mostly on multi-step reversals
+  (+0.180); the path arm stays at ceiling (-0.018, n.s.); interaction -0.140. Kernel now prefers offsets 3-8 (0% -> 50-100%).
+- Allowed: "PoPE's pinned offset fixes the kernel peak at zero phase difference; that helps a path phase and hurts an index
+  phase". Not: "freeing delta reverses the interaction" (MAJOR 5); path-arm OOD cost is UNMEASURED (P1 Holm 0.094).
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).

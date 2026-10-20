@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-17 05:30. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-20 14:15. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
 ## Running
@@ -18,6 +18,11 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
   contribution 3 lean on an account GAUGE did not confirm). Venues: `docs/paper/VENUES_2026-10-15.md` (ICLR 2027 workshop
   list out 29 Nov 2026, papers ~1 Feb 2027; CCN 2027 4 Feb; CPAL Spotlight 18 Jan; Cosyne abstracts 18 Oct 2026).
 - Mock review of draft 3: `docs/paper/MOCK_REVIEW_draft3.md` (6/10).
+
+## Last results (2026-10-20): DELTA_FREE (`DELTA_FREE_RESULTS.md`): PEAK-PINNING SUPPORTED
+- Freeing PoPE's offset: index +0.122 (R3+ +0.180), path at ceiling; MapPoPE mechanism now causal at T = 128.
+- Also 2026-10-20: seven expansion reports + draft-2 plan (`docs/paper/expansion/`), what/where at T = 1024
+  (`docs/audits/2026-10-20/WHAT_WHERE_T1024.md`). Next: decisive clock-route GPU tests (~22 h), draft 2.
 
 ## Last results (2026-10-17): LRSWEEP (`LRSWEEP_RESULTS.md`): COST AT BEST RATES
 - Each arm at its own best of 4 lr: |.| 2/8 (3e-3, bracketed) vs signed 8/8 (1e-3), p 0.007; the lr objection is answered
