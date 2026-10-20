@@ -1,0 +1,57 @@
+
+=== paper2x2 ===
+
+-- RoPE (n=8 seeds; verify max 0.0e+00) --
+stratum                 share     acc  massCell  massRT massOff1      C     C0   mAct  mObsX   (medians over seeds; masses = best head)
+all                     1.000  0.8010     0.108   0.120    0.002  0.160  0.300  0.569  0.328
+R1 (1-step reversal)    0.190  0.9973     0.441   0.435    0.003  0.475  0.260  0.261  0.278
+R2                      0.160  0.9464     0.050   0.082    0.002  0.062  0.394  0.563  0.384
+R3+                     0.519  0.7808     0.021   0.038    0.002  0.167  0.307  0.658  0.314
+not retrace             0.135  0.4758     0.001     nan    0.002 -0.078  0.174  0.637  0.361
+plain gap<128           1.000  0.8010     0.108   0.120    0.002  0.160  0.300  0.569  0.328
+content-pair kernel: frac(K(3) > K(1)) per run: 0.90 0.88 0.82 0.71 0.53 0.87 0.88 1.00
+argmax_D in 1..16 of K_ao(D), pooled (h, a, o) counts: 2:168 3:414 4:8 6:34 7:277 8:9 10:122 11:25 12:10 15:21
+attention by token offset 0..12 (max over heads, median over seeds): 0.002 0.002 0.332 0.245 0.181 0.003 0.119 0.140 0.085 0.002 0.045 0.088 0.040
+  head with most offset-3 mass, offsets 0..12:                        0.001 0.002 0.332 0.245 0.136 0.003 0.017 0.042 0.035 0.002 0.014 0.064 0.003
+
+-- PoPE-Flat (n=8 seeds; verify max 0.0e+00) --
+stratum                 share     acc  massCell  massRT massOff1      C     C0   mAct  mObsX   (medians over seeds; masses = best head)
+all                     1.000  0.6950     0.023   0.026    0.305  0.507  0.507  0.227  0.729
+R1 (1-step reversal)    0.190  0.9811     0.093   0.106    0.244  0.910  0.910  0.589  0.305
+R2                      0.160  0.9444     0.033   0.033    0.293  0.759  0.759  0.280  0.675
+R3+                     0.519  0.5761     0.004   0.010    0.321  0.401  0.401  0.118  0.867
+not retrace             0.135  0.4460     0.000     nan    0.306  0.084  0.084  0.209  0.791
+plain gap<128           1.000  0.6950     0.023   0.026    0.305  0.507  0.507  0.227  0.729
+content-pair kernel: frac(K(3) > K(1)) per run: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
+PoPE delta: share >= 0 (dead zone, gradient 0) per run: 1.00 0.99 1.00 0.98 1.00 1.00 1.00 1.00; mean |delta| 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
+argmax_D in 1..16 of K_ao(D), pooled (h, a, o) counts: 1:1068 7:16 11:4
+attention by token offset 0..12 (max over heads, median over seeds): 0.189 0.304 0.164 0.151 0.106 0.075 0.064 0.096 0.053 0.032 0.028 0.023 0.024
+  head with most offset-3 mass, offsets 0..12:                        0.013 0.292 0.104 0.151 0.045 0.075 0.018 0.030 0.011 0.015 0.007 0.008 0.006
+
+-- Vanilla (n=8 seeds; verify max 0.0e+00) --
+stratum                 share     acc  massCell  massRT massOff1      C     C0   mAct  mObsX   (medians over seeds; masses = best head)
+all                     1.000  0.9837     0.807   0.737    0.000  0.734  0.952  0.134  0.062
+R1 (1-step reversal)    0.190  1.0000     0.828   0.762    0.000  0.752  0.967  0.118  0.052
+R2                      0.160  0.9980     0.808   0.741    0.000  0.748  0.966  0.133  0.055
+R3+                     0.519  0.9972     0.807   0.728    0.000  0.735  0.956  0.135  0.059
+not retrace             0.135  0.9752     0.750     nan    0.001  0.695  0.886  0.132  0.107
+plain gap<128           1.000  0.9837     0.807   0.737    0.000  0.734  0.952  0.134  0.062
+zero-displacement score (median over h, a, key): obs keys 121.9 146.8 237.7 203.8 167.2 209.4 177.9 140.4 | action keys 92.2 119.3 198.5 169.5 124.4 197.6 140.9 168.6
+  amplitude sum_c|.| obs 174.1 220.5 286.8 243.8 237.9 353.7 201.3 309.4 | act 156.1 185.7 257.6 215.5 180.7 253.1 189.6 271.3
+  amplitude-weighted cos(psi): obs keys +0.75 +0.77 +0.81 +0.85 +0.87 +0.56 +0.87 +0.45 | action keys +0.76 +0.68 +0.76 +0.77 +0.79 +0.78 +0.76 +0.62
+attention by token offset 0..12 (max over heads, median over seeds): 0.041 0.000 0.016 0.136 0.021 0.003 0.011 0.117 0.015 0.003 0.009 0.100 0.012
+  head with most offset-3 mass, offsets 0..12:                        0.024 0.000 0.012 0.136 0.010 0.002 0.009 0.117 0.008 0.001 0.008 0.100 0.006
+
+-- MapPoPE-Flat (n=8 seeds; verify max 0.0e+00) --
+stratum                 share     acc  massCell  massRT massOff1      C     C0   mAct  mObsX   (medians over seeds; masses = best head)
+all                     1.000  1.0000     0.912   0.823    0.012  0.997  0.997  0.053  0.031
+R1 (1-step reversal)    0.190  1.0000     0.929   0.836    0.013  0.999  0.999  0.046  0.025
+R2                      0.160  1.0000     0.921   0.824    0.012  0.999  0.999  0.047  0.028
+R3+                     0.519  1.0000     0.916   0.817    0.011  0.997  0.998  0.052  0.029
+not retrace             0.135  1.0000     0.882     nan    0.011  0.987  0.987  0.057  0.060
+plain gap<128           1.000  1.0000     0.912   0.823    0.012  0.997  0.997  0.053  0.031
+zero-displacement score (median over h, a, key): obs keys 76.5 338.9 74.8 76.1 1156.8 2954.8 77.3 665.4 | action keys 35.8 288.6 34.7 34.9 1079.0 2588.1 35.4 625.7
+  amplitude sum_c|.| obs 76.5 338.9 74.8 76.1 1156.8 2954.8 77.3 665.4 | act 35.8 288.6 34.7 34.9 1079.0 2588.1 35.4 625.7
+  mean key magnitude softplus(k): obs 0.91 1.12 0.91 0.91 1.05 1.80 0.92 1.25 | act 0.68 0.95 0.61 0.68 0.91 1.56 0.63 1.24
+attention by token offset 0..12 (max over heads, median over seeds): 0.050 0.011 0.011 0.150 0.022 0.006 0.006 0.131 0.018 0.006 0.005 0.114 0.015
+  head with most offset-3 mass, offsets 0..12:                        0.009 0.002 0.002 0.150 0.004 0.002 0.001 0.131 0.003 0.001 0.001 0.114 0.002

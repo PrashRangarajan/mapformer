@@ -1,0 +1,18 @@
+-- SO_p
+  s1300 ---- acc 0.987 | usage: blind 0.13; of non-blind: relation 0.68, lattice 0.76, both 0.64
+  s1301 SOLV acc 1.000 | usage: blind 0.02; of non-blind: relation 1.00, lattice 0.98, both 0.98
+  s1302 SOLV acc 1.000 | usage: blind 0.00; of non-blind: relation 1.00, lattice 1.00, both 1.00
+  s1303 SOLV acc 1.000 | usage: blind 0.10; of non-blind: relation 1.00, lattice 0.97, both 0.97
+  s1304 ---- acc 0.935 | usage: blind 0.04; of non-blind: relation 1.00, lattice 0.69, both 0.69
+  s1305 SOLV acc 1.000 | usage: blind 0.06; of non-blind: relation 1.00, lattice 0.97, both 0.97
+  s1306 ---- acc 0.654 | usage: blind 0.14; of non-blind: relation 1.00, lattice 0.93, both 0.93
+  s1307 SOLV acc 1.000 | usage: blind 0.02; of non-blind: relation 1.00, lattice 0.99, both 0.99
+-- AO_p
+  s1300 ---- acc 0.987 | usage: blind 0.07; of non-blind: relation 1.00, lattice 0.99, both 0.99
+  s1301 ---- acc 0.910 | usage: blind 0.17; of non-blind: relation 1.00, lattice 0.97, both 0.97
+  s1302 ---- acc 0.904 | usage: blind 0.02; of non-blind: relation 1.00, lattice 0.99, both 0.99
+  s1303 ---- acc 0.590 | usage: blind 0.07; of non-blind: relation 1.00, lattice 0.99, both 0.99
+  s1304 ---- acc 0.768 | usage: blind 0.09; of non-blind: relation 0.99, lattice 0.00, both 0.00
+  s1305 SOLV acc 1.000 | usage: blind 0.06; of non-blind: relation 1.00, lattice 0.94, both 0.94
+  s1306 ---- acc 0.908 | usage: blind 0.05; of non-blind: relation 1.00, lattice 0.46, both 0.46
+  s1307 SOLV acc 1.000 | usage: blind 0.09; of non-blind: relation 1.00, lattice 0.57, both 0.57

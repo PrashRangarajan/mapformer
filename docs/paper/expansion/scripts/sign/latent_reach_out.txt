@@ -1,0 +1,10 @@
+seed 800: signed need in latent span 1.000 (usage-w 1.000, rank 4) | |.| default init: 0.395 (usage-w 0.726, rank 8; random baseline 0.125) | |.| absmag start: 0.365 (usage-w 0.663, rank 2)
+seed 801: signed need in latent span 1.000 (usage-w 1.000, rank 4) | |.| default init: 0.483 (usage-w 0.718, rank 8; random baseline 0.125) | |.| absmag start: 0.425 (usage-w 0.685, rank 2)
+seed 802: signed need in latent span 1.000 (usage-w 1.000, rank 4) | |.| default init: 0.292 (usage-w 0.652, rank 8; random baseline 0.125) | |.| absmag start: 0.259 (usage-w 0.442, rank 2)
+seed 803: signed need in latent span 1.000 (usage-w 1.000, rank 4) | |.| default init: 0.281 (usage-w 0.427, rank 8; random baseline 0.125) | |.| absmag start: 0.198 (usage-w 0.227, rank 2)
+seed 804: signed need in latent span 1.000 (usage-w 1.000, rank 4) | |.| default init: 0.190 (usage-w 0.371, rank 8; random baseline 0.125) | |.| absmag start: 0.132 (usage-w 0.256, rank 2)
+seed 805: signed need in latent span 1.000 (usage-w 1.000, rank 4) | |.| default init: 0.342 (usage-w 0.482, rank 8; random baseline 0.125) | |.| absmag start: 0.275 (usage-w 0.462, rank 2)
+seed 806: signed need in latent span 1.000 (usage-w 1.000, rank 4) | |.| default init: 0.352 (usage-w 0.548, rank 8; random baseline 0.125) | |.| absmag start: 0.293 (usage-w 0.515, rank 2)
+seed 807: signed need in latent span 1.000 (usage-w 1.000, rank 4) | |.| default init: 0.374 (usage-w 0.563, rank 8; random baseline 0.125) | |.| absmag start: 0.336 (usage-w 0.452, rank 2)
+
+mean: signed 1.000 / 1.000 (usage-w) | |.| default 0.339 / 0.561 | |.| absmag start 0.285 / 0.463

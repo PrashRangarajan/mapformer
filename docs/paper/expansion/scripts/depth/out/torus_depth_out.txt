@@ -1,0 +1,78 @@
+== accuracy by revisit class (mean of per-seed accuracies, n = 4 seeds; share = fraction of revisits)
+| class | share | n (seed 500) | L1 | L4 | LOOP | PATH |
+|---|---|---|---|---|---|---|
+| all | 1.000 | 32056 | 0.719 (0.69-0.74) | 0.859 (0.81-0.88) | 0.864 (0.86-0.87) | 1.000 (1.00-1.00) |
+| short | 0.828 | 26801 | 0.769 (0.73-0.79) | 0.943 (0.90-0.96) | 0.938 (0.94-0.94) | 1.000 (1.00-1.00) |
+| long | 0.090 | 2454 | 0.480 (0.46-0.51) | 0.458 (0.37-0.51) | 0.507 (0.50-0.53) | 1.000 (1.00-1.00) |
+| wrap-only | 0.083 | 2801 | 0.482 (0.47-0.49) | 0.457 (0.38-0.49) | 0.509 (0.50-0.52) | 1.000 (1.00-1.00) |
+| short, retrace | 0.680 | 21939 | 0.833 (0.79-0.86) | 0.996 (0.99-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) |
+| short, not retrace | 0.148 | 4862 | 0.475 (0.47-0.48) | 0.699 (0.51-0.77) | 0.655 (0.65-0.66) | 1.000 (1.00-1.00) |
+| short non-retrace, runs 2-2 | 0.000 | 0 | -- | -- | -- | -- |
+| short non-retrace, runs 3-4 | 0.031 | 1108 | 0.477 (0.46-0.49) | 0.926 (0.74-0.99) | 0.977 (0.96-0.99) | 1.000 (1.00-1.00) |
+| short non-retrace, runs 5-8 | 0.056 | 1819 | 0.476 (0.47-0.49) | 0.735 (0.52-0.81) | 0.645 (0.63-0.66) | 1.000 (1.00-1.00) |
+| short non-retrace, runs 9-16 | 0.052 | 1643 | 0.474 (0.47-0.48) | 0.561 (0.38-0.64) | 0.499 (0.49-0.50) | 1.000 (1.00-1.00) |
+| short non-retrace, runs 17-+ | 0.009 | 292 | 0.472 (0.45-0.50) | 0.493 (0.36-0.54) | 0.502 (0.49-0.53) | 1.000 (1.00-1.00) |
+| plain gap 2-7 | 0.371 | 11972 | 0.935 (0.84-0.99) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) | 1.000 (1.00-1.00) |
+| plain gap 8-31 | 0.354 | 11523 | 0.681 (0.65-0.70) | 0.978 (0.94-0.99) | 0.986 (0.98-0.99) | 1.000 (1.00-1.00) |
+| plain gap 32-127 | 0.102 | 3306 | 0.469 (0.46-0.48) | 0.614 (0.42-0.69) | 0.551 (0.54-0.56) | 1.000 (1.00-1.00) |
+| plain gap 128-511 | 0.075 | 2090 | 0.481 (0.46-0.51) | 0.458 (0.36-0.51) | 0.506 (0.49-0.53) | 1.000 (1.00-1.00) |
+| plain gap 512-1024 | 0.015 | 364 | 0.480 (0.46-0.50) | 0.461 (0.38-0.50) | 0.511 (0.48-0.53) | 1.000 (1.00-1.00) |
+| wrap-only gap 64-127 | 0.001 | 12 | 0.393 (0.29-0.50) | 0.368 (0.25-0.44) | 0.429 (0.35-0.50) | 1.000 (1.00-1.00) |
+| wrap-only gap 128-511 | 0.046 | 1577 | 0.485 (0.48-0.50) | 0.455 (0.38-0.50) | 0.509 (0.49-0.53) | 1.000 (1.00-1.00) |
+| wrap-only gap 512-1024 | 0.037 | 1212 | 0.481 (0.46-0.50) | 0.462 (0.39-0.49) | 0.512 (0.49-0.52) | 1.000 (1.00-1.00) |
+
+== attention at revisit queries, per pass: mass on earlier same-cell observation tokens (same), on the last visit's two tokens (last), normalised entropy (ent), mean distance in moves (dist); uniform-attention chance of 'same' in brackets; means over seeds and queries; h0 / h1
+  L1    short, retrace       [chance 0.003]  p1: same 0.05/0.06 last 0.10/0.12 ent 0.23/0.24 dist 5/5
+  L1    short, not retrace   [chance 0.002]  p1: same 0.00/0.00 last 0.00/0.00 ent 0.25/0.24 dist 6/6
+  L1    long                 [chance 0.001]  p1: same 0.00/0.00 last 0.00/0.00 ent 0.23/0.22 dist 7/6
+  L1    wrap-only            [chance 0.001]  p1: same 0.00/0.00 last 0.00/0.00 ent 0.23/0.22 dist 7/6
+  L4    short, retrace       [chance 0.003]  p1: same 0.01/0.01 last 0.04/0.07 ent 0.54/0.48 dist 25/16 | p2: same 0.03/0.03 last 0.05/0.06 ent 0.53/0.55 dist 28/27 | p3: same 0.26/0.21 last 0.27/0.22 ent 0.44/0.42 dist 51/30 | p4: same 0.55/0.58 last 0.56/0.58 ent 0.19/0.16 dist 15/15
+  L4    short, not retrace   [chance 0.002]  p1: same 0.00/0.00 last 0.01/0.00 ent 0.55/0.57 dist 26/22 | p2: same 0.00/0.00 last 0.01/0.01 ent 0.60/0.61 dist 33/29 | p3: same 0.01/0.01 last 0.01/0.02 ent 0.52/0.62 dist 33/46 | p4: same 0.22/0.22 last 0.21/0.21 ent 0.35/0.31 dist 62/52
+  L4    long                 [chance 0.001]  p1: same 0.00/0.00 last 0.00/0.00 ent 0.52/0.56 dist 29/25 | p2: same 0.00/0.00 last 0.00/0.00 ent 0.61/0.60 dist 45/34 | p3: same 0.00/0.00 last 0.00/0.00 ent 0.56/0.67 dist 63/79 | p4: same 0.01/0.01 last 0.01/0.01 ent 0.52/0.42 dist 176/114
+  L4    wrap-only            [chance 0.001]  p1: same 0.00/0.00 last 0.00/0.00 ent 0.53/0.54 dist 33/28 | p2: same 0.00/0.00 last 0.00/0.00 ent 0.60/0.60 dist 56/41 | p3: same 0.00/0.00 last 0.00/0.00 ent 0.56/0.67 dist 79/114 | p4: same 0.00/0.00 last 0.00/0.00 ent 0.58/0.43 dist 229/130
+  LOOP  short, retrace       [chance 0.003]  p1: same 0.01/0.01 last 0.03/0.03 ent 0.45/0.43 dist 16/21 | p2: same 0.04/0.03 last 0.07/0.04 ent 0.49/0.45 dist 29/31 | p3: same 0.33/0.31 last 0.34/0.32 ent 0.39/0.39 dist 35/42 | p4: same 0.50/0.49 last 0.52/0.50 ent 0.25/0.24 dist 17/22
+  LOOP  short, not retrace   [chance 0.002]  p1: same 0.00/0.00 last 0.00/0.00 ent 0.37/0.32 dist 10/12 | p2: same 0.00/0.00 last 0.00/0.00 ent 0.50/0.44 dist 20/20 | p3: same 0.01/0.01 last 0.01/0.02 ent 0.48/0.46 dist 25/30 | p4: same 0.20/0.20 last 0.20/0.20 ent 0.33/0.35 dist 54/49
+  LOOP  long                 [chance 0.001]  p1: same 0.00/0.00 last 0.00/0.00 ent 0.34/0.33 dist 10/13 | p2: same 0.00/0.00 last 0.00/0.00 ent 0.49/0.43 dist 23/21 | p3: same 0.00/0.00 last 0.00/0.00 ent 0.49/0.47 dist 37/45 | p4: same 0.00/0.00 last 0.00/0.00 ent 0.48/0.51 dist 141/127
+  LOOP  wrap-only            [chance 0.001]  p1: same 0.00/0.00 last 0.00/0.00 ent 0.35/0.30 dist 11/14 | p2: same 0.00/0.00 last 0.00/0.00 ent 0.49/0.41 dist 26/22 | p3: same 0.00/0.00 last 0.00/0.00 ent 0.51/0.46 dist 50/52 | p4: same 0.00/0.00 last 0.00/0.00 ent 0.49/0.52 dist 165/146
+  PATH  short, retrace       [chance 0.003]  p1: same 0.83/0.76 last 0.70/0.65 ent 0.16/0.18 dist 43/50
+  PATH  short, not retrace   [chance 0.002]  p1: same 0.82/0.76 last 0.69/0.64 ent 0.16/0.19 dist 82/87
+  PATH  long                 [chance 0.001]  p1: same 0.81/0.74 last 0.69/0.64 ent 0.17/0.19 dist 326/325
+  PATH  wrap-only            [chance 0.001]  p1: same 0.66/0.58 last 0.57/0.51 ent 0.22/0.26 dist 437/436
+
+== last pass, max over heads of same-cell mass, split by correct / wrong prediction
+  L1    short, retrace       correct 0.12 (n 72206)  wrong 0.05 (n 14530)
+  L1    short, not retrace   correct 0.00 (n 8980)  wrong 0.00 (n 9928)
+  L1    long                 correct 0.00 (n 5483)  wrong 0.00 (n 5943)
+  L1    wrap-only            correct 0.00 (n 5097)  wrong 0.00 (n 5461)
+  L4    short, retrace       correct 0.75 (n 86413)  wrong 0.30 (n 323)
+  L4    short, not retrace   correct 0.45 (n 13184)  wrong 0.21 (n 5724)
+  L4    long                 correct 0.02 (n 5272)  wrong 0.02 (n 6154)
+  L4    wrap-only            correct 0.00 (n 4809)  wrong 0.00 (n 5749)
+  LOOP  short, retrace       correct 0.65 (n 86734)  wrong 0.18 (n 2)
+  LOOP  short, not retrace   correct 0.38 (n 12376)  wrong 0.15 (n 6532)
+  LOOP  long                 correct 0.00 (n 5782)  wrong 0.00 (n 5644)
+  LOOP  wrap-only            correct 0.00 (n 5387)  wrong 0.00 (n 5171)
+  PATH  short, retrace       correct 0.93 (n 86736)  wrong nan (n 0)
+  PATH  short, not retrace   correct 0.93 (n 18908)  wrong nan (n 0)
+  PATH  long                 correct 0.92 (n 11426)  wrong nan (n 0)
+  PATH  wrap-only            correct 0.80 (n 10556)  wrong 0.27 (n 2)
+
+== linear probes (ridge, out-of-sample R^2; train walks 0-29, test 30-39), mean over seeds; rows = residual after pass p (p0 = embedding); x and y averaged
+  L1: P (unwrapped)  cos/sin 2piP/64  d4  d16  d64  d256
+    p0: -0.061  -0.015   0.707   0.158   0.026  -0.019
+    p1: -0.064  -0.021   0.897   0.473   0.090  -0.005
+  L4: P (unwrapped)  cos/sin 2piP/64  d4  d16  d64  d256
+    p0: -0.061  -0.015   0.707   0.158   0.026  -0.019
+    p1: -0.041  -0.008   0.959   0.934   0.385   0.070
+    p2:  0.050  -0.015   0.930   0.881   0.765   0.280
+    p3:  0.104  -0.021   0.860   0.776   0.719   0.368
+    p4:  0.090  -0.019   0.801   0.709   0.690   0.340
+  LOOP: P (unwrapped)  cos/sin 2piP/64  d4  d16  d64  d256
+    p0: -0.061  -0.015   0.707   0.158   0.026  -0.019
+    p1: -0.062  -0.017   0.950   0.788   0.180   0.017
+    p2: -0.030  -0.013   0.870   0.857   0.397   0.082
+    p3: -0.012  -0.017   0.781   0.697   0.554   0.127
+    p4: -0.020  -0.016   0.736   0.638   0.560   0.137
+  PATH: P (unwrapped)  cos/sin 2piP/64  d4  d16  d64  d256
+    p0: -0.061  -0.015   0.707   0.158   0.026  -0.019
+    p1: -0.060  -0.011   0.718   0.220   0.049  -0.015

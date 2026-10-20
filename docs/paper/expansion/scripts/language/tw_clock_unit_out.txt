@@ -1,0 +1,10 @@
+tw_s0        drift ch 26: |tick| per move 4.960 rad | aside sentence 0.009 filler word 0.002 adverb word 0.002 (x tick) | cos(aside, tick) +0.36
+tw_s2        drift ch 29: |tick| per move 2.682 rad | aside sentence 0.042 filler word 0.007 adverb word 0.007 (x tick) | cos(aside, tick) +0.12
+tw_s3        drift ch 35: |tick| per move 6.146 rad | aside sentence 0.042 filler word 0.004 adverb word 0.002 (x tick) | cos(aside, tick) +0.58
+tw_s4        drift ch 36: |tick| per move 6.941 rad | aside sentence 0.028 filler word 0.003 adverb word 0.003 (x tick) | cos(aside, tick) +0.39
+MapWM_s11    drift ch 38: |tick| per move 5.536 rad | aside sentence 0.018 filler word 0.001 adverb word 0.001 (x tick) | cos(aside, tick) -0.32
+MapWM_s13    drift ch 27: |tick| per move 4.788 rad | aside sentence 0.024 filler word 0.001 adverb word 0.001 (x tick) | cos(aside, tick) +0.30
+MapWM_s14    drift ch 28: |tick| per move 2.946 rad | aside sentence 0.023 filler word 0.004 adverb word 0.004 (x tick) | cos(aside, tick) +0.16
+MapWM_s15    drift ch 30: |tick| per move 3.450 rad | aside sentence 0.062 filler word 0.004 adverb word 0.003 (x tick) | cos(aside, tick) -0.14
+NormStep_s11 drift ch 27: |tick| per move 8.074 rad | aside sentence 0.019 filler word 0.001 adverb word 0.002 (x tick) | cos(aside, tick) -0.45
+NormStep_s16 drift ch 28: |tick| per move 9.480 rad | aside sentence 0.030 filler word 0.003 adverb word 0.002 (x tick) | cos(aside, tick) -0.35

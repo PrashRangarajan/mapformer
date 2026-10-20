@@ -1,0 +1,28 @@
+E s0 DESC  start [k 0.616 off 0.00 rg 0.78 ind 0.01] [k 1.040 off 0.00 rg 1.32 ind 0.25]  ->  end [k 1.055 off 0.01 rg 0.74 ind 0.39] [k 1.101 off 0.01 rg 0.78 ind 0.40]
+E s1 SOLV  start [k 0.060 off 0.00 rg 1.32 ind 0.41] [k 0.046 off 0.00 rg 1.01 ind 0.82]  ->  end [k 0.000 off 1.00 rg 0.07 ind 0.88] [k 0.000 off 1.00 rg 0.12 ind 0.63]
+E s2 SOLV  start [k 0.092 off 0.00 rg 0.07 ind 0.01] [k 0.352 off 0.00 rg 0.27 ind 0.03]  ->  end [k 0.000 off 1.00 rg 0.17 ind 0.71] [k 0.000 off 1.00 rg 0.15 ind 0.88]
+E s3 SOLV  start [k 0.024 off 0.00 rg 0.02 ind 0.00] [k 1.506 off 0.00 rg 1.34 ind 0.11]  ->  end [k 0.001 off 1.00 rg 0.03 ind 0.60] [k 0.001 off 1.00 rg 0.04 ind 0.83]
+E s4 DESC  start [k 1.583 off 0.00 rg 0.93 ind 0.21] [k 0.988 off 0.00 rg 0.58 ind 0.15]  ->  end [k 0.020 off 0.66 rg 0.01 ind 0.33] [k 0.204 off 0.66 rg 0.09 ind 0.20]
+E s5 DESC  start [k 0.554 off 0.00 rg 0.65 ind 0.15] [k 0.708 off 0.00 rg 0.83 ind 0.19]  ->  end [k 2.220 off 0.05 rg 0.77 ind 0.72] [k 1.738 off 0.05 rg 0.60 ind 0.51]
+E s6 DESC  start [k 0.811 off 0.00 rg 0.99 ind 0.28] [k 0.573 off 0.00 rg 0.70 ind 0.22]  ->  end [k 1.543 off 0.08 rg 0.91 ind 0.70] [k 1.392 off 0.08 rg 0.83 ind 0.53]
+E s7 DESC  start [k 0.805 off 0.00 rg 1.70 ind 0.12] [k 0.090 off 0.00 rg 0.19 ind 0.02]  ->  end [k 0.930 off 0.31 rg 0.81 ind 0.25] [k 0.371 off 0.31 rg 0.33 ind 0.13]
+F s0 DESC  start [k 0.502 off 0.37 rg 0.63 ind 0.10] [k 0.326 off 0.37 rg 0.41 ind 0.32]  ->  end [k 0.001 off 0.99 rg 0.37 ind 0.69] [k 0.001 off 0.99 rg 0.35 ind 0.62]
+F s1 SOLV  start [k 0.284 off 0.11 rg 0.51 ind 0.25] [k 0.618 off 0.11 rg 1.12 ind 0.15]  ->  end [k 0.001 off 0.96 rg 0.30 ind 0.87] [k 0.001 off 0.96 rg 0.31 ind 0.64]
+F s2 STAL  start [k 1.501 off 0.73 rg 1.37 ind 0.19] [k 0.788 off 0.73 rg 0.72 ind 0.01]  ->  end [k 0.000 off 0.98 rg 0.07 ind 0.88] [k 0.000 off 0.98 rg 0.09 ind 0.68]
+F s3 DESC  start [k 5.512 off 0.91 rg 1.76 ind 0.02] [k 5.122 off 0.91 rg 1.63 ind 0.32]  ->  end [k 0.000 off 0.99 rg 0.12 ind 0.61] [k 0.000 off 0.99 rg 0.11 ind 0.75]
+F s4 STAL  start [k 5.864 off 0.87 rg 2.61 ind 0.26] [k 2.348 off 0.87 rg 1.05 ind 0.18]  ->  end [k 0.001 off 0.99 rg 0.11 ind 0.66] [k 0.000 off 0.99 rg 0.10 ind 0.86]
+F s5 DESC  start [k 1.419 off 0.80 rg 1.11 ind 0.33] [k 1.121 off 0.80 rg 0.88 ind 0.47]  ->  end [k 0.001 off 0.91 rg 0.40 ind 0.64] [k 0.001 off 0.91 rg 0.39 ind 0.70]
+F s6 SOLV  start [k 2.646 off 0.74 rg 1.15 ind 0.03] [k 2.270 off 0.74 rg 0.99 ind 0.07]  ->  end [k 0.000 off 1.00 rg 0.06 ind 0.88] [k 0.000 off 1.00 rg 0.03 ind 0.63]
+F s7 DESC  start [k 1.376 off 0.90 rg 1.05 ind 0.09] [k 2.164 off 0.90 rg 1.65 ind 0.08]  ->  end [k 0.001 off 0.91 rg 0.27 ind 0.55] [k 0.001 off 0.91 rg 0.25 ind 0.71]
+C s0 STAL  start [k 0.616 off 0.00 rg 0.78 ind 0.01] [k 1.040 off 0.00 rg 1.32 ind 0.25]  ->  end [k 0.635 off 0.00 rg 0.82 ind 0.01] [k 0.874 off 0.00 rg 1.13 ind 0.19]
+C s1 SOLV  start [k 0.060 off 0.00 rg 1.32 ind 0.41] [k 0.046 off 0.00 rg 1.01 ind 0.82]  ->  end [k 0.001 off 0.00 rg 0.92 ind 0.82] [k 0.001 off 0.00 rg 0.92 ind 0.83]
+C s2 DESC  start [k 0.092 off 0.00 rg 0.07 ind 0.01] [k 0.352 off 0.00 rg 0.27 ind 0.03]  ->  end [k 0.090 off 0.00 rg 0.05 ind 0.01] [k 0.617 off 0.00 rg 0.36 ind 0.05]
+C s3 DESC  start [k 0.024 off 0.00 rg 0.02 ind 0.00] [k 1.506 off 0.00 rg 1.34 ind 0.11]  ->  end [k 0.030 off 0.00 rg 0.02 ind 0.00] [k 1.717 off 0.00 rg 1.30 ind 0.16]
+C s4 STAL  start [k 1.583 off 0.00 rg 0.93 ind 0.21] [k 0.988 off 0.00 rg 0.58 ind 0.15]  ->  end [k 2.243 off 0.00 rg 0.63 ind 0.33] [k 2.730 off 0.00 rg 0.76 ind 0.41]
+C s5 STAL  start [k 0.554 off 0.00 rg 0.65 ind 0.15] [k 0.708 off 0.00 rg 0.83 ind 0.19]  ->  end [k 0.752 off 0.00 rg 0.47 ind 0.24] [k 1.494 off 0.00 rg 0.92 ind 0.52]
+C s6 STAL  start [k 0.811 off 0.00 rg 0.99 ind 0.28] [k 0.573 off 0.00 rg 0.70 ind 0.22]  ->  end [k 1.104 off 0.00 rg 1.09 ind 0.32] [k 0.646 off 0.00 rg 0.64 ind 0.19]
+C s7 STAL  start [k 0.805 off 0.00 rg 1.70 ind 0.12] [k 0.090 off 0.00 rg 0.19 ind 0.02]  ->  end [k 0.835 off 0.00 rg 1.47 ind 0.13] [k 0.097 off 0.00 rg 0.17 ind 0.02]
+
+full 4-dim latent at the START (before any training): off-plane share of c, |c|/|U| (native latent metric)
+E: s0: off 0.03 |c|/|U| 0.79; s1: off 0.09 |c|/|U| 0.05; s2: off 0.14 |c|/|U| 1.29; s3: off 0.11 |c|/|U| 1.13; s4: off 0.06 |c|/|U| 1.70; s5: off 0.01 |c|/|U| 0.86; s6: off 0.01 |c|/|U| 0.82; s7: off 0.06 |c|/|U| 0.47
+F: s0: off 0.37 |c|/|U| 0.80; s1: off 0.11 |c|/|U| 0.55; s2: off 0.73 |c|/|U| 1.09; s3: off 0.91 |c|/|U| 3.14; s4: off 0.87 |c|/|U| 2.24; s5: off 0.80 |c|/|U| 1.28; s6: off 0.74 |c|/|U| 2.29; s7: off 0.90 |c|/|U| 1.32

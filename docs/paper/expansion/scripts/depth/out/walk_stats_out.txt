@@ -1,0 +1,26 @@
+torus 64x64, T = 1024 (FACTORIAL stream, seed 500):
+  sd of P_T per axis 60.2 cells (= 0.94 grid widths); sd of P_t at t = 128: 19.5
+  window w =    4: sd of d_w per axis 2.50 cells
+  window w =   16: sd of d_w per axis 6.86 cells
+  window w =   64: sd of d_w per axis 14.66 cells
+  window w =  256: sd of d_w per axis 30.96 cells
+ring 32, T = 128, p_plus 0.5: sd of P_T 28.0 (= 0.88 ring widths), mean |P_T| 22.9; sd of P_t/(t+1) over t >= 8 0.389
+    w =   4: sd of d_w 3.54
+    w =  16: sd of d_w 9.72
+    w =  64: sd of d_w 20.45
+    sd of P_t over t >= 8: 21.01
+ring 32, T = 128, p_plus 0.75: sd of P_T 24.7 (= 0.77 ring widths), mean |P_T| 67.7; sd of P_t/(t+1) over t >= 8 0.331
+    w =   4: sd of d_w 3.00
+    w =  16: sd of d_w 8.20
+    w =  64: sd of d_w 17.82
+    sd of P_t over t >= 8: 25.80
+ring 32, T = 128, p_plus 0.9: sd of P_T 17.3 (= 0.54 ring widths), mean |P_T| 104.7; sd of P_t/(t+1) over t >= 8 0.225
+    w =   4: sd of d_w 2.03
+    w =  16: sd of d_w 5.54
+    w =  64: sd of d_w 12.12
+    sd of P_t over t >= 8: 30.82
+ring 32, T = 128, p_plus 1.0: sd of P_T 0.0 (= 0.00 ring widths), mean |P_T| 128.0; sd of P_t/(t+1) over t >= 8 0.000
+    w =   4: sd of d_w 0.00
+    w =  16: sd of d_w 0.00
+    w =  64: sd of d_w 0.00
+    sd of P_t over t >= 8: 34.64

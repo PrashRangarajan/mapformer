@@ -1,0 +1,90 @@
+
+=== paper2x2 ===
+index arms, PoPE-Flat vs RoPE:
+  acc       all              PoPE-Flat 0.679 vs RoPE 0.805: d -0.126  perm p 0.0002  (seeds PoPE-Flat > RoPE max: 0/8)
+  acc       R1 (1-step reversal) PoPE-Flat 0.961 vs RoPE 0.994: d -0.033  perm p 0.0051  (seeds PoPE-Flat > RoPE max: 0/8)
+  acc       R2               PoPE-Flat 0.914 vs RoPE 0.943: d -0.028  perm p 0.3778  (seeds PoPE-Flat > RoPE max: 0/8)
+  acc       R3+              PoPE-Flat 0.566 vs RoPE 0.779: d -0.212  perm p 0.0002  (seeds PoPE-Flat > RoPE max: 0/8)
+  acc       not retrace      PoPE-Flat 0.440 vs RoPE 0.469: d -0.029  perm p 0.0870  (seeds PoPE-Flat > RoPE max: 0/8)
+  massOff1  all              PoPE-Flat 0.307 vs RoPE 0.002: d +0.305  perm p 0.0002  (seeds PoPE-Flat > RoPE max: 8/8)
+  massRT    R3+              PoPE-Flat 0.012 vs RoPE 0.039: d -0.027  perm p 0.0005  (seeds PoPE-Flat > RoPE max: 0/8)
+decomposition of PoPE - RoPE accuracy gap (mean share x mean delta acc):
+  R1 (1-step reversal)   share 0.189 x d -0.033 = -0.0062
+  R2                     share 0.160 x d -0.028 = -0.0045
+  R3+                    share 0.519 x d -0.212 = -0.1102
+  not retrace            share 0.133 x d -0.029 = -0.0038
+  sum -0.1247 (total gap -0.1255)
+path arms, MapPoPE-Flat vs Vanilla (MapWM), r2:
+  acc       all              MapPoPE-Flat 0.999 vs Vanilla 0.971: d +0.028  perm p 0.0395  (seeds MapPoPE-Flat > Vanilla max: 0/8)
+  massCell  all              MapPoPE-Flat 0.925 vs Vanilla 0.747: d +0.178  perm p 0.0008  (seeds MapPoPE-Flat > Vanilla max: 4/8)
+  C         all              MapPoPE-Flat 0.995 vs Vanilla 0.703: d +0.292  perm p 0.0002  (seeds MapPoPE-Flat > Vanilla max: 8/8)
+  C0        all              MapPoPE-Flat 0.996 vs Vanilla 0.905: d +0.090  perm p 0.0002  (seeds MapPoPE-Flat > Vanilla max: 8/8)
+  mAct      all              MapPoPE-Flat 0.041 vs Vanilla 0.179: d -0.138  perm p 0.0002  (seeds MapPoPE-Flat > Vanilla max: 0/8)
+  mObsX     all              MapPoPE-Flat 0.034 vs Vanilla 0.074: d -0.040  perm p 0.0558  (seeds MapPoPE-Flat > Vanilla max: 0/8)
+  MapWM C0 - C (content phase's cost to target coherence): +0.202, positive on 7/8 seeds
+
+=== score_rank ===
+MapPoPE-Pair vs Vanilla:
+  acc       plain gap<128    MapPoPE-Pair 0.992 vs Vanilla 0.878: d +0.114  perm p 0.0355  (seeds MapPoPE-Pair > Vanilla max: 0/12)
+  massCell  plain gap<128    MapPoPE-Pair 0.763 vs Vanilla 0.633: d +0.130  perm p 0.0397  (seeds MapPoPE-Pair > Vanilla max: 3/12)
+  C         plain gap<128    MapPoPE-Pair 0.960 vs Vanilla 0.617: d +0.343  perm p 0.0002  (seeds MapPoPE-Pair > Vanilla max: 10/12)
+  C0        plain gap<128    MapPoPE-Pair 0.960 vs Vanilla 0.900: d +0.059  perm p 0.1610  (seeds MapPoPE-Pair > Vanilla max: 1/12)
+  acc       plain gap>=128   MapPoPE-Pair 0.792 vs Vanilla 0.750: d +0.042  perm p 0.6285  (seeds MapPoPE-Pair > Vanilla max: 0/12)
+  massCell  plain gap>=128   MapPoPE-Pair 0.383 vs Vanilla 0.418: d -0.035  perm p 0.7633  (seeds MapPoPE-Pair > Vanilla max: 2/12)
+  C         plain gap>=128   MapPoPE-Pair 0.840 vs Vanilla 0.524: d +0.316  perm p 0.0286  (seeds MapPoPE-Pair > Vanilla max: 7/12)
+  C0        plain gap>=128   MapPoPE-Pair 0.837 vs Vanilla 0.814: d +0.023  perm p 0.8444  (seeds MapPoPE-Pair > Vanilla max: 0/12)
+  acc       wrap-only        MapPoPE-Pair 0.631 vs Vanilla 0.641: d -0.009  perm p 0.9043  (seeds MapPoPE-Pair > Vanilla max: 0/12)
+  massCell  wrap-only        MapPoPE-Pair 0.236 vs Vanilla 0.244: d -0.008  perm p 0.9276  (seeds MapPoPE-Pair > Vanilla max: 1/12)
+  C         wrap-only        MapPoPE-Pair 0.414 vs Vanilla 0.184: d +0.230  perm p 0.2357  (seeds MapPoPE-Pair > Vanilla max: 4/12)
+  C0        wrap-only        MapPoPE-Pair 0.411 vs Vanilla 0.457: d -0.046  perm p 0.7871  (seeds MapPoPE-Pair > Vanilla max: 4/12)
+MapPoPE-Pair_r4mi vs Vanilla_r4mi:
+  acc       plain gap<128    MapPoPE-Pair_r4mi 1.000 vs Vanilla_r4mi 1.000: d +0.000  perm p 1.0000  (seeds MapPoPE-Pair_r4mi > Vanilla_r4mi max: 0/8)
+  massCell  plain gap<128    MapPoPE-Pair_r4mi 0.830 vs Vanilla_r4mi 0.825: d +0.005  perm p 0.7142  (seeds MapPoPE-Pair_r4mi > Vanilla_r4mi max: 1/8)
+  C         plain gap<128    MapPoPE-Pair_r4mi 0.997 vs Vanilla_r4mi 0.926: d +0.072  perm p 0.0003  (seeds MapPoPE-Pair_r4mi > Vanilla_r4mi max: 7/8)
+  C0        plain gap<128    MapPoPE-Pair_r4mi 1.000 vs Vanilla_r4mi 1.000: d +0.000  perm p 0.3520  (seeds MapPoPE-Pair_r4mi > Vanilla_r4mi max: 2/8)
+  acc       plain gap>=128   MapPoPE-Pair_r4mi 0.999 vs Vanilla_r4mi 1.000: d -0.000  perm p 1.0000  (seeds MapPoPE-Pair_r4mi > Vanilla_r4mi max: 0/8)
+  massCell  plain gap>=128   MapPoPE-Pair_r4mi 0.793 vs Vanilla_r4mi 0.800: d -0.008  perm p 0.6743  (seeds MapPoPE-Pair_r4mi > Vanilla_r4mi max: 0/8)
+  C         plain gap>=128   MapPoPE-Pair_r4mi 0.991 vs Vanilla_r4mi 0.923: d +0.068  perm p 0.0005  (seeds MapPoPE-Pair_r4mi > Vanilla_r4mi max: 6/8)
+  C0        plain gap>=128   MapPoPE-Pair_r4mi 0.993 vs Vanilla_r4mi 0.993: d -0.000  perm p 0.9322  (seeds MapPoPE-Pair_r4mi > Vanilla_r4mi max: 2/8)
+  acc       wrap-only        MapPoPE-Pair_r4mi 0.995 vs Vanilla_r4mi 0.998: d -0.003  perm p 0.7333  (seeds MapPoPE-Pair_r4mi > Vanilla_r4mi max: 0/8)
+  massCell  wrap-only        MapPoPE-Pair_r4mi 0.412 vs Vanilla_r4mi 0.692: d -0.280  perm p 0.1021  (seeds MapPoPE-Pair_r4mi > Vanilla_r4mi max: 0/8)
+  C         wrap-only        MapPoPE-Pair_r4mi 0.554 vs Vanilla_r4mi 0.789: d -0.236  perm p 0.2813  (seeds MapPoPE-Pair_r4mi > Vanilla_r4mi max: 3/8)
+  C0        wrap-only        MapPoPE-Pair_r4mi 0.554 vs Vanilla_r4mi 0.840: d -0.285  perm p 0.2342  (seeds MapPoPE-Pair_r4mi > Vanilla_r4mi max: 1/8)
+Vanilla_r4mi vs Vanilla:
+  acc       plain gap<128    Vanilla_r4mi 1.000 vs Vanilla 0.878: d +0.122  perm p 0.0531  (seeds Vanilla_r4mi > Vanilla max: 0/8)
+  massCell  plain gap<128    Vanilla_r4mi 0.825 vs Vanilla 0.633: d +0.192  perm p 0.0068  (seeds Vanilla_r4mi > Vanilla max: 4/8)
+  C         plain gap<128    Vanilla_r4mi 0.926 vs Vanilla 0.617: d +0.309  perm p 0.0036  (seeds Vanilla_r4mi > Vanilla max: 1/8)
+  C0        plain gap<128    Vanilla_r4mi 1.000 vs Vanilla 0.900: d +0.099  perm p 0.0049  (seeds Vanilla_r4mi > Vanilla max: 3/8)
+  acc       plain gap>=128   Vanilla_r4mi 1.000 vs Vanilla 0.750: d +0.250  perm p 0.0048  (seeds Vanilla_r4mi > Vanilla max: 0/8)
+  massCell  plain gap>=128   Vanilla_r4mi 0.800 vs Vanilla 0.418: d +0.383  perm p 0.0012  (seeds Vanilla_r4mi > Vanilla max: 4/8)
+  C         plain gap>=128   Vanilla_r4mi 0.923 vs Vanilla 0.524: d +0.399  perm p 0.0032  (seeds Vanilla_r4mi > Vanilla max: 1/8)
+  C0        plain gap>=128   Vanilla_r4mi 0.993 vs Vanilla 0.814: d +0.179  perm p 0.0143  (seeds Vanilla_r4mi > Vanilla max: 2/8)
+  acc       wrap-only        Vanilla_r4mi 0.998 vs Vanilla 0.641: d +0.357  perm p 0.0007  (seeds Vanilla_r4mi > Vanilla max: 0/8)
+  massCell  wrap-only        Vanilla_r4mi 0.692 vs Vanilla 0.244: d +0.448  perm p 0.0060  (seeds Vanilla_r4mi > Vanilla max: 4/8)
+  C         wrap-only        Vanilla_r4mi 0.789 vs Vanilla 0.184: d +0.605  perm p 0.0070  (seeds Vanilla_r4mi > Vanilla max: 0/8)
+  C0        wrap-only        Vanilla_r4mi 0.840 vs Vanilla 0.457: d +0.383  perm p 0.0316  (seeds Vanilla_r4mi > Vanilla max: 4/8)
+MapPoPE-Pair_r4mi vs MapPoPE-Pair:
+  acc       plain gap<128    MapPoPE-Pair_r4mi 1.000 vs MapPoPE-Pair 0.992: d +0.008  perm p 0.0486  (seeds MapPoPE-Pair_r4mi > MapPoPE-Pair max: 0/8)
+  massCell  plain gap<128    MapPoPE-Pair_r4mi 0.830 vs MapPoPE-Pair 0.763: d +0.067  perm p 0.0573  (seeds MapPoPE-Pair_r4mi > MapPoPE-Pair max: 0/8)
+  C         plain gap<128    MapPoPE-Pair_r4mi 0.997 vs MapPoPE-Pair 0.960: d +0.037  perm p 0.2691  (seeds MapPoPE-Pair_r4mi > MapPoPE-Pair max: 5/8)
+  C0        plain gap<128    MapPoPE-Pair_r4mi 1.000 vs MapPoPE-Pair 0.960: d +0.040  perm p 0.1476  (seeds MapPoPE-Pair_r4mi > MapPoPE-Pair max: 2/8)
+  acc       plain gap>=128   MapPoPE-Pair_r4mi 0.999 vs MapPoPE-Pair 0.792: d +0.208  perm p 0.0079  (seeds MapPoPE-Pair_r4mi > MapPoPE-Pair max: 0/8)
+  massCell  plain gap>=128   MapPoPE-Pair_r4mi 0.793 vs MapPoPE-Pair 0.383: d +0.410  perm p 0.0022  (seeds MapPoPE-Pair_r4mi > MapPoPE-Pair max: 1/8)
+  C         plain gap>=128   MapPoPE-Pair_r4mi 0.991 vs MapPoPE-Pair 0.840: d +0.152  perm p 0.1654  (seeds MapPoPE-Pair_r4mi > MapPoPE-Pair max: 4/8)
+  C0        plain gap>=128   MapPoPE-Pair_r4mi 0.993 vs MapPoPE-Pair 0.837: d +0.156  perm p 0.1520  (seeds MapPoPE-Pair_r4mi > MapPoPE-Pair max: 3/8)
+  acc       wrap-only        MapPoPE-Pair_r4mi 0.995 vs MapPoPE-Pair 0.631: d +0.364  perm p 0.0020  (seeds MapPoPE-Pair_r4mi > MapPoPE-Pair max: 0/8)
+  massCell  wrap-only        MapPoPE-Pair_r4mi 0.412 vs MapPoPE-Pair 0.236: d +0.176  perm p 0.2777  (seeds MapPoPE-Pair_r4mi > MapPoPE-Pair max: 0/8)
+  C         wrap-only        MapPoPE-Pair_r4mi 0.554 vs MapPoPE-Pair 0.414: d +0.140  perm p 0.5171  (seeds MapPoPE-Pair_r4mi > MapPoPE-Pair max: 1/8)
+  C0        wrap-only        MapPoPE-Pair_r4mi 0.554 vs MapPoPE-Pair 0.411: d +0.143  perm p 0.5077  (seeds MapPoPE-Pair_r4mi > MapPoPE-Pair max: 1/8)
+  Vanilla            plain gap<128   C 0.617  C0 0.900  C0-C +0.284
+  Vanilla            plain gap>=128  C 0.524  C0 0.814  C0-C +0.290
+  Vanilla            wrap-only       C 0.184  C0 0.457  C0-C +0.273
+  MapPoPE-Pair       plain gap<128   C 0.960  C0 0.960  C0-C -0.001
+  MapPoPE-Pair       plain gap>=128  C 0.840  C0 0.837  C0-C -0.003
+  MapPoPE-Pair       wrap-only       C 0.414  C0 0.411  C0-C -0.003
+  Vanilla_r4mi       plain gap<128   C 0.926  C0 1.000  C0-C +0.074
+  Vanilla_r4mi       plain gap>=128  C 0.923  C0 0.993  C0-C +0.071
+  Vanilla_r4mi       wrap-only       C 0.789  C0 0.840  C0-C +0.050
+  MapPoPE-Pair_r4mi  plain gap<128   C 0.997  C0 1.000  C0-C +0.003
+  MapPoPE-Pair_r4mi  plain gap>=128  C 0.991  C0 0.993  C0-C +0.002
+  MapPoPE-Pair_r4mi  wrap-only       C 0.554  C0 0.554  C0-C +0.001

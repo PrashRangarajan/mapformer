@@ -1,0 +1,26 @@
+S_def        n 8 | SOLVED (loss < 0.05) 0 | ESCAPED (acc >= 0.95) 3, acc >= 0.9 3 | acc mean 0.832 (start 0.330) | final loss median 0.773 | wrap share end 0.32
+     per seed acc/loss: s800:0.89/0.61 s801:0.86/0.93 s802:0.95/0.29 s803:0.70/2.58 s804:0.98/0.11 s805:0.75/1.42 s806:0.96/0.19 s807:0.56/3.56
+S_abs        n 8 | SOLVED (loss < 0.05) 0 | ESCAPED (acc >= 0.95) 0, acc >= 0.9 1 | acc mean 0.467 (start 0.289) | final loss median 6.033 | wrap share end 0.10
+     per seed acc/loss: s800:0.37/6.05 s801:0.94/0.19 s802:0.34/7.68 s803:0.75/1.69 s804:0.28/6.54 s805:0.37/6.01 s806:0.35/6.01 s807:0.32/7.06
+S_abs_fz     n 8 | SOLVED (loss < 0.05) 0 | ESCAPED (acc >= 0.95) 0, acc >= 0.9 0 | acc mean 0.398 (start 0.289) | final loss median 6.187 | wrap share end 0.09
+     per seed acc/loss: s800:0.36/6.28 s801:0.32/6.07 s802:0.33/7.92 s803:0.76/1.56 s804:0.33/6.04 s805:0.35/6.10 s806:0.37/6.40 s807:0.36/7.05
+A_abs        n 8 | SOLVED (loss < 0.05) 0 | ESCAPED (acc >= 0.95) 0, acc >= 0.9 0 | acc mean 0.363 (start 0.289) | final loss median 6.499 | wrap share end 0.02
+     per seed acc/loss: s800:0.33/6.63 s801:0.37/6.53 s802:0.35/7.89 s803:0.55/4.69 s804:0.28/6.47 s805:0.35/6.35 s806:0.36/6.21 s807:0.31/7.28
+A_high       n 8 | SOLVED (loss < 0.05) 0 | ESCAPED (acc >= 0.95) 0, acc >= 0.9 1 | acc mean 0.643 (start 0.361) | final loss median 3.798 | wrap share end 0.19
+     per seed acc/loss: s800:0.81/1.24 s801:0.50/4.24 s802:0.74/1.87 s803:0.56/5.78 s804:0.92/0.44 s805:0.53/3.35 s806:0.55/4.60 s807:0.53/4.96
+A_seg_t0.75  n 8 | SOLVED (loss < 0.05) 0 | ESCAPED (acc >= 0.95) 0, acc >= 0.9 0 | acc mean 0.506 (start 0.321) | final loss median 4.927 | wrap share end 0.01
+     per seed acc/loss: s800:0.33/6.61 s801:0.64/3.20 s802:0.50/4.75 s803:0.54/6.31 s804:0.42/5.10 s805:0.61/2.96 s806:0.42/5.98 s807:0.59/4.04
+A_seg_t0.5   n 8 | SOLVED (loss < 0.05) 0 | ESCAPED (acc >= 0.95) 0, acc >= 0.9 0 | acc mean 0.612 (start 0.323) | final loss median 3.357 | wrap share end 0.04
+     per seed acc/loss: s800:0.63/3.05 s801:0.82/2.09 s802:0.71/2.66 s803:0.76/2.45 s804:0.45/4.71 s805:0.49/3.66 s806:0.42/6.15 s807:0.62/3.82
+A_seg_t0.25  (no runs)
+S_seg_t0.75  (no runs)
+
+== contrasts (accuracy: permutation p; ESCAPED counts: Fisher p) ==
+S_abs vs A_abs: acc 0.467 vs 0.363 (d +0.104, perm p 0.3169); ESCAPED 0/8 vs 0/8 (Fisher p 1.0000)
+S_abs vs S_abs_fz: acc 0.467 vs 0.398 (d +0.069, perm p 0.5570); ESCAPED 0/8 vs 0/8 (Fisher p 1.0000)
+S_def vs S_abs: acc 0.832 vs 0.467 (d +0.365, perm p 0.0054); ESCAPED 3/8 vs 0/8 (Fisher p 0.2000)
+A_high vs A_abs: acc 0.643 vs 0.363 (d +0.280, perm p 0.0007); ESCAPED 0/8 vs 0/8 (Fisher p 1.0000)
+S_abs_fz vs A_abs: acc 0.398 vs 0.363 (d +0.035, perm p 0.6085); ESCAPED 0/8 vs 0/8 (Fisher p 1.0000)
+0.75 vs 1 0.012199390030498474
+0.5 vs 1 0.0017499125043747813
+S_def vs A_seg0.5 0.013099345032748363

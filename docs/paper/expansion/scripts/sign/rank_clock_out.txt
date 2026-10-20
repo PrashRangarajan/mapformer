@@ -1,0 +1,62 @@
+== shared r2 (rank_mi/Vanilla)
+  s0 ---- loss 0.587 | h0 r2 lat-clock 1.476 ch-clock 0.853 in-span 1.00 obs 0.302 | h1 r2 lat-clock 1.476 ch-clock 1.359 in-span 0.94 obs 0.342
+  s1 ---- loss 0.051 | h0 r2 lat-clock 0.049 ch-clock 0.061 in-span 1.00 obs 0.054 | h1 r2 lat-clock 0.049 ch-clock 0.050 in-span 1.00 obs 0.044
+  s2 ---- loss 0.308 | h0 r2 lat-clock 2.436 ch-clock 0.077 in-span 0.83 obs 0.032 | h1 r2 lat-clock 2.436 ch-clock 0.279 in-span 0.98 obs 0.123
+  s3 ---- loss 0.321 | h0 r2 lat-clock 2.255 ch-clock 0.081 in-span 1.00 obs 0.024 | h1 r2 lat-clock 2.255 ch-clock 1.537 in-span 1.00 obs 0.543
+  s4 ---- loss 0.177 | h0 r2 lat-clock 3.410 ch-clock 1.420 in-span 0.99 obs 0.499 | h1 r2 lat-clock 3.410 ch-clock 0.899 in-span 1.00 obs 0.318
+  s5 ---- loss 0.404 | h0 r2 lat-clock 1.532 ch-clock 0.381 in-span 0.98 obs 0.208 | h1 r2 lat-clock 1.532 ch-clock 0.621 in-span 0.72 obs 0.258
+  s6 ---- loss 0.675 | h0 r2 lat-clock 1.783 ch-clock 0.773 in-span 1.00 obs 0.239 | h1 r2 lat-clock 1.783 ch-clock 0.701 in-span 1.00 obs 0.142
+  s7 ---- loss 0.605 | h0 r2 lat-clock 0.853 ch-clock 0.748 in-span 0.93 obs 0.398 | h1 r2 lat-clock 0.853 ch-clock 0.158 in-span 0.94 obs 0.068
+== per-head r2 (rank_mi/Vanilla_r2ph)
+  s0 ---- loss 1.049 | h0 r2 lat-clock 9.031 ch-clock 1.050 in-span 1.00 obs 0.371 | h1 r2 lat-clock 10.951 ch-clock 12.536 in-span 1.00 obs 1.869
+  s1 SOLV loss 0.007 | h0 r2 lat-clock 2.100 ch-clock 0.936 in-span 0.98 obs 0.328 | h1 r2 lat-clock 0.028 ch-clock 0.029 in-span 1.00 obs 0.010
+  s2 SOLV loss 0.003 | h0 r2 lat-clock 0.057 ch-clock 0.045 in-span 1.00 obs 0.016 | h1 r2 lat-clock 0.046 ch-clock 0.046 in-span 1.00 obs 0.016
+  s3 ---- loss 0.910 | h0 r2 lat-clock 3.450 ch-clock 1.588 in-span 0.90 obs 0.401 | h1 r2 lat-clock 0.312 ch-clock 0.417 in-span 1.00 obs 0.404
+  s4 ---- loss 0.194 | h0 r2 lat-clock 3.338 ch-clock 1.368 in-span 0.99 obs 0.274 | h1 r2 lat-clock 4.302 ch-clock 2.315 in-span 0.36 obs 0.839
+  s5 ---- loss 0.211 | h0 r2 lat-clock 0.264 ch-clock 0.104 in-span 1.00 obs 0.036 | h1 r2 lat-clock 0.106 ch-clock 0.021 in-span 1.00 obs 0.004
+  s6 ---- loss 0.248 | h0 r2 lat-clock 0.155 ch-clock 0.130 in-span 1.00 obs 0.046 | h1 r2 lat-clock 0.121 ch-clock 0.038 in-span 1.00 obs 0.013
+  s7 ---- loss 0.539 | h0 r2 lat-clock 3.118 ch-clock 1.210 in-span 0.62 obs 0.599 | h1 r2 lat-clock 3.177 ch-clock 2.147 in-span 1.00 obs 0.732
+== blockdiag r4 (2/head) (rank_sep/Vanilla_r4mibd)
+  s0 ---- loss 0.482 | h0 r2 lat-clock 5.331 ch-clock 0.939 in-span 0.99 obs 0.331 | h1 r2 lat-clock 3.775 ch-clock 1.846 in-span 0.97 obs 0.601
+  s1 ---- loss 0.302 | h0 r2 lat-clock 0.129 ch-clock 0.018 in-span 1.00 obs 0.005 | h1 r2 lat-clock 0.430 ch-clock 0.094 in-span 0.78 obs 0.109
+  s2 SOLV loss 0.010 | h0 r2 lat-clock 0.039 ch-clock 0.041 in-span 1.00 obs 0.015 | h1 r2 lat-clock 0.103 ch-clock 0.063 in-span 1.00 obs 0.023
+  s3 ---- loss 0.234 | h0 r2 lat-clock 2.334 ch-clock 1.482 in-span 1.00 obs 0.524 | h1 r2 lat-clock 0.879 ch-clock 0.020 in-span 1.00 obs 0.004
+  s4 ---- loss 0.202 | h0 r2 lat-clock 4.323 ch-clock 0.838 in-span 1.00 obs 0.296 | h1 r2 lat-clock 0.255 ch-clock 0.041 in-span 1.00 obs 0.005
+  s5 ---- loss 0.310 | h0 r2 lat-clock 0.297 ch-clock 0.010 in-span 1.00 obs 0.002 | h1 r2 lat-clock 1.631 ch-clock 0.730 in-span 0.98 obs 0.257
+  s6 SOLV loss 0.010 | h0 r2 lat-clock 0.082 ch-clock 0.072 in-span 1.00 obs 0.025 | h1 r2 lat-clock 3.503 ch-clock 1.431 in-span 0.99 obs 0.506
+  s7 ---- loss 0.166 | h0 r2 lat-clock 0.047 ch-clock 0.010 in-span 1.00 obs 0.003 | h1 r2 lat-clock 0.105 ch-clock 0.075 in-span 1.00 obs 0.026
+== per-head r3 (rank3/Vanilla_r3ph)
+  s0 ---- loss 0.243 | h0 r3 lat-clock 7.778 ch-clock 3.820 in-span 0.99 obs 1.349 | h1 r3 lat-clock 1.333 ch-clock 0.584 in-span 0.45 obs 0.076
+  s1 SOLV loss 0.003 | h0 r3 lat-clock 0.030 ch-clock 0.026 in-span 1.00 obs 0.009 | h1 r3 lat-clock 0.031 ch-clock 0.031 in-span 1.00 obs 0.011
+  s2 SOLV loss 0.003 | h0 r3 lat-clock 0.055 ch-clock 0.045 in-span 1.00 obs 0.016 | h1 r3 lat-clock 0.056 ch-clock 0.058 in-span 1.00 obs 0.021
+  s3 ---- loss 0.134 | h0 r3 lat-clock 4.712 ch-clock 1.776 in-span 0.97 obs 0.627 | h1 r3 lat-clock 0.894 ch-clock 0.122 in-span 0.72 obs 0.022
+  s4 SOLV loss 0.003 | h0 r3 lat-clock 0.038 ch-clock 0.034 in-span 1.00 obs 0.012 | h1 r3 lat-clock 0.025 ch-clock 0.026 in-span 1.00 obs 0.009
+  s5 SOLV loss 0.006 | h0 r3 lat-clock 0.044 ch-clock 0.043 in-span 1.00 obs 0.015 | h1 r3 lat-clock 0.058 ch-clock 0.059 in-span 1.00 obs 0.020
+  s6 SOLV loss 0.003 | h0 r3 lat-clock 0.016 ch-clock 0.017 in-span 1.00 obs 0.006 | h1 r3 lat-clock 0.018 ch-clock 0.017 in-span 1.00 obs 0.006
+  s7 SOLV loss 0.005 | h0 r3 lat-clock 0.093 ch-clock 0.081 in-span 1.00 obs 0.029 | h1 r3 lat-clock 0.080 ch-clock 0.081 in-span 1.00 obs 0.029
+== shared r4 (rank_mi/Vanilla_r4mi)
+  s0 SOLV loss 0.004 | h0 r4 lat-clock 0.217 ch-clock 0.093 in-span 0.98 obs 0.032 | h1 r4 lat-clock 0.217 ch-clock 0.091 in-span 1.00 obs 0.032
+  s1 SOLV loss 0.003 | h0 r4 lat-clock 0.031 ch-clock 0.031 in-span 1.00 obs 0.011 | h1 r4 lat-clock 0.031 ch-clock 0.030 in-span 1.00 obs 0.010
+  s2 SOLV loss 0.003 | h0 r4 lat-clock 0.069 ch-clock 0.069 in-span 1.00 obs 0.024 | h1 r4 lat-clock 0.069 ch-clock 0.064 in-span 1.00 obs 0.022
+  s3 SOLV loss 0.003 | h0 r4 lat-clock 0.037 ch-clock 0.039 in-span 1.00 obs 0.014 | h1 r4 lat-clock 0.037 ch-clock 0.038 in-span 1.00 obs 0.013
+  s4 SOLV loss 0.002 | h0 r4 lat-clock 0.011 ch-clock 0.011 in-span 1.00 obs 0.004 | h1 r4 lat-clock 0.011 ch-clock 0.008 in-span 1.00 obs 0.003
+  s5 SOLV loss 0.004 | h0 r4 lat-clock 0.031 ch-clock 0.033 in-span 1.00 obs 0.012 | h1 r4 lat-clock 0.031 ch-clock 0.029 in-span 1.00 obs 0.010
+  s6 SOLV loss 0.004 | h0 r4 lat-clock 0.028 ch-clock 0.026 in-span 1.00 obs 0.009 | h1 r4 lat-clock 0.028 ch-clock 0.026 in-span 1.00 obs 0.009
+  s7 SOLV loss 0.010 | h0 r4 lat-clock 0.095 ch-clock 0.095 in-span 1.00 obs 0.034 | h1 r4 lat-clock 0.095 ch-clock 0.102 in-span 1.00 obs 0.036
+== per-head r4 (rank_sep/Vanilla_r4ph)
+  s0 SOLV loss 0.004 | h0 r4 lat-clock 0.122 ch-clock 0.134 in-span 1.00 obs 0.047 | h1 r4 lat-clock 0.128 ch-clock 0.138 in-span 1.00 obs 0.049
+  s1 SOLV loss 0.010 | h0 r4 lat-clock 0.031 ch-clock 0.025 in-span 1.00 obs 0.009 | h1 r4 lat-clock 0.027 ch-clock 0.027 in-span 1.00 obs 0.010
+  s2 SOLV loss 0.004 | h0 r4 lat-clock 0.065 ch-clock 0.064 in-span 1.00 obs 0.023 | h1 r4 lat-clock 0.049 ch-clock 0.051 in-span 1.00 obs 0.018
+  s3 SOLV loss 0.004 | h0 r4 lat-clock 0.040 ch-clock 0.039 in-span 1.00 obs 0.013 | h1 r4 lat-clock 0.040 ch-clock 0.032 in-span 1.00 obs 0.011
+  s4 SOLV loss 0.002 | h0 r4 lat-clock 0.020 ch-clock 0.020 in-span 1.00 obs 0.007 | h1 r4 lat-clock 0.022 ch-clock 0.020 in-span 1.00 obs 0.007
+  s5 SOLV loss 0.008 | h0 r4 lat-clock 0.031 ch-clock 0.028 in-span 1.00 obs 0.010 | h1 r4 lat-clock 0.027 ch-clock 0.026 in-span 1.00 obs 0.009
+  s6 SOLV loss 0.005 | h0 r4 lat-clock 0.029 ch-clock 0.024 in-span 1.00 obs 0.009 | h1 r4 lat-clock 0.018 ch-clock 0.016 in-span 1.00 obs 0.005
+  s7 SOLV loss 0.003 | h0 r4 lat-clock 0.081 ch-clock 0.080 in-span 1.00 obs 0.028 | h1 r4 lat-clock 0.090 ch-clock 0.089 in-span 1.00 obs 0.031
+
+== summary over heads (mean; SOLVED runs / unsolved runs) ==
+shared r2                lat-clock S   -   (n 0) U 1.724 (n 16) | ch-clock S   -   (n 0) U 0.625 (n 16) | in-span S   -   (n 0) U 0.956 (n 16) | obs S   -   (n 0) U 0.225 (n 16)
+per-head r2              lat-clock S 0.558 (n 4) U 3.194 (n 12) | ch-clock S 0.264 (n 4) U 1.910 (n 12) | in-span S 0.994 (n 4) U 0.906 (n 12) | obs S 0.092 (n 4) U 0.466 (n 12)
+blockdiag r4 (2/head)    lat-clock S 0.932 (n 4) U 1.628 (n 12) | ch-clock S 0.402 (n 4) U 0.509 (n 12) | in-span S 0.998 (n 4) U 0.976 (n 12) | obs S 0.142 (n 4) U 0.180 (n 12)
+per-head r3              lat-clock S 0.045 (n 12) U 3.679 (n 4) | ch-clock S 0.043 (n 12) U 1.575 (n 4) | in-span S 1.000 (n 12) U 0.781 (n 4) | obs S 0.015 (n 12) U 0.519 (n 4)
+shared r4                lat-clock S 0.065 (n 16) U   -   (n 0) | ch-clock S 0.049 (n 16) U   -   (n 0) | in-span S 0.999 (n 16) U   -   (n 0) | obs S 0.017 (n 16) U   -   (n 0)
+per-head r4              lat-clock S 0.051 (n 16) U   -   (n 0) | ch-clock S 0.051 (n 16) U   -   (n 0) | in-span S 0.999 (n 16) U   -   (n 0) | obs S 0.018 (n 16) U   -   (n 0)

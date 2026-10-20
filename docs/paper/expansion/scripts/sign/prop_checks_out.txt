@@ -1,0 +1,12 @@
+(1) 8 channels: max |angle-sum error| after least squares: median 7.6, min 1.07e-14 (n 4000)
+(1) 9 channels: max |angle-sum error| after least squares: median 12.5, min 0.0266 (n 4000)
+(2) signed: clock surrogate 1.28e-29; |u| / (|z_x| + |z_y|) 0.000; latent norm end / start 0.707; map part change |d - d0| / |d0| 0.000; mean |map angle| 0.160
+(2) abs   : clock surrogate 2.97e-20; |u| / (|z_x| + |z_y|) 0.999; latent norm end / start 0.000; map part change |d - d0| / |d0| 1.000; mean |map angle| 0.000
+(2) signed: clock surrogate 3.48e-25; |u| / (|z_x| + |z_y|) 0.000; latent norm end / start 0.629; map part change |d - d0| / |d0| 0.000; mean |map angle| 0.124
+(2) abs   : clock surrogate 1.04e-13; |u| / (|z_x| + |z_y|) 0.999; latent norm end / start 0.000; map part change |d - d0| / |d0| 1.000; mean |map angle| 0.000
+(2) signed: clock surrogate 4.01e-29; |u| / (|z_x| + |z_y|) 0.000; latent norm end / start 0.584; map part change |d - d0| / |d0| 0.000; mean |map angle| 0.271
+(2) abs   : clock surrogate 2.68e-22; |u| / (|z_x| + |z_y|) 0.999; latent norm end / start 0.000; map part change |d - d0| / |d0| 1.000; mean |map angle| 0.000
+(2) signed: clock surrogate 1.32e-28; |u| / (|z_x| + |z_y|) 0.000; latent norm end / start 0.907; map part change |d - d0| / |d0| 0.000; mean |map angle| 0.501
+(2) abs   : clock surrogate 9.98e-16; |u| / (|z_x| + |z_y|) 0.999; latent norm end / start 0.000; map part change |d - d0| / |d0| 1.000; mean |map angle| 0.000
+(3) signed: reached a collective zero 80/80 (via the mirror copy z_2 = -2 z_1: 0)
+(3) abs   : reached a collective zero 30/80 (via the mirror copy z_2 = -2 z_1: 16)

@@ -1,0 +1,13 @@
+s0 loss 1p 3.103 4p 3.218 | step_map norm x3.78 coh 0.32->0.17 | omega norm x3.11 coh 0.58->0.54 | block norm x3.63 coh 1.00->1.00 | embed norm x1.26 coh 1.00->0.99 | head norm x1.22 coh 1.00->1.00
+s1 loss 1p 3.307 4p 3.230 | step_map norm x2.41 coh 0.57->0.56 | omega norm x2.53 coh 0.88->0.88 | block norm x3.16 coh 1.00->1.00 | embed norm x1.06 coh 1.00->0.99 | head norm x1.20 coh 1.00->1.00
+s2 loss 1p 2.904 4p 2.920 | step_map norm x2.46 coh 0.44->0.55 | omega norm x1.68 coh 0.67->0.45 | block norm x2.99 coh 1.00->1.00 | embed norm x0.94 coh 1.00->0.99 | head norm x1.29 coh 1.00->1.00
+s3 loss 1p 3.124 4p 2.957 | step_map norm x2.70 coh 0.25->0.25 | omega norm x3.41 coh 0.59->0.78 | block norm x3.10 coh 1.00->1.00 | embed norm x1.06 coh 1.00->0.99 | head norm x1.14 coh 1.00->1.00
+s4 loss 1p 3.293 4p 3.363 | step_map norm x2.96 coh 0.30->0.39 | omega norm x3.79 coh 0.85->0.92 | block norm x3.65 coh 1.00->1.00 | embed norm x1.17 coh 1.00->0.99 | head norm x1.30 coh 1.00->1.00
+s5 loss 1p 3.335 4p 3.421 | step_map norm x2.97 coh 0.62->0.50 | omega norm x3.63 coh 0.70->0.78 | block norm x3.54 coh 1.00->1.00 | embed norm x1.19 coh 1.00->1.00 | head norm x1.23 coh 1.00->1.00
+s6 loss 1p 3.029 4p 2.983 | step_map norm x2.89 coh 0.49->0.18 | omega norm x2.65 coh 0.85->0.88 | block norm x3.07 coh 1.00->1.00 | embed norm x1.00 coh 1.00->0.97 | head norm x1.24 coh 1.00->1.00
+s7 loss 1p 3.037 4p 2.975 | step_map norm x3.18 coh 0.68->0.70 | omega norm x3.19 coh 0.78->0.82 | block norm x3.93 coh 1.00->1.00 | embed norm x1.44 coh 1.00->1.00 | head norm x1.24 coh 1.00->1.00
+step_map  norm ratio 4p/1p: mean 2.92 (min 2.41, max 3.78); coherence 1p 0.46 -> 4p 0.41
+omega     norm ratio 4p/1p: mean 3.00 (min 1.68, max 3.79); coherence 1p 0.74 -> 4p 0.76
+block     norm ratio 4p/1p: mean 3.38 (min 2.99, max 3.93); coherence 1p 1.00 -> 4p 1.00
+embed     norm ratio 4p/1p: mean 1.14 (min 0.94, max 1.44); coherence 1p 1.00 -> 4p 0.99
+head      norm ratio 4p/1p: mean 1.23 (min 1.14, max 1.30); coherence 1p 1.00 -> 4p 1.00

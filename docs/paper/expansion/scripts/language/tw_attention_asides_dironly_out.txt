@@ -1,0 +1,8 @@
+DirOnly_s10 oppW 0.188 | acc 0.9681 (x1 0.9705) errs 39 aside 1.00 | attn last 0.649 old 0.098 anoun 0.047 same 0.073 rest 0.132 | lift-off(1 move) 1.0000 (0.00) lift-off(0.25) 0.9787 (1.00) lift-in(0.5) 1.0000 (0.00)
+DirOnly_s11 oppW 0.003 | acc 0.9705 (x1 0.9730) errs 36 aside 1.00 | attn last 0.671 old 0.100 anoun 0.041 same 0.070 rest 0.118 | lift-off(1 move) 1.0000 (0.00) lift-off(0.25) 0.9713 (1.00) lift-in(0.5) 1.0000 (0.00)
+DirOnly_s12 oppW 0.190 | acc 0.9705 (x1 0.9713) errs 36 aside 1.00 | attn last 0.660 old 0.098 anoun 0.042 same 0.102 rest 0.099 | lift-off(1 move) 1.0000 (0.00) lift-off(0.25) 0.9951 (1.00) lift-in(0.5) 1.0000 (0.00)
+DirOnly_s13 oppW 0.189 | acc 0.9754 (x1 0.9738) errs 30 aside 1.00 | attn last 0.660 old 0.098 anoun 0.044 same 0.067 rest 0.132 | lift-off(1 move) 1.0000 (0.00) lift-off(0.25) 0.9836 (1.00) lift-in(0.5) 1.0000 (0.00)
+DirOnly_s14 oppW 0.231 | acc 0.9812 (x1 0.9812) errs 23 aside 1.00 | attn last 0.404 old 0.062 anoun 0.077 same 0.227 rest 0.230 | lift-off(1 move) 1.0000 (0.00) lift-off(0.25) 0.9853 (1.00) lift-in(0.5) 0.9992 (0.00)
+DirOnly_s15 oppW 0.002 | acc 0.9672 (x1 0.9730) errs 40 aside 1.00 | attn last 0.661 old 0.099 anoun 0.041 same 0.067 rest 0.132 | lift-off(1 move) 1.0000 (0.00) lift-off(0.25) 0.9959 (1.00) lift-in(0.5) 1.0000 (0.00)
+DirOnly_s16 oppW 0.002 | acc 0.9615 (x1 0.9631) errs 47 aside 1.00 | attn last 0.646 old 0.096 anoun 0.041 same 0.097 rest 0.121 | lift-off(1 move) 0.9722 (1.00) lift-off(0.25) 0.9631 (1.00) lift-in(0.5) 1.0000 (0.00)
+DirOnly_s17 oppW 0.001 | acc 0.9689 (x1 0.9689) errs 38 aside 1.00 | attn last 0.658 old 0.098 anoun 0.041 same 0.090 rest 0.113 | lift-off(1 move) 1.0000 (0.00) lift-off(0.25) 0.9812 (1.00) lift-in(0.5) 1.0000 (0.00)

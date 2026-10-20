@@ -1,0 +1,66 @@
+model             opp  tick/dN tick/dN(u)  resid drift obs/pred agree     r use@drift  clock asideNet nounOff nounOff rad cos(tick,verb)
+tw_s0           0.004    4.456      1.797  0.038      26/26      1.00  1.00     0.167  0.894    0.047   0.047       0.024 +1.000
+     class step / dN: direction 1.635, verbs 1.451, adverbs 0.010, see 0.647, objects+nothing 0.312, period 0.485, aside-only 0.487, fillers 0.004, shared (and/a/she) 0.025
+tw_s1           0.004    0.144      0.033  0.154       0/0       1.00  1.00     0.000  0.101    0.117   0.117       0.034 +0.312
+     class step / dN: direction 1.001, verbs 0.027, adverbs 0.016, see 0.048, objects+nothing 0.033, period 0.132, aside-only 0.121, fillers 0.009, shared (and/a/she) 0.050
+tw_s2           0.005    3.305      1.016  0.086      29/29      1.00  1.00     0.094  0.832    0.095   0.095       0.023 +1.000
+     class step / dN: direction 1.269, verbs 0.968, adverbs 0.025, see 0.454, objects+nothing 0.290, period 0.484, aside-only 0.434, fillers 0.009, shared (and/a/she) 0.068
+tw_s3           0.002    4.949      1.828  0.105      35/35      1.00  1.00     0.059  0.881    0.161   0.161       0.030 +1.000
+     class step / dN: direction 1.359, verbs 1.202, adverbs 0.010, see 0.996, objects+nothing 0.475, period 0.801, aside-only 0.748, fillers 0.009, shared (and/a/she) 0.080
+tw_s4           0.004    4.842      2.424  0.078      36/36      1.00  1.00     0.030  0.884    0.148   0.148       0.031 +1.000
+     class step / dN: direction 1.244, verbs 1.115, adverbs 0.015, see 0.982, objects+nothing 0.589, period 0.775, aside-only 0.813, fillers 0.010, shared (and/a/she) 0.063
+tw_s5           0.006    0.198      0.038  0.165       1/1       1.00  1.00     0.006  0.130    0.110   0.110       0.032 +0.836
+     class step / dN: direction 1.001, verbs 0.052, adverbs 0.023, see 0.084, objects+nothing 0.074, period 0.138, aside-only 0.128, fillers 0.019, shared (and/a/she) 0.063
+tw_s6           0.013    0.210      0.047  0.176       3/3       1.00  1.00     0.016  0.139    0.122   0.122       0.034 +0.566
+     class step / dN: direction 1.001, verbs 0.046, adverbs 0.031, see 0.104, objects+nothing 0.052, period 0.134, aside-only 0.129, fillers 0.021, shared (and/a/she) 0.057
+tw_s7           0.004    0.123      0.056  0.067       2/2       1.00  1.00     0.029  0.100    0.048   0.048       0.020 +0.820
+     class step / dN: direction 1.001, verbs 0.058, adverbs 0.014, see 0.035, objects+nothing 0.036, period 0.020, aside-only 0.075, fillers 0.007, shared (and/a/she) 0.034
+MapWM_s10       0.009    0.174      0.066  0.099       3/3       1.00  1.00     0.032  0.136    0.074   0.074       0.029 +0.916
+     class step / dN: direction 1.001, verbs 0.052, adverbs 0.018, see 0.032, objects+nothing 0.050, period 0.047, aside-only 0.102, fillers 0.012, shared (and/a/she) 0.035
+MapWM_s11       0.001    3.642      2.256  0.033      38/38      1.00  1.00     0.035  0.813    0.044   0.044       0.020 +1.000
+     class step / dN: direction 1.208, verbs 0.806, adverbs 0.005, see 0.760, objects+nothing 0.400, period 0.730, aside-only 0.687, fillers 0.006, shared (and/a/she) 0.022
+MapWM_s12       0.003    0.134      0.064  0.083       3/3       1.00  0.99     0.045  0.105    0.056   0.056       0.023 +0.805
+     class step / dN: direction 1.001, verbs 0.070, adverbs 0.021, see 0.037, objects+nothing 0.044, period 0.027, aside-only 0.081, fillers 0.009, shared (and/a/she) 0.039
+MapWM_s13       0.009    6.771      3.740  0.052      27/27      1.00  1.00     0.027  0.882    0.048   0.048       0.015 +1.000
+     class step / dN: direction 1.579, verbs 1.453, adverbs 0.009, see 1.405, objects+nothing 0.775, period 1.403, aside-only 1.331, fillers 0.005, shared (and/a/she) 0.038
+MapWM_s14       0.003    3.308      1.544  0.058      28/28      1.00  1.00     0.105  0.849    0.093   0.093       0.022 +0.999
+     class step / dN: direction 1.255, verbs 0.987, adverbs 0.014, see 0.513, objects+nothing 0.237, period 0.466, aside-only 0.407, fillers 0.006, shared (and/a/she) 0.043
+MapWM_s15       0.004    4.192      2.197  0.109      30/30      1.00  1.00     0.035  0.857    0.164   0.164       0.033 +1.000
+     class step / dN: direction 1.198, verbs 0.954, adverbs 0.019, see 0.888, objects+nothing 0.490, period 0.657, aside-only 0.714, fillers 0.008, shared (and/a/she) 0.078
+MapWM_s16       0.002    0.075      0.024  0.127       0/0       1.00  0.98     0.000  0.056    0.118   0.118       0.038 +0.035
+     class step / dN: direction 1.000, verbs 0.035, adverbs 0.008, see 0.074, objects+nothing 0.041, period 0.079, aside-only 0.118, fillers 0.008, shared (and/a/she) 0.030
+MapWM_s17       0.011    0.234      0.055  0.132       3/3       1.00  1.00     0.016  0.159    0.087   0.087       0.025 +0.925
+     class step / dN: direction 1.003, verbs 0.092, adverbs 0.024, see 0.069, objects+nothing 0.063, period 0.090, aside-only 0.102, fillers 0.015, shared (and/a/she) 0.044
+NormStep_s10    0.005    0.050      0.024  0.087       0/0       1.00  0.98     0.000  0.041    0.107   0.107       0.047 +0.242
+     class step / dN: direction 1.000, verbs 0.039, adverbs 0.006, see 0.059, objects+nothing 0.031, period 0.055, aside-only 0.084, fillers 0.006, shared (and/a/she) 0.020
+NormStep_s11    0.007    5.062      1.354  0.067      27/27      1.00  1.00     0.046  0.858    0.041   0.041       0.022 +1.000
+     class step / dN: direction 1.316, verbs 1.471, adverbs 0.012, see 1.011, objects+nothing 0.593, period 0.770, aside-only 0.803, fillers 0.006, shared (and/a/she) 0.063
+NormStep_s12    0.004    0.030      0.016  0.072       0/0       1.00  0.96     0.000  0.031    0.097   0.097       0.046 +0.098
+     class step / dN: direction 1.000, verbs 0.036, adverbs 0.004, see 0.046, objects+nothing 0.015, period 0.033, aside-only 0.074, fillers 0.007, shared (and/a/she) 0.019
+NormStep_s13    0.004    0.102      0.040  0.102       2/2       1.00  0.99     0.017  0.081    0.101   0.101       0.045 +0.735
+     class step / dN: direction 1.000, verbs 0.032, adverbs 0.012, see 0.052, objects+nothing 0.041, period 0.055, aside-only 0.134, fillers 0.008, shared (and/a/she) 0.020
+NormStep_s14    0.004    0.142      0.036  0.137       2/2       1.00  1.00     0.010  0.107    0.106   0.106       0.041 +0.732
+     class step / dN: direction 1.000, verbs 0.064, adverbs 0.005, see 0.079, objects+nothing 0.041, period 0.073, aside-only 0.160, fillers 0.009, shared (and/a/she) 0.039
+NormStep_s15    0.006    0.127      0.035  0.147       2/1       0.98  0.99     0.013  0.096    0.118   0.118       0.046 +0.533
+     class step / dN: direction 1.001, verbs 0.026, adverbs 0.010, see 0.085, objects+nothing 0.034, period 0.087, aside-only 0.144, fillers 0.010, shared (and/a/she) 0.040
+NormStep_s16    0.009    4.578      1.182  0.069      28/28      1.00  1.00     0.161  0.859    0.039   0.039       0.022 +1.000
+     class step / dN: direction 1.318, verbs 1.492, adverbs 0.009, see 0.869, objects+nothing 0.494, period 0.510, aside-only 0.603, fillers 0.007, shared (and/a/she) 0.059
+NormStep_s17    0.004    0.047      0.021  0.092       0/0       1.00  0.97     0.000  0.041    0.111   0.111       0.052 +0.177
+     class step / dN: direction 1.000, verbs 0.028, adverbs 0.006, see 0.049, objects+nothing 0.041, period 0.055, aside-only 0.106, fillers 0.005, shared (and/a/she) 0.020
+DirOnly_s10     0.191    0.003      0.001  0.020       0/0       1.00  0.75     0.000  0.024    0.000   0.000       0.000 +0.000
+     class step / dN: direction 1.000, verbs 0.000, adverbs 0.000, see 0.000, objects+nothing 0.000, period 0.000, aside-only 0.000, fillers 0.000, shared (and/a/she) 0.000
+DirOnly_s11     0.003    0.004      0.003  0.007       0/0       1.00  0.98     0.000  0.022    0.000   0.000       0.000 +0.000
+     class step / dN: direction 1.000, verbs 0.000, adverbs 0.000, see 0.000, objects+nothing 0.000, period 0.000, aside-only 0.000, fillers 0.000, shared (and/a/she) 0.000
+DirOnly_s12     0.186    0.005      0.001  0.026       0/0       1.00  0.95     0.000  0.024    0.000   0.000       0.000 +0.000
+     class step / dN: direction 1.001, verbs 0.000, adverbs 0.000, see 0.000, objects+nothing 0.000, period 0.000, aside-only 0.000, fillers 0.000, shared (and/a/she) 0.000
+DirOnly_s13     0.196    0.005      0.003  0.030       0/0       1.00  0.78     0.000  0.025    0.000   0.000       0.000 +0.000
+     class step / dN: direction 1.000, verbs 0.000, adverbs 0.000, see 0.000, objects+nothing 0.000, period 0.000, aside-only 0.000, fillers 0.000, shared (and/a/she) 0.000
+DirOnly_s14     0.231    0.007      0.003  0.040       0/0       1.00  0.77     0.000  0.022    0.000   0.000       0.000 +0.000
+     class step / dN: direction 1.001, verbs 0.000, adverbs 0.000, see 0.000, objects+nothing 0.000, period 0.000, aside-only 0.000, fillers 0.000, shared (and/a/she) 0.000
+DirOnly_s15     0.002    0.005      0.002  0.007       0/0       1.00  0.97     0.000  0.023    0.000   0.000       0.000 +0.000
+     class step / dN: direction 1.000, verbs 0.000, adverbs 0.000, see 0.000, objects+nothing 0.000, period 0.000, aside-only 0.000, fillers 0.000, shared (and/a/she) 0.000
+DirOnly_s16     0.002    0.005      0.003  0.006       0/0       1.00  1.00     0.000  0.021    0.000   0.000       0.000 +0.000
+     class step / dN: direction 1.000, verbs 0.000, adverbs 0.000, see 0.000, objects+nothing 0.000, period 0.000, aside-only 0.000, fillers 0.000, shared (and/a/she) 0.000
+DirOnly_s17     0.001    0.002      0.001  0.006       0/0       1.00  0.93     0.000  0.025    0.000   0.000       0.000 +0.000
+     class step / dN: direction 1.000, verbs 0.000, adverbs 0.000, see 0.000, objects+nothing 0.000, period 0.000, aside-only 0.000, fillers 0.000, shared (and/a/she) 0.000
+median lag between consecutive visits (clauses): 8.0, pairs 1221

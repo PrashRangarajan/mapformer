@@ -1,0 +1,3 @@
+TEXTWORLD (np seed 0): n 6381 | always-'nothing' 0.5054 | one-step reversal-copy 0.5965 | retrace 0.9337
+TW_NORMSTEP (np seed 10**6): n 6109 | always-'nothing' 0.5120 | one-step reversal-copy 0.6024 | retrace 0.9365
+NEEDS-MAP stratum (first 100 walks of the TEXTWORLD stream): n 179; best constant 0.1117 ('cat'); share 'nothing' 0.0000

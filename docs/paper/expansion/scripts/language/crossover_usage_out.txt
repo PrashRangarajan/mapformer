@@ -1,0 +1,18 @@
+torus, Signed_r4, matched length (L = 2048 tokens):
+  torus s0       clock-dominated channels   0/64 carry usage 0.000 | usage-weighted median rho    0.066 (unweighted    0.075)
+  torus s1       clock-dominated channels   0/64 carry usage 0.000 | usage-weighted median rho    0.064 (unweighted    0.069)
+  torus s2       clock-dominated channels   0/64 carry usage 0.000 | usage-weighted median rho    0.077 (unweighted    0.079)
+  torus s3       clock-dominated channels   0/64 carry usage 0.000 | usage-weighted median rho    0.065 (unweighted    0.087)
+  torus s4       clock-dominated channels   0/64 carry usage 0.000 | usage-weighted median rho    0.076 (unweighted    0.072)
+  torus s5       clock-dominated channels   0/64 carry usage 0.000 | usage-weighted median rho    0.064 (unweighted    0.058)
+  torus s6       clock-dominated channels   0/64 carry usage 0.000 | usage-weighted median rho    0.079 (unweighted    0.074)
+  torus s7       clock-dominated channels   0/64 carry usage 0.000 | usage-weighted median rho    0.076 (unweighted    0.072)
+recency (k-back, k_max 64, fillers), Signed_r4 (L = 1024 tokens):
+  recency s0     clock-dominated channels  64/64 carry usage 1.000 | usage-weighted median rho   22.007 (unweighted   25.413)
+  recency s1     clock-dominated channels  63/64 carry usage 0.931 | usage-weighted median rho   21.987 (unweighted   21.849)
+  recency s2     clock-dominated channels  64/64 carry usage 1.000 | usage-weighted median rho   22.115 (unweighted   21.969)
+  recency s3     clock-dominated channels  61/64 carry usage 0.952 | usage-weighted median rho   21.909 (unweighted   31.332)
+  recency s4     clock-dominated channels  64/64 carry usage 1.000 | usage-weighted median rho   21.822 (unweighted   21.250)
+  recency s5     clock-dominated channels  64/64 carry usage 1.000 | usage-weighted median rho   21.866 (unweighted   22.080)
+  recency s6     clock-dominated channels  63/64 carry usage 0.938 | usage-weighted median rho   21.982 (unweighted   28.079)
+  recency s7     clock-dominated channels  63/64 carry usage 0.966 | usage-weighted median rho   21.828 (unweighted   21.848)

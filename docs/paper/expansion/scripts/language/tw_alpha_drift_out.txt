@@ -1,0 +1,41 @@
+text world: true unwrapped walk coordinates alpha 0.668 (the map reference); clock reference 1.000
+  tw_s0         alpha 0.984 (pred 0.943) rho  11.180 content alpha 0.559 R2(t) 0.999 | drift ch (26): alpha 1.003 rho 16.36 | map ch: alpha 0.968 rho 8.638
+  tw_s1         alpha 0.669 (pred 0.690) rho   0.431 content alpha 0.600 R2(t) 0.747
+  tw_s2         alpha 0.997 (pred 0.938) rho   9.608 content alpha 0.575 R2(t) 0.998 | drift ch (29): alpha 1.027 rho 16.74 | map ch: alpha 0.944 rho 4.950
+  tw_s3         alpha 0.982 (pred 0.955) rho  12.474 content alpha 0.597 R2(t) 0.999 | drift ch (35): alpha 0.992 rho 16.02 | map ch: alpha 0.948 rho 6.850
+  tw_s4         alpha 0.987 (pred 0.954) rho  12.614 content alpha 0.592 R2(t) 0.999 | drift ch (36): alpha 0.995 rho 15.05 | map ch: alpha 0.959 rho 7.772
+  tw_s5         alpha 0.738 (pred 0.747) rho   0.863 content alpha 0.603 R2(t) 0.834
+  tw_s6         alpha 0.735 (pred 0.738) rho   0.723 content alpha 0.611 R2(t) 0.837
+  tw_s7         alpha 0.682 (pred 0.709) rho   0.520 content alpha 0.607 R2(t) 0.781
+  MapWM_s10     alpha 0.718 (pred 0.740) rho   0.746 content alpha 0.610 R2(t) 0.846
+  MapWM_s11     alpha 1.008 (pred 0.949) rho  13.211 content alpha 0.545 R2(t) 0.999 | drift ch (38): alpha 1.021 rho 17.70 | map ch: alpha 0.970 rho 7.214
+  MapWM_s12     alpha 0.696 (pred 0.714) rho   0.533 content alpha 0.611 R2(t) 0.784
+  MapWM_s13     alpha 0.982 (pred 0.952) rho  13.864 content alpha 0.557 R2(t) 0.999 | drift ch (27): alpha 0.997 rho 20.40 | map ch: alpha 0.959 rho 8.910
+  MapWM_s14     alpha 0.993 (pred 0.940) rho   9.279 content alpha 0.597 R2(t) 0.998 | drift ch (28): alpha 1.014 rho 14.29 | map ch: alpha 0.961 rho 5.727
+  MapWM_s15     alpha 1.016 (pred 0.942) rho  11.253 content alpha 0.553 R2(t) 0.999 | drift ch (30): alpha 1.027 rho 14.79 | map ch: alpha 0.996 rho 7.769
+  MapWM_s16     alpha 0.643 (pred 0.673) rho   0.246 content alpha 0.618 R2(t) 0.647
+  MapWM_s17     alpha 0.735 (pred 0.745) rho   0.827 content alpha 0.605 R2(t) 0.846
+  NormStep_s10  alpha 0.626 (pred 0.651) rho   0.163 content alpha 0.612 R2(t) 0.622
+  NormStep_s11  alpha 0.978 (pred 0.944) rho  11.078 content alpha 0.572 R2(t) 0.999 | drift ch (27): alpha 0.998 rho 18.35 | map ch: alpha 0.940 rho 5.992
+  NormStep_s12  alpha 0.611 (pred 0.638) rho   0.121 content alpha 0.608 R2(t) 0.660
+  NormStep_s13  alpha 0.652 (pred 0.678) rho   0.299 content alpha 0.612 R2(t) 0.685
+  NormStep_s14  alpha 0.662 (pred 0.687) rho   0.393 content alpha 0.605 R2(t) 0.739
+  NormStep_s15  alpha 0.653 (pred 0.683) rho   0.306 content alpha 0.616 R2(t) 0.685
+  NormStep_s16  alpha 0.982 (pred 0.944) rho  11.578 content alpha 0.564 R2(t) 0.999 | drift ch (28): alpha 0.998 rho 17.60 | map ch: alpha 0.947 rho 6.129
+  NormStep_s17  alpha 0.615 (pred 0.642) rho   0.158 content alpha 0.603 R2(t) 0.657
+  DirOnly_s10   alpha 0.610 (pred 0.624) rho   0.054 content alpha 0.610 R2(t) 0.628
+  DirOnly_s11   alpha 0.618 (pred 0.634) rho   0.060 content alpha 0.619 R2(t) 0.631
+  DirOnly_s12   alpha 0.608 (pred 0.625) rho   0.062 content alpha 0.609 R2(t) 0.665
+  DirOnly_s13   alpha 0.604 (pred 0.618) rho   0.049 content alpha 0.605 R2(t) 0.665
+  DirOnly_s14   alpha 0.645 (pred 0.665) rho   0.073 content alpha 0.647 R2(t) 0.618
+  DirOnly_s15   alpha 0.620 (pred 0.639) rho   0.072 content alpha 0.621 R2(t) 0.638
+  DirOnly_s16   alpha 0.615 (pred 0.631) rho   0.061 content alpha 0.616 R2(t) 0.638
+  DirOnly_s17   alpha 0.606 (pred 0.621) rho   0.054 content alpha 0.607 R2(t) 0.652
+TinyStories (MapWM r4, 6 layers, trained at 512):
+  TinyStories s0           alpha 0.999 (pred 0.957) rho  12.522 content alpha 0.609 R2(t) 0.999
+  TinyStories s1           alpha 1.001 (pred 0.952) rho  12.298 content alpha 0.580 R2(t) 0.999
+  TinyStories s2           alpha 1.005 (pred 0.953) rho  11.862 content alpha 0.602 R2(t) 0.999
+code (bytes, MapWM, 9 layers, trained at 2048):
+  code MapWM s0            alpha 0.989 (pred 0.945) rho   2.899 content alpha 0.822 R2(t) 0.989
+  code MapWM s1            alpha 1.001 (pred 0.958) rho   4.965 content alpha 0.804 R2(t) 0.996
+  code MapWM s2            alpha 1.012 (pred 0.959) rho   3.228 content alpha 0.850 R2(t) 0.996

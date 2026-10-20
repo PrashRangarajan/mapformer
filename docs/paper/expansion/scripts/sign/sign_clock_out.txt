@@ -1,0 +1,32 @@
+ring MECH          SO           SOLVED 8/8 | clock ratio mean 0.018 (solved 0.018, unsolved nan) | usage on cancelling 0.96, blind 0.03
+      per run clock: 0.04* 0.01* 0.01* 0.01* 0.01* 0.01* 0.03* 0.03*
+ring MECH          SO_absmag    SOLVED 7/8 | clock ratio mean 0.015 (solved 0.015, unsolved 0.016) | usage on cancelling 0.96, blind 0.03
+      per run clock: 0.02* 0.02* 0.01* 0.02* 0.02 0.01* 0.02* 0.01*
+ring MECH          SO_high      SOLVED 8/8 | clock ratio mean 0.165 (solved 0.165, unsolved nan) | usage on cancelling 0.91, blind 0.00
+      per run clock: 0.47* 0.27* 0.13* 0.09* 0.10* 0.00* 0.18* 0.08*
+ring MECH          AO           SOLVED 0/8 | clock ratio mean 1.683 (solved nan, unsolved 1.683) | usage on cancelling 0.08, blind 0.26 | cone violations 0/487
+      per run clock: 1.84 2.04 1.37 1.10 0.68 1.50 2.31 2.63
+ring MECH          AO_absmag    SOLVED 0/8 | clock ratio mean 1.632 (solved nan, unsolved 1.632) | usage on cancelling 0.02, blind 0.29 | cone violations 0/496
+      per run clock: 1.90 2.00 1.60 1.49 1.34 1.96 1.65 1.11
+ring MECH          AO_mid       SOLVED 2/8 | clock ratio mean 1.520 (solved 0.405, unsolved 1.891) | usage on cancelling 0.20, blind 0.02 | cone violations 0/248
+      per run clock: 0.10* 0.71* 1.71 2.41 1.56 1.63 1.62 2.43
+ring MECH          AO_high      SOLVED 8/8 | clock ratio mean 0.312 (solved 0.312, unsolved nan) | usage on cancelling 0.82, blind 0.00 | cone violations 0/11
+      per run clock: 0.76* 0.12* 0.11* 0.11* 0.23* 0.55* 0.12* 0.48*
+ring ACCOUNTS T2   SO_absmag_fz SOLVED 1/8 | clock ratio mean 1.394 (solved 0.058, unsolved 1.585) | usage on cancelling 0.15, blind 0.18
+      per run clock: 0.98 1.42 1.22 0.06* 2.65 2.06 1.11 1.65
+ring ACCOUNTS T2   SO_same_fz   SOLVED 7/8 | clock ratio mean 0.176 (solved 0.074, unsolved 0.887) | usage on cancelling 0.87, blind 0.09
+      per run clock: 0.11* 0.05* 0.89 0.07* 0.13* 0.05* 0.07* 0.04*
+ring GAUGE         SO_m         SOLVED 8/8 | clock ratio mean 0.016 (solved 0.016, unsolved nan) | usage on cancelling 0.95, blind 0.04
+      per run clock: 0.01* 0.03* 0.01* 0.02* 0.02* 0.01* 0.03* 0.01*
+ring GAUGE         AO_m         SOLVED 1/8 | clock ratio mean 1.549 (solved 0.823, unsolved 1.652) | usage on cancelling 0.06, blind 0.18 | cone violations 0/495
+      per run clock: 2.08 1.56 1.62 0.82* 1.84 1.36 1.64 1.46
+torus TORUS_START  SO4          SOLVED 8/8 | clock ratio mean 0.001 (solved 0.001, unsolved nan) | usage on cancelling 0.77, blind 0.23
+      per run clock: 0.00* 0.00* 0.00* 0.00* 0.00* 0.00* 0.00* 0.00*
+torus TORUS_START  AO4          SOLVED 1/8 | clock ratio mean 1.219 (solved 0.024, unsolved 1.389) | usage on cancelling 0.16, blind 0.48 | cone violations 0/949
+      per run clock: 1.31 1.41 0.02* 1.35 1.46 2.19 0.72 1.29
+torus TORUS_START  SO4_high     SOLVED 2/8 | clock ratio mean 0.832 (solved 1.798, unsolved 0.510) | usage on cancelling 0.59, blind 0.05
+      per run clock: 0.16 1.81* 0.48 0.29 1.45 0.30 1.78* 0.39
+torus TORUS_START  AO4_high     SOLVED 0/8 | clock ratio mean 0.954 (solved nan, unsolved 0.954) | usage on cancelling 0.50, blind 0.04 | cone violations 0/619
+      per run clock: 0.47 0.98 2.41 0.09 0.54 1.04 1.13 0.97
+torus TORUS_START  AO4_mid      SOLVED 0/8 | clock ratio mean 1.841 (solved nan, unsolved 1.841) | usage on cancelling 0.12, blind 0.13 | cone violations 0/754
+      per run clock: 1.59 0.99 1.96 0.92 2.83 2.47 1.41 2.56

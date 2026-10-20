@@ -1,0 +1,1 @@
+rank-D runs with a drifting head: 62; runs whose most aligned drifting head has r_beta < 0.5: 57; expected under a random drift direction 28.7; P(>= 57) = 0.00000 (20000 sims)

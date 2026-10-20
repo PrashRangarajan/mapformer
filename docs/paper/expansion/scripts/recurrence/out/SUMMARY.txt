@@ -1,0 +1,165 @@
+== check against stored registered evaluation (T=1024, all revisits)
+  A   max |ours - stored| = 3.05e-04
+  C   max |ours - stored| = 3.05e-05
+  L   max |ours - stored| = 2.82e-04
+  L4  max |ours - stored| = 9.40e-05
+
+== model accuracy (trained readout) vs best one-pass phase-only reader (obs top-1), mean over 8 seeds
+| arm | stratum | model acc | reader obs top-1 | reader cell top-1 | model - reader |
+|---|---|---|---|---|---|
+| A | all | 0.894 | 0.773 | 0.688 | +0.121 |
+| A | short | 0.950 | 0.854 | 0.800 | +0.096 |
+| A | long | 0.671 | 0.402 | 0.182 | +0.268 |
+| A | wrap | 0.558 | 0.349 | 0.105 | +0.208 |
+| L | all | 0.973 | 0.844 | 0.786 | +0.129 |
+| L | short | 1.000 | 0.940 | 0.918 | +0.060 |
+| L | long | 0.927 | 0.432 | 0.221 | +0.496 |
+| L | wrap | 0.747 | 0.307 | 0.044 | +0.440 |
+| L4 | all | 0.990 | 0.855 | 0.801 | +0.135 |
+| L4 | short | 1.000 | 0.944 | 0.923 | +0.056 |
+| L4 | long | 0.990 | 0.488 | 0.297 | +0.502 |
+| L4 | wrap | 0.887 | 0.354 | 0.115 | +0.533 |
+| C | all | 0.998 | 0.999 | 0.999 | -0.002 |
+| C | short | 1.000 | 1.000 | 1.000 | -0.000 |
+| C | long | 0.995 | 0.999 | 0.999 | -0.004 |
+| C | wrap | 0.977 | 0.991 | 0.988 | -0.014 |
+
+== code quality contrasts (fitted reader cell top-1; permutation p, 8 vs 8)
+  all   L - A: +0.098  p 0.2033
+  all   L4 - A: +0.113  p 0.1462
+  all   C - L: +0.213  p 0.0002
+  all   C - L4: +0.198  p 0.0002
+  long  L - A: +0.040  p 0.8196
+  long  L4 - A: +0.115  p 0.4239
+  long  C - L: +0.778  p 0.0002
+  long  C - L4: +0.702  p 0.0002
+  wrap  L - A: -0.061  p 0.9478
+  wrap  L4 - A: +0.010  p 0.9368
+  wrap  C - L: +0.944  p 0.0002
+  wrap  C - L4: +0.873  p 0.0002
+
+== compensation (model - reader, obs top-1) contrasts
+  long  L - A: +0.227  p 0.0009
+  long  L4 - A: +0.233  p 0.0051
+  wrap  L - A: +0.232  p 0.0002
+  wrap  L4 - A: +0.325  p 0.0002
+
+== obs-token step / action step (the leak)
+  A   0.530 0.131 0.478 0.345 0.364 0.270 0.413 0.546  mean 0.385
+  L   0.374 0.010 0.334 0.024 0.173 0.349 0.051 0.032  mean 0.168
+  L4  0.411 0.200 0.242 0.004 0.010 0.017 0.410 0.014  mean 0.163
+  C   0.058 0.016 0.032 0.018 0.005 0.016 0.013 0.048  mean 0.026
+
+== per pass (L: n_loops = j, passes 5-8 beyond training; L4: logit lens after layer j), mean over seeds
+-- A
+  acc   all   0.894
+  acc   short 0.950
+  acc   long  0.671
+  acc   wrap  0.558
+  obs_mass         all   h0 0.47 h1 0.46
+  act_mass         all   h0 0.04 h1 0.09
+  argmax_same_cell all   h0 0.69 h1 0.70
+  obs_mass         short h0 0.55 h1 0.51
+  act_mass         short h0 0.05 h1 0.10
+  argmax_same_cell short h0 0.79 h1 0.78
+  obs_mass         long  h0 0.19 h1 0.23
+  act_mass         long  h0 0.01 h1 0.03
+  argmax_same_cell long  h0 0.33 h1 0.39
+  obs_mass         wrap  h0 0.02 h1 0.13
+  act_mass         wrap  h0 0.00 h1 0.00
+  argmax_same_cell wrap  h0 0.04 h1 0.19
+-- L
+  acc   all   0.381 0.887 0.964 0.973 0.971 0.954 0.899 0.847
+  acc   short 0.382 0.951 0.999 1.000 1.000 0.987 0.932 0.881
+  acc   long  0.363 0.612 0.875 0.927 0.921 0.871 0.799 0.731
+  acc   wrap  0.393 0.519 0.700 0.747 0.730 0.699 0.666 0.623
+  obs_mass         all   h0 0.03 h1 0.01 | h0 0.36 h1 0.16 | h0 0.46 h1 0.32 | h0 0.52 h1 0.38 | h0 0.31 h1 0.20 | h0 0.16 h1 0.10 | h0 0.11 h1 0.07 | h0 0.08 h1 0.05
+  act_mass         all   h0 0.02 h1 0.01 | h0 0.01 h1 0.01 | h0 0.08 h1 0.04 | h0 0.10 h1 0.08 | h0 0.07 h1 0.07 | h0 0.06 h1 0.05 | h0 0.07 h1 0.06 | h0 0.09 h1 0.09
+  argmax_same_cell all   h0 0.19 h1 0.21 | h0 0.60 h1 0.42 | h0 0.75 h1 0.66 | h0 0.87 h1 0.75 | h0 0.73 h1 0.66 | h0 0.44 h1 0.43 | h0 0.33 h1 0.33 | h0 0.31 h1 0.30
+  obs_mass         short h0 0.04 h1 0.01 | h0 0.42 h1 0.19 | h0 0.49 h1 0.35 | h0 0.54 h1 0.40 | h0 0.31 h1 0.21 | h0 0.17 h1 0.10 | h0 0.11 h1 0.07 | h0 0.09 h1 0.06
+  act_mass         short h0 0.02 h1 0.01 | h0 0.01 h1 0.01 | h0 0.09 h1 0.04 | h0 0.12 h1 0.09 | h0 0.07 h1 0.08 | h0 0.06 h1 0.06 | h0 0.08 h1 0.07 | h0 0.10 h1 0.10
+  argmax_same_cell short h0 0.23 h1 0.25 | h0 0.67 h1 0.49 | h0 0.80 h1 0.72 | h0 0.92 h1 0.81 | h0 0.78 h1 0.73 | h0 0.48 h1 0.48 | h0 0.37 h1 0.36 | h0 0.34 h1 0.34
+  obs_mass         long  h0 0.01 h1 0.00 | h0 0.12 h1 0.04 | h0 0.39 h1 0.22 | h0 0.52 h1 0.36 | h0 0.33 h1 0.21 | h0 0.16 h1 0.10 | h0 0.09 h1 0.06 | h0 0.06 h1 0.05
+  act_mass         long  h0 0.00 h1 0.00 | h0 0.01 h1 0.00 | h0 0.03 h1 0.00 | h0 0.04 h1 0.01 | h0 0.04 h1 0.03 | h0 0.04 h1 0.03 | h0 0.04 h1 0.03 | h0 0.05 h1 0.05
+  argmax_same_cell long  h0 0.01 h1 0.01 | h0 0.35 h1 0.12 | h0 0.65 h1 0.44 | h0 0.77 h1 0.58 | h0 0.63 h1 0.49 | h0 0.35 h1 0.31 | h0 0.23 h1 0.21 | h0 0.21 h1 0.18
+  obs_mass         wrap  h0 0.00 h1 0.00 | h0 0.04 h1 0.01 | h0 0.24 h1 0.16 | h0 0.32 h1 0.20 | h0 0.21 h1 0.11 | h0 0.10 h1 0.05 | h0 0.05 h1 0.03 | h0 0.03 h1 0.01
+  act_mass         wrap  h0 0.00 h1 0.00 | h0 0.00 h1 0.00 | h0 0.01 h1 0.00 | h0 0.02 h1 0.00 | h0 0.02 h1 0.01 | h0 0.02 h1 0.01 | h0 0.01 h1 0.01 | h0 0.01 h1 0.01
+  argmax_same_cell wrap  h0 0.01 h1 0.00 | h0 0.15 h1 0.05 | h0 0.36 h1 0.27 | h0 0.44 h1 0.29 | h0 0.34 h1 0.20 | h0 0.17 h1 0.12 | h0 0.09 h1 0.08 | h0 0.05 h1 0.05
+-- L4
+  acc   all   0.507 0.575 0.935 0.990
+  acc   short 0.508 0.590 0.986 1.000
+  acc   long  0.500 0.504 0.757 0.990
+  acc   wrap  0.504 0.507 0.601 0.887
+  obs_mass         all   h0 0.01 h1 0.01 | h0 0.10 h1 0.15 | h0 0.62 h1 0.35 | h0 0.78 h1 0.79
+  act_mass         all   h0 0.01 h1 0.01 | h0 0.01 h1 0.02 | h0 0.04 h1 0.01 | h0 0.08 h1 0.09
+  argmax_same_cell all   h0 0.04 h1 0.09 | h0 0.18 h1 0.25 | h0 0.80 h1 0.56 | h0 0.94 h1 0.95
+  obs_mass         short h0 0.01 h1 0.01 | h0 0.12 h1 0.17 | h0 0.69 h1 0.40 | h0 0.81 h1 0.82
+  act_mass         short h0 0.01 h1 0.01 | h0 0.01 h1 0.02 | h0 0.05 h1 0.01 | h0 0.08 h1 0.10
+  argmax_same_cell short h0 0.05 h1 0.11 | h0 0.21 h1 0.28 | h0 0.87 h1 0.65 | h0 0.97 h1 0.98
+  obs_mass         long  h0 0.00 h1 0.00 | h0 0.03 h1 0.07 | h0 0.41 h1 0.18 | h0 0.67 h1 0.73
+  act_mass         long  h0 0.00 h1 0.00 | h0 0.00 h1 0.01 | h0 0.04 h1 0.00 | h0 0.08 h1 0.04
+  argmax_same_cell long  h0 0.00 h1 0.00 | h0 0.09 h1 0.16 | h0 0.65 h1 0.23 | h0 0.92 h1 0.89
+  obs_mass         wrap  h0 0.00 h1 0.00 | h0 0.00 h1 0.03 | h0 0.17 h1 0.04 | h0 0.50 h1 0.54
+  act_mass         wrap  h0 0.00 h1 0.00 | h0 0.00 h1 0.00 | h0 0.01 h1 0.00 | h0 0.03 h1 0.01
+  argmax_same_cell wrap  h0 0.00 h1 0.00 | h0 0.01 h1 0.06 | h0 0.25 h1 0.04 | h0 0.64 h1 0.64
+-- C
+  acc   all   0.998
+  acc   short 1.000
+  acc   long  0.995
+  acc   wrap  0.977
+  obs_mass         all   h0 0.77 h1 0.75
+  act_mass         all   h0 0.02 h1 0.03
+  argmax_same_cell all   h0 0.92 h1 0.94
+  obs_mass         short h0 0.78 h1 0.77
+  act_mass         short h0 0.02 h1 0.03
+  argmax_same_cell short h0 0.93 h1 0.96
+  obs_mass         long  h0 0.75 h1 0.71
+  act_mass         long  h0 0.02 h1 0.02
+  argmax_same_cell long  h0 0.90 h1 0.91
+  obs_mass         wrap  h0 0.73 h1 0.62
+  act_mass         wrap  h0 0.02 h1 0.02
+  argmax_same_cell wrap  h0 0.88 h1 0.80
+
+== L per seed: best pass count, and accuracy at 1 / 2 / 4 / 8 passes
+  s0: best k=4  k1=0.672 k2=0.946 k3=0.971 k4=0.978 k5=0.978 k8=0.957
+  s1: best k=4  k1=0.365 k2=0.848 k3=0.979 k4=0.985 k5=0.983 k8=0.905
+  s2: best k=4  k1=0.484 k2=0.935 k3=0.958 k4=0.964 k5=0.963 k8=0.613
+  s3: best k=4  k1=0.089 k2=0.860 k3=0.954 k4=0.979 k5=0.971 k8=0.933
+  s4: best k=5  k1=0.504 k2=0.943 k3=0.974 k4=0.976 k5=0.977 k8=0.969
+  s5: best k=4  k1=0.498 k2=0.896 k3=0.963 k4=0.968 k5=0.962 k8=0.884
+  s6: best k=4  k1=0.283 k2=0.812 k3=0.973 k4=0.978 k5=0.976 k8=0.624
+  s7: best k=5  k1=0.153 k2=0.855 k3=0.942 k4=0.957 k5=0.960 k8=0.892
+
+== soft one-pass position-only reader (phase_reader_soft.py) vs model, mean over 8 seeds
+| arm | stratum | model acc | soft reader acc | model - reader | perm p (gap vs A's gap) |
+|---|---|---|---|---|---|
+| A | all | 0.894 | 0.866 | +0.028 | nan |
+| A | short | 0.950 | 0.940 | +0.010 | nan |
+| A | long | 0.671 | 0.558 | +0.113 | nan |
+| A | wrap | 0.558 | 0.448 | +0.110 | nan |
+| L | all | 0.973 | 0.893 | +0.080 | 0.0036 |
+| L | short | 1.000 | 0.971 | +0.029 | 0.2925 |
+| L | long | 0.927 | 0.608 | +0.319 | 0.0025 |
+| L | wrap | 0.747 | 0.406 | +0.341 | 0.0002 |
+| L4 | all | 0.990 | 0.897 | +0.094 | 0.0031 |
+| L4 | short | 1.000 | 0.967 | +0.033 | 0.1823 |
+| L4 | long | 0.990 | 0.653 | +0.337 | 0.0045 |
+| L4 | wrap | 0.887 | 0.453 | +0.435 | 0.0002 |
+| C | all | 0.998 | 1.000 | -0.002 | 0.0434 |
+| C | short | 1.000 | 1.000 | -0.000 | 0.5540 |
+| C | long | 0.995 | 1.000 | -0.005 | 0.0037 |
+| C | wrap | 0.977 | 0.997 | -0.020 | 0.0002 |
+
+== soft-reader code quality contrasts (perm p)
+  all   L - A: +0.027  p 0.2799
+  all   L4 - A: +0.031  p 0.2653
+  all   C - L: +0.107  p 0.0002
+  all   C - L4: +0.103  p 0.0002
+  long  L - A: +0.050  p 0.5798
+  long  L4 - A: +0.095  p 0.3173
+  long  C - L: +0.392  p 0.0002
+  long  C - L4: +0.347  p 0.0002
+  wrap  L - A: -0.042  p 0.7713
+  wrap  L4 - A: +0.005  p 0.9333
+  wrap  C - L: +0.591  p 0.0002
+  wrap  C - L4: +0.544  p 0.0002

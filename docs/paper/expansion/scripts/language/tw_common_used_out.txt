@@ -1,0 +1,9 @@
+tw_s0: |c| / |move| in used channels 0.339 | cost of zeroing non-direction steps 0.689
+tw_s1: |c| / |move| in used channels 0.028 | cost of zeroing non-direction steps 0.105
+tw_s2: |c| / |move| in used channels 0.059 | cost of zeroing non-direction steps 0.334
+tw_s3: |c| / |move| in used channels 0.098 | cost of zeroing non-direction steps 0.322
+tw_s4: |c| / |move| in used channels 0.227 | cost of zeroing non-direction steps 0.460
+tw_s5: |c| / |move| in used channels 0.025 | cost of zeroing non-direction steps 0.102
+tw_s6: |c| / |move| in used channels 0.011 | cost of zeroing non-direction steps 0.050
+tw_s7: |c| / |move| in used channels 0.020 | cost of zeroing non-direction steps 0.296
+Spearman over 8 seeds: +0.905

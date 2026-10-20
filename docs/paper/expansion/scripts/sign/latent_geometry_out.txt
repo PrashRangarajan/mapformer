@@ -1,0 +1,189 @@
+== reconstruction check (MECHANISM default angles) ==
+seed 800: max |rebuilt - stored default angle| = 0.00e+00
+seed 801: max |rebuilt - stored default angle| = 0.00e+00
+seed 802: max |rebuilt - stored default angle| = 0.00e+00
+seed 803: max |rebuilt - stored default angle| = 0.00e+00
+seed 804: max |rebuilt - stored default angle| = 0.00e+00
+seed 805: max |rebuilt - stored default angle| = 0.00e+00
+seed 806: max |rebuilt - stored default angle| = 0.00e+00
+seed 807: max |rebuilt - stored default angle| = 0.00e+00
+
+== GAUGE (seeds 1300-1307): init and end ==
+-- SO_m
+  s1300 SOLV acc 1.000 loss 0.000
+     init: cos +0.633 ratio 0.28 res 0.935 same 0.68 coh 0.68 (n 37) collapse0/1/2 [37, 24, 3]
+     end : cos -1.000 ratio 1.00 res 0.016 same 0.00 coh 1.00 (n 60) collapse0/1/2 [60, 0, 4]
+  s1301 SOLV acc 1.000 loss 0.000
+     init: cos +0.021 ratio 1.63 res 0.734 same 0.53 coh 0.53 (n 47) collapse0/1/2 [47, 15, 2]
+     end : cos -0.987 ratio 0.99 res 0.082 same 0.04 coh 0.96 (n 51) collapse0/1/2 [51, 3, 10]
+  s1302 SOLV acc 1.000 loss 0.000
+     init: cos +0.576 ratio 0.56 res 0.897 same 0.68 coh 0.68 (n 38) collapse0/1/2 [38, 24, 2]
+     end : cos -0.999 ratio 1.00 res 0.026 same 0.00 coh 1.00 (n 54) collapse0/1/2 [54, 1, 9]
+  s1303 SOLV acc 1.000 loss 0.000
+     init: cos -0.018 ratio 2.17 res 0.748 same 0.48 coh 0.52 (n 48) collapse0/1/2 [48, 13, 3]
+     end : cos -0.996 ratio 1.00 res 0.046 same 0.00 coh 1.00 (n 54) collapse0/1/2 [54, 2, 8]
+  s1304 SOLV acc 1.000 loss 0.000
+     init: cos -0.286 ratio 0.70 res 0.614 same 0.33 coh 0.67 (n 39) collapse0/1/2 [39, 20, 5]
+     end : cos -0.991 ratio 0.98 res 0.069 same 0.00 coh 1.00 (n 48) collapse0/1/2 [48, 4, 12]
+  s1305 SOLV acc 1.000 loss 0.000
+     init: cos +0.701 ratio 1.17 res 0.923 same 0.77 coh 0.77 (n 39) collapse0/1/2 [39, 20, 5]
+     end : cos -0.999 ratio 1.00 res 0.020 same 0.00 coh 1.00 (n 55) collapse0/1/2 [55, 2, 7]
+  s1306 SOLV acc 1.000 loss 0.000
+     init: cos +0.202 ratio 0.68 res 0.784 same 0.62 coh 0.62 (n 39) collapse0/1/2 [39, 24, 1]
+     end : cos -0.991 ratio 0.97 res 0.068 same 0.00 coh 1.00 (n 51) collapse0/1/2 [51, 4, 9]
+  s1307 SOLV acc 1.000 loss 0.000
+     init: cos -0.474 ratio 2.06 res 0.593 same 0.33 coh 0.67 (n 42) collapse0/1/2 [42, 18, 4]
+     end : cos -0.998 ratio 0.99 res 0.029 same 0.00 coh 1.00 (n 54) collapse0/1/2 [54, 1, 9]
+-- AO_m
+  s1300 ---- acc 0.904 loss 0.404
+     init: cos +0.633 ratio 0.28 res 0.935 same 0.68 coh 0.68 (n 37) collapse0/1/2 [37, 24, 3] cone_tight 0.13 (n 62)
+     end : cos +0.400 ratio 0.86 res 0.838 same 0.70 coh 0.70 (n 30) collapse0/1/2 [30, 23, 11] cone_tight 0.20 (n 54)
+  s1301 ---- acc 0.953 loss 0.206
+     init: cos +0.021 ratio 1.63 res 0.734 same 0.53 coh 0.53 (n 47) collapse0/1/2 [47, 15, 2] cone_tight 0.03 (n 59)
+     end : cos +0.220 ratio 1.18 res 0.783 same 0.58 coh 0.58 (n 33) collapse0/1/2 [33, 17, 14] cone_tight 0.16 (n 50)
+  s1302 ---- acc 0.957 loss 0.197
+     init: cos +0.576 ratio 0.56 res 0.897 same 0.68 coh 0.68 (n 38) collapse0/1/2 [38, 24, 2] cone_tight 0.06 (n 64)
+     end : cos +0.595 ratio 0.96 res 0.893 same 0.81 coh 0.81 (n 37) collapse0/1/2 [37, 14, 13] cone_tight 0.20 (n 51)
+  s1303 SOLV acc 1.000 loss 0.005
+     init: cos -0.018 ratio 2.17 res 0.748 same 0.48 coh 0.52 (n 48) collapse0/1/2 [48, 13, 3] cone_tight 0.12 (n 57)
+     end : cos +0.287 ratio 2.07 res 0.829 same 0.69 coh 0.69 (n 36) collapse0/1/2 [36, 12, 16] cone_tight 0.17 (n 42)
+  s1304 ---- acc 0.922 loss 0.292
+     init: cos -0.286 ratio 0.70 res 0.614 same 0.33 coh 0.67 (n 39) collapse0/1/2 [39, 20, 5] cone_tight 0.03 (n 61)
+     end : cos -0.180 ratio 0.74 res 0.650 same 0.43 coh 0.57 (n 37) collapse0/1/2 [37, 15, 12] cone_tight 0.22 (n 49)
+  s1305 ---- acc 0.928 loss 0.257
+     init: cos +0.701 ratio 1.17 res 0.923 same 0.77 coh 0.77 (n 39) collapse0/1/2 [39, 20, 5] cone_tight 0.03 (n 58)
+     end : cos +0.441 ratio 1.09 res 0.849 same 0.79 coh 0.79 (n 34) collapse0/1/2 [34, 17, 13] cone_tight 0.24 (n 46)
+  s1306 ---- acc 0.880 loss 0.447
+     init: cos +0.202 ratio 0.68 res 0.784 same 0.62 coh 0.62 (n 39) collapse0/1/2 [39, 24, 1] cone_tight 0.09 (n 64)
+     end : cos -0.007 ratio 0.97 res 0.705 same 0.48 coh 0.52 (n 31) collapse0/1/2 [31, 26, 7] cone_tight 0.33 (n 57)
+  s1307 ---- acc 0.903 loss 0.412
+     init: cos -0.474 ratio 2.06 res 0.593 same 0.33 coh 0.67 (n 42) collapse0/1/2 [42, 18, 4] cone_tight 0.12 (n 60)
+     end : cos -0.202 ratio 1.41 res 0.645 same 0.44 coh 0.56 (n 18) collapse0/1/2 [18, 26, 20] cone_tight 0.48 (n 44)
+-- SO_p
+  s1300 ---- acc 0.987 loss 0.066
+     init: cos +0.633 ratio 0.28 res 0.803 same 0.68 coh 0.68 (n 37) collapse0/1/2 [37, 24, 3]
+     end : cos +0.219 ratio 0.61 res 0.751 same 0.56 coh 0.56 (n 45) collapse0/1/2 [45, 11, 8]
+  s1301 SOLV acc 1.000 loss 0.000
+     init: cos +0.021 ratio 1.63 res 0.703 same 0.53 coh 0.53 (n 47) collapse0/1/2 [47, 15, 2]
+     end : cos +0.985 ratio 1.98 res 0.085 same 0.98 coh 0.98 (n 42) collapse0/1/2 [42, 10, 12]
+  s1302 SOLV acc 1.000 loss 0.002
+     init: cos +0.576 ratio 0.56 res 0.679 same 0.68 coh 0.68 (n 38) collapse0/1/2 [38, 24, 2]
+     end : cos +0.985 ratio 1.99 res 0.086 same 0.97 coh 0.97 (n 35) collapse0/1/2 [35, 10, 19]
+  s1303 SOLV acc 1.000 loss 0.000
+     init: cos -0.018 ratio 2.17 res 0.701 same 0.48 coh 0.52 (n 48) collapse0/1/2 [48, 13, 3]
+     end : cos +0.994 ratio 1.99 res 0.056 same 1.00 coh 1.00 (n 46) collapse0/1/2 [46, 6, 12]
+  s1304 ---- acc 0.935 loss 0.112
+     init: cos -0.286 ratio 0.70 res 0.712 same 0.33 coh 0.67 (n 39) collapse0/1/2 [39, 20, 5]
+     end : cos +0.994 ratio 2.00 res 0.057 same 1.00 coh 1.00 (n 27) collapse0/1/2 [27, 5, 32]
+  s1305 SOLV acc 1.000 loss 0.000
+     init: cos +0.701 ratio 1.17 res 0.456 same 0.77 coh 0.77 (n 39) collapse0/1/2 [39, 20, 5]
+     end : cos +0.993 ratio 1.98 res 0.059 same 1.00 coh 1.00 (n 38) collapse0/1/2 [38, 8, 18]
+  s1306 ---- acc 0.654 loss 0.934
+     init: cos +0.202 ratio 0.68 res 0.737 same 0.62 coh 0.62 (n 39) collapse0/1/2 [39, 24, 1]
+     end : cos +0.999 ratio 2.00 res 0.020 same 1.00 coh 1.00 (n 39) collapse0/1/2 [39, 4, 21]
+  s1307 SOLV acc 1.000 loss 0.001
+     init: cos -0.474 ratio 2.06 res 0.513 same 0.33 coh 0.67 (n 42) collapse0/1/2 [42, 18, 4]
+     end : cos +0.999 ratio 1.99 res 0.025 same 1.00 coh 1.00 (n 43) collapse0/1/2 [43, 6, 15]
+-- AO_p
+  s1300 ---- acc 0.987 loss 0.132
+     init: cos +0.633 ratio 0.28 res 0.803 same 0.68 coh 0.68 (n 37) collapse0/1/2 [37, 24, 3]
+     end : cos +0.996 ratio 2.00 res 0.047 same 1.00 coh 1.00 (n 21) collapse0/1/2 [21, 13, 30]
+  s1301 ---- acc 0.910 loss 0.178
+     init: cos +0.021 ratio 1.63 res 0.703 same 0.53 coh 0.53 (n 47) collapse0/1/2 [47, 15, 2]
+     end : cos +0.519 ratio 1.85 res 0.492 same 0.67 coh 0.67 (n 42) collapse0/1/2 [42, 16, 6]
+  s1302 ---- acc 0.904 loss 0.177
+     init: cos +0.576 ratio 0.56 res 0.679 same 0.68 coh 0.68 (n 38) collapse0/1/2 [38, 24, 2]
+     end : cos -0.006 ratio 1.20 res 0.727 same 0.53 coh 0.53 (n 38) collapse0/1/2 [38, 19, 7]
+  s1303 ---- acc 0.590 loss 1.154
+     init: cos -0.018 ratio 2.17 res 0.701 same 0.48 coh 0.52 (n 48) collapse0/1/2 [48, 13, 3]
+     end : cos +0.999 ratio 1.99 res 0.026 same 1.00 coh 1.00 (n 32) collapse0/1/2 [32, 8, 24]
+  s1304 ---- acc 0.768 loss 0.689
+     init: cos -0.286 ratio 0.70 res 0.712 same 0.33 coh 0.67 (n 39) collapse0/1/2 [39, 20, 5]
+     end : cos -0.555 ratio 1.86 res 0.473 same 0.37 coh 0.63 (n 38) collapse0/1/2 [38, 19, 7]
+  s1305 SOLV acc 1.000 loss 0.000
+     init: cos +0.701 ratio 1.17 res 0.456 same 0.77 coh 0.77 (n 39) collapse0/1/2 [39, 20, 5]
+     end : cos +0.999 ratio 2.00 res 0.026 same 1.00 coh 1.00 (n 39) collapse0/1/2 [39, 9, 16]
+  s1306 ---- acc 0.908 loss 0.177
+     init: cos +0.202 ratio 0.68 res 0.737 same 0.62 coh 0.62 (n 39) collapse0/1/2 [39, 24, 1]
+     end : cos +0.989 ratio 2.00 res 0.073 same 1.00 coh 1.00 (n 40) collapse0/1/2 [40, 8, 16]
+  s1307 SOLV acc 1.000 loss 0.002
+     init: cos -0.474 ratio 2.06 res 0.513 same 0.33 coh 0.67 (n 42) collapse0/1/2 [42, 18, 4]
+     end : cos -0.980 ratio 1.99 res 0.099 same 0.02 coh 0.98 (n 48) collapse0/1/2 [48, 6, 10]
+
+== MECHANISM (seeds 800-807): end (init = the arm's start, rebuilt only for SO/AO) ==
+-- SO
+  s800 SOLV acc 1.000 end: cos -0.988 ratio 1.00 res 0.077 same 0.00 coh 1.00 (n 50) collapse0/1/2 [50, 4, 10]
+  s801 SOLV acc 1.000 end: cos -0.999 ratio 1.00 res 0.017 same 0.00 coh 1.00 (n 58) collapse0/1/2 [58, 1, 5]
+  s802 SOLV acc 1.000 end: cos -0.998 ratio 1.01 res 0.029 same 0.02 coh 0.98 (n 55) collapse0/1/2 [55, 0, 9]
+  s803 SOLV acc 1.000 end: cos -0.998 ratio 1.02 res 0.034 same 0.00 coh 1.00 (n 51) collapse0/1/2 [51, 3, 10]
+  s804 SOLV acc 1.000 end: cos -0.992 ratio 0.99 res 0.062 same 0.00 coh 1.00 (n 55) collapse0/1/2 [55, 3, 6]
+  s805 SOLV acc 1.000 end: cos -0.998 ratio 1.00 res 0.029 same 0.00 coh 1.00 (n 54) collapse0/1/2 [54, 2, 8]
+  s806 SOLV acc 1.000 end: cos -0.991 ratio 1.01 res 0.065 same 0.00 coh 1.00 (n 55) collapse0/1/2 [55, 1, 8]
+  s807 SOLV acc 1.000 end: cos -0.989 ratio 0.99 res 0.074 same 0.00 coh 1.00 (n 51) collapse0/1/2 [51, 4, 9]
+-- SO_absmag
+  s800 SOLV acc 1.000 end: cos -0.990 ratio 1.00 res 0.070 same 0.02 coh 0.98 (n 47) collapse0/1/2 [47, 7, 10]
+  s801 SOLV acc 1.000 end: cos -0.989 ratio 1.00 res 0.074 same 0.02 coh 0.98 (n 46) collapse0/1/2 [46, 7, 11]
+  s802 SOLV acc 1.000 end: cos -0.994 ratio 1.00 res 0.053 same 0.00 coh 1.00 (n 49) collapse0/1/2 [49, 7, 8]
+  s803 SOLV acc 1.000 end: cos -0.995 ratio 1.01 res 0.050 same 0.00 coh 1.00 (n 58) collapse0/1/2 [58, 0, 6]
+  s804 ---- acc 0.866 end: cos -0.998 ratio 1.00 res 0.033 same 0.00 coh 1.00 (n 50) collapse0/1/2 [50, 4, 10]
+  s805 SOLV acc 1.000 end: cos -0.998 ratio 1.02 res 0.035 same 0.00 coh 1.00 (n 53) collapse0/1/2 [53, 1, 10]
+  s806 SOLV acc 1.000 end: cos -0.993 ratio 0.99 res 0.060 same 0.02 coh 0.98 (n 48) collapse0/1/2 [48, 5, 11]
+  s807 SOLV acc 1.000 end: cos -0.996 ratio 1.00 res 0.046 same 0.00 coh 1.00 (n 57) collapse0/1/2 [57, 2, 5]
+-- SO_high
+  s800 SOLV acc 1.000 end: cos +0.836 ratio 0.91 res 0.958 same 1.00 coh 1.00 (n 60) collapse0/1/2 [60, 3, 1]
+  s801 SOLV acc 1.000 end: cos +0.245 ratio 0.63 res 0.801 same 1.00 coh 1.00 (n 64) collapse0/1/2 [64, 0, 0]
+  s802 SOLV acc 1.000 end: cos -0.288 ratio 0.58 res 0.632 same 0.80 coh 0.80 (n 61) collapse0/1/2 [61, 3, 0]
+  s803 SOLV acc 1.000 end: cos -0.688 ratio 0.38 res 0.573 same 0.00 coh 1.00 (n 63) collapse0/1/2 [63, 1, 0]
+  s804 SOLV acc 1.000 end: cos +0.186 ratio 1.01 res 0.770 same 1.00 coh 1.00 (n 64) collapse0/1/2 [64, 0, 0]
+  s805 SOLV acc 1.000 end: cos -1.000 ratio 1.00 res 0.005 same 0.00 coh 1.00 (n 64) collapse0/1/2 [64, 0, 0]
+  s806 SOLV acc 1.000 end: cos +0.600 ratio 0.54 res 0.904 same 1.00 coh 1.00 (n 60) collapse0/1/2 [60, 4, 0]
+  s807 SOLV acc 1.000 end: cos -0.058 ratio 1.13 res 0.688 same 1.00 coh 1.00 (n 64) collapse0/1/2 [64, 0, 0]
+-- AO
+  s800 ---- acc 0.907 end: cos -0.118 ratio 1.33 res 0.673 same 0.19 coh 0.81 (n 26) collapse0/1/2 [26, 21, 17] cone_tight 0.35 (n 48)
+  s801 ---- acc 0.894 end: cos +0.071 ratio 0.60 res 0.752 same 0.50 coh 0.50 (n 22) collapse0/1/2 [22, 20, 22] cone_tight 0.32 (n 41)
+  s802 ---- acc 0.910 end: cos +0.303 ratio 1.27 res 0.810 same 0.73 coh 0.73 (n 33) collapse0/1/2 [33, 20, 11] cone_tight 0.33 (n 52)
+  s803 ---- acc 0.965 end: cos -0.613 ratio 1.26 res 0.452 same 0.08 coh 0.92 (n 37) collapse0/1/2 [37, 19, 8] cone_tight 0.27 (n 51)
+  s804 ---- acc 0.987 end: cos -0.504 ratio 1.15 res 0.502 same 0.19 coh 0.81 (n 36) collapse0/1/2 [36, 18, 10] cone_tight 0.27 (n 49)
+  s805 ---- acc 0.888 end: cos -0.390 ratio 0.98 res 0.552 same 0.24 coh 0.76 (n 37) collapse0/1/2 [37, 17, 10] cone_tight 0.23 (n 53)
+  s806 ---- acc 0.880 end: cos -0.445 ratio 0.66 res 0.555 same 0.08 coh 0.92 (n 25) collapse0/1/2 [25, 20, 19] cone_tight 0.36 (n 45)
+  s807 ---- acc 0.924 end: cos +0.437 ratio 0.60 res 0.858 same 0.77 coh 0.77 (n 30) collapse0/1/2 [30, 20, 14] cone_tight 0.25 (n 44)
+-- AO_absmag
+  s800 ---- acc 0.865 end: cos -0.211 ratio 1.17 res 0.631 same 0.63 coh 0.63 (n 19) collapse0/1/2 [19, 25, 20] cone_tight 0.50 (n 44)
+  s801 ---- acc 0.922 end: cos -0.536 ratio 1.08 res 0.483 same 0.75 coh 0.75 (n 12) collapse0/1/2 [12, 25, 27] cone_tight 0.42 (n 40)
+  s802 ---- acc 0.861 end: cos +0.147 ratio 1.00 res 0.757 same 0.79 coh 0.79 (n 39) collapse0/1/2 [39, 17, 8] cone_tight 0.22 (n 54)
+  s803 ---- acc 0.860 end: cos -0.325 ratio 0.89 res 0.583 same 0.59 coh 0.59 (n 27) collapse0/1/2 [27, 25, 12] cone_tight 0.42 (n 52)
+  s804 ---- acc 0.933 end: cos +0.299 ratio 0.92 res 0.806 same 0.90 coh 0.90 (n 42) collapse0/1/2 [42, 12, 10] cone_tight 0.23 (n 48)
+  s805 ---- acc 0.857 end: cos -0.278 ratio 1.04 res 0.601 same 0.71 coh 0.71 (n 21) collapse0/1/2 [21, 28, 15] cone_tight 0.41 (n 49)
+  s806 ---- acc 0.889 end: cos -0.636 ratio 1.08 res 0.428 same 0.67 coh 0.67 (n  6) collapse0/1/2 [6, 30, 28] cone_tight 0.61 (n 38)
+  s807 ---- acc 0.945 end: cos +0.113 ratio 1.62 res 0.763 same 0.95 coh 0.95 (n 40) collapse0/1/2 [40, 16, 8] cone_tight 0.04 (n 51)
+-- AO_mid
+  s800 SOLV acc 0.968 end: cos +0.405 ratio 1.35 res 0.842 same 1.00 coh 1.00 (n 64) collapse0/1/2 [64, 0, 0] cone_tight 0.00 (n 2)
+  s801 SOLV acc 1.000 end: cos +0.345 ratio 0.56 res 0.836 same 1.00 coh 1.00 (n 64) collapse0/1/2 [64, 0, 0] cone_tight 0.00 (n 4)
+  s802 ---- acc 0.917 end: cos +0.170 ratio 0.98 res 0.765 same 1.00 coh 1.00 (n 63) collapse0/1/2 [63, 1, 0] cone_tight 0.00 (n 35)
+  s803 ---- acc 0.921 end: cos +0.137 ratio 0.72 res 0.761 same 1.00 coh 1.00 (n 60) collapse0/1/2 [60, 4, 0] cone_tight 0.05 (n 62)
+  s804 ---- acc 0.976 end: cos +0.345 ratio 1.17 res 0.821 same 1.00 coh 1.00 (n 63) collapse0/1/2 [63, 1, 0] cone_tight 0.03 (n 30)
+  s805 ---- acc 0.890 end: cos -0.022 ratio 1.11 res 0.700 same 1.00 coh 1.00 (n 63) collapse0/1/2 [63, 1, 0] cone_tight 0.02 (n 64)
+  s806 ---- acc 0.928 end: cos +0.027 ratio 0.97 res 0.717 same 1.00 coh 1.00 (n 64) collapse0/1/2 [64, 0, 0] cone_tight 0.00 (n 14)
+  s807 ---- acc 0.951 end: cos +0.057 ratio 0.86 res 0.729 same 1.00 coh 1.00 (n 62) collapse0/1/2 [62, 1, 1] cone_tight 0.03 (n 36)
+-- AO_high
+  s800 SOLV acc 1.000 end: cos +0.205 ratio 0.62 res 0.790 same 1.00 coh 1.00 (n 64) collapse0/1/2 [64, 0, 0] cone_tight nan (n 0)
+  s801 SOLV acc 1.000 end: cos -0.452 ratio 1.27 res 0.533 same 0.98 coh 0.98 (n 62) collapse0/1/2 [62, 2, 0] cone_tight 0.00 (n 2)
+  s802 SOLV acc 1.000 end: cos -0.026 ratio 1.67 res 0.721 same 1.00 coh 1.00 (n 64) collapse0/1/2 [64, 0, 0] cone_tight 0.00 (n 2)
+  s803 SOLV acc 1.000 end: cos +0.228 ratio 0.99 res 0.784 same 1.00 coh 1.00 (n 64) collapse0/1/2 [64, 0, 0] cone_tight 0.00 (n 4)
+  s804 SOLV acc 1.000 end: cos +0.370 ratio 0.38 res 0.865 same 1.00 coh 1.00 (n 63) collapse0/1/2 [63, 1, 0] cone_tight 0.00 (n 1)
+  s805 SOLV acc 1.000 end: cos +0.490 ratio 1.44 res 0.868 same 1.00 coh 1.00 (n 59) collapse0/1/2 [59, 5, 0] cone_tight nan (n 0)
+  s806 SOLV acc 1.000 end: cos -0.440 ratio 0.95 res 0.530 same 1.00 coh 1.00 (n 64) collapse0/1/2 [64, 0, 0] cone_tight 0.00 (n 2)
+  s807 SOLV acc 1.000 end: cos +0.533 ratio 1.52 res 0.881 same 1.00 coh 1.00 (n 60) collapse0/1/2 [60, 4, 0] cone_tight nan (n 0)
+
+== summary (means over seeds) ==
+gauge  SO_m       solved 8/8 | end: res 0.044 cos -0.995 coh 1.00 1-collapsed ch 2.1 2-collapsed 8.5 | init: res 0.778 coh 0.64
+gauge  AO_m       solved 1/8 | end: res 0.774 cos +0.194 coh 0.65 1-collapsed ch 18.8 2-collapsed 13.2 | init: res 0.778 coh 0.64 | cone_tight 0.25
+gauge  SO_p       solved 5/8 | end: res 0.142 cos +0.896 coh 0.94 1-collapsed ch 7.5 2-collapsed 17.1 | init: res 0.663 coh 0.64
+gauge  AO_p       solved 2/8 | end: res 0.245 cos +0.370 coh 0.85 1-collapsed ch 12.2 2-collapsed 14.5 | init: res 0.663 coh 0.64
+mech   SO         solved 8/8 | end: res 0.048 cos -0.994 coh 1.00 1-collapsed ch 2.2 2-collapsed 8.1
+mech   SO_absmag  solved 7/8 | end: res 0.053 cos -0.994 coh 0.99 1-collapsed ch 4.1 2-collapsed 8.9
+mech   SO_high    solved 8/8 | end: res 0.666 cos -0.021 coh 0.98 1-collapsed ch 1.4 2-collapsed 0.1
+mech   AO         solved 0/8 | end: res 0.644 cos -0.157 coh 0.78 1-collapsed ch 19.4 2-collapsed 13.9 | cone_tight 0.30
+mech   AO_absmag  solved 0/8 | end: res 0.631 cos -0.179 coh 0.75 1-collapsed ch 22.2 2-collapsed 16.0 | cone_tight 0.36
+mech   AO_mid     solved 2/8 | end: res 0.771 cos +0.183 coh 1.00 1-collapsed ch 1.0 2-collapsed 0.1 | cone_tight 0.02
+mech   AO_high    solved 8/8 | end: res 0.746 cos +0.114 coh 1.00 1-collapsed ch 1.5 2-collapsed 0.0 | cone_tight 0.00

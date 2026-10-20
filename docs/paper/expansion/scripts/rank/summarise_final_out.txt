@@ -1,0 +1,101 @@
+== C1: drifting heads (kappa > 0.01) -- r_beta = resolution along the drift / mean resolution (null 1) ==
+  torus G64 shared r2 (rank_mi)                  drifting: n=16 med 0.060 IQR 0.019-0.127; frac<0.5 0.88 | clean-drift heads: n=0
+  torus G64 per-head r2 (rank_mi)                drifting: n=9 med 0.194 IQR 0.096-0.313; frac<0.5 0.89 | clean-drift heads: n=7 med 0.000 IQR 0.000-1.086
+  torus G64 block-diag r4 (rank_sep)             drifting: n=8 med 0.106 IQR 0.019-0.456; frac<0.5 0.75 | clean-drift heads: n=8 med 0.000 IQR 0.000-0.182
+  torus G64 shared r2 (score_rank)               drifting: n=20 med 0.195 IQR 0.057-0.354; frac<0.5 0.80 | clean-drift heads: n=4 med 0.933 IQR 0.915-0.963
+  torus G64 shared r2 1800ep (loop_rank_e1800)   drifting: n=12 med 0.214 IQR 0.022-0.676; frac<0.5 0.67 | clean-drift heads: n=4 med 0.000 IQR -0.000-0.000
+  torus G64 per-head r3 (rank3)                  drifting: n=4 med 0.069 IQR 0.000-0.496; frac<0.5 0.75 | clean-drift heads: n=12 med 1.054 IQR 0.932-1.322
+  torus G64 shared r4 (rank_mi)                  drifting: n=0; frac<0.5 nan | clean-drift heads: n=16 med 1.031 IQR 0.923-1.106
+  torus G64 per-head r4 (rank_sep)               drifting: n=0; frac<0.5 nan | clean-drift heads: n=16 med 0.985 IQR 0.869-1.080
+  torus G64 shared r4 (score_rank)               drifting: n=0; frac<0.5 nan | clean-drift heads: n=16 med 0.969 IQR 0.911-1.045
+  ND D2 G32 r2 (rank_nd)                         drifting: n=15 med 0.005 IQR 0.001-0.019; frac<0.5 1.00 | clean-drift heads: n=1 med 0.796 IQR 0.796-0.796
+  ND D2 G32 r3 (rank_nd)                         drifting: n=0; frac<0.5 nan | clean-drift heads: n=16 med 0.933 IQR 0.886-1.054
+  ND D3 G10 r3 (rank_nd)                         drifting: n=14 med 0.088 IQR 0.008-0.320; frac<0.5 0.86 | clean-drift heads: n=2 med 0.838 IQR 0.761-0.916
+  ND D3 G10 r4 (rank_nd)                         drifting: n=10 med 0.030 IQR 0.010-0.106; frac<0.5 1.00 | clean-drift heads: n=6 med 1.028 IQR 0.856-1.577
+  ND D3 G18 r4 (rank_wrap)                       drifting: n=1 med 0.000 IQR 0.000-0.000; frac<0.5 1.00 | clean-drift heads: n=15 med 0.793 IQR 0.647-1.024
+  ND D3 G10 r4 (rank_wrap)                       drifting: n=10 med 0.030 IQR 0.010-0.106; frac<0.5 1.00 | clean-drift heads: n=6 med 1.028 IQR 0.856-1.577
+  ND D2 G32 r3 (rank_wrap)                       drifting: n=0; frac<0.5 nan | clean-drift heads: n=16 med 0.933 IQR 0.886-1.054
+  escape E lifted r2->r4                         drifting: n=10 med 0.501 IQR 0.183-0.695; frac<0.5 0.50 | clean-drift heads: n=6 med 0.938 IQR 0.797-1.103
+  escape C r2 continued                          drifting: n=14 med 0.087 IQR 0.015-0.181; frac<0.5 1.00 | clean-drift heads: n=2 med 0.811 IQR 0.809-0.813
+  escape F fresh r4 step map                     drifting: n=0; frac<0.5 nan | clean-drift heads: n=16 med 1.095 IQR 0.846-1.287
+  paper torus T=128 shared r2 (rank_sweep)       drifting: n=8 med 0.096 IQR 0.031-0.302; frac<0.5 0.75 | clean-drift heads: n=8 med -0.000 IQR -0.000-0.000
+  paper torus T=128 shared r4 (rank_sweep)       drifting: n=1 med 1.018 IQR 1.018-1.018; frac<0.5 0.00 | clean-drift heads: n=15 med 0.934 IQR 0.690-1.028
+  pooled rank-D (D>=2) drifting heads: n=116 med 0.087 IQR 0.012-0.297; frac < 0.5: 0.85
+  random-direction null for the same heads (own frame conditioning): expected frac < 0.5 = 0.29
+
+== C2 / C3: rank > D heads -- leftover latent clock (lam = |c_lat| / |U_lat|), off-plane share, readout gain ==
+  torus G64 per-head r3 (rank3)            SOLVED heads: lam n=12 med 0.004 IQR 0.001-0.004 | off-plane share n=12 med 0.978 IQR 0.956-0.991 (random 0.58) | readgain n=12 med 0.154 IQR 0.095-0.285 | kappa n=12 med 0.000 IQR 0.000-0.001
+  torus G64 per-head r3 (rank3)            unsolved heads: lam n=4 med 1.498 IQR 0.582-2.739 | off-plane share n=4 med 0.271 IQR 0.250-0.320 (random 0.58) | readgain n=4 med 0.606 IQR 0.340-0.884 | kappa n=4 med 1.075 IQR 0.210-2.519
+  torus G64 shared r4 (rank_mi)            SOLVED heads: lam n=16 med 0.004 IQR 0.004-0.005 | off-plane share n=16 med 0.996 IQR 0.983-0.997 (random 0.71) | readgain n=16 med 0.109 IQR 0.080-0.157 | kappa n=16 med 0.000 IQR 0.000-0.001
+  torus G64 per-head r4 (rank_sep)         SOLVED heads: lam n=16 med 0.003 IQR 0.002-0.005 | off-plane share n=16 med 0.988 IQR 0.976-0.996 (random 0.71) | readgain n=16 med 0.159 IQR 0.110-0.211 | kappa n=16 med 0.001 IQR 0.000-0.001
+  torus G64 shared r4 (score_rank)         SOLVED heads: lam n=16 med 0.003 IQR 0.003-0.004 | off-plane share n=16 med 0.998 IQR 0.990-0.999 (random 0.71) | readgain n=16 med 0.090 IQR 0.076-0.155 | kappa n=16 med 0.000 IQR 0.000-0.000
+  ND D2 G32 r3 (rank_nd)                   SOLVED heads: lam n=16 med 0.003 IQR 0.002-0.006 | off-plane share n=16 med 0.987 IQR 0.974-0.992 (random 0.58) | readgain n=16 med 0.090 IQR 0.068-0.175 | kappa n=16 med 0.000 IQR 0.000-0.000
+  ND D3 G10 r4 (rank_nd)                   SOLVED heads: lam n=8 med 0.008 IQR 0.006-0.273 | off-plane share n=8 med 0.964 IQR 0.820-0.990 (random 0.50) | readgain n=8 med 0.231 IQR 0.049-0.592 | kappa n=8 med 0.000 IQR 0.000-0.184
+  ND D3 G10 r4 (rank_nd)                   unsolved heads: lam n=8 med 1.154 IQR 0.738-1.947 | off-plane share n=8 med 0.534 IQR 0.174-0.795 (random 0.50) | readgain n=8 med 0.779 IQR 0.617-0.900 | kappa n=8 med 0.937 IQR 0.630-1.352
+  ND D3 G18 r4 (rank_wrap)                 SOLVED heads: lam n=16 med 0.001 IQR 0.000-0.003 | off-plane share n=16 med 0.810 IQR 0.475-0.970 (random 0.50) | readgain n=16 med 0.569 IQR 0.166-0.797 | kappa n=16 med 0.000 IQR 0.000-0.000
+  ND D3 G10 r4 (rank_wrap)                 SOLVED heads: lam n=8 med 0.008 IQR 0.006-0.273 | off-plane share n=8 med 0.964 IQR 0.820-0.990 (random 0.50) | readgain n=8 med 0.231 IQR 0.049-0.592 | kappa n=8 med 0.000 IQR 0.000-0.184
+  ND D3 G10 r4 (rank_wrap)                 unsolved heads: lam n=8 med 1.154 IQR 0.738-1.947 | off-plane share n=8 med 0.534 IQR 0.174-0.795 (random 0.50) | readgain n=8 med 0.779 IQR 0.617-0.900 | kappa n=8 med 0.937 IQR 0.630-1.352
+  ND D2 G32 r3 (rank_wrap)                 SOLVED heads: lam n=16 med 0.003 IQR 0.002-0.006 | off-plane share n=16 med 0.987 IQR 0.974-0.992 (random 0.58) | readgain n=16 med 0.090 IQR 0.068-0.175 | kappa n=16 med 0.000 IQR 0.000-0.000
+  ring R2 (rank_tests)                     SOLVED heads: lam n=16 med 0.025 IQR 0.017-0.034 | off-plane share n=16 med 0.989 IQR 0.977-0.997 (random 0.71) | readgain n=16 med 0.207 IQR 0.187-0.224 | kappa n=16 med 0.004 IQR 0.003-0.007
+  ring R2S shared r2 (rank_tests)          SOLVED heads: lam n=14 med 0.018 IQR 0.015-0.030 | off-plane share n=14 med 1.000 IQR 0.979-1.000 (random 0.71) | readgain n=14 med 0.227 IQR 0.190-0.252 | kappa n=14 med 0.005 IQR 0.003-0.007
+  ring R2S shared r2 (rank_tests)          unsolved heads: lam n=2 med 1.032 IQR 1.032-1.032 | off-plane share n=2 med 0.908 IQR 0.908-0.908 (random 0.71) | readgain n=2 med 1.152 IQR 1.146-1.159 | kappa n=2 med 0.151 IQR 0.141-0.161
+  escape E lifted r2->r4                   SOLVED heads: lam n=6 med 0.003 IQR 0.003-0.014 | off-plane share n=6 med 0.996 IQR 0.996-0.998 (random 0.71) | readgain n=6 med 0.096 IQR 0.051-0.145 | kappa n=6 med 0.000 IQR 0.000-0.001
+  escape E lifted r2->r4                   unsolved heads: lam n=10 med 1.687 IQR 1.416-2.273 | off-plane share n=10 med 0.083 IQR 0.049-0.310 (random 0.71) | readgain n=10 med 0.756 IQR 0.394-0.805 | kappa n=10 med 1.078 IQR 0.511-1.505
+  escape F fresh r4 step map               SOLVED heads: lam n=4 med 0.004 IQR 0.002-0.005 | off-plane share n=4 med 0.981 IQR 0.963-0.999 (random 0.71) | readgain n=4 med 0.176 IQR 0.049-0.300 | kappa n=4 med 0.000 IQR 0.000-0.001
+  escape F fresh r4 step map               unsolved heads: lam n=12 med 0.003 IQR 0.002-0.004 | off-plane share n=12 med 0.985 IQR 0.913-0.991 (random 0.71) | readgain n=12 med 0.185 IQR 0.107-0.354 | kappa n=12 med 0.001 IQR 0.000-0.001
+  paper torus T=128 shared r4 (rank_sweep) SOLVED heads: lam n=16 med 0.021 IQR 0.015-0.027 | off-plane share n=16 med 0.988 IQR 0.981-0.996 (random 0.71) | readgain n=16 med 0.266 IQR 0.222-0.311 | kappa n=16 med 0.005 IQR 0.004-0.007
+
+== rank-D heads, for comparison: lam (latent clock) and readgain ==
+  torus G64 shared r2 (rank_mi)            unsolved: lam n=16 med 0.839 IQR 0.709-1.169 | kappa n=16 med 0.594 IQR 0.092-0.855 | indep n=16 med 0.150 IQR 0.027-0.228
+  torus G64 per-head r2 (rank_mi)          SOLVED: lam n=4 med 0.000 IQR 0.000-0.263 | kappa n=4 med 0.000 IQR 0.000-0.313 | indep n=4 med 0.666 IQR 0.547-0.791
+  torus G64 per-head r2 (rank_mi)          unsolved: lam n=12 med 1.603 IQR 0.065-3.453 | kappa n=12 med 1.179 IQR 0.006-1.585 | indep n=12 med 0.126 IQR 0.000-0.260
+  torus G64 block-diag r4 (rank_sep)       SOLVED: lam n=4 med 0.013 IQR 0.000-0.458 | kappa n=4 med 0.001 IQR 0.000-0.456 | indep n=4 med 0.450 IQR 0.226-0.634
+  torus G64 block-diag r4 (rank_sep)       unsolved: lam n=12 med 0.384 IQR 0.124-2.042 | kappa n=12 med 0.055 IQR 0.004-0.989 | indep n=12 med 0.021 IQR 0.001-0.127
+  torus G64 shared r2 (score_rank)         SOLVED: lam n=6 med 0.000 IQR 0.000-0.111 | kappa n=6 med 0.000 IQR 0.000-0.086 | indep n=6 med 0.898 IQR 0.469-0.915
+  torus G64 shared r2 (score_rank)         unsolved: lam n=18 med 1.818 IQR 1.191-2.472 | kappa n=18 med 0.991 IQR 0.692-1.415 | indep n=18 med 0.256 IQR 0.120-0.345
+  torus G64 shared r2 1800ep (loop_rank_e1800) unsolved: lam n=16 med 1.024 IQR 0.612-1.818 | kappa n=16 med 0.785 IQR 0.216-1.519 | indep n=16 med 0.157 IQR 0.008-0.311
+  ND D2 G32 r2 (rank_nd)                   SOLVED: lam n=2 med 0.213 IQR 0.107-0.319 | kappa n=2 med 0.205 IQR 0.102-0.307 | indep n=2 med 0.656 IQR 0.578-0.734
+  ND D2 G32 r2 (rank_nd)                   unsolved: lam n=14 med 0.809 IQR 0.546-1.078 | kappa n=14 med 0.495 IQR 0.434-0.651 | indep n=14 med 0.039 IQR 0.021-0.076
+  ND D3 G10 r3 (rank_nd)                   SOLVED: lam n=2 med 0.255 IQR 0.128-0.382 | kappa n=2 med 0.230 IQR 0.115-0.345 | indep n=2 med 0.365 IQR 0.212-0.519
+  ND D3 G10 r3 (rank_nd)                   unsolved: lam n=14 med 0.894 IQR 0.539-1.460 | kappa n=14 med 0.646 IQR 0.411-1.292 | indep n=14 med 0.083 IQR 0.033-0.185
+  ring R1 (rank_tests)                     SOLVED: lam n=14 med 0.001 IQR 0.000-0.001 | kappa n=14 med 0.001 IQR 0.000-0.001 | indep n=14 med 1.000 IQR 1.000-1.000
+  ring R1 (rank_tests)                     unsolved: lam n=2 med 0.846 IQR 0.452-1.239 | kappa n=2 med 0.280 IQR 0.169-0.391 | indep n=2 med 1.000 IQR 1.000-1.000
+  ring R1AO (rank_tests)                   SOLVED: lam n=0 | kappa n=16 med 0.001 IQR 0.000-0.001 | indep n=16 med 1.000 IQR 1.000-1.000
+  escape C r2 continued                    SOLVED: lam n=2 med 0.001 IQR 0.001-0.001 | kappa n=2 med 0.001 IQR 0.001-0.001 | indep n=2 med 0.825 IQR 0.824-0.827
+  escape C r2 continued                    unsolved: lam n=14 med 1.325 IQR 0.834-1.681 | kappa n=14 med 0.793 IQR 0.621-1.396 | indep n=14 med 0.174 IQR 0.030-0.300
+  paper torus T=128 shared r2 (rank_sweep) SOLVED: lam n=14 med 0.057 IQR 0.051-0.655 | kappa n=14 med 0.007 IQR 0.004-0.434 | indep n=14 med 0.000 IQR 0.000-0.099
+  paper torus T=128 shared r2 (rank_sweep) unsolved: lam n=2 med 0.375 IQR 0.375-0.375 | kappa n=2 med 0.390 IQR 0.381-0.398 | indep n=2 med 0.793 IQR 0.766-0.820
+
+== C4: 1D ring -- per-head kappa and frame (r_beta is 1 by construction in 1D) ==
+  ring R1 (rank_tests)               s20 SOLV CLOCK  kappa [0.3141, 0.0399] lam [0.3141, 0.0399] |U| [5.0, 4.15]
+  ring R1 (rank_tests)               s21 SOLV CLEAN  kappa [0.0011, 0.0003] lam [0.0011, 0.0003] |U| [2.01, 1.87]
+  ring R1 (rank_tests)               s22 DESC CLOCK  kappa [0.5021, 0.0575] lam [1.6335, 0.0575] |U| [2.8, 3.51]
+  ring R1 (rank_tests)               s23 SOLV CLEAN  kappa [0.0005, 0.0013] lam [0.0005, 0.0013] |U| [2.12, 2.56]
+  ring R1 (rank_tests)               s24 SOLV CLEAN  kappa [0.0003, 0.0001] lam [0.0003, 0.0001] |U| [1.6, 1.81]
+  ring R1 (rank_tests)               s25 SOLV CLEAN  kappa [0.0013, 0.0002] lam [0.0013, 0.0002] |U| [2.18, 1.99]
+  ring R1 (rank_tests)               s26 SOLV CLEAN  kappa [0.001, 0.2402] lam [0.001, 0.2402] |U| [2.55, 3.25]
+  ring R1 (rank_tests)               s27 SOLV CLEAN  kappa [0.0002, 0.0003] lam [0.0002, 0.0003] |U| [2.05, 1.77]
+  ring R2 (rank_tests)               s20 SOLV CLEAN  kappa [0.0075, 0.0079] lam [0.0334, 0.0366] |U| [1.21, 1.59]
+  ring R2 (rank_tests)               s21 SOLV CLEAN  kappa [0.0054, 0.0078] lam [0.0281, 0.0381] |U| [1.64, 1.64]
+  ring R2 (rank_tests)               s22 SOLV CLEAN  kappa [0.0045, 0.0027] lam [0.0279, 0.0102] |U| [1.58, 1.78]
+  ring R2 (rank_tests)               s23 SOLV CLEAN  kappa [0.003, 0.0107] lam [0.0171, 0.0502] |U| [1.65, 1.47]
+  ring R2 (rank_tests)               s24 SOLV CLEAN  kappa [0.0038, 0.0026] lam [0.0253, 0.013] |U| [1.54, 1.65]
+  ring R2 (rank_tests)               s25 SOLV CLEAN  kappa [0.0047, 0.0033] lam [0.0245, 0.0126] |U| [1.54, 1.47]
+  ring R2 (rank_tests)               s26 SOLV CLEAN  kappa [0.0072, 0.0042] lam [0.0342, 0.0161] |U| [1.46, 1.68]
+  ring R2 (rank_tests)               s27 SOLV CLEAN  kappa [0.0043, 0.0034] lam [0.0192, 0.0202] |U| [1.54, 1.58]
+  ring R2S shared r2 (rank_tests)    s20 SOLV CLEAN  kappa [0.0022, 0.0024] lam [0.0094, 0.0094] |U| [1.51, 1.6]
+  ring R2S shared r2 (rank_tests)    s21 SOLV CLEAN  kappa [0.0026, 0.0026] lam [0.0138, 0.0138] |U| [1.51, 1.54]
+  ring R2S shared r2 (rank_tests)    s22 SOLV CLEAN  kappa [0.0164, 0.0071] lam [0.0717, 0.0717] |U| [1.36, 1.51]
+  ring R2S shared r2 (rank_tests)    s23 SOLV CLEAN  kappa [0.0068, 0.0076] lam [0.0306, 0.0306] |U| [1.67, 1.35]
+  ring R2S shared r2 (rank_tests)    s24 SOLV CLEAN  kappa [0.0078, 0.0051] lam [0.0276, 0.0276] |U| [1.24, 1.56]
+  ring R2S shared r2 (rank_tests)    s25 SOLV CLEAN  kappa [0.0038, 0.0045] lam [0.0175, 0.0175] |U| [1.49, 1.75]
+  ring R2S shared r2 (rank_tests)    s26 STAL CLOCK  kappa [0.1714, 0.1303] lam [1.0324, 1.0324] |U| [2.26, 2.09]
+  ring R2S shared r2 (rank_tests)    s27 SOLV CLEAN  kappa [0.0037, 0.0046] lam [0.0182, 0.0182] |U| [1.55, 1.55]
+  ring R1AO (rank_tests)             s20 SOLV CLEAN  kappa [0.0, 0.0] lam [nan, nan] |U| [1.58, 1.62]
+  ring R1AO (rank_tests)             s21 SOLV CLEAN  kappa [0.0008, 0.0001] lam [nan, nan] |U| [2.22, 1.58]
+  ring R1AO (rank_tests)             s22 SOLV CLEAN  kappa [0.0009, 0.0001] lam [nan, nan] |U| [2.37, 1.58]
+  ring R1AO (rank_tests)             s23 SOLV CLEAN  kappa [0.0014, 0.001] lam [nan, nan] |U| [1.67, 1.56]
+  ring R1AO (rank_tests)             s24 SOLV CLEAN  kappa [0.0026, 0.0004] lam [nan, nan] |U| [1.53, 1.63]
+  ring R1AO (rank_tests)             s25 SOLV CLEAN  kappa [0.0005, 0.5457] lam [nan, nan] |U| [1.5, 2.01]
+  ring R1AO (rank_tests)             s26 SOLV CLEAN  kappa [0.0004, 0.0001] lam [nan, nan] |U| [1.56, 2.33]
+  ring R1AO (rank_tests)             s27 SOLV CLEAN  kappa [0.0006, 0.0009] lam [nan, nan] |U| [1.57, 1.59]
