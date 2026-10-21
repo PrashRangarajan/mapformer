@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/teqapVwjO+pzKM4M47r83hvdBMM</id>
+  <title>arXiv Query: search_query=&amp;id_list=2406.07049&amp;start=0&amp;max_results=10</title>
+  <updated>2026-10-15T18:22:47Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=&amp;start=0&amp;max_results=10&amp;id_list=2406.07049" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>10</opensearch:itemsPerPage>
+  <opensearch:totalResults>1</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2406.07049v3</id>
+    <title>GridPE: A Grid Cell-Inspired Unified Position Embedding for Arbitrary-Dimensional Spaces</title>
+    <updated>2026-06-03T23:26:46Z</updated>
+    <link href="https://arxiv.org/abs/2406.07049v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2406.07049v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Understanding spatial relationships across all dimensions is fundamental for intelligent systems. However, existing positional embeddings, such as Rotary Positional Embedding (RoPE), lack theoretical guarantees for high-dimensional spatiotemporal tasks like video understanding and robotic navigation. Inspired by the hexagonal periodic coding of grid cells in mammalian spatial cognition, we propose GridPE -- a novel positional embedding framework that integrates computational neuroscience principles with harmonic analysis. Our approach builds upon Random Fourier Features and leverages principles from neuroscience to construct efficient embeddings. Theoretically, we prove that any translation-invariant spatial function can be approximated by a finite sum of Fourier bases, which naturally reduces to RoPE in the one-dimensional case. We then derive the directions and quantities of frequency vectors at each scale in any Euclidean dimension, along with the optimal ratio between different scales, from a bioavailability perspective. These derivations are equivalent to the relationship between the centroid and the vertices of a regular simplex in that dimension. We validate GridPE across a range of spatial modeling tasks, including 2D image classification (ImageNet100) and 3D point cloud recognition (ModelNet40). Our theoretical analysis establishes GridPE as a unified framework for positional embedding in arbitrary-dimensional spaces, while empirical results demonstrate its superiority over existing methods.</summary>
+    <category term="cs.NE" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-06-11T08:25:11Z</published>
+    <arxiv:primary_category term="cs.NE"/>
+    <author>
+      <name>Boyang Li</name>
+    </author>
+    <author>
+      <name>Yulin Wu</name>
+    </author>
+    <author>
+      <name>Nuoxian Huang</name>
+    </author>
+    <author>
+      <name>Wenjia Zhang</name>
+    </author>
+  </entry>
+</feed>

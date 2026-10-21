@@ -1,0 +1,463 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/ZpIrQSQHup/aOrVNC1gIyN4Z0lA</id>
+  <title>arXiv Query: search_query=&amp;id_list=2511.19279,2405.17394,2411.12537,2603.15569,2511.17388,2512.07805,2507.23083,2405.18719,2505.16381,2210.10749,2303.06349,2002.09277,2002.10487,2112.04035,2503.02130,2402.09963&amp;start=0&amp;max_results=20</title>
+  <updated>2026-10-15T18:24:29Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=&amp;start=0&amp;max_results=20&amp;id_list=2511.19279,2405.17394,2411.12537,2603.15569,2511.17388,2512.07805,2507.23083,2405.18719,2505.16381,2210.10749,2303.06349,2002.09277,2002.10487,2112.04035,2503.02130,2402.09963" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>20</opensearch:itemsPerPage>
+  <opensearch:totalResults>16</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2303.06349v1</id>
+    <title>Resurrecting Recurrent Neural Networks for Long Sequences</title>
+    <updated>2023-03-11T08:53:11Z</updated>
+    <link href="https://arxiv.org/abs/2303.06349v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2303.06349v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Recurrent Neural Networks (RNNs) offer fast inference on long sequences but are hard to optimize and slow to train. Deep state-space models (SSMs) have recently been shown to perform remarkably well on long sequence modeling tasks, and have the added benefits of fast parallelizable training and RNN-like fast inference. However, while SSMs are superficially similar to RNNs, there are important differences that make it unclear where their performance boost over RNNs comes from. In this paper, we show that careful design of deep RNNs using standard signal propagation arguments can recover the impressive performance of deep SSMs on long-range reasoning tasks, while also matching their training speed. To achieve this, we analyze and ablate a series of changes to standard RNNs including linearizing and diagonalizing the recurrence, using better parameterizations and initializations, and ensuring proper normalization of the forward pass. Our results provide new insights on the origins of the impressive performance of deep SSMs, while also introducing an RNN block called the Linear Recurrent Unit that matches both their performance on the Long Range Arena benchmark and their computational efficiency.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2023-03-11T08:53:11Z</published>
+    <arxiv:comment>30 pages, 9 figures</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Antonio Orvieto</name>
+    </author>
+    <author>
+      <name>Samuel L Smith</name>
+    </author>
+    <author>
+      <name>Albert Gu</name>
+    </author>
+    <author>
+      <name>Anushan Fernando</name>
+    </author>
+    <author>
+      <name>Caglar Gulcehre</name>
+    </author>
+    <author>
+      <name>Razvan Pascanu</name>
+    </author>
+    <author>
+      <name>Soham De</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2112.04035v2</id>
+    <title>Relating transformers to models and neural representations of the hippocampal formation</title>
+    <updated>2022-03-15T12:55:05Z</updated>
+    <link href="https://arxiv.org/abs/2112.04035v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2112.04035v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Many deep neural network architectures loosely based on brain networks have recently been shown to replicate neural firing patterns observed in the brain. One of the most exciting and promising novel architectures, the Transformer neural network, was developed without the brain in mind. In this work, we show that transformers, when equipped with recurrent position encodings, replicate the precisely tuned spatial representations of the hippocampal formation; most notably place and grid cells. Furthermore, we show that this result is no surprise since it is closely related to current hippocampal models from neuroscience. We additionally show the transformer version offers dramatic performance gains over the neuroscience version. This work continues to bind computations of artificial and brain networks, offers a novel understanding of the hippocampal-cortical interaction, and suggests how wider cortical areas may perform complex tasks beyond current neuroscience models such as language comprehension.</summary>
+    <category term="cs.NE" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-bio.NC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-12-07T23:14:07Z</published>
+    <arxiv:primary_category term="cs.NE"/>
+    <author>
+      <name>James C. R. Whittington</name>
+    </author>
+    <author>
+      <name>Joseph Warren</name>
+    </author>
+    <author>
+      <name>Timothy E. J. Behrens</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2405.17394v3</id>
+    <title>The Expressive Capacity of State Space Models: A Formal Language Perspective</title>
+    <updated>2025-12-11T23:41:44Z</updated>
+    <link href="https://arxiv.org/abs/2405.17394v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2405.17394v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Recently, recurrent models based on linear state space models (SSMs) have shown promising performance in language modeling (LM), competititve with transformers. However, there is little understanding of the in-principle abilities of such models, which could provide useful guidance to the search for better LM architectures. We present a comprehensive theoretical study of the capacity of such SSMs as it compares to that of transformers and traditional RNNs. We find that SSMs and transformers have overlapping but distinct strengths. In star-free state tracking, SSMs implement straightforward and exact solutions to problems that transformers struggle to represent exactly. They can also model bounded hierarchical structure with optimal memory even without simulating a stack. On the other hand, we identify a design choice in current SSMs that limits their expressive power. We discuss implications for SSM and LM research, and verify results empirically on a recent SSM, Mamba.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.FL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-05-27T17:46:57Z</published>
+    <arxiv:comment>Published in NeurIPS 2024</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <arxiv:journal_ref>Advances in Neural Information Processing Systems 37 (2024)</arxiv:journal_ref>
+    <author>
+      <name>Yash Sarrof</name>
+    </author>
+    <author>
+      <name>Yana Veitsman</name>
+    </author>
+    <author>
+      <name>Michael Hahn</name>
+    </author>
+    <arxiv:doi>10.52202/079017-1304</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.52202/079017-1304" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2505.16381v2</id>
+    <title>PaTH Attention: Position Encoding via Accumulating Householder Transformations</title>
+    <updated>2026-02-03T19:26:51Z</updated>
+    <link href="https://arxiv.org/abs/2505.16381v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2505.16381v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The attention mechanism is a core primitive in modern large language models (LLMs) and AI more broadly. Since attention by itself is permutation-invariant, position encoding is essential for modeling structured domains such as language. Rotary position encoding (RoPE) has emerged as the de facto standard approach for position encoding and is part of many modern LLMs. However, in RoPE the key/query transformation between two elements in a sequence is only a function of their relative position and otherwise independent of the actual input. This limits the expressivity of RoPE-based transformers.
+  This paper describes PaTH, a flexible data-dependent position encoding scheme based on accumulated products of Householder(like) transformations, where each transformation is data-dependent, i.e., a function of the input. We derive an efficient parallel algorithm for training through exploiting a compact representation of products of Householder matrices, and implement a FlashAttention-style blockwise algorithm. Across both targeted synthetic benchmarks and moderate-scale real-world language modeling experiments, we find that PaTH improves upon RoPE and other recent baselines. Finally, we show that we can convert pretrained RoPE transformers into PaTH with continued pretraining.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2025-05-22T08:36:09Z</published>
+    <arxiv:comment>NeurIPS 2025 camera ready</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Songlin Yang</name>
+    </author>
+    <author>
+      <name>Yikang Shen</name>
+    </author>
+    <author>
+      <name>Kaiyue Wen</name>
+    </author>
+    <author>
+      <name>Shawn Tan</name>
+    </author>
+    <author>
+      <name>Mayank Mishra</name>
+    </author>
+    <author>
+      <name>Liliang Ren</name>
+    </author>
+    <author>
+      <name>Rameswar Panda</name>
+    </author>
+    <author>
+      <name>Yoon Kim</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2507.23083v1</id>
+    <title>Context-aware Rotary Position Embedding</title>
+    <updated>2025-07-30T20:32:19Z</updated>
+    <link href="https://arxiv.org/abs/2507.23083v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2507.23083v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Positional encoding is a vital component of Transformer architectures, enabling models to incorporate sequence order into self-attention mechanisms. Rotary Positional Embeddings (RoPE) have become a widely adopted solution due to their compatibility with relative position encoding and computational efficiency. However, RoPE relies on static, input-independent sinusoidal frequency patterns, limiting its ability to model context-sensitive relationships. In this work, we propose CARoPE (Context-Aware Rotary Positional Embedding), a novel generalization of RoPE that dynamically generates head-specific frequency patterns conditioned on token embeddings. This design introduces token- and context-sensitive positional representations while preserving RoPE efficiency and architectural simplicity. CARoPE computes input-dependent phase shifts using a bounded transformation of token embeddings and integrates them into the rotary mechanism across attention heads. We evaluate CARoPE on the FineWeb-Edu-10B dataset using GPT-2 variants trained on next-token prediction tasks. Experimental results show that CARoPE consistently outperforms RoPE and other common positional encoding baselines, achieving significantly lower perplexity, even at longer context lengths. Additionally, CARoPE enables faster training throughput without sacrificing model stability. These findings demonstrate that CARoPE offers a scalable, expressive, and efficient upgrade to existing positional encoding strategies in Transformer models.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2025-07-30T20:32:19Z</published>
+    <arxiv:comment>4 pages, 1 table</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Ali Veisi</name>
+    </author>
+    <author>
+      <name>Delaram Fartoot</name>
+    </author>
+    <author>
+      <name>Hamidreza Amirzadeh</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2002.10487v2</id>
+    <title>Reparameterizing Mirror Descent as Gradient Descent</title>
+    <updated>2020-06-22T22:38:47Z</updated>
+    <link href="https://arxiv.org/abs/2002.10487v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2002.10487v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Most of the recent successful applications of neural networks have been based on training with gradient descent updates. However, for some small networks, other mirror descent updates learn provably more efficiently when the target is sparse. We present a general framework for casting a mirror descent update as a gradient descent update on a different set of parameters. In some cases, the mirror descent reparameterization can be described as training a modified network with standard backpropagation. The reparameterization framework is versatile and covers a wide range of mirror descent updates, even cases where the domain is constrained. Our construction for the reparameterization argument is done for the continuous versions of the updates. Finding general criteria for the discrete versions to closely track their continuous counterparts remains an interesting open problem.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-02-24T19:09:47Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Ehsan Amid</name>
+    </author>
+    <author>
+      <name>Manfred K. Warmuth</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2512.07805v6</id>
+    <title>Group Representational Position Encoding</title>
+    <updated>2026-05-13T18:33:36Z</updated>
+    <link href="https://arxiv.org/abs/2512.07805v6" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2512.07805v6" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We present GRAPE (Group Representational Position Encoding), a unified framework for positional encoding based on group actions. GRAPE unifies two families of mechanisms: (i) multiplicative rotations (Multiplicative GRAPE) in $\operatorname{SO}(d)$ and (ii) additive logit biases (Additive GRAPE) arising from unipotent actions in the general linear group $\mathrm{GL}$. In Multiplicative GRAPE, a position $n \in \mathbb{Z}$ (or $t \in \mathbb{R}$) acts as $\mathbf{G}(n) = \exp(n \, ω\, \mathbf{L})$ with a rank-2 skew-symmetric generator $\mathbf{L} \in \mathbb{R}^{d \times d}$, yielding a relative, compositional, norm-preserving map with a closed-form matrix exponential. RoPE is recovered exactly when the $d/2$ planes correspond to canonical coordinate pairs with a log-uniform spectrum. Learned commuting subspaces and compact non-commuting mixtures strictly extend this geometry to capture cross-subspace feature coupling at $O(d)$ and $O(r d)$ cost per head, respectively. In Additive GRAPE, additive logits arise from rank-1 (or low-rank) unipotent actions, recovering ALiBi and the Forgetting Transformer (FoX) as exact special cases while preserving an exact relative law and streaming cacheability. Overall, GRAPE provides a principled design space for positional geometry in long-context models, subsuming RoPE and ALiBi as special cases. Project page: https://github.com/model-architectures/GRAPE.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2025-12-08T18:39:13Z</published>
+    <arxiv:comment>Published in ICLR 2026. Project Page: https://github.com/model-architectures/GRAPE</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Yifan Zhang</name>
+    </author>
+    <author>
+      <name>Zixiang Chen</name>
+    </author>
+    <author>
+      <name>Yifeng Liu</name>
+    </author>
+    <author>
+      <name>Zhen Qin</name>
+    </author>
+    <author>
+      <name>Huizhuo Yuan</name>
+    </author>
+    <author>
+      <name>Kangping Xu</name>
+    </author>
+    <author>
+      <name>Yang Yuan</name>
+    </author>
+    <author>
+      <name>Quanquan Gu</name>
+    </author>
+    <author>
+      <name>Andrew Chi-Chih Yao</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2511.19279v4</id>
+    <title>MapFormer: Self-Supervised Learning of Cognitive Maps with Input-Dependent Positional Embeddings</title>
+    <updated>2026-05-10T09:29:41Z</updated>
+    <link href="https://arxiv.org/abs/2511.19279v4" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2511.19279v4" rel="related" type="application/pdf" title="pdf"/>
+    <summary>A cognitive map is an internal model which encodes the abstract relationships among entities in the world, giving humans and animals the flexibility to adapt to new situations, with a strong out-of-distribution (OOD) generalization that current AI systems still do not possess. To bridge this gap, we introduce $\textit{MapFormers}$, new Transformer-based architectures, which can learn cognitive maps from observational data and perform path-integration without supervision. Cognitive maps are learned in the model by disentangling structural relationships in the inputs from their specific content, a property that can be achieved by updating position encodings with input-dependent matrices, built as exponentials of learned combinations of Lie-algebra generators. We developed two variants of $\textit{MapFormers}$ that unify absolute and relative positional encoding to model episodic (EM) and working memory (WM), respectively. We tested $\textit{MapFormers}$ on several formal tasks targeting distinct cognitive capacities, including gating, 2D navigation and nested hierarchies (Dyck Languages). Our results demonstrate that $\textit{MapFormers}$ significantly outperform current AI architectures, achieving near-perfect OOD generalization where standard models fail. Furthermore, we show that $\textit{MapFormers}$ are scalable; evaluations on naturalistic data yield perplexity improvements over baselines, suggesting that these principles extend to large-scale, real-world domains. These results are obtained through efficient parallel computation on commutative maps, though our models can also learn non-commutative cognitive maps via sequential path-integration. Overall, these results suggest that input-dependent matrices provide a critical structural bias, by disentangling abstract relations from content in order to drive robust OOD generalization.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2025-11-24T16:29:02Z</published>
+    <arxiv:comment>19 pages (29 with appendix), 8 figures</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Victor Rambaud</name>
+    </author>
+    <author>
+      <name>Salvador Mascarenhas</name>
+    </author>
+    <author>
+      <name>Yair Lakretz</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2002.09277v3</id>
+    <title>Kernel and Rich Regimes in Overparametrized Models</title>
+    <updated>2020-07-27T15:04:41Z</updated>
+    <link href="https://arxiv.org/abs/2002.09277v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2002.09277v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>A recent line of work studies overparametrized neural networks in the "kernel regime," i.e. when the network behaves during training as a kernelized linear predictor, and thus training with gradient descent has the effect of finding the minimum RKHS norm solution. This stands in contrast to other studies which demonstrate how gradient descent on overparametrized multilayer networks can induce rich implicit biases that are not RKHS norms. Building on an observation by Chizat and Bach, we show how the scale of the initialization controls the transition between the "kernel" (aka lazy) and "rich" (aka active) regimes and affects generalization properties in multilayer homogeneous models. We also highlight an interesting role for the width of a model in the case that the predictor is not identically zero at initialization. We provide a complete and detailed analysis for a family of simple depth-$D$ models that already exhibit an interesting and meaningful transition between the kernel and rich regimes, and we also demonstrate this transition empirically for more complex matrix factorization models and multilayer non-linear networks.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-02-20T15:43:02Z</published>
+    <arxiv:comment>This updates and significantly extends a previous article (arXiv:1906.05827), Sections 6 and 7 are the most major additions. 31 pages. arXiv admin note: text overlap with arXiv:1906.05827</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Blake Woodworth</name>
+    </author>
+    <author>
+      <name>Suriya Gunasekar</name>
+    </author>
+    <author>
+      <name>Jason D. Lee</name>
+    </author>
+    <author>
+      <name>Edward Moroshko</name>
+    </author>
+    <author>
+      <name>Pedro Savarese</name>
+    </author>
+    <author>
+      <name>Itay Golan</name>
+    </author>
+    <author>
+      <name>Daniel Soudry</name>
+    </author>
+    <author>
+      <name>Nathan Srebro</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2402.09963v4</id>
+    <title>Why are Sensitive Functions Hard for Transformers?</title>
+    <updated>2024-05-27T17:01:29Z</updated>
+    <link href="https://arxiv.org/abs/2402.09963v4" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2402.09963v4" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Empirical studies have identified a range of learnability biases and limitations of transformers, such as a persistent difficulty in learning to compute simple formal languages such as PARITY, and a bias towards low-degree functions. However, theoretical understanding remains limited, with existing expressiveness theory either overpredicting or underpredicting realistic learning abilities. We prove that, under the transformer architecture, the loss landscape is constrained by the input-space sensitivity: Transformers whose output is sensitive to many parts of the input string inhabit isolated points in parameter space, leading to a low-sensitivity bias in generalization. We show theoretically and empirically that this theory unifies a broad array of empirical observations about the learning abilities and biases of transformers, such as their generalization bias towards low sensitivity and low degree, and difficulty in length generalization for PARITY. This shows that understanding transformers' inductive biases requires studying not just their in-principle expressivity, but also their loss landscape.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-02-15T14:17:51Z</published>
+    <arxiv:comment>ACL 2024</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Michael Hahn</name>
+    </author>
+    <author>
+      <name>Mark Rofin</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2603.15569v1</id>
+    <title>Mamba-3: Improved Sequence Modeling using State Space Principles</title>
+    <updated>2026-03-16T17:30:08Z</updated>
+    <link href="https://arxiv.org/abs/2603.15569v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2603.15569v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Scaling inference-time compute has emerged as an important driver of LLM performance, making inference efficiency a central focus of model design alongside model quality. While the current Transformer-based models deliver strong model quality, their quadratic compute and linear memory make inference expensive. This has spurred the development of sub-quadratic models with reduced linear compute and constant memory requirements. However, many recent linear models trade off model quality and capability for algorithmic efficiency, failing on tasks such as state tracking. Moreover, their theoretically linear inference remains hardware-inefficient in practice. Guided by an inference-first perspective, we introduce three core methodological improvements inspired by the state space model (SSM) viewpoint of linear models. We combine: (1) a more expressive recurrence derived from SSM discretization, (2) a complex-valued state update rule that enables richer state tracking, and (3) a multi-input, multi-output (MIMO) formulation for better model performance without increasing decode latency. Together with architectural refinements, our Mamba-3 model achieves significant gains across retrieval, state-tracking, and downstream language modeling tasks. At the 1.5B scale, Mamba-3 improves average downstream accuracy by 0.6 percentage points compared to the next best model (Gated DeltaNet), with Mamba-3's MIMO variant further improving accuracy by another 1.2 points for a total 1.8 point gain. Across state-size experiments, Mamba-3 achieves comparable perplexity to Mamba-2 despite using half of its predecessor's state size. Our evaluations demonstrate Mamba-3's ability to advance the performance-efficiency Pareto frontier.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-03-16T17:30:08Z</published>
+    <arxiv:comment>ICLR 2026</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Aakash Lahoti</name>
+    </author>
+    <author>
+      <name>Kevin Y. Li</name>
+    </author>
+    <author>
+      <name>Berlin Chen</name>
+    </author>
+    <author>
+      <name>Caitlin Wang</name>
+    </author>
+    <author>
+      <name>Aviv Bick</name>
+    </author>
+    <author>
+      <name>J. Zico Kolter</name>
+    </author>
+    <author>
+      <name>Tri Dao</name>
+    </author>
+    <author>
+      <name>Albert Gu</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2503.02130v2</id>
+    <title>Forgetting Transformer: Softmax Attention with a Forget Gate</title>
+    <updated>2025-03-31T19:41:52Z</updated>
+    <link href="https://arxiv.org/abs/2503.02130v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2503.02130v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>An essential component of modern recurrent sequence models is the forget gate. While Transformers do not have an explicit recurrent form, we show that a forget gate can be naturally incorporated into Transformers by down-weighting the unnormalized attention scores in a data-dependent way. We name this attention mechanism Forgetting Attention and the resulting model the Forgetting Transformer (FoX). We show that FoX outperforms the Transformer on long-context language modeling, length extrapolation, and short-context downstream tasks, while performing on par with the Transformer on long-context downstream tasks. Moreover, it is compatible with the FlashAttention algorithm and does not require any positional embeddings. Several analyses, including the needle-in-the-haystack test, show that FoX also retains the Transformer's superior long-context capabilities over recurrent sequence models such as Mamba-2, HGRN2, and DeltaNet. We also introduce a "Pro" block design that incorporates some common architectural components in recurrent sequence models and find it significantly improves the performance of both FoX and the Transformer. Our code is available at https://github.com/zhixuan-lin/forgetting-transformer.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2025-03-03T23:35:23Z</published>
+    <arxiv:comment>Published as a conference paper at ICLR 2025; Fixed an issue with the attention map visualization</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Zhixuan Lin</name>
+    </author>
+    <author>
+      <name>Evgenii Nikishin</name>
+    </author>
+    <author>
+      <name>Xu Owen He</name>
+    </author>
+    <author>
+      <name>Aaron Courville</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2411.12537v5</id>
+    <title>Unlocking State-Tracking in Linear RNNs Through Negative Eigenvalues</title>
+    <updated>2025-03-18T13:13:18Z</updated>
+    <link href="https://arxiv.org/abs/2411.12537v5" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2411.12537v5" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Linear Recurrent Neural Networks (LRNNs) such as Mamba, RWKV, GLA, mLSTM, and DeltaNet have emerged as efficient alternatives to Transformers for long sequences. However, both Transformers and LRNNs struggle to perform state-tracking, which may impair performance in tasks such as code evaluation. In one forward pass, current architectures are unable to solve even parity, the simplest state-tracking task, which non-linear RNNs can handle effectively. Recently, Sarrof et al. (2024) demonstrated that the failure of LRNNs like Mamba to solve parity stems from restricting the value range of their diagonal state-transition matrices to $[0, 1]$ and that incorporating negative values can resolve this issue. We extend this result to non-diagonal LRNNs such as DeltaNet. We prove that finite precision LRNNs with state-transition matrices having only positive eigenvalues cannot solve parity, while non-triangular matrices are needed to count modulo $3$. Notably, we also prove that LRNNs can learn any regular language when their state-transition matrices are products of identity minus vector outer product matrices, each with eigenvalues in the range $[-1, 1]$. Our experiments confirm that extending the eigenvalue range of Mamba and DeltaNet to include negative values not only enables them to solve parity but consistently improves their performance on state-tracking tasks. We also show that state-tracking enabled LRNNs can be pretrained stably and efficiently at scale (1.3B parameters), achieving competitive performance on language modeling and showing promise on code and math tasks.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.FL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-11-19T14:35:38Z</published>
+    <arxiv:comment>V2: Correction to Theorem 1 and 2 and to point 3 of Proposition 1. V3: ICLR Camera Ready, V4: ICLR Camera Ready, added figures to theory section, updated modular arithmetic with brackets results because previous results did not contain multiplication</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Riccardo Grazzi</name>
+    </author>
+    <author>
+      <name>Julien Siems</name>
+    </author>
+    <author>
+      <name>Arber Zela</name>
+    </author>
+    <author>
+      <name>Jörg K. H. Franke</name>
+    </author>
+    <author>
+      <name>Frank Hutter</name>
+    </author>
+    <author>
+      <name>Massimiliano Pontil</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2405.18719v2</id>
+    <title>Contextual Position Encoding: Learning to Count What's Important</title>
+    <updated>2024-05-30T17:51:53Z</updated>
+    <link href="https://arxiv.org/abs/2405.18719v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2405.18719v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The attention mechanism is a critical component of Large Language Models (LLMs) that allows tokens in a sequence to interact with each other, but is order-invariant. Incorporating position encoding (PE) makes it possible to address by position, such as attending to the i-th token. However, current PE methods use token counts to derive position, and thus cannot generalize to higher levels of abstraction, such as attending to the i-th sentence. In this paper, we propose a new position encoding method, Contextual Position Encoding (CoPE), that allows positions to be conditioned on context by incrementing position only on certain tokens determined by the model. This allows more general position addressing such as attending to the $i$-th particular word, noun, or sentence. We show that CoPE can solve the selective copy, counting and Flip-Flop tasks where popular position embeddings fail, and improves perplexity on language modeling and coding tasks.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-05-29T02:57:15Z</published>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Olga Golovneva</name>
+    </author>
+    <author>
+      <name>Tianlu Wang</name>
+    </author>
+    <author>
+      <name>Jason Weston</name>
+    </author>
+    <author>
+      <name>Sainbayar Sukhbaatar</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2210.10749v2</id>
+    <title>Transformers Learn Shortcuts to Automata</title>
+    <updated>2023-05-02T14:16:15Z</updated>
+    <link href="https://arxiv.org/abs/2210.10749v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2210.10749v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Algorithmic reasoning requires capabilities which are most naturally understood through recurrent models of computation, like the Turing machine. However, Transformer models, while lacking recurrence, are able to perform such reasoning using far fewer layers than the number of reasoning steps. This raises the question: what solutions are learned by these shallow and non-recurrent models? We find that a low-depth Transformer can represent the computations of any finite-state automaton (thus, any bounded-memory algorithm), by hierarchically reparameterizing its recurrent dynamics. Our theoretical results characterize shortcut solutions, whereby a Transformer with $o(T)$ layers can exactly replicate the computation of an automaton on an input sequence of length $T$. We find that polynomial-sized $O(\log T)$-depth solutions always exist; furthermore, $O(1)$-depth simulators are surprisingly common, and can be understood using tools from Krohn-Rhodes theory and circuit complexity. Empirically, we perform synthetic experiments by training Transformers to simulate a wide variety of automata, and show that shortcut solutions can be learned via standard training. We further investigate the brittleness of these solutions and propose potential mitigations.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.FL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2022-10-19T17:45:48Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Bingbin Liu</name>
+    </author>
+    <author>
+      <name>Jordan T. Ash</name>
+    </author>
+    <author>
+      <name>Surbhi Goel</name>
+    </author>
+    <author>
+      <name>Akshay Krishnamurthy</name>
+    </author>
+    <author>
+      <name>Cyril Zhang</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2511.17388v3</id>
+    <title>Selective Rotary Position Embedding</title>
+    <updated>2026-06-23T17:12:17Z</updated>
+    <link href="https://arxiv.org/abs/2511.17388v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2511.17388v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Position information is essential for language modeling. In softmax transformers, Rotary Position Embeddings (\textit{RoPE}) encode positions through \textit{fixed-angle} rotations, while in linear transformers, order is handled via input-dependent (selective) gating that decays past key-value associations. Selectivity has generally been shown to improve language-related tasks. Inspired by this, we introduce \textit{Selective RoPE}, an \textit{input-dependent} rotary embedding mechanism, that generalizes \textit{RoPE}, and enables rotation in \textit{arbitrary angles} for both linear and softmax transformers. We show that softmax attention already performs a hidden form of these rotations on query-key pairs, uncovering an implicit positional structure. We further show that in state-space models and gated linear transformers, the real part manages forgetting while the imaginary part encodes positions through rotations. We validate our method by equipping gated transformers with \textit{Selective RoPE}, demonstrating that its input-dependent rotations improve performance in language modeling and on difficult sequence tasks like copying, state tracking, and retrieval.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2025-11-21T16:50:00Z</published>
+    <arxiv:comment>ICLR 2026</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Sajad Movahedi</name>
+    </author>
+    <author>
+      <name>Timur Carstensen</name>
+    </author>
+    <author>
+      <name>Arshia Afzal</name>
+    </author>
+    <author>
+      <name>Frank Hutter</name>
+    </author>
+    <author>
+      <name>Antonio Orvieto</name>
+    </author>
+    <author>
+      <name>Volkan Cevher</name>
+    </author>
+  </entry>
+</feed>

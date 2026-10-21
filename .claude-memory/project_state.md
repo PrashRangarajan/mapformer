@@ -19,6 +19,10 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
   list out 29 Nov 2026, papers ~1 Feb 2027; CCN 2027 4 Feb; CPAL Spotlight 18 Jan; Cosyne abstracts 18 Oct 2026).
 - Mock review of draft 3: `docs/paper/MOCK_REVIEW_draft3.md` (6/10).
 
+## Running / handoff (2026-10-20)
+- SROPE_TORUS running on GPU 1 (started 16:02, ~18/48 at 22:44, ETA ~10:00 2026-10-21). Marker `.srope_torus_done`.
+- Runbook for another machine: `docs/RUNBOOK_NEXT_EXPERIMENTS.md` (setup, protocol, queue G-1..G-11, CPU work).
+
 ## Last results (2026-10-20): DELTA_FREE (`DELTA_FREE_RESULTS.md`): PEAK-PINNING SUPPORTED
 - Freeing PoPE's offset: index +0.122 (R3+ +0.180), path at ceiling; MapPoPE mechanism now causal at T = 128.
 - Also 2026-10-20: seven expansion reports + draft-2 plan (`docs/paper/expansion/`), what/where at T = 1024
