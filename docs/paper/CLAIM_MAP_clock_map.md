@@ -123,6 +123,12 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
 - Allowed: "PoPE's pinned offset fixes the kernel peak at zero phase difference; that helps a path phase and hurts an index
   phase". Not: "freeing delta reverses the interaction" (MAJOR 5); path-arm OOD cost is UNMEASURED (P1 Holm 0.094).
 
+## Update 2026-10-21: SROPE_TORUS (`SROPE_TORUS_RESULTS.md`, registered): FAILS THE MAP BUT USES ITS PHASE
+- Faithful Selective RoPE (best LM config) 0.961, 0/8 (all descending) vs MapWM 8/8; beats index RoPE +0.236; zero-angle 0.507.
+- State-tracking config 0.769, 0/8: its +1 rad bias keeps every learned step non-negative (analysis) -- fails like |.|.
+- Do not claim "Selective RoPE cannot learn maps" (budget-scoped, every run descending); claim "does not learn the torus map
+  within 900 epochs in its published configurations; observations step its phase almost as much as moves".
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).

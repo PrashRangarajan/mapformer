@@ -1,0 +1,57 @@
+== torus 64x64, T = 1024, 900 epochs; per seed: accuracy at T = 1024 and run class ==
+seed | SRoPE | SRoPE_NoSiLU | SRoPE_ST | SRoPEGen | MapWM | RoPE
+1700 | 0.9681 DESC | 0.9769 DESC | 0.8816 STAL | 0.9776 DESC | 1.0000 SOLV | 0.7288 STAL
+1701 | 0.9216 DESC | 0.9482 DESC | 0.6321 STAL | 0.9675 SOLV | 1.0000 SOLV | 0.7260 STAL
+1702 | 0.9629 DESC | 0.9793 DESC | 0.6381 STAL | 0.9996 SOLV | 1.0000 SOLV | 0.7303 STAL
+1703 | 0.9642 DESC | 0.9748 DESC | 0.8626 STAL | 0.9728 STAL | 1.0000 SOLV | 0.7164 STAL
+1704 | 0.9726 DESC | 0.9974 SOLV | 0.8582 DESC | 1.0000 SOLV | 0.9992 SOLV | 0.7548 STAL
+1705 | 0.9848 DESC | 0.9999 SOLV | 0.7689 STAL | 0.9999 SOLV | 1.0000 SOLV | 0.7223 STAL
+1706 | 0.9559 DESC | 0.8921 DESC | 0.7275 STAL | 0.9990 SOLV | 1.0000 SOLV | 0.7117 STAL
+1707 | 0.9551 DESC | 0.9844 DESC | 0.7821 STAL | 0.9633 DESC | 1.0000 SOLV | 0.7073 STAL
+floors (own eval stream, seeds 1700-1707, T = 1024): blank 0.5087, n-gram 0.5779, retrace 0.8454 (best trivial predictor)
+
+== registered contrasts ==
+S1 SRoPE vs MapWM (Signed_r4): FAILS -- SRoPE 0.9607 SOLVED 0/8 vs MapWM 0.9999 SOLVED 8/8; d -0.0392 [95% CI -0.050, -0.030] (perm p 0.0002); Fisher p 0.0002
+S2 SRoPE vs index RoPE: BEATS INDEX -- SRoPE 0.9607 SOLVED 0/8 vs RoPE 0.7247 SOLVED 0/8; d +0.2359 [95% CI +0.220, +0.250] (perm p 0.0002); Fisher p 1.0000
+phase (eval-only, Amendment 1) SRoPE: USES ITS PHASE -- intact 0.9607 vs zero angle 0.5065; d -0.4541 (sign-flip p 0.0078)
+
+Reading: SELECTIVE ROPE (BEST LM CONFIG) FAILS THE MAP BUT USES ITS CONTENT PHASE (beats index RoPE; zeroing its angle costs)
+
+== declared secondary contrasts (labelled, no family-wise correction; not part of the reading) ==
+SiLU: SRoPE_NoSiLU vs SRoPE: NO DIFFERENCE SHOWN -- SRoPE_NoSiLU 0.9691 SOLVED 2/8 vs SRoPE 0.9607 SOLVED 0/8; d +0.0085 [95% CI -0.020, +0.035] (perm p 0.5708); Fisher p 0.4667
+SRoPE_NoSiLU vs MapWM: FAILS -- SRoPE_NoSiLU 0.9691 SOLVED 2/8 vs MapWM 0.9999 SOLVED 8/8; d -0.0308 [95% CI -0.055, -0.010] (perm p 0.0003); Fisher p 0.0070
+SRoPEGen vs MapWM: UNMEASURED -- SRoPEGen 0.9850 SOLVED 5/8 vs MapWM 0.9999 SOLVED 8/8; d -0.0149 [95% CI -0.025, -0.005] (perm p 0.0082); Fisher p 0.2000
+SRoPEGen vs index RoPE: BEATS INDEX -- SRoPEGen 0.9850 SOLVED 5/8 vs RoPE 0.7247 SOLVED 0/8; d +0.2603 [95% CI +0.245, +0.275] (perm p 0.0002); Fisher p 0.0256
+SRoPE_NoSiLU vs index RoPE: BEATS INDEX -- SRoPE_NoSiLU 0.9691 SOLVED 2/8 vs RoPE 0.7247 SOLVED 0/8; d +0.2444 [95% CI +0.220, +0.265] (perm p 0.0002); Fisher p 0.4667
+SRoPE_ST vs MapWM: FAILS -- SRoPE_ST 0.7689 SOLVED 0/8 vs MapWM 0.9999 SOLVED 8/8; d -0.2310 [95% CI -0.305, -0.160] (perm p 0.0002); Fisher p 0.0002
+SRoPE_ST vs index RoPE: NOT DISTINGUISHED -- SRoPE_ST 0.7689 SOLVED 0/8 vs RoPE 0.7247 SOLVED 0/8; d +0.0442 [95% CI -0.030, +0.115] (perm p 0.2343); Fisher p 1.0000
+phase SRoPE_NoSiLU: USES ITS PHASE -- d -0.4824 (sign-flip p 0.0078)
+phase SRoPE_ST: USES ITS PHASE -- d -0.4932 (sign-flip p 0.0078)
+phase SRoPEGen: USES ITS PHASE -- d -0.5525 (sign-flip p 0.0078)
+phase MapWM: USES ITS PHASE -- d -0.4973 (sign-flip p 0.0078)
+
+== declared secondary readouts (descriptive) ==
+SRoPE: acc T 2048 (OOD) 0.8074 (floor retrace 0.7913); loss AUC 0.455; SOLVED at loss 0.1 0/8; classes DESC DESC DESC DESC DESC DESC DESC DESC
+   strata: plain_lag<128 0.992; plain_lag>=128 0.937; wrap 0.659
+   zero-angle accuracy 0.5065 (intact 0.9607)
+   angles: negative-mass share move0 0.38, move1 0.45, move2 0.57, move3 0.34, obs 0.44, blank 0.44; wrap-aware cancel share (pair) 0.75 (token-class 0.82); context CV 0.129; obs/move |step| 0.955; pair move-map participation ratio per head [1.59, 1.72] (top-2 energy [0.951, 0.918])
+SRoPE_NoSiLU: acc T 2048 (OOD) 0.8609 (floor retrace 0.7913); loss AUC 0.400; SOLVED at loss 0.1 3/8; classes DESC DESC DESC DESC SOLV SOLV DESC DESC
+   strata: plain_lag<128 0.987; plain_lag>=128 0.952; wrap 0.805
+   zero-angle accuracy 0.4867 (intact 0.9691)
+   angles: negative-mass share move0 0.41, move1 0.61, move2 0.58, move3 0.39, obs 0.50, blank 0.51; wrap-aware cancel share (pair) 0.80 (token-class 0.83); context CV 0.112; obs/move |step| 0.864; pair move-map participation ratio per head [1.57, 1.43] (top-2 energy [0.975, 0.954])
+SRoPE_ST: acc T 2048 (OOD) 0.7238 (floor retrace 0.7913); loss AUC 1.055; SOLVED at loss 0.1 0/8; classes STAL STAL STAL STAL DESC STAL STAL STAL
+   strata: plain_lag<128 0.788; plain_lag>=128 0.705; wrap 0.628
+   zero-angle accuracy 0.2757 (intact 0.7689)
+   angles: negative-mass share move0 0.00, move1 0.00, move2 0.00, move3 0.00, obs 0.00, blank 0.00; wrap-aware cancel share (pair) 0.00 (token-class 0.00); context CV 0.062; obs/move |step| 1.002; pair move-map participation ratio per head [1.16, 1.15] (top-2 energy [0.974, 0.976])
+SRoPEGen: acc T 2048 (OOD) 0.9505 (floor retrace 0.7913); loss AUC 0.347; SOLVED at loss 0.1 6/8; classes DESC SOLV SOLV STAL SOLV SOLV SOLV DESC
+   strata: plain_lag<128 0.997; plain_lag>=128 0.975; wrap 0.865
+   zero-angle accuracy 0.4325 (intact 0.9850)
+   angles: negative-mass share move0 0.53, move1 0.48, move2 0.47, move3 0.57, obs 0.52, blank 0.53; wrap-aware cancel share (pair) 0.71 (token-class 0.65); context CV 0.154; obs/move |step| 0.447; pair move-map participation ratio per head [2.24, 2.16] (top-2 energy [0.898, 0.911])
+MapWM: acc T 2048 (OOD) 0.9919 (floor retrace 0.7913); loss AUC 0.291; SOLVED at loss 0.1 8/8; classes SOLV SOLV SOLV SOLV SOLV SOLV SOLV SOLV
+   strata: plain_lag<128 1.000; plain_lag>=128 1.000; wrap 0.999
+   zero-angle accuracy 0.5026 (intact 0.9999)
+   angles: negative-mass share move0 0.53, move1 0.47, move2 0.48, move3 0.52, obs 0.49, blank 0.49; wrap-aware cancel share (pair) 1.00 (token-class 0.98); context CV 0.000; obs/move |step| 0.027; pair move-map participation ratio per head [1.9, 1.87] (top-2 energy [1.0, 1.0])
+RoPE: acc T 2048 (OOD) 0.5605 (floor retrace 0.7913); loss AUC 1.115; SOLVED at loss 0.1 0/8; classes STAL STAL STAL STAL STAL STAL STAL STAL
+   strata: plain_lag<128 0.775; plain_lag>=128 0.470; wrap 0.465
+threshold sensitivity SRoPE vs MapWM: SOLVED at loss 0.1 0/8 vs 8/8 (Fisher p 0.0002)
+threshold sensitivity SRoPE_NoSiLU vs SRoPE: SOLVED at loss 0.1 3/8 vs 0/8 (Fisher p 0.2000)

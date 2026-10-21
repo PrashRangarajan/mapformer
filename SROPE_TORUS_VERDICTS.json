@@ -1,0 +1,160 @@
+{
+  "primary": {
+    "S1": {
+      "label": "FAILS",
+      "SRoPE_solved": 0,
+      "MapWM_solved": 8,
+      "SRoPE_acc": 0.9606541264586278,
+      "MapWM_acc": 0.9999028567875905,
+      "d": -0.0392487303289627,
+      "perm_p": 0.0001554001554001554,
+      "fisher_p": 0.0001554001554001554,
+      "ci": [
+        -0.049999999999999156,
+        -0.02999999999999914
+      ]
+    },
+    "S2": {
+      "label": "BEATS INDEX",
+      "SRoPE_solved": 0,
+      "RoPE_solved": 0,
+      "SRoPE_acc": 0.9606541264586278,
+      "RoPE_acc": 0.7247084381722962,
+      "d": 0.23594568828633156,
+      "perm_p": 0.0001554001554001554,
+      "fisher_p": 1.0,
+      "ci": [
+        0.22000000000000108,
+        0.2500000000000011
+      ]
+    },
+    "phase": {
+      "label": "USES ITS PHASE",
+      "d": -0.45414100185656936,
+      "p": 0.0078125,
+      "intact": 0.9606541264586278,
+      "zero_angle": 0.5065131246020584
+    }
+  },
+  "secondary": {
+    "SiLU": {
+      "label": "NO DIFFERENCE SHOWN",
+      "SRoPE_NoSiLU_solved": 2,
+      "SRoPE_solved": 0,
+      "SRoPE_NoSiLU_acc": 0.9691154855326363,
+      "SRoPE_acc": 0.9606541264586278,
+      "d": 0.008461359074008468,
+      "perm_p": 0.5707847707847707,
+      "fisher_p": 0.4666666666666667,
+      "ci": [
+        -0.01999999999999913,
+        0.03500000000000103
+      ]
+    },
+    "NoSiLU_vs_MapWM": {
+      "label": "FAILS",
+      "SRoPE_NoSiLU_solved": 2,
+      "MapWM_solved": 8,
+      "SRoPE_NoSiLU_acc": 0.9691154855326363,
+      "MapWM_acc": 0.9999028567875905,
+      "d": -0.030787371254954232,
+      "perm_p": 0.0003108003108003108,
+      "fisher_p": 0.006993006993006993,
+      "ci": [
+        -0.05499999999999916,
+        -0.00999999999999912
+      ]
+    },
+    "SRoPEGen_vs_MapWM": {
+      "label": "UNMEASURED",
+      "SRoPEGen_solved": 5,
+      "MapWM_solved": 8,
+      "SRoPEGen_acc": 0.984975910756075,
+      "MapWM_acc": 0.9999028567875905,
+      "d": -0.014926946031515453,
+      "perm_p": 0.008236208236208237,
+      "fisher_p": 0.2,
+      "ci": [
+        -0.024999999999999134,
+        -0.004999999999999116
+      ]
+    },
+    "SRoPEGen_vs_RoPE": {
+      "label": "BEATS INDEX",
+      "SRoPEGen_solved": 5,
+      "RoPE_solved": 0,
+      "SRoPEGen_acc": 0.984975910756075,
+      "RoPE_acc": 0.7247084381722962,
+      "d": 0.2602674725837788,
+      "perm_p": 0.0001554001554001554,
+      "fisher_p": 0.025641025641025633,
+      "ci": [
+        0.245000000000001,
+        0.27500000000000124
+      ]
+    },
+    "NoSiLU_vs_RoPE": {
+      "label": "BEATS INDEX",
+      "SRoPE_NoSiLU_solved": 2,
+      "RoPE_solved": 0,
+      "SRoPE_NoSiLU_acc": 0.9691154855326363,
+      "RoPE_acc": 0.7247084381722962,
+      "d": 0.24440704736034002,
+      "perm_p": 0.0001554001554001554,
+      "fisher_p": 0.4666666666666667,
+      "ci": [
+        0.22000000000000108,
+        0.265000000000001
+      ]
+    },
+    "ST_vs_MapWM": {
+      "label": "FAILS",
+      "SRoPE_ST_solved": 0,
+      "MapWM_solved": 8,
+      "SRoPE_ST_acc": 0.7689033385423113,
+      "MapWM_acc": 0.9999028567875905,
+      "d": -0.2309995182452792,
+      "perm_p": 0.0001554001554001554,
+      "fisher_p": 0.0001554001554001554,
+      "ci": [
+        -0.3049999999999994,
+        -0.15999999999999925
+      ]
+    },
+    "ST_vs_RoPE": {
+      "label": "NOT DISTINGUISHED",
+      "SRoPE_ST_solved": 0,
+      "RoPE_solved": 0,
+      "SRoPE_ST_acc": 0.7689033385423113,
+      "RoPE_acc": 0.7247084381722962,
+      "d": 0.044194900370015056,
+      "perm_p": 0.23434343434343435,
+      "fisher_p": 1.0,
+      "ci": [
+        -0.02999999999999914,
+        0.1150000000000011
+      ]
+    },
+    "phase_SRoPE_NoSiLU": {
+      "label": "USES ITS PHASE",
+      "d": -0.4824174113886348,
+      "p": 0.0078125
+    },
+    "phase_SRoPE_ST": {
+      "label": "USES ITS PHASE",
+      "d": -0.4932163805835868,
+      "p": 0.0078125
+    },
+    "phase_SRoPEGen": {
+      "label": "USES ITS PHASE",
+      "d": -0.5525119562277125,
+      "p": 0.0078125
+    },
+    "phase_MapWM": {
+      "label": "USES ITS PHASE",
+      "d": -0.4972635842988292,
+      "p": 0.0078125
+    }
+  },
+  "reading": "SELECTIVE ROPE (BEST LM CONFIG) FAILS THE MAP BUT USES ITS CONTENT PHASE (beats index RoPE; zeroing its angle costs)"
+}
