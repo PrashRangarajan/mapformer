@@ -1,0 +1,70 @@
+{
+  "reading": "SUPPORTED",
+  "primary": {
+    "0.001": "SIGNED INCREMENT RESTORES",
+    "0.003": "SIGNED INCREMENT RESTORES"
+  },
+  "primary_detail": {
+    "0.001": {
+      "S_vs_A": {
+        "fisher_p": 0.0001554001554001554,
+        "perm_p": 0.0001554001554001554,
+        "d": 0.08236479007387953
+      },
+      "H_vs_A": {
+        "fisher_p": 0.0001554001554001554,
+        "perm_p": 0.0001554001554001554,
+        "d": 0.08236479007387953
+      },
+      "S_vs_H": {
+        "fisher_p": 1.0,
+        "perm_p": 1.0,
+        "d": 0.0
+      },
+      "full": true,
+      "likeA": false
+    },
+    "0.003": {
+      "S_vs_A": {
+        "fisher_p": 0.006993006993006993,
+        "perm_p": 0.006993006993006993,
+        "d": 0.04222655546116816
+      },
+      "H_vs_A": {
+        "fisher_p": 0.006993006993006993,
+        "perm_p": 0.006993006993006993,
+        "d": 0.04222655546116816
+      },
+      "S_vs_H": {
+        "fisher_p": 1.0,
+        "perm_p": 1.0,
+        "d": 0.0
+      },
+      "full": true,
+      "likeA": false
+    }
+  },
+  "control_broken": false,
+  "abs_tied_solved": 0,
+  "breadth": {
+    "exp|0.001": "SIGNED LEARNS BETTER",
+    "softplus|0.001": "SIGNED LEARNS BETTER",
+    "exp|0.003": "SIGNED LEARNS BETTER",
+    "softplus|0.003": "SIGNED LEARNS BETTER"
+  },
+  "solved": {
+    "signed|0.001": 8,
+    "abs|0.001": 0,
+    "hybrid|0.001": 8,
+    "abs_tied|0.001": 0,
+    "exp|0.001": 1,
+    "softplus|0.001": 1,
+    "signed|0.003": 8,
+    "abs|0.003": 2,
+    "hybrid|0.003": 8,
+    "abs_tied|0.003": 0,
+    "exp|0.003": 1,
+    "softplus|0.003": 3
+  },
+  "n_diverged": 0
+}

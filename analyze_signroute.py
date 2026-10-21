@@ -282,11 +282,14 @@ def analyse(R, seeds=SEEDS, out=print):
 
     out(f"\nfloors on record (ring 32, +1/-1): blank {FLOORS['blank']}, n-gram {FLOORS['ngram']}, "
         f"retrace {FLOORS['retrace']}")
-    out("\nper seed (acc T=128 + class initial; D = DIVERGED), lr x arm:")
+    # One letter per class, all distinct (post-batch display fix, SIGNROUTE_RESULTS.md: the first
+    # version printed cls[0], so SOLVED/STALLED both read "S" and DESCENDING/DIVERGED both "D").
+    code = {"SOLVED": "S", "STALLED": "T", "DESCENDING": "D", "RISING": "R", "DIVERGED": "X"}
+    out("\nper seed (acc T=128 + class: S SOLVED, T STALLED, D DESCENDING, R RISING, X DIVERGED), lr x arm:")
     for lr in RATES:
         for arm in ARMS:
             rows = C[lr][arm]["rows"]
-            out(f"  {lr:g} {arm:9s} " + " ".join(f"{r['acc']:.3f}{r['cls'][0]}" for r in rows))
+            out(f"  {lr:g} {arm:9s} " + " ".join(f"{r['acc']:.3f}{code[r['cls']]}" for r in rows))
 
     return {"reading": reading, "primary": {f"{lr:g}": labels[lr] for lr in RATES},
             "primary_detail": {f"{lr:g}": details[lr] for lr in RATES}, "control_broken": broken,

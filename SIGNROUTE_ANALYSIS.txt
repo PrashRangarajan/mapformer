@@ -1,0 +1,53 @@
+/home/prashr/mapformer/model_gated.py:1: SyntaxWarning: invalid escape sequence '\_'
+  """A per-token sigmoid GATE on a SIGNED increment -- CoPE's selection, MapFormer's direction.
+== SIGNROUTE: registered primary (hybrid vs abs and vs signed, gated on the in-batch anchors) ==
+lr 0.001: SOLVED signed 8/8 abs 0/8 hybrid 8/8 abs_tied 0/8 | acc T=128 signed 1.0000 abs 0.9176 hybrid 1.0000 abs_tied 0.7386
+   primary: SIGNED INCREMENT RESTORES   {"S_vs_A": {"fisher_p": 0.0001554001554001554, "perm_p": 0.0001554001554001554, "d": 0.08236479007387953}, "H_vs_A": {"fisher_p": 0.0001554001554001554, "perm_p": 0.0001554001554001554, "d": 0.08236479007387953}, "S_vs_H": {"fisher_p": 1.0, "perm_p": 1.0, "d": 0.0}, "full": true, "likeA": false}
+lr 0.003: SOLVED signed 8/8 abs 2/8 hybrid 8/8 abs_tied 0/8 | acc T=128 signed 1.0000 abs 0.9578 hybrid 1.0000 abs_tied 0.7481
+   primary: SIGNED INCREMENT RESTORES   {"S_vs_A": {"fisher_p": 0.006993006993006993, "perm_p": 0.006993006993006993, "d": 0.04222655546116816}, "H_vs_A": {"fisher_p": 0.006993006993006993, "perm_p": 0.006993006993006993, "d": 0.04222655546116816}, "S_vs_H": {"fisher_p": 1.0, "perm_p": 1.0, "d": 0.0}, "full": true, "likeA": false}
+
+C (control): abs_tied SOLVED 0/16 -- held (no abs_tied run solved, as the proof requires)
+
+READING (registered): SUPPORTED
+   scope: 'at lr 1e-3 and 3e-3'. A SIGNED INCREMENT RESTORES reading shows the non-negative readout MATRIX is costless and the signed increment is what matters; it does not separate S3 (no route) from S1/P3 (the wrap barrier) -- the hybrid removes both.
+
+== breadth (fixed rates, NOT best-rate claims): exp / softplus vs signed, cell_label thresholds, Holm per test over 4 cells ==
+lr 0.001 exp      : SOLVED 1/8 acc 0.9351 vs signed 8/8 | raw SIGNED LEARNS BETTER (Fisher 0.0014, perm 0.0002) | Holm (Fisher 0.0056, perm 0.0006) -> SIGNED LEARNS BETTER
+lr 0.001 softplus : SOLVED 1/8 acc 0.8785 vs signed 8/8 | raw SIGNED LEARNS BETTER (Fisher 0.0014, perm 0.0014) | Holm (Fisher 0.0056, perm 0.0042) -> SIGNED LEARNS BETTER
+lr 0.003 exp      : SOLVED 1/8 acc 0.9577 vs signed 8/8 | raw SIGNED LEARNS BETTER (Fisher 0.0014, perm 0.0014) | Holm (Fisher 0.0056, perm 0.0042) -> SIGNED LEARNS BETTER
+lr 0.003 softplus : SOLVED 3/8 acc 0.9663 vs signed 8/8 | raw SIGNED LEARNS BETTER (Fisher 0.0256, perm 0.0014) | Holm (Fisher 0.0256, perm 0.0042) -> SIGNED LEARNS BETTER
+
+== S2 diagnostics (medians per arm x rate; registered as descriptive) ==
+   arm        lr     u_ratio  cos(zx,zy)  max clock  step<0  readout<0  row-sign-coherent
+   signed    0.001  +0.055   -0.994     +0.418    +0.500  +0.467     +0.086
+   abs       0.001  +0.661   -0.133     +5.969    +0.000  +0.488     +0.102
+   hybrid    0.001  +0.043   -0.996     +0.261    +0.500  +0.000     +1.000
+   abs_tied  0.001  +0.000   -1.000     +20.614    +0.000  +0.492     +0.109
+   exp       0.001  +0.870   +0.515     +16.467    +0.000  +0.523     +0.102
+   softplus  0.001  +0.925   +0.711     +10.181    +0.000  +0.457     +0.094
+   signed    0.003  +0.001   -1.000     +0.002    +0.500  +0.506     +0.047
+   abs       0.003  +0.664   -0.165     +6.275    +0.000  +0.502     +0.039
+   hybrid    0.003  +0.002   -1.000     +0.005    +0.500  +0.000     +1.000
+   abs_tied  0.003  +0.000   -1.000     +11.490    +0.000  +0.502     +0.000
+   exp       0.003  +0.942   +0.775     +8.884    +0.000  +0.482     +0.055
+   softplus  0.003  +0.966   +0.865     +6.643    +0.000  +0.484     +0.047
+
+== rule 2: r(log10 final loss, acc) per eval length, finite runs ==
+   T=128: r = -0.702 over 96 runs (0 diverged excluded)
+   T=512: r = -0.709 over 96 runs (0 diverged excluded)
+
+floors on record (ring 32, +1/-1): blank 0.5, n-gram 0.554, retrace 0.86
+
+per seed (acc T=128 + class: S SOLVED, T STALLED, D DESCENDING, R RISING, X DIVERGED), lr x arm:
+  0.001 signed    1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S
+  0.001 abs       0.912T 0.874T 0.902T 0.926T 0.918T 0.968T 0.939T 0.902T
+  0.001 hybrid    1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S
+  0.001 abs_tied  0.748T 0.748T 0.672T 0.723T 0.749T 0.751T 0.748T 0.770T
+  0.001 exp       0.904T 0.973T 0.929T 0.957T 0.852T 0.958T 0.936D 0.972S
+  0.001 softplus  0.841T 0.794T 1.000S 0.984T 0.734T 0.861T 0.909T 0.906D
+  0.003 signed    1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S
+  0.003 abs       0.921T 0.944T 0.935T 0.968T 0.949T 1.000S 0.945T 1.000S
+  0.003 hybrid    1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S
+  0.003 abs_tied  0.743T 0.748T 0.652T 0.778T 0.775T 0.748T 0.774T 0.769T
+  0.003 exp       0.897T 0.959D 1.000S 1.000D 0.902T 0.967D 0.960D 0.977D
+  0.003 softplus  0.954T 0.959D 0.999S 1.000S 0.964T 0.975D 1.000S 0.880T

@@ -23,9 +23,20 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
 - Nothing running (SROPE_TORUS finished 2026-10-21 07:54).
 - Runbook for another machine: `docs/RUNBOOK_NEXT_EXPERIMENTS.md` (setup, protocol, queue G-1..G-11, CPU work).
 
+## Second machine (koopman-side clone, /home/prashr/mapformer), 2026-10-20/21
+- Set up per `docs/RUNBOOK_NEXT_EXPERIMENTS.md`: torch 2.10.0+cu128 in the user site (driver 550.144.03 = CUDA 12.4; works via
+  minor-version compat, kernels verified); miniconda's 2.6.0+cu124 kept as fallback. `test_guards` 6/13 here: the 7 failures
+  are missing `.pt` under runs/{dof,warm,unfreeze} (rsync needed), not code. One job per GPU: packing measured slower.
+- SIGNROUTE ran here (GPU 1, done 2026-10-21 07:43). Its torus part (frozen move latents) is NOT built; held until the read.
+
 ## Last results (2026-10-21): SROPE_TORUS (`SROPE_TORUS_RESULTS.md`): FAILS THE MAP BUT USES ITS PHASE
 - Faithful Selective RoPE 0.961 0/8 (all descending) vs MapWM 8/8; +0.236 over index RoPE; state-tracking config 0/8 with
   all-positive steps. Observations step ~0.9x moves (leak at full size).
+
+## Last results (2026-10-21): SIGNROUTE (`SIGNROUTE_RESULTS.md`): SUPPORTED, scope narrowed
+- Hybrid (non-negative readout matrix, signed increment) 16/16 = signed vs |.| 0/8, 2/8 at lr 1e-3 / 3e-3; ends antipodal like
+  signed. Cost is the non-negative INCREMENT, not the readout. Does NOT separate S3 from S1/P3 (Amendment 1); 'decisive'
+  withdrawn for G-2, so G-1 carries more of the clock-theory weight. abs_tied (no solution in class) 0/16 as required.
 
 ## Last results (2026-10-20): DELTA_FREE (`DELTA_FREE_RESULTS.md`): PEAK-PINNING SUPPORTED
 - Freeing PoPE's offset: index +0.122 (R3+ +0.180), path at ceiling; MapPoPE mechanism now causal at T = 128.
