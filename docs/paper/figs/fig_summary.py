@@ -45,7 +45,7 @@ for xi, s, i in zip(x, scratch, installed):
 ax.set_xticks(x); ax.set_xticklabels(cases)
 ax.set_ylim(0, 12.6); ax.set_yticks([0, 2, 4, 6, 8]); ax.set_ylabel("runs that solve the map (of 8)")
 ax.legend(loc="upper left", ncol=1, handlelength=1.0, borderaxespad=0.1)
-ax.set_title("(b) The solution exists and training keeps it,\nbut training from scratch does not find it",
+ax.set_title("(b) The solution exists and training keeps or re-finds it,\nbut training from scratch does not find it",
              loc="left", color=INK)
 ax.grid(axis="x", visible=False)
 
