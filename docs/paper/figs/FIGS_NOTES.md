@@ -28,6 +28,9 @@ per-epoch losses). Each figure is a post hoc DRAWING; the label in each caption 
 | `fig_existence` | F5 | from scratch vs installed (frozen / trained) | registered |
 | `fig_textworld` | F6 | text world: cancellation, clock, ablation | registered batch, declared secondaries |
 | `fig_ring_strata` (floor added) | F9 | ring strata | post hoc |
+| `fig_segments` (2026-10-21) | plan 8 / draft-2 Fig. 4 | accuracy vs direction runs spanned, torus index depth / loop, ring index depth | registered batches; bins post hoc (analysis) |
+| `fig_clock_endstate` (2026-10-21) | plan 9 / draft-2 Fig. 5 | clock / map per run, one definition, by arm | registered batches and classes; ratio post hoc (analysis) |
+| `fig_kernel_peak` (2026-10-21) | plan 11 / draft-2 Fig. 10 | kernel peak offset, C vs C0, C0 by stratum | registered batches; probes post hoc (analysis) |
 
 Floor helpers (post hoc, CPU, no model): `torus_strata_floors.py` -> `torus_strata_floors_s500-503.json` (FACTORIAL's
 stream) and `torus_strata_floors_s0-7.json` (the stream of SIGN_MATCHED / RANK_MI / RANK3 / RANK_SEP, seeds 0-7): per
@@ -400,3 +403,50 @@ dropout re-scale. Seeds 0-1 were the pilot.
 - F4's ring half uses WRAP_EXISTENCE only (one ring batch, as the review asked); RING_DIAL / MECHANISM / ROBUST-ring loss
   curves exist in the same checkpoints if wanted.
 - `fig_mechanism` and `fig_ring_strata` were fixed in place, not restyled to the shared palette.
+
+## Draft-2 figures from the audit-corrected generators (2026-10-21; post hoc, CPU, eval-only)
+
+Built for `docs/paper/MAIN_DRAFT2.md` from the generators that `docs/paper/review_draft5/ANALYSIS_SCRIPT_AUDIT.md`
+corrected; each script asserts its drawn means equal to the committed text outputs (3 decimals) before drawing.
+
+### `fig_segments.py` (plan Fig. 8; draft-2 Fig. 4, Sec. 6)
+
+Data: `expansion/scripts/depth/out/segments_bins.json`, written by the new `depth/segments_bins.py` from the per-revisit
+rows of `torus_depth.py` / `ring_depth.py` (`$DEPTH_SCRATCH/*.npz`, not committed; regenerate in minutes). Seed means
+(mean of per-seed accuracies; audit M-DP4), dots = seeds. (a) Torus T = 1024, FACTORIAL s500-503: solid = plain revisits
+at gap < 128 (2 runs = retrace; = Table 3 / `torus_depth_out.txt`), dashed = plain revisits at gaps 32-127
+(`torus_segments_out.txt`). (b) Ring T = 128, p_plus 0.5, CANCEL fresh seeds 2-7: 2 runs = retrace, 3+ = not retrace, not
+a one-lap return, not wrap-only (audit depth MINOR; = `ring_plain_bins_out.txt` 'plain only'). Floors: retrace exact at 2
+runs; best constant = torus short-gap stratum (`torus_strata_floors_s500-503.json`, 0.508) / ring 'neither' class
+(`ring_class_floors_out.txt`, 0.493; includes wrap-only). 1L curves labelled eval mode (no dropout rescale).
+
+| bin (runs) | 2 | 3-4 | 5-8 | 9-16 | 17+ |
+|---|---|---|---|---|---|
+| torus index 1L, gap < 128 | 0.833 | 0.477 | 0.476 | 0.474 | 0.472 |
+| torus index 4L, gap < 128 / gap 32-127 | 0.996 / 0.874 | 0.926 / 0.832 | 0.735 / 0.688 | 0.561 / 0.560 | 0.493 / 0.493 |
+| torus loop x4, gap < 128 / gap 32-127 | 1.000 / 0.996 | 0.977 / 0.911 | 0.645 / 0.575 | 0.499 / 0.499 | 0.502 / 0.502 |
+| torus path 1L | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| ring index 1L / 2L / 3L (plain) | 0.797 / 0.987 / 1.000 | 0.491 / 0.910 / 0.999 | 0.473 / 0.828 / 0.996 | 0.454 / 0.742 / 0.988 | -- |
+
+### `fig_clock_endstate.py` (plan Fig. 9; draft-2 Fig. 5, Sec. 7.1)
+
+Data: `expansion/scripts/sign/clock_table_out.txt` per-run run ratios (symmetric map, usage pooled over heads; B3 /
+M-SG1; one definition for every row) and its SOLVED stars; collapsed = unsolved rank-2 run with both head ratios < 0.15
+and COLLAPSE in `expansion/scripts/rank/sweep_final_out.txt` (per-head r2 s5, s6; block-diagonal s1, s7). Values are the
+3-decimal printed ones (torus signed small start 0.001-0.002). Rows: signed small start (MECH SO, SO_absmag, GAUGE SO_m,
+TORUS_START SO4) 0.001-0.036, 31/32 SOLVED; rank 4 0.010-0.136; rank 3 solved 0.017-0.081, unsolved 0.767-1.105; rank 2
+solved 0.045-0.611; rank 2 unsolved 0.053-1.263 (median 0.624; collapsed 0.053-0.086); signed frozen latents unsolved
+1.055-1.741, solved 0.058; |.| ring small start 0.698-1.850 (solved 0.881); |.| torus unsolved 0.700-1.868 (solved 0.024);
+|.| past pi ring 0.106-0.757 (8/8); signed large start (SO_high, SO4_high) 0.004-1.777, 10/16, the solved torus runs
+1.390 / 1.777 with near-pi usage 0.43 / 0.99. No side panel: RANK's off-plane share is a different (latent) metric (audit
+M-RK1 / M-RK2).
+
+### `fig_kernel_peak.py` (plan Fig. 11; draft-2 Fig. 10, Sec. 7.4)
+
+(a) `expansion/scripts/mappope/kernel_argmax_odd_out.txt`: argmax of K_ao(D) over odd D (audit mappope MINOR), PAPER2X2
+index arms, 1,088 pooled pairs: PoPE-Flat D = 1 0.982, 7 0.015, 11 0.004; RoPE 3 0.523, 7 0.314, 11 0.143, 15 0.019;
+K(3) > K(1) per run RoPE 0.53-1.00, PoPE 0.00 (`kernel_probe_paper2x2_out.txt`). Drawn as the argmax distribution; no
+committed output holds the kernel curve K(D) itself. (b) `kernel_probe_paper2x2.json`, stratum 'all', per seed: MapWM C
+0.703 vs C0 0.905 (C < C0 on 7/8), MapPoPE-Flat 0.995 / 0.996. (c) `kernel_probe_score_rank_hstratum.json` (HEAD_RULE=
+stratum, audit B2), C0 means: rank 2 RoPE score 0.900 / 0.795 / 0.399, polar 0.960 / 0.905 / 0.482; rank 4 RoPE score
+1.000 / 0.993 / 0.967, polar 1.000 / 0.993 / 0.970 (gap < 128 / >= 128 / wrap-only; = `probe_stats_hstratum_out.txt`).

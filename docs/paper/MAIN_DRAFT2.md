@@ -352,11 +352,11 @@ layer learns retrace and the one-lap offset: on the ring it scores 0.68-0.80 on 
 once they are common, and the floor on everything else at p_plus 0.5 and 0.75 (0.487 against 0.491-0.493; at 0.9 an
 unexplained 0.592 against 0.502), so at p_plus 1.0, where every revisit is a one-lap return, it matches the path layer.
 Three index layers on the ring are flat in the number of direction runs a revisit spans (0.997 / 0.993 / 0.972 at 3-4 /
-5-8 / 9-16 runs, wrap-only revisits included) and carry a displacement code over the last ~64 moves (linear-probe R^2
+5-8 / 9-16 runs, wrap-only revisits included; 0.999 / 0.996 / 0.988 on plain revisits only, Fig. 4b) and carry a displacement code over the last ~64 moves (linear-probe R^2
 0.72 for the displacement over the last 64 moves, read at moves 96-127); displacement older than 64 moves is not
 decodable (R^2 0.01), so no global count is detectable on the ring either, and on 128-move walks a 64-move window covers
 most revisits. On the torus no index model carries a count (R^2 at most 0.21). Four layers or the loop solve retraces
-(0.996 / 1.000) and decay with the number of runs spanned, at a fixed gap as well as overall: at gaps of 32-127 moves
+(0.996 / 1.000) and decay with the number of runs spanned, at a fixed gap as well as overall (Fig. 4a): at gaps of 32-127 moves
 four layers score 0.874 at 2 runs and 0.493 at 17 or more (seed means). Their last layer puts 0.55-0.58 of its attention
 on the remembered cell for retraces and 0.00-0.01 at long gaps, where the path layer puts 0.81. Nearly all long-gap
 revisits span 17 or more runs (98.5%; median 37), beyond that reach. Short-gap accuracy decomposes over these classes:
@@ -382,6 +382,22 @@ a rank-2 path code: they lift long-gap revisits from 0.671 to 0.927-0.990 and wr
 0.747-0.887 (Sec. 7.4). Extra passes add accuracy where the code carries position information that one pass cannot read,
 and none where it carries none.
 
+![Figure 4](figs/fig_segments.png)
+
+*Figure 4 (`fig_segments`; analysis of registered batches, eval mode). Revisit accuracy against the number of direction
+runs (maximal runs of one move) the walk spans between the two visits; lines: means of per-seed accuracies (seed means,
+not pooled); dots: seeds. (a) Torus at T = 1024 (FACTORIAL, n = 4). Solid: plain revisits at gaps under 128 moves (2 runs
+= retrace; the rows of Table 3). Four index layers fall from 0.996 at 2 runs to 0.926 / 0.735 / 0.561 / 0.493 at 3-4 /
+5-8 / 9-16 / 17+ runs and the loop from 1.000 to 0.977 / 0.645 / 0.499 / 0.502; one index layer (eval mode) scores 0.833
+on retraces and 0.472-0.477 beyond; one path layer scores 1.000 in every bin. Dashed: plain revisits at gaps of 32-127
+moves only, the fixed-gap control: the same decay (four layers 0.874 at 2 runs to 0.493 at 17+, the loop 0.996 to
+0.502). (b) Ring of 32 cells at T = 128, p_plus 0.5 (fresh seeds 2-7, n = 6), plain revisits only (wrap-only revisits
+and one-lap returns excluded; 2 runs = retrace): three index layers stay flat (1.000 / 0.999 / 0.996 / 0.988 at 2 / 3-4 /
+5-8 / 9-16 runs), two layers decay (0.987 / 0.910 / 0.828 / 0.742), and one layer (eval mode) learns retrace only (0.797,
+then 0.454-0.491); no ring revisit spans 17 or more runs. Floors on each batch's own walks: retrace is exact on 2-run
+revisits (dotted) and falls to the best constant elsewhere (dashed: the torus short-gap stratum's 0.508; the ring's
+'neither' class 0.493, a class that includes wrap-only revisits).*
+
 ## 7. What decides whether training finds the map
 
 Two choices of the content-to-angle map decide whether the torus map is learned: its per-head rank and the sign
@@ -391,7 +407,7 @@ whether training removes the clock, and by which route.
 
 ### 7.1 The clock and the signature
 
-Training from a small start ends in one of two places on either axis (Table 4; analysis; the clock / map ratio of Sec.
+Training from a small start ends in one of two places on either axis (Table 4, Fig. 5; analysis; the clock / map ratio of Sec.
 4). The models that succeed end with clock-free heads: the signed and rank-3/4 arms at arm means 0.001-0.051, with no
 head above 0.14, and every solved rank-2 run with at least one clean head (0.03-0.07; two of the four keep a drifting
 second head, 0.54 and 0.68). The models that fail end with a clock of the order of their map: the non-negative arms at
@@ -421,10 +437,25 @@ frozen-latent signed arm and the rank arms.*
 | torus, rank 2, solved runs (4): six clean heads / two drifting heads (per head) | 4 runs | 0.03-0.07 / 0.54, 0.68 |
 | torus, rank 3 and rank 4, solved runs | 6/8, 8/8, 8/8 | 0.043-0.051 |
 
+![Figure 5](figs/fig_clock_endstate.png)
+
+*Figure 5 (`fig_clock_endstate`; analysis of registered batches). Clock / map ratio at the end of training, one dot per
+run (circles: ring; squares: torus; filled: SOLVED; log scale), on the one definition of Table 4 throughout (symmetric
+map, usage-weighted over both heads). Successes from small starts are clock-free: signed 0.001-0.036 (31 of 32 runs
+SOLVED; the unsolved one at 0.016), rank 4 0.010-0.136 (16/16), solved rank 3 0.017-0.081. Failures carry a clock of the
+order of the map: |.| from small starts 0.70-1.85 on the ring (1 of 24 SOLVED, at 0.88) and 0.70-1.87 for the unsolved
+torus runs (the solved one at 0.024), signed with move latents frozen 1.055-1.741 (the solved run 0.058), unsolved rank 3
+0.767-1.105 and unsolved rank 2 up to 1.26 (median 0.62). Four unsolved rank-2 runs are clock-free (0.053-0.086) with their
+two map axes collapsed onto one direction (crosses; App. G3). The solved rank-2 runs span 0.045-0.611 (two keep a
+drifting second head). Starts past pi cancel by wrapping and solve at larger ratios: |.| on the ring 0.11-0.76 (8/8);
+signed 0.004-1.78 (10 of 16, ring and torus), the two solved torus runs at 1.39 and 1.78 with 0.43 and 0.99 of their
+usage on channels whose per-pair clock is near pi. For an unwrapped |.| channel a ratio of at least 1 holds by
+construction.*
+
 ### 7.2 Per-head rank of the content-to-angle map
 
 **Per-head rank decides it.** On the torus at T = 1024 we compare six bottlenecks, all built from the same initial weights
-at each seed (Table 5, Fig. 4a). Every arm whose heads each read a rank-2 map solves 0-2 of 8; rank 3 solves 6/8 and rank
+at each seed (Table 5, Fig. 6a). Every arm whose heads each read a rank-2 map solves 0-2 of 8; rank 3 solves 6/8 and rank
 4 8/8, whether the latent is shared or per head. At matched sharing (per-head rank 4 against a block-diagonal rank-4 latent
 in which each head reads rank 2) the split is 8/8 against 2/8 (Fisher and permutation p 0.0070). Per-head rank 3 improves
 on per-head rank 2 by +0.102 in accuracy (permutation p 0.027, Holm 0.054). Total latent size does not track success: the
@@ -452,10 +483,10 @@ SOLVED under either score at T = 1024, with rank 4 at 8/8 under both (Sec. 7.4 g
 
 **The rank-2 solution exists and is held.** The rank-2 projection of each solved rank-4 model scores 0.9955 frozen (at
 least 0.981 on every seed). Trained from there it solves 7/8, as many as the rank-4 control trained from its own solution
-(7/8), against 1/8 for rank 2 trained further from its own stalled weights (accuracy p 0.0009) (Fig. 5a). A rank-2 map
+(7/8), against 1/8 for rank 2 trained further from its own stalled weights (accuracy p 0.0009) (Fig. 7a). A rank-2 map
 that solves the torus exists, is kept by training, and is not reached from scratch.
 
-**Rank against the map's dimension.** Rank equal to the map's dimension D is hard in 2D and 3D and not in 1D (Fig. 4b). On
+**Rank against the map's dimension.** Rank equal to the map's dimension D is hard in 2D and 3D and not in 1D (Fig. 6b). On
 a 2D torus of 32 cells per side rank 2 solves 1/8 against rank 3's 8/8 (Fisher p 0.0014). On a 3D torus of 10 cells per
 side rank 3 solves 1/8 (rank 4, 4/8), and rank 4 solves an 18-per-side 3D torus 8/8 (1.000). On the 1D ring rank 1 solves
 7/8 against rank 2's 8/8, and with the drift forbidden by construction rank 1 solves 8/8 in a median of 24 epochs instead
@@ -475,18 +506,18 @@ heads: its latent clock shrinks 14-85x in absolute size, and the residual (0.002
 (share 0.91-1.00). At rank 1 on the ring, Proposition 4(d) leaves only the collective route, and Conjecture 1 has
 nothing to starve: rank 1 learns.
 
-![Figure 4](figs/fig_rank_solved.png)
+![Figure 6](figs/fig_rank_solved.png)
 
-*Figure 4 (`fig_rank_solved`). Runs (of 8) that solve the map, by the per-head rank of the content-to-angle map. (a) Torus,
+*Figure 6 (`fig_rank_solved`). Runs (of 8) that solve the map, by the per-head rank of the content-to-angle map. (a) Torus,
 T = 1024, six bottlenecks built from the same initial weights: every arm whose heads each read a rank-2 map solves 0-2/8,
 rank 3 solves 6/8 and rank 4 8/8, whether the latent is shared or per head. (b) Rank equal to the task's dimension D
 against D + 1 (separate batches and recipes): on the 1D ring rank 1 solves 7/8 (rank 2, 8/8); on a 2D torus rank 2 solves
 1/8 (rank 3, 8/8); on a small 3D torus (10 per side) rank 3 solves 1/8 and rank 4 4/8, and rank 4 solves 8/8 on an
 18-per-side torus with few wrap-only revisits (hatched). Torus budget 900 epochs; at 1800 epochs rank 2 still solves 0/8.*
 
-![Figure 5](figs/fig_existence.png)
+![Figure 7](figs/fig_existence.png)
 
-*Figure 5 (`fig_existence`). A solution exists in each constrained class and training keeps or re-finds it, but training
+*Figure 7 (`fig_existence`). A solution exists in each constrained class and training keeps or re-finds it, but training
 from scratch does not find it. Bars: runs SOLVED of 8 (hatched: the solution was installed and then trained). (a) Rank 2
 on the torus: a rank-2 projection of a solved rank-4 model scores 0.9955 frozen and is held when trained (7/8), while rank
 2 from scratch solves 0/8, and 1/8 when the stalled runs are trained further. (b) The |.| step on the ring: an installed
@@ -501,7 +532,7 @@ SOLVED); from scratch 0/8 against 8/8. "Lost": the maximum per-epoch training lo
 for the signed step, -0.177 (permutation p 0.0002), and solves 0/8 against 8/8; softplus scores 0.781 and solves 1/8
 (-0.218, p 0.0003). On the ring |.| solves 2/8 and 1/8 against 8/8 at p_plus 0.5 and 0.75 (Fisher p 0.007 and 0.0014).
 Observation-step-free models show the same: 0/8 against 8/8 on the ring and on the torus (0.880 against 1.000). The
-training curves separate (Fig. 6): the signed median crosses the SOLVED threshold at epoch 480 / 57 / 309 / 183 in four
+training curves separate (Fig. 8): the signed median crosses the SOLVED threshold at epoch 480 / 57 / 309 / 183 in four
 batches and keeps descending, while most |.| runs flatten at a loss of 0.3-0.5.
 
 **The cost holds at each step's best learning rate, without weight decay and at 2 layers d_model 256** (Table 6). With
@@ -535,7 +566,7 @@ of the signed model's, so the test is posed at the scale training uses (App. D).
 trained for 300 more epochs, stays solved on 8/8 seeds and never leaves the solved region, keeping its cancelling code in
 the channels attention uses (98%, usage-weighted). On the torus, trained at learning rate 1e-4, it is perturbed early (peak
 loss 0.11-0.21), re-enters the solved region for good between epochs 119 and 204, and ends solved on 8/8 seeds at accuracy
-1.000. From scratch the same class solves 0/8 on both tasks (Fig. 5b-c).
+1.000. From scratch the same class solves 0/8 on both tasks (Fig. 7b-c).
 
 **Why the non-negative step does not find it.** Proposition 4(b) says the |.| class lacks both routes from a small start,
 and the stored models show the consequences (analysis; App. H). At initialisation a latent move produces exactly the change
@@ -561,12 +592,12 @@ what costs.
 **How signed steps reach the map.** Started from the |.| start, with both moves rotating the same way, signed steps still
 solve 7/8 on the ring (|.| from the same start: 0/8; Fisher p 0.0014). They end with 98-99% of channels opposite-signed
 (analysis): they cancel opposite moves through zero, which Lemma 1 shows the non-negative step excludes for an inverse
-pair (Fig. 7). The escape is collective. Freezing the two move latents, with W_out and omega still free, blocks it: 1/8
+pair (Fig. 9). The escape is collective. Freezing the two move latents, with W_out and omega still free, blocks it: 1/8
 against 7/8 (Fisher p 0.010), and the frozen-latent model ends where the non-negative step ends (clock / map 1.18,
 Table 4). With the latents free, one move's latent moves toward the negative of the other's and every channel cancels
 together (82% of channels end opposite-signed, against 15% with the latents frozen). MapFormer described this antipodal end
 state (their Figs. 3d and 9b); this is the causal test of how it is reached. A |.| step has only the wrapped branch, and on
-the ring it learns the map when its opposite-move angles start with sums past pi (8/8, cancelling by wrapping; Fig. 7d).
+the ring it learns the map when its opposite-move angles start with sums past pi (8/8, cancelling by wrapping; Fig. 9d).
 
 **Published content phases also miss the torus map.** Faithful CARoPE cannot represent cancellation. *Proposition 8
 (proved):* CARoPE advances every channel by an amount in (0, 1] per token, so the shortest return's phase lies in
@@ -581,9 +612,9 @@ descending. Its readouts show why the map is harder for it: every token steps th
 as far as a move (MapWM: 0.027), so what is seen moves where the model thinks it is. Its state-tracking configuration
 carries a positive bias that keeps every learned step non-negative, and it fails as the non-negative steps do (0.769, 0/8).
 
-![Figure 6](figs/fig_loss_curves.png)
+![Figure 8](figs/fig_loss_curves.png)
 
-*Figure 6 (`fig_loss_curves`). Training loss per epoch for the signed step (blue) and the non-negative steps |.| (orange)
+*Figure 8 (`fig_loss_curves`). Training loss per epoch for the signed step (blue) and the non-negative steps |.| (orange)
 and softplus (green), every run of four batches (thin lines; thick: median of 8 runs; log scale; training loss with
 dropout on). Dashed line: the SOLVED threshold (final-5% mean training loss below 0.05); n/8 = runs SOLVED. (a) Torus,
 T = 1024, one layer: signed 8/8, |.| 0/8, softplus 1/8. (b) Ring of 32 cells, observation-step-free: 8/8 against 0/8. (c)
@@ -591,9 +622,9 @@ Torus, observation-step-free: 8/8 against 0/8. (d) As (c) at two layers and d_mo
 crosses the threshold at epoch 480 / 57 / 309 / 183 of 900 / 300 / 900 / 900 and keeps descending; the |.| median never
 does.*
 
-![Figure 7](figs/fig_mechanism.png)
+![Figure 9](figs/fig_mechanism.png)
 
-*Figure 7 (`fig_mechanism`; ring, 8 runs per panel; analysis of a registered batch). Move angles (a(+1), a(-1)) of every
+*Figure 9 (`fig_mechanism`; ring, 8 runs per panel; analysis of a registered batch). Move angles (a(+1), a(-1)) of every
 rotary channel at the start (grey) and after training (dots). A channel cancels opposite moves when a(+1) + a(-1) = 0 mod
 2 pi: on the blue line (through zero, reached only with opposite signs) or the red line (by wrapping). Grey shading marks
 the two mixed-sign quadrants, the only region the |.| step cannot reach (omega's sign is free, so both angles may be
@@ -623,8 +654,8 @@ Path integration changes dphi; PoPE's polar score removes beta, and Proposition 
 phase difference. The two predictions have opposite signs, and so do the results. On the short-walk torus PoPE's score
 raises the path model (MapPoPE 0.999 against MapWM 0.971) and lowers the index model (PoPE 0.679 against RoPE 0.805), an
 interaction of +0.154 (8/8). Probes give the mechanism (analysis; App. L). For the path model the pinned peak aligns the
-kernel with the target (target coherence 0.995 against 0.70 for MapWM). For the index model no content pair's kernel
-prefers offset 3 over offset 1 (0% of pairs, against 53-100% for RoPE, whose kernel is a comb at the retrace offsets),
+kernel with the target (target coherence 0.995 against 0.70 for MapWM; Fig. 10b). For the index model no content pair's kernel
+prefers offset 3 over offset 1 (0% of pairs, against 53-100% for RoPE, whose kernel is a comb at the retrace offsets; Fig. 10a),
 and 0.110 of the 0.126 accuracy gap lies on reversals whose target sits three or more steps back. Freeing PoPE's phase
 offset tests this directly (registered): the index model rises by +0.122 (8/8 seeds, sign-flip p 0.0078), most on
 multi-step reversals (+0.180), its kernel now prefers offset 3 over offset 1 in 50-100% of content pairs, with peaks at
@@ -635,8 +666,21 @@ to 0.62. PoPE's pinned offset is the lever: it helps a path phase and hurts an i
 revisits mostly through the readout term (target coherence 0.617 to 0.960, p 0.0002, with the code term moving +0.06)
 and leaves the code term low on long-gap revisits (0.80 / 0.91 under the two scores, against 0.99 at rank 4) and
 wrap-only revisits (0.40 / 0.48, against 0.97 at rank 4 under either score) (analysis; each stratum read on the head
-that carries its same-cell attention). The rank-2 phase does not place long-gap or wrapped revisits at zero phase, and
+that carries its same-cell attention; Fig. 10c). The rank-2 phase does not place long-gap or wrapped revisits at zero phase, and
 no score rule can make it: under either score rank 2 solves 3/12 (registered).
+
+![Figure 10](figs/fig_kernel_peak.png)
+
+*Figure 10 (`fig_kernel_peak`; analysis of registered batches). (a) Index arms on the torus at T = 128 (PAPER2X2, n =
+8): the token offset at which each content pair's kernel K(D) peaks, over the odd offsets where observation keys sit
+(1,088 head x action x observation pairs pooled). PoPE's kernel peaks at offset 1 in 98.2% of pairs and in no run does a
+pair prefer offset 3 over 1; RoPE's is a comb on the retrace offsets 3 / 7 / 11 / 15 (52.3 / 31.4 / 14.3 / 1.9% of pairs;
+53-100% prefer 3 over 1, per run). (b) Path arms at T = 128: target coherence C against C0, the same with the content
+phase removed, one dot per seed: MapWM 0.703 against 0.905 (C below C0 on 7 of 8 seeds), MapPoPE 0.995 against 0.996,
+on the diagonal. (c) C0 by stratum on the torus at T = 1024 (SCORE_RANK rank 2, n = 12; RANK_MI rank 4, n = 8), each
+stratum read on the head with most same-cell attention in that stratum: rank 2 has 0.90 / 0.96 on short gaps, 0.80 /
+0.91 on long gaps and 0.40 / 0.48 on wrap-only revisits (RoPE / polar score); rank 4 0.97-1.00 in every stratum under
+either score. Lines: means; dots: seeds.*
 
 ## 8. Maps from words
 
@@ -673,7 +717,7 @@ re-scored with the attention-dropout scale unless marked).*
 
 **What the step table holds.** On every seed, opposite direction words cancel once the component common to the four
 directions is removed (0.002-0.012), synonyms collapse to one step (cosine 1.000), and zeroing the direction steps drops
-accuracy to the constant floor (0.39-0.51) (declared secondaries; Fig. 8). The rest of the vocabulary is organised by how
+accuracy to the constant floor (0.39-0.51) (declared secondaries; Fig. 11). The rest of the vocabulary is organised by how
 often a word occurs per move (analysis, 32 models): adverbs and fillers, whose count per move varies, get steps of
 0.004-0.03 of a move; words that occur once per move (verb, seeing words, object, full stop) may carry a common tick; aside
 sentences get sizeable word steps that cancel within the sentence, leaving the aside's noun 0.04-0.16 of a move off the
@@ -708,9 +752,9 @@ A step that depends on an object's identity spreads objects at one place over id
 objects' steps, or normalising the step input, lets every run converge (16/16 SOLVED against 0/8 for MapWM; 8/8 against 0/8
 on fresh seeds; App. K). A token's offset from its place should depend on its role, not on its identity.
 
-![Figure 8](figs/fig_textworld.png)
+![Figure 11](figs/fig_textworld.png)
 
-*Figure 8 (`fig_textworld`). What a one-layer path model learns from a torus walk told in English (n = 8 seeds). (a)
+*Figure 11 (`fig_textworld`). What a one-layer path model learns from a torus walk told in English (n = 8 seeds). (a)
 Opposition of the learned direction-word steps, |A + B| / |A| averaged over north/south and west/east (0 = opposites
 cancel): after removing the component common to all four directions, opposites cancel to 0.002-0.012 on every seed. (b)
 That common component is small on four seeds (blue, 4-6% of a direction step) and large on the other four (orange,

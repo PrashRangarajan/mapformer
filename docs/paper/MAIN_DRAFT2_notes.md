@@ -138,9 +138,8 @@ MINORs (draft text).
   the audit in the text.
 - `step_basin.py` not made deterministic (exploratory label instead; rerunning every cell 2-3 times would cost hours of
   CPU).
-- Figures: Fig. 9 (clock end state, now one definition), Fig. 11 (c) (per-stratum head) and Fig. 8 ring rows (plain /
-  wrap-only population) must be built from the corrected generators when CPU-10 runs; `fig_kernel_peak` (a) must use the
-  odd-offset argmax.
+- Figures: plan Figs. 8, 9 and 11 are now built from the corrected generators (2026-10-21; draft Figs. 4, 5, 10; see
+  "Figures added" below). Still not built: plan T1 (schematic), 10 (loop reader), 7d-e, G2, H7, J2.
 - The expansion reports' bodies and the plan's claims table (rows 22, 30-31, 35-37, 41, 44, 46, 56; X7, X9, C-1, Table 5)
   still carry the old numbers; their CORRECTED banners point to the audit, and the draft is current.
 - `kernel_probe.py` still reads score_rank seeds from a directory listing (pin them before any pilot dir is added there).
@@ -160,13 +159,13 @@ Counted per paragraph (whitespace tokens). "Body" excludes figure captions, tabl
 | 3 Setup and how map use is measured | 711 | 113 (Fig. 2) |
 | 4 Theory | 1,345 | 233 (Table 1) |
 | 5 One path layer solves the long-walk map | 312 | 90 (Table 2) |
-| 6 What index depth buys | 806 | 340 (Fig. 3, Table 3) |
+| 6 What index depth buys | 806 | 340 (Fig. 3, Table 3; + Fig. 4, not counted) |
 | 7 opening | 67 | -- |
-| 7.1 The clock and the signature | 182 | 160 (Table 4) |
-| 7.2 Per-head rank | 639 | 416 (Table 5, Figs. 4-5) |
-| 7.3 The sign of the phase step | 1,242 | 509 (Table 6, Figs. 6-7) |
-| 7.4 Readers cannot repair a code | 536 | -- |
-| 8 Maps from words | 838 | 244 (Table 7, Fig. 8) |
+| 7.1 The clock and the signature | 182 | 160 (Table 4; + Fig. 5, not counted) |
+| 7.2 Per-head rank | 639 | 416 (Table 5, Figs. 6-7) |
+| 7.3 The sign of the phase step | 1,242 | 509 (Table 6, Figs. 8-9) |
+| 7.4 Readers cannot repair a code | 536 | -- (+ Fig. 10, not counted) |
+| 8 Maps from words | 838 | 244 (Table 7, Fig. 11) |
 | 9 Discussion and related work | 1,152 | -- |
 | 10 Limitations | 227 | 19 |
 | **Sections 1-10 + abstract** | **about 9,750** | **2,256** |
@@ -309,11 +308,11 @@ sections.
 ## Deviations from the plan, and why
 
 1. **Figure 1 is `fig_summary`** (the user's instruction). The plan's Fig. 1 (exchange rate) is Fig. 3; plan Figs. 3-7
-   are Figs. 4-8. The plan's new figures (T1 schematic, 8 segments, 9 clock end state, 10 loop reader, 11 kernel peak,
-   7d-e, G2, H7, J2) were **not built**: CPU-10 had not been done, and this task excluded editing or making figures.
-   Their content is carried by tables: Table 3 (segments, for Fig. 8), Table 4 (clock end states, for Fig. 9), Table 7
-   (text-world strata), App. M3 (loop reader, for Fig. 10), App. L2 (kernel peak, for Fig. 11), App. J1 / J5 (for 7d-e),
-   App. G6 (for G2), App. H7 (for H7), App. J4 (for J2).
+   are Figs. 6-9 and 11 (plan Fig. 7 `fig_textworld` is Fig. 11). Plan Figs. 8 (segments), 9 (clock end state) and 11
+   (kernel peak) were built on 2026-10-21 from the audit-corrected generators and are draft Figs. 4, 5 and 10 ("Figures
+   added" below); Tables 3 and 4 and App. L2 still carry the same numbers. Not built: T1 schematic, 10 loop reader,
+   7d-e, G2, H7, J2; their content is carried by Table 7 (text-world strata), App. M3 (loop reader), App. J1 / J5 (for
+   7d-e), App. G6 (for G2), App. H7 (for H7), App. J4 (for J2).
 2. **Theory status table is Table 1** (plan: "Table 4" at the end of Sec. 4), so that tables are numbered in order of
    first mention. Table 1 cites sections, not later tables or figures.
 3. **The plan's opening sentence for Sec. 4** ("This account was developed after the registered batches ...") moved to
@@ -420,7 +419,7 @@ Read both files start to end after assembly. Fixed during the read:
 - App. C9's "all main-text accuracies are eval mode" contradicted Sec. 8 -> "except where marked re-scored".
 - Old appendix section references renumbered (Secs. 4 / 5 / 6.1 / 6.2 / 7 -> 5 / 6 / 7.2 / 7.3 / 8; Proposition 1 -> 3;
   Proposition 2 (CARoPE) -> 8).
-Checked: figure numbers 1-8 in order of first mention (MapFormer's own "Fig. 3d" / "Fig. 9" / "Table 2" are marked
+Checked: figure numbers 1-8 in order of first mention (after the figures of 2026-10-21, Figs. 3-11 are in order; Fig. 2 is cited in Sec. 1 before Fig. 1, see "Figures added") (MapFormer's own "Fig. 3d" / "Fig. 9" / "Table 2" are marked
 "their"); tables 1-7 in order; every "App. X" in the main text exists in the appendix; every proposition used is stated
 before use (Prop. 8 is stated where first used, in Sec. 7.3).
 
@@ -441,10 +440,33 @@ unsolved-head sentence -> medians; "G-2" in G4 -> RANK_THEORY's G2 (the plan's G
 touched by the edits re-wrapped to 120 columns. Claim map: no withdrawn claim introduced; "parking" now appears only as
 the proved route (Prop. 4(c), Sec. 9) and never as a measured mechanism.
 
+### Figures added (2026-10-21; post hoc drawings, CPU, from the audit-corrected generators)
+
+Old Figs. 4-8 renumbered to 6-9 and 11 everywhere in MAIN_DRAFT2 (MapFormer's own "their Fig." references untouched).
+Every caption number below is in the figure's `_out.txt` (`docs/paper/figs/`).
+- **Fig. 4 `fig_segments`** (Sec. 6, after the Table 3 paragraph; plan Fig. 8) [A-audited data, drawing post hoc]: per-seed
+  bins from `depth/segments_bins.py` -> `depth/out/segments_bins.json` (new generator; reads the `torus_depth_*.npz` /
+  `ring_depth.npz` rows in $DEPTH_SCRATCH), asserted by the figure script equal to `torus_depth_out.txt` (Table 3 rows),
+  `torus_segments_out.txt` (gap 32-127), `ring_plain_bins_out.txt` ('plain only') and `ring_depth_out.txt` (retrace).
+  Seed means (M-DP4 labelling); ring population plain only (depth MINOR); 1L curves labelled eval mode. Text: Sec. 6 ring
+  sentence now also gives the plain-only 0.999 / 0.996 / 0.988 (Fig. 4b).
+- **Fig. 5 `fig_clock_endstate`** (Sec. 7.1, after Table 4; plan Fig. 9) [A-audited]: `sign/clock_table_out.txt` run
+  ratios (one definition, B3 / M-SG1); collapsed = unsolved, both heads < 0.15 and COLLAPSE in `rank/sweep_final_out.txt`
+  (per-head r2 s5, s6; block-diagonal s1, s7; block-diagonal s3, s5 are COLLAPSE there but keep one clocked head and are
+  drawn as ordinary unsolved runs). Rows added beyond the plan's list: rank 3 and |.| past pi (both Table 4 rows). No side
+  panel (M-RK1 / M-RK2).
+- **Fig. 10 `fig_kernel_peak`** (Sec. 7.4, end; plan Fig. 11) [A-audited]: (a) `mappope/kernel_argmax_odd_out.txt` (odd
+  offsets: RoPE 3 / 7 / 11 / 15 = 569 / 342 / 156 / 21 of 1,088; PoPE 1 = 1,068) and K(3) > K(1) shares from
+  `kernel_probe_paper2x2_out.txt`; (b) `kernel_probe_paper2x2.json` per seed, means asserted equal to `probe_stats_out.txt`;
+  (c) `kernel_probe_score_rank_hstratum.json` (HEAD_RULE=stratum, B2), means asserted equal to
+  `probe_stats_hstratum_out.txt`. Panel (a) shows the argmax distribution, not a kernel curve (no committed generator
+  outputs K(D) itself).
+- Pre-existing, not changed: Fig. 2 is first cited (Sec. 1, "(Fig. 2)") before Fig. 1.
+
 ## Open items
 
 1. **Script audit applied** (see top). What it leaves open is listed there under "Left open".
-2. Build the figures of deviation 1 (CPU-10), then move the corresponding tables to the appendix if space is short.
+2. Figures of deviation 1: plan Figs. 8, 9, 11 built (draft Figs. 4, 5, 10); T1, 10, 7d-e, G2, H7, J2 still to build. Move Tables 3 / 4 to the appendix if space is short.
 3. CPU-4, CPU-5, CPU-6, CPU-8 (T = 1024 kernel probe at 100 walks). CPU-3 is done for the channel ratio (Table 4, G3,
    H7); G4's latent metric stays separate by design.
 4. App. A3 status cells to verify: "reproduced: yes" for LOOP_RANK and TW_NORMSTEP rests on both batches being named in

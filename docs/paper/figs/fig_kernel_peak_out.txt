@@ -1,0 +1,13 @@
+(a) argmax over odd D of K_ao(D), PAPER2X2 index arms, pooled (h, a, o) pairs
+  PoPE (polar score)   n 1088: D=1: 1068 (0.982)  D=7: 16 (0.015)  D=11: 4 (0.004)
+  RoPE                 n 1088: D=3: 569 (0.523)  D=7: 342 (0.314)  D=11: 156 (0.143)  D=15: 21 (0.019)
+  RoPE: share of pairs with K(3) > K(1) per run 0.53-1.00
+  PoPE-Flat: share of pairs with K(3) > K(1) per run 0.00-0.00
+(b) target coherence, PAPER2X2 path arms, all revisits (per seed; mean)
+  MapWM (RoPE score)     C 0.703 (0.401-0.908)  C0 0.905 (0.652-0.986)  C0 - C +0.202, C < C0 on 7/8 seeds
+  MapPoPE (polar score)  C 0.995 (0.989-0.999)  C0 0.996 (0.989-0.999)  C0 - C +0.000, C < C0 on 5/8 seeds
+(c) C0 by stratum, SCORE_RANK / RANK_MI, T = 1024, each stratum on its own head (HEAD_RULE=stratum)
+  rank 4, RoPE score (n 8)     plain gap<128: 1.000 (0.999-1.000)  plain gap>=128: 0.993 (0.986-0.998)  wrap-only: 0.967 (0.951-0.982)
+  rank 4, polar score (n 8)    plain gap<128: 1.000 (1.000-1.000)  plain gap>=128: 0.993 (0.977-1.000)  wrap-only: 0.970 (0.925-0.989)
+  rank 2, RoPE score (n 12)    plain gap<128: 0.900 (0.597-1.000)  plain gap>=128: 0.795 (0.114-0.996)  wrap-only: 0.399 (-0.209-0.967)
+  rank 2, polar score (n 12)   plain gap<128: 0.960 (0.725-1.000)  plain gap>=128: 0.905 (0.156-0.996)  wrap-only: 0.482 (-0.228-0.981)

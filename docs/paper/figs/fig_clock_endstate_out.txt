@@ -1,0 +1,24 @@
+clock / map at the end of training (clock_table.py run ratio; * = SOLVED)
+signed, small start            runs 32 SOLVED 31  mean 0.013 median 0.009 range 0.001-0.036  sets: SO, SO_absmag, SO_m, SO4
+                               solved 0.001-0.036; unsolved 0.016-0.016
+rank 4 (shared, per-head)      runs 16 SOLVED 16  mean 0.050 median 0.034 range 0.010-0.136  sets: shared r4, per-head r4
+rank 3 (per-head)              runs  8 SOLVED  6  mean 0.266 median 0.051 range 0.017-1.105  sets: per-head r3
+                               solved 0.017-0.081; unsolved 0.767-1.105
+rank 2, solved runs            runs  4 SOLVED  4  mean 0.285 median 0.243 range 0.045-0.611  sets: shared r2, per-head r2, blockdiag r4 (2/head)
+rank 2, unsolved runs          runs 20 SOLVED  0  mean 0.609 median 0.624 range 0.053-1.263  sets: shared r2, per-head r2, blockdiag r4 (2/head)
+                               collapsed: per-head r2 s5 run 0.086 heads [0.1, 0.02]
+                               collapsed: per-head r2 s6 run 0.071 heads [0.13, 0.04]
+                               collapsed: blockdiag r4 (2/head) s1 run 0.079 heads [0.02, 0.09]
+                               collapsed: blockdiag r4 (2/head) s7 run 0.053 heads [0.01, 0.07]
+signed, move latents frozen    runs  8 SOLVED  1  mean 1.181 median 1.198 range 0.058-1.741  sets: SO_absmag_fz
+                               solved 0.058-0.058; unsolved 1.055-1.741
+|.|, small start, ring         runs 24 SOLVED  1  mean 1.534 median 1.631 range 0.698-1.850  sets: AO, AO_absmag, AO_m
+                               solved 0.881-0.881; unsolved 0.698-1.850
+|.|, small start, torus        runs  8 SOLVED  1  mean 1.248 median 1.377 range 0.024-1.868  sets: AO4
+                               solved 0.024-0.024; unsolved 0.700-1.868
+|.|, start past pi, ring       runs  8 SOLVED  8  mean 0.317 median 0.177 range 0.106-0.757  sets: AO_high
+signed, large start            runs 16 SOLVED 10  mean 0.452 median 0.277 range 0.004-1.777  sets: SO_high, SO4_high
+                               solved 0.004-1.777; unsolved 0.156-1.133
+                               torus SO4_high solved s1201: ratio 1.390, usage share near pi 0.43
+                               torus SO4_high solved s1206: ratio 1.777, usage share near pi 0.99
+signed / rank arms blue, |.| orange; values as printed by clock_table_out.txt (3 decimals: torus signed small start 0.001-0.002)
