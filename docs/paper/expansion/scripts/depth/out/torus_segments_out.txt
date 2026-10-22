@@ -1,0 +1,20 @@
+== plain revisits at gaps 32-127 moves, by runs spanned: accuracy as mean of per-seed accuracies [pooled over seeds]; n pooled over the 4 seeds; retrace share of the cell
+| runs | n | retrace share | L1 | L4 | LOOP |
+|---|---|---|---|---|---|
+| 2 | 240 | 1.000 | 0.412 [0.412] | 0.874 [0.896] | 0.996 [0.996] |
+| 3-4 | 503 | 0.000 | 0.483 [0.477] | 0.832 [0.785] | 0.911 [0.915] |
+| 5-8 | 4565 | 0.000 | 0.464 [0.464] | 0.688 [0.687] | 0.575 [0.576] |
+| 9-16 | 6569 | 0.000 | 0.474 [0.473] | 0.560 [0.561] | 0.499 [0.499] |
+| 17+ | 1202 | 0.000 | 0.472 [0.473] | 0.493 [0.494] | 0.502 [0.502] |
+== plain revisits at gaps 8-31 moves, by runs spanned: accuracy as mean of per-seed accuracies [pooled over seeds]; n pooled over the 4 seeds; retrace share of the cell
+| runs | n | retrace share | L1 | L4 | LOOP |
+|---|---|---|---|---|---|
+| 2 | 39287 | 1.000 | 0.711 [0.711] | 0.993 [0.992] | 1.000 [1.000] |
+| 3-4 | 3303 | 0.000 | 0.474 [0.474] | 0.940 [0.936] | 0.987 [0.988] |
+| 5-8 | 2580 | 0.000 | 0.494 [0.494] | 0.818 [0.816] | 0.768 [0.768] |
+| 9-16 | 26 | 0.000 | 0.510 [0.462] | 0.795 [0.769] | 0.607 [0.538] |
+| 17+ | 0 | -- | -- | -- | -- |
+
+== runs spanned by revisits that retrace cannot reach (labels are arm-independent)
+  long gap (plain, gap >= 128): n 11426; share spanning 17+ runs 0.9852; median 37; min 11; max 144
+  wrap-only: n 10558; share spanning 17+ runs 0.9905; median 65; min 8; max 151

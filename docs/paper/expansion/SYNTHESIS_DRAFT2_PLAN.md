@@ -1,10 +1,17 @@
 # Draft 2 of the main paper: integrated plan from the seven expansion reports (2026-10-20)
 
+*CORRECTED 2026-10-21. The independent analysis-script audit (`docs/paper/review_draft5/ANALYSIS_SCRIPT_AUDIT.md`) changes
+several numbers and claims this plan quotes (text-world NEEDS-MAP gloss and 100-walk subset, the clock / map table, the
+T = 1024 coherence strata, "never rank 4's 2D code", parking, the ring "global count"); they are applied in
+`docs/paper/MAIN_DRAFT2.md` / `MAIN_APPENDIX2.md` and listed in `MAIN_DRAFT2_notes.md`. The lines updated here are the
+what/where run (complete) and X2. Where this plan and the draft differ, the draft is current.*
+
 Inputs, read in full: `PAPER_LEVEL.md`, `MAPPOPE.md`, `RECURRENCE.md`, `RANK_THEORY.md`, `SEARCH_THEORY.md`,
 `DEPTH_THEORY.md`, `LANGUAGE.md` (this directory), against `docs/paper/MAIN_DRAFT1.md`, `MAIN_APPENDIX1.md`,
 `APPENDIX_theory_v3.md`, `OUTLINE_main_v2.md` and CLAUDE.md. Spot checks made for this plan (CPU, read-only): the
-SEARCH / RANK clock outputs (`scripts/sign/rank_clock_out.txt`, `scripts/rank/rank_geom.py`), the running what/where
-re-analysis at T = 1024 (`docs/audits/2026-10-20/causal_whatwhere_T1024.{log,json}`; no `.txt` yet), the T = 1024 floors
+SEARCH / RANK clock outputs (`scripts/sign/rank_clock_out.txt`, `scripts/rank/rank_geom.py`), the what/where
+re-analysis at T = 1024 (`docs/audits/2026-10-20/causal_whatwhere_T1024.{log,json}`; then running, complete since with its
+`.txt`), the T = 1024 floors
 (`docs/audits/2026-10-16/sign_floors_out.txt`), `figs/fig_exchange_rate_out.txt`. Nothing trained, nothing committed, no
 existing file edited.
 
@@ -68,7 +75,7 @@ where the pooled growth exponent cannot (analysis).
 | # | contradiction | resolution | status |
 |---|---|---|---|
 | X1 | SEARCH: the strong unification ("the failing class lacks a linear route to cancellation") is **false for rank D**, which has R1. | RANK Props. 2-3 supply the missing piece (hiding starves R1 at D >= 2; none in 1D). The first-order statement is proved. The feedback is **not shown**: the one failing pilot seed inherited its weak axis (RANK C6), and the readout gradient at initialisation is uninformative (C8, drift too large for assumption A1). The paper states the route inventory as proved and the hiding dynamics as a conjecture. G-1 decides it. | flagged: conjecture |
-| X2 | RANK: solved rank > D heads **park** the clock (off-plane 0.96-1.00, leftover lam 0.003-0.004). SEARCH: at rank 3/4 it is **removed in the latent (R1), not parked** (latent clock 0.045-0.065, in-span 0.999-1.000). | The two use different definitions. RANK's c is the clock common to all four moves plus the mean observation step, measured in the native latent against U. SEARCH's are per inverse pair (c_x = z_-x + z_+x, c_y), and its "in-span" is the share of the *read* channel clock inside the map span; a parked clock is by definition the unread part, so the two agree that what is still read lies in-plane and is small. The magnitudes (0.004 vs 0.065) are not comparable. Unresolved: whether the final shrinkage at rank > D is gradient-driven (R1) or weight decay on a parked, unread direction (RANK C2: "consistent, not a test"). Before drafting: **one definition** (per inverse pair, SEARCH's) and a recomputation of RANK's off-plane share and readgain with it (CPU-3). Add a rank-4 wd 0 arm to G-1 (parking predicts a solved model with a large parked clock; R1 predicts the clock is removed anyway). | resolved on end states; mechanism of final removal open |
+| X2 | RANK: solved rank > D heads **park** the clock (off-plane 0.96-1.00, leftover lam 0.003-0.004). SEARCH: at rank 3/4 it is **removed in the latent (R1), not parked** (latent clock 0.045-0.065, in-span 0.999-1.000). | The two use different definitions. RANK's c is the clock common to all four moves plus the mean observation step, measured in the native latent against U. SEARCH's are per inverse pair (c_x = z_-x + z_+x, c_y), and its "in-span" is the share of the *read* channel clock inside the map span; a parked clock is by definition the unread part, so the two agree that what is still read lies in-plane and is small. The magnitudes (0.004 vs 0.065) are not comparable. Unresolved: whether the final shrinkage at rank > D is gradient-driven (R1) or weight decay on a parked, unread direction (RANK C2: "consistent, not a test"). Before drafting: **one definition** (per inverse pair, SEARCH's) and a recomputation of RANK's off-plane share and readgain with it (CPU-3). Add a rank-4 wd 0 arm to G-1 (parking predicts a solved model with a large parked clock; R1 predicts the clock is removed anyway). | resolved (audit, coordinator view): RANK's c = a + o is the drift a walk accumulates per move and observation; in solved rank > D heads the mean move step a and the mean observation step o (each about 0.02 of a map step) lie in the map plane and cancel (cosine -0.79 to -0.999), and only a tiny residual (0.001-0.025 of a map step) is off-plane. SEARCH's per-pair clock leaves out o and so overstates the drift; the two agree on what is read. The end states do not separate parking from removal (the escape arms' latent clock shrinks 14-85x); G-1's r4 wd 0 arm and the seeded escape (G-2) remain the tests (`scripts/rank/clock_decomp_out.txt`) |
 | X3 | SEARCH: solved rank-2 heads "keep a moderate clock, 0.26-0.40". RANK: in solved rank-D heads the clock "is simply gone (lam <= 0.001)". | SEARCH's numbers are means over **both heads** of solved runs, and solved rank-2 runs have one clean head and one drifting head (per-head r2 s1: h0 lat-clock 2.10, h1 0.028; block-diagonal s6: h0 0.082, h1 3.50; `rank_clock_out.txt`). This matches "SOLVED iff a clean head" (39/40, close to circular). Wording fix: report the clean head and the other head separately. | resolved |
 | X4 | RECURRENCE calls the loop's 1D cancelling code "a third end state". RANK classes are CLOCK (A) and COLLAPSE (B), "points on one curve" (R2). | They are the same object: the 1D code is RANK's collapse corner with the common mode removed (hiding complete). One taxonomy for the paper: **map** (2D, clock-free), **collapsed** (clock-free, one map dimension lost), **clock** (drifting). RECURRENCE's "cancel" is not wrap-aware (its reader columns are), so use the reader-based classification. | resolved (naming) |
 | X5 | PAPER_LEVEL 3.1: LOOP_RANK shows "more search (depth) partly recovers rank 2, as a search account predicts". RECURRENCE: the gain is a wider **reader** on an unchanged code, not search (code quality L - A +0.027, p 0.28; L4 - A +0.031, p 0.27; 2D codes 1/16 vs rank 4 8/8). | Follow RECURRENCE, as CLAUDE.md already does ("NOT search at constant capacity"). The registered UNMEASURED verdict stands. The paper's sentence: "more computation reads a rank-2 code; it does not repair it" (analysis). | resolved |
@@ -295,15 +302,18 @@ parking (off-plane), hiding (rotate off the drift direction). Five minutes of re
 **9 Discussion and related work.**
 - Rewrite "What the two failure axes share" in route terms (one paragraph, from 1.1), with RECURRENCE 6.3's sentence.
 - Keep design guidance, and add: "measure the used-channel clock ratio, not the pooled growth exponent".
-- *What and where:* replace with the T = 1024 result once complete (CPU-1). Current partial numbers (analysis, from
-  `causal_whatwhere_T1024.json` at 2026-10-20 ~02:00; .txt pending):
-  - Signed rank-4 models keep 0.925-0.999 (mean 0.966) with object identity removed. That is above retrace (0.843) on
-    every seed, but the cost (mean 0.032, up to 0.064) is larger than at T = 128 (0.011-0.025).
-  - The shared position kernel times a content gain keeps 0.990-1.000 (cost <= 0.001).
-  - |.| models lose 0.02-0.61 (mean 0.28) with identity removed and score 0.48-0.90 under the gain-only score.
-  - Pos (softplus) has n = 5 so far; RoPE is pending.
-  - If it holds, the new reading is: in the long-walk regime the solving models separate where from what, and the
-    failing ones lean on content-position interactions.
+- *What and where:* the T = 1024 run (CPU-1) is complete (`docs/audits/2026-10-20/WHAT_WHERE_T1024.md`, `.json`, `.txt`;
+  analysis; all 8 seeds per arm):
+  - Signed rank-4 models keep 0.925-0.999 (mean 0.966) with token identity within type removed (8/8 lower, sign-flip
+    p 0.008, uncorrected; Holm over 24 contrasts 0.08). That is above retrace (0.843) on every seed, but the cost (mean
+    0.032, up to 0.064) is larger than at T = 128 (0.011-0.025).
+  - The shared position kernel times a per-pair content gain plus offset keeps 0.990-1.000 (cost <= 0.001).
+  - |.| models: intact 0.821, identity removed 0.544 (-0.277; 7/8 runs lose >= 0.15), gain 0.584 (-0.237).
+  - Softplus: intact 0.780, identity removed 0.476 (-0.305), gain 0.675 (-0.106). RoPE: intact 0.731, identity removed
+    0.479 (-0.252), gain 0.439 (-0.293).
+  - Reading: in the long-walk regime the solving models separate where from what, and the failing ones lean on
+    content-position interactions; separation tracks success within the non-negative arms (Spearman 0.84, p 5e-5,
+    analysis; `scripts/whatwhere/whatwhere_stats.py`).
 - *Integrator view* and *Text:* LANGUAGE 6.3. The pooled growth exponent is replaced by the used-channel ratio (C-2).
 - *EM contrast:* PAPER_LEVEL's two-sentence version with the 1800-epoch caveat (X11).
 - *Egocentric actions:* two sentences as a boundary only. Rotation actions break a cumsum phase and allocentric
@@ -384,7 +394,7 @@ Keep Secs. 1, 3, 5, 6, 7.1-7.3 and 8. Shrink Sec. 4 to Figure T1 plus 4.4, 4.6 a
 | C-1 | Sec. 7, App. B, App. J, abstract | Text-world floors given as 0.505 / 0.597 only; retrace scores 0.934 on that stream | Report retrace beside the others. Rest the map claim on the NEEDS-MAP revisits (path 0.961 fresh seeds 2-7, 0.920 all eight re-scored; RoPE 2L 0.138; best constant 0.112; analysis) and the registered mechanism. Note that DirOnly (0.970-0.974) is barely above retrace. Run CPU-2 first | LANGUAGE 2.6 |
 | C-2 | Sec. 8 "Text" | "the phase grows linearly with token index ... consistent with there being no map to build": text-world models with a perfect map show the same alpha (0.98-1.02) | Replace with LANGUAGE 6.3 "Text". Linear growth is not diagnostic; the used-channel ratio (0.06-0.23 vs 9.9-12.3) separates the two | LANGUAGE 3.4 |
 | C-3 | Sec. 3 "Protocol" | "Every verdict was pre-registered" sits beside the ring exchange rate (a declared secondary; CANCEL's registered primary landed in no branch) and beside analysis floors | "Every contrast in Tables 1-3 and Figs. 1, 3-5 was pre-registered with its decision rule; declared secondaries and analyses are marked". Check against App. A | PAPER_LEVEL 1 |
-| C-4 | Sec. 8 "What and where", App. K | The checks ran on T = 128 checkpoints, where retrace scores 0.934 and a map is not needed | Re-run at T = 1024 (running). Replace the paragraph with the T = 1024 numbers and keep T = 128 in App. K | PAPER_LEVEL 1, 3.1 |
+| C-4 | Sec. 8 "What and where", App. K | The checks ran on T = 128 checkpoints, where retrace scores 0.934 and a map is not needed | Re-run at T = 1024 (done 2026-10-20). Replace the paragraph with the T = 1024 numbers and keep T = 128 in App. K | PAPER_LEVEL 1, 3.1 |
 | C-5 | Sec. 7 clock seeds | "the model counts steps"; "solve as well"; "zeroing the non-direction words' steps costs it more" read as clock use | The clock counts **moves** (an aside adds <= 0.06 of a tick, a filler <= 0.007). It sits in channels retrieval does not use, at a cost <= 0.009 to remove on the 7 clock models at ceiling. Seed 0 (a clock seed, 0.881 eval mode) is below ceiling and still uses it, so drop "solve as well" for all four. The zeroing cost tracks the direction words' common component in the used channels (Spearman +0.905), not clock use. All analysis | LANGUAGE 2.2-2.3, 6.5 |
 | C-6 | Sec. 9 Limitations | "why the non-negative parameterisations stall from small starts is not identified" | Replace with the route account (theory-proved inventory; analysis end states). Keep "the per-channel |.| dynamics are underived" | SEARCH 5.1-5.2 |
 | C-7 | App. H4 / theory T1(ii) | "+1/+2 is harder for both; why is open" | "On +1/+2 the |.| step code is learned (relation in 8/8 runs in the used channels); the failures shared with signed lie outside the step code (analysis). There is no evidence of a sign cost without an inverse pair" | SEARCH 0.3, S4 |
@@ -435,7 +445,7 @@ Cheapest set that makes the theory registered: G-2 ring part (about 5 h) + G-6 (
 
 | id | check | why | cost |
 |---|---|---|---|
-| CPU-1 | Finish the what/where re-analysis at T = 1024 (running: Pos_r4 5/8 done, RoPE pending) and write its `.txt` | C-4; Discussion and App. K | running |
+| CPU-1 | Finish the what/where re-analysis at T = 1024 and write its `.txt` | C-4; Discussion and App. K | done (2026-10-20; all 32 runs, `.txt` written) |
 | CPU-2 | Retrace floor and NEEDS-MAP strata on the TW_NORMSTEP and TW_STATECHANGE batches (LANGUAGE E5) | C-1: no text-world number goes into the paper until done | about 1 h |
 | CPU-3 | Harmonise the clock metric: recompute RANK's off-plane share and readgain with SEARCH's per-inverse-pair clocks on the same checkpoints; report clean and drifting heads separately | X2, X3; Fig. 9 | about 1 h |
 | CPU-4 | Rank-3 heads: are the two pair clocks independent in the unsolved runs (S6(b): one parkable at r = 3)? | X14 | < 1 h |
@@ -508,7 +518,7 @@ Cheapest set that makes the theory registered: G-2 ring part (about 5 h) + G-6 (
 | 51 | Used-channel rho: torus 0.064-0.079, text world 0.06-0.23, code 4.5-6.6, TinyStories 9.9-12.3, recency 21.8-22.1 | A (code, TinyStories n = 3 pilots) | LANGUAGE 3.3 |
 | 52 | The pooled growth exponent does not separate map from clock data | A | LANGUAGE 3.4 |
 | 53 | "A token's offset depends on its role, not its identity" (leak, DirOnly and asides as instances) | C (light) + R (leak) + A | LANGUAGE 5 |
-| 54 | What/where at T = 1024: signed r4 keeps 0.925-0.999 with identity removed, 0.990-1.000 with a shared kernel x gain; |.| models depend on content-position interactions | A (partial; CPU-1) | `causal_whatwhere_T1024` |
+| 54 | What/where at T = 1024: signed r4 keeps 0.925-0.999 with token identity within type removed, 0.990-1.000 with a shared kernel x per-pair gain plus offset; |.| models lose 0.28 on average (7/8 runs >= 0.15); separation tracks success (Spearman 0.84, analysis) | A (complete; CPU-1) | `causal_whatwhere_T1024`, `scripts/whatwhere/whatwhere_stats.py` |
 | 55 | EM's recency deficit is a different kind of search failure (closed mostly by 4x budget) | R pieces + A contrast (not registered) | PAPER_LEVEL 3.2 |
 | 56 | The exact start-to-solution basin does not reach halfway along the straight |.| segment within 2000 step-map steps | A | SEARCH 3.4 |
 
@@ -520,6 +530,6 @@ Cheapest set that makes the theory registered: G-2 ring part (about 5 h) + G-6 (
   runs).
 - X2's definitional difference was checked against the docstrings of `sign/rank_clock.py` and `rank/rank_geom.py`. The
   0.004-vs-0.065 gap was not recomputed (CPU-3).
-- The what/where numbers were read from the JSON at about 02:00 on 2026-10-20 (Signed_r4 8/8, Abs_r4 8/8, Pos_r4 5/8,
-  RoPE 0/8). The `.txt` does not exist yet.
+- The what/where numbers were first read from the JSON at about 02:00 on 2026-10-20 (Signed_r4 8/8, Abs_r4 8/8, Pos_r4
+  5/8, RoPE 0/8); the run has since completed (32/32, `.txt` written) and Sec. 3, item "9 Discussion", above carries the final values.
 - Every other number in this plan is copied from the named report or results file. None was re-derived.

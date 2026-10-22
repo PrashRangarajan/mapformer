@@ -1,5 +1,7 @@
 # Why per-head rank decides whether the map is learned: hiding the clock, and parking it
 
+*CORRECTED 2026-10-21: the off-plane share holds only for the small residual of c = a + o, end states do not separate parking from removal, and the escape rank-sum p is post hoc (`docs/paper/review_draft5/ANALYSIS_SCRIPT_AUDIT.md` M-RK1-M-RK4 and rank MINORs; applied in `docs/paper/MAIN_APPENDIX2.md` G4-G6). The body below is unchanged.*
+
 Expansion note for `docs/paper/MAIN_DRAFT1.md` Sec. 6.1 (2026-10-20). Labels: **ESTABLISHED** (registered results, files
 named), **ANALYSIS** (computed here on stored checkpoints or CPU pilots, script named; post hoc unless said), **THEORY**
 (statement + assumptions + the check that could break it), **SPECULATION**. Scripts and outputs:

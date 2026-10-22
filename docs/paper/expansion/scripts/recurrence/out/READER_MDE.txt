@@ -1,0 +1,14 @@
+| stratum | contrast | difference | perm p | exact-t MDE | verdict |
+|---|---|---|---|---|---|
+| all | L - A | +0.027 | 0.2799 | 0.074 | UNMEASURED |
+| all | L4 - A | +0.031 | 0.2653 | 0.080 | UNMEASURED |
+| all | C - L | +0.107 | 0.0002 | 0.026 | detectable |
+| all | C - L4 | +0.103 | 0.0002 | 0.041 | detectable |
+| long | L - A | +0.050 | 0.5798 | 0.266 | UNMEASURED |
+| long | L4 - A | +0.095 | 0.3173 | 0.277 | UNMEASURED |
+| long | C - L | +0.392 | 0.0002 | 0.134 | detectable |
+| long | C - L4 | +0.347 | 0.0002 | 0.154 | detectable |
+| wrap | L - A | -0.042 | 0.7713 | 0.202 | UNMEASURED |
+| wrap | L4 - A | +0.005 | 0.9333 | 0.232 | UNMEASURED |
+| wrap | C - L | +0.591 | 0.0002 | 0.066 | detectable |
+| wrap | C - L4 | +0.544 | 0.0002 | 0.132 | detectable |

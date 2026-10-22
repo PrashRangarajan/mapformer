@@ -1,7 +1,10 @@
 """Tables from torus_depth.py's rows (POST HOC). Accuracy by stratum / retrace / runs spanned / gap, per arm (mean over
 the 4 seeds of per-seed accuracies, range), attention summaries per pass, and probe R^2.
   python3 summarize_torus.py   (reads $DEPTH_SCRATCH/torus_depth_*.npz and out/torus_depth_*.json)
-writes out/torus_depth_out.txt"""
+writes out/torus_depth_out.txt
+  python3 summarize_torus.py --segments   (reads $DEPTH_SCRATCH/torus_depth_*.npz only)
+writes out/torus_segments_out.txt: runs spanned at a fixed gap and the run counts of long-gap / wrap-only revisits
+(added 2026-10-21 for docs/paper/review_draft5/ANALYSIS_SCRIPT_AUDIT.md M-DP4; the default output is unchanged)"""
 import json
 import os
 import sys
@@ -83,5 +86,38 @@ def main():
     open(f"{OUTDIR}/torus_depth_out.txt", "w").write(txt + "\n")
 
 
+RUN_BINS = [(2, 3), (3, 5), (5, 9), (9, 17), (17, 10 ** 6)]
+
+
+def segments():
+    """Fixed-gap segment table (plain revisits, i.e. not wrap-only, retraces included) and runs spanned by long-gap and
+    wrap-only revisits. Accuracy both as the mean of per-seed accuracies and pooled over seeds."""
+    L = []
+    D = {a: dict(np.load(f"{S}/torus_depth_{a}.npz")) for a in ARMS if os.path.exists(f"{S}/torus_depth_{a}.npz")}
+    R0 = D[next(iter(D))]
+    for glo, ghi in [(32, 128), (8, 32)]:
+        L.append(f"== plain revisits at gaps {glo}-{ghi - 1} moves, by runs spanned: accuracy as mean of per-seed "
+                 f"accuracies [pooled over seeds]; n pooled over the 4 seeds; retrace share of the cell")
+        L.append("| runs | n | retrace share | " + " | ".join(D) + " |")
+        L.append("|---|---|---|" + "---|" * len(D))
+        for lo, hi in RUN_BINS:
+            lab = f"{lo}" if hi == lo + 1 else (f"{lo}+" if hi >= 10 ** 6 else f"{lo}-{hi - 1}")
+            sel0 = ~R0["wrap"] & (R0["lag"] >= glo) & (R0["lag"] < ghi) & (R0["nruns"] >= lo) & (R0["nruns"] < hi)
+            cells = []
+            for a, R in D.items():
+                sel = ~R["wrap"] & (R["lag"] >= glo) & (R["lag"] < ghi) & (R["nruns"] >= lo) & (R["nruns"] < hi)
+                accs = [R["c"][sel & (R["seed"] == s)].mean() for s in SEEDS if (sel & (R["seed"] == s)).any()]
+                cells.append(f"{np.mean(accs):.3f} [{R['c'][sel].mean():.3f}]" if accs else "--")
+            rs = f"{R0['retr'][sel0].mean():.3f}" if sel0.any() else "--"
+            L.append(f"| {lab} | {int(sel0.sum())} | {rs} | " + " | ".join(cells) + " |")
+    L.append("\n== runs spanned by revisits that retrace cannot reach (labels are arm-independent)")
+    for name, sel in (("long gap (plain, gap >= 128)", ~R0["wrap"] & (R0["lag"] >= 128)), ("wrap-only", R0["wrap"])):
+        nr = R0["nruns"][sel]
+        L.append(f"  {name}: n {int(sel.sum())}; share spanning 17+ runs {np.mean(nr >= 17):.4f}; median {np.median(nr):.0f}; "
+                 f"min {nr.min()}; max {nr.max()}")
+    txt = "\n".join(L); print(txt)
+    open(f"{OUTDIR}/torus_segments_out.txt", "w").write(txt + "\n")
+
+
 if __name__ == "__main__":
-    main()
+    segments() if "--segments" in sys.argv else main()

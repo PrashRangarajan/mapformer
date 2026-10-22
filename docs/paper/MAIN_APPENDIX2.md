@@ -132,7 +132,7 @@ computed after the batches.
 | torus T = 1024 (analysis) | same | 0.508 / 0.578 / 0.843; wrap-only 0.081 | GENERALITY, seeds 700-707 | `generality_floors_out.txt` (same directory) |
 | torus T = 1024, 2 layers d 256 (analysis) | same | 0.509 / 0.578 / 0.844; every run of both arms above retrace (lowest \|.\| 0.910) | ROBUST, seeds 1400-1407 | `robust_floors_out.txt` |
 | torus T = 1024 (analysis) | blank / retrace | 0.509 / 0.844 | FACTORIAL, seeds 500-503 | `docs/paper/figs/fig_factorial_strata_out.txt` |
-| ring p_plus 0.5 / 0.75 / 0.9 (analysis) | retrace | 0.860 / 0.758 / 0.612 (blank 0.497-0.499) | 2000 walks per bias | `docs/audits/2026-10-16/ring_floors_out.txt` |
+| ring p_plus 0.5 / 0.75 / 0.9 (analysis) | retrace | 0.860 / 0.758 / 0.612 (blank 0.497-0.499; 0.864 at p_plus 0.5 on the registered eval stream) | 2000 walks per bias, another stream of the same task | `docs/audits/2026-10-16/ring_floors_out.txt` |
 | ring p_plus 0.5 / 0.75 / 0.9 / 1.0 | better of best constant and n-gram (orders 1-5) | 0.554 / 0.544 / 0.520 / 0.498 | 1000 held-out walks | `CANCEL_PREREG.md`, `CANCEL_RESULTS.md` |
 | line (256 cells) | blank | 0.503 | ACCOUNTS T4 | `ACCOUNTS_RESULTS.md` |
 | ring, moves +1/+2 | blank (retrace reduces to it) | ~0.50 | GAUGE | `GAUGE_RESULTS.md` |
@@ -157,7 +157,8 @@ stream: 0.508 / 0.515 / 0.517, retrace 0.912. Ring (`ring_strata_floors_out.txt`
 | torus T = 128 | retrace | 0.938 | DELTA_FREE, seeds 1600-1607 | `DELTA_FREE_RESULTS.md`; `docs/audits/2026-10-20/delta_free_floors_out.txt` |
 | torus in words | always-'nothing' / one-step reversal-copy / retrace | 0.5054 / 0.5965 / 0.9337 | TEXTWORLD registered eval stream | `docs/paper/expansion/scripts/language/tw_retrace_floor_out.txt` |
 | torus in words | same | 0.5120 / 0.6024 / 0.9365 | TW_NORMSTEP eval stream | same |
-| torus in words, revisits retrace gets wrong | best constant | 0.112 ('cat'; 179 of 3,055 revisits, 5.9%) | first 100 walks of the TEXTWORLD stream | same |
+| torus in words, revisits retrace cannot reach | best constant | 0.506 ('nothing'; 856 of 6,381 revisits, 13.4%) | all 200 walks of the TEXTWORLD stream | `docs/paper/expansion/scripts/language/tw_strata_200walks_out.txt` |
+| torus in words, ... whose cell holds an object (the revisits retrace gets wrong) | best constant ('nothing' excluded by construction) | 0.088 ('cat'; 423 of 6,381, 6.6%) | same | same |
 | ring, moves +1/-1, observation-step-free | n-gram / retrace | 0.554 / 0.860 | SIGNROUTE reference | `SIGNROUTE_RESULTS.md` |
 
 ---
@@ -611,19 +612,28 @@ rule) and the one-lap clock (when the walk never reverses, the cell N moves back
 direction runs is a function of those k runs; selecting its offset needs a summary of k runs, and stacking layers extends
 the reach. The reach is measured (App. F), not derived.
 
-### E7. Clock, map, the failure signature and the tick rule (proved)
+### E7. Clock, map, the position-factor bound and the tick rule (proved)
 
 **E7.0 (phase decomposition).** Over an interval with n_x moves x and n_y moves y, displacement d = n_y - n_x, the phase
 of channel c is a_c(y) n_y + a_c(x) n_x = m_c d + k_c n_x, exactly.
 
-**E7.1 (Proposition 2(a), signature).** Let a revisit at displacement 0 have n backward moves; its phase in channel c is
-k_c n. For usage weights q_c (sum 1), the same-cell position factor F(n) = sum_c q_c cos(k_c n) equals 1 at n = 0; if a
-usage share s of the channels has kappa <= |k_c| <= K (unwrapped), then F(n) <= 1 - s (1 - cos(kappa n)) for n <= pi / K.
+**E7.1 (Proposition 2(a), a bound on the position factor).** Let a revisit at displacement 0 have n backward moves; its
+phase in channel c is k_c n. For usage weights q_c (sum 1), the same-cell position factor F(n) = sum_c q_c cos(k_c n)
+equals 1 at n = 0; if a usage share s of the channels has kappa <= |k_c| <= K (unwrapped), then F(n) <= 1 - s (1 -
+cos(kappa n)) for n <= pi / K.
 
 *Proof.* phi = m d + k n with d = 0. For n <= pi / K, kappa n <= |k_c| n <= pi, and cos is decreasing on [0, pi], so
-cos(k_c n) <= cos(kappa n) on the share s and <= 1 elsewhere. [] Index RoPE is the extreme case: every token, observations
-included, advances every channel, so the whole code is clock. Wrap-only revisits also need the lattice condition
-N m_c = 0 mod 2 pi, which a code with a large clock cannot use either, since its long-gap revisits are already lost.
+cos(k_c n) <= cos(kappa n) on the share s and <= 1 elsewhere. [] The bound covers n <= pi / K only. It says how fast a
+clock erodes the position factor of a revisit; it is not a theorem that a clocked code loses long-gap revisits, and near
+|k_c| n = pi it says nothing: two signed torus models started past pi solve with 0.43 and 0.99 of their usage on
+channels whose per-pair clock is near pi (App. H7). Index RoPE is the extreme case: every token, observations included,
+advances every channel, so the whole code is clock. Wrap-only revisits also need the lattice condition N m_c = 0 mod 2 pi.
+
+**E7.1' (the measured clock / map ratio).** Every clock / map number in the paper (Table 4, G3, H7) is
+rho_cm = sqrt( sum_{pairs} sum_c q_c wrap(k_c)^2 / sum_{pairs} sum_c q_c (wrap(a_c(x))^2 + wrap(a_c(y))^2) / 2 ), with the
+usage q normalised over the channels of both heads (one value per run), or over one head's channels (per head). The
+symmetric denominator makes it invariant to which move of a pair is called y (rule 8); for unwrapped |.| channels
+|k_c| >= |m_c| (E8.1), so rho_cm >= 1 there by construction. Generator: `scripts/sign/clock_table.py`.
 
 **E7.2 (Proposition 2(b), tick rule).** Split each move's contribution in channel c into the map part and a tick tau_c, the
 phase every move adds whatever its direction. If the target at t is the key at the last visit to the same cell, matched
@@ -821,7 +831,7 @@ problem.
 | E5 | CARoPE: every channel a clock or blind | proved | `p6_carope.py` |
 | E6.1 | prefix sum in the phase; one layer at any gap | proved | same-cell attention (App. F2) |
 | E6.2 | two-layer global count (normaliser, precision, width) | cited (Liu et al. Lemma 6; Yao et al.) | probes (App. F3) |
-| E7 | phase decomposition; signature; tick rule | proved | strata; text-world drift (App. J) |
+| E7 | phase decomposition; position-factor bound; tick rule | proved | bound consistent with the strata, not a test of them; text-world drift (App. J) |
 | E8.1-E8.4 | |.| clock floor; signed collective route; no |.| collective route; same-direction moves | proved (E8.2(c), E8.4 for the quadratic surrogate) | `prop_checks.py`, `sign_clock.py` |
 | E8.5 | rank D: no clock-free full-map channel; rank > D: parking | proved | end states (App. G) |
 | E8.6 | route inventory | proved (inventory) | Table 4; SIGNROUTE |
@@ -878,7 +888,7 @@ integration with one layer is at 1.000 in every stratum. Four index layers or a 
 (0.46-0.51).*
 
 
-### F1. Which revisits depth buys on the torus (analysis; `scripts/depth/torus_depth.py`, `summarize_torus.py` -> `out/torus_depth_out.txt`)
+### F1. Which revisits depth buys on the torus (analysis; `scripts/depth/torus_depth.py`, `summarize_torus.py` -> `out/torus_depth_out.txt`, `summarize_torus.py --segments` -> `out/torus_segments_out.txt`)
 
 The FACTORIAL evaluation stream was regenerated (env seed 10000, np seed 1234 + s, 100 walks); overall accuracy per run
 equals the stored strata files' "all" to 4 decimals for all 16 runs, and the re-implemented forward equals the model's
@@ -899,7 +909,8 @@ range in brackets).
 
 Gap in moves (plain revisits): index 4L / loop 1.000 / 1.000 at 2-7, 0.978 / 0.986 at 8-31, 0.614 / 0.551 at 32-127,
 0.458 / 0.506 at 128-511; one layer 0.935 at 2-7, 0.681 at 8-31, floor beyond. Runs at a fixed gap of 32-127 moves (plain
-revisits, pooled over seeds):
+revisits, retraces included; mean of per-seed accuracies, n pooled over the 4 seeds; the 2-run cells are all retraces of
+merged runs; pooled over seeds instead, the small cells read 4L 0.896 at 2 runs and 0.785 at 3-4):
 
 | runs spanned | n | index 1L | index 4L | loop x4 |
 |---|---|---|---|---|
@@ -912,8 +923,9 @@ revisits, pooled over seeds):
 At gaps of 8-31 moves: 4L 0.993 / 0.940 / 0.818, loop 1.000 / 0.987 / 0.768 at 2 / 3-4 / 5-8 runs. Long-gap revisits
 span 17 or more runs in 98.5% of cases (median 37, minimum 11), wrap-only revisits in 99% (median 65). The deep models
 score below the constant floor there with high loss (2.1-4.8 nats): they predict a specific wrong object rather than
-abstaining to blank. *Accounting:* the short-gap retrace floor is (0.680 x 1 + 0.148 x ~0.5) / 0.828 = 0.911 (measured
-0.912); four index layers give (0.680 x 0.996 + 0.148 x 0.699) / 0.828 = 0.943 (measured 0.943).
+abstaining to blank. *Decomposition* (an identity, since short = retrace + not retrace): the short-gap retrace floor is
+(0.680 x 1 + 0.148 x ~0.5) / 0.828 = 0.911 (measured 0.912); four index layers give (0.680 x 0.996 + 0.148 x 0.699) /
+0.828 = 0.943. The class contrasts at n = 4 (e.g. 4L against the loop at 3-4 runs; 4L range 0.74-0.99) carry no test.
 
 ### F2. Where index attention looks (analysis; same script)
 
@@ -935,7 +947,7 @@ the mirror point, not the cell.
 Ridge probes from the residual stream at move tokens (train walks 0-29, test 30-39, t >= 16; out-of-sample R^2, mean of 4
 seeds, x and y averaged; best pass):
 
-| target | index 1L | index 4L | loop x4 | ring index 3L, p_plus 0.5 |
+| target | index 1L | index 4L | loop x4 | ring index 3L, p_plus 0.5 (t >= 8; see F5) |
 |---|---|---|---|---|
 | unwrapped displacement P_t | -0.06 | 0.10 | -0.01 | 0.60 |
 | normalised count P_t / (t+1) | -0.03 | 0.21 | 0.06 | 0.69 |
@@ -946,8 +958,9 @@ seeds, x and y averaged; best pass):
 | ... last 256 | -0.01 | 0.37 | 0.14 | -- |
 
 The deep torus models know elapsed time (1/t) but carry no normalised count; they carry a recent-displacement code whose
-error grows with the window (0.5 cells at 4 moves, 1.8 at 16, 7.1 at 64, 25 at 256 for 4L). Linear probes bound only what
-is linearly readable; the attention readout of F2 does not rely on them.
+error grows with the window (0.5 cells at 4 moves, 1.8 at 16, 7.1 at 64, 25 at 256 for 4L; the d_w targets at t < w are
+the displacement since the start, so the rmse at w = 256 is approximate). Linear probes bound only what is linearly
+readable; the attention readout of F2 does not rely on them. The ring column's count-like R^2 is a window code (F5).
 
 ### F4. Run length moved at evaluation (analysis, distribution-shifted; `scripts/depth/torus_runlen.py`)
 
@@ -967,17 +980,28 @@ CANCEL evaluation stream (overall accuracy equals each run's stored value for al
 |---|---|---|---|---|---|
 | retrace | 0.716 | 0.797 | 0.987 | 1.000 | 1.000 |
 | lap, not retrace | 0.035 | 0.497 | 0.977 | 1.000 | 1.000 |
-| neither, 3-4 runs | 0.127 | 0.487 | 0.891 (0.72-0.94) | 0.997 | 1.000 |
+| neither, 3-4 runs (wrap-only included) | 0.127 | 0.487 | 0.891 (0.72-0.94) | 0.997 | 1.000 |
 | neither, 5-8 | 0.097 | 0.489 | 0.802 (0.55-0.87) | 0.993 | 1.000 |
 | neither, 9-16 | 0.025 | 0.485 | 0.678 (0.48-0.75) | 0.972 | 1.000 |
 | wrap-only | 0.118 | 0.503 | 0.819 | 0.989 | 1.000 |
 
-p_plus 0.75 / 0.9 (index 1L): retrace 0.692 / 0.677, lap 0.987 / 0.994, neither 0.487 / 0.592. At p_plus 1.0 every
-revisit is a lap revisit, 1.000 at every depth. Three layers' residual stream at layer 2 carries a global count (P_t R^2
-0.60, P_t / t 0.69, 1/t 0.89; one layer 0.09 / 0.18 / 0.14; two 0.40 / 0.60 / 0.67), and its last-layer attention reaches
-the cell on wrap-only revisits (same-cell mass 0.36 / 0.38). *Descriptive decomposition of the one-layer accuracy across
-p_plus:* share x accuracy summed over the three classes gives 0.709 (observed 0.710) at 0.5, 0.678 (0.677) at 0.75 and
-0.823 (0.824) at 0.9; the dip at 0.75 is retrace's share falling (0.72 -> 0.49) before the lap share is large.
+The "neither" rows include wrap-only revisits (29% / 47% / 56% of the three bins); on plain revisits only, 2L scores
+0.910 / 0.828 / 0.742 and 3L 0.999 / 0.996 / 0.988 (`ring_plain_bins.py`; the conclusions, 2L decays and 3L is flat, are
+the same). p_plus 0.75 / 0.9 (index 1L): retrace 0.692 / 0.677, lap 0.987 / 0.994, neither 0.487 / 0.592, against
+best-constant floors of 0.493 / 0.491 / 0.502 for the "neither" class at p_plus 0.5 / 0.75 / 0.9
+(`ring_class_floors.py`): at 0.9 one layer sits an unexplained +0.09 above it. At p_plus 1.0 every revisit is a lap
+revisit, 1.000 at every depth. *No global count on the ring either* (`ring_probe_window.py` ->
+`out/ring_probe_window_out.txt`). Probes read at t >= 8 on 128-move walks (P_t R^2 0.60, P_t / t 0.69, 1/t 0.89 for
+three layers; one layer 0.09 / 0.18 / 0.14; two 0.40 / 0.60 / 0.67) cannot separate a prefix count from a recent-window
+code, since half of P_t / t's variance sits at t <= 32 and for t < 64 the 64-move window equals P_t. Read late, three
+layers give P_t R^2 0.59 at t >= 64 (two layers 0.32), and at t >= 96 the displacement before the last 64 moves has R^2
+0.01 (before the last 32: 0.31), while the windows are well coded (last 64 moves 0.72); the true 64-move displacement
+alone predicts P_t there with R^2 0.51, against the model's 0.53. Three ring layers carry a displacement code reaching
+32-64 moves back, which on 128-move walks covers most revisits; their last-layer attention reaches the cell on wrap-only
+revisits (same-cell mass 0.36 / 0.38). *One-layer accuracy across p_plus (descriptive):* a p-invariant mixture does not
+reproduce it: per-class accuracies pooled over p predict 0.678 / 0.683 / 0.749 against the observed 0.710 / 0.677 /
+0.824 at p_plus 0.5 / 0.75 / 0.9, because the class accuracies themselves move with p (retrace 0.797 -> 0.692 from 0.5
+to 0.75, as large as the net dip of 0.033). No mechanism is claimed for the dip at 0.75.
 
 ### F6. Dyck-2: blocks to skip (analysis; `scripts/depth/dyck_distance.py`, `dyck_crosstab.py`)
 
@@ -1056,60 +1080,92 @@ Torus at T = 1024, 900 epochs, 32 angles per head in every arm; rank-2 arms on s
 Primary: 3/12 vs 3/12 (Fisher p 1.00); the rank-2 deficit replicates on these fresh seeds under both scores (8/8 vs 3/12,
 p 0.0014 each). The stratum readouts are secondaries (short gaps +0.115, p 0.036; gap >= 128 +0.043; wrap-only -0.015).
 
-### G3. The clock at the end of training, per head (analysis; `scripts/sign/rank_clock.py` -> `rank_clock_out.txt`)
+### G3. The clock at the end of training, per head (analysis; `scripts/sign/clock_table.py` -> `clock_table_out.txt`; latent column `scripts/sign/rank_clock.py` -> `rank_clock_out.txt`)
 
-Usage-weighted rms clock over rms map of the channels each head reads ("read clock"), per inverse pair, and the latent
-clock (|z_x + z_y| over the map frame); full models (observations step). Means over heads:
+Clock / map ratio of Sec. 4 (E7.1') per run (usage pooled over both heads) and per head (usage normalised within the
+head); full models (observations step). The latent clock (|z_x + z_y| over the map frame, raw latent coordinates, mean
+over unsolved runs' heads) is a different quantity and not invariant to the GL(r) gauge of the latent (in the W_out image
+the unsolved values become 1.4-2.6).
 
-| arm | SOLVED | read clock, solved runs' heads | read clock, unsolved runs' heads | latent clock, unsolved |
+| arm | SOLVED | solved runs: run mean (heads median, range) | unsolved runs: run mean, median (heads median, range) | latent clock, unsolved |
 |---|---|---|---|---|
-| shared r2 | 0/8 | -- | 0.625 | 1.72 |
-| per-head r2 | 2/8 | 0.264 | 1.910 | 3.19 |
-| block-diagonal r4 (rank 2 per head) | 2/8 | 0.402 | 0.509 | 1.63 |
-| per-head r3 | 6/8 | 0.043 | 1.575 | 3.68 |
-| shared r4 | 8/8 | 0.049 | -- | -- |
-| per-head r4 | 8/8 | 0.051 | -- | -- |
+| shared r2 | 0/8 | -- | 0.595, 0.579 (0.619, 0.07-1.26) | 1.72 |
+| per-head r2 | 2/8 | 0.236 (0.045, 0.03-0.54) | 0.694, 0.792 (0.756, 0.02-1.98) | 3.19 |
+| block-diagonal r4 (rank 2 per head) | 2/8 | 0.335 (0.067, 0.04-0.68) | 0.541, 0.575 (0.084, 0.01-1.41) | 1.63 |
+| per-head r3 | 6/8 | 0.043 (0.038, 0.02-0.08) | 0.936 (0.678, 0.12-1.25) | 3.68 |
+| shared r4 | 8/8 | 0.049 (0.036, 0.01-0.10) | -- | -- |
+| per-head r4 | 8/8 | 0.051 (0.030, 0.02-0.14) | -- | -- |
 
-The solved rank-2 means hide a split: in each of the four solved rank-2 runs at least one head is clean (per-head r2 s1 h1
-0.029, s2 0.045 / 0.046; block-diagonal s2 0.041 / 0.063, s6 h0 0.072), and two runs keep a drifting second head
-(per-head s1 h0 0.936, block-diagonal s6 h1 1.431). The observation clock (mean observation step over the map) is
-0.015-0.018 in solved rank-3/4 heads and 0.18-0.52 in unsolved heads.
+The solved rank-2 run means hide a split: in each of the four solved rank-2 runs at least one head is clean (per-head r2
+s1 h1 0.03, s2 0.05 / 0.05; block-diagonal s2 0.04 / 0.06, s6 h0 0.07), and two runs keep a drifting second head
+(per-head s1 h0 0.54, block-diagonal s6 h1 0.68). Not every failure is clock-coupled: 5 of the 20 unsolved rank-2 runs
+have both heads below 0.15 (shared s1; per-head s5, s6; block-diagonal s1, s7), and 4 of them (all but shared s1) are in
+the collapsed class of `rank/sweep_final_out.txt`: visible drift <= 0.01 per move with the two map axes near-collinear
+(frame conditioning 0.00-0.03), a map that has lost a dimension; shared s1 ends just above the SOLVED threshold (final
+loss 0.051). Heads below 0.15 among unsolved runs: shared 4/16, per-head 4/12, block-diagonal 7/12. The rank-3 unsolved
+runs are clock-coupled. The observation clock (mean observation step over the map; `rank_clock.py`) is 0.015-0.018 in
+solved rank-3/4 heads and 0.18-0.52 in unsolved heads. At r = 2 = D, rank_clock's "in-span" share of the clock is 1 by
+construction before wrapping, so it is not reported as a measurement.
 
-### G4. Parking and hiding (analysis; `scripts/rank/`; RANK's own clock definition)
+### G4. The leftover latent clock and hiding (analysis; `scripts/rank/`; a latent quantity, not the ratio of G3)
 
-Here the clock is c, the latent step common to every move plus the mean observation step, measured in the native latent
-against the map frame U (lam = |c| / |U|); "off-plane share" = |c_perp| / |c|; "readgain" = how strongly the readout sees
-the leftover clock relative to the map (1 = read like the map, 0 = invisible). This metric and G3's per-pair clock agree
-that what is still read in solved heads is small; they are not numerically comparable.
+Here the clock is c = a + o, the mean move latent a plus the mean observation latent o (the drift a walk accumulates per
+move and observation), measured in the native latent of each head's read subspace against the map frame U (lam = |c| /
+|U|); "off-plane share" = |c_perp| / |c|; "readgain" = how strongly the readout sees the leftover clock relative to the map
+(1 = read like the map, 0 = invisible). This latent metric and G3's channel ratio agree that what is still read in solved
+heads is small; they are not numerically comparable. The native latent metric is not invariant to the GL(r) gauge of the
+latent; the independent audit found the balanced gauge gives the same picture (solved-set medians 0.94-1.00).
 
-*Solved heads of rank above D park the leftover clock* (`sweep_final.py`, `summarise_final.py`):
+*What the leftover clock is made of* (`clock_decomp.py` -> `clock_decomp_out.txt`; medians over solved heads): a and o are
+each 0.017-0.037 of a map step and anti-parallel (cosine -0.79 to -0.999), so they cancel; at T = 1024 they lie mostly in
+the map plane (off-plane share 0.05-0.35 for a, 0.02-0.08 for o). Only their small residual c is off-plane. SEARCH's
+per-pair clocks z(-e_j) + z(+e_j), which leave the observation step out, are 0.034-0.057 of a map step and in-plane
+(off-plane 0.14-0.21 on the 2D sets, below the random-direction median); with the two observation steps of one
+out-and-back added, 0.73-0.99 off-plane. The per-pair clock therefore overstates the drift a walk accumulates; the two
+definitions agree on what is read.
 
-| set (solved heads) | r - D | lam | off-plane share (random direction) | readgain |
+| set (solved heads) | \|a\| / \|U\| | \|o\| / \|U\| | cos(a, o) | off-plane share of a / o / c |
 |---|---|---|---|---|
-| torus G64 per-head r3 | 1 | 0.004 | 0.978 (0.58) | 0.15 |
+| torus G64 per-head r3 | 0.021 | 0.020 | -0.988 | 0.15 / 0.07 / 0.98 |
+| torus G64 shared r4 (RANK_MI) | 0.017 | 0.017 | -0.980 | 0.19 / 0.08 / 1.00 |
+| 3D G18 r4 | 0.021 | 0.022 | -0.999 | 0.05 / 0.06 / 0.81 |
+| torus T = 128 r4 | 0.034 | 0.029 | -0.897 | 0.48 / 0.40 / 0.99 |
+| ring rank 2 | 0.037 | 0.032 | -0.793 | 0.47 / 0.17 / 0.99 |
+
+*Where the residual lies in solved heads of rank above D* (`sweep_final.py`, `summarise_final.py`; consistent with
+parking, but removal through the latent, which takes the read components first, leaves the same end state, so this does
+not discriminate the two):
+
+| set (solved heads) | r - D | lam | off-plane share (random direction, median) | readgain |
+|---|---|---|---|---|
+| torus G64 per-head r3 | 1 | 0.004 | 0.978 (0.50) | 0.15 |
 | torus G64 shared r4 (RANK_MI) | 2 | 0.004 | 0.996 (0.71) | 0.11 |
 | torus G64 per-head r4 | 2 | 0.003 | 0.988 (0.71) | 0.16 |
 | torus G64 shared r4 (SCORE_RANK) | 2 | 0.003 | 0.998 (0.71) | 0.09 |
-| 2D G32 r3 | 1 | 0.003 | 0.987 (0.58) | 0.09 |
-| 3D G10 r4 | 1 | 0.008 | 0.964 (0.50) | 0.23 |
-| 3D G18 r4 | 1 | 0.001 | 0.810 (0.50) | 0.57 |
+| 2D G32 r3 | 1 | 0.003 | 0.987 (0.50) | 0.09 |
+| 3D G10 r4 | 1 | 0.008 | 0.964 (0.40) | 0.23 |
+| 3D G18 r4 | 1 | 0.001 | 0.810 (0.40) | 0.57 |
 | ring rank 2 (1D), 300 epochs | 1 | 0.025 | 0.989 (0.71) | 0.21 |
 | torus T = 128 r4, 300 epochs | 2 | 0.021 | 0.988 (0.71) | 0.27 |
 | escape, fresh r4 step map, 600 epochs | 2 | 0.003-0.004 | 0.98 (0.71) | 0.18 |
 
-In solved rank-D heads (ring rank 1, torus rank 2) the clock is removed instead (lam 0.000-0.001), since it cannot be
-parked. The parked remainder is about 6x larger after 300 epochs than after 600-900, of the size decoupled weight decay
-alone gives an unread direction over a cosine schedule (consistent, not a test). Unsolved heads of rank above D read their
-clock in all three sets and hold it in the map plane in two (torus per-head r3: off-plane 0.27 against 0.58 random,
-readgain 0.61; escape lifted runs: 0.08 against 0.71, readgain 0.76; 3D G10 r4: off-plane 0.53 against 0.50, readgain
-0.78).
+In the clean head of solved rank-D runs (ring rank 1, torus rank 2) the clock is removed (lam <= 0.0005 on the T = 1024
+2D sets, <= 0.0013 on the ring), since it cannot lie off the plane; the other head of such runs often drifts (lam
+0.15-1.75). The leftover is about 6x larger after 300 epochs than after 600-900, of the size decoupled weight decay
+alone gives an unread direction over a cosine schedule (consistent, not a test). The escape arms (below) show the latent
+clock shrinking, not held: in the fresh rank-4 step maps its absolute size falls 14-85x (relative to the map step
+270-1300x), the off-plane part 15-72x in 7/8 runs (1.6x in s1, which started at 0.005), and in the three solved lifted
+runs 23-490x (`clock_decomp_out.txt`). Unsolved heads of rank above D read their clock in all three sets and hold it in
+the map plane in two (torus per-head r3: off-plane 0.27 against a random-direction median of 0.50, readgain 0.61; escape
+lifted runs: 0.08 against 0.71, readgain 0.76; 3D G10 r4: off-plane 0.53 against 0.40, readgain 0.78).
 
-*Drifting rank-D heads drift along their least-resolved axis* (`c1_runlevel.py`): over 116 drifting heads in nine sets the
-median r_beta (resolution along the drift direction relative to the head's mean) is 0.087, and 85% are below 0.5 against
-29% for a random direction given each head's own frame; at the run level 57 of 62 runs against 28.7 expected
-(P < 5e-5, 20,000 simulations). Clean heads of rank above D sit at r_beta 0.93-1.05 (medians). This geometry is what E9
-leads to and also what pruning of a visible drift after any collapse would leave; it fixes the geometry, not the order of
-events.
+*Drifting rank-D heads drift along their least-resolved axis* (`c1_runlevel.py`): over 116 drifting heads in nine sets
+the median r_beta (resolution along the drift direction relative to the head's mean) is 0.087, and 85% are below 0.5
+against 29% for a random direction given each head's own frame; at the run level 57 of 62 runs against 28.7 expected (P
+< 5e-5, 20,000 simulations); escape C continues rank_mi's own networks, so counting each network once gives 50 of 55
+against 25.1 (`c1_runlevel_once.py`). Clean heads of rank above D sit at r_beta 0.79-1.10 (medians). This geometry is
+what E9 leads to and also what pruning of a visible drift after any collapse would leave; it fixes the geometry, not the
+order of events.
 
 *The escape test, re-read* (`escape_start.py`; RANK_TESTS escape arms, 600 epochs on the same eight trained networks):
 
@@ -1121,16 +1177,22 @@ events.
 
 Within the lifted arm the clock's off-plane share at the start (the lift adds two latent rows at default scale beside
 large trained rows) is 0.09 / 0.14 / 0.11 in the three runs that solve and 0.01-0.06 in the five that do not (exact
-one-sided rank-sum p 0.018). The fresh step maps remove the drift everywhere; learning the rest of the map within 600
-epochs (2/8 SOLVED) is a separate matter.
+one-sided rank-sum p 0.018; post hoc). Two caveats make this suggestive only. The statistic was chosen after the fact:
+with the off-plane clock relative to the map step instead (|c_perp| / |U|), the solved runs rank 1st, 2nd and 8th (p
+0.29). And s1's source also solves under plain continuation (arm C s1 SOLVED) and starts nearly clock-free (|c| / |U|
+0.05), so its large share is that of a near-zero clock; without s1, p 0.048 (`escape_start_out.txt`). A seeded escape
+test (RANK_THEORY's G2) would test it. The fresh step maps remove the drift everywhere, and the residual geometry does
+not track SOLVED within that arm (the 12 unsolved heads show the same off-plane share, 0.985, and readgain, 0.19, as the
+4 solved ones; audit); learning the rest of the map within 600 epochs (2/8 SOLVED) is a separate matter.
 
 ### G5. The 1D exemption (registered + analysis)
 
 On the ring (`RANK_TESTS_RESULTS.md`), rank 1 solves 7/8 (0.993) and rank 2 8/8 (1.000); with the drift forbidden by
 construction (opposite move latents tied, observation steps zero) rank 1 solves 8/8 in a median of 24 epochs (58 without).
-Every channel of a rank-1 head sees the same phantom drift in cells (E8.5(d)); the 14 clean rank-1 heads end at lam
-<= 0.001 (removed, not parked), and the 3 drifting heads have the largest map steps, the only other global way to shrink
-the drift in cells.
+Every channel of a rank-1 head sees the same phantom drift in cells (E8.5(d)); over the 8 rank-1 runs the 11 clean
+heads (visible drift <= 0.01 per move) end at lam <= 0.0013, and the 5 drifting heads (visible drift 0.04-0.50 per move;
+two of them in the unsolved run s22) have the largest map steps (|U| 2.8-5.0 against 1.6-2.6), the only other global way
+to shrink the drift in cells.
 
 ### G6. Dynamics (analysis, CPU pilot; `scripts/rank/train_snap.py`, `analyze_snap.py`, `pilot_t128/`)
 
@@ -1143,19 +1205,22 @@ each channel a learned clock rate; identical to r2 at initialisation). Snapshots
 | r2 | 3000 | 0.005 | 1.000 / 0.937 | removed in lockstep with the visible drift (lam 0.63 -> 0.004) |
 | r2 | 3001 | 0.230 | 0.922 / 0.836 | kept, on the unresolved axis (r_beta 0.00); frame near-collinear from step 0 |
 | r2 | 3002 | 0.003 | 1.000 / 0.981 | removed in lockstep |
-| r4 | 3000 | 0.005 | 1.000 / 0.954 | parked: off-plane 0.62 -> 0.96 |
-| r4 | 3001 | 0.028 | 0.990 / 0.959 | parked: 0.55 -> 0.98 |
-| r4 | 3002 | 0.005 | 1.000 / 0.946 | parked: 0.81 -> 1.00 |
-| R2Clock | 3000-3002 | 0.003-0.006 | 1.000 / 0.941-0.959 | in the slot (off-plane 1.00) |
+| r4 | 3000 | 0.005 | 1.000 / 0.954 | off-plane 0.62 -> 0.96, then removed (lam falls 66x) |
+| r4 | 3001 | 0.028 | 0.990 / 0.959 | off-plane 0.55 -> 0.98, then removed (180x) |
+| r4 | 3002 | 0.005 | 1.000 / 0.946 | off-plane 0.81 -> 1.00, then removed (5.5x) |
+| R2Clock | 3000-3002 | 0.003-0.006 | 1.000 / 0.941-0.959 | the slot holds a fixed unit clock by construction (off-plane ~1 from step 0) |
 
-At rank 4 the visible drift fell tenfold before the latent clock did in 4/6 heads (parking first); at rank 2 the two fall
-together. At the same initial weights as the failing rank-2 seed 3001, R2Clock solved (loss 0.006 against 0.230) and
-repaired its frame (one matched pair). The failing seed's weak axis was present at initialisation; the readout gradient
-at initialisation on the real T = 1024 task gives no consistent hiding direction (drift 0.4-2.7 cells per move, outside
-assumption A1; `grad_hiding.py`). Initial frame conditioning does not separate solved from unsolved rank-D runs at T =
-1024 (one-sided p 0.19; `init_frame.py`); initial drift is lower in the runs that solve (pooled p 0.012, seeds shared across
-sets; independent SCORE_RANK seeds p 0.073). MapFormer's 5D setting (T = 16, grid 5) solved at every rank under our recipe
-(rank 5, 6 and 5 + clock slot 3/3 each; index RoPE stalled), so it does not test rank here (`pilot_5d/`).
+At rank 4 the visible drift fell tenfold one or two snapshots before the latent clock did in 4/6 heads, and the latent
+clock was then removed too (5-180x within 40 epochs); in the rank-2 control the same order appears in 2/6 heads (n = 3).
+R2Clock is not counted: its slot clock cannot shrink tenfold by construction. At the same initial weights as the failing
+rank-2 seed 3001, R2Clock solved (loss 0.006 against 0.230) and repaired its frame (one matched pair). The failing
+seed's weak axis was present at initialisation; the readout gradient at initialisation on the real T = 1024 task gives
+no consistent hiding direction (drift 0.4-2.7 cells per move, outside assumption A1; one stochastic sample of two
+batches, dropout on; `grad_hiding.py`). Initial frame conditioning does not separate solved from unsolved rank-D runs at
+T = 1024 (one-sided p 0.19; `init_frame.py`); initial drift is lower in the runs that solve (as a test only the
+independent SCORE_RANK seeds count: one-sided p 0.073; pooled over sets whose seeds share a base, 0.012, descriptive).
+MapFormer's 5D setting (T = 16, grid 5) solved at every rank under our recipe (rank 5, 6 and 5 + clock slot 3/3 each;
+index RoPE stalled), so it does not test rank here (`pilot_5d/`).
 
 ---
 
@@ -1225,16 +1290,17 @@ is a ring result.
 ### H4. Moves +1/-1 vs +1/+2 (`GAUGE_RESULTS.md`, ring, seeds 1300-1307)
 
 By Lemma 1 (ii) a |.| step represents, without wrapping or crossing zero, a map whose two moves step the same way. With
-moves +1/-1 (an inverse pair) the cost replicates: |.| 0.931, 1/8 vs signed 1.000, 8/8 (-0.069 [-0.095, -0.045], Fisher p
-0.0014). Moves +1/+2 need integration (index RoPE 0.649, 0/8) and every revisit is a lap of at least 16 moves; there |.|
-scores 0.883, 2/8 against signed 0.947, 5/8 (-0.064 [-0.200, +0.075], Fisher p 0.31), a registered comparison that is not
-resolved because the task is harder for both arms. The step code is learned in both classes (analysis;
+moves +1/-1 (an inverse pair) the cost replicates: |.| 0.931, 1/8 vs signed 1.000, 8/8 (-0.069 [-0.095, -0.045], Fisher
+p 0.0014). Moves +1/+2 need integration (index RoPE 0.649, 0/8) and every revisit is a lap of at least 16 moves; there
+|.| scores 0.883, 2/8 against signed 0.947, 5/8 (-0.064 [-0.200, +0.075], Fisher p 0.31), a registered comparison that
+is not resolved because the task is harder for both arms. The step code is learned in both classes (analysis;
 `scripts/sign/latent_geometry.py`, `lattice_p.py`): in the channels attention uses the relation a(+2) = 2 a(+1) holds on
-0.98-1.00 of usage in 8/8 |.| runs (signed 0.99-1.00 in 7/8), and the latent relation in 5/8 |.| runs, one of them through
-the mirror copy z_2 = -2 z_1 of E8.4 (cosine -0.98), against 7/8 signed. The unsolved runs of both classes have the relation
-in place; what they miss lies outside the step code. There is no evidence of a sign cost without an inverse pair. Signed
-models on +1/+2 end with 0.92 of channels having both move angles of one sign (0.01 on +1/-1), the sign-coherent code
-Lemma 1 allows.
+0.98-1.00 of usage in 8/8 |.| runs (signed 0.99-1.00 in 7/8; angle tolerance 0.05 rad, a post hoc choice: at 0.3 rad the
+lattice shares change a lot), and the latent relation in 5/8 |.| runs, one of them through the mirror copy z_2 = -2 z_1
+of E8.4 (cosine -0.98), against 7/8 signed. The unsolved |.| runs and 2 of the 3 unsolved signed runs have the relation
+in place (signed s1300: 0.68); what they miss lies outside the step code. There is no evidence of a sign cost without an
+inverse pair. Signed models on +1/+2 end with 0.92 of channels having both move angles of one sign (0.01 on +1/-1), the
+sign-coherent code Lemma 1 allows.
 
 ### H5. Three times the ring budget (`RING_BUDGET_RESULTS.md`, seeds 40-47)
 
@@ -1276,33 +1342,47 @@ axis); constant floor 0.50.*
 
 ### H7. Routes, measured (analysis; `docs/paper/expansion/scripts/sign/`)
 
-*End-state clocks* (`sign_clock.py`; usage-weighted rms clock / rms map per inverse pair; per-run values in
-`sign_clock_out.txt`):
+*End-state clocks* (`clock_table.py` -> `clock_table_out.txt`: the clock / map ratio of E7.1', one value per run; the
+usage share on cancelling channels from `sign_clock.py`; `sign_clock.py`'s one-sided map wrap(a_y), the old column, gave
+1.683 / 1.632 / 1.549 / 1.394 / 1.520 / 1.219 for the |.| and frozen rows, and is reproduced by `clock_table.py` as a
+check):
 
 | batch, arm | SOLVED | clock / map, arm mean | usage on cancelling channels |
 |---|---|---|---|
 | ring MECHANISM, signed (default start) | 8/8 | 0.018 | 0.96 |
 | ring MECHANISM, signed from the \|.\| start | 7/8 | 0.015 | 0.96 |
 | ring GAUGE, signed (+1/-1) | 8/8 | 0.016 | 0.95 |
-| ring MECHANISM, \|.\| (default start) | 0/8 | 1.683 | 0.08 |
-| ring MECHANISM, \|.\| (\|.\| start) | 0/8 | 1.632 | 0.02 |
-| ring GAUGE, \|.\| (+1/-1) | 1/8 | 1.549 | 0.06 |
-| ring ACCOUNTS T2, signed, move latents frozen, \|.\| start | 1/8 | 1.394 (the solved run 0.058) | 0.15 |
-| ring ACCOUNTS T2, signed, move latents frozen, default start | 7/8 | 0.176 | 0.87 |
-| ring MECHANISM, \|.\| from a large sub-pi start | 2/8 | 1.520 | 0.20 |
-| ring MECHANISM, \|.\| from a start past pi | 8/8 | 0.312 (wrapped) | 0.82 |
+| ring MECHANISM, \|.\| (default start) | 0/8 | 1.471 | 0.08 |
+| ring MECHANISM, \|.\| (\|.\| start) | 0/8 | 1.571 | 0.02 |
+| ring GAUGE, \|.\| (+1/-1) | 1/8 | 1.559 | 0.06 |
+| ring ACCOUNTS T2, signed, move latents frozen, \|.\| start | 1/8 | 1.181 (the solved run 0.058) | 0.15 |
+| ring ACCOUNTS T2, signed, move latents frozen, default start | 7/8 | 0.167 | 0.87 |
+| ring MECHANISM, \|.\| from a large sub-pi start | 2/8 | 1.423 (solved runs 0.10, 0.59) | 0.20 |
+| ring MECHANISM, \|.\| from a start past pi | 8/8 | 0.317 (wrapped; runs 0.11-0.76) | 0.82 |
+| ring MECHANISM, signed from a start past pi | 8/8 | 0.166 (runs 0.004-0.48) | -- |
 | torus TORUS_START, signed | 8/8 | 0.001 | 0.77 |
-| torus TORUS_START, \|.\| | 1/8 | 1.219 (the solved run 0.024) | 0.16 |
+| torus TORUS_START, \|.\| | 1/8 | 1.248 (the solved run 0.024) | 0.16 |
+| torus TORUS_START, signed from a start past pi | 2/8 | 0.737 (solved runs 1.39, 1.78) | -- |
 
-The |.| cone inequality |k| >= |m| holds with zero violations on every sub-pi channel. Trained signed ring models end on the
-collective zero set: |z_x + z_y| / (|z_x| + |z_y|) 0.044-0.053, cosine -0.994 to -0.995 (`latent_geometry.py`), MapFormer's
-antipodal end state (their Figs. 3d and 9b).
+"Clock-free at the end" holds for runs that succeed from a small start (arm means 0.001-0.018 here, 0.043-0.051 for the
+rank arms of G3); runs that succeed from a large start can end with a large ratio. In the two solved signed torus runs
+from a start past pi, 0.43 and 0.99 of the usage sits on channels whose per-pair clock is near pi (|wrap(k)| > 2.6 rad;
+`clock_table_out.txt`), where E7.1's bound says nothing; the independent audit found the second of them (s1206) at
+revisit accuracy 1.000 in all four parity strata of (n_-x, n_-y) on 16 fresh walks although the correct key's score flips
+sign with the parity (mechanism not identified). For unwrapped |.| channels the ratio is at least 1 by construction (E8.1).
 
-*The cone boundary.* Sub-pi |.| ring channels within 10% of the cone boundary (|delta| >= 0.9 |k| / 2, one move's step near
-zero): 0.30 (MECHANISM default start), 0.36 (|.| start), 0.25 (GAUGE), against 0.056 at initialisation and 0.00-0.02 for the
-large starts. |.| models end with 19-22 one-sided and 13-16 blind channels of 64 (signed 2-4 and 8-9; initialisation 15.6 and
-5.0). At fixed clock the largest map a |.| channel can carry sits on that boundary, so collapse onto the wall is the boundary
-optimum of a clock-map trade-off as well as the sticky kink of E4.2.
+The |.| cone inequality |k| >= |m| holds with zero violations on every sub-pi channel (an identity for |.|, listed as a
+check of the code). Trained signed ring models end on the collective zero set: |z_x + z_y| / (|z_x| + |z_y|)
+0.044-0.053, cosine -0.994 to -0.995 (`latent_geometry.py`), MapFormer's antipodal end state (their Figs. 3d and 9b).
+
+*The cone boundary.* Sub-pi |.| ring channels within 10% of the cone boundary (|delta| >= 0.9 |k| / 2, one move's step
+near zero): 0.30 (MECHANISM default start), 0.36 (|.| start), 0.25 (GAUGE), against 0.056 at initialisation and
+0.00-0.02 for the large starts. |.| models end with 18.8-22.2 one-sided and 13.2-16.0 blind channels of 64 (signed
+2.1-4.1 and 8.1-8.9; initialisation 15.6 and 5.0); these counts are unweighted over all 64 channels, unused ones
+included. The MECHANISM initialisation values (0.056; 15.6 / 5.0) were recomputed with the script's functions by the
+independent audit; the script itself prints GAUGE's (0.078; 19.8 / 3.1). At fixed clock the largest map a |.| channel
+can carry sits on that boundary, so collapse onto the wall is the boundary optimum of a clock-map trade-off as well as
+the sticky kink of E4.2.
 
 *Latent-reachable share at initialisation* (`latent_reach.py`, MECHANISM seeds 800-807). Share of the needed change of the
 angle sums that a latent move can produce: signed (to zero) 1.000 on every seed (E8.2(a)); |.| (to the nearest wrap)
@@ -1323,9 +1403,12 @@ balanced gauge, so a straight line in W_out is a straight line in angle space; 6
 
 Every |.| seed's largest rise exceeds every signed seed's (complete separation, exact two-sided permutation p 1.6e-4).
 
-*The step map's basin with the content frozen* (`step_basin.py`, `basin_summary.py`; ring, seeds 800-807; content of the
-solved signed model frozen, only W_in, W_out and omega trained for 2000 steps of batch 32, about 2% of a full run;
-fresh-stream accuracy):
+*The step map's basin with the content frozen* (exploratory; `step_basin.py`, `basin_summary.py`; ring, seeds 800-807;
+content of the solved signed model frozen, only W_in, W_out and omega trained for 2000 steps of batch 32, about 2% of a
+full run; fresh-stream accuracy). These CPU runs are not deterministic and the step-map search is bistable: re-runs of
+single cells in the independent audit gave S_abs s801 0.944 -> 0.509 and 0.939, A_abs s803 0.548 -> 0.450 and A_high
+s804 0.921 -> 0.839, so the per-seed values and the "runs >= 0.9" column do not reproduce; only contrasts much larger
+than these swings are read:
 
 | start | class | accuracy start -> end (mean) | runs >= 0.9 |
 |---|---|---|---|
@@ -1336,11 +1419,12 @@ fresh-stream accuracy):
 | past pi, U(1.7, 4.5) | \|.\| | 0.36 -> 0.64 | 1/8 |
 | halfway along the straight segment to the wrapped solution | \|.\| | 0.32 -> 0.61 | 0/8 |
 
-With the content fixed the start decides the step map's search (default vs |.| start, signed: +0.365, p 0.005; past pi vs
-small start, |.|: +0.280, p 0.0007). The signed escape from the same-direction start that full training shows (7/8) is
-not reproduced by the step map alone (signed vs |.| from that start +0.104, p 0.32): in full training the content
-co-adapts. The wrapped solution's basin, for the step map with this content and budget, does not reach halfway along the
-straight segment from the |.| start.
+With the content fixed the start decides the step map's search (default vs |.| start, signed: +0.365, p 0.005; past pi
+vs small start, |.|: +0.280, p 0.0007; both survive Holm over the eight exploratory tests, two others at p 0.012-0.013
+do not). The signed escape from the same-direction start that full training shows (7/8) is not reproduced by the step
+map alone (signed vs |.| from that start +0.104, p 0.32): in full training the content co-adapts. No run from halfway
+along the straight segment to the wrapped solution reached 0.9 (end accuracies 0.42-0.82), so within this budget the
+wrapped solution's basin did not extend that far; a re-run could change single runs.
 
 ### H8. The sign route (`SIGNROUTE_RESULTS.md`, registered SUPPORTED; per seed in C10)
 
@@ -1472,7 +1556,7 @@ Steps omega-scaled, relative to the clause-level direction differential (one mov
 | `and` / `a` / `she` (shared by fillers, seeing phrases, asides) | 0.02-0.07 | 0.02-0.08 |
 | verbs, seeing words, object words, `.` (once per move) | 0.02-0.14 | 0.24-1.49 |
 | aside-only words (`thought`, `about`, `remembered`, `story`) | 0.07-0.16 per word | 0.41-1.33 per word |
-| aside sentence, net (usage-weighted) | 0.05-0.12 of a move | 0.04-0.16 of a move |
+| aside sentence, net (usage-weighted; equal by construction to the aside noun's offset from its place) | 0.05-0.12 of a move | 0.04-0.16 of a move |
 | DirOnly oracle: every non-direction word | 0 by construction | -- |
 
 The clause tick (what every move adds whatever its direction) is 0.03-0.23 of a move on map-type models and 3.3-6.8 moves
@@ -1481,18 +1565,22 @@ The clause tick (what every move adds whatever its direction) is 0.03-0.23 of a 
 ### J2. The tick predicts the drift; the clock counts moves (analysis; `tw_step_account.py`, `tw_clock_unit.py`)
 
 Predicted drift per channel = mean |wrap(lag x tau_c)| over consecutive-visit pairs (median lag 8 moves, 1,221 pairs);
-observed = mean |wrap(dtheta_c)| at those pairs. Classified at 1 rad they agree on 0.98-1.00 of channels on each of the 32
-models. Clock models drift in 26-38 channels between consecutive visits (registered text world s0 / s2 / s3 / s4: 26 / 29 /
-35 / 36; MapWM s11 / s13 / s14 / s15: 38 / 27 / 28 / 30; NormStep s11 / s16: 27 / 28); map models in 0-3. (The registered
-31-38 of the CORRECTED block in `TEXTWORLD_RESULTS.md` counts drift from the first visit.) Regressing each move's net phase
-in the drifting channels on direction, aside present, filler count and adverb present: an aside sentence adds 0.009-0.062
-of a tick, a filler word 0.001-0.007, an adverb word 0.001-0.007 (10 clock models). A word counter would give fillers about
-1/8 of a tick each and a sentence counter would give asides about one tick: the clock counts moves. On all 10 clock models
-2-6 channels tick by exactly pi per move (e.g. -3.141, -3.140 rad); on the even 64-torus a pi tick encodes the parity of
-the cell and is invisible to revisits (E7.2), and these channels carry up to 0.24 of retrieval usage. The registered
-finding that zeroing every non-direction step costs the clock seeds 0.33-0.69 and the map seeds 0.05-0.30 tracks the
-direction words' common component in the used channels (0.06-0.34 of a move on clock seeds, 0.01-0.03 on map seeds),
-which the other words cancel within the move (Spearman +0.905 across the 8 registered seeds; `tw_common_used.py`).
+observed = mean |wrap(dtheta_c)| at those pairs. Classified at 1 rad they agree on 0.98-1.00 of channels on each of the
+32 models. On the 22 map and DirOnly models both are near zero, so the agreement there is close to an identity; the
+informative evidence is the 10 clock models, where the predicted and observed drifting-channel counts match exactly.
+Clock models drift in 26-38 channels between consecutive visits (registered text world s0 / s2 / s3 / s4: 26 / 29 / 35 /
+36; MapWM s11 / s13 / s14 / s15: 38 / 27 / 28 / 30; NormStep s11 / s16: 27 / 28); map models in 0-3. (The registered
+31-38 of the CORRECTED block in `TEXTWORLD_RESULTS.md` counts drift from the first visit.) Regressing each move's net
+phase in the drifting channels on direction, aside present, filler count and adverb present: an aside sentence adds
+0.009-0.062 of a tick, a filler word 0.001-0.007, an adverb word 0.001-0.007 (10 clock models). A word counter would
+give fillers about 1/8 of a tick each and a sentence counter would give asides about one tick: the clock counts moves.
+On all 10 clock models 2-6 channels tick by exactly pi per move (e.g. -3.141, -3.140 rad); on the even 64-torus a pi
+tick encodes the parity of the cell and is invisible to revisits (E7.2), and these channels carry up to 0.24 of
+retrieval usage. The registered finding that zeroing every non-direction step costs the clock seeds 0.33-0.69 and the
+map seeds 0.05-0.30 tracks the direction words' common component in the used channels (0.06-0.34 of a move on clock
+seeds, 0.01-0.03 on map seeds), which the other words cancel within the move (Spearman +0.905 across the 8 registered
+seeds, exact permutation p 0.0046; `tw_common_used.py`, p from `scripts/whatwhere/whatwhere_stats.py`; the used channels
+are those whose tick is 0 mod pi, a post hoc rule).
 
 ### J3. The clock is idle (analysis; `usage_tick.py`, `tw_attention_asides.py`)
 
@@ -1522,7 +1610,7 @@ Usage-weighted median of rho_c (E13) at the training length, all MapWM with a si
 | data | used-channel rho | usage in clock-dominated channels | seeds |
 |---|---|---|---|
 | 2D torus, 1 layer, matched length (SIGN_MATCHED signed) | 0.064-0.079 | 0.000 | 8 |
-| text world, 1 layer (24 learned-step models; s0 below ceiling 2.5) | 0.06-0.23 | 0.01-0.30 | 24 |
+| text world, 1 layer (23 of 24 learned-step models; the unconverged tw s0: 2.5) | 0.06-0.23 | 0.01-0.30 | 24 |
 | code, bytes, 9 layers (trained at 2048) | 4.5-6.6 | 0.50-0.55 | 3 |
 | TinyStories, words, 6 layers (trained at 512) | 9.9-12.3 | 0.42-0.43 | 3 |
 | k-back recency with fillers, 1 layer (signed rank 4) | 21.8-22.1 | 0.93-1.00 | 8 |
@@ -1541,28 +1629,38 @@ keeping the phase after the aside unchanged:
 
 - *Collapse* (learned models): every aside word is put at its clause's object-slot phase. The 19 learned-step models at
   ceiling in eval mode fall from 0.989-1.000 to 0.952-0.975, and 71-100% of their errors then name an object told in an
-  aside at that cell (before: 0-13 errors, none of that kind). The 5 models below ceiling respond partly (0.966-0.994).
+  aside at that cell (before: 0-13 errors, one of that kind, in MapWM s13). The 5 models below ceiling respond partly
+  (0.966-0.994). The 19 / 5 split at eval-mode accuracy 0.98 is a post hoc cut (it falls in a gap, 0.960 against 0.989).
 - *Lift* (DirOnly): intact, DirOnly scores 0.962-0.981 on this stream and 100% of its errors are aside errors on 8/8 seeds.
   Offsetting its aside words by half a move in-plane gives 0.999-1.000 on 8/8; by one move off the map plane 1.000 on 7/8
-  (one seed 0.972); by a quarter move off-plane 0.963-0.996.
+  (one seed 0.972); by a quarter move off-plane 0.963-0.996 (a variant added after the main run). The lift sizes are free
+  choices, not fitted.
 
 At each revisit query the 19 learned-step models at ceiling put 0.55-0.76 of their attention on the object slot of the most
 recent visit to the cell and 0.004-0.035 on aside nouns told there; DirOnly puts 0.041-0.077 on those aside nouns.
 
-### J6. Retrace on the text world (analysis; `tw_retrace_floor.py`, `tw_strata.py`)
+### J6. Retrace on the text world (analysis; `tw_retrace_floor.py`, `tw_strata_200.py` -> `tw_strata_200walks_out.txt`)
 
 The retrace rule of B, ported to the text world, scores 0.9337 on the registered evaluation stream (0.9365 on
-TW_NORMSTEP's), where the constant and reversal-copy rules reproduce the registered 0.5054 / 0.5965. On the first 100 walks
-(3,055 revisits; retrace correct on 0.9414):
+TW_NORMSTEP's), where the constant and reversal-copy rules reproduce the registered 0.5054 / 0.5965. On all 200 walks of
+that stream (6,381 revisits) the rule applies to 5,525 (86.6%) and is never wrong when it applies; on the other 856
+(13.4%), places reached by another route than undoing the last run, it predicts 'nothing', which is right on the 50.6% of
+them whose cell is blank. Accuracy by stratum (mean over 8 seeds; fresh seeds 2-7 in brackets):
 
-| model (registered batch, n = 8) | all | retrace correct (2,876) | retrace wrong (179) |
-|---|---|---|---|
-| path, 1 layer, re-scored | 0.9936 | 0.9981 | 0.9204 (min 0.603 at s0, max 1.000; seeds 2-7: 0.9609) |
-| path, 1 layer, eval mode | 0.9698 | 0.9751 | 0.8848 (seeds 2-7: 0.9302) |
-| index RoPE, 2 layers | 0.7787 | 0.8186 | 0.1376 (0.10-0.17) |
-| index RoPE, 1 layer | 0.5065 | 0.5379 | 0.0021 |
+| model (registered batch, n = 8) | all | retrace applies (5,525) | retrace cannot reach (856) | ... cell holds an object (423) | ... blank cell (433) |
+|---|---|---|---|---|---|
+| path, 1 layer, re-scored | 0.993 | 0.999 | 0.956 (0.978; min 0.786 at s0) | 0.925 (0.967; s0 0.617, s7 0.872) | 0.985 |
+| path, 1 layer, eval mode | 0.969 | 0.975 | 0.934 (0.958) | 0.884 (0.927) | 0.984 |
+| index RoPE, 2 layers | 0.772 | 0.828 | 0.411 (0.34-0.55) | 0.129 (0.09-0.15) | 0.687 |
+| index RoPE, 1 layer | 0.505 | 0.513 | 0.454 | 0.004 | 0.894 |
+| best constant | 0.505 ('nothing') | -- | 0.506 ('nothing') | 0.088 ('cat') | 1.000 ('nothing') |
 
-Two-layer index RoPE learns part of retrace (two seeds reach 0.93) and stays near the constant where a map is needed.
+The object-cell column is the stratum "retrace wrong" of the first version of this analysis (`tw_strata.py`, first 100
+walks: 5.9% of 3,055 revisits, path 0.920 / 0.961 fresh, RoPE 2L 0.138, constant 0.112). Its best constant excludes
+'nothing' by construction, and one index layer scores near zero there because it predicts 'nothing'. On the whole
+non-retrace stratum, which needs no outcome-defined split, two index layers score below the constant. Two-layer index RoPE
+learns part of retrace (its best seeds reach 0.927 and 0.926 overall, against retrace's 0.934) and nothing that needs the
+map. Seeds at ceiling score 0.936-1.000 on the object-cell stratum.
 
 ---
 
@@ -1578,20 +1676,26 @@ to <= 0.0007. Held-out accuracy when the score is rebuilt:
 | condition | signed (learns the map) | \|.\| | softplus | index RoPE |
 |---|---|---|---|---|
 | intact | 0.998 | 0.821 | 0.780 | 0.731 |
-| object identity removed from the score (token type kept) | 0.966 (-0.032, p 0.012) | 0.544 (-0.277) | 0.476 (-0.305) | 0.479 (-0.252) |
-| one shared position kernel x content gain | 0.998 (-0.000) | 0.584 (-0.237) | 0.675 (-0.106) | 0.439 (-0.293) |
+| token identity within type removed from the score (token type kept) | 0.966 (-0.032; 8/8 lower, sign-flip p 0.008, uncorrected) | 0.544 (-0.277) | 0.476 (-0.305) | 0.479 (-0.252) |
+| one shared position kernel x per-pair content gain plus offset | 0.998 (-0.000) | 0.584 (-0.237) | 0.675 (-0.106) | 0.439 (-0.293) |
 | additive position + content | 0.895 (-0.104) | 0.350 | 0.512 | 0.492 |
 | token type removed too (one global mean) | 0.113 | 0.295 | 0.302 | 0.399 |
 | content only (no rotation) | 0.505 | 0.399 | 0.385 | 0.490 |
-| share of score variance explained by position alone | 0.925 | 0.644 | 0.577 | 0.618 |
+| SS(P) / SS(S): within-row score sum of squares carried by the content-averaged score | 0.925 | 0.644 | 0.577 | 0.618 |
 | content x position interaction share | 0.061 | 0.187 | 0.174 | 0.353 |
 
-The model that learns the map factorises what and where: one position kernel per head, scaled by a content gain,
-reproduces it exactly; removing object identity costs 0.032 (8/8 seeds lower); token type is essential. The failing
-models do not factorise: removing identity costs 0.25-0.31, and a shared kernel times a gain does not restore them. Within
-the non-negative arms, across 16 runs, accuracy correlates with the share of it that survives removing object identity
-(Spearman 0.84, p 5e-5); the two non-negative runs that reach > 0.95 keep 0.97 and 0.99 of their accuracy, the failing ones
-0.03-0.07. (Intact softplus reads 0.780 on this rebuilt forward against the registered 0.781.)
+The model that learns the map factorises what and where: one position kernel per head, scaled by a per-pair content gain
+plus offset (2 x 441 parameters per head, fitted on the calibration walks, so this condition nests the additive one),
+reproduces it exactly; removing token identity within type (which also removes action identity within the action class
+and blank against object within the observation class) costs 0.032 (8/8 seeds lower; sign-flip p 0.008, the design's
+minimum; paired t p 0.012; Holm over the 24 contrasts 0.08; the effect sits at the MDE of 0.031); token type is
+essential. The failing models do not factorise: removing identity costs 0.25-0.31 on average (|.|: 7 of 8 runs lose at
+least 0.15; Abs_r4 s0 loses 0.020), and a shared kernel times a gain does not restore them. Within the non-negative
+arms, across 16 runs, accuracy correlates with the share of it that survives removing token identity (Spearman 0.84, p
+5e-5; a post hoc statistic, `scripts/whatwhere/whatwhere_stats.py`); the two non-negative runs that reach > 0.95 keep
+0.97 and 0.99 of their accuracy, the four lowest softplus runs fall to 0.03-0.07 (5-12% of their accuracy), and the |.|
+runs keep 0.22-0.77 of theirs except Abs_r4 s0 (0.98 of 0.931). (Intact softplus reads 0.780 on this rebuilt forward
+against the registered 0.781. The `.txt` of the source was written by `--report` after the run; the JSON is the run's.)
 
 ### K2. What and where at T = 128 (analysis; `docs/WHAT_WHERE_CHECKS.md`; the 48 PAPER2X2 checkpoints)
 
@@ -1649,31 +1753,40 @@ evaluation. T = 128, PAPER2X2 checkpoints, 100 walks per seed:
 |---|---|---|---|---|
 | target coherence C (path arms) | -- | -- | 0.703 | 0.995 (p 0.0002, 8/8) |
 | code term C0 (path arms) | -- | -- | 0.905 | 0.996 (p 0.0002) |
-| same-cell attention mass (path arms) | -- | -- | 0.747 | 0.925 (p 0.0008) |
-| attention on action keys (path arms) | -- | -- | 0.179 | 0.041 (p 0.0002) |
+| same-cell attention mass (path arms; retrieval head) | -- | -- | 0.747 | 0.925 (p 0.0008) |
+| attention on action keys (path arms; retrieval head; over both heads 0.223 vs 0.147, p 0.15) | -- | -- | 0.179 | 0.041 (p 0.0002) |
 | content pairs with K(3) > K(1) (index arms) | 53-100% per seed | 0% on every seed | -- | -- |
-| attention on the newest observation (index arms) | 0.002 | 0.307 (p 0.0002) | -- | -- |
+| attention on the newest observation (index arms; the more recency-weighted head) | 0.002 | 0.307 (p 0.0002) | -- | -- |
 | R3+ accuracy (index arms) | 0.779 | 0.566 (p 0.0002) | -- | -- |
 
-The argmax over offsets 1-16 of the content-pair kernel is at offset 1 for 1068/1088 PoPE pairs; for RoPE it is at offsets
-3 (414), 7 (277), 10-11 (147) and 2 (168), a comb over the retrace offsets 4j - 1. The PoPE - RoPE accuracy gap decomposes
+The argmax of the content-pair kernel over the odd offsets 1-15, where an observation key can sit, is at offset 1 for
+1068/1088 PoPE pairs; for RoPE it is at offsets 3 (569), 7 (342), 11 (156) and 15 (21): every RoPE pair peaks on a
+retrace offset 4j - 1, a comb (`kernel_argmax_odd.py`; the argmax over all offsets 1-16 also lands on even offsets, where
+no observation key sits). The PoPE - RoPE accuracy gap decomposes
 over retrace strata as R1 -0.006, R2 -0.005, R3+ -0.110 and non-retrace -0.004. MapWM's content phase costs C0 - C = +0.20
-(7/8 seeds). About 80% of the +0.154 interaction is the index side, (MapPoPE - MapWM) - (PoPE - RoPE) = (+0.028) -
+(7/8 seeds; a statement about target coherence on the retrieval head, not an accuracy prediction). About 80% of the
++0.154 interaction is the index side, (MapPoPE - MapWM) - (PoPE - RoPE) = (+0.028) -
 (-0.126).
 
-T = 1024, SCORE_RANK checkpoints (r2 n = 12, r4 n = 8; 40 of the 100 registered walks per seed):
+T = 1024, SCORE_RANK checkpoints (r2 n = 12, r4 n = 8; 40 of the 100 registered walks per seed; each stratum read on the
+head with the most same-cell attention in that stratum, `HEAD_RULE=stratum` -> `kernel_probe_score_rank_hstratum_out.txt`,
+`probe_stats_hstratum_out.txt`; the first version read every stratum on the head chosen over all revisits):
 
 | stratum | MapWM r2: C / C0 | PoPE score r2: C / C0 | MapWM r4: C / C0 | PoPE score r4: C / C0 |
 |---|---|---|---|---|
 | plain gap < 128 | 0.617 / 0.900 | 0.960 / 0.960 | 0.926 / 1.000 | 0.997 / 1.000 |
-| plain gap >= 128 | 0.524 / 0.814 | 0.840 / 0.837 | 0.923 / 0.993 | 0.991 / 0.993 |
-| wrap-only | 0.184 / 0.457 | 0.414 / 0.411 | 0.789 / 0.840 | 0.554 / 0.554 |
+| plain gap >= 128 | 0.538 / 0.795 | 0.908 / 0.905 | 0.923 / 0.993 | 0.991 / 0.993 |
+| wrap-only | 0.144 / 0.399 | 0.485 / 0.482 | 0.904 / 0.967 | 0.969 / 0.970 |
 
-On short gaps the score raises C (p 0.0002) and leaves C0 (0.900 vs 0.960, p 0.16): the repair is in the readout term. On
-gap >= 128 and wrap-only revisits C0 stays at 0.81-0.84 and 0.41-0.46 under both scores; rank 4 raises MapWM's to 0.99 and
-0.84. In MapPoPE r4 wrap-only C0 is 0.55 while accuracy is 0.995, so another head or the feed-forward block carries those
-revisits there: C0 measured on one head is not a sufficient statistic for success. At T = 128 MapPoPE's C0 is also higher
-than MapWM's (0.996 vs 0.905), so on short walks a better readout and a better code co-occur.
+On short gaps the score raises C by +0.34 (p 0.0002) and C0 by +0.06 (0.900 vs 0.960, p 0.16): the repair is mostly in the
+readout term. On gap >= 128 revisits the score raises C (0.538 to 0.908, p 0.005) and leaves C0 low (0.80 / 0.91, p 0.32,
+against 0.99 at rank 4); on wrap-only revisits C0 is 0.40 / 0.48 under the two scores (p 0.64), and rank 4 raises it to
+0.97 under either (MapWM +0.568, p 0.0009; PoPE score +0.488, p 0.012). In both rank-4 models the wrap-only revisits are
+carried by the head that is not the short-gap head (C0 0.97 there). At T = 128 MapPoPE's C0 is also higher than MapWM's
+(0.996 vs 0.905), so on short walks a better readout and a better code co-occur. About 60 contrasts are computed in this
+appendix without a multiplicity correction; the p 0.0002 contrasts survive Holm over the family, those at p 0.03-0.04
+(e.g. MapPoPE - MapWM short-gap accuracy +0.114, p 0.036, consistent with the registered +0.115 on the same checkpoints)
+do not.
 
 ---
 
@@ -1707,10 +1820,15 @@ The re-implemented forward matches each model's own forward and its stored evalu
 | L4 | all | 0.507 | 0.575 | 0.935 | 0.990 | | | |
 | L4 | wrap-only | 0.504 | 0.507 | 0.601 | 0.887 | | | |
 
-One pass of L's trained weights scores below the always-blank floor (0.381 vs 0.51); the loop is a fixed-depth
-computation, and past four passes accuracy falls. Same-cell attention mass (head 0) rises over L's passes 0.03 -> 0.36 ->
-0.46 -> 0.52 while attention entropy falls 6.1 -> 2.4 nats; on wrap-only revisits L4's last layer finds the right cell 64%
-of the time from a code whose own one-pass reader finds it 12% of the time. With an index code every pass works on short
+One pass of L's trained weights scores below the always-blank floor (0.381 vs 0.51; mean, per seed 0.09-0.67, 7 of 8
+below); the loop is a fixed-depth computation, and past four passes accuracy falls. Same-cell attention mass (best head
+per seed, `pass_strata_besthead.py` -> `out/PASS_STRATA_BESTHEAD.txt`; head labels are a symmetry, and at pass 2 the
+retrieval head is head 1 on three seeds) rises over L's passes 0.03 -> 0.50 -> 0.64 -> 0.63, and the share of queries
+whose top-attended key is a same-cell observation 0.35 -> 0.86 -> 0.88 -> 0.92: retrieval forms at passes 2-3 and pass 4
+sharpens it. Attention entropy falls 6.1 -> 2.4 nats (head mean, 10 walks per seed; `attn_offsets.py`). On wrap-only
+revisits L4's last layer puts its top attention on a same-cell observation 81% of the time (best head), from a code whose
+own one-pass reader finds the cell 12% of the time (the reader's top-1 cell, a different quantity). Mass on same-cell
+action tokens stays at 0.01-0.15 (best-head means over passes 1-4). With an index code every pass works on short
 gaps only: the index loop's long-gap and wrap-only accuracy sits at 0.50-0.52 after every pass while short gaps climb
 0.41 -> 0.94 (`index_loop_passes.py`, FACTORIAL checkpoints).
 
@@ -1726,15 +1844,20 @@ fitted to each model's own theta on 24 separate walks and scored on the 50 evalu
 | L4 | 0.990 / 1.000 / 0.990 / 0.887 | 0.897 / 0.967 / 0.653 / 0.453 | +0.094 / +0.033 / +0.337 / +0.435 |
 | C | 0.998 / 1.000 / 0.995 / 0.977 | 1.000 / 1.000 / 1.000 / 0.997 | -0.002 / 0.000 / -0.005 / -0.020 |
 
-Code quality L - A +0.027 (permutation p 0.28), L4 - A +0.031 (p 0.27); C - L +0.107, C - L4 +0.103 (p 0.0002 each).
+Code quality L - A +0.027 (permutation p 0.28), L4 - A +0.031 (p 0.27), both below the exact-t MDE (0.074 / 0.080;
+long-gap +0.050 / +0.095 against 0.27-0.28; `reader_mde.py` -> `out/READER_MDE.txt`): whether the loop and depth learn a
+code one pass reads better is unmeasured; C - L +0.107, C - L4 +0.103 (p 0.0002 each). The model is scored on 100 walks
+and the reader on the first 50 of them; on matched walks the margins change by <= 0.004. The reader under-fits on some
+runs: with five times the fitting steps on seeds 0, 1 and 3 the independent audit found L's long-gap reader accuracy up
+by 0.03-0.06, so L's long-gap margin (+0.32) is probably 0.03-0.05 too large; no verdict changes.
 Model-minus-reader margin against A's: L overall p 0.0036, long 0.0025, wrap-only 0.0002; L4 0.0031, 0.0045, 0.0002. A
 simpler top-1 kernel reader gives the same verdicts.
 
 ### M4. Step-map geometry (analysis; `geometry.py`)
 
 Per run, the omega-weighted x- and y-step phase vectors; *2D map*: common mode below 0.1 of the map step and the second
-singular value above 0.3 of the first; *1D map*: common mode below 0.1, x and y steps collinear (sigma_2 / sigma_1 <= 0.002
-in every such run); *drifting*: common mode >= 0.1.
+singular value above 0.3 of the first; *1D map*: common mode below 0.1, x and y steps collinear (sigma_2 / sigma_1 <=
+0.002 in every such run); *drifting*: common mode >= 0.1.
 
 | arm | 2D map | 1D map | drifting |
 |---|---|---|---|
@@ -1743,10 +1866,13 @@ in every such run); *drifting*: common mode >= 0.1.
 | L4 | 1/8 | 4/8 (\|kappa\| 0.62-1.72) | 3/8 |
 | C | 8/8 | 0/8 | 0/8 |
 
-2D map, aids vs rank 4: 1/16 vs 8/8 (Fisher p 1.2e-5). In the reader's terms the 1D code is the collapsed end state of a
-rank-D head with the common mode removed. At initialisation the loop multiplies the step map's gradient norm by 2.9 and
-leaves its batch-to-batch coherence unchanged (0.46 -> 0.41; `grad_at_init.py`): the loop does not deliver a stronger or
-more consistent signal to the code, and Adam removes the scale.
+2D map, aids vs rank 4: 1/16 vs 8/8 (Fisher p 1.2e-5); the aids do shift the class, 1D cancelling 8/16 against 0/8 for
+plain rank 2 (Fisher p 0.022, post hoc), so they change which code is learned within the family but rarely reach rank
+4's. The class thresholds are post hoc and stable (any common-mode cut in (0.08, 0.34) and any second-singular-value cut
+in (0.002, 0.57) give the same classes; closest call C s0 at 0.08). In the reader's terms the 1D code is the collapsed
+end state of a rank-D head with the common mode removed. At initialisation the loop multiplies the step map's gradient
+norm by 2.9 and leaves its batch-to-batch coherence unchanged (0.46 -> 0.41; `grad_at_init.py`): the loop does not
+deliver a stronger or more consistent signal to the code, and Adam removes the scale.
 
 ---
 
@@ -1771,30 +1897,44 @@ times the budget (`RING_BUDGET_RESULTS.md`).
 ## O. Analysis scripts
 
 Every number marked (analysis) comes from one of these scripts (CPU, eval-only, on stored checkpoints of registered
-batches unless stated). "Verification" = the check the script runs before any new readout. Independent audit status:
-see `docs/paper/MAIN_DRAFT2_notes.md` (an independent audit of `docs/paper/expansion/scripts/` was in progress when this
-draft was written).
+batches unless stated). "Verification" = the check the script runs before any new readout. Independent audit: every
+script below was audited results-blind and re-run on CPU (`docs/paper/review_draft5/ANALYSIS_SCRIPT_AUDIT.md`); every
+committed output re-derived, except `sign/step_basin.py`, which is not deterministic (its numbers are labelled
+exploratory). The audit's corrections are applied in this version; the scripts marked "new" were added to apply them,
+so that every quoted number has a committed generator.
 
 | script (under `docs/paper/expansion/scripts/`) | what it computes | used in | verification |
 |---|---|---|---|
-| `depth/torus_depth.py`, `summarize_torus.py` | torus revisit classes, runs spanned, attention masses | Table 3; F1-F2 | stored accuracy to 4 decimals (16 runs); forward = model logits |
+| `depth/torus_depth.py`, `summarize_torus.py` (`--segments`: new) | torus revisit classes, runs spanned, attention masses; fixed-gap segments and runs spanned by long-gap revisits | Table 3; Sec. 6; F1-F2 | stored accuracy to 4 decimals (16 runs); forward = model logits |
 | `depth/torus_probe.py` | ridge probes of the residual stream | F3 | same stream |
 | `depth/torus_runlen.py` | run-length-shifted evaluation | F4 | -- (distribution-shifted) |
-| `depth/ring_depth.py`, `summarize_ring.py` | ring classes, probes, one-layer decomposition | F5 | stored accuracy for all 128 runs (< 2e-3) |
+| `depth/ring_depth.py`, `summarize_ring.py` | ring classes, probes, one-layer mixture test | F5 | stored accuracy for all 128 runs (< 2e-3) |
+| `depth/ring_probe_window.py`, `ring_class_floors.py`, `ring_plain_bins.py` (new) | late-position probes and old-displacement targets; per-class floors; plain-only run bins | Sec. 6; F5 | same stream as `ring_depth.py` |
 | `depth/dyck_distance.py`, `dyck_crosstab.py` | Dyck closing accuracy by blocks and distance | F6 | arm means equal the registered ones |
-| `sign/sign_clock.py`, `rank_clock.py` | usage-weighted clock / map per inverse pair | Table 4; G3; H7 | cone inequality as an identity (0 violations) |
+| `sign/clock_table.py` (new) | the clock / map ratio of E7.1' for every sign and rank arm, per run and per head | Table 4; Sec. 7.1; G3; H7 | reproduces `sign_clock.py`'s one-sided ratios as a check |
+| `sign/sign_clock.py`, `rank_clock.py` | cancelling usage share; observation and latent clocks | G3; H7 | cone inequality as an identity (0 violations) |
 | `sign/latent_geometry.py`, `lattice_p.py` | latent end states; +1/+2 relations | H4; H7 | initialisation rebuilt bit-exact |
 | `sign/latent_reach.py`, `aobal_geometry.py` | latent-reachable share; readout targets | H7 | -- |
 | `sign/prop_checks.py` | numerical checks of E8.3-E8.4 | E8 | -- |
 | `sign/path_profiles.py` | loss along straight paths | H7 | -- |
-| `sign/step_basin.py`, `basin_summary.py` | step-map-only training from fixed content (CPU) | H7 | exact solutions held (pilot) |
+| `sign/step_basin.py`, `basin_summary.py` | step-map-only training from fixed content (CPU; not deterministic: exploratory) | Sec. 7.3; H7 | exact solutions held (pilot) |
 | `rank/rank_geom.py`, `sweep_final.py`, `summarise_final.py`, `c1_runlevel.py` | off-plane share, readgain, r_beta | G4 | drift and frame conditioning equal the registered head statistics to 4 decimals |
 | `rank/escape_start.py`, `init_frame.py`, `grad_hiding.py` | escape re-read; initial conditions | G4; G6 | -- |
+| `rank/clock_decomp.py`, `c1_runlevel_once.py` (new) | move / observation parts of the leftover clock; escape-arm clock sizes; C1 counting each network once | Sec. 7.2; G4 | -- |
 | `rank/train_snap.py`, `analyze_snap.py`, `train_nd_cpu.py` | CPU pilots on seeds 3000-3002, 4000-4002 | G6 | outside every registered batch |
-| `recurrence/pass_strata.py`, `attn_offsets.py`, `index_loop_passes.py` | per-pass accuracy and attention | M2 | forward and stored evaluation to <= 3.1e-4 (1e-6 on FACTORIAL) |
+| `recurrence/pass_strata.py`, `attn_offsets.py`, `index_loop_passes.py`; `pass_strata_besthead.py` (new) | per-pass accuracy and attention; best head per seed | M2 | forward and stored evaluation to <= 3.1e-4 (1e-6 on FACTORIAL) |
+| `recurrence/reader_mde.py` (new) | MDE of the reader's code-quality contrasts | Sec. 7.4; M3 | -- |
 | `recurrence/phase_reader_soft.py`, `phase_code.py` | one-pass reader fits | Sec. 7.4; M3 | fitted on separate walks |
 | `recurrence/geometry.py`, `training_curves.py`, `grad_at_init.py` | step-map classes; curves; gradients at initialisation | M4 | -- |
-| `mappope/kernel_probe.py`, `probe_stats.py` | kernel, coherence C and C0, attention by offset | Sec. 7.4; L2 | rebuilt logits equal the model's (0.0); per-seed accuracies reproduce the stored evaluation |
-| `language/tw_lib.py` and the `tw_*.py` scripts | step table, drift, clock unit, asides, attention, retrace, strata | Table 7; Sec. 8; J1-J6 | manual forward logit-identical; generator token-identical |
+| `mappope/kernel_probe.py`, `probe_stats.py` (`HEAD_RULE=stratum` / `SUFFIX=_hstratum`: new); `kernel_argmax_odd.py` (new) | kernel, coherence C and C0, attention by offset; per-stratum head; kernel argmax over odd offsets | Sec. 7.4; L2 | rebuilt logits equal the model's (0.0); per-seed accuracies reproduce the stored evaluation |
+| `language/tw_lib.py` and the `tw_*.py` scripts; `tw_strata_200.py` (new: all 200 walks, the non-retrace stratum and its floors) | step table, drift, clock unit, asides, attention, retrace, strata | Table 7; Sec. 8; J1-J6 | manual forward logit-identical; generator token-identical; `N_WALKS=100` reproduces `tw_strata.py` |
 | `language/usage_tick.py`, `crossover_usage.py`, `tw_alpha_drift.py` | used-channel rho; growth exponent | Sec. 9; J4 | -- |
-| `docs/audits/2026-10-20/causal_whatwhere_T1024.py` | what/where at T = 1024 | Sec. 9; K1 | rebuilt forward exact on 32 checkpoints; intact accuracy within 0.0007 |
+| `docs/audits/2026-10-20/causal_whatwhere_T1024.py`; `whatwhere/whatwhere_stats.py` (new) | what/where at T = 1024; its sign-flip p, SS(P)/SS(S) and Spearman, and the text-world Spearman p | Sec. 8; Sec. 9; J2; K1 | rebuilt forward exact on 32 checkpoints; intact accuracy within 0.0007 |
+
+*Post hoc choices* (rule 7; from the audit's Sec. 5): the best-head rule of the kernel probes and the per-stratum head
+rule that replaces it at T = 1024; 40 of the 100 registered walks at T = 1024 (L2); the r_beta < 0.5 cut, the 10x criteria
+for t_kappa / t_lam and the off-plane share as the escape statistic (G4, G6); `geometry.py`'s class thresholds (M4, stable
+over wide ranges); `sign_clock.py`'s 0.1 / 0.05 rad cuts and the near-pi cut 2.6 rad of `clock_table.py` (H7); the
+`lattice_p.py` tolerance (H4); the path-profile rise statistic (H7); the depth run-length bins (F1, F4); the text-world
+0.98 ceiling cut, the blank exclusion of the object-cell stratum and the lift sizes (J5, J6); the what/where Spearman
+(K1); the 0 mod pi used-channel rule (J2-J4). The audit found that none of its corrections depends on a threshold choice.

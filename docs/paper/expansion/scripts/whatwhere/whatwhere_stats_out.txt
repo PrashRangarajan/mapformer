@@ -1,0 +1,21 @@
+== Signed_r4 (n 8): intact 0.9983
+   pos_class 0.9660 (cost -0.0322; per seed -0.064..-0.001); seeds lower 8/8; paired t p 0.0116; exact sign-flip p 0.0078
+   gain      0.9981 (cost -0.0001; per seed -0.001..+0.000); seeds lower 5/8; paired t p 0.1640; exact sign-flip p 0.1562
+   SS(P)/SS(S) (row_pos_share, mean over heads and seeds) 0.925
+== Abs_r4 (n 8): intact 0.8210
+   pos_class 0.5444 (cost -0.2766; per seed -0.613..-0.020); seeds lower 8/8; paired t p 0.0065; exact sign-flip p 0.0078
+   gain      0.5840 (cost -0.2370; per seed -0.375..-0.034); seeds lower 8/8; paired t p 0.0009; exact sign-flip p 0.0078
+   SS(P)/SS(S) (row_pos_share, mean over heads and seeds) 0.644
+== Pos_r4 (n 8): intact 0.7805
+   pos_class 0.4756 (cost -0.3049; per seed -0.636..-0.010); seeds lower 8/8; paired t p 0.0173; exact sign-flip p 0.0078
+   gain      0.6748 (cost -0.1057; per seed -0.352..-0.001); seeds lower 8/8; paired t p 0.0495; exact sign-flip p 0.0078
+   SS(P)/SS(S) (row_pos_share, mean over heads and seeds) 0.577
+== RoPE (n 8): intact 0.7311
+   pos_class 0.4787 (cost -0.2524; per seed -0.289..-0.216); seeds lower 8/8; paired t p 0.0000; exact sign-flip p 0.0078
+   gain      0.4386 (cost -0.2925; per seed -0.360..-0.251); seeds lower 8/8; paired t p 0.0000; exact sign-flip p 0.0078
+   SS(P)/SS(S) (row_pos_share, mean over heads and seeds) 0.618
+
+Spearman(intact, pos_class / intact) over the 16 non-negative runs (Abs_r4 + Pos_r4): rho 0.838, scipy p 5.0e-05, permutation p (20k) 5.0e-05
+   share kept by the runs with intact > 0.95: 0.970, 0.990
+
+Text world (tw_common_used_out.txt, n 8): Spearman +0.905, exact two-sided permutation p 0.0046

@@ -1,0 +1,62 @@
+stream: first 200 walks of the TEXTWORLD eval stream (map 10000, np seed 0): 6381 revisit targets; retrace correct 0.9337
+  rule applies 5525 (0.866), wrong when it applies 0; NON-RETRACE 856 (0.134; blank share 0.506); NEEDS-MAP = NON-RETRACE and object target 423 (0.066); RETRACE-OK 5958
+  best constant on all revisits: 0.5054 ('nothing'); share 'nothing' 0.5054
+  best constant on NON-RETRACE: 0.5058 ('nothing'); share 'nothing' 0.5058
+  best constant on NEEDS-MAP: 0.0875 ('cat'); share 'nothing' 0.0000
+path s0 re-scored: all 0.9696 applies 0.9980 retrace_ok 0.9946 needs_map 0.6170 non_retrace 0.7862 non_retrace_blank 0.9515
+path s0 eval mode: all 0.8806 applies 0.9028 retrace_ok 0.9060 needs_map 0.5225 non_retrace 0.7371 non_retrace_blank 0.9469
+  RoPE 1L s0 eval mode: all 0.5045 applies 0.5122 retrace_ok 0.5401 needs_map 0.0024 non_retrace 0.4544 non_retrace_blank 0.8961
+  RoPE 2L s0 eval mode: all 0.6949 applies 0.7500 retrace_ok 0.7375 needs_map 0.0946 non_retrace 0.3388 non_retrace_blank 0.5774
+path s1 re-scored: all 0.9981 applies 0.9995 retrace_ok 0.9992 needs_map 0.9835 non_retrace 0.9895 non_retrace_blank 0.9954
+path s1 eval mode: all 0.9981 applies 0.9995 retrace_ok 0.9992 needs_map 0.9835 non_retrace 0.9895 non_retrace_blank 0.9954
+  RoPE 1L s1 eval mode: all 0.5037 applies 0.5115 retrace_ok 0.5393 needs_map 0.0024 non_retrace 0.4533 non_retrace_blank 0.8938
+  RoPE 2L s1 eval mode: all 0.7232 applies 0.7756 retrace_ok 0.7644 needs_map 0.1442 non_retrace 0.3855 non_retrace_blank 0.6212
+path s2 re-scored: all 0.9994 applies 0.9998 retrace_ok 0.9995 needs_map 0.9976 non_retrace 0.9965 non_retrace_blank 0.9954
+path s2 eval mode: all 0.9992 applies 0.9998 retrace_ok 0.9995 needs_map 0.9953 non_retrace 0.9953 non_retrace_blank 0.9954
+  RoPE 1L s2 eval mode: all 0.5034 applies 0.5122 retrace_ok 0.5389 needs_map 0.0024 non_retrace 0.4463 non_retrace_blank 0.8799
+  RoPE 2L s2 eval mode: all 0.9267 applies 0.9935 retrace_ok 0.9839 needs_map 0.1206 non_retrace 0.4953 non_retrace_blank 0.8614
+path s3 re-scored: all 0.9947 applies 0.9998 retrace_ok 0.9988 needs_map 0.9362 non_retrace 0.9614 non_retrace_blank 0.9861
+path s3 eval mode: all 0.9945 applies 0.9998 retrace_ok 0.9988 needs_map 0.9338 non_retrace 0.9603 non_retrace_blank 0.9861
+  RoPE 1L s3 eval mode: all 0.5062 applies 0.5131 retrace_ok 0.5420 needs_map 0.0024 non_retrace 0.4614 non_retrace_blank 0.9099
+  RoPE 2L s3 eval mode: all 0.7217 applies 0.7712 retrace_ok 0.7625 needs_map 0.1466 non_retrace 0.4019 non_retrace_blank 0.6513
+path s4 re-scored: all 0.9995 applies 1.0000 retrace_ok 1.0000 needs_map 0.9929 non_retrace 0.9965 non_retrace_blank 1.0000
+path s4 eval mode: all 0.9994 applies 1.0000 retrace_ok 1.0000 needs_map 0.9905 non_retrace 0.9953 non_retrace_blank 1.0000
+  RoPE 1L s4 eval mode: all 0.5046 applies 0.5119 retrace_ok 0.5398 needs_map 0.0095 non_retrace 0.4579 non_retrace_blank 0.8961
+  RoPE 2L s4 eval mode: all 0.9256 applies 0.9839 retrace_ok 0.9812 needs_map 0.1418 non_retrace 0.5491 non_retrace_blank 0.9469
+path s5 re-scored: all 1.0000 applies 1.0000 retrace_ok 1.0000 needs_map 1.0000 non_retrace 1.0000 non_retrace_blank 1.0000
+path s5 eval mode: all 1.0000 applies 1.0000 retrace_ok 1.0000 needs_map 1.0000 non_retrace 1.0000 non_retrace_blank 1.0000
+  RoPE 1L s5 eval mode: all 0.5059 applies 0.5135 retrace_ok 0.5415 needs_map 0.0047 non_retrace 0.4568 non_retrace_blank 0.8984
+  RoPE 2L s5 eval mode: all 0.7057 applies 0.7625 retrace_ok 0.7491 needs_map 0.0946 non_retrace 0.3388 non_retrace_blank 0.5774
+path s6 re-scored: all 1.0000 applies 1.0000 retrace_ok 1.0000 needs_map 1.0000 non_retrace 1.0000 non_retrace_blank 1.0000
+path s6 eval mode: all 1.0000 applies 1.0000 retrace_ok 1.0000 needs_map 1.0000 non_retrace 1.0000 non_retrace_blank 1.0000
+  RoPE 1L s6 eval mode: all 0.5057 applies 0.5140 retrace_ok 0.5415 needs_map 0.0024 non_retrace 0.4521 non_retrace_blank 0.8915
+  RoPE 2L s6 eval mode: all 0.7596 applies 0.8174 retrace_ok 0.8030 needs_map 0.1489 non_retrace 0.3867 non_retrace_blank 0.6189
+path s7 re-scored: all 0.9862 applies 0.9975 retrace_ok 0.9943 needs_map 0.8723 non_retrace 0.9136 non_retrace_blank 0.9538
+path s7 eval mode: all 0.8817 applies 0.8947 retrace_ok 0.8986 needs_map 0.6430 non_retrace 0.7979 non_retrace_blank 0.9492
+  RoPE 1L s7 eval mode: all 0.5040 applies 0.5120 retrace_ok 0.5394 needs_map 0.0047 non_retrace 0.4521 non_retrace_blank 0.8891
+  RoPE 2L s7 eval mode: all 0.7201 applies 0.7710 retrace_ok 0.7615 needs_map 0.1371 non_retrace 0.3914 non_retrace_blank 0.6397
+
+MEAN path     all               : all seeds 0.9934 (min 0.9696, max 1.0000); fresh seeds 2-7 0.9966 (min 0.9862)
+MEAN path     applies           : all seeds 0.9993 (min 0.9975, max 1.0000); fresh seeds 2-7 0.9995 (min 0.9975)
+MEAN path     retrace_ok        : all seeds 0.9983 (min 0.9943, max 1.0000); fresh seeds 2-7 0.9988 (min 0.9943)
+MEAN path     needs_map         : all seeds 0.9249 (min 0.6170, max 1.0000); fresh seeds 2-7 0.9665 (min 0.8723)
+MEAN path     non_retrace       : all seeds 0.9555 (min 0.7862, max 1.0000); fresh seeds 2-7 0.9780 (min 0.9136)
+MEAN path     non_retrace_blank : all seeds 0.9853 (min 0.9515, max 1.0000); fresh seeds 2-7 0.9892 (min 0.9538)
+MEAN path_x1  all               : all seeds 0.9692 (min 0.8806, max 1.0000); fresh seeds 2-7 0.9791 (min 0.8817)
+MEAN path_x1  applies           : all seeds 0.9746 (min 0.8947, max 1.0000); fresh seeds 2-7 0.9824 (min 0.8947)
+MEAN path_x1  retrace_ok        : all seeds 0.9753 (min 0.8986, max 1.0000); fresh seeds 2-7 0.9828 (min 0.8986)
+MEAN path_x1  needs_map         : all seeds 0.8836 (min 0.5225, max 1.0000); fresh seeds 2-7 0.9271 (min 0.6430)
+MEAN path_x1  non_retrace       : all seeds 0.9344 (min 0.7371, max 1.0000); fresh seeds 2-7 0.9581 (min 0.7979)
+MEAN path_x1  non_retrace_blank : all seeds 0.9841 (min 0.9469, max 1.0000); fresh seeds 2-7 0.9885 (min 0.9492)
+MEAN rope1    all               : all seeds 0.5047 (min 0.5034, max 0.5062); fresh seeds 2-7 0.5050 (min 0.5034)
+MEAN rope1    applies           : all seeds 0.5126 (min 0.5115, max 0.5140); fresh seeds 2-7 0.5128 (min 0.5119)
+MEAN rope1    retrace_ok        : all seeds 0.5403 (min 0.5389, max 0.5420); fresh seeds 2-7 0.5405 (min 0.5389)
+MEAN rope1    needs_map         : all seeds 0.0038 (min 0.0024, max 0.0095); fresh seeds 2-7 0.0043 (min 0.0024)
+MEAN rope1    non_retrace       : all seeds 0.4543 (min 0.4463, max 0.4614); fresh seeds 2-7 0.4544 (min 0.4463)
+MEAN rope1    non_retrace_blank : all seeds 0.8943 (min 0.8799, max 0.9099); fresh seeds 2-7 0.8941 (min 0.8799)
+MEAN rope2    all               : all seeds 0.7722 (min 0.6949, max 0.9267); fresh seeds 2-7 0.7932 (min 0.7057)
+MEAN rope2    applies           : all seeds 0.8281 (min 0.7500, max 0.9935); fresh seeds 2-7 0.8499 (min 0.7625)
+MEAN rope2    retrace_ok        : all seeds 0.8179 (min 0.7375, max 0.9839); fresh seeds 2-7 0.8402 (min 0.7491)
+MEAN rope2    needs_map         : all seeds 0.1285 (min 0.0946, max 0.1489); fresh seeds 2-7 0.1316 (min 0.0946)
+MEAN rope2    non_retrace       : all seeds 0.4109 (min 0.3388, max 0.5491); fresh seeds 2-7 0.4272 (min 0.3388)
+MEAN rope2    non_retrace_blank : all seeds 0.6868 (min 0.5774, max 0.9469); fresh seeds 2-7 0.7159 (min 0.5774)

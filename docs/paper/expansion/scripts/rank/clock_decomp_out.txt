@@ -1,0 +1,35 @@
+ANALYSIS (post hoc, CPU, ~1 min): what the leftover latent clock of solved rank > D heads is made of.
+| set (solved heads, rank > D) | n heads | |a|/|U| | |o|/|U| | |c|/|U| | off(a) | off(o) | off(c) | cos(a,o) | |c_j|/|U| | off(c_j) | off(c_j+2o) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| torus G64 per-head r3 (rank3) | 12 | 0.021 | 0.020 | 0.0038 | 0.153 | 0.072 | 0.978 | -0.988 | 0.041 | 0.152 | 0.968 |
+| torus G64 shared r4 (rank_mi) | 16 | 0.017 | 0.017 | 0.0039 | 0.191 | 0.075 | 0.996 | -0.980 | 0.034 | 0.191 | 0.989 |
+| torus G64 per-head r4 (rank_sep) | 16 | 0.018 | 0.017 | 0.0032 | 0.161 | 0.073 | 0.988 | -0.993 | 0.035 | 0.161 | 0.973 |
+| torus G64 shared r4 (score_rank) | 16 | 0.019 | 0.019 | 0.0033 | 0.143 | 0.050 | 0.998 | -0.984 | 0.038 | 0.143 | 0.993 |
+| ND D2 G32 r3 (rank_nd) | 16 | 0.017 | 0.017 | 0.0034 | 0.212 | 0.029 | 0.987 | -0.988 | 0.037 | 0.211 | 0.984 |
+| ND D3 G10 r4 (rank_nd) | 8 | 0.028 | 0.027 | 0.0083 | 0.349 | 0.076 | 0.964 | -0.875 | 0.057 | 0.408 | 0.978 |
+| ND D3 G18 r4 (rank_wrap) | 16 | 0.021 | 0.022 | 0.0007 | 0.054 | 0.055 | 0.810 | -0.999 | 0.046 | 0.061 | 0.731 |
+| ring R2 (rank_tests) | 16 | 0.037 | 0.032 | 0.0249 | 0.466 | 0.166 | 0.989 | -0.793 | 0.073 | 0.466 | 0.989 |
+| ring R2S shared r2 (rank_tests) | 14 | 0.039 | 0.037 | 0.0182 | 0.598 | 0.166 | 1.000 | -0.691 | 0.077 | 0.598 | 1.000 |
+| escape E lifted r2->r4 | 6 | 0.006 | 0.006 | 0.0029 | 0.524 | 0.091 | 0.996 | -0.837 | 0.051 | 0.967 | 0.991 |
+| escape F fresh r4 step map | 4 | 0.026 | 0.026 | 0.0037 | 0.126 | 0.018 | 0.981 | -0.989 | 0.054 | 0.185 | 0.970 |
+| paper torus T=128 shared r4 (rank_sweep) | 16 | 0.034 | 0.029 | 0.0208 | 0.476 | 0.402 | 0.988 | -0.897 | 0.069 | 0.477 | 0.988 |
+
+== escape arms (RANK_TESTS experiment 2): latent clock lam = |c|/|U| and its off-plane part lam_perp, start -> end, mean over the two heads; shrink = start / end
+  F fresh r4 step map s0 DESC: lam 0.8005 -> 0.0021 (shrink 381.7x); lam_perp 0.2935 -> 0.0021; end off-plane share 0.99 | absolute |c| 0.1970 -> 0.0023 (84.7x), |c_perp| 0.0722 -> 0.0023 (31.3x), |U| 0.246 -> 1.109
+  F fresh r4 step map s1 SOLV: lam 0.5535 -> 0.0020 (shrink 279.5x); lam_perp 0.0586 -> 0.0019; end off-plane share 0.96 | absolute |c| 0.0445 -> 0.0031 (14.4x), |c_perp| 0.0047 -> 0.0030 (1.6x), |U| 0.080 -> 1.564
+  F fresh r4 step map s2 STAL: lam 1.0928 -> 0.0040 (shrink 271.4x); lam_perp 0.7953 -> 0.0039; end off-plane share 0.98 | absolute |c| 0.1730 -> 0.0046 (37.6x), |c_perp| 0.1259 -> 0.0045 (27.9x), |U| 0.158 -> 1.142
+  F fresh r4 step map s3 DESC: lam 3.1399 -> 0.0024 (shrink 1292.7x); lam_perp 2.8716 -> 0.0024; end off-plane share 0.99 | absolute |c| 0.2202 -> 0.0028 (78.4x), |c_perp| 0.2014 -> 0.0028 (72.4x), |U| 0.070 -> 1.156
+  F fresh r4 step map s4 STAL: lam 2.2440 -> 0.0045 (shrink 503.8x); lam_perp 1.9546 -> 0.0044; end off-plane share 0.99 | absolute |c| 0.3142 -> 0.0051 (61.8x), |c_perp| 0.2737 -> 0.0050 (54.4x), |U| 0.140 -> 1.141
+  F fresh r4 step map s5 DESC: lam 1.2798 -> 0.0025 (shrink 508.7x); lam_perp 1.0297 -> 0.0023; end off-plane share 0.91 | absolute |c| 0.1635 -> 0.0038 (43.6x), |c_perp| 0.1315 -> 0.0034 (38.4x), |U| 0.128 -> 1.491
+  F fresh r4 step map s6 SOLV: lam 2.2928 -> 0.0054 (shrink 428.0x); lam_perp 1.6860 -> 0.0054; end off-plane share 1.00 | absolute |c| 0.2631 -> 0.0129 (20.4x), |c_perp| 0.1934 -> 0.0129 (15.0x), |U| 0.115 -> 2.412
+  F fresh r4 step map s7 DESC: lam 1.3152 -> 0.0031 (shrink 422.1x); lam_perp 1.1822 -> 0.0028; end off-plane share 0.91 | absolute |c| 0.1794 -> 0.0044 (40.7x), |c_perp| 0.1613 -> 0.0040 (40.3x), |U| 0.136 -> 1.415
+  F fresh r4 step map: shrink of lam 271.4-1292.7x (median 425.1); of absolute |c| 14.4-84.7x (median 42.1); end lam 0.0020-0.0054; end off-plane share 0.91-1.00
+  E lifted r2 -> r4 s0 DESC: lam 0.7872 -> 1.4162 (shrink 0.6x); lam_perp 0.0000 -> 0.0158; end off-plane share 0.01 | absolute |c| 5.7629 -> 7.5127 (0.8x), |c_perp| 0.0000 -> 0.0841 (0.0x), |U| 7.321 -> 5.305
+  E lifted r2 -> r4 s1 SOLV: lam 0.0459 -> 0.0029 (shrink 15.6x); lam_perp 0.0000 -> 0.0029; end off-plane share 1.00 | absolute |c| 0.2157 -> 0.0095 (22.7x), |c_perp| 0.0000 -> 0.0095 (0.0x), |U| 4.700 -> 3.216
+  E lifted r2 -> r4 s2 SOLV: lam 1.2940 -> 0.0028 (shrink 464.0x); lam_perp 0.0000 -> 0.0028; end off-plane share 1.00 | absolute |c| 3.2380 -> 0.0066 (490.4x), |c_perp| 0.0000 -> 0.0066 (0.0x), |U| 2.502 -> 2.368
+  E lifted r2 -> r4 s3 SOLV: lam 1.1270 -> 0.0182 (shrink 61.8x); lam_perp 0.0000 -> 0.0181; end off-plane share 1.00 | absolute |c| 3.3547 -> 0.0407 (82.5x), |c_perp| 0.0000 -> 0.0405 (0.0x), |U| 2.977 -> 2.232
+  E lifted r2 -> r4 s4 DESC: lam 1.7055 -> 2.2726 (shrink 0.8x); lam_perp 0.0000 -> 1.5032; end off-plane share 0.66 | absolute |c| 4.6886 -> 4.7362 (1.0x), |c_perp| 0.0000 -> 3.1327 (0.0x), |U| 2.749 -> 2.084
+  E lifted r2 -> r4 s5 DESC: lam 0.8544 -> 2.8948 (shrink 0.3x); lam_perp 0.0000 -> 0.1421; end off-plane share 0.05 | absolute |c| 5.8771 -> 8.1101 (0.7x), |c_perp| 0.0000 -> 0.3982 (0.0x), |U| 6.879 -> 2.802
+  E lifted r2 -> r4 s6 DESC: lam 0.8229 -> 1.6867 (shrink 0.5x); lam_perp 0.0000 -> 0.1398; end off-plane share 0.08 | absolute |c| 6.5827 -> 9.3633 (0.7x), |c_perp| 0.0000 -> 0.7762 (0.0x), |U| 8.000 -> 5.551
+  E lifted r2 -> r4 s7 DESC: lam 0.4740 -> 1.1416 (shrink 0.4x); lam_perp 0.0000 -> 0.3534; end off-plane share 0.31 | absolute |c| 3.1558 -> 4.0974 (0.8x), |c_perp| 0.0000 -> 1.2684 (0.0x), |U| 6.658 -> 3.589
+  E lifted r2 -> r4: shrink of lam 0.3-464.0x (median 0.7); of absolute |c| 0.7-490.4x (median 0.9); end lam 0.0028-2.8948; end off-plane share 0.01-1.00

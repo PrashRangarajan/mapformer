@@ -1,5 +1,7 @@
 # Recurrence: what looping a shared block does to a path-integrated model
 
+*CORRECTED 2026-10-21: 1 of 16 runs (L4 s1) finds a 2D code, "code unchanged" is unmeasured (below the MDE), and per-pass attention is re-read on the best head per seed (`docs/paper/review_draft5/ANALYSIS_SCRIPT_AUDIT.md` B4, M-RC1, M-RC2). The body below is unchanged.*
+
 Expansion note for `docs/paper/MAIN_DRAFT1.md` Secs. 5, 6.1 and 6.3 (2026-10-20). Labels: **ESTABLISHED**
 (registered, results file named; a CORRECTED / AUDIT block wins), **ANALYSIS** (computed here on stored checkpoints,
 CPU, inference only unless stated; script named; all post hoc), **THEORY** (statement, assumptions, the check that

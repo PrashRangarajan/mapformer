@@ -1,5 +1,7 @@
 # Search theory for the two failure axes (sign and rank)
 
+*CORRECTED 2026-10-21: one symmetric clock / map definition replaces S1's and A5's (`scripts/sign/clock_table.py`), S5 is a bound on the position factor rather than a signature theorem, and `step_basin.py` is not deterministic (`docs/paper/review_draft5/ANALYSIS_SCRIPT_AUDIT.md` B3, M-SG1-M-SG7). The body below is unchanged.*
+
 *2026-10-20. Expansion note for the main paper (`docs/paper/MAIN_DRAFT1.md` Sec. 6, 8, 9; theory appendix
 `docs/paper/APPENDIX_theory_v3.md`). CPU only; nothing here is registered and nothing changes a registered verdict. Every
 statement carries one label: **ESTABLISHED** (a registered result, cited), **ANALYSIS** (a post hoc or exploratory

@@ -1,5 +1,7 @@
 # The depth exchange rate: what index attention computes, layer by layer (expansion note, 2026-10-20)
 
+*CORRECTED 2026-10-21: the ring "global count" is a ~64-move window code (route A has no positive instance), the 0.75-dip decomposition is an identity, and the fixed-gap table holds seed means (`docs/paper/review_draft5/ANALYSIS_SCRIPT_AUDIT.md` M-DP1-M-DP4). The body below is unchanged.*
+
 Scope: main draft Section 5 (`docs/paper/MAIN_DRAFT1.md`), outline claims 5.1-5.4 (`docs/paper/OUTLINE_main_v2.md`).
 Every statement carries one label:
 

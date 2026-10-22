@@ -1,5 +1,7 @@
 # MapPoPE: what PoPE's polar score adds to a path-integrated phase (expansion note, 2026-10-20)
 
+*CORRECTED 2026-10-21: the T = 1024 C / C0 strata are re-read on the per-stratum head (rank 4 wrap-only C0 0.97 under either score; the "not a sufficient statistic" caveat was an artefact), and action-key attention is a retrieval-head statement (`docs/paper/review_draft5/ANALYSIS_SCRIPT_AUDIT.md` B2, M-MP1, M-MP2). The body below is unchanged.*
+
 Labels: **ESTABLISHED** = registered result (results file named); **ANALYSIS** = new post hoc CPU analysis run for
 this note, eval-only on stored checkpoints (script and output named); **THEORY** = derivation, with its assumptions and a
 check against data; **SPECULATION** = untested.

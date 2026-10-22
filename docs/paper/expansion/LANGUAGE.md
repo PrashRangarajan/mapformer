@@ -1,5 +1,7 @@
 # Language side and the integrator framing: expansion for Section 7 and the Discussion (2026-10-20)
 
+*CORRECTED 2026-10-21: NEEDS-MAP is "no retrace AND an object target", not all places reached another way, and the strata are re-run on all 200 walks (`scripts/language/tw_strata_200walks_out.txt`; `docs/paper/review_draft5/ANALYSIS_SCRIPT_AUDIT.md` B1, M-LG1). The body below is unchanged.*
+
 Scope: what a one-layer path model learns from words, when a learned phase becomes a map and when a clock, the
 integrator (Howard) framing, and whether what/where and the leak belong in the main paper. For `docs/paper/MAIN_DRAFT1.md`
 Sections 2.1, 7 and 8. No training was run; every new number is a post hoc, eval-only CPU analysis of stored checkpoints

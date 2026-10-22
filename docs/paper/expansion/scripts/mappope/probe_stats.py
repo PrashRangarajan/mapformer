@@ -7,6 +7,7 @@ sys.path.insert(0, "/home/prashr")
 from mapformer.stats_core import perm2_p  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+SFX = os.environ.get("SUFFIX", "")   # SUFFIX=_hstratum reads kernel_probe_<batch>_hstratum.json (ANALYSIS_SCRIPT_AUDIT B2)
 COL = ["share", "acc", "massCell", "massRT", "massOff1", "C", "C0", "mAct", "mObsX"]
 lines = []
 
@@ -29,7 +30,7 @@ def contrast(J, a, b, sn, col):
 
 
 for batch in ("paper2x2", "score_rank"):
-    f = f"{HERE}/kernel_probe_{batch}.json"
+    f = f"{HERE}/kernel_probe_{batch}{SFX}.json"
     if not os.path.exists(f):
         continue
     J = json.load(open(f))[batch]
@@ -63,4 +64,4 @@ for batch in ("paper2x2", "score_rank"):
                 c, c0 = get(J, v, sn, "C"), get(J, v, sn, "C0")
                 if c is not None:
                     L(f"  {v:18s} {sn:15s} C {np.mean(c):.3f}  C0 {np.mean(c0):.3f}  C0-C {np.mean(c0 - c):+.3f}")
-open(f"{HERE}/probe_stats_out.txt", "w").write("\n".join(lines) + "\n")
+open(f"{HERE}/probe_stats{SFX}_out.txt", "w").write("\n".join(lines) + "\n")

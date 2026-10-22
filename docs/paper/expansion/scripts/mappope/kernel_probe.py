@@ -24,7 +24,10 @@ K_ao(D) over token offset D for action query a and observation key o; fraction o
 (needed to prefer the 1-step retrace target over the newest observation); PoPE delta dead-zone share (>= 0).
 
 Run from /home/prashr:  CUDA_VISIBLE_DEVICES= python3 mapformer/docs/paper/expansion/scripts/mappope/kernel_probe.py
-Outputs: kernel_probe_out.txt, kernel_probe.json next to this file.
+Outputs: kernel_probe_<batch>_out.txt, kernel_probe_<batch>.json next to this file.
+HEAD_RULE=stratum (added 2026-10-21, docs/paper/review_draft5/ANALYSIS_SCRIPT_AUDIT.md B2) reads C, C0, mAct and mObsX
+of each stratum on the head with the most same-cell mass in that stratum (default: the head with the most same-cell
+mass over all revisits, used for every stratum); outputs then carry the suffix _hstratum.
 """
 import json
 import math
@@ -53,6 +56,7 @@ REPO = "/home/prashr/mapformer"
 HERE = os.path.dirname(os.path.abspath(__file__))
 NA, NO = 4, 17
 OFFMAX = 24
+HEAD_RULE = os.environ.get("HEAD_RULE", "all")
 
 BATCHES = {
     "paper2x2": dict(dir=f"{REPO}/runs/paper2x2/p0", T=128, trials=100, seeds=range(8),
@@ -267,7 +271,10 @@ def summarise(name, res, arms, lines):
                 R = r["R"]; sel = f(R)
                 if sel.sum() < 5:
                     continue
-                mc = R["mass_cell"][sel].mean(0); h = int(np.argmax(R["mass_cell"].mean(0)))
+                mc = R["mass_cell"][sel].mean(0)
+                # HEAD_RULE=all (default; the committed outputs): best head over ALL revisits, used for every stratum.
+                # HEAD_RULE=stratum (ANALYSIS_SCRIPT_AUDIT.md B2): the head with most same-cell mass IN THIS STRATUM.
+                h = int(np.argmax(mc)) if HEAD_RULE == "stratum" else int(np.argmax(R["mass_cell"].mean(0)))
                 mrt = np.nanmean(R["mass_rt"][sel], 0) if np.isfinite(R["mass_rt"][sel]).any() else np.full(2, np.nan)
                 row.append((sel.mean(), R["ok"][sel].mean(), mc[h], np.nanmax(mrt) if np.isfinite(mrt).any() else np.nan,
                             R["mass_off1"][sel].mean(0).max(), R["C"][sel][:, h].mean(), R["C0"][sel][:, h].mean(),
@@ -314,7 +321,7 @@ def main():
                                               "wrap_acc": float(r["R"]["ok"][r["R"]["wrap"]].mean()) if r["R"]["wrap"].any() else None,
                                               "kern": r["kern"]} for (v, s), r in res.items()}
         print("\n".join(lines), flush=True)
-    tag = "_".join(which)
+    tag = "_".join(which) + ("_hstratum" if HEAD_RULE == "stratum" else "")
     open(f"{HERE}/kernel_probe_{tag}_out.txt", "w").write("\n".join(lines) + "\n")
     json.dump({k: {str(kk): vv for kk, vv in v.items()} for k, v in js.items()}, open(f"{HERE}/kernel_probe_{tag}.json", "w"), indent=1, default=float)
 

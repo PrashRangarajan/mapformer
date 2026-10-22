@@ -1,0 +1,4 @@
+p_plus 0.5: retrace: n 13882, best constant 0.495; lap, not retrace: n 679, best constant 0.498; neither: n 4822, best constant 0.493
+p_plus 0.75: retrace: n 9467, best constant 0.492; lap, not retrace: n 3429, best constant 0.507; neither: n 6314, best constant 0.491
+p_plus 0.9: retrace: n 4109, best constant 0.508; lap, not retrace: n 10185, best constant 0.493; neither: n 4906, best constant 0.502
+p_plus 1.0: retrace: n 0; lap, not retrace: n 19200, best constant 0.495; neither: n 0

@@ -8,17 +8,146 @@ appendix v3, the seven expansion reports, and the results that landed after the 
 
 ## Script-audit status
 
-`docs/paper/review_draft5/ANALYSIS_SCRIPT_AUDIT.md` did **not exist** when this draft was finished (checked at the end of
-the session). Every number below labelled **[A-pending]** comes from `docs/paper/expansion/scripts/` and is **pending
-script audit**. Numbers labelled [A] come from older, separately audited or refereed analysis files
-(`docs/audits/2026-10-16/`, `docs/paper/figs/*_out.txt`, `docs/WHAT_WHERE_CHECKS.md`, `docs/audits/2026-10-20/`). When the
-audit lands: apply its corrections to Sec. 6 (Table 3, the 0.943 accounting, probes, attention), Sec. 7.1 (Table 4),
-Sec. 7.2 ("Why the extra rank helps"), Sec. 7.3 ("Why the non-negative step does not find it"), Sec. 7.4 (one-pass reader,
-kernel probes), Sec. 8 (Table 7, step table, asides, clock channels), Sec. 9 (used-channel rho), and App. F, G3-G6, H4,
-H7, J1-J6, L2, M2-M4. The what/where T = 1024 script (`docs/audits/2026-10-20/causal_whatwhere_T1024.py`) is not in the
-audit's list; treat K1 as [A], unaudited.
+The independent results-blind audit of every analysis script (`docs/paper/review_draft5/ANALYSIS_SCRIPT_AUDIT.md`,
+CPU-9, commit cb13feb; line references to 45abed7) is **applied** (2026-10-21; list below). Every number formerly labelled
+[A-pending] has been cleared by the audit (re-derived exactly from its script) or replaced by a corrected number with a
+committed generator; the label is now **[A-audited]**. The one script that does not reproduce, `sign/step_basin.py`
+(not deterministic), is labelled exploratory wherever it is used (Sec. 7.3, App. H7). The what/where T = 1024 script
+(`docs/audits/2026-10-20/causal_whatwhere_T1024.py`) was in the audit's scope (Part 6: REPRODUCED, MINORs only), so K1 is
+[A-audited] too.
+
+### Changes applied (old -> new; audit item)
+
+Counts: 4 BLOCKERs, 20 MAJORs, 46 MINORs touching draft text (MINORs that touch only reports or code docstrings are left
+to the reports' CORRECTED banners, except where noted).
+
+BLOCKERs.
+- B1 / M-LG1 (Sec. 1 contribution 5, Sec. 8 paragraph 2, Table 7, App. B, App. J6). Headline map evidence is now the whole
+  non-retrace stratum on all 200 registered walks: "the 5.9% that retrace gets wrong, places reached by another route ...
+  path 0.961 (fresh), RoPE 2L 0.138, constant 0.112" -> "the 13.4% that retrace cannot reach ...: path 0.956 all 8 seeds
+  (0.978 fresh; 0.934 eval mode), RoPE 2L 0.411 (seeds 0.34-0.55) and RoPE 1L 0.454, both below the constant 0.506
+  ('nothing')". The object-target sub-stratum is kept with its correct label ("the revisits retrace gets wrong: ... whose
+  cell holds an object; on blank cells retrace's default is right"): 6.6% (was 5.9%), path 0.925 (was 0.920) / 0.967 fresh
+  (was 0.961), RoPE 2L 0.129 (0.138), RoPE 1L 0.004 (0.002; "it predicts 'nothing'"), best constant 0.088 (0.112,
+  'nothing' excluded by construction); seeds at ceiling 0.936-1.000 (0.944-1.000). Table 7 "all": 0.993 / 0.772 / 0.505
+  (was 0.994 / 0.779 / 0.507), with "retrace applies" (0.999 / 0.828 / 0.513) replacing "retrace correct". RoPE 2L best
+  seeds 0.927 / 0.926 against 0.934 (were 0.932 / 0.930 against the 100-walk 0.941). Generator:
+  `scripts/language/tw_strata_200.py` -> `tw_strata_200walks_out.txt` (new; `N_WALKS=100` reproduces `tw_strata_out.txt`).
+- B2 / M-MP1 (Sec. 7.4 last paragraph, App. L2). C0 by stratum re-read on the per-stratum head: gap >= 128 "0.81-0.84"
+  -> "0.80 / 0.91", wrap-only "0.41-0.46, against 0.84 at rank 4" -> "0.40 / 0.48, against 0.97 at rank 4 under either
+  score"; PoPE-score long-gap C 0.840 -> 0.908 (p 0.029 -> 0.005); r4 - r2 wrap C0 +0.568 (p 0.0009) and +0.488 (p 0.012);
+  "C0 is not a sufficient statistic" deleted (artefact of the head rule); short gaps "code term unchanged" -> "moving +0.06".
+  Generator: `kernel_probe.py` with `HEAD_RULE=stratum` -> `kernel_probe_score_rank_hstratum_{out.txt,json}`,
+  `probe_stats.py` with `SUFFIX=_hstratum` -> `probe_stats_hstratum_out.txt` (code fix; default output unchanged).
+- B3 / M-SG1 / M-SG4 / M-SG7 (Sec. 4 definition, Sec. 7.1 text and Table 4, Sec. 7.3, Sec. 1, Sec. 9, App. E7, G3, H7). One
+  definition, stated once in Sec. 4 (and E7.1'): sign_clock's ratio with a symmetric map, usage pooled over heads (per head:
+  within the head). Table 4: |.| small starts "1.55-1.68" -> 1.47-1.57 (ring; with torus 1.25); frozen latents 1.39 -> 1.18
+  (Sec. 7.3 too); past pi 0.31 -> 0.32; torus |.| 1.22 -> 1.25; unsolved rank 2 "0.51-1.91 (head means)" -> 0.54-0.69 run
+  means (medians 0.58-0.79); solved rank-2 heads "0.029-0.072 / 0.94, 1.43" -> "0.03-0.07 / 0.54, 0.68"; rank 3/4
+  0.043-0.051 (unchanged). "Every failure ends with a clock about as large as its map" -> "a clock of the order of the map,
+  or (4 of 20 unsolved rank-2 runs) collapsed, clock-free heads; one more just above the SOLVED threshold". "Failing
+  non-negative arms end at 1.22-1.68" -> 1.25-1.57; caption says the |.| rows are >= 1 by construction. Generator:
+  `scripts/sign/clock_table.py` -> `clock_table_out.txt` (new; reproduces sign_clock's one-sided values as a check).
+- B4 (Sec. 7.4). "None of the 16 runs finds rank 4's two-dimensional code" -> "Only 1 of the 16 runs finds a
+  two-dimensional code (rank 4: 8/8)".
+
+MAJORs.
+- M-RK1 (Sec. 7.2, G4). Clock decomposed: a and o each 0.02-0.04 of a map step, anti-parallel (cosine -0.79 to -0.999),
+  in-plane at T = 1024; only the residual (0.001-0.025 of a map step) is off-plane. Generator: `rank/clock_decomp.py` (new).
+- M-RK2 (Sec. 7.2, G4, G6). "show it being used" -> "consistent with it but do not discriminate it from plain removal";
+  "each time by parking it off the plane" -> "its latent clock shrinks 14-85x in absolute size, and the residual
+  (0.002-0.005 of a map step) lies off the plane (share 0.91-1.00)"; G4 heading "park" -> "where the residual lies".
+- M-RK3 (Sec. 7.2 -> G4). The rank-sum p 0.018 sentence is moved to App. G4 with both caveats (p 0.29 on |c_perp| / |U|;
+  s1 solves under plain continuation and starts near-clock-free; without s1 p 0.048).
+- M-RK4 (G6). R2Clock "in the slot (off-plane 1.00)" -> "fixed unit clock by construction"; R2Clock dropped from the P4
+  count; rank-2 control 2/6 reported; "parked" rows -> "off-plane ..., then removed (66x / 180x / 5.5x)".
+- M-SG2 (Sec. 7.1, H7). "Every model that succeeds ends with clock-free heads" -> "from a small start"; "0.001-0.072" ->
+  "arm means 0.001-0.051, no solved head above 0.14"; large-start solved runs listed in H7.
+- M-SG3 (abstract, Sec. 1, contribution 3, Prop. 2, Table 1, Sec. 7.1, Sec. 9, E7, E14). Proposition 2(a) restated as a
+  bound on the position factor for n|k| < pi ("serves ... and loses the rest" dropped); a per-move tick of pi is
+  parity-compatible on the even torus (Prop. 2(b)); two solved signed torus runs from a start past pi carry 0.43 / 0.99 of
+  usage on channels with per-pair clocks near pi (clock_table.py); the failure-signature claim rests on the measured
+  strata.
+- M-SG5 (G3). rank_clock's in-span at r = 2 noted as 1 by construction, not reported (it was not in the main text).
+- M-SG6 (Sec. 7.3, H7). Step-basin numbers labelled exploratory with the observed re-run spread (0.944 -> 0.509 / 0.939,
+  0.548 -> 0.450, 0.921 -> 0.839); "does not reach halfway" -> "no run from halfway reached 0.9 within this budget".
+  Not made deterministic: that needs every cell re-run (not trivial).
+- M-MP2 (L2). Action-key attention and same-cell mass labelled "(retrieval head)"; both-head means 0.223 vs 0.147, p 0.15.
+- M-RC1 (contribution 4, Sec. 7.4, M3, M4). "never the code ... on an unchanged code" -> "never change the code family;
+  the codes they learn stay far from rank 4's"; "no better than plain rank 2's (p 0.27-0.28)" -> "not measurably more
+  readable (... below MDEs of 0.07-0.08)"; M4 adds the class shift (1D 8/16 vs 0/8, p 0.022). Generator:
+  `recurrence/reader_mde.py` (new; MDEs 0.074 / 0.080, the audit's 0.080 / 0.087 used a different formula).
+- M-RC2 (M2). Best head per seed: "0.03 -> 0.36 -> 0.46 -> 0.52 (head 0)" -> 0.03 -> 0.50 -> 0.64 -> 0.63; "64%" -> 81%;
+  action-token mass 0.01-0.15. Generator: `recurrence/pass_strata_besthead.py` (new).
+- M-DP1 (Sec. 6, F3, F5). "carry a global count in the residual stream (R^2 0.69 for P_t / t)" -> "carry a displacement
+  code over the last ~64 moves (R^2 0.72 for the last 64 moves at moves 96-127); displacement older than 64 moves is not
+  decodable (R^2 0.01), so no global count is detectable on the ring either"; "show which one each task gets" -> "training
+  finds only rules that need no count". Generator: `depth/ring_probe_window.py` (new; its values differ from the audit's
+  by <= 0.03, e.g. 2L P/t at t >= 64 0.31 vs 0.33).
+- M-DP2 (F5). "Descriptive decomposition ... reproduced" -> the p-invariant mixture does not reproduce the one-layer
+  accuracies (0.678 / 0.683 / 0.749 vs 0.710 / 0.677 / 0.824); retrace accuracy itself falls 0.797 -> 0.692.
+- M-DP3 (Sec. 6, F5). "the floor on everything else" -> "at p_plus 0.5 and 0.75 (0.487 against 0.491-0.493; at 0.9 an
+  unexplained 0.592 against 0.502)". Generator: `depth/ring_class_floors.py` (new).
+- M-DP4 (Sec. 6, F1). Generators added: `summarize_torus.py --segments` -> `out/torus_segments_out.txt` (fixed-gap
+  segments table; 98.5% / median 37 / minimum 11; wrap-only 99% / 65); torus_depth.py was re-run into the scratchpad so
+  its committed JSONs are untouched. F1 table relabelled "mean of per-seed accuracies" (pooled: 0.896, 0.785).
+
+MINORs (draft text).
+- Causal (Sec. 9, K1): "92.5% of the score's variance" -> "92.5% of the within-row sum of squares (SS(P) / SS(S))";
+  "-0.032" + "8/8 seeds lower, sign-flip p 0.008, uncorrected; Holm over the 24 contrasts 0.08"; "object identity removed"
+  -> "token identity within type removed"; "kernel x content gain" -> "x per-pair content gain plus offset"; Spearman 0.84
+  + "p 5e-5" with a committed generator (`scripts/whatwhere/whatwhere_stats.py`, new); "|.| models depend" -> "7 of 8 |.|
+  runs lose at least 0.15"; K1 collapse sentence -> "the four lowest softplus runs fall to 0.03-0.07 (5-12%); |.| runs keep
+  0.22-0.77 except Abs_r4 s0 (0.98)"; K1 notes the `.txt` came from `--report`.
+- Rank (Sec. 7.2, G4-G6): random baseline "0.50-0.71" -> "0.40-0.71 (median)" (table: 0.58 -> 0.50, 0.50 -> 0.40); C1
+  "57 of 62, against 28.7" -> "50 of 55 counting each network once, against 25.1" (`rank/c1_runlevel_once.py`, new; the
+  audit's 24.7 used another RNG draw); r_beta "0.93-1.05" -> 0.79-1.10; G5 "14 clean / 3 drifting" -> 11 / 5; G6 C7 "pooled
+  p 0.012" -> "test p 0.073; pooled 0.012 descriptive"; G4 "solved rank-D heads lam 0.000-0.001" -> "the clean head ...;
+  the other head often drifts"; G4 escape F unsolved heads show the same residual geometry; G6 grad_hiding is one
+  stochastic sample with dropout on; G4 notes the native-gauge metric (balanced gauge agrees, audit).
+- Depth (Sec. 6, Table 3, F1, F3, F5): "exactly the measured 0.943" -> "decomposes"; ring run rows "wrap-only revisits
+  included" plus plain-only values (`depth/ring_plain_bins.py`, new: 2L 0.910 / 0.828 / 0.742, 3L 0.999 / 0.996 / 0.988);
+  Table 3 caption "eval mode" and "contrasts at n = 4 carry no test"; F3 d_w at t < w note; "(seed means)" on the
+  0.874 / 0.493 sentence.
+- Language (Sec. 8, Sec. 9, J1, J2, J4, J5): Spearman +0.905 + "exact permutation p 0.0046"; "text world 0.06-0.23
+  (analysis)" -> "(23 of 24 learned-step models; the unconverged one 2.5)"; J5 "none of that kind" -> "one of that kind
+  (MapWM s13)"; the 0.98 ceiling cut and the lift sizes declared post hoc; J1 aside net = noun offset by construction; J2
+  and Sec. 8 "agreement 0.98-1.00" qualified (informative on the 10 clock models only).
+- MapPoPE (L2): kernel argmax restricted to odd offsets: "3 (414), 7 (277), 10-11 (147) and 2 (168)" -> "3 (569), 7 (342),
+  11 (156), 15 (21)" (`mappope/kernel_argmax_odd.py`, new); ~60 contrasts without Holm stated (p 0.03-0.04 do not
+  survive); "+0.114 ... replicating the registered +0.115" -> "consistent with"; C0 - C +0.20 is a coherence statement;
+  PoPE's 0.307 labelled "the more recency-weighted head".
+- Recurrence (Sec. 7.4, M2, M3): "one pass 0.381" -> "(mean; 7 of 8 seeds below the 0.51 floor)"; model on 100 walks vs
+  reader on 50 (<= 0.004 on matched walks); reader under-fits (L long-gap margin probably 0.03-0.05 too large); entropy
+  column from 10 walks labelled.
+- Sign (Sec. 7.3, H4, H7): Holm over the 8 basin tests stated; lattice tolerance 0.05 rad stated; latent_geometry's MECH
+  init values sourced to the audit; ranges 18.8-22.2 / 13.2-16.0 and 2.1-4.1 / 8.1-8.9, unweighted; H4 "the unsolved runs of
+  both classes have the relation" -> "the unsolved |.| runs and 2 of 3 unsolved signed runs (s1300 0.68)"; cone check
+  labelled an identity.
+- Floors (App. B): ring retrace "0.864 on the registered eval stream" added; text-world NEEDS-MAP floor row replaced by the
+  200-walk non-retrace and object-cell rows. (The sign_floors "maps 10-25" MINOR refers to APPENDIX_draft6; draft 2 has no
+  such sentence.)
+
+### Left open
+
+- MAIN_DRAFT2 Sec. 7.1 "signed steps cancel ... in 70-93% of channels and |.| in 2-10%" comes from `fig_wrap_share`
+  (App. H6), outside the audit's scope and not audited.
+- Numbers quoted from the audit's own scratch checks without a committed generator: the balanced-gauge medians
+  (0.94-1.00, G4), SO4_high s1206's parity-stratum accuracy (H7), the escape-F unsolved-head residual geometry (G4), the
+  reader's 5x-steps sensitivity (M3), the MECHANISM initialisation values 0.056 / 15.6 / 5.0 (H7). Each is attributed to
+  the audit in the text.
+- `step_basin.py` not made deterministic (exploratory label instead; rerunning every cell 2-3 times would cost hours of
+  CPU).
+- Figures: Fig. 9 (clock end state, now one definition), Fig. 11 (c) (per-stratum head) and Fig. 8 ring rows (plain /
+  wrap-only population) must be built from the corrected generators when CPU-10 runs; `fig_kernel_peak` (a) must use the
+  odd-offset argmax.
+- The expansion reports' bodies and the plan's claims table (rows 22, 30-31, 35-37, 41, 44, 46, 56; X7, X9, C-1, Table 5)
+  still carry the old numbers; their CORRECTED banners point to the audit, and the draft is current.
+- `kernel_probe.py` still reads score_rank seeds from a directory listing (pin them before any pilot dir is added there).
 
 ## Word counts
+
+(Counted before the audit was applied. The audit edits added about 830 whitespace tokens to the file (12,934 -> 13,765), mostly in Secs. 4, 6, 7.1, 7.2 and 8 and Table 7; the per-section counts below are not recounted.)
 
 Counted per paragraph (whitespace tokens). "Body" excludes figure captions, table captions and table cells.
 
@@ -49,8 +178,9 @@ N 218; O 476).
 
 ## Every number and its source
 
-R = registered decision or declared secondary; A = analysis (post hoc, eval-only); A-pending = analysis from
-`docs/paper/expansion/scripts/`, pending script audit; P = theory (proved); C = conjecture; D = descriptive / structural.
+R = registered decision or declared secondary; A = analysis (post hoc, eval-only); A-audited = analysis from
+`docs/paper/expansion/scripts/` (or `docs/audits/2026-10-20/`) cleared or corrected by the analysis-script audit (formerly
+"A-pending"); P = theory (proved); C = conjecture; D = descriptive / structural.
 
 **Abstract and Sec. 1** (contributions repeat numbers below).
 - retrace 0.843 (T = 1024), 0.934 (T = 128) [A]: `docs/audits/2026-10-16/sign_floors_out.txt`, `paper2x2_T128_floors_out.txt`.
@@ -62,7 +192,8 @@ R = registered decision or declared secondary; A = analysis (post hoc, eval-only
 - frozen move latents 1/8 vs 7/8 [R]: `ACCOUNTS_RESULTS.md` T2.
 - text world 0.979 vs 0.505 (fresh seeds) [R]: `TEXTWORLD_RESULTS.md` CORRECTED block, `docs/audits/2026-09-27/fresh_seeds.txt`.
 - loop / depth +0.079 / +0.096 [R]: `LOOP_RANK_RESULTS.md`; DELTA_FREE +0.122 [R]: `DELTA_FREE_RESULTS.md`.
-- NEEDS-MAP 0.961 vs 0.138 [A-pending]: `language/tw_strata_out.txt` (path re-scored, fresh seeds 2-7 0.9609; RoPE 2L 0.1376).
+- Non-retrace stratum 0.956 / 0.978 fresh vs 0.411, constant 0.506 [A-audited]: `language/tw_strata_200walks_out.txt`
+  (path re-scored all seeds 0.9555, fresh 0.9780; RoPE 2L 0.4109; best constant 0.5058; B1 / M-LG1).
 
 **Fig. 1** (`figs/fig_summary_out.txt`): (a) FACTORIAL 0.719 / 0.860 / 0.864 / 1.000, floors 0.509 / 0.844 [R; floors A];
 (b) rank 2 0 / 7 (RANK_MI; RANK_PROJ), |.| ring 0 / 8 (WRAP_EXISTENCE), |.| torus 0 / 8 re-found (GENERALITY) [R]; (c)
@@ -93,60 +224,71 @@ SEARCH S8. Prop. 6 [P]: RECURRENCE T1-T2, MAPPOPE Theory 2. Prop. 7 [P given del
 `CANCEL_RESULTS.md`. Torus 1.000 vs 0.719 / 0.860 / 0.864, p 0.029, +0.140 / +0.145, 203,925 vs 798,741; strata 0.769 ->
 0.943 / 0.938, 0.458 / 0.507, 0.457 / 0.509, floors 0.515 / 0.517 [R; floors A]: `FACTORIAL_RESULTS.md`,
 `figs/fig_factorial_strata_out.txt`. Fig. 3 caption 0.844: `figs/fig_exchange_rate_out.txt` (C-12 applied). "Why the rate
-differs": ring 1L retrace 0.68-0.80, lap 0.99-1.00, 3L 0.997 / 0.993 / 0.972, R^2 0.69 vs 0.18 [A-pending]:
-`depth/out/ring_depth_out.txt`; torus R^2 <= 0.21 [A-pending]: `depth/out/torus_probe_out.txt`; 0.996 / 1.000, 0.874,
-0.493, attention 0.55-0.58, 0.00-0.01, 0.81, 98.5% and median 37, 0.911 and 0.943 accounting [A-pending]:
-`depth/out/torus_depth_out.txt`. Table 3 [A-pending]: same file (DEPTH 4.1). LOOP_RANK strata 0.671 -> 0.927-0.990,
+differs": ring 1L retrace 0.68-0.80, lap 0.99-1.00, 3L 0.997 / 0.993 / 0.972 [A-audited]: `depth/out/ring_depth_out.txt`;
+neither-class floors 0.491-0.493 / 0.502 and 1L 0.487 / 0.592 [A-audited]: `depth/out/ring_class_floors_out.txt`,
+`ring_depth_out.txt`; window code R^2 0.72, older displacement 0.01 [A-audited]: `depth/out/ring_probe_window_out.txt`
+(M-DP1; the old R^2 0.69 vs 0.18 is no longer quoted); torus R^2 <= 0.21 [A-audited]: `depth/out/torus_probe_out.txt`;
+0.996 / 1.000, attention 0.55-0.58, 0.00-0.01, 0.81, 0.911 and 0.943 decomposition [A-audited]:
+`depth/out/torus_depth_out.txt`; 0.874, 0.493 (seed means), 98.5% and median 37 [A-audited]:
+`depth/out/torus_segments_out.txt` (`summarize_torus.py --segments`, M-DP4). Table 3 [A-audited]: `torus_depth_out.txt`. LOOP_RANK strata 0.671 -> 0.927-0.990,
 0.557 -> 0.747-0.887 [R secondary]: `LOOP_RANK_STRATA.json` via RECURRENCE Sec. 1.
 
-**Sec. 7.1 and Table 4** [A-pending]: `sign/sign_clock_out.txt` (arm means: MECH SO 0.018, SO_absmag 0.015, GAUGE SO_m
-0.016; AO 1.683, AO_absmag 1.632, AO_m 1.549; SO_absmag_fz 1.394; AO_high 0.312 with 0.82 usage on cancelling; TORUS_START
-SO4 0.001, AO4 1.219) and `sign/rank_clock_out.txt` (unsolved ch-clock head means 0.625 / 1.910 / 0.509; solved rank-2
-clean heads 0.029-0.072, drifting 0.936 / 1.431; rank 3 / 4 solved 0.043 / 0.049 / 0.051). Strata [R secondary]:
+**Sec. 7.1 and Table 4** [A-audited]: `sign/clock_table_out.txt` (one definition, B3 / M-SG1; run-level arm means: MECH SO
+0.018, SO_absmag 0.015, GAUGE SO_m 0.016; AO 1.471, AO_absmag 1.571, AO_m 1.559; SO_absmag_fz 1.181 (solved 0.058);
+AO_high 0.317; TORUS_START SO4 0.001, AO4 1.248, SO4_high solved 1.390 / 1.777 with near-pi usage 0.43 / 0.99; rank arms
+unsolved 0.595 / 0.694 / 0.541, medians 0.579 / 0.792 / 0.575; solved rank-2 heads 0.03-0.07 / 0.54, 0.68; rank 3 / 4
+solved 0.043 / 0.049 / 0.051; solved heads <= 0.138); 0.82 usage on cancelling channels: `sign/sign_clock_out.txt`;
+collapsed runs: `rank/sweep_final_out.txt` (basin COLLAPSE, indep 0.00-0.03). Strata [R secondary]:
 `fig_strata_modes_out.txt`. Usage-weighted cancelling 70-93% vs 2-10% [A]: `FIGS_NOTES.md` (fig_wrap_share table, App. H6).
 
 **Sec. 7.2 and Table 5.** Six arms, SOLVED, accuracy, p 0.0070, +0.102 p 0.027 Holm 0.054 (C-11), 478-532, 1800 epochs
 0/8 (0.908) vs 7/8, Fisher 0.0014, +0.086 p 0.0003, 0.9955 / 0.981 / 7/8 / 7/8 / 1/8 p 0.0009, 2D 1/8 vs 8/8, 3D 1/8,
 4/8, 8/8, ring 7/8 vs 8/8 [R]: as draft 1; R1DF 24 vs 58 epochs [R]: `RANK_TESTS_RESULTS.md`. SCORE_RANK 3/12 vs 3/12, 8/8
-[R]: `SCORE_RANK_RESULTS.md`. "Why the extra rank helps" [A-pending]: `rank/summarise_final_out.txt` (off-plane 0.96-1.00 in
-9 of 10 sets, random 0.50-0.71, readgain 0.09-0.27), `rank/c1_runlevel_out.txt` (57/62 vs 28.7), `rank/escape_start_out.txt`
-(16/16 heads, rank-sum p 0.018).
+[R]: `SCORE_RANK_RESULTS.md`. "Why the extra rank helps" [A-audited]: `rank/summarise_final_out.txt` (off-plane 0.96-1.00 in
+9 of 10 sets, readgain 0.09-0.27; random-direction median 0.40-0.71 per the audit's Beta computation), `rank/clock_decomp_out.txt`
+(a, o 0.017-0.037, cosine -0.79 to -0.999, residual 0.0007-0.025; escape F |c| 14-85x, residual 0.002-0.005, share
+0.91-1.00), `rank/c1_runlevel_once_out.txt` (50/55 vs 25.1), `rank/escape_start_out.txt` (16/16 heads; the rank-sum p 0.018
+now in App. G4 only).
 
 **Sec. 7.3 and Table 6.** As draft 1 (SIGN_MATCHED, RING_DIAL, WRAP_EXISTENCE, GENERALITY, LRSWEEP, ROBUST, MECHANISM,
 ACCOUNTS) [R]. Exp / softplus 1/8-3/8 [R breadth cells, fixed rates]: `SIGNROUTE_RESULTS.md`. Routes paragraph
-[A-pending]: `sign/latent_reach_out.txt` (1.000; 0.339 / 0.561), `sign/path_profiles_out.txt` (0.60-1.92 vs 0.04-0.48;
-0.30 -> 0.72 vs 0.30), `sign/latent_geometry_out.txt` (cone boundary 0.30 / 0.36 / 0.25 vs 0.056), `sign/basin_summary_out.txt`
-(frozen-content qualification). Hybrid 8/8 at both rates, 1.000, |.| 0/8 and 2/8, Fisher 0.0002 / 0.007, u-ratio 0.043 /
+[A-audited]: `sign/latent_reach_out.txt` (1.000; 0.339 / 0.561), `sign/path_profiles_out.txt` (0.60-1.92 vs 0.04-0.48;
+0.30 -> 0.72 vs 0.30), `sign/latent_geometry_out.txt` (cone boundary 0.30 / 0.36 / 0.25; the 0.056 initialisation value
+recomputed by the audit), `sign/basin_summary_out.txt` (frozen-content qualification; exploratory, M-SG6). Hybrid 8/8 at both rates, 1.000, |.| 0/8 and 2/8, Fisher 0.0002 / 0.007, u-ratio 0.043 /
 0.002, cosine -0.996 / -1.000, abs_tied 0/16 [R; end states descriptive in the file]: `SIGNROUTE_RESULTS.md`. Clock / map
-1.39 for frozen latents [A-pending]. CARoPE 0.667 vs 0.722 p 0.040; CoPE 0.887 p 0.0002, +0.157; line 1/16 [R]:
+1.18 for frozen latents [A-audited]: `sign/clock_table_out.txt`. CARoPE 0.667 vs 0.722 p 0.040; CoPE 0.887 p 0.0002, +0.157; line 1/16 [R]:
 `GENERALITY_RESULTS.md`, `ACCOUNTS_RESULTS.md`. Selective RoPE +0.236, 0.961 -> 0.507, 0/8 vs 8/8, 0.961 vs 1.000 p 0.0002,
 all descending; observation / move step 0.86-0.96 vs 0.027; state-tracking 0.769 0/8, negative-mass share 0.00 [R;
 readouts declared secondaries, descriptive]: `SROPE_TORUS_RESULTS.md`.
 
 **Sec. 7.4.** LOOP_RANK 0.894 / 0.973 / 0.990, p 0.0034 / 0.0012, 2/8 / 5/8, rank 4 0.998 [R]: `LOOP_RANK_RESULTS.md`.
-Reader 0.866 / 0.894, 1.000 / 0.998, 0.32-0.44, 0.893 / 0.897 p 0.27-0.28, p 0.0002, 0.381, 1/16 2D codes, half 1D
-[A-pending]: `recurrence/out/SUMMARY.txt`, `GEOMETRY.txt` (RECURRENCE 5.2-5.4). PAPER2X2 0.999 / 0.971 / 0.679 / 0.805,
-+0.154 [R]. Probes 0.995 vs 0.70, 0% vs 53-100%, 0.110 of 0.126 [A-pending]: `mappope/probe_stats_out.txt`,
+Reader 0.866 / 0.894, 1.000 / 0.998, 0.32-0.44, 0.893 / 0.897, p 0.0002, 0.381, 1/16 2D codes, half 1D [A-audited]:
+`recurrence/out/SUMMARY.txt`, `GEOMETRY.txt` (RECURRENCE 5.2-5.4); MDE 0.074 / 0.080 [A-audited]: `recurrence/out/READER_MDE.txt`;
+7 of 8 seeds below the floor: `recurrence/out/pass_strata_L.json`. PAPER2X2 0.999 / 0.971 / 0.679 / 0.805,
++0.154 [R]. Probes 0.995 vs 0.70, 0% vs 53-100%, 0.110 of 0.126 [A-audited]: `mappope/probe_stats_out.txt`,
 `kernel_probe_paper2x2_out.txt`. DELTA_FREE +0.122 p 0.0078, +0.180, 50-100% with peaks at 3, 4, 7, 8, -0.018 p 0.31,
-0.987 -> 0.62 [R; mechanism readouts declared secondaries]: `DELTA_FREE_RESULTS.md`. T = 1024 C 0.617 -> 0.960, C0 0.81-0.84
-and 0.41-0.46, rank 4 0.99 and 0.84 [A-pending; 40 walks per seed]: `mappope/probe_stats_out.txt`.
+0.987 -> 0.62 [R; mechanism readouts declared secondaries]: `DELTA_FREE_RESULTS.md`. T = 1024 C 0.617 -> 0.960, C0 +0.06, C0
+0.80 / 0.91 and 0.40 / 0.48, rank 4 0.99 and 0.97 [A-audited; 40 walks per seed; per-stratum head, B2]:
+`mappope/probe_stats_hstratum_out.txt`, `kernel_probe_score_rank_hstratum_out.txt`.
 
-**Sec. 8 and Table 7.** Retrace 0.934, constant 0.505, reversal-copy 0.597 [A-pending / R]: `language/tw_retrace_floor_out.txt`,
+**Sec. 8 and Table 7.** Retrace 0.934, constant 0.505, reversal-copy 0.597 [A-audited / R]: `language/tw_retrace_floor_out.txt`,
 `TEXTWORLD_RESULTS.md`. 0.979 +/- 0.048, 0.505, +0.474 p 0.0022, 0.793 [R]: `fresh_seeds.txt`. 0.993 re-scored [R, registered
-re-score]: `docs/audits/2026-10-04/DROPOUT_RESCORE.md`. Table 7, 5.9%, 0.961, 0.944-1.000, 0.138, 0.112 [A-pending]:
-`language/tw_strata_out.txt`. Cancel 0.002-0.012, synonyms 1.000, 0.39-0.51, 31-38 channels, cosine +0.999 to +1.000 [R
-secondaries]: `TEXTWORLD_RESULTS.md`, `fig_textworld_out.txt`. Step table 0.004-0.03, 0.04-0.16 [A-pending]:
+re-score]: `docs/audits/2026-10-04/DROPOUT_RESCORE.md`. Table 7, 13.4%, 0.956 / 0.978 / 0.934, 0.411, 0.454, 0.506; 6.6%,
+0.925 / 0.967, 0.129, 0.004, 0.088; 0.927 / 0.926 [A-audited]: `language/tw_strata_200walks_out.txt` (all 200 walks;
+B1 / M-LG1). Cancel 0.002-0.012, synonyms 1.000, 0.39-0.51, 31-38 channels, cosine +0.999 to +1.000 [R
+secondaries]: `TEXTWORLD_RESULTS.md`, `fig_textworld_out.txt`. Step table 0.004-0.03, 0.04-0.16 [A-audited]:
 `language/tw_step_account_out.txt`. DirOnly 0.970-0.974 [R, eval mode]: `TW_NORMSTEP_RESULTS.md`. Collapse 0.989-1.000 ->
-0.952-0.975, 71-100%; lift 0.962-0.981 -> 0.999-1.000 [A-pending]: `language/tw_attention_asides_out.txt`,
+0.952-0.975, 71-100%; lift 0.962-0.981 -> 0.999-1.000 [A-audited]: `language/tw_attention_asides_out.txt`,
 `tw_attention_asides_dironly_out.txt`. 10 of 24, 26-38, 0.06, 0.007, 0.98-1.00, 79-99%, 0.009, 0.03-0.65, 0.09-0.26,
-Spearman +0.905 [A-pending]: `tw_step_account_out.txt`, `tw_clock_unit_out.txt`, `usage_tick_out.txt`,
-`tw_attention_asides_out.txt`, `tw_common_used_out.txt`. Leak 16/16 vs 0/8, 8/8 vs 0/8 [R]: `LEAK_RESULTS.md`,
+Spearman +0.905 [A-audited]: `tw_step_account_out.txt`, `tw_clock_unit_out.txt`, `usage_tick_out.txt`,
+`tw_attention_asides_out.txt`, `tw_common_used_out.txt`; its p 0.0046: `scripts/whatwhere/whatwhere_stats_out.txt`. Leak 16/16 vs 0/8, 8/8 vs 0/8 [R]: `LEAK_RESULTS.md`,
 `GAIN_PHASE_RESULTS.md`.
 
 **Sec. 9.** 0.9955, 7/8, 8/8, 0-2/8, 0/8, 16/16 [R]. EM 1.000, 0.578 -> 0.928 (budget contrast not registered) [R pieces]:
 `WARM_RESULTS.md`, `SPREAD_RESULTS.md`, `SEARCH_RESULTS.md`. What/where 0.998, 0.966 (-0.032), 92.5%, 0.113, 0.25-0.31,
-Spearman 0.84 [A]: `docs/audits/2026-10-20/WHAT_WHERE_T1024.md`. rho 0.064-0.079, 0.06-0.23, 21.8-22.1, 9.9-12.3, 4.5-6.6
-[A-pending]: `language/crossover_usage_out.txt`, `usage_tick_out.txt`. 1.5053 vs 1.5050 [pilot]:
+Spearman 0.84 [A-audited]: `docs/audits/2026-10-20/WHAT_WHERE_T1024.md`; sign-flip p 0.0078, t p 0.0116, SS(P)/SS(S)
+0.925, Spearman 0.838 p 5.0e-5: `scripts/whatwhere/whatwhere_stats_out.txt`. rho 0.064-0.079, 0.06-0.23, 21.8-22.1, 9.9-12.3, 4.5-6.6
+[A-audited]: `language/crossover_usage_out.txt`, `usage_tick_out.txt`. 1.5053 vs 1.5050 [pilot]:
 `TINYSTORIES_PILOT_RESULTS.md`; +0.0056 bpc, 3/3 [R, n = 3]: `CODE_FULLVAL_RESULTS.md`; R^2 0.994-0.999 [A]:
 `docs/audits/2026-10-12/alpha_language_out.txt`. Egocentric +0.050 -> +0.488 (n = 8, 16-epoch recipe, index arm on the
 0.508 floor; not registered): `KNOB_SWEEP_n8.md`.
@@ -180,10 +322,11 @@ sections.
    4.5 -> Prop. 3 + Lemma 1; 4.6 -> Prop. 4; 4.7 -> Prop. 5 + Conjecture 1; 4.8 -> Remark 2; 4.9 -> Prop. 6; 4.10 -> Prop. 7;
    4.11 -> Remark 3 (App. E13, used in Sec. 9); CARoPE (v3 P6) -> Prop. 8 (stated in Sec. 7.3). App. E's header maps
    each to its E-label.
-5. **CPU-3 (clock-metric harmonisation) not done.** Table 4 uses SEARCH's per-inverse-pair clock throughout (X2's chosen
-   definition). RANK's off-plane share and readgain are reported with RANK's own definition (the clock common to all
-   moves) in Sec. 7.2 and App. G4, labelled as a different metric; App. G4 says the two agree that what is read in solved
-   heads is small and are not numerically comparable. X3's clean-head / other-head split is applied (Table 4, G3).
+5. **CPU-3 (clock-metric harmonisation)**, done in part by applying the audit (B3, M-RK1): Table 4, G3 and H7 now use
+   one channel ratio (the symmetric clock / map ratio of Sec. 4 / E7.1', `sign/clock_table.py`). RANK's latent quantities
+   (off-plane share, readgain) stay a separate, latent metric in Sec. 7.2 and App. G4, now with the a + o decomposition
+   (`rank/clock_decomp.py`); they are not recomputed with per-pair clocks (the audit shows the per-pair clock omits the
+   observation step and so overstates the drift). X3's clean-head / other-head split is applied (Table 4, G3).
 6. **CPU-4 (rank-3 pair clocks) not done**: per X14 neither account of rank 3's 6/8 appears in the main text.
 7. **CPU-5, CPU-6, CPU-8 not done**: the MAPPOPE T = 1024 probe remains at 40 walks per seed (stated in App. L2); no
    polarisation check; no loss-by-stratum for LOOP_RANK.
@@ -203,8 +346,9 @@ sections.
 13. **Abstract.** The plan's abstract with: "In line with this" (not "Accordingly"); the SIGNROUTE clause added ("vanishes
     when only the readout, not the increment, is non-negative", ring); "learns which words move it" dropped for length.
     "On a ring" kept for the best-rate claim (C-18). 300 words by token count (the plan's version counts about 280).
-14. **Three ranges differ from the reports' summaries; the output files were used.** |.| clock / map arm means are
-    1.22-1.68 in `sign_clock_out.txt` (SEARCH's summary says 1.10-1.68; no arm mean of 1.10 appears in the output);
+14. **Three ranges differ from the reports' summaries; the output files were used.** |.| clock / map arm means were
+    1.22-1.68 in `sign_clock_out.txt` (SEARCH's summary says 1.10-1.68; no arm mean of 1.10 appears in the output; now
+    1.25-1.57 under the audit's symmetric definition);
     removing as many map channels gives 0.03-0.65 as means over draws (LANGUAGE's summary says 0.02-0.65; 0.02 is a draw
     interval bound); cone-boundary share 0.25-0.36 including GAUGE (the plan quotes 0.30-0.36, MECHANISM arms only).
 15. **Protocol sentence (C-3)** is label-based ("every contrast reported without '(analysis)' is registered or a declared
@@ -280,11 +424,29 @@ Checked: figure numbers 1-8 in order of first mention (MapFormer's own "Fig. 3d"
 "their"); tables 1-7 in order; every "App. X" in the main text exists in the appendix; every proposition used is stated
 before use (Prop. 8 is stated where first used, in Sec. 7.3).
 
+### Second rule-28 read, after applying the script audit (2026-10-21)
+
+Read MAIN_DRAFT2 start to end and every changed appendix block. Checked: every new or changed number against its
+generator's output (`tw_strata_200walks_out.txt`, `clock_table_out.txt`, `clock_decomp_out.txt`,
+`c1_runlevel_once_out.txt`, `ring_probe_window_out.txt`, `ring_class_floors_out.txt`, `ring_plain_bins_out.txt`,
+`torus_segments_out.txt`, `kernel_probe_score_rank_hstratum_out.txt`, `probe_stats_hstratum_out.txt`,
+`kernel_argmax_odd_out.txt`, `PASS_STRATA_BESTHEAD.txt`, `READER_MDE.txt`, `whatwhere_stats_out.txt`); every "App. X"
+reference resolves; Tables 1-7 and Figures 1-8 still in order of first mention; one clock / map definition, stated in Sec.
+4 and E7.1', used by Table 4, G3 and H7. Fixed during the read: the abstract's "removes it" (antecedent lost) -> "removes
+the clock"; Sec. 7.1's first claim excluded the solved rank-2 runs' drifting heads -> "clock-free heads ... and every
+solved rank-2 run with at least one clean head"; Prop. 4(c)'s c now names the observation step (as Sec. 7.2 uses it);
+Prop. 6 "code class" -> "code family" (the geometry classes of App. M4 do shift); the Sec. 7.4 heading "acts on the
+readout term only" -> "repairs the readout, not the code" (the measured code term moves +0.06); G4 random baselines in the
+unsolved-head sentence -> medians; "G-2" in G4 -> RANK_THEORY's G2 (the plan's G-2 is the sign-route batch); paragraphs
+touched by the edits re-wrapped to 120 columns. Claim map: no withdrawn claim introduced; "parking" now appears only as
+the proved route (Prop. 4(c), Sec. 9) and never as a measured mechanism.
+
 ## Open items
 
-1. **Script audit pending** (see top). Apply `ANALYSIS_SCRIPT_AUDIT.md` when it lands.
+1. **Script audit applied** (see top). What it leaves open is listed there under "Left open".
 2. Build the figures of deviation 1 (CPU-10), then move the corresponding tables to the appendix if space is short.
-3. CPU-3 (one clock definition for Table 4 and G4), CPU-4, CPU-5, CPU-6, CPU-8 (T = 1024 kernel probe at 100 walks).
+3. CPU-4, CPU-5, CPU-6, CPU-8 (T = 1024 kernel probe at 100 walks). CPU-3 is done for the channel ratio (Table 4, G3,
+   H7); G4's latent metric stays separate by design.
 4. App. A3 status cells to verify: "reproduced: yes" for LOOP_RANK and TW_NORMSTEP rests on both batches being named in
    `REPRO_AUDIT_nonsign.md`; SCORE_RANK's code check is its Amendment 1 (independent code audit before launch);
    KNOB_SWEEP's seed numbers are not given in `KNOB_SWEEP_n8.md` ("8 seeds").

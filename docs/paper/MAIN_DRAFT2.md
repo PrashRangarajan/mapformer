@@ -12,8 +12,9 @@ torus walks, where a map-free rule that retraces the last run of moves scores 0.
 0.998 (8 of 8 seeds solved) against 0.731 for index RoPE. The rotation carries the prefix sum of the moves, so one layer
 compares positions at any gap; index attention must build that sum in its residual stream, and at matched depth one path
 layer is worth about three index layers on Dyck-2 and on a biased 1D walk, and more than four on the torus. We show that a
-map code is a phase without a clock, the phase an out-and-back adds, and that any clock serves only short-gap revisits.
-Two choices decide whether training removes it. A signed step at per-head rank above the map's dimension has two routes
+map code is a phase without a clock, the phase an out-and-back adds, and bound how much a clock erodes the position match
+one attention pass can make as the moves since the last visit grow. Two choices decide whether training removes the
+clock. A signed step at per-head rank above the map's dimension has two routes
 that remove the clock and leave the map intact; at rank equal to the dimension no channel can be clock-free and a full
 map while a clock remains; a non-negative step has neither route from a small start. In line with this, rank 2 solves the torus
 on at most 2 of 8 seeds against 8 of 8 at rank 4, and non-negative steps on 0 of 8 against 8 of 8 for signed steps,
@@ -37,10 +38,10 @@ The account turns on one decomposition. Split the phase a channel gains over an 
 displacement, the *map*, and a part that grows with the number of moves whatever their direction, the *clock*. A map
 code is one whose used channels carry no clock: an out-and-back returns the phase to where it started. Path
 integration writes the prefix sum of the moves into the rotation, so a clock-free code lets one attention layer find the
-same place at any gap and across the wrap of the torus. Any clock does the opposite. Its phase error grows with the number
-of moves since the last visit, so it serves short-gap revisits and loses long-gap and wrap-only ones (Proposition 2). That
-signature is shared, at the level of what one attention pass can read, by every model we see fail: index attention, a
-rank-2 content-to-angle map and a non-negative step.
+same place at any gap and across the wrap of the torus. A clock works against this: its phase error grows with the number
+of moves since the last visit, and Proposition 2 bounds the position match it leaves to one attention pass while that
+error stays below pi. Every model we see fail, index attention, a rank-2 content-to-angle map and a non-negative step,
+shows the matching measured signature: it keeps short-gap revisits and loses long-gap and wrap-only ones (Fig. 2).
 
 Depth does not buy the map. Four index layers, or one block looped four times, learn local return rules that reach a few
 direction runs, and never find the global count that would give them the map (Sec. 6). So the map has
@@ -50,7 +51,8 @@ leaves the map untouched. Above rank D, the map's dimension, each channel can al
 no cost to the map. A non-negative step has neither route from a small start, and at rank D no channel can be both
 clock-free and a full map while a clock remains (Proposition 4). The measurements follow this inventory on both axes
 (Fig. 1): the constrained classes represent the map exactly, keep or re-find an installed solution, and from scratch
-rarely find it, and every failure ends with a clock about as large as its map.
+rarely find it, and the runs that fail from a small start end with a clock of the order of their map or, for a few rank-2
+runs, with a map that has lost a dimension.
 
 **Contributions.**
 
@@ -63,19 +65,21 @@ rarely find it, and every failure ends with a clock about as large as its map.
    precision and large width (cited construction). Trained index models instead learn local return rules whose reach
    grows with depth in direction runs (analysis). Registered exchange rates: about three index layers on Dyck-2 and on a
    biased ring, more than four on the torus.
-3. *A theory of when the map is found.* The clock/map decomposition and the failure signature it implies; a route
+3. *A theory of when the map is found.* The clock/map decomposition and the bound it puts on one-pass retrieval; a route
    inventory for each step class (proved); a conjecture for why rank D starves the collective route in two or more
    dimensions but not in one. Registered support on both axes: the solution exists, is kept or re-found, and is not found
    from scratch at rank 2 (at most 2/8, also at twice the budget) or with a non-negative step (0/8 against 8/8, also at
    each step's best of four learning rates on a ring). Causal tests of the routes: freezing the move latents removes the
    collective route (1/8 against 7/8), and a non-negative readout with a signed increment restores it (16/16).
-4. *Readers and codes.* Loops, extra layers and a score rule change how a code is read, never the code. Loops and depth
-   raise rank-2 accuracy (+0.079 and +0.096, registered) on an unchanged code (analysis). PoPE's polar score pins every
-   kernel's peak at zero phase difference (proved), which helps a path phase and hurts an index phase; freeing its phase
-   offset raises the index model by +0.122 and leaves the path model at ceiling (registered).
-5. *Maps from words.* One path layer learns navigation told in English (registered). On the revisits retrace gets wrong it
-   scores 0.961 against 0.138 for two index layers (analysis). Its step table follows one rule: a word's offset from its
-   place depends on its role, not its identity, and a per-move clock survives only in channels retrieval does not use.
+4. *Readers and codes.* Loops, extra layers and a score rule change how a code is read and never change the code family
+   (proved). Loops and depth raise rank-2 accuracy (+0.079 and +0.096, registered), while the codes they learn stay far
+   from rank 4's (analysis). PoPE's polar score pins every kernel's peak at zero phase difference (proved), which helps a
+   path phase and hurts an index phase; freeing its phase offset raises the index model by +0.122 and leaves the path
+   model at ceiling (registered).
+5. *Maps from words.* One path layer learns navigation told in English (registered). On the revisits retrace cannot reach
+   it scores 0.956 (0.978 on fresh seeds) against 0.411 for two index layers, below the 0.506 constant (analysis). Its
+   step table follows one rule: a word's offset from its place depends on its role, not its identity, and a per-move
+   clock survives only in channels retrieval does not use.
 
 ![Figure 1](figs/fig_summary.png)
 
@@ -198,15 +202,20 @@ finds, not representational depth bounds.
 
 **Clock and map.** For an inverse pair of moves (x, y) in channel c write the *clock* k_c = a_c(x) + a_c(y) and the *map*
 m_c = a_c(y). Over an interval with n_x moves x and n_y moves y, displacement d = n_y - n_x, the phase is
-m_c d + k_c n_x exactly. A *map code* has k_c = 0 mod 2 pi in every channel attention uses.
+m_c d + k_c n_x exactly. A *map code* has k_c = 0 mod 2 pi in every channel attention uses. To measure how far a trained
+code is from one we use a single ratio throughout the paper (Table 4, App. G3, H7): the *clock / map ratio* is the
+usage-weighted rms of wrap(k_c) over the usage-weighted rms of the map, with the map's size taken symmetrically over the
+pair, (wrap(a_c(x))^2 + wrap(a_c(y))^2) / 2, so that the readout does not depend on which move is called y; sums run over
+the inverse pairs and the channels of both heads (for one head, over its channels with its usage normalised to 1).
 
-**Proposition 2 (the failure signature and the tick rule; proved).** (a) A zero-displacement revisit after n backward
-moves reads phase k_c n in channel c. If a usage share s of the channels has kappa <= |k_c| <= K, the same-cell position
-factor sum_c q_c cos(k_c n) is at most 1 - s (1 - cos(kappa n)) for n <= pi / K. A clock therefore serves revisits with
-n |k| well below pi and loses the rest; index RoPE is the extreme case, in which every token advances every channel. (b)
-More generally, if the target is the key at the last visit to the same cell and returns come at lags with greatest common
-divisor g (g = 2 on the even torus), a channel can serve place-keyed retrieval only if its per-move *tick* is
-0 mod 2 pi / g.
+**Proposition 2 (a bound on the position factor, and the tick rule; proved).** (a) A zero-displacement revisit after n
+backward moves reads phase k_c n in channel c. If a usage share s of the channels has kappa <= |k_c| <= K, the same-cell
+position factor sum_c q_c cos(k_c n) is at most 1 - s (1 - cos(kappa n)) for n <= pi / K. The bound applies only while n
+|k| stays below pi: it says how fast a clock erodes the position match of a revisit, not that every clocked code fails
+at long gaps (by (b), a per-move tick of pi is invisible to revisits on the even torus). Index RoPE is the extreme case,
+in which every token advances every channel. (b) More generally, if the target is the key at the last visit to the same
+cell and returns come at lags with greatest common divisor g (g = 2 on the even torus), a channel can serve place-keyed
+retrieval only if its per-move *tick* is 0 mod 2 pi / g.
 
 **Proposition 3 (representability by wrapping; proved).** If at most r tokens step, a |.| model of rank r reproduces any
 signed angle table exactly mod 2 pi; annihilating the observation embeddings in W_in leaves only the moves stepping, so
@@ -219,17 +228,17 @@ J = diag(1, -1). A non-negative step therefore fixes only the relative signs of 
 inverse pair it removes cancellation through zero, angles (a, -a), while the wrapped code (a, 2 pi - a), the same function,
 remains.
 
-**Proposition 4 (route inventory; proved).** (a) *Signed, collective route.* The clock vector is
-k = diag(omega) W u with u = z_x + z_y. The set {u = 0} cancels every channel at once and leaves the map free; gradient
-flow on a quadratic clock surrogate converges to it from every start; for almost every readout it is the only latent set
-that cancels every channel. (b) *|.| has neither route from a small start.* The same latent move ends at a(y) = a(x), a
-clock. At a generic readout no latent choice cancels more than 2r channels non-blindly. Per channel, an unwrapped |.|
-pair has |k_c| >= |m_c|, and its non-blind zero-clock points lie at |k_c| = 2 pi n, across |k_c| = pi from a small start.
-(c) *Rank.* Let c be the latent step common to all moves and U the map frame, the half-differences of opposite moves'
-latents. At per-head rank D, c lies in the plane U spans, c = U beta for a phantom displacement beta, so a channel is
-clock-free only by losing resolution along beta; above rank D the part of c outside the map plane can be cancelled channel by channel
-with the map untouched (*parking*). (d) *One dimension.* At D = 1 no readout change alters the drift-to-map ratio; only the
-collective route acts.
+**Proposition 4 (route inventory; proved).** (a) *Signed, collective route.* The clock vector is k = diag(omega) W u
+with u = z_x + z_y. The set {u = 0} cancels every channel at once and leaves the map free; gradient flow on a quadratic
+clock surrogate converges to it from every start; for almost every readout it is the only latent set that cancels every
+channel. (b) *|.| has neither route from a small start.* The same latent move ends at a(y) = a(x), a clock. At a generic
+readout no latent choice cancels more than 2r channels non-blindly. Per channel, an unwrapped |.| pair has |k_c| >=
+|m_c|, and its non-blind zero-clock points lie at |k_c| = 2 pi n, across |k_c| = pi from a small start. (c) *Rank.* Let
+c be the latent step common to all moves (with the mean observation step added when observations step) and U the map
+frame, the half-differences of opposite moves' latents. At per-head rank D, c lies in the plane U spans, c = U beta for
+a phantom displacement beta, so a channel is clock-free only by losing resolution along beta; above rank D the part of c
+outside the map plane can be cancelled channel by channel with the map untouched (*parking*). (d) *One dimension.* At D
+= 1 no readout change alters the drift-to-map ratio; only the collective route acts.
 
 **Proposition 5 (hiding; proved to first order) and Conjecture 1.** At rank D >= 2 with isotropic resolution and a small
 drift, rotating a channel's resolution off the drift direction lowers the drift loss at zero first-order cost to the map
@@ -242,11 +251,11 @@ training reaches S within the budget with probability at least one half. "A solu
 kept, but training from scratch does not find it" says that S is non-empty, S lies in Bas, and the initialisation
 distribution puts little mass on Bas: the obstruction is where training starts, not what the class contains.
 
-**Proposition 6 (readers and codes; proved).** In one layer, the query and key at a scored revisit depend on token identity
-only, so the model is a position-only reader of its own code. MapFormer computes theta once from the embeddings, so a
-loop or extra layers widen the reader and never change the code class. Any score of the form
-sum_c A_c cos(dphi_c + beta_c) splits target coherence into a code term C0 (the A-weighted cos dphi on the target) and a
-readout term C - C0; a score rule acts only on the second.
+**Proposition 6 (readers and codes; proved).** In one layer, the query and key at a scored revisit depend on token
+identity only, so the model is a position-only reader of its own code. MapFormer computes theta once from the
+embeddings, so a loop or extra layers widen the reader and never change the code family (the set of codes the step map
+can produce). Any score of the form sum_c A_c cos(dphi_c + beta_c) splits target coherence into a code term C0 (the
+A-weighted cos dphi on the target) and a readout term C - C0; a score rule acts only on the second.
 
 **Proposition 7 (peak pinning; proved given delta = 0).** PoPE's score sets beta_c = -delta_c with delta content-free and,
 in trained models, in its clamp's dead zone (delta = 0). Then every head's kernel, for every content pair, is a
@@ -260,7 +269,7 @@ content pair's kernel decreases over offsets 0-3, so no fixed far offset can be 
 |---|---|---|
 | Prop. 1, prefix sum in the phase | proved | same-cell attention of path models at long gaps (Sec. 6) |
 | Remark 1, two-layer count | cited (Liu et al. Lemma 6; Yao et al.) | probes: no count in torus index models (Sec. 6) |
-| Prop. 2, signature and tick rule | proved | strata of every failing model (Fig. 2); text-world channels (Sec. 8) |
+| Prop. 2, position-factor bound and tick rule | proved | bound: consistent with the strata of every failing model (Fig. 2), not a test of them; tick rule: text-world channels (Sec. 8) |
 | Prop. 3 and Lemma 1, representability and gauge | proved | constructions exact to 1.4e-6 rad (App. D) |
 | Prop. 4, route inventory | proved | end-state clocks (Sec. 7.1); frozen latents; hybrid readout (Sec. 7.3) |
 | Prop. 5, hiding at first order | proved under small drift, isotropy, near-isometry | drift on the least-resolved axis (Sec. 7.2) |
@@ -337,22 +346,25 @@ batch's retrace floor (0.844; the 0.843 of Table 2 is the floor on the sign batc
 always-blank and retrace on this batch's own walks).*
 
 **Why the rate differs by task.** A revisit asks for an earlier observation at the same cell, that is, for a key whose
-moves since then sum to zero. Remark 1 offers index attention two ways to compute that. The stored models show which one
-each task gets (analysis; Table 3, App. F). One index layer learns exactly retrace and the one-lap offset: on the ring it scores
-0.68-0.80 on retraces, 0.99-1.00 on one-lap returns once they are common, and the floor on everything else, so at p_plus
-1.0, where every revisit is a one-lap return, it matches the path layer. Three index layers on the ring are flat in the
-number of direction runs a revisit spans (0.997 / 0.993 / 0.972 at 3-4 / 5-8 / 9-16 runs) and carry a global count in the
-residual stream (linear-probe R^2 0.69 for P_t / t, against 0.18 at one layer). On the torus no index model carries a
-count (R^2 at most 0.21). Four layers or the loop solve retraces (0.996 / 1.000) and decay with the number of runs spanned,
-at a fixed gap as well as overall: at gaps of 32-127 moves four layers score 0.874 at 2 runs and 0.493 at 17 or more. Their
-last layer puts 0.55-0.58 of its attention on the remembered cell for retraces and 0.00-0.01 at long gaps, where the path
-layer puts 0.81. Nearly all long-gap revisits span 17 or more runs (98.5%; median 37), beyond that reach. The arithmetic
-closes: the short-gap retrace floor is (0.680 x 1 + 0.148 x 0.5) / 0.828 = 0.911, and four layers give
-(0.680 x 0.996 + 0.148 x 0.699) / 0.828 = 0.943, exactly the measured 0.943, so depth adds the exact retrace rule plus
-partial returns over 3-8 runs.
+moves since then sum to zero. Remark 1 offers index attention a global count or rules that need none. The stored models
+show that training finds only the second kind, with a reach that differs by task (analysis; Table 3, App. F). One index
+layer learns retrace and the one-lap offset: on the ring it scores 0.68-0.80 on retraces, 0.99-1.00 on one-lap returns
+once they are common, and the floor on everything else at p_plus 0.5 and 0.75 (0.487 against 0.491-0.493; at 0.9 an
+unexplained 0.592 against 0.502), so at p_plus 1.0, where every revisit is a one-lap return, it matches the path layer.
+Three index layers on the ring are flat in the number of direction runs a revisit spans (0.997 / 0.993 / 0.972 at 3-4 /
+5-8 / 9-16 runs, wrap-only revisits included) and carry a displacement code over the last ~64 moves (linear-probe R^2
+0.72 for the displacement over the last 64 moves, read at moves 96-127); displacement older than 64 moves is not
+decodable (R^2 0.01), so no global count is detectable on the ring either, and on 128-move walks a 64-move window covers
+most revisits. On the torus no index model carries a count (R^2 at most 0.21). Four layers or the loop solve retraces
+(0.996 / 1.000) and decay with the number of runs spanned, at a fixed gap as well as overall: at gaps of 32-127 moves
+four layers score 0.874 at 2 runs and 0.493 at 17 or more (seed means). Their last layer puts 0.55-0.58 of its attention
+on the remembered cell for retraces and 0.00-0.01 at long gaps, where the path layer puts 0.81. Nearly all long-gap
+revisits span 17 or more runs (98.5%; median 37), beyond that reach. Short-gap accuracy decomposes over these classes:
+the retrace floor is (0.680 x 1 + 0.148 x 0.5) / 0.828 = 0.911, and four layers give (0.680 x 0.996 + 0.148 x 0.699) /
+0.828 = 0.943, so depth adds the exact retrace rule plus partial returns over 3-8 runs.
 
-*Table 3. Torus at T = 1024: accuracy by revisit class (analysis; FACTORIAL models, n = 4; "runs" = maximal runs of one
-move between the two visits; share = fraction of all revisits).*
+*Table 3. Torus at T = 1024: accuracy by revisit class (analysis; FACTORIAL models, n = 4, eval mode; "runs" = maximal
+runs of one move between the two visits; share = fraction of all revisits; class contrasts at n = 4 carry no test).*
 
 | revisit class | share | index 1 layer | index 4 layers | index loop x4 | path 1 layer |
 |---|---|---|---|---|---|
@@ -379,28 +391,34 @@ whether training removes the clock, and by which route.
 
 ### 7.1 The clock and the signature
 
-Every model that fails from a small start, on either axis, ends with a clock about as large as its map, and every model
-that succeeds ends with clock-free heads (Table 4; analysis). The ratio is the usage-weighted rms clock over the rms map, per inverse
-pair, with usage the mean query norm of a channel at move tokens times its mean key norm at observation tokens. Failing
-non-negative arms end at 1.22-1.68 (arm means), failing rank-2 arms at 0.51-1.91 (head means), and successes from small
-starts at 0.001-0.072. A
-solved rank-2 run always has at least one clean head; two of the four keep a drifting second head. By Proposition 2 the
-failing codes therefore serve short-gap revisits and lose long-gap and wrap-only ones, which is what their strata show:
-shared rank 2 0.950 / 0.671 / 0.557 and |.| 0.870 / 0.630 / 0.515 against 1.000 / 0.995 / 0.982 for the signed
-rank-4 model (Fig. 2b-c). Weighted by usage, signed steps cancel opposite moves mod 2 pi in 70-93% of channels and |.|
-steps in 2-10% (analysis; App. H6).
+Training from a small start ends in one of two places on either axis (Table 4; analysis; the clock / map ratio of Sec.
+4). The models that succeed end with clock-free heads: the signed and rank-3/4 arms at arm means 0.001-0.051, with no
+head above 0.14, and every solved rank-2 run with at least one clean head (0.03-0.07; two of the four keep a drifting
+second head, 0.54 and 0.68). The models that fail end with a clock of the order of their map: the non-negative arms at
+1.25-1.57 (arm means; for an unwrapped |.| channel a ratio of at least 1 holds by construction, so the informative part
+is that the channels did not wrap) and the unsolved rank-2 runs at 0.54-0.69 (medians 0.58-0.79). The exceptions are
+informative too: 4 of the 20 unsolved rank-2 runs end with clock-free heads whose two map axes have collapsed onto one
+direction (a map that has lost a dimension; App. G3), and one more sits just above the SOLVED threshold (final loss
+0.051). The measured strata show the signature that Proposition 2's bound leads one to expect: shared rank 2 scores
+0.950 / 0.671 / 0.557 on short-gap / long-gap / wrap-only revisits and |.| 0.870 / 0.630 / 0.515, against 1.000 / 0.995
+/ 0.982 for the signed rank-4 model (Fig. 2b-c). The bound alone does not predict failure: two signed torus runs started
+with angle sums past pi solve with clock / map 1.39 and 1.78, with 0.43 and 0.99 of their usage on channels whose
+per-pair clock is near pi, where the bound says nothing (App. H7). Weighted by usage, signed steps cancel opposite moves
+mod 2 pi in 70-93% of channels and |.| steps in 2-10% (analysis; App. H6).
 
-*Table 4. Clock at the end of training (analysis; usage-weighted rms clock / rms map; SOLVED of 8).*
+*Table 4. Clock at the end of training (analysis; clock / map ratio of Sec. 4, one value per run, arm means unless marked;
+SOLVED of 8). For unwrapped |.| channels the ratio is at least 1 by construction; the informative rows are the
+frozen-latent signed arm and the rank arms.*
 
 | arm | SOLVED | clock / map |
 |---|---|---|
 | ring, signed (three batches) | 8/8, 7/8, 8/8 | 0.015-0.018 |
-| ring, \|.\| from small starts (three batches) | 0/8, 0/8, 1/8 | 1.55-1.68 |
-| ring, signed with move latents frozen, \|.\| start | 1/8 | 1.39 |
-| ring, \|.\| from a start past pi | 8/8 | 0.31 (wrapped; 0.82 of usage on cancelling channels) |
-| torus, signed / \|.\|, observation-step-free | 8/8 / 1/8 | 0.001 / 1.22 |
-| torus, rank 2, unsolved runs (three arms, head means) | 0/8, 2/8, 2/8 | 0.51-1.91 |
-| torus, rank 2, solved runs (4): six clean heads / two drifting heads | 4 runs | 0.029-0.072 / 0.94, 1.43 |
+| ring, \|.\| from small starts (three batches) | 0/8, 0/8, 1/8 | 1.47-1.57 |
+| ring, signed with move latents frozen, \|.\| start | 1/8 | 1.18 (the solved run 0.06) |
+| ring, \|.\| from a start past pi | 8/8 | 0.32 (wrapped; 0.82 of usage on cancelling channels) |
+| torus, signed / \|.\|, observation-step-free | 8/8 / 1/8 | 0.001 / 1.25 |
+| torus, rank 2, unsolved runs (three arms) | 0/8, 2/8, 2/8 | 0.54-0.69 (medians 0.58-0.79); 4 of 20 runs collapsed, clock-free |
+| torus, rank 2, solved runs (4): six clean heads / two drifting heads (per head) | 4 runs | 0.03-0.07 / 0.54, 0.68 |
 | torus, rank 3 and rank 4, solved runs | 6/8, 8/8, 8/8 | 0.043-0.051 |
 
 ### 7.2 Per-head rank of the content-to-angle map
@@ -443,15 +461,19 @@ side rank 3 solves 1/8 (rank 4, 4/8), and rank 4 solves an 18-per-side 3D torus 
 7/8 against rank 2's 8/8, and with the drift forbidden by construction rank 1 solves 8/8 in a median of 24 epochs instead
 of 58.
 
-**Why the extra rank helps.** Proposition 4(c) gives a channel above rank D a map-free way to stop reading the clock, and
-the stored checkpoints show it being used (analysis; App. G). Here the clock is c, the latent step common to all moves (the
-mean move latent plus the mean observation step). Solved heads of rank above D keep a small leftover c almost entirely
-outside the map plane: off-plane share 0.96-1.00 in nine of ten sets of heads, against 0.50-0.71 for a random direction,
-read at 0.09-0.27 of the map's gain. Drifting rank-D heads drift along their least-resolved axis (57 of 62 runs, against
-28.7 expected for a random direction), the geometry Proposition 5 leads to. A fresh rank-4 step map trained on the stalled rank-2
-networks removes the drift in 16 of 16 heads, each time by parking it off the plane, and of the stalled runs lifted to rank
-4 the three that solve are the three whose clock started with the largest off-plane share (rank-sum p 0.018). At rank 1 on
-the ring, Proposition 4(d) leaves only the collective route, and Conjecture 1 has nothing to starve: rank 1 learns.
+**Why the extra rank helps.** Proposition 4(c) gives a channel above rank D a map-free way to stop reading the clock.
+The stored checkpoints are consistent with it but do not discriminate it from plain removal of the clock through the
+latent (analysis; App. G4). Here the clock is c = a + o, the mean move latent a plus the mean observation latent o, the
+drift a walk accumulates per move and observation. In solved heads of rank above D, a and o are each 0.02-0.04 of a map
+step and point in opposite directions (cosine -0.79 to -0.999), so they cancel; at T = 1024 both lie mostly in the map
+plane. What is left of c (0.001-0.025 of a map step) lies almost entirely outside the plane: off-plane share 0.96-1.00 in
+nine of ten sets of heads, against 0.40-0.71 for a random direction (median), read at 0.09-0.27 of the map's gain. Parking
+and removal through the latent would both leave such a residual. Drifting rank-D heads drift along their least-resolved
+axis (50 of 55 runs, counting each network once, against 25.1 expected for a random direction), the geometry
+Proposition 5 leads to. A fresh rank-4 step map trained on the stalled rank-2 networks removes the drift in 16 of 16
+heads: its latent clock shrinks 14-85x in absolute size, and the residual (0.002-0.005 of a map step) lies off the plane
+(share 0.91-1.00). At rank 1 on the ring, Proposition 4(d) leaves only the collective route, and Conjecture 1 has
+nothing to starve: rank 1 learns.
 
 ![Figure 4](figs/fig_rank_solved.png)
 
@@ -524,7 +546,8 @@ path (complete separation). Rotating one move latent toward the negative of the 
 the signed model from 0.30 to 0.72 accuracy and leaves the |.| model at 0.30, since under |.| that move makes a clock. The
 cone of Proposition 4(b) is where trained |.| ring models end: 0.25-0.36 of their sub-pi channels lie within 10% of its
 boundary, where one move's step is zero, against 0.056 at initialisation. In full training the content co-adapts along the
-collective route; with the content frozen, the step map alone rarely takes it from the same-direction start.
+collective route; with the content frozen, the step map alone rarely takes it from the same-direction start (exploratory:
+these CPU runs are not deterministic, and single runs moved by up to 0.43 in accuracy on re-runs; App. H7).
 
 **The cost is carried by the increment, not the readout.** A hybrid whose readout matrix is confined to the non-negative
 orthant, a_c(x) = omega_c |w_c| . z_x, but whose latent and hence increment are signed, keeps the collective route. On the
@@ -539,7 +562,7 @@ what costs.
 solve 7/8 on the ring (|.| from the same start: 0/8; Fisher p 0.0014). They end with 98-99% of channels opposite-signed
 (analysis): they cancel opposite moves through zero, which Lemma 1 shows the non-negative step excludes for an inverse
 pair (Fig. 7). The escape is collective. Freezing the two move latents, with W_out and omega still free, blocks it: 1/8
-against 7/8 (Fisher p 0.010), and the frozen-latent model ends where the non-negative step ends (clock / map 1.39,
+against 7/8 (Fisher p 0.010), and the frozen-latent model ends where the non-negative step ends (clock / map 1.18,
 Table 4). With the latents free, one move's latent moves toward the negative of the other's and every channel cancels
 together (82% of channels end opposite-signed, against 15% with the latents frozen). MapFormer described this antipodal end
 state (their Figs. 3d and 9b); this is the causal test of how it is reached. A |.| step has only the wrapped branch, and on
@@ -582,36 +605,38 @@ to 23% of channels, all by wrapping (App. H).*
 
 ### 7.4 Readers cannot repair a code
 
-**More computation reads a rank-2 code; it does not repair it.** Looping the single block four times (identical parameters
-and initialisation) or using four real layers raises rank-2 accuracy from 0.894 to 0.973 and 0.990 (permutation p 0.0034
-and 0.0012; SOLVED 2/8 and 5/8 against 0/8; rank 4 0.998, 8/8). By Proposition 6 neither change touches the code; both
-change how it is read. Fitting a one-pass, position-only reader to each model's own phase recovers the one-layer models'
-accuracy (rank 2 0.866 against 0.894; rank 4 1.000 against 0.998) but falls 0.32-0.44 short of the looped and deep models
-on long-gap and wrap-only revisits (analysis; App. M). Their codes are no better than plain rank 2's (0.893 and 0.897
-against 0.866, p 0.27-0.28) and far from rank 4's (p 0.0002). Run with one pass, the looped weights score 0.381; the right
-cell is found only at passes 2-4. None of the 16 runs finds rank 4's two-dimensional code: half end with x and y moving the
-phase along one direction. Downstream computation compensates for the rank-2 deficit and leaves it in place.
+**More computation reads a rank-2 code; it does not repair it.** Looping the single block four times (identical
+parameters and initialisation) or using four real layers raises rank-2 accuracy from 0.894 to 0.973 and 0.990
+(permutation p 0.0034 and 0.0012; SOLVED 2/8 and 5/8 against 0/8; rank 4 0.998, 8/8). By Proposition 6 neither change
+alters the code family; both change how a code is read. Fitting a one-pass, position-only reader to each model's own
+phase recovers the one-layer models' accuracy (rank 2 0.866 against 0.894; rank 4 1.000 against 0.998) but falls
+0.32-0.44 short of the looped and deep models on long-gap and wrap-only revisits (analysis; App. M). Their codes are not
+measurably more readable by one pass than plain rank 2's (0.893 and 0.897 against 0.866, below minimum detectable
+effects of 0.07-0.08) and stay far from rank 4's (p 0.0002). Run with one pass, the looped weights score 0.381 (mean; 7
+of 8 seeds below the 0.51 floor); the right cell is found only at passes 2-4. Only 1 of the 16 runs finds a
+two-dimensional code (rank 4: 8/8); half end with x and y moving the phase along one direction. Downstream computation
+compensates for the rank-2 deficit and leaves it in place.
 
-**Where the angle comes from and how content uses it are separate choices.** Any rotary score can be written
-sum_c A_c cos(dphi_c + beta_c): the phase difference dphi says where, and content sets an amplitude A and, in RoPE, a phase
-beta. Path integration changes dphi; PoPE's polar score removes beta, and Proposition 7 then pins every kernel's peak at
-zero phase difference. The two predictions have opposite signs, and so do the results. On the short-walk torus PoPE's
-score raises the path model (MapPoPE 0.999 against MapWM 0.971) and lowers the index model (PoPE 0.679 against RoPE 0.805),
-an interaction of +0.154 (8/8). Probes give the mechanism (analysis; App. L). For the path model the pinned peak aligns the
+**Where the angle comes from and how content uses it are separate choices.** Any rotary score can be written sum_c A_c
+cos(dphi_c + beta_c): the phase difference dphi says where, and content sets an amplitude A and, in RoPE, a phase beta.
+Path integration changes dphi; PoPE's polar score removes beta, and Proposition 7 then pins every kernel's peak at zero
+phase difference. The two predictions have opposite signs, and so do the results. On the short-walk torus PoPE's score
+raises the path model (MapPoPE 0.999 against MapWM 0.971) and lowers the index model (PoPE 0.679 against RoPE 0.805), an
+interaction of +0.154 (8/8). Probes give the mechanism (analysis; App. L). For the path model the pinned peak aligns the
 kernel with the target (target coherence 0.995 against 0.70 for MapWM). For the index model no content pair's kernel
-prefers offset 3 over offset 1 (0% of pairs, against 53-100% for RoPE, whose kernel is a comb at the retrace offsets), and
-0.110 of the 0.126 accuracy gap lies on reversals whose target sits three or more steps back. Freeing PoPE's phase offset
-tests this directly (registered): the index model rises by +0.122 (8/8 seeds, sign-flip p 0.0078), most on multi-step
-reversals (+0.180), its kernel now prefers offset 3 over offset 1 in 50-100% of content pairs, with peaks at offsets 3, 4, 7
-and 8, and the path model stays at ceiling
-(-0.018, p 0.31) while its target alignment falls from 0.987 to 0.62. PoPE's pinned offset is the lever: it helps a path
-phase and hurts an index phase.
+prefers offset 3 over offset 1 (0% of pairs, against 53-100% for RoPE, whose kernel is a comb at the retrace offsets),
+and 0.110 of the 0.126 accuracy gap lies on reversals whose target sits three or more steps back. Freeing PoPE's phase
+offset tests this directly (registered): the index model rises by +0.122 (8/8 seeds, sign-flip p 0.0078), most on
+multi-step reversals (+0.180), its kernel now prefers offset 3 over offset 1 in 50-100% of content pairs, with peaks at
+offsets 3, 4, 7 and 8, and the path model stays at ceiling (-0.018, p 0.31) while its target alignment falls from 0.987
+to 0.62. PoPE's pinned offset is the lever: it helps a path phase and hurts an index phase.
 
-**A score rule acts on the readout term only.** On the long-walk torus at rank 2 the polar score repairs short-gap
-revisits through the readout term (target coherence 0.617 to 0.960, p 0.0002, with the code term unchanged) and leaves
-the code term where it was on long-gap revisits (0.81-0.84, against 0.99 at rank 4) and wrap-only revisits (0.41-0.46,
-against 0.84 at rank 4) (analysis). The rank-2 phase does not place long-gap or wrapped revisits at zero phase, and no score
-rule can make it: under either score rank 2 solves 3/12 (registered).
+**A score rule repairs the readout, not the code.** On the long-walk torus at rank 2 the polar score repairs short-gap
+revisits mostly through the readout term (target coherence 0.617 to 0.960, p 0.0002, with the code term moving +0.06)
+and leaves the code term low on long-gap revisits (0.80 / 0.91 under the two scores, against 0.99 at rank 4) and
+wrap-only revisits (0.40 / 0.48, against 0.97 at rank 4 under either score) (analysis; each stratum read on the head
+that carries its same-cell attention). The rank-2 phase does not place long-gap or wrapped revisits at zero phase, and
+no score rule can make it: under either score rank 2 solves 3/12 (registered).
 
 ## 8. Maps from words
 
@@ -624,20 +649,27 @@ floors.
 
 **One path layer learns navigation told in English.** On fresh seeds (n = 6) one path layer scores 0.979 +/- 0.048 (6/6
 SOLVED) against 0.505 for one-layer index RoPE (0/6), +0.474 (permutation and Fisher p 0.0022); two index layers reach
-0.793 (0/6). With the attention-dropout evaluation scale (App. C9) the path layer scores 0.993 over all eight seeds. Both
-index models stay below retrace on every seed. The decisive revisits are the 5.9% that retrace gets wrong, places reached
-by a route other than undoing the last run (Table 7; analysis): there the path layer scores 0.961 on the fresh seeds
-(re-scored; 0.944-1.000 on every seed at ceiling), two index layers 0.138 and the best constant 0.112. Two index layers learn part of
-retrace and almost nothing that needs the map.
+0.793 (0/6). With the attention-dropout evaluation scale (App. C9) the path layer scores 0.993 over all eight seeds.
+Both index models stay below retrace on every seed (the best two-layer seeds reach 0.927 and 0.926 against 0.934). The
+decisive revisits are the 13.4% that retrace cannot reach, places reached by a route other than undoing the last run
+(Table 7; analysis, all 200 evaluation walks): there the path layer scores 0.956 over all eight seeds (re-scored; 0.978
+on the fresh seeds, 0.934 in eval mode), while two index layers score 0.411 and one index layer 0.454, both below the
+constant 'nothing' (0.506). Of these revisits, the 6.6% whose cell holds an object are the ones retrace gets wrong (on
+blank cells its default 'nothing' is right by chance); there the path layer scores 0.925 (0.967 on the fresh seeds), two
+index layers 0.129, the best constant 0.088 ('nothing' excluded by construction), and one index layer 0.004, since it
+predicts 'nothing'. Two index layers learn part of retrace and nothing that needs the map.
 
-*Table 7. Text world: accuracy on the revisits retrace gets right and on those it gets wrong (analysis; registered batch,
-first 100 evaluation walks, 3,055 revisits; path re-scored with the attention-dropout scale).*
+*Table 7. Text world: accuracy by whether the retrace rule can reach a revisit (analysis; registered batch, all 200
+evaluation walks of the registered stream, 6,381 revisits; mean over 8 seeds, fresh seeds 2-7 in brackets; path models
+re-scored with the attention-dropout scale unless marked).*
 
-| model (n = 8) | all revisits | retrace correct (n 2,876) | retrace wrong (n 179) |
-|---|---|---|---|
-| path, 1 layer | 0.994 | 0.998 | 0.920 (seeds 2-7: 0.961) |
-| index RoPE, 2 layers | 0.779 | 0.819 | 0.138 |
-| index RoPE, 1 layer | 0.507 | 0.538 | 0.002 |
+| model (n = 8) | all revisits | retrace applies (n 5,525) | retrace cannot reach (n 856) | ... cell holds an object (n 423) |
+|---|---|---|---|---|
+| path, 1 layer | 0.993 | 0.999 | 0.956 (0.978) | 0.925 (0.967) |
+| path, 1 layer, eval mode | 0.969 | 0.975 | 0.934 (0.958) | 0.884 (0.927) |
+| index RoPE, 2 layers | 0.772 | 0.828 | 0.411 (seeds 0.34-0.55) | 0.129 |
+| index RoPE, 1 layer | 0.505 | 0.513 | 0.454 | 0.004 |
+| best constant | 0.505 ('nothing') | -- | 0.506 ('nothing') | 0.088 ('cat') |
 
 **What the step table holds.** On every seed, opposite direction words cancel once the component common to the four
 directions is removed (0.002-0.012), synonyms collapse to one step (cosine 1.000), and zeroing the direction steps drops
@@ -659,15 +691,17 @@ what is mentioned is not filed where it is not.
 **Half the models also count moves, in channels they do not use.** On four of the eight registered seeds the direction
 words' common component points along the verbs' step (cosine +0.999 to +1.000), and 31-38 of 64 channels drift between
 visits to the same cell (declared secondary; drift from the first visit). Across 24 learned-step models (analysis), 10
-carry such a per-move tick, which drifts in 26-38 channels between consecutive visits. It counts moves: an aside sentence
-adds at most 0.06 of a tick, a filler word at most 0.007. In Howard et al.'s terms these channels integrate distance
-travelled (Case II) beside the others' position (Case III). Proposition 2(b) says such channels cannot serve retrieval by
-place, and they do not: the tick alone predicts which channels drift (agreement 0.98-1.00), 79-99% of retrieval usage sits
-in channels whose tick is zero modulo pi (on the even torus a return always takes an even number of moves), and removing
-the 26-38 clock channels from the score costs at most 0.009 on each of the seven clock models at ceiling, while removing as
-many map channels collapses accuracy (to 0.03-0.65, means over random draws). The three clock models below ceiling still lean on their clock
-channels (removal costs 0.09-0.26). The clock seeds' extra dependence on non-direction words follows the direction words'
-common component in the used channels (Spearman +0.905), which those words cancel within each move.
+carry such a per-move tick, which drifts in 26-38 channels between consecutive visits. It counts moves: an aside
+sentence adds at most 0.06 of a tick, a filler word at most 0.007. In Howard et al.'s terms these channels integrate
+distance travelled (Case II) beside the others' position (Case III). Proposition 2(b) says such channels cannot serve
+retrieval by place, and they do not: the tick alone predicts which channels drift (agreement 0.98-1.00; informative on
+the 10 clock models, where the predicted and observed counts of drifting channels match exactly), 79-99% of retrieval
+usage sits in channels whose tick is zero modulo pi (on the even torus a return always takes an even number of moves),
+and removing the 26-38 clock channels from the score costs at most 0.009 on each of the seven clock models at ceiling,
+while removing as many map channels collapses accuracy (to 0.03-0.65, means over random draws). The three clock models
+below ceiling still lean on their clock channels (removal costs 0.09-0.26). The clock seeds' extra dependence on
+non-direction words follows the direction words' common component in the used channels (Spearman +0.905 over the 8
+registered seeds, exact permutation p 0.0046), which those words cancel within each move.
 
 **What must and must not move.** The same rule covers the what-to-where leak on a task with new objects in every episode.
 A step that depends on an object's identity spreads objects at one place over identity-dependent offsets; removing the
@@ -688,18 +722,20 @@ to the constant floor (0.505, dashed) or below. Eval mode without the dropout re
 ## 9. Discussion and related work
 
 **What the two failure axes share.** For per-head rank 2 and for non-negative steps, a solution in the class exists (the
-rank-2 projection scores 0.9955; the |.| construction is exact), training keeps or re-finds it (7/8 at rank 2; held 8/8 on
-the ring and re-found 8/8 on the torus for |.|), and training from scratch does not reach it (0-2/8; 0/8). In Remark 2's
-terms the initialisation sits outside the basin of a non-empty, stable solution set. The route inventory accounts for
-this, proved for the routes and conjectured for the rank-D dynamics, and the two axes fail differently inside it. A non-negative increment has no collective route and its per-channel targets lie past
-pi; restoring a signed increment under a non-negative readout restores learning (16/16). At rank D the collective route
-exists, but no channel can be both clock-free and a full map while a clock remains, and in two or more dimensions hiding
-offers a free local move that, by Conjecture 1, starves the collective route; one more latent dimension adds a local move,
-parking, that costs the map nothing. Both failures end in the same place: a clock about as large as the map, which by
-Proposition 2 serves short-gap revisits and loses the rest. Giving the rest of the network four times the computation or
-the parameters reads that code better and does not find the rank-2 solution: the deficit is local to the content-to-angle
-map. Shakerinava et al. (2026) report "representable but not learned" for non-Abelian rotations in diagonal SSMs; we find
-it in single-layer Abelian tasks, produced by one rank or parameterisation choice, and give its routes.
+rank-2 projection scores 0.9955; the |.| construction is exact), training keeps or re-finds it (7/8 at rank 2; held 8/8
+on the ring and re-found 8/8 on the torus for |.|), and training from scratch does not reach it (0-2/8; 0/8). In Remark
+2's terms the initialisation sits outside the basin of a non-empty, stable solution set. The route inventory accounts
+for this, proved for the routes and conjectured for the rank-D dynamics, and the two axes fail differently inside it. A
+non-negative increment has no collective route and its per-channel targets lie past pi; restoring a signed increment
+under a non-negative readout restores learning (16/16). At rank D the collective route exists, but no channel can be
+both clock-free and a full map while a clock remains, and in two or more dimensions hiding offers a free local move
+that, by Conjecture 1, starves the collective route; one more latent dimension adds a local move, parking, that costs
+the map nothing. Both failures end in the same measured place: a clock of the order of the map (or, in a few rank-2
+runs, a map that has lost a dimension), and strata that keep short-gap revisits and lose the rest. Giving the rest of
+the network four times the computation or the parameters reads that code better and does not find the rank-2 solution:
+the deficit is local to the content-to-angle map. Shakerinava et al. (2026) report "representable but not learned" for
+non-Abelian rotations in diagonal SSMs; we find it in single-layer Abelian tasks, produced by one rank or
+parameterisation choice, and give its routes.
 
 **Not every search failure is of this kind.** Single-origin MapEM represents k-back recency exactly (installed and frozen,
 1.000) and finds the rewind per query token, and four times the budget closes most of its deficit (0.578 to 0.928; not registered), whereas
@@ -712,25 +748,26 @@ suffices, against measured map-free floors and by stratum: the long-gap and wrap
 rule, and an aggregate accuracy near 0.9 can be either. To tell whether a trained model's phase is a map or a clock, read
 the used-channel clock ratio, not the growth of the phase with the token index.
 
-**What and where.** In the long-walk regime, the model that learns the map separates where from what, and the models that
-fail do not (analysis; App. K). For the signed rank-4 model at T = 1024, one shared position kernel per head times a content
-gain reproduces its accuracy exactly (0.998), removing object identity from the score costs 0.032 (0.966), and position
-alone explains 92.5% of the score's variance. Token type (move or observation) is essential: without it the model falls to
-0.113. The non-negative and index models lose 0.25-0.31 when object identity is removed, and a shared kernel times a gain
-does not restore them; within the non-negative arms, accuracy tracks the share that survives the removal (Spearman 0.84
-over 16 runs). Separation is a property of the solution training finds, not of the architecture. MapFormer showed the
-separation in the learned embeddings (their Fig. 9); these checks show that the models rely on it where a map is needed,
-in the sense TEM proposed.
+**What and where.** In the long-walk regime, the model that learns the map separates where from what, and the models
+that fail do not (analysis; App. K). For the signed rank-4 model at T = 1024, one shared position kernel per head times
+a per-pair content gain plus offset reproduces its accuracy exactly (0.998); removing token identity within type from
+the score costs 0.032 (0.966; 8/8 seeds lower, sign-flip p 0.008, uncorrected; Holm over the 24 contrasts 0.08); and the
+content-averaged score carries 92.5% of the score's within-row sum of squares (SS(P) / SS(S)). Token type (move or
+observation) is essential: without it the model falls to 0.113. The non-negative and index models lose 0.25-0.31 when
+token identity within type is removed, and a shared kernel times a gain does not restore them; within the non-negative
+arms, accuracy tracks the share that survives the removal (Spearman 0.84 over 16 runs, p 5e-5). Separation is a property
+of the solution training finds, not of the architecture. MapFormer showed the separation in the learned embeddings
+(their Fig. 9); these checks show that the models rely on it where a map is needed, in the sense TEM proposed.
 
-**The integrator view.** A learned, signed, content-dependent rate can realise all three of Howard et al.'s cases, and which
-one a channel realises is set by what the readout keys on. Split each step into the frequency-weighted mean, a clock, and a
-content part, and write rho_c for the clock part over the content part at the training length (Remark 3, App. E13). For
-targets keyed to a place reached at variable lags the used channels must be clock-free (Proposition 2(b)), and the models
-put them there: torus 0.064-0.079, text world 0.06-0.23 (analysis). For targets keyed to a count back, the used channels
-are clocks: k-back recency, the same one-layer signed class, gives 21.8-22.1. One text-world model can do both at once,
-with distance travelled in idle channels and position in used ones. In the rotary slot the cases coincide in what they can
-represent (Proposition 3), so the sign result is about learnability: a non-negative step could hold a Case III code and
-does not find one.
+**The integrator view.** A learned, signed, content-dependent rate can realise all three of Howard et al.'s cases, and
+which one a channel realises is set by what the readout keys on. Split each step into the frequency-weighted mean, a
+clock, and a content part, and write rho_c for the clock part over the content part at the training length (Remark 3,
+App. E13). For targets keyed to a place reached at variable lags the used channels must be clock-free (Proposition
+2(b)), and the models put them there: torus 0.064-0.079, text world 0.06-0.23 (23 of 24 learned-step models; the
+unconverged one 2.5; analysis). For targets keyed to a count back, the used channels are clocks: k-back recency, the
+same one-layer signed class, gives 21.8-22.1. One text-world model can do both at once, with distance travelled in idle
+channels and position in used ones. In the rotary slot the cases coincide in what they can represent (Proposition 3), so
+the sign result is about learnability: a non-negative step could hold a Case III code and does not find one.
 
 **Text.** On ordinary text at small scale (n = 3 pilots; the ratios are analysis), the channels attention uses are clock-dominated (rho 9.9-12.3
 on TinyStories, Eldan and Li 2023; 4.5-6.6 on code; against 0.06-0.23 in the text world), MapWM matches index RoPE on
@@ -769,9 +806,11 @@ TEM-t for the "where" apart from the "what".
   reported). The torus exchange rate is a lower bound measured at n = 4.
 - The theory of Sec. 4 was developed after the registered batches. Its proved statements concern the step
   parameterisation and quadratic surrogates; the hiding feedback at rank D is a conjecture, and the per-channel dynamics of
-  |.| are not derived. The checks marked (analysis) are post hoc, on one batch per arm, without fresh-seed replication.
+  |.| are not derived. The checks marked (analysis) are post hoc, on one batch per arm, without fresh-seed replication;
+  their thresholds and statistics chosen after the data were seen are listed in App. O, and one CPU analysis (the
+  step-map basin) is not deterministic and is reported as exploratory.
 - The text world is scripted (58 words, one movement clause per move, context-free direction words), and its walks are
-  short enough that retrace scores 0.934; the map evidence there is the revisits retrace gets wrong and the mechanism.
+  short enough that retrace scores 0.934; the map evidence there is the revisits retrace cannot reach and the mechanism.
 - No recurrent or SSM baseline.
 
 ## References

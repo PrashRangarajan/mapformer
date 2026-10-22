@@ -1,0 +1,53 @@
+Is the ring index models' 'global count' a count or a recent-window code? (POST HOC, eval only, CPU, ~2 min)
+  RoPE 1L s2 done
+  RoPE 1L s3 done
+  RoPE 1L s4 done
+  RoPE 1L s5 done
+  RoPE 1L s6 done
+  RoPE 1L s7 done
+  RoPE 2L s2 done
+  RoPE 2L s3 done
+  RoPE 2L s4 done
+  RoPE 2L s5 done
+  RoPE 2L s6 done
+  RoPE 2L s7 done
+  RoPE 3L s2 done
+  RoPE 3L s3 done
+  RoPE 3L s4 done
+  RoPE 3L s5 done
+  RoPE 3L s6 done
+  RoPE 3L s7 done
+
+== t >= 64: out-of-sample R^2, mean over fresh seeds 2-7 (n 6)
+| model | pass | P_t | P_t/(t+1) |
+|---|---|---|---|
+| RoPE 1L | 0 | -0.024 | -0.027 |
+| RoPE 1L | 1 | 0.066 | 0.061 |
+| RoPE 1L | best | 0.066 | 0.061 |
+| RoPE 2L | 0 | -0.024 | -0.027 |
+| RoPE 2L | 1 | 0.315 | 0.314 |
+| RoPE 2L | 2 | 0.310 | 0.311 |
+| RoPE 2L | best | 0.315 | 0.314 |
+| RoPE 3L | 0 | -0.024 | -0.027 |
+| RoPE 3L | 1 | 0.311 | 0.307 |
+| RoPE 3L | 2 | 0.591 | 0.590 |
+| RoPE 3L | 3 | 0.490 | 0.490 |
+| RoPE 3L | best | 0.591 | 0.590 |
+
+== t >= 96: out-of-sample R^2, mean over fresh seeds 2-7 (n 6)
+| model | pass | P_t | P_{t-32} | P_{t-64} | d32 | d64 |
+|---|---|---|---|---|---|---|
+| RoPE 1L | 0 | -0.020 | -0.075 | -0.060 | 0.052 | 0.043 |
+| RoPE 1L | 1 | 0.050 | -0.079 | -0.116 | 0.331 | 0.207 |
+| RoPE 1L | best | 0.050 | -0.075 | -0.060 | 0.331 | 0.207 |
+| RoPE 2L | 0 | -0.020 | -0.075 | -0.060 | 0.052 | 0.043 |
+| RoPE 2L | 1 | 0.271 | -0.053 | -0.109 | 0.872 | 0.610 |
+| RoPE 2L | 2 | 0.260 | -0.040 | -0.100 | 0.793 | 0.550 |
+| RoPE 2L | best | 0.271 | -0.040 | -0.060 | 0.872 | 0.610 |
+| RoPE 3L | 0 | -0.020 | -0.075 | -0.060 | 0.052 | 0.043 |
+| RoPE 3L | 1 | 0.280 | -0.070 | -0.121 | 0.817 | 0.590 |
+| RoPE 3L | 2 | 0.534 | 0.313 | 0.011 | 0.783 | 0.720 |
+| RoPE 3L | 3 | 0.436 | 0.201 | -0.048 | 0.697 | 0.631 |
+| RoPE 3L | best | 0.534 | 0.313 | 0.011 | 0.817 | 0.720 |
+
+oracle: R^2 of P_t (t >= 96) from the true d64 alone, mean over the 6 seeds' streams 0.506
