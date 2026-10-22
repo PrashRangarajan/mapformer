@@ -115,6 +115,7 @@ from mapformer.model_looped import (MapFormerWM_Looped, MapFormerWM_RoPE_Looped,
                                     MapFormerWM_Level15Looped)
 from mapformer.model_fixed_omega import MapFormerWM_FixedOmega
 from mapformer.model_pope_index_hier import MapFormerWM_Hourglass_PoPE_Index
+from mapformer.model_rankclock import MapFormerWM_r2Clock, MapFormerWM_r2ClockXY, MapFormerWM_r2DF, MapFormerWM_r2AO
 from mapformer import model_pope_t3 as _t3
 from mapformer.model_baselines_extra import EXTRA_BASELINES
 from mapformer.model_tem import TEMRecurrent
@@ -208,6 +209,11 @@ VARIANT_MAP = {
     "Vanilla_r2ph": MapFormerWM_PerHead,   # paper-faithful per-head r=2
     "Vanilla_r4mi": MapFormerWM_r4MatchedInit,   # shared r=4 built from r=2's base
     "Vanilla_r4mibd": MapFormerWM_r4MIBlockDiag,   # C with block-diagonal W_out (RANK_SEP)
+    # G-1 RANKCLOCK (model_rankclock.py): shared r2 + clock slot / drift-forbidden / actions-only
+    "Vanilla_r2clock": MapFormerWM_r2Clock,
+    "Vanilla_r2clockxy": MapFormerWM_r2ClockXY,
+    "Vanilla_r2DF": MapFormerWM_r2DF,
+    "Vanilla_r2AO": MapFormerWM_r2AO,
     "Vanilla_r4ph": MapFormerWM_PerHead4,   # per-head r=4 (RANK_SEP)
     "Vanilla_r3ph": MapFormerWM_PerHead3,   # per-head r=3 (RANK3)
     # --- the sign ablation (A5): may the phase increment be negative? ---
@@ -369,6 +375,31 @@ VARIANT_MAP = {
 }
 
 
+_SNAP_PREFIXES = ("action_to_lie.", "path_integrator.", "token_emb.")
+
+
+def _snapshotter(model, out, every):
+    """G-1 geometry snapshots: the step-map state only (a few thousand floats), at init and every `every` epochs.
+    Returns None when off, which leaves train() on its default path. Saving copies tensors and draws no RNG."""
+    if not every:
+        return None
+    d = Path(out) / "snaps"
+    d.mkdir(parents=True, exist_ok=True)
+
+    def _save(tag):
+        with torch.no_grad():
+            sd = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()
+                  if k.startswith(_SNAP_PREFIXES)}
+        torch.save(sd, d / f"{tag}.pt")
+
+    _save("e0000")                                    # initialisation, before the first step
+
+    def cb(epoch, _model):
+        if (epoch + 1) % every == 0:
+            _save(f"e{epoch + 1:04d}")
+    return cb
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--variant", required=True, choices=list(VARIANT_MAP.keys()))
@@ -480,6 +511,13 @@ def main():
     parser.add_argument("--data-seed-offset", type=int, default=0,
                         help="offset the --data-workers stream seed (0 = unchanged); a "
                              "continuation uses 1 so it sees fresh walks on the same map")
+    parser.add_argument("--weight-decay", type=float, default=0.05,
+                        help="AdamW weight decay; 0.05 is train()'s default, so omitting it is the old path "
+                             "(G-1's optional r4 wd 0 arm)")
+    parser.add_argument("--snapshot-every", type=int, default=0,
+                        help="G-1: every K epochs (and at init) save the step-map state (action_to_lie, "
+                             "path_integrator, token_emb) to <output-dir>/snaps/. The hook draws no random "
+                             "numbers (test_epoch_callback.py: bitwise-identical training). 0 = off")
     parser.add_argument("--save-full-state", action="store_true",
                         help="also save optimizer and scheduler state (opt-in)")
     parser.add_argument("--fast-attn", action="store_true",
@@ -632,6 +670,8 @@ def main():
         data_workers=args.data_workers,
         data_seed_offset=args.data_seed_offset,
         return_state=args.save_full_state,
+        weight_decay=args.weight_decay,
+        epoch_callback=_snapshotter(model, out, args.snapshot_every),
     )
     opt_state = None
     if args.save_full_state:

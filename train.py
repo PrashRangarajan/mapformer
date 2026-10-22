@@ -41,12 +41,18 @@ def train(
     data_workers: int = 0,
     data_seed_offset: int = 0,
     return_state: bool = False,
+    epoch_callback=None,
 ) -> list[float]:
     """Full training loop with observation-only loss.
 
     If ``aux_coef > 0`` and the model exposes ``prediction_error_loss()``
     (e.g. PC, GridL15PC), the auxiliary loss is added to the next-token
     loss as ``total = next_token_loss + aux_coef * model.prediction_error_loss()``.
+
+    ``epoch_callback(epoch, model)``, if given, is called after each epoch's loss is
+    logged (G-1 geometry snapshots). It must not draw random numbers or change the
+    model; with the default None the loop is unchanged (verified bitwise,
+    `test_epoch_callback.py`).
 
     Returns:
         List of per-epoch average losses (next-token loss only; aux is
@@ -208,6 +214,8 @@ def train(
         epoch_loss = float(epoch_loss_t)          # the one sync per epoch
         avg_loss = epoch_loss / n_batches
         losses.append(avg_loss)
+        if epoch_callback is not None:
+            epoch_callback(epoch, model)
 
         if verbose and (epoch + 1) % 5 == 0:
             dt = time.time() - t0
