@@ -1,0 +1,13 @@
+signed    moves  parallel vs auditor recurrence rel 2.5e-13
+signed    all    parallel vs auditor recurrence rel 4.4e-13
+abs       moves  parallel vs auditor recurrence rel 2.1e-13
+abs       all    parallel vs auditor recurrence rel 8.4e-13
+softplus  moves  parallel vs auditor recurrence rel 2.3e-12
+softplus  all    parallel vs auditor recurrence rel 6.0e-10
+exp       moves  parallel vs auditor recurrence rel 2.0e-13
+exp       all    parallel vs auditor recurrence rel 5.3e-11
+index     moves  parallel vs auditor recurrence rel 1.5e-14
+index     all    parallel vs auditor recurrence rel 1.5e-14
+gauge: exp(-i om D) == exp(+i (-om) D): 0.0e+00
+exp(+i om D) vs exp(-i om D), same omega (not a gauge in general unless q/k are conjugated): 1.50e+00
+WORST 6.014164210232611e-10

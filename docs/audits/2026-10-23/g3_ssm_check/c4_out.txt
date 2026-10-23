@@ -1,0 +1,6 @@
+reading: TASK DOES NOT NEED INTEGRATION (index SOLVED 2/8, acc 0.774); m = 8: SIGN COST IN THE SSM; lr 1e-3 (m = 32): SIGN COST IN THE SSM
+gate m=32: TASK DOES NOT NEED INTEGRATION (index SOLVED 2/8, acc 0.774)
+A abs|32 label stored: SIGNED LEARNS BETTER | softplus|32: TASK DOES NOT NEED INTEGRATION (index SOLVED 2/8, acc 0.774)
+joint (3e-3): {'abs': 'SEARCH COST', 'softplus': None, 'exp': None}
+joint (1e-3): {'abs': 'SEARCH COST', 'softplus': 'SEARCH COST', 'exp': 'SEARCH COST'}
+blocks in rule-2 r: ['A', 'A2', 'B', 'H2']

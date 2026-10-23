@@ -1,0 +1,6 @@
+m= 8 T=128: ids ok True vocab 19 | scored 48000 revisit share 0.938 | chance 0.4976 (blank True) | action n-gram 1-5 0.498 0.498 0.498 0.498 0.498 | stream n-gram 1-5 0.498 0.498 0.498 0.544 0.541 | retrace 0.7917 | BEST FLOOR 0.7917
+m= 8 T=512: ids ok True vocab 19 | scored 201600 revisit share 0.984 | chance 0.4870 (blank True) | action n-gram 1-5 0.487 0.487 0.487 0.487 0.487 | stream n-gram 1-5 0.487 0.487 0.487 0.502 0.502 | retrace 0.7905 | BEST FLOOR 0.7905
+m=32 T=128: ids ok True vocab 19 | scored 38847 revisit share 0.759 | chance 0.4959 (blank True) | action n-gram 1-5 0.496 0.496 0.496 0.496 0.496 | stream n-gram 1-5 0.496 0.496 0.496 0.554 0.552 | retrace 0.8636 | BEST FLOOR 0.8636
+m=32 T=512: ids ok True vocab 19 | scored 192000 revisit share 0.938 | chance 0.4981 (blank True) | action n-gram 1-5 0.498 0.498 0.498 0.498 0.498 | stream n-gram 1-5 0.498 0.498 0.498 0.544 0.542 | retrace 0.8085 | BEST FLOOR 0.8085
+pilot index_moves_m32_s2181: index m=32 acc T=128 0.7554 T=512 0.4057 class STALLED final loss 0.9603 (300 epochs)
+pilot none_moves_m32_s2181: none m=32 acc T=128 0.4959 T=512 0.4981 class STALLED final loss 2.0816 (100 epochs)

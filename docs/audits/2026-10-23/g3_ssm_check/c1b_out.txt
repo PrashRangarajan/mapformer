@@ -1,0 +1,29 @@
+/tmp/claude-1002/-home-prashr-mapformer/224d7c23-b570-4513-8742-cf8a41acc4a3/scratchpad/g3_check/c1b_init.py:20: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  dst = float((a.step_table() - m.step_table()).abs().max())
+32 signed 2177 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+32 signed 2178 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+32 abs 2177 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+32 abs 2178 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+32 softplus 2177 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+32 softplus 2178 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+32 exp 2177 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+32 exp 2178 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+8 signed 2177 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+8 signed 2178 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+8 abs 2177 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+8 abs 2178 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+8 softplus 2177 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+8 softplus 2178 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+8 exp 2177 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+8 exp 2178 24 shared; diff [] only-ssm ['layers.0.y_norm.weight'] only-attn [] step-table diff 0.0
+index vs attention signed shared diff []
+none vs attention signed shared diff []
+init signed   m=32: frac move steps negative 0.515; channels per head with |move-angle sum| > pi 0.6 of 32
+init signed   m= 8: frac move steps negative 0.515; channels per head with |move-angle sum| > pi 0.9 of 32
+init abs      m=32: frac move steps negative 0.000; channels per head with |move-angle sum| > pi 0.9 of 32
+init abs      m= 8: frac move steps negative 0.000; channels per head with |move-angle sum| > pi 1.5 of 32
+init softplus m=32: frac move steps negative 0.000; channels per head with |move-angle sum| > pi 9.4 of 32
+init softplus m= 8: frac move steps negative 0.000; channels per head with |move-angle sum| > pi 15.6 of 32
+init exp      m=32: frac move steps negative 0.000; channels per head with |move-angle sum| > pi 12.9 of 32
+init exp      m= 8: frac move steps negative 0.000; channels per head with |move-angle sum| > pi 21.2 of 32

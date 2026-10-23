@@ -8,7 +8,7 @@ import sys
 import numpy as np
 import torch
 
-from mapformer.construct_ssm_sign import CLASSES, construct, wrap_err
+from mapformer.construct_ssm_sign import CLASSES, construct, sensitivity, wrap_err
 from mapformer.environment_steps import GridWorldSteps
 from mapformer.model_signroute import ARMS as ATTN_ARMS
 from mapformer.model_ssm_sign import MODES, STEPS, build
@@ -216,10 +216,21 @@ def test_balance_invariant():
         check(f"balance leaves {k} steps unchanged", d < 1e-6 and eq, f"{d:.1e}")
 
 
+def test_sensitivity():
+    """Amendment 1.2: the move-angle sensitivity recorded in report.json is finite and positive for every construction."""
+    env, tok = _tokens()
+    torch.manual_seed(11)
+    src = _perturb(build("signed", "moves", env.unified_vocab_size, 32), scale=2.0).eval()
+    vals = {k: sensitivity(construct(src, k)[0]) for k in CLASSES}
+    ok = all(np.isfinite(m) and m > 0 and mx >= m for m, mx in vals.values())
+    check("sensitivity finite and positive", ok, " ".join(f"{k} {v[0]:.1f}" for k, v in vals.items()))
+
+
 def main():
     for f in (test_parallel_equals_recurrence, test_long_sequence_tolerance, test_shared_init_matches_attention_arm,
               test_parameter_parity, test_step_classes, test_causal, test_memoryless, test_index_angles,
-              test_constructions_exact, test_construction_moves_to_all, test_balance_invariant):
+              test_constructions_exact, test_construction_moves_to_all, test_balance_invariant,
+              test_sensitivity):
         print(f.__name__, flush=True)
         f()
     n_ok = sum(ok for _, ok in RESULTS)

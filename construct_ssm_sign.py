@@ -131,6 +131,21 @@ def construct(src, target, steps=None, balance=True):
     return m, info
 
 
+def sensitivity(m):
+    """Amendment 1 (MAJOR 2): move-angle sensitivity to an Adam-sized step. L1 norm of d angle / d parameter over the move
+    embeddings' rows of token_emb, W_in, W_out and omega, for each of the A x C move angles; (mean, max) over angles. Adam
+    moves each coordinate by at most about lr, so lr x this bounds one step's angle change (the audit's c3_built.py
+    definition; pilot s2183: control 30, abs 116, softplus 191, exp 238; attention AO_bal 87-96, SO_bal 15-18)."""
+    ps = [m.token_emb.weight, m.action_to_lie.w_in.weight, m.action_to_lie.w_out.weight, m.path_integrator.omega]
+    with torch.enable_grad():
+        A = m.angle_table()[m.act].reshape(-1)
+        tot = torch.zeros(A.numel(), dtype=torch.float64)
+        for i in range(A.numel()):
+            g = torch.autograd.grad(A[i], ps, retain_graph=True, allow_unused=True)
+            tot[i] = sum(float(x.abs().sum()) for x in g if x is not None)
+    return float(tot.mean()), float(tot.max())
+
+
 def wrap_err(a, b):
     """max |(a - b) wrapped to (-pi, pi]|"""
     return float(torch.angle(torch.exp(1j * (a.double() - b.double()))).abs().max())
@@ -173,8 +188,11 @@ def main():
     np.random.seed(5)
     tok = torch.stack([env.generate_trajectory(cfg["n_steps"])[0][:-1] for _ in range(4)])
     built = {k: construct(src, k, steps=a.steps) for k in CLASSES}
-    rep = {"source": a.source, "source_steps": src.steps, "steps": a.steps or src.steps, "size": cfg["size"]}
+    s_mean, s_max = sensitivity(src)
+    rep = {"source": a.source, "source_steps": src.steps, "steps": a.steps or src.steps, "size": cfg["size"],
+           "source_sensitivity_mean": s_mean, "source_sensitivity_max": s_max}
     for k, (m, info) in built.items():
+        info["sensitivity_mean"], info["sensitivity_max"] = sensitivity(m)
         r_src = compare(src, m, env=env, T=cfg["n_steps"], n_trials=a.n_trials, tokens=tok)
         r_ctl = compare(src, m, ref=built["signed"][0], tokens=tok)
         rep[k] = {**info, "vs_source": r_src, "vs_signed_control": r_ctl}
@@ -184,7 +202,8 @@ def main():
               f"{r_src['ref_acc']:.4f} | logit diff vs source {r_src['max_logit_diff']:.2e} (scale "
               f"{r_src['logit_scale']:.1f}) | max|W_in| {info['max_abs_w_in']:.3f} (src {info['src_max_abs_w_in']:.3f})"
               f" max|W_out| {info['max_abs_w_out']:.3f} (src {info['src_max_abs_w_out']:.3f}) max|omega| "
-              f"{info['max_abs_omega']:.2f} (src {info['src_max_abs_omega']:.2f})", flush=True)
+              f"{info['max_abs_omega']:.2f} (src {info['src_max_abs_omega']:.2f}) | sensitivity mean "
+              f"{info['sensitivity_mean']:.1f} max {info['sensitivity_max']:.1f} (src {s_mean:.1f})", flush=True)
         if a.save:
             os.makedirs(a.save, exist_ok=True)
             torch.save({"model_state_dict": m.state_dict(), "variant": k, "seed": b["seed"],

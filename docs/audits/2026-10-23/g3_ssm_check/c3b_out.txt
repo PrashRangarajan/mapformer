@@ -1,0 +1,5 @@
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  f" ratio AO_bal / SO_bal {a / c:.2f}; max|W_in| AO {float(ao.action_to_lie.w_in.weight.abs().max()):.3f} "
+s600: source sens 22.7 (|ang| 0.41); SO_bal 15.0 (|ang| 0.41); AO_bal 87.0 (|ang| 3.19); ratio AO_bal / SO_bal 5.82; max|W_in| AO 0.233 max|W_out| AO 1.635
+s601: source sens 27.3 (|ang| 0.54); SO_bal 18.2 (|ang| 0.54); AO_bal 88.8 (|ang| 3.39); ratio AO_bal / SO_bal 4.88; max|W_in| AO 0.241 max|W_out| AO 1.385
+s602: source sens 24.0 (|ang| 0.43); SO_bal 16.7 (|ang| 0.43); AO_bal 95.9 (|ang| 3.09); ratio AO_bal / SO_bal 5.73; max|W_in| AO 0.192 max|W_out| AO 1.700
