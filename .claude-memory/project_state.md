@@ -28,6 +28,12 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
   minor-version compat, kernels verified); miniconda's 2.6.0+cu124 kept as fallback. `test_guards` 6/13 here: the 7 failures
   are missing `.pt` under runs/{dof,warm,unfreeze} (rsync needed), not code. One job per GPU: packing measured slower.
 - SIGNROUTE ran here (GPU 1, done 2026-10-21 07:43). Its torus part (frozen move latents) is NOT built; held until the read.
+- G-1 RANKCLOCK ran here (GPU 1, 2026-10-21 18:48 -> 10-23 02:16). Nothing running on koopman after it.
+
+## Last results (2026-10-23): RANKCLOCK / G-1 (`RANKCLOCK_RESULTS.md`): PARTIAL primary, CLOCK IS THE OBSTACLE
+- Drift-forbidden rank 2 8/8 (= rank 4) vs actions-only 1/8 (p 0.0014): rank 2 fails because of the clock. Clock slots at
+  rank 2 (per-axis, per-token) 3/8 each vs rank 2 1/8: the 'clock exit' mechanism is NOT supported (PARTIAL, budget-scoped).
+  Post hoc: rank 4 at wd 0 solves 1/8 (vs 8/8) -> weight decay looks necessary; X2 unreadable. Ran on koopman, GPU 1.
 
 ## Last results (2026-10-21): SROPE_TORUS (`SROPE_TORUS_RESULTS.md`): FAILS THE MAP BUT USES ITS PHASE
 - Faithful Selective RoPE 0.961 0/8 (all descending) vs MapWM 8/8; +0.236 over index RoPE; state-tracking config 0/8 with

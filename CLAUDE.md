@@ -103,6 +103,13 @@ r=2's initial weights at each seed, differing only in the bottleneck; SOLVED wit
 | 4 | shared r=4, per-head r=4 | 8/8, 8/8 |
 
 **Escape test** (`RANK_TESTS_RESULTS.md`, registered X1 PARTIAL): lifting stalled rank-2 runs to rank 4 solves 3/8 in 600 epochs vs rank 2 continued 1/8 (p 0.57) and a fresh rank-4 step map on the same network 2/8: UNMEASURED at this budget; secondary: lifted runs that stay unsolved keep a drifting (CLOCK) head, fresh step maps are clean.
+**Clock routes (G-1)** (`RANKCLOCK_RESULTS.md`, registered + Amendment 1, 2026-10-23, shared rank, T=1024, 900 ep):
+the rank-2 obstacle IS the clock -- drift-forbidden rank 2 (pairs exact negatives, observation steps 0) solves 8/8 like
+rank 4 (1.000 to 2T) vs actions-only rank 2 1/8 (p 0.0014), which is no better than rank 2 (1/8). But explicit clock exits
+at rank 2 do NOT reach rank 4: per-axis slot 3/8, per-token slot 3/8 vs rank 2 1/8 (registered PARTIAL, p 0.57; most
+unsolved slot runs still descending -- budget-scoped). So 'extra rank helps by giving the clock an exit' is NOT supported
+at the registered bar. Post hoc, unregistered: rank 4 at weight decay 0 solves 1/8 vs 8/8 (p 0.0014), so X2 (park vs
+remove) was unreadable. Every class contained and HELD a solution before launch (frozen + 60-epoch warm start).
 Separated: per-head rank FIRES (D - C_bd, both block-diagonal, Fisher and permutation p 0.0070);
 sharing one latent vs per-head latents UNMEASURED (D - C); `W_out` per-entry scale UNMEASURED
 (C_bd - B). Initial angle scale does not explain it (A and B fail at normal scale). A rank-2 solution

@@ -1,0 +1,44 @@
+== RANKCLOCK (G-1): run classes (SOLVED = final-5% loss < 0.05; S/T/D/R/X) ==
+  r2     SOLVED 1/8 | acc@1024 0.9182 | s1900:T(0.377) s1901:D(0.329) s1902:D(0.354) s1903:D(0.089) s1904:D(0.226) s1905:T(0.488) s1906:S(0.002) s1907:D(0.494)
+  slotxy SOLVED 3/8 | acc@1024 0.9721 | s1900:D(0.172) s1901:D(0.121) s1902:S(0.044) s1903:D(0.062) s1904:D(0.159) s1905:T(0.585) s1906:S(0.003) s1907:S(0.003)
+  slot   SOLVED 3/8 | acc@1024 0.9505 | s1900:T(0.264) s1901:D(0.167) s1902:S(0.003) s1903:T(0.417) s1904:D(0.274) s1905:D(0.302) s1906:S(0.009) s1907:S(0.011)
+  DF     SOLVED 8/8 | acc@1024 1.0000 | s1900:S(0.000) s1901:S(0.000) s1902:S(0.000) s1903:S(0.000) s1904:S(0.000) s1905:S(0.000) s1906:S(0.000) s1907:S(0.000)
+  AO     SOLVED 1/8 | acc@1024 0.9624 | s1900:D(0.326) s1901:D(0.075) s1902:D(0.263) s1903:D(0.148) s1904:D(0.264) s1905:D(0.157) s1906:S(0.001) s1907:D(0.147)
+  r4     SOLVED 8/8 | acc@1024 0.9998 | s1900:S(0.002) s1901:S(0.002) s1902:S(0.002) s1903:S(0.003) s1904:S(0.009) s1905:S(0.003) s1906:S(0.003) s1907:S(0.003)
+  r4wd0  SOLVED 1/8 | acc@1024 0.7598 | s1900:T(0.641) s1901:T(0.616) s1902:S(0.003) s1903:T(0.496) s1904:T(0.872) s1905:D(0.249) s1906:T(1.077) s1907:T(0.831)
+
+P: PARTIAL (3/8 vs r2 1/8, Fisher p 0.5692) -- slotxy 3/8 vs r2 1/8, Fisher p 0.5692; acc@1024 0.9721 vs 0.9182, perm p 0.0500
+
+P2: PARTIAL (3/8 vs r2 1/8, Fisher p 0.5692) -- slot 3/8 vs r2 1/8, Fisher p 0.5692; acc@1024 0.9505 vs 0.9182, perm p 0.2068
+E2 (G1+): THE CLOCK IS THE OBSTACLE (r2 1/8, AO 1/8, DF 8/8; Fisher AO vs r2 1.0000, DF vs AO 0.0014)
+   DF vs r4: SOLVED 8/8 vs 8/8, Fisher p 1.0000 (descriptive)
+
+X2 (r4 weight decay 0): X2 UNREADABLE (r4wd0 SOLVED 1/8 < 4)
+   reference r4 (wd 0.05), 8 solved: median shrink 0.134, readgain/init 0.026, u_ratio 0.022
+X2b (P4 ordering): r4wd0 NO ORDER (no usable runs; 1 solved) | r4 NO ORDER (read first in 2/4 usable runs, sign p 1.0000; 8 solved)
+
+READING (registered primary): PARTIAL (3/8 vs r2 1/8, Fisher p 0.5692)
+   scope: torus T = 1024, 900 epochs, shared rank, one host; budget-scoped where runs are still DESCENDING.
+
+== geometry medians (all runs, end of training; descriptive) ==
+  r2     u_ratio 0.169  shrink 1.856  readgain 0.356
+  slotxy u_ratio 0.243  shrink 3.154  readgain 0.597  max|omega*clock_x| 0.142  max|omega*clock_y| 0.124
+  slot   u_ratio 0.056  shrink 0.410  readgain 0.176  max|omega*clock| 0.068
+  DF     u_ratio 0.000  shrink 0.000  readgain 0.000
+  AO     u_ratio 0.481  shrink 7.298  readgain 0.780
+  r4     u_ratio 0.022  shrink 0.134  readgain 0.046
+  r4wd0  u_ratio 0.105  shrink 1.562  readgain 0.638
+
+== rule 2: r(log10 final loss, acc) per length, finite runs ==
+   T=512: r = -0.537 over 56 runs
+   T=1024: r = -0.655 over 56 runs
+   T=2048: r = -0.824 over 56 runs
+
+per seed acc@1024 (class):
+  r2     0.883T 0.896D 0.923D 0.981D 0.939D 0.882T 0.998S 0.843D
+  slotxy 0.965D 0.981D 0.997S 0.995D 0.978D 0.861T 1.000S 1.000S
+  slot   0.916T 0.962D 1.000S 0.900T 0.930D 0.897D 1.000S 0.999S
+  DF     1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S
+  AO     0.916D 0.993D 0.948D 0.968D 0.935D 0.981D 1.000S 0.959D
+  r4     1.000S 1.000S 1.000S 0.998S 1.000S 1.000S 1.000S 1.000S
+  r4wd0  0.735T 0.715T 1.000S 0.783T 0.692T 0.890D 0.590T 0.673T

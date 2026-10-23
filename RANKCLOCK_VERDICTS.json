@@ -1,0 +1,18 @@
+{
+  "solved": {
+    "r2": 1,
+    "slotxy": 3,
+    "slot": 3,
+    "DF": 8,
+    "AO": 1,
+    "r4": 8,
+    "r4wd0": 1
+  },
+  "P": "PARTIAL (3/8 vs r2 1/8, Fisher p 0.5692)",
+  "P2": "PARTIAL (3/8 vs r2 1/8, Fisher p 0.5692)",
+  "E2": "THE CLOCK IS THE OBSTACLE (r2 1/8, AO 1/8, DF 8/8; Fisher AO vs r2 1.0000, DF vs AO 0.0014)",
+  "reading": "PARTIAL (3/8 vs r2 1/8, Fisher p 0.5692)",
+  "X2": "X2 UNREADABLE (r4wd0 SOLVED 1/8 < 4)",
+  "X2b_wd0": "NO ORDER (no usable runs; 1 solved)",
+  "X2b_r4": "NO ORDER (read first in 2/4 usable runs, sign p 1.0000; 8 solved)"
+}
