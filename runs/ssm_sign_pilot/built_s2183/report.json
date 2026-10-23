@@ -1,0 +1,130 @@
+{
+  "source": "/home/prashr/mapformer/runs/ssm_sign_pilot/signed_moves_m32_lr3e-3_s2183/signed.pt",
+  "source_steps": "moves",
+  "steps": "moves",
+  "size": 32,
+  "abs": {
+    "class": "abs",
+    "steps": "moves",
+    "c0": 18.750388380780695,
+    "balance_lambda": 0.20992332403419264,
+    "w_in_solve_resid": 1.0658141036401503e-14,
+    "max_abs_w_in": 1.5962793880936168,
+    "max_abs_w_out": 1.5962793880936168,
+    "src_max_abs_w_in": 0.4956156015396118,
+    "src_max_abs_w_out": 0.33978569507598877,
+    "max_abs_omega": 1.0,
+    "src_max_abs_omega": 0.6790232062339783,
+    "vs_source": {
+      "angle_err_all_tokens": 4.2120088774645655e-07,
+      "angle_err_moves": 4.2120088774645655e-07,
+      "min_move_step": 2.4255303543441187e-08,
+      "min_step_all_tokens": 0.0,
+      "max_logit_diff": 0.0006626248359680176,
+      "logit_scale": 21.540241241455078,
+      "frozen_acc": 1.0,
+      "ref_acc": 1.0
+    },
+    "vs_signed_control": {
+      "angle_err_all_tokens": 8.901012973121373e-07,
+      "angle_err_moves": 8.901012973121373e-07,
+      "min_move_step": 2.4255303543441187e-08,
+      "min_step_all_tokens": 0.0,
+      "max_logit_diff": 0.0006346702575683594,
+      "logit_scale": 21.540245056152344
+    }
+  },
+  "softplus": {
+    "class": "softplus",
+    "steps": "moves",
+    "c0": 18.750388380780695,
+    "balance_lambda": 0.08777947654836393,
+    "w_in_solve_resid": 1.0658141036401503e-14,
+    "max_abs_w_in": 0.6674845196762286,
+    "max_abs_w_out": 0.6674845196762286,
+    "src_max_abs_w_in": 0.4956156015396118,
+    "src_max_abs_w_out": 0.33978569507598877,
+    "max_abs_omega": 9.064720283654388,
+    "src_max_abs_omega": 0.6790232062339783,
+    "vs_source": {
+      "angle_err_all_tokens": 1.2596342889206474e-06,
+      "angle_err_moves": 1.2596342889206474e-06,
+      "min_move_step": 0.6931471824645996,
+      "min_step_all_tokens": 0.0,
+      "max_logit_diff": 0.0033919811248779297,
+      "logit_scale": 21.540241241455078,
+      "frozen_acc": 1.0,
+      "ref_acc": 1.0
+    },
+    "vs_signed_control": {
+      "angle_err_all_tokens": 1.319238933696038e-06,
+      "angle_err_moves": 1.319238933696038e-06,
+      "min_move_step": 0.6931471824645996,
+      "min_step_all_tokens": 0.0,
+      "max_logit_diff": 0.0036619901657104492,
+      "logit_scale": 21.540245056152344
+    }
+  },
+  "exp": {
+    "class": "exp",
+    "steps": "moves",
+    "c0": 18.750388380780695,
+    "balance_lambda": 0.0697241921305499,
+    "w_in_solve_resid": 1.0658141036401503e-14,
+    "max_abs_w_in": 0.5301902075985961,
+    "max_abs_w_out": 0.530190207598596,
+    "src_max_abs_w_in": 0.4956156015396118,
+    "src_max_abs_w_out": 0.33978569507598877,
+    "max_abs_omega": 6.283185307179586,
+    "src_max_abs_omega": 0.6790232062339783,
+    "vs_source": {
+      "angle_err_all_tokens": 2.289776915141733e-06,
+      "angle_err_moves": 2.289776915141733e-06,
+      "min_move_step": 1.0,
+      "min_step_all_tokens": 0.0,
+      "max_logit_diff": 0.004986822605133057,
+      "logit_scale": 21.540241241455078,
+      "frozen_acc": 1.0,
+      "ref_acc": 1.0
+    },
+    "vs_signed_control": {
+      "angle_err_all_tokens": 2.2897769186944467e-06,
+      "angle_err_moves": 2.2897769186944467e-06,
+      "min_move_step": 1.0,
+      "min_step_all_tokens": 0.0,
+      "max_logit_diff": 0.004915058612823486,
+      "logit_scale": 21.540245056152344
+    }
+  },
+  "signed": {
+    "class": "signed",
+    "steps": "moves",
+    "c0": 18.750388380780695,
+    "balance_lambda": 0.17184202044176197,
+    "w_in_solve_resid": 1.0658141036401503e-14,
+    "max_abs_w_in": 1.3067050862574323,
+    "max_abs_w_out": 1.306705086257432,
+    "src_max_abs_w_in": 0.4956156015396118,
+    "src_max_abs_w_out": 0.33978569507598877,
+    "max_abs_omega": 1.0,
+    "src_max_abs_omega": 0.6790232062339783,
+    "vs_source": {
+      "angle_err_all_tokens": 7.152557373046875e-07,
+      "angle_err_moves": 7.152557373046875e-07,
+      "min_move_step": -4.210340976715088,
+      "min_step_all_tokens": -4.210340976715088,
+      "max_logit_diff": 0.00027000904083251953,
+      "logit_scale": 21.540241241455078,
+      "frozen_acc": 1.0,
+      "ref_acc": 1.0
+    },
+    "vs_signed_control": {
+      "angle_err_all_tokens": 0.0,
+      "angle_err_moves": 0.0,
+      "min_move_step": -4.210340976715088,
+      "min_step_all_tokens": -4.210340976715088,
+      "max_logit_diff": 0.0,
+      "logit_scale": 21.540245056152344
+    }
+  }
+}
