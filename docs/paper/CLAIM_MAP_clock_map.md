@@ -129,6 +129,14 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
 - Do not claim "Selective RoPE cannot learn maps" (budget-scoped, every run descending); claim "does not learn the torus map
   within 900 epochs in its published configurations; observations step its phase almost as much as moves".
 
+## Update 2026-10-23: RANKCLOCK / G-1 (`RANKCLOCK_RESULTS.md`, registered)
+- E2 THE CLOCK IS THE OBSTACLE: drift-forbidden rank 2 (inverse pairs tied to exact negatives, observation steps 0) solves
+  the torus 8/8 at 1.000 vs actions-only rank 2 1/8 (Fisher p 0.0014). Primary P PARTIAL: per-axis clock slot 3/8 vs 1/8.
+- Allowed (supersedes the do-not-claim "rank = D is hard because of the clock" FOR THE TORUS ONLY): "on the torus the rank-2
+  obstacle is the clock, not capacity". Not: "extra rank helps because it gives the clock an exit" (not supported at the
+  registered bar); not "rank = D is hard because of the clock" in general (rank 1 learns the ring); the weight-decay-0 rank-4
+  result (1/8) is post hoc.
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).

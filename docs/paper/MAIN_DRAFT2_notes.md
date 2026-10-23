@@ -1,4 +1,4 @@
-# Notes on MAIN_DRAFT2 (2026-10-21)
+# Notes on MAIN_DRAFT2 (2026-10-21; G-1 folded in 2026-10-23)
 
 Drafted from `docs/paper/expansion/SYNTHESIS_DRAFT2_PLAN.md`, draft 1 (`MAIN_DRAFT1.md`, `MAIN_APPENDIX1.md`), the theory
 appendix v3, the seven expansion reports, and the results that landed after the plan (DELTA_FREE, SROPE_TORUS, SIGNROUTE,
@@ -144,6 +144,106 @@ MINORs (draft text).
   still carry the old numbers; their CORRECTED banners point to the audit, and the draft is current.
 - `kernel_probe.py` still reads score_rank seeds from a directory listing (pin them before any pilot dir is added there).
 
+## G-1 (RANKCLOCK) folded in (2026-10-23)
+
+Source: `RANKCLOCK_RESULTS.md` (registered; read in full), `RANKCLOCK_PREREG.md` (arms Sec. 2, existence Sec. 3, analysis
+Sec. 5, Amendment 1), `RANKCLOCK_ANALYSIS.txt`, `RANKCLOCK_VERDICTS.json`, `RANKCLOCK.md`, the CLAUDE.md rank block of
+commit 80fc2f4. No results file, code, run directory or figure edited; nothing committed.
+
+### Changes (old -> new)
+
+- **Abstract.** After "... keep or re-find an installed solution." added: "Forbidding the clock by construction makes rank
+  2 solve the torus on every seed (8 of 8), while zeroing only the observation steps does not (1 of 8)." The paragraph
+  was re-wrapped to 120 columns. Length 316 -> 344 whitespace tokens (open item 8).
+- **Sec. 1, contribution 3.** "Causal tests of the routes: freezing the move latents removes the collective route (1/8
+  against 7/8), and a non-negative readout with a signed increment restores it (16/16)." -> "... (1/8 against 7/8), a
+  non-negative readout with a signed increment restores it (16/16), and on the torus a rank-2 step map with the clock
+  forbidden by construction solves 8/8, like rank 4, against 1/8 when only the observation steps are zeroed: the rank-2
+  obstacle there is the clock, not capacity."
+- **Sec. 4, after Conjecture 1.** Added: two empirical claims tested in Sec. 7.2 -- the clock blocks rank D on the torus
+  (registered support) and the *clock-exit account* (rank above D helps because parking gives the clock a map-free exit;
+  Prop. 4(c) shows the exit exists, not that training uses it; a conjecture, registered test PARTIAL).
+- **Table 1.** Conjecture 1 row "consistent with rank 1 learning the ring; not tested" -> "...; its premise, a clock that
+  persists at rank D, has the support of the row above; the feedback itself not tested". New rows: "At rank D on the
+  torus, the clock is the obstacle | registered causal support (shared rank 2, T = 1024, 900 epochs) | clock forbidden
+  8/8 against observation steps zeroed 1/8 (Sec. 7.2)"; "Clock-exit account: rank above D helps through parking |
+  conjecture; registered test PARTIAL | explicit clock exits at rank 2 3/8 against 1/8, Fisher p 0.57, most runs still
+  descending (Sec. 7.2)". Prop. 4 and Prop. 5 rows unchanged (proved statements; G-1 does not test them).
+- **Sec. 7.2.** New paragraph "On the torus the rank-2 obstacle is the clock (registered)" between "Rank against the
+  map's dimension" and "Why the extra rank helps": gates (r2 1/8, r4 8/8), the drift-forbidden arm defined from prereg
+  Sec. 2 (pair steps +-W_out W_in (e(+x) - e(-x)) / sqrt 2, observation steps 0; clock zero by construction) 8/8 at
+  1.000, 1.000 at 2T against r4 0.986 (descriptive); actions-only (observation steps 0, four move steps free, so the moves'
+  own clock remains) 1/8 = r2's 1/8; DF vs AO Fisher p 0.0014; "removing the clock is sufficient and removing its
+  observation part is not: what stops rank 2 is the clock, not the rank's capacity to hold the map". "Why the extra rank
+  helps": old second sentence "The stored checkpoints are consistent with it but do not discriminate it from plain
+  removal ..." -> the registered primary first (per-axis slot, +128 parameters, zero init, cancels common and
+  axis-differential parts; 3/8 vs 1/8, Fisher p 0.57, accuracy 0.972 vs 0.918; per-token slot 3/8; PARTIAL against the
+  6/8-at-p < .05 and 2/8 bars; every class contains a solution and keeps or re-finds it; 4 of 5 / 3 of 5 unsolved slot
+  runs DESCENDING; "not supported at the registered bar, and not refuted"), then "The stored checkpoints are consistent
+  with parking but do not discriminate it from plain removal ..." (audit wording kept: "consistent with", residual
+  off-plane; nothing upgraded). Rest of the paragraph unchanged; re-wrapped.
+- **Sec. 9, "What the two failure axes share".** Added after "... parking, that costs the map nothing.": "That the clock is
+  what blocks rank D is tested on the torus: with the clock forbidden by construction, rank 2 solves on every seed
+  (registered). That parking is why one more dimension helps is not shown: an explicit clock exit at rank 2 solves 3/8
+  against 1/8 within 900 epochs, most unsolved runs still descending (registered PARTIAL), so it remains a conjecture."
+  This is the one place outside Sec. 7.2 that gives the slot numbers.
+- **Sec. 9, design guidance.** Added: "Where the inverse pairs of actions are known, also tying their steps to exact
+  negatives removes the clock by construction, and rank D then suffices (rank 2 on the torus, 8/8)."
+- **Sec. 10.** Budget bullet: the clock-exit test's unsolved slot runs mostly still descending (no numbers repeated).
+  Rank bullet: the clock-route batch is shared rank only, one task and length. New bullet: weight decay 0.05 throughout
+  except where marked; rank 4 at wd 0 solved 1/8 vs 8/8 (Fisher p 0.0014; App. G7), post hoc, unregistered, "whether rank
+  4 needs weight decay is untested" (the only main-text mention). Theory bullet: "developed after the registered batches"
+  -> "..., except the clock-route batch (Sec. 7.2), which was registered to test its rank account".
+- **App. A3.** New row RANKCLOCK (G7): seeds 1900-1907, 900 epochs, standard attention (no `--fast-attn` in
+  `run_rankclock.sh`), code check yes (Amendment 1), reproduced no.
+- **App. E9.3** status sentence and **App. E14** rows E8.5 and E9.3: the premise (a remaining clock blocks rank D) has
+  registered support on the torus; the feedback is not tested; parking as why rank > D helps is a conjecture with a
+  PARTIAL registered test.
+- **App. G7 (new).** Design; the two clock exits (prereg Sec. 1, Amendment 1 finding 1); arm table (prereg Sec. 2);
+  existence table (prereg Sec. 3); all-arm results table and per-seed table (`RANKCLOCK_ANALYSIS.txt`); gates; registered
+  readings table (P, P2, E2, X2, X2b with their rules); power; slot angle sizes; budget note; rule-2 check; post hoc list
+  (wd 0, r4 end-state clock, DF at 2T, geometry medians). G6's R2Clock pilot distinguished from the G-1 slot arms.
+
+### Numbers and sources
+
+- r2 1/8, slotxy 3/8, slot 3/8, DF 8/8, AO 1/8, r4 8/8, r4wd0 1/8; S / T / D counts; per-seed accuracy, class and
+  final-5% loss [R]: `RANKCLOCK_ANALYSIS.txt` (the bracketed number is `classify_run`'s tail, `analyze_rankclock.py` l.152).
+- Accuracy at T = 512 / 1024 / 2048, mean +/- sd [R, descriptive]: `RANKCLOCK.md`, `RANKCLOCK_RESULTS.md` all-arms table.
+- P PARTIAL (Fisher 0.5692; permutation 0.0500), P2 PARTIAL (0.5692; 0.2068), E2 THE CLOCK IS THE OBSTACLE (DF vs AO
+  0.0014, AO vs r2 1.0000), X2 UNREADABLE, X2b NO ORDER (2 of 4, sign p 1.0000) [R]: `RANKCLOCK_VERDICTS.json`,
+  `RANKCLOCK_ANALYSIS.txt`.
+- Bars 6/8 at p < .05 and 2/8; power 6/8 vs 1/8 p 0.041 [prereg]: `RANKCLOCK_PREREG.md` Sec. 5.
+- Arm definitions, parameters 204,373 / 204,501 / 204,437 / 204,757, DF sqrt 2 scaling, AO initial move clock 0.743, drift
+  decomposition and 1.22 / 1.01 [prereg]: `RANKCLOCK_PREREG.md` Secs. 1-2, Amendment 1 findings 1 and 9.
+- Existence: source r4 1.0000 / 0.0021, singular values 12.61 / 10.51 / 0.028 / 0.009, per-class frozen and trainable
+  rows, 12.9 rad, 2-3x scales, AO 0.60 / DF 1.00 [prereg]: `RANKCLOCK_PREREG.md` Sec. 3 (from
+  `runs/rankclock_pilot/construct_rankclock.json`, not re-read).
+- Slot angles 0.142 / 0.124 / 0.068; budget class counts; rule-2 r -0.537 / -0.655 / -0.824; wd-0 1/8 vs 8/8 p 0.0014,
+  6/8 STALLED, 0.766; r4 shrink 0.134, readgain 0.026, u_ratio 0.022; DF 1.000 +/- 0.001 vs r4 0.986 +/- 0.018 at 2T;
+  geometry medians [R descriptive / post hoc as labelled]: `RANKCLOCK_RESULTS.md`, `RANKCLOCK_ANALYSIS.txt` (r4wd0
+  geometry 0.105 / 1.56 from the analysis file only).
+- 1800-epoch reference 0/8 vs 7/8 [R]: `LOOP_RANK_E1800_P1_RESULTS.md` (already in Sec. 7.2 / C4).
+
+### Claim-map compliance
+
+"Rank = D is hard because of the clock" is a do-not-claim (it fails in 1D). Every new sentence is scoped to the torus
+and to the registered E2 reading ("on the torus the rank-2 obstacle is the clock"; "the rank-2 obstacle there"); none
+says rank D is hard because of the clock in general, and Sec. 7.2 keeps rank 1 learning the ring beside it. The
+clock-exit account, hiding feedback (Conjecture 1) and parking as a mechanism stay conjectures; "parking" still appears
+as a measured mechanism nowhere. The wd-0 observation is in Limitations and App. G7 only, labelled post hoc.
+
+### Rule-28 read of the touched sections (2026-10-23)
+
+Read the abstract, Sec. 1 contributions, Sec. 4 (Conjecture 1 to Table 1), Sec. 7.2 whole, Sec. 9 first paragraph and
+design guidance, Sec. 10, App. A3, E9.3, E14, G6-G7. Checked every new number against `RANKCLOCK_RESULTS.md`,
+`RANKCLOCK_ANALYSIS.txt`, `RANKCLOCK.md` and `RANKCLOCK_PREREG.md`; the unsolved-slot counts (slotxy 4 D + 1 T of 5;
+slot 3 D + 2 T of 5) recounted from the per-seed classes. Cross-references: "App. G7" (Sec. 7.2, Sec. 10, A3, E9.3,
+E14) resolves; Table 1 cites only sections; no table or figure added to the main text, so Tables 1-7 and Figs. 1-11 keep
+their numbers and order. Fixed during the read: "at p < .05" broken across a line (a line starting "<") -> "with Fisher
+p below .05"; "keeps it" -> "keeps or re-finds it" (the slot classes were knocked off, peak loss ~0.2, and re-found);
+"is now tested" -> "is tested" (no process history); the 2T number labelled descriptive; design guidance de-duplicated
+("keep observations from stepping" stated once). Touched paragraphs re-wrapped to 120 columns.
+
 ## Word counts
 
 (Counted before the audit was applied. The audit edits added about 830 whitespace tokens to the file (12,934 -> 13,765), mostly in Secs. 4, 6, 7.1, 7.2 and 8 and Table 7; the per-section counts below are not recounted.)
@@ -247,7 +347,8 @@ collapsed runs: `rank/sweep_final_out.txt` (basin COLLAPSE, indep 0.00-0.03). St
 9 of 10 sets, readgain 0.09-0.27; random-direction median 0.40-0.71 per the audit's Beta computation), `rank/clock_decomp_out.txt`
 (a, o 0.017-0.037, cosine -0.79 to -0.999, residual 0.0007-0.025; escape F |c| 14-85x, residual 0.002-0.005, share
 0.91-1.00), `rank/c1_runlevel_once_out.txt` (50/55 vs 25.1), `rank/escape_start_out.txt` (16/16 heads; the rank-sum p 0.018
-now in App. G4 only).
+now in App. G4 only). G-1 (RANKCLOCK) paragraph and the primary in "Why the extra rank helps" [R]: see "G-1 (RANKCLOCK)
+folded in" above.
 
 **Sec. 7.3 and Table 6.** As draft 1 (SIGN_MATCHED, RING_DIAL, WRAP_EXISTENCE, GENERALITY, LRSWEEP, ROBUST, MECHANISM,
 ACCOUNTS) [R]. Exp / softplus 1/8-3/8 [R breadth cells, fixed rates]: `SIGNROUTE_RESULTS.md`. Routes paragraph
@@ -293,7 +394,8 @@ Spearman 0.84 [A-audited]: `docs/audits/2026-10-20/WHAT_WHERE_T1024.md`; sign-fl
 0.508 floor; not registered): `KNOB_SWEEP_n8.md`.
 
 **Sec. 10.** Quarter-size gap and descending |.| runs [R]: `ROBUST_RESULTS.md`; Selective RoPE all descending [R]:
-`SROPE_TORUS_RESULTS.md`; exp / softplus initial steps +1.051 / +0.706 [R descriptive]: `SIGNROUTE_RESULTS.md`.
+`SROPE_TORUS_RESULTS.md`; exp / softplus initial steps +1.051 / +0.706 [R descriptive]: `SIGNROUTE_RESULTS.md`. Clock-slot budget, shared rank only, wd 0 1/8
+vs 8/8 (post hoc) [R / post hoc]: `RANKCLOCK_RESULTS.md`.
 
 **Appendix.** Every number is copied with its source named inline. New appendix material by source: A3 (prereg / results
 headers of each batch); A5 `KNOB_SWEEP_n8.md`; B additions (SCORE_RANK, SROPE_TORUS, DELTA_FREE results files and their
@@ -397,7 +499,8 @@ the recipe" / "at any learning rate"; "no cost without an inverse pair" (App. H4
 sign cost without an inverse pair", the claim map's GAUGE wording); the opposition score
 0.06 vs 1.92 (not wrap-aware). "Rank = D is hard because of the clock" is a do-not-claim in the claim map: the text states
 the route inventory as proved, the hiding feedback as a conjecture, the drift-on-the-weakest-axis geometry as analysis, and
-says "in line with this" / "accounts for", not "because". Sharing vs per-head latents: only the descriptive "whether the
+says "in line with this" / "accounts for", not "because". (2026-10-23: the registered G-1 E2 reading licenses the scoped "on the torus the
+rank-2 obstacle is the clock"; see the G-1 section.) Sharing vs per-head latents: only the descriptive "whether the
 latent is shared or per head" (both 8/8), as in draft 1.
 
 ## Rule-28 end-to-end read (done 2026-10-21)
@@ -474,9 +577,10 @@ Every caption number below is in the figure's `_out.txt` (`docs/paper/figs/`).
    KNOB_SWEEP's seed numbers are not given in `KNOB_SWEEP_n8.md` ("8 seeds").
 5. The new references (deviation 24) need metadata checks; Yao et al. is cited via Liu et al. App. A.5 and is not in
    `papers/`.
-6. Plan GPU items still open and named in Limitations: G-1 (clock-slot rank test; decides Conjecture 1 vs
-   over-parameterisation), G-3 (SSM), G-4 (torus best-rate sweep), G-5 (depth routes), G-7 (long text world), recurrent
-   baseline. If G-1 lands, Prop. 5 / Conjecture 1 and Sec. 7.2's last paragraph change.
+6. Plan GPU items still open: G-3 (SSM), G-4 (torus best-rate sweep), G-5 (depth routes), G-7 (long text world),
+   recurrent baseline. G-1 landed (2026-10-23) and is folded in (section "G-1 (RANKCLOCK) folded in"): E2 THE CLOCK IS
+   THE OBSTACLE, P PARTIAL. Follow-ups named by its results file, not run: a registered r4 wd 0.05 vs wd 0 contrast, and
+   a longer budget for slotxy and r2 together (slower vs unable).
 7. `fig_summary` panel (b)'s title says "training keeps it" for all three bars; the torus |.| bar is re-found, not kept.
    The caption says so; the figure title itself would need a regenerated figure.
-8. The abstract is about 300 tokens; TMLR has no limit, but trim if a venue requires 250.
+8. The abstract is 344 whitespace tokens after G-1 (316 before); TMLR has no limit, but trim if a venue requires 250.

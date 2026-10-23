@@ -78,6 +78,7 @@ Pilots ran on seeds outside the batch except where noted.
 | RANK_WRAP | 7.2 | 2D and 3D tori of two sizes | per-head rank D + 1 | 0-7 | 900 | standard | yes | yes |
 | RANK_TESTS | 7.2 | ring; torus escape test | rank 1, 2 (+ variants); lifted / fresh rank 4 | 20-27; 0-7 | 300; 600 | standard | yes | yes |
 | SCORE_RANK | 7.2, 7.4 | torus T = 1024 | MapWM / PoPE score at r2 and r4 | r2 10-21, r4 10-17 | 900 | standard | yes | no |
+| RANKCLOCK (G7) | 7.2 | torus T = 1024 | shared r2; r2 + per-axis / per-token clock slot; r2 drift-forbidden; r2 actions-only; shared r4 at weight decay 0.05 and 0 | 1900-1907 | 900 | standard | yes | no |
 | LOOP_RANK | 6, 7.4 | torus T = 1024 | r2 1 layer, r2 looped x4, r2 4 layers, r4 | 0-7 (A and C reused; A s0 reproduced bitwise) | 900 | standard | no | yes |
 | RING_DIAL | 7.3 | ring p_plus 0.5 / 0.75 / 0.9 | signed, \|.\| | 30-37 | 300 | standard | yes | yes |
 | WRAP_EXISTENCE | 7.3 | ring p_plus 0.5 | obs.-step-free signed / \|.\|, constructions | 600-607 | 300 + 300 | standard | yes | yes |
@@ -763,7 +764,9 @@ not the gradient (once g |tau_i| > 1 the cosine averages out), so drift removal 
 shows at long gaps and wrap-only revisits; and the CLOCK and COLLAPSE end states of rank-D heads (partial and complete
 hiding) are points on one curve. *Status.* The first-order statement is proved; the feedback is a conjecture. A CPU pilot
 at T = 128 (n = 3) saw a failing rank-2 seed whose weak axis was present at initialisation, and at initialisation on the
-real task the drift is too large for A1 (App. G6).
+real task the drift is too large for A1 (App. G6). A registered batch (App. G7) shows that on the torus removing the
+clock by construction lets rank 2 solve (8/8 against 1/8 with only the observation steps zeroed); that supports the
+premise that a remaining clock blocks rank D, and does not test the feedback.
 
 ### E10. Exists, kept, not found (Remark 2; definitional)
 
@@ -833,10 +836,10 @@ problem.
 | E6.2 | two-layer global count (normaliser, precision, width) | cited (Liu et al. Lemma 6; Yao et al.) | probes (App. F3) |
 | E7 | phase decomposition; position-factor bound; tick rule | proved | bound consistent with the strata, not a test of them; text-world drift (App. J) |
 | E8.1-E8.4 | |.| clock floor; signed collective route; no |.| collective route; same-direction moves | proved (E8.2(c), E8.4 for the quadratic surrogate) | `prop_checks.py`, `sign_clock.py` |
-| E8.5 | rank D: no clock-free full-map channel; rank > D: parking | proved | end states (App. G) |
+| E8.5 | rank D: no clock-free full-map channel; rank > D: parking | proved | end states (App. G3-G4); that parking is why rank > D helps: conjecture, registered test PARTIAL (App. G7) |
 | E8.6 | route inventory | proved (inventory) | Table 4; SIGNROUTE |
 | E9.2 | hiding free to first order at D >= 2 | proved under A1-A3 | drift on the least-resolved axis (App. G) |
-| E9.3 | hiding starves the collective route | conjecture | not tested |
+| E9.3 | hiding starves the collective route | conjecture | feedback not tested; its premise, that a remaining clock blocks rank D, has registered support on the torus (App. G7) |
 | E10 | basins | definitional | App. H7 |
 | E11 | readers and codes | proved (architecture, algebra) | one-pass reader (App. M) |
 | E12 | peak pinning | proved given delta = 0 (measured) | DELTA_FREE (App. L) |
@@ -1221,6 +1224,124 @@ T = 1024 (one-sided p 0.19; `init_frame.py`); initial drift is lower in the runs
 independent SCORE_RANK seeds count: one-sided p 0.073; pooled over sets whose seeds share a base, 0.012, descriptive).
 MapFormer's 5D setting (T = 16, grid 5) solved at every rank under our recipe (rank 5, 6 and 5 + clock slot 3/3 each;
 index RoPE stalled), so it does not test rank here (`pilot_5d/`).
+
+### G7. Clock routes at rank 2 (`RANKCLOCK_RESULTS.md`, registered; `RANKCLOCK_PREREG.md` with Amendment 1)
+
+**Design.** Torus 64 x 64, T = 1024, the RANK_MI recipe (900 epochs, lr 1e-3, 98 batches of 16, cosine, AdamW weight
+decay 0.05, 1 layer, 2 heads, d_model 128, standard attention), fresh seeds 1900-1907, 7 arms x 8 = 56 runs in one batch
+on one GPU from one code version (`a33d6d0`, md5-guarded). r2, both slot arms, drift-forbidden and actions-only share
+every initial weight at a seed (bitwise; `test_rankclock.py`); r4 is built from r2's base as in RANK_MI. An independent
+results-blind code check before launch (Amendment 1: 3 MAJOR, 5 MINOR, 2 NOTE) was folded in; its first MAJOR added the
+per-axis slot as the primary. Pilots on seeds 1990-1992 are not pooled. Evaluation `eval_noise_refine` on fresh maps
+(env seed 10000), 100 trials per length. Analysis `analyze_rankclock.py` -> `RANKCLOCK_ANALYSIS.txt`,
+`RANKCLOCK_VERDICTS.json`.
+
+**Two clock exits.** Per inverse pair the latent clock is u_x = z(+x) + z(-x) (likewise u_y). A walk's drift per channel
+is (t / 2)(u_x + u_y) / 4, a common part growing with the step count, plus (n_x - n_y)(u_x - u_y) / 4, a differential
+part growing with the net axis imbalance; at initialisation the second is as large as the first (|u_x - u_y| / |u_x +
+u_y| median 1.22 for r2, 1.01 for r4; reviewer's measurement). Two independent pair clocks need r >= 4 to be parked
+(E8.5(b)), so rank 4 has both exits. The per-axis slot gives rank 2 both without extra map rank; the per-token slot only
+the common one (on this stream it is equivalent to a learned index-RoPE rate). The slots add parameters but not map
+rank, so the over-parameterisation account predicts r2-like behaviour for both. (G6's R2Clock pilot is a different arm:
+a fixed extra latent coordinate that every token steps by 1, at T = 128.)
+
+| arm | step map | parameters | initialisation against r2 at the seed |
+|---|---|---|---|
+| r2 | shared rank 2, every token steps | 204,373 | -- |
+| slotxy (primary) | r2 + per-channel clock_x on the two x-moves and clock_y on the two y-moves; observation steps unchanged | 204,501 (+128) | shared tensors bitwise equal; slots 0; forward bitwise equal |
+| slot (P2) | r2 + one per-channel clock on every token | 204,437 (+64) | as slotxy |
+| DF, drift-forbidden | pair (+x, -x) steps +-W_out W_in (e(+x) - e(-x)) / sqrt 2, likewise y; every other step 0 | 204,373 | state dict bitwise equal |
+| AO, actions-only | the four move steps W_out W_in e(move) free; every other step 0 | 204,373 | state dict bitwise equal |
+| r4 | shared rank 4 built from r2's base | 204,757 | differs only in W_in, W_out |
+| r4wd0 | as r4, weight decay 0 | 204,757 | as r4 |
+
+Measured on the constructed models: DF's non-move steps are exactly 0, its pairs exact negatives and its move-sum clock
+exactly 0; AO's non-move steps are exactly 0 and its initial move clock is 0.743. DF's initial pair step is sqrt 2 times
+r2's half-difference (as in the ring precedent). Shared, not per-head, rank throughout.
+
+**Existence before the batch (prereg Sec. 3; `runs/rankclock_pilot/construct_rankclock.json`).** Source: a trained
+shared r4 (pilot seed 1990, outside the batch; frozen accuracy 1.0000, final-5% loss 0.0021; step-table singular values
+12.61, 10.51, 0.028, 0.009, so effectively rank 2). Each class is scored frozen by the best construction it can
+represent and then warm-started for 60 cosine epochs at peak lr 1e-3 (HELD = still SOLVED and frozen accuracy within
+0.02):
+
+| class | frozen, best construction | other constructions | after 60 epochs | |
+|---|---|---|---|---|
+| r2 | rank-2 projection 1.0000 | DF 1.0000, AO 0.6045 | 0.9998, peak loss 0.289, tail 0.0073 | HELD |
+| slot | rank-2 projection 1.0000 | slot 1.0000, DF 1.0000, AO 0.6045 | 1.0000, peak 0.210, tail 0.0025 | HELD |
+| slotxy | rank-2 projection 1.0000 | xy 1.0000, DF 1.0000, AO 0.6044 | 1.0000, peak 0.197, tail 0.0052 | HELD |
+| AO | DF 1.0000 | AO 0.6045 | 1.0000, peak 0.135, tail 0.0002 | HELD |
+| DF | DF 1.0000 | -- | 1.0000, peak 0.017, tail 0.0001 | HELD |
+
+Every class contains a solution and holds it, so a failure in the batch is a search failure. The slot classes are
+knocked off their solution (peak loss about 0.2; one Adam step at lr 1e-3 moves a slot's top-channel phase by 12.9 rad
+over 2,048 tokens) and re-find it. Constructed weight scales are 2-3x the source's. Descriptive, one source: the trained
+r4 with its observation steps zeroed (AO) scores 0.60 and with its moves antisymmetrised (DF) 1.00, so it cancels part
+of its move clock with its observation steps.
+
+**Results** (SOLVED = final-5% training loss < 0.05; S / T / D = SOLVED / STALLED / DESCENDING; no run diverged;
+accuracy mean +/- sd over 8 seeds; `RANKCLOCK.md`, `RANKCLOCK_ANALYSIS.txt`):
+
+| arm | SOLVED | S / T / D | T = 512 | T = 1024 | T = 2048 |
+|---|---|---|---|---|---|
+| r2 | 1/8 | 1 / 2 / 5 | 0.954 +/- 0.042 | 0.918 +/- 0.053 | 0.851 +/- 0.056 |
+| slotxy (primary) | 3/8 | 3 / 1 / 4 | 0.984 +/- 0.037 | 0.972 +/- 0.046 | 0.927 +/- 0.059 |
+| slot (P2) | 3/8 | 3 / 2 / 3 | 0.979 +/- 0.023 | 0.951 +/- 0.045 | 0.891 +/- 0.075 |
+| DF | 8/8 | 8 / 0 / 0 | 1.000 +/- 0.000 | 1.000 +/- 0.000 | 1.000 +/- 0.001 |
+| AO | 1/8 | 1 / 0 / 7 | 0.990 +/- 0.011 | 0.962 +/- 0.029 | 0.890 +/- 0.072 |
+| r4 | 8/8 | 8 / 0 / 0 | 1.000 +/- 0.000 | 1.000 +/- 0.001 | 0.986 +/- 0.018 |
+| r4wd0 | 1/8 | 1 / 6 / 1 | 0.766 +/- 0.128 | 0.760 +/- 0.130 | 0.748 +/- 0.130 |
+
+Per seed, accuracy at T = 1024 and run class (final-5% training loss):
+
+| seed | r2 | slotxy | slot | DF | AO | r4 | r4wd0 |
+|---|---|---|---|---|---|---|---|
+| 1900 | 0.883 STAL (0.377) | 0.965 DESC (0.172) | 0.916 STAL (0.264) | 1.000 SOLV (0.000) | 0.916 DESC (0.326) | 1.000 SOLV (0.002) | 0.735 STAL (0.641) |
+| 1901 | 0.896 DESC (0.329) | 0.981 DESC (0.121) | 0.962 DESC (0.167) | 1.000 SOLV (0.000) | 0.993 DESC (0.075) | 1.000 SOLV (0.002) | 0.715 STAL (0.616) |
+| 1902 | 0.923 DESC (0.354) | 0.997 SOLV (0.044) | 1.000 SOLV (0.003) | 1.000 SOLV (0.000) | 0.948 DESC (0.263) | 1.000 SOLV (0.002) | 1.000 SOLV (0.003) |
+| 1903 | 0.981 DESC (0.089) | 0.995 DESC (0.062) | 0.900 STAL (0.417) | 1.000 SOLV (0.000) | 0.968 DESC (0.148) | 0.998 SOLV (0.003) | 0.783 STAL (0.496) |
+| 1904 | 0.939 DESC (0.226) | 0.978 DESC (0.159) | 0.930 DESC (0.274) | 1.000 SOLV (0.000) | 0.935 DESC (0.264) | 1.000 SOLV (0.009) | 0.692 STAL (0.872) |
+| 1905 | 0.882 STAL (0.488) | 0.861 STAL (0.585) | 0.897 DESC (0.302) | 1.000 SOLV (0.000) | 0.981 DESC (0.157) | 1.000 SOLV (0.003) | 0.890 DESC (0.249) |
+| 1906 | 0.998 SOLV (0.002) | 1.000 SOLV (0.003) | 1.000 SOLV (0.009) | 1.000 SOLV (0.000) | 1.000 SOLV (0.001) | 1.000 SOLV (0.003) | 0.590 STAL (1.077) |
+| 1907 | 0.843 DESC (0.494) | 1.000 SOLV (0.003) | 0.999 SOLV (0.011) | 1.000 SOLV (0.000) | 0.959 DESC (0.147) | 1.000 SOLV (0.003) | 0.673 STAL (0.831) |
+
+Gates: G0 r4 8/8 (>= 6 required; RANK_MI 8/8); G1 r2 1/8 (<= 2 required; RANK_MI 0/8). Both pass.
+
+**Registered readings.**
+
+| readout | rule | label | numbers |
+|---|---|---|---|
+| P (primary): slotxy vs r2 | >= 6/8 and Fisher < .05: CLOCK EXITS HELP; <= 2/8: DO NOT HELP; else PARTIAL | **PARTIAL** | 3/8 vs 1/8, Fisher p 0.5692; accuracy 0.972 vs 0.918, permutation p 0.0500 (printed beside, not a decision rule) |
+| P2: slot vs r2 | same thresholds (common-mode exit) | PARTIAL | 3/8 vs 1/8, Fisher p 0.5692; accuracy 0.951 vs 0.918, permutation p 0.2068 |
+| E2: DF, AO, r2 | AO <= 2/8, DF >= 6/8 and Fisher(DF, AO) < .05: THE CLOCK IS THE OBSTACLE (first match of five branches) | **THE CLOCK IS THE OBSTACLE** | DF 8/8 vs AO 1/8, Fisher p 0.0014; AO vs r2 1/8 vs 1/8, p 1.0000; DF vs r4 8/8 vs 8/8 (descriptive) |
+| X2: r4wd0, park or remove | needs >= 4 SOLVED r4wd0 runs | X2 UNREADABLE | r4wd0 SOLVED 1/8 |
+| X2b: order of read and latent clock decline | two-sided sign test over solved runs | NO ORDER | r4wd0: no usable runs (1 solved); r4: read clock first in 2 of 4 usable runs, sign p 1.0000 |
+
+Power (prereg Sec. 5): with r2 at 1/8 the primary could read HELPS only at >= 6/8 (Fisher p 0.041); a slot at 3-5/8
+reads PARTIAL by design. The slots were used, not left at zero: median max |omega x slot| 0.142 / 0.124 rad (clock_x /
+clock_y) and 0.068 rad (per-token slot).
+
+**Budget (rules 3-4; read before quoting the primary).** The slot arms are not stalled at rank 2's level: of their 5
+unsolved runs each, slotxy has 4 DESCENDING and 1 STALLED, slot 3 DESCENDING and 2 STALLED; rank 2 has 5 of 7 unsolved
+runs DESCENDING. The registered claim is "within 900 epochs"; a slot that solves later than rank 4, or a rank 2 that
+would solve with more epochs, fits this table, so PARTIAL is a speed-or-capability question the batch does not separate.
+Rank 2 did not solve in 1800 epochs from scratch (0/8 vs rank 4 7/8; C4), so a longer budget is not certain to rescue
+the slot arms either.
+
+**Checks.** Rule 2: r(log10 final loss, accuracy) = -0.537 / -0.655 / -0.824 at T = 512 / 1024 / 2048 over 56 runs; the
+readings are on SOLVED and accuracy is descriptive.
+
+**Not registered (post hoc).**
+- *Weight decay looks close to necessary for rank 4 here.* r4wd0 solves 1/8 against r4's 8/8 (Fisher p 0.0014), with 6/8
+  STALLED, and is the only arm far from ceiling at T = 512 (0.766). No r4 vs r4wd0 contrast was registered (the arm was
+  there to read X2), so this is an observation to confirm in a registered batch. It is also why X2 could not be read.
+- *The solved wd-0.05 rank-4 runs end with little clock:* median shrink |u_end| / |u_init| 0.134, readgain 0.026 of its
+  initial value, u_ratio 0.022 (8/8 solved). With decay on, removal and decay of a parked clock cannot be told apart, so
+  this says only that the end state carries little clock; it is not evidence for parking or for removal.
+- *DF holds its solution past the training length:* 1.000 +/- 0.001 at T = 2048 against rank 4's 0.986 +/- 0.018.
+- *Geometry at the end of training* (medians over all runs, descriptive): u_ratio r2 0.169, slotxy 0.243, slot 0.056, AO
+  0.481, r4 0.022, r4wd0 0.105; shrink r2 1.86, slotxy 3.15, slot 0.41, AO 7.30, r4 0.13, r4wd0 1.56. In r2, slotxy and
+  AO the latent clock grew over training (shrink > 1), most in AO; in the per-token slot arm it shrank, as in rank 4.
 
 ---
 

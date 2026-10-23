@@ -7,18 +7,19 @@
 ## Abstract
 
 Path-integrated rotary attention replaces RoPE's token index with a learned phase that sums a content-dependent step per
-token. We give an account of what such models learn and of what decides whether training finds a map. On 1024-move
-torus walks, where a map-free rule that retraces the last run of moves scores 0.843, one path-integrated layer scores
-0.998 (8 of 8 seeds solved) against 0.731 for index RoPE. The rotation carries the prefix sum of the moves, so one layer
-compares positions at any gap; index attention must build that sum in its residual stream, and at matched depth one path
-layer is worth about three index layers on Dyck-2 and on a biased 1D walk, and more than four on the torus. We show that a
-map code is a phase without a clock, the phase an out-and-back adds, and bound how much a clock erodes the position match
+token. We give an account of what such models learn and of what decides whether training finds a map. On 1024-move torus
+walks, where a map-free rule that retraces the last run of moves scores 0.843, one path-integrated layer scores 0.998 (8
+of 8 seeds solved) against 0.731 for index RoPE. The rotation carries the prefix sum of the moves, so one layer compares
+positions at any gap; index attention must build that sum in its residual stream, and at matched depth one path layer is
+worth about three index layers on Dyck-2 and on a biased 1D walk, and more than four on the torus. We show that a map
+code is a phase without a clock, the phase an out-and-back adds, and bound how much a clock erodes the position match
 one attention pass can make as the moves since the last visit grow. Two choices decide whether training removes the
-clock. A signed step at per-head rank above the map's dimension has two routes
-that remove the clock and leave the map intact; at rank equal to the dimension no channel can be clock-free and a full
-map while a clock remains; a non-negative step has neither route from a small start. In line with this, rank 2 solves the torus
-on at most 2 of 8 seeds against 8 of 8 at rank 4, and non-negative steps on 0 of 8 against 8 of 8 for signed steps,
-although both constrained classes represent the map exactly and keep or re-find an installed solution. On a ring the sign
+clock. A signed step at per-head rank above the map's dimension has two routes that remove the clock and leave the map
+intact; at rank equal to the dimension no channel can be clock-free and a full map while a clock remains; a non-negative
+step has neither route from a small start. In line with this, rank 2 solves the torus on at most 2 of 8 seeds against 8
+of 8 at rank 4, and non-negative steps on 0 of 8 against 8 of 8 for signed steps, although both constrained classes
+represent the map exactly and keep or re-find an installed solution. Forbidding the clock by construction makes rank 2
+solve the torus on every seed (8 of 8), while zeroing only the observation steps does not (1 of 8). On a ring the sign
 gap holds at each step's best learning rate and vanishes when only the readout, not the increment, is non-negative. Told
 in English, the walk is learned by one path layer (0.979 vs 0.505), which cancels opposite directions.
 
@@ -70,7 +71,9 @@ runs, with a map that has lost a dimension.
    dimensions but not in one. Registered support on both axes: the solution exists, is kept or re-found, and is not found
    from scratch at rank 2 (at most 2/8, also at twice the budget) or with a non-negative step (0/8 against 8/8, also at
    each step's best of four learning rates on a ring). Causal tests of the routes: freezing the move latents removes the
-   collective route (1/8 against 7/8), and a non-negative readout with a signed increment restores it (16/16).
+   collective route (1/8 against 7/8), a non-negative readout with a signed increment restores it (16/16), and on the
+   torus a rank-2 step map with the clock forbidden by construction solves 8/8, like rank 4, against 1/8 when only the
+   observation steps are zeroed: the rank-2 obstacle there is the clock, not capacity.
 4. *Readers and codes.* Loops, extra layers and a score rule change how a code is read and never change the code family
    (proved). Loops and depth raise rank-2 accuracy (+0.079 and +0.096, registered), while the codes they learn stay far
    from rank 4's (analysis). PoPE's polar score pins every kernel's peak at zero phase difference (proved), which helps a
@@ -244,7 +247,10 @@ outside the map plane can be cancelled channel by channel with the map untouched
 drift, rotating a channel's resolution off the drift direction lowers the drift loss at zero first-order cost to the map
 (*hiding*). The collective route removes the drift at a rate proportional to the head's resolution along the drift
 direction, which hiding lowers. *Conjecture 1:* this feedback keeps the drift in place at rank D >= 2; in 1D there is
-nothing to hide along, which fits rank 1 learning the ring.
+nothing to hide along, which fits rank 1 learning the ring. Two empirical claims sit beside these statements and are
+tested in Sec. 7.2: that at rank D on the torus the remaining clock is what blocks training (registered support), and
+the *clock-exit account*, that rank above D helps because parking gives the clock a map-free exit (Proposition 4(c)
+shows the exit exists, not that training uses it; a conjecture, its registered test PARTIAL).
 
 **Remark 2 (exists, kept, not found).** Let S be the solution set of a class and Bas the set of starting points from which
 training reaches S within the budget with probability at least one half. "A solution exists and an installed solution is
@@ -273,7 +279,9 @@ content pair's kernel decreases over offsets 0-3, so no fixed far offset can be 
 | Prop. 3 and Lemma 1, representability and gauge | proved | constructions exact to 1.4e-6 rad (App. D) |
 | Prop. 4, route inventory | proved | end-state clocks (Sec. 7.1); frozen latents; hybrid readout (Sec. 7.3) |
 | Prop. 5, hiding at first order | proved under small drift, isotropy, near-isometry | drift on the least-resolved axis (Sec. 7.2) |
-| Conjecture 1, hiding starves the collective route | conjecture | consistent with rank 1 learning the ring; not tested |
+| At rank D on the torus, the clock is the obstacle | registered causal support (shared rank 2, T = 1024, 900 epochs) | clock forbidden by construction 8/8 against observation steps zeroed 1/8 (Sec. 7.2) |
+| Conjecture 1, hiding starves the collective route | conjecture | consistent with rank 1 learning the ring; its premise, a clock that persists at rank D, has the support of the row above; the feedback itself not tested |
+| Clock-exit account: rank above D helps through parking | conjecture; registered test PARTIAL | explicit clock exits at rank 2: 3/8 against 1/8, Fisher p 0.57, most runs still descending (Sec. 7.2) |
 | Remark 2, basins | definitional | existence and continuation batches (Secs. 7.2-7.3) |
 | Prop. 6, readers and codes | proved | one-pass reader fits (Sec. 7.4) |
 | Prop. 7, peak pinning | proved given delta = 0 | delta-freedom batch (Sec. 7.4) |
@@ -492,19 +500,40 @@ side rank 3 solves 1/8 (rank 4, 4/8), and rank 4 solves an 18-per-side 3D torus 
 7/8 against rank 2's 8/8, and with the drift forbidden by construction rank 1 solves 8/8 in a median of 24 epochs instead
 of 58.
 
+**On the torus the rank-2 obstacle is the clock (registered).** A registered batch on fresh seeds (torus, T = 1024, 900
+epochs, shared rank, seven arms built from the same initial weights at each seed; App. G7) tests this causally. Its
+gates replicate the rank split: rank 2 solves 1/8 and rank 4 8/8. In the *drift-forbidden* rank-2 arm the steps of each
+inverse pair of moves are tied to exact negatives of one another (+-W_out W_in (e(+x) - e(-x)) / sqrt 2) and every
+observation step is 0, so the clock is zero by construction; it solves 8/8 at accuracy 1.000 on every seed, like rank 4,
+and scores 1.000 at twice the training length (rank 4: 0.986; descriptive). In the *actions-only* rank-2 arm only the
+observation steps are 0 and the four move steps stay free, so the moves' own clock remains; it solves 1/8, no better
+than rank 2 (1/8), against the drift-forbidden arm's 8/8 (Fisher p 0.0014). At the rank that fails, removing the clock
+is sufficient and removing its observation part is not: what stops rank 2 is the clock, not the rank's capacity to hold
+the map, which the existence test above already showed it has. The construction removes the clock without saying how an
+unconstrained step map gets rid of one; the next paragraph tests that.
+
 **Why the extra rank helps.** Proposition 4(c) gives a channel above rank D a map-free way to stop reading the clock.
-The stored checkpoints are consistent with it but do not discriminate it from plain removal of the clock through the
-latent (analysis; App. G4). Here the clock is c = a + o, the mean move latent a plus the mean observation latent o, the
-drift a walk accumulates per move and observation. In solved heads of rank above D, a and o are each 0.02-0.04 of a map
-step and point in opposite directions (cosine -0.79 to -0.999), so they cancel; at T = 1024 both lie mostly in the map
-plane. What is left of c (0.001-0.025 of a map step) lies almost entirely outside the plane: off-plane share 0.96-1.00 in
-nine of ten sets of heads, against 0.40-0.71 for a random direction (median), read at 0.09-0.27 of the map's gain. Parking
-and removal through the latent would both leave such a residual. Drifting rank-D heads drift along their least-resolved
-axis (50 of 55 runs, counting each network once, against 25.1 expected for a random direction), the geometry
-Proposition 5 leads to. A fresh rank-4 step map trained on the stalled rank-2 networks removes the drift in 16 of 16
-heads: its latent clock shrinks 14-85x in absolute size, and the residual (0.002-0.005 of a map step) lies off the plane
-(share 0.91-1.00). At rank 1 on the ring, Proposition 4(d) leaves only the collective route, and Conjecture 1 has
-nothing to starve: rank 1 learns.
+The same batch's registered primary asks whether that exit is why extra rank helps, by giving rank 2 an explicit clock
+exit without extra map rank: a learned per-channel slot per move axis (one added to the steps of both x-moves, one to
+both y-moves, initialised at zero; +128 parameters), which can cancel the clock's common and axis-differential parts
+while the map stays rank 2. It solves 3/8 against rank 2's 1/8 (Fisher p 0.57; accuracy 0.972 against 0.918), and a
+single per-token slot, which can cancel only the common part, also solves 3/8: registered PARTIAL, short of the 6/8 with
+Fisher p below .05 that would have read "clock exits help" and above the 2/8 that would have read "they do not". Every
+class contains a solution and keeps or re-finds it under training (installed frozen at 1.000, SOLVED again after a
+60-epoch warm start), so the shortfall is search; and 4 of the 5 unsolved per-axis slot runs were still descending at
+900 epochs (3 of 5 per-token), so the batch does not separate slower from unable. "Extra rank helps because it gives the
+clock an exit" is therefore not supported at the registered bar, and not refuted. The stored checkpoints are consistent
+with parking but do not discriminate it from plain removal of the clock through the latent (analysis; App. G4). Here the
+clock is c = a + o, the mean move latent a plus the mean observation latent o, the drift a walk accumulates per move and
+observation. In solved heads of rank above D, a and o are each 0.02-0.04 of a map step and point in opposite directions
+(cosine -0.79 to -0.999), so they cancel; at T = 1024 both lie mostly in the map plane. What is left of c (0.001-0.025
+of a map step) lies almost entirely outside the plane: off-plane share 0.96-1.00 in nine of ten sets of heads, against
+0.40-0.71 for a random direction (median), read at 0.09-0.27 of the map's gain. Parking and removal through the latent
+would both leave such a residual. Drifting rank-D heads drift along their least-resolved axis (50 of 55 runs, counting
+each network once, against 25.1 expected for a random direction), the geometry Proposition 5 leads to. A fresh rank-4
+step map trained on the stalled rank-2 networks removes the drift in 16 of 16 heads: its latent clock shrinks 14-85x in
+absolute size, and the residual (0.002-0.005 of a map step) lies off the plane (share 0.91-1.00). At rank 1 on the ring,
+Proposition 4(d) leaves only the collective route, and Conjecture 1 has nothing to starve: rank 1 learns.
 
 ![Figure 6](figs/fig_rank_solved.png)
 
@@ -774,7 +803,10 @@ non-negative increment has no collective route and its per-channel targets lie p
 under a non-negative readout restores learning (16/16). At rank D the collective route exists, but no channel can be
 both clock-free and a full map while a clock remains, and in two or more dimensions hiding offers a free local move
 that, by Conjecture 1, starves the collective route; one more latent dimension adds a local move, parking, that costs
-the map nothing. Both failures end in the same measured place: a clock of the order of the map (or, in a few rank-2
+the map nothing. That the clock is what blocks rank D is tested on the torus: with the clock forbidden by construction,
+rank 2 solves on every seed (registered). That parking is why one more dimension helps is not shown: an explicit clock
+exit at rank 2 solves 3/8 against 1/8 within 900 epochs, most unsolved runs still descending (registered PARTIAL), so it
+remains a conjecture. Both failures end in the same measured place: a clock of the order of the map (or, in a few rank-2
 runs, a map that has lost a dimension), and strata that keep short-gap revisits and lose the rest. Giving the rest of
 the network four times the computation or the parameters reads that code better and does not find the rank-2 solution:
 the deficit is local to the content-to-angle map. Shakerinava et al. (2026) report "representable but not learned" for
@@ -786,11 +818,12 @@ parameterisation choice, and give its routes.
 rank 2 stays at 0/8 with twice the budget (App. N).
 
 **Design guidance.** Keep the phase increment signed; a non-negative readout is harmless. Give each head rank above the
-map's dimension (D + 1). Keep observations from stepping the phase: a step that depends on what is seen moves
-where the model thinks it is. Measure map use where retracing no longer
-suffices, against measured map-free floors and by stratum: the long-gap and wrap-only revisits separate a map from a local
-rule, and an aggregate accuracy near 0.9 can be either. To tell whether a trained model's phase is a map or a clock, read
-the used-channel clock ratio, not the growth of the phase with the token index.
+map's dimension (D + 1). Keep observations from stepping the phase: a step that depends on what is seen moves where the
+model thinks it is. Where the inverse pairs of actions are known, also tying their steps to exact negatives removes the
+clock by construction, and rank D then suffices (rank 2 on the torus, 8/8). Measure map use where retracing no longer
+suffices, against measured map-free floors and by stratum: the long-gap and wrap-only revisits separate a map from a
+local rule, and an aggregate accuracy near 0.9 can be either. To tell whether a trained model's phase is a map or a
+clock, read the used-channel clock ratio, not the growth of the phase with the token index.
 
 **What and where.** In the long-walk regime, the model that learns the map separates where from what, and the models
 that fail do not (analysis; App. K). For the signed rank-4 model at T = 1024, one shared position kernel per head times
@@ -843,16 +876,23 @@ TEM-t for the "where" apart from the "what".
 - The models are small (1-4 layers, 2 heads, d_model 128-256) and the tasks synthetic; natural text appears only as a
   three-seed pilot. Actions are allocentric translations.
 - "Not found" is relative to the stated budgets (300-1800 epochs). Learning rates were swept on the ring only. On the
-  torus, in the 2-layer d_model 256 model, the sign gap is a quarter of the one-layer gap in accuracy and most |.| runs were
-  still descending, so at scale part of the cost may be speed. Selective RoPE's runs were all still descending at 900
-  epochs. The exp and softplus increments start at a constant positive step and were run at two fixed rates.
+  torus, in the 2-layer d_model 256 model, the sign gap is a quarter of the one-layer gap in accuracy and most |.| runs
+  were still descending, so at scale part of the cost may be speed. Selective RoPE's runs were all still descending at
+  900 epochs, as were most unsolved clock-slot runs of the clock-exit test (Sec. 7.2), which therefore does not separate
+  a slower exit from none. The exp and softplus increments start at a constant positive step and were run at two fixed
+  rates.
 - Rank results use two heads; our latent is shared across heads where MapFormer's is per head (per-head arms are
-  reported). The torus exchange rate is a lower bound measured at n = 4.
-- The theory of Sec. 4 was developed after the registered batches. Its proved statements concern the step
-  parameterisation and quadratic surrogates; the hiding feedback at rank D is a conjecture, and the per-channel dynamics of
-  |.| are not derived. The checks marked (analysis) are post hoc, on one batch per arm, without fresh-seed replication;
-  their thresholds and statistics chosen after the data were seen are listed in App. O, and one CPU analysis (the
-  step-map basin) is not deterministic and is reported as exploratory.
+  reported); the clock-route batch (Sec. 7.2) is shared rank only, on one task and length. The torus exchange rate is a
+  lower bound measured at n = 4.
+- Every rank and sign batch uses weight decay 0.05 except where marked. In the clock-route batch rank 4 without weight
+  decay solved 1/8 against 8/8 with it (Fisher p 0.0014; App. G7); no contrast between the two was registered, so this
+  is a post hoc observation, not a result, and whether rank 4 needs weight decay is untested.
+- The theory of Sec. 4 was developed after the registered batches, except the clock-route batch (Sec. 7.2), which was
+  registered to test its rank account. Its proved statements concern the step parameterisation and quadratic surrogates;
+  the hiding feedback at rank D is a conjecture, and the per-channel dynamics of |.| are not derived. The checks marked
+  (analysis) are post hoc, on one batch per arm, without fresh-seed replication; their thresholds and statistics chosen
+  after the data were seen are listed in App. O, and one CPU analysis (the step-map basin) is not deterministic and is
+  reported as exploratory.
 - The text world is scripted (58 words, one movement clause per move, context-free direction words), and its walks are
   short enough that retrace scores 0.934; the map evidence there is the revisits retrace cannot reach and the mechanism.
 - No recurrent or SSM baseline.
