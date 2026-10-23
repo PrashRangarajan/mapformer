@@ -110,6 +110,11 @@ at rank 2 do NOT reach rank 4: per-axis slot 3/8, per-token slot 3/8 vs rank 2 1
 unsolved slot runs still descending -- budget-scoped). So 'extra rank helps by giving the clock an exit' is NOT supported
 at the registered bar. Post hoc, unregistered: rank 4 at weight decay 0 solves 1/8 vs 8/8 (p 0.0014), so X2 (park vs
 remove) was unreadable. Every class contained and HELD a solution before launch (frozen + 60-epoch warm start).
+**Weight decay (RANKWD)** (`RANKWD_RESULTS.md`, registered + Amendment 1, 2026-10-23): rank 4 NEEDS AdamW decay 0.05 --
+8/8 vs 1/8 at decay 0 (p 0.0014; replicates G-1's post-hoc split on fresh seeds; 5/7 wd-0 failures still descending,
+budget-scoped). Decay acts on ALL parameters here (omega and LayerNorm gains included), so this is credited to 'decay on
+everything', not to the step map. Descriptive: with decay omega ends at ~0.15 of init (0.96 without), embeddings at 0.10
+(passive decay 0.089). Every rank-4 success in the repo used decay 0.05; state rank 4 as 'with decay'.
 Separated: per-head rank FIRES (D - C_bd, both block-diagonal, Fisher and permutation p 0.0070);
 sharing one latent vs per-head latents UNMEASURED (D - C); `W_out` per-entry scale UNMEASURED
 (C_bd - B). Initial angle scale does not explain it (A and B fail at normal scale). A rank-2 solution

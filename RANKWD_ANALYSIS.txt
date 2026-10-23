@@ -1,0 +1,28 @@
+== RANKWD: shared rank 4, weight decay 0.05 vs 0 (SOLVED = final-5% loss < 0.05; S/T/D/R/X) ==
+  wd   SOLVED 8/8 | acc@512/1024/2048 1.0000 / 0.9995 / 0.9757 | s2100:S(0.003) s2101:S(0.003) s2102:S(0.003) s2103:S(0.003) s2104:S(0.009) s2105:S(0.003) s2106:S(0.004) s2107:S(0.002)
+  wd0  SOLVED 1/8 | acc@512/1024/2048 0.8647 / 0.8603 / 0.8465 | s2100:D(0.316) s2101:D(0.253) s2102:T(0.281) s2103:D(0.101) s2104:D(0.251) s2105:S(0.001) s2106:D(0.088) s2107:T(1.048)
+
+P (primary): DECAY NEEDED -- Fisher p 0.0014; acc@1024 0.8603 vs 0.9995, perm p 0.0014, paired sign-flip p 0.0156
+S1 X2 (park vs remove, solved wd0 runs): X2 UNREADABLE (r4wd0 SOLVED 1/8 < 4)
+   X2b ordering: wd0 NO ORDER (no usable runs; 1 solved) | wd NO ORDER (read first in 3/4 usable runs, sign p 0.6250; 8 solved)
+   reference wd (0.05; NON-DIAGNOSTIC of removal: passive decay alone gives 0.089), 8 solved: median shrink 0.202, readgain/init 0.058
+
+READING (registered primary): DECAY NEEDED
+   scope: torus T = 1024, 900 epochs, shared rank 4, AdamW, lr 1e-3 cosine; one host.
+
+== geometry medians over ALL runs per arm (descriptive) ==
+  wd   u_ratio 0.032  shrink 0.202  readgain 0.060
+  wd0  u_ratio 0.091  shrink 1.357  readgain 0.625
+
+== norm growth end / init (medians; descriptive; ln_gains = RMS gain, init 1) ==
+  wd   w_in 4.364  w_out 0.520  token_emb 0.099  omega 0.145  ln_gains 0.415
+  wd0  w_in 2.373  w_out 0.888  token_emb 0.997  omega 0.957  ln_gains 1.132
+
+== rule 2: r(log10 final loss, acc) per length ==
+   T=512: r = -0.834 over 16 runs
+   T=1024: r = -0.841 over 16 runs
+   T=2048: r = -0.827 over 16 runs
+
+per seed acc@1024 (class):
+  wd   0.998S 1.000S 0.999S 1.000S 1.000S 1.000S 1.000S 1.000S
+  wd0  0.853D 0.866D 0.837T 0.952D 0.870D 1.000S 0.920D 0.585T

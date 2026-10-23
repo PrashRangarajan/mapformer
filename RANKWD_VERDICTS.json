@@ -1,0 +1,11 @@
+{
+  "solved": {
+    "wd": 8,
+    "wd0": 1
+  },
+  "P": "DECAY NEEDED",
+  "reading": "DECAY NEEDED",
+  "X2": "X2 UNREADABLE (r4wd0 SOLVED 1/8 < 4)",
+  "X2b_wd0": "NO ORDER (no usable runs; 1 solved)",
+  "X2b_wd": "NO ORDER (read first in 3/4 usable runs, sign p 0.6250; 8 solved)"
+}

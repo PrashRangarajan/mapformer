@@ -30,6 +30,11 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
 - SIGNROUTE ran here (GPU 1, done 2026-10-21 07:43). Its torus part (frozen move latents) is NOT built; held until the read.
 - G-1 RANKCLOCK ran here (GPU 1, 2026-10-21 18:48 -> 10-23 02:16). Nothing running on koopman after it.
 
+## Last results (2026-10-23): RANKWD (`RANKWD_RESULTS.md`): DECAY NEEDED
+- Rank 4 at AdamW wd 0.05 8/8 vs wd 0 1/8 (p 0.0014), replicating G-1's post-hoc split. Decay is on ALL parameters, so not
+  attributable to the step map; omega shrinks to ~0.15 with decay (0.96 without) -> next test: decay except / only omega.
+  Ran on koopman GPU 1 (03:00-11:35). The 1800-epoch clock-slot test and G-4 were dropped by the user for now.
+
 ## Last results (2026-10-23): RANKCLOCK / G-1 (`RANKCLOCK_RESULTS.md`): PARTIAL primary, CLOCK IS THE OBSTACLE
 - Drift-forbidden rank 2 8/8 (= rank 4) vs actions-only 1/8 (p 0.0014): rank 2 fails because of the clock. Clock slots at
   rank 2 (per-axis, per-token) 3/8 each vs rank 2 1/8: the 'clock exit' mechanism is NOT supported (PARTIAL, budget-scoped).
