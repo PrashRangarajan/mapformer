@@ -884,9 +884,11 @@ TEM-t for the "where" apart from the "what".
 - Rank results use two heads; our latent is shared across heads where MapFormer's is per head (per-head arms are
   reported); the clock-route batch (Sec. 7.2) is shared rank only, on one task and length. The torus exchange rate is a
   lower bound measured at n = 4.
-- Every rank and sign batch uses weight decay 0.05 except where marked. In the clock-route batch rank 4 without weight
-  decay solved 1/8 against 8/8 with it (Fisher p 0.0014; App. G7); no contrast between the two was registered, so this
-  is a post hoc observation, not a result, and whether rank 4 needs weight decay is untested.
+- Every rank and sign batch uses weight decay 0.05 except where marked. Rank 4's success depends on it: in a registered
+  test on fresh seeds, shared rank 4 solves the torus 8/8 with AdamW weight decay 0.05 on all parameters and 1/8 without
+  it within 900 epochs (Fisher p 0.0014; 5 of the 7 unsolved runs still descending; App. G8), although a solved rank-4
+  model trained further without weight decay keeps its solution. The result is credited to the optimiser setting, not
+  to the step map or the clock specifically. The sign cost, by contrast, holds without weight decay (Table 6).
 - The theory of Sec. 4 was developed after the registered batches, except the clock-route batch (Sec. 7.2), which was
   registered to test its rank account. Its proved statements concern the step parameterisation and quadratic surrogates;
   the hiding feedback at rank D is a conjecture, and the per-channel dynamics of |.| are not derived. The checks marked

@@ -1347,6 +1347,29 @@ readings are on SOLVED and accuracy is descriptive.
 
 ## H. Sign details
 
+
+### G8. Weight decay and rank 4 (RANKWD; registered, `RANKWD_RESULTS.md`, `RANKWD_PREREG.md` + Amendment 1)
+
+Shared rank 4 (`Vanilla_r4mi`) at AdamW weight decay 0.05 vs 0, fresh seeds 2100-2107, torus 64 x 64, T = 1024, 900
+epochs, lr 1e-3 cosine (the RANK_MI / RANKCLOCK recipe); independent check before launch. Existence: a solved rank-4 model
+holds its solution through 60 epochs at peak lr with weight decay 0. Registered reading: DECAY NEEDED, scoped to "AdamW
+decay 0.05 on all parameters, at lr 1e-3 cosine, within 900 epochs" (not credited to the step map or the clock); 5 of the 7
+unsolved weight-decay-0 runs were still DESCENDING at 900 epochs. The park-vs-remove secondary was unreadable by design
+(1 solved run).
+
+#### Primary
+
+| arm | SOLVED | classes (S / T / D) | acc T = 512 | acc T = 1024 | acc T = 2048 |
+|---|---|---|---|---|---|
+| wd 0.05 | **8/8** | 8 / 0 / 0 | 1.000 +/- 0.000 | 0.9995 (1.000 +/- 0.001) | 0.976 +/- 0.023 |
+| wd 0 | **1/8** | 1 / 2 / 5 | 0.865 +/- 0.123 | 0.860 +/- 0.124 | 0.846 +/- 0.124 |
+
+G0 passes (wd 8/8 >= 6). P: k_wd0 = 1 <= 2 and Fisher p 0.0014 < .05 -> DECAY NEEDED. Accuracy at T = 1024: 0.9995 vs 0.8603,
+unpaired permutation p 0.0014, paired sign-flip p 0.0156 (exact; the smallest p the n = 8 design allows is 0.0078).
+
+Per seed, accuracy at T = 1024 (class): wd 0.998S 1.000S 0.999S 1.000S 1.000S 1.000S 1.000S 1.000S; wd 0 0.853D 0.866D 0.837T
+0.952D 0.870D 1.000S 0.920D 0.585T.
+
 ### H1. Learning rates (`LRSWEEP_RESULTS.md`; ring, observation-step-free, seeds 1500-1507)
 
 | learning rate | signed SOLVED, accuracy | \|.\| SOLVED, accuracy |
