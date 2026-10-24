@@ -46,7 +46,8 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
 
 ## Last results (2026-10-23): RANKWD (`RANKWD_RESULTS.md`): DECAY NEEDED
 - Rank 4 at AdamW wd 0.05 8/8 vs wd 0 1/8 (p 0.0014), replicating G-1's post-hoc split. Decay is on ALL parameters, so not
-  attributable to the step map; omega shrinks to ~0.15 with decay (0.96 without) -> next test: decay except / only omega.
+  attributable to the step map. CORRECTED 2026-10-24: omega's norm is gauge-dependent; the gauge-invariant per-move angle
+  ends at 0.45x with decay and grows ~9x without. RANKDECAY (omega 2x2) shelved on branch rankdecay-wip (gauge flaw).
   Ran on koopman GPU 1 (03:00-11:35). The 1800-epoch clock-slot test and G-4 were dropped by the user for now.
 
 ## Last results (2026-10-23): RANKCLOCK / G-1 (`RANKCLOCK_RESULTS.md`): PARTIAL primary, CLOCK IS THE OBSTACLE
