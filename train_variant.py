@@ -514,6 +514,11 @@ def main():
     parser.add_argument("--weight-decay", type=float, default=0.05,
                         help="AdamW weight decay; 0.05 is train()'s default, so omitting it is the old path "
                              "(G-1's optional r4 wd 0 arm)")
+    parser.add_argument("--wd-select", default=None, choices=["exclude", "only"],
+                        help="RANKDECAY: decay every parameter EXCEPT --wd-names (exclude) or ONLY them (only). "
+                             "Omitted = the old single-group AdamW (every parameter decayed)")
+    parser.add_argument("--wd-names", nargs="+", default=[],
+                        help="exact parameter names for --wd-select, e.g. path_integrator.omega")
     parser.add_argument("--snapshot-every", type=int, default=0,
                         help="G-1: every K epochs (and at init) save the step-map state (action_to_lie, "
                              "path_integrator, token_emb) to <output-dir>/snaps/. The hook draws no random "
@@ -672,6 +677,7 @@ def main():
         return_state=args.save_full_state,
         weight_decay=args.weight_decay,
         epoch_callback=_snapshotter(model, out, args.snapshot_every),
+        wd_select=args.wd_select, wd_names=tuple(args.wd_names),
     )
     opt_state = None
     if args.save_full_state:

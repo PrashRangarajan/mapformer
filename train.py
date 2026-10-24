@@ -23,6 +23,28 @@ from typing import Optional
 from .environment import GridWorld
 
 
+def build_optimizer(model, lr, weight_decay, wd_select=None, wd_names=(), wd_other=0.0):
+    """AdamW for `train`. wd_select None -> the original single-group call, unchanged. Otherwise two groups in the
+    model's own parameter order: the decayed set at `weight_decay`, the rest at `wd_other` (0 in every real use; the
+    test passes `weight_decay` to show that the grouping alone changes nothing)."""
+    if wd_select is None:
+        return optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    if wd_select not in ("exclude", "only"):
+        raise ValueError(f"wd_select must be None, 'exclude' or 'only', got {wd_select!r}")
+    named = list(model.named_parameters())
+    names = {n for n, _ in named}
+    missing = [n for n in wd_names if n not in names]
+    if not wd_names or missing:
+        raise ValueError(f"wd_names must name existing parameters; missing {missing or '(none given)'}")
+    picked = set(wd_names)
+    decay = [p for n, p in named if (n in picked) == (wd_select == "only")]
+    other = [p for n, p in named if (n in picked) != (wd_select == "only")]
+    groups = [{"params": decay, "weight_decay": weight_decay}]
+    if other:
+        groups.append({"params": other, "weight_decay": wd_other})
+    return optim.AdamW(groups, lr=lr, weight_decay=weight_decay)
+
+
 def train(
     model: nn.Module,
     env: GridWorld,
@@ -42,12 +64,19 @@ def train(
     data_seed_offset: int = 0,
     return_state: bool = False,
     epoch_callback=None,
+    wd_select: str | None = None,
+    wd_names: tuple = (),
 ) -> list[float]:
     """Full training loop with observation-only loss.
 
     If ``aux_coef > 0`` and the model exposes ``prediction_error_loss()``
     (e.g. PC, GridL15PC), the auxiliary loss is added to the next-token
     loss as ``total = next_token_loss + aux_coef * model.prediction_error_loss()``.
+
+    ``wd_select`` / ``wd_names`` (RANKDECAY): with the default None the optimiser is built exactly as before,
+    ``AdamW(model.parameters(), lr, weight_decay)`` -- every parameter decayed. "exclude" decays every parameter
+    EXCEPT those named in ``wd_names`` (exact parameter names, e.g. "path_integrator.omega"); "only" decays ONLY
+    those. Named parameters must exist. See `build_optimizer` and `test_wd_groups.py`.
 
     ``epoch_callback(epoch, model)``, if given, is called after each epoch's loss is
     logged (G-1 geometry snapshots). It must not draw random numbers or change the
@@ -60,7 +89,7 @@ def train(
     """
     has_aux = aux_coef > 0.0 and hasattr(model, "prediction_error_loss")
     model = model.to(device)
-    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    optimizer = build_optimizer(model, lr, weight_decay, wd_select, wd_names)
 
     total_steps = n_epochs * n_batches
     if schedule == "cosine":
