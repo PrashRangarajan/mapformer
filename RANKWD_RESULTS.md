@@ -12,6 +12,16 @@ This replicates, on fresh seeds and as a registered contrast, G-1's post-hoc 8/8
 AdamW here decays EVERY parameter, so the reading is credited only to "AdamW decay 0.05 on all parameters, at lr 1e-3 cosine,
 within 900 epochs" -- not to the step map, and not to the clock.
 
+> **CORRECTED 2026-10-24 (descriptive section only; the registered reading DECAY NEEDED is unchanged).** The omega norm in
+> the table below is NOT gauge-invariant: omega_c and row c of W_out trade scale exactly (rescaling one by c and the other by
+> 1/c moves the logits by <= 5e-7 on a scale of 1.4; likewise W_out's columns against W_in's rows -- verified 2026-10-24, found
+> by RANKDECAY's independent check). So "omega shrinks to ~0.15 with decay" says where the scale sat, not what the map does.
+> The gauge-invariant quantity is the effective angle a move adds per channel, omega_c (W_out W_in e_move)_c, from the same
+> snapshots: end / init norm **0.451** (0.374-0.700) with decay vs **9.218** (6.498-14.859) without; the largest angle a single
+> move adds ends at **1.85 rad** with decay vs **37.8 rad** without (4.98 at init). The contrast is that WITHOUT decay the
+> effective angles grow ~9x -- tens of radians per move, many wraps per cell (rule 8) -- while with decay they stay bounded.
+> That replaces the omega-shrink reading below as the lead for a mechanism; it is still descriptive and untested.
+
 ## Primary
 
 | arm | SOLVED | classes (S / T / D) | acc T = 512 | acc T = 1024 | acc T = 2048 |

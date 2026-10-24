@@ -113,8 +113,9 @@ remove) was unreadable. Every class contained and HELD a solution before launch 
 **Weight decay (RANKWD)** (`RANKWD_RESULTS.md`, registered + Amendment 1, 2026-10-23): rank 4 NEEDS AdamW decay 0.05 --
 8/8 vs 1/8 at decay 0 (p 0.0014; replicates G-1's post-hoc split on fresh seeds; 5/7 wd-0 failures still descending,
 budget-scoped). Decay acts on ALL parameters here (omega and LayerNorm gains included), so this is credited to 'decay on
-everything', not to the step map. Descriptive: with decay omega ends at ~0.15 of init (0.96 without), embeddings at 0.10
-(passive decay 0.089). Every rank-4 success in the repo used decay 0.05; state rank 4 as 'with decay'.
+everything', not to the step map. Descriptive (CORRECTED 2026-10-24: omega's norm is not gauge-invariant -- it trades
+scale exactly with W_out's rows): the gauge-invariant per-move angle ends at 0.45 of init with decay but grows ~9x
+without it (max 37.8 rad per move vs 1.85). Every rank-4 success in the repo used decay 0.05; state rank 4 as 'with decay'.
 Separated: per-head rank FIRES (D - C_bd, both block-diagonal, Fisher and permutation p 0.0070);
 sharing one latent vs per-head latents UNMEASURED (D - C); `W_out` per-entry scale UNMEASURED
 (C_bd - B). Initial angle scale does not explain it (A and B fail at normal scale). A rank-2 solution
