@@ -20,8 +20,9 @@ step has neither route from a small start. In line with this, rank 2 solves the 
 of 8 at rank 4, and non-negative steps on 0 of 8 against 8 of 8 for signed steps, although both constrained classes
 represent the map exactly and keep or re-find an installed solution. Forbidding the clock by construction makes rank 2
 solve the torus on every seed (8 of 8), while zeroing only the observation steps does not (1 of 8). On a ring the sign
-gap holds at each step's best learning rate and vanishes when only the readout, not the increment, is non-negative. Told
-in English, the walk is learned by one path layer (0.979 vs 0.505), which cancels opposite directions.
+gap holds at each step's best learning rate, vanishes when only the readout, not the increment, is non-negative, and
+appears unchanged in a one-layer state-space model with the same rotation (0 of 8 against 8 of 8). Told in English, the
+walk is learned by one path layer (0.979 vs 0.505), which cancels opposite directions.
 
 ## 1. Introduction
 
@@ -70,8 +71,9 @@ runs, with a map that has lost a dimension.
    inventory for each step class (proved); a conjecture for why rank D starves the collective route in two or more
    dimensions but not in one. Registered support on both axes: the solution exists, is kept or re-found, and is not found
    from scratch at rank 2 (at most 2/8, also at twice the budget) or with a non-negative step (0/8 against 8/8, also at
-   each step's best of four learning rates on a ring). Causal tests of the routes: freezing the move latents removes the
-   collective route (1/8 against 7/8), a non-negative readout with a signed increment restores it (16/16), and on the
+   each step's best of four learning rates on a ring, and in a one-layer diagonal complex SSM, which has no softmax).
+   Causal tests of the routes: freezing the move latents removes the collective route (1/8 against 7/8), a non-negative
+   readout with a signed increment restores it (16/16), and on the
    torus a rank-2 step map with the clock forbidden by construction solves 8/8, like rank 4, against 1/8 when only the
    observation steps are zeroed: the rank-2 obstacle there is the clock, not capacity.
 4. *Readers and codes.* Loops, extra layers and a score rule change how a code is read and never change the code family
@@ -586,6 +588,7 @@ signed 8/8 (App. H).
 | ring | weight decay 0 | 0.873, 0/8 | 1.000, 8/8 | perm p 0.0002; Fisher 0.0002 |
 | ring | lr / 3 (3.3e-4) | 0.841, 0/8 | 0.950, 6/8 | Fisher 0.0070 |
 | ring | each step at its best of four rates (\|.\| 3e-3, signed 1e-3) | 0.963, 2/8 | 1.000, 8/8 | selection-aware p 0.0070 (SOLVED), 0.0057 (accuracy) |
+| ring, 1-layer diagonal complex SSM (no softmax) | lr 3e-3 | 0.821, 0/8 | 1.000, 8/8 | perm p 0.0002; Fisher 0.0002 |
 
 **The non-negative solution exists, and training keeps or re-finds it.** Proposition 3 constructs it: each solved signed
 observation-step-free model is converted exactly into |.| form, with the move latents re-solved to orthogonal directions,
@@ -617,6 +620,16 @@ ring it solves 8/8 at both reference rates, at accuracy 1.000 on every seed, exa
 construction, whose two steps are then equal and whose code is a pure clock, solves 0/16. Non-negativity in the readout
 costs nothing; a non-negative increment, which removes both the collective route and the near-side cancelling point, is
 what costs.
+
+**The cost is not specific to softmax attention.** Replacing softmax attention by the causal unnormalised kernel, with
+every other tensor initialised identically, turns the model into a one-layer diagonal complex state-space model whose
+transition is the rotation exp(-i omega Delta(x_t)) (the identity of Mamba-3's Proposition 3; the parallel form equals the
+recurrence to 1e-12). On the ring at learning rate 3e-3 the |.| step solves 0/8 against 8/8 for the signed step (0.821
+against 1.000, below the 0.864 retrace floor; Fisher and permutation p 0.0002), and softplus solves 1/8 (registered; App.
+H10). The signed SSM ends as signed attention does, with antipodal move latents (cosine -1.000) and every non-blind
+channel cancelling through zero. The exact non-negative constructions carry over: frozen, the |.|, softplus and exp
+models score as their sources on 8/8 seeds, and the |.| model trained further ends solved on 8/8 at both learning rates
+tried, after an early perturbation. The cost belongs to the non-negative rotary step, not to softmax normalisation.
 
 **How signed steps reach the map.** Started from the |.| start, with both moves rotating the same way, signed steps still
 solve 7/8 on the ring (|.| from the same start: 0/8; Fisher p 0.0014). They end with 98-99% of channels opposite-signed
@@ -860,8 +873,8 @@ advantage (position effect +0.050 to +0.488, n = 8, in a short-walk recipe; not 
 **Related work.** *Optimisation, not expressivity.* Shakerinava et al. (2026) find that input-dependent rotations in
 unit-modulus SSMs can represent non-Abelian state tracking but do not learn it from scratch, while near-solution starts
 recover it. Grazzi et al. (2025) and Mamba-3 own the representability of rotations with non-negative angles; ours is the
-learnability cost in the rotary slot and its route account. Orientation-fixing parameterisations have a history: scoRNN
-fixes the +/-1 diagonal of its Cayley transform (Helfrich et al. 2018); a reparameterised weight w = |u| cannot change
+learnability cost in the rotary slot, in attention and in a diagonal complex SSM, and its route account.
+Orientation-fixing parameterisations have a history: scoRNN fixes the +/-1 diagonal of its Cayley transform (Helfrich et al. 2018); a reparameterised weight w = |u| cannot change
 sign under gradient flow (Amid and Warmuth 2020, Prop. 2; Woodworth et al. 2020); the LRU initialises its phases near zero
 (Orvieto et al. 2023). With fixed frequencies the parameter symmetries of rotary attention are per-plane complex scalars
 (Wang and Wang 2025; Tran et al. 2026); a learnable step adds the reflection of Lemma 1. *Depth and recurrence.* Depth can
@@ -897,7 +910,10 @@ TEM-t for the "where" apart from the "what".
   reported as exploratory.
 - The text world is scripted (58 words, one movement clause per move, context-free direction words), and its walks are
   short enough that retrace scores 0.934; the map evidence there is the revisits retrace cannot reach and the mechanism.
-- No recurrent or SSM baseline.
+- The state-space test (App. H10) is one layer on the ring, without Mamba's decay, output gate or input scaling by the
+  step, and from scratch at one learning rate (3e-3). There exp was unstable (8/8 runs diverging in step size), so it
+  carries no learnability statement; most unsolved softplus runs were still descending; the installed |.| solution was
+  perturbed and re-found rather than held under the registered rule. No other recurrent baseline.
 
 ## References
 

@@ -1,4 +1,4 @@
-# Notes on MAIN_DRAFT2 (2026-10-21; G-1 folded in 2026-10-23)
+# Notes on MAIN_DRAFT2 (2026-10-21; G-1 and G-3 folded in 2026-10-23)
 
 Drafted from `docs/paper/expansion/SYNTHESIS_DRAFT2_PLAN.md`, draft 1 (`MAIN_DRAFT1.md`, `MAIN_APPENDIX1.md`), the theory
 appendix v3, the seven expansion reports, and the results that landed after the plan (DELTA_FREE, SROPE_TORUS, SIGNROUTE,
@@ -243,6 +243,19 @@ their numbers and order. Fixed during the read: "at p < .05" broken across a lin
 p below .05"; "keeps it" -> "keeps or re-finds it" (the slot classes were knocked off, peak loss ~0.2, and re-found);
 "is now tested" -> "is tested" (no process history); the 2T number labelled descriptive; design guidance de-duplicated
 ("keep observations from stepping" stated once). Touched paragraphs re-wrapped to 120 columns.
+
+## G-3 (SSM sign test) folded in (2026-10-23)
+
+Source: `G3_SSM_RESULTS.md` (registered reading SIGN COST IN THE SSM; `G3_SSM_ANALYSIS.txt`, `G3_SSM_VERDICTS.json`).
+Changes: abstract (ring sentence: "appears unchanged in a one-layer state-space model with the same rotation (0 of 8 against
+8 of 8)"); contribution 3 (non-negative step clause: "and in a one-layer diagonal complex SSM, which has no softmax"); Sec.
+7.3 new paragraph "The cost is not specific to softmax attention" and a Table 6 row; Related work (learnability cost "in
+attention and in a diagonal complex SSM"); Limitations ("No recurrent or SSM baseline" replaced by the SSM test's scope:
+one layer, no decay / gate / input scaling, one rate from scratch, exp unstable, softplus descending, |.| re-found not
+held). Appendix: H10 (new), A3 row, E2 (g) "not built" -> built in the SSM, E14 row. Numbers: |.| 0/8 0.821 vs signed 8/8
+1.000 (Fisher, perm p 0.0002); softplus 1/8; exp 8/8 RUNAWAY; retrace 0.864; constructions frozen = source 8/8, angle
+error <= 2.3e-6; |.| continuations 8/8 SOLVED at 3e-3 and 1e-3 [all R]. Claim-map compliance: no "exp fails in the SSM",
+no "held" at the registered bar, no Mamba-faithfulness claim.
 
 ## Word counts
 

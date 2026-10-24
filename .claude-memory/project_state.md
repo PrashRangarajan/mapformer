@@ -5,8 +5,22 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-21 08:10. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-23 23:40. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
+
+## Running (2026-10-23 23:40)
+- koopman: G-4 TORUS_LRSWEEP pilot running since 2026-10-23 23:05 (seeds 2492-2493, outside the batch). Read-only from
+  other sessions: do not launch, kill or git pull there while it runs.
+- kalman: SIGNSEP running on GPU 0.
+- G-3 SSM finished on koopman GPU 1 (18:24 -> 23:02); run dirs rsynced to `runs/ssm_sign/p0` here.
+
+## Last results (2026-10-23): G-3 SSM (`G3_SSM_RESULTS.md`): SIGN COST IN THE SSM
+- One-layer diagonal complex SSM (= unnormalised rotary linear attention), ring 32, lr 3e-3, 300 ep, minimal_h2 (104 runs):
+  |.| 0/8 (0.821, below retrace 0.864) vs signed 8/8 (p 0.0002): the sign cost is not specific to softmax attention.
+  softplus 1/8 (5 descending, budget-scoped); exp 0/8 = 8/8 RUNAWAY (instability at 3e-3; A2 at 1e-3 not run).
+- Rule 14: exact constructions incl. exp (first build of (g)); |.| perturbed and re-found at 3e-3, held only by secondary
+  E2' at 1e-3 (registered E2 PERTURBED via the 10x clause): the registered SEARCH COST joint did not form. Folded into
+  draft 2 (Sec. 7.3, abstract, Limitations, App. H10). Open, if wanted: A2 (1e-3 from scratch, 40 runs) would settle exp.
 
 ## Running
 - Nothing running (LRSWEEP finished 2026-10-17 05:03).

@@ -87,6 +87,7 @@ Pilots ran on seeds outside the batch except where noted.
 | ACCOUNTS | 7.3 | ring; line | T1 continuations; T2 frozen latents; T4 CoPE on a line | 600-607; 1000-1007; 1100-1115 | 300 | standard | yes | yes |
 | MECHANISM | 7.3 | ring p_plus 0.5 | eight start / step arms | 800-807 | 300 | standard | yes | yes |
 | SIGNROUTE | 7.3 | ring, moves +1/-1 | obs.-step-free signed, \|.\|, hybrid, abs_tied, exp, softplus at lr 1e-3 and 3e-3 | 1800-1807 | 300 | standard | yes | no |
+| G3_SSM (H10) | 7.3 | ring, moves +1/-1 | one-layer diagonal complex SSM: signed, \|.\|, softplus, exp, index; constructions (H at 3e-3, H2 at 1e-3) | 2100-2107 | 300; +100 | none (linear kernel) | yes | no (analysis re-run from the run dirs, identical) |
 | SROPE_TORUS | 7.3 | torus T = 1024 | Selective RoPE (best LM config), without SiLU, state-tracking config, generator swap; MapWM; RoPE | 1700-1707 | 900 | fast-attn | yes | no |
 | DELTA_FREE | 7.4 | torus T = 128, r2 | PoPE / MapPoPE with delta pinned, free, frozen-random (path) | 1600-1607 | 300 | standard | yes | no |
 | TEXTWORLD | 8 | torus in words | path 1 layer; index 1, 2 layers | 0-7; main text 2-7 (0-1 were the pilot) | 900 | standard | yes | yes |
@@ -520,7 +521,7 @@ source's to 2.8e-11.
 **(g) Exp.** The same construction with omega'_c = 2 pi and W_out'[c, j] = ln((remainder(Theta_{c,x_j}, 2 pi) + 2 pi) /
 2 pi) makes every non-stepping token step exp(0) = 1, an angle of exactly 2 pi, and every stepping token's angle
 Theta mod 2 pi. *Proof.* exp is a bijection from R onto (0, inf); the targets (remainder + 2 pi) / 2 pi lie in [1, 2). []
-Not built in a trained model.
+Built in trained one-layer SSMs (App. H10): frozen accuracy equal to the source's on 8/8, move-angle error <= 2.3e-6 rad.
 
 *What representability does not cover.* For a rank-1 |.| model and two stepping tokens with steps of strictly opposite
 sign, exact representation mod 2 pi fails for almost every signed table (v3 P1(c), proved); rank-1 non-negative codes
@@ -828,7 +829,7 @@ problem.
 | # | statement | status | check |
 |---|---|---|---|
 | E1 | rotary position factor = Howard's propagator with s = i omega | proved (identity: Mamba-3 Prop. 3) | `a0_propagator.py` |
-| E2 (a), (f), (g) | exact non-negative (|.|, softplus, exp) representation mod 2 pi with <= r stepping tokens | proved; (a), (f) built, (g) not | `p1_wrap.py`, `theory_check_extra.py` |
+| E2 (a), (f), (g) | exact non-negative (|.|, softplus, exp) representation mod 2 pi with <= r stepping tokens | proved; (a), (f) built in attention; (a), (f), (g) built in the SSM (App. H10) | `p1_wrap.py`, `theory_check_extra.py`, `construct_ssm_sign.py` |
 | E3 | relative-sign gauge; excluded codes are opposite-sign rows | proved | `t1_gauge.py` |
 | E4 | cut circle; sticky wall along s | proved | `p3_p5_geometry.py` |
 | E5 | CARoPE: every channel a clock or blind | proved | `p6_carope.py` |
@@ -1599,6 +1600,62 @@ both; the batch localises the cost to the increment and shows that non-negativit
 
 Both start every token at a positive step (mean move step at initialisation exp +1.051, softplus +0.706, signed +0.003),
 i.e. as index RoPE with a rescaled omega; no best-rate sweep was run for them.
+
+### H10. The sign test in a state-space model (G-3; `G3_SSM_RESULTS.md`, registered, `G3_SSM_PREREG.md` + Amendment 1)
+
+*Model.* Per head (2 heads, 32 complex channels, value width 64), H_t = diag(exp(-i omega Delta(x_t))) H_{t-1} +
+k_t v_t^T and y_t = Re(conj(q_t)^T H_t), with k_t, q_t the (even, odd) pairs of the real key and query projections; y is
+RMS-normalised per head, then the attention model's output projection, residual, feed-forward and head. It is computed in
+the cumsum-of-angles form (E1; Mamba-3 Prop. 3) as causal *unnormalised* rotary linear attention, equal to the recurrence
+to 1.1e-12 relative in float64 and 8.7e-5 in float32 at 4T. Only the mixer differs from the attention ring arms (softmax
+with attention dropout replaced by the linear kernel, +128 norm parameters); at a seed all 24 shared tensors start bitwise
+equal to the attention arm's. No decay (|a| = 1), no output gate, Delta enters only the phase (declared, not
+Mamba-faithful). Task and recipe: the ring anchors' (32 cells, moves +1/-1, only the moves step, T = 128, 300 epochs,
+cosine, AdamW 0.05, rank 4), lr 3e-3; fresh seeds 2100-2107; configuration `minimal_h2` (104 runs); independent check
+before launch (no BLOCKER, 6 MAJOR, 11 MINOR, folded in). Floors: blank 0.496, n-gram 0.554, retrace 0.864.
+
+*From scratch (block A).*
+
+| arm | SOLVED | classes (S / T / D) | accuracy T = 128 | T = 512 (descriptive) | RUNAWAY | vs signed |
+|---|---|---|---|---|---|---|
+| signed | 8/8 | 8 / 0 / 0 | 1.000 | 0.999 | 0 | -- |
+| \|.\| | 0/8 | 0 / 7 / 1 | 0.821 | 0.457 | 0 | signed learns better (Fisher 0.0002, perm 0.0002; d -0.179) |
+| softplus | 1/8 | 1 / 2 / 5 | 0.935 | 0.617 | 0 | signed learns better (Holm: Fisher 0.0014, perm 0.0003) |
+| exp | 0/8 | 0 / 8 / 0 | 0.473 | 0.421 | 8 | signed learns better (8 RUNAWAY): no learnability statement |
+| index | 0/8 | 0 / 5 / 3 | 0.755 | 0.445 | 0 | integration gate passes |
+
+Registered reading: SIGN COST IN THE SSM, worded "not specific to softmax attention (it appears in unnormalised rotary
+linear attention = this SSM)". RUNAWAY (Amendment 1.4) = final move-step magnitude > 10^3 or a post-warm-up training loss
+above the memoryless 2.08; 7 exp runs by magnitude (up to 3.6e24), one by loss. Exp's failure at 3e-3 is instability at
+that rate; the second rate from scratch (1e-3) was not run in this configuration (attention at 1e-3: exp 1/8, softplus
+1/8, |.| 1/8, signed 8/8; App. H1, H9). 5 of 7 unsolved softplus runs were still descending (budget-scoped). r(log10
+final loss, accuracy) -0.674 at T = 128 and -0.927 at T = 512 over the 40 runs. Mechanism (descriptive, medians): signed
+cos(z_+, z_-) -1.000, u-ratio 0.001, every non-blind channel cancelling through zero; |.| -0.334, 0.592, 7% cancelling;
+softplus +0.738, 0.933, 12%.
+
+*Existence (blocks H, H2).* Each solved signed source (8/8) is converted by E2 (a), (f), (g) with D3's balancing
+(max |W_in| = max |W_out|; |.| <= 3.7x, softplus <= 1.5x, exp <= 1.2x the source's) and a signed control differing only in
+the wrap. Frozen: accuracy = source on 8/8 for every class and the control; move-angle error <= 2.3e-6 rad. (f) and (g)
+fix omega' at 2 pi / ln 2 and 2 pi against the sources' 0.59-0.84 (declared). Move-angle sensitivity, median: |.| 108,
+softplus 180, exp 224, control 27 (attention AO_bal 87-96). Continuations: 100 epochs on a fresh stream, LOST and HELD
+as in D6.
+
+| lr | class | SOLVED | LOST (of which > 0.3) | max loss (control) | E2 (registered) | E2' (> 0.3 only; secondary) |
+|---|---|---|---|---|---|---|
+| 3e-3 | \|.\| | 8/8 | 8 (8) | 0.320-0.678 (0.006-0.039) | perturbed and re-found | perturbed and re-found |
+| 3e-3 | softplus (f) | 3/8 | 8 (8) | 1.215-1.481 | not held [construction (f)] | not held |
+| 3e-3 | exp (g) | 1/8 | 8 (8) | 1.491-1.811 | not held [construction (g)] | not held |
+| 1e-3 | \|.\| | 8/8 | 6 (0) | 0.033-0.127 (0.001-0.002) | perturbed and re-found | held |
+| 1e-3 | softplus (f) | 8/8 | 8 (0) | 0.050-0.204 | perturbed and re-found [construction (f)] | held |
+| 1e-3 | exp (g) | 8/8 | 8 (0) | 0.110-0.165 | perturbed and re-found [construction (g)] | held |
+
+A non-held softplus or exp label is a property of constructions (f) / (g), not of the class (Amendment 1.2); at 3e-3 most
+of their continuations were still descending at 100 epochs, so the line between "not held" and "perturbed and re-found" is
+set partly by the budget. At 1e-3 the registered rule reads "perturbed" only through its 10x-control clause (the SSM control
+peaks at 0.001-0.002); the |.| peaks lie inside the attention held range (AO_bal 0.024-0.154). Registered joints: |.| at
+3e-3 cost, solution perturbed and re-found; the 1e-3 joint is declared cross-rate (from scratch at 3e-3) and reads the same;
+exp forms none (RUNAWAY). The registered "search cost" joint (needs held) did not form; on E2' |.| is held at 1e-3
+(secondary).
 
 ---
 

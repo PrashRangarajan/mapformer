@@ -11,7 +11,7 @@ WITHDRAWN. Prior art: `docs/lit/LIT_CLOCK_MAP.md` (2026-10-12; summary in the se
 | # | claim | evidence (numbers) | status | file | gap |
 |---|---|---|---|---|---|
 | C1 | Signed increments make the interval sum a net displacement (same place at different times collides: a map); monotone ones make it a path length (a clock) | by construction | definition | `.claude-memory/project_clock_vs_map.md` | prior art (C1 is likely known; see lit) |
-| C2 | Forcing a clock destroys a map task, at the training length | torus trained and tested at T = 1024: Abs - Signed -0.177 (p 0.0002), 0/8 vs 8/8 SOLVED; opposite moves cancel only when signed (0.06 vs 1.92-1.97). (The often-quoted crossover -0.280 is OUT OF DISTRIBUTION: trained at T = 128, read at 1024) | REG | `SIGN_MATCHED_RESULTS.md` (`SIGN_ABLATION.md` for the OOD figure) | replication of Grazzi / Sarrof / Selective RoPE in a new regime: say so |
+| C2 | Forcing a clock destroys a map task, at the training length | torus trained and tested at T = 1024: Abs - Signed -0.177 (p 0.0002), 0/8 vs 8/8 SOLVED; opposite moves cancel only when signed (0.06 vs 1.92-1.97). (The often-quoted crossover -0.280 is OUT OF DISTRIBUTION: trained at T = 128, read at 1024). Not softmax-specific: in a one-layer diagonal complex SSM on the ring |.| 0/8 vs signed 8/8 (G-3, 2026-10-23) | REG | `SIGN_MATCHED_RESULTS.md` (`SIGN_ABLATION.md` for the OOD figure); `G3_SSM_RESULTS.md` | replication of Grazzi / Sarrof / Selective RoPE in a new regime: say so |
 | C3 | A clock costs nothing where a clock is enough, and a signed phase can act as one | k-back recency, trained at T = 1024: at the training length monotone arms 0.961-1.000 vs signed 1.000 (near ceiling; no registered contrast at this length); the registered -0.004 is read at T = 2048 (OUT OF DISTRIBUTION). The unconstrained signed model runs a clock there (C4). The index (RoPE) fails the task (0.234): it counts tokens, not content (C5) | REG, but the clock-side contrast is OOD or at ceiling | `RECENCY_RESULTS.md` | a matched-length clock-side contrast below ceiling; "recency NEEDS a clock" is withdrawn (a rewind solves it) |
 | C4 | The free phase chooses map or clock per task | growth exponent alpha of the unconstrained arm 0.591 (torus) vs 0.967 (recency), +0.376, se 0.009; alpha is a re-description of opposition (r +0.9995) | REG (H2) | `RECENCY_RESULTS.md`, `LOCALISATION.md` | alpha is a statistic, not a lever |
 | C5 | What a clock counts matters | recency at the training length (T = 1024), eval-only intervention on the trained signed model: a constant step on content tokens vs on all tokens, magnitude-matched, 0.783 vs 0.189 (+0.594, 8/8); the index arms (which count tokens) sit at 0.234 | citable; the matched pair was designed after a failed control (labelled post hoc in the file) | `RECENCY_GATE_ABLATION.md` | one task; an intervention, not trained arms |
@@ -136,6 +136,18 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
   obstacle is the clock, not capacity". Not: "extra rank helps because it gives the clock an exit" (not supported at the
   registered bar); not "rank = D is hard because of the clock" in general (rank 1 learns the ring); the weight-decay-0 rank-4
   result (1/8) is post hoc.
+
+## Update 2026-10-23: G-3 SSM (`G3_SSM_RESULTS.md`, registered): SIGN COST IN THE SSM
+- One-layer diagonal complex SSM with an input-dependent rotation, no decay (= unnormalised rotary linear attention), the
+  attention ring task and recipe, lr 3e-3, 300 epochs: |.| 0/8 (0.821, below retrace 0.864) vs signed 8/8 (1.000), Fisher and
+  permutation p 0.0002; softplus 1/8 (0.935; Holm-surviving; 5/7 unsolved still descending); exp 0/8 but 8/8 RUNAWAY.
+- Rule 14: exact |.| / softplus / exp constructions (frozen = source 8/8); |.| perturbed and re-found at 3e-3 (8/8 SOLVED,
+  peaks 0.32-0.68), at 1e-3 PERTURBED AND RE-FOUND by the registered 10x clause and HELD by the secondary E2' (peaks
+  0.033-0.127). The registered SEARCH COST joint did not form.
+- Allowed: "the sign cost is not specific to softmax attention: it appears in a one-layer diagonal complex SSM
+  (unnormalised rotary linear attention)". Not: "exp fails in the SSM" (instability at 3e-3, A2 not run); "the SSM holds
+  the non-negative solution" (re-found at 3e-3; held only on E2' at 1e-3); anything about Mamba-faithful SSMs (no decay,
+  no gate, Delta in the phase only), m = 8, or other rates.
 
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
