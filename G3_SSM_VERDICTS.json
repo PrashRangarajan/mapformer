@@ -1,0 +1,380 @@
+{
+  "config": {
+    "sizes": [
+      32
+    ],
+    "a2": false,
+    "b": false,
+    "h2": true
+  },
+  "A": {
+    "abs|32": {
+      "label": "SIGNED LEARNS BETTER",
+      "shown": "SIGNED LEARNS BETTER",
+      "licensed": true,
+      "k_runaway": 0,
+      "raw_label": "SIGNED LEARNS BETTER",
+      "fisher_p": 0.0001554001554001554,
+      "perm_p": 0.0001554001554001554,
+      "fisher_p_adj": 0.0001554001554001554,
+      "perm_p_adj": 0.0001554001554001554,
+      "d": -0.179045357427858,
+      "k": 0,
+      "k_ref": 8
+    },
+    "softplus|32": {
+      "label": "SIGNED LEARNS BETTER",
+      "shown": "SIGNED LEARNS BETTER",
+      "licensed": true,
+      "k_runaway": 0,
+      "fisher_p": 0.0013986013986013986,
+      "perm_p": 0.0001554001554001554,
+      "fisher_p_adj": 0.0013986013986013986,
+      "perm_p_adj": 0.0003108003108003108,
+      "k": 1,
+      "d": -0.06515947177388204
+    },
+    "exp|32": {
+      "label": "SIGNED LEARNS BETTER",
+      "shown": "SIGNED LEARNS BETTER (8 RUNAWAY)",
+      "licensed": false,
+      "k_runaway": 8,
+      "fisher_p": 0.0001554001554001554,
+      "perm_p": 0.0001554001554001554,
+      "fisher_p_adj": 0.0003108003108003108,
+      "perm_p_adj": 0.0003108003108003108,
+      "k": 0,
+      "d": -0.5267588230751409
+    }
+  },
+  "gate": {
+    "32": null
+  },
+  "reading": "SIGN COST IN THE SSM",
+  "existence": {
+    "n_sources": 8,
+    "sources": [
+      2100,
+      2101,
+      2102,
+      2103,
+      2104,
+      2105,
+      2106,
+      2107
+    ],
+    "control_E1": true,
+    "control_max_loss": [
+      0.038546261174351275,
+      0.0095348461083854,
+      0.011027778790015205,
+      0.019213785182357092,
+      0.010426606654117659,
+      0.006363378857602175,
+      0.010972276283962632,
+      0.008778849093371774
+    ],
+    "label": {
+      "abs": "PERTURBED AND RE-FOUND",
+      "softplus": "NOT HELD",
+      "exp": "NOT HELD"
+    },
+    "label_secondary": {
+      "abs": "PERTURBED AND RE-FOUND",
+      "softplus": "NOT HELD",
+      "exp": "NOT HELD"
+    },
+    "detail": {
+      "abs": {
+        "E1_acc": true,
+        "E1_angle": true,
+        "E1_control": true,
+        "solved": 8,
+        "lost": 8,
+        "lost_abs_only": 8,
+        "acc": 0.999874507683991,
+        "control_acc": 0.9999967822483075,
+        "max_loss_range": [
+          0.319717818757101,
+          0.6780873363723561
+        ],
+        "sensitivity_median": 108.11754722380962,
+        "frozen_acc": [
+          0.9999742579864597,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999227739593791,
+          0.999742579864597
+        ],
+        "source_acc": [
+          0.9999742579864597,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999227739593791,
+          0.999742579864597
+        ]
+      },
+      "softplus": {
+        "E1_acc": true,
+        "E1_angle": true,
+        "E1_control": true,
+        "solved": 3,
+        "lost": 8,
+        "lost_abs_only": 8,
+        "acc": 0.9738525497464412,
+        "control_acc": 0.9999967822483075,
+        "max_loss_range": [
+          1.2153184961299508,
+          1.4812488136242847
+        ],
+        "sensitivity_median": 180.39246971579269,
+        "frozen_acc": [
+          0.9999742579864597,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999227739593791,
+          0.999742579864597
+        ],
+        "source_acc": [
+          0.9999742579864597,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999227739593791,
+          0.999742579864597
+        ]
+      },
+      "exp": {
+        "E1_acc": true,
+        "E1_angle": true,
+        "E1_control": true,
+        "solved": 1,
+        "lost": 8,
+        "lost_abs_only": 8,
+        "acc": 0.9296728190079029,
+        "control_acc": 0.9999967822483075,
+        "max_loss_range": [
+          1.4906187446749941,
+          1.8111796829165245
+        ],
+        "sensitivity_median": 223.6167691592127,
+        "frozen_acc": [
+          0.9999742579864597,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999227739593791,
+          0.999742579864597
+        ],
+        "source_acc": [
+          0.9999742579864597,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999227739593791,
+          0.999742579864597
+        ]
+      }
+    }
+  },
+  "joint": {
+    "abs": "COST, SOLUTION PERTURBED AND RE-FOUND",
+    "softplus": "COST, SOLUTION NOT HELD (construction (f), omega' = 2 pi / ln 2)",
+    "exp": null
+  },
+  "joint_kind": "same rate (3e-3)",
+  "existence_lr1e-3": {
+    "n_sources": 8,
+    "sources": [
+      2100,
+      2101,
+      2102,
+      2103,
+      2104,
+      2105,
+      2106,
+      2107
+    ],
+    "control_E1": true,
+    "control_max_loss": [
+      0.0017308537250978495,
+      0.0014957658794517148,
+      0.0013221841341799852,
+      0.0019144163639070104,
+      0.0013595355686837657,
+      0.0013071155508812956,
+      0.0018210770144740272,
+      0.001857886091756325
+    ],
+    "label": {
+      "abs": "PERTURBED AND RE-FOUND",
+      "softplus": "PERTURBED AND RE-FOUND",
+      "exp": "PERTURBED AND RE-FOUND"
+    },
+    "label_secondary": {
+      "abs": "HELD",
+      "softplus": "HELD",
+      "exp": "HELD"
+    },
+    "detail": {
+      "abs": {
+        "E1_acc": true,
+        "E1_angle": true,
+        "E1_control": true,
+        "solved": 8,
+        "lost": 6,
+        "lost_abs_only": 0,
+        "acc": 0.9999710402347671,
+        "control_acc": 1.0,
+        "max_loss_range": [
+          0.032559307050363785,
+          0.12711223785477996
+        ],
+        "sensitivity_median": 108.11754722380962,
+        "frozen_acc": [
+          0.9999742579864597,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999227739593791,
+          0.999742579864597
+        ],
+        "source_acc": [
+          0.9999742579864597,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999227739593791,
+          0.999742579864597
+        ]
+      },
+      "softplus": {
+        "E1_acc": true,
+        "E1_angle": true,
+        "E1_control": true,
+        "solved": 8,
+        "lost": 8,
+        "lost_abs_only": 0,
+        "acc": 0.9999356449661493,
+        "control_acc": 1.0,
+        "max_loss_range": [
+          0.05019214973613924,
+          0.20405419589951634
+        ],
+        "sensitivity_median": 180.39246971579269,
+        "frozen_acc": [
+          0.9999742579864597,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999227739593791,
+          0.999742579864597
+        ],
+        "source_acc": [
+          0.9999742579864597,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999227739593791,
+          0.999742579864597
+        ]
+      },
+      "exp": {
+        "E1_acc": true,
+        "E1_angle": true,
+        "E1_control": true,
+        "solved": 8,
+        "lost": 8,
+        "lost_abs_only": 0,
+        "acc": 0.9999549514763044,
+        "control_acc": 1.0,
+        "max_loss_range": [
+          0.10980091859558028,
+          0.1648186571725017
+        ],
+        "sensitivity_median": 223.6167691592127,
+        "frozen_acc": [
+          0.9999742579864597,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999227739593791,
+          0.999742579864597
+        ],
+        "source_acc": [
+          0.9999742579864597,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999227739593791,
+          0.999742579864597
+        ]
+      }
+    }
+  },
+  "joint_lr1e-3": {
+    "abs": "COST, SOLUTION PERTURBED AND RE-FOUND",
+    "softplus": "COST, SOLUTION PERTURBED AND RE-FOUND (construction (f), omega' = 2 pi / ln 2)",
+    "exp": null
+  },
+  "joint_kind_lr1e-3": "CROSS-RATE (from scratch at 3e-3, kept at 1e-3; declared)",
+  "solved": {
+    "A|softplus|32": 1,
+    "H2|signed|32": 8,
+    "H2|softplus|32": 8,
+    "A|exp|32": 0,
+    "H|exp|32": 1,
+    "A|signed|32": 8,
+    "H2|abs|32": 8,
+    "H|signed|32": 8,
+    "H|softplus|32": 3,
+    "H2|exp|32": 8,
+    "H|abs|32": 8,
+    "A|abs|32": 0,
+    "A|index|32": 0
+  },
+  "runaway": {
+    "A|softplus|32": 0,
+    "H2|signed|32": 0,
+    "H2|softplus|32": 0,
+    "A|exp|32": 8,
+    "H|exp|32": 0,
+    "A|signed|32": 0,
+    "H2|abs|32": 0,
+    "H|signed|32": 0,
+    "H|softplus|32": 0,
+    "H2|exp|32": 0,
+    "H|abs|32": 0,
+    "A|abs|32": 0,
+    "A|index|32": 0
+  },
+  "n_diverged": 0,
+  "config_name": "minimal_h2"
+}
