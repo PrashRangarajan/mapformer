@@ -1,0 +1,48 @@
+== SIGNSEP: registered 2x2 (W = route + barrier, F = no route + no barrier; anchors S, A; control C1) ==
+lr 0.001: SOLVED signed 5/8 abs 0/8 abs_wrap 2/8 signed_frozen 3/8 abs_wrap_past 5/8 | acc T=128 signed 0.9813 abs 0.9300 abs_wrap 0.9322 signed_frozen 0.9393 abs_wrap_past 0.9604
+   reading: UNREADABLE (signed SOLVED 5/8 < 6)
+   {}
+lr 0.003: SOLVED signed 8/8 abs 3/8 abs_wrap 0/8 signed_frozen 4/8 abs_wrap_past 7/8 | acc T=128 signed 1.0000 abs 0.9734 abs_wrap 0.9525 signed_frozen 0.9713 abs_wrap_past 0.9851
+   reading: UNMEASURED
+   {"S_vs_A": {"fisher_p": 0.025641025641025644, "perm_p": 0.02564102564102564, "d": 0.026614024248976742}, "W": {"class": "A-LIKE", "X_vs_A": {"fisher_p": 0.2, "perm_p": 0.10178710178710179, "d": -0.020931474759955715}, "S_vs_X": {"fisher_p": 0.0001554001554001554, "perm_p": 0.0001554001554001554, "d": 0.04754549900893246}, "better_X_A": false, "better_S_X": true}, "F": {"class": "UNMEASURED", "X_vs_A": {"fisher_p": 1.0, "perm_p": 0.8826728826728827, "d": -0.0021333693721523606}, "S_vs_X": {"fisher_p": 0.07692307692307693, "perm_p": 0.02564102564102564, "d": 0.028747393621129103}, "better_X_A": false, "better_S_X": false}, "k_P": 7, "C1_solved": true, "C1_tau_median": 1.9986169040203094, "C1_tau": true, "W_solved_tau_sums": [], "W_on_sheet": false, "W_diverged": 0, "half_route": "UNMEASURED", "half_barrier": "BARRIER BLOCKS"}
+diverged runs per arm x rate: signed|0.001 0, abs|0.001 0, abs_wrap|0.001 0, signed_frozen|0.001 0, abs_wrap_past|0.001 0, signed|0.003 0, abs|0.003 0, abs_wrap|0.003 0, signed_frozen|0.003 0, abs_wrap_past|0.003 0
+
+READING (registered): UNMEASURED
+   scope: ring 32, +1/-1, observation-step-free rank 4, the common |.| start, 300 epochs, 'at lr 1e-3 and 3e-3'. ROUTE / BARRIER / BOTH / NEITHER ALONE are statements about these two constructed classes against the two anchors, nothing wider.
+
+== diagnostics (medians per arm x rate; descriptive, registered as such) ==
+   arm            lr     u_ratio  cos(zx,zy) clock_rms cancel  c_zero  c_wrap  tau_sum  pre<0   k0_med
+   signed         0.001  +0.304  -0.738  +0.661  +0.504  +0.504  +0.000     n/a     n/a  +0.516
+   abs            0.001  +0.730  +0.058  +1.272  +0.027  +0.027  +0.000     n/a     n/a  +0.516
+   abs_wrap       0.001  +0.744  +0.104  +1.276  +0.043  +0.041  +0.000  +0.062  +0.113  +0.516
+   signed_frozen  0.001  +0.707  -0.000  +1.157  +0.080  +0.080  +0.000     n/a     n/a  +0.516
+   abs_wrap_past  0.001  +0.606  -0.279  +0.939  +0.188  +0.000  +0.188  +1.684  +0.000  +5.228
+   signed         0.003  +0.002  -1.000  +0.001  +1.000  +1.000  +0.000     n/a     n/a  +0.516
+   abs            0.003  +0.878  +0.536  +1.228  +0.051  +0.032  +0.000     n/a     n/a  +0.516
+   abs_wrap       0.003  +0.782  +0.210  +1.653  +0.016  +0.000  +0.000  +0.547  +0.059  +0.516
+   signed_frozen  0.003  +0.707  -0.000  +0.962  +0.182  +0.170  +0.013     n/a     n/a  +0.516
+   abs_wrap_past  0.003  +0.036  -0.997  +0.011  +1.000  +0.000  +1.000  +1.999  +0.000  +5.228
+
+   W / W_past runs, tau_sum at the end per seed (S = SOLVED): the collective wrap sheet is tau_sum = +-2
+   0.001 abs_wrap       +0.07- +0.04- +0.09- +0.06S +0.11- +0.04- +0.11S +0.01-
+   0.001 abs_wrap_past  +1.68- +1.69S +1.69S +1.63- +1.68S +1.69S +1.71- +1.66S
+   0.003 abs_wrap       +0.37- +0.17- +0.55- +0.55- +0.55- +0.63- +0.70- +0.13-
+   0.003 abs_wrap_past  +2.00S +2.00S +2.00S +2.00S +2.00S +2.00S +2.00- +2.00S
+
+== rule 2: r(log10 final loss, acc) per eval length, finite runs ==
+   T=128: r = -0.782 over 80 runs (0 diverged excluded)
+   T=512: r = -0.603 over 80 runs (0 diverged excluded)
+
+floors on record (ring 32, +1/-1): blank 0.5, n-gram 0.554, retrace 0.86
+
+per seed (acc T=128 + class: S SOLVED, T STALLED, D DESCENDING, R RISING, X DIVERGED), lr x arm:
+  0.001 signed         0.968T 1.000S 0.925T 0.956T 1.000S 1.000S 1.000S 1.000S
+  0.001 abs            0.859T 0.906T 0.943T 0.936T 0.947T 0.971T 0.988T 0.891T
+  0.001 abs_wrap       0.876T 0.865T 0.929T 1.000S 0.923T 0.948T 1.000S 0.917T
+  0.001 signed_frozen  0.901T 0.927T 0.989S 1.000S 0.869T 1.000S 0.913T 0.915T
+  0.001 abs_wrap_past  0.899T 1.000S 1.000S 0.874T 1.000S 1.000S 0.911T 1.000S
+  0.003 signed         1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S
+  0.003 abs            0.934T 0.960T 1.000S 0.963T 1.000S 0.985D 1.000S 0.945T
+  0.003 abs_wrap       0.948T 0.972D 0.963T 0.959T 0.957T 0.974T 0.933T 0.913T
+  0.003 signed_frozen  0.960T 0.916T 1.000S 1.000S 0.955D 1.000S 0.983S 0.956T
+  0.003 abs_wrap_past  1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 0.881D 1.000S

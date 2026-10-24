@@ -1,4 +1,4 @@
-# Notes on MAIN_DRAFT2 (2026-10-21; G-1 and G-3 folded in 2026-10-23)
+# Notes on MAIN_DRAFT2 (2026-10-21; G-1 and G-3 folded in 2026-10-23; SIGNSEP 2026-10-24)
 
 Drafted from `docs/paper/expansion/SYNTHESIS_DRAFT2_PLAN.md`, draft 1 (`MAIN_DRAFT1.md`, `MAIN_APPENDIX1.md`), the theory
 appendix v3, the seven expansion reports, and the results that landed after the plan (DELTA_FREE, SROPE_TORUS, SIGNROUTE,
@@ -256,6 +256,18 @@ held). Appendix: H10 (new), A3 row, E2 (g) "not built" -> built in the SSM, E14 
 1.000 (Fisher, perm p 0.0002); softplus 1/8; exp 8/8 RUNAWAY; retrace 0.864; constructions frozen = source 8/8, angle
 error <= 2.3e-6; |.| continuations 8/8 SOLVED at 3e-3 and 1e-3 [all R]. Claim-map compliance: no "exp fails in the SSM",
 no "held" at the registered bar, no Mamba-faithfulness claim.
+
+## SIGNSEP (route vs barrier) folded in (2026-10-24)
+
+Source: `SIGNSEP_RESULTS.md` (registered reading UNMEASURED; `SIGNSEP_ANALYSIS.txt`, `SIGNSEP_VERDICTS.json`). Changes:
+Sec. 7.3 new paragraph "A collective route does not carry the non-negative step past pi" (W 0/8 vs signed 8/8 at 3e-3,
+Fisher p 0.0002; P 7/8, tau_sum 2.00 on every seed; W tau_sum 0.13-0.70; F 4/8 vs |.| 3/8; 1e-3 unreadable, signed 5/8,
+earlier 7/8 twice; F 3/8 at 1e-3 vs ACCOUNTS T2 1/8 [all R]); Discussion clause after the hybrid's 16/16; Prop. 4 status row;
+Limitations bullet (ring, one start, one readable rate, half of the 2x2, tau mobility). Appendix: H11 (new), A3 row, E8.6
+sentence (W's class keeps the barrier and has a collective route; prereg W1, W2), E14 row; the "## H. Sign details" heading
+moved from above G8 (misplaced by an earlier fold) to above H1. Claim-map compliance: only the half-reading BARRIER BLOCKS is
+stated as a finding; no "the barrier is THE obstacle", no "routes are irrelevant", nothing at 1e-3. Draft 6 Sec. 4.3: one
+sentence after "is open"; its PDF rebuilt (source changed).
 
 ## Word counts
 

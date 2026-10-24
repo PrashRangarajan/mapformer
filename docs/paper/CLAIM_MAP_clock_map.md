@@ -149,6 +149,18 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
   the non-negative solution" (re-found at 3e-3; held only on E2' at 1e-3); anything about Mamba-faithful SSMs (no decay,
   no gate, Delta in the phase only), m = 8, or other rates.
 
+## Update 2026-10-24: SIGNSEP (`SIGNSEP_RESULTS.md`, registered): UNMEASURED
+- A 2x2 from one common |.| start (ring, observation-step-free rank 4, 300 epochs) to separate the two accounts SIGNROUTE
+  left together. lr 3e-3 (gates pass: signed 8/8, |.| 3/8): W = |.| plus a learnable per-move wrap offset (a collective
+  route to a point where every channel cancels by wrapping; barrier kept) 0/8, A-LIKE (vs signed Fisher p 0.0002); F =
+  signed with frozen move latents (no barrier, no collective route) 4/8, UNMEASURED; control P (W's class from past pi) 7/8,
+  every run ending on the collective wrap sheet (tau_sum 2.00). lr 1e-3 UNREADABLE (signed anchor 5/8 < 6; from this start
+  signed solved 7/8 in MECHANISM and in ACCOUNTS T2).
+- Allowed: "from a small start a collective route to the wrap does not get the non-negative step past pi (registered
+  half-reading BARRIER BLOCKS, ring, lr 3e-3)". Not: "the barrier is THE obstacle" or "the route is irrelevant" (F
+  unmeasured; the 2x2's registered reading is UNMEASURED); nothing at 1e-3, on the torus, or from other starts. The
+  mechanism of the sign cost stays an account.
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
@@ -162,6 +174,7 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
 - "Initialise a monotone rotary step near the wrap" as a general design rule (ring only; fails on the torus).
 - "A near-wrap start rescues CoPE" (unmeasured; WRAP_COPE).
 - "The sign cost is only the start, not the constraint" (toy only; in the transformer signed escapes the |.| start through zero).
+- "SIGNSEP shows the sign cost is the wrap barrier" (only the half-reading BARRIER BLOCKS; the registered reading is UNMEASURED).
 
 ## Gaps, cheapest first
 1. **Prior art** (`docs/lit/LIT_CLOCK_MAP.md`, agent running): which of C1-C5 are published.

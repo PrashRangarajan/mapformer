@@ -171,7 +171,11 @@ default start freezing has no detected effect (7/8 vs 8/8). MapFormer described 
 **Loose ends (post hoc; appendix C12).** Rescued |.| models cancel in only 23% of channels, not those the one-channel flow
 predicts (kappa +0.09); the final gradient points into the wall for only about half of the collapsed small-start |.| steps
 (mixed, by a rule fixed in advance); a transformer-free toy does not reproduce the signed escape (appendix I). Why |.| fails
-from a small start (a wrap past |sigma| = pi, P3; the wall, P4; both; neither, Sec. 4.5) is open.
+from a small start (a wrap past |sigma| = pi, P3; the wall, P4; both; neither, Sec. 4.5) is open. A registered 2x2 from
+the same-direction start narrows it by half: |.| given one learnable offset per move, a collective route to a point where
+every channel cancels by wrapping, solves 0/8 against signed 8/8 at lr 3e-3, while the same class started past pi solves
+7/8 and ends on that point -- a route does not carry |.| past pi; signed steps with frozen latents (no barrier, no route)
+solve 4/8, so whether removing the barrier alone suffices is unmeasured.
 
 ### 4.4 The start lever fails on the torus within 900 epochs
 

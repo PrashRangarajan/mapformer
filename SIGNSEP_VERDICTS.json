@@ -1,0 +1,69 @@
+{
+  "reading": "UNMEASURED",
+  "per_rate": {
+    "0.001": "UNREADABLE (signed SOLVED 5/8 < 6)",
+    "0.003": "UNMEASURED"
+  },
+  "detail": {
+    "0.001": {},
+    "0.003": {
+      "S_vs_A": {
+        "fisher_p": 0.025641025641025644,
+        "perm_p": 0.02564102564102564,
+        "d": 0.026614024248976742
+      },
+      "W": {
+        "class": "A-LIKE",
+        "X_vs_A": {
+          "fisher_p": 0.2,
+          "perm_p": 0.10178710178710179,
+          "d": -0.020931474759955715
+        },
+        "S_vs_X": {
+          "fisher_p": 0.0001554001554001554,
+          "perm_p": 0.0001554001554001554,
+          "d": 0.04754549900893246
+        },
+        "better_X_A": false,
+        "better_S_X": true
+      },
+      "F": {
+        "class": "UNMEASURED",
+        "X_vs_A": {
+          "fisher_p": 1.0,
+          "perm_p": 0.8826728826728827,
+          "d": -0.0021333693721523606
+        },
+        "S_vs_X": {
+          "fisher_p": 0.07692307692307693,
+          "perm_p": 0.02564102564102564,
+          "d": 0.028747393621129103
+        },
+        "better_X_A": false,
+        "better_S_X": false
+      },
+      "k_P": 7,
+      "C1_solved": true,
+      "C1_tau_median": 1.9986169040203094,
+      "C1_tau": true,
+      "W_solved_tau_sums": [],
+      "W_on_sheet": false,
+      "W_diverged": 0,
+      "half_route": "UNMEASURED",
+      "half_barrier": "BARRIER BLOCKS"
+    }
+  },
+  "solved": {
+    "signed|0.001": 5,
+    "abs|0.001": 0,
+    "abs_wrap|0.001": 2,
+    "signed_frozen|0.001": 3,
+    "abs_wrap_past|0.001": 5,
+    "signed|0.003": 8,
+    "abs|0.003": 3,
+    "abs_wrap|0.003": 0,
+    "signed_frozen|0.003": 4,
+    "abs_wrap_past|0.003": 7
+  },
+  "n_diverged": 0
+}

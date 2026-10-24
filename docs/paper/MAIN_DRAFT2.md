@@ -279,7 +279,7 @@ content pair's kernel decreases over offsets 0-3, so no fixed far offset can be 
 | Remark 1, two-layer count | cited (Liu et al. Lemma 6; Yao et al.) | probes: no count in torus index models (Sec. 6) |
 | Prop. 2, position-factor bound and tick rule | proved | bound: consistent with the strata of every failing model (Fig. 2), not a test of them; tick rule: text-world channels (Sec. 8) |
 | Prop. 3 and Lemma 1, representability and gauge | proved | constructions exact to 1.4e-6 rad (App. D) |
-| Prop. 4, route inventory | proved | end-state clocks (Sec. 7.1); frozen latents; hybrid readout (Sec. 7.3) |
+| Prop. 4, route inventory | proved | end-state clocks (Sec. 7.1); frozen latents; hybrid readout; route-with-barrier class (Sec. 7.3) |
 | Prop. 5, hiding at first order | proved under small drift, isotropy, near-isometry | drift on the least-resolved axis (Sec. 7.2) |
 | At rank D on the torus, the clock is the obstacle | registered causal support (shared rank 2, T = 1024, 900 epochs) | clock forbidden by construction 8/8 against observation steps zeroed 1/8 (Sec. 7.2) |
 | Conjecture 1, hiding starves the collective route | conjecture | consistent with rank 1 learning the ring; its premise, a clock that persists at rank D, has the support of the row above; the feedback itself not tested |
@@ -641,6 +641,23 @@ together (82% of channels end opposite-signed, against 15% with the latents froz
 state (their Figs. 3d and 9b); this is the causal test of how it is reached. A |.| step has only the wrapped branch, and on
 the ring it learns the map when its opposite-move angles start with sums past pi (8/8, cancelling by wrapping; Fig. 9d).
 
+**A collective route does not carry the non-negative step past pi.** The hybrid removes both obstacles Proposition 4(b)
+names for |.|, the missing collective route and the barrier at |k_c| = pi, so it cannot say which one binds. A registered
+2x2 builds the two missing cells on the ring from one common start, the |.| start above, at which all four classes
+compute the same function (App. H11). The first adds to |.| one learnable offset per move, a_c(x) = omega_c |w_c . z_x +
+tau_x pi / |omega_c||: both angles keep one sign, so the barrier stays, but u = 0 with tau_x + tau_y = 2 cancels every
+channel at once by wrapping, for any readout, so the class has a collective route. The second is the signed step with its
+move latents frozen: no barrier and no collective route. At learning rate 3e-3 the route class solves 0/8 against signed
+8/8 (Fisher p 0.0002). The same class started with every channel past pi solves 7/8 and ends exactly on the collective
+wrap point (offset sum 2.00 on every seed, move latents antipodal), so the offsets are usable; started small, the offset
+sum stops at 0.13-0.70 on every seed, short of 1, where the offsets alone would carry a channel to pi. The registered
+half-reading is that the barrier blocks: a route to the wrap is not enough. The frozen-latent signed class solves 4/8,
+between the anchors (|.| 3/8), so whether removing the barrier alone suffices is unmeasured, and the registered reading
+of the 2x2 is unmeasured. At 1e-3 the batch's signed anchor solved 5/8 from this start (7/8 in two earlier batches),
+below its gate, and that rate is unreadable; the frozen-latent class solved 3/8 there (1/8 in the test above). The
+barrier account has one registered half behind it, and the route account is neither confirmed nor excluded: why the
+non-negative step fails from a small start remains an account.
+
 **Published content phases also miss the torus map.** Faithful CARoPE cannot represent cancellation. *Proposition 8
 (proved):* CARoPE advances every channel by an amount in (0, 1] per token, so the shortest return's phase lies in
 (0, 4], never 0 mod 2 pi, and every channel is either a clock or blind over an excursion (App. E5). It scores 0.667 on the
@@ -813,7 +830,8 @@ on the ring and re-found 8/8 on the torus for |.|), and training from scratch do
 2's terms the initialisation sits outside the basin of a non-empty, stable solution set. The route inventory accounts
 for this, proved for the routes and conjectured for the rank-D dynamics, and the two axes fail differently inside it. A
 non-negative increment has no collective route and its per-channel targets lie past pi; restoring a signed increment
-under a non-negative readout restores learning (16/16). At rank D the collective route exists, but no channel can be
+under a non-negative readout restores learning (16/16), while giving |.| a collective route to the wrap with the barrier
+left in place does not (0/8; the 2x2 that would separate the two is unmeasured). At rank D the collective route exists, but no channel can be
 both clock-free and a full map while a clock remains, and in two or more dimensions hiding offers a free local move
 that, by Conjecture 1, starves the collective route; one more latent dimension adds a local move, parking, that costs
 the map nothing. That the clock is what blocks rank D is tested on the torus: with the clock forbidden by construction,
@@ -914,6 +932,11 @@ TEM-t for the "where" apart from the "what".
   step, and from scratch at one learning rate (3e-3). There exp was unstable (8/8 runs diverging in step size), so it
   carries no learnability statement; most unsolved softplus runs were still descending; the installed |.| solution was
   perturbed and re-found rather than held under the registered rule. No other recurrent baseline.
+- The route-versus-barrier test (Sec. 7.3, App. H11) is on the ring only, from one start (the |.| start, not the default),
+  at 300 epochs. It is readable at one learning rate (3e-3; at 1e-3 its signed anchor failed the gate), and there only
+  half of it reads: the route class fails, the frozen-latent class lands between the anchors. The offsets it adds move
+  about ten times less per channel per optimiser step than the latents; its control shows they are usable, not that the
+  two routes are equally fast.
 
 ## References
 

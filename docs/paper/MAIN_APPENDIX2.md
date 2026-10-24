@@ -88,6 +88,7 @@ Pilots ran on seeds outside the batch except where noted.
 | MECHANISM | 7.3 | ring p_plus 0.5 | eight start / step arms | 800-807 | 300 | standard | yes | yes |
 | SIGNROUTE | 7.3 | ring, moves +1/-1 | obs.-step-free signed, \|.\|, hybrid, abs_tied, exp, softplus at lr 1e-3 and 3e-3 | 1800-1807 | 300 | standard | yes | no |
 | G3_SSM (H10) | 7.3 | ring, moves +1/-1 | one-layer diagonal complex SSM: signed, \|.\|, softplus, exp, index; constructions (H at 3e-3, H2 at 1e-3) | 2100-2107 | 300; +100 | none (linear kernel) | yes | no (analysis re-run from the run dirs, identical) |
+| SIGNSEP (H11) | 7.3 | ring, moves +1/-1 | obs.-step-free signed, \|.\|, \|.\| + wrap offset (W), signed with frozen move latents (F), W from past pi (P), one common start, at lr 1e-3 and 3e-3 | 2300-2307 | 300 | standard | yes | no |
 | SROPE_TORUS | 7.3 | torus T = 1024 | Selective RoPE (best LM config), without SiLU, state-tracking config, generator swap; MapWM; RoPE | 1700-1707 | 900 | fast-attn | yes | no |
 | DELTA_FREE | 7.4 | torus T = 128, r2 | PoPE / MapPoPE with delta pinned, free, frozen-random (path) | 1600-1607 | 300 | standard | yes | no |
 | TEXTWORLD | 8 | torus in words | path 1 layer; index 1, 2 layers | 0-7; main text 2-7 (0-1 were the pilot) | 900 | standard | yes | yes |
@@ -734,7 +735,10 @@ frozen move latents: per-channel only (each channel can still cross zero through
 (E8.3: the latent route ends at a clock and no latent choice wraps more than 2r channels; E8.1 + E4.1: the per-channel
 zero-clock points lie at |k| = 2 pi n, across |k| = pi). A hybrid with readout |w_c| and signed latent,
 a_c(x) = omega_c |w_c| . z_x, has the signed class's collective route (E8.2 with W replaced by |W|) and its near-side
-cancelling point k = 0.
+cancelling point k = 0. |.| with one learnable offset per move, a_c(x) = omega_c |w_c . z_x + tau_x pi / |omega_c||,
+keeps E8.1's barrier (both angles keep one sign) and gains a collective route to the wrap: where every pre-|.| step is
+non-negative, k_c = omega_c w_c . u + pi sign(omega_c)(tau_x + tau_y), and u = 0, tau_x + tau_y = 2 cancels every channel
+at once for any readout (`SIGNSEP_PREREG.md` W1, W2; tested in App. H11).
 
 ### E9. Hiding at rank D (Proposition 5; Conjecture 1)
 
@@ -838,7 +842,7 @@ problem.
 | E7 | phase decomposition; position-factor bound; tick rule | proved | bound consistent with the strata, not a test of them; text-world drift (App. J) |
 | E8.1-E8.4 | |.| clock floor; signed collective route; no |.| collective route; same-direction moves | proved (E8.2(c), E8.4 for the quadratic surrogate) | `prop_checks.py`, `sign_clock.py` |
 | E8.5 | rank D: no clock-free full-map channel; rank > D: parking | proved | end states (App. G3-G4); that parking is why rank > D helps: conjecture, registered test PARTIAL (App. G7) |
-| E8.6 | route inventory | proved (inventory) | Table 4; SIGNROUTE |
+| E8.6 | route inventory | proved (inventory) | Table 4; SIGNROUTE; SIGNSEP (App. H11: route class fails, 2x2 unmeasured) |
 | E9.2 | hiding free to first order at D >= 2 | proved under A1-A3 | drift on the least-resolved axis (App. G) |
 | E9.3 | hiding starves the collective route | conjecture | feedback not tested; its premise, that a remaining clock blocks rank D, has registered support on the torus (App. G7) |
 | E10 | basins | definitional | App. H7 |
@@ -1346,9 +1350,6 @@ readings are on SOLVED and accuracy is descriptive.
 
 ---
 
-## H. Sign details
-
-
 ### G8. Weight decay and rank 4 (RANKWD; registered, `RANKWD_RESULTS.md`, `RANKWD_PREREG.md` + Amendment 1)
 
 Shared rank 4 (`Vanilla_r4mi`) at AdamW weight decay 0.05 vs 0, fresh seeds 2100-2107, torus 64 x 64, T = 1024, 900
@@ -1370,6 +1371,8 @@ unpaired permutation p 0.0014, paired sign-flip p 0.0156 (exact; the smallest p 
 
 Per seed, accuracy at T = 1024 (class): wd 0.998S 1.000S 0.999S 1.000S 1.000S 1.000S 1.000S 1.000S; wd 0 0.853D 0.866D 0.837T
 0.952D 0.870D 1.000S 0.920D 0.585T.
+
+## H. Sign details
 
 ### H1. Learning rates (`LRSWEEP_RESULTS.md`; ring, observation-step-free, seeds 1500-1507)
 
@@ -1656,6 +1659,56 @@ peaks at 0.001-0.002); the |.| peaks lie inside the attention held range (AO_bal
 3e-3 cost, solution perturbed and re-found; the 1e-3 joint is declared cross-rate (from scratch at 3e-3) and reads the same;
 exp forms none (RUNAWAY). The registered "search cost" joint (needs held) did not form; on E2' |.| is held at 1e-3
 (secondary).
+
+
+### H11. Route or barrier (SIGNSEP; `SIGNSEP_RESULTS.md`, registered, `SIGNSEP_PREREG.md` + Amendments 1-3)
+
+*Design.* Five observation-step-free rank-4 arms on the ring (32 cells, moves +1/-1; LRSWEEP's recipe: T = 128, 300
+epochs, cosine, AdamW 0.05) at lr 1e-3 and 3e-3, fresh seeds 2300-2307, 80 runs; independent check before launch (5 MAJOR,
+7 MINOR, 6 NOTE, folded in). Every arm starts from one common start, MECHANISM's balanced-gauge |.| start (App. H3;
+median |k_c| 0.52 rad), at which signed (S), |.| (A), W and F give bitwise-identical logits. **W** = |.| with one learnable
+offset per move, a_c(x) = omega_c |w_c . z_x + tau_x pi / |omega_c||, tau = 0 at the start and exempt from weight decay
+(Amendment 2): it keeps the barrier and has a collective route to the wrap (E8.6). **F** = signed with the move latents
+frozen: no barrier, no collective route (each channel's clock depends on its own W_out row and omega only). **P** = W's
+class with tau_x = tau_y = 0.75 at the start, every channel past pi (median |k_c| 5.23): control C1. Gates: G0 k_S >= 6;
+G1 k_A <= 3 and better(S, A); classes S-LIKE / A-LIKE / PARTIAL / UNMEASURED against the anchors; C1 k_P >= 6 and median
+final tau_sum of P >= 1.55 (Amendment 3). better(a, b) = Fisher < .05 with k_a > k_b, or permutation p < .05 with d >= +0.05.
+
+*Outcome per rate* (SOLVED, mean accuracy at T = 128; none diverged).
+
+| lr | signed | \|.\| | W (route, barrier) | F (no route, no barrier) | P (control) | reading |
+|---|---|---|---|---|---|---|
+| 1e-3 | 5/8, 0.981 | 0/8, 0.930 | 2/8, 0.932 | 3/8, 0.939 | 5/8, 0.960 | UNREADABLE (G0: 5 < 6) |
+| 3e-3 | 8/8, 1.000 | 3/8, 0.973 | **0/8, 0.953** | **4/8, 0.971** | 7/8, 0.985 | UNMEASURED |
+
+At 3e-3: G1 S vs A Fisher p 0.026 (k_A at the bound). W A-LIKE: S vs W Fisher p 0.0002, perm p 0.0002, d +0.048; W vs A
+Fisher p 0.20, perm p 0.10, d -0.021. F UNMEASURED: S vs F Fisher p 0.077, perm p 0.026 with d +0.029 (below 0.05); F vs
+A Fisher p 1.0. C1 passes: P 7/8, median tau_sum 1.999. Half-readings: barrier BARRIER BLOCKS (a route is not enough),
+route UNMEASURED. No definite row of the 2x2, so the rate and the overall reading are UNMEASURED. Scope: ring, this start,
+300 epochs, lr 1e-3 and 3e-3. Signed from this start at 1e-3 in earlier batches: 7/8 (MECHANISM), 7/8 (ACCOUNTS T2); from
+the default start 8/8 (LRSWEEP, SIGNROUTE).
+
+*End states (descriptive, medians at 3e-3).*
+
+| arm | u-ratio | cos(z_x, z_y) | wrapped clock rms | cancelling (through zero / by wrap) | tau_sum |
+|---|---|---|---|---|---|
+| signed | 0.002 | -1.000 | 0.001 | 1.000 (1.000 / 0) | -- |
+| \|.\| | 0.878 | +0.536 | 1.228 | 0.051 (0.032 / 0) | -- |
+| W | 0.782 | +0.210 | 1.653 | 0.016 (0 / 0) | 0.547 (per seed 0.13-0.70) |
+| F | 0.707 (frozen) | 0.000 (frozen) | 0.962 | 0.182 (0.170 / 0.013) | -- |
+| P | 0.036 | -0.997 | 0.011 | 1.000 (0 / 1.000) | 1.999 (2.00 on every seed) |
+
+In a |.| class the "through zero" share counts near-blind one-sided channels, not cancellation. P ends at the end point of
+W's collective route (u -> 0, tau_sum = 2); W's offsets move toward it but stop below 1 on every seed. At 1e-3 W's tau_sum
+stays at 0.01-0.11 (its two SOLVED runs are off the sheet) and P's moves from 1.5 to 1.63-1.71. r(log10 final loss,
+accuracy) -0.782 at T = 128 and -0.603 at T = 512 over 80 runs. `experiment_audit` windowed classes (rates pooled) agree
+with the registered ones in every arm; one DESCENDING run each in |.|, W, F and P at 3e-3.
+
+Per seed (accuracy at T = 128, class), 3e-3: signed 1.000S on every seed; |.| 0.934T 0.960T 1.000S 0.963T 1.000S 0.985D
+1.000S 0.945T; W 0.948T 0.972D 0.963T 0.959T 0.957T 0.974T 0.933T 0.913T; F 0.960T 0.916T 1.000S 1.000S 0.955D 1.000S
+0.983S 0.956T; P 1.000S x 6, 0.881D (s2306), 1.000S. 1e-3: signed 0.968T 1.000S 0.925T 0.956T 1.000S 1.000S 1.000S 1.000S; the |.|
+arm all STALLED (0.859-0.988); W 0.876T 0.865T 0.929T 1.000S 0.923T 0.948T 1.000S 0.917T; F 0.901T 0.927T 0.989S 1.000S
+0.869T 1.000S 0.913T 0.915T; P 0.899T 1.000S 1.000S 0.874T 1.000S 1.000S 0.911T 1.000S.
 
 ---
 
