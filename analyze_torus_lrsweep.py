@@ -37,9 +37,9 @@ CLS = {"SO": MapFormerWM_SignedAO4_r4, "AO": MapFormerWM_AbsAO4_r4}
 DEFAULT_RATES = (1e-3, 3e-3, 1e-2)
 PAIRS = ((0, 1), (2, 3))                 # environment.GridWorld.ACTION_DELTAS: N/S, W/E
 UNR = "UNREADABLE"
-MEMORYLESS = 2.08                        # nats: marginal revisit-observation entropy, 0.5 blank + 0.5 x 16 types = 2.079
+RUNAWAY_MARGIN = 0.05                    # Amendment 1 (MAJOR 2): post-warm-up loss above H_map(seed) + 0.05 = RUNAWAY
 STEP_RUNAWAY = 1e3                       # |W_out W_in e(move)| before omega (G-3 Amendment 1.4's move_step_absmax bound)
-COLLAPSE = 1.9                           # final-5% mean loss above this = the run ends (nearly) context-free (prereg Sec. 3)
+COLLAPSE = 1.9                           # final-5% mean loss above this = the run ends (nearly) context-free (prereg Sec. 2)
 RECIPE = {"n_steps": 1024, "batch_size": 16, "n_batches": 98, "d_model": 128, "n_layers": 1, "n_heads": 2,
           "grid_size": 64, "n_obs_types": 16, "n_landmarks": 0, "schedule": "cosine", "init_from": None,
           "data_seed_offset": 0, "fast_attn": True, "deterministic": False, "p_empty": 0.5}
@@ -76,67 +76,93 @@ def clock_table():
 def reading(lab, r_ao, r_so, rates, ao_desc=0, lab_1e3=None, ao_runaway=0):
     """Overall reading, fixed in TORUS_LRSWEEP_PREREG.md. lab: B1 label; r_ao: AO's selected rate; r_so: the LOWEST rate at
     which SO reaches its best SOLVED count (LRSWEEP Amendment 1 MAJOR 1); ao_desc / ao_runaway: AO runs DESCENDING /
-    RUNAWAY at r_ao; lab_1e3: the per-rate (naive) label at 1e-3, GENERALITY E3's rate."""
+    UNSTABLE-and-unsolved at r_ao (Amendment 1 MAJOR 2); lab_1e3: the per-rate (naive) label at 1e-3, GENERALITY E3's rate.
+    Amendment 1 MAJOR 1: every reading that rests on AO's cell at >= 1e-2 (B1 SLB, NSC or NLB) triggers stage 2, and until
+    stage 2 reports, a closing or shrinking cost is worded 'with the rate and its coupled decay'."""
     q = ""
     if r_ao == max(rates):
         q += " [AO's best rate is the grid's top rate: the AO optimum is not bracketed; 'best' = best TESTED]"
     if ao_desc:
         q += f" [{ao_desc} AO run(s) still DESCENDING at AO's best rate: budget-scoped]"
     if ao_runaway >= 2:
-        q += (f" [{ao_runaway} AO runs UNSTABLE (RUNAWAY / COLLAPSED) at AO's best rate: optimiser instability at that rate; "
-              f"no learnability sentence rests on this rate]")
+        q += (f" [{ao_runaway} unsolved AO runs UNSTABLE (RUNAWAY / COLLAPSED) at AO's best rate: optimiser instability at "
+              f"that rate; no learnability sentence rests on this rate]")
     if lab.startswith(UNR):
         return "UNREADABLE (the signed arm solves < 4/8 at every rate)" + q
+    st2 = " [STAGE 2 TRIGGERED: decay-matched control at AO's rate]" if stage2_trigger(lab, r_ao) else ""
     if lab == SLB:
-        st2 = " [STAGE 2 TRIGGERED: decay-matched control at AO's rate]" if r_ao >= 1e-2 else ""
         return "COST AT BEST RATES" + st2 + q
     if lab in (NSC, NLB):
         rev = " (reversed: NON-NEGATIVE LEARNS BETTER)" if lab == NLB else ""
         sel = " -- cost not detectable at AO's best tested rate (selection-inflated; see the cross-fit)" if lab == NSC else ""
         if r_ao > r_so:
-            return f"COST CLOSES AT HIGHER LR (AO best {r_ao:g} > SO lowest best {r_so:g}){rev}{sel}" + q
+            return (f"COST CLOSES AT HIGHER LR (AO best {r_ao:g} > SO lowest best {r_so:g}; with the rate and its coupled "
+                    f"decay){rev}{sel}" + st2 + q)
         con = (" -- contradicts GENERALITY E3 (torus, lr 1e-3, 0/8 vs 8/8)" if lab_1e3 == NSC
                else f" -- does not contradict GENERALITY E3 (1e-3 per-rate contrast reads {lab_1e3})")
-        return f"NO COST AT BEST RATES (AO best {r_ao:g}, SO lowest best {r_so:g}){rev}{sel}{con}" + q
-    return "UNMEASURED" + (f" (AO best {r_ao:g} > SO lowest best {r_so:g}: the cost may shrink with the rate)"
-                           if r_ao > r_so else "") + q
+        return f"NO COST AT BEST RATES (AO best {r_ao:g}, SO lowest best {r_so:g}){rev}{sel}{con}" + st2 + q
+    return "UNMEASURED" + (f" (AO best {r_ao:g} > SO lowest best {r_so:g}: the cost may shrink with the rate and its coupled "
+                           f"decay)" if r_ao > r_so else "") + q
 
 
 def stage2_trigger(lab, r_ao):
-    return lab == SLB and r_ao >= 1e-2
+    """Amendment 1 MAJOR 1: stage 2 whenever AO's selected rate is >= 1e-2 and B1 reads SLB, NSC or NLB."""
+    return lab in (SLB, NSC, NLB) and r_ao >= 1e-2
 
 
-def stage2_reading(lab2):
+def stage2_kind(lab, r_ao, r_so_low):
+    """Which batch reading stage 2 qualifies: COST (SLB), CLOSES (NSC / NLB with AO's rate above SO's lowest best) or NOCOST."""
+    return "COST" if lab == SLB else ("CLOSES" if r_ao > r_so_low else "NOCOST")
+
+
+def stage2_reading(lab2, kind="COST"):
     """Final reading after the conditional decay-matched stage 2 (SO and AO at AO's selected rate, wd = 5e-5 / lr), labelled
-    by the ROBUST rule with naive Fisher / permutation p."""
-    if lab2 == SLB:
-        return "COST AT BEST RATES (stands under decay matched to the default's lr x wd)"
+    by the ROBUST rule with naive Fisher / permutation p. kind = stage2_kind of the batch reading."""
+    unr = lab2.startswith(UNR)
+    if kind == "COST":
+        if lab2 == SLB:
+            return "COST AT BEST RATES (stands under decay matched to the default's lr x wd)"
+        if lab2 in (NSC, NLB):
+            return f"COST AT BEST RATES IS COUPLED DECAY (stage 2 reads {lab2})"
+        return ("COST AT BEST RATES, scoped to 'AdamW wd 0.05 coupled to lr' (stage 2 "
+                + ("UNREADABLE: SO < 4/8 at matched decay)" if unr else "UNMEASURED)"))
+    head = "COST CLOSES AT HIGHER LR" if kind == "CLOSES" else "NO COST AT BEST RATES"
     if lab2 in (NSC, NLB):
-        return f"COST AT BEST RATES IS COUPLED DECAY (stage 2 reads {lab2})"
-    if lab2.startswith(UNR):
-        return "COST AT BEST RATES, scoped to 'AdamW wd 0.05 coupled to lr' (stage 2 UNREADABLE: SO < 4/8 at matched decay)"
-    return "COST AT BEST RATES, scoped to 'AdamW wd 0.05 coupled to lr' (stage 2 UNMEASURED)"
+        return f"{head} (holds at matched decay; stage 2 reads {lab2})"
+    if lab2 == SLB:
+        return (f"{head.replace('AT HIGHER LR', '').replace('AT BEST RATES', '').strip()} WITH COUPLED DECAY "
+                f"(lr alone does not close it; stage 2 reads SIGNED LEARNS BETTER)")
+    return f"{head} with its coupled decay; lr and decay not separated (stage 2 {'UNREADABLE' if unr else 'UNMEASURED'})"
 
 
-def pilot_rule(k_lo, s_lo, k_hi, s_hi):
-    """Grid extension (prereg Sec. 6): AO at 3e-2 better than at 1e-2 over the pilot seeds -> add 3e-2. Better = more SOLVED;
-    equal SOLVED -> lower mean selection score. Training-side only."""
-    return k_hi > k_lo or (k_hi == k_lo and s_hi < s_lo)
+def pilot_rule(k_lo, s_lo, k_hi, s_hi, hi_unstable=0):
+    """Grid extension (prereg Sec. 8, Amendment 1 MINOR 1): EXTEND iff the pilot AO solves more at 3e-2 than at 1e-2, or as
+    many with a mean selection score lower by >= 0.05 and no 3e-2 pilot run UNSTABLE. Training-side only."""
+    return k_hi > k_lo or (k_hi == k_lo and s_hi <= s_lo - 0.05 and hi_unstable == 0)
 
 
 # ------------------------------------------------------------------------------ loading
-def runaway(L, step_absmax, warm_epochs):
-    """UNSTABLE flag (prereg Sec. 3). RUNAWAY, G-3 Amendment 1.4 in torus form: any epoch after the 5% warm-up with training
-    loss above the memoryless 2.08, or a final move step (before omega) above 1e3; or COLLAPSED: final-5% mean loss above 1.9
-    (the timing pilot's |.| run at 1e-2 sat at 2.03-2.04 after warm-up, under 2.08). Non-finite losses are DIVERGED."""
+def h_map(seed, size=64, n_obs=16, p_empty=0.5):
+    """Entropy (nats) of the seed's training map (blank + 16 types): the loss of a context-free predictor on that map
+    (Amendment 1 MAJOR 2; 2.051-2.102 on seeds 2400-2407). The map is GridWorld's, built exactly as train_variant builds it."""
+    om = GridWorld(size=size, n_obs_types=n_obs, p_empty=p_empty, seed=seed).obs_map.numpy().ravel()
+    p = np.bincount(om) / om.size; p = p[p > 0]
+    return float(-(p * np.log(p)).sum())
+
+
+def runaway(L, step_absmax, warm_epochs, h):
+    """UNSTABLE flag (prereg Sec. 2 + Amendment 1 MAJOR 2). RUNAWAY: any epoch after the 5% warm-up with training loss above
+    h + 0.05 (h = H_map(seed), the run's own context-free loss), or a final move step (before omega) above 1e3; or COLLAPSED:
+    final-5% mean loss above 1.9. Non-finite losses are DIVERGED, not UNSTABLE."""
     post = L[warm_epochs:]
     post = post[np.isfinite(post)]
     k5 = max(1, round(0.05 * len(L))); tail = L[-k5:]
     collapsed = bool(np.isfinite(tail).all() and tail.mean() > COLLAPSE)
-    return bool((post > MEMORYLESS).any() or (np.isfinite(step_absmax) and step_absmax > STEP_RUNAWAY) or collapsed)
+    return bool((post > h + RUNAWAY_MARGIN).any() or (np.isfinite(step_absmax) and step_absmax > STEP_RUNAWAY) or collapsed)
 
 
-def run_record(ck, arm, s, lr, wd, epochs, n_batches, ev, st, tok, ct, want_model=True):
+def check_ckpt(ck, arm, s, lr, wd, epochs, n_batches):
+    """Load a checkpoint and assert the registered recipe (used by the batch, stage 2 and, Amendment 1 MINOR 5, the pilot)."""
     b = torch.load(ck, map_location="cpu", weights_only=False); c = b["config"]; A = c.get("args", {})
     want = {**RECIPE, "n_batches": n_batches, "epochs": epochs}
     bad = {k: (c.get(k), v) for k, v in want.items() if c.get(k) != v}
@@ -147,6 +173,12 @@ def run_record(ck, arm, s, lr, wd, epochs, n_batches, ev, st, tok, ct, want_mode
     if abs(c.get("lr", -1) - lr) > 1e-9 * lr or abs(A.get("weight_decay", -1) - wd) > 1e-6 * max(wd, 1e-12):
         bad["lr/wd"] = ((c.get("lr"), A.get("weight_decay")), (lr, wd))
     assert not bad and b["variant"] == VAR[arm] and b["seed"] == s and len(b["losses"]) == epochs, (ck, bad, len(b["losses"]))
+    return b
+
+
+def run_record(ck, arm, s, lr, wd, epochs, n_batches, ev, st, tok, ct, want_model=True, h=None):
+    b = check_ckpt(ck, arm, s, lr, wd, epochs, n_batches); c = b["config"]
+    h = h_map(s) if h is None else h
     L = np.asarray(b["losses"], float); div = not np.all(np.isfinite(L))
     k = classify_run(L); k10 = classify_run(L, solved_loss=0.1)
     fin = lambda x: float(x) if x is not None and np.isfinite(x) else 0.0   # non-finite accuracy counts 0 (declared)
@@ -161,18 +193,26 @@ def run_record(ck, arm, s, lr, wd, epochs, n_batches, ev, st, tok, ct, want_mode
     m.load_state_dict(b["model_state_dict"]); m.eval()
     with torch.no_grad():
         step_absmax = float(m.step_table()[m.act].abs().max())
-    rec["runaway"] = (not div) and runaway(L, step_absmax, max(1, int(0.05 * epochs)))
-    rec["step_absmax"] = step_absmax
+    warm = max(1, int(0.05 * epochs))
+    rec["runaway"] = (not div) and runaway(L, step_absmax, warm, h)
+    rec["step_absmax"] = step_absmax; rec["h_map"] = h
+    post = L[warm:][np.isfinite(L[warm:])]
+    rec["maxpost_minus_h"] = float(post.max() - h) if post.size else float("nan")
+    rec["tail"] = float(k["tail"])
+    nanrec = dict(wrap=float("nan"), wrapw=float("nan"), opp=float("nan"), clock=float("nan"), clock_heads=[],
+                  clock_pi=float("nan"))
+    rec.update(nanrec)
     if want_model and not div and all(torch.isfinite(p).all() for p in m.parameters()):
-        with torch.no_grad():
-            rec["wrap"] = wrap_share(m, pairs=PAIRS)[1]
-            rec["wrapw"] = wrap_share_weighted(m, usage_weights(m, tok, action_offset=0, n_actions=4), pairs=PAIRS)
-            rec["opp"] = opp_share(m, PAIRS)
-            run, _ay, heads, pis = ct.ratios(b["model_state_dict"], arm == "SO", PAIRS)
-            rec["clock"], rec["clock_heads"], rec["clock_pi"] = run, heads, pis
-    else:
-        rec.update(wrap=float("nan"), wrapw=float("nan"), opp=float("nan"), clock=float("nan"), clock_heads=[],
-                   clock_pi=float("nan"))
+        try:                         # Amendment 1 MINOR 2: a model-derived secondary can never block the verdict
+            with torch.no_grad():
+                rec["wrap"] = wrap_share(m, pairs=PAIRS)[1]
+                rec["wrapw"] = wrap_share_weighted(m, usage_weights(m, tok, action_offset=0, n_actions=4), pairs=PAIRS)
+                rec["opp"] = opp_share(m, PAIRS)
+                run, _ay, heads, pis = ct.ratios(b["model_state_dict"], arm == "SO", PAIRS)
+                rec["clock"], rec["clock_heads"], rec["clock_pi"] = run, heads, pis
+        except Exception as e:      # noqa: BLE001 -- logged, secondaries become NaN
+            print(f"WARNING: model secondaries failed for {ck}: {e!r}")
+            rec.update(nanrec)
     return rec
 
 
@@ -183,7 +223,14 @@ def usage_stream():
 
 
 def load(root, ev_dir, rates, seeds, epochs, n_batches, wd_of=lambda lr: 0.05, prefix="TORUS_LRSWEEP", models=True):
-    tok = usage_stream() if models else None; ct = clock_table() if models else None
+    tok, ct = None, None
+    if models:
+        try:
+            tok, ct = usage_stream(), clock_table()
+        except Exception as e:      # noqa: BLE001 -- Amendment 1 MINOR 2
+            print(f"WARNING: usage stream / clock_table unavailable ({e!r}); model secondaries will be NaN")
+            models = False
+    H = {s: h_map(s) for s in seeds}
     R = {}
     for lr in rates:
         for arm in ARMS:
@@ -193,7 +240,7 @@ def load(root, ev_dir, rates, seeds, epochs, n_batches, wd_of=lambda lr: 0.05, p
             st = json.load(open(sf)) if os.path.exists(sf) else None
             for s in seeds:
                 ck = f"{root}/{tag}/{arm}/p0/{VAR[arm]}_s{s}/{VAR[arm]}.pt"
-                R[lr, arm, s] = run_record(ck, arm, s, lr, wd_of(lr), epochs, n_batches, ev, st, tok, ct, models)
+                R[lr, arm, s] = run_record(ck, arm, s, lr, wd_of(lr), epochs, n_batches, ev, st, tok, ct, models, H[s])
     return R
 
 
@@ -216,8 +263,8 @@ def analyse(R, rates, seeds, out=print):
         lab_1e3 = label_from(ka, kso, A[n:, j].mean(), A[:n, j].mean(), fisher_solved(ka, n, kso, n),
                              perm2_p(A[:n, j], A[n:, j])["p"], n)
     ao_desc = sum(R[r_ao, "AO", s]["cls"] == "DESCENDING" for s in seeds)
-    ao_run = sum(R[r_ao, "AO", s]["runaway"] for s in seeds)
-    so_run = sum(R[r_so, "SO", s]["runaway"] for s in seeds)
+    ao_run = sum(R[r_ao, "AO", s]["runaway"] and not R[r_ao, "AO", s]["solved"] for s in seeds)   # Amendment 1 MAJOR 2
+    so_run = sum(R[r_so, "SO", s]["runaway"] and not R[r_so, "SO", s]["solved"] for s in seeds)
     rd = reading(lab, r_ao, r_so_low, rates, ao_desc, lab_1e3, ao_run)
     V = {"B1": {"label": lab, "AO_rate": r_ao, "SO_rate": r_so, "SO_lowest_best_rate": r_so_low, "AO_solved": t["k_ao"],
                 "SO_solved": t["k_so"], "AO_acc": t["acc_ao"], "SO_acc": t["acc_so"], "d": t["acc_ao"] - t["acc_so"],
@@ -226,6 +273,7 @@ def analyse(R, rates, seeds, out=print):
                 "n_relabel": t["n_relabel"], "AO_desc_at_best": int(ao_desc), "AO_runaway_at_best": int(ao_run),
                 "SO_runaway_at_best": int(so_run), "label_1e3": lab_1e3},
          "reading": rd, "stage2_triggered": bool(stage2_trigger(lab, r_ao)),
+         "stage2_kind": stage2_kind(lab, r_ao, r_so_low) if stage2_trigger(lab, r_ao) else None,
          "stage2_wd": (5e-5 / r_ao) if stage2_trigger(lab, r_ao) else None}
     out("== B1 (registered primary): each arm at its own best rate (most SOLVED, then lowest mean final-5% loss, then lower "
         "rate) ==")
@@ -236,12 +284,18 @@ def analyse(R, rates, seeds, out=print):
         f"selection redone in each): SOLVED {t['p_k_sel']:.4f}, accuracy {t['p_acc_sel']:.4f}; naive at the selected rates: "
         f"Fisher {P['naive_fisher_p']:.4f}, perm {P['naive_perm_p']:.4f}; DECISION p = max: SOLVED {P['p_k']:.4f}, accuracy "
         f"{P['p_acc']:.4f}")
-    out(f"UNSTABLE (RUNAWAY / COLLAPSED) at the selected rates: AO {ao_run}/{n}, SO {so_run}/{n}; DESCENDING AO {ao_desc}/{n}")
+    out(f"UNSTABLE and unsolved (RUNAWAY / COLLAPSED) at the selected rates: AO {ao_run}/{n}, SO {so_run}/{n}; DESCENDING AO "
+        f"{ao_desc}/{n}")
+    flagged = [(lr, arm, s) for (lr, arm, s), x in sorted(R.items()) if x["runaway"]]
+    for lr, arm, s in flagged:
+        x = R[lr, arm, s]
+        out(f"  UNSTABLE {arm} lr {lr:g} s{s}: max post-warm-up loss - H_map {x['maxpost_minus_h']:+.3f} (H_map "
+            f"{x['h_map']:.3f}), final-5% loss {x['tail']:.4f}, step max {x['step_absmax']:.2f}, {x['cls']}")
     out(f"B1: {lab}")
     out(f"Reading: {rd}")
     if V["stage2_triggered"]:
-        out(f"STAGE 2 TRIGGERED (registered): SO and AO at lr {r_ao:g} with wd {5e-5 / r_ao:.6g} (lr x wd = the default's "
-            f"5e-5), seeds {seeds[0]}-{seeds[-1]}, 16 runs; its own independent check before launch")
+        out(f"STAGE 2 TRIGGERED (registered, Amendment 1): SO and AO at lr {r_ao:g} with wd {5e-5 / r_ao:.6g} (lr x wd = the "
+            f"default's 5e-5), seeds {seeds[0]}-{seeds[-1]}, 16 runs, qualifying the {V['stage2_kind']} reading")
     return V, S, SC, A
 
 
@@ -330,13 +384,13 @@ def secondaries(R, rates, seeds, S, SC, A, out=print):
     return W
 
 
-def analyse_stage2(R, lr, seeds, out=print):
+def analyse_stage2(R, lr, seeds, kind="COST", out=print):
     """Stage 2: SO vs AO at AO's selected rate, wd = 5e-5 / lr; the ROBUST rule with naive Fisher / permutation p."""
     n = len(seeds)
     ao = [R[lr, "AO", s]["acc"] for s in seeds]; so = [R[lr, "SO", s]["acc"] for s in seeds]
     ka = sum(R[lr, "AO", s]["solved"] for s in seeds); ks = sum(R[lr, "SO", s]["solved"] for s in seeds)
     lab, st = robust_cell_label(ao, so, ka, ks, n)
-    rd = stage2_reading(lab)
+    rd = stage2_reading(lab, kind)
     out(f"STAGE 2 (decay-matched, lr {lr:g}, wd {5e-5 / lr:.6g}): AO {ka}/{n} {np.mean(ao):.4f} vs SO {ks}/{n} "
         f"{np.mean(so):.4f}; d {st['d']:+.4f}; Fisher p {st['fisher_p']:.4f}, perm p {st['perm_p']:.4f} -> {lab}")
     out(f"Final reading: {rd}")
@@ -376,12 +430,20 @@ def selftest():
             assert stage2_trigger(lab, rates[t["r_ao"]]) and "STAGE 2 TRIGGERED" in rd and "not bracketed" in rd, rd
         if name == "COST AT BEST RATES":
             assert not stage2_trigger(lab, rates[t["r_ao"]]) and "STAGE 2" not in rd, rd
+        if name.startswith("COST CLOSES"):                 # Amendment 1 MAJOR 1: AO's cell at 1e-2 -> stage 2 also here
+            assert stage2_trigger(lab, rates[t["r_ao"]]) and "STAGE 2 TRIGGERED" in rd and "coupled decay" in rd, rd
+            assert stage2_kind(lab, rates[t["r_ao"]], r_low) == "CLOSES"
+        if name in ("UNMEASURED", "UNREADABLE", "NO COST AT BEST RATES"):
+            assert not stage2_trigger(lab, rates[t["r_ao"]]) and "STAGE 2" not in rd, (name, rd)
     need = {SLB, NSC, NLB, UNM, UNR, "COST AT BEST RATES", "COST CLOSES AT HIGHER LR", "NO COST AT BEST RATES", "UNMEASURED",
             "UNREADABLE"}
     assert need <= seen, need - seen
     # qualifiers
     assert "RUNAWAY" in reading(SLB, 3e-3, 1e-3, rates, ao_runaway=2) and "RUNAWAY" not in reading(SLB, 3e-3, 1e-3, rates,
                                                                                                      ao_runaway=1)
+    assert stage2_trigger(NSC, 1e-2) and stage2_trigger(NLB, 1e-2) and stage2_trigger(SLB, 1e-2)
+    assert not stage2_trigger(UNM, 1e-2) and not stage2_trigger(NSC, 3e-3) and stage2_kind(NSC, 1e-2, 1e-2) == "NOCOST"
+    assert "STAGE 2 TRIGGERED" in reading(NSC, 1e-2, 1e-2, rates, lab_1e3=SLB)
     assert "DESCENDING" in reading(SLB, 3e-3, 1e-3, rates, ao_desc=3)
     assert "contradicts GENERALITY" in reading(NSC, 1e-3, 1e-3, rates, lab_1e3=NSC)
     assert "does not contradict" in reading(NSC, 1e-3, 1e-3, rates, lab_1e3=SLB)
@@ -395,16 +457,29 @@ def selftest():
     assert got[SLB].startswith("COST AT BEST RATES (stands") and "COUPLED DECAY" in got[NSC]
     assert "UNMEASURED" in got[UNM] and "UNREADABLE" in got["UNREADABLE"]
     assert "COUPLED DECAY" in stage2_reading(NLB)
+    # closing branch (Amendment 1 MAJOR 1)
+    assert stage2_reading(NSC, "CLOSES") .startswith("COST CLOSES AT HIGHER LR (holds at matched decay")
+    assert stage2_reading(NLB, "CLOSES").startswith("COST CLOSES AT HIGHER LR (holds at matched decay")
+    assert stage2_reading(SLB, "CLOSES").startswith("COST CLOSES WITH COUPLED DECAY (lr alone does not close it")
+    assert "not separated" in stage2_reading(UNM, "CLOSES") and "not separated" in stage2_reading("UNREADABLE (x)", "CLOSES")
+    assert stage2_reading(SLB, "NOCOST").startswith("NO COST WITH COUPLED DECAY")
+    for k_ in ("COST", "CLOSES", "NOCOST"):
+        print(f"selftest stage 2 [{k_}]: " + " | ".join(stage2_reading(l_, k_) for l_ in (SLB, NSC, UNM, "UNREADABLE (x)")))
     print("selftest: stage-2 readings reached: stands / COUPLED DECAY (NSC, NLB) / scoped (UNMEASURED, UNREADABLE)")
-    # pilot rule
-    assert pilot_rule(0, 0.5, 1, 0.9) and not pilot_rule(1, 0.5, 0, 0.1) and pilot_rule(0, 0.5, 0, 0.4) \
-        and not pilot_rule(0, 0.4, 0, 0.5) and not pilot_rule(0, 0.4, 0, 0.4)
+    # pilot rule (Amendment 1 MINOR 1)
+    assert pilot_rule(0, 0.5, 1, 0.9) and not pilot_rule(1, 0.5, 0, 0.1) and pilot_rule(0, 0.5, 0, 0.44) \
+        and not pilot_rule(0, 0.5, 0, 0.46) and not pilot_rule(0, 0.4, 0, 0.5) and not pilot_rule(0, 0.5, 0, 0.3, 1) \
+        and pilot_rule(0, 0.5, 1, 0.9, 2)
     # RUNAWAY rule
-    L = np.full(100, 0.5); assert not runaway(L, 10.0, 5)
-    L2 = L.copy(); L2[3] = 3.0; assert not runaway(L2, 10.0, 5)          # inside the warm-up: ignored
-    L2[50] = 2.2; assert runaway(L2, 10.0, 5); assert runaway(L, 2e3, 5)
-    L3 = np.full(100, 2.03); assert runaway(L3, 10.0, 5)                   # COLLAPSED: memoryless-level tail, under 2.08
-    L3[-5:] = 1.0; assert not runaway(L3, 10.0, 5)
+    L = np.full(100, 0.5); assert not runaway(L, 10.0, 5, 2.06)
+    L2 = L.copy(); L2[3] = 3.0; assert not runaway(L2, 10.0, 5, 2.06)    # inside the warm-up: ignored
+    L2[50] = 2.10; assert not runaway(L2, 10.0, 5, 2.06)                 # within H_map + 0.05 (Amendment 1 MAJOR 2)
+    L2[50] = 2.12; assert runaway(L2, 10.0, 5, 2.06) and not runaway(L2, 10.0, 5, 2.10)
+    assert runaway(L, 2e3, 5, 2.06)
+    L3 = np.full(100, 2.03); assert runaway(L3, 10.0, 5, 2.06)              # COLLAPSED: context-free tail
+    L3[-5:] = 1.0; assert not runaway(L3, 10.0, 5, 2.06)
+    hm = [h_map(s) for s in range(2400, 2408)]
+    assert all(abs(a_ - b_) < 5e-4 for a_, b_ in zip(hm, (2.061, 2.073, 2.102, 2.051, 2.054, 2.070, 2.094, 2.086))), hm
     # tie-break and one-rate null
     S = np.zeros((2, 3), bool); SC = np.array([[0.2, 0.1, 0.1], [0.2, 0.1, 0.1]])
     assert select(S, SC, np.array([[0, 1]]))[0] == 1
@@ -419,6 +494,7 @@ def selftest():
         assert np.allclose(a_ct, a_m, atol=1e-6), (arm, np.abs(a_ct - a_m).max())
     # decay exponent: the ring value LRSWEEP quoted (~805 x lr at 300 epochs) and the torus one
     assert abs(decay_exponent(1.0, epochs=300) - 805) < 2, decay_exponent(1.0, epochs=300)
+    print(f"selftest: H_map 2400-2407 = audit's values ({' '.join(f'{x:.3f}' for x in hm)})")
     print(f"selftest: one-rate null = Fisher ({t1['p_k_sel']:.4f}); tie-breaks, pilot rule, RUNAWAY rule ok; clock_table "
           f"angles == model angles; decay exponent ring {decay_exponent(1.0, epochs=300):.0f} x lr, torus "
           f"{decay_exponent(1.0):.0f} x lr")
@@ -461,25 +537,30 @@ def power(reps=400):
 
 # ------------------------------------------------------------------------------ pilot
 def pilot(root, seeds, epochs, n_batches):
-    """Grid-extension rule on the pilot (seeds 2490-2491, outside the batch, never pooled): AO at 1e-2 vs 3e-2, full 900
-    epochs, the driver's command line; training-side only (no evaluation needed)."""
+    """Grid-extension rule on the pilot (seeds 2492-2493, outside the batch, never pooled; Amendment 1 MINOR 1): AO at 1e-2 vs
+    3e-2, full 900 epochs, the driver's command line; training-side only (no evaluation needed). The batch's recipe asserts
+    apply (Amendment 1 MINOR 5)."""
     out = {}
     for lr, arm in ((1e-2, "AO"), (3e-2, "AO")):
         for s in seeds:
             ck = f"{root}/{rate_tag(lr)}/{arm}/p0/{VAR[arm]}_s{s}/{VAR[arm]}.pt"
-            b = torch.load(ck, map_location="cpu", weights_only=False)
-            assert b["seed"] == s and abs(b["config"]["lr"] - lr) < 1e-12 and len(b["losses"]) == epochs \
-                and b["config"]["n_batches"] == n_batches, ck
+            b = check_ckpt(ck, arm, s, lr, 0.05, epochs, n_batches)
             L = np.asarray(b["losses"], float); k = classify_run(L); div = not np.all(np.isfinite(L))
+            with torch.no_grad():
+                m = CLS[arm](vocab_size=b["config"]["vocab_size"], d_model=128, n_heads=2, n_layers=1, grid_size=64)
+                m.load_state_dict(b["model_state_dict"]); step = float(m.step_table()[m.act].abs().max())
+            h = h_map(s); uns = (not div) and runaway(L, step, max(1, int(0.05 * epochs)), h)
             out[lr, arm, s] = {"solved": k["registered"] == "SOLVED" and not div, "score": sel_score(L),
-                               "cls": "DIVERGED" if div else k["cls"], "tail": float(k["tail"])}
-            print(f"pilot {arm} lr {lr:g} s{s}: {out[lr, arm, s]['cls']}, final-5% loss {k['tail']:.4f}, sel. score "
-                  f"{out[lr, arm, s]['score']:.4f}")
+                               "cls": "DIVERGED" if div else k["cls"], "tail": float(k["tail"]), "unstable": uns}
+            print(f"pilot {arm} lr {lr:g} s{s}: {out[lr, arm, s]['cls']}{' UNSTABLE' if uns else ''}, final-5% loss "
+                  f"{k['tail']:.4f}, sel. score {out[lr, arm, s]['score']:.4f}, H_map {h:.3f}")
     k_lo = sum(out[1e-2, "AO", s]["solved"] for s in seeds); k_hi = sum(out[3e-2, "AO", s]["solved"] for s in seeds)
     s_lo = np.mean([out[1e-2, "AO", s]["score"] for s in seeds]); s_hi = np.mean([out[3e-2, "AO", s]["score"] for s in seeds])
-    ext = pilot_rule(k_lo, s_lo, k_hi, s_hi)
-    print(f"AO 1e-2: {k_lo}/{len(seeds)} SOLVED, mean score {s_lo:.4f}; AO 3e-2: {k_hi}/{len(seeds)}, {s_hi:.4f} -> "
-          + ("EXTEND: add 3e-2 to the grid by amendment (64 runs)" if ext else "DO NOT EXTEND: grid 1e-3 / 3e-3 / 1e-2"))
+    u_hi = sum(out[3e-2, "AO", s]["unstable"] for s in seeds)
+    ext = pilot_rule(k_lo, s_lo, k_hi, s_hi, u_hi)
+    print(f"AO 1e-2: {k_lo}/{len(seeds)} SOLVED, mean score {s_lo:.4f}; AO 3e-2: {k_hi}/{len(seeds)}, {s_hi:.4f}, UNSTABLE "
+          f"{u_hi} -> " + ("EXTEND: add 3e-2 to the grid by amendment (64 runs)" if ext
+                           else "DO NOT EXTEND: grid 1e-3 / 3e-3 / 1e-2"))
     return ext
 
 
@@ -502,7 +583,7 @@ def main():
     ap.add_argument("--power", action="store_true")
     ap.add_argument("--pilot", action="store_true")
     ap.add_argument("--pilot-root", default=f"{REPO}/runs/torus_lrsweep_pilot")
-    ap.add_argument("--pilot-seeds", default="2490-2491")
+    ap.add_argument("--pilot-seeds", default="2492-2493")
     ap.add_argument("--stage2", action="store_true")
     a = ap.parse_args()
     if a.selftest:
@@ -519,7 +600,7 @@ def main():
         lr = float(V["B1"]["AO_rate"])
         R = load(f"{a.root}/stage2", ev_dir, [lr], seeds, a.epochs, a.n_batches, wd_of=lambda x: 5e-5 / x,
                  prefix="TORUS_LRSWEEP_S2", models=False)
-        W = analyse_stage2(R, lr, seeds)
+        W = analyse_stage2(R, lr, seeds, V.get("stage2_kind") or "COST")
         if not a.no_json:
             V["stage2"] = W; json.dump(V, open(a.json_out, "w"), indent=2)
         return

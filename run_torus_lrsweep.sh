@@ -8,12 +8,16 @@
 #   cd /home/prashr/mapformer && DRV_GPUS=1 DRV_MAXPG=2 setsid nohup bash run_torus_lrsweep.sh > /dev/null 2>&1 &
 # Modes (MODE=..., same lock, so never two at once):
 #   batch   (default) the 48-run batch, evals, analysis, marker .torus_lrsweep_done
-#   pilot   grid-extension pilot (prereg Sec. 6): AO at 1e-2 and 3e-2, seeds 2490-2491, full 900 epochs (4 runs), then
+#   pilot   grid-extension pilot (prereg Sec. 8 + Amendment 1): AO at 1e-2 and 3e-2, seeds 2492-2493, 900 epochs (4 runs), then
 #           `analyze_torus_lrsweep --pilot`; marker .torus_lrsweep_pilot_done. Run BEFORE the batch; its outcome goes into
 #           an amendment (which edits RATES below if it says EXTEND).
-#   stage2  the conditional decay-matched stage 2 (prereg Sec. 4): only if TORUS_LRSWEEP_VERDICTS.json says
+#   stage2  the conditional decay-matched stage 2 (prereg Sec. 3 + Amendment 1): only if TORUS_LRSWEEP_VERDICTS.json says
 #           stage2_triggered; SO / AO at AO's selected rate with wd = 5e-5 / lr, seeds 2400-2407 (16 runs), evals, analysis;
-#           marker .torus_lrsweep_stage2_done. Uses the batch's md5 record: code must be unchanged since the batch.
+#           marker .torus_lrsweep_stage2_done. Amendment 1 MINOR 4: the TRAINING modules must be unchanged against the
+#           batch's md5 record; stage 2 then keeps its own record under runs/torus_lrsweep/stage2 (analysis / evaluator /
+#           driver fixes from stage 2's own check are allowed).
+# The md5 guard is re-checked before EVERY launch (Amendment 1 MINOR 3): no git pull / checkout on the GPU machine while a
+# mode is running.
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")" && pwd)"
 MODE="${MODE:-batch}"
@@ -59,8 +63,22 @@ for m in sorted(k for k, v in sys.modules.items() if k.startswith('mapformer.') 
 " 2>> "$LOG")
 [ "${#GUARD[@]}" -ge 20 ] || { _drv_log "ABORT: module list for the md5 guard has ${#GUARD[@]} entries"; exit 1; }
 GUARD+=(docs/paper/expansion/scripts/sign/clock_table.py lib_driver.sh run_torus_lrsweep.sh)
-GROOT="$R"; [ "$MODE" = pilot ] && GROOT="$RP"
-if [ "$MODE" = stage2 ] && [ ! -f "$R/code_md5.txt" ]; then _drv_log "REFUSED: stage 2 without the batch's md5 record"; exit 1; fi
+GROOT="$R"; [ "$MODE" = pilot ] && GROOT="$RP"; [ "$MODE" = stage2 ] && GROOT="$R/stage2"
+if [ "$MODE" = stage2 ]; then   # Amendment 1 MINOR 4: training modules unchanged since the batch
+  [ -f "$R/code_md5.txt" ] || { _drv_log "REFUSED: stage 2 without the batch's md5 record"; exit 1; }
+  mapfile -t TGUARD < <(CUDA_VISIBLE_DEVICES="" python3 -c "
+import sys
+import mapformer.train_variant, mapformer.data_parallel
+for m in sorted(k for k, v in sys.modules.items() if k.startswith('mapformer.') and getattr(v, '__file__', None)):
+    print(m.split('.', 1)[1].replace('.', '/') + '.py')
+" 2>> "$LOG")
+  [ "${#TGUARD[@]}" -ge 20 ] || { _drv_log "ABORT: training module list has ${#TGUARD[@]} entries"; exit 1; }
+  for f in "${TGUARD[@]}"; do
+    want=$(awk -v f="$f" '$2==f {print $1}' "$R/code_md5.txt"); have=$(cd "$REPO" && md5sum "$f" | awk '{print $1}')
+    [ -n "$want" ] && [ "$want" = "$have" ] || { _drv_log "REFUSED: training module $f changed since the batch (or absent from its record)"; exit 1; }
+  done
+  _drv_log "stage 2: ${#TGUARD[@]} training modules unchanged against the batch's md5 record"
+fi
 drv_md5_guard "$GROOT" "${GUARD[@]}" || exit 1
 _drv_log "code version: $(cd "$REPO" && git rev-parse HEAD); md5 guard over ${#GUARD[@]} files; torch $(python3 -c 'import torch; print(torch.__version__)')"
 running(){ ps -u "$USER" -o comm=,args= | awk -v o="--output-dir $1" '$1=="python3" && index($0" ", o" ")' | grep -q .; }
@@ -69,7 +87,9 @@ torus(){  # root rate arm seed weight_decay
   OUT="$RT/${TAG[$L]}/$A/p0/${V}_s$S"
   [ -f "$OUT/$V.pt" ] && { _drv_log "skip $L $A s$S (done)"; return 0; }
   running "$OUT" && { _drv_log "skip $L $A s$S (running)"; return 0; }
-  G=$(drv_wait_slot "$DRV_MAXPG"); mkdir -p "$OUT"; _drv_log "torus $L $A s$S wd $WD -> cuda:$G"
+  G=$(drv_wait_slot "$DRV_MAXPG")
+  drv_md5_guard "$GROOT" "${GUARD[@]}" || drv_fail "code changed during the batch (before launching $L $A s$S)"   # MINOR 3
+  mkdir -p "$OUT"; _drv_log "torus $L $A s$S wd $WD -> cuda:$G"
   OMP_NUM_THREADS=2 drv_launch "$RT/${TAG[$L]}/${A}_s$S.log" python3 -u -m mapformer.train_variant --variant "$V" --seed "$S" \
     --lr "$L" --weight-decay "$WD" --n-batches 98 --batch-size 16 --n-steps 1024 --n-layers 1 --n-heads 2 --d-model 128 \
     --n-landmarks 0 --schedule cosine --data-workers 3 --fast-attn --epochs 900 --device "cuda:$G" --output-dir "$OUT"
@@ -88,12 +108,12 @@ evals(){  # root rate arm prefix [strata]
 }
 
 if [ "$MODE" = pilot ]; then
-  for S in 2490 2491; do for L in 1e-2 3e-2; do torus "$RP" "$L" AO "$S" 0.05; done; done
+  for S in 2492 2493; do for L in 1e-2 3e-2; do torus "$RP" "$L" AO "$S" 0.05; done; done
   sleep 60; DRV_WAIT_POLL=60 drv_wait_dir "$RP/"
-  REQ=(); for S in 2490 2491; do for L in 1e-2 3e-2; do REQ+=("$RP/${TAG[$L]}/AO/p0/AbsAO4_r4_s$S/AbsAO4_r4.pt"); done; done
+  REQ=(); for S in 2492 2493; do for L in 1e-2 3e-2; do REQ+=("$RP/${TAG[$L]}/AO/p0/AbsAO4_r4_s$S/AbsAO4_r4.pt"); done; done
   drv_require "${REQ[@]}" || drv_fail "missing pilot runs"
   drv_md5_guard "$RP" "${GUARD[@]}" || drv_fail "code changed before the pilot analysis"
-  CUDA_VISIBLE_DEVICES="" python3 -u -m mapformer.analyze_torus_lrsweep --pilot --pilot-root "$RP" --pilot-seeds 2490-2491 \
+  CUDA_VISIBLE_DEVICES="" python3 -u -m mapformer.analyze_torus_lrsweep --pilot --pilot-root "$RP" --pilot-seeds 2492-2493 \
     > "$RP/PILOT_ANALYSIS.txt" 2>&1 || drv_fail "pilot analysis"
   drv_done "$REPO/.torus_lrsweep_pilot_done" "$RP/PILOT_ANALYSIS.txt"
   exit 0
@@ -111,7 +131,7 @@ print(int(bool(V['stage2_triggered'])), f\"{V['B1']['AO_rate']:.0e}\".replace('e
   sleep 60; DRV_WAIT_POLL=60 drv_wait_dir "$R/stage2/"
   REQ=(); for S in "${SEEDS[@]}"; do for A in SO AO; do REQ+=("$R/stage2/${TAG[$LR2]}/$A/p0/${VAR[$A]}_s$S/${VAR[$A]}.pt"); done; done
   drv_require "${REQ[@]}" || drv_fail "missing stage-2 runs"
-  drv_md5_guard "$R" "${GUARD[@]}" || drv_fail "code changed before the stage-2 evaluation"
+  drv_md5_guard "$GROOT" "${GUARD[@]}" || drv_fail "code changed before the stage-2 evaluation"
   for A in SO AO; do evals "$R/stage2" "$LR2" "$A" TORUS_LRSWEEP_S2; done
   CUDA_VISIBLE_DEVICES="" python3 -u -m mapformer.analyze_torus_lrsweep --stage2 --root "$R" --seeds 2400-2407 \
     --json-out "$REPO/TORUS_LRSWEEP_VERDICTS.json" \

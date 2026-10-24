@@ -209,3 +209,71 @@ An independent code-verification agent, blind to results, checks this file, the 
   seed outer / rate / arm inner, no duplicate output dir, every command line as Sec. 1 on cuda:1; then fails closed
   ("MISSING" x 48, "FAILED: missing runs -- done marker NOT set"). `MODE=pilot`: 4 launches (AO, 1e-2 / 3e-2, s2490-2491),
   fails closed. `MODE=stage2` with a triggered verdict at 1e-2: 16 launches at `--weight-decay 0.005`, fails closed.
+
+## Amendment 1 (2026-10-24, after the independent check `docs/audits/2026-10-24/g4_torus_lrsweep_audit.md`; before any batch run, no batch result exists)
+The check found the registered machinery (LRSWEEP's, imported unchanged) correctly applied to three rates, the command lines
+identical to GENERALITY's torus recipe except lr, lr and decay reaching the optimiser (decay exponent 2414.5 x lr), shared
+init and stream per seed, `--fast-attn` valid for both classes, the analysis inputs as read, and the driver sound. Verdict:
+launchable after this amendment. This amendment supersedes the body where they differ. Changes:
+- **MAJOR 1 (decay in the closing branch).** Stage 2 (SO / AO at AO's selected rate, wd = 5e-5 / lr, seeds 2400-2407, 16
+  runs) now triggers whenever AO's selected rate is >= 1e-2 and B1 reads SIGNED LEARNS BETTER, NO SIGN COST or NON-NEGATIVE
+  LEARNS BETTER, i.e. whenever a reading rests on AO's high-rate cell (RANKWD shows decay can help on this task, so a closing
+  cost at 1e-2 may be the 10x coupled decay, not the rate). `stage2_kind` records which reading stage 2 qualifies:
+  - COST (B1 SLB): unchanged -- stands / "COST AT BEST RATES IS COUPLED DECAY" / scoped to "AdamW wd 0.05 coupled to lr".
+  - CLOSES (NSC / NLB, AO's rate above SO's lowest best): stage 2 NSC or NLB -> "COST CLOSES AT HIGHER LR (holds at matched
+    decay)"; SLB -> "COST CLOSES WITH COUPLED DECAY (lr alone does not close it)"; UNMEASURED / UNREADABLE -> "COST CLOSES AT
+    HIGHER LR with its coupled decay; lr and decay not separated".
+  - NOCOST (NSC / NLB at AO's rate <= SO's lowest best, only possible if SO's best count is first reached at >= 1e-2): the
+    same three forms with "NO COST AT BEST RATES".
+  Until stage 2 reports, COST CLOSES and UNMEASURED's clause read "with the rate and its coupled decay". UNMEASURED does not
+  trigger stage 2 (no reading rests on AO's cell there).
+- **MAJOR 2 (UNSTABLE).** RUNAWAY's loss clause is now: an epoch after the 5% warm-up above **H_map(seed) + 0.05**, H_map =
+  the entropy of the seed's own training map (blank + 16 types, `GridWorld(64, 16, 0.5, seed).obs_map`, built as
+  train_variant builds it; 2.061 / 2.073 / 2.102 / 2.051 / 2.054 / 2.070 / 2.094 / 2.086 on seeds 2400-2407, checked equal to
+  the audit's values in the selftest). The fixed 2.08 sat inside this per-seed spread. The step clause (> 1e3) and COLLAPSED
+  (final-5% mean loss > 1.9) are unchanged. The reading's qualifier counts only UNSTABLE runs that are NOT SOLVED; every
+  flagged run prints its max post-warm-up loss minus H_map, H_map, its final-5% loss, step maximum and class.
+- **MINOR 1 (pilot rule).** EXTEND iff the pilot AO solves more at 3e-2 than at 1e-2, or solves as many with a mean selection
+  score lower by >= 0.05 AND no 3e-2 pilot run UNSTABLE (so two collapsed rates cannot extend the grid by a coin flip). Pilot
+  seeds are now **2492-2493** (unused; no pilot run repeats the partly observed timing run on 2490).
+- **MINOR 2.** The model-derived secondaries (usage stream, clock_table, wrap / opposite-sign / clock shares) are wrapped in
+  try / except -> NaN plus a logged warning, so they can never block the verdict (tested by forcing a failure).
+- **MINOR 3.** The driver re-checks the md5 guard before EVERY launch (`drv_fail` on a change). Runbook: no `git pull` /
+  checkout on koopman while any mode of this driver runs.
+- **MINOR 4 (stage-2 md5 policy).** `MODE=stage2` first verifies every training module (all `mapformer` modules imported by
+  `train_variant` + `data_parallel`, 89 files) against the batch's `runs/torus_lrsweep/code_md5.txt` and refuses on any
+  change; it then keeps its own md5 record under `runs/torus_lrsweep/stage2`, so fixes from stage 2's own check may touch the
+  analysis, the evaluators or the driver, never the training path. Dry-run tested: an analysis edit passes, a `train.py`
+  edit is refused.
+- **MINOR 5.** `pilot()` applies the batch's recipe asserts (`check_ckpt`: variant, seed, lr, wd, epochs, T, batch,
+  n_batches, size, heads, grid, objects, landmarks, schedule, init_from, data_seed_offset, fast_attn, deterministic,
+  data_workers, environment knobs).
+- **MINOR 6.** n_trials (100), the eval env seed (10000) and the walk seed (1234 + s) are fixed by the driver's command
+  lines only; the eval JSON does not record them and the evaluator (a guarded module) is not changed to.
+- **MINOR 7 (cross-references).** Pilot = Sec. 8, stage 2 = Sec. 3, UNSTABLE = Sec. 2 (fixed in the driver and analysis).
+- **MINOR 8.** Sec. 1's "no code changes" is replaced by: train.py, train_variant.py and model_wrap_exist.py changed since
+  GENERALITY (47a766b / 62334d9); the changes are additive (an `epoch_callback=None` default tested bitwise, `--weight-decay`
+  default 0.05 = train()'s old default, `--snapshot-every` off, `freeze_latent` read with a False default, new eval-only
+  functions) and leave this path unchanged (audit item 2). No trainer flag is added by G-4.
+- **MINOR 9.** DRV_MAXPG stays 2 on koopman: RANKWD's timing (2.0 s/epoch alone, 4.2 with two) puts packing ~5% slower than
+  serial (~25.2 h vs ~24.0 h without an SDPA gain); accepted for consistency with RANKCLOCK / RANKWD.
+- **Incident during the check (recorded).** A driver test in the checker's scratch `git clone --shared` was run once without
+  `DRV_DRYRUN=1` and launched two real 900-epoch jobs (SO / AO, seed 2400, lr 1e-3) on kalman GPU 1 at 22:43 on 2026-10-23;
+  both were killed by PID within ~2 min with their data workers, no orphans, and the clone and its `runs/` deleted. Nothing
+  was written under `/home/prashr/mapformer/runs/` and no checkpoint, log or loss of those runs was kept or read, so seed 2400
+  is unaffected (a run is a fresh computation from the seed; no information about its outcome exists).
+- Tests after the changes: `--selftest` passes (every B1 label and reading; STAGE 2 TRIGGERED on the SLB edge case and on
+  both COST CLOSES cases, not on UNMEASURED / UNREADABLE / NO COST at 1e-3; every stage-2 reading of the three kinds; the
+  new pilot rule; the H_map RUNAWAY rule and COLLAPSED; H_map = the audit's values; tie-breaks; one-rate null = Fisher;
+  clock_table angles = model angles; decay exponents). `--power` unchanged (Sec. 5). Synthetic trees through the file path:
+  COST AT BEST RATES; COST with STAGE 2 TRIGGERED; COST CLOSES with STAGE 2 TRIGGERED (`stage2_kind` CLOSES, wd 0.005);
+  stage 2 on it reaching "holds at matched decay" / "COST CLOSES WITH COUPLED DECAY" / "not separated"; NO COST; UNMEASURED;
+  UNREADABLE with a DIVERGED run. Driver dry runs (`DRV_DRYRUN=1 DRV_GPUS=1 DRV_MAXPG=2`, scratch clone): pilot 4 launches
+  (AO, 1e-2 / 3e-2, s2492-2493), batch 48 (seed / rate / arm order, no duplicates), stage 2 16 at wd 0.005 with the training
+  check passing; each fails closed; stage 2 refused after a training-module edit; the batch refused after a guarded edit.
+- Launch (koopman, after commit; GPU 1, two jobs): pilot first,
+  `cd /home/prashr/mapformer && MODE=pilot DRV_GPUS=1 DRV_MAXPG=2 setsid nohup bash run_torus_lrsweep.sh > /dev/null 2>&1 &`
+  (~1.9 h; result `runs/torus_lrsweep_pilot/PILOT_ANALYSIS.txt` recorded here before the batch; EXTEND -> an amendment adding
+  3e-2 to `RATES`), then the batch,
+  `cd /home/prashr/mapformer && DRV_GPUS=1 DRV_MAXPG=2 setsid nohup bash run_torus_lrsweep.sh > /dev/null 2>&1 &`
+  (~20-25 h; marker `.torus_lrsweep_done`).
