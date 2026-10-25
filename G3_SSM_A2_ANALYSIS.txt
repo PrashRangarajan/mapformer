@@ -1,0 +1,67 @@
+== G-3, block A (steps = moves; lr 3e-3, 300 epochs; m = 32; 32 primary) ==
+m = 32: SOLVED signed 8/8 abs 0/8 softplus 1/8 exp 0/8 index 0/8 | RUNAWAY signed 0 abs 0 softplus 0 exp 8 index 0 | acc T=128 signed 1.0000 abs 0.8209 softplus 0.9348 exp 0.4732 index 0.7548
+   gates: G0 and GI pass
+   P m = 32: abs vs signed -> SIGNED LEARNS BETTER  (raw SIGNED LEARNS BETTER; Fisher 0.0002, perm 0.0002, d -0.1790)
+   BR m = 32 softplus: SOLVED 1/8 acc 0.9348 -> SIGNED LEARNS BETTER (Fisher 0.0014 / Holm 0.0014, perm 0.0002 / Holm 0.0003)
+   BR m = 32 exp     : SOLVED 0/8 acc 0.4732 -> SIGNED LEARNS BETTER (8 RUNAWAY) (Fisher 0.0002 / Holm 0.0003, perm 0.0002 / Holm 0.0003)
+
+== block A2 (lr 1e-3, m = 32; the index arm repeats A's gate at the second rate) ==
+   SOLVED signed 7/8 abs 0/8 softplus 0/8 exp 6/8 index 0/8 | RUNAWAY signed 0 abs 0 softplus 0 exp 0 index 0 | acc signed 0.9941 abs 0.7558 softplus 0.9382 exp 0.9854 index 0.7087
+   gates: G0 and GI pass
+   abs      vs signed -> SIGNED LEARNS BETTER (raw SIGNED LEARNS BETTER; Fisher 0.0014 / adj 0.0014, perm 0.0002 / adj 0.0002)
+   softplus vs signed -> SIGNED LEARNS BETTER (raw SIGNED LEARNS BETTER; Fisher 0.0014 / adj 0.0042, perm 0.0003 / adj 0.0006)
+   exp      vs signed -> NO SIGN COST (raw NO SIGN COST; Fisher 1.0000 / adj 1.0000, perm 0.7179 / adj 0.7179)
+   sensitivity (declared, not registered): Holm over 2 cells {softplus, exp}: softplus SIGNED LEARNS BETTER (Fisher adj 0.0028, perm adj 0.0006); exp NO SIGN COST (Fisher adj 1.0000, perm adj 0.7179)
+
+READING (registered): SIGN COST IN THE SSM; lr 1e-3 (m = 32): SIGN COST IN THE SSM
+   wording (Amendment 1.5): not specific to softmax attention (it appears in unnormalised rotary linear attention = this SSM)
+   attention anchors on record (ring 32, AO, 300 epochs, never pooled): at lr 3e-3 LRSWEEP signed 8/8, |.| 2/8 (|.|'s best rate); SIGNROUTE exp 1/8 0.958, softplus 3/8 0.966. At lr 1e-3: |.| 1/8 0.917, exp 1/8 0.935, softplus 1/8 0.879, signed 8/8
+   m = 8 not in this configuration
+
+== rule 14, block H (lr 3e-3; continuations from the n_s = 8 SOLVED signed m = 32 sources of block A) ==
+   signed control: E1 True, max loss 0.006-0.039
+   abs     : E2 PERTURBED AND RE-FOUND | E2' (LOST = max > 0.3 only) PERTURBED AND RE-FOUND
+            solved 8/8, LOST 8 (abs-only 8), acc 0.9999 vs control 1.0000, max loss 0.320-0.678, sensitivity median 108.11754722380962
+      joint, same rate (3e-3): COST, SOLUTION PERTURBED AND RE-FOUND
+   softplus: E2 NOT HELD  [construction (f), omega' = 2 pi / ln 2: read as a property of the construction, not the class] | E2' (LOST = max > 0.3 only) NOT HELD
+            solved 3/8, LOST 8 (abs-only 8), acc 0.9739 vs control 1.0000, max loss 1.215-1.481, sensitivity median 180.39246971579269
+      joint, same rate (3e-3): COST, SOLUTION NOT HELD (construction (f), omega' = 2 pi / ln 2)
+   exp     : E2 NOT HELD  [construction (g), omega' = 2 pi: read as a property of the construction, not the class] | E2' (LOST = max > 0.3 only) NOT HELD
+            solved 1/8, LOST 8 (abs-only 8), acc 0.9297 vs control 1.0000, max loss 1.491-1.811, sensitivity median 223.6167691592127
+   attention continuation max-loss ranges (WRAP_EXISTENCE ring, lr 1e-3): AO_bal 0.024-0.154, SO_bal 0.015-0.112
+
+== rule 14, block H2 (lr 1e-3; continuations from the n_s = 8 SOLVED signed m = 32 sources of block A) ==
+   signed control: E1 True, max loss 0.001-0.002
+   abs     : E2 PERTURBED AND RE-FOUND | E2' (LOST = max > 0.3 only) HELD
+            solved 8/8, LOST 6 (abs-only 0), acc 1.0000 vs control 1.0000, max loss 0.033-0.127, sensitivity median 108.11754722380962
+      joint, same rate (1e-3): COST, SOLUTION PERTURBED AND RE-FOUND
+   softplus: E2 PERTURBED AND RE-FOUND  [construction (f), omega' = 2 pi / ln 2: read as a property of the construction, not the class] | E2' (LOST = max > 0.3 only) HELD
+            solved 8/8, LOST 8 (abs-only 0), acc 0.9999 vs control 1.0000, max loss 0.050-0.204, sensitivity median 180.39246971579269
+      joint, same rate (1e-3): COST, SOLUTION PERTURBED AND RE-FOUND (construction (f), omega' = 2 pi / ln 2)
+   exp     : E2 PERTURBED AND RE-FOUND  [construction (g), omega' = 2 pi: read as a property of the construction, not the class] | E2' (LOST = max > 0.3 only) HELD
+            solved 8/8, LOST 8 (abs-only 0), acc 1.0000 vs control 1.0000, max loss 0.110-0.165, sensitivity median 223.6167691592127
+   attention continuation max-loss ranges (WRAP_EXISTENCE ring, lr 1e-3): AO_bal 0.024-0.154, SO_bal 0.015-0.112
+
+== rule 2: r(log10 final loss, acc), finite runs, blocks A / A2 / B (Amendment 1.7) ==
+   T=128: r = -0.689 over 80 runs
+   T=512: r = -0.891 over 80 runs
+
+per seed (acc T=128 + class: S SOLVED, T STALLED, D DESCENDING, R RISING, X DIVERGED; ! = RUNAWAY):
+  A  m32 abs      0.777T 0.869T 0.750T 0.761T 0.743T 0.825T 0.939T 0.903D | med cos(zx,zy) -0.334 cancel 0.07 wrap-cancel 0.03
+  A  m32 exp      0.568T! 0.496T! 0.521T! 0.681T! 0.031T! 0.497T! 0.496T! 0.496T! | med cos(zx,zy) -1.000 cancel 0.05 wrap-cancel 0.00
+  A  m32 index    0.774D 0.782T 0.775D 0.705T 0.751D 0.750T 0.749T 0.753T | med cos(zx,zy) +nan cancel nan wrap-cancel nan
+  A  m32 signed   1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S | med cos(zx,zy) -1.000 cancel 1.00 wrap-cancel 0.00
+  A  m32 softplus 0.963D 0.920D 0.986D 0.898T 0.993S 0.817T 0.989D 0.912D | med cos(zx,zy) +0.738 cancel 0.12 wrap-cancel 0.11
+  A2 m32 abs      0.736T 0.819T 0.741T 0.744T 0.739T 0.822T 0.720T 0.724T | med cos(zx,zy) -0.228 cancel 0.04 wrap-cancel 0.01
+  A2 m32 exp      0.998S 0.999S 0.908T 0.999S 0.999S 0.994S 0.988T 0.999S | med cos(zx,zy) +0.601 cancel 0.22 wrap-cancel 0.21
+  A2 m32 index    0.693T 0.713T 0.699T 0.709R 0.699D 0.690T 0.720T 0.747T | med cos(zx,zy) +nan cancel nan wrap-cancel nan
+  A2 m32 signed   0.977T 1.000S 0.999S 0.993S 0.992S 0.997S 0.995S 1.000S | med cos(zx,zy) -0.728 cancel 0.74 wrap-cancel 0.00
+  A2 m32 softplus 0.984T 0.951T 0.886T 0.957T 0.938T 0.899T 0.966T 0.924T | med cos(zx,zy) +0.569 cancel 0.12 wrap-cancel 0.11
+  H  m32 abs      1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S | med cos(zx,zy) +0.129 cancel 0.28 wrap-cancel 0.28
+  H  m32 exp      0.946D 0.951D 0.877D 0.998S 0.978D 0.855D 0.956D 0.876D | med cos(zx,zy) +0.666 cancel 0.10 wrap-cancel 0.10
+  H  m32 signed   1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S | med cos(zx,zy) -1.000 cancel 1.00 wrap-cancel 0.00
+  H  m32 softplus 0.992S 0.988D 0.927D 0.989D 0.945D 0.953D 0.997S 0.999S | med cos(zx,zy) +0.724 cancel 0.20 wrap-cancel 0.20
+  H2 m32 abs      1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S | med cos(zx,zy) +0.023 cancel 0.43 wrap-cancel 0.43
+  H2 m32 exp      1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S | med cos(zx,zy) +0.391 cancel 0.30 wrap-cancel 0.30
+  H2 m32 signed   1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S | med cos(zx,zy) -0.953 cancel 0.99 wrap-cancel 0.00
+  H2 m32 softplus 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S 1.000S | med cos(zx,zy) +0.362 cancel 0.34 wrap-cancel 0.34

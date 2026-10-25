@@ -176,6 +176,29 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
 - Allowed: "rank D + 1 (with decay) is needed on the T = 1024 torus, and rank D fails at the best of three recipes". Not:
   "no recipe rescues rank 2" (no lower-decay or combined arm; both alternatives raise the total decay).
 
+## Update 2026-10-25: G-3 block A2 (`G3_SSM_A2_RESULTS.md`, registered): COST FOR |.| AND SOFTPLUS, NONE FOR EXP AT 1e-3
+- Same SSM, task and recipe at lr 1e-3, 40 runs: |.| 0/8 (0.756) and softplus 0/8 (0.938) vs signed 7/8 (0.994): SIGNED
+  LEARNS BETTER for both (Fisher 0.0014; softplus Holm 0.0042). exp 6/8 (0.985) vs 7/8: NO SIGN COST (Fisher 1.0, perm 0.72),
+  no RUNAWAY. Same-rate H2 joints: |.| and softplus COST, SOLUTION PERTURBED AND RE-FOUND; exp none.
+- Mechanism (descriptive + analysis): exp ends with non-antipodal latents (cos +0.60), all steps positive, cancelling on 0.22
+  of non-blind channels, 0.21 by a wrap; 90 of its 95 cancelling channels started past pi. In attention exp solved 1/8 at
+  both reference rates (SIGNROUTE; cross-batch).
+- Allowed: "the sign cost holds for |.| and softplus increments in attention and in the SSM, at both SSM rates"; "the
+  LRU-style exp increment shows no cost in the SSM at lr 1e-3 (registered), reaching the map by wrapping on channels its
+  initialisation put past pi". Not: "every non-negative parameterisation pays"; "exp fails in the SSM" (3e-3 is
+  instability, 1e-3 no cost); "exp succeeds because of its start" (Sec. 8's caveat names the start; the batch does not
+  separate start, multiplicative step and mixer); anything about exp at other rates or in Mamba-faithful SSMs.
+
+## Update 2026-10-25: C6 replicated on fresh seeds (`FACTORIAL_N8_RESULTS.md`, registered): REPLICATES
+- Seeds 2800-2803 alone (n = 4 per cell): path 1 layer 0.999 (4/4) vs index 1 layer 0.729, 4 layers 0.830, loop x4 0.859
+  (0/4 each); C0 PATH WINS, C1 and C2 DOES NOT CATCH UP, C3 both HELP, each a complete separation (p 0.029). Pooled n = 8
+  (cross-batch, descriptive): 0.999 8/8 vs 0.724 / 0.845 / 0.862, 0/8 each.
+- Declared secondary: four index layers sit at the retrace floor (fresh -0.016, 1/4 seeds above; pooled -0.000), the loop
+  +0.014; short-gap 0.913 vs retrace 0.911, long-gap and wrap-only at 0.41, below the blank level 0.51.
+- Allowed: "on the torus, four index layers or a loop x4 do not reach one path layer (n = 8 over two batches, replicated on
+  fresh seeds); depth buys index attention about what a map-free retrace rule gives". Not: an exchange rate beyond "more
+  than four"; pooled p-values as registered.
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
@@ -190,6 +213,7 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
 - "A near-wrap start rescues CoPE" (unmeasured; WRAP_COPE).
 - "The sign cost is only the start, not the constraint" (toy only; in the transformer signed escapes the |.| start through zero).
 - "SIGNSEP shows the sign cost is the wrap barrier" (only the half-reading BARRIER BLOCKS; the registered reading is UNMEASURED).
+- "Every non-negative step parameterisation pays the sign cost" (exp shows no cost in the SSM at lr 1e-3, G-3 A2; the claim is |.| and softplus).
 
 ## Gaps, cheapest first
 1. **Prior art** (`docs/lit/LIT_CLOCK_MAP.md`, agent running): which of C1-C5 are published.

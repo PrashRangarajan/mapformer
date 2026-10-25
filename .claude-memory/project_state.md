@@ -5,17 +5,34 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-24 (22:50). Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-25. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
-## Running (2026-10-24, 22:50)
-- Nothing running on kalman or koopman. Both batches of 2026-10-24 are done and folded in: G-4 TORUS_LRSWEEP (kalman GPU 1,
-  06:49 -> 21:14, `fb7a028`, 48 runs; marker `.torus_lrsweep_done`) and RANKRECIPE (koopman GPU 1, 03:59 -> 21:10).
-  RANKDECAY shelved on branch `rankdecay-wip`. SIGNSEP finished on kalman 06:48; G-3 SSM on koopman 2026-10-23 23:02.
-- Next, per `docs/paper/BIG_PICTURE_2026-10-24.md` triage (each needs a prereg + independent check; show cost first):
-  (1) G-3 block A2 (exp at lr 1e-3 in the SSM, 40 runs, ~2 h; turns "exp was unstable" into a statement);
-  (2) FACTORIAL +4 seeds (n = 8, ~8 h; the torus "more than four layers" headline rests on n = 4);
-  (3) optional: LSTM/GRU torus baseline at T = 1024 (~8 h) if TMLR is the target. Then stop.
+## Running (2026-10-25)
+- Nothing running; both GPUs on kalman idle (koopman idle too). Both batches of 2026-10-24/25 are done and folded in:
+  G-3 block A2 (kalman GPU 0, 23:32 -> 02:37, `ab872fb`, 40 runs; marker `.ssm_sign_a2_done`) and FACTORIAL_N8 (kalman
+  GPU 1, 23:32 -> 07:34, `ab872fb`, 16 runs; marker `.factorial_n8_done`).
+- IMAGE_TORUS (`IMAGE_TORUS_PREREG.md` + Amendment 1, committed 4955021, not launched): its pilot (`IMAGE_TORUS_PILOT.txt`,
+  2026-10-25 02:41-03:00, GPU 0) fired the stop rule (image MapWM training loss flat at 2.05 over 150 epochs while token
+  MapWM and image RoPE descend). Redesign pending with the user; do not edit those files from other sessions.
+- Of the BIG_PICTURE triage only the optional LSTM/GRU torus baseline (~8 h) remains, if TMLR is the target. Then stop.
+
+## Last results (2026-10-25): G-3 block A2 (`G3_SSM_A2_RESULTS.md`): COST FOR |.| AND SOFTPLUS, NO SIGN COST FOR EXP
+- SSM, ring 32, lr 1e-3, 300 ep: |.| 0/8 (0.756) and softplus 0/8 (0.938) vs signed 7/8 (0.994): SIGNED LEARNS BETTER
+  (Fisher 0.0014; softplus Holm 0.0042). exp 6/8 (0.985): NO SIGN COST (Fisher 1.0, perm 0.72), no RUNAWAY. Amendment 3.2:
+  "no sign cost for exp at lr 1e-3", read with the past-pi-start caveat; exp's 3e-3 cell stays instability. The sign claim
+  is now "|.| and softplus increments", not every non-negative increment (CLAUDE.md sign row, claim map, drafts 2 and 6).
+- Mechanism (analysis, `docs/audits/2026-10-25/g3_a2_exp_mech.py`): exp cancels by wrapping (0.21 of 0.22 cancelling
+  channels), latents cos +0.60, steps positive and bounded (max 4-8); 90 of 95 cancelling channels started past pi. In
+  attention exp solved 1/8 at both rates (SIGNROUTE), so the start alone does not obviously explain it (not tested).
+- Signed at 1e-3: 4/8 runs solve with partial codes (T = 512 0.43-0.78).
+
+## Last results (2026-10-25): FACTORIAL_N8 (`FACTORIAL_N8_RESULTS.md`): REPLICATES
+- Fresh seeds 2800-2803 alone: path 1L 0.999 (4/4) vs index 1L 0.729, 4L 0.830, loop 0.859 (0/4 each); C0 PATH WINS,
+  C1 / C2 DOES NOT CATCH UP, C3 both HELP, all p 0.029. Pooled n = 8 (descriptive): 0.999 8/8 vs 0.724 / 0.845 / 0.862.
+- Secondary: 4 index layers at the retrace floor (-0.016, 1/4 above; pooled -0.000), loop +0.014; depth buys short-gap
+  returns only (0.913 vs retrace 0.911). Folded into CLAUDE.md, claim map, RESULTS_INDEX, draft 2 (Sec. 6, Fig. 1/3
+  captions, Limitations, App. A3, C2, F).
 
 ## Last results (2026-10-24): G-4 TORUS_LRSWEEP (`TORUS_LRSWEEP_RESULTS.md`): COST AT BEST RATES
 - Torus T = 1024, observation-step-free rank 4, 900 ep, lr 1e-3 / 3e-3 / 1e-2 (wd 0.05 coupled): |.| best 3e-3 0/8 (0.890)

@@ -17,12 +17,13 @@ one attention pass can make as the moves since the last visit grow. Two choices 
 clock. A signed step at per-head rank above the map's dimension has two routes that remove the clock and leave the map
 intact; at rank equal to the dimension no channel can be clock-free and a full map while a clock remains; a non-negative
 step has neither route from a small start. In line with this, rank 2 solves the torus on at most 2 of 8 seeds against 8
-of 8 at rank 4 (and on 0 of 8 at each of three training recipes), and non-negative steps on 0 of 8 against 8 of 8 for signed steps, although both constrained classes
+of 8 at rank 4 (and on 0 of 8 at each of three training recipes), and |.| steps on 0 of 8 against 8 of 8 for signed steps, although both constrained classes
 represent the map exactly and keep or re-find an installed solution. Forbidding the clock by construction makes rank 2
 solve the torus on every seed (8 of 8), while zeroing only the observation steps does not (1 of 8). The sign gap holds
 with each step at its own best learning rate, on the ring and on the torus (0 of 8 against 8 of 8); on a ring it vanishes
-when only the readout, not the increment, is non-negative, and appears unchanged in a one-layer state-space model with the
-same rotation (0 of 8 against 8 of 8). Told in English, the
+when only the readout, not the increment, is non-negative, and appears in a one-layer state-space model with the same
+rotation for |.| and softplus steps (0-1 of 8 against 7-8 of 8 at two learning rates), where the LRU-style exp step, which
+starts many channels past pi, does not pay (6 of 8 against 7 of 8). Told in English, the
 walk is learned by one path layer (0.979 vs 0.505), which cancels opposite directions.
 
 ## 1. Introduction
@@ -43,7 +44,7 @@ code is one whose used channels carry no clock: an out-and-back returns the phas
 integration writes the prefix sum of the moves into the rotation, so a clock-free code lets one attention layer find the
 same place at any gap and across the wrap of the torus. A clock works against this: its phase error grows with the number
 of moves since the last visit, and Proposition 2 bounds the position match it leaves to one attention pass while that
-error stays below pi. Every model we see fail, index attention, a rank-2 content-to-angle map and a non-negative step,
+error stays below pi. Every model we see fail, index attention, a rank-2 content-to-angle map and a |.| or softplus step,
 shows the matching measured signature: it keeps short-gap revisits and loses long-gap and wrap-only ones (Fig. 2).
 
 Depth does not buy the map. Four index layers, or one block looped four times, learn local return rules that reach a few
@@ -67,13 +68,16 @@ runs, with a map that has lost a dimension.
    attention reaches the map only through a global count, which needs two layers in principle but a normaliser, fine
    precision and large width (cited construction). Trained index models instead learn local return rules whose reach
    grows with depth in direction runs (analysis). Registered exchange rates: about three index layers on Dyck-2 and on a
-   biased ring, more than four on the torus.
+   biased ring, more than four on the torus (replicated on four fresh seeds; n = 8 over two batches), where four index
+   layers score what a map-free retrace rule scores.
 3. *A theory of when the map is found.* The clock/map decomposition and the bound it puts on one-pass retrieval; a route
    inventory for each step class (proved); a conjecture for why rank D starves the collective route in two or more
    dimensions but not in one. Registered support on both axes: the solution exists, is kept or re-found, and is not found
-   from scratch at rank 2 (at most 2/8, also at twice the budget and at the best of three recipes) or with a non-negative
-   step (0/8 against 8/8, also with each step at its own best learning rate on the ring and on the torus, and in a
-   one-layer diagonal complex SSM, which has no softmax).
+   from scratch at rank 2 (at most 2/8, also at twice the budget and at the best of three recipes) or with a |.| step
+   (0/8 against 8/8, also with each step at its own best learning rate on the ring and on the torus, and in a one-layer
+   diagonal complex SSM, which has no softmax). In that SSM softplus pays too, while the LRU-style exp step learns the
+   map at the lower of two rates (6/8 against 7/8), by wrapping: the cost belongs to the |.| and softplus
+   parameterisations, not to non-negativity as such.
    Causal tests of the routes: freezing the move latents removes the collective route (1/8 against 7/8), a non-negative
    readout with a signed increment restores it (16/16), and on the
    torus a rank-2 step map with the clock forbidden by construction solves 8/8, like rank 4, against 1/8 when only the
@@ -91,8 +95,8 @@ runs, with a map that has lost a dimension.
 ![Figure 1](figs/fig_summary.png)
 
 *Figure 1 (`fig_summary`). The paper in three panels (torus, T = 1024 unless marked). (a) One path-integrated layer learns
-the map; index attention at one or four layers or looped four times does not (n = 4; dashed: this batch's retrace and
-always-blank floors, 0.844 and 0.509). (b) For both constrained classes a solution exists and training keeps it (rank 2:
+the map; index attention at one or four layers or looped four times does not (n = 4 shown; replicated on four fresh
+seeds, App. F7; dashed: this batch's retrace and always-blank floors, 0.844 and 0.509). (b) For both constrained classes a solution exists and training keeps it (rank 2:
 a rank-2 projection of a solved rank-4 model, 7/8 SOLVED after training; |.| on the ring: held 8/8) or re-finds it (|.|
 on the torus: perturbed early, 8/8 SOLVED at the end), while training from scratch solves 0/8. (c) Every failing
 one-layer model keeps short-gap revisits and loses long-gap and wrap-only ones; the model that learns the map holds all
@@ -344,6 +348,13 @@ one layer 0.719, at four real layers 0.860 and as one block looped four times 0.
 0.029) (Fig. 3c). Depth and the loop each help (+0.140 and +0.145), and the loop matches four real layers with a quarter of
 the parameters (203,925 against 798,741). Four layers or a loop lift short-gap revisits from 0.769 to 0.943 / 0.938 and
 leave long-gap (0.458 / 0.507) and wrap-only (0.457 / 0.509) revisits at the constant floor (0.515 / 0.517; Fig. 2a).
+A registered replication on four fresh seeds and new evaluation walks, analysed alone, gives every reading again (App.
+F7): one path layer 0.999 (4/4) against index attention at one layer 0.729, at four layers 0.830 and looped 0.859 (0/4
+each; complete separations, p 0.029); over both batches (n = 8, descriptive) 0.999 (8/8) against 0.724 / 0.845 / 0.862,
+0/8 each. Measured against a map-free rule on the same walks, four index layers score what retracing scores (0.830
+against 0.846 in the fresh batch, 1/4 seeds above; -0.000 over both batches) and the loop barely more (+0.014): depth
+buys index attention about what a retrace rule gives, short-gap returns at 0.913 against retrace's 0.911, and nothing at
+long range, where four layers fall to 0.41, below the constant 0.51.
 
 ![Figure 3](figs/fig_exchange_rate.png)
 
@@ -351,7 +362,8 @@ leave long-gap (0.458 / 0.507) and wrap-only (0.457 / 0.509) revisits at the con
 means) beside one layer of path integration (blue line), each trained and tested at the same length and depth. (a) Dyck-2
 at length 32 and depth 12 (Hewitt closing accuracy; n = 8): index attention needs about three layers to approach one path
 layer (0.964 at 3, 0.982 at 4, against 0.996). (b) Ring of 32 cells at T = 128 for three move biases (n = 6 fresh seeds;
-declared secondary): three index layers reach one path layer (0.998-0.999 against 1.000). (c) Torus at T = 1024 (n = 4):
+declared secondary): three index layers reach one path layer (0.998-0.999 against 1.000). (c) Torus at T = 1024 (n = 4; the
+fresh-seed replication, App. F7, puts four layers at 0.830 and the loop at 0.859 against a retrace floor of 0.846):
 four index layers (0.860) or one layer looped four times (0.864) stay far below one path layer (1.000), just above this
 batch's retrace floor (0.844; the 0.843 of Table 2 is the floor on the sign batch's walks). Dashed lines: map-free floors
 (analysis; Dyck: the best stack-free floor; ring: retrace per bias, on another stream of the same task; torus:
@@ -586,7 +598,7 @@ gives 0/8 against 8/8 (-0.127); at a third of the learning rate, 0/8 against 6/8
 eight times the parameters gives 2/8 against 8/8 (0.967 against 0.999, p 0.0005). Across the ring's learning-rate grid, higher
 rates hurt the signed step first (8, 8, 4 and 1 of 8 solved at 1e-3, 3e-3, 1e-2 and 3e-2) and do not help |.| past 3e-3
 (1, 2, 1 and 0 of 8). On the torus the same holds more sharply: within 900 epochs signed solves 8, 0 and 0 of 8 at 1e-3,
-3e-3 and 1e-2 (every run at the higher rates still descending, at 0.975 and 0.968), and |.| none at any rate. Two further non-negative increments behave alike at the two reference rates: exp, the LRU
+3e-3 and 1e-2 (every run at the higher rates still descending, at 0.975 and 0.968), and |.| none at any rate. In attention two further non-negative increments behave alike at the two reference rates: exp, the LRU
 parameterisation, and softplus, both of which start every token at the same positive step, solve 1/8 to 3/8 against
 signed 8/8 (App. H).
 
@@ -604,6 +616,7 @@ signed 8/8 (App. H).
 | ring | lr / 3 (3.3e-4) | 0.841, 0/8 | 0.950, 6/8 | Fisher 0.0070 |
 | ring | each step at its best of four rates (\|.\| 3e-3, signed 1e-3) | 0.963, 2/8 | 1.000, 8/8 | selection-aware p 0.0070 (SOLVED), 0.0057 (accuracy) |
 | ring, 1-layer diagonal complex SSM (no softmax) | lr 3e-3 | 0.821, 0/8 | 1.000, 8/8 | perm p 0.0002; Fisher 0.0002 |
+| ring, 1-layer diagonal complex SSM (no softmax) | lr 1e-3 | 0.756, 0/8 | 0.994, 7/8 | perm p 0.0002; Fisher 0.0014 |
 
 **The non-negative solution exists, and training keeps or re-finds it.** Proposition 3 constructs it: each solved signed
 observation-step-free model is converted exactly into |.| form, with the move latents re-solved to orthogonal directions,
@@ -644,7 +657,18 @@ against 1.000, below the 0.864 retrace floor; Fisher and permutation p 0.0002), 
 H10). The signed SSM ends as signed attention does, with antipodal move latents (cosine -1.000) and every non-blind
 channel cancelling through zero. The exact non-negative constructions carry over: frozen, the |.|, softplus and exp
 models score as their sources on 8/8 seeds, and the |.| model trained further ends solved on 8/8 at both learning rates
-tried, after an early perturbation. The cost belongs to the non-negative rotary step, not to softmax normalisation.
+tried, after an early perturbation. At the second rate (1e-3, registered; App. H13) the |.| cost replicates (0/8 against
+signed 7/8, 0.756 against 0.994; Fisher p 0.0014) and softplus pays as well (0/8, 0.938), but the exp step, the LRU
+parameterisation, unstable at 3e-3, shows no cost: 6/8 against 7/8 (0.985 against 0.994; Fisher p 1.0). It reaches the
+map by wrapping, not through zero: its move latents stay far from antipodal (cosine +0.60), every step stays positive,
+and 90 of the 95 channels that cancel (over 8 seeds) are channels whose move-angle sums its initialisation, exp(0) = 1,
+already put past pi (13 of 32 per head), cancelling one to three full turns round (analysis), as the |.| step does when
+started past pi on the ring (below; App. H3). The result identifies which parameterisations pay in this model, |.| and
+softplus, but not why exp does not: softplus also starts some channels past pi (9 of 32 per head) and cancels by wrapping
+on them, on fewer channels than exp, and does not solve; the batch does not separate exp's start from its multiplicative
+step or from the mixer, and in softmax attention the same exp step solved 1/8 at both rates. For |.| and
+softplus increments the cost belongs to the non-negative rotary step, not to softmax normalisation; it is not a cost of
+every non-negative parameterisation.
 
 **How signed steps reach the map.** Started from the |.| start, with both moves rotating the same way, signed steps still
 solve 7/8 on the ring (|.| from the same start: 0/8; Fisher p 0.0014). They end with 98-99% of channels opposite-signed
@@ -839,7 +863,7 @@ to the constant floor (0.505, dashed) or below. Eval mode without the dropout re
 
 ## 9. Discussion and related work
 
-**What the two failure axes share.** For per-head rank 2 and for non-negative steps, a solution in the class exists (the
+**What the two failure axes share.** For per-head rank 2 and for |.| steps, a solution in the class exists (the
 rank-2 projection scores 0.9955; the |.| construction is exact), training keeps or re-finds it (7/8 at rank 2; held 8/8
 on the ring and re-found 8/8 on the torus for |.|), and training from scratch does not reach it (0-2/8; 0/8). In Remark
 2's terms the initialisation sits outside the basin of a non-empty, stable solution set. The route inventory accounts
@@ -863,7 +887,9 @@ parameterisation choice, and give its routes.
 1.000) and finds the rewind per query token, and four times the budget closes most of its deficit (0.578 to 0.928; not registered), whereas
 rank 2 stays at 0/8 with twice the budget (App. N).
 
-**Design guidance.** Keep the phase increment signed; a non-negative readout is harmless. Give each head rank above the
+**Design guidance.** Keep the phase increment signed; a non-negative readout is harmless. If a non-negative increment is
+needed, |.| and softplus are the forms that paid everywhere we looked; exp escaped once (an SSM at one rate) and paid in
+attention. Give each head rank above the
 map's dimension (D + 1). Keep observations from stepping the phase: a step that depends on what is seen moves where the
 model thinks it is. Where the inverse pairs of actions are known, also tying their steps to exact negatives removes the
 clock by construction, and rank D then suffices (rank 2 on the torus, 8/8). Measure map use where retracing no longer
@@ -890,7 +916,7 @@ App. E13). For targets keyed to a place reached at variable lags the used channe
 unconverged one 2.5; analysis). For targets keyed to a count back, the used channels are clocks: k-back recency, the
 same one-layer signed class, gives 21.8-22.1. One text-world model can do both at once, with distance travelled in idle
 channels and position in used ones. In the rotary slot the cases coincide in what they can represent (Proposition 3), so
-the sign result is about learnability: a non-negative step could hold a Case III code and does not find one.
+the sign result is about learnability: a |.| step could hold a Case III code and does not find one.
 
 **Text.** On ordinary text at small scale (n = 3 pilots; the ratios are analysis), the channels attention uses are clock-dominated (rho 9.9-12.3
 on TinyStories, Eldan and Li 2023; 4.5-6.6 on code; against 0.06-0.23 in the text world), MapWM matches index RoPE on
@@ -906,7 +932,8 @@ advantage (position effect +0.050 to +0.488, n = 8, in a short-walk recipe; not 
 **Related work.** *Optimisation, not expressivity.* Shakerinava et al. (2026) find that input-dependent rotations in
 unit-modulus SSMs can represent non-Abelian state tracking but do not learn it from scratch, while near-solution starts
 recover it. Grazzi et al. (2025) and Mamba-3 own the representability of rotations with non-negative angles; ours is the
-learnability cost in the rotary slot, in attention and in a diagonal complex SSM, and its route account.
+learnability cost of |.| and softplus steps in the rotary slot, in attention and in a diagonal complex SSM (where the
+exp step escapes it at one rate), and its route account.
 Orientation-fixing parameterisations have a history: scoRNN fixes the +/-1 diagonal of its Cayley transform (Helfrich et al. 2018); a reparameterised weight w = |u| cannot change
 sign under gradient flow (Amid and Warmuth 2020, Prop. 2; Woodworth et al. 2020); the LRU initialises its phases near zero
 (Orvieto et al. 2023). With fixed frequencies the parameter symmetries of rotary attention are per-plane complex scalars
@@ -932,7 +959,8 @@ TEM-t for the "where" apart from the "what".
   rates.
 - Rank results use two heads; our latent is shared across heads where MapFormer's is per head (per-head arms are
   reported); the clock-route batch (Sec. 7.2) is shared rank only, on one task and length. The torus exchange rate is a
-  lower bound measured at n = 4.
+  lower bound measured at n = 4 and replicated on four fresh seeds (n = 8 over two batches, pooled only descriptively),
+  with 1 and 4 layers only.
 - Every rank and sign batch uses weight decay 0.05 except where marked. Rank 4's success depends on it: in a registered
   test on fresh seeds, shared rank 4 solves the torus 8/8 with AdamW weight decay 0.05 on all parameters and 1/8 without
   it within 900 epochs (Fisher p 0.0014; 5 of the 7 unsolved runs still descending; App. G8), although a solved rank-4
@@ -950,10 +978,13 @@ TEM-t for the "where" apart from the "what".
   reported as exploratory.
 - The text world is scripted (58 words, one movement clause per move, context-free direction words), and its walks are
   short enough that retrace scores 0.934; the map evidence there is the revisits retrace cannot reach and the mechanism.
-- The state-space test (App. H10) is one layer on the ring, without Mamba's decay, output gate or input scaling by the
-  step, and from scratch at one learning rate (3e-3). There exp was unstable (8/8 runs diverging in step size), so it
-  carries no learnability statement; most unsolved softplus runs were still descending; the installed |.| solution was
-  perturbed and re-found rather than held under the registered rule. No other recurrent baseline.
+- The state-space test (App. H10, H13) is one layer on the ring, without Mamba's decay, output gate or input scaling by
+  the step, from scratch at two learning rates (3e-3, 1e-3). At 3e-3 exp was unstable (8/8 runs diverging in step size)
+  and carries no learnability statement; at 1e-3 it showed no sign cost (6/8 against 7/8), so the SSM result is a cost
+  of the |.| and softplus increments, not of every non-negative parameterisation, and whether exp escapes through its
+  past-pi start, its multiplicative step or the linear mixer is not separated (in attention it paid). The signed anchor
+  at 1e-3 solved 7/8 with partial codes on four seeds. The installed |.| solution was perturbed and re-found rather than
+  held under the registered rule. No other recurrent baseline.
 - The route-versus-barrier test (Sec. 7.3, App. H11) is on the ring only, from one start (the |.| start, not the default),
   at 300 epochs. It is readable at one learning rate (3e-3; at 1e-3 its signed anchor failed the gate), and there only
   half of it reads: the route class fails, the frozen-latent class lands between the anchors. The offsets it adds move

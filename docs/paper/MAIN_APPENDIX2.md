@@ -67,6 +67,7 @@ Pilots ran on seeds outside the batch except where noted.
 | SIGN_MATCHED | 5, 7.3, 9 | torus T = 1024 | signed, \|.\|, softplus, RoPE | 0-7 | 900 | standard | no (authors' pre-launch gate) | yes |
 | GENERALITY | 5, 7.3 | torus; ring p_plus 0.5 | obs.-step-free signed / \|.\| and constructions; signed, CARoPE, CoPE, RoPE | 700-707 | 900 (ring 300); +300 | fast-attn (torus) | yes | yes |
 | FACTORIAL | 6 | torus T = 1024 | path 1 layer; index 1, 4 layers, looped x4 | 500-503 (n = 4) | 900 | fast-attn | yes | yes |
+| FACTORIAL_N8 (F7) | 6 | torus T = 1024 | FACTORIAL's four cells, its recipe asserted per run | 2800-2803 (fresh, n = 4) | 900 | fast-attn | yes | no (analysis re-run from the run dirs, identical) |
 | DYCK_MDEPTH | 6 | Dyck-2 L32 D12 | MapWM, MapPoPE (r2), RoPE, PoPE at 1-4 layers; 3x; mixture | 0-7 | 1x / 3x | standard | no | yes |
 | CANCEL | 6 | ring p_plus 0.5-1.0 | path 1 layer; index 1-3 layers | 0-7; main text 2-7 (0-1 were the pilot) | 300 | standard | no | yes |
 | RANK_MI | 7.2 | torus | shared r2, per-head r2, shared r4 | 0-7 (per-head r2 s0-1 were a pilot) | 900 | standard | no | yes |
@@ -90,6 +91,7 @@ Pilots ran on seeds outside the batch except where noted.
 | MECHANISM | 7.3 | ring p_plus 0.5 | eight start / step arms | 800-807 | 300 | standard | yes | yes |
 | SIGNROUTE | 7.3 | ring, moves +1/-1 | obs.-step-free signed, \|.\|, hybrid, abs_tied, exp, softplus at lr 1e-3 and 3e-3 | 1800-1807 | 300 | standard | yes | no |
 | G3_SSM (H10) | 7.3 | ring, moves +1/-1 | one-layer diagonal complex SSM: signed, \|.\|, softplus, exp, index; constructions (H at 3e-3, H2 at 1e-3) | 2100-2107 | 300; +100 | none (linear kernel) | yes | no (analysis re-run from the run dirs, identical) |
+| G3_SSM block A2 (H13) | 7.3 | ring, moves +1/-1 | the same SSM arms at lr 1e-3 from scratch | 2100-2107 | 300 | none (linear kernel) | yes (Amendment 3) | no (analysis re-run from the run dirs, identical) |
 | SIGNSEP (H11) | 7.3 | ring, moves +1/-1 | obs.-step-free signed, \|.\|, \|.\| + wrap offset (W), signed with frozen move latents (F), W from past pi (P), one common start, at lr 1e-3 and 3e-3 | 2300-2307 | 300 | standard | yes | no |
 | SROPE_TORUS | 7.3 | torus T = 1024 | Selective RoPE (best LM config), without SiLU, state-tracking config, generator swap; MapWM; RoPE | 1700-1707 | 900 | fast-attn | yes | no |
 | DELTA_FREE | 7.4 | torus T = 128, r2 | PoPE / MapPoPE with delta pinned, free, frozen-random (path) | 1600-1607 | 300 | standard | yes | no |
@@ -198,10 +200,16 @@ Registered: |.| - signed -0.177 (permutation p 0.0002; 0/8 vs 8/8, Fisher p 0.00
 | 501 | 1.000 | 0.731 | 0.870 | 0.861 |
 | 502 | 1.000 | 0.688 | 0.874 | 0.860 |
 | 503 | 1.000 | 0.739 | 0.881 | 0.868 |
+| 2800 (fresh) | 0.996 | 0.730 | 0.840 (D) | 0.845 |
+| 2801 (fresh) | 1.000 | 0.740 | 0.862 | 0.861 |
+| 2802 (fresh) | 1.000 | 0.713 | 0.811 | 0.866 |
+| 2803 (fresh) | 1.000 | 0.733 | 0.807 | 0.866 |
 
-Every path run SOLVED, every index run STALLED. Registered C0-C3: path beats index at one layer (+0.281), four layers
-(+0.141) and loop x4 (+0.136); depth and loop each help index (+0.140, +0.145); every firing a complete separation
-(p 0.029).
+FACTORIAL (500-503): every path run SOLVED, every index run STALLED. Registered C0-C3: path beats index at one layer
+(+0.281), four layers (+0.141) and loop x4 (+0.136); depth and loop each help index (+0.140, +0.145); every firing a
+complete separation (p 0.029). FACTORIAL_N8 (2800-2803, analysed alone; App. F7): every path run SOLVED, every index run
+STALLED except one 4-layer run still DESCENDING (D); the same five labels (+0.270, +0.169, +0.140; +0.101, +0.130), each a
+complete separation (p 0.029): REPLICATES.
 
 ### C3. Ring exchange rate, fresh seeds 2-7 (Sec. 6; `docs/audits/2026-09-27/fresh_seeds.txt`)
 
@@ -844,7 +852,7 @@ problem.
 | E7 | phase decomposition; position-factor bound; tick rule | proved | bound consistent with the strata, not a test of them; text-world drift (App. J) |
 | E8.1-E8.4 | |.| clock floor; signed collective route; no |.| collective route; same-direction moves | proved (E8.2(c), E8.4 for the quadratic surrogate) | `prop_checks.py`, `sign_clock.py` |
 | E8.5 | rank D: no clock-free full-map channel; rank > D: parking | proved | end states (App. G3-G4); that parking is why rank > D helps: conjecture, registered test PARTIAL (App. G7) |
-| E8.6 | route inventory | proved (inventory) | Table 4; SIGNROUTE; SIGNSEP (App. H11: route class fails, 2x2 unmeasured) |
+| E8.6 | route inventory | proved (inventory) | Table 4; SIGNROUTE; SIGNSEP (App. H11: route class fails, 2x2 unmeasured); exp from its past-pi start learns in the SSM at 1e-3 by wrapping (App. H13) |
 | E9.2 | hiding free to first order at D >= 2 | proved under A1-A3 | drift on the least-resolved axis (App. G) |
 | E9.3 | hiding starves the collective route | conjecture | feedback not tested; its premise, that a remaining clock blocks rank D, has registered support on the torus (App. G7) |
 | E10 | basins | definitional | App. H7 |
@@ -886,7 +894,7 @@ layer 1.000 / 1.000 / 1.000; index one layer 0.769 (0.735-0.787) / 0.480 (0.456-
 layers 0.943 (0.900-0.958) / 0.458 (0.367-0.506) / 0.457 (0.381-0.494); looped x4 0.938 (0.937-0.940) / 0.507
 (0.496-0.531) / 0.509 (0.496-0.521). Floors on this stream (analysis): constant 0.508 / 0.515 / 0.517, retrace 0.912 on
 short gaps. Memorisation check: four index layers 0.897 on their own training map against 0.860 held out; looped 0.862
-against 0.864; path 1.000 on both.
+against 0.864; path 1.000 on both. The fresh-seed replication and the retrace-floor comparison are in F7.
 
 ![Figure F1](figs/fig_factorial_strata.png)
 
@@ -1027,6 +1035,30 @@ Closing accuracy by the number of complete balanced blocks between the top opene
 Dyck has a BOS token, so the count route's normaliser is available, and both blocks and distance matter for the index
 models; the path model is flat in both (0.987-0.998). 93% of scored prefixes need at most one block, which is why three
 index layers already reach 0.964 in aggregate.
+
+### F7. Fresh-seed replication of the torus factorial (FACTORIAL_N8; registered, `FACTORIAL_N8_RESULTS.md`, `FACTORIAL_N8_PREREG.md` + Amendment 1)
+
+FACTORIAL repeated exactly (cells, recipe and flags asserted per run against FACTORIAL's checkpoints, evaluation and
+decision functions imported unchanged) on fresh seeds 2800-2803, scored on new evaluation walks; kalman GPU 1, 2026-10-24/25,
+code `ab872fb`; independent code check before launch. Registered primary = the fresh seeds alone (n = 4 per cell; minimum p
+0.029); pooling with FACTORIAL is cross-batch and descriptive (two guarded training modules changed additively since
+FACTORIAL's commit).
+
+| cell | acc T = 1024 (fresh) | SOLVED | acc - retrace, same walks (seeds above) | short gap | long gap | wrap-only | own map | pooled n = 8 (SOLVED) |
+|---|---|---|---|---|---|---|---|---|
+| path, 1 layer | 0.999 | 4/4 | +0.153 (4/4) | 1.000 | 0.997 | 0.987 | 0.999 | 0.999 (8/8) |
+| index, looped x4 | 0.859 | 0/4 | +0.014 (3/4) | 0.931 | 0.494 | 0.493 | 0.869 | 0.862 (0/8) |
+| index, 4 layers | 0.830 | 0/4 | **-0.016 (1/4)** | 0.913 | 0.413 | 0.407 | 0.919 | 0.845 (0/8) |
+| index, 1 layer | 0.729 | 0/4 | -0.117 (0/4) | 0.779 | 0.474 | 0.476 | 0.790 | 0.724 (0/8) |
+| floors (these walks) | blank 0.511, retrace 0.846 | | | retrace 0.911 | 0.514 | 0.514 | | |
+
+Registered (fresh alone): C0 PATH WINS AT ONE LAYER (+0.270); C1 and C2 INDEX DOES NOT CATCH UP (+0.169 and +0.140; 4/4 vs
+0/4, Fisher p 0.029; one 4-layer run still descending); C3 both HELP (+0.101, +0.130); replication summary REPLICATES.
+Declared secondaries: on FACTORIAL's own walks the deep cells sat at +0.015 (4 layers, 3/4 above) and +0.020 (loop, 4/4)
+over retrace, so over both batches four index layers are at the retrace floor (-0.000, 4/8 above) and the loop +0.017
+(7/8). Batch shift per cell <= 0.029 (perm p >= 0.17). Four layers learn more of their own map (0.919) than they transfer
+(0.830). Out of distribution, T = 512 / 2048: path 1.000 / 0.968; 4 layers 0.881 / 0.573; loop 0.900 / 0.632; 1 layer
+0.759 / 0.545. r(final loss, acc) -0.909 over the 16 runs. Predictions held except "no 4-layer run descending" (1/4).
 
 ---
 
@@ -1662,8 +1694,8 @@ before launch (no BLOCKER, 6 MAJOR, 11 MINOR, folded in). Floors: blank 0.496, n
 Registered reading: SIGN COST IN THE SSM, worded "not specific to softmax attention (it appears in unnormalised rotary
 linear attention = this SSM)". RUNAWAY (Amendment 1.4) = final move-step magnitude > 10^3 or a post-warm-up training loss
 above the memoryless 2.08; 7 exp runs by magnitude (up to 3.6e24), one by loss. Exp's failure at 3e-3 is instability at
-that rate; the second rate from scratch (1e-3) was not run in this configuration (attention at 1e-3: exp 1/8, softplus
-1/8, |.| 1/8, signed 8/8; App. H1, H9). 5 of 7 unsolved softplus runs were still descending (budget-scoped). r(log10
+that rate; the second rate from scratch (1e-3) was run afterwards as block A2 (App. H13: exp 6/8 vs signed 7/8, no sign
+cost; attention at 1e-3: exp 1/8, softplus 1/8, |.| 1/8, signed 8/8; App. H1, H9). 5 of 7 unsolved softplus runs were still descending (budget-scoped). r(log10
 final loss, accuracy) -0.674 at T = 128 and -0.927 at T = 512 over the 40 runs. Mechanism (descriptive, medians): signed
 cos(z_+, z_-) -1.000, u-ratio 0.001, every non-blind channel cancelling through zero; |.| -0.334, 0.592, 7% cancelling;
 softplus +0.738, 0.933, 12%.
@@ -1688,8 +1720,9 @@ A non-held softplus or exp label is a property of constructions (f) / (g), not o
 of their continuations were still descending at 100 epochs, so the line between "not held" and "perturbed and re-found" is
 set partly by the budget. At 1e-3 the registered rule reads "perturbed" only through its 10x-control clause (the SSM control
 peaks at 0.001-0.002); the |.| peaks lie inside the attention held range (AO_bal 0.024-0.154). Registered joints: |.| at
-3e-3 cost, solution perturbed and re-found; the 1e-3 joint is declared cross-rate (from scratch at 3e-3) and reads the same;
-exp forms none (RUNAWAY). The registered "search cost" joint (needs held) did not form; on E2' |.| is held at 1e-3
+3e-3 cost, solution perturbed and re-found; the 1e-3 joint was declared cross-rate (from scratch at 3e-3) and read the
+same, and is superseded by the same-rate joint of block A2 (App. H13: |.| and softplus cost, solution perturbed and
+re-found; exp none); exp forms none at 3e-3 (RUNAWAY). The registered "search cost" joint (needs held) did not form; on E2' |.| is held at 1e-3
 (secondary).
 
 
@@ -1783,6 +1816,50 @@ seed | 1e-3:SO     | 1e-3:AO     | 3e-3:SO     | 3e-3:AO     | 1e-2:SO     | 1e-
 2405 | 1.0000 SOLV | 0.7571 STAL | 0.9642 DESC | 0.8310 STAL | 0.9678 DESC | 0.8226 DESC
 2406 | 1.0000 SOLV | 0.7969 STAL | 0.9624 DESC | 0.8948 DESC | 0.9805 DESC | 0.8237 STAL!
 2407 | 1.0000 SOLV | 0.9348 DESC | 0.9771 DESC | 0.8411 STAL | 0.9505 DESC | 0.7110 STAL
+```
+
+### H13. The SSM at the second rate (G-3 block A2; registered, `G3_SSM_A2_RESULTS.md`, `G3_SSM_PREREG.md` Amendments 2-3)
+
+H10's model, task and recipe from scratch at lr 1e-3 (40 runs, seeds 2100-2107, kalman GPU 0, 2026-10-24/25, code
+`ab872fb`; model, trainer and library code md5-equal to block A's). Not results-blind: launched because block A's exp cell
+was RUNAWAY; design and analysis fixed before it ran, and an independent check (Amendment 3) fixed the Holm family
+({|.|, softplus, exp}, |.| at raw p) and the exp branches before launch.
+
+| arm | SOLVED | classes (S / T / D / R) | accuracy T = 128 | T = 512 (descriptive) | RUNAWAY | vs signed (registered) |
+|---|---|---|---|---|---|---|
+| signed | 7/8 | 7 / 1 / 0 / 0 | 0.994 | 0.764 | 0 | -- (G0 passes) |
+| exp | 6/8 | 6 / 2 / 0 / 0 | 0.985 | 0.753 | 0 | no sign cost (Fisher 1.0, perm 0.72; d -0.009) |
+| softplus | 0/8 | 0 / 8 / 0 / 0 | 0.938 | 0.533 | 0 | signed learns better (Holm: Fisher 0.0042, perm 0.0006; d -0.056) |
+| \|.\| | 0/8 | 0 / 8 / 0 / 0 | 0.756 | 0.431 | 0 | signed learns better (Fisher 0.0014, perm 0.0002; d -0.238) |
+| index | 0/8 | 0 / 6 / 1 / 1 | 0.709 | 0.415 | 0 | integration gate passes |
+
+Registered reading: SIGN COST IN THE SSM at 1e-3 for |.| and softplus; for exp, per Amendment 3.2, "no sign cost for exp at
+lr 1e-3", read with the prereg's caveat that exp starts past pi on 13 of 32 channels per head; exp's 3e-3 cell stays
+instability. The 2-cell Holm sensitivity gives the same labels. Same-rate joints with H2: |.| and softplus cost, solution
+perturbed and re-found; exp none. r(log10 final loss, accuracy) -0.689 / -0.891 at T = 128 / 512 over blocks A and A2.
+Signed at 1e-3 solves on loss with partial codes on four seeds (cosine -0.46 to +0.11, T = 512 0.43-0.78); the other four
+end antipodal.
+
+*Mechanism at 1e-3* (registered readouts, medians; the last two columns analysis, `docs/audits/2026-10-25/g3_a2_exp_mech.py`):
+
+| arm | u-ratio | cos(z_+, z_-) | cancel share (by wrap) | max move step | cancelling channels, over 8 seeds | of them started past pi |
+|---|---|---|---|---|---|---|
+| signed | 0.261 | -0.728 | 0.74 (0.00) | 2.0 | 329 of 458 (8 by wrap) | -- (through zero) |
+| exp | 0.895 | +0.601 | 0.22 (0.21) | 5.2 | 95 of 484 (92 by wrap) | 90 (2 omega_0 > pi) |
+| softplus | 0.887 | +0.569 | 0.12 (0.11) | 3.0 | 63 of 464 (58 by wrap) | 58 (2 ln 2 omega_0 > pi) |
+| \|.\| | 0.640 | -0.228 | 0.05 (0.01) | 1.7 | 20 of 422 (7 by wrap) | -- |
+
+exp ends with every step positive (minimum 0.004-0.33 per run) and bounded (maximum 4.1-7.8, against up to 3.6e24 at
+3e-3), its cancelling channels 1-3 full turns round; omega ends at 0.44-0.49 of its initial value in every arm (weight
+decay). Per seed (accuracy at T = 128 and class):
+
+```
+arm       2100    2101    2102    2103    2104    2105    2106    2107
+signed    0.977T  1.000S  0.999S  0.993S  0.992S  0.997S  0.995S  1.000S
+exp       0.998S  0.999S  0.908T  0.999S  0.999S  0.994S  0.988T  0.999S
+softplus  0.984T  0.951T  0.886T  0.957T  0.938T  0.899T  0.966T  0.924T
+abs       0.736T  0.819T  0.741T  0.744T  0.739T  0.822T  0.720T  0.724T
+index     0.693T  0.713T  0.699T  0.709R  0.699D  0.690T  0.720T  0.747T
 ```
 
 ---

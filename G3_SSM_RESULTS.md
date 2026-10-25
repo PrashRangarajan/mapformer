@@ -1,5 +1,13 @@
 # Does the sign cost appear in a state-space model? -- results (G-3, registered, `G3_SSM_PREREG.md` + Amendment 1)
 
+**UPDATE 2026-10-25 (block A2, `G3_SSM_A2_RESULTS.md`; supersedes this file where they differ).** Block A2 (lr 1e-3 from
+scratch, 40 runs, registered + Amendments 2-3) was run. |.| 0/8 and softplus 0/8 vs signed 7/8: SIGNED LEARNS BETTER for
+both (the cost replicates at the second rate). **exp 6/8 vs 7/8: NO SIGN COST** (Fisher 1.0, permutation 0.72; no
+RUNAWAY), read per Amendment 3.2 as "no sign cost for exp at lr 1e-3" with the past-pi-start caveat; exp's 3e-3 cell below
+stays instability. The SSM sign claim is therefore about |.| and softplus increments, not every non-negative
+parameterisation. The CROSS-RATE H2 joint below is superseded by the same-rate (1e-3) joint: |.| and softplus COST,
+SOLUTION PERTURBED AND RE-FOUND; exp none. The Scope line "A2 ... not run" no longer holds.
+
 Batch 2026-10-23 18:24 -> 23:02 on koopman GPU 1 (up to 4 runs at a time), configuration `minimal_h2` (launch-time choice,
 prereg Sec. 10), 104 runs, code `ffa34cd` (the 104 md5s in `runs/ssm_sign/p0/code_md5.txt` match that commit; prereg md5
 243a2bbe...), torch 2.10.0+cu128. **Model:** a one-layer diagonal complex SSM with an input-dependent rotation and no

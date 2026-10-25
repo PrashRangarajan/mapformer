@@ -220,3 +220,13 @@ number. Fixed during the read: author citations for Selective RoPE / Mamba-3 / C
 Related-work list was cut; "trained and tested at the same length" restored in Sec. 2; "Prop. 2 at tau = 0" in Sec. 5;
 "(0.730 at p_plus 0.5)"; "no cancelling channel wrapping" (was ambiguous "none wrapping"). Remaining known weak spots: the
 3-word margin under 3,500; Fig. 2's numbers pending; the Wang and Wang year.
+
+## 2026-10-25: G-3 (SSM, blocks A and A2) folded in
+
+- Title: "parameterised to be non-negative" -> "parameterised as |s| or softplus(s)". G-3 block A2 (`G3_SSM_A2_RESULTS.md`,
+  registered) found NO SIGN COST for an exp(s) (LRU-style) step in a one-layer SSM at lr 1e-3 (6/8 vs signed 7/8), so the
+  old title generalised past the evidence; |.| and softplus paid at both SSM rates.
+- Sec. 4.1: new paragraph "Without softmax" (|.| 0/8 vs 8/8 at 3e-3 and 0/8 vs 7/8 at 1e-3; softplus 1/8, 0/8; exp diverged
+  at 3e-3, no cost at 1e-3, wrapping on past-pi channels, post hoc; exp 1/8 in attention). Sec. 5: one clause after the LRU
+  sentence. Limitations: "no recurrent, SSM or exp(.)-type (LRU) baselines" replaced by the SSM test's scope and the exp
+  result. Word count +~150 (above the 3,500 target; trim before submission). MR W5 (exp(.) arm) is now answered in the SSM.

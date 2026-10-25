@@ -284,6 +284,25 @@ descending; rank bullet: three recipes, both higher-decay, 12/24 descending, the
 the G-4 cell means re-derived from the checkpoints]. Claim-map compliance: no "at any learning rate", no "no recipe rescues
 rank 2". Draft 6: abstract, Sec. 4.1 and Limitations carry the torus best-rate result; its PDF rebuilt.
 
+## G-3 block A2 (SSM at lr 1e-3) and FACTORIAL_N8 (torus depth, fresh seeds) folded in (2026-10-25)
+
+Sources: `G3_SSM_A2_RESULTS.md` (registered: SIGN COST IN THE SSM at 1e-3 for |.| and softplus; exp NO SIGN COST;
+`G3_SSM_A2_ANALYSIS.txt`, `G3_SSM_A2_VERDICTS.json`) and `FACTORIAL_N8_RESULTS.md` (registered: REPLICATES;
+`FACTORIAL_N8_ANALYSIS.txt`, `FACTORIAL_N8_VERDICTS.json`). Changes: abstract (sign sentence: "non-negative steps" -> "|.|
+steps"; SSM clause now |.| and softplus at two rates, exp 6 of 8 against 7 of 8); Sec. 1 failure list ("a |.| or softplus
+step"); contributions 2 (torus rate replicated, n = 8, four layers at the retrace floor) and 3 (|.| step; SSM softplus pays,
+exp does not at 1e-3, "not to non-negativity as such"); Fig. 1 and Fig. 3 captions (replication pointer); Sec. 6 torus
+paragraph (fresh 0.999 / 0.729 / 0.830 / 0.859; pooled 0.999 / 0.724 / 0.845 / 0.862; 4L - retrace -0.016, pooled -0.000;
+loop +0.014; short gap 0.913 vs 0.911; long range 0.41 vs 0.51); Sec. 7.3 attention exp sentence scoped "In attention",
+Table 6 SSM 1e-3 row, SSM paragraph extended (A2 numbers, exp mechanism, what is not separated); Discussion ("|.| steps"),
+design guidance (|.| and softplus paid everywhere; exp escaped once), Sec. 9 integrator sentence, related work;
+Limitations (torus n = 8; SSM bullet rewritten). Appendix: A3 rows, C2 fresh rows, F pointer and F7 (new), H10 pointers
+(A2 run; cross-rate joint superseded), H13 (new, tables + per seed), E14 E8.6 check. Numbers [all R: re-read from the
+analysis files and eval.json; exp channel counts from `docs/audits/2026-10-25/g3_a2_exp_mech_out.txt`, analysis].
+Claim-map compliance: no "every non-negative parameterisation pays", no "exp succeeds because of its start", no exchange
+rate beyond "more than four", pooled numbers labelled descriptive. Figures not regenerated (Figs. 1-4 still plot the n = 4
+FACTORIAL models; captions point to F7). Draft 6: title, Sec. 4.1, Sec. 5, Limitations; its PDF rebuilt.
+
 ## Word counts
 
 (Counted before the audit was applied. The audit edits added about 830 whitespace tokens to the file (12,934 -> 13,765), mostly in Secs. 4, 6, 7.1, 7.2 and 8 and Table 7; the per-section counts below are not recounted.)
@@ -617,8 +636,8 @@ Every caption number below is in the figure's `_out.txt` (`docs/paper/figs/`).
    KNOB_SWEEP's seed numbers are not given in `KNOB_SWEEP_n8.md` ("8 seeds").
 5. The new references (deviation 24) need metadata checks; Yao et al. is cited via Liu et al. App. A.5 and is not in
    `papers/`.
-6. Plan GPU items still open: G-3 block A2 (exp at 1e-3), G-5 (depth routes), G-7 (long text world), FACTORIAL to n = 8,
-   recurrent baseline. G-3 block A (2026-10-23), G-4 and RANKRECIPE (2026-10-24) landed and are folded in. G-1 landed (2026-10-23) and is folded in (section "G-1 (RANKCLOCK) folded in"): E2 THE CLOCK IS
+6. Plan GPU items still open: G-5 (depth routes), G-7 (long text world), recurrent baseline. G-3 block A2 and FACTORIAL
+   to n = 8 landed 2026-10-25 and are folded in. G-3 block A (2026-10-23), G-4 and RANKRECIPE (2026-10-24) landed and are folded in. G-1 landed (2026-10-23) and is folded in (section "G-1 (RANKCLOCK) folded in"): E2 THE CLOCK IS
    THE OBSTACLE, P PARTIAL. Follow-ups named by its results file, not run: a registered r4 wd 0.05 vs wd 0 contrast, and
    a longer budget for slotxy and r2 together (slower vs unable).
 7. `fig_summary` panel (b)'s title says "training keeps it" for all three bars; the torus |.| bar is re-found, not kept.

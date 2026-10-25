@@ -1,0 +1,49 @@
+== REGISTERED PRIMARY: fresh seeds [2800, 2801, 2802, 2803] ALONE (n = 4 per cell; exact permutation and Fisher minimum p 0.029 = complete separation only; rule 5) ==
+  RoPE_L1   acc T=1024 0.7291 (per seed [0.73, 0.74, 0.713, 0.733]) | SOLVED 0/4 | classes ['STALLED', 'STALLED', 'STALLED', 'STALLED']
+  Path_L1   acc T=1024 0.9989 (per seed [0.996, 1.0, 1.0, 1.0]) | SOLVED 4/4 | classes ['SOLVED', 'SOLVED', 'SOLVED', 'SOLVED']
+  RoPE_L4   acc T=1024 0.8300 (per seed [0.84, 0.862, 0.811, 0.807]) | SOLVED 0/4 | classes ['DESCENDING', 'STALLED', 'STALLED', 'STALLED']
+  RoPE_Loop acc T=1024 0.8594 (per seed [0.845, 0.861, 0.866, 0.866]) | SOLVED 0/4 | classes ['STALLED', 'STALLED', 'STALLED', 'STALLED']
+  floors on these eval walks (measured, model-free): blank 0.5106, retrace 0.8459 (per seed [np.float64(0.851), np.float64(0.841), np.float64(0.847), np.float64(0.845)]), wrap-only share 0.077; best n-gram 0.576 (quoted, RANK_MI)
+  REGISTERED C0 (Path_L1 - RoPE_L1): PATH WINS AT ONE LAYER: d +0.2698 (perm p 0.0286; n = 4 vs 4, only large splits readable)
+  REGISTERED C1 (depth): INDEX (RoPE_L4) DOES NOT CATCH UP: Path_L1 - RoPE_L4 +0.1689 (perm p 0.0286); SOLVED RoPE_L4 0/4 vs Path_L1 4/4 (Fisher p 0.0286) [within 900 epochs; RoPE_L4 still DESCENDING 1/4]
+  REGISTERED C3 (RoPE_L4): HELPS: RoPE_L4 - RoPE_L1 +0.1009 (perm p 0.0286)
+  REGISTERED C2 (loop): INDEX (RoPE_Loop) DOES NOT CATCH UP: Path_L1 - RoPE_Loop +0.1395 (perm p 0.0286); SOLVED RoPE_Loop 0/4 vs Path_L1 4/4 (Fisher p 0.0286) [within 900 epochs; RoPE_Loop still DESCENDING 0/4]
+  REGISTERED C3 (RoPE_Loop): HELPS: RoPE_Loop - RoPE_L1 +0.1303 (perm p 0.0286)
+  REPLICATION SUMMARY (catch-up readings C1, C2): REPLICATES (C1 and C2 both DOES NOT CATCH UP, as FACTORIAL)
+  same label as FACTORIAL (descriptive): C0 yes, C3_RoPE_L4 yes, C3_RoPE_Loop yes
+== SECONDARY (declared, no verdict) ==
+  acc - retrace floor (same walks) RoPE_L1  : -0.1168 (per seed [-0.121, -0.102, -0.134, -0.111]; 0/4 above)
+  acc - retrace floor (same walks) Path_L1  : +0.1530 (per seed [0.145, 0.159, 0.153, 0.155]; 4/4 above)
+  acc - retrace floor (same walks) RoPE_L4  : -0.0159 (per seed [-0.011, 0.02, -0.035, -0.038]; 1/4 above)
+  acc - retrace floor (same walks) RoPE_Loop: +0.0135 (per seed [-0.006, 0.019, 0.019, 0.022]; 3/4 above)
+  strata RoPE_L1  : short-gap 0.779 (retrace 0.911), long-gap 0.474 (retrace 0.514), wrap-only 0.476 (retrace 0.514)
+  strata Path_L1  : short-gap 1.000 (retrace 0.911), long-gap 0.997 (retrace 0.514), wrap-only 0.987 (retrace 0.514)
+  strata RoPE_L4  : short-gap 0.913 (retrace 0.911), long-gap 0.413 (retrace 0.514), wrap-only 0.407 (retrace 0.514)
+  strata RoPE_Loop: short-gap 0.931 (retrace 0.911), long-gap 0.494 (retrace 0.514), wrap-only 0.493 (retrace 0.514)
+  own (training) map RoPE_L1  : 0.7898 vs held-out 0.7291
+  own (training) map Path_L1  : 0.9990 vs held-out 0.9989
+  own (training) map RoPE_L4  : 0.9194 vs held-out 0.8300
+  own (training) map RoPE_Loop: 0.8690 vs held-out 0.8594
+  OOD (rule 10) RoPE_L1  : T=512 0.7591, T=2048 0.5450
+  OOD (rule 10) Path_L1  : T=512 1.0000, T=2048 0.9676
+  OOD (rule 10) RoPE_L4  : T=512 0.8810, T=2048 0.5732
+  OOD (rule 10) RoPE_Loop: T=512 0.9002, T=2048 0.6322
+  r(final-5% training loss, acc T=1024) over the 16 fresh runs: -0.909
+== SECONDARY: pooled n = 8 with FACTORIAL's seeds [500, 501, 502, 503] -- CROSS-BATCH, DESCRIPTIVE ONLY (train.py (+8 lines: epoch_callback, default None) and train_variant.py (+61 lines: new variants, --weight-decay default 0.05 = train()'s default, --snapshot-every default 0) changed since FACTORIAL's 4041da9; every other module in the import closure is unchanged or new) ==
+  pooled RoPE_L1   acc 0.7242 | SOLVED 0/8 | fresh 0.7291 vs FACTORIAL 0.7193
+  pooled Path_L1   acc 0.9994 | SOLVED 8/8 | fresh 0.9989 vs FACTORIAL 1.0000
+  pooled RoPE_L4   acc 0.8447 | SOLVED 0/8 | fresh 0.8300 vs FACTORIAL 0.8595
+  pooled RoPE_Loop acc 0.8617 | SOLVED 0/8 | fresh 0.8594 vs FACTORIAL 0.8641
+  pooled C0: Path_L1 - RoPE_L1 +0.2753 (perm p 0.00016) [DESCRIPTIVE]
+  pooled C1: [DESCRIPTIVE, cross-batch n = 8 vs 8] would read DOES NOT CATCH UP: Path_L1 - RoPE_L4 +0.1547 (perm p 0.0002); SOLVED 0/8 vs 8/8 (Fisher p 0.0002); DESCENDING 1/8
+  pooled C3 (RoPE_L4): RoPE_L4 - RoPE_L1 +0.1206 (perm p 0.00016) [DESCRIPTIVE]
+  pooled C2: [DESCRIPTIVE, cross-batch n = 8 vs 8] would read DOES NOT CATCH UP: Path_L1 - RoPE_Loop +0.1377 (perm p 0.0002); SOLVED 0/8 vs 8/8 (Fisher p 0.0002); DESCENDING 0/8
+  pooled C3 (RoPE_Loop): RoPE_Loop - RoPE_L1 +0.1376 (perm p 0.00016) [DESCRIPTIVE]
+  batch shift RoPE_L1  : fresh - FACTORIAL +0.0099 (perm p 0.5429, n = 4 vs 4)
+  batch shift Path_L1  : fresh - FACTORIAL -0.0011 (perm p 0.2571, n = 4 vs 4)
+  batch shift RoPE_L4  : fresh - FACTORIAL -0.0294 (perm p 0.1714, n = 4 vs 4)
+  batch shift RoPE_Loop: fresh - FACTORIAL -0.0047 (perm p 0.4286, n = 4 vs 4)
+  FACTORIAL acc - retrace floor (its own walks) RoPE_L1  : -0.1248 (0/4 above)
+  FACTORIAL acc - retrace floor (its own walks) Path_L1  : +0.1559 (4/4 above)
+  FACTORIAL acc - retrace floor (its own walks) RoPE_L4  : +0.0154 (3/4 above)
+  FACTORIAL acc - retrace floor (its own walks) RoPE_Loop: +0.0200 (4/4 above)
