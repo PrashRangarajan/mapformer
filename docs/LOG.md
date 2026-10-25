@@ -3277,3 +3277,13 @@ introduces early. The obstacle is spread over 64 per-token rewinds.
     reading "not found", ask what transformations leave the solution's FUNCTION unchanged
     (here: shifts by 2 pi / omega per block; the sign gauge A_X -> -A_X, kappa -> -kappa) and
     measure the function (does A_P select the answer?), not one representative of it.
+
+35. **The step map has exact scale gauges, so a manipulation of one of its tensors can test nothing about the map.** (koopman,
+    2026-10-24, RANKDECAY's independent check; verified.) The angle a token adds is omega_c (W_out W_in e)_c: rescaling omega_c by
+    c and row c of W_out by 1/c, or column j of W_out by k and row j of W_in by 1/k, moves the logits by <= 5e-7 on a scale of
+    1.4. So "decay omega only" / "decay all but omega" leave a direction that absorbs the decay on the angle -- they test where
+    decay lands inside the gauge block {omega, W_out, W_in}, not "frequency" -- and RANKWD's "omega shrinks to 0.15" was a
+    statement about the gauge, not the function. The gauge-invariant quantity is the effective per-move angle; it showed the real
+    contrast (0.45x with decay vs ~9x growth without). RANKDECAY was shelved before launch (branch `rankdecay-wip`). Same family as
+    34: before registering a manipulation or a readout on one tensor, list the transformations that leave the function unchanged
+    and act on, or read, a set closed under them.
