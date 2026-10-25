@@ -438,3 +438,218 @@ changes, marked [A1.n].
 - (ii) core: 80 stage-1 launches, 40 of them at m = 8.
 - full: 152 stage-1 launches, 40 of them at 1e-3.
 - An unknown `G3_CONFIG` aborts.
+
+## Amendment 2 -- block A2 launch (2026-10-25)
+
+**Not results-blind.** Blocks A, H and H2 (configuration `minimal_h2`, koopman, 2026-10-23, `G3_SSM_RESULTS.md`) were
+read before this amendment was written: signed 8/8, |.| 0/8, softplus 1/8 (5 of 7 unsolved DESCENDING), exp 0/8 with all
+8 RUNAWAY, index 0/8; READING SIGN COST IN THE SSM. Block A2 is launched BECAUSE of that reading: Sec. 8 registers "an exp
+failure at 3e-3 as instability unless A2 agrees", and with exp 8/8 RUNAWAY at 3e-3 the exp cell licenses no learnability
+sentence without A2. The decision to run A2 therefore depends on block A's outcome; A2's design and analysis do not.
+
+**Design: unchanged from Sec. 5** (table row A2). Arms signed, abs, softplus, exp, index; m = 32; steps = moves; lr 1e-3;
+300 epochs; the block-A recipe (asserted per run by `analyze_ssm_sign.RECIPE`); seeds **2100-2107**, the registered batch
+seeds, so each A2 run has the same initial weights and walk stream as its block-A twin and differs only in the rate
+(paired by design, tested unpaired, Sec. 7). Seed labels 2100-2107 were also used by RANKWD (torus attention); no run,
+checkpoint or contrast is shared, the overlap is in labels only. Layout `runs/ssm_sign/p0/A2/<arm>_moves_m32_lr1e-3_s<seed>`,
+inside the minimal_h2 root (rsynced from koopman to kalman; 104 eval.json, 136 checkpoints).
+
+**Analysis: unchanged from Sec. 6** ("Block A2" line), as already implemented and audited for `full`: G0 on A2's own
+signed arm (k >= 6), GI on A2's own index arm (k <= 1 and signed - index >= 0.05); abs vs signed at raw p; softplus, exp vs
+signed; RUNAWAY as Amendment 1.4 (a cell with k_RUNAWAY >= 2 keeps its label with the suffix, licenses no learnability
+sentence, forms no joint); READING suffix "; lr 1e-3 (m = 32): <gated abs label>"; rule-2 r(loss, acc) over A and A2.
+- **Holm family -- a text / code discrepancy found while preparing this amendment.** Sec. 6 says "softplus, exp vs signed
+  Holm over the 3 cells per test"; the audited code (`analyse`, block A2) adjusts over the **2** cells softplus and exp, with
+  abs at raw p (as block A's P / BR split, where BR's family is softplus and exp x sizes). Declared before A2 is run: the
+  code's family governs the registered label (it is the one the Amendment 1 check verified, and the text's "3" matches no
+  split that keeps abs at raw p); the results file will also state whether any softplus / exp label would differ under
+  Holm over the 3 cells (abs, softplus, exp). Flagged for the independent check.
+
+**Readings that depend on block A, and how.**
+- The READING string is "<block A label>; lr 1e-3 (m = 32): <A2 label>"; its first part is already known (SIGN COST IN THE
+  SSM). No A2 label is conditioned on block A: G0 and GI at 1e-3 are read on A2's own signed and index arms.
+- **The H2 joint changes kind.** In this configuration H2 joins A2 at the same rate (1e-3), as `full` registers; the
+  CROSS-RATE H2 joint reported in `G3_SSM_RESULTS.md` (minimal_h2) is superseded by it in the A2 output and kept in the
+  minimal_h2 output, both reported. H2's E2 labels are fixed by data already read (|.|, softplus, exp: PERTURBED AND
+  RE-FOUND; E2' HELD), so the same-rate H2 joint can only be "COST, SOLUTION PERTURBED AND RE-FOUND" (A2 label SIGNED
+  LEARNS BETTER, gated, licensed) or none; the registered SEARCH COST joint cannot form at H2 whatever A2 shows.
+- **"Unless A2 agrees" (Sec. 8), made operational here, before A2 is run** (interpretation only; no code): A2 agrees iff
+  A2 passes G0 and GI and A2's exp vs signed label is SIGNED LEARNS BETTER without a RUNAWAY suffix. Then: "exp learns
+  worse than signed at lr 1e-3" (a learnability statement scoped at 1e-3), while the 3e-3 cell stays instability. If A2's
+  exp cell has k_RUNAWAY >= 2: instability at both rates, no exp learnability sentence. If A2's exp label is NO SIGN COST
+  or UNMEASURED: no exp cost shown at 1e-3, and exp's 3e-3 failure stays instability. If A2 fails G0 or GI: A2 is
+  UNREADABLE / TASK DOES NOT NEED INTEGRATION and exp stays unread. Softplus is read the same way at 1e-3, with its own
+  budget scope (DESCENDING runs counted as at 3e-3). Any exp result is read beside Sec. 8's caveat: exp starts past pi on
+  13 of 32 channels per head, so an exp success is that start, not "non-negativity is free".
+- Block A ran on koopman and A2 runs on kalman (both torch 2.10.0+cu128, RTX 4090). Every registered A2 contrast is
+  within A2, so the host does not enter any contrast; the descriptive rule-2 r pools A and A2 across hosts.
+
+**Code diff (additive; no change to the model, trainer, constructions or registered analysis logic).**
+- `analyze_ssm_sign.py`: a fourth preset `CONFIGS["a2_after_minimal_h2"] = {sizes (32,), a2 True, b False, h2 True,
+  base "minimal_h2"}` (the analysis reads it exactly as any configuration with blocks A at 32, A2, H, H2; the `base` key is
+  read only by the driver); two docstring lines; one selftest case (READING with the A2 suffix, A2 exp "(3 RUNAWAY)" with
+  no joint, H2 joint kind "same rate (1e-3)").
+- `run_ssm_sign.sh`: an A2-only mode, entered when the preset has a `base`. It (i) requires `p0/config.txt` = the base
+  (`minimal_h2`) and keeps this launch's `config.txt` and `code_md5.txt` in `p0/A2/` (the base root's own provenance files
+  are never written); (ii) requires every guarded file to be the set recorded in `p0/code_md5.txt` with the recorded md5,
+  except `analyze_ssm_sign.py`, `run_ssm_sign.sh` and this file -- so A2 trains with byte-identical model, trainer, task and
+  library code to block A (checked: 104 guarded files, 0 mismatches); (iii) requires all block-A, H and H2 artifacts and
+  never re-runs them (no block-A launches, no constructions, no continuations); (iv) launches the 40 A2 runs, then the
+  unchanged artifact count (320), md5 re-check and analysis with `--config a2_after_minimal_h2 --root runs/ssm_sign/p0`;
+  (v) writes `G3_SSM_A2_ANALYSIS.txt`, `G3_SSM_A2_VERDICTS.json`, marker `.ssm_sign_a2_done`, log `ssm_sign_a2.log`, so the
+  minimal_h2 outputs are not overwritten. For the three original presets the driver's behaviour is unchanged (same run
+  dir, provenance files, outputs and marker).
+
+**Host and settings.** kalman, **GPU 0 only** (`DRV_GPUS=0`; GPU 1 is reserved for another batch), `DRV_MAXPG` 4
+(`G3_MAXPG` default), `DRV_MINFREE` 2500 MiB, `DRV_SPACING` 5 s, seed-major order, 3 data workers and `OMP_NUM_THREADS=2`
+per run.
+
+**Cost.** 40 runs x 300 epochs = **12,000 run-epochs**. Measured in the pilot below: 3 concurrent runs on an otherwise
+idle GPU 0, 2.85-2.89 s/epoch each = 0.96 s per run-epoch, so about **3.2 h** at 4 per GPU if GPU 0 stays free of other
+jobs; at the Sec. 10 shared-GPU rate (1.25-1.52 s per run-epoch) 4.2-5.1 h. Analysis < 1 min CPU. Disk ~35 MB.
+
+**Pilot (seed 2184, in the registered pilot range 2180-2189 and used by no run in the repo; never pooled; one seed per
+arm: anecdote).** Full registered recipe and length (300 epochs at lr 1e-3; the 3e-3 runaways set in at epochs 21-104, so
+a shortened schedule would not have tested stability), run concurrently on GPU 0, 2026-10-24. Signed added to the
+requested exp / softplus pair because of A2's G0 risk (Sec. 10, audit MAJOR 6).
+
+| run | arm | acc T=128 | acc T=512 | final loss | class (final-5% < 0.05) | max loss after warm-up | move_step_absmax | RUNAWAY | cos(z+, z-) | cancel share | s/epoch |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| s2184 | exp | 0.9984 | 0.8278 | 0.0055 | SOLVED | 1.233 (epoch 19) | 4.93 | no | +0.551 | 0.21 | 2.85 |
+| s2184 | softplus | 0.8669 | 0.4407 | 0.4386 | not solved (drifting down, 0.46 -> 0.44 over the last 60 epochs) | 1.04 | 2.42 | no | +0.633 | 0.07 | 2.89 |
+| s2184 | signed | 0.9961 | 0.4574 | 0.0131 | SOLVED | 0.94 | 1.74 | no | -0.482 | 0.35 | 2.88 |
+
+Reading (anecdote): at 1e-3 exp is stable on this seed (no epoch above the memoryless 2.08, steps bounded by 5) and
+solves, as pilot s2180 did; softplus ends at 0.867, at the retrace floor (0.864); signed solves on loss but with a partial
+code (T=512 0.457; s2180 signed at 1e-3 was STALLED at 0.064), so G0 at 1e-3 remains a real risk. Pilot run dirs:
+`runs/ssm_sign_pilot/{exp,softplus,signed}_moves_m32_lr1e-3_s2184`.
+
+**Checks after the amendment (CPU unless stated).** `test_ssm_sign` 40/40 PASS; `analyze_ssm_sign --selftest` PASS
+(incl. the new case); `analyze_ssm_sign --config minimal_h2` on the real root reproduces `G3_SSM_VERDICTS.json` exactly.
+Driver dry runs (`DRV_DRYRUN=1`) in a scratch clone with these files committed there and a copy of the real p0 root
+(eval.json copied with paths rewritten, checkpoints linked): (i) `a2_after_minimal_h2` without A2: 40 launches, all
+`--lr 1e-3 --device cuda:0` into `p0/A2/`, seed-major, no block-A / H / H2 launch, provenance 0 mismatches, fails closed
+on the 80 missing A2 artifacts (none outside A2); (ii) with one H2 eval.json removed: REFUSED (base incomplete); (iii) with
+the trainer changed by one comment line and committed: REFUSED (provenance mismatch `train_ssm_sign.py`); (iv)
+`minimal_h2` into the same root: ABORT (md5 guard: driver / analysis changed); `full`: REFUSED (config.txt); (v) with
+synthetic A2 results (block-A eval.json relabelled lr 1e-3, plumbing only): 40 skips, 320 artifacts, md5 re-check,
+analysis with the A2 suffix and the same-rate H2 joint, `.ssm_sign_a2_done` set. The base root's `config.txt` and
+`code_md5.txt` were unchanged by every dry run.
+
+**Launch (after a commit of every file, by the main session; the driver refuses any modified tracked file anywhere in
+the repo at start, and md5-guards this file in `p0/A2/code_md5.txt`, so this file must not be edited again until the
+batch has finished):**
+
+    cd /home/prashr/mapformer && G3_CONFIG=a2_after_minimal_h2 DRV_GPUS=0 setsid nohup bash run_ssm_sign.sh > /dev/null 2>&1 &
+
+## Amendment 3 -- independent check of the A2 launch (rule 29), 2026-10-25, before A2 is run
+
+From `docs/audits/2026-10-25/g3_a2_audit.md`. The check is results-blind for A2: no A2 run exists (`runs/ssm_sign/p0/A2`
+absent). Verdict: launchable after an amendment. No BLOCKER; 1 MAJOR, 3 MINOR, 6 NOTE, all applied below. Where this
+amendment and Amendment 2 differ, this one governs.
+
+1. **Holm family for block A2 (MAJOR 1; supersedes Amendment 2's Holm paragraph).**
+   - The registered text governs (Sec. 6, "Block A2"). The softplus and exp labels use Holm per test over the 3 cells
+     {abs, softplus, exp}. abs's own label uses raw p.
+   - Amendment 2 claimed the text "matches no split that keeps abs at raw p". That was wrong: abs is the unadjusted
+     primary, and the two secondaries are adjusted within a family that also counts abs, which is the literal reading.
+   - Amendment 1 did not change the A2 family; A1.6 concerns block A's BR line.
+   - The audit found the family matters in the G0-risk regime (signed 6-7/8): 80 of 4,374 softplus / exp cells change
+     verdict between the two families (Fisher-only scan).
+   - `analyze_ssm_sign.analyse` now matches the text. The A2 block computes the 3-cell family and then replaces abs's
+     entry with its raw-p label. This changes `full`'s A2 in the same way; no `full` run exists.
+   - The 2-cell labels (Holm over {softplus, exp}) are printed as a declared sensitivity line, marked "[DIFFERS from the
+     registered label]" where they differ. They are stored as `A2_sensitivity_2cell` in the verdicts JSON and are never a
+     registered label.
+   - A new selftest case separates the families: signed 6/8, abs 1/8, softplus 0/8, exp 1/8, with accuracies close enough
+     that the permutation branch cannot fire. exp's Fisher p is 0.0811 adjusted over 3 cells (UNMEASURED) and 0.0406
+     over 2 cells (SIGNED LEARNS BETTER, sensitivity only); abs stays at raw p.
+   - The change is in `analyze_ssm_sign.py`, one of the three files exempt from the A2 provenance check, and nothing
+     imports it. Model, trainer, task and library code are unchanged.
+
+2. **"Unless A2 agrees" (MINOR 1; supersedes Amendment 2's definition).**
+   - **The 3e-3 exp cell stays instability whatever A2 shows.** Amendment 1.4 binds it: 8/8 RUNAWAY, so it licenses no
+     learnability sentence.
+   - **"A2 agrees"** means: A2 passes G0 and GI, and A2's exp label is SIGNED LEARNS BETTER without a RUNAWAY suffix.
+     The exp label is the registered one under item 1's 3-cell family.
+
+   The branches for A2's exp cell:
+   - **SIGNED LEARNS BETTER, licensed (agrees):** "exp learns worse than signed at lr 1e-3", a learnability statement
+     scoped at 1e-3.
+   - **NO SIGN COST:** "no sign cost for exp at lr 1e-3". This is a positive registered statement, read with Sec. 8's
+     caveat: exp starts past pi on 13 of 32 channels per head, so the start, not "non-negativity is free".
+   - **UNMEASURED:** "no exp cost shown at 1e-3". This is not "no cost".
+   - **NON-NEGATIVE LEARNS BETTER:** read as the past-pi start (Sec. 8), never as "non-negativity is free". It is
+     reachable only through the accuracy branch, e.g. when signed passes G0 with partial codes (pilot s2184: exp 0.998,
+     signed 0.996).
+   - **k_RUNAWAY >= 2 (any label):** instability at both rates; no exp learnability sentence.
+   - **G0 or GI fails:** A2 is UNREADABLE / TASK DOES NOT NEED INTEGRATION, and exp stays unread.
+
+   Softplus is read by the same branches at 1e-3, with its own budget scope (DESCENDING runs counted as at 3e-3).
+
+3. **Which H2 joint is cited (NOTE 4, NOTE 5).**
+   - In the A2 output, the same-rate H2 joint is the registered one. The minimal_h2 CROSS-RATE joint (`G3_SSM_RESULTS.md`)
+     is reported as superseded.
+   - The same holds when A2 is UNREADABLE (G0) or TASK DOES NOT NEED INTEGRATION (GI): then no H2 joint is registered,
+     and the cross-rate joint is NOT promoted back.
+   - The same-rate joint combines an A2 label (kalman) with H2 existence labels (koopman). That is a conjunction of
+     labels, not a cross-host contrast.
+   - Amendment 2 says each A2 run starts from the same weights and walk stream as its block-A twin. Across hosts that is
+     unverified, and nothing uses it: every test is unpaired.
+
+4. **Driver (MINOR 2, NOTE 6).**
+   - The base-root precheck now also requires every H and H2 continuation checkpoint (`H/<cls>_built_moves_m32_s<seed>/<cls>.pt`,
+     `H2/<cls>_built_moves_m32_lr1e-3_s<seed>/<cls>.pt`). The final artifact count already required them, so an
+     incomplete root is now refused before training rather than ~3 h later.
+   - A2-only mode refuses a launch without an explicit `DRV_GPUS`, because the default `1` is GPU index 1. The launch
+     line sets `DRV_GPUS=0`.
+   - `p0/A2` is no longer created before the checks pass; `drv_md5_guard` creates it.
+   - A lock refusal in A2-only mode is logged to `ssm_sign.log`, because the log switches to `ssm_sign_a2.log` after the
+     lock is taken.
+
+5. **Selftest (MINOR 3).** Added in the `a2_after_minimal_h2` configuration:
+   - the Holm-family case of item 1;
+   - A2 G0 failure (signed 5/8): READING suffix `UNREADABLE (signed SOLVED 5/8 < 6)`, every A2 label gated, every H2
+     joint None;
+   - A2 GI failure (index 2/8): suffix `TASK DOES NOT NEED INTEGRATION (index SOLVED 2/8, ...)`, every H2 joint None;
+   - A2 abs UNMEASURED (abs 5/8 vs signed 8/8): suffix `UNMEASURED`, no abs H2 joint;
+   - A2 exp NON-NEGATIVE LEARNS BETTER (signed 6/8 at 0.93 / 0.60, exp 8/8): label reached, no exp H2 joint.
+
+6. **Stated (NOTES 2, 3).**
+   - **Reproduction is content-equal, not byte-equal.** The minimal_h2 re-analysis equals `G3_SSM_VERDICTS.json` as
+     parsed JSON. The summary dicts `solved` / `runaway` iterated a set, so their key order followed the hash seed;
+     they are now built over sorted keys (exempt file, same content). "Reproduces exactly" in Amendment 2 means
+     content-equal.
+   - **Sec. 5's seed statement is stale.** Its "no run dir in the repo carries them" no longer holds: RANKWD (torus
+     attention, koopman) used the labels 2100-2107. No run, checkpoint or contrast is shared.
+
+7. **Freeze rule.**
+   - Launch only with `DRV_GPUS=0`.
+   - From launch to `.ssm_sign_a2_done`, no guarded file may be edited, this pre-registration included. Its md5 sits in
+     `p0/A2/code_md5.txt`, and the driver re-checks it before the analysis.
+   - The start check needs a tree with no modified tracked file anywhere. Other sessions' work (e.g. FACTORIAL_N8) must
+     be committed or untracked at launch.
+
+**Checks after this amendment (CPU).**
+- `test_ssm_sign`: 40/40 PASS.
+- `analyze_ssm_sign --selftest`: PASS, including the five new cases above.
+- `--config minimal_h2` on the real root: equal to `G3_SSM_VERDICTS.json` as parsed JSON. The text output is equal
+  apart from a SyntaxWarning line from `model_gated.py`, which goes to stderr.
+- Driver dry runs (`DRV_DRYRUN=1`, `CUDA_VISIBLE_DEVICES=""`), in a fresh scratch clone with the three files committed
+  there. The copied p0 has eval.json with paths rewritten and empty placeholder checkpoints.
+  - No `DRV_GPUS`: REFUSED.
+  - One H continuation checkpoint removed: REFUSED before launch. The same for one H2 checkpoint.
+  - `DRV_GPUS=0` without A2:
+    - provenance: 104 files, 0 mismatches;
+    - 40 launches, all `--lr 1e-3 --device cuda:0` into `p0/A2/`, seed-major;
+    - fails closed on 80 missing artifacts, none outside A2; no marker.
+  - Synthetic A2 (block-A eval.json relabelled lr 1e-3; plumbing only):
+    - 40 skips and 320 artifacts;
+    - analysis with the 3-cell labels, the sensitivity line, the A2 suffix and the same-rate H2 joint;
+    - `.ssm_sign_a2_done` set; `.ssm_sign_done` not touched.
+- The real `runs/ssm_sign/p0` is untouched: 104 eval.json, 136 checkpoints, `config.txt` = minimal_h2, `config.txt` and
+  `code_md5.txt` still dated 2026-10-23 18:24. No `p0/A2`, no `G3_SSM_A2_*`, no `.ssm_sign_a2_done`.
+
+**Launch (after a commit of every file):**
+
+    cd /home/prashr/mapformer && G3_CONFIG=a2_after_minimal_h2 DRV_GPUS=0 setsid nohup bash run_ssm_sign.sh > /dev/null 2>&1 &

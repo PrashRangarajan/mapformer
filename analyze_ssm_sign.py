@@ -12,6 +12,8 @@ CONFIGURATIONS (a launch-time choice, CONFIGS below; the driver passes the same 
   minimal_h2  A at m = 32 + H + H2                     104 runs (recommended default)
   core        A at m = 32 and 8 + H                     112 runs
   full        A at m = 32 and 8 + A2 + B + H + H2       216 runs
+  a2_after_minimal_h2  (Amendment 2) block A2 (40 runs) added to a finished minimal_h2 root; read as A at m = 32 + A2 +
+              H + H2 (the readings `full` registers for those blocks: "; lr 1e-3 (m = 32): <label>", H2 joins A2)
 
 Layout: <root>/A/<arm>_moves_m<m>_s<seed>              block A, primary: steps = moves, lr 3e-3
         <root>/A2/<arm>_moves_m32_lr1e-3_s<seed>       block A2: the same five arms at lr 1e-3, m = 32 (full only)
@@ -78,7 +80,10 @@ ARMS_B = ("signed", "abs", "softplus", "exp")
 CLASSES_H = ("abs", "softplus", "exp", "signed")
 CONFIGS = {"minimal_h2": {"sizes": (32,), "a2": False, "b": False, "h2": True},
            "core": {"sizes": (32, 8), "a2": False, "b": False, "h2": False},
-           "full": {"sizes": (32, 8), "a2": True, "b": True, "h2": True}}
+           "full": {"sizes": (32, 8), "a2": True, "b": True, "h2": True},
+           # Amendment 2: A2 run into a finished minimal_h2 root ("base"); the driver launches A2 only and refuses
+           # to re-run A / H / H2. The analysis reads it as any configuration with these blocks.
+           "a2_after_minimal_h2": {"sizes": (32,), "a2": True, "b": False, "h2": True, "base": "minimal_h2"}}
 RECIPE = {"n_steps": 128, "batch_size": 128, "n_batches": 98, "data_workers": 3, "n_trials": 400,
           "weight_decay": 0.05, "deltas": "1,-1", "rank": 4, "decay": "none"}
 RUNAWAY_STEP, RUNAWAY_LOSS = 1e3, 2.08              # Amendment 1.4; 2.08 = the memoryless pilot's loss
@@ -320,12 +325,21 @@ def analyse(R, cfg=None, seeds=SEEDS, out=print):
             + " ".join(f"{a} {C2[a]['kr']}" for a in ARMS_A) + " | acc "
             + " ".join(f"{a} {np.mean(C2[a]['acc']):.4f}" for a in ARMS_A))
         out(f"   gates: {g2 or 'G0 and GI pass'}")
-        labs2 = contrast_labels(C2, C2["signed"], ["softplus", "exp"], n, True, g2)
-        labs2.update(contrast_labels(C2, C2["signed"], ["abs"], n, False, g2))
+        # Sec. 6 / Amendment 3.1: softplus and exp by Holm per test over the 3 cells {abs, softplus, exp}; abs's own
+        # label at raw p
+        labs2 = contrast_labels(C2, C2["signed"], ["abs", "softplus", "exp"], n, True, g2)
+        labs2["abs"] = contrast_labels(C2, C2["signed"], ["abs"], n, False, g2)["abs"]
         for a, l in labs2.items():
             out(f"   {a:8s} vs signed -> {l['shown']} (raw {l['raw_label']}; Fisher {l['fisher_p']:.4f} / adj "
                 f"{l['fisher_p_adj']:.4f}, perm {l['perm_p']:.4f} / adj {l['perm_p_adj']:.4f})")
         v["A2"] = labs2
+        # declared sensitivity (Amendment 3.1), not a registered label: Holm over the 2 cells {softplus, exp}
+        sens2 = contrast_labels(C2, C2["signed"], ["softplus", "exp"], n, True, g2)
+        v["A2_sensitivity_2cell"] = sens2
+        out("   sensitivity (declared, not registered): Holm over 2 cells {softplus, exp}: "
+            + "; ".join(f"{a} {l['shown']} (Fisher adj {l['fisher_p_adj']:.4f}, perm adj {l['perm_p_adj']:.4f})"
+                        + ("" if l["label"] == labs2[a]["label"] else "  [DIFFERS from the registered label]")
+                        for a, l in sens2.items()))
         rd += f"; lr 1e-3 (m = 32): {one(labs2['abs'])}"
     v["reading"] = rd
     out(f"\nREADING (registered): {rd}")
@@ -412,9 +426,9 @@ def analyse(R, cfg=None, seeds=SEEDS, out=print):
             + f" | med cos(zx,zy) {med('latent_cos'):+.3f} cancel {med('cancel_share_nonblind'):.2f} "
               f"wrap-cancel {med('wrap_cancel_share_nonblind'):.2f}")
     v["solved"] = {f"{k[0]}|{k[1]}|{k[2]}": int(sum(R[(k[0], k[1], k[2], s)]["solved"] for s in seeds
-                                                   if (k[0], k[1], k[2], s) in R)) for k in {kk[:3] for kk in R}}
+                                                   if (k[0], k[1], k[2], s) in R)) for k in sorted({kk[:3] for kk in R})}
     v["runaway"] = {f"{k[0]}|{k[1]}|{k[2]}": int(sum(R[(k[0], k[1], k[2], s)]["runaway"] for s in seeds
-                                                    if (k[0], k[1], k[2], s) in R)) for k in {kk[:3] for kk in R}}
+                                                    if (k[0], k[1], k[2], s) in R)) for k in sorted({kk[:3] for kk in R})}
     v["n_diverged"] = int(sum(r["div"] for r in R.values()))
     return v
 
@@ -575,6 +589,58 @@ def selftest():
     ok &= good
     print(f"  {'ok ' if good else 'BAD'} E2 {v['existence']['label']['abs']} vs E2' "
           f"{v['existence']['label_secondary']['abs']}; H2 joint kind {v['joint_kind_lr1e-3']}")
+    # Amendment 2: A2 added to a minimal_h2 root -> the A2 suffix, A2's own labels (exp with a RUNAWAY suffix forms no
+    # joint), and H2 joins A2 at the same rate (not CROSS-RATE)
+    A2C = CONFIGS["a2_after_minimal_h2"]
+    root = os.path.join(tmp, "a2c")
+    _write(root, {**sp(), ("run", "A2", "exp", 32): 3}, lo_idx, cfg=A2C)
+    R, missing = load(root, A2C)
+    v = analyse(R, A2C, out=silent)
+    good = not missing and v["reading"] == f"{COST}; lr 1e-3 (m = 32): {COST}"
+    good &= v["joint_kind_lr1e-3"] == "same rate (1e-3)" and v["A2"]["exp"]["shown"] == f"{SLB} (3 RUNAWAY)"
+    good &= v["joint_lr1e-3"]["abs"] == J_SEARCH and v["joint_lr1e-3"]["exp"] is None
+    ok &= good
+    print(f"  {'ok ' if good else 'BAD'} a2_after_minimal_h2: {v['reading']!r}; H2 joint kind {v['joint_kind_lr1e-3']}; "
+          f"A2 exp {v['A2']['exp']['shown']}; H2 joints {v['joint_lr1e-3']}")
+    # Amendment 3 (MAJOR 1): the Holm family of block A2 is the 3 cells {abs, softplus, exp}; abs keeps raw p. Signed 6/8,
+    # abs 1/8, softplus 0/8, exp 1/8, accuracies close (the permutation branch cannot fire): exp's Fisher p adjusted over
+    # 3 cells is 0.0811 (no label), over 2 cells 0.041 (SIGNED LEARNS BETTER, the declared sensitivity line only)
+    near = {("A2", a, 32): 0.98 for a in ("signed", "abs", "softplus", "exp")}
+    root = os.path.join(tmp, "a2holm")
+    _write(root, {**sp(), ("A2", "signed", 32): 6, ("A2", "abs", 32): 1, ("A2", "softplus", 32): 0,
+                  ("A2", "exp", 32): 1}, {**lo_idx, **near}, cfg=A2C)
+    R, _ = load(root, A2C)
+    v = analyse(R, A2C, out=silent)
+    ex3, ex2 = v["A2"]["exp"], v["A2_sensitivity_2cell"]["exp"]
+    good = abs(ex3["fisher_p_adj"] - 0.0811) < 5e-4 and abs(ex2["fisher_p_adj"] - 0.0406) < 5e-4
+    good &= ex3["label"] == UNM and ex2["label"] == SLB and v["A2"]["abs"]["label"] == SLB
+    good &= abs(v["A2"]["abs"]["fisher_p_adj"] - v["A2"]["abs"]["fisher_p"]) < 1e-12      # abs at raw p
+    good &= v["reading"] == f"{COST}; lr 1e-3 (m = 32): {COST}"
+    ok &= good
+    print(f"  {'ok ' if good else 'BAD'} A2 Holm over 3 cells: exp adj {ex3['fisher_p_adj']:.4f} -> {ex3['label']}; "
+          f"2-cell sensitivity adj {ex2['fisher_p_adj']:.4f} -> {ex2['label']}; abs {v['A2']['abs']['label']} at raw p")
+    # Amendment 3 (MINOR 3): A2 gate failures (every H2 joint None), A2 UNMEASURED, A2 exp NON-NEGATIVE LEARNS BETTER
+    a2cases = [("G0", {("A2", "signed", 32): 5}, {}, {}, f"{UNR} (signed SOLVED 5/8 < 6)"),
+               ("GI", {("A2", "index", 32): 2}, {}, {}, f"{NNI} (index SOLVED 2/8"),
+               ("UNM", {("A2", "abs", 32): 5}, {}, {}, UNM),
+               ("NLB", {("A2", "signed", 32): 6, ("A2", "exp", 32): 8}, {("A2", "signed", 32): 0.60},
+                {("A2", "signed", 32): 0.93}, None)]
+    for nm, extra, lo_x, hi_x, want_suffix in a2cases:
+        root = os.path.join(tmp, f"a2_{nm}")
+        _write(root, {**sp(), **extra}, {**lo_idx, **lo_x}, hi=hi_x, cfg=A2C)
+        R, _ = load(root, A2C)
+        v = analyse(R, A2C, out=silent)
+        suf = v["reading"].split("; lr 1e-3 (m = 32): ", 1)[1]
+        if nm in ("G0", "GI"):
+            good = suf.startswith(want_suffix) and all(x is None for x in v["joint_lr1e-3"].values())
+            good &= all(x["label"].startswith(want_suffix[:12]) for x in v["A2"].values())
+        elif nm == "UNM":
+            good = suf == want_suffix and v["joint_lr1e-3"]["abs"] is None
+        else:
+            good = v["A2"]["exp"]["label"] == NLB and v["joint_lr1e-3"]["exp"] is None
+        ok &= good
+        print(f"  {'ok ' if good else 'BAD'} A2 {nm}: suffix {suf!r}; A2 exp {v['A2']['exp']['shown']}; "
+              f"H2 joints {v['joint_lr1e-3']}")
     # existence unreadable when fewer than 6 sources solved
     root = os.path.join(tmp, "h_unr")
     _write(root, sp(signed_32=5), lo_idx, cfg=MIN)
