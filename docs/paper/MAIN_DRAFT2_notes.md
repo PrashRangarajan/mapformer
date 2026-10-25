@@ -1,4 +1,4 @@
-# Notes on MAIN_DRAFT2 (2026-10-21; G-1 and G-3 folded in 2026-10-23; SIGNSEP 2026-10-24)
+# Notes on MAIN_DRAFT2 (2026-10-21; G-1 and G-3 folded in 2026-10-23; SIGNSEP, G-4 and RANKRECIPE 2026-10-24)
 
 Drafted from `docs/paper/expansion/SYNTHESIS_DRAFT2_PLAN.md`, draft 1 (`MAIN_DRAFT1.md`, `MAIN_APPENDIX1.md`), the theory
 appendix v3, the seven expansion reports, and the results that landed after the plan (DELTA_FREE, SROPE_TORUS, SIGNROUTE,
@@ -268,6 +268,21 @@ sentence (W's class keeps the barrier and has a collective route; prereg W1, W2)
 moved from above G8 (misplaced by an earlier fold) to above H1. Claim-map compliance: only the half-reading BARRIER BLOCKS is
 stated as a finding; no "the barrier is THE obstacle", no "routes are irrelevant", nothing at 1e-3. Draft 6 Sec. 4.3: one
 sentence after "is open"; its PDF rebuilt (source changed).
+
+## G-4 (torus best-rate sign sweep) and RANKRECIPE (rank-2 recipe search) folded in (2026-10-24)
+
+Sources: `TORUS_LRSWEEP_RESULTS.md` (registered reading COST AT BEST RATES; `TORUS_LRSWEEP_ANALYSIS.txt`,
+`TORUS_LRSWEEP_VERDICTS.json`) and `RANKRECIPE_RESULTS.md` (registered reading RANK D+1 NEEDED SURVIVES A THREE-RECIPE
+SEARCH; `RANKRECIPE_ANALYSIS.txt`, `RANKRECIPE_VERDICTS.json`). Changes: abstract (sign sentence: best rate on the ring and
+the torus; rank sentence: 0 of 8 at each of three recipes); contribution 3 (both); Sec. 7.2 new paragraph "Nor does a recipe
+search" (0/24; best recipe lr 3e-3 0.910 vs 1.000, decision p 0.0002 both routes; "rank D + 1 with weight decay ... rank D
+fails at the best of three recipes"); Sec. 7.3 best-rate paragraph (torus |.| 3e-3 0/8 0.890 vs signed 1e-3 8/8 1.000,
+selection-aware p 0.0002 / 0.0095; signed 8, 0, 0 of 8 on the torus grid, all descending above 1e-3) and a Table 6 row;
+Limitations ("swept on the ring only" replaced: ring four rates, torus three, decay coupled, no torus decay control, 5/8 |.|
+descending; rank bullet: three recipes, both higher-decay, 12/24 descending, the stated claim form). Appendix: G9 and H12
+(new, with tables and per-seed rows), two A3 rows, an H1 pointer to H12 [all numbers R: re-read from the analysis files;
+the G-4 cell means re-derived from the checkpoints]. Claim-map compliance: no "at any learning rate", no "no recipe rescues
+rank 2". Draft 6: abstract, Sec. 4.1 and Limitations carry the torus best-rate result; its PDF rebuilt.
 
 ## Word counts
 
@@ -602,8 +617,8 @@ Every caption number below is in the figure's `_out.txt` (`docs/paper/figs/`).
    KNOB_SWEEP's seed numbers are not given in `KNOB_SWEEP_n8.md` ("8 seeds").
 5. The new references (deviation 24) need metadata checks; Yao et al. is cited via Liu et al. App. A.5 and is not in
    `papers/`.
-6. Plan GPU items still open: G-3 (SSM), G-4 (torus best-rate sweep), G-5 (depth routes), G-7 (long text world),
-   recurrent baseline. G-1 landed (2026-10-23) and is folded in (section "G-1 (RANKCLOCK) folded in"): E2 THE CLOCK IS
+6. Plan GPU items still open: G-3 block A2 (exp at 1e-3), G-5 (depth routes), G-7 (long text world), FACTORIAL to n = 8,
+   recurrent baseline. G-3 block A (2026-10-23), G-4 and RANKRECIPE (2026-10-24) landed and are folded in. G-1 landed (2026-10-23) and is folded in (section "G-1 (RANKCLOCK) folded in"): E2 THE CLOCK IS
    THE OBSTACLE, P PARTIAL. Follow-ups named by its results file, not run: a registered r4 wd 0.05 vs wd 0 contrast, and
    a longer budget for slotxy and r2 together (slower vs unable).
 7. `fig_summary` panel (b)'s title says "training keeps it" for all three bars; the torus |.| bar is re-found, not kept.

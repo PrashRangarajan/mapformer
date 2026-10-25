@@ -161,6 +161,21 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
   unmeasured; the 2x2's registered reading is UNMEASURED); nothing at 1e-3, on the torus, or from other starts. The
   mechanism of the sign cost stays an account.
 
+## Update 2026-10-24: G-4 TORUS_LRSWEEP (`TORUS_LRSWEEP_RESULTS.md`, registered): COST AT BEST RATES
+- Torus, T = 1024, observation-step-free rank 4, 1 layer, 900 epochs, lr 1e-3 / 3e-3 / 1e-2 with AdamW wd 0.05 coupled:
+  each step at its own best rate, |.| 3e-3 0/8 (0.890) vs signed 1e-3 8/8 (1.000), decision p 0.0002 (SOLVED) / 0.0095
+  (accuracy; selection redone in the null). |.| solves 0/8 at every rate; 5/8 at its best rate still descending
+  (budget-scoped). Signed's best is the grid's lowest rate, at ceiling; at 3e-3 and 1e-2 signed is 0/8, all descending.
+- Allowed: "the cost holds with each step at its own best learning rate on the ring (four rates) and on the T = 1024 torus
+  (three rates, 1e-3 to 1e-2)". The LRSWEEP "ring only" qualifier is closed. Not: "at any learning rate", other optimisers
+  or schedules, or a torus decay control (at 3e-3 the coupled decay is 3x the default's; stage 2 not triggered).
+
+## Update 2026-10-24: RANKRECIPE (`RANKRECIPE_RESULTS.md`, registered): RANK D+1 NEEDED SURVIVES A THREE-RECIPE SEARCH
+- Shared rank 2 0/8 at lr 1e-3 / wd 0.05, lr 3e-3, wd 0.2 (0/24) vs shared rank 4 8/8 at the default; best rank-2 recipe
+  (lr 3e-3) vs rank 4: 0/8 vs 8/8, 0.910 vs 1.000, decision p 0.0002 both routes. 12/24 rank-2 runs still descending.
+- Allowed: "rank D + 1 (with decay) is needed on the T = 1024 torus, and rank D fails at the best of three recipes". Not:
+  "no recipe rescues rank 2" (no lower-decay or combined arm; both alternatives raise the total decay).
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).

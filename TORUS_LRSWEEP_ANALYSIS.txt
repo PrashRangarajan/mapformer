@@ -1,0 +1,58 @@
+== TORUS_LRSWEEP (G-4): torus 64 x 64, T = 1024, 900 epochs, wd 0.05, observation-step-free SignedAO4_r4 (SO) vs AbsAO4_r4 (AO); rates 0.001, 0.003, 0.01; seeds 2400-2407 ==
+per seed: acc T = 1024 and class (! = UNSTABLE) | 0.001:SO | 0.001:AO | 0.003:SO | 0.003:AO | 0.01:SO | 0.01:AO
+2400 | 1.0000 SOLV | 0.8605 STAL | 0.9782 DESC | 0.9288 DESC | 0.9466 DESC | 0.8288 DESC
+2401 | 1.0000 SOLV | 0.8948 STAL | 0.9622 DESC | 0.9546 DESC | 0.9966 DESC | 0.7768 DESC
+2402 | 1.0000 SOLV | 0.8233 STAL | 0.9963 DESC | 0.9028 DESC | 0.9513 DESC | 0.8349 DESC
+2403 | 1.0000 SOLV | 0.8421 STAL | 0.9992 DESC | 0.9603 DESC | 0.9518 DESC | 0.8305 DESC
+2404 | 1.0000 SOLV | 0.9279 DESC | 0.9625 DESC | 0.8094 STAL | 0.9958 DESC | 0.5137 STAL!
+2405 | 1.0000 SOLV | 0.7571 STAL | 0.9642 DESC | 0.8310 STAL | 0.9678 DESC | 0.8226 DESC
+2406 | 1.0000 SOLV | 0.7969 STAL | 0.9624 DESC | 0.8948 DESC | 0.9805 DESC | 0.8237 STAL!
+2407 | 1.0000 SOLV | 0.9348 DESC | 0.9771 DESC | 0.8411 STAL | 0.9505 DESC | 0.7110 STAL
+
+== B1 (registered primary): each arm at its own best rate (most SOLVED, then lowest mean final-5% loss, then lower rate) ==
+AO best rate 0.003: SOLVED 0/8, acc 0.8903 | SO best rate 0.001 (lowest rate with SO's best count 0.001): SOLVED 8/8, acc 1.0000 | d = AO - SO -0.1097
+selection-aware p (exact, 12870 relabellings of 16 rate profiles, selection redone in each): SOLVED 0.0002, accuracy 0.0095; naive at the selected rates: Fisher 0.0002, perm 0.0002; DECISION p = max: SOLVED 0.0002, accuracy 0.0095
+UNSTABLE and unsolved (RUNAWAY / COLLAPSED) at the selected rates: AO 0/8, SO 0/8; DESCENDING AO 5/8
+  UNSTABLE AO lr 0.01 s2404: max post-warm-up loss - H_map +0.008 (H_map 2.054), final-5% loss 2.0216, step max 0.00, STALLED
+  UNSTABLE AO lr 0.01 s2406: max post-warm-up loss - H_map +0.105 (H_map 2.094), final-5% loss 0.8695, step max 25.82, STALLED
+B1: SIGNED LEARNS BETTER
+Reading: COST AT BEST RATES [5 AO run(s) still DESCENDING at AO's best rate: budget-scoped]
+
+== secondaries (declared; no verdict) ==
+floors (T = 1024 eval stream, post hoc, docs/audits/2026-10-20/WHAT_WHERE_T1024.md): blank 0.506, best n-gram 0.575, retrace 0.843; torus always-blank 0.507 (GENERALITY)
+decay exponent sum(lr_t) x wd over the run (wd 0.05): 0.001: 2.4, 0.003: 7.2, 0.01: 24.1
+per rate, per arm: SOLVED | SOLVED@0.1 | acc 1024 | acc 2048 | loss AUC | mean sel. score | wrap-cancel | usage-wtd wrap-cancel | opposite-sign | clock/map (run, median) | UNSTABLE | classes
+0.001   SO: 8/8 | 8/8 | 1.0000 | 0.9982 | 0.193 | 0.0019 | 1.00 | 1.00 | 1.00 | 0.001 | 0/8 | SOLV SOLV SOLV SOLV SOLV SOLV SOLV SOLV
+0.001   AO: 0/8 | 0/8 | 0.8547 | 0.7228 | 0.762 | 0.5129 | 0.11 | 0.36 | 0.09 | 1.143 | 0/8 | STAL STAL STAL STAL DESC STAL STAL DESC
+0.003   SO: 0/8 | 3/8 | 0.9753 | 0.9166 | 0.297 | 0.1300 | 1.00 | 1.00 | 1.00 | 0.002 | 0/8 | DESC DESC DESC DESC DESC DESC DESC DESC
+0.003   AO: 0/8 | 0/8 | 0.8903 | 0.8165 | 0.787 | 0.4876 | 0.23 | 0.66 | 0.19 | 0.033 | 0/8 | DESC DESC DESC DESC STAL STAL DESC STAL
+0.01    SO: 0/8 | 0/8 | 0.9676 | 0.9098 | 0.379 | 0.1744 | 1.00 | 1.00 | 1.00 | 0.004 | 0/8 | DESC DESC DESC DESC DESC DESC DESC DESC
+0.01    AO: 0/8 | 0/8 | 0.7678 | 0.7159 | 1.614 | 1.0363 | 0.08 | 0.61 | 0.06 | 0.650 | 2/8 | DESC DESC DESC DESC STAL DESC STAL STAL
+
+clock / map (audit-fixed definition, clock_table.py; usage-weighted, symmetric map), SOLVED vs unsolved runs:
+  0.001   SO: solved median 0.001 (8); unsolved --; near-pi usage share 0.00
+  0.001   AO: solved --; unsolved median 1.143 (8); near-pi usage share 0.09
+  0.003   SO: solved --; unsolved median 0.002 (8); near-pi usage share 0.00
+  0.003   AO: solved --; unsolved median 0.033 (8); near-pi usage share 0.09
+  0.01    SO: solved --; unsolved median 0.004 (8); near-pi usage share 0.00
+  0.01    AO: solved --; unsolved median 0.650 (8); near-pi usage share 0.03
+
+revisit strata at T = 1024 (eval_rank_strata; mean over seeds): plain lag < 128 | plain lag >= 128 | wrap-only
+  0.001   SO: 1.000 | 1.000 | 1.000
+  0.001   AO: 0.913 | 0.620 | 0.513
+  0.003   SO: 1.000 | 0.973 | 0.714
+  0.003   AO: 0.957 | 0.618 | 0.495
+  0.01    SO: 1.000 | 0.921 | 0.684
+  0.01    AO: 0.825 | 0.489 | 0.490
+
+per-rate AO vs SO (Holm over the 3 rates within each route; labels by the ROBUST rule on Holm p)
+  lr 0.001  : AO 0/8 0.8547 vs SO 8/8 1.0000; d -0.1453; Fisher p 0.0002 (Holm 0.0005); perm p 0.0002 (Holm 0.0005) -> SIGNED LEARNS BETTER (fresh-seed replication of GENERALITY E3)
+  lr 0.003  : AO 0/8 0.8903 vs SO 0/8 0.9753; d -0.0849; Fisher p 1.0000 (Holm 1.0000); perm p 0.0002 (Holm 0.0005) -> UNREADABLE (SO SOLVED 0 < 4)
+  lr 0.01   : AO 0/8 0.7678 vs SO 0/8 0.9676; d -0.1999; Fisher p 1.0000 (Holm 1.0000); perm p 0.0002 (Holm 0.0005) -> UNREADABLE (SO SOLVED 0 < 4)
+
+threshold sensitivity, B1 with SOLVED at loss 0.1 (selection redone): AO 0.003 0/8 vs SO 0.001 8/8; decision p SOLVED 0.0002, acc 0.0073 -> SIGNED LEARNS BETTER
+accuracy at T = 2048 (2x the training length) at the B1-selected rates: AO 0.8165 vs SO 0.9982; d -0.1817; selection-aware p 0.0101
+cross-fit: rates chosen on seeds 2400-2403 (AO 0.003, SO 0.001), tested on 2404-2407: AO 0/4 0.8441 vs SO 4/4 1.0000; Fisher p 0.0286, perm p 0.0286
+cross-fit: rates chosen on seeds 2404-2407 (AO 0.001, SO 0.001), tested on 2400-2403: AO 0/4 0.8552 vs SO 4/4 1.0000; Fisher p 0.0286, perm p 0.0286
+SOLVED-vs-lr (descriptive): SO 0.001:8 0.003:0 0.01:0; AO 0.001:0 0.003:0 0.01:0
+cross-batch reference, labelled, never pooled (rule 12): GENERALITY E3 (seeds 700-707, same recipe, lr 1e-3): AO4 0/8 0.880 vs SO4 8/8 1.000; ROBUST torus (seeds 1400-1407, 2 layers d 256, lr 1e-3): AO 2/8 0.967 vs SO 8/8 0.999; LRSWEEP ring (seeds 1500-1507): |.| best 3e-3 2/8 vs signed best 1e-3 8/8

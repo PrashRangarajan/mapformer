@@ -1,0 +1,7 @@
+/home/prashr/mapformer/model_gated.py:1: SyntaxWarning: invalid escape sequence '\_'
+  """A per-token sigmoid GATE on a SIGNED increment -- CoPE's selection, MapFormer's direction.
+pilot AO lr 0.01 s2492: DESCENDING UNSTABLE, final-5% loss 0.5159, sel. score 0.5159, H_map 2.052
+pilot AO lr 0.01 s2493: STALLED, final-5% loss 0.7502, sel. score 0.7502, H_map 2.039
+pilot AO lr 0.03 s2492: STALLED UNSTABLE, final-5% loss 2.0235, sel. score 2.0235, H_map 2.052
+pilot AO lr 0.03 s2493: STALLED UNSTABLE, final-5% loss 2.0158, sel. score 2.0158, H_map 2.039
+AO 1e-2: 0/2 SOLVED, mean score 0.6331; AO 3e-2: 0/2, 2.0197, UNSTABLE 2 -> DO NOT EXTEND: grid 1e-3 / 3e-3 / 1e-2

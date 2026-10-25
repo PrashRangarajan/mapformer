@@ -5,17 +5,24 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-24. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-24 (22:50). Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
-## Running (2026-10-24)
-- kalman: G-4 TORUS_LRSWEEP batch (`run_torus_lrsweep.sh`) on GPU 1 since 2026-10-24 06:49, 48 runs, ~20-25 h, from
-  `fb7a028`; the koopman pilot (s2492-2493) said DO NOT EXTEND. The driver re-checks an md5 guard over the training modules
-  before every launch: do NOT edit, create, move or check out any tracked .py / .sh file or `TORUS_LRSWEEP_PREREG.md`, and
-  do not git pull, on kalman while it runs. Documents only.
-- koopman: RANKRECIPE (the registered rank-2 recipe search, attack A2) finished 2026-10-24 21:10 -- RANK D+1 NEEDED SURVIVES A
-  THREE-RECIPE SEARCH (below). RANKDECAY shelved on branch `rankdecay-wip`. Nothing running on koopman.
-- SIGNSEP finished on kalman 2026-10-24 06:48 (below). G-3 SSM finished on koopman 2026-10-23 23:02.
+## Running (2026-10-24, 22:50)
+- Nothing running on kalman or koopman. Both batches of 2026-10-24 are done and folded in: G-4 TORUS_LRSWEEP (kalman GPU 1,
+  06:49 -> 21:14, `fb7a028`, 48 runs; marker `.torus_lrsweep_done`) and RANKRECIPE (koopman GPU 1, 03:59 -> 21:10).
+  RANKDECAY shelved on branch `rankdecay-wip`. SIGNSEP finished on kalman 06:48; G-3 SSM on koopman 2026-10-23 23:02.
+- Next, per `docs/paper/BIG_PICTURE_2026-10-24.md` triage (each needs a prereg + independent check; show cost first):
+  (1) G-3 block A2 (exp at lr 1e-3 in the SSM, 40 runs, ~2 h; turns "exp was unstable" into a statement);
+  (2) FACTORIAL +4 seeds (n = 8, ~8 h; the torus "more than four layers" headline rests on n = 4);
+  (3) optional: LSTM/GRU torus baseline at T = 1024 (~8 h) if TMLR is the target. Then stop.
+
+## Last results (2026-10-24): G-4 TORUS_LRSWEEP (`TORUS_LRSWEEP_RESULTS.md`): COST AT BEST RATES
+- Torus T = 1024, observation-step-free rank 4, 900 ep, lr 1e-3 / 3e-3 / 1e-2 (wd 0.05 coupled): |.| best 3e-3 0/8 (0.890)
+  vs signed best 1e-3 8/8 (1.000), decision p 0.0002 SOLVED / 0.0095 accuracy (selection-aware); 5/8 |.| descending
+  (budget-scoped); stage 2 not triggered. |.| 0/8 at every rate; signed 0/8 at 3e-3 and 1e-2 (all descending; predicted
+  7-8/8 at 3e-3: missed). Closes LRSWEEP's "ring only". Pilot (koopman s2492-2493): DO NOT EXTEND. Folded into CLAUDE.md,
+  claim map, RESULTS_INDEX, draft 2 (abstract, contribution 3, Sec. 7.2 / 7.3, Limitations, App. G9 / H12) and draft 6.
 
 ## Last results (2026-10-24): SIGNSEP (`SIGNSEP_RESULTS.md`): UNMEASURED
 - Route vs wrap barrier for the |.| cost, 2x2 from one common |.| start, ring, 80 runs (seeds 2300-2307). lr 3e-3: W (|.| +
@@ -58,6 +65,7 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
 ## Last results (2026-10-24): RANKRECIPE (`RANKRECIPE_RESULTS.md`): RANK D+1 NEEDED SURVIVES A THREE-RECIPE SEARCH
 - Rank 2 0/8 at each of lr 1e-3/wd 0.05, lr 3e-3, wd 0.2 (0/24) vs rank 4 8/8; best (lr 3e-3) vs rank 4 p 0.0002. Ran on
   koopman GPU 1 (03:59-21:10). The rank claim is robust to these recipes; not to all recipes (no lower-decay arm).
+- Folded into draft 2 (Sec. 7.2, Limitations, App. G9), claim map and RESULTS_INDEX on 2026-10-24.
 
 ## Last results (2026-10-23): RANKWD (`RANKWD_RESULTS.md`): DECAY NEEDED
 - Rank 4 at AdamW wd 0.05 8/8 vs wd 0 1/8 (p 0.0014), replicating G-1's post-hoc split. Decay is on ALL parameters, so not

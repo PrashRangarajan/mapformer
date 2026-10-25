@@ -1,0 +1,285 @@
+{
+  "B1": {
+    "label": "SIGNED LEARNS BETTER",
+    "AO_rate": 0.003,
+    "SO_rate": 0.001,
+    "SO_lowest_best_rate": 0.001,
+    "AO_solved": 0,
+    "SO_solved": 8,
+    "AO_acc": 0.8903416277502144,
+    "SO_acc": 1.0,
+    "d": -0.10965837224978559,
+    "p_k_sel": 0.0001554001554001554,
+    "p_acc_sel": 0.00947940947940948,
+    "naive_fisher_p": 0.0001554001554001554,
+    "naive_perm_p": 0.0001554001554001554,
+    "p_k": 0.0001554001554001554,
+    "p_acc": 0.00947940947940948,
+    "exact": true,
+    "n_relabel": 12870,
+    "AO_desc_at_best": 5,
+    "AO_runaway_at_best": 0,
+    "SO_runaway_at_best": 0,
+    "label_1e3": "SIGNED LEARNS BETTER"
+  },
+  "reading": "COST AT BEST RATES [5 AO run(s) still DESCENDING at AO's best rate: budget-scoped]",
+  "stage2_triggered": false,
+  "stage2_kind": null,
+  "stage2_wd": null,
+  "secondaries": {
+    "cells": {
+      "0.001|SO": {
+        "solved": 8,
+        "solved10": 8,
+        "acc": 1.0,
+        "acc2": 0.9982225355871908,
+        "auc": 0.1926150827138804,
+        "score": 0.0018743992207065862,
+        "wrap": 1.0,
+        "wrapw": 1.0,
+        "opp": 1.0,
+        "clock": 0.0009829380621634673,
+        "runaway": 0,
+        "cls": [
+          "SOLVED",
+          "SOLVED",
+          "SOLVED",
+          "SOLVED",
+          "SOLVED",
+          "SOLVED",
+          "SOLVED",
+          "SOLVED"
+        ]
+      },
+      "0.001|AO": {
+        "solved": 0,
+        "solved10": 0,
+        "acc": 0.8546902331267419,
+        "acc2": 0.7227565022909619,
+        "auc": 0.7621203518375467,
+        "score": 0.5128751139876658,
+        "wrap": 0.11149580408845453,
+        "wrapw": 0.3563451036393088,
+        "opp": 0.09055855498412405,
+        "clock": 1.1426722480077094,
+        "runaway": 0,
+        "cls": [
+          "STALLED",
+          "STALLED",
+          "STALLED",
+          "STALLED",
+          "DESCENDING",
+          "STALLED",
+          "STALLED",
+          "DESCENDING"
+        ]
+      },
+      "0.003|SO": {
+        "solved": 0,
+        "solved10": 3,
+        "acc": 0.9752706731408642,
+        "acc2": 0.9165670060327309,
+        "auc": 0.2970160410577468,
+        "score": 0.12999742387560598,
+        "wrap": 1.0,
+        "wrapw": 1.0,
+        "opp": 1.0,
+        "clock": 0.0022828399996899355,
+        "runaway": 0,
+        "cls": [
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING"
+        ]
+      },
+      "0.003|AO": {
+        "solved": 0,
+        "solved10": 0,
+        "acc": 0.8903416277502144,
+        "acc2": 0.8164890797655623,
+        "auc": 0.7867061896071201,
+        "score": 0.4875587547531609,
+        "wrap": 0.2256995938121165,
+        "wrapw": 0.6590460925477727,
+        "opp": 0.1874028101863855,
+        "clock": 0.03336751210477483,
+        "runaway": 0,
+        "cls": [
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "STALLED",
+          "STALLED",
+          "DESCENDING",
+          "STALLED"
+        ]
+      },
+      "0.01|SO": {
+        "solved": 0,
+        "solved10": 0,
+        "acc": 0.9676223591711937,
+        "acc2": 0.9097829920421119,
+        "auc": 0.3791903360234244,
+        "score": 0.17435667507428054,
+        "wrap": 1.0,
+        "wrapw": 1.0,
+        "opp": 1.0,
+        "clock": 0.003970249316291762,
+        "runaway": 0,
+        "cls": [
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING"
+        ]
+      },
+      "0.01|AO": {
+        "solved": 0,
+        "solved10": 0,
+        "acc": 0.7677595866558027,
+        "acc2": 0.7158728931718898,
+        "auc": 1.6140756672160392,
+        "score": 1.0362558116870266,
+        "wrap": 0.08236270552312155,
+        "wrapw": 0.6060608884241859,
+        "opp": 0.06054111373260309,
+        "clock": 0.6502025309873185,
+        "runaway": 2,
+        "cls": [
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "STALLED",
+          "DESCENDING",
+          "STALLED",
+          "STALLED"
+        ]
+      }
+    },
+    "strata": {
+      "0.001|SO": {
+        "plain_lag<128": 1.0,
+        "plain_lag>=128": 1.0,
+        "wrap": 1.0
+      },
+      "0.001|AO": {
+        "plain_lag<128": 0.9129752594383066,
+        "plain_lag>=128": 0.6198819560897902,
+        "wrap": 0.5130575347580267
+      },
+      "0.003|SO": {
+        "plain_lag<128": 0.9999623599488998,
+        "plain_lag>=128": 0.9727069473063954,
+        "wrap": 0.7136163041864458
+      },
+      "0.003|AO": {
+        "plain_lag<128": 0.9572234139052116,
+        "plain_lag>=128": 0.618381778315503,
+        "wrap": 0.49549920988526164
+      },
+      "0.01|SO": {
+        "plain_lag<128": 0.999929900549513,
+        "plain_lag>=128": 0.9207929384713955,
+        "wrap": 0.683657814276621
+      },
+      "0.01|AO": {
+        "plain_lag<128": 0.825146973809745,
+        "plain_lag>=128": 0.48866026780596583,
+        "wrap": 0.49036292602342274
+      }
+    },
+    "per_rate": {
+      "0.001": {
+        "label": "SIGNED LEARNS BETTER",
+        "AO_solved": 0,
+        "SO_solved": 8,
+        "d": -0.14530976687325814,
+        "fisher_p": 0.0001554001554001554,
+        "perm_p": 0.0001554001554001554,
+        "fisher_holm": 0.0004662004662004662,
+        "perm_holm": 0.0004662004662004662
+      },
+      "0.003": {
+        "label": "UNREADABLE (SO SOLVED 0 < 4)",
+        "AO_solved": 0,
+        "SO_solved": 0,
+        "d": -0.08492904539064983,
+        "fisher_p": 1.0,
+        "perm_p": 0.0001554001554001554,
+        "fisher_holm": 1.0,
+        "perm_holm": 0.0004662004662004662
+      },
+      "0.01": {
+        "label": "UNREADABLE (SO SOLVED 0 < 4)",
+        "AO_solved": 0,
+        "SO_solved": 0,
+        "d": -0.19986277251539097,
+        "fisher_p": 1.0,
+        "perm_p": 0.0001554001554001554,
+        "fisher_holm": 1.0,
+        "perm_holm": 0.0004662004662004662
+      }
+    },
+    "B1_loss0.1": {
+      "label": "SIGNED LEARNS BETTER",
+      "k_ao": 0,
+      "k_so": 8,
+      "p_k_sel": 0.0001554001554001554,
+      "p_acc_sel": 0.007303807303807304,
+      "p_k": 0.0001554001554001554,
+      "p_acc": 0.007303807303807304,
+      "naive_fisher_p": 0.0001554001554001554,
+      "naive_perm_p": 0.0001554001554001554,
+      "AO_rate": 0.003,
+      "SO_rate": 0.001
+    },
+    "acc2048_sel": {
+      "AO": 0.8164890797655623,
+      "SO": 0.9982225355871908,
+      "p_sel": 0.010101010101010102
+    },
+    "crossfit": [
+      {
+        "select_on": [
+          2400,
+          2401,
+          2402,
+          2403
+        ],
+        "AO_rate": 0.003,
+        "SO_rate": 0.001,
+        "AO_solved": 0,
+        "SO_solved": 4,
+        "d": -0.15591300407967223,
+        "fisher_p": 0.028571428571428567,
+        "perm_p": 0.02857142857142857
+      },
+      {
+        "select_on": [
+          2404,
+          2405,
+          2406,
+          2407
+        ],
+        "AO_rate": 0.001,
+        "SO_rate": 0.001,
+        "AO_solved": 0,
+        "SO_solved": 4,
+        "d": -0.1448206767763477,
+        "fisher_p": 0.028571428571428567,
+        "perm_p": 0.02857142857142857
+      }
+    ]
+  }
+}

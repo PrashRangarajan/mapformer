@@ -79,10 +79,12 @@ Pilots ran on seeds outside the batch except where noted.
 | RANK_TESTS | 7.2 | ring; torus escape test | rank 1, 2 (+ variants); lifted / fresh rank 4 | 20-27; 0-7 | 300; 600 | standard | yes | yes |
 | SCORE_RANK | 7.2, 7.4 | torus T = 1024 | MapWM / PoPE score at r2 and r4 | r2 10-21, r4 10-17 | 900 | standard | yes | no |
 | RANKCLOCK (G7) | 7.2 | torus T = 1024 | shared r2; r2 + per-axis / per-token clock slot; r2 drift-forbidden; r2 actions-only; shared r4 at weight decay 0.05 and 0 | 1900-1907 | 900 | standard | yes | no |
+| RANKRECIPE (G9) | 7.2 | torus T = 1024 | shared r2 at lr 1e-3 / wd 0.05, lr 3e-3, wd 0.2; shared r4 at the default | 2600-2607 | 900 | standard | yes | no |
 | LOOP_RANK | 6, 7.4 | torus T = 1024 | r2 1 layer, r2 looped x4, r2 4 layers, r4 | 0-7 (A and C reused; A s0 reproduced bitwise) | 900 | standard | no | yes |
 | RING_DIAL | 7.3 | ring p_plus 0.5 / 0.75 / 0.9 | signed, \|.\| | 30-37 | 300 | standard | yes | yes |
 | WRAP_EXISTENCE | 7.3 | ring p_plus 0.5 | obs.-step-free signed / \|.\|, constructions | 600-607 | 300 + 300 | standard | yes | yes |
 | LRSWEEP | 7.3 | ring | obs.-step-free signed / \|.\| at 1e-3 / 3e-3 / 1e-2 / 3e-2 | 1500-1507 | 300 | standard | yes | no (windowed run classes cross-checked) |
+| TORUS_LRSWEEP (H12) | 7.3 | torus T = 1024 | obs.-step-free signed / \|.\| at 1e-3 / 3e-3 / 1e-2 | 2400-2407 | 900 | fast-attn | yes | no (windowed run classes cross-checked; cell means re-derived from the checkpoints) |
 | ROBUST | 7.3 | ring (four recipes); torus 2 layers d 256 | obs.-step-free signed / \|.\| | 1400-1407 | 300; 900 | fast-attn (torus) | yes | yes |
 | ACCOUNTS | 7.3 | ring; line | T1 continuations; T2 frozen latents; T4 CoPE on a line | 600-607; 1000-1007; 1100-1115 | 300 | standard | yes | yes |
 | MECHANISM | 7.3 | ring p_plus 0.5 | eight start / step arms | 800-807 | 300 | standard | yes | yes |
@@ -1372,6 +1374,36 @@ unpaired permutation p 0.0014, paired sign-flip p 0.0156 (exact; the smallest p 
 Per seed, accuracy at T = 1024 (class): wd 0.998S 1.000S 0.999S 1.000S 1.000S 1.000S 1.000S 1.000S; wd 0 0.853D 0.866D 0.837T
 0.952D 0.870D 1.000S 0.920D 0.585T.
 
+### G9. A recipe search for rank 2 (RANKRECIPE; registered, `RANKRECIPE_RESULTS.md`, `RANKRECIPE_PREREG.md` + Amendment 1)
+
+Shared rank 2 (`Vanilla`) at three recipes and shared rank 4 (`Vanilla_r4mi`) at the default, fresh seeds 2600-2607, torus
+64 x 64, T = 1024, 900 epochs, cosine (5% warm-up), AdamW, the RANKWD recipe otherwise (standard attention); 32 runs on one GPU
+and one code version; independent check before launch (2 MAJOR, 8 MINOR, folded in). At a seed the rank-2 cells share every
+initial weight, and rank 4 shares all non-bottleneck weights. Existence: a rank-2 solution exists and is held (App. D1,
+G7), and the construction held a 60-epoch warm start at both new recipes. The pilot (seeds 2692-2693) kept the higher rate
+at 3e-3 (not UNSTABLE). Selection of rank 2's best recipe on training loss only (most SOLVED, then lowest mean final-5%
+loss); decision p = max(selection-aware, naive). Gates: rank 4 >= 6/8; rank 2 at the default <= 2/8.
+
+| cell | recipe | SOLVED | classes (S / T / D) | acc T = 512 | acc T = 1024 | acc T = 2048 | per-move angle growth (end / init) |
+|---|---|---|---|---|---|---|---|
+| rank 2 | lr 1e-3, weight decay 0.05 (default) | 0/8 | 0 / 3 / 5 | 0.888 | 0.860 | 0.803 | 0.566 |
+| rank 2 | lr 3e-3, weight decay 0.05 | **0/8** | 0 / 3 / 5 | 0.954 | **0.910** | 0.838 | 0.555 |
+| rank 2 | lr 1e-3, weight decay 0.2 | 0/8 | 0 / 6 / 2 | 0.932 | 0.885 | 0.802 | 0.296 |
+| rank 4 | lr 1e-3, weight decay 0.05 (default) | **8/8** | 8 / 0 / 0 | 1.000 | **1.000** | 0.997 | 0.504 |
+
+Gates pass (rank 4 8/8; rank 2 at the default 0/8, replicating App. C4 and G7). Selected: lr 3e-3 (SOLVED tied at 0; lowest
+mean final-5% loss 0.370; also rank 2's best on accuracy). Primary, rank 2 at its best recipe against rank 4: SOLVED 0/8 vs
+8/8, naive Fisher and selection-aware p 0.0002; accuracy at T = 1024 0.9095 vs 0.9999 (d -0.090), naive permutation and
+selection-aware p 0.0002. Registered reading: RANK D+1 NEEDED SURVIVES A THREE-RECIPE SEARCH, scoped to "the best of these
+three recipes": the decay exponents are 2.41 / 7.24 / 9.66, so both alternatives raise the total decay; there is no
+lower-decay or combined arm; 12 of the 24 rank-2 runs were still descending. No run UNSTABLE or diverged. r(log10 final loss,
+accuracy) -0.629 / -0.793 / -0.925 at T = 512 / 1024 / 2048 over 32 runs. Every cell keeps its effective per-move angle
+bounded (maximum 2.09-3.98 rad per move), unlike rank 4 without decay (~9x growth, App. G8).
+
+Per seed, accuracy at T = 1024 (class): rank 2 default 0.731D 0.883D 0.720T 0.922D 0.983D 0.792T 0.984D 0.862T; lr 3e-3
+0.923D 0.902D 0.892T 0.885T 0.907D 0.910D 0.878T 0.978D; weight decay 0.2 0.864T 0.881T 0.882D 0.951D 0.871T 0.882T 0.877T
+0.870T; rank 4 1.000S x 4, 0.999S, 1.000S x 3.
+
 ## H. Sign details
 
 ### H1. Learning rates (`LRSWEEP_RESULTS.md`; ring, observation-step-free, seeds 1500-1507)
@@ -1385,7 +1417,7 @@ Per seed, accuracy at T = 1024 (class): wd 0.998S 1.000S 0.999S 1.000S 1.000S 1.
 
 Registered B1 (each arm at its best rate, selection redone in the null over all 12,870 relabellings): |.| 3e-3 2/8 vs
 signed 1e-3 8/8, -0.037, decision p 0.0070 (SOLVED) / 0.0057 (accuracy). The |.| optimum is interior to the grid. Three
-|.| runs at 3e-3 were still descending at 300 epochs. At 3e-2 both arms sit near the 0.50 blank floor. Per seed:
+|.| runs at 3e-3 were still descending at 300 epochs. At 3e-2 both arms sit near the 0.50 blank floor. The torus counterpart (three rates) is H12. Per seed:
 
 ```
 seed | 1e-3:SO | 1e-3:AO | 3e-3:SO | 3e-3:AO | 1e-2:SO | 1e-2:AO | 3e-2:SO | 3e-2:AO
@@ -1709,6 +1741,49 @@ Per seed (accuracy at T = 128, class), 3e-3: signed 1.000S on every seed; |.| 0.
 0.983S 0.956T; P 1.000S x 6, 0.881D (s2306), 1.000S. 1e-3: signed 0.968T 1.000S 0.925T 0.956T 1.000S 1.000S 1.000S 1.000S; the |.|
 arm all STALLED (0.859-0.988); W 0.876T 0.865T 0.929T 1.000S 0.923T 0.948T 1.000S 0.917T; F 0.901T 0.927T 0.989S 1.000S
 0.869T 1.000S 0.913T 0.915T; P 0.899T 1.000S 1.000S 0.874T 1.000S 1.000S 0.911T 1.000S.
+
+### H12. Learning rates on the torus (G-4 TORUS_LRSWEEP; registered, `TORUS_LRSWEEP_RESULTS.md`, `TORUS_LRSWEEP_PREREG.md` + Amendment 1)
+
+*Design.* Observation-step-free shared rank-4 arms, signed (SO) and |.| (AO), on GENERALITY's torus recipe (64 x 64, T =
+1024, 900 epochs, cosine, 1 layer, d 128, fast attention) at lr 1e-3, 3e-3 and 1e-2 with AdamW weight decay 0.05 (decay
+exponent sum(lr_t) x wd = 2.4 / 7.2 / 24.1), fresh seeds 2400-2407, 48 runs; at a seed every arm and rate shares the initial
+weights and the training stream. Independent check before launch (2 MAJOR, 9 MINOR, folded in). Registered B1 as in H1
+(LRSWEEP's rule and code, unchanged): each arm's best rate on training loss only (most SOLVED, then lowest mean final-5%
+loss, then the lower rate); selection redone inside the null over all 12,870 relabellings of the 16 per-seed rate profiles;
+decision p = max(selection-aware, naive). Stage 2 (a decay-matched control at |.|'s rate) was registered for a selected
+|.| rate >= 1e-2. UNSTABLE: a post-warm-up epoch above the seed's map entropy + 0.05, a final move step > 1e3, or a final
+loss > 1.9. The extension pilot (seeds 2492-2493, outside the batch) found |.| at 3e-2 collapsed to the memoryless loss on
+both seeds, so the grid was not extended.
+
+| learning rate | signed SOLVED, accuracy | \|.\| SOLVED, accuracy | per-rate label (Holm) |
+|---|---|---|---|
+| 1e-3 | **8/8, 1.000** | 0/8, 0.855 | signed learns better (Fisher and perm p 0.0002) |
+| 3e-3 | 0/8, 0.975 (8 descending) | **0/8, 0.890** | unreadable (signed < 4/8); perm p 0.0002 |
+| 1e-2 | 0/8, 0.968 (8 descending) | 0/8, 0.768 (2 UNSTABLE) | unreadable (signed < 4/8); perm p 0.0002 |
+
+Registered B1: |.| at 3e-3 (0/8 at every rate; its lowest loss and highest accuracy are both at 3e-3, an interior rate)
+against signed at 1e-3 (the grid's lowest rate, at ceiling), d -0.110, selection-aware p 0.0002 (SOLVED) and 0.0095
+(accuracy), naive Fisher and permutation 0.0002: SIGNED LEARNS BETTER, reading COST AT BEST RATES, with 5 of the 8 |.| runs
+at 3e-3 still descending (budget-scoped). Stage 2 not triggered. Declared secondaries agree: SOLVED at loss 0.1, 0/8 vs 8/8
+(accuracy p 0.0073); accuracy at T = 2048, 0.817 vs 0.998 (selection-aware p 0.010); cross-fit, both halves 0/4 vs 4/4
+(Fisher p 0.029). Revisit strata at T = 1024 (short / long / wrap-only): signed at 1e-3 1.000 / 1.000 / 1.000, |.| at 3e-3
+0.957 / 0.618 / 0.495 (floor 0.507). Usage-weighted wrap-cancelling share: signed 1.00 at every rate, |.| 0.36 / 0.66 /
+0.61. r(log10 final loss, accuracy) -0.646 at T = 1024 over 48 runs. `experiment_audit` windowed classes agree with the
+registered ones in every cell.
+
+Per seed (accuracy at T = 1024, class; ! UNSTABLE):
+
+```
+seed | 1e-3:SO     | 1e-3:AO     | 3e-3:SO     | 3e-3:AO     | 1e-2:SO     | 1e-2:AO
+2400 | 1.0000 SOLV | 0.8605 STAL | 0.9782 DESC | 0.9288 DESC | 0.9466 DESC | 0.8288 DESC
+2401 | 1.0000 SOLV | 0.8948 STAL | 0.9622 DESC | 0.9546 DESC | 0.9966 DESC | 0.7768 DESC
+2402 | 1.0000 SOLV | 0.8233 STAL | 0.9963 DESC | 0.9028 DESC | 0.9513 DESC | 0.8349 DESC
+2403 | 1.0000 SOLV | 0.8421 STAL | 0.9992 DESC | 0.9603 DESC | 0.9518 DESC | 0.8305 DESC
+2404 | 1.0000 SOLV | 0.9279 DESC | 0.9625 DESC | 0.8094 STAL | 0.9958 DESC | 0.5137 STAL!
+2405 | 1.0000 SOLV | 0.7571 STAL | 0.9642 DESC | 0.8310 STAL | 0.9678 DESC | 0.8226 DESC
+2406 | 1.0000 SOLV | 0.7969 STAL | 0.9624 DESC | 0.8948 DESC | 0.9805 DESC | 0.8237 STAL!
+2407 | 1.0000 SOLV | 0.9348 DESC | 0.9771 DESC | 0.8411 STAL | 0.9505 DESC | 0.7110 STAL
+```
 
 ---
 

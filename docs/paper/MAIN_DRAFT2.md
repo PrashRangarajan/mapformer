@@ -17,11 +17,12 @@ one attention pass can make as the moves since the last visit grow. Two choices 
 clock. A signed step at per-head rank above the map's dimension has two routes that remove the clock and leave the map
 intact; at rank equal to the dimension no channel can be clock-free and a full map while a clock remains; a non-negative
 step has neither route from a small start. In line with this, rank 2 solves the torus on at most 2 of 8 seeds against 8
-of 8 at rank 4, and non-negative steps on 0 of 8 against 8 of 8 for signed steps, although both constrained classes
+of 8 at rank 4 (and on 0 of 8 at each of three training recipes), and non-negative steps on 0 of 8 against 8 of 8 for signed steps, although both constrained classes
 represent the map exactly and keep or re-find an installed solution. Forbidding the clock by construction makes rank 2
-solve the torus on every seed (8 of 8), while zeroing only the observation steps does not (1 of 8). On a ring the sign
-gap holds at each step's best learning rate, vanishes when only the readout, not the increment, is non-negative, and
-appears unchanged in a one-layer state-space model with the same rotation (0 of 8 against 8 of 8). Told in English, the
+solve the torus on every seed (8 of 8), while zeroing only the observation steps does not (1 of 8). The sign gap holds
+with each step at its own best learning rate, on the ring and on the torus (0 of 8 against 8 of 8); on a ring it vanishes
+when only the readout, not the increment, is non-negative, and appears unchanged in a one-layer state-space model with the
+same rotation (0 of 8 against 8 of 8). Told in English, the
 walk is learned by one path layer (0.979 vs 0.505), which cancels opposite directions.
 
 ## 1. Introduction
@@ -70,8 +71,9 @@ runs, with a map that has lost a dimension.
 3. *A theory of when the map is found.* The clock/map decomposition and the bound it puts on one-pass retrieval; a route
    inventory for each step class (proved); a conjecture for why rank D starves the collective route in two or more
    dimensions but not in one. Registered support on both axes: the solution exists, is kept or re-found, and is not found
-   from scratch at rank 2 (at most 2/8, also at twice the budget) or with a non-negative step (0/8 against 8/8, also at
-   each step's best of four learning rates on a ring, and in a one-layer diagonal complex SSM, which has no softmax).
+   from scratch at rank 2 (at most 2/8, also at twice the budget and at the best of three recipes) or with a non-negative
+   step (0/8 against 8/8, also with each step at its own best learning rate on the ring and on the torus, and in a
+   one-layer diagonal complex SSM, which has no softmax).
    Causal tests of the routes: freezing the move latents removes the collective route (1/8 against 7/8), a non-negative
    readout with a signed increment restores it (16/16), and on the
    torus a rank-2 step map with the clock forbidden by construction solves 8/8, like rank 4, against 1/8 when only the
@@ -491,6 +493,13 @@ arm built from the same initial weights at each seed.*
 4's 7/8 (Fisher p 0.0014; accuracy +0.086, permutation p 0.0003). PoPE's polar score does not rescue it either: 3/12
 SOLVED under either score at T = 1024, with rank 4 at 8/8 under both (Sec. 7.4 gives the reason).
 
+**Nor does a recipe search (registered).** Rank 2 was given three recipes on fresh seeds (App. G9): the default (learning
+rate 1e-3, weight decay 0.05), three times the learning rate and four times the weight decay. It solves 0/8 at each (0/24),
+while rank 4 solves 8/8 at the default. Rank 2 at its best recipe (learning rate 3e-3, selected on training loss) scores 0.910 against
+rank 4's 1.000 (SOLVED 0/8 against 8/8; decision p 0.0002 on both, selection included). The search favours rank 2, which
+picks its best of three while rank 4 gets one. Rank 4 in turn needs weight decay (App. G8), so the rank result reads: rank
+D + 1 with weight decay learns the torus, and rank D fails at the best of three recipes.
+
 **The rank-2 solution exists and is held.** The rank-2 projection of each solved rank-4 model scores 0.9955 frozen (at
 least 0.981 on every seed). Trained from there it solves 7/8, as many as the rank-4 control trained from its own solution
 (7/8), against 1/8 for rank 2 trained further from its own stalled weights (accuracy p 0.0009) (Fig. 7a). A rank-2 map
@@ -566,13 +575,18 @@ Observation-step-free models show the same: 0/8 against 8/8 on the ring and on t
 training curves separate (Fig. 8): the signed median crosses the SOLVED threshold at epoch 480 / 57 / 309 / 183 in four
 batches and keeps descending, while most |.| runs flatten at a loss of 0.3-0.5.
 
-**The cost holds at each step's best learning rate, without weight decay and at 2 layers d_model 256** (Table 6). With
-each step at its own best of four learning rates on the ring (the |.| optimum, 3e-3, is bracketed by the grid), |.|
-solves 2/8 against signed 8/8 (selection-aware p 0.0070 on SOLVED and 0.0057 on accuracy). Without weight decay the ring
+**The cost holds at each step's best learning rate, on the torus and the ring, without weight decay and at 2 layers
+d_model 256** (Table 6). On the T = 1024 torus, with each step at its own best of three learning rates (1e-3 to 1e-2,
+weight decay coupled to the rate), |.| solves 0/8 at every rate and 0/8 at its best (3e-3, 0.890) against signed 8/8 at
+1e-3 (1.000), with selection-aware p 0.0002 on SOLVED and 0.0095 on accuracy (App. H12). The |.| optimum is interior on
+both its loss and its accuracy; the signed optimum is the grid's lowest rate, where it is already at ceiling. On the ring,
+at each step's own best of four rates (the |.| optimum, 3e-3, again interior), |.| solves 2/8 against signed 8/8
+(selection-aware p 0.0070 on SOLVED and 0.0057 on accuracy). Without weight decay the ring
 gives 0/8 against 8/8 (-0.127); at a third of the learning rate, 0/8 against 6/8. A 2-layer, d_model 256 torus model with
-eight times the parameters gives 2/8 against 8/8 (0.967 against 0.999, p 0.0005). Across the learning-rate grid, higher
+eight times the parameters gives 2/8 against 8/8 (0.967 against 0.999, p 0.0005). Across the ring's learning-rate grid, higher
 rates hurt the signed step first (8, 8, 4 and 1 of 8 solved at 1e-3, 3e-3, 1e-2 and 3e-2) and do not help |.| past 3e-3
-(1, 2, 1 and 0 of 8). Two further non-negative increments behave alike at the two reference rates: exp, the LRU
+(1, 2, 1 and 0 of 8). On the torus the same holds more sharply: within 900 epochs signed solves 8, 0 and 0 of 8 at 1e-3,
+3e-3 and 1e-2 (every run at the higher rates still descending, at 0.975 and 0.968), and |.| none at any rate. Two further non-negative increments behave alike at the two reference rates: exp, the LRU
 parameterisation, and softplus, both of which start every token at the same positive step, solve 1/8 to 3/8 against
 signed 8/8 (App. H).
 
@@ -582,6 +596,7 @@ signed 8/8 (App. H).
 |---|---|---|---|---|
 | torus, 1 layer, full | default (lr 1e-3, weight decay 0.05) | 0.821, 0/8 | 0.998, 8/8 | perm p 0.0002; Fisher 0.0002 |
 | torus, 1 layer | default | 0.880, 0/8 | 1.000, 8/8 | perm p 0.0002; Fisher 0.0002 |
+| torus, 1 layer | each step at its best of three rates (\|.\| 3e-3, signed 1e-3) | 0.890, 0/8 | 1.000, 8/8 | selection-aware p 0.0002 (SOLVED), 0.0095 (accuracy) |
 | torus, 2 layers, d_model 256 | default | 0.967, 2/8 | 0.999, 8/8 | perm p 0.0005; Fisher 0.0070 |
 | ring, full, p_plus 0.5 | default | 0.973, 2/8 | 1.000, 8/8 | Fisher 0.0070 |
 | ring | default | 0.911, 1/8 | 1.000, 8/8 | perm p 0.0002; Fisher 0.0014 |
@@ -906,7 +921,10 @@ TEM-t for the "where" apart from the "what".
 
 - The models are small (1-4 layers, 2 heads, d_model 128-256) and the tasks synthetic; natural text appears only as a
   three-seed pilot. Actions are allocentric translations.
-- "Not found" is relative to the stated budgets (300-1800 epochs). Learning rates were swept on the ring only. On the
+- "Not found" is relative to the stated budgets (300-1800 epochs). Learning rates for the sign contrast were swept on
+  the ring (four rates) and on the one-layer torus (three rates, 1e-3 to 1e-2); on the torus AdamW's decay was coupled to
+  the rate (three times the default's at the |.| optimum) with no decay-matched control, and 5 of the 8 |.| runs at its
+  best rate were still descending. No other optimiser was tried. On the
   torus, in the 2-layer d_model 256 model, the sign gap is a quarter of the one-layer gap in accuracy and most |.| runs
   were still descending, so at scale part of the cost may be speed. Selective RoPE's runs were all still descending at
   900 epochs, as were most unsolved clock-slot runs of the clock-exit test (Sec. 7.2), which therefore does not separate
@@ -919,7 +937,11 @@ TEM-t for the "where" apart from the "what".
   test on fresh seeds, shared rank 4 solves the torus 8/8 with AdamW weight decay 0.05 on all parameters and 1/8 without
   it within 900 epochs (Fisher p 0.0014; 5 of the 7 unsolved runs still descending; App. G8), although a solved rank-4
   model trained further without weight decay keeps its solution. The result is credited to the optimiser setting, not
-  to the step map or the clock specifically. The sign cost, by contrast, holds without weight decay (Table 6).
+  to the step map or the clock specifically. The sign cost, by contrast, holds without weight decay (Table 6). Rank 2
+  was given three recipes (the default, three times the learning rate, four times the weight decay; App. G9) and failed
+  at each, but both alternatives raise the total decay, there is no lower-decay or combined arm, and 12 of the 24 rank-2
+  runs were still descending at 900 epochs. The rank claim is therefore "rank D + 1 with weight decay is needed, and
+  rank D fails at the best of three recipes", not that no recipe rescues rank D.
 - The theory of Sec. 4 was developed after the registered batches, except the clock-route batch (Sec. 7.2), which was
   registered to test its rank account. Its proved statements concern the step parameterisation and quadratic surrogates;
   the hiding feedback at rank D is a conjecture, and the per-channel dynamics of |.| are not derived. The checks marked
