@@ -116,6 +116,10 @@ budget-scoped). Decay acts on ALL parameters here (omega and LayerNorm gains inc
 everything', not to the step map. Descriptive (CORRECTED 2026-10-24: omega's norm is not gauge-invariant -- it trades
 scale exactly with W_out's rows): the gauge-invariant per-move angle ends at 0.45 of init with decay but grows ~9x
 without it (max 37.8 rad per move vs 1.85). Every rank-4 success in the repo used decay 0.05; state rank 4 as 'with decay'.
+**Recipe search (RANKRECIPE)** (`RANKRECIPE_RESULTS.md`, registered + Amendment 1, 2026-10-24): RANK D+1 NEEDED SURVIVES A
+THREE-RECIPE SEARCH -- shared rank 2 solves 0/8 at the default (lr 1e-3, wd 0.05), at lr 3e-3 and at wd 0.2 (0/24), rank 4
+8/8 at the default; best rank-2 recipe (lr 3e-3) vs rank 4: SOLVED 0/8 vs 8/8, acc 0.910 vs 1.000, decision p 0.0002 both
+routes. Scoped to these three recipes (both alternatives higher-decay; no lower-decay arm); 12/24 rank-2 runs still descending.
 Separated: per-head rank FIRES (D - C_bd, both block-diagonal, Fisher and permutation p 0.0070);
 sharing one latent vs per-head latents UNMEASURED (D - C); `W_out` per-entry scale UNMEASURED
 (C_bd - B). Initial angle scale does not explain it (A and B fail at normal scale). A rank-2 solution

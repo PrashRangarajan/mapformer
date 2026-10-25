@@ -13,8 +13,8 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
   `fb7a028`; the koopman pilot (s2492-2493) said DO NOT EXTEND. The driver re-checks an md5 guard over the training modules
   before every launch: do NOT edit, create, move or check out any tracked .py / .sh file or `TORUS_LRSWEEP_PREREG.md`, and
   do not git pull, on kalman while it runs. Documents only.
-- koopman: switching to a registered rank-2 recipe search per `docs/paper/BIG_PICTURE_2026-10-24.md` (attack A2 on the rank
-  claim); RANKDECAY shelved.
+- koopman: RANKRECIPE (the registered rank-2 recipe search, attack A2) finished 2026-10-24 21:10 -- RANK D+1 NEEDED SURVIVES A
+  THREE-RECIPE SEARCH (below). RANKDECAY shelved on branch `rankdecay-wip`. Nothing running on koopman.
 - SIGNSEP finished on kalman 2026-10-24 06:48 (below). G-3 SSM finished on koopman 2026-10-23 23:02.
 
 ## Last results (2026-10-24): SIGNSEP (`SIGNSEP_RESULTS.md`): UNMEASURED
@@ -54,6 +54,10 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
   are missing `.pt` under runs/{dof,warm,unfreeze} (rsync needed), not code. One job per GPU: packing measured slower.
 - SIGNROUTE ran here (GPU 1, done 2026-10-21 07:43). Its torus part (frozen move latents) is NOT built; held until the read.
 - G-1 RANKCLOCK ran here (GPU 1, 2026-10-21 18:48 -> 10-23 02:16). Nothing running on koopman after it.
+
+## Last results (2026-10-24): RANKRECIPE (`RANKRECIPE_RESULTS.md`): RANK D+1 NEEDED SURVIVES A THREE-RECIPE SEARCH
+- Rank 2 0/8 at each of lr 1e-3/wd 0.05, lr 3e-3, wd 0.2 (0/24) vs rank 4 8/8; best (lr 3e-3) vs rank 4 p 0.0002. Ran on
+  koopman GPU 1 (03:59-21:10). The rank claim is robust to these recipes; not to all recipes (no lower-decay arm).
 
 ## Last results (2026-10-23): RANKWD (`RANKWD_RESULTS.md`): DECAY NEEDED
 - Rank 4 at AdamW wd 0.05 8/8 vs wd 0 1/8 (p 0.0014), replicating G-1's post-hoc split. Decay is on ALL parameters, so not

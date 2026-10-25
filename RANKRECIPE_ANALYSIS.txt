@@ -1,0 +1,33 @@
+/home/prashr/mapformer/model_gated.py:1: SyntaxWarning: invalid escape sequence '\_'
+  """A per-token sigmoid GATE on a SIGNED increment -- CoPE's selection, MapFormer's direction.
+== RANKRECIPE: shared rank 2 at three recipes vs shared rank 4 at the default (SOLVED = final-5% loss < 0.05) ==
+  r2_R0  (lr 0.001, wd 0.05) SOLVED 0/8 | acc@512/1024/2048 0.8877 / 0.8597 / 0.8031 | classes S/T/D/R/X 0/3/5/0/0 | UNSTABLE 0 | mean sel. score 0.4445
+  r2_R1  (lr 0.003, wd 0.05) SOLVED 0/8 | acc@512/1024/2048 0.9544 / 0.9095 / 0.8377 | classes S/T/D/R/X 0/3/5/0/0 | UNSTABLE 0 | mean sel. score 0.3701
+  r2_R2  (lr 0.001, wd 0.2) SOLVED 0/8 | acc@512/1024/2048 0.9320 / 0.8847 / 0.8022 | classes S/T/D/R/X 0/6/2/0/0 | UNSTABLE 0 | mean sel. score 0.5106
+  r4_R0  (lr 0.001, wd 0.05) SOLVED 8/8 | acc@512/1024/2048 1.0000 / 0.9999 / 0.9967 | classes S/T/D/R/X 8/0/0/0/0 | UNSTABLE 0 | mean sel. score 0.0036
+
+B (registered primary): rank 2 at its best recipe = r2_R1 (selected on SOLVED, then final-5% loss): SOLVED 0/8, acc@1024 0.9095 | rank 4 R0: SOLVED 8/8, acc 0.9999 (d -0.0904)
+   DECISION p (max of selection-aware and naive; in practice the naive p decides, Amendment 1 finding 3): SOLVED 0.0002 (naive Fisher 0.0002, sel. 0.0002), accuracy 0.0002 (naive perm 0.0002, sel. 0.0002); best vs r2_R0 Fisher 1.0000
+   rule-label: RANK D+1 NEEDED SURVIVES A THREE-RECIPE SEARCH
+
+READING (registered): RANK D+1 NEEDED SURVIVES A THREE-RECIPE SEARCH
+   scope: torus T = 1024, 900 epochs, shared rank, AdamW, cosine; rank 2's recipes limited to the three registered.
+
+== effective per-move angle omega (W_out W_in e_move), end / init (medians; descriptive) ==
+   invariant under both step-map gauges, not under a 2 pi wrap per move (rule 8): a MAGNITUDE, not the function;
+   moves only -- in Vanilla observation tokens add angles too (Amendment 1 finding 6)
+  r2_R0  growth 0.566  max angle per move 3.98 rad (wrapped 2.78)
+  r2_R1  growth 0.555  max angle per move 3.05 rad (wrapped 2.90)
+  r2_R2  growth 0.296  max angle per move 2.53 rad (wrapped 2.53)
+  r4_R0  growth 0.504  max angle per move 2.09 rad (wrapped 2.09)
+
+== rule 2: r(log10 final loss, acc) per length ==
+   T=512: r = -0.629 over 32 runs
+   T=1024: r = -0.793 over 32 runs
+   T=2048: r = -0.925 over 32 runs
+
+per seed acc@1024 (class; ! = UNSTABLE):
+  r2_R0  0.731D 0.883D 0.720T 0.922D 0.983D 0.792T 0.984D 0.862T
+  r2_R1  0.923D 0.902D 0.892T 0.885T 0.907D 0.910D 0.878T 0.978D
+  r2_R2  0.864T 0.881T 0.882D 0.951D 0.871T 0.882T 0.877T 0.870T
+  r4_R0  1.000S 1.000S 1.000S 1.000S 0.999S 1.000S 1.000S 1.000S
