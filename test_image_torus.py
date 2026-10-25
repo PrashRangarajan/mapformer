@@ -256,6 +256,44 @@ def test_eval_stream_equals_eval_noise_refine():
     assert not torch.equal(rec.seen[0][0], W2[0][0][:-1])
 
 
+def test_encoder_gain_runtime_flag():
+    """--enc-gain (Amendment 2): the gain is a build argument, recorded in the state dict, restored by a strict load,
+    and part of the cell name when it is not ENC_GAIN; the gain changes the observation embedding exactly by its ratio."""
+    m1 = MI.build("MapWM", "image", 3182, banks=SYN, enc_gain=1.0).eval()
+    mg = MI.build("MapWM", "image", 3182, banks=SYN).eval()
+    assert abs(float(m1.token_emb.enc_gain) - 1.0) < 1e-7 and abs(float(mg.token_emb.enc_gain) - MI.ENC_GAIN) < 1e-5
+    tok, _ = _walk_tokens(); inp = tok[:, :-1]; obs = torch.zeros_like(inp, dtype=torch.bool); obs[:, 1::2] = True
+    MI.image_emb(m1).reseed(4); MI.image_emb(mg).reseed(4)
+    with torch.no_grad():
+        x1, xg = m1.token_emb(inp), mg.token_emb(inp)
+    assert torch.allclose(xg[obs], x1[obs] * MI.ENC_GAIN, rtol=1e-5, atol=1e-5) and torch.equal(xg[~obs], x1[~obs])
+    m2 = MI.build("MapWM", "image", 3182, banks=SYN, seed_rng=False)          # default gain, then load the gain-1 dict
+    m2.load_state_dict(m1.state_dict()); assert abs(float(m2.token_emb.enc_gain) - 1.0) < 1e-7
+    assert MI.cell_name("MapWM", "image", 1, 1.0) == "I_MapWM_g1"
+    assert MI.cell_name("MapWM", "image", 1, MI.ENC_GAIN) == "I_MapWM" == MI.cell_name("MapWM", "image", 1)
+    assert MI.cell_name("MapWM", "token", 1, 1.0) == "T_MapWM"
+
+
+def test_encoder_gain_end_to_end_through_trainer():
+    """Amendment 3 (n5): train_image.main with --enc-gain 1.0 (tiny CPU run) -> cell I_MapWM_g1, file I_MapWM_g1.pt,
+    config and buffer 1.0; the evaluator's load restores it; the analysis' gain constant equals ENC_GAIN."""
+    import tempfile, os
+    import mapformer.train_image as TI
+    from mapformer import analyze_image_torus as AN
+    assert abs(AN.ENC_GAIN - MI.ENC_GAIN) < 1e-9
+    with tempfile.TemporaryDirectory() as td:
+        TI.main(["--arm", "MapWM", "--obs", "image", "--enc-gain", "1.0", "--seed", "3190", "--epochs", "1",
+                 "--n-batches", "1", "--batch-size", "2", "--n-steps", "32", "--data-workers", "0", "--device", "cpu",
+                 "--output-dir", td])
+        ck = os.path.join(td, "I_MapWM_g1.pt")
+        assert os.path.exists(ck), os.listdir(td)
+        b = torch.load(ck, map_location="cpu", weights_only=False)
+        assert b["variant"] == "I_MapWM_g1" and abs(b["config"]["enc_gain"] - 1.0) < 1e-7
+        assert abs(float(b["model_state_dict"]["token_emb.enc_gain"]) - 1.0) < 1e-7
+        m, _ = EV.load(ck, "cpu")
+        assert abs(float(MI.image_emb(m).enc_gain) - 1.0) < 1e-7
+
+
 def test_encoder_gain_fixed_and_calibrated():
     g, norms = MI.calibrate_gain()
     assert abs(g - MI.ENC_GAIN) / MI.ENC_GAIN < 1e-4, (g, MI.ENC_GAIN)

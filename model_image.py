@@ -62,13 +62,13 @@ class ImageEncoder(nn.Module):
 
 
 class ImageObsEmbedding(nn.Module):
-    def __init__(self, tok_emb, d_model, banks, sample_seed, enc_seed):
+    def __init__(self, tok_emb, d_model, banks, sample_seed, enc_seed, enc_gain=None):
         super().__init__()
         self.tok = tok_emb                       # the model's own nn.Embedding; only action rows are used
         with torch.random.fork_rng(devices=[]):  # the encoder init leaves the global RNG untouched
             torch.manual_seed(enc_seed)
             self.encoder = ImageEncoder(d_model)
-        self.register_buffer("enc_gain", torch.tensor(float(ENC_GAIN)))   # fixed scale (Amendment 1, M2)
+        self.register_buffer("enc_gain", torch.tensor(float(ENC_GAIN if enc_gain is None else enc_gain)))  # fixed scale
         for split in ("train", "test"):
             b = banks[split]
             assert b["images"].dtype == torch.uint8 and tuple(b["images"].shape[1:]) == (28, 28)
@@ -148,12 +148,12 @@ def calibrate_gain(d_model=128, seeds=range(16), n_per_class=64, bank=None):
     return math.sqrt(d_model) / (sum(norms) / len(norms)), norms
 
 
-def use_image_obs(model, banks, seed):
+def use_image_obs(model, banks, seed, enc_gain=None):
     d = model.token_emb.embedding_dim
     model.token_emb = ImageObsEmbedding(
         model.token_emb, d, banks,
         sample_seed=(seed * SAMPLE_SEED_MUL + SAMPLE_SEED_ADD) % (2 ** 31),
-        enc_seed=(seed * ENC_SEED_MUL + ENC_SEED_ADD) % (2 ** 31))
+        enc_seed=(seed * ENC_SEED_MUL + ENC_SEED_ADD) % (2 ** 31), enc_gain=enc_gain)
     return model
 
 
@@ -179,7 +179,7 @@ ARMS = ("MapWM", "ActOnly", "NormStep", "RoPE")
 PATH_ARMS = ("MapWM", "ActOnly", "NormStep")
 
 
-def build(arm, obs, seed, n_layers=1, banks=None, d_model=128, n_heads=2, grid_size=64, seed_rng=True):
+def build(arm, obs, seed, n_layers=1, banks=None, d_model=128, n_heads=2, grid_size=64, seed_rng=True, enc_gain=None):
     """The model of one cell. seed_rng=True seeds torch as train_variant does (torch.manual_seed(seed) right before
     the model is built; the environment draws no torch numbers), so the token twin of MapWM is bitwise
     train_variant's Vanilla_r4 at the same seed."""
@@ -190,7 +190,7 @@ def build(arm, obs, seed, n_layers=1, banks=None, d_model=128, n_heads=2, grid_s
     assert len(m.layers) == n_layers, (len(m.layers), n_layers)        # rule 17
     if obs == "image":
         assert banks is not None
-        use_image_obs(m, banks, seed)
+        use_image_obs(m, banks, seed, enc_gain)
     return m
 
 
@@ -205,5 +205,7 @@ def step_of(model, tokens):
     return model.action_to_lie(x)
 
 
-def cell_name(arm, obs, n_layers):
-    return f"{'I' if obs == 'image' else 'T'}_{arm}{'' if n_layers == 1 else f'_L{n_layers}'}"
+def cell_name(arm, obs, n_layers, enc_gain=None):
+    """I_/T_ + arm (+ _L<n> for depth) (+ _g<gain> for an image arm whose encoder gain is not ENC_GAIN, e.g. _g1)."""
+    g = "" if (obs != "image" or enc_gain is None or abs(enc_gain - ENC_GAIN) < 1e-6) else f"_g{enc_gain:g}"
+    return f"{'I' if obs == 'image' else 'T'}_{arm}{'' if n_layers == 1 else f'_L{n_layers}'}{g}"

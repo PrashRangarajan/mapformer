@@ -1,0 +1,9 @@
+# IMAGE_TORUS pilot 2 (diagnostic), 2026-10-25 12:15:09; seeds 3182-3183 outside the batch; 150 epochs, cosine; never pooled
+memoryless loss level (blank 0.5, 16 classes): ln 2 + 0.5 ln 16 = 2.079
+| run | arm | gain | seed | lr | loss ep 50 / 100 / 150 | held-out acc T=1024 (test images) | zeroobj | shuffle | probe | step obj/act, inst/act |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P2a | ActOnly | 30.3729 | 3182 | 1e-3 | 0.1737 0.0806 0.0148  | 0.9944 | 0.9944 | 0.2577 | 0.9841 | 0.000, 0.000 |
+| P2b | MapWM | 1.0 | 3182 | 1e-3 | 0.1901 0.0626 0.0154  | 0.9927 | 0.9376 | 0.2360 | 0.9829 | 0.003, 0.001 |
+| P2c | MapWM | 30.3729 | 3183 | 1e-3 | 2.0712 2.0688 2.0732  | 0.5027 | 0.5027 | 0.5027 | 0.1289 | 4.272, 0.000 |
+| P2d | MapWM | 30.3729 | 3182 | 3e-4 | 2.0627 2.0809 2.0799  | 0.5086 | 0.5086 | 0.5086 | 0.8699 | 572.417, 121.936 |
+pilot 1 (s3181, gain 30.37, lr 1e-3): I_MapWM 2.0488 2.0472 2.0458; I_RoPE 1.2883 1.2283 1.1996; T_MapWM 0.9118 0.7810 0.5178

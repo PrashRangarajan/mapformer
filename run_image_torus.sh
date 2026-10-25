@@ -2,7 +2,8 @@
 # IMAGE_TORUS_PREREG.md: the headline torus (64x64, T = 1024, 900 epochs, FACTORIAL's recipe) with each observation
 # token replaced by an image of its class (MNIST digits + six Fashion-MNIST classes; train split in training, test
 # split at evaluation). Seeds 3100-3107 (fresh). Block A (registered core): I_MapWM, I_ActOnly, I_RoPE, T_MapWM,
-# T_ActOnly = 40 runs (T_ActOnly added by Amendment 1);
+# T_ActOnly = 40 runs (T_ActOnly added by Amendment 1); Amendment 2 adds I_MapWM_g1 (image MapWM, encoder gain 1.0)
+# = 48 runs, and P1's path arm becomes I_ActOnly;
 # block B (optional, declared before launch): I_NormStep, I_RoPE_L4, T_RoPE = 24 runs.
 # REQUIRED in the environment (no defaults): DRV_GPUS, DRV_MAXPG, IMG_BLOCKS (A or AB; must equal the prereg's
 # "Declared blocks:" line). Planned launch (after both registered batches finish, after commit and the checker's amendment):
@@ -40,10 +41,11 @@ if (cd "$REPO" && git status --porcelain --untracked-files=no | grep -q .); then
 fi
 cd "$REPO/.."
 SEEDS=(3100 3101 3102 3103 3104 3105 3106 3107)
-# cell = name:arm:obs:layers -- deep first within a seed (it is the longest), then image arms, then token twins
-CELLS_A=("I_MapWM:MapWM:image:1" "I_ActOnly:ActOnly:image:1" "I_RoPE:RoPE:image:1" "T_MapWM:MapWM:token:1"
-         "T_ActOnly:ActOnly:token:1")                                       # T_ActOnly: Amendment 1, m3
-CELLS_B=("I_RoPE_L4:RoPE:image:4" "I_NormStep:NormStep:image:1" "T_RoPE:RoPE:token:1")
+# (block AB puts the deep cell first within a seed: it is the longest)
+# cell = name:arm:obs:layers:encoder gain ("-" = default 30.3729; the gain is part of the cell name when not default)
+CELLS_A=("I_ActOnly:ActOnly:image:1:-" "I_MapWM:MapWM:image:1:-" "I_RoPE:RoPE:image:1:-" "I_MapWM_g1:MapWM:image:1:1.0"
+         "T_MapWM:MapWM:token:1:-" "T_ActOnly:ActOnly:token:1:-")    # T_ActOnly: Amendment 1, m3; I_MapWM_g1: Amendment 2
+CELLS_B=("I_RoPE_L4:RoPE:image:4:-" "I_NormStep:NormStep:image:1:-" "T_RoPE:RoPE:token:1:-")
 if [ "$BLK" = AB ]; then CELLS=("${CELLS_B[0]}" "${CELLS_A[@]}" "${CELLS_B[1]}" "${CELLS_B[2]}"); else CELLS=("${CELLS_A[@]}"); fi
 mapfile -t GUARD < <(cd "$REPO/.." && CUDA_VISIBLE_DEVICES="" python3 -c "
 import sys
@@ -71,14 +73,15 @@ running(){ ps -u "$USER" -o comm=,args= | awk -v o="--output-dir $1" '$1=="pytho
 COMMON=(--epochs 900 --lr 1e-3 --n-batches 98 --batch-size 16 --n-steps 1024 --schedule cosine --data-workers 3 --fast-attn)
 REQ=()
 for S in "${SEEDS[@]}"; do for C in "${CELLS[@]}"; do         # seed outer, cell inner: a partial batch stays paired
-  IFS=: read -r NAME ARM OBS NL <<< "$C"; OUT="$R/$NAME/${NAME}_s$S"; REQ+=("$OUT/$NAME.pt")
+  IFS=: read -r NAME ARM OBS NL GAIN <<< "$C"; OUT="$R/$NAME/${NAME}_s$S"; REQ+=("$OUT/$NAME.pt")
+  GA=(); [ "$GAIN" = - ] || GA=(--enc-gain "$GAIN")
   [ -f "$OUT/$NAME.pt" ] && { _drv_log "skip $NAME s$S (done)"; continue; }
   running "$OUT" && { _drv_log "skip $NAME s$S (running)"; continue; }
   drv_md5_guard "$R" "${GUARD[@]}" "${DATA[@]}" || drv_fail "code changed during the batch"   # per launch (rule 22)
   if [ "$DRY" = 1 ]; then G="${DRV_GPUS%% *}"; else G=$(drv_wait_slot); fi   # a dry run never waits for a slot
   mkdir -p "$OUT"; _drv_log "$NAME s$S -> cuda:$G"
   OMP_NUM_THREADS=3 drv_launch "$R/$NAME/${NAME}_s${S}.log" python3 -u -m mapformer.train_image --arm "$ARM" --obs "$OBS" \
-    --n-layers "$NL" --seed "$S" "${COMMON[@]}" --device "cuda:$G" --output-dir "$OUT"
+    --n-layers "$NL" "${GA[@]}" --seed "$S" "${COMMON[@]}" --device "cuda:$G" --output-dir "$OUT"
 done; done
 NEXP=$(( ${#SEEDS[@]} * ${#CELLS[@]} ))
 [ "${#REQ[@]}" -eq "$NEXP" ] || drv_fail "expected $NEXP checkpoints, listed ${#REQ[@]}"

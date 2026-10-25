@@ -8,8 +8,10 @@ Reads runs/image_torus/<cell>/<cell>_s<seed>/eval_image.json (eval_image_torus.p
 IMAGE_TORUS_VERDICTS.json.
 
 REGISTERED (accuracy on revisit targets, held-out map, test-split images, T = 1024; n = 8 vs 8; exact two-sided
-permutation test, stats_core.perm2_p, C(16, 8) = 12870 relabellings; Holm over P1 and P2 at family alpha 0.05):
-  P1  I_MapWM - I_RoPE       does path integration survive pixel observations at one layer?
+permutation test, stats_core.perm2_p, C(16, 8) = 12870 relabellings; Holm over P1 and P2 at family alpha 0.05).
+AMENDMENT 2 (redesign after pilot 1's stop rule): P1's path arm is I_ActOnly (image MapWM at the init-matched gain never
+learned in two pilots); P2 is unchanged in form but PILOT-INFORMED (not blind), confirmed on the fresh seeds 3100-3107.
+  P1  I_ActOnly - I_RoPE     does path integration survive pixel observations at one layer?
       PATH WINS IN PIXELS      d >= 0.05 and p_Holm < 0.05
       INDEX WINS IN PIXELS     d <= -0.05 and p_Holm < 0.05
       WITHIN 0.05              the 95% permutation CI of d lies inside (-0.05, +0.05)
@@ -18,14 +20,27 @@ permutation test, stats_core.perm2_p, C(16, 8) = 12870 relabellings; Holm over P
       directional label gets [winning arm at or below the retrace floor] when the winner's mean is <= the mean
       retrace floor -- Amendment 1, m2; the retrace floor assumes perfect recognition, so it is optimistic for pixels)
   P2  I_ActOnly - I_MapWM    does the observation-driven step (the what-to-where leak) cost accuracy?
-      THE LEAK COSTS IN PIXELS d >= 0.01 and p_Holm < 0.05
+      THE OBSERVATION STEP COSTS IN PIXELS d >= 0.01 and p_Holm < 0.05
       ACTION-ONLY HURTS        d <= -0.01 and p_Holm < 0.05
       WITHIN 0.01              the 95% permutation CI of d lies inside (-0.01, +0.01)
       UNMEASURED               otherwise
+      I_MapWM is the image MapWM at the init-matched encoder gain (30.3729). AMENDMENT 3: label words name the
+      observation STEP, not a mechanism; beside P2 a declared descriptive per-seed END STATE of each image MapWM seed:
+      LEARNED (acc > that seed's retrace floor), else COLLAPSED (encoder probe test acc < 0.5), else NOISY
+      (within-class step / action step >= 1 and probe >= 0.5), else OTHER (precedence in that order).
+      P2 and G are printed with "PILOT-INFORMED, NOT BLIND"; P1 with "partly pilot-informed".
       ("IN PIXELS" names the condition; the pixel-specific attribution is the secondary S2b
        (I_ActOnly - I_MapWM) - (T_ActOnly - T_MapWM), Amendment 1, m3)
       Beside P2, a DECLARED SECONDARY (no verdict, outside Holm; Amendment 1, M3 as revised): seeds within 0.01 of
       their seed's ceil_vote, I_ActOnly vs I_MapWM, two-sided Fisher exact (stats_core.fisher_solved).
+  G   REGISTERED SECONDARY (own label, outside Holm; Amendment 2): I_MapWM_g1 - I_MapWM, image MapWM with encoder
+      gain 1.0 vs 30.3729 -- does the cost scale with how strongly images enter the step map?
+      GAIN 1 RESCUES MAPWM     d >= 0.05 and perm p < 0.05 (gain 1 ahead)
+      NO RESCUE >= 0.05        the 95% CI of d lies below +0.05
+      (AMENDMENT 3: the gain scales the whole image embedding -- step-map input AND residual stream -- so G is a total
+      effect of the encoder-output scale at two values, not a dose-response and not specific to the step map)
+      AS IT FALLS              otherwise
+      beside it, I_ActOnly - I_MapWM_g1 (the residual cost at gain 1), d and perm p, no label.
   Every label carries the run classes of both arms (SOLVED / STALLED / DESCENDING, stats_core.classify_run; TAGS
   only -- in image arms the loss has a recognition floor, so STALLED is not "stuck": read it with the ceiling count) and,
   per arm, how many seeds sit above the retrace floor and within 0.01 of the perception ceiling (ceil_vote).
@@ -34,7 +49,7 @@ run that drew a test-split image, or a registered readout that drew a train-spli
 runs or from the gate's.
 Declared secondaries (no verdict): S1 cost of pixels; S2 leak readouts and step statistics; S3 perception (probe,
 transfer gap); S4 strata vs retrace; S5 context destruction; S6 run classes, r(loss, acc), lengths, own map;
-S7 block B contrasts (if declared); P1' I_ActOnly - I_RoPE.
+S7 block B contrasts (if declared); P1' I_MapWM - I_RoPE (the pre-Amendment-2 P1).
 """
 import argparse
 import json
@@ -46,13 +61,20 @@ import numpy as np
 
 from mapformer.stats_core import perm2_p, perm2_ci, classify_run, signflip_p, fisher_solved
 
+ENC_GAIN = 30.3729          # = model_image.ENC_GAIN (not imported: the analysis needs no torch)
+PILOT_P2 = "[PILOT-INFORMED, NOT BLIND: direction known from pilots 1-2 (3 seeds at 150 epochs)]"
+PILOT_G = "[PILOT-INFORMED, NOT BLIND: one pilot seed]"
+PILOT_P1 = ("[partly pilot-informed: image ActOnly 0.9944 on one pilot seed, image RoPE's pilot training loss known; "
+            "image RoPE accuracy unseen]")
+
 REPO = "/home/prashr/mapformer"
 RUNS = f"{REPO}/runs/image_torus"
 GATE = f"{REPO}/IMAGE_TORUS_GATE.json"
 SEEDS = list(range(3100, 3108))
-BLOCKS = {"A": ["I_MapWM", "I_ActOnly", "I_RoPE", "T_MapWM", "T_ActOnly"], "B": ["I_NormStep", "I_RoPE_L4", "T_RoPE"]}
-IMAGE_CELLS = ("I_MapWM", "I_ActOnly", "I_RoPE", "I_NormStep", "I_RoPE_L4")
-PATH_CELLS = ("I_MapWM", "I_ActOnly", "I_NormStep", "T_MapWM", "T_ActOnly")
+BLOCKS = {"A": ["I_ActOnly", "I_MapWM", "I_RoPE", "I_MapWM_g1", "T_MapWM", "T_ActOnly"],     # Amendment 2: 48 runs
+          "B": ["I_NormStep", "I_RoPE_L4", "T_RoPE"]}
+IMAGE_CELLS = ("I_MapWM", "I_ActOnly", "I_RoPE", "I_MapWM_g1", "I_NormStep", "I_RoPE_L4")
+PATH_CELLS = ("I_MapWM", "I_ActOnly", "I_MapWM_g1", "I_NormStep", "T_MapWM", "T_ActOnly")
 STRATA = ("plain_lag<128", "plain_lag>=128", "wrap")
 SNAME = {"plain_lag<128": "short-gap", "plain_lag>=128": "long-gap", "wrap": "wrap-only"}
 KEY = "test|1024"
@@ -93,6 +115,12 @@ def voids(D, gate):
             if ed.get("train", 1) != 0 or ed.get("test", 0) <= 0:
                 v.append(f"{c} s{r['seed']}: registered readouts drew {ed} (must be test split only)")
             md5s.add(r.get("bank_md5"))
+    for c in IMAGE_CELLS:                       # gain void (Amendment 3, n4): belt and braces over the cell-name chain
+        want = 1.0 if c == "I_MapWM_g1" else ENC_GAIN
+        for r in D.get(c, []):
+            g = r.get("enc_gain")
+            if g is None or abs(g - want) > 1e-4:
+                v.append(f"{c} s{r['seed']}: encoder gain {g} != {want}")
     if len(md5s) > 1 or (md5s and gate.get("bank_md5") not in md5s):
         v.append(f"bank md5 differs: runs {sorted(md5s)}, gate {gate.get('bank_md5')}")
     return v
@@ -138,6 +166,28 @@ def tags(D, c, gate):
             f"{ab}/{n}; within 0.01 of ceil_vote {at}/{n}")
 
 
+END_STATES = ("LEARNED", "COLLAPSED", "NOISY", "OTHER")
+
+
+def end_state(r, retrace):
+    """Amendment 3 (M1), thresholds fixed before the batch: LEARNED if acc > the seed's retrace floor; else COLLAPSED if
+    the encoder's linear probe test acc < 0.5; else NOISY if within-class (per-instance) step / action step >= 1 (probe
+    >= 0.5); else OTHER."""
+    if r["acc"][KEY] > retrace:
+        return "LEARNED"
+    pr = (r.get("probe") or {}).get("test_acc")
+    if pr is not None and pr < 0.5:
+        return "COLLAPSED"
+    ia = (r.get("step") or {}).get("instance_over_action")
+    if ia is not None and ia >= 1.0 and pr is not None:
+        return "NOISY"
+    return "OTHER"
+
+
+def end_states(D, c, gate):
+    return [(r["seed"], end_state(r, floor_of(gate, r["seed"], "retrace"))) for r in D.get(c, [])]
+
+
 def holm(ps):
     order = np.argsort(ps); m = len(ps); adj = np.empty(m); run = 0.0
     for i, j in enumerate(order):
@@ -157,7 +207,7 @@ def label_p1(d, p, ci):
 
 def label_p2(d, p, ci):
     if d >= 0.01 and p < 0.05:
-        return "THE LEAK COSTS IN PIXELS"
+        return "THE OBSERVATION STEP COSTS IN PIXELS"
     if d <= -0.01 and p < 0.05:
         return "ACTION-ONLY HURTS"
     if ci["lo"] is not None and ci["lo"] > -0.01 and ci["hi"] < 0.01:
@@ -174,7 +224,7 @@ def contrast(D, a, b, key=KEY):
 
 
 def registered(D, gate):
-    P1 = contrast(D, "I_RoPE", "I_MapWM"); P2 = contrast(D, "I_MapWM", "I_ActOnly")
+    P1 = contrast(D, "I_RoPE", "I_ActOnly"); P2 = contrast(D, "I_MapWM", "I_ActOnly")      # Amendment 2
     adj = holm(np.array([P1["p"], P2["p"]]))                             # Holm over two (Amendment 1, M3 revised)
     P1["p_holm"], P2["p_holm"] = float(adj[0]), float(adj[1])
     P1["label"] = label_p1(P1["d"], P1["p_holm"], P1["ci"]); P2["label"] = label_p2(P2["d"], P2["p_holm"], P2["ci"])
@@ -205,14 +255,21 @@ def report(D, gate, blocks, out=print):
     out("== REGISTERED (T = 1024, test-split images, held-out map; n = 8 vs 8; Holm over P1, P2) ==")
     for k in ("P1", "P2"):
         C = R[k]
-        out(f"{k} -> {C['label']}"); out("   " + fmt(C, k))
+        out(f"{k} -> {C['label']}  " + (PILOT_P2 if k == "P2" else PILOT_P1)); out("   " + fmt(C, k))
         if k == "P2":
+            es = end_states(D, "I_MapWM", gate)
+            out("   (declared descriptive, no verdict) image MapWM end state per seed: "
+                + ", ".join(f"s{s} {e}" for s, e in es) + "; counts "
+                + ", ".join(f"{e} {sum(x == e for _, x in es)}" for e in END_STATES))
+            V["secondary"]["P2_end_states_I_MapWM"] = dict((str(s), e) for s, e in es)
             F = C["fisher_secondary"]
             out(f"   (declared secondary, no verdict, outside Holm) seeds within 0.01 of ceil_vote: I_ActOnly "
                 f"{F['k_ActOnly']}/{F['n']} vs I_MapWM {F['k_MapWM']}/{F['n']}, Fisher p {F['p']:.4g}")
         out("   [" + tags(D, C["b"], gate) + "]"); out("   [" + tags(D, C["a"], gate) + "]")
         V["registered"][k] = {x: C[x] for x in ("a", "b", "d", "p", "p_holm", "label", "mean_a", "mean_b")}
         V["registered"][k]["ci"] = C["ci"]
+        V["registered"][k]["pilot_informed"] = True if k == "P2" else "partly"
+        V["registered"][k]["disclosure"] = PILOT_P2 if k == "P2" else PILOT_P1
         if k == "P2":
             V["secondary"]["P2_within_ceiling_fisher"] = C["fisher_secondary"]
     floors = {"blank": float(by_seed(gate, "blank").mean()), "retrace": float(by_seed(gate, "retrace").mean()),
@@ -254,10 +311,12 @@ def report(D, gate, blocks, out=print):
         if c in D and D[c]:
             L = np.array([r["acc"]["zeroobj|1024"] - r["acc"][KEY] for r in D[c]])
             oa = [r["step"]["object_over_action"] for r in D[c]]; ia = [r["step"]["instance_over_action"] for r in D[c]]
-            S2[c] = {"L_mean": float(L.mean()), "object_over_action": float(np.mean(oa)),
-                     "instance_over_action": float(np.mean(ia))}
-            out(f"   {c:11s} L {L.mean():+.4f} +/- {L.std(ddof=1):.4f}; object/action step {np.mean(oa):.4f}; "
-                f"within-class (instance)/action {np.mean(ia):.4f}")
+            S2[c] = {"L_median": float(np.median(L)), "L_range": [float(L.min()), float(L.max())],
+                     "object_over_action_median": float(np.median(oa)), "object_over_action_range": [min(oa), max(oa)],
+                     "instance_over_action_median": float(np.median(ia)), "instance_over_action_range": [min(ia), max(ia)]}
+            out(f"   {c:11s} L median {np.median(L):+.4f} [{L.min():+.4f}, {L.max():+.4f}]; object/action step median "
+                f"{np.median(oa):.4f} [{min(oa):.4f}, {max(oa):.4f}]; within-class (instance)/action median "
+                f"{np.median(ia):.4f} [{min(ia):.4f}, {max(ia):.4f}]")
     if D.get("I_MapWM") and D.get("T_MapWM"):
         Li = [r["acc"]["zeroobj|1024"] - r["acc"][KEY] for r in D["I_MapWM"]]
         Lt = [r["acc"]["zeroobj|1024"] - r["acc"][KEY] for r in D["T_MapWM"]]
@@ -280,9 +339,13 @@ def report(D, gate, blocks, out=print):
         if c in D and D[c]:
             pr = [r["probe"]["test_acc"] for r in D[c] if "probe" in r]
             gap = np.array([r["acc"]["train|1024"] - r["acc"][KEY] for r in D[c]])
-            S3[c] = {"probe": float(np.mean(pr)) if pr else None, "gap": float(gap.mean()), "gap_p": signflip_p(gap)["p"]}
-            out(f"   {c:11s} probe {np.mean(pr) if pr else float('nan'):.4f}; gap {gap.mean():+.4f} "
-                f"(sign-flip p {signflip_p(gap)['p']:.3g})")
+            S3[c] = {"probe_median": float(np.median(pr)) if pr else None,
+                     "probe_range": [min(pr), max(pr)] if pr else None,
+                     "gap_median": float(np.median(gap)), "gap_range": [float(gap.min()), float(gap.max())],
+                     "gap_p": signflip_p(gap)["p"]}
+            out(f"   {c:11s} probe median {np.median(pr) if pr else float('nan'):.4f} "
+                f"[{min(pr) if pr else float('nan'):.4f}, {max(pr) if pr else float('nan'):.4f}]; gap median "
+                f"{np.median(gap):+.4f} [{gap.min():+.4f}, {gap.max():+.4f}] (sign-flip p {signflip_p(gap)['p']:.3g})")
     V["secondary"]["S3"] = S3
     # S4 strata
     out("S4 strata (T = 1024): cell acc / retrace floor on the same walks")
@@ -301,12 +364,35 @@ def report(D, gate, blocks, out=print):
     rr = float(np.corrcoef(tails, accs)[0, 1]) if len(set(tails)) > 1 else float("nan")
     out(f"S6 r(final-5% training loss, acc T=1024) over {len(tails)} runs: {rr:+.3f}")
     V["secondary"]["S6_r_loss_acc"] = rr
+    # G: registered secondary, own label, outside Holm (Amendment 2)
+    G = contrast(D, "I_MapWM", "I_MapWM_g1")
+    if G["d"] >= 0.05 and G["p"] < 0.05:
+        G["label"] = "GAIN 1 RESCUES MAPWM"
+    elif G["ci"]["hi"] is not None and G["ci"]["hi"] < 0.05:
+        G["label"] = "NO RESCUE >= 0.05"
+    else:
+        G["label"] = "AS IT FALLS"
+    Gr = contrast(D, "I_MapWM_g1", "I_ActOnly")
+    out(f"G (registered secondary, outside Holm) -> {G['label']}  {PILOT_G}"); out("   " + fmt(G, "I_MapWM_g1 - I_MapWM"))
+    out("   [" + tags(D, "I_MapWM_g1", gate) + "]")
+    es1 = end_states(D, "I_MapWM_g1", gate)
+    out("   (declared descriptive) gain-1 MapWM end state per seed: " + ", ".join(f"s{s} {e}" for s, e in es1))
+    out("   residual cost at gain 1: " + fmt(Gr, "I_ActOnly - I_MapWM_g1"))
+    V["registered_secondary"] = {"G": {"label": G["label"], "d": G["d"], "p": G["p"], "ci": G["ci"],
+                                       "pilot_informed": True, "disclosure": PILOT_G},
+                                 "residual_g1": {"d": Gr["d"], "p": Gr["p"]}}
     # P1' and S7
-    out("P1' (secondary) " + fmt(contrast(D, "I_RoPE", "I_ActOnly"), "I_ActOnly - I_RoPE"))
+    P1o = contrast(D, "I_RoPE", "I_MapWM")
+    lab = label_p1(P1o["d"], P1o["p"], P1o["ci"])
+    out(f"P1' -> {lab}  [original P1 rule on the RAW p, outside Holm, superseded by Amendment 2; the pre-pilot "
+        f"prediction (I_MapWM 0.97-0.99) was contradicted by the pilots]")
+    out("   " + fmt(P1o, "I_MapWM - I_RoPE"))
+    V["secondary"]["P1_original"] = {"label": lab, "d": P1o["d"], "p_raw": P1o["p"], "superseded": True}
     if "B" in blocks:
         out("S7 block B:")
         S7 = {}
-        for a, b in (("I_RoPE", "I_RoPE_L4"), ("I_RoPE_L4", "I_MapWM"), ("I_MapWM", "I_NormStep"),
+        # Amendment 3 (n7): the depth reference is read against the path arm that learns (I_ActOnly)
+        for a, b in (("I_RoPE", "I_RoPE_L4"), ("I_RoPE_L4", "I_ActOnly"), ("I_MapWM", "I_NormStep"),
                      ("T_RoPE", "T_MapWM"), ("T_RoPE", "I_RoPE")):
             C = contrast(D, a, b); S7[f"{b}-{a}"] = {"d": C["d"], "p": C["p"]}; out("   " + fmt(C, f"{b} - {a}"))
         V["secondary"]["S7"] = S7
@@ -348,7 +434,7 @@ def _fake_gate(path, seeds):
 
 
 def _fake_runs(root, seeds, accs, blocks="A", actonly_leak=0.0, test_draw_in_train=False, train_draw_in_eval=False,
-               drop=None, desc=None, bad_md5=False, no_train_draws=False):
+               drop=None, desc=None, bad_md5=False, no_train_draws=False, bad_gain=False, probe=None, inst=None):
     rng = np.random.default_rng(0)
     for c in cells_for(blocks):
         for i, s in enumerate(seeds):
@@ -367,23 +453,27 @@ def _fake_runs(root, seeds, accs, blocks="A", actonly_leak=0.0, test_draw_in_tra
             if c in PATH_CELLS:
                 r["acc"]["zeroobj|1024"] = a + (actonly_leak if c == "I_ActOnly" else (0.0 if c.endswith("ActOnly") else 0.004))
                 r["step"] = {"object_over_action": 0.05, "instance_over_action": 0.02 if img else 0.0}
+                if inst and c in inst:
+                    r["step"]["instance_over_action"] = inst[c][i]
             if img:
                 r["bank_md5"] = "y" if (bad_md5 and c == "I_RoPE") else "x"
                 r["train_draws"] = ({} if no_train_draws else {"train": 10 ** 8, "test": 1 if test_draw_in_train else 0})
                 r["draws_eval_main"] = {"train": 1 if train_draw_in_eval else 0, "test": 10 ** 6}
-                r["probe"] = {"test_acc": 0.98}
+                r["probe"] = {"test_acc": probe[c][i] if (probe and c in probe) else 0.98}
+                r["enc_gain"] = (1.0 if c == "I_MapWM_g1" else ENC_GAIN) + (0.5 if (bad_gain and c == "I_ActOnly") else 0.0)
             d = f"{root}/{c}/{c}_s{s}"; os.makedirs(d, exist_ok=True)
             json.dump(r, open(f"{d}/eval_image.json", "w"))
 
 
 def selftest():
     S = SEEDS
-    base = {"I_MapWM": 0.99, "I_ActOnly": 0.995, "I_RoPE": 0.72, "T_MapWM": 1.0, "T_ActOnly": 1.0, "I_NormStep": 0.99,
+    base = {"I_MapWM": 0.99, "I_ActOnly": 0.995, "I_RoPE": 0.72, "I_MapWM_g1": 0.99, "T_MapWM": 1.0, "T_ActOnly": 1.0,
+            "I_NormStep": 0.99,
             "I_RoPE_L4": 0.85, "T_RoPE": 0.72}
     lin = lambda lo, hi: list(np.linspace(lo, hi, 8))
     cases = [
-        ("P1 PATH WINS / P2 LEAK COSTS", dict(base, I_MapWM=lin(0.975, 0.985), I_ActOnly=lin(0.994, 0.998)),
-         {"P1": "PATH WINS IN PIXELS", "P2": "THE LEAK COSTS IN PIXELS"}, "A", {}),
+        ("P1 PATH WINS / P2 OBSERVATION STEP COSTS", dict(base, I_MapWM=lin(0.975, 0.985), I_ActOnly=lin(0.994, 0.998)),
+         {"P1": "PATH WINS IN PIXELS", "P2": "THE OBSERVATION STEP COSTS IN PIXELS"}, "A", {}),
         ("P1 INDEX WINS / P2 ACTION-ONLY HURTS", dict(base, I_MapWM=lin(0.60, 0.62), I_RoPE=lin(0.72, 0.74),
                                                       I_ActOnly=lin(0.55, 0.57)),
          {"P1": "INDEX WINS IN PIXELS [winning arm at or below the retrace floor]",
@@ -393,7 +483,7 @@ def selftest():
          {"P1": "PATH WINS IN PIXELS [winning arm at or below the retrace floor]",
           "P2": "WITHIN 0.01 [NOT LEARNED: both arms at or below the retrace floor]"}, "A", {}),
         ("Holm changes both labels (raw p 0.032 / 0.039 -> Holm 0.063 / 0.063)",
-         dict(base, I_MapWM=lin(0.90, 0.94), I_RoPE=lin(0.70, 0.975), I_ActOnly=lin(0.916, 0.956)),
+         dict(base, I_MapWM=lin(0.90, 0.94), I_RoPE=lin(0.716, 0.991), I_ActOnly=lin(0.916, 0.956)),
          {"P1": "UNMEASURED", "P2": "UNMEASURED"}, "A", {"raw_p2_below": 0.05}),
         ("P1 WITHIN / P2 WITHIN", dict(base, I_MapWM=lin(0.900, 0.904), I_RoPE=lin(0.899, 0.903),
                                        I_ActOnly=lin(0.9005, 0.9045)),
@@ -406,9 +496,9 @@ def selftest():
          {"P1": "WITHIN 0.05 [NOT LEARNED: both arms at or below the retrace floor]",
           "P2": "WITHIN 0.01 [NOT LEARNED: both arms at or below the retrace floor]"}, "A", {}),
         ("block B present", dict(base, I_MapWM=lin(0.975, 0.985), I_ActOnly=lin(0.994, 0.998)),
-         {"P1": "PATH WINS IN PIXELS", "P2": "THE LEAK COSTS IN PIXELS"}, "AB", {}),
+         {"P1": "PATH WINS IN PIXELS", "P2": "THE OBSERVATION STEP COSTS IN PIXELS"}, "AB", {}),
         ("tags with DESCENDING runs", dict(base, I_MapWM=lin(0.975, 0.985), I_ActOnly=lin(0.994, 0.998)),
-         {"P1": "PATH WINS IN PIXELS", "P2": "THE LEAK COSTS IN PIXELS"}, "A", {"desc": {"I_MapWM"}}),
+         {"P1": "PATH WINS IN PIXELS", "P2": "THE OBSERVATION STEP COSTS IN PIXELS"}, "A", {"desc": {"I_MapWM"}}),
     ]
     ok = True
     for name, accs, want, blocks, kw in cases:
@@ -432,13 +522,46 @@ def selftest():
                            ("void: train image in a registered readout", {"train_draw_in_eval": True}, "registered readouts"),
                            ("void: missing run", {"drop": ("I_RoPE", 3103)}, "missing"),
                            ("void: bank md5 mismatch", {"bad_md5": True}, "bank md5"),
-                           ("void: no train draws recorded", {"no_train_draws": True}, "none recorded")):
+                           ("void: no train draws recorded", {"no_train_draws": True}, "none recorded"),
+                           ("void: encoder gain mismatch", {"bad_gain": True}, "encoder gain")):
         with tempfile.TemporaryDirectory() as td:
             _fake_gate(f"{td}/gate.json", S); _fake_runs(f"{td}/runs", S, base, "A", **kw)
             res = run(f"{td}/runs", f"{td}/gate.json", "A", S, None, out=lambda *_: None)
             good = "void" in res and any(frag in v for v in res["void"])
             ok &= good
             print(f"[{'ok' if good else 'FAIL'}] {name}: {res.get('void', ['not void'])[0][:90]}")
+    # G (registered secondary): each label
+    for name, accs, want in (("G GAIN 1 RESCUES MAPWM", dict(base, I_MapWM=lin(0.50, 0.52), I_MapWM_g1=lin(0.97, 0.99)),
+                              "GAIN 1 RESCUES MAPWM"),
+                             ("G NO RESCUE", dict(base, I_MapWM=lin(0.50, 0.52), I_MapWM_g1=lin(0.50, 0.52)),
+                              "NO RESCUE >= 0.05"),
+                             ("G AS IT FALLS", dict(base, I_MapWM=[0.5, 0.9] * 4, I_MapWM_g1=[0.5, 1.0, 0.6, 1.0] * 2),
+                              "AS IT FALLS")):
+        with tempfile.TemporaryDirectory() as td:
+            _fake_gate(f"{td}/gate.json", S); _fake_runs(f"{td}/runs", S, accs, "A")
+            res = run(f"{td}/runs", f"{td}/gate.json", "A", S, None, out=lambda *_: None)
+            got = res["registered_secondary"]["G"]["label"]; good = got == want; ok &= good
+            print(f"[{'ok' if good else 'FAIL'}] {name}: {got}")
+    # end states (Amendment 3, M1), disclosures (m1, m2) and P1' under the original rule (m3)
+    with tempfile.TemporaryDirectory() as td:
+        accs = dict(base, I_MapWM=[0.5] * 6 + [0.99, 0.99], I_ActOnly=lin(0.994, 0.998))
+        pr = {"I_MapWM": [0.13, 0.13, 0.13, 0.87, 0.87, 0.87, 0.98, 0.98]}
+        ins = {"I_MapWM": [0.0, 0.0, 0.0, 120.0, 120.0, 0.5, 0.02, 0.02]}
+        _fake_gate(f"{td}/gate.json", S); _fake_runs(f"{td}/runs", S, accs, "A", probe=pr, inst=ins)
+        lines = []
+        res = run(f"{td}/runs", f"{td}/gate.json", "A", S, None, out=lines.append)
+        es = res["secondary"]["P2_end_states_I_MapWM"]
+        cnt = {e: sum(v == e for v in es.values()) for e in END_STATES}
+        good = cnt == {"LEARNED": 2, "COLLAPSED": 3, "NOISY": 2, "OTHER": 1}
+        good &= any(l.startswith("P2 -> ") and PILOT_P2 in l for l in lines)
+        good &= any(l.startswith("P1 -> ") and PILOT_P1 in l for l in lines)
+        good &= any(l.startswith("G (registered") and PILOT_G in l for l in lines)
+        good &= (res["registered"]["P2"]["pilot_informed"] is True and res["registered_secondary"]["G"]["pilot_informed"]
+                 is True and res["registered"]["P1"]["pilot_informed"] == "partly")
+        good &= any(l.startswith("P1' -> ") and "superseded" in l for l in lines) and res["secondary"]["P1_original"]["superseded"]
+        good &= any("median" in l and "[" in l for l in lines if l.strip().startswith("I_MapWM ") and "probe" in l)
+        ok &= good
+        print(f"[{'ok' if good else 'FAIL'}] end states {cnt}; disclosures on P1 / P2 / G; P1' original rule; medians")
     # gate seeds must equal the batch seeds
     with tempfile.TemporaryDirectory() as td:
         _fake_gate(f"{td}/gate.json", S[:-1] + [9999]); _fake_runs(f"{td}/runs", S, base, "A")

@@ -1,0 +1,20 @@
+# IMAGE_TORUS pilot 2026-10-25 02:40:59, GPU 0 (NVIDIA GeForce RTX 4090), baseline 24 MiB
+## stage 1: solo, 10 epochs (median s/epoch over the 5-epoch prints after the first; peak MiB above baseline)
+T_MapWM: 0.9 s/epoch (whole run incl. start-up 2.60 s/epoch); peak +999 MiB; params=204,757
+I_MapWM: 2.1 s/epoch (whole run incl. start-up 3.88 s/epoch); peak +1547 MiB; params=284,725
+I_MapWM_bench: 1.7 s/epoch (whole run incl. start-up 3.58 s/epoch); peak +1529 MiB; params=284,725
+I_RoPE: 2.0 s/epoch (whole run incl. start-up 3.77 s/epoch); peak +1507 MiB; params=283,893
+## stage 2: contended, block A's four arms at once, 15 epochs
+I_MapWM: 5.8 s/epoch (whole run 9.19 s/epoch)
+I_ActOnly: 5.8 s/epoch (whole run 9.19 s/epoch)
+I_RoPE: 6.9 s/epoch (whole run 9.01 s/epoch)
+T_MapWM: 4.2 s/epoch (whole run 5.18 s/epoch)
+contended peak +5617 MiB total
+## stage 3: evaluator wall time per run (all readouts + probe)
+I_MapWM eval: 10 s
+T_MapWM eval: 2 s
+## stage 4: learning check, 150 epochs (training loss at epochs 50 / 100 / 150; eval NOT read)
+I_MapWM: 2.0488 2.0472 2.0458 
+I_RoPE: 1.2883 1.2283 1.1996 
+T_MapWM: 0.9118 0.7810 0.5178 
+done 2026-10-25 03:00:22

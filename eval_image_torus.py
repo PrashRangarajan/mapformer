@@ -45,8 +45,10 @@ def load(ckpt, dev, banks=None):
         banks = banks or image_bank.load_banks()
         assert c["bank_md5"] == image_bank.bank_md5(), (ckpt, c["bank_md5"])
     m = MI.build(c["arm"], c["obs"], b["seed"], n_layers=c["n_layers"], banks=banks, grid_size=c["grid_size"],
-                 seed_rng=False)
+                 seed_rng=False, enc_gain=c.get("enc_gain"))
     m.load_state_dict(b["model_state_dict"])               # strict; the image banks are non-persistent buffers
+    if c["obs"] == "image":                                # enc_gain is a persistent buffer: restored by the load
+        assert abs(float(MI.image_emb(m).enc_gain) - c["enc_gain"]) < 1e-5, (ckpt, c["enc_gain"])
     return m.to(dev).eval(), b
 
 
@@ -197,7 +199,7 @@ def evaluate_run(ckpt, dev, banks=None, n_trials=N_TRIALS, lengths=(1024, 512, 2
     emb = MI.image_emb(m)
     d0 = dict(emb.draws) if emb is not None else None
     R = {"ckpt": os.path.abspath(ckpt), "cell": blob["variant"], "seed": s, "arm": c["arm"], "obs": c["obs"],
-         "n_layers": c["n_layers"], "bank_md5": c.get("bank_md5"), "losses": [float(x) for x in blob["losses"]],
+         "n_layers": c["n_layers"], "enc_gain": c.get("enc_gain"), "bank_md5": c.get("bank_md5"), "losses": [float(x) for x in blob["losses"]],
          "acc": {}, "strata": {}}
     for T in lengths:
         W = walks(ENV_SEED, 1234 + s, n_trials, T, gs)

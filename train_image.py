@@ -64,6 +64,9 @@ def main(argv=None):
     ap.add_argument("--grid-size", type=int, default=64)
     ap.add_argument("--fast-attn", action="store_true", help="as train_variant: SDPA in WMTransformerLayer, TF32 off")
     ap.add_argument("--deterministic", action="store_true", help="as train_variant")
+    ap.add_argument("--enc-gain", type=float, default=MI.ENC_GAIN,
+                    help="fixed encoder-output gain for image arms (default ENC_GAIN = 30.3729, Amendment 1; 1.0 = no "
+                         "gain). A non-default gain is part of the cell name (_g<gain>) and the checkpoint config")
     ap.add_argument("--cudnn-benchmark", action="store_true",
                     help="cudnn autotuning for the encoder convs (pilot decides; off by default)")
     ap.add_argument("--bank", default=image_bank.CACHE)
@@ -89,14 +92,16 @@ def main(argv=None):
     check_interleaving(env, args.n_steps)
     banks = image_bank.load_banks(args.bank) if args.obs == "image" else None
     bank_md5 = image_bank.bank_md5(args.bank) if args.obs == "image" else None
-    model = MI.build(args.arm, args.obs, args.seed, n_layers=args.n_layers, banks=banks,
+    if args.obs == "token" and abs(args.enc_gain - MI.ENC_GAIN) > 1e-6:
+        raise SystemExit("--enc-gain applies to image arms only")
+    model = MI.build(args.arm, args.obs, args.seed, n_layers=args.n_layers, banks=banks, enc_gain=args.enc_gain,
                      grid_size=args.grid_size, seed_rng=True)
     if args.fast_attn:
         from mapformer.model import WMTransformerLayer as _WML
         plain = [m for m in model.modules() if type(m).forward is _WML.forward]
         if not plain:
             raise SystemExit(f"--fast-attn changes nothing for {args.arm}")
-    cell = MI.cell_name(args.arm, args.obs, args.n_layers)
+    cell = MI.cell_name(args.arm, args.obs, args.n_layers, args.enc_gain)
     n_enc = sum(p.numel() for p in model.token_emb.encoder.parameters()) if args.obs == "image" else 0
     print(f"{cell} seed={args.seed} params={sum(p.numel() for p in model.parameters()):,} (encoder {n_enc:,}) "
           f"bank {bank_md5}")
