@@ -321,3 +321,30 @@ dry run in a scratch clone (Sec. "Launch" below).
    applied: projection = 16 waves x 900 x s/epoch.
 2. Batch, after Amendment 2, a commit, and the same manual check:
    `cd /home/prashr/mapformer && DRV_GPUS="0 1" DRV_MAXPG=2 setsid nohup bash run_exptorus.sh > /dev/null 2>&1 &`
+
+## Amendment 2 -- pilot result and the 12 h rule (2026-10-26 03:45, before the batch)
+
+Pilot (`MODE=pilot`, seeds 3490-3491, outside the batch, never pooled; exp only, at lr 1e-3 and 3e-3, the batch's command
+line; 03:02-03:39 on both GPUs, no other job and no other user on the GPUs at any launch, so the timing is readable),
+from `runs/exptorus_pilot/PILOT_ANALYSIS.txt`:
+
+| run | class | final-5% loss | max post-warm-up loss - H_map | step max | census: cancelling / counted (wrap, zero); from past-pi start |
+|---|---|---|---|---|---|
+| exp 1e-3 s3490 | STALLED | 0.666 | -0.285 | 60.8 | 12/80 (8, 4); 7 |
+| exp 1e-3 s3491 | DESCENDING | 0.418 | -0.329 | 13.1 | 13/39 (12, 1); 12 |
+| exp 3e-3 s3490 | STALLED, UNSTABLE | 1.157 | +1.127 | 23.2 | 0/81; 0 |
+| exp 3e-3 s3491 | STALLED, UNSTABLE | 0.993 | +0.279 | 25.5 | 5/59 (0, 5); 1 |
+
+1. **12 h rule (Sec. 2): option B stands.** Median 2.40 s/epoch at the pilot's concurrency projects 16 waves x 900 epochs =
+   9.6 h of training for 64 runs at 4 concurrent (+ ~2 min evals), under 12 h. `EXPTORUS_RATES` is unchanged.
+2. **Disclosure: the batch is now partly pilot-informed for exp.** The pilot is not blind to exp's behaviour on the torus:
+   0 of 4 exp runs solved; both 3e-3 runs are UNSTABLE (loss above H_map + 0.05 after warm-up); at 1e-3 neither is
+   UNSTABLE, one stalled and one still descending, and their cancelling channels cancel mostly by a wrap, mostly from the
+   past-pi start set. Nothing in the design, analysis, thresholds or labels changes; the registered readings and the Sec. 4
+   predictions stand as written before the pilot. The results file will carry this disclosure beside the exp readings, and
+   the pilot's exp numbers are never pooled with the batch.
+3. **What the pilot cannot say.** Two seeds, one arm: it does not estimate exp's solve rate, and it says nothing about
+   softplus or the anchors. The 3e-3 instability suggests exp's selected rate will be 1e-3 (the analysis decides).
+
+Launch, after committing this amendment, with the same manual GPU check:
+`cd /home/prashr/mapformer && DRV_GPUS="0 1" DRV_MAXPG=2 setsid nohup bash run_exptorus.sh > /dev/null 2>&1 &`
