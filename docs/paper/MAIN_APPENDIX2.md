@@ -1,7 +1,7 @@
 # Appendix to "A map is a phase without a clock: what path-integrated attention learns, and what decides whether training finds it"
 
 *Draft 2 (2026-10-21; revised 2026-10-26: main-text Table 4 and Fig. 5 moved to G3 as Table G3a and Fig. G2, the
-revisit-class table is F1's, H4 and G9 scoped per the 2026-10-26 critical review), for `docs/paper/MAIN_DRAFT2.md`. Every number is copied from the file named beside it; a CORRECTED
+revisit-class table is F1's, H4 and G9 scoped per the 2026-10-26 critical review; H14 added with EXPTORUS), for `docs/paper/MAIN_DRAFT2.md`. Every number is copied from the file named beside it; a CORRECTED
 or AUDIT block at the top of a results file supersedes its body. "Registered" = a pre-registered decision or declared
 secondary; "(analysis)" = computed on stored streams or checkpoints, eval-only, never changing a verdict; its script is
 listed in App. O. App. E states and proves every theory statement the main text uses; statements not used are in
@@ -93,6 +93,7 @@ Pilots ran on seeds outside the batch except where noted.
 | SIGNROUTE | 7.3 | ring, moves +1/-1 | obs.-step-free signed, \|.\|, hybrid, abs_tied, exp, softplus at lr 1e-3 and 3e-3 | 1800-1807 | 300 | standard | yes | no |
 | G3_SSM (H10) | 7.3 | ring, moves +1/-1 | one-layer diagonal complex SSM: signed, \|.\|, softplus, exp, index; constructions (H at 3e-3, H2 at 1e-3) | 2100-2107 | 300; +100 | none (linear kernel) | yes | no (analysis re-run from the run dirs, identical) |
 | G3_SSM block A2 (H13) | 7.3 | ring, moves +1/-1 | the same SSM arms at lr 1e-3 from scratch | 2100-2107 | 300 | none (linear kernel) | yes (Amendment 3) | no (analysis re-run from the run dirs, identical) |
+| EXPTORUS (H14) | 7.3 | torus T = 1024 | obs.-step-free signed, \|.\|, exp, softplus at lr 1e-3 / 3e-3 | 3400-3407 | 900 | fast-attn | yes (Amendment 1; exp partly pilot-informed, Amendment 2) | no (windowed run classes cross-checked; cell means and permutation p re-derived from the evaluation files) |
 | SIGNSEP (H11) | 7.3 | ring, moves +1/-1 | obs.-step-free signed, \|.\|, \|.\| + wrap offset (W), signed with frozen move latents (F), W from past pi (P), one common start, at lr 1e-3 and 3e-3 | 2300-2307 | 300 | standard | yes | no |
 | SROPE_TORUS | 7.3 | torus T = 1024 | Selective RoPE (best LM config), without SiLU, state-tracking config, generator swap; MapWM; RoPE | 1700-1707 | 900 | fast-attn | yes | no |
 | DELTA_FREE | 7.4 | torus T = 128, r2 | PoPE / MapPoPE with delta pinned, free, frozen-random (path) | 1600-1607 | 300 | standard | yes | no |
@@ -854,7 +855,7 @@ problem.
 | E7 | phase decomposition; position-factor bound; tick rule | proved | bound consistent with the strata, not a test of them; text-world drift (App. J) |
 | E8.1-E8.4 | |.| clock floor; signed collective route; no |.| collective route; same-direction moves | proved (E8.2(c), E8.4 for the quadratic surrogate) | `prop_checks.py`, `sign_clock.py` |
 | E8.5 | rank D: no clock-free full-map channel; rank > D: parking | proved | end states (App. G3-G4); that parking is why rank > D helps: conjecture, registered test PARTIAL (App. G7) |
-| E8.6 | route inventory | proved (inventory) | Table 4; SIGNROUTE; SIGNSEP (App. H11: route class fails, 2x2 unmeasured); exp from its past-pi start learns in the SSM at 1e-3 by wrapping (App. H13) |
+| E8.6 | route inventory | proved (inventory) | Table 4; SIGNROUTE; SIGNSEP (App. H11: route class fails, 2x2 unmeasured); exp from its past-pi start learns in the SSM at 1e-3 by wrapping (App. H13), not in attention on the torus (App. H14) |
 | E9.2 | hiding free to first order at D >= 2 | proved under A1-A3 | drift on the least-resolved axis (App. G) |
 | E9.3 | hiding starves the collective route | conjecture | feedback not tested; its premise, that a remaining clock blocks rank D, has registered support on the torus (App. G7) |
 | E10 | basins | definitional | App. H7 |
@@ -1909,6 +1910,71 @@ exp       0.998S  0.999S  0.908T  0.999S  0.999S  0.994S  0.988T  0.999S
 softplus  0.984T  0.951T  0.886T  0.957T  0.938T  0.899T  0.966T  0.924T
 abs       0.736T  0.819T  0.741T  0.744T  0.739T  0.822T  0.720T  0.724T
 index     0.693T  0.713T  0.699T  0.709R  0.699D  0.690T  0.720T  0.747T
+```
+
+### H14. Exp and softplus in attention on the torus (EXPTORUS; registered, `EXPTORUS_RESULTS.md`, `EXPTORUS_PREREG.md` + Amendments 1-2)
+
+*Design.* H12's recipe and class unchanged (torus 64 x 64, T = 1024, observation-step-free shared rank 4, 1 layer, 900
+epochs, cosine, AdamW weight decay 0.05 coupled to the rate, fast attention), four arms that differ only in the function on
+the step readout s = W_out W_in e(move): signed s, |s|, exp(s), softplus(s); each at lr 1e-3 and 3e-3; fresh seeds
+3400-3407, 64 runs (kalman, 2026-10-26, code `782ba4f`). At a seed every arm and rate shares the initial weights and the
+training stream; the initial *steps* differ (exp(0) = 1, softplus(0) = ln 2), so exp starts with 11 of 32 channels per head
+past pi (34%; 41% on the SSM ring of H13) and softplus with 8. B1 as in H12 (each arm's best rate on training loss;
+selection redone over all 12,870 relabellings; decision p = max(selection-aware, naive)), Holm over the two primaries (exp,
+softplus) per route; anchor gate |.| vs signed must read signed learns better. UNSTABLE as H12, with non-finite loss added.
+Independent check before launch (2 MAJOR, 5 MINOR, folded in as Amendment 1). *Disclosure (Amendment 2):* a pilot on
+outside seeds (exp only, 2 seeds per rate: 0/4 solved, both 3e-3 runs unstable) ran before the batch, so the exp readings
+are partly pilot-informed; design, thresholds and labels were not changed.
+
+| arm | best rate | SOLVED | accuracy T = 1024 | d vs signed | decision p, SOLVED / accuracy (Holm) | label |
+|---|---|---|---|---|---|---|
+| signed | 1e-3 | **8/8** | **0.993** | -- | -- | -- |
+| \|.\| (gate) | 1e-3 | 0/8 | 0.858 | -0.135 | 0.0002 / 0.0002 (raw) | signed learns better: gate passes |
+| exp | 1e-3 | **0/8** | 0.916 | -0.077 | 0.0003 / 0.0006 | **signed learns better** (6/8 descending) |
+| softplus | 3e-3 (grid top: not bracketed) | **0/8** | 0.908 | -0.085 | 0.0003 / 0.11 | **signed learns better** on SOLVED (5/8 descending) |
+
+Registered batch reading: BOTH PAY (the exp and softplus content-dependent increments pay in attention on the torus; the
+SSM's exp no-cost does not transfer). Per rate (declared; Holm over the two rates):
+
+| learning rate | signed | \|.\| | exp | softplus |
+|---|---|---|---|---|
+| 1e-3 | **8/8, 0.993** | 0/8, 0.858 | 0/8, 0.916 (1 UNSTABLE) | 0/8, 0.849 |
+| 3e-3 | 0/8, 0.964 (8 descending) | 0/8, 0.865 | 0/8, 0.743 (**6 UNSTABLE**) | 0/8, 0.908 |
+
+At 1e-3 (G-3 A2's rate, no selection) each non-negative arm is signed learns better (Fisher 0.0002, Holm 0.0003); the 3e-3
+cells are unreadable (signed 0/8). All 7 UNSTABLE runs are exp, RUNAWAY by loss (none diverged; largest step 35). Declared
+secondaries agree: SOLVED at loss 0.1, 0/8 vs 8/8 for every arm; accuracy at T = 2048, exp 0.763 and softplus 0.823 vs
+0.980 (selection-aware p 0.0002, 0.020); both cross-fit halves 0/4 vs 4/4 (Fisher p 0.029). Revisit strata at T = 1024
+(short / long / wrap-only) at the selected rates: signed 0.992 / 0.993 / 0.996, exp 0.977 / 0.695 / 0.524, softplus 0.971
+/ 0.659 / 0.529 (blank ~0.51). r(log10 final loss, accuracy) -0.618 over 64 runs; `experiment_audit` windowed classes
+agree with the registered ones in every cell.
+
+*Cancelling census at the selected rates* (declared secondary; (pair, channel) cells over 8 seeds; non-blind |wrap(first
+move angle)| > 0.05, cancelling |wrap(pair sum)| < 0.1; past-pi set from each run's initial weights):
+
+| arm, rate | non-blind | cancelling | by wrap / through zero | from the past-pi start set | P(cancel \| past-pi start) vs not | usage-weighted cancel | opposite-sign |
+|---|---|---|---|---|---|---|---|
+| signed, 1e-3 | 693 | 693 | 0 / 693 | 36 | 1.00 vs 1.00 | 1.00 | 1.00 |
+| \|.\|, 1e-3 | 439 | 46 | 25 / 21 | 17 | 0.31 vs 0.08 | 0.19 | 0.09 |
+| exp, 1e-3 | 443 | 107 | 97 / 10 | 95 | 0.31 vs 0.09 | 0.81 | 0.26 |
+| softplus, 3e-3 | 159 | 64 | 57 / 7 | 46 | 0.68 vs 0.20 | 0.89 | 0.41 |
+
+exp cancels as in H13 (by a wrap, on channels that started past pi) but on a minority of non-blind cells and without a map;
+omega ends at 0.11 (exp) and 0.02 (softplus) of its initial value under the coupled decay. Not separated: whether the SSM
+escape of H13 is the mixer, the task (ring vs torus) or the start; the two batches are never pooled.
+
+Per seed (accuracy at T = 1024, class; ! UNSTABLE):
+
+```
+seed | 1e-3:SO     | 1e-3:AO     | 1e-3:EXP    | 1e-3:SPL    | 3e-3:SO     | 3e-3:AO     | 3e-3:EXP     | 3e-3:SPL
+3400 | 0.9988 SOLV | 0.8863 STAL | 0.9274 DESC | 0.7067 STAL | 0.9778 DESC | 0.9363 DESC | 0.8626 DESC! | 0.9207 DESC
+3401 | 1.0000 SOLV | 0.9064 STAL | 0.9530 DESC | 0.8102 STAL | 0.9588 DESC | 0.8553 STAL | 0.8046 STAL  | 0.8879 STAL
+3402 | 0.9420 SOLV | 0.8790 STAL | 0.9092 STAL | 0.9255 DESC | 0.9595 DESC | 0.7783 STAL | 0.5429 STAL! | 0.9837 DESC
+3403 | 1.0000 SOLV | 0.7671 STAL | 0.9231 DESC | 0.9221 DESC | 0.9493 DESC | 0.8987 DESC | 0.8510 STAL! | 0.9501 DESC
+3404 | 1.0000 SOLV | 0.8243 STAL | 0.8757 DESC | 0.6904 STAL | 0.9567 DESC | 0.8957 DESC | 0.8651 DESC  | 0.8680 RISI
+3405 | 1.0000 SOLV | 0.8395 STAL | 0.8792 STAL!| 0.9104 DESC | 0.9769 DESC | 0.8328 STAL | 0.7891 STAL! | 0.8775 STAL
+3406 | 1.0000 SOLV | 0.9158 DESC | 0.9213 DESC | 0.8743 STAL | 0.9672 DESC | 0.8633 STAL | 0.6247 STAL! | 0.9410 DESC
+3407 | 1.0000 SOLV | 0.8465 STAL | 0.9380 DESC | 0.9517 STAL | 0.9645 DESC | 0.8583 STAL | 0.6036 STAL! | 0.8336 DESC
 ```
 
 ---

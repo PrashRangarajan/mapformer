@@ -1,0 +1,86 @@
+== EXPTORUS: torus 64 x 64, T = 1024, 900 epochs, wd 0.05, observation-step-free rank 4; arms signed (SO), |.| (AO), exp (EXP), softplus (SPL); rates 0.001, 0.003; seeds 3400-3407 ==
+per seed: acc T = 1024 and class (! = UNSTABLE) | 0.001:SO | 0.001:AO | 0.001:EXP | 0.001:SPL | 0.003:SO | 0.003:AO | 0.003:EXP | 0.003:SPL
+3400 | 0.9988 SOLV | 0.8863 STAL | 0.9274 DESC | 0.7067 STAL | 0.9778 DESC | 0.9363 DESC | 0.8626 DESC! | 0.9207 DESC
+3401 | 1.0000 SOLV | 0.9064 STAL | 0.9530 DESC | 0.8102 STAL | 0.9588 DESC | 0.8553 STAL | 0.8046 STAL | 0.8879 STAL
+3402 | 0.9420 SOLV | 0.8790 STAL | 0.9092 STAL | 0.9255 DESC | 0.9595 DESC | 0.7783 STAL | 0.5429 STAL! | 0.9837 DESC
+3403 | 1.0000 SOLV | 0.7671 STAL | 0.9231 DESC | 0.9221 DESC | 0.9493 DESC | 0.8987 DESC | 0.8510 STAL! | 0.9501 DESC
+3404 | 1.0000 SOLV | 0.8243 STAL | 0.8757 DESC | 0.6904 STAL | 0.9567 DESC | 0.8957 DESC | 0.8651 DESC | 0.8680 RISI
+3405 | 1.0000 SOLV | 0.8395 STAL | 0.8792 STAL! | 0.9104 DESC | 0.9769 DESC | 0.8328 STAL | 0.7891 STAL! | 0.8775 STAL
+3406 | 1.0000 SOLV | 0.9158 DESC | 0.9213 DESC | 0.8743 STAL | 0.9672 DESC | 0.8633 STAL | 0.6247 STAL! | 0.9410 DESC
+3407 | 1.0000 SOLV | 0.8465 STAL | 0.9380 DESC | 0.9517 STAL | 0.9645 DESC | 0.8583 STAL | 0.6036 STAL! | 0.8336 DESC
+
+== B1 (registered): each arm at its own best rate (most SOLVED, then lowest mean final-5% loss, then lower rate), vs signed at ITS best rate ==
+|.|      best 0.001: 0/8, acc 0.8581 | signed best 0.001: 8/8, acc 0.9926 | d -0.1345 | selection-aware p SOLVED 0.0002, acc 0.0002; naive Fisher 0.0002, perm 0.0002; decision p SOLVED 0.0002, acc 0.0002 (anchor gate: raw decision p) | DESCENDING at best 1, UNSTABLE+unsolved 0 -> SIGNED LEARNS BETTER
+exp      best 0.001: 0/8, acc 0.9159 | signed best 0.001: 8/8, acc 0.9926 | d -0.0767 | selection-aware p SOLVED 0.0002, acc 0.0003; naive Fisher 0.0002, perm 0.0003; decision p SOLVED 0.0002, acc 0.0003; Holm over exp/softplus: SOLVED 0.0003, acc 0.0006 | DESCENDING at best 6, UNSTABLE+unsolved 1 -> SIGNED LEARNS BETTER | matched-rate 1e-3 per-rate label (Amendment 1.2): SIGNED LEARNS BETTER
+softplus best 0.003: 0/8, acc 0.9078 | signed best 0.001: 8/8, acc 0.9926 | d -0.0848 | selection-aware p SOLVED 0.0002, acc 0.1100; naive Fisher 0.0002, perm 0.0005; decision p SOLVED 0.0002, acc 0.1100; Holm over exp/softplus: SOLVED 0.0003, acc 0.1100 | DESCENDING at best 5, UNSTABLE+unsolved 0 -> SIGNED LEARNS BETTER | matched-rate 1e-3 per-rate label (Amendment 1.2): SIGNED LEARNS BETTER
+anchor gate (|.| vs signed must read SIGNED LEARNS BETTER): PASS (SIGNED LEARNS BETTER)
+Reading exp: EXP PAYS THE SIGN COST IN ATTENTION ON THE TORUS (SIGNED LEARNS BETTER at best rates) [6 exp run(s) still DESCENDING at its best rate: budget-scoped]
+Reading softplus: SOFTPLUS PAYS THE SIGN COST IN ATTENTION ON THE TORUS (SIGNED LEARNS BETTER at best rates) [softplus's best rate is the grid's top rate: its optimum is not bracketed; 'best' = best TESTED] [5 softplus run(s) still DESCENDING at its best rate: budget-scoped]
+Batch reading: BOTH PAY: in attention on the torus the exp (LRU-style positivity) and softplus (Mamba-Delta-style) content-dependent increments pay the cost (the SSM's exp no-cost does not transfer)
+  UNSTABLE exp lr 0.001 s3405: max post-warm-up loss - H_map +0.138 at epoch 67 (H_map 2.134), final-5% loss 0.4305, step max 13.49, STALLED
+  UNSTABLE exp lr 0.003 s3400: max post-warm-up loss - H_map +0.075 at epoch 60 (H_map 2.089), final-5% loss 0.5152, step max 24.35, DESCENDING
+  UNSTABLE exp lr 0.003 s3402: max post-warm-up loss - H_map +0.897 at epoch 121 (H_map 2.098), final-5% loss 1.0845, step max 11.31, STALLED
+  UNSTABLE exp lr 0.003 s3403: max post-warm-up loss - H_map +0.542 at epoch 71 (H_map 2.060), final-5% loss 0.6986, step max 17.82, STALLED
+  UNSTABLE exp lr 0.003 s3405: max post-warm-up loss - H_map +0.859 at epoch 150 (H_map 2.134), final-5% loss 0.6556, step max 35.14, STALLED
+  UNSTABLE exp lr 0.003 s3406: max post-warm-up loss - H_map +0.401 at epoch 84 (H_map 2.046), final-5% loss 0.9747, step max 19.32, STALLED
+  UNSTABLE exp lr 0.003 s3407: max post-warm-up loss - H_map +0.629 at epoch 274 (H_map 2.087), final-5% loss 1.3628, step max 14.17, STALLED
+
+== secondaries (declared; no verdict) ==
+floors (T = 1024 eval stream, post hoc, docs/audits/2026-10-20/WHAT_WHERE_T1024.md): blank 0.506, best n-gram 0.575, retrace 0.843; torus always-blank 0.507 (GENERALITY)
+decay exponent sum(lr_t) x wd (wd 0.05): 0.001: 2.4, 0.003: 7.2
+per rate, per arm: SOLVED | SOLVED@0.1 | acc 1024 | acc 2048 | mean sel. score | usage-wtd cancel | opposite-sign | UNSTABLE | step max (median) | classes
+0.001   signed  : 8/8 | 8/8 | 0.9926 | 0.9804 | 0.0072 | 1.00 | 1.00 | 0/8 | 3.07 | SOLV SOLV SOLV SOLV SOLV SOLV SOLV SOLV
+0.001   |.|     : 0/8 | 0/8 | 0.8581 | 0.7332 | 0.5287 | 0.19 | 0.09 | 0/8 | 6.35 | STAL STAL STAL STAL STAL STAL DESC STAL
+0.001   exp     : 0/8 | 0/8 | 0.9159 | 0.7628 | 0.3114 | 0.81 | 0.26 | 1/8 | 16.23 | DESC DESC STAL DESC DESC STAL DESC DESC
+0.001   softplus: 0/8 | 0/8 | 0.8489 | 0.7413 | 0.4922 | 0.76 | 0.21 | 0/8 | 8.47 | STAL STAL DESC DESC STAL DESC STAL STAL
+0.003   signed  : 0/8 | 0/8 | 0.9639 | 0.9003 | 0.1710 | 1.00 | 1.00 | 0/8 | 1.44 | DESC DESC DESC DESC DESC DESC DESC DESC
+0.003   |.|     : 0/8 | 0/8 | 0.8648 | 0.7974 | 0.5387 | 0.53 | 0.17 | 0/8 | 14.93 | DESC STAL STAL DESC DESC STAL STAL STAL
+0.003   exp     : 0/8 | 0/8 | 0.7429 | 0.6645 | 0.7973 | 0.38 | 0.08 | 6/8 | 21.15 | DESC STAL STAL STAL DESC STAL STAL STAL
+0.003   softplus: 0/8 | 0/8 | 0.9078 | 0.8227 | 0.3694 | 0.89 | 0.41 | 0/8 | 17.11 | DESC STAL DESC DESC RISI STAL DESC DESC
+
+per-rate contrasts vs signed at the same rate (Holm over the 2 rates within each arm and route; ROBUST rule on Holm p; 1e-3 = G-3 A2's rate)
+  |.|      lr 0.001  : 0/8 0.8581 vs signed 8/8 0.9926; d -0.1345; Fisher 0.0002 (Holm 0.0003); perm 0.0002 (Holm 0.0003) -> SIGNED LEARNS BETTER
+  |.|      lr 0.003  : 0/8 0.8648 vs signed 0/8 0.9639; d -0.0990; Fisher 1.0000 (Holm 1.0000); perm 0.0002 (Holm 0.0003) -> UNREADABLE (SO SOLVED 0 < 4)  [not a sign contrast: signed is at its known-bad torus rate here]
+  exp      lr 0.001  : 0/8 0.9159 vs signed 8/8 0.9926; d -0.0767; Fisher 0.0002 (Holm 0.0003); perm 0.0003 (Holm 0.0003) -> SIGNED LEARNS BETTER
+  exp      lr 0.003  : 0/8 0.7429 vs signed 0/8 0.9639; d -0.2209; Fisher 1.0000 (Holm 1.0000); perm 0.0002 (Holm 0.0003) -> UNREADABLE (SO SOLVED 0 < 4)  [not a sign contrast: signed is at its known-bad torus rate here]
+  softplus lr 0.001  : 0/8 0.8489 vs signed 8/8 0.9926; d -0.1437; Fisher 0.0002 (Holm 0.0003); perm 0.0003 (Holm 0.0006) -> SIGNED LEARNS BETTER
+  softplus lr 0.003  : 0/8 0.9078 vs signed 0/8 0.9639; d -0.0560; Fisher 1.0000 (Holm 1.0000); perm 0.0073 (Holm 0.0073) -> UNREADABLE (SO SOLVED 0 < 4)  [not a sign contrast: signed is at its known-bad torus rate here]
+
+|.|: SOLVED at loss 0.1 (selection redone; raw decision p): 0/8 vs 8/8, p SOLVED 0.0002, acc 0.0002 -> SIGNED LEARNS BETTER; T = 2048 at the selected rates (robustness, not capability): 0.7332 vs 0.9804, selection-aware p 0.0002
+  cross-fit: chosen on 3400-3403 (|.| 0.003, signed 0.001), tested on 3404-3407: 0/4 0.8625 vs 4/4 1.0000; Fisher 0.0286, perm 0.0286
+  cross-fit: chosen on 3404-3407 (|.| 0.001, signed 0.001), tested on 3400-3403: 0/4 0.8597 vs 4/4 0.9852; Fisher 0.0286, perm 0.0286
+
+exp: SOLVED at loss 0.1 (selection redone; raw decision p): 0/8 vs 8/8, p SOLVED 0.0002, acc 0.0003 -> SIGNED LEARNS BETTER; T = 2048 at the selected rates (robustness, not capability): 0.7628 vs 0.9804, selection-aware p 0.0002
+  cross-fit: chosen on 3400-3403 (exp 0.001, signed 0.001), tested on 3404-3407: 0/4 0.9036 vs 4/4 1.0000; Fisher 0.0286, perm 0.0286
+  cross-fit: chosen on 3404-3407 (exp 0.001, signed 0.001), tested on 3400-3403: 0/4 0.9282 vs 4/4 0.9852; Fisher 0.0286, perm 0.0571
+
+softplus: SOLVED at loss 0.1 (selection redone; raw decision p): 0/8 vs 8/8, p SOLVED 0.0002, acc 0.1100 -> SIGNED LEARNS BETTER; T = 2048 at the selected rates (robustness, not capability): 0.8227 vs 0.9804, selection-aware p 0.0197
+  cross-fit: chosen on 3400-3403 (softplus 0.003, signed 0.001), tested on 3404-3407: 0/4 0.8800 vs 4/4 1.0000; Fisher 0.0286, perm 0.0286
+  cross-fit: chosen on 3404-3407 (softplus 0.003, signed 0.001), tested on 3400-3403: 0/4 0.9356 vs 4/4 0.9852; Fisher 0.0286, perm 0.0857
+
+mechanism (declared secondary, descriptive): initial past-pi record per arm (mean over seeds; per pair N/S, W/E, of 64 channels) and, per rate, the end-of-training census summed over seeds (pair x channel cells): non-blind | cancelling | by wrap | through zero | cancelling from the past-pi start set | P(cancel | past-pi start) vs P(cancel | not) | turns | omega end / init (median)
+  init signed  : past pi N/S 2.6, W/E 2.8, both 1.0; analytic (exp step 1: 22, softplus ln 2: 16); median |sum| 0.23 rad
+  0.001   signed  : 693 | 693 | 0 | 693 | 36 | 1.00 vs 1.00 | [0] | 0.22
+  0.003   signed  : 237 | 237 | 0 | 237 | 17 | 1.00 vs 1.00 | [0] | 0.05
+  init |.|     : past pi N/S 2.9, W/E 4.4, both 1.4; analytic (exp step 1: 22, softplus ln 2: 16); median |sum| 0.36 rad
+  0.001   |.|     : 439 | 46 | 25 | 21 | 17 | 0.31 vs 0.08 | [0, 1, 2] | 0.13
+  0.003   |.|     : 271 | 46 | 32 | 14 | 4 | 0.20 vs 0.17 | [0, 1, 2] | 0.03
+  init exp     : past pi N/S 22.6, W/E 22.0, both 20.2; analytic (exp step 1: 22, softplus ln 2: 16); median |sum| 1.58 rad
+  0.001   exp     : 443 | 107 | 97 | 10 | 95 | 0.31 vs 0.09 | [0, 1, 2] | 0.11
+  0.003   exp     : 377 | 39 | 19 | 20 | 19 | 0.12 vs 0.09 | [0, 1] | 0.05
+  init softplus: past pi N/S 15.1, W/E 15.5, both 13.9; analytic (exp step 1: 22, softplus ln 2: 16); median |sum| 1.06 rad
+  0.001   softplus: 427 | 98 | 77 | 21 | 81 | 0.38 vs 0.08 | [0, 1, 2, 4] | 0.12
+  0.003   softplus: 159 | 64 | 57 | 7 | 46 | 0.68 vs 0.20 | [0, 1, 2] | 0.02
+
+revisit strata at T = 1024 (eval_rank_strata; mean over seeds): plain lag < 128 | plain lag >= 128 | wrap-only
+  0.001   signed  : 0.992 | 0.993 | 0.996
+  0.001   |.|     : 0.912 | 0.651 | 0.522
+  0.001   exp     : 0.977 | 0.695 | 0.524
+  0.001   softplus: 0.888 | 0.724 | 0.577
+  0.003   signed  : 1.000 | 0.943 | 0.609
+  0.003   |.|     : 0.930 | 0.589 | 0.498
+  0.003   exp     : 0.800 | 0.474 | 0.454
+  0.003   softplus: 0.971 | 0.659 | 0.529
+
+rule 2: r(log10 final loss, acc) -0.618 at T = 1024, -0.757 at T = 2048 over 64 runs
+cross-batch references, labelled, never pooled (rule 12): TORUS_LRSWEEP (seeds 2400-2407, same recipe): |.| best 3e-3 0/8 0.890 vs signed best 1e-3 8/8 1.000; per rate signed 8/8 (1e-3), 0/8 (3e-3, all DESCENDING). G-3 A2 (SSM, ring, lr 1e-3): exp 6/8 vs signed 7/8 NO SIGN COST; softplus 0/8. SIGNROUTE (attention, ring): exp 1/8 at 1e-3 and at 3e-3, softplus 1/8 and 3/8, vs signed 8/8

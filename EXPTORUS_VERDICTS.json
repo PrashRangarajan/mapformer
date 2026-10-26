@@ -1,0 +1,768 @@
+{
+  "B1": {
+    "AO": {
+      "arm": "AO",
+      "rate": 0.001,
+      "SO_rate": 0.001,
+      "k": 0,
+      "k_SO": 8,
+      "acc": 0.8580928148254395,
+      "acc_SO": 0.9925860711376557,
+      "d": -0.1344932563122162,
+      "p_k_sel": 0.0001554001554001554,
+      "p_acc_sel": 0.0001554001554001554,
+      "naive_fisher_p": 0.0001554001554001554,
+      "naive_perm_p": 0.0001554001554001554,
+      "p_k": 0.0001554001554001554,
+      "p_acc": 0.0001554001554001554,
+      "exact": true,
+      "n_relabel": 12870,
+      "desc_at_best": 1,
+      "unstable_at_best": 0,
+      "label": "SIGNED LEARNS BETTER"
+    },
+    "EXP": {
+      "arm": "EXP",
+      "rate": 0.001,
+      "SO_rate": 0.001,
+      "k": 0,
+      "k_SO": 8,
+      "acc": 0.9158700692839767,
+      "acc_SO": 0.9925860711376557,
+      "d": -0.076716001853679,
+      "p_k_sel": 0.0001554001554001554,
+      "p_acc_sel": 0.0003108003108003108,
+      "naive_fisher_p": 0.0001554001554001554,
+      "naive_perm_p": 0.0003108003108003108,
+      "p_k": 0.0001554001554001554,
+      "p_acc": 0.0003108003108003108,
+      "exact": true,
+      "n_relabel": 12870,
+      "desc_at_best": 6,
+      "unstable_at_best": 1,
+      "p_k_holm": 0.0003108003108003108,
+      "p_acc_holm": 0.0006216006216006216,
+      "label": "SIGNED LEARNS BETTER",
+      "label_matched_1e3": "SIGNED LEARNS BETTER",
+      "reading": "EXP PAYS THE SIGN COST IN ATTENTION ON THE TORUS (SIGNED LEARNS BETTER at best rates) [6 exp run(s) still DESCENDING at its best rate: budget-scoped]"
+    },
+    "SPL": {
+      "arm": "SPL",
+      "rate": 0.003,
+      "SO_rate": 0.001,
+      "k": 0,
+      "k_SO": 8,
+      "acc": 0.9078113804026342,
+      "acc_SO": 0.9925860711376557,
+      "d": -0.08477469073502153,
+      "p_k_sel": 0.0001554001554001554,
+      "p_acc_sel": 0.11002331002331002,
+      "naive_fisher_p": 0.0001554001554001554,
+      "naive_perm_p": 0.0004662004662004662,
+      "p_k": 0.0001554001554001554,
+      "p_acc": 0.11002331002331002,
+      "exact": true,
+      "n_relabel": 12870,
+      "desc_at_best": 5,
+      "unstable_at_best": 0,
+      "p_k_holm": 0.0003108003108003108,
+      "p_acc_holm": 0.11002331002331002,
+      "label": "SIGNED LEARNS BETTER",
+      "label_matched_1e3": "SIGNED LEARNS BETTER",
+      "reading": "SOFTPLUS PAYS THE SIGN COST IN ATTENTION ON THE TORUS (SIGNED LEARNS BETTER at best rates) [softplus's best rate is the grid's top rate: its optimum is not bracketed; 'best' = best TESTED] [5 softplus run(s) still DESCENDING at its best rate: budget-scoped]"
+    }
+  },
+  "gate_ok": true,
+  "anchor_label": "SIGNED LEARNS BETTER",
+  "batch_reading": "BOTH PAY: in attention on the torus the exp (LRU-style positivity) and softplus (Mamba-Delta-style) content-dependent increments pay the cost (the SSM's exp no-cost does not transfer)",
+  "rates": [
+    0.001,
+    0.003
+  ],
+  "seeds": [
+    3400,
+    3401,
+    3402,
+    3403,
+    3404,
+    3405,
+    3406,
+    3407
+  ],
+  "per_rate": {
+    "0.001|AO": {
+      "label": "SIGNED LEARNS BETTER",
+      "k": 0,
+      "k_SO": 8,
+      "acc": 0.8580928148254395,
+      "acc_SO": 0.9925860711376557,
+      "d": -0.1344932563122162,
+      "fisher_p": 0.0001554001554001554,
+      "perm_p": 0.0001554001554001554,
+      "fisher_holm": 0.0003108003108003108,
+      "perm_holm": 0.0003108003108003108
+    },
+    "0.003|AO": {
+      "label": "UNREADABLE (SO SOLVED 0 < 4)",
+      "k": 0,
+      "k_SO": 0,
+      "acc": 0.8648394782976507,
+      "acc_SO": 0.963853469390082,
+      "d": -0.09901399109243125,
+      "fisher_p": 1.0,
+      "perm_p": 0.0001554001554001554,
+      "fisher_holm": 1.0,
+      "perm_holm": 0.0003108003108003108
+    },
+    "0.001|EXP": {
+      "label": "SIGNED LEARNS BETTER",
+      "k": 0,
+      "k_SO": 8,
+      "acc": 0.9158700692839767,
+      "acc_SO": 0.9925860711376557,
+      "d": -0.076716001853679,
+      "fisher_p": 0.0001554001554001554,
+      "perm_p": 0.0003108003108003108,
+      "fisher_holm": 0.0003108003108003108,
+      "perm_holm": 0.0003108003108003108
+    },
+    "0.003|EXP": {
+      "label": "UNREADABLE (SO SOLVED 0 < 4)",
+      "k": 0,
+      "k_SO": 0,
+      "acc": 0.7429493886140596,
+      "acc_SO": 0.963853469390082,
+      "d": -0.22090408077602242,
+      "fisher_p": 1.0,
+      "perm_p": 0.0001554001554001554,
+      "fisher_holm": 1.0,
+      "perm_holm": 0.0003108003108003108
+    },
+    "0.001|SPL": {
+      "label": "SIGNED LEARNS BETTER",
+      "k": 0,
+      "k_SO": 8,
+      "acc": 0.8489010815811018,
+      "acc_SO": 0.9925860711376557,
+      "d": -0.14368498955655395,
+      "fisher_p": 0.0001554001554001554,
+      "perm_p": 0.0003108003108003108,
+      "fisher_holm": 0.0003108003108003108,
+      "perm_holm": 0.0006216006216006216
+    },
+    "0.003|SPL": {
+      "label": "UNREADABLE (SO SOLVED 0 < 4)",
+      "k": 0,
+      "k_SO": 0,
+      "acc": 0.9078113804026342,
+      "acc_SO": 0.963853469390082,
+      "d": -0.05604208898744778,
+      "fisher_p": 1.0,
+      "perm_p": 0.007303807303807304,
+      "fisher_holm": 1.0,
+      "perm_holm": 0.007303807303807304
+    }
+  },
+  "secondaries": {
+    "cells": {
+      "0.001|SO": {
+        "solved": 8,
+        "solved10": 8,
+        "acc": 0.9925860711376557,
+        "acc2": 0.9803649094008207,
+        "score": 0.007229582966023688,
+        "wrapw": 1.0,
+        "opp": 1.0,
+        "runaway": 0,
+        "step_absmax_median": 3.066041946411133,
+        "cls": [
+          "SOLVED",
+          "SOLVED",
+          "SOLVED",
+          "SOLVED",
+          "SOLVED",
+          "SOLVED",
+          "SOLVED",
+          "SOLVED"
+        ]
+      },
+      "0.001|AO": {
+        "solved": 0,
+        "solved10": 0,
+        "acc": 0.8580928148254395,
+        "acc2": 0.7331988233033213,
+        "score": 0.5287326704790973,
+        "wrapw": 0.18674755596545967,
+        "opp": 0.08692363503686877,
+        "runaway": 0,
+        "step_absmax_median": 6.349637985229492,
+        "cls": [
+          "STALLED",
+          "STALLED",
+          "STALLED",
+          "STALLED",
+          "STALLED",
+          "STALLED",
+          "DESCENDING",
+          "STALLED"
+        ]
+      },
+      "0.001|EXP": {
+        "solved": 0,
+        "solved10": 0,
+        "acc": 0.9158700692839767,
+        "acc2": 0.7628471837042603,
+        "score": 0.31139913227983546,
+        "wrapw": 0.8145059261145493,
+        "opp": 0.2564536932179863,
+        "runaway": 1,
+        "step_absmax_median": 16.23214054107666,
+        "cls": [
+          "DESCENDING",
+          "DESCENDING",
+          "STALLED",
+          "DESCENDING",
+          "DESCENDING",
+          "STALLED",
+          "DESCENDING",
+          "DESCENDING"
+        ]
+      },
+      "0.001|SPL": {
+        "solved": 0,
+        "solved10": 0,
+        "acc": 0.8489010815811018,
+        "acc2": 0.741261587285349,
+        "score": 0.4921785798857237,
+        "wrapw": 0.7617244143973331,
+        "opp": 0.20776643746627482,
+        "runaway": 0,
+        "step_absmax_median": 8.469189643859863,
+        "cls": [
+          "STALLED",
+          "STALLED",
+          "DESCENDING",
+          "DESCENDING",
+          "STALLED",
+          "DESCENDING",
+          "STALLED",
+          "STALLED"
+        ]
+      },
+      "0.003|SO": {
+        "solved": 0,
+        "solved10": 0,
+        "acc": 0.963853469390082,
+        "acc2": 0.9002807497781959,
+        "score": 0.1709968975779195,
+        "wrapw": 1.0,
+        "opp": 1.0,
+        "runaway": 0,
+        "step_absmax_median": 1.437497615814209,
+        "cls": [
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING",
+          "DESCENDING"
+        ]
+      },
+      "0.003|AO": {
+        "solved": 0,
+        "solved10": 0,
+        "acc": 0.8648394782976507,
+        "acc2": 0.7973945878738707,
+        "score": 0.5387203080604981,
+        "wrapw": 0.5273908161531067,
+        "opp": 0.16923381411367683,
+        "runaway": 0,
+        "step_absmax_median": 14.931864261627197,
+        "cls": [
+          "DESCENDING",
+          "STALLED",
+          "STALLED",
+          "DESCENDING",
+          "DESCENDING",
+          "STALLED",
+          "STALLED",
+          "STALLED"
+        ]
+      },
+      "0.003|EXP": {
+        "solved": 0,
+        "solved10": 0,
+        "acc": 0.7429493886140596,
+        "acc2": 0.6644766968126151,
+        "score": 0.797278916279948,
+        "wrapw": 0.3849670675854725,
+        "opp": 0.08090509754626488,
+        "runaway": 6,
+        "step_absmax_median": 21.147150993347168,
+        "cls": [
+          "DESCENDING",
+          "STALLED",
+          "STALLED",
+          "STALLED",
+          "DESCENDING",
+          "STALLED",
+          "STALLED",
+          "STALLED"
+        ]
+      },
+      "0.003|SPL": {
+        "solved": 0,
+        "solved10": 0,
+        "acc": 0.9078113804026342,
+        "acc2": 0.822704986804496,
+        "score": 0.36938780535180377,
+        "wrapw": 0.8907398986409738,
+        "opp": 0.4096460333145116,
+        "runaway": 0,
+        "step_absmax_median": 17.11461067199707,
+        "cls": [
+          "DESCENDING",
+          "STALLED",
+          "DESCENDING",
+          "DESCENDING",
+          "RISING",
+          "STALLED",
+          "DESCENDING",
+          "DESCENDING"
+        ]
+      }
+    },
+    "per_rate": {
+      "0.001|AO": {
+        "label": "SIGNED LEARNS BETTER",
+        "k": 0,
+        "k_SO": 8,
+        "acc": 0.8580928148254395,
+        "acc_SO": 0.9925860711376557,
+        "d": -0.1344932563122162,
+        "fisher_p": 0.0001554001554001554,
+        "perm_p": 0.0001554001554001554,
+        "fisher_holm": 0.0003108003108003108,
+        "perm_holm": 0.0003108003108003108
+      },
+      "0.003|AO": {
+        "label": "UNREADABLE (SO SOLVED 0 < 4)",
+        "k": 0,
+        "k_SO": 0,
+        "acc": 0.8648394782976507,
+        "acc_SO": 0.963853469390082,
+        "d": -0.09901399109243125,
+        "fisher_p": 1.0,
+        "perm_p": 0.0001554001554001554,
+        "fisher_holm": 1.0,
+        "perm_holm": 0.0003108003108003108
+      },
+      "0.001|EXP": {
+        "label": "SIGNED LEARNS BETTER",
+        "k": 0,
+        "k_SO": 8,
+        "acc": 0.9158700692839767,
+        "acc_SO": 0.9925860711376557,
+        "d": -0.076716001853679,
+        "fisher_p": 0.0001554001554001554,
+        "perm_p": 0.0003108003108003108,
+        "fisher_holm": 0.0003108003108003108,
+        "perm_holm": 0.0003108003108003108
+      },
+      "0.003|EXP": {
+        "label": "UNREADABLE (SO SOLVED 0 < 4)",
+        "k": 0,
+        "k_SO": 0,
+        "acc": 0.7429493886140596,
+        "acc_SO": 0.963853469390082,
+        "d": -0.22090408077602242,
+        "fisher_p": 1.0,
+        "perm_p": 0.0001554001554001554,
+        "fisher_holm": 1.0,
+        "perm_holm": 0.0003108003108003108
+      },
+      "0.001|SPL": {
+        "label": "SIGNED LEARNS BETTER",
+        "k": 0,
+        "k_SO": 8,
+        "acc": 0.8489010815811018,
+        "acc_SO": 0.9925860711376557,
+        "d": -0.14368498955655395,
+        "fisher_p": 0.0001554001554001554,
+        "perm_p": 0.0003108003108003108,
+        "fisher_holm": 0.0003108003108003108,
+        "perm_holm": 0.0006216006216006216
+      },
+      "0.003|SPL": {
+        "label": "UNREADABLE (SO SOLVED 0 < 4)",
+        "k": 0,
+        "k_SO": 0,
+        "acc": 0.9078113804026342,
+        "acc_SO": 0.963853469390082,
+        "d": -0.05604208898744778,
+        "fisher_p": 1.0,
+        "perm_p": 0.007303807303807304,
+        "fisher_holm": 1.0,
+        "perm_holm": 0.007303807303807304
+      }
+    },
+    "B1_loss0.1": {
+      "AO": {
+        "label_raw_p": "SIGNED LEARNS BETTER",
+        "k": 0,
+        "k_SO": 8,
+        "p_k": 0.0001554001554001554,
+        "p_acc": 0.0001554001554001554,
+        "naive_fisher_p": 0.0001554001554001554,
+        "naive_perm_p": 0.0001554001554001554
+      },
+      "EXP": {
+        "label_raw_p": "SIGNED LEARNS BETTER",
+        "k": 0,
+        "k_SO": 8,
+        "p_k": 0.0001554001554001554,
+        "p_acc": 0.0003108003108003108,
+        "naive_fisher_p": 0.0001554001554001554,
+        "naive_perm_p": 0.0003108003108003108
+      },
+      "SPL": {
+        "label_raw_p": "SIGNED LEARNS BETTER",
+        "k": 0,
+        "k_SO": 8,
+        "p_k": 0.0001554001554001554,
+        "p_acc": 0.11002331002331002,
+        "naive_fisher_p": 0.0001554001554001554,
+        "naive_perm_p": 0.0004662004662004662
+      }
+    },
+    "acc2048_sel": {
+      "AO": {
+        "acc": 0.7331988233033213,
+        "acc_SO": 0.9803649094008207,
+        "p_sel": 0.0001554001554001554
+      },
+      "EXP": {
+        "acc": 0.7628471837042603,
+        "acc_SO": 0.9803649094008207,
+        "p_sel": 0.0001554001554001554
+      },
+      "SPL": {
+        "acc": 0.822704986804496,
+        "acc_SO": 0.9803649094008207,
+        "p_sel": 0.019735819735819737
+      }
+    },
+    "crossfit": {
+      "AO": [
+        {
+          "select_on": [
+            3400,
+            3401,
+            3402,
+            3403
+          ],
+          "rate": 0.003,
+          "SO_rate": 0.001,
+          "k": 0,
+          "k_SO": 4,
+          "d": -0.13745369340668634,
+          "fisher_p": 0.028571428571428567,
+          "perm_p": 0.02857142857142857
+        },
+        {
+          "select_on": [
+            3404,
+            3405,
+            3406,
+            3407
+          ],
+          "rate": 0.001,
+          "SO_rate": 0.001,
+          "k": 0,
+          "k_SO": 4,
+          "d": -0.12549854953056727,
+          "fisher_p": 0.028571428571428567,
+          "perm_p": 0.02857142857142857
+        }
+      ],
+      "EXP": [
+        {
+          "select_on": [
+            3400,
+            3401,
+            3402,
+            3403
+          ],
+          "rate": 0.001,
+          "SO_rate": 0.001,
+          "k": 0,
+          "k_SO": 4,
+          "d": -0.09643501950063749,
+          "fisher_p": 0.028571428571428567,
+          "perm_p": 0.02857142857142857
+        },
+        {
+          "select_on": [
+            3404,
+            3405,
+            3406,
+            3407
+          ],
+          "rate": 0.001,
+          "SO_rate": 0.001,
+          "k": 0,
+          "k_SO": 4,
+          "d": -0.05699698420672039,
+          "fisher_p": 0.028571428571428567,
+          "perm_p": 0.05714285714285714
+        }
+      ],
+      "SPL": [
+        {
+          "select_on": [
+            3400,
+            3401,
+            3402,
+            3403
+          ],
+          "rate": 0.003,
+          "SO_rate": 0.001,
+          "k": 0,
+          "k_SO": 4,
+          "d": -0.11998395747493507,
+          "fisher_p": 0.028571428571428567,
+          "perm_p": 0.02857142857142857
+        },
+        {
+          "select_on": [
+            3404,
+            3405,
+            3406,
+            3407
+          ],
+          "rate": 0.003,
+          "SO_rate": 0.001,
+          "k": 0,
+          "k_SO": 4,
+          "d": -0.04956542399510799,
+          "fisher_p": 0.028571428571428567,
+          "perm_p": 0.08571428571428572
+        }
+      ]
+    },
+    "mechanism": {
+      "0.001|SO": {
+        "nonblind": 693,
+        "cancel": 693,
+        "cancel_wrap": 0,
+        "cancel_zero": 693,
+        "past0_nonblind": 36,
+        "cancel_from_past0": 36,
+        "cancel_not_past0": 657,
+        "cancel_solved": 693,
+        "nonblind_solved": 693,
+        "cancel_unsolved": 0,
+        "nonblind_unsolved": 0,
+        "p_cancel_given_past0": 1.0,
+        "p_cancel_given_not_past0": 1.0,
+        "turns": [
+          0
+        ],
+        "omega_ratio_median": 0.2193392589688301
+      },
+      "0.003|SO": {
+        "nonblind": 237,
+        "cancel": 237,
+        "cancel_wrap": 0,
+        "cancel_zero": 237,
+        "past0_nonblind": 17,
+        "cancel_from_past0": 17,
+        "cancel_not_past0": 220,
+        "cancel_solved": 0,
+        "nonblind_solved": 0,
+        "cancel_unsolved": 237,
+        "nonblind_unsolved": 237,
+        "p_cancel_given_past0": 1.0,
+        "p_cancel_given_not_past0": 1.0,
+        "turns": [
+          0
+        ],
+        "omega_ratio_median": 0.04916326329112053
+      },
+      "0.001|AO": {
+        "nonblind": 439,
+        "cancel": 46,
+        "cancel_wrap": 25,
+        "cancel_zero": 21,
+        "past0_nonblind": 55,
+        "cancel_from_past0": 17,
+        "cancel_not_past0": 29,
+        "cancel_solved": 0,
+        "nonblind_solved": 0,
+        "cancel_unsolved": 46,
+        "nonblind_unsolved": 439,
+        "p_cancel_given_past0": 0.3090909090909091,
+        "p_cancel_given_not_past0": 0.07552083333333333,
+        "turns": [
+          0,
+          1,
+          2
+        ],
+        "omega_ratio_median": 0.1272457242012024
+      },
+      "0.003|AO": {
+        "nonblind": 271,
+        "cancel": 46,
+        "cancel_wrap": 32,
+        "cancel_zero": 14,
+        "past0_nonblind": 20,
+        "cancel_from_past0": 4,
+        "cancel_not_past0": 42,
+        "cancel_solved": 0,
+        "nonblind_solved": 0,
+        "cancel_unsolved": 46,
+        "nonblind_unsolved": 271,
+        "p_cancel_given_past0": 0.2,
+        "p_cancel_given_not_past0": 0.16733067729083664,
+        "turns": [
+          0,
+          1,
+          2
+        ],
+        "omega_ratio_median": 0.034533703699707985
+      },
+      "0.001|EXP": {
+        "nonblind": 443,
+        "cancel": 107,
+        "cancel_wrap": 97,
+        "cancel_zero": 10,
+        "past0_nonblind": 306,
+        "cancel_from_past0": 95,
+        "cancel_not_past0": 12,
+        "cancel_solved": 0,
+        "nonblind_solved": 0,
+        "cancel_unsolved": 107,
+        "nonblind_unsolved": 443,
+        "p_cancel_given_past0": 0.3104575163398693,
+        "p_cancel_given_not_past0": 0.08759124087591241,
+        "turns": [
+          0,
+          1,
+          2
+        ],
+        "omega_ratio_median": 0.10652871802449226
+      },
+      "0.003|EXP": {
+        "nonblind": 377,
+        "cancel": 39,
+        "cancel_wrap": 19,
+        "cancel_zero": 20,
+        "past0_nonblind": 154,
+        "cancel_from_past0": 19,
+        "cancel_not_past0": 20,
+        "cancel_solved": 0,
+        "nonblind_solved": 0,
+        "cancel_unsolved": 39,
+        "nonblind_unsolved": 377,
+        "p_cancel_given_past0": 0.12337662337662338,
+        "p_cancel_given_not_past0": 0.08968609865470852,
+        "turns": [
+          0,
+          1
+        ],
+        "omega_ratio_median": 0.04620564170181751
+      },
+      "0.001|SPL": {
+        "nonblind": 427,
+        "cancel": 98,
+        "cancel_wrap": 77,
+        "cancel_zero": 21,
+        "past0_nonblind": 215,
+        "cancel_from_past0": 81,
+        "cancel_not_past0": 17,
+        "cancel_solved": 0,
+        "nonblind_solved": 0,
+        "cancel_unsolved": 98,
+        "nonblind_unsolved": 427,
+        "p_cancel_given_past0": 0.3767441860465116,
+        "p_cancel_given_not_past0": 0.08018867924528301,
+        "turns": [
+          0,
+          1,
+          2,
+          4
+        ],
+        "omega_ratio_median": 0.12141554057598114
+      },
+      "0.003|SPL": {
+        "nonblind": 159,
+        "cancel": 64,
+        "cancel_wrap": 57,
+        "cancel_zero": 7,
+        "past0_nonblind": 68,
+        "cancel_from_past0": 46,
+        "cancel_not_past0": 18,
+        "cancel_solved": 0,
+        "nonblind_solved": 0,
+        "cancel_unsolved": 64,
+        "nonblind_unsolved": 159,
+        "p_cancel_given_past0": 0.6764705882352942,
+        "p_cancel_given_not_past0": 0.1978021978021978,
+        "turns": [
+          0,
+          1,
+          2
+        ],
+        "omega_ratio_median": 0.015906339045614004
+      }
+    },
+    "strata": {
+      "0.001|SO": {
+        "plain_lag<128": 0.9922442493946732,
+        "plain_lag>=128": 0.9931299630043989,
+        "wrap": 0.995538580401458
+      },
+      "0.001|AO": {
+        "plain_lag<128": 0.9118930144081366,
+        "plain_lag>=128": 0.6510236908557508,
+        "wrap": 0.5222581643342099
+      },
+      "0.001|EXP": {
+        "plain_lag<128": 0.9766761764397629,
+        "plain_lag>=128": 0.6948235144282667,
+        "wrap": 0.5236720616200216
+      },
+      "0.001|SPL": {
+        "plain_lag<128": 0.8882133378555916,
+        "plain_lag>=128": 0.7235809975727743,
+        "wrap": 0.5769960985121497
+      },
+      "0.003|SO": {
+        "plain_lag<128": 0.9997897103383852,
+        "plain_lag>=128": 0.9433754220732755,
+        "wrap": 0.6090178560616759
+      },
+      "0.003|AO": {
+        "plain_lag<128": 0.9296993152607574,
+        "plain_lag>=128": 0.5891205169729378,
+        "wrap": 0.49843354827803665
+      },
+      "0.003|EXP": {
+        "plain_lag<128": 0.7995068359266457,
+        "plain_lag>=128": 0.47379338537653287,
+        "wrap": 0.453524011357086
+      },
+      "0.003|SPL": {
+        "plain_lag<128": 0.9706092476047885,
+        "plain_lag>=128": 0.6593157326844145,
+        "wrap": 0.5285634760831507
+      }
+    },
+    "rule2": {
+      "r_1024": -0.6184832921217445,
+      "r_2048": -0.756565362944844
+    }
+  }
+}

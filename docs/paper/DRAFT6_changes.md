@@ -230,3 +230,11 @@ Related-work list was cut; "trained and tested at the same length" restored in S
   at 3e-3, no cost at 1e-3, wrapping on past-pi channels, post hoc; exp 1/8 in attention). Sec. 5: one clause after the LRU
   sentence. Limitations: "no recurrent, SSM or exp(.)-type (LRU) baselines" replaced by the SSM test's scope and the exp
   result. Word count +~150 (above the 3,500 target; trim before submission). MR W5 (exp(.) arm) is now answered in the SSM.
+
+## Fold of EXPTORUS (2026-10-26)
+
+- EXPTORUS (`EXPTORUS_RESULTS.md`, registered + Amendments 1-2): in attention on the observation-step-free T = 1024 torus,
+  each step at its best of lr 1e-3 / 3e-3, exp 0/8 and softplus 0/8 vs signed 8/8 (Holm p 0.0003 on SOLVED; BOTH PAY;
+  budget-scoped; exp partly pilot-informed). Sec. 4.1 "Without softmax": exp pays in attention on the ring and the torus,
+  escapes only in the SSM on the ring. Sec. 5 (LRU sentence) and Limitations updated (mixer, task and start not
+  separated). Title unchanged (|s| or softplus(s) remain the forms that pay everywhere). Word count 5,296 -> 5,396.

@@ -8,16 +8,28 @@ metadata:
 Updated 2026-10-26. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
-## Running (2026-10-26)
-- Nothing running; both GPUs on kalman idle. IMAGE_TORUS (block A, 48 runs, seeds 3100-3107, code `6c4fdf4`, kalman GPUs
-  0-1, 2026-10-25 12:31 -> 23:55; marker `.image_torus_done`) is done and folded in (`IMAGE_TORUS_RESULTS.md`).
-- Next: **Memory Maze on Hyak** (first-person 3D; scoping, nothing registered). memory-maze 1.0.3 installed at
-  a project venv on the cluster's persistent storage (path in the local notes) with gym 0.26.2; EGL rendering works on A40; ~36 env steps/s per process at
-  9x9, ~21 at 15x15; ExtraObs gives agent_pos / agent_dir / maze_layout / targets. Plan (user's): the official 9x9 dataset first,
-  then scrubbed or generated data via the arrays, then a pre-registration. Cluster lessons: `docs/HYAK_NOTES.md`
-  (cleaned; connection details are in an uncommitted local file outside the repo -- ask the user): read before submitting jobs.
-- Optional from the BIG_PICTURE triage: the LSTM/GRU torus baseline (~8 h), if TMLR is the target. IMAGE_TORUS block B
-  (NormStep on images, 4-layer index, token RoPE; ~6 h on two GPUs) is registered as optional and was not declared.
+## Running (2026-10-26, updated after EXPTORUS)
+- **RNN_TORUS** (LSTM/GRU baseline on the T = 1024 torus, `RNN_TORUS_PREREG.md` + Amendment 1, 64 runs, seeds 3300-3307,
+  code `782ba4f`, md5 guard over 107 files) running on kalman GPUs 0-1 since 2026-10-26 13:30, ~18 h; log `rnn_torus.log`.
+  Do NOT edit, create, move or check out any tracked .py / .sh while it runs (the guard re-checks before every launch).
+- **Memory Maze** (first-person 3D, Hyak): CPU gate registered before any number (commit `a8ab5f7`); the official Drive
+  download is quota-blocked and the download / gate jobs are polling. **Pending user decision on the Drive quota.**
+  memory-maze 1.0.3 in a project venv on the cluster's persistent storage (path in the local notes), gym 0.26.2, EGL on A40.
+  Cluster lessons: `docs/HYAK_NOTES.md`; connection details in an uncommitted local file outside the repo (ask the user).
+  Compute on kalman and Hyak only, not koopman.
+- EXPTORUS done (2026-10-26 03:42 -> 13:28, marker `.exptorus_done`) and folded in (below).
+- Optional, not declared: IMAGE_TORUS block B (NormStep on images, 4-layer index, token RoPE; ~6 h on two GPUs).
+
+## Last results (2026-10-26): EXPTORUS (`EXPTORUS_RESULTS.md`): BOTH PAY
+- Attention, torus T = 1024, obs.-step-free rank 4, 900 ep, each arm at its best of lr 1e-3 / 3e-3, seeds 3400-3407:
+  exp 0/8 (1e-3, 0.916) and softplus 0/8 (3e-3, 0.908, not bracketed) vs signed 8/8 (1e-3, 0.993): SIGNED LEARNS BETTER
+  for both (Holm p 0.0003 on SOLVED); anchor gate |.| 0/8 PASS. Budget-scoped (6/8, 5/8 descending); exp partly
+  pilot-informed (Amendment 2); exp 3e-3 6/8 UNSTABLE. The SSM's exp escape (G-3 A2) does not transfer; mixer, task and
+  start (past pi 34% torus vs 41% SSM ring) not separated. Census: exp cancels by a wrap on past-pi-start channels (95 of
+  107 cancelling cells) without solving.
+- Folded into CLAUDE.md (sign row, project line), claim map, RESULTS_INDEX, draft 2 (abstract, Sec. 7.3 + Table 5,
+  Discussion, design guidance, Limitations; App. A3 row, H14 new) and draft 6 (Sec. 4.1, related work, Limitations); PDFs
+  rebuilt.
 
 ## Last results (2026-10-26): IMAGE_TORUS (`IMAGE_TORUS_RESULTS.md`): PATH WINS IN PIXELS
 - Torus T = 1024, each observation a fresh MNIST / Fashion-MNIST class image (test split at eval), CNN end to end, 1 layer.

@@ -19,8 +19,8 @@ Parameterisation: steps written |s| or softplus(s), which put a barrier at zero,
 8 seeds against 8 of 8 for signed steps from small starts; the |.| cost holds with each step at its best learning rate
 on a ring and the torus and in a one-layer diagonal complex state-space model, although the |.| solution exists and is
 kept or re-found. Where the angles start relative to pi matters too: a |.| step started past pi learns the ring map by
-wrapping, and the LRU-style exp step shows no cost in the state-space model at one rate, consistent with its past-pi
-start. Told in English, the walk is learned by one path layer (0.979 vs 0.505), and the result survives a pixel front
+wrapping, and the LRU-style exp step shows no cost in the state-space model on the ring at one rate, consistent with its
+past-pi start, but pays in attention on the torus. Told in English, the walk is learned by one path layer (0.979 vs 0.505), and the result survives a pixel front
 end.
 
 ## 1. Introduction
@@ -437,9 +437,10 @@ from the small start, p 0.0002), while a large start whose sums stay below pi so
 it. From past pi both classes cancel by wrapping; from small starts signed models cancel through zero (98-99% of channels
 end opposite-signed; analysis). On the ring the variable is the barrier parameterisation together with where the angle
 sums start relative to pi. On the torus the start lever does not transfer: a past-pi start leaves |.| at 0/8 and slows the
-signed step to 2/8, with 5/8 runs per large-start arm still descending (App. H3).
+signed step to 2/8, with 5/8 runs per large-start arm still descending (App. H3); exp's
+built-in past-pi start does not help there either (below).
 
-*Table 5. SOLVED (of 8) by start, move set and model (observation-step-free, rank 4; registered; App. H3, H4, H13).*
+*Table 5. SOLVED (of 8) by start, move set and model (observation-step-free, rank 4; registered; App. H3, H4, H13, H14).*
 
 | task, model | moves | initial move angles | signed | \|.\| | other |
 |---|---|---|---|---|---|
@@ -451,6 +452,7 @@ signed step to 2/8, with 5/8 runs per large-start arm still descending (App. H3)
 | torus, attention | four moves | large, sums past pi | 2/8 | 0/8 | |
 | ring, attention | +1/+2 (no inverse pair) | default | 5/8 | 2/8 | UNMEASURED |
 | ring, SSM, lr 1e-3 | +1/-1 | default (exp: 13 of 32 channels per head past pi) | 7/8 | 0/8 | softplus 0/8, exp **6/8** |
+| torus, attention, best of lr 1e-3 / 3e-3 | four moves | default (exp: 11 of 32 channels per head past pi) | 8/8 | 0/8 | softplus 0/8, exp 0/8 |
 
 **The signed escape is collective, and lives in the increment.** From the |.| start, freezing the two move latents (W_out
 and omega still free) blocks the signed escape: 1/8 against 7/8 (Fisher p 0.010), ending with a |.|-like clock (1.18).
@@ -473,17 +475,19 @@ offset per move, a collective route to a point where every channel cancels by wr
 registered half-reading is that a route to the wrap does not carry |.| past pi from a small start; the cell without a
 barrier and without a route (signed, latents frozen) solves 4/8, so the 2x2 as registered is unmeasured.
 
-**The cost is not specific to softmax attention; exp is the exception.** Replacing softmax by the causal unnormalised
+**The cost is not specific to softmax attention; exp escapes only in the SSM.** Replacing softmax by the causal unnormalised
 kernel gives a one-layer diagonal complex SSM without decay or gate, with transition exp(-i omega Delta(x_t)). On the ring
 |.| solves 0/8 against signed 8/8 at learning rate 3e-3 and 0/8 against 7/8 at 1e-3, and softplus 1/8 and 0/8 (Table 4;
 App. H10, H13); the constructions are exact and the installed |.| solution is re-found. The exp step diverged at 3e-3 but
 shows no cost at 1e-3: 6/8 against 7/8 (Fisher p 1.0), at a rate where the signed anchor reached exact codes on only four
 seeds. It ends with every step positive, and 90 of its 95 cancelling channels are channels its initialisation, exp(0) =
-1, already put past pi (analysis): consistent with the past-pi start on the ring, but the batch does not separate the
-start from exp's multiplicative step or the mixer, and softplus, which starts 9 of 32 channels per head past pi, does not
-solve. In attention on the ring exp and softplus solve 1/8 to 3/8 against signed 8/8 at both reference rates (App. H9);
-exp has not been run in attention on the torus. The cost is shown for |s| and softplus(s), not for every non-negative
-parameterisation.
+1, already put past pi (analysis); softplus, which starts 9 of 32 channels per head past pi, does not solve. In attention
+exp pays. On the ring exp and softplus solve 1/8 to 3/8 against signed 8/8 at both reference rates (App. H9). On the
+T = 1024 torus (registered, App. H14), each at its best of two rates, exp solves 0/8 (0.916) and softplus 0/8 (0.908)
+against signed 8/8 (0.993; Holm p 0.0003 on SOLVED; budget-scoped), its cancelling channels again mostly past-pi-start
+ones cancelling by a wrap (95 of 107), without a map. So the escape is not exp's alone; between the two batches mixer, task
+and start (past pi on 41% of channels in the SSM, 34% on the torus) all change, and which matters is not separated. The
+cost is shown for |s|, softplus(s) and, in attention, exp(s).
 
 **Published content phases also miss the torus map.** *Proposition 8 (proved):* faithful CARoPE advances every channel by
 (0, 1] per token, so the shortest return's phase lies in (0, 4], never 0 mod 2 pi (App. E5); it scores 0.667 on the torus
@@ -620,14 +624,14 @@ revisits and lose the rest, and four times the computation or parameters reads t
 rank-2 solution: the deficit is local to the content-to-angle map. For rank, the registered causal test names the
 obstacle: forbid the clock and rank 2 solves. For the step, the evidence points to the increment and its start: a signed
 increment under a non-negative readout learns, a |.| step started past pi learns on the ring, and the exp step learns in
-the SSM from a start with many channels past pi; losing the through-zero route does not by itself account for the cost
+the SSM on the ring from a start with many channels past pi but not in attention on the torus; losing the through-zero route does not by itself account for the cost
 (+1/+2), and whether the barrier at pi or the missing route binds from a small start is half-read. MapEM's recency
 deficit is a contrast: its exact solution is found with four times the budget (0.578 to 0.928; not registered), while rank
 2 stays at 0/8 with twice the budget (App. N).
 
 **Design guidance.** Keep the phase increment signed; a non-negative readout is harmless. If a non-negative increment is
 needed, |.| and softplus from small starts are the forms that paid everywhere we looked; exp escaped in an SSM at one rate
-and paid in attention on the ring. Give each head rank above the map's dimension (D + 1), with weight decay; where the
+and paid in attention on the ring and the torus. Give each head rank above the map's dimension (D + 1), with weight decay; where the
 inverse pairs of actions are known, tying their steps to exact negatives removes the clock, and rank D then suffices.
 Keep observations from stepping the phase. With pixels this is decisive (Table 7): when the image embedding enters the
 step at token scale, 5 of 8 runs collapse, the encoder outputting a constant and the phase becoming a clock that ticks at
@@ -674,11 +678,12 @@ with one layer; we give the rate at matched depth, the mechanism trained models 
   Learning rates for the |.| contrast were swept on the ring (four rates) and the torus (three, decay coupled to the rate,
   no decay-matched control; 5 of 8 |.| runs at its best rate still descending). At 2 layers and d_model 256 the accuracy
   gap is a quarter of the one-layer gap, so at scale part of the cost may be speed. No other optimiser was tried.
-- The parameterisation result is shown for |s| and softplus(s). The exp step showed no cost in the SSM at one rate (1e-3;
-  unstable at 3e-3), where the signed anchor had partial codes on four seeds, and whether its past-pi start, its
-  multiplicative step or the mixer explains this is not separated. In attention exp and softplus were run on the ring at
-  two fixed rates only; exp has not been run on the torus in attention. The start lever is registered on the ring and does
-  not transfer to the torus within 900 epochs.
+- The parameterisation result is shown for |s| and softplus(s), and for exp(s) in attention (ring at two fixed rates; torus
+  at the best of two, softplus's optimum not bracketed, most runs still descending, the exp batch partly pilot-informed).
+  The exp step showed no cost in the SSM on the ring at one rate (1e-3; unstable at 3e-3), where the signed anchor had
+  partial codes on four seeds; whether the mixer, the task or the start explains this is not separated (no SSM on the
+  torus, no exp started below pi). The start lever is registered on the ring and does not transfer to the torus within
+  900 epochs.
 - Why the barrier classes fail from a small start is not settled. The registered test of Lemma 1's learnability reading
   (+1/+2) is unmeasured and did not confirm it; the route-versus-barrier 2x2 (ring, one start, one readable rate) has one
   registered half (a route to the wrap does not carry |.| past pi) and is unmeasured as a whole.

@@ -136,7 +136,11 @@ one-layer diagonal complex state-space model with the same rotation. On the ring
 3e-3 and 0/8 against 7/8 at 1e-3 (Fisher p 0.0002, 0.0014), and softplus 1/8 and 0/8. The exp(s) step of the LRU, which
 starts at exp(0) = 1 and so puts 13 of 32 channels per head past pi, diverged at 3e-3 but shows no cost at 1e-3: 6/8 against
 7/8 (Fisher p 1.0), cancelling by wrapping on channels that started past pi (post hoc). In attention the same exp step
-solved 1/8 at both rates. The cost is shown for |s| and softplus(s), not for every non-negative parameterisation.
+pays: on the ring it solved 1/8 at both rates, and on the observation-step-free T = 1024 torus (registered EXPTORUS,
+`EXPTORUS_RESULTS.md`; each step at its best of lr 1e-3 and 3e-3) exp and softplus each solve 0/8 against signed 8/8
+(Holm p 0.0003 on SOLVED; most runs still descending; the exp readings partly pilot-informed), exp again cancelling by a
+wrap on past-pi-start channels without reaching a map. The cost is shown for |s| and softplus(s), and in attention for
+exp(s); exp escapes only in the SSM on the ring.
 
 ### 4.2 The |.| solution exists: kept on the ring, re-found on the torus
 
@@ -246,7 +250,7 @@ and Grazzi et al.'s advice, allow a sign, for a different reason.
 RNNs the +/-1 diagonal of the scaled Cayley parameterisation is fixed during training, its count of -1s a per-task
 hyperparameter (Helfrich et al. 2018). The LRU (Orvieto et al. 2023) needs its positive phases initialised near zero to
 learn PathX; they are input-independent, so by Lemma 1(ii) their sign is a convention. Made input-dependent, its exp(s)
-step learned our ring map in a one-layer SSM at one rate and not in attention (Sec. 4.1). Dale's-law networks ask the same
+step learned our ring map in a one-layer SSM at one rate and not in attention, on the ring or the torus (Sec. 4.1). Dale's-law networks ask the same
 question, constraint or start (Cornford et al. 2021; Li et al. 2023). With fixed frequencies the parameter symmetries of
 rotary attention are per-plane complex scalars, with no reflection (Wang and Wang 2025; Tran et al. 2026); to our knowledge
 the reflection a learnable step adds (Lemma 1), the loss of the through-zero route for inverse pairs, and the learnability
@@ -258,9 +262,10 @@ ingredient.
 "Does not learn" is scoped to our budgets: 3x the ring budget did not help; learning rates were swept on the ring (each step at its best of four) and on the one-layer torus (best of three, decay coupled to the rate, no decay-matched control); in a larger torus model the accuracy gap
 shrinks and |.| runs were mostly still descending; no other optimisers or longer budgets at scale. Small models (one layer, 2 heads, d =
 128, a rank-4 latent shared across heads), synthetic tasks, n = 8, no recurrent baseline and one SSM test (one layer, ring,
-no decay or gate, two rates). There an exp(.) (LRU-style) step showed no cost at lr 1e-3, so the claim covers |s| and
-softplus(s), not every non-negative parameterisation; whether exp escapes through its past-pi start, its multiplicative
-step or the linear mixer is not separated. On the
+no decay or gate, two rates). There an exp(.) (LRU-style) step showed no cost at lr 1e-3; in attention it pays on the
+ring and the torus, so the claim covers |s|, softplus(s) and, in attention, exp(s); whether the SSM escape comes from the
+mixer, the task (ring vs torus) or exp's past-pi start (41% of channels on the SSM ring, 34% on the torus) is not
+separated. On the
 ring the evidence is mainly a loss criterion, which at p_plus 0.5 does not survive a looser threshold (0.1; post hoc). On
 the torus the barrier class has less latent slack (the wrapped code also needs the 2 pi k / omega offsets), and per-head
 rank, known to decide torus learnability for signed steps, is uncontrolled. Softplus carries an initialisation confound; its

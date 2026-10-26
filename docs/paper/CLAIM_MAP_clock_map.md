@@ -214,6 +214,22 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
   noise); a dose-response in the gain (two values, total effect); anything about first-person, natural or 3D views (Memory
   Maze is not run); P2 or G as blind tests.
 
+## Update 2026-10-26: EXPTORUS (`EXPTORUS_RESULTS.md`, registered + Amendments 1-2): BOTH PAY
+- Attention, torus T = 1024, observation-step-free rank 4, 1 layer, 900 epochs, each arm at its best of lr 1e-3 / 3e-3
+  (selection-aware): exp 0/8 (best 1e-3, 0.916) and softplus 0/8 (best 3e-3, 0.908) vs signed 8/8 (1e-3, 0.993): SIGNED
+  LEARNS BETTER for both (Holm p 0.0003 on SOLVED; softplus accuracy route p 0.11, SOLVED carries it). Anchor gate |.| 0/8 vs
+  8/8 PASS. At A2's rate 1e-3 (no selection) exp and softplus 0/8 vs 8/8. exp at 3e-3 6/8 UNSTABLE (not selected).
+  Qualifiers: budget-scoped (exp 6/8, softplus 5/8 still descending); softplus's optimum not bracketed; exp readings partly
+  pilot-informed (Amendment 2).
+- Census (declared secondary): exp at 1e-3 cancels on 107 of 443 non-blind cells, 97 by a wrap, 95 from the past-pi start
+  set (usage-weighted cancel 0.81) -- A2's pattern without solving. The torus start puts exp past pi on 34% of channels vs
+  41% on the SSM ring.
+- Allowed: "in attention on the T = 1024 torus the exp (LRU-style positivity) and softplus (Mamba-Delta-style)
+  content-dependent increments pay the sign cost, as |.| does, at the best of two rates"; "exp escapes only in the SSM on the
+  ring at lr 1e-3". Not: "the LRU and Mamba parameterisations pay" (wording, Amendment 1.7); "the mixer explains exp's SSM
+  escape" (mixer, task and start all change between the batches); "non-negativity alone" (decay coupled to the rate pulls
+  exp / softplus toward a uniform clock); anything at exp 3e-3 (instability).
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
@@ -228,7 +244,7 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
 - "A near-wrap start rescues CoPE" (unmeasured; WRAP_COPE).
 - "The sign cost is only the start, not the constraint" (toy only; in the transformer signed escapes the |.| start through zero).
 - "SIGNSEP shows the sign cost is the wrap barrier" (only the half-reading BARRIER BLOCKS; the registered reading is UNMEASURED).
-- "Every non-negative step parameterisation pays the sign cost" (exp shows no cost in the SSM at lr 1e-3, G-3 A2; the claim is |.| and softplus).
+- "Every non-negative step parameterisation pays the sign cost" (exp shows no cost in the SSM on the ring at lr 1e-3, G-3 A2; in attention |.|, softplus and exp all pay, EXPTORUS on the torus, SIGNROUTE on the ring).
 
 ## Gaps, cheapest first
 1. **Prior art** (`docs/lit/LIT_CLOCK_MAP.md`, agent running): which of C1-C5 are published.
