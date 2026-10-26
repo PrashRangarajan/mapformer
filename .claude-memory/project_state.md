@@ -14,8 +14,8 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
 - Next: **Memory Maze on Hyak** (first-person 3D; scoping, nothing registered). memory-maze 1.0.3 installed at
   `/gscratch/cse/prashr/mapformer_mm/mm-env` with gym 0.26.2; EGL rendering works on A40; ~36 env steps/s per process at
   9x9, ~21 at 15x15; ExtraObs gives agent_pos / agent_dir / maze_layout / targets. Plan (user's): the official 9x9 dataset first,
-  then scrubbed or generated data via the arrays, then a pre-registration. The user's Hyak
-  handoff notes cover the ckpt partition, the 8-9 h job clamp and storage: read them before submitting jobs.
+  then scrubbed or generated data via the arrays, then a pre-registration. Cluster lessons: `docs/HYAK_NOTES.md`
+  (cleaned; connection details are in an uncommitted local file outside the repo -- ask the user): read before submitting jobs.
 - Optional from the BIG_PICTURE triage: the LSTM/GRU torus baseline (~8 h), if TMLR is the target. IMAGE_TORUS block B
   (NormStep on images, 4-layer index, token RoPE; ~6 h on two GPUs) is registered as optional and was not declared.
 
