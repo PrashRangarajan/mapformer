@@ -99,8 +99,8 @@ risk.
 
 ### 3b. External benchmark: Memory Maze on Hyak (ckpt, A40)
 
-**Measured feasibility (job 42334056).** memory-maze 1.0.3 + dm_control 1.0.50 + mujoco 3.17 + gym 0.26.2 in
-`/gscratch/cse/prashr/mapformer_mm/mm-env`; EGL rendering works on A40 (OSMesa unavailable, so generation needs GPU
+**Measured feasibility (one 45-min cluster job, 2026-10-25).** memory-maze 1.0.3 + dm_control 1.0.50 + mujoco 3.17 + gym 0.26.2 in
+a project venv on the cluster's persistent storage; EGL rendering works on A40 (OSMesa unavailable, so generation needs GPU
 nodes); ~36 env steps/s per process at 9x9, ~21 at 15x15; 8 parallel processes ~33 each (~260 steps/s/node). ExtraObs
 (`global_observables=True`) gives `agent_pos`, `agent_dir`, `maze_layout`, `targets_pos/vec`, `target_color`.
 6 discrete actions. 9x9 episodes 1000 steps (README: 11x11 2000, 13x13 3000, 15x15 4000).
@@ -154,7 +154,7 @@ RoPE 4 layers (FACTORIAL: depth helps index on short revisits only); E = path mo
 long-gap retrieval at 15x15; secondaries P - R4, P - E, probe scores vs Deng et al. Pilots on outside seeds;
 independent verification agent before reading (rule 29).
 
-**Cost.** Dataset download ~200 GB to gscratch (check quota); encoder pretrain + embedding ~2-3 A40-h. One run at
+**Cost.** Dataset download ~200 GB to the cluster's scratch storage (check quota); encoder pretrain + embedding ~2-3 A40-h. One run at
 T = 2000, d 128, 1 layer on precomputed embeddings ~ 2-4x a torus T=1024 run, roughly 1-2 A40-h; 32 runs (4 arms x 8)
 ~ 32-64 A40-h, i.e. 4-8 ckpt array tasks of 8 h at 2-4 jobs per GPU. Every run must checkpoint each epoch and resume
 (ckpt preemption; 8-9 h windows). If the native-length 15x15 data is generated: + ~10 node-h per 1000 episodes.

@@ -12,7 +12,7 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
 - Nothing running; both GPUs on kalman idle. IMAGE_TORUS (block A, 48 runs, seeds 3100-3107, code `6c4fdf4`, kalman GPUs
   0-1, 2026-10-25 12:31 -> 23:55; marker `.image_torus_done`) is done and folded in (`IMAGE_TORUS_RESULTS.md`).
 - Next: **Memory Maze on Hyak** (first-person 3D; scoping, nothing registered). memory-maze 1.0.3 installed at
-  `/gscratch/cse/prashr/mapformer_mm/mm-env` with gym 0.26.2; EGL rendering works on A40; ~36 env steps/s per process at
+  a project venv on the cluster's persistent storage (path in the local notes) with gym 0.26.2; EGL rendering works on A40; ~36 env steps/s per process at
   9x9, ~21 at 15x15; ExtraObs gives agent_pos / agent_dir / maze_layout / targets. Plan (user's): the official 9x9 dataset first,
   then scrubbed or generated data via the arrays, then a pre-registration. Cluster lessons: `docs/HYAK_NOTES.md`
   (cleaned; connection details are in an uncommitted local file outside the repo -- ask the user): read before submitting jobs.
