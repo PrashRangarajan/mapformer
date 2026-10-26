@@ -1,0 +1,65 @@
+== REGISTERED (T = 1024, test-split images, held-out map; n = 8 vs 8; Holm over P1, P2) ==
+P1 -> PATH WINS IN PIXELS  [partly pilot-informed: image ActOnly 0.9944 on one pilot seed, image RoPE's pilot training loss known; image RoPE accuracy unseen]
+   P1: I_ActOnly 0.9946 +/- 0.0009 vs I_RoPE 0.7010 +/- 0.0161; d +0.2936, perm p 0.0001554, Holm 0.0003108, 95% CI [+0.2816, +0.3056]
+   [I_ActOnly: SOLVED 8/8, STALLED 0, DESCENDING 0; above retrace 8/8; within 0.01 of ceil_vote 8/8]
+   [I_RoPE: SOLVED 0/8, STALLED 8, DESCENDING 0; above retrace 0/8; within 0.01 of ceil_vote 0/8]
+P2 -> THE OBSERVATION STEP COSTS IN PIXELS  [PILOT-INFORMED, NOT BLIND: direction known from pilots 1-2 (3 seeds at 150 epochs)]
+   P2: I_ActOnly 0.9946 +/- 0.0009 vs I_MapWM 0.6677 +/- 0.2207; d +0.3269, perm p 0.0001554, Holm 0.0003108, 95% CI [+0.1674, +0.4874]
+   (declared descriptive, no verdict) image MapWM end state per seed: s3100 LEARNED, s3101 COLLAPSED, s3102 COLLAPSED, s3103 COLLAPSED, s3104 COLLAPSED, s3105 LEARNED, s3106 LEARNED, s3107 COLLAPSED; counts LEARNED 3, COLLAPSED 5, NOISY 0, OTHER 0
+   (declared secondary, no verdict, outside Holm) seeds within 0.01 of ceil_vote: I_ActOnly 8/8 vs I_MapWM 0/8, Fisher p 0.0001554
+   [I_ActOnly: SOLVED 8/8, STALLED 0, DESCENDING 0; above retrace 8/8; within 0.01 of ceil_vote 8/8]
+   [I_MapWM: SOLVED 1/8, STALLED 5, DESCENDING 2; above retrace 3/8; within 0.01 of ceil_vote 0/8]
+
+Floors on these walks (mean over seeds): blank 0.5079, retrace 0.8432, token n-gram 0.5166, action-only n-gram 0.5079; perception ceiling ceil_vote 0.9927 (standalone classifier 0.9801)
+
+== DECLARED SECONDARIES (no verdict) ==
+Per cell (mean +/- sd over seeds): acc T=1024 | 512 | 2048 (OOD) | own map | train images | zeroobj | shuffle
+  I_ActOnly   0.9946+/-0.0009 | 0.9944+/-0.0005 | 0.9893+/-0.0111 | 0.9946+/-0.0007 | 1.0000+/-0.0000 | 0.9946+/-0.0009 | 0.2687+/-0.0262   [I_ActOnly: SOLVED 8/8, STALLED 0, DESCENDING 0; above retrace 8/8; within 0.01 of ceil_vote 8/8]
+  I_MapWM     0.6677+/-0.2207 | 0.6801+/-0.2417 | 0.6375+/-0.1771 | 0.6619+/-0.2248 | 0.6700+/-0.2240 | 0.6061+/-0.1824 | 0.4250+/-0.1158   [I_MapWM: SOLVED 1/8, STALLED 5, DESCENDING 2; above retrace 3/8; within 0.01 of ceil_vote 0/8]
+  I_RoPE      0.7010+/-0.0161 | 0.7260+/-0.0181 | 0.4926+/-0.0931 | 0.7514+/-0.0205 | 0.7108+/-0.0169 | -- | 0.3590+/-0.0186   [I_RoPE: SOLVED 0/8, STALLED 8, DESCENDING 0; above retrace 0/8; within 0.01 of ceil_vote 0/8]
+  I_MapWM_g1  0.9938+/-0.0007 | 0.9941+/-0.0006 | 0.9699+/-0.0236 | 0.9939+/-0.0010 | 0.9996+/-0.0006 | 0.9512+/-0.0339 | 0.2778+/-0.0170   [I_MapWM_g1: SOLVED 8/8, STALLED 0, DESCENDING 0; above retrace 8/8; within 0.01 of ceil_vote 8/8]
+  T_MapWM     0.9595+/-0.1119 | 0.9622+/-0.1070 | 0.9425+/-0.1103 | 0.9635+/-0.1009 | -- | 0.7664+/-0.0807 | 0.2918+/-0.0166   [T_MapWM: SOLVED 7/8, STALLED 1, DESCENDING 0; above retrace 7/8; within 0.01 of ceil_vote 7/8]
+  T_ActOnly   0.9998+/-0.0005 | 1.0000+/-0.0000 | 0.9918+/-0.0208 | 0.9998+/-0.0006 | -- | 0.9998+/-0.0005 | 0.2902+/-0.0190   [T_ActOnly: SOLVED 8/8, STALLED 0, DESCENDING 0; above retrace 8/8; within 0.01 of ceil_vote 8/8]
+S1 cost of pixels (b - a):
+   I_MapWM - T_MapWM: I_MapWM 0.6677 +/- 0.2207 vs T_MapWM 0.9595 +/- 0.1119; d -0.2919, perm p 0.007148, 95% CI [-0.4914, -0.0944]
+   I_ActOnly - T_ActOnly: I_ActOnly 0.9946 +/- 0.0009 vs T_ActOnly 0.9998 +/- 0.0005; d -0.0052, perm p 0.0001554, 95% CI [-0.0057, -0.0047]
+   I_ActOnly - T_MapWM: I_ActOnly 0.9946 +/- 0.0009 vs T_MapWM 0.9595 +/- 0.1119; d +0.0350, perm p 0.9994, 95% CI [-0.0055, +0.1020]
+   I_MapWM - ceil_vote (paired by seed): -0.3251 (min -0.4890)
+   I_ActOnly - ceil_vote (paired by seed): +0.0019 (min +0.0006)
+   I_RoPE - ceil_vote (paired by seed): -0.2918 (min -0.3150)
+   I_MapWM_g1 - ceil_vote (paired by seed): +0.0011 (min +0.0002)
+S2 leak: L = zeroobj - test (object steps zeroed at eval); step statistics (ratios to the action rms step)
+   I_MapWM     L median +0.0000 [-0.4000, +0.0066]; object/action step median 20.2956 [0.0029, 48.3608]; within-class (instance)/action median 0.0000 [0.0000, 0.0143]
+   I_ActOnly   L median +0.0000 [+0.0000, +0.0000]; object/action step median 0.0000 [0.0000, 0.0000]; within-class (instance)/action median 0.0000 [0.0000, 0.0000]
+   I_MapWM_g1  L median -0.0470 [-0.0900, -0.0005]; object/action step median 0.0027 [0.0012, 0.0058]; within-class (instance)/action median 0.0007 [0.0006, 0.0008]
+   T_MapWM     L median -0.1937 [-0.2524, -0.1033]; object/action step median 0.0219 [0.0126, 0.1496]; within-class (instance)/action median 0.0000 [0.0000, 0.0000]
+   T_ActOnly   L median +0.0000 [+0.0000, +0.0000]; object/action step median 0.0000 [0.0000, 0.0000]; within-class (instance)/action median 0.0000 [0.0000, 0.0000]
+   L(I_MapWM) - L(T_MapWM) +0.1316, perm p 0.02797 ('leaks more with images')
+   S2b (I_ActOnly - I_MapWM) - (T_ActOnly - T_MapWM) +0.2866 (paired by seed, sign-flip p 0.0391); token ActOnly - MapWM +0.0403
+S3 perception: linear probe of the trained encoder (test split); transfer gap = train-images - test-images acc
+   I_MapWM     probe median 0.0709 [0.0709, 0.9784]; gap median +0.0000 [+0.0000, +0.0081] (sign-flip p 0.25)
+   I_ActOnly   probe median 0.9851 [0.9841, 0.9860]; gap median +0.0052 [+0.0043, +0.0067] (sign-flip p 0.00781)
+   I_RoPE      probe median 0.9647 [0.9633, 0.9709]; gap median +0.0098 [+0.0078, +0.0116] (sign-flip p 0.00781)
+   I_MapWM_g1  probe median 0.9838 [0.9828, 0.9850]; gap median +0.0056 [+0.0049, +0.0067] (sign-flip p 0.00781)
+S4 strata (T = 1024): cell acc / retrace floor on the same walks
+   I_ActOnly   short-gap 0.995 / 0.911  long-gap 0.994 / 0.509  wrap-only 0.994 / 0.508
+   I_MapWM     short-gap 0.688 / 0.911  long-gap 0.589 / 0.509  wrap-only 0.544 / 0.508
+   I_RoPE      short-gap 0.745 / 0.911  long-gap 0.482 / 0.509  wrap-only 0.483 / 0.508
+   I_MapWM_g1  short-gap 0.994 / 0.911  long-gap 0.993 / 0.509  wrap-only 0.991 / 0.508
+   T_MapWM     short-gap 0.961 / 0.911  long-gap 0.958 / 0.509  wrap-only 0.947 / 0.508
+   T_ActOnly   short-gap 1.000 / 0.911  long-gap 1.000 / 0.509  wrap-only 0.997 / 0.508
+S5 context destruction (observations shuffled): vs blank floor 0.5079
+   I_ActOnly   0.2687
+   I_MapWM     0.4250
+   I_RoPE      0.3590
+   I_MapWM_g1  0.2778
+   T_MapWM     0.2918
+   T_ActOnly   0.2902
+S6 r(final-5% training loss, acc T=1024) over 48 runs: -0.988
+G (registered secondary, outside Holm) -> GAIN 1 RESCUES MAPWM  [PILOT-INFORMED, NOT BLIND: one pilot seed]
+   I_MapWM_g1 - I_MapWM: I_MapWM_g1 0.9938 +/- 0.0007 vs I_MapWM 0.6677 +/- 0.2207; d +0.3262, perm p 0.0001554, 95% CI [+0.1667, +0.4867]
+   [I_MapWM_g1: SOLVED 8/8, STALLED 0, DESCENDING 0; above retrace 8/8; within 0.01 of ceil_vote 8/8]
+   (declared descriptive) gain-1 MapWM end state per seed: s3100 LEARNED, s3101 LEARNED, s3102 LEARNED, s3103 LEARNED, s3104 LEARNED, s3105 LEARNED, s3106 LEARNED, s3107 LEARNED
+   residual cost at gain 1: I_ActOnly - I_MapWM_g1: I_ActOnly 0.9946 +/- 0.0009 vs I_MapWM_g1 0.9938 +/- 0.0007; d +0.0007, perm p 0.0906, 95% CI [+0.0002, +0.0012]
+P1' -> UNMEASURED  [original P1 rule on the RAW p, outside Holm, superseded by Amendment 2; the pre-pilot prediction (I_MapWM 0.97-0.99) was contradicted by the pilots]
+   I_MapWM - I_RoPE: I_MapWM 0.6677 +/- 0.2207 vs I_RoPE 0.7010 +/- 0.0161; d -0.0333, perm p 0.7279, 95% CI [-0.1978, +0.1267]

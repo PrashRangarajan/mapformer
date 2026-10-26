@@ -98,6 +98,7 @@ Pilots ran on seeds outside the batch except where noted.
 | TEXTWORLD | 8 | torus in words | path 1 layer; index 1, 2 layers | 0-7; main text 2-7 (0-1 were the pilot) | 900 | standard | yes | yes |
 | TW_NORMSTEP | 8 | torus in words | MapWM, NormStep, DirOnly (direction words only step) | 10-17 | 900 | standard | yes | yes |
 | LEAK | 8 | new-object torus | MapWM, ActOnly, NormStep | 0-7 | 900 | standard | yes | yes |
+| IMAGE_TORUS (K4) | 8 | torus T = 1024, class images per observation | image ActOnly, MapWM (gain 30.37 and 1), RoPE; token MapWM, ActOnly | 3100-3107 | 900 | fast-attn | yes (twice: Amendments 1, 3) | no (analysis re-run from the run dirs, identical) |
 | GAIN_PHASE (K) | -- | new-object torus | step x score 2x2 | 8-15 | 900 | standard | yes | no |
 | RING_BUDGET (H) | -- | ring p_plus 0.5 | \|.\| at 300 and 900 epochs | 40-47 | 300 / 900 | standard | yes | yes |
 | TORUS_START (H) | -- | torus | start arms | 1200-1207 | 900 | fast-attn | yes | yes |
@@ -2124,6 +2125,74 @@ LayerNorm(embedding)) lets the model converge: 16/16 SOLVED (unseen-object accur
 MapWM's leak; the accuracy and loss are strongly coupled there (r(loss, accuracy) -0.94). On fresh seeds the convergence
 result replicated (NormStep 8/8 against MapWM 0/8) and the accuracy gain did not (+0.0045, p 0.46; 0.9940 against 0.9895).
 A score change alone leaves the leak in place (GAIN_PHASE).
+
+### K4. Maps from pixels (IMAGE_TORUS; registered, `IMAGE_TORUS_RESULTS.md`, `IMAGE_TORUS_PREREG.md` + Amendments 1-3)
+
+**Task and recipe.** FACTORIAL's torus (64 x 64, 16 classes, p_empty 0.5, trained and tested at T = 1024, one training map
+per run, held-out evaluation map) with each observation token replaced by a 28 x 28 image of its class: MNIST digits 0-9
+and Fashion-MNIST trouser, dress, sandal, sneaker, bag, ankle boot; a fresh instance at every visit; blank cells are the
+all-zero image. Training draws only training-split images (96,000; zero test draws recorded per run), every registered
+readout only test-split images (16,000; zero byte-identical images across splits). Encoder: three strided convolutions and
+a linear map to d_model (79,968 parameters), trained end to end, its output multiplied by a fixed gain: 30.3729 matches an
+image embedding's norm to a token embedding's at initialisation (set on seeds 0-15, not the batch seeds), 1.0 is the raw
+output. Recipe: 1 layer, 2 heads, d 128, 900 epochs, lr 1e-3 warmup + cosine, AdamW wd 0.05, batch 16, --fast-attn; 8
+seeds per cell (3100-3107), 48 runs in one batch. Arms: ActOnly (step from action tokens only), MapWM (shared rank 4;
+every token sets a step), index RoPE. The perception ceiling ceil_vote is a perfect map with a standalone classifier (same
+encoder and a linear head, 10 epochs; test accuracy 0.980) voting over every earlier visit to the cell.
+
+**Disclosure.** The design was changed after the pilot's pre-declared stop rule fired (image MapWM at gain 30.37 stayed at
+the memoryless level over 150 epochs on three pilot seeds; pilots on seeds 3180-3183, outside the batch, never pooled).
+P1 is partly pilot-informed (image ActOnly seen on one pilot seed at 0.9944; image RoPE's pilot loss known, its accuracy
+not); P2 and G are pilot-informed, not blind (confirmations on fresh seeds). The original P1 (image MapWM vs image RoPE)
+reads UNMEASURED under its own rule (-0.033, raw p 0.73) and its prediction (image MapWM 0.97-0.99) was contradicted.
+
+| contrast (Holm over P1, P2; G outside) | label | d | 95% CI | p |
+|---|---|---|---|---|
+| P1 image ActOnly - image RoPE | PATH WINS IN PIXELS | +0.294 | [+0.282, +0.306] | perm 0.00016, Holm 0.0003 |
+| P2 image ActOnly - image MapWM (gain 30.37) | THE OBSERVATION STEP COSTS IN PIXELS | +0.327 | [+0.167, +0.487] | perm 0.00016, Holm 0.0003 |
+| G image MapWM gain 1 - gain 30.37 | GAIN 1 RESCUES MAPWM | +0.326 | [+0.167, +0.487] | perm 0.00016 |
+| residual: image ActOnly - MapWM gain 1 | (no label) | +0.0007 | [+0.0002, +0.0012] | perm 0.091 |
+| S2b (ActOnly - MapWM), images minus tokens, paired by seed | (secondary) | +0.287 | -- | sign-flip 0.039 |
+
+**Per seed** (accuracy at T = 1024; floors on the same walks: retrace 0.838-0.848, blank 0.504-0.515, ceil_vote
+0.992-0.993):
+
+| cell | 3100 | 3101 | 3102 | 3103 | 3104 | 3105 | 3106 | 3107 | mean | classes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| image ActOnly | 0.9954 | 0.9937 | 0.9937 | 0.9933 | 0.9952 | 0.9957 | 0.9945 | 0.9951 | 0.9946 | 8 S |
+| image MapWM, gain 1 | 0.9930 | 0.9937 | 0.9927 | 0.9944 | 0.9943 | 0.9937 | 0.9945 | 0.9945 | 0.9938 | 8 S |
+| image MapWM, gain 30.37 | 0.9197 | 0.5052 | 0.5076 | 0.5037 | 0.5141 | 0.9616 | 0.9200 | 0.5094 | 0.6677 | 1 S, 5 T, 2 D |
+| image RoPE | 0.6778 | 0.6957 | 0.6931 | 0.7220 | 0.7025 | 0.6875 | 0.7244 | 0.7047 | 0.7010 | 8 T |
+| token ActOnly | 1.0000 | 1.0000 | 1.0000 | 0.9986 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 0.9998 | 8 S |
+| token MapWM | 1.0000 | 0.9988 | 0.9999 | 0.9949 | 1.0000 | 0.6827 | 1.0000 | 1.0000 | 0.9595 | 7 S, 1 T |
+
+**End states of image MapWM at gain 30.37** (thresholds fixed before the batch): LEARNED (above the seed's retrace floor)
+3100, 3105, 3106; COLLAPSED (otherwise, encoder probe < 0.5) 3101-3104, 3107; NOISY (per-instance step >= an action step)
+none. Collapsed runs end at the memoryless loss (2.06-2.10; ln 2 + 0.5 ln 16 = 2.079); four never leave it,
+and 3103 dipped to 1.91 at epoch 25, during warm-up, and was back at 2.03 by epoch 35. They score exactly their seed's blank floor under every readout, and their encoder outputs one constant (probe 0.0709, the
+most frequent test class; object step = blank step; per-instance step 0), with that constant observation step 17-48x the
+action step. Learned runs escape by epoch 50 (3100, 3105) or between epochs 100 and 400 (3106); two null their
+observation step (0.03x and 0.003x an action step), 3106 keeps a constant one of 9.4x and depends on it (zeroing it:
+0.920 -> 0.520). At gain 1 every run is LEARNED with object steps 0.001-0.006 and per-instance steps 0.0006-0.0008 of an
+action step, and uses them (zeroing costs 0.0005-0.090, median 0.047).
+
+**Strata, perception and other readouts** (means; retrace on the same revisits in brackets):
+
+| cell | short gap (0.911) | long gap (0.509) | wrap-only (0.508) | T = 2048 (OOD) | probe (median) | context destroyed (blank 0.508) |
+|---|---|---|---|---|---|---|
+| image ActOnly | 0.995 | 0.994 | 0.994 | 0.989 | 0.985 | 0.269 |
+| image MapWM, gain 1 | 0.994 | 0.993 | 0.991 | 0.970 | 0.984 | 0.278 |
+| image MapWM, gain 30.37 | 0.688 | 0.589 | 0.544 | 0.638 | 0.071 | 0.425 |
+| image RoPE | 0.745 | 0.482 | 0.483 | 0.493 | 0.965 | 0.359 |
+| token ActOnly | 1.000 | 1.000 | 0.997 | 0.992 | -- | 0.290 |
+| token MapWM | 0.961 | 0.958 | 0.947 | 0.943 | -- | 0.292 |
+
+Cost of pixels for the path model: image ActOnly - token ActOnly -0.0052 (perm p 0.00016); image ActOnly - ceil_vote
++0.0019 per seed (min +0.0006). Transfer gap (train-split minus test-split images at evaluation): ActOnly +0.005, RoPE
++0.010 (sign-flip p 0.0078 each). r(final-5% training loss, accuracy) over the 48 runs -0.988.
+
+Scope: class images on a discrete grid, one top-down image per cell visit, allocentric moves; 1 layer, T = 1024, one
+recipe; block A only (NormStep on images, deeper index models and token RoPE were registered as optional and not run).
 
 ---
 

@@ -5,17 +5,29 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-25. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-26. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
-## Running (2026-10-25)
-- Nothing running; both GPUs on kalman idle (koopman idle too). Both batches of 2026-10-24/25 are done and folded in:
-  G-3 block A2 (kalman GPU 0, 23:32 -> 02:37, `ab872fb`, 40 runs; marker `.ssm_sign_a2_done`) and FACTORIAL_N8 (kalman
-  GPU 1, 23:32 -> 07:34, `ab872fb`, 16 runs; marker `.factorial_n8_done`).
-- IMAGE_TORUS (`IMAGE_TORUS_PREREG.md` + Amendment 1, committed 4955021, not launched): its pilot (`IMAGE_TORUS_PILOT.txt`,
-  2026-10-25 02:41-03:00, GPU 0) fired the stop rule (image MapWM training loss flat at 2.05 over 150 epochs while token
-  MapWM and image RoPE descend). Redesign pending with the user; do not edit those files from other sessions.
-- Of the BIG_PICTURE triage only the optional LSTM/GRU torus baseline (~8 h) remains, if TMLR is the target. Then stop.
+## Running (2026-10-26)
+- Nothing running; both GPUs on kalman idle. IMAGE_TORUS (block A, 48 runs, seeds 3100-3107, code `6c4fdf4`, kalman GPUs
+  0-1, 2026-10-25 12:31 -> 23:55; marker `.image_torus_done`) is done and folded in (`IMAGE_TORUS_RESULTS.md`).
+- Next: **Memory Maze on Hyak** (first-person 3D; scoping, nothing registered). memory-maze 1.0.3 installed at
+  `/gscratch/cse/prashr/mapformer_mm/mm-env` with gym 0.26.2; EGL rendering works on A40; ~36 env steps/s per process at
+  9x9, ~21 at 15x15; ExtraObs gives agent_pos / agent_dir / maze_layout / targets. Plan (user's): the official 9x9 dataset first,
+  then scrubbed or generated data via the arrays, then a pre-registration. The user's Hyak
+  handoff notes cover the ckpt partition, the 8-9 h job clamp and storage: read them before submitting jobs.
+- Optional from the BIG_PICTURE triage: the LSTM/GRU torus baseline (~8 h), if TMLR is the target. IMAGE_TORUS block B
+  (NormStep on images, 4-layer index, token RoPE; ~6 h on two GPUs) is registered as optional and was not declared.
+
+## Last results (2026-10-26): IMAGE_TORUS (`IMAGE_TORUS_RESULTS.md`): PATH WINS IN PIXELS
+- Torus T = 1024, each observation a fresh MNIST / Fashion-MNIST class image (test split at eval), CNN end to end, 1 layer.
+  P1 (partly pilot-informed): action-driven path step (ActOnly) 0.9946 (8/8, at/above the perception ceiling 0.9927;
+  long-gap / wrap-only 0.994) vs index RoPE 0.7010 (below retrace 0.843), +0.294, Holm p 0.0003. Pixels cost the path model 0.005.
+- P2 (PILOT-INFORMED, NOT BLIND): MapWM with the image in its step at token scale (gain 30.37) 0.668: 5/8 COLLAPSED
+  (memoryless, constant encoder), 3/8 learned (0.92-0.96), 0 NOISY. G (pilot-informed): gain 1 0.9938, 8/8. S2b +0.287
+  (p 0.039). Design rule: actions drive the step, images do not.
+- Folded into CLAUDE.md (row + leak-row pointer), claim map, RESULTS_INDEX, draft 2 (abstract, contribution 5, Sec. 8
+  "Maps from pixels", design guidance, Limitations; App. A3 row, K4 new) and its PDFs.
 
 ## Last results (2026-10-25): G-3 block A2 (`G3_SSM_A2_RESULTS.md`): COST FOR |.| AND SOFTPLUS, NO SIGN COST FOR EXP
 - SSM, ring 32, lr 1e-3, 300 ep: |.| 0/8 (0.756) and softplus 0/8 (0.938) vs signed 7/8 (0.994): SIGNED LEARNS BETTER

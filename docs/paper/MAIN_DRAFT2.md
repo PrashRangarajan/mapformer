@@ -24,7 +24,9 @@ with each step at its own best learning rate, on the ring and on the torus (0 of
 when only the readout, not the increment, is non-negative, and appears in a one-layer state-space model with the same
 rotation for |.| and softplus steps (0-1 of 8 against 7-8 of 8 at two learning rates), where the LRU-style exp step, which
 starts many channels past pi, does not pay (6 of 8 against 7 of 8). Told in English, the
-walk is learned by one path layer (0.979 vs 0.505), which cancels opposite directions.
+walk is learned by one path layer (0.979 vs 0.505), which cancels opposite directions; shown as class images, it is
+learned to the perception ceiling by one path layer whose step the actions set (0.995 vs 0.701), while letting the
+images set the step as well stops training on most seeds.
 
 ## 1. Introduction
 
@@ -36,7 +38,7 @@ built this into a transformer and showed that it helps navigation, generalises t
 on Dyck-2 with one layer, and learns opposite latents for opposite actions. We take that as the starting point. What we
 add is a measurement of how much of the task needs a map, the exchange rate between path integration and index depth
 together with its mechanism, a theory of what decides whether training finds the map, and the same mechanism at work on
-navigation told in words.
+navigation told in words and shown in pixels.
 
 The account turns on one decomposition. Split the phase a channel gains over an interval into a part that depends on net
 displacement, the *map*, and a part that grows with the number of moves whatever their direction, the *clock*. A map
@@ -87,10 +89,13 @@ runs, with a map that has lost a dimension.
    from rank 4's (analysis). PoPE's polar score pins every kernel's peak at zero phase difference (proved), which helps a
    path phase and hurts an index phase; freeing its phase offset raises the index model by +0.122 and leaves the path
    model at ceiling (registered).
-5. *Maps from words.* One path layer learns navigation told in English (registered). On the revisits retrace cannot reach
-   it scores 0.956 (0.978 on fresh seeds) against 0.411 for two index layers, below the 0.506 constant (analysis). Its
+5. *Maps from words and pixels.* One path layer learns navigation told in English (registered). On the revisits
+   retrace cannot reach it scores 0.956 (0.978 on fresh seeds) against 0.411 for two index layers, below the 0.506 constant (analysis). Its
    step table follows one rule: a word's offset from its place depends on its role, not its identity, and a per-move
    clock survives only in channels retrieval does not use.
+   With every observation a fresh class image read by a CNN trained end to end, one path layer whose step the actions set
+   learns the torus to the perception ceiling (0.995, 8/8, against 0.701 for index RoPE; registered), and an image-driven
+   step at token scale stops training on 5 of 8 seeds: actions drive the step, images do not.
 
 ![Figure 1](figs/fig_summary.png)
 
@@ -861,6 +866,44 @@ between visits to the same cell, counted from the first visit). (c) Held-out acc
 all non-direction words zeroed, and with the direction words' steps zeroed: removing the direction steps drops every seed
 to the constant floor (0.505, dashed) or below. Eval mode without the dropout re-scale (App. C9).*
 
+### Maps from pixels
+
+Every other result gives the model its observations as tokens. In the image torus (registered; App. K4) each observation
+of the 1024-move torus walk is a 28 x 28 image of its class (the ten MNIST digits and six Fashion-MNIST classes), a fresh
+instance at every visit, read by a small CNN (80k parameters) trained end to end with the one-layer model. Training draws
+only training-split images; evaluation uses test-split images on a held-out map. A perfect map that recognised each image
+with a standalone classifier, voting over the earlier visits to the cell, would score 0.993: the perception ceiling.
+Retrace scores 0.843.
+
+**Path integration survives pixels.** One path layer whose step is set by the actions scores 0.995 (8/8 seeds solved,
+every seed at or above the perception ceiling) against 0.701 for one index layer (0/8, below retrace on every seed):
++0.294, Holm p 0.0003 (registered; partly pilot-informed: the path arm was seen on one pilot seed). It holds the
+revisits that need a map, long-gap and wrap-only alike at 0.994 against 0.51 for retrace, and the images cost it 0.005
+against the same model on tokens (0.9998), less than the standalone classifier's error. The path model also learns a
+better encoder (linear probe 0.985 against index RoPE's 0.965), but that gap is a fifteenth of the accuracy gap: the
+difference is the map.
+
+**Images must not drive the step.** The same model with the image embedding in its step input, at the scale of a token
+embedding, scores 0.668 (registered, +0.327 below the action-driven step, Holm p 0.0003; pilot-informed, not blind: the
+pilots had shown it). On 5 of 8 seeds training ends at the memoryless level: the encoder collapses to a constant and
+the model predicts the blank floor; the 3 seeds that escape stay below the ceiling (0.92-0.96). With the image embedding
+scaled down 30x, so that an image moves the phase by 0.001-0.006 of a move, the same model learns on 8/8 seeds to 0.994
+(registered secondary, pilot-informed). The failure belongs to pixels: on tokens the same step costs 0.040 (difference of
+differences +0.287, sign-flip p 0.039). This is the what-to-where rule above at full strength. With tokens, an object's
+step costs a percent; with pixels, whose every instance differs, a step that reads the image stops training. Actions
+drive the step; what is seen is matched by content attention at the place the actions reach.
+
+*Table 8. Torus from pixels (registered; T = 1024, test-split images, held-out map, n = 8 per cell; App. K4).*
+
+| model (1 layer) | observations | step set by | accuracy | solved | at the perception ceiling | long gap / wrap-only |
+|---|---|---|---|---|---|---|
+| path | images | actions | **0.995** | 8/8 | 8/8 | 0.994 / 0.994 |
+| path, image embedding scaled down 30x | images | every token | 0.994 | 8/8 | 8/8 | 0.993 / 0.991 |
+| path | images | every token | 0.668 | 1/8 (5/8 memoryless) | 0/8 | 0.589 / 0.544 |
+| index RoPE | images | -- | 0.701 | 0/8 | 0/8 | 0.482 / 0.483 |
+| path | tokens | actions | 1.000 | 8/8 | -- | 1.000 / 0.997 |
+| floors | | | retrace 0.843, blank 0.508; ceiling 0.993 | | | retrace 0.509 / 0.508 |
+
 ## 9. Discussion and related work
 
 **What the two failure axes share.** For per-head rank 2 and for |.| steps, a solution in the class exists (the
@@ -891,8 +934,8 @@ rank 2 stays at 0/8 with twice the budget (App. N).
 needed, |.| and softplus are the forms that paid everywhere we looked; exp escaped once (an SSM at one rate) and paid in
 attention. Give each head rank above the
 map's dimension (D + 1). Keep observations from stepping the phase: a step that depends on what is seen moves where the
-model thinks it is. Where the inverse pairs of actions are known, also tying their steps to exact negatives removes the
-clock by construction, and rank D then suffices (rank 2 on the torus, 8/8). Measure map use where retracing no longer
+model thinks it is, and with pixel observations at token scale it stops training (Table 8). Where the inverse pairs of
+actions are known, also tying their steps to exact negatives removes the clock by construction, and rank D then suffices (rank 2 on the torus, 8/8). Measure map use where retracing no longer
 suffices, against measured map-free floors and by stratum: the long-gap and wrap-only revisits separate a map from a
 local rule, and an aggregate accuracy near 0.9 can be either. To tell whether a trained model's phase is a map or a
 clock, read the used-channel clock ratio, not the growth of the phase with the token index.
@@ -906,7 +949,9 @@ observation) is essential: without it the model falls to 0.113. The non-negative
 token identity within type is removed, and a shared kernel times a gain does not restore them; within the non-negative
 arms, accuracy tracks the share that survives the removal (Spearman 0.84 over 16 runs, p 5e-5). Separation is a property
 of the solution training finds, not of the architecture. MapFormer showed the separation in the learned embeddings
-(their Fig. 9); these checks show that the models rely on it where a map is needed, in the sense TEM proposed.
+(their Fig. 9); these checks show that the models rely on it where a map is needed, in the sense TEM proposed. With
+pixel observations the separation becomes a design condition: a "where" driven by the actions alone learns from images
+to the perception ceiling, and letting the "what" into the step stops training on most seeds (Sec. 8, Table 8).
 
 **The integrator view.** A learned, signed, content-dependent rate can realise all three of Howard et al.'s cases, and
 which one a channel realises is set by what the readout keys on. Split each step into the frequency-weighted mean, a
@@ -976,6 +1021,10 @@ TEM-t for the "where" apart from the "what".
   (analysis) are post hoc, on one batch per arm, without fresh-seed replication; their thresholds and statistics chosen
   after the data were seen are listed in App. O, and one CPU analysis (the step-map basin) is not deterministic and is
   reported as exploratory.
+- The pixel test (Table 8, App. K4) uses class images (MNIST and Fashion-MNIST) on the discrete torus, one top-down
+  image per cell visit with allocentric moves, one layer, one length and one recipe; it is not first-person or 3D vision
+  (Memory Maze is future work). The cost of an image-driven step was predicted from pilots and confirmed on fresh seeds,
+  not tested blind, and the 30x rescue is a total effect of the image-embedding scale at two values.
 - The text world is scripted (58 words, one movement clause per move, context-free direction words), and its walks are
   short enough that retrace scores 0.934; the map evidence there is the revisits retrace cannot reach and the mechanism.
 - The state-space test (App. H10, H13) is one layer on the ring, without Mamba's decay, output gate or input scaling by

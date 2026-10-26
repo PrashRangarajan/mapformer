@@ -1,0 +1,258 @@
+{
+ "blocks": "A",
+ "registered": {
+  "P1": {
+   "a": "I_RoPE",
+   "b": "I_ActOnly",
+   "d": 0.2936174963260858,
+   "p": 0.0001554001554001554,
+   "p_holm": 0.0003108003108003108,
+   "label": "PATH WINS IN PIXELS",
+   "mean_a": 0.7009605177168718,
+   "mean_b": 0.9945780140429576,
+   "ci": {
+    "lo": 0.2816174963260858,
+    "hi": 0.3056174963260858,
+    "clipped": false
+   },
+   "pilot_informed": "partly",
+   "disclosure": "[partly pilot-informed: image ActOnly 0.9944 on one pilot seed, image RoPE's pilot training loss known; image RoPE accuracy unseen]"
+  },
+  "P2": {
+   "a": "I_MapWM",
+   "b": "I_ActOnly",
+   "d": 0.326916634053809,
+   "p": 0.0001554001554001554,
+   "p_holm": 0.0003108003108003108,
+   "label": "THE OBSERVATION STEP COSTS IN PIXELS",
+   "mean_a": 0.6676613799891487,
+   "mean_b": 0.9945780140429576,
+   "ci": {
+    "lo": 0.16741663405380885,
+    "hi": 0.48741663405380914,
+    "clipped": false
+   },
+   "pilot_informed": true,
+   "disclosure": "[PILOT-INFORMED, NOT BLIND: direction known from pilots 1-2 (3 seeds at 150 epochs)]"
+  }
+ },
+ "secondary": {
+  "P2_end_states_I_MapWM": {
+   "3100": "LEARNED",
+   "3101": "COLLAPSED",
+   "3102": "COLLAPSED",
+   "3103": "COLLAPSED",
+   "3104": "COLLAPSED",
+   "3105": "LEARNED",
+   "3106": "LEARNED",
+   "3107": "COLLAPSED"
+  },
+  "P2_within_ceiling_fisher": {
+   "k_ActOnly": 8,
+   "k_MapWM": 0,
+   "n": 8,
+   "p": 0.0001554001554001554
+  },
+  "S1": {
+   "I_MapWM-T_MapWM": {
+    "d": -0.2918777630181657,
+    "p": 0.007148407148407148
+   },
+   "I_ActOnly-T_ActOnly": {
+    "d": -0.005237561986032868,
+    "p": 0.0001554001554001554
+   },
+   "I_ActOnly-T_MapWM": {
+    "d": 0.03503887103564329,
+    "p": 0.9993783993783993
+   },
+   "I_MapWM-ceil": -0.325062673559973,
+   "I_ActOnly-ceil": 0.0018539604938360155,
+   "I_RoPE-ceil": -0.2917635358322498,
+   "I_MapWM_g1-ceil": 0.0011122650314980553
+  },
+  "S2": {
+   "I_MapWM": {
+    "L_median": 0.0,
+    "L_range": [
+     -0.4000249430985564,
+     0.006634557111415917
+    ],
+    "object_over_action_median": 20.29561343428978,
+    "object_over_action_range": [
+     0.0029280394175734722,
+     48.3608130083377
+    ],
+    "instance_over_action_median": 0.0,
+    "instance_over_action_range": [
+     0.0,
+     0.01431786818839835
+    ]
+   },
+   "I_ActOnly": {
+    "L_median": 0.0,
+    "L_range": [
+     0.0,
+     0.0
+    ],
+    "object_over_action_median": 0.0,
+    "object_over_action_range": [
+     0.0,
+     0.0
+    ],
+    "instance_over_action_median": 0.0,
+    "instance_over_action_range": [
+     0.0,
+     0.0
+    ]
+   },
+   "I_MapWM_g1": {
+    "L_median": -0.046977170297237025,
+    "L_range": [
+     -0.09000338242981454,
+     -0.0005300408443238425
+    ],
+    "object_over_action_median": 0.0026757696206205625,
+    "object_over_action_range": [
+     0.001212811730628223,
+     0.00578509395882701
+    ],
+    "instance_over_action_median": 0.0007050512691932269,
+    "instance_over_action_range": [
+     0.0006317436988529306,
+     0.0007718395001522539
+    ]
+   },
+   "T_MapWM": {
+    "L_median": -0.19372580016492308,
+    "L_range": [
+     -0.2523673062546723,
+     -0.10325029504641003
+    ],
+    "object_over_action_median": 0.02185939079787663,
+    "object_over_action_range": [
+     0.012604764130612064,
+     0.14961079670098446
+    ],
+    "instance_over_action_median": 0.0,
+    "instance_over_action_range": [
+     0.0,
+     0.0
+    ]
+   },
+   "T_ActOnly": {
+    "L_median": 0.0,
+    "L_range": [
+     0.0,
+     0.0
+    ],
+    "object_over_action_median": 0.0,
+    "object_over_action_range": [
+     0.0,
+     0.0
+    ],
+    "instance_over_action_median": 0.0,
+    "instance_over_action_range": [
+     0.0,
+     0.0
+    ]
+   },
+   "L_image_minus_token": {
+    "d": 0.1315575738555642,
+    "p": 0.027972027972027972
+   },
+   "pixel_attribution": {
+    "d": 0.2866402010321328,
+    "p_signflip": 0.0390625,
+    "token_ActOnly_minus_MapWM": 0.04027643302167622
+   }
+  },
+  "S3": {
+   "I_MapWM": {
+    "probe_median": 0.0709375,
+    "probe_range": [
+     0.0709375,
+     0.978375
+    ],
+    "gap_median": 0.0,
+    "gap_range": [
+     0.0,
+     0.00806991802494339
+    ],
+    "gap_p": 0.25
+   },
+   "I_ActOnly": {
+    "probe_median": 0.98509375,
+    "probe_range": [
+     0.984125,
+     0.986
+    ],
+    "gap_median": 0.005158845844779325,
+    "gap_range": [
+     0.004306082740582418,
+     0.006698829241311488
+    ],
+    "gap_p": 0.0078125
+   },
+   "I_RoPE": {
+    "probe_median": 0.9646874999999999,
+    "probe_range": [
+     0.96325,
+     0.970875
+    ],
+    "gap_median": 0.009822114431572104,
+    "gap_range": [
+     0.007841087297438598,
+     0.011555697823303457
+    ],
+    "gap_p": 0.0078125
+   },
+   "I_MapWM_g1": {
+    "probe_median": 0.9838125,
+    "probe_range": [
+     0.9828125,
+     0.985
+    ],
+    "gap_median": 0.00557121999403154,
+    "gap_range": [
+     0.004897567221510801,
+     0.006728133565910843
+    ],
+    "gap_p": 0.0078125
+   }
+  },
+  "S6_r_loss_acc": -0.9875311000761905,
+  "P1_original": {
+   "label": "UNMEASURED",
+   "d": -0.033299137727723194,
+   "p_raw": 0.7278943278943278,
+   "superseded": true
+  }
+ },
+ "floors": {
+  "blank": 0.5079087276761938,
+  "retrace": 0.8431726739386753,
+  "ngram_token": 0.5166055335382163,
+  "ngram_action": 0.5079087276761938,
+  "ceil_vote": 0.9927240535491216,
+  "classifier_test": 0.9801250100135803
+ },
+ "registered_secondary": {
+  "G": {
+   "label": "GAIN 1 RESCUES MAPWM",
+   "d": 0.32617493859147095,
+   "p": 0.0001554001554001554,
+   "ci": {
+    "lo": 0.1666749385914708,
+    "hi": 0.4866749385914711,
+    "clipped": false
+   },
+   "pilot_informed": true,
+   "disclosure": "[PILOT-INFORMED, NOT BLIND: one pilot seed]"
+  },
+  "residual_g1": {
+   "d": 0.0007416954623380434,
+   "p": 0.0905982905982906
+  }
+ }
+}

@@ -303,6 +303,21 @@ Claim-map compliance: no "every non-negative parameterisation pays", no "exp suc
 rate beyond "more than four", pooled numbers labelled descriptive. Figures not regenerated (Figs. 1-4 still plot the n = 4
 FACTORIAL models; captions point to F7). Draft 6: title, Sec. 4.1, Sec. 5, Limitations; its PDF rebuilt.
 
+## IMAGE_TORUS (pixel observations) folded in (2026-10-26)
+
+Source: `IMAGE_TORUS_RESULTS.md` (registered: P1 PATH WINS IN PIXELS, partly pilot-informed; P2 THE OBSERVATION STEP COSTS
+IN PIXELS and G GAIN 1 RESCUES MAPWM, both PILOT-INFORMED, NOT BLIND; P1' UNMEASURED; `IMAGE_TORUS_ANALYSIS.txt`,
+`IMAGE_TORUS_VERDICTS.json`). Changes: abstract (last sentence: class images learned to the perception ceiling by an
+action-driven path layer, 0.995 vs 0.701; an image-driven step stops training on most seeds); Sec. 1 ("and shown in
+pixels"); contribution 5 ("Maps from words and pixels", two sentences); Sec. 8 new subsection "Maps from pixels" with
+Table 8 (0.995 8/8 at ceiling vs 0.701; long-gap / wrap-only 0.994 vs retrace 0.51; pixel cost 0.005; probe 0.985 vs 0.965;
+image-driven step 0.668, 5/8 memoryless, 3/8 at 0.92-0.96; gain 1 0.994 8/8; S2b +0.287, p 0.039); Sec. 9 What and where
+(one sentence) and design guidance (one clause); Limitations (pixel bullet: class images on a grid, not first-person,
+pilot-informed P2/G, G a total effect). Appendix: A3 row, K4 (new: task, disclosure, contrasts, per-seed table, end states,
+strata / OOD / probe / context-destruction table) [all numbers R: re-read from the analysis files, eval_image.json and the
+training logs]. Claim-map compliance: no "leak" for this batch (0 NOISY seeds), no dose-response in the gain, nothing about
+first-person or 3D vision, disclosures stated.
+
 ## Word counts
 
 (Counted before the audit was applied. The audit edits added about 830 whitespace tokens to the file (12,934 -> 13,765), mostly in Secs. 4, 6, 7.1, 7.2 and 8 and Table 7; the per-section counts below are not recounted.)
