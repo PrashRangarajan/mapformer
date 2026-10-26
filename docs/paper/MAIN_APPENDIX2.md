@@ -1,6 +1,7 @@
 # Appendix to "A map is a phase without a clock: what path-integrated attention learns, and what decides whether training finds it"
 
-*Draft 2 (2026-10-21), for `docs/paper/MAIN_DRAFT2.md`. Every number is copied from the file named beside it; a CORRECTED
+*Draft 2 (2026-10-21; revised 2026-10-26: main-text Table 4 and Fig. 5 moved to G3 as Table G3a and Fig. G2, the
+revisit-class table is F1's, H4 and G9 scoped per the 2026-10-26 critical review), for `docs/paper/MAIN_DRAFT2.md`. Every number is copied from the file named beside it; a CORRECTED
 or AUDIT block at the top of a results file supersedes its body. "Registered" = a pre-registered decision or declared
 secondary; "(analysis)" = computed on stored streams or checkpoints, eval-only, never changing a verdict; its script is
 listed in App. O. App. E states and proves every theory statement the main text uses; statements not used are in
@@ -377,7 +378,7 @@ all 24 runs) gives path 0.969 -> 0.993, index one layer 0.505 -> 0.506, index tw
 layer +0.464 -> +0.488 (p 0.0002). The re-score was a declared secondary of RING_DIAL, RING_BUDGET, WRAP_EXISTENCE,
 GENERALITY, MECHANISM and WRAP_COPE and changed no label there; it was applied to SIGN_MATCHED by the same audit with no
 verdict changed. ACCOUNTS, TORUS_START, GAUGE and ROBUST were not re-scored (the correction does not apply at two layers).
-Main-text accuracies are eval mode without the scale except where marked re-scored (Sec. 8, Table 7, App. J).
+Main-text accuracies are eval mode without the scale except where marked re-scored (Sec. 8, Table 6, App. J).
 
 ### C10. Sign route (Sec. 7.3; `SIGNROUTE_RESULTS.md`, registered; ring, observation-step-free, seeds 1800-1807)
 
@@ -643,7 +644,7 @@ clock erodes the position factor of a revisit; it is not a theorem that a clocke
 channels whose per-pair clock is near pi (App. H7). Index RoPE is the extreme case: every token, observations included,
 advances every channel, so the whole code is clock. Wrap-only revisits also need the lattice condition N m_c = 0 mod 2 pi.
 
-**E7.1' (the measured clock / map ratio).** Every clock / map number in the paper (Table 4, G3, H7) is
+**E7.1' (the measured clock / map ratio).** Every clock / map number in the paper (Table G3a, G3, H7) is
 rho_cm = sqrt( sum_{pairs} sum_c q_c wrap(k_c)^2 / sum_{pairs} sum_c q_c (wrap(a_c(x))^2 + wrap(a_c(y))^2) / 2 ), with the
 usage q normalised over the channels of both heads (one value per run), or over one head's channels (per head). The
 symmetric denominator makes it invariant to which move of a pair is called y (rule 8); for unwrapped |.| channels
@@ -1125,6 +1126,46 @@ p 0.0014 each). The stratum readouts are secondaries (short gaps +0.115, p 0.036
 
 ### G3. The clock at the end of training, per head (analysis; `scripts/sign/clock_table.py` -> `clock_table_out.txt`; latent column `scripts/sign/rank_clock.py` -> `rank_clock_out.txt`)
 
+*Both axes (moved from main-text Sec. 7.1, 2026-10-26).* Training from a small start ends in one of two places on either
+axis. The models that succeed end with clock-free heads: the signed and rank-3/4 arms at arm means 0.001-0.051, with no
+head above 0.14, and every solved rank-2 run with at least one clean head (0.03-0.07; two of the four keep a drifting
+second head, 0.54 and 0.68). The models that fail end with a clock of the order of their map: the non-negative arms at
+1.25-1.57 (arm means; for an unwrapped |.| channel a ratio of at least 1 holds by construction, so the informative part is
+that the channels did not wrap) and the unsolved rank-2 runs at 0.54-0.69 (medians 0.58-0.79). Four of the 20 unsolved
+rank-2 runs end with clock-free heads whose two map axes have collapsed onto one direction, and one more sits just above
+the SOLVED threshold (final loss 0.051). Weighted by usage, signed steps cancel opposite moves mod 2 pi in 70-93% of
+channels and |.| steps in 2-10% (H6).
+
+*Table G3a. Clock at the end of training (analysis; clock / map ratio of Sec. 4 and E7.1', one value per run, arm means
+unless marked; SOLVED of 8). For unwrapped |.| channels the ratio is at least 1 by construction; the informative rows are
+the frozen-latent signed arm and the rank arms.*
+
+| arm | SOLVED | clock / map |
+|---|---|---|
+| ring, signed (three batches) | 8/8, 7/8, 8/8 | 0.015-0.018 |
+| ring, \|.\| from small starts (three batches) | 0/8, 0/8, 1/8 | 1.47-1.57 |
+| ring, signed with move latents frozen, \|.\| start | 1/8 | 1.18 (the solved run 0.06) |
+| ring, \|.\| from a start past pi | 8/8 | 0.32 (wrapped; 0.82 of usage on cancelling channels) |
+| torus, signed / \|.\|, observation-step-free | 8/8 / 1/8 | 0.001 / 1.25 |
+| torus, rank 2, unsolved runs (three arms) | 0/8, 2/8, 2/8 | 0.54-0.69 (medians 0.58-0.79); 4 of 20 runs collapsed, clock-free |
+| torus, rank 2, solved runs (4): six clean heads / two drifting heads (per head) | 4 runs | 0.03-0.07 / 0.54, 0.68 |
+| torus, rank 3 and rank 4, solved runs | 6/8, 8/8, 8/8 | 0.043-0.051 |
+
+![Figure G2](figs/fig_clock_endstate.png)
+
+*Figure G2 (`fig_clock_endstate`; moved from the main text; analysis of registered batches). Clock / map ratio at the end of
+training, one dot per run (circles: ring; squares: torus; filled: SOLVED; log scale), on the one definition of Table G3a.
+Successes from small starts are clock-free: signed 0.001-0.036 (31 of 32 runs SOLVED; the unsolved one at 0.016), rank 4
+0.010-0.136 (16/16), solved rank 3 0.017-0.081. Failures carry a clock of the order of the map: |.| from small starts
+0.70-1.85 on the ring (1 of 24 SOLVED, at 0.88) and 0.70-1.87 for the unsolved torus runs (the solved one at 0.024), signed
+with move latents frozen 1.055-1.741 (the solved run 0.058), unsolved rank 3 0.767-1.105 and unsolved rank 2 up to 1.26
+(median 0.62). Four unsolved rank-2 runs are clock-free (0.053-0.086) with their two map axes collapsed onto one direction
+(crosses). The solved rank-2 runs span 0.045-0.611 (two keep a drifting second head). Starts past pi cancel by wrapping and
+solve at larger ratios: |.| on the ring 0.11-0.76 (8/8); signed 0.004-1.78 (10 of 16, ring and torus), the two solved
+torus runs at 1.39 and 1.78 with 0.43 and 0.99 of their usage on channels whose per-pair clock is near pi.*
+
+*Per head.*
+
 Clock / map ratio of Sec. 4 (E7.1') per run (usage pooled over both heads) and per head (usage normalised within the
 head); full models (observations step). The latent clock (|z_x + z_y| over the map frame, raw latent coordinates, mean
 over unsolved runs' heads) is a different quantity and not invariant to the GL(r) gauge of the latent (in the W_out image
@@ -1433,6 +1474,12 @@ lower-decay or combined arm; 12 of the 24 rank-2 runs were still descending. No 
 accuracy) -0.629 / -0.793 / -0.925 at T = 512 / 1024 / 2048 over 32 runs. Every cell keeps its effective per-move angle
 bounded (maximum 2.09-3.98 rad per move), unlike rank 4 without decay (~9x growth, App. G8).
 
+Scope of the search (2026-10-26, after the critical review B-M5). Selecting rank 2's best of three cannot hurt rank 2, but
+neither alternative is a recipe at which rank 4 is known to learn: at lr 3e-3 the related observation-step-free signed
+rank-4 model solves 0/8 on this torus within 900 epochs (H12, a different model, cited as an observation), and the higher
+decay shrinks the angles most and leaves the most rank-2 runs STALLED. The search is therefore limited, and the main text
+states the result as "rank 2 fails at each of three recipes" (within 900 epochs).
+
 Per seed, accuracy at T = 1024 (class): rank 2 default 0.731D 0.883D 0.720T 0.922D 0.983D 0.792T 0.984D 0.862T; lr 3e-3
 0.923D 0.902D 0.892T 0.885T 0.907D 0.910D 0.878T 0.978D; weight decay 0.2 0.864T 0.881T 0.882D 0.951D 0.871T 0.882T 0.877T
 0.870T; rank 4 1.000S x 4, 0.999S, 1.000S x 3.
@@ -1511,8 +1558,9 @@ is not resolved because the task is harder for both arms. The step code is learn
 0.98-1.00 of usage in 8/8 |.| runs (signed 0.99-1.00 in 7/8; angle tolerance 0.05 rad, a post hoc choice: at 0.3 rad the
 lattice shares change a lot), and the latent relation in 5/8 |.| runs, one of them through the mirror copy z_2 = -2 z_1
 of E8.4 (cosine -0.98), against 7/8 signed. The unsolved |.| runs and 2 of the 3 unsolved signed runs have the relation
-in place (signed s1300: 0.68); what they miss lies outside the step code. There is no evidence of a sign cost without an
-inverse pair. Signed models on +1/+2 end with 0.92 of channels having both move angles of one sign (0.01 on +1/-1), the
+in place (signed s1300: 0.68); what they miss lies outside the step code. The registered comparison is unmeasured: there
+is no evidence either way of a sign cost without an inverse pair, and |.| solves +1/+2 no more often than +1/-1 (2/8 against
+1/8, Fisher p 1.00), so losing the through-zero route does not account for |.|'s difficulty (main text Sec. 7.3). Signed models on +1/+2 end with 0.92 of channels having both move angles of one sign (0.01 on +1/-1), the
 sign-coherent code Lemma 1 allows.
 
 ### H5. Three times the ring budget (`RING_BUDGET_RESULTS.md`, seeds 40-47)
@@ -2380,13 +2428,13 @@ so that every quoted number has a committed generator.
 
 | script (under `docs/paper/expansion/scripts/`) | what it computes | used in | verification |
 |---|---|---|---|
-| `depth/torus_depth.py`, `summarize_torus.py` (`--segments`: new) | torus revisit classes, runs spanned, attention masses; fixed-gap segments and runs spanned by long-gap revisits | Table 3; Sec. 6; F1-F2 | stored accuracy to 4 decimals (16 runs); forward = model logits |
+| `depth/torus_depth.py`, `summarize_torus.py` (`--segments`: new) | torus revisit classes, runs spanned, attention masses; fixed-gap segments and runs spanned by long-gap revisits | Sec. 6, Fig. 4; F1-F2 (the revisit-class table, formerly main-text Table 3) | stored accuracy to 4 decimals (16 runs); forward = model logits |
 | `depth/torus_probe.py` | ridge probes of the residual stream | F3 | same stream |
 | `depth/torus_runlen.py` | run-length-shifted evaluation | F4 | -- (distribution-shifted) |
 | `depth/ring_depth.py`, `summarize_ring.py` | ring classes, probes, one-layer mixture test | F5 | stored accuracy for all 128 runs (< 2e-3) |
 | `depth/ring_probe_window.py`, `ring_class_floors.py`, `ring_plain_bins.py` (new) | late-position probes and old-displacement targets; per-class floors; plain-only run bins | Sec. 6; F5 | same stream as `ring_depth.py` |
 | `depth/dyck_distance.py`, `dyck_crosstab.py` | Dyck closing accuracy by blocks and distance | F6 | arm means equal the registered ones |
-| `sign/clock_table.py` (new) | the clock / map ratio of E7.1' for every sign and rank arm, per run and per head | Table 4; Sec. 7.1; G3; H7 | reproduces `sign_clock.py`'s one-sided ratios as a check |
+| `sign/clock_table.py` (new) | the clock / map ratio of E7.1' for every sign and rank arm, per run and per head | Sec. 7.1; Table G3a, Fig. G2; G3; H7 | reproduces `sign_clock.py`'s one-sided ratios as a check |
 | `sign/sign_clock.py`, `rank_clock.py` | cancelling usage share; observation and latent clocks | G3; H7 | cone inequality as an identity (0 violations) |
 | `sign/latent_geometry.py`, `lattice_p.py` | latent end states; +1/+2 relations | H4; H7 | initialisation rebuilt bit-exact |
 | `sign/latent_reach.py`, `aobal_geometry.py` | latent-reachable share; readout targets | H7 | -- |
@@ -2402,7 +2450,7 @@ so that every quoted number has a committed generator.
 | `recurrence/phase_reader_soft.py`, `phase_code.py` | one-pass reader fits | Sec. 7.4; M3 | fitted on separate walks |
 | `recurrence/geometry.py`, `training_curves.py`, `grad_at_init.py` | step-map classes; curves; gradients at initialisation | M4 | -- |
 | `mappope/kernel_probe.py`, `probe_stats.py` (`HEAD_RULE=stratum` / `SUFFIX=_hstratum`: new); `kernel_argmax_odd.py` (new) | kernel, coherence C and C0, attention by offset; per-stratum head; kernel argmax over odd offsets | Sec. 7.4; L2 | rebuilt logits equal the model's (0.0); per-seed accuracies reproduce the stored evaluation |
-| `language/tw_lib.py` and the `tw_*.py` scripts; `tw_strata_200.py` (new: all 200 walks, the non-retrace stratum and its floors) | step table, drift, clock unit, asides, attention, retrace, strata | Table 7; Sec. 8; J1-J6 | manual forward logit-identical; generator token-identical; `N_WALKS=100` reproduces `tw_strata.py` |
+| `language/tw_lib.py` and the `tw_*.py` scripts; `tw_strata_200.py` (new: all 200 walks, the non-retrace stratum and its floors) | step table, drift, clock unit, asides, attention, retrace, strata | Table 6; Sec. 8; J1-J6 | manual forward logit-identical; generator token-identical; `N_WALKS=100` reproduces `tw_strata.py` |
 | `language/usage_tick.py`, `crossover_usage.py`, `tw_alpha_drift.py` | used-channel rho; growth exponent | Sec. 9; J4 | -- |
 | `docs/audits/2026-10-20/causal_whatwhere_T1024.py`; `whatwhere/whatwhere_stats.py` (new) | what/where at T = 1024; its sign-flip p, SS(P)/SS(S) and Spearman, and the text-world Spearman p | Sec. 8; Sec. 9; J2; K1 | rebuilt forward exact on 32 checkpoints; intact accuracy within 0.0007 |
 

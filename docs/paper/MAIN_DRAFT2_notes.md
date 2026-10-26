@@ -318,9 +318,86 @@ strata / OOD / probe / context-destruction table) [all numbers R: re-read from t
 training logs]. Claim-map compliance: no "leak" for this batch (0 NOISY seeds), no dose-response in the gain, nothing about
 first-person or 3D vision, disclosures stated.
 
+## Critical review 2026-10-26, Part B, applied (2026-10-26)
+
+Source: `docs/audits/2026-10-26/CRITICAL_REVIEW.md` Part B. Rule-28 end-to-end read of the main text before and after the
+cut. Only `docs/paper/` files changed (MAIN_DRAFT2.md, MAIN_APPENDIX2.md, this file, the three draft-2 PDFs). Results files,
+CLAUDE.md and code untouched, so the review items addressed to them are open (listed at the end).
+
+**Length.** Main file 18,000 -> 11,570 words (`wc -w`, references and header note included; 17,231 -> 10,721 without the
+reference list). Per section (whitespace tokens, captions and tables included): abstract 321, 1 757, 2 344, 3 669, 4 1,342,
+5 291, 6 782, 7 41, 7.1 206, 7.2 1,066, 7.3 1,775, 7.4 412, 8 717 + pixels 348, 9 905, 10 587, references 849. Figures 11
+-> 10, tables 8 -> 7 in the main text. Appendix 35,444 -> 36,209 (moved material plus two scope paragraphs).
+
+**Finding by finding.**
+- B-B1 (GAUGE missing from the main text). Added: Lemma 1 now says it is a statement about representation and that its
+  learnability reading was tested and not confirmed; Table 1 row "Lemma 1 read as learnability: registered test
+  UNMEASURED (+1/+2: |.| 2/8, no better than +1/-1)"; Sec. 7.3 paragraph "Losing the through-zero route does not account
+  for the difficulty (registered)" with DRAFT6's numbers (index RoPE 0.649 0/8; sign-coherent 0.92 vs 0.01; |.| 2/8 vs 1/8
+  on +1/-1, Fisher p 1.00; signed 5/8; unmeasured because +1/+2 is harder for signed too) and DRAFT6's closing sentence;
+  +1/+2 row in the new Table 5; Sec. 9 "losing the through-zero route does not by itself account for the cost (+1/+2)";
+  Limitations bullet. App. H4's "There is no evidence of a sign cost without an inverse pair" reworded to "no evidence
+  either way ... |.| solves +1/+2 no more often than +1/-1".
+- B-B2 (sign framing). Sec. 7.3 retitled "How the step is parameterised, and where its angles start"; "barrier
+  parameterisations" defined in Sec. 3 (DRAFT6's term); abstract rewritten: |s| and softplus(s) from small starts pay;
+  where the angles start relative to pi matters (|.| past pi learns the ring by wrapping; exp no cost in the SSM at one
+  rate "consistent with its past-pi start", not "which starts many channels past pi"). New Table 5 (start x move set x
+  model: MECHANISM, TORUS_START, GAUGE, G3 A2) carries the account; the text marks the start lever as registered and
+  causal on the ring, not transferring to the torus, and only consistent (analysis) for exp. "exp has not been run in
+  attention on the torus" stated in Sec. 7.3 and Limitations (the batch to test it is being built elsewhere; not
+  mentioned in the paper). "sign gap" / "the sign of the phase step" removed from the main text.
+- B-M2 (IMAGE_TORUS primary swap). Sec. 8 pixels: "The batch's registered primary compared the default MapWM ... reads
+  unmeasured (0.668 against 0.701); after a pilot stop rule fired the path arm was changed to the action-driven step
+  (Amendment 2; partly pilot-informed)." Same in Limitations.
+- B-M3 ("the what-to-where rule at full strength"). Removed. Design guidance now: "not the token-level leak (no
+  per-instance offsets) but a collapse of encoder and phase together"; the gain is called "a total effect on the step
+  input and the residual stream at once", with the chain "since the action-driven model is fine at token scale, the cost
+  belongs to the step".
+- B-M4 (pixels oversold). Subsection retitled "Pixel observations" (one paragraph + Table 7): "Its phase never sees a pixel:
+  what this shows is that a content-addressed CNN with an action-driven phase reaches the perception ceiling, and that the
+  revisit loss alone trains the encoder (probe 0.985 vs 0.980; RoPE 0.965)". Pixels dropped from contribution 5 and
+  reduced to "the result survives a pixel front end" in the abstract; the P2 collapse moved to design guidance and
+  Limitations; "Maps from pixels" and "path integration survives pixels" headings gone; the What-and-where pixel sentence cut.
+- B-M5 (RANKRECIPE "search favours rank 2"). Replaced in Sec. 7.2 with "The selection cannot hurt rank 2, but the search is
+  limited: neither alternative is a recipe at which rank 4 is known to learn (at 3e-3 the related signed rank-4
+  observation-step-free model solves 0/8 on this torus within 900 epochs, App. H12; the higher decay shrinks the angles
+  most and leaves the most rank-2 runs stalled). The result reads: rank 2 fails at each of three recipes." Abstract and
+  contribution 3: "at three recipes". Limitations bullet as the review asks. App. G9: "Scope of the search" paragraph.
+  Wording note: the review's "the other raises decay, the direction RANKWD shows rank 4 needs less of" is not what RANKWD
+  shows (rank 4 needs decay, 8/8 vs 1/8 at 0); not used. The registered label in G9 is kept verbatim.
+- B-M6 (survives / needed). "Rank 4 in turn needs weight decay" -> "Within 900 epochs rank 4, in turn, learned only with
+  weight decay"; "Twice the budget does not rescue rank 2" + "Nor does a recipe search" -> "Rank 2 still fails at twice
+  the budget and at three recipes"; the cost-at-best-rates heading now says "within 900 epochs"; "Why the extra rank
+  helps" -> "Why the extra rank helps is open". Headings in the results files and CLAUDE.md rows not edited (out of scope).
+- B-M7 (citations). Larson 2026 (2609.12259) in Sec. 7.2 (reconciled as in BIG_PICTURE: agree on capacity, rank-D
+  solution exists and is held; differ on search: sparse revisit loss and shared readout need one more dimension) and Sec.
+  9; Howe 2026 (2609.18966) in Sec. 9 (pre-registered, exact-init solutions pulled off by Adam through an additive pathway;
+  deleting it lets training find the automaton, as forbidding the clock does here); Heo et al. 2026 (2603.05573) in Sec. 6
+  (error falls exponentially with depth: expressivity, not what training finds) and Sec. 9. Titles and authors checked on
+  arXiv 2026-10-26; references added.
+- B-M8 (length). Done as above. Props. 5-6, Conjecture 1 and Remark 2 condensed into one "Further statements" paragraph
+  (numbering kept so the appendix cross-references hold); Table 4 and Fig. 5 (clock end state) moved to App. G3 as Table
+  G3a and Fig. G2; Table 3 (revisit classes) dropped from the main text (identical table already in App. F1); SIGNSEP to
+  three sentences; exp to five; the step-basin / straight-path / cone analysis paragraph of old Sec. 7.3 cut to its App.
+  H7 home; Sec. 7.2 clock-exit analysis cut to two sentences (App. G4); Sec. 8 text-world asides and clock paragraphs
+  shortened (App. J); captions shortened. Every registered number that carries a claim is kept.
+- B-M1, B-M9 (triage, LSTM/GRU baseline). GPU items, not in scope; Limitations now says "There is no LSTM or GRU baseline".
+- MINORs applied: abstract exp sentence aligned with Limitations; signed anchor at 1e-3 "reached exact codes on only four
+  seeds" beside the exp sentence (Sec. 7.3, Limitations); "diagonal complex SSM without decay or gate" at first mention;
+  SIGNSEP in Sec. 9 now "half-read", with F's 4/8 in Sec. 7.3; "more than four" kept. MINORs on CLAUDE.md, project_state,
+  IMAGE_TORUS_RESULTS line 196 and RANKRECIPE's Checks section are outside docs/paper and left open.
+
+**Numbers.** No new number; every number in the revised text was already in the main text or appendix [R], except the
+Larson / Howe / Heo descriptions (arXiv abstracts, 2026-10-26) and "ring best-rate |.| 2/8" now stated in the abstract and
+contribution 3 as "at most 2/8 on the ring" (the old abstract's "0 of 8 against 8 of 8 ... on the ring and on the torus"
+was wrong for the ring's best-rate cell, 2/8; fixed).
+
+**Cross-references.** Main-text figures renumbered (old 6-11 -> 5-10), tables (old 5 -> 3, 6 -> 4, 7 -> 6, 8 -> 7; new
+Table 5). Appendix references updated: C9 and O ("Table 6"), E7.1' and O ("Table G3a"), O's F1 row.
+
 ## Word counts
 
-(Counted before the audit was applied. The audit edits added about 830 whitespace tokens to the file (12,934 -> 13,765), mostly in Secs. 4, 6, 7.1, 7.2 and 8 and Table 7; the per-section counts below are not recounted.)
+(Superseded by the 2026-10-26 counts above. Counted before the audit was applied. The audit edits added about 830 whitespace tokens to the file (12,934 -> 13,765), mostly in Secs. 4, 6, 7.1, 7.2 and 8 and Table 7; the per-section counts below are not recounted.)
 
 Counted per paragraph (whitespace tokens). "Body" excludes figure captions, table captions and table cells.
 
