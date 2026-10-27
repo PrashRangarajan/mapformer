@@ -1,0 +1,24 @@
+{
+ "e_map.npy": "06af820ac860ee3f02173f2f02cc1d4d",
+ "encoder.pt": "03bf2cd6899eb257e926f96fbeea979c",
+ "eval_act.npy": "8f6742ea8dc8c285c6c79bbdb7dfda7c",
+ "eval_dir.npy": "4e6d3eabdaa9c2fbe3c7cf867c2e4543",
+ "eval_emb.npy": "3393b7e542c6653312a312caa7199de3",
+ "eval_layout.npy": "44ac4edc8c6519d4e96cf7dbcd4ffe70",
+ "eval_names.txt": "3e69156bbe10e883af0548ca5111b3e4",
+ "eval_pos.npy": "6402bc88d1c38e53f93dc245010dae3d",
+ "eval_tvec.npy": "8c116916bd3604a9f309e4b5efd0bf66",
+ "train0_act.npy": "59c192422ef6229f2beb53041925527f",
+ "train0_dir.npy": "12ad5307937e195cb10ae6510adc7735",
+ "train0_emb.npy": "0f85fba052fb249ea5a416dfee111b6e",
+ "train0_layout.npy": "c6ee77e4714e398d3700ad82832786a4",
+ "train0_names.txt": "f64f36fb0a3c4505e7699cfaaa7615df",
+ "train0_pos.npy": "9cbfdafc9a800ceaf7d25ef581d97a6b",
+ "train0_tvec.npy": "5825939f176e9c68090127d2038ceb11",
+ "code": {
+  "mm_encoder.py": "9fbdf9ed6135b1e2f2d713d629d4bb64",
+  "mm_data.py": "396fd0736893724aa0df920e7080be4d",
+  "mm_gate.py": "36720d251efa50b310edfe17ff3e4cac",
+  "mm_gate_v2.py": "f1cfb80441c175ce42144557890cc387"
+ }
+}

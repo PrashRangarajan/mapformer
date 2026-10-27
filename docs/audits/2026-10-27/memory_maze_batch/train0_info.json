@@ -1,0 +1,9 @@
+{
+ "split": "train0",
+ "lo": 0,
+ "n": 2900,
+ "recon_mse_first50": 0.0006557775172404945,
+ "layout_constant": true,
+ "first": "20220923T100000-1000.npz",
+ "last": "20220923T111715-1000.npz"
+}

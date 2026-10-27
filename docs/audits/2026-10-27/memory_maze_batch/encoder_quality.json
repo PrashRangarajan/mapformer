@@ -1,0 +1,8 @@
+{
+ "heading_acc": 0.24786069651741294,
+ "heading_majority": 0.1742537313432836,
+ "cell_acc": 0.01711442786069652,
+ "cell_uniform": 0.0044444444444444444,
+ "single_frame_ident_R1": 0.12067005076142132,
+ "n_eval_episodes": 200
+}

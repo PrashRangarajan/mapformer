@@ -1,0 +1,9 @@
+{
+ "split": "eval",
+ "lo": 0,
+ "n": 1000,
+ "recon_mse_first50": 0.0006789479288272559,
+ "layout_constant": true,
+ "first": "20220920T045048-1000.npz",
+ "last": "20220920T051824-1000.npz"
+}
