@@ -5,20 +5,35 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-26. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-27. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
-## Running (2026-10-26, updated after EXPTORUS)
-- **RNN_TORUS** (LSTM/GRU baseline on the T = 1024 torus, `RNN_TORUS_PREREG.md` + Amendment 1, 64 runs, seeds 3300-3307,
-  code `782ba4f`, md5 guard over 107 files) running on kalman GPUs 0-1 since 2026-10-26 13:30, ~18 h; log `rnn_torus.log`.
-  Do NOT edit, create, move or check out any tracked .py / .sh while it runs (the guard re-checks before every launch).
-- **Memory Maze** (first-person 3D, Hyak): CPU gate registered before any number (commit `a8ab5f7`); the official Drive
-  download is quota-blocked and the download / gate jobs are polling. **Pending user decision on the Drive quota.**
-  memory-maze 1.0.3 in a project venv on the cluster's persistent storage (path in the local notes), gym 0.26.2, EGL on A40.
-  Cluster lessons: `docs/HYAK_NOTES.md`; connection details in an uncommitted local file outside the repo (ask the user).
-  Compute on kalman and Hyak only, not koopman.
-- EXPTORUS done (2026-10-26 03:42 -> 13:28, marker `.exptorus_done`) and folded in (below).
-- Optional, not declared: IMAGE_TORUS block B (NormStep on images, 4-layer index, token RoPE; ~6 h on two GPUs).
+## Running (2026-10-27, updated after RNN_TORUS)
+- **Nothing on kalman: GPUs idle.** RNN_TORUS done (2026-10-26 13:30 -> 2026-10-27 09:53, marker `.rnn_torus_done`) and
+  folded in (below).
+- **Memory Maze** (first-person 3D, Hyak): gate v1 STOPPED as registered (S2 linear two-frame continuation 0.89 >= 0.85,
+  S3 action x heading dead-reckoning 13% of long-gap re-entries; commit `5e993d9`). **Gate v2** (blind stretches, richer
+  step inputs; `MEMORY_MAZE_GATE_V2.md`, commit `4c76a14`) **STOPPED as registered** at the primary cell (32 blind / 32
+  sighted): S2v2 passes (best map-free 0.022), S3v2 fires (best class prev-action x action with continuous heading 0.490 <
+  0.50), S4v2 fires (2.44 scored returns per episode < 3). **User decision pending:** (a) a gate v3 at 16 blind steps on
+  fresh episodes; (b) cancelling the cluster download jobs (only `train-part0` and eval are downloaded). memory-maze 1.0.3 in
+  a project venv on the cluster's persistent storage (path in the local notes), gym 0.26.2, EGL on A40. Cluster lessons:
+  `docs/HYAK_NOTES.md`; connection details in an uncommitted local file outside the repo (ask the user). Compute on kalman
+  and Hyak only, not koopman.
+- Optional, not declared: IMAGE_TORUS block B (NormStep on images, 4-layer index, token RoPE; ~6 h on two GPUs); GPS-PE
+  control (index attention given cumsum of the moves; review A-M2); many-map RNN training.
+
+## Last results (2026-10-27): RNN_TORUS (`RNN_TORUS_RESULTS.md`): PATH WINS
+- Torus T = 1024, 900 ep, seeds 3300-3307, n = 8, in-batch anchors: path 1L 0.9998 (8/8) beats all six LSTM / GRU cells
+  (LSTM_L1_h157, GRU_L1_h181, LSTM_L2_h111, GRU_L2_h128 at ~205k params; LSTM_L1_h313 at 4x, lr 1e-3 and 3e-3) on accuracy
+  and SOLVED, d +0.35..+0.43, p 0.00016; matched-parameter reading PATH WINS (4/4). RoPE 1L 0.724.
+- Central secondary: the RNNs memorise the fixed training map (own map 0.93-0.98) and do not transfer (held-out
+  0.57-0.65, below RoPE 1L and retrace 0.844, even on short gaps 0.62-0.70 vs 0.910); the 4x LSTM fits best, transfers
+  worst (S9 -0.033). Context used (CD 0.30-0.31). r(loss, acc) -0.05 (RNN-only +0.70, post hoc). Pilot-informed predictions
+  (held-out 0.84-0.92, above RoPE) contradicted. Post hoc probe: held-out predictions match the training map no more than an
+  unrelated map (0.10 vs 0.11). Scope: one training map per run (paper's protocol); many-map training untested.
+- Folded into CLAUDE.md (new row), claim map (C6 row + update), RESULTS_INDEX, draft 2 (Sec. 6 paragraph, abstract clause,
+  Limitations; App. A3 row, F8 new) and its PDFs.
 
 ## Last results (2026-10-26): EXPTORUS (`EXPTORUS_RESULTS.md`): BOTH PAY
 - Attention, torus T = 1024, obs.-step-free rank 4, 900 ep, each arm at its best of lr 1e-3 / 3e-3, seeds 3400-3407:

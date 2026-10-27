@@ -728,7 +728,7 @@ Every caption number below is in the figure's `_out.txt` (`docs/paper/figs/`).
    KNOB_SWEEP's seed numbers are not given in `KNOB_SWEEP_n8.md` ("8 seeds").
 5. The new references (deviation 24) need metadata checks; Yao et al. is cited via Liu et al. App. A.5 and is not in
    `papers/`.
-6. Plan GPU items still open: G-5 (depth routes), G-7 (long text world), recurrent baseline (RNN_TORUS running 2026-10-26). EXPTORUS landed 2026-10-26 and is folded in (Sec. 7.3, Table 5, abstract, Discussion, design guidance, Limitations; App. A3, E8.6, H14; main text 11,570 -> 11,704 words). G-3 block A2 and FACTORIAL
+6. Plan GPU items still open: G-5 (depth routes), G-7 (long text world). RNN_TORUS (recurrent baseline) landed 2026-10-27 and is folded in (abstract clause, contribution 2, Sec. 6 paragraph, Limitations line replaced; App. A3 row, F8 new, O row; main text 11,706 -> 11,956 words). EXPTORUS landed 2026-10-26 and is folded in (Sec. 7.3, Table 5, abstract, Discussion, design guidance, Limitations; App. A3, E8.6, H14; main text 11,570 -> 11,704 words). G-3 block A2 and FACTORIAL
    to n = 8 landed 2026-10-25 and are folded in. G-3 block A (2026-10-23), G-4 and RANKRECIPE (2026-10-24) landed and are folded in. G-1 landed (2026-10-23) and is folded in (section "G-1 (RANKCLOCK) folded in"): E2 THE CLOCK IS
    THE OBSTACLE, P PARTIAL. Follow-ups named by its results file, not run: a registered r4 wd 0.05 vs wd 0 contrast, and
    a longer budget for slotxy and r2 together (slower vs unable).

@@ -69,6 +69,7 @@ Pilots ran on seeds outside the batch except where noted.
 | GENERALITY | 5, 7.3 | torus; ring p_plus 0.5 | obs.-step-free signed / \|.\| and constructions; signed, CARoPE, CoPE, RoPE | 700-707 | 900 (ring 300); +300 | fast-attn (torus) | yes | yes |
 | FACTORIAL | 6 | torus T = 1024 | path 1 layer; index 1, 4 layers, looped x4 | 500-503 (n = 4) | 900 | fast-attn | yes | yes |
 | FACTORIAL_N8 (F7) | 6 | torus T = 1024 | FACTORIAL's four cells, its recipe asserted per run | 2800-2803 (fresh, n = 4) | 900 | fast-attn | yes | no (analysis re-run from the run dirs, identical) |
+| RNN_TORUS (F8) | 6 | torus T = 1024 | path 1 layer, index 1 layer (anchors); LSTM / GRU at 1 and 2 layers (~205k params); 1-layer LSTM at 4x (lr 1e-3 and 3e-3) | 3300-3307 | 900 | fast-attn (anchors); cuDNN LSTM / GRU, fp32 | yes | no (analysis re-run from the run dirs, identical; every number re-derived from the evaluation files) |
 | DYCK_MDEPTH | 6 | Dyck-2 L32 D12 | MapWM, MapPoPE (r2), RoPE, PoPE at 1-4 layers; 3x; mixture | 0-7 | 1x / 3x | standard | no | yes |
 | CANCEL | 6 | ring p_plus 0.5-1.0 | path 1 layer; index 1-3 layers | 0-7; main text 2-7 (0-1 were the pilot) | 300 | standard | no | yes |
 | RANK_MI | 7.2 | torus | shared r2, per-head r2, shared r4 | 0-7 (per-head r2 s0-1 were a pilot) | 900 | standard | no | yes |
@@ -1062,6 +1063,42 @@ over retrace, so over both batches four index layers are at the retrace floor (-
 (7/8). Batch shift per cell <= 0.029 (perm p >= 0.17). Four layers learn more of their own map (0.919) than they transfer
 (0.830). Out of distribution, T = 512 / 2048: path 1.000 / 0.968; 4 layers 0.881 / 0.573; loop 0.900 / 0.632; 1 layer
 0.759 / 0.545. r(final loss, acc) -0.909 over the 16 runs. Predictions held except "no 4-layer run descending" (1/4).
+
+### F8. Recurrent baselines (RNN_TORUS; registered, `RNN_TORUS_RESULTS.md`, `RNN_TORUS_PREREG.md` + Amendment 1)
+
+LSTM and GRU trained through the path model's trainer (same environment, walks, loss on revisits, AdamW wd 0.05, cosine,
+900 epochs, batch 16) with in-batch path and index anchors; kalman GPUs 0-1, 2026-10-26/27, code `782ba4f`; independent
+code check before launch; fresh seeds 3300-3307 (n = 8 per cell). Model: token embedding (width = hidden) -> LSTM / GRU ->
+LayerNorm -> linear readout; LSTM forget-gate bias 1; hidden size set to match the parameter target. Each RNN shape at the
+rate a one-seed pilot (seed 3390, 300 of 900 epochs, lowest training loss) picked; the 4x LSTM, a tie in the pilot, at both
+rates. Each run trains on one map (drawn once from the run seed) and is scored on a new map (env seed 10000); "own map"
+re-scores fresh walks on the training map.
+
+| cell | params | lr | acc T = 1024, held-out | own map | short / long gap / wrap-only | T = 2048 | SOLVED | context destroyed |
+|---|---|---|---|---|---|---|---|---|
+| path, 1 layer (MapWM r4) | 204,757 | 1e-3 | **0.9998** | 0.9998 | 1.000 / 1.000 / 0.997 | 0.985 | **8/8** | 0.260 |
+| index RoPE, 1 layer | 203,925 | 1e-3 | 0.724 | 0.784 | 0.774 / 0.462 / 0.479 | 0.552 | 0/8 | 0.352 |
+| LSTM, 2 x 111 | 203,817 | 3e-3 | 0.649 | 0.936 | 0.704 / 0.367 / 0.378 | 0.605 | 0/8 | 0.313 |
+| GRU, 2 x 128 | 203,797 | 3e-3 | 0.626 | 0.933 | 0.677 / 0.363 / 0.372 | 0.586 | 0/8 | 0.307 |
+| LSTM, 1 x 157 | 205,377 | 3e-3 | 0.607 | 0.933 | 0.656 / 0.353 / 0.364 | 0.567 | 0/8 | 0.311 |
+| GRU, 1 x 181 | 205,637 | 1e-3 | 0.582 | 0.931 | 0.627 / 0.346 / 0.360 | 0.547 | 0/8 | 0.309 |
+| LSTM, 1 x 313 (4x) | 800,049 | 1e-3 | 0.574 | 0.974 | 0.624 / 0.314 / 0.327 | 0.534 | 0/8 | 0.301 |
+| LSTM, 1 x 313 (4x) | 800,049 | 3e-3 | 0.572 | 0.977 | 0.621 / 0.316 / 0.327 | 0.532 | 0/8 (5 descending) | 0.302 |
+| floors (these walks) | | | blank 0.508, retrace 0.844 | | retrace 0.910 / blank 0.498 / 0.515 | | | blank 0.508 |
+
+Registered: PATH WINS (path beats all six RNN cells on accuracy, d +0.350 to +0.428, exact permutation p 0.00016, and on
+SOLVED, 8/8 vs 0/8, Fisher p 0.00016; selected best RNN cell by training loss: the 4x LSTM at 3e-3); matched-parameter
+reading over the four ~205k cells PATH WINS. Declared secondaries: every RNN cell below index RoPE at one layer (-0.075 to
+-0.152, p 0.00016) and below retrace on every seed; own map minus held-out +0.29 to +0.40 on every seed (index +0.060, path
+0.000); four times the parameters transfer worse (-0.033, p 0.00016) and fit the training map better; every model reads
+its context (destroyed below the blank level); r(final loss, accuracy) -0.05 over the 64 runs. Analysis (post hoc): over
+the 48 RNN runs alone r = +0.70, lower training loss with lower held-out accuracy; on revisits where the held-out, training
+and an unrelated map all differ, RNN predictions equal the training map's content 0.10 of the time and the unrelated map's
+0.11, so on a new map they do not dead-reckon into the stored map (`docs/audits/2026-10-27/rnn_torus/trainmap_probe.py`).
+The pre-registered predictions, written after the pilot's training losses, put the RNNs at 0.84-0.92 held out and above
+index RoPE; both were wrong, because the training loss measured the fit to the training map. Not tested: RNNs trained
+across many maps, the 4x GRU and 4x two-layer shapes, gated SSMs, and index attention given the integrated position as an
+absolute code.
 
 ---
 
@@ -2519,6 +2556,7 @@ so that every quoted number has a committed generator.
 | `language/tw_lib.py` and the `tw_*.py` scripts; `tw_strata_200.py` (new: all 200 walks, the non-retrace stratum and its floors) | step table, drift, clock unit, asides, attention, retrace, strata | Table 6; Sec. 8; J1-J6 | manual forward logit-identical; generator token-identical; `N_WALKS=100` reproduces `tw_strata.py` |
 | `language/usage_tick.py`, `crossover_usage.py`, `tw_alpha_drift.py` | used-channel rho; growth exponent | Sec. 9; J4 | -- |
 | `docs/audits/2026-10-20/causal_whatwhere_T1024.py`; `whatwhere/whatwhere_stats.py` (new) | what/where at T = 1024; its sign-flip p, SS(P)/SS(S) and Spearman, and the text-world Spearman p | Sec. 8; Sec. 9; J2; K1 | rebuilt forward exact on 32 checkpoints; intact accuracy within 0.0007 |
+| `docs/audits/2026-10-27/rnn_torus/trainmap_probe.py` (outside `expansion/scripts/`; new) | RNN predictions on the held-out map against the training map and an unrelated map | F8 | its accuracy on the first 10 of each seed's 100 evaluation walks within 0.007 of the registered evaluation |
 
 *Post hoc choices* (rule 7; from the audit's Sec. 5): the best-head rule of the kernel probes and the per-stratum head
 rule that replaces it at T = 1024; 40 of the 100 registered walks at T = 1024 (L2); the r_beta < 0.5 cut, the 10x criteria

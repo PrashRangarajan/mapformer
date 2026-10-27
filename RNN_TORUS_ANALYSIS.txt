@@ -1,0 +1,69 @@
+== REGISTERED PRIMARY: path 1L vs every RNN cell, seeds 3300-3307 (n = 8 per cell; exact permutation min p 0.00016, Fisher 8/8 vs 0/8 p 0.00016) ==
+  Path_L1              params  204,757 | acc T=1024 0.9998 (sd 0.0005; per seed [0.999, 0.999, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]) | SOLVED 8/8 | tail loss 0.0058 | classes ['SOLVED', 'SOLVED', 'SOLVED', 'SOLVED', 'SOLVED', 'SOLVED', 'SOLVED', 'SOLVED']
+  RoPE_L1              params  203,925 | acc T=1024 0.7243 (sd 0.0172; per seed [0.729, 0.744, 0.705, 0.73, 0.744, 0.697, 0.73, 0.715]) | SOLVED 0/8 | tail loss 0.9718 | classes ['STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED']
+  LSTM_L1_h313@0.001   params  800,049 | acc T=1024 0.5742 (sd 0.0047; per seed [0.579, 0.57, 0.574, 0.577, 0.569, 0.568, 0.581, 0.575]) | SOLVED 0/8 | tail loss 0.0987 | classes ['STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED']
+  LSTM_L1_h313@0.003   params  800,049 | acc T=1024 0.5721 (sd 0.0051; per seed [0.578, 0.567, 0.572, 0.577, 0.568, 0.565, 0.577, 0.573]) | SOLVED 0/8 | tail loss 0.0886 | classes ['DESCENDING', 'DESCENDING', 'DESCENDING', 'STALLED', 'DESCENDING', 'STALLED', 'DESCENDING', 'STALLED']
+  LSTM_L1_h157@0.003   params  205,377 | acc T=1024 0.6072 (sd 0.0045; per seed [0.61, 0.599, 0.603, 0.61, 0.612, 0.606, 0.607, 0.611]) | SOLVED 0/8 | tail loss 0.2534 | classes ['STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED']
+  GRU_L1_h181@0.001    params  205,637 | acc T=1024 0.5819 (sd 0.0061; per seed [0.59, 0.571, 0.58, 0.587, 0.579, 0.58, 0.588, 0.58]) | SOLVED 0/8 | tail loss 0.2731 | classes ['STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED']
+  LSTM_L2_h111@0.003   params  203,817 | acc T=1024 0.6494 (sd 0.0021; per seed [0.653, 0.647, 0.649, 0.652, 0.65, 0.647, 0.648, 0.649]) | SOLVED 0/8 | tail loss 0.2683 | classes ['STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED']
+  GRU_L2_h128@0.003    params  203,797 | acc T=1024 0.6260 (sd 0.0037; per seed [0.628, 0.619, 0.623, 0.627, 0.631, 0.629, 0.628, 0.625]) | SOLVED 0/8 | tail loss 0.2782 | classes ['STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED', 'STALLED']
+  floors on these eval walks (measured, model-free): blank 0.5083, retrace 0.8442, wrap-only share 0.080; best n-gram 0.576 (quoted, RANK_MI)
+  path - LSTM_L1_h313@0.001  : d +0.4256 (perm p 0.00016); SOLVED 8/8 vs 0/8 (Fisher p 0.00016) -> path beats it (route: both)
+  path - LSTM_L1_h313@0.003  : d +0.4277 (perm p 0.00016); SOLVED 8/8 vs 0/8 (Fisher p 0.00016) -> path beats it (route: both)
+  path - LSTM_L1_h157@0.003  : d +0.3926 (perm p 0.00016); SOLVED 8/8 vs 0/8 (Fisher p 0.00016) -> path beats it (route: both)
+  path - GRU_L1_h181@0.001   : d +0.4179 (perm p 0.00016); SOLVED 8/8 vs 0/8 (Fisher p 0.00016) -> path beats it (route: both)
+  path - LSTM_L2_h111@0.003  : d +0.3504 (perm p 0.00016); SOLVED 8/8 vs 0/8 (Fisher p 0.00016) -> path beats it (route: both)
+  path - GRU_L2_h128@0.003   : d +0.3737 (perm p 0.00016); SOLVED 8/8 vs 0/8 (Fisher p 0.00016) -> path beats it (route: both)
+  selected best RNN cell (training loss only): LSTM_L1_h313@0.003
+  REGISTERED PRIMARY: PATH WINS: path beats every RNN cell (6/6); selected best LSTM_L1_h313@0.003: acc 0.5721 vs path 0.9998 (d +0.4277, perm p 0.00016), SOLVED 0/8 vs 8/8 (Fisher p 0.00016); binding cell LSTM_L1_h313@0.001 (separated on both) [within 900 epochs; DESCENDING 5/8 in LSTM_L1_h313@0.003]
+  REGISTERED MATCHED-PARAMETER READING (4 cells at ~205k): PATH WINS: path beats every RNN cell (4/4); selected best LSTM_L1_h157@0.003: acc 0.6072 vs path 0.9998 (d +0.3926, perm p 0.00016), SOLVED 0/8 vs 8/8 (Fisher p 0.00016); binding cell LSTM_L1_h157@0.003 (separated on both) [within 900 epochs; DESCENDING 0/8 in LSTM_L1_h157@0.003]
+== SECONDARY (declared, no verdict) ==
+  S1 LSTM_L1_h313@0.001   - RoPE_L1: -0.1502 (perm p 0.00016); SOLVED 0/8 vs 0/8 (Fisher p 1.00000) -> RNN BELOW INDEX 1L
+  S1 LSTM_L1_h313@0.003   - RoPE_L1: -0.1523 (perm p 0.00016); SOLVED 0/8 vs 0/8 (Fisher p 1.00000) -> RNN BELOW INDEX 1L [selected best]
+  S1 LSTM_L1_h157@0.003   - RoPE_L1: -0.1171 (perm p 0.00016); SOLVED 0/8 vs 0/8 (Fisher p 1.00000) -> RNN BELOW INDEX 1L
+  S1 GRU_L1_h181@0.001    - RoPE_L1: -0.1424 (perm p 0.00016); SOLVED 0/8 vs 0/8 (Fisher p 1.00000) -> RNN BELOW INDEX 1L
+  S1 LSTM_L2_h111@0.003   - RoPE_L1: -0.0750 (perm p 0.00016); SOLVED 0/8 vs 0/8 (Fisher p 1.00000) -> RNN BELOW INDEX 1L
+  S1 GRU_L2_h128@0.003    - RoPE_L1: -0.0983 (perm p 0.00016); SOLVED 0/8 vs 0/8 (Fisher p 1.00000) -> RNN BELOW INDEX 1L
+  S2 acc - retrace floor (same walks) Path_L1             : +0.1556 (8/8 above)
+  S2 acc - retrace floor (same walks) RoPE_L1             : -0.1198 (0/8 above)
+  S2 acc - retrace floor (same walks) LSTM_L1_h313@0.001  : -0.2700 (0/8 above)
+  S2 acc - retrace floor (same walks) LSTM_L1_h313@0.003  : -0.2721 (0/8 above)
+  S2 acc - retrace floor (same walks) LSTM_L1_h157@0.003  : -0.2370 (0/8 above)
+  S2 acc - retrace floor (same walks) GRU_L1_h181@0.001   : -0.2623 (0/8 above)
+  S2 acc - retrace floor (same walks) LSTM_L2_h111@0.003  : -0.1948 (0/8 above)
+  S2 acc - retrace floor (same walks) GRU_L2_h128@0.003   : -0.2181 (0/8 above)
+  S3 strata Path_L1             : short-gap 1.000 (retrace 0.910), long-gap 1.000 (retrace 0.498), wrap-only 0.997 (retrace 0.515)
+  S3 strata RoPE_L1             : short-gap 0.774 (retrace 0.910), long-gap 0.462 (retrace 0.498), wrap-only 0.479 (retrace 0.515)
+  S3 strata LSTM_L1_h313@0.001  : short-gap 0.624 (retrace 0.910), long-gap 0.314 (retrace 0.498), wrap-only 0.327 (retrace 0.515)
+  S3 strata LSTM_L1_h313@0.003  : short-gap 0.621 (retrace 0.910), long-gap 0.316 (retrace 0.498), wrap-only 0.327 (retrace 0.515)
+  S3 strata LSTM_L1_h157@0.003  : short-gap 0.656 (retrace 0.910), long-gap 0.353 (retrace 0.498), wrap-only 0.364 (retrace 0.515)
+  S3 strata GRU_L1_h181@0.001   : short-gap 0.627 (retrace 0.910), long-gap 0.346 (retrace 0.498), wrap-only 0.360 (retrace 0.515)
+  S3 strata LSTM_L2_h111@0.003  : short-gap 0.704 (retrace 0.910), long-gap 0.367 (retrace 0.498), wrap-only 0.378 (retrace 0.515)
+  S3 strata GRU_L2_h128@0.003   : short-gap 0.677 (retrace 0.910), long-gap 0.363 (retrace 0.498), wrap-only 0.372 (retrace 0.515)
+  S4 OOD (rule 10) Path_L1             : T=512 1.0000, T=2048 0.9849
+  S4 OOD (rule 10) RoPE_L1             : T=512 0.7583, T=2048 0.5520
+  S4 OOD (rule 10) LSTM_L1_h313@0.001  : T=512 0.6076, T=2048 0.5342
+  S4 OOD (rule 10) LSTM_L1_h313@0.003  : T=512 0.6039, T=2048 0.5323
+  S4 OOD (rule 10) LSTM_L1_h157@0.003  : T=512 0.6401, T=2048 0.5670
+  S4 OOD (rule 10) GRU_L1_h181@0.001   : T=512 0.6147, T=2048 0.5465
+  S4 OOD (rule 10) LSTM_L2_h111@0.003  : T=512 0.6861, T=2048 0.6050
+  S4 OOD (rule 10) GRU_L2_h128@0.003   : T=512 0.6620, T=2048 0.5857
+  S5 own (training) map Path_L1             : 0.9998 vs held-out 0.9998
+  S5 own (training) map RoPE_L1             : 0.7839 vs held-out 0.7243
+  S5 own (training) map LSTM_L1_h313@0.001  : 0.9742 vs held-out 0.5742
+  S5 own (training) map LSTM_L1_h313@0.003  : 0.9767 vs held-out 0.5721
+  S5 own (training) map LSTM_L1_h157@0.003  : 0.9325 vs held-out 0.6072
+  S5 own (training) map GRU_L1_h181@0.001   : 0.9308 vs held-out 0.5819
+  S5 own (training) map LSTM_L2_h111@0.003  : 0.9358 vs held-out 0.6494
+  S5 own (training) map GRU_L2_h128@0.003   : 0.9333 vs held-out 0.6260
+  S6 r(final-5% training loss, acc T=1024) over the 64 runs: -0.050
+  S7 run classes: Path_L1 {'SOLVED': 8, 'STALLED': 0, 'DESCENDING': 0}; RoPE_L1 {'SOLVED': 0, 'STALLED': 8, 'DESCENDING': 0}; LSTM_L1_h313@0.001 {'SOLVED': 0, 'STALLED': 8, 'DESCENDING': 0}; LSTM_L1_h313@0.003 {'SOLVED': 0, 'STALLED': 3, 'DESCENDING': 5}; LSTM_L1_h157@0.003 {'SOLVED': 0, 'STALLED': 8, 'DESCENDING': 0}; GRU_L1_h181@0.001 {'SOLVED': 0, 'STALLED': 8, 'DESCENDING': 0}; LSTM_L2_h111@0.003 {'SOLVED': 0, 'STALLED': 8, 'DESCENDING': 0}; GRU_L2_h128@0.003 {'SOLVED': 0, 'STALLED': 8, 'DESCENDING': 0}
+  S8 context destruction Path_L1             : CONTEXT USED (destroyed 0.2603 vs blank 0.5083); same 50 walks intact 0.9998
+  S8 context destruction RoPE_L1             : CONTEXT USED (destroyed 0.3516 vs blank 0.5083); same 50 walks intact 0.7251
+  S8 context destruction LSTM_L1_h313@0.001  : CONTEXT USED (destroyed 0.3013 vs blank 0.5083); same 50 walks intact 0.5759
+  S8 context destruction LSTM_L1_h313@0.003  : CONTEXT USED (destroyed 0.3017 vs blank 0.5083); same 50 walks intact 0.5723
+  S8 context destruction LSTM_L1_h157@0.003  : CONTEXT USED (destroyed 0.3105 vs blank 0.5083); same 50 walks intact 0.6086
+  S8 context destruction GRU_L1_h181@0.001   : CONTEXT USED (destroyed 0.3085 vs blank 0.5083); same 50 walks intact 0.5824
+  S8 context destruction LSTM_L2_h111@0.003  : CONTEXT USED (destroyed 0.3127 vs blank 0.5083); same 50 walks intact 0.6503
+  S8 context destruction GRU_L2_h128@0.003   : CONTEXT USED (destroyed 0.3072 vs blank 0.5083); same 50 walks intact 0.6270
+  S9 capacity LSTM_L1_h313@0.001 - LSTM_L1_h157@0.003: -0.0330 (perm p 0.00016); SOLVED 0 vs 0

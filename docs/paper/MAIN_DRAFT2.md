@@ -10,7 +10,8 @@ Path-integrated rotary attention replaces RoPE's token index with a learned phas
 token. We measure what such models learn and what decides whether training finds a map. On 1024-move torus walks, where
 a map-free rule that retraces the last run of moves scores 0.843, one path-integrated layer scores 0.998 (8 of 8 seeds
 solved) against 0.731 for index RoPE; at matched depth one path layer is worth about three index layers on Dyck-2 and a
-biased 1D walk, and more than four on the torus, where four index layers score what retracing scores. A map code is a
+biased 1D walk, and more than four on the torus, where four index layers score what retracing scores; LSTM and GRU
+baselines with as many or four times the parameters fit their training map but score 0.57-0.65 on new maps. A map code is a
 phase without a clock, the phase an out-and-back adds, and we bound how much a clock erodes one attention pass's
 position match. Two choices of the step map decide whether training removes the clock. Per-head rank: rank 2 solves the
 torus on at most 2 of 8 seeds against 8 of 8 at rank 4, also at twice the budget and at three recipes, although a rank-2
@@ -51,7 +52,8 @@ solution, and from scratch rarely find it (Fig. 1).
    at 1024 moves, where one path layer scores 0.998 against index RoPE's 0.731 (8/8 vs 0/8 SOLVED, p 0.0002).
 2. *What depth buys index attention.* Registered exchange rates at matched length and depth: about three index layers on
    Dyck-2 and a biased ring, more than four on the torus (replicated on fresh seeds); trained index models learn local
-   return rules whose reach grows with depth in direction runs (analysis).
+   return rules whose reach grows with depth in direction runs (analysis). LSTM and GRU baselines at matched and four
+   times the parameters memorise their training map and fall below one index layer on new maps (registered).
 3. *What decides whether the map is found.* The clock/map decomposition and a proved route inventory per step class.
    Registered support on both axes: the solution exists, is kept or re-found, and is not found from scratch at rank 2 (at
    most 2/8, also at twice the budget and three recipes) or with a |.| step (0/8 against 8/8 on the torus, at most 2/8
@@ -271,6 +273,16 @@ A registered replication on four fresh seeds gives every reading again (App. F7)
 0.859 (0/4 each, p 0.029); over both batches (n = 8, descriptive) 0.999 against 0.724 / 0.845 / 0.862. Four index layers
 score what retrace scores on the same walks (-0.000 over both batches; 0.913 on short gaps against retrace's 0.911) and
 fall to 0.41 on long gaps, below the constant 0.51: depth buys index attention about what a map-free rule gives.
+
+**Recurrent baselines: integration without transfer (registered; App. F8).** An LSTM or GRU given the same stream can
+integrate the moves; the question is whether it also stores a new map. Trained like every torus model here (one map per
+run, scored on a new map; T = 1024, n = 8), LSTM and GRU at one and two layers with the path model's ~205k parameters,
+and a one-layer LSTM with four times as many at two learning rates, score 0.57-0.65 against 0.9998 for one path layer
+(0/8 against 8/8 SOLVED; d +0.35 to +0.43, p 0.00016 for each of the six cells). They fit their training map (0.93-0.98
+on fresh walks over it) and fall below one index layer (0.724) and below retrace on the new one, even on short-gap
+revisits (0.62-0.70 against 0.910); the larger LSTM fits best and transfers worst. Under this protocol the recurrent
+networks store the map in their weights, where the path layer stores it in context; recurrent networks trained across
+many maps are not tested.
 
 ![Figure 3](figs/fig_exchange_rate.png)
 
@@ -673,7 +685,9 @@ with one layer; we give the rate at matched depth, the mechanism trained models 
 ## 10. Limitations
 
 - The models are small (1-4 layers, 2 heads, d_model 128-256) and the tasks synthetic; natural text appears only as a
-  three-seed pilot. Actions are allocentric translations. There is no LSTM or GRU baseline.
+  three-seed pilot. Actions are allocentric translations. The LSTM and GRU baselines are trained on one map per run, as
+  every torus model here; recurrent networks trained across many maps, gated SSMs and index attention given the integrated
+  position as an absolute code are not tested.
 - "Not found" is relative to the stated budgets (300-1800 epochs), and many failing cells have runs still descending.
   Learning rates for the |.| contrast were swept on the ring (four rates) and the torus (three, decay coupled to the rate,
   no decay-matched control; 5 of 8 |.| runs at its best rate still descending). At 2 layers and d_model 256 the accuracy
