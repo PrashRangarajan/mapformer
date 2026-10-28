@@ -1,0 +1,95 @@
+n runs 64 {'GPS': [3600, 3601, 3602, 3603, 3604, 3605, 3606, 3607], 'GRU': [3600, 3601, 3602, 3603, 3604, 3605, 3606, 3607], 'P_E_frozen': [3600, 3601, 3602, 3603, 3604, 3605, 3606, 3607], 'P_E': [3600, 3601, 3602, 3603, 3604, 3605, 3606, 3607], 'P_odo': [3600, 3601, 3602, 3603, 3604, 3605, 3606, 3607], 'P_raw': [3600, 3601, 3602, 3603, 3604, 3605, 3606, 3607], 'R1': [3600, 3601, 3602, 3603, 3604, 3605, 3606, 3607], 'R4': [3600, 3601, 3602, 3603, 3604, 3605, 3606, 3607]}
+md5 end sets 1 ['{"lie_groups.py": "1deedf7f74deb482cc1acaa9a14e6008", "mm_data.py": "396fd0736893724aa0df920e7080be4d", "mm_gate.py": "36720d251efa50b310edfe17ff3e4cac", "mm_gate_v2.py": "f1cfb80441c175ce42144557890cc387", "model.py": "0a379a4a6565ef565b914a83165f885a", "model_mm.py": "d9da04783b519eebd0da5997d8114581", "train_mm.py": "5c6ba93f65cb5c9824a1e6656ebd07dc"}']
+md5 start sets 1 True
+torch {'2.13.0+cu130'} tf32 {'{"cudnn": false, "matmul": false, "rnn": "ieee"}'} gpus {'NVIDIA A40': 48, 'NVIDIA A100 80GB PCIe': 16} changed []
+GPS n_params {312704} n_trainable {312704} install {'none'} epochs {600} loss {'both'} hist len {600} sec/ep 2.27 probe_sec 115
+GRU n_params {302864} n_trainable {302864} install {'none'} epochs {600} loss {'both'} hist len {600} sec/ep 5.33 probe_sec 124
+P_E_frozen n_params {305120} n_trainable {304128} install {'frozen'} epochs {600} loss {'both'} hist len {600} sec/ep 2.07 probe_sec 109
+P_E n_params {305120} n_trainable {305120} install {'none'} epochs {600} loss {'both'} hist len {600} sec/ep 2.23 probe_sec 111
+P_odo n_params {304712} n_trainable {304712} install {'none'} epochs {600} loss {'both'} hist len {600} sec/ep 2.35 probe_sec 113
+P_raw n_params {304472} n_trainable {304472} install {'none'} epochs {600} loss {'both'} hist len {600} sec/ep 2.23 probe_sec 111
+R1 n_params {304128} n_trainable {304128} install {'none'} epochs {600} loss {'both'} hist len {600} sec/ep 2.20 probe_sec 113
+R4 n_params {898944} n_trainable {898944} install {'none'} epochs {600} loss {'both'} hist len {600} sec/ep 5.95 probe_sec 113
+
+per arm eval nonlocal R1 / held / R2 / all / swap / shuffle / n scored mean
+GPS        0.2974 sd 0.0054 min 0.290 max 0.305 | held 0.3274 sd 0.0098 | R2 0.2809 heldR2 0.3086 | all 0.2989 | swap 0.1772 shuf 0.0123 | n 5132 heldn 6900
+GRU        0.1558 sd 0.0106 min 0.139 max 0.172 | held 0.1751 sd 0.0129 | R2 0.1312 heldR2 0.1472 | all 0.1547 | swap 0.0397 shuf 0.0087 | n 5132 heldn 6900
+P_E_frozen 0.2416 sd 0.0190 min 0.220 max 0.271 | held 0.2738 sd 0.0209 | R2 0.1416 heldR2 0.1674 | all 0.2471 | swap 0.0322 shuf 0.0073 | n 5132 heldn 6900
+P_E        0.3309 sd 0.0799 min 0.273 max 0.464 | held 0.3823 sd 0.0963 | R2 0.2051 heldR2 0.2417 | all 0.3397 | swap 0.0279 shuf 0.0076 | n 5132 heldn 6900
+P_odo      0.5387 sd 0.0225 min 0.491 max 0.568 | held 0.5455 sd 0.0237 | R2 0.4606 heldR2 0.4706 | all 0.5355 | swap 0.0722 shuf 0.0071 | n 5132 heldn 6900
+P_raw      0.1289 sd 0.0344 min 0.048 max 0.159 | held 0.1419 sd 0.0354 | R2 0.0808 heldR2 0.0934 | all 0.1270 | swap 0.0341 shuf 0.0204 | n 5132 heldn 6900
+R1         0.1175 sd 0.0093 min 0.106 max 0.132 | held 0.1332 sd 0.0050 | R2 0.0725 heldR2 0.0878 | all 0.1162 | swap 0.0326 shuf 0.0189 | n 5132 heldn 6900
+R4         0.3894 sd 0.0269 min 0.340 max 0.428 | held 0.4168 sd 0.0233 | R2 0.3457 heldR2 0.3763 | all 0.3873 | swap 0.0565 shuf 0.0145 | n 5132 heldn 6900
+P_E-R1: d +0.2133 p 0.00016
+P_E-R4: d -0.0586 p 0.07148
+P_E-GRU: d +0.1751 p 0.00016
+P_odo-P_E: d +0.2078 p 0.00016
+P_odo-GPS: d +0.2413 p 0.00016
+P_E_frozen-R1: d +0.1241 p 0.00016
+P_raw-P_E: d -0.2020 p 0.00016
+R4-R1: d +0.2719 p 0.00016
+GPS-P_E: d -0.0335 p 0.27242
+P_E_frozen-P_E: d -0.0893 p 0.00016
+held P_E-R1 0.24911231884057966 0.0001554001554001554
+
+per seed P_E [0.276 0.278 0.273 0.464 0.435 0.281 0.274 0.367]
+per seed R4 [0.407 0.383 0.383 0.406 0.34  0.428 0.37  0.399]
+per seed R1 [0.13  0.116 0.112 0.119 0.106 0.132 0.109 0.115]
+GPS window slopes % [-3.  -2.9 -3.2 -2.9 -2.9 -2.9 -2.9 -3. ] DESC 1 final loss 4.751
+GRU window slopes % [-3.9 -3.9 -4.  -3.8 -3.9 -4.2 -3.9 -3.9] DESC 8 final loss 5.416
+P_E_frozen window slopes % [-1.9 -2.1 -2.  -1.9 -1.9 -2.3 -1.9 -1.9] DESC 0 final loss 5.964
+P_E window slopes % [-2.  -1.9 -1.8 -2.5 -2.7 -1.9 -2.  -3. ] DESC 1 final loss 5.656
+P_odo window slopes % [-2.8 -4.5 -2.7 -2.9 -3.3 -3.5 -3.6 -3.1] DESC 5 final loss 5.216
+P_raw window slopes % [-2.7 -1.9 -2.  -2.  -1.6 -2.2 -2.2 -2.2] DESC 0 final loss 5.942
+R1 window slopes % [-2.2 -2.5 -2.6 -2.1 -2.7 -2.2 -2.9 -2.5] DESC 0 final loss 6.125
+R4 window slopes % [-5.9 -5.6 -5.4 -5.7 -5.5 -5.7 -5.5 -5.7] DESC 8 final loss 3.678
+
+probe per arm blinded walls/obj, unblinded, sd
+GPS        B walls 75.99+-0.59 obj 36.94+-0.06 | U walls 76.51 obj 37.19
+GRU        B walls 78.20+-0.02 obj 36.86+-0.03 | U walls 78.30 obj 36.78
+P_E_frozen B walls 77.94+-0.17 obj 36.90+-0.04 | U walls 77.30 obj 37.12
+P_E        B walls 77.97+-0.20 obj 36.87+-0.02 | U walls 77.45 obj 37.01
+P_odo      B walls 77.52+-0.35 obj 36.91+-0.05 | U walls 76.80 obj 37.07
+P_raw      B walls 77.78+-0.39 obj 36.89+-0.04 | U walls 77.50 obj 37.06
+R1         B walls 77.11+-1.05 obj 36.92+-0.04 | U walls 77.16 obj 37.19
+R4         B walls 75.16+-0.14 obj 37.02+-0.09 | U walls 77.60 obj 37.16
+probe keys ['constant', 'blinded', 'unblinded'] constant set 1
+| arm | 3600 | 3601 | 3602 | 3603 | 3604 | 3605 | 3606 | 3607 | mean |
+| P_odo | 0.543 | 0.532 | 0.532 | 0.491 | 0.568 | 0.543 | 0.546 | 0.553 | 0.539 |
+| R4 | 0.407 | 0.383 | 0.383 | 0.406 | 0.340 | 0.428 | 0.370 | 0.399 | 0.389 |
+| P_E | 0.276 | 0.278 | 0.273 | 0.464 | 0.435 | 0.281 | 0.274 | 0.367 | 0.331 |
+| GPS | 0.303 | 0.305 | 0.292 | 0.298 | 0.301 | 0.293 | 0.290 | 0.299 | 0.297 |
+| P_E_frozen | 0.234 | 0.246 | 0.268 | 0.234 | 0.239 | 0.271 | 0.222 | 0.220 | 0.242 |
+| GRU | 0.163 | 0.158 | 0.146 | 0.164 | 0.139 | 0.172 | 0.150 | 0.154 | 0.156 |
+| P_raw | 0.152 | 0.124 | 0.138 | 0.141 | 0.048 | 0.159 | 0.139 | 0.130 | 0.129 |
+| R1 | 0.130 | 0.116 | 0.112 | 0.119 | 0.106 | 0.132 | 0.109 | 0.115 | 0.118 |
+held
+| P_odo | 0.555 | 0.542 | 0.531 | 0.496 | 0.572 | 0.553 | 0.550 | 0.565 | 0.546 |
+| R4 | 0.434 | 0.410 | 0.413 | 0.433 | 0.373 | 0.450 | 0.404 | 0.417 | 0.417 |
+| P_E | 0.312 | 0.316 | 0.313 | 0.535 | 0.516 | 0.324 | 0.317 | 0.426 | 0.382 |
+| GPS | 0.343 | 0.332 | 0.321 | 0.323 | 0.338 | 0.321 | 0.326 | 0.314 | 0.327 |
+| P_E_frozen | 0.262 | 0.287 | 0.305 | 0.268 | 0.264 | 0.300 | 0.257 | 0.248 | 0.274 |
+| GRU | 0.186 | 0.175 | 0.170 | 0.171 | 0.154 | 0.198 | 0.170 | 0.178 | 0.175 |
+| P_raw | 0.166 | 0.136 | 0.149 | 0.152 | 0.058 | 0.170 | 0.154 | 0.151 | 0.142 |
+| R1 | 0.138 | 0.137 | 0.131 | 0.132 | 0.128 | 0.141 | 0.127 | 0.132 | 0.133 |
+P_odo final-5% loss 5.220 (4.797-5.626) r within -0.65 longgap 0.5386 ep-mean 0.5351
+R4 final-5% loss 3.678 (3.553-3.897) r within -0.97 longgap 0.3896 ep-mean 0.3814
+P_E final-5% loss 5.658 (5.426-5.780) r within -0.99 longgap 0.3308 ep-mean 0.3213
+GPS final-5% loss 4.751 (4.620-4.807) r within 0.08 longgap 0.2975 ep-mean 0.2944
+P_E_frozen final-5% loss 5.966 (5.829-6.094) r within 0.69 longgap 0.2415 ep-mean 0.2382
+GRU final-5% loss 5.417 (5.316-5.536) r within -0.58 longgap 0.1558 ep-mean 0.1513
+P_raw final-5% loss 5.942 (5.762-6.344) r within -0.93 longgap 0.1288 ep-mean 0.1285
+R1 final-5% loss 6.126 (6.030-6.218) r within -0.84 longgap 0.1175 ep-mean 0.1160
+pooled r(final loss, acc) over 64: -0.558
+P_E 3600 [6.54, 6.31, 6.15, 6.06, 5.98, 5.87, 5.8, 5.78] 0.276
+P_E 3601 [6.55, 6.3, 6.14, 6.01, 5.94, 5.83, 5.77, 5.74] 0.278
+P_E 3602 [6.54, 6.31, 6.16, 6.03, 5.95, 5.84, 5.78, 5.77] 0.273
+P_E 3603 [6.89, 6.36, 5.98, 5.8, 5.67, 5.53, 5.44, 5.43] 0.464
+P_E 3604 [7.19, 6.91, 6.18, 5.9, 5.77, 5.6, 5.52, 5.48] 0.435
+P_E 3605 [6.52, 6.3, 6.16, 6.06, 5.97, 5.85, 5.79, 5.75] 0.281
+P_E 3606 [6.53, 6.32, 6.16, 6.04, 5.97, 5.84, 5.77, 5.75] 0.274
+P_E 3607 [7.15, 6.88, 6.38, 6.06, 5.89, 5.69, 5.58, 5.55] 0.367
+R4 3600 [4.95, 4.29, 3.97, 3.75, 3.61, 3.57]
+R4 3601 [5.06, 4.42, 4.09, 3.89, 3.76, 3.72]
+wall per run h:  {'GPS': 0.38, 'GRU': 0.89, 'P_E_frozen': 0.35, 'P_E': 0.37, 'P_odo': 0.39, 'P_raw': 0.37, 'R1': 0.37, 'R4': 0.99}
+total A40-ish h train 35.13094325310653

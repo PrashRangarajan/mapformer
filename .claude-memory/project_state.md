@@ -5,23 +5,30 @@ metadata:
   type: project
 ---
 
-Updated 2026-10-27. Goes stale fast: check `git log`, `.done` markers, the logs named below.
+Updated 2026-10-28. Goes stale fast: check `git log`, `.done` markers, the logs named below.
 New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..09 is `docs/SESSION_2026-10-04_to_10-09.md`.
 
-## Running (2026-10-27, updated after RNN_TORUS)
-- **Nothing on kalman: GPUs idle.** RNN_TORUS done (2026-10-26 13:30 -> 2026-10-27 09:53, marker `.rnn_torus_done`) and
-  folded in (below).
-- **Memory Maze** (first-person 3D, Hyak): gate v1 STOPPED as registered (S2 linear two-frame continuation 0.89 >= 0.85,
-  S3 action x heading dead-reckoning 13% of long-gap re-entries; commit `5e993d9`). **Gate v2** (blind stretches, richer
-  step inputs; `MEMORY_MAZE_GATE_V2.md`, commit `4c76a14`) **STOPPED as registered** at the primary cell (32 blind / 32
-  sighted): S2v2 passes (best map-free 0.022), S3v2 fires (best class prev-action x action with continuous heading 0.490 <
-  0.50), S4v2 fires (2.44 scored returns per episode < 3). **User decision pending:** (a) a gate v3 at 16 blind steps on
-  fresh episodes; (b) cancelling the cluster download jobs (only `train-part0` and eval are downloaded). memory-maze 1.0.3 in
-  a project venv on the cluster's persistent storage (path in the local notes), gym 0.26.2, EGL on A40. Cluster lessons:
-  `docs/HYAK_NOTES.md`; connection details in an uncommitted local file outside the repo (ask the user). Compute on kalman
-  and Hyak only, not koopman.
+## Running (2026-10-28, updated after MEMORY_MAZE)
+- **Nothing running. kalman GPUs idle; nothing on the cluster.** The Memory Maze batch finished 2026-10-28 (64/64 DONE,
+  cluster) and is folded in (below). Its results.json files were fetched to the workstation outside the repo (location in
+  the local notes); the cluster arrays and run dirs are on scratch (purged eventually; nothing there is needed for the
+  committed numbers). Cluster lessons: `docs/HYAK_NOTES.md`; connection details in an uncommitted local file outside the
+  repo (ask the user). Compute on kalman and the cluster only, not koopman.
 - Optional, not declared: IMAGE_TORUS block B (NormStep on images, 4-layer index, token RoPE; ~6 h on two GPUs); GPS-PE
-  control (index attention given cumsum of the moves; review A-M2); many-map RNN training.
+  control on the torus; many-map RNN training on the torus; Memory Maze R4 / GRU at a longer budget (both 8/8 still
+  descending at 600 epochs; S1 unmeasured).
+
+## Last results (2026-10-28): MEMORY_MAZE (`MEMORY_MAZE_RESULTS.md`): PATH WINS (loss pilot-informed)
+- Memory Maze 15x15, heading given, frames blinded 16/16, R1 retrieval at blind non-local re-entries, eval split, 1 layer,
+  600 ep, seeds 3600-3607, code `d5c0ec4`, torch 2.13: P_E 0.331 vs R1 0.118, +0.213, p 0.00016 (held +0.249); floor 0.047.
+- S1 vs R4 (4 index layers, 2.95x params) UNMEASURED (0.389, Holm p 0.071; R4 8/8 descending; above P_E in the pilot too):
+  the "1 path layer ~ 3 attention layers" rate is not supported here. S2 P_E ABOVE GRU (0.156). S3 P_odo (0.539) ABOVE
+  P_E. S4 P_odo ABOVE GPS (0.297). Given odometry 0.54 vs integrator 0.93: the one-layer readout limits every arm.
+- Descriptive: P_E_frozen - R1 +0.124 at equal trainable params; P_raw - P_E -0.202; destruction drops every arm. Probe
+  uninformative: a memory-free pose-only predictor scores 36.75 on Objects (every arm 36.8-37.2; analysis,
+  `docs/audits/2026-10-28/memory_maze/`). P_E bimodal (5 seeds 0.27-0.28, 3 at 0.37-0.46).
+- Folded into CLAUDE.md (new row), claim map (C6 row + update + gap 3), RESULTS_INDEX, draft 2 (Sec. 8 paragraph +
+  Table 8, Limitations; App. A3 row, K5 new, O rows) and its PDFs.
 
 ## Last results (2026-10-27): RNN_TORUS (`RNN_TORUS_RESULTS.md`): PATH WINS
 - Torus T = 1024, 900 ep, seeds 3300-3307, n = 8, in-batch anchors: path 1L 0.9998 (8/8) beats all six LSTM / GRU cells

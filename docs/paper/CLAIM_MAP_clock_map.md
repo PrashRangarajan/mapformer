@@ -15,7 +15,7 @@ WITHDRAWN. Prior art: `docs/lit/LIT_CLOCK_MAP.md` (2026-10-12; summary in the se
 | C3 | A clock costs nothing where a clock is enough, and a signed phase can act as one | k-back recency, trained at T = 1024: at the training length monotone arms 0.961-1.000 vs signed 1.000 (near ceiling; no registered contrast at this length); the registered -0.004 is read at T = 2048 (OUT OF DISTRIBUTION). The unconstrained signed model runs a clock there (C4). The index (RoPE) fails the task (0.234): it counts tokens, not content (C5) | REG, but the clock-side contrast is OOD or at ceiling | `RECENCY_RESULTS.md` | a matched-length clock-side contrast below ceiling; "recency NEEDS a clock" is withdrawn (a rewind solves it) |
 | C4 | The free phase chooses map or clock per task | growth exponent alpha of the unconstrained arm 0.591 (torus) vs 0.967 (recency), +0.376, se 0.009; alpha is a re-description of opposition (r +0.9995) | REG (H2) | `RECENCY_RESULTS.md`, `LOCALISATION.md` | alpha is a statistic, not a lever |
 | C5 | What a clock counts matters | recency at the training length (T = 1024), eval-only intervention on the trained signed model: a constant step on content tokens vs on all tokens, magnitude-matched, 0.783 vs 0.189 (+0.594, 8/8); the index arms (which count tokens) sit at 0.234 | citable; the matched pair was designed after a failed control (labelled post hoc in the file) | `RECENCY_GATE_ABLATION.md` | one task; an intervention, not trained arms |
-| C6 | Where a map is needed, path integration beats the index at matched length | torus +0.243 (8/8, converged recipe); Match-Query 0.730 vs 0.154 (n = 5); Dyck at matched depth +0.353 / +0.130 / +0.045 / +0.024 at 1-4 layers; navigation in words 0.969 vs 0.505; from pixel observations 0.995 vs 0.701 (action-driven step; REG, partly pilot-informed); against LSTM / GRU (matched and 4x parameters) 0.9998 vs 0.57-0.65 on held-out maps (REG; the RNNs memorise the training map); on Dyck the accumulated distance tracks stack depth (r 0.755) not token distance (0.278) | REG / citable (Match-Query not pre-reg., n = 5; the depth probe POST HOC) | `PAPER2X2_RESULTS.md`, `MATCH_QUERY_SCALE.md`, `DYCK_MDEPTH_RESULTS.md`, `TEXTWORLD_RESULTS.md`, `IMAGE_TORUS_RESULTS.md`, `RNN_TORUS_RESULTS.md`, `CROSS_RESULTS.md` | LSTM / GRU and deeper RoPE done (RNN_TORUS, FACTORIAL); Mamba-like and GPS-PE open |
+| C6 | Where a map is needed, path integration beats the index at matched length | torus +0.243 (8/8, converged recipe); Match-Query 0.730 vs 0.154 (n = 5); Dyck at matched depth +0.353 / +0.130 / +0.045 / +0.024 at 1-4 layers; navigation in words 0.969 vs 0.505; from pixel observations 0.995 vs 0.701 (action-driven step; REG, partly pilot-informed); against LSTM / GRU (matched and 4x parameters) 0.9998 vs 0.57-0.65 on held-out maps (REG; the RNNs memorise the training map); first-person 3D (Memory Maze, heading given, blind loop-closing re-entries, 1 layer) 0.331 vs 0.118 and above a many-maze GRU 0.156 (REG, loss pilot-informed; four index layers 0.389 not separated); on Dyck the accumulated distance tracks stack depth (r 0.755) not token distance (0.278) | REG / citable (Match-Query not pre-reg., n = 5; the depth probe POST HOC) | `PAPER2X2_RESULTS.md`, `MATCH_QUERY_SCALE.md`, `DYCK_MDEPTH_RESULTS.md`, `TEXTWORLD_RESULTS.md`, `IMAGE_TORUS_RESULTS.md`, `RNN_TORUS_RESULTS.md`, `MEMORY_MAZE_RESULTS.md`, `CROSS_RESULTS.md` | LSTM / GRU and deeper RoPE done (RNN_TORUS, FACTORIAL); GPS-PE and a many-maze GRU done on Memory Maze only; Mamba-like open |
 | C7 | A within-task dial: as steps stop cancelling, the index stops needing depth | biased 1D walk: index needs 3 layers at p_plus 0.5 / 0.75 / 0.9 (0.9 knife-edge, gap 0.0115 vs 0.01), 1 layer at p_plus 1.0 (a clock); path 1 layer solves every cell | REG secondary; the registered primary fell in NO branch | `CANCEL_RESULTS.md` | the only within-task dial; a clean registered readout would strengthen it |
 | C8 | On clock-like natural data the learned phase is a clock and buys nothing over the index | TinyStories: alpha 1.00, R^2(phase ~ token index) 0.999 (3/3); MapWM = RoPE (1.5053 vs 1.5050). Code (9 layers, 2048): alpha 0.99-1.02, R^2 0.994-0.998, 75-92% of each byte's step shared; path integration costs +0.0056 bpc at matched length (p 0.024, n = 3). Bach: alpha ~1.00. With the clock removed, TinyStories' content part shows no cancelling structure (real order = shuffled); code's shows a weak one (real order slower on 5/6) | POST HOC / PILOT; code n = 3 | `docs/audits/2026-10-12/alpha_language_out.txt`, `TINYSTORIES_PILOT_RESULTS.md`, `docs/audits/2026-10-05/code_step_table_out.txt`, `CODE_FULLVAL_RESULTS.md` | **confound: clock tasks use 6-9-layer models, map tasks 1 layer**; n = 3 |
 | C9 | Map and clock can coexist in separate channels given rank | text world: 4/8 seeds run a per-step clock in 31-38 of 64 channels alongside the map, solving as well | REG secondary | `TEXTWORLD_RESULTS.md`; theory `THEORY_KERNEL.md` Thm 1 (scoped) | -- |
@@ -245,6 +245,26 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
   construction); "the RNN dead-reckons into its stored map" (post hoc probe: predictions match the training map no more
   than an unrelated map).
 
+## Update 2026-10-28: C6 on a first-person 3D benchmark (`MEMORY_MAZE_RESULTS.md`, registered + Amendments 1-2): PATH WINS
+- Memory Maze 15x15 (new maze per episode, egocentric actions, momentum, collisions), heading GIVEN, frames blinded 16/16,
+  frozen autoencoder frame embedding, R1 retrieval at blind non-local (gap >= 128) re-entries on the official eval split,
+  1 layer, 600 epochs, n = 8, seeds 3600-3607. PRIMARY PATH WINS (loss pilot-informed, Amendment 1): path phase on a learned
+  step map of (prev action, action) x heading 0.331 vs index RoPE 1 layer 0.118, d +0.213, p 0.00016 (complete
+  separation); held split +0.249. Floor 0.047.
+- S1 vs index RoPE 4 layers (2.95x parameters) UNMEASURED: 0.331 vs 0.389, Holm p 0.071, R4 8/8 still descending (above
+  P_E in the pilot too). S2 above a matched GRU trained across mazes (0.156). S3 given odometry 0.539 above P_E; S4 given
+  odometry as a phase above the same position as an absolute code (GPS 0.297). Every secondary budget-scoped.
+- Descriptive: frozen class-E phase at R1's exact trainable parameters 0.242 (+0.124); raw actions without heading 0.129
+  (-0.202 vs P_E); context destruction drops every arm. Given odometry reaches 0.539 against an integrator ceiling of 0.93:
+  the one-layer readout limits every arm. Offline probe uninformative (a memory-free pose-only predictor scores 36.75 on
+  Objects; every arm 36.8-37.2; analysis). P_E bimodal (5 seeds 0.27-0.28, 3 at 0.37-0.46; analysis).
+- Allowed: "on a first-person 3D benchmark, one attention layer whose phase integrates given actions and heading retrieves
+  the view at blind loop-closing re-entries far more often than one index layer with the same inputs, and above a GRU
+  trained across mazes". Not: "navigates from pixels" (heading given; frames enter content only); "one path layer ~ three
+  attention layers" on this task (S1 unmeasured, R4 higher on average and still descending); anything from the offline
+  probe; accuracy of integration (the one-layer readout caps given odometry at 0.54); the primary as a blind test (loss
+  pilot-informed).
+
 ## Do not claim (withdrawn or failed)
 - Clock vs map predicts when PoPE's encoding helps: both within-task tests failed (`T2_RESULTS.md`; CLAUDE.md withdrawn).
 - Recency needs a clock (a signed rewind solves it).
@@ -266,7 +286,8 @@ a ring result; the sign cost replicates (1/8 vs 8/8).
 2. **The cross-task confound in C8.** Map tasks are 1-layer, clock tasks 6-9 layers. A same-size comparison: MapWM vs RoPE
    at the TinyStories size on a map task (or 1-layer on a clock task), or a registered within-task dial (C7 with a clean
    readout). GPU, ~1-3 h.
-3. **Baselines for C6**: LSTM / GRU done (RNN_TORUS, PATH WINS); open: GPS-PE (index attention given cumsum of the moves),
+3. **Baselines for C6**: LSTM / GRU done (RNN_TORUS, PATH WINS); GPS-PE and a GRU trained across mazes done on Memory
+   Maze (`MEMORY_MAZE_RESULTS.md`; S4 given position as a phase above GPS, S2 path above GRU); open on the torus: GPS-PE,
    a gated SSM, many-map RNN training.
 4. Statistical status of C8 (n = 3, pilot): either run as a registered small batch or present as descriptive.
 

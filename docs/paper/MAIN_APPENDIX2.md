@@ -102,6 +102,7 @@ Pilots ran on seeds outside the batch except where noted.
 | TW_NORMSTEP | 8 | torus in words | MapWM, NormStep, DirOnly (direction words only step) | 10-17 | 900 | standard | yes | yes |
 | LEAK | 8 | new-object torus | MapWM, ActOnly, NormStep | 0-7 | 900 | standard | yes | yes |
 | IMAGE_TORUS (K4) | 8 | torus T = 1024, class images per observation | image ActOnly, MapWM (gain 30.37 and 1), RoPE; token MapWM, ActOnly | 3100-3107 | 900 | fast-attn | yes (twice: Amendments 1, 3) | no (analysis re-run from the run dirs, identical) |
+| MEMORY_MAZE (K5) | 8 | Memory Maze 15x15, first-person, frames blinded 16/16, heading given | path (learned step map), path (given odometry), path (raw actions), index RoPE 1 and 4 layers, GRU, index + absolute position code; path with the class-E map frozen (descriptive) | 3600-3607 | 600 | SDPA, fp32 | yes (Amendment 2; loss pilot-informed, Amendment 1) | no (analysis re-run from the run results, identical; every number re-derived from them) |
 | GAIN_PHASE (K) | -- | new-object torus | step x score 2x2 | 8-15 | 900 | standard | yes | no |
 | RING_BUDGET (H) | -- | ring p_plus 0.5 | \|.\| at 300 and 900 epochs | 40-47 | 300 / 900 | standard | yes | yes |
 | TORUS_START (H) | -- | torus | start arms | 1200-1207 | 900 | fast-attn | yes | yes |
@@ -2345,6 +2346,104 @@ Cost of pixels for the path model: image ActOnly - token ActOnly -0.0052 (perm p
 Scope: class images on a discrete grid, one top-down image per cell visit, allocentric moves; 1 layer, T = 1024, one
 recipe; block A only (NormStep on images, deeper index models and token RoPE were registered as optional and not run).
 
+### K5. First-person 3D (MEMORY_MAZE; registered, `MEMORY_MAZE_RESULTS.md`, `MEMORY_MAZE_PREREG.md` + Amendments 1-2)
+
+**Task.** Memory Maze 15x15 (Pasukonis et al. 2022), official offline data: 1000-step episodes, a new maze every episode,
+64 x 64 first-person frames, six egocentric actions (noop, forward, left, right, forward-left, forward-right) under a
+scripted waypoint policy with momentum and collisions. Training on train-part0 episodes 0-1599; primary scoring on the
+official eval split (1000 episodes, a separate generation run with more collisions); held scoring on train-part0
+1600-2899. Sequence [f_0, s_1, f_1, ..., s_1000, f_1000]; f_t a frozen convolutional autoencoder embedding (256-d,
+trained on episodes 0-299 only; it identifies a frame's pose less well than raw pixels), s_t the step token of a_t. Frames
+are blinded in alternating runs of 16 blind / 16 sighted steps (a learned blank token); the scored steps are the first
+sighted step after a full blind run whose pose bin (cell x 8 headings) differs from the last sighted frame's and was
+sighted before; primary stratum non-local (earlier visit >= 128 steps back, not a backtrack): 5,132 eval and 6,900 held
+re-entries. Readout R1: the frame whose key is nearest the query at s_t has the pose bin of t (R2: f_t beats every
+frame of another pose bin). Loss InfoNCE over the episode's 1001 frames, on sighted plus post-blind steps.
+
+**Arms** (1 layer, 2 heads, d 128 unless stated; frames enter content only, only step tokens step a path phase):
+P_E, path phase from a learned rank-4 step map of one-hot (a_{t-1}, a_t) x [dir_{t-1}, dir_t] (heading given);
+P_odo, path phase from the true displacement (given odometry); P_raw, path phase from one-hot a_t (no heading); R1 / R4,
+index RoPE at 1 / 4 layers with P_E's tokens; GRU, one layer, hidden 184, same tokens; GPS, index RoPE plus an additive
+sinusoidal code of the given position pos_t - pos_0; P_E_frozen (descriptive), P_E with the least-squares class-E map
+(fitted on episodes 0-299) installed and frozen, trainable parameters exactly R1's. AdamW lr 3e-4, wd 0.05, 2% warmup +
+cosine, batch 16 episodes, 600 epochs, dropout 0, fp32 (TF32 off).
+
+**Disclosure.** The gate passed at its third version (v1 STOP: the view at a re-entry is predictable from the last two
+frames; v2 STOP at 32/32 blinding: too few returns, class E just under its threshold; v3 PASS at 16/16 on fresh
+episodes, the cell chosen post hoc from v2's grid). The loss as first registered (sighted steps only) left every learned
+or index arm near the floor on pilot seeds; the amended loss and the 600-epoch budget were chosen on pilots (seeds
+3690-3694, workstation, never pooled), so the primary confirms a pilot finding on fresh seeds and untouched splits. Three
+registered predictions (R4 a little above R1; P_E near the class-E integrator 0.66; P_odo near 0.93) were contradicted by
+the pilots before launch, the registration unchanged.
+
+| contrast (eval split, R1, non-local; n = 8 per arm) | label | d | p |
+|---|---|---|---|
+| PRIMARY P_E - R1 | PATH WINS (loss pilot-informed) | +0.213 (MDE 0.093) | perm 0.00016 |
+| HELD P_E - R1 (descriptive) | PATH WINS | +0.249 | perm 0.00016 |
+| S1 P_E - R4 | UNMEASURED | -0.059 (MDE 0.097) | Holm 0.071 |
+| S2 P_E - GRU | P_E ABOVE GRU | +0.175 | Holm 0.00062 |
+| S3 P_odo - P_E | P_odo ABOVE P_E | +0.208 | Holm 0.00062 |
+| S4 P_odo - GPS | P_odo ABOVE GPS | +0.241 | Holm 0.00062 |
+| P_E_frozen - R1 (descriptive) | -- | +0.124 | perm 0.00016 |
+| P_raw - P_E (descriptive) | -- | -0.202 | perm 0.00016 |
+
+**Per arm** (mean, sd over seeds; floor on both splits 0.047; DESCENDING = training loss falls > 3% across 60-85% of
+training):
+
+| arm | params | eval R1 | held R1 | eval R2 | held R2 | frames swapped | steps shuffled | DESCENDING |
+|---|---|---|---|---|---|---|---|---|
+| P_odo | 304,712 | 0.539 (0.023) | 0.546 (0.024) | 0.461 | 0.471 | 0.072 | 0.007 | 5/8 |
+| R4 | 898,944 | 0.389 (0.027) | 0.417 (0.023) | 0.346 | 0.376 | 0.057 | 0.014 | 8/8 |
+| P_E | 305,120 | 0.331 (0.080) | 0.382 (0.096) | 0.205 | 0.242 | 0.028 | 0.008 | 1/8 |
+| GPS | 312,704 | 0.297 (0.005) | 0.327 (0.010) | 0.281 | 0.309 | 0.177 | 0.012 | 1/8 |
+| P_E_frozen | 304,128 trainable | 0.242 (0.019) | 0.274 (0.021) | 0.142 | 0.167 | 0.032 | 0.007 | 0/8 |
+| GRU | 302,864 | 0.156 (0.011) | 0.175 (0.013) | 0.131 | 0.147 | 0.040 | 0.009 | 8/8 |
+| P_raw | 304,472 | 0.129 (0.034) | 0.142 (0.035) | 0.081 | 0.093 | 0.034 | 0.020 | 0/8 |
+| R1 | 304,128 | 0.118 (0.009) | 0.133 (0.005) | 0.072 | 0.088 | 0.033 | 0.019 | 0/8 |
+
+Ceilings: the gate's odometry integrator retrieves 0.93 and its class-E integrator 0.66 on the eval split; given
+odometry, the one-layer model reaches 0.54.
+
+**Per seed** (eval R1, seeds 3600-3607):
+
+| arm | 3600 | 3601 | 3602 | 3603 | 3604 | 3605 | 3606 | 3607 |
+|---|---|---|---|---|---|---|---|---|
+| P_odo | 0.543 | 0.532 | 0.532 | 0.491 | 0.568 | 0.543 | 0.546 | 0.553 |
+| R4 | 0.407 | 0.383 | 0.383 | 0.406 | 0.340 | 0.428 | 0.370 | 0.399 |
+| P_E | 0.276 | 0.278 | 0.273 | 0.464 | 0.435 | 0.281 | 0.274 | 0.367 |
+| GPS | 0.303 | 0.305 | 0.292 | 0.298 | 0.301 | 0.293 | 0.290 | 0.299 |
+| P_E_frozen | 0.234 | 0.246 | 0.268 | 0.234 | 0.239 | 0.271 | 0.222 | 0.220 |
+| GRU | 0.163 | 0.158 | 0.146 | 0.164 | 0.139 | 0.172 | 0.150 | 0.154 |
+| P_raw | 0.152 | 0.124 | 0.138 | 0.141 | 0.048 | 0.159 | 0.139 | 0.130 |
+| R1 | 0.130 | 0.116 | 0.112 | 0.119 | 0.106 | 0.132 | 0.109 | 0.115 |
+
+P_E is bimodal (analysis): five seeds at 0.27-0.28 and three at 0.37-0.46, which end at a lower training loss (within
+the arm r(final loss, R1) -0.99). The low mode alone is above every R1 seed; it is below every R4 seed, and two high-mode
+seeds are above R4's best, so S1 turns on which mode a seed reaches.
+
+**Offline probe** (registered standard secondary; Pasukonis et al.'s protocol: frozen state at the frame token plus the
+given agent position and heading, 4 x 1024 MLP, scored on eval steps 501-1000; blinded stream; Walls accuracy %,
+Objects squared distance averaged over objects):
+
+| | P_odo | R4 | P_E | GPS | P_E_frozen | GRU | P_raw | R1 | constant | pose only (analysis) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Walls | 77.5 | 75.2 | 78.0 | 76.0 | 77.9 | 78.2 | 77.8 | 77.1 | 78.2 | -- |
+| Objects | 36.9 | 37.0 | 36.9 | 36.9 | 36.9 | 36.9 | 36.9 | 36.9 | 65.1 | 36.75 |
+
+The probe does not discriminate between these models. Walls is at or below the constant for every arm. Objects is the
+same for every arm, R1 included, and a memory-free predictor that rotates the objects' training-mean world positions
+into the agent's frame using the given pose scores 36.75 (analysis; `targets_vec` is an exact rotation of the
+world-frame offset, so its error is the spread of object positions whatever the pose). Published 15x15 rows (Walls /
+Objects): constant 78.3 / 64.8, VAE without memory 78.7 / 56.2, RSSM-TBTT 80.5 / 33.8, TSSM-XL 79.8 / 35.1, S4WM 80.2 /
+34.8, S5WM 81.8 / 25.3 (Pasukonis et al. 2022; Deng et al. 2023, arXiv:2307.02064). They are not comparable: those probes
+are trained alongside the model on 30M steps (ours 10k steps on frozen states of 1,600 episodes), and their memory-free
+VAE row sits far above the pose-only level.
+
+Scope: heading given (a compass), so "integrates given self-motion", not "navigates from pixels"; one layer except R4;
+one 600-epoch budget with R4 and the GRU still descending; 1,600 training episodes of the dataset's 29k; a frozen frame
+encoder; the one-layer readout caps every arm (given odometry 0.54 against the integrator's 0.93); rule 14 met only
+weakly (the frozen exact class-E map scores below scratch P_E); no function-identical twin floor (seed sd only).
+
 ---
 
 ## L. PoPE's score
@@ -2557,6 +2656,8 @@ so that every quoted number has a committed generator.
 | `language/usage_tick.py`, `crossover_usage.py`, `tw_alpha_drift.py` | used-channel rho; growth exponent | Sec. 9; J4 | -- |
 | `docs/audits/2026-10-20/causal_whatwhere_T1024.py`; `whatwhere/whatwhere_stats.py` (new) | what/where at T = 1024; its sign-flip p, SS(P)/SS(S) and Spearman, and the text-world Spearman p | Sec. 8; Sec. 9; J2; K1 | rebuilt forward exact on 32 checkpoints; intact accuracy within 0.0007 |
 | `docs/audits/2026-10-27/rnn_torus/trainmap_probe.py` (outside `expansion/scripts/`; new) | RNN predictions on the held-out map against the training map and an unrelated map | F8 | its accuracy on the first 10 of each seed's 100 evaluation walks within 0.007 of the registered evaluation |
+| `docs/audits/2026-10-28/memory_maze/pose_only_probe.py` (outside `expansion/scripts/`; new) | a memory-free, pose-only predictor of the Memory Maze Objects probe target, scored like the probe | K5 | reproduces the batch's constant baseline (65.09); the world-position reconstruction is constant within episodes (4e-7) |
+| `docs/audits/2026-10-28/memory_maze/verify_numbers.py` (outside `expansion/scripts/`; new) | every Memory Maze number re-derived from the 64 run results with its own permutation test and window slope | K5 | equals `MEMORY_MAZE_ANALYSIS.txt` to the printed precision |
 
 *Post hoc choices* (rule 7; from the audit's Sec. 5): the best-head rule of the kernel probes and the per-stratum head
 rule that replaces it at T = 1024; 40 of the 100 registered walks at T = 1024 (L2); the r_beta < 0.5 cut, the 10x criteria

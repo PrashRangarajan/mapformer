@@ -1,0 +1,5 @@
+convention check: within-episode sd of reconstructed world positions (50 train episodes) 3.74e-07 (0 = exact)
+Objects (squared distance averaged over objects), eval steps 501-1000, 1000 episodes:
+  constant baseline (training mean of targets_vec)            65.09
+  pose only, no memory (training-mean world position, rotated) 36.75
+  registered probe, every arm (MEMORY_MAZE_ANALYSIS.txt)       36.86-37.02 blinded, 36.78-37.19 unblinded

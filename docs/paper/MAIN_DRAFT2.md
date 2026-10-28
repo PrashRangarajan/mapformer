@@ -282,7 +282,7 @@ and a one-layer LSTM with four times as many at two learning rates, score 0.57-0
 on fresh walks over it) and fall below one index layer (0.724) and below retrace on the new one, even on short-gap
 revisits (0.62-0.70 against 0.910); the larger LSTM fits best and transfers worst. Under this protocol the recurrent
 networks store the map in their weights, where the path layer stores it in context; recurrent networks trained across
-many maps are not tested.
+many maps are tested only on Memory Maze (Sec. 8), where a GRU stays below one path layer.
 
 ![Figure 3](figs/fig_exchange_rate.png)
 
@@ -627,6 +627,18 @@ unmeasured (0.668 against 0.701); after a pilot stop rule fired the path arm was
 | path | tokens | actions | 1.000 | 8/8 | 1.000 / 0.997 |
 | floors | | | retrace 0.843, blank 0.508; ceiling 0.993 | | retrace 0.509 / 0.508 |
 
+**First-person 3D (registered; App. K5).** On Memory Maze 15x15 (Pasukonis et al. 2022) every episode is a new maze seen
+through 64 x 64 first-person frames, with egocentric turn-and-forward actions, momentum and collisions. Frames are withheld
+in alternating runs of 16 steps, and the question is asked at loop-closing re-entries: the first frame seen after a blind
+run, at a place and heading last seen at least 128 steps earlier, where a one-layer model must retrieve an earlier frame
+of that pose (map-free floor 0.05). When the given actions and heading set the step (a compass enters the step input;
+frames enter content only), one path layer retrieves at 0.33 against 0.12 for one index layer with the same inputs (d
++0.21, p 0.00016, n = 8), and above a GRU of matched size trained across mazes (0.16); raw egocentric actions without
+heading give 0.13. The training loss was chosen on pilot seeds, so this confirms a pilot finding rather than testing
+blind. Four index layers (2.95x the parameters) are not separated from one path layer (0.39, Holm p 0.07) and are still
+descending, so Sec. 6's exchange rate is not shown here. The one-layer readout limits every arm: given odometry reaches
+0.54, against 0.93 for an odometry integrator retrieving directly.
+
 ## 9. Discussion and related work
 
 **What the two failure axes share.** For per-head rank 2 and for |.| steps a solution in the class exists, training keeps
@@ -685,9 +697,10 @@ with one layer; we give the rate at matched depth, the mechanism trained models 
 ## 10. Limitations
 
 - The models are small (1-4 layers, 2 heads, d_model 128-256) and the tasks synthetic; natural text appears only as a
-  three-seed pilot. Actions are allocentric translations. The LSTM and GRU baselines are trained on one map per run, as
-  every torus model here; recurrent networks trained across many maps, gated SSMs and index attention given the integrated
-  position as an absolute code are not tested.
+  three-seed pilot. Actions are allocentric translations, except on Memory Maze, where egocentric actions are integrated
+  with the heading given. The LSTM and GRU baselines are trained on one map per run, as every torus model here; on the
+  torus, recurrent networks trained across many maps, gated SSMs and index attention given the integrated position as an
+  absolute code are not tested (Memory Maze has a GRU trained across mazes and such a code).
 - "Not found" is relative to the stated budgets (300-1800 epochs), and many failing cells have runs still descending.
   Learning rates for the |.| contrast were swept on the ring (four rates) and the torus (three, decay coupled to the rate,
   no decay-matched control; 5 of 8 |.| runs at its best rate still descending). At 2 layers and d_model 256 the accuracy
@@ -712,6 +725,11 @@ with one layer; we give the rate at matched depth, the mechanism trained models 
   recipe. Its registered primary (default MapWM against index RoPE) was unmeasured; the reported path arm replaced it after
   a pilot stop rule, and the cost of an image-driven step was predicted from pilots and confirmed on fresh seeds, not blind;
   the gain effect is a total effect at two values.
+- The first-person 3D test (Memory Maze) gives the heading, so it shows integration of given self-motion, not navigation
+  from pixels. It trains on 1,600 of the dataset's 29k training episodes with a frozen frame encoder, one layer and 600
+  epochs, with a loss chosen on pilots. Its one-layer readout caps even given odometry at 0.54 (integrator 0.93); four
+  index layers are unmeasured against one path layer and still descending; the standard offline probe does not separate
+  our models (the pose it is given explains its object score).
 - The text world is scripted (58 words, context-free direction words), and its walks are short enough that retrace scores
   0.934; the map evidence there is the revisits retrace cannot reach and the step table.
 - The theory of Sec. 4 was developed after the registered batches, except the clock-route batch, registered to test its
@@ -764,6 +782,8 @@ the notes file).
   ICLR 2026; arXiv:2511.17388.
 - Orvieto, A., Smith, S. L., Gu, A., Fernando, A., Gulcehre, C., Pascanu, R. and De, S. Resurrecting recurrent neural
   networks for long sequences (LRU). ICML 2023*; arXiv:2303.06349.
+- Pasukonis, J., Lillicrap, T. and Hafner, D. Evaluating long-term memory in 3D mazes. arXiv:2210.13383, 2022 (title and
+  authors from the arXiv PDF, 2026-10-28).
 - Rambaud, V., Mascarenhas, S. and Lakretz, Y. MapFormer: self-supervised learning of cognitive maps with input-dependent
   positional embeddings. arXiv:2511.19279 (v4, 10 May 2026).
 - Sarrof, Y., Veitsman, Y. and Hahn, M. The expressive capacity of state space models: a formal language perspective.
