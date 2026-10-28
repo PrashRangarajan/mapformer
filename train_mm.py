@@ -5,12 +5,17 @@
 Run dir: ckpt.pt (model, optimiser, scheduler, epoch, history; replaced atomically every epoch), log.txt,
 results.json (written last, atomically) and DONE (marker after results.json). A run with DONE is skipped.
 Randomness: data order and the training blind-phase draws come from numpy generators seeded by (seed, epoch, batch),
-so a resumed run sees the same data as an uninterrupted one; dropout is 0 (no RNG in the forward pass).
+so a resumed run sees the same data as an uninterrupted one; dropout is 0 (no RNG in the forward pass). On GPU the
+fp32 SDPA backward is not bitwise deterministic, so a resumed run is a statistical, not bitwise, continuation (the
+CPU resume test in test_mm is exact). TF32 is OFF for matmuls and cuDNN (the GRU arm is fp32 too; Amendment 2).
+Provenance: md5 of every code file at START (config.md5_start) and END (md5); a mismatch is recorded (md5_changed).
 
 Training: train-part0 indices 0-1599 (mm_data.TRAIN_RANGE), batch 16 episodes, blind schedule B 16 / S 16 with a random
-phase per sample, InfoNCE at every sighted step t >= 1: the query at s_t against the keys of all 1001 frames of the
-episode, positive f_t, frames u != t in the same pose bin as t removed from the negatives. AdamW, lr 3e-4, weight decay
-0.05 on all parameters, linear warmup over 2% of steps then cosine to 0, grad-norm clip 1.0, fp32.
+phase per sample, InfoNCE: the query at s_t against the keys of all 1001 frames of the episode, positive f_t, frames
+u != t in the same pose bin as t removed from the negatives, averaged over sighted steps PLUS averaged over post-blind
+steps (`--loss-steps both`, the default since Amendment 1, pilot-informed). 600 epochs (Amendment 1). AdamW, lr 3e-4,
+weight decay 0.05 on all parameters, linear warmup over 2% of steps then cosine to 0, grad-norm clip 1.0, fp32
+(step features stored fp32 since Amendment 2). Arm P_E_frozen installs the fitted E map frozen (Amendment 2).
 Scoring: the gate's schedule (mm_data.sighted_mask, phase from the archive index) on the official eval split
 (primary) and on train-part0 1600-2899 (held-out secondary); readouts R1 / R2 on the gate's scored blind re-entries.
 """
@@ -36,6 +41,15 @@ CODE_FILES = ("train_mm.py", "model_mm.py", "mm_data.py", "mm_gate.py", "mm_gate
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
+def _fp32_precision(op):
+    """cuDNN fp32 precision for op from the C++ state (building nn.GRU imports torch.backends.cudnn.rnn, which shadows
+    the Python attribute torch.backends.cudnn.rnn but not the setting itself)."""
+    try:
+        return torch._C._get_fp32_precision_getter("cuda", op)
+    except Exception:
+        return None
+
+
 def md5_file(p):
     h = hashlib.md5()
     with open(p, "rb") as f:
@@ -59,9 +73,9 @@ class Split:
         self.emb = torch.from_numpy(np.array(S["emb"][lo:hi])).to(device)                       # fp16
         e = np.stack([D.e_feature(a, d_) for a, d_ in zip(act, dr)])
         self.feats = {
-            "e": torch.from_numpy(e).to(device=device, dtype=torch.float16),
+            "e": torch.from_numpy(e).to(device=device, dtype=torch.float32),
             "odo": torch.from_numpy(np.stack([D.odo_feature(p) for p in pos])).to(device),
-            "raw": torch.from_numpy(np.stack([D.raw_feature(a) for a in act])).to(device=device, dtype=torch.float16),
+            "raw": torch.from_numpy(np.stack([D.raw_feature(a) for a in act])).to(device=device, dtype=torch.float32),
         }
         pb = [D.pose_bins(p, d_) for p, d_ in zip(pos, dr)]
         self.pose_np = np.stack([x[0] for x in pb]); self.cid_np = np.stack([x[1] for x in pb])
@@ -89,8 +103,8 @@ class Split:
 
 def info_nce(logits, pose, sighted, steps="sighted"):
     """logits (B, 1000, 1001); pose (B, 1001); sighted (B, 1001). CE with same-pose negatives masked, averaged over:
-    steps="sighted": every sighted t >= 1 (default);
-    steps="both":    mean over sighted steps + mean over post-blind steps (first sighted step after a blind run), so
+    steps="sighted": every sighted t >= 1 (the loss as first registered; failed in pilot wave 1);
+    steps="both":    (the registered default since Amendment 1) mean over sighted steps + mean over post-blind steps (first sighted step after a blind run), so
                      the steps that need memory carry as much weight as all the others together."""
     B, Tq, Tk = logits.shape
     pt = pose[:, 1:]
@@ -161,7 +175,7 @@ class ProbeMLP(nn.Module):
         super().__init__()
         layers, d = [], din
         for _ in range(depth):
-            layers += [nn.Linear(d, width), nn.LayerNorm(width), nn.ELU()]
+            layers += [nn.Linear(d, width), nn.LayerNorm(width, eps=1e-3), nn.ELU()]   # Table E.3 LayerNorm eps
             d = width
         layers.append(nn.Linear(d, dout))
         self.net = nn.Sequential(*layers)
@@ -172,14 +186,15 @@ class ProbeMLP(nn.Module):
 
 @torch.no_grad()
 def states(model, sp, bs, blinded):
-    """Final hidden (after the last LayerNorm) at frame tokens f_0..f_1000: (n, 1001, d), fp16 on device."""
+    """Probe states at frame tokens f_0..f_1000 (model.probe_states: final hidden after the last LayerNorm for transformer
+    arms, the 184-d GRU hidden for the GRU): (n, 1001, d), fp16 on device."""
     model.eval()
     sm = sp.gate_masks() if blinded else np.ones((sp.n, 1001), bool)
     hs = []
     for i0 in range(0, sp.n, bs):
         idx = np.arange(i0, min(i0 + bs, sp.n))
         emb, sighted, feats, _ = sp.batch(idx, sm[idx])
-        hs.append(model.hidden(emb, sighted, feats)[:, 0::2].half())
+        hs.append(model.probe_states(emb, sighted, feats)[:, 0::2].half())
     return torch.cat(hs)
 
 
@@ -191,17 +206,18 @@ def probe_inputs(H, sp, ii, tt):
 
 def run_probe(Htr, sp_tr, Hev, sp_ev, steps, seed, log):
     """Walls (maze_layout, BCE, accuracy over tiles) and Objects (targets_vec, MSE) probes on frozen states plus
-    agent_pos / agent_dir; trained on training-split states (all t), scored on eval steps 500-1000."""
+    agent_pos / agent_dir; trained on training-split states (all t), scored on eval steps 501-1000 (the second half,
+500 steps). Table E.3 epsilons (Adam 1e-5, LayerNorm 1e-3) since Amendment 2."""
     dev = Htr.device
     torch.manual_seed(seed)
     g = np.random.default_rng(seed)
     din = Htr.shape[-1] + 4
     res = {}
-    ev_i = np.repeat(np.arange(sp_ev.n), 501); ev_t = np.tile(np.arange(500, 1001), sp_ev.n)
+    ev_i = np.repeat(np.arange(sp_ev.n), 500); ev_t = np.tile(np.arange(501, 1001), sp_ev.n)   # second half: 500 steps
     for target in ("walls", "objects"):
         dout = 225 if target == "walls" else 12
         net = ProbeMLP(din, dout).to(dev)
-        opt = torch.optim.AdamW(net.parameters(), lr=3e-4, weight_decay=0.0)
+        opt = torch.optim.AdamW(net.parameters(), lr=3e-4, weight_decay=0.0, eps=1e-5)   # Table E.3 Adam eps
         for s in range(steps):
             ii = g.integers(0, sp_tr.n, 1024); tt = g.integers(0, 1001, 1024)
             x = probe_inputs(Htr, sp_tr, ii, tt)
@@ -241,7 +257,7 @@ def constant_probe(sp_tr, sp_ev):
     y = sp_ev.layout.reshape(sp_ev.n, 225)
     walls = 100.0 * float(((lay_mean > 0.5).float() == y).float().mean())
     tv_mean = sp_tr.tvec.reshape(-1, 6, 2).mean(0)
-    ev = sp_ev.tvec[:, 500:1001]
+    ev = sp_ev.tvec[:, 501:1001]
     e2 = (ev - tv_mean) ** 2
     return dict(walls_acc=walls, objects_mse_sqdist=float(e2.sum(-1).mean()), objects_mse_coord=float(e2.mean()))
 
@@ -287,9 +303,18 @@ def main():
         print(s, flush=True); logf.write(s + "\n"); logf.flush()
 
     dev = torch.device(args.device)
+    torch.backends.cuda.matmul.allow_tf32 = False      # Amendment 2: fp32 everywhere, GRU (cuDNN) included
+    torch.backends.cudnn.allow_tf32 = False
+    for k in ("rnn", "conv"):                          # torch >= 2.9 per-op precision API: say 'ieee' explicitly
+        if hasattr(getattr(torch.backends.cudnn, k, None), "fp32_precision"):
+            getattr(torch.backends.cudnn, k).fp32_precision = "ieee"
+    md5_start = {f: md5_file(os.path.join(HERE, f)) for f in CODE_FILES}
     MM.USE_SDPA = True                     # fast attention; dropout 0, so no RNG difference (rule 19 note in prereg)
     torch.manual_seed(args.seed)
     model = M.build(args.arm).to(dev)
+    if args.arm == "P_E_frozen":
+        assert args.install in ("none", "frozen"), "P_E_frozen is the frozen install by definition"
+        args.install = "frozen"
     if args.install != "none":
         W = D.e_map_as_matrix(np.load(os.path.join(args.data, "e_map.npy")))
         model.install_e_map(W, frozen=(args.install == "frozen"), seed=args.seed)
@@ -314,7 +339,9 @@ def main():
         log(f"resumed at epoch {ep0}")
     cfg = dict(vars(args), n_params=M.n_params(model), n_trainable=M.n_params(model, True), n_train=tr.n,
                steps_per_epoch=nb, total_steps=total, warmup=warm, sdpa=True, dropout=0.0,
-               gru_hidden=getattr(model, "h", None))
+               gru_hidden=getattr(model, "h", None), md5_start=md5_start,
+               tf32=dict(matmul=torch.backends.cuda.matmul.allow_tf32, cudnn=torch.backends.cudnn.allow_tf32,
+                         rnn=_fp32_precision("rnn")))
     log(f"config {json.dumps(cfg)}")
     if dev.type == "cuda":
         torch.cuda.reset_peak_memory_stats(dev)
@@ -382,6 +409,9 @@ def main():
         res["probe_sec"] = time.time() - t0
 
     res["md5"] = {f: md5_file(os.path.join(HERE, f)) for f in CODE_FILES}
+    res["md5_changed"] = sorted(f for f in CODE_FILES if res["md5"][f] != md5_start[f])
+    if res["md5_changed"]:
+        log(f"WARNING: code changed during the run: {res['md5_changed']}")
     res["env"] = dict(torch=torch.__version__, python=platform.python_version(),
                       gpu=torch.cuda.get_device_name(0) if dev.type == "cuda" else "cpu")
     with open(os.path.join(args.out, "results.json.tmp"), "w") as f:

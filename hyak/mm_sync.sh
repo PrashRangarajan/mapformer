@@ -6,7 +6,7 @@
 set -euo pipefail
 : "${MM_REMOTE:?}" "${MM_PROJ:?}"
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-FILES="model.py lie_groups.py model_mm.py train_mm.py mm_data.py mm_gate.py mm_gate_v2.py mm_gate_v3.py mm_encoder.py test_mm.py mm_floors.py"
+FILES="model.py lie_groups.py model_mm.py train_mm.py mm_data.py mm_gate.py mm_gate_v2.py mm_gate_v3.py mm_encoder.py test_mm.py mm_floors.py analyze_mm.py stats_core.py"
 SLURM="hyak/mm_prep.slurm hyak/mm_runs.slurm hyak/mm_floors.slurm hyak/mm_batch_tasks.txt"
 ssh -o BatchMode=yes "$MM_REMOTE" "mkdir -p '$MM_PROJ/mapformer' '$MM_PROJ/logs' && : > '$MM_PROJ/mapformer/__init__.py'"
 (cd "$REPO" && rsync -a $FILES "$MM_REMOTE:$MM_PROJ/mapformer/" && rsync -a $SLURM "$MM_REMOTE:$MM_PROJ/")

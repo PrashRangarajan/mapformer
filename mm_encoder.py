@@ -224,6 +224,8 @@ def main():
     enc_range = (0, 1) if args.smoke else D.ENC_RANGE
     train_ae(tz, enc_range, args.out, args.device, 1 if args.smoke else args.epochs, args.batch, log)
     embed_split(tz, "train0", 0, 2 if args.smoke else 2900, args.out, args.device, log)
+    if not os.path.exists(ez) and not args.smoke:
+        raise SystemExit(f"missing {ez}: refusing to embed anything else as 'eval'")
     embed_split(ez if os.path.exists(ez) else tz, "eval", 0, 2 if args.smoke else 1000, args.out, args.device, log)
     emap = os.path.join(args.out, "e_map.npy")
     if not os.path.exists(emap):

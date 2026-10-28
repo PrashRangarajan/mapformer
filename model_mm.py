@@ -17,6 +17,10 @@ Arms (ARMS):
   R1/R4  index RoPE (canonical base 10000), 1 / 4 layers
   GPS    index RoPE + additive sinusoidal code of cumsum(d_t) (pos_t - pos_0), content also gets d_t
   GRU    one-layer GRU, hidden size chosen so its core matches one transformer layer's parameter count
+  P_E_frozen  (Amendment 2, descriptive) P_E with the least-squares E map installed frozen (W_in, W_out, omega fixed);
+              its trainable parameter count equals R1's exactly
+Probe states (`probe_states`): the final hidden after the last LayerNorm for transformer arms; the GRU's own hidden
+state (184-d) for the GRU arm (Amendment 2).
 """
 import math
 
@@ -29,7 +33,7 @@ from mapformer.model import PathIntegrator, WMTransformerLayer
 EMB = 256
 E_DIM = 168
 TAU = 0.1
-ARMS = ("P_E", "P_odo", "P_raw", "R1", "R4", "GPS", "GRU")
+ARMS = ("P_E", "P_odo", "P_raw", "R1", "R4", "GPS", "GRU", "P_E_frozen")   # P_E_frozen: Amendment 2, descriptive
 GPS_FREQS = 16
 
 
@@ -37,6 +41,7 @@ def arm_spec(arm):
     """(content feature keys, step feature key or None, kind, n_layers)."""
     return {
         "P_E": (("e",), "e", "path", 1),
+        "P_E_frozen": (("e",), "e", "path", 1),   # P_E with the fitted E map installed FROZEN (train_mm does it)
         "P_odo": (("e", "odo"), "odo", "path", 1),
         "P_raw": (("e",), "raw", "path", 1),
         "R1": (("e",), None, "index", 1),
@@ -140,6 +145,9 @@ class MMTransformer(nn.Module):
         out = self.hidden(emb, sighted, feats)
         return self.io.logits(out, emb), out
 
+    def probe_states(self, emb, sighted, feats):
+        return self.hidden(emb, sighted, feats)
+
     @torch.no_grad()
     def install_e_map(self, W, frozen, seed=0):
         """Rule 14: install the least-squares E map (W: (168, 2), e_feature @ W = displacement) as the step map.
@@ -189,6 +197,12 @@ class MMGRU(nn.Module):
         x = self.io.tokens(emb, sighted, content)
         y, _ = self.gru(x)
         return self.out_norm(self.proj(y))
+
+    def probe_states(self, emb, sighted, feats):
+        """The GRU's hidden state (184-d), the representation Pasukonis et al. probe for recurrent models."""
+        content = torch.cat([feats[k] for k in self.ckeys], dim=-1)
+        y, _ = self.gru(self.io.tokens(emb, sighted, content))
+        return y
 
     def forward(self, emb, sighted, feats):
         out = self.hidden(emb, sighted, feats)

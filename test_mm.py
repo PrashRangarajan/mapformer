@@ -90,8 +90,8 @@ def t_model_properties():
             d = m.step_delta(feats)
             chk(float(d[:, 0::2].abs().max()) == 0.0, f"{arm}: ActOnly (frame tokens have step 0)")
             c1, _ = m.path(d)
-            # frames do not enter the phase: recompute with other embeddings -> identical step
-            chk(torch.equal(m.step_delta(feats), d), f"{arm}: step independent of frames")
+            chk(m.w_in.in_features == M.FEAT_DIM[m.skey], f"{arm}: step map reads only the {m.skey} feature "
+                f"({m.w_in.in_features}-d; frames never enter it, structurally)")
     gm = M.build("GRU")
     core = sum(p.numel() for p in gm.gru.parameters()) + sum(p.numel() for p in gm.proj.parameters())
     tl = M.transformer_layer_params()
@@ -99,8 +99,13 @@ def t_model_properties():
 
 
 def t_gps_alignment():
-    m = M.build("GPS")
+    m = M.build("GPS").eval()
     emb, sighted, feats = fake_batch()
+    # probe the model: changing d_t at step t = 300 moves p_300.. and so changes tokens from s_300 (index 599) on only
+    f2 = {k: v.clone() for k, v in feats.items()}; f2["odo"][:, 300] += 0.5
+    h1, h2 = m.hidden(emb, sighted, feats), m.hidden(emb, sighted, f2)
+    chk(torch.allclose(h1[:, :599], h2[:, :599], atol=1e-6) and not torch.allclose(h1[:, 599], h2[:, 599]),
+        "GPS (model): a change of d_300 reaches s_300 (token 599) and nothing earlier")
     p = torch.cumsum(feats["odo"], 1)
     ptok = torch.repeat_interleave(p, 2, dim=1)[:, 1:]
     chk(torch.equal(ptok[:, 0], p[:, 0]) and torch.equal(ptok[:, 1], p[:, 1]) and torch.equal(ptok[:, 2], p[:, 1])
@@ -157,6 +162,12 @@ def t_install(zp):
     chk(torch.allclose(cum.double(), pred, atol=1e-3), "installed phase = u_k . dead-reckoned position (E map)")
     m2 = M.build("P_E"); m2.install_e_map(W, frozen=False)
     chk(m2.w_in.weight.requires_grad, "install trainable keeps the step map trainable")
+    m3 = M.build("P_E_frozen"); m3.install_e_map(W, frozen=True)
+    chk(M.n_params(m3, True) == M.n_params(M.build("R1")), f"P_E_frozen trainable {M.n_params(m3, True)} == R1 "
+        f"{M.n_params(M.build('R1'))}")
+    g = M.build("GRU")
+    emb, sighted, feats = fake_batch()
+    chk(g.probe_states(emb, sighted, feats).shape[-1] == g.h, f"GRU probe states are its {g.h}-d hidden")
 
 
 class _Stub:
