@@ -23,7 +23,9 @@ DESC = {"A": ("grid 32, T=128", "48 distinct, 1.95 prior, 512 occupied", 128),
 
 
 def cell(d, T, seeds=(0, 1, 2)):
-    import torch
+    # the .pt files were deleted on 2026-10-29; losses come from the
+    # runs/visits_test/CKPT_META.jsonl sidecar (mapformer/ckpt_sidecar.py, D2_MANIFEST.md)
+    from mapformer.ckpt_sidecar import load_ckpt_meta
     E, F, rows = [], [], []
     for s in seeds:
         jv, jr = f"{d}/s{s}/Vanilla_oracle.json", f"{d}/s{s}/RoPE_oracle.json"
@@ -33,8 +35,8 @@ def cell(d, T, seeds=(0, 1, 2)):
         av, ar = json.load(open(jv)), json.load(open(jr))
         if k not in av or k not in ar:
             continue
-        lv = torch.load(jv[:-5] + ".pt", map_location="cpu")["losses"]
-        lr = torch.load(jr[:-5] + ".pt", map_location="cpu")["losses"]
+        lv = load_ckpt_meta(jv[:-5] + ".pt")["losses"]
+        lr = load_ckpt_meta(jr[:-5] + ".pt")["losses"]
         sl = lambda X: (X[int(.9*len(X)):][-1] - X[int(.9*len(X)):][0]) / max(1, len(X[int(.9*len(X)):]) - 1)
         e = av[k]["nb_acc"] - ar[k]["nb_acc"]
         E.append(e); F.append(abs(sl(lv)) < FLAT and abs(sl(lr)) < FLAT)

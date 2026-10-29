@@ -42,11 +42,13 @@ CONVERGED_LOSS = 0.4       # legacy threshold; ALWAYS report sensitivity, never 
 
 def _load(runs_dir, length):
     """-> {(variant, cell, seed): dict(acc, loss, slope)}. Cell = the grid/config dir."""
-    import torch
+    # a .pt deleted in the 2026-10-29 cleanup is read from its runs/<dir>/CKPT_META.jsonl
+    # sidecar (mapformer/ckpt_sidecar.py, docs/cleanup/D2_MANIFEST.md)
+    from mapformer.ckpt_sidecar import has_ckpt, load_ckpt_meta
     out = {}
     for js in glob.glob(os.path.join(runs_dir, "**", "*.json"), recursive=True):
         pt = js[:-5] + ".pt"
-        if not os.path.exists(pt):
+        if not has_ckpt(pt):
             continue
         base = os.path.basename(js)[:-5]
         parts = js.split(os.sep)
@@ -58,7 +60,7 @@ def _load(runs_dir, length):
             r = json.load(open(js))
             if str(length) not in r:
                 continue
-            L = torch.load(pt, map_location="cpu").get("losses") or []
+            L = load_ckpt_meta(pt).get("losses") or []
             if not L:
                 continue
             tail = L[int(0.9 * len(L)):]

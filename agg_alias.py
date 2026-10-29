@@ -35,12 +35,14 @@ MARGINAL = {16: 0.077, 64: 0.031, 256: 0.013}
 def load(d, variant):
     j = os.path.join(d, f"{variant}_oracle.json")
     p = j[:-5] + ".pt"
-    if not (os.path.exists(j) and os.path.exists(p)):
+    # the .pt files were deleted on 2026-10-29; their losses are read from the
+    # runs/<dir>/CKPT_META.jsonl sidecar (mapformer/ckpt_sidecar.py, D2_MANIFEST.md)
+    from mapformer.ckpt_sidecar import has_ckpt, load_ckpt_meta
+    if not (os.path.exists(j) and has_ckpt(p)):
         return None
     try:
-        import torch
         r = json.load(open(j))
-        L = torch.load(p, map_location="cpu").get("losses") or []
+        L = load_ckpt_meta(p).get("losses") or []
         if not L or "512" not in r:
             return None
         tail = L[int(0.9 * len(L)):]

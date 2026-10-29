@@ -28,11 +28,13 @@ def _final_loss(runs_dir, seed, variant, enc):
     """Final training loss from the arm's .pt (torch saves `losses`); None if
     absent. Imported lazily so aggregation works even without torch present."""
     pt = os.path.join(runs_dir, f"s{seed}", f"{variant}_{enc}.pt")
-    if not os.path.exists(pt):
+    # the MiniWorld .pt files were deleted on 2026-10-29; losses come from the
+    # runs/<dir>/CKPT_META.jsonl sidecar (mapformer/ckpt_sidecar.py, D2_MANIFEST.md)
+    from mapformer.ckpt_sidecar import has_ckpt, load_ckpt_meta
+    if not has_ckpt(pt):
         return None
     try:
-        import torch
-        d = torch.load(pt, map_location="cpu")
+        d = load_ckpt_meta(pt)
         ls = d.get("losses")
         return float(ls[-1]) if ls else None
     except Exception as e:

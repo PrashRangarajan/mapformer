@@ -1,0 +1,27 @@
+== 1. rule 2: accuracy (nb_acc, T=512) vs final training loss, MiniWorld
+  mw_grid_sweep alone: n=51 r=-0.9968 acc = 1.033 -0.549*loss, resid sd 0.0191
+  6-run additions reproducing r -0.996, intercept 1.039, slope -0.555, sd 0.021: 3
+    + miniworld_fresh/*/PoPE-Flat_allo.pt + miniworld_oracle/*/RoPE_oracle.pt: n=57 r=-0.9963 a=1.0392 b=-0.5555 sd=0.0214
+    + miniworld_oracle/*/MapPoPE-Flat_oracle.pt + miniworld_oracle/*/RoPE_oracle.pt: n=57 r=-0.9964 a=1.0390 b=-0.5548 sd=0.0214
+    + miniworld_oracle/*/PoPE-Flat_allo.pt + miniworld_oracle/*/RoPE_oracle.pt: n=57 r=-0.9963 a=1.0392 b=-0.5555 sd=0.0214
+  OK  rule 2 reproduced by at least one 57-run set: sidecar True  documented True
+  (every hit contains miniworld_oracle RoPE_oracle; which second cell was used is not recorded. Residual sd uses ddof=2.)
+== 2a. MINIWORLD_ENDPOINTS.md: final loss / final-10% slope (runs/alias_follow)
+  OK  n256_800 s0 Vanilla: sidecar ('0.0156', '-1.8e-04')  documented ('0.0156', '-1.8e-04')
+  OK  n256_800 s0 RoPE: sidecar ('0.3981', '-2.5e-04')  documented ('0.3981', '-2.5e-04')
+  OK  n256_800 s1 Vanilla: sidecar ('0.0102', '-6.0e-05')  documented ('0.0102', '-6.0e-05')
+  OK  n256_800 s1 RoPE: sidecar ('0.3440', '-1.7e-04')  documented ('0.3440', '-1.7e-04')
+  OK  n256_800 s2 Vanilla: sidecar ('0.0157', '-4.1e-05')  documented ('0.0157', '-4.1e-05')
+  OK  n256_800 s2 RoPE: sidecar ('0.3712', '-2.7e-04')  documented ('0.3712', '-2.7e-04')
+  OK  g16 s0 Vanilla: sidecar ('0.0022', '-6.0e-05')  documented ('0.0022', '-6.0e-05')
+  OK  g16 s0 RoPE: sidecar ('0.1317', '-3.3e-04')  documented ('0.1317', '-3.3e-04')
+  OK  g16 s1 Vanilla: sidecar ('0.0016', '-1.7e-05')  documented ('0.0016', '-1.7e-05')
+  OK  g16 s1 RoPE: sidecar ('0.1439', '-3.2e-04')  documented ('0.1439', '-3.2e-04')
+  OK  g16 s2 Vanilla: sidecar ('0.0188', '-3.1e-04')  documented ('0.0188', '-3.1e-04')
+  OK  g16 s2 RoPE: sidecar ('0.1498', '-4.7e-04')  documented ('0.1498', '-4.7e-04')
+== 2b. ALIASING_CONTROLLED.md: training-loss table (runs/alias_sweep, anchor runs/rope_converge)
+  OK  n_obs 16: sidecar ('0.120 [0.004-0.430]', '0.438 [0.406-0.499]', '-0.318')  documented ('0.120 [0.004-0.430]', '0.438 [0.406-0.499]', '-0.318')
+  OK  n_obs 64: sidecar ('0.026 [0.006-0.040]', '0.560 [0.512-0.613]', '-0.534')  documented ('0.026 [0.006-0.040]', '0.560 [0.512-0.613]', '-0.534')
+  OK  n_obs 256: sidecar ('0.073 [0.007-0.286]', '0.664 [0.599-0.704]', '-0.591')  documented ('0.073 [0.007-0.286]', '0.664 [0.599-0.704]', '-0.591')
+
+ALL REPRODUCED
