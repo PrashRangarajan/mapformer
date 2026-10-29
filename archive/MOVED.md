@@ -226,3 +226,4 @@ move); `archive/legacy_level15/` the April-August Level 1.5 / InEKF / PC / TEM /
 | `docs/paper/OUTLINE_workshop.md` | `docs/paper/old/OUTLINE_workshop.md` | C4 | 2026-10-29 |
 | `docs/paper/READ_draft4.md` | `docs/paper/old/READ_draft4.md` (stub left at the old path for a pre-registration) | C4 | 2026-10-29 |
 | `docs/paper/VENUES_2026-10-15.md` | `docs/paper/old/VENUES_2026-10-15.md` | C4 | 2026-10-29 |
+| `README.md` (April-May InEKF framing, SUPERSEDED banner) | `archive/superseded/README_2026-05_inekf_framing.md`; a new short `README.md` replaces it | C6 | 2026-10-29 |
