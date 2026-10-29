@@ -43,7 +43,7 @@ would be α=0 and nothing achieves it — everything accumulates without wrappin
 
 ## Scope: it explains TWO of four, not "almost everything"
 
-`ACCUMULATOR.md`: neither the forget gate (−0.051, MDE 0.092) nor PoPE (+0.006, MDE
+`archive/withdrawn/ACCUMULATOR.md`: neither the forget gate (−0.051, MDE 0.092) nor PoPE (+0.006, MDE
 0.177) nor Level15 (+0.009, MDE 0.191) changes α. All unmeasured.
 
 **And the positive control FAILED.** "The InEKF's wrap bounds the accumulator" is

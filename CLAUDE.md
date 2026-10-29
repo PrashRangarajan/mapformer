@@ -45,7 +45,7 @@ represent the map -- published -- but |.|, softplus and exp steps do not learn i
 | void / stale results | `archive/void/` (bannered), `archive_stale/`; code bugs `KNOWN_BUGS.md` |
 | documents | `positional_review.pdf` (review), `axes_measured.pdf` (results paper), `mapformer_math.pdf` (record), `report/report.pdf`, `report/report_short.pdf` -- carry rank separation, Dyck matched depth and torus loop-rank (2026-09-27); 2026-09-30 corrected only where contradicted (sign now has its matched-length control; code full-val) in all but `mapformer_math` (nothing contradicted), rebuilt from source. **They do NOT carry rank 3, H1 part 1, H3, the text world, the context step, 3D rank / wrap, what/where, the leak or NormStep on words** (`docs/WHERE_THINGS_STAND.md`, Known stale); corpus `papers/INDEX.md` (44 papers plus 28 from the 2026-10-14..16 checks under `papers/new_*/`, read first-hand -- grep, don't re-search) |
 | shared report | https://claude.ai/artifact/LVfYeHhjs1KjwMpg3Pxggc, source `report/language_summary.html` (v22, 2026-10-11: rank tests added); republish WITH `url=` or the user's link breaks |
-| run dirs of the Dyck / Bach / Indirect line | `docs/LOG.md`, block 2026-09-15..20 (`DYCK_T3_RESULTS.md` is an empty artefact) |
+| run dirs of the Dyck / Bach / Indirect line | `docs/LOG.md`, block 2026-09-15..20 (`archive/withdrawn/DYCK_T3_RESULTS.md` is an empty artefact) |
 | model aliases | `train_variant.py::VARIANT_MAP`: MapWM-Flat=Vanilla, MapEM-Flat=VanillaEM, MapWM-Hier=Hourglass_k2, MapWM-FlatHG=HourglassFlat3; Plain-* use index RoPE |
 
 ## Citable results
@@ -157,15 +157,15 @@ Habitat porting (`HABITAT_BUILD.md`); bf16 autocast (`BF16_RESULTS.md`, keep fp3
 ## Withdrawn -- do not cite
 
 - The lm200 era (Apr-May 2026 landmark tables: TEM leader, NoDrop +13pp, GSF, Cascade): baselines never converged. `CORRECTED_LM200_LEADERBOARD.md`
-- hier-goal, the "MapFormer x hierarchy synergy", all four planner tasks and the +7.5pp frozen probe: solvable from the action stream. `HIERGOAL_ABLATION.md`, `PLANNER_TASK_AUDIT.md`
+- hier-goal, the "MapFormer x hierarchy synergy", all four planner tasks and the +7.5pp frozen probe: solvable from the action stream. `archive/withdrawn/HIERGOAL_ABLATION.md`, `archive/withdrawn/PLANNER_TASK_AUDIT.md`
 - Code OOD (encoding -3.694, MapPoPE - PoPE -0.102): the cost of extrapolating past 512; at matched length the sign reverses. `CODE_RESULTS.md`, `CODE_DECAY_RESULTS.md`
 - "Position effect scales with aliasing" (sign inverted at fixed grid) and "distinct cells visited". `ALIASING_CONTROLLED.md`, `VISITS_TEST.md`
 - The named Level 1.5 decomposition ("gate load-bearing", "not a clamp", "wins architecturally"). `L15_ABLATION.md`
 - WM-vs-EM regime table; "MapWM is additive / an OR-gate"; Thm 3. `AUDIT_2026-09-10.md`
 - "EM never finds the rewind (0/40)"; the early-window mechanism. `SEARCH_RESULTS.md`, `UNFREEZE_RESULTS.md`
 - The accumulator + kernel account of the MapPoPE collapse; the PoPE-decoupling corollary. `T2_RESULTS.md`
-- "The InEKF wrap bounds the accumulator"; the critical-dimension import. `ACCUMULATOR.md`, `LOCALISATION.md`
-- Packing geometry as the account of v4 Table 6 (r=2 is best at D=5). `DXR_RANK_THRESHOLD.md`
+- "The InEKF wrap bounds the accumulator"; the critical-dimension import. `archive/withdrawn/ACCUMULATOR.md`, `LOCALISATION.md`
+- Packing geometry as the account of v4 Table 6 (r=2 is best at D=5). `archive/withdrawn/DXR_RANK_THRESHOLD.md`
 - "The r=4 gap is training speed"; "r=2 loses because its basis is skewed" (within r=2 skew does not predict accuracy; a rank-2 solution exists). `RANK_MATCHED_RESULTS.md`, `RANK_PROJ_FROZEN.md`
 - Navigation "+0.461, index on the floor" as the torus headline (16-epoch recipe; converged +0.243). `PAPER2X2_RESULTS.md`
 - Dyck: the 4-layer +0.168 as a capability result, and "depth closes 40% of the gap then stops" (index arms keep climbing and hit ceiling at matched depth). `DYCK_MDEPTH_RESULTS.md`
@@ -173,12 +173,12 @@ Habitat porting (`HABITAT_BUILD.md`); bf16 autocast (`BF16_RESULTS.md`, keep fp3
 - "Nobody varies sign or rank deliberately" (Grazzi varies sign; MapFormer ablates r) and "Mamba-3 is the first to claim both slots" (Selective RoPE, earlier). `papers/txt/`
 - "PoPE's Table 5 does not replicate" (stale checkpoint + 5% val; NoSigma cell unmeasured). `ABLATE_RESULTS.md`
 - Dyck "depth substitutes, 4.4x" (width confound); Dyck F1 as a headline (inflates position 2.3x). `DYCK_LADDER_RESULTS.md`, `DYCK_LITERATURE_METRICS.md`
-- "Scale hurts path integration at long range"; the horizon table is budget-limited. `LOOPED_PILOT.md`, `HORIZON_RESULTS.md`
+- "Scale hurts path integration at long range"; the horizon table is budget-limited. `LOOPED_PILOT.md`, `archive/withdrawn/HORIZON_RESULTS.md`
 - "The loop beats three real layers" (it matches them). `LOOP_HEADROOM.md`
-- enwik8 hourglass "2.00 vs 2.07, better" (it is 1.4844 vs 1.4727, worse). `ENWIK8_HIER.md`
+- enwik8 hourglass "2.00 vs 2.07, better" (it is 1.4844 vs 1.4727, worse). `archive/withdrawn/ENWIK8_HIER.md`
 - The monotone H12 budget curve (bimodal). `H12_BUDGET_CURVE.md`
-- The lap-counting mechanism (catastrophic forgetting). `LAP_TRANSFER_NOREWARD.md`
-- Family tree "plain WM beats every published variant" (unmeasured at n=3). `N3_AUDIT.md`
+- The lap-counting mechanism (catastrophic forgetting). `archive/withdrawn/LAP_TRANSFER_NOREWARD.md`
+- Family tree "plain WM beats every published variant" (unmeasured at n=3). `archive/withdrawn/N3_AUDIT.md`
 - "Separate q0/k0 is refuted" -- true on the four map tasks only; on recency it is better. `D5_RESULTS.md`
 - DoG hex result before the kernel fix (targets were all zero). `archive_stale/DOG_RESULTS_FIXED.md`
 - The `Level15PC_v4` (predictive-coding) +3.4pp win and its RNG-drift explanation (control byte-identical). `archive_stale/V4_CONTROL_RESULTS.md`

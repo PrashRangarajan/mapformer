@@ -9,7 +9,7 @@
 > a filter-free capacity control ties it, and its benefit does not grow with drift
 > (`L15_ABLATION.md`, `EXTRAHEAD_CONTROL.md`, `MQ_NOISE_2X2*.md`); its gain is past the training
 > length only and has never had a matched-length control. The wrap does NOT bound the accumulator
-> (`ACCUMULATOR.md`). The GSF / NoDrop "recommendations" below rest on the retracted lm200 tables.
+> (`archive/withdrawn/ACCUMULATOR.md`). The GSF / NoDrop "recommendations" below rest on the retracted lm200 tables.
 > The surviving positive results are path integration on the torus at training length (+0.243,
 > `PAPER2X2_RESULTS.md`), Match-Query below, and the rank of the content-to-angle map deciding
 > whether training finds the torus solution (`RANK_MI_RESULTS.md`).
@@ -28,7 +28,7 @@
 > narrative in the section below is an artifact of a broken baseline.
 >
 > **Affected:** the "Match or beat the strongest cognitive-map baseline"
-> section, and all lm200 rows in `RESULTS_PAPER.md` / `CLAUDE.md`.
+> section, and all lm200 rows in `archive/withdrawn/RESULTS_PAPER.md` / `CLAUDE.md`.
 > **Not affected (verified):** clean and noise results, which retrain
 > **bit-identically** — the bug is landmark-RNG-specific. The RoPE-collapse /
 > cognitive-map-necessity claims also survive (fresh RoPE lm200 = 0.513 vs
@@ -53,7 +53,7 @@ The detailed experiment-by-experiment record, ablation details, and
 session-by-session history are in
 [DETAILED_RESULTS.md](DETAILED_RESULTS.md).
 The session-2026-05-10 walkthrough is in
-[RESULTS_SUMMARY_2026-05-10.md](RESULTS_SUMMARY_2026-05-10.md)
+[archive/withdrawn/RESULTS_SUMMARY_2026-05-10.md](archive/withdrawn/RESULTS_SUMMARY_2026-05-10.md)
 (also as PDF).
 
 ## Headline results
@@ -68,7 +68,7 @@ The session-2026-05-10 walkthrough is in
 > | Vocab sweep (multi-seed, same batch) | **VALID** — `VOCAB_SWEEP_MULTISEED.md` |
 > | Anything on **lm200 / landmarks** | **VOID** — non-converged checkpoints |
 > | Anything on **hier-goal** | **VOID** — solvable from the action prefix |
-> | **All goal-directed / planner tasks** | **VOID** — `PLANNER_TASK_AUDIT.md` |
+> | **All goal-directed / planner tasks** | **VOID** — `archive/withdrawn/PLANNER_TASK_AUDIT.md` |
 > | **WM-vs-EM regime narrative** | **WITHDRAWN** — replacement mechanism falsified |
 >
 > Rows 1, 2 and 5 of the necessity table below use landmark configs and are VOID.
@@ -292,7 +292,7 @@ d_t       = (1 − K_t)·d_{t−1} + K_t·ν_t      # affine scan, parallel-scan
 ```
 
 ~~The wrap on innovation is what keeps `θ̂` bounded at OOD sequence length —
-the key mechanism for length extrapolation.~~ REFUTED (`ACCUMULATOR.md`): the wrap bounds the
+the key mechanism for length extrapolation.~~ REFUTED (`archive/withdrawn/ACCUMULATOR.md`): the wrap bounds the
 innovation, not the angle -- range(θ̂) 285.6 vs range(θ_path) 283.9.
 
 Gaussian Sum Filter extends this with K parallel chains differing in
@@ -377,9 +377,9 @@ mapformer/
   probe_modeomega_lesion.py  Mode-omega capacity vs specialization disambiguation
 
   ── outputs (auto-generated) ───────────────────────────────────────────
-  RESULTS_SUMMARY_2026-05-10.md   Session walkthrough (PDF available)
+  archive/withdrawn/RESULTS_SUMMARY_2026-05-10.md   Session walkthrough (PDF available)
   DETAILED_RESULTS.md             Full historical record
-  RESULTS_PAPER.md                Paper-ready multi-seed tables
+  archive/withdrawn/RESULTS_PAPER.md                Paper-ready multi-seed tables
   *_RESULTS.md                    Per-experiment results
   paper_figures/                  Length-gen + calibration + ablation PNGs
   runs/{Variant_Config}/seed{N}/{Variant}.pt   Multi-seed checkpoints

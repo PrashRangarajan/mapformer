@@ -126,7 +126,7 @@ and none of the 2026-10-01..03 results (3D rank / wrap, what/where, leak).
 - **Indirect Indexing**: path integration faster (6/7, directional) and more padding-robust (0.430 vs
   0.149, uncontrolled) (`INDIRECT_RESULTS_200k.md`, `INDIRECT_OOD.md`).
 - **Family tree** non-commutativity +0.013 (MDE 0.008 z-based; fails the t-based MDE at n=3)
-  (`N3_AUDIT.md`, `FAMILY_TREE_RESULTS.md`).
+  (`archive/withdrawn/N3_AUDIT.md`, `FAMILY_TREE_RESULTS.md`).
 - **COUNTER** (n=4): with an identical installed counter MapWM 1.000, EM 0.740, TEM 0.337
   (`COUNTER_RESULTS.md`).
 - **Addition**: signed MapFormer is the only learned code to learn 30 digits (3/3), holds to ~33-38;
