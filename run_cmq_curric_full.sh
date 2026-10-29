@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# GUARD (2026-10-29 disk cleanup): the checkpoints of runs this driver writes or reads were
+# deleted; it would retrain those runs or overwrite tracked results. Losses/configs survive in
+# runs/<dir>/CKPT_META.jsonl. See docs/cleanup/DISK_TIERS_ANALYSIS.md section 4, D2_MANIFEST.md.
+if [ "${MAPFORMER_ALLOW_DELETED_RERUN:-0}" != "1" ]; then
+  echo "REFUSED: $(basename "$0"): checkpoints of its runs were deleted on 2026-10-29 (docs/cleanup/DISK_TIERS_ANALYSIS.md, section 4); relaunching would retrain them or overwrite tracked results. Set MAPFORMER_ALLOW_DELETED_RERUN=1 to run anyway (rule 30: reproduce archived batches from their pre-registration commit)." >&2
+  exit 3
+fi
 # Full curriculum sweep: 5 variants x 6 seeds = 30 runs, T_query curriculum
 # (16->256) + LR warmup. Reuses the 6 probe runs already in runs/cmq_curric
 # (resumable skip). PROPER per-GPU cap (CAP live jobs per GPU) -- fixes the

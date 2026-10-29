@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# GUARD (2026-10-29 disk cleanup): the checkpoints of runs this driver writes or reads were
+# deleted; it would retrain those runs or overwrite tracked results. Losses/configs survive in
+# runs/<dir>/CKPT_META.jsonl. See docs/cleanup/DISK_TIERS_ANALYSIS.md section 4, D2_MANIFEST.md.
+if [ "${MAPFORMER_ALLOW_DELETED_RERUN:-0}" != "1" ]; then
+  echo "REFUSED: $(basename "$0"): checkpoints of its runs were deleted on 2026-10-29 (docs/cleanup/DISK_TIERS_ANALYSIS.md, section 4); relaunching would retrain them or overwrite tracked results. Set MAPFORMER_ALLOW_DELETED_RERUN=1 to run anyway (rule 30: reproduce archived batches from their pre-registration commit)." >&2
+  exit 3
+fi
 # FOLLOW-UP to the aliasing sweep, restructured around --fast-attn (2.56x faster,
 # 37% of the memory, mathematically identical: logits 1.4e-06, grads 2.4e-08,
 # grad cosine 1.0000000000).

@@ -225,6 +225,7 @@ Habitat porting (`HABITAT_BUILD.md`); bf16 autocast (`BF16_RESULTS.md`, keep fp3
     0-1). Every batch gets an independent code-verification agent, blind to results; its findings go into an
     amendment before any result is read (it found missing branches, 1%-gap firings, unfailable tests, probe errors).
 30. Archived batches are reproducible from their pre-registration commit, not from HEAD (`train.py` / `train_variant.py` differ from 41 recorded md5s; scripts and results moved by the 2026-10-29 cleanup are listed in `archive/MOVED.md`): check out that commit to re-run one.
+31. Checkpoints were deleted on 2026-10-29 (`docs/cleanup/D2_MANIFEST.md`) and most old drivers skip a run only when its `.pt` exists, so they would retrain it and overwrite its JSON: the 54 affected drivers refuse to start unless `MAPFORMER_ALLOW_DELETED_RERUN=1` (list in `docs/cleanup/EXECUTION_LOG.md`); losses and configs survive in `runs/<dir>/CKPT_META.jsonl`, read with `ckpt_sidecar.py`.
 
 ## Invariants (paper-faithful; do not break)
 

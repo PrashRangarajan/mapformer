@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# GUARD (2026-10-29 disk cleanup): the checkpoints of runs this driver writes or reads were
+# deleted; it would retrain those runs or overwrite tracked results. Losses/configs survive in
+# runs/<dir>/CKPT_META.jsonl. See docs/cleanup/DISK_TIERS_ANALYSIS.md section 4, D2_MANIFEST.md.
+if [ "${MAPFORMER_ALLOW_DELETED_RERUN:-0}" != "1" ]; then
+  echo "REFUSED: $(basename "$0"): checkpoints of its runs were deleted on 2026-10-29 (docs/cleanup/DISK_TIERS_ANALYSIS.md, section 4); relaunching would retrain them or overwrite tracked results. Set MAPFORMER_ALLOW_DELETED_RERUN=1 to run anyway (rule 30: reproduce archived batches from their pre-registration commit)." >&2
+  exit 3
+fi
 # Re-run the PAPERTASK evaluation, which OOM'd because SPREAD2 had already started on the same
 # GPUs. Training is complete; only the eval is missing. Waits for real GPU headroom, keeps the
 # ORIGINAL protocol layout (8 x 32, matching PAPER_TASK_FLOORS.md), and verifies the artifact

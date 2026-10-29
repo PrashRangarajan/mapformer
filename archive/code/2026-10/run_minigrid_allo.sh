@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# GUARD (2026-10-29 disk cleanup): the checkpoints of runs this driver writes or reads were
+# deleted; it would retrain those runs or overwrite tracked results. Losses/configs survive in
+# runs/<dir>/CKPT_META.jsonl. See docs/cleanup/DISK_TIERS_ANALYSIS.md section 4, D2_MANIFEST.md.
+if [ "${MAPFORMER_ALLOW_DELETED_RERUN:-0}" != "1" ]; then
+  echo "REFUSED: $(basename "$0"): checkpoints of its runs were deleted on 2026-10-29 (docs/cleanup/DISK_TIERS_ANALYSIS.md, section 4); relaunching would retrain them or overwrite tracked results. Set MAPFORMER_ALLOW_DELETED_RERUN=1 to run anyway (rule 30: reproduce archived batches from their pre-registration commit)." >&2
+  exit 3
+fi
 # Allocentric rerun of the MiniGrid DoorKey-16 factorial: identical to
 # run_minigrid_2x2x2.sh (same 7 arms, n=3, n_layers=3, 50 ep, obj_color, 25K
 # buffer) EXCEPT actions are recorded as realized world-fixed displacement

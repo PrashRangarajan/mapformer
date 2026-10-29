@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# GUARD (2026-10-29 disk cleanup): the checkpoints of runs this driver writes or reads were
+# deleted; it would retrain those runs or overwrite tracked results. Losses/configs survive in
+# runs/<dir>/CKPT_META.jsonl. See docs/cleanup/DISK_TIERS_ANALYSIS.md section 4, D2_MANIFEST.md.
+if [ "${MAPFORMER_ALLOW_DELETED_RERUN:-0}" != "1" ]; then
+  echo "REFUSED: $(basename "$0"): checkpoints of its runs were deleted on 2026-10-29 (docs/cleanup/DISK_TIERS_ANALYSIS.md, section 4); relaunching would retrain them or overwrite tracked results. Set MAPFORMER_ALLOW_DELETED_RERUN=1 to run anyway (rule 30: reproduce archived batches from their pre-registration commit)." >&2
+  exit 3
+fi
 # N5: set the position kernel's coherence rho and see whether its effect INVERTS
 # between a map task and a clock task. Pre-registration: N5_PREREG.md.
 # 4 arms x 2 tasks x 8 seeds; each TASK is one batch (rule 3).
