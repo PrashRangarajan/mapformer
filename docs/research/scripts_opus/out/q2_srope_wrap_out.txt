@@ -1,0 +1,8 @@
+SRoPE         predicted wrap coherence (usage-wtd cos 64 m) 0.564 [0.384, 0.815]; out-and-back x8 coherence (cos 8 k) 0.982; wrap-only acc 0.659; r(pred, acc) over seeds +0.64; usage on temperature < 0.01 channels 0.052
+   per seed: 1700:0.55/0.63 1701:0.61/0.57 1702:0.56/0.59 1703:0.38/0.60 1704:0.81/0.71 1705:0.75/0.94 1706:0.44/0.62 1707:0.40/0.61
+SRoPE_NoSiLU  predicted wrap coherence (usage-wtd cos 64 m) 0.653 [0.323, 0.922]; out-and-back x8 coherence (cos 8 k) 0.991; wrap-only acc 0.805; r(pred, acc) over seeds +0.31; usage on temperature < 0.01 channels 0.135
+   per seed: 1700:0.81/0.77 1701:0.43/0.56 1702:0.32/0.76 1703:0.84/0.70 1704:0.55/0.97 1705:0.69/1.00 1706:0.66/0.75 1707:0.92/0.93
+MapWM         predicted wrap coherence (usage-wtd cos 64 m) 0.928 [0.551, 0.989]; out-and-back x8 coherence (cos 8 k) 1.000; wrap-only acc 0.999; r(pred, acc) over seeds -0.15
+   per seed: 1700:0.97/1.00 1701:0.99/1.00 1702:0.97/1.00 1703:0.55/1.00 1704:0.99/0.99 1705:0.98/1.00 1706:0.99/1.00 1707:0.99/1.00
+SRoPEGen      predicted wrap coherence (usage-wtd cos 64 m) 0.590 [0.375, 0.809]; out-and-back x8 coherence (cos 8 k) 0.990; wrap-only acc 0.865; r(pred, acc) over seeds +0.44
+   per seed: 1700:0.38/0.69 1701:0.61/0.69 1702:0.46/1.00 1703:0.44/0.68 1704:0.49/1.00 1705:0.75/1.00 1706:0.80/0.99 1707:0.81/0.88

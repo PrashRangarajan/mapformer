@@ -1,0 +1,35 @@
+n revisits 51132 (20 walks x 8 seeds, T = 1024)
+== floors (model-free) by stratum: share, blank, retrace(rule), induction(longest match, any m>=2), comb(m>=4/6/8/12) ==
+all    n  51132 share 1.000 blank 0.512 retrace 0.840 induction 0.405 comb4 0.824 comb6 0.843 comb8 0.851 comb12 0.850 | ind same-cell match share 0.169; median match len 5
+short  n  42221 share 0.826 blank 0.513 retrace 0.910 induction 0.407 comb4 0.901 comb6 0.911 comb8 0.916 comb12 0.915 | ind same-cell match share 0.165; median match len 5
+long   n   5019 share 0.098 blank 0.500 retrace 0.500 induction 0.392 comb4 0.455 comb6 0.517 comb8 0.543 comb12 0.535 | ind same-cell match share 0.189; median match len 5
+wrap   n   3892 share 0.076 blank 0.518 retrace 0.518 induction 0.397 comb4 0.456 comb6 0.521 comb8 0.552 comb12 0.552 | ind same-cell match share 0.187; median match len 5
+== model accuracy by stratum ==
+all    RoPE_L1 0.722 RoPE_L4 0.840 RoPE_Loop 0.856 Path_L1 0.999
+short  RoPE_L1 0.775 RoPE_L4 0.925 RoPE_Loop 0.932 Path_L1 1.000
+long   RoPE_L1 0.463 RoPE_L4 0.433 RoPE_Loop 0.489 Path_L1 0.999
+wrap   RoPE_L1 0.480 RoPE_L4 0.434 RoPE_Loop 0.501 Path_L1 0.992
+== model accuracy in cells: stratum x (retrace applies) x (induction: same-cell match of >= m tokens) ==
+-- induction cell defined as a same-cell match of >= 4 tokens --
+short retrace Y ind Y: n  4952 blank 0.510 ind_pred 1.000 | RoPE_L1 0.807 RoPE_L4 0.991 RoPE_Loop 1.000 Path_L1 1.000
+short retrace Y ind N: n 29411 blank 0.513 ind_pred 0.308 | RoPE_L1 0.849 RoPE_L4 0.995 RoPE_Loop 1.000 Path_L1 1.000
+short retrace N ind Y: n  1364 blank 0.528 ind_pred 1.000 | RoPE_L1 0.483 RoPE_L4 0.590 RoPE_Loop 0.594 Path_L1 1.000
+short retrace N ind N: n  6494 blank 0.513 ind_pred 0.277 | RoPE_L1 0.477 RoPE_L4 0.631 RoPE_Loop 0.648 Path_L1 1.000
+long  retrace N ind Y: n   933 blank 0.505 ind_pred 1.000 | RoPE_L1 0.464 RoPE_L4 0.424 RoPE_Loop 0.493 Path_L1 1.000
+long  retrace N ind N: n  4086 blank 0.499 ind_pred 0.253 | RoPE_L1 0.463 RoPE_L4 0.435 RoPE_Loop 0.488 Path_L1 0.999
+wrap  retrace N ind Y: n   728 blank 0.518 ind_pred 1.000 | RoPE_L1 0.467 RoPE_L4 0.420 RoPE_Loop 0.507 Path_L1 0.989
+wrap  retrace N ind N: n  3164 blank 0.518 ind_pred 0.258 | RoPE_L1 0.483 RoPE_L4 0.437 RoPE_Loop 0.499 Path_L1 0.992
+-- induction cell defined as a same-cell match of >= 8 tokens --
+short retrace Y ind Y: n  2810 blank 0.517 ind_pred 1.000 | RoPE_L1 0.731 RoPE_L4 0.987 RoPE_Loop 0.999 Path_L1 1.000
+short retrace Y ind N: n 31553 blank 0.512 ind_pred 0.355 | RoPE_L1 0.853 RoPE_L4 0.995 RoPE_Loop 1.000 Path_L1 1.000
+short retrace N ind Y: n   885 blank 0.516 ind_pred 1.000 | RoPE_L1 0.467 RoPE_L4 0.574 RoPE_Loop 0.584 Path_L1 1.000
+short retrace N ind N: n  6973 blank 0.516 ind_pred 0.327 | RoPE_L1 0.480 RoPE_L4 0.630 RoPE_Loop 0.646 Path_L1 1.000
+long  retrace N ind Y: n   669 blank 0.496 ind_pred 1.000 | RoPE_L1 0.447 RoPE_L4 0.411 RoPE_Loop 0.484 Path_L1 1.000
+long  retrace N ind N: n  4350 blank 0.500 ind_pred 0.298 | RoPE_L1 0.466 RoPE_L4 0.436 RoPE_Loop 0.490 Path_L1 0.999
+wrap  retrace N ind Y: n   539 blank 0.532 ind_pred 1.000 | RoPE_L1 0.475 RoPE_L4 0.421 RoPE_Loop 0.523 Path_L1 0.987
+wrap  retrace N ind N: n  3353 blank 0.516 ind_pred 0.300 | RoPE_L1 0.481 RoPE_L4 0.436 RoPE_Loop 0.497 Path_L1 0.993
+== per seed, non-retrace revisits (all strata), same-cell match >= 8 tokens: Y vs N (acc) ==
+RoPE_L1: Y 0.465 N 0.476 d -0.011 (seeds + 3/8)
+RoPE_L4: Y 0.481 N 0.526 d -0.045 (seeds + 1/8)
+RoPE_Loop: Y 0.537 N 0.565 d -0.027 (seeds + 2/8)
+Path_L1: Y 0.996 N 0.998 d -0.002 (seeds + 0/8)

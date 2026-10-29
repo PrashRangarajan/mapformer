@@ -1,0 +1,2 @@
+SRoPE: |conv tap| share by lag 0/1/2/3 = [0.288 0.309 0.222 0.18 ]; gate mean move/object/blank = [0.946 0.987 0.988]
+SRoPE_NoSiLU: |conv tap| share by lag 0/1/2/3 = [0.3   0.292 0.22  0.188]; gate mean move/object/blank = [0.936 0.942 0.942]

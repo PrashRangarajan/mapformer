@@ -1,0 +1,21 @@
+rows 51132; env revisits not torus-revisits under the start-cell convention: 0
+== cover stratum shares and model accuracy (mean over revisits; 8 seeds) ==
+tree   n  35949 share 0.703 blank 0.513 retrace-applies 0.956 | RoPE_L1 0.827 RoPE_L4 0.987 RoPE_Loop 0.994 Path_L1 1.000
+plane  n  11291 share 0.221 blank 0.507 retrace-applies 0.000 | RoPE_L1 0.471 RoPE_L4 0.511 RoPE_Loop 0.540 Path_L1 1.000
+torus  n   3892 share 0.076 blank 0.518 retrace-applies 0.000 | RoPE_L1 0.480 RoPE_L4 0.434 RoPE_Loop 0.501 Path_L1 0.992
+== tree revisits: retrace vs nested (non-retrace tree), by tree age (moves) ==
+tree retrace age    0-  16: n 31001 blank 0.513 | RoPE_L1 0.885 RoPE_L4 0.999 RoPE_Loop 1.000 Path_L1 1.000
+tree retrace age   16-  64: n  3362 blank 0.505 | RoPE_L1 0.450 RoPE_L4 0.955 RoPE_Loop 0.997 Path_L1 1.000
+tree nested  age    0-  16: n   254 blank 0.567 | RoPE_L1 0.504 RoPE_L4 0.953 RoPE_Loop 0.980 Path_L1 1.000
+tree nested  age   16-  64: n  1316 blank 0.523 | RoPE_L1 0.478 RoPE_L4 0.799 RoPE_Loop 0.856 Path_L1 1.000
+== plane-only (needs commutation, no wrap) revisits by gap (moves since last visit of the cell) ==
+plane gap    0-  16: n   251 blank 0.526 | RoPE_L1 0.518 RoPE_L4 0.869 RoPE_Loop 0.892 Path_L1 1.000
+plane gap   16-  64: n  3466 blank 0.510 | RoPE_L1 0.480 RoPE_L4 0.627 RoPE_Loop 0.617 Path_L1 1.000
+plane gap   64- 128: n  2555 blank 0.515 | RoPE_L1 0.471 RoPE_L4 0.474 RoPE_Loop 0.501 Path_L1 1.000
+plane gap  128- 512: n  4177 blank 0.492 | RoPE_L1 0.457 RoPE_L4 0.424 RoPE_Loop 0.481 Path_L1 1.000
+plane gap  512-2000: n   842 blank 0.539 | RoPE_L1 0.496 RoPE_L4 0.474 RoPE_Loop 0.529 Path_L1 0.996
+== per seed: tree-nested (non-retrace) vs plane-only short-gap (< 128) accuracy, index arms ==
+RoPE_L1: (tree-nested above its blank) - (plane short above its blank) = -0.014; seeds + 1/8
+RoPE_L4: (tree-nested above its blank) - (plane short above its blank) = +0.228; seeds + 8/8
+RoPE_Loop: (tree-nested above its blank) - (plane short above its blank) = +0.274; seeds + 8/8
+Path_L1: (tree-nested above its blank) - (plane short above its blank) = -0.014; seeds + 1/8

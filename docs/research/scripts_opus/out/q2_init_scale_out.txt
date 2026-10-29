@@ -1,0 +1,4 @@
+SRoPE         per-move map angle |m| (rad): INIT median 0.0000 p90 0.0001 share>pi/64 0.00 | TRAINED median 0.0000 p90 0.0140 share>pi/64 0.07
+SRoPE_NoSiLU  per-move map angle |m| (rad): INIT median 0.0000 p90 0.0002 share>pi/64 0.00 | TRAINED median 0.0000 p90 0.0424 share>pi/64 0.09
+MapWM         per-move map angle |m| (rad): INIT median 0.0855 p90 0.6930 share>pi/64 0.62 | TRAINED median 0.0975 p90 0.6689 share>pi/64 0.62
+SRoPEGen      per-move map angle |m| (rad): INIT median 0.0519 p90 0.2023 share>pi/64 0.52 | TRAINED median 0.0044 p90 0.1341 share>pi/64 0.23

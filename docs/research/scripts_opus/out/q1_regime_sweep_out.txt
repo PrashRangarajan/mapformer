@@ -1,0 +1,16 @@
+torus 64 T 128               revisits/walk    25.1 | tree 0.876 (retrace 0.870) plane-only 0.124 torus-only 0.000 | need-map 0.124, at gap>=16 0.116, gap>=128 0.000 | edge-recallable among need-map 0.376
+torus 64 T 132               revisits/walk    27.4 | tree 0.885 (retrace 0.867) plane-only 0.115 torus-only 0.000 | need-map 0.115, at gap>=16 0.107, gap>=128 0.000 | edge-recallable among need-map 0.397
+torus 64 T 512               revisits/walk   140.7 | tree 0.779 (retrace 0.743) plane-only 0.204 torus-only 0.017 | need-map 0.221, at gap>=16 0.216, gap>=128 0.078 | edge-recallable among need-map 0.477
+torus 64 T 1024              revisits/walk   316.7 | tree 0.711 (retrace 0.687) plane-only 0.209 torus-only 0.080 | need-map 0.289, at gap>=16 0.285, gap>=128 0.170 | edge-recallable among need-map 0.486
+torus 64 T 4096              revisits/walk  1933.4 | tree 0.472 (retrace 0.455) plane-only 0.203 torus-only 0.325 | need-map 0.528, at gap>=16 0.524, gap>=128 0.442 | edge-recallable among need-map 0.568
+torus 32 T 1024              revisits/walk   460.2 | tree 0.489 (retrace 0.473) plane-only 0.144 torus-only 0.367 | need-map 0.511, at gap>=16 0.508, gap>=128 0.381 | edge-recallable among need-map 0.546
+torus 16 T 1024              revisits/walk   778.7 | tree 0.289 (retrace 0.280) plane-only 0.085 torus-only 0.626 | need-map 0.711, at gap>=16 0.709, gap>=128 0.404 | edge-recallable among need-map 0.712
+torus 128 T 1024             revisits/walk   292.5 | tree 0.770 (retrace 0.744) plane-only 0.226 torus-only 0.004 | need-map 0.230, at gap>=16 0.226, gap>=128 0.102 | edge-recallable among need-map 0.470
+room 6x6 (18 occ.) T 512     revisits/walk   476.2 | tree 0.605 (retrace 0.442) plane-only 0.395 torus-only 0.000 | need-map 0.395, at gap>=16 0.373, gap>=128 0.031 | edge-recallable among need-map 0.899
+room 8x8 (32 occ.) T 512     revisits/walk   450.9 | tree 0.543 (retrace 0.426) plane-only 0.457 torus-only 0.000 | need-map 0.457, at gap>=16 0.450, gap>=128 0.077 | edge-recallable among need-map 0.863
+room 11x11 (60 occ.) T 512   revisits/walk   403.2 | tree 0.506 (retrace 0.415) plane-only 0.494 torus-only 0.000 | need-map 0.494, at gap>=16 0.487, gap>=128 0.161 | edge-recallable among need-map 0.803
+room 16x16 (128 occ.) T 512  revisits/walk   328.0 | tree 0.506 (retrace 0.434) plane-only 0.494 torus-only 0.000 | need-map 0.494, at gap>=16 0.488, gap>=128 0.214 | edge-recallable among need-map 0.728
+room 23x23 (264 occ.) T 512  revisits/walk   260.0 | tree 0.566 (retrace 0.500) plane-only 0.434 torus-only 0.000 | need-map 0.434, at gap>=16 0.426, gap>=128 0.199 | edge-recallable among need-map 0.685
+room 32x32 (512 occ.) T 512  revisits/walk   215.5 | tree 0.656 (retrace 0.610) plane-only 0.344 torus-only 0.000 | need-map 0.344, at gap>=16 0.337, gap>=128 0.149 | edge-recallable among need-map 0.671
+room 16x16 (128 occ.) T 1024 revisits/walk   790.5 | tree 0.439 (retrace 0.385) plane-only 0.561 torus-only 0.000 | need-map 0.561, at gap>=16 0.555, gap>=128 0.329 | edge-recallable among need-map 0.772
+room 32x32 (512 occ.) T 128  revisits/walk    42.6 | tree 0.837 (retrace 0.756) plane-only 0.163 torus-only 0.000 | need-map 0.163, at gap>=16 0.154, gap>=128 0.000 | edge-recallable among need-map 0.628

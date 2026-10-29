@@ -1,0 +1,11 @@
+regime | blank retrace induction comb(retrace->induction>=6)
+room 6x6 (18 occ.) T 512: blank 0.495 retrace 0.711 induction 0.861 comb 0.911
+room 8x8 (32 occ.) T 512: blank 0.508 retrace 0.716 induction 0.785 comb 0.883
+room 11x11 (60 occ.) T 512: blank 0.501 retrace 0.710 induction 0.686 comb 0.844
+room 16x16 (128 occ.) T 512: blank 0.496 retrace 0.723 induction 0.558 comb 0.802
+room 23x23 (264 occ.) T 512: blank 0.493 retrace 0.755 induction 0.512 comb 0.812
+room 32x32 (512 occ.) T 512: blank 0.489 retrace 0.797 induction 0.468 comb 0.837
+room 16x16 (128 occ.) T 1024: blank 0.503 retrace 0.698 induction 0.621 comb 0.804
+room 32x32 (512 occ.) T 1024: blank 0.503 retrace 0.753 induction 0.480 comb 0.786
+torus 64 T 128: blank 0.484 retrace 0.931 induction 0.391 comb 0.932
+torus 64 T 1024: blank 0.512 retrace 0.846 induction 0.407 comb 0.850

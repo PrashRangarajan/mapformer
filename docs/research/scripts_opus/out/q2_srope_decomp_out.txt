@@ -1,0 +1,15 @@
+== same-place phase coherence C0 (usage-weighted cos) and accuracy, 6 walks x 8 seeds, T = 1024 ==
+SRoPE         full      | short C0 0.980 acc 0.991 | long C0 0.887 acc 0.932 | wrap C0 0.292 acc 0.602
+SRoPE         obs0      | short C0 0.861 acc 0.457 | long C0 0.299 acc 0.318 | wrap C0 0.107 acc 0.362
+SRoPE         gate_cls  | short C0 0.973 acc 0.853 | long C0 0.575 acc 0.418 | wrap C0 0.133 acc 0.396
+SRoPE         conv1     | short C0 0.868 acc 0.460 | long C0 0.108 acc 0.346 | wrap C0 0.123 acc 0.367
+SRoPE         all3      | short C0 0.766 acc 0.392 | long C0 0.185 acc 0.332 | wrap C0 0.096 acc 0.352
+SRoPE_NoSiLU  full      | short C0 0.971 acc 0.984 | long C0 0.931 acc 0.949 | wrap C0 0.673 acc 0.834
+SRoPE_NoSiLU  obs0      | short C0 0.935 acc 0.823 | long C0 0.449 acc 0.378 | wrap C0 0.350 acc 0.358
+SRoPE_NoSiLU  gate_cls  | short C0 0.971 acc 0.981 | long C0 0.910 acc 0.689 | wrap C0 0.629 acc 0.602
+SRoPE_NoSiLU  conv1     | short C0 0.992 acc 0.494 | long C0 0.922 acc 0.555 | wrap C0 0.621 acc 0.497
+SRoPE_NoSiLU  all3      | short C0 0.953 acc 0.490 | long C0 0.462 acc 0.367 | wrap C0 0.362 acc 0.353
+MapWM         full      | short C0 1.000 acc 1.000 | long C0 0.995 acc 1.000 | wrap C0 0.905 acc 1.000
+SRoPEGen      full      | short C0 0.962 acc 0.998 | long C0 0.906 acc 0.977 | wrap C0 0.590 acc 0.857
+SRoPE: observation/move |phase| -- effective (token removed, whole window) 0.343; first-difference at the token (the registered readout's kind) 0.931
+SRoPE_NoSiLU: observation/move |phase| -- effective (token removed, whole window) 0.143; first-difference at the token (the registered readout's kind) 0.866
