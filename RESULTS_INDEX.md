@@ -135,7 +135,7 @@ and none of the 2026-10-01..03 results (3D rank / wrap, what/where, leak).
   multi-seed table is 25-epoch undertrained (`MAP_QUERY_GATES.md`, `MAP_QUERY_RESULTS.md`).
 - **lm200, corrected**: Level15 0.990 vs Vanilla 0.742 stands as numbers; the interpretation is
   withdrawn (a filter-free capacity control ties it), and lm200 never had a context-destruction
-  ablation (`LM200_CORRECTED_MULTISEED.md`, `EXTRAHEAD_CONTROL.md`).
+  ablation (`archive/legacy_level15/LM200_CORRECTED_MULTISEED.md`, `EXTRAHEAD_CONTROL.md`).
 
 ## Post hoc analyses, pilots and literature (no registered verdict)
 

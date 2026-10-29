@@ -34,9 +34,9 @@
 > cognitive-map-necessity claims also survive (fresh RoPE lm200 = 0.513 vs
 > stored 0.523, i.e. genuinely weak, not an artifact).
 >
-> Corrected single-seed table: [CORRECTED_LM200_LEADERBOARD.md](CORRECTED_LM200_LEADERBOARD.md).
+> Corrected single-seed table: [archive/legacy_level15/CORRECTED_LM200_LEADERBOARD.md](archive/legacy_level15/CORRECTED_LM200_LEADERBOARD.md).
 > Scope + root cause: [NOISE_CLEAN_REVALIDATION.md](NOISE_CLEAN_REVALIDATION.md).
-> Multi-seed rerun complete ([LM200_CORRECTED_MULTISEED.md](LM200_CORRECTED_MULTISEED.md)):
+> Multi-seed rerun complete ([archive/legacy_level15/LM200_CORRECTED_MULTISEED.md](archive/legacy_level15/LM200_CORRECTED_MULTISEED.md)):
 > Level15 **0.990 ± 0.005** > TEMFaithful 0.974 ± 0.008 > GSF 0.967 > NoDrop 0.956
 > (T=512 OOD, n=3) — Level 1.5 leads with non-overlapping error bars.
 
@@ -65,7 +65,7 @@ The session-2026-05-10 walkthrough is in
 > | **Path integration necessary (Match-Query)** | **VERIFIED** — gates + ablation + scale-up |
 > | Paper replication (WM + EM, paper's own OOD protocol) | **VERIFIED** — `PAPER_OOD_PROTOCOL.md` |
 > | Clean / noise regimes | **VALID** — retrain bit-identically |
-> | Vocab sweep (multi-seed, same batch) | **VALID** — `VOCAB_SWEEP_MULTISEED.md` |
+> | Vocab sweep (multi-seed, same batch) | **VALID** — `archive/legacy_level15/VOCAB_SWEEP_MULTISEED.md` |
 > | Anything on **lm200 / landmarks** | **VOID** — non-converged checkpoints |
 > | Anything on **hier-goal** | **VOID** — solvable from the action prefix |
 > | **All goal-directed / planner tasks** | **VOID** — `archive/withdrawn/PLANNER_TASK_AUDIT.md` |

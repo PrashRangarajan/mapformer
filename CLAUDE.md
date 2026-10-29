@@ -156,7 +156,7 @@ Habitat porting (`HABITAT_BUILD.md`); bf16 autocast (`BF16_RESULTS.md`, keep fp3
 
 ## Withdrawn -- do not cite
 
-- The lm200 era (Apr-May 2026 landmark tables: TEM leader, NoDrop +13pp, GSF, Cascade): baselines never converged. `CORRECTED_LM200_LEADERBOARD.md`
+- The lm200 era (Apr-May 2026 landmark tables: TEM leader, NoDrop +13pp, GSF, Cascade): baselines never converged. `archive/legacy_level15/CORRECTED_LM200_LEADERBOARD.md`
 - hier-goal, the "MapFormer x hierarchy synergy", all four planner tasks and the +7.5pp frozen probe: solvable from the action stream. `archive/withdrawn/HIERGOAL_ABLATION.md`, `archive/withdrawn/PLANNER_TASK_AUDIT.md`
 - Code OOD (encoding -3.694, MapPoPE - PoPE -0.102): the cost of extrapolating past 512; at matched length the sign reverses. `CODE_RESULTS.md`, `CODE_DECAY_RESULTS.md`
 - "Position effect scales with aliasing" (sign inverted at fixed grid) and "distinct cells visited". `ALIASING_CONTROLLED.md`, `VISITS_TEST.md`

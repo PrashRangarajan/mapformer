@@ -166,7 +166,7 @@ itself is under the July retraction, so read the direction only); stop-gradient 
 v3's tighter clamp) closed the direct route but PC still leaked via the shared `action_to_lie`
 (|theta_hat| ~3840 at T=512, `archive_stale/LENGTH_DIAGNOSTIC.md`). Only v4 (detach theta_hat AND the target
 embedding) avoids collapse, and then PC has zero gradient into the model. v4's "+3.4pp win" is gone:
-the `aux_coef=0` control is byte-identical to Level15 on every clean seed (`V4_CONTROL_RESULTS.md`),
+the `aux_coef=0` control is byte-identical to Level15 on every clean seed (`archive/legacy_level15/V4_CONTROL_RESULTS.md`),
 so neither PC nor RNG drift explains anything. **How to apply:** in any writeup, never "complementary"
 or "stack"; frame as duals whose coupling creates a degenerate optimum.
 

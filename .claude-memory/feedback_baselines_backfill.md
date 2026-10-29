@@ -14,9 +14,9 @@ bias matter at all, vs a standard transformer?"
 **Tables that need a standard-transformer baseline (RoPE at minimum) before
 paper submission:**
 
-- `LEVEL15BETA_RESULTS.md` — has Vanilla, Level15, Level15Beta, TEMFaithful. Add RoPE.
-- `VOCAB_SWEEP_RESULTS.md` — has Vanilla{,EM}, Level15{,EM}. Add RoPE at each vocab.
-- `NODROP_PARETO_RESULTS.md` — has Vanilla, Level15, Level15NoDrop. Add RoPE.
+- `archive/legacy_level15/LEVEL15BETA_RESULTS.md` — has Vanilla, Level15, Level15Beta, TEMFaithful. Add RoPE.
+- `archive/legacy_level15/VOCAB_SWEEP_RESULTS.md` — has Vanilla{,EM}, Level15{,EM}. Add RoPE at each vocab.
+- `archive/legacy_level15/NODROP_PARETO_RESULTS.md` — has Vanilla, Level15, Level15NoDrop. Add RoPE.
 - `DROPOUT_ABLATION_RESULTS.md` — has Vanilla, Level15, NoDrop, Beta, TEMFaithful. Add RoPE.
 - `GSF_RESULTS.md` / `GSF_NODROP_RESULTS.md` — Level15 family + TEMFaithful only. Add RoPE.
 - `GOAL_DIRECTED_RESULTS.md` / `GOAL_TASKS_RESULTS.md` — needs RoPE goal-directed trained.

@@ -4,6 +4,12 @@ One row per file the 2026-10-29 cleanup moved or removed (plan: `docs/cleanup/CL
 Historical documents (docs/LOG.md, audits, sessions, old reports, pre-registrations) were NOT rewritten: when one of them names a
 file below by its old path, look the name up here. Archived files keep their git history (`git log --follow <new path>`).
 
+Folders: `archive/withdrawn/` withdrawn or void results (CLAUDE.md "Withdrawn"); `archive/superseded/` files a newer named
+version replaces; `archive/orphan/` results no live document, result file or reader script refers to (each read before the
+move); `archive/legacy_level15/` the April-August Level 1.5 / InEKF / PC / TEM / lm200-era results (withdrawn as a line);
+`archive/code/2026-10/` dead and superseded scripts; `docs/paper/old/` superseded drafts, outlines and reviews.
+`archive/void/` and `archive_stale/` predate this cleanup and are unchanged.
+
 | old path | new path | step | date |
 |---|---|---|---|
 | `CLONE_ANALYSIS_LEVEL15PC.md` | deleted; byte-identical copy at `archive_stale/CLONE_ANALYSIS_LEVEL15PC.md` | A1 | 2026-10-29 |
@@ -97,3 +103,40 @@ file below by its old path, look the name up here. Archived files keep their git
 | `SESSION_HIERARCHICAL_CASCADE.md` | `archive/orphan/SESSION_HIERARCHICAL_CASCADE.md` | A3 | 2026-10-29 |
 | `SPACETIME_HIER_RESULTS.md` | `archive/orphan/SPACETIME_HIER_RESULTS.md` | A3 | 2026-10-29 |
 | `THEORY_NARRATIVE.md` | `archive/orphan/THEORY_NARRATIVE.md` | A3 | 2026-10-29 |
+| `BUMP_TOKEN_RESULTS.md` | `archive/legacy_level15/BUMP_TOKEN_RESULTS.md` | A4 | 2026-10-29 |
+| `CAPACITY_CONTROL.md` | `archive/legacy_level15/CAPACITY_CONTROL.md` | A4 | 2026-10-29 |
+| `CAPACITY_PERREGIME.md` | `archive/legacy_level15/CAPACITY_PERREGIME.md` | A4 | 2026-10-29 |
+| `CASCADE_MULTISEED_RESULTS.md` | `archive/legacy_level15/CASCADE_MULTISEED_RESULTS.md` | A4 | 2026-10-29 |
+| `CASCADE_REPRO_TEST.md` | `archive/legacy_level15/CASCADE_REPRO_TEST.md` | A4 | 2026-10-29 |
+| `CASCADE_ZEROSHOT_S0.md` | `archive/legacy_level15/CASCADE_ZEROSHOT_S0.md` | A4 | 2026-10-29 |
+| `CORRECTED_LM200_LEADERBOARD.md` | `archive/legacy_level15/CORRECTED_LM200_LEADERBOARD.md` | A4 | 2026-10-29 |
+| `GSF_FULL_RESULTS.md` | `archive/legacy_level15/GSF_FULL_RESULTS.md` | A4 | 2026-10-29 |
+| `LEVEL15_MEETS_GATED_matchq.md` | `archive/legacy_level15/LEVEL15_MEETS_GATED_matchq.md` | A4 | 2026-10-29 |
+| `LEVEL15_MEETS_GATED_paper.md` | `archive/legacy_level15/LEVEL15_MEETS_GATED_paper.md` | A4 | 2026-10-29 |
+| `LEVEL15_MEETS_GATED_paper.json` | `archive/legacy_level15/LEVEL15_MEETS_GATED_paper.json` | A4 | 2026-10-29 |
+| `LEVEL15_MEETS_GATED_paper50.md` | `archive/legacy_level15/LEVEL15_MEETS_GATED_paper50.md` | A4 | 2026-10-29 |
+| `LEVEL15_MEETS_GATED_paper50.json` | `archive/legacy_level15/LEVEL15_MEETS_GATED_paper50.json` | A4 | 2026-10-29 |
+| `LEVEL15BETA_RESULTS.md` | `archive/legacy_level15/LEVEL15BETA_RESULTS.md` | A4 | 2026-10-29 |
+| `LEVEL15EM_CROSSSCALE.md` | `archive/legacy_level15/LEVEL15EM_CROSSSCALE.md` | A4 | 2026-10-29 |
+| `LM200_ABLATION.md` | `archive/legacy_level15/LM200_ABLATION.md` | A4 | 2026-10-29 |
+| `LM200_ABLATION.json` | `archive/legacy_level15/LM200_ABLATION.json` | A4 | 2026-10-29 |
+| `LM200_CORRECTED_MULTISEED.md` | `archive/legacy_level15/LM200_CORRECTED_MULTISEED.md` | A4 | 2026-10-29 |
+| `MULTICLASS_MULTISEED_RESULTS.md` | `archive/legacy_level15/MULTICLASS_MULTISEED_RESULTS.md` | A4 | 2026-10-29 |
+| `MULTISEED_FOLLOWUP_RESULTS.md` | `archive/legacy_level15/MULTISEED_FOLLOWUP_RESULTS.md` | A4 | 2026-10-29 |
+| `NOBYPASS_RESULTS.md` | `archive/legacy_level15/NOBYPASS_RESULTS.md` | A4 | 2026-10-29 |
+| `NODROP_PARETO_RESULTS.md` | `archive/legacy_level15/NODROP_PARETO_RESULTS.md` | A4 | 2026-10-29 |
+| `NUMBERLINE_RESULTS.md` | `archive/legacy_level15/NUMBERLINE_RESULTS.md` | A4 | 2026-10-29 |
+| `TEM_BACKGROUND_BASELINES.md` | `archive/legacy_level15/TEM_BACKGROUND_BASELINES.md` | A4 | 2026-10-29 |
+| `TEM_CROSSSCALE_DIAGNOSTIC.md` | `archive/legacy_level15/TEM_CROSSSCALE_DIAGNOSTIC.md` | A4 | 2026-10-29 |
+| `TEM_NOISE_FFN_RESULTS.md` | `archive/legacy_level15/TEM_NOISE_FFN_RESULTS.md` | A4 | 2026-10-29 |
+| `TEM_RESULTS.md` | `archive/legacy_level15/TEM_RESULTS.md` | A4 | 2026-10-29 |
+| `TEM_T_MULTISEED.md` | `archive/legacy_level15/TEM_T_MULTISEED.md` | A4 | 2026-10-29 |
+| `TEM_T_RESULTS.md` | `archive/legacy_level15/TEM_T_RESULTS.md` | A4 | 2026-10-29 |
+| `V3_RESULTS.md` | `archive/legacy_level15/V3_RESULTS.md` | A4 | 2026-10-29 |
+| `V4_CONTROL_RESULTS.md` | `archive/legacy_level15/V4_CONTROL_RESULTS.md` | A4 | 2026-10-29 |
+| `V4_MULTISEED.md` | `archive/legacy_level15/V4_MULTISEED.md` | A4 | 2026-10-29 |
+| `V4_RESULTS.md` | `archive/legacy_level15/V4_RESULTS.md` | A4 | 2026-10-29 |
+| `VECTOR_NAV_V2_RESULTS.md` | `archive/legacy_level15/VECTOR_NAV_V2_RESULTS.md` | A4 | 2026-10-29 |
+| `VOCAB_SWEEP_MULTISEED.md` | `archive/legacy_level15/VOCAB_SWEEP_MULTISEED.md` | A4 | 2026-10-29 |
+| `VOCAB_SWEEP_MULTISEED.json` | `archive/legacy_level15/VOCAB_SWEEP_MULTISEED.json` | A4 | 2026-10-29 |
+| `VOCAB_SWEEP_RESULTS.md` | `archive/legacy_level15/VOCAB_SWEEP_RESULTS.md` | A4 | 2026-10-29 |
