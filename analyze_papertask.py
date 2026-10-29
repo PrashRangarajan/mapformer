@@ -31,6 +31,12 @@ def final_loss(arm, s):
             return float(ck.losses[-1])
     except Exception:
         pass
+    # the .pt files were deleted on 2026-10-29; their full-precision losses are in
+    # runs/paper_task_rerun/CKPT_META.jsonl (mapformer/ckpt_sidecar.py, D2_MANIFEST.md)
+    from mapformer.ckpt_sidecar import load_ckpt_meta
+    meta = None if pt.exists() else load_ckpt_meta(str(pt))
+    if meta and meta.get("losses"):
+        return float(meta["losses"][-1])
     log = RUNS / "logs" / f"train_{arm}_s{s}.log"
     if log.exists():
         m = re.findall(r"loss[=: ]+([0-9.]+)", log.read_text())
