@@ -35,7 +35,6 @@ under test is not exercised.
 """
 from __future__ import annotations
 import argparse
-import collections
 
 import numpy as np
 import torch

@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
 
 from mapformer.environment import GridWorld
-from mapformer.probe_hex_emergence import VARIANT_CLS, build, collect_rate_maps
+from mapformer.probe_hex_emergence import build, collect_rate_maps
 from mapformer.probe_hex import spatial_autocorrelogram, grid_score
 
 

@@ -2,7 +2,7 @@
 
     python3 -m mapformer.analyze_sameblock      (from /home/prashr)
 """
-import glob, json, os
+import glob, json
 import numpy as np
 import torch
 

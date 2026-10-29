@@ -13,7 +13,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 
 from mapformer.environment import GridWorld
 from mapformer.train_variant import VARIANT_MAP

@@ -16,7 +16,6 @@ tokens are truncated (mean piece is 242 timesteps = 968 tokens, so this is rare)
 import json
 from pathlib import Path
 
-import numpy as np
 import torch
 
 PATH = Path(__file__).resolve().parent / "data" / "Jsb16thSeparated.json"

@@ -11,7 +11,6 @@ more ambiguous.
 from __future__ import annotations
 
 import argparse
-import json
 import time
 from pathlib import Path
 
@@ -22,8 +21,6 @@ import torch.nn.functional as F
 from mapformer.environment import GridWorld
 from mapformer.model import MapFormerWM
 from mapformer.model_inekf_level15 import MapFormerWM_Level15InEKF
-from mapformer.model_inekf_level15_nodrop import MapFormerWM_Level15NoDrop
-from mapformer.model_inekf_gsf import MapFormerWM_Level15GSF
 from mapformer.model_inekf_gsf_nodrop import MapFormerWM_Level15GSF_NoDrop
 from mapformer.model_tem_faithful import TEMFaithful
 from mapformer.model_baseline_rope import MapFormerWM_RoPE

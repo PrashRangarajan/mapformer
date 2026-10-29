@@ -41,7 +41,6 @@ complicates it, and the pattern is stated here before the run.
 import argparse, glob, json, os
 import numpy as np
 import torch
-import torch.nn.functional as F
 
 from mapformer.environment_recency import RecencyWorld
 from mapformer.probe_recency_accumulator import _load

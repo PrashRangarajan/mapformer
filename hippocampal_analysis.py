@@ -38,12 +38,10 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
-from collections import defaultdict
 
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
-from matplotlib import cm
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 

@@ -26,7 +26,6 @@ Tolman cognitive-map claim.
 from __future__ import annotations
 
 import argparse
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np

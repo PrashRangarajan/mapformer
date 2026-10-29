@@ -4,7 +4,7 @@ Primary readout is A2 (Hewitt distance-averaged closing accuracy), NOT F1: F1
 inflates the position effect 2.3x and this project's rules forbid it as a
 headline. F1 and invalid mass are reported alongside, never selectively.
 """
-import glob, json, os
+import glob, json
 import numpy as np, torch
 
 from mapformer.eval_dyck_literature import cell_data, metrics, CELLS, N

@@ -43,7 +43,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 
 from mapformer.environment_match_query import MatchQueryGridWorld
 from mapformer.environment_lap import LapWorld

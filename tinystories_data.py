@@ -8,7 +8,7 @@ official valid file), vocab.json, stats.json.
 
   python3 -m mapformer.tinystories_data            # from /home/prashr; ~10-20 min on 16 processes
 """
-import collections, json, os, re, sys
+import collections, json, re, sys
 from multiprocessing import Pool
 import numpy as np
 

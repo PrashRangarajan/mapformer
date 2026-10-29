@@ -9,7 +9,7 @@ Convention: S = cumsum over tokens of the per-token increment averaged over freq
 head; range(S) = max_t S - min_t S averaged over sequences and heads; alpha from a log-log fit of
 range against T over one sequence family. Run: python3 -m mapformer.probe_dyck_alpha
 """
-import glob, re
+import glob
 import numpy as np, torch
 
 from mapformer.environment_dyck import DyckWorld

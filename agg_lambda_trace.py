@@ -5,7 +5,7 @@ r(peak lambda, gain) > 0 while r(final lambda, gain) is the -0.516 already
 measured. Rise-then-fall with a positive peak correlation supports it; monotone
 drift, or a negative peak correlation, does not.
 """
-import argparse, json, glob, os
+import argparse, json, os
 import numpy as np
 
 

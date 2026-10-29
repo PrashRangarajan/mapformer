@@ -3,7 +3,7 @@ Run from /home/prashr: python3 -m mapformer.analyze_indirect --runs-dir <dir> --
 import argparse, glob, json, math, re
 import numpy as np
 
-from mapformer.environment_indirect import IndirectWorld, VOCAB, STOI, LETTERS
+from mapformer.environment_indirect import IndirectWorld, VOCAB
 
 PAPER = {"RoPE": (11.16 / 100, 2.45 / 100), "PoPE": (94.82 / 100, 2.91 / 100)}
 ORDER = ["RoPE", "PoPE", "MapWM_r2", "MapPoPE_r2"]

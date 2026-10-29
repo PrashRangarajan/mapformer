@@ -11,7 +11,7 @@ and no such split on parity.
 
 Inference only, on checkpoints that already exist.
 """
-import argparse, json
+import argparse
 from pathlib import Path
 
 import numpy as np

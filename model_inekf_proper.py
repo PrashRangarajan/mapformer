@@ -24,10 +24,9 @@ inversion.
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import math
 
-from .model import MapFormerWM, WMTransformerLayer, _apply_rope
+from .model import MapFormerWM, WMTransformerLayer
 
 
 class InEKFSO2(nn.Module):

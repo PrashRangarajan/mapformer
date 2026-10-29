@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import json
-import math
 
 import numpy as np
 import torch

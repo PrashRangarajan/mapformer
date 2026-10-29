@@ -35,13 +35,9 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from scipy.stats import spearmanr
 
 from mapformer.environment import GridWorld
 from mapformer.environment_goal import bfs_torus
-from mapformer.train_variant import VARIANT_MAP
 from mapformer.probe_goal_distance import DistanceHead, train_head, eval_head, build
 
 

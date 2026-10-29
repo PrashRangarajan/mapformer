@@ -10,7 +10,6 @@ Batched over trials (all run in lockstep for T_navigate steps; 'reached' is
 latched). Evaluated at multiple OOD explore lengths.
 """
 import argparse
-import json
 import statistics as st
 from pathlib import Path
 

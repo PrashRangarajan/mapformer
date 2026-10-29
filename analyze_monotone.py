@@ -11,7 +11,7 @@ import numpy as np
 import torch
 
 from mapformer.ckpt_guard import REPO, load_checkpoint, compare_checkpoints
-from mapformer.stats_guard import paired, rule9, table, loss_matched, interaction
+from mapformer.stats_guard import paired, table, loss_matched, interaction
 
 SEEDS = list(range(12))
 REC = REPO / "runs/monotone/recency"

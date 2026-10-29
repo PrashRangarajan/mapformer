@@ -22,7 +22,7 @@ from collections import Counter, defaultdict
 
 import numpy as np
 
-from mapformer.environment_flipflop import FlipFlopWorld, W, R
+from mapformer.environment_flipflop import FlipFlopWorld, W
 
 
 def ngram_acc(ans, orders=(1, 2, 3, 5)):

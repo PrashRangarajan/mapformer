@@ -23,7 +23,7 @@ wrong and the length-dependence of the rank effect needs another explanation.
 No forward pass is needed -- s_t is a cumsum of a linear map of the embeddings --
 so this is exact and costs no GPU.
 """
-import argparse, json, glob
+import argparse, glob
 import numpy as np
 import torch
 from pathlib import Path

@@ -5,7 +5,7 @@ path byte-identical. Trains a short run and fingerprints the final weights: a
 weight hash catches any change to the data stream, the RNG draw order or the
 optimisation, where comparing final loss would not.
 """
-import argparse, hashlib, json, os
+import argparse, hashlib, json
 import numpy as np
 import torch
 

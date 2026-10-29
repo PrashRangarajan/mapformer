@@ -18,7 +18,7 @@ Decision rule, fixed here rather than chosen after seeing the numbers:
   parity (path-int - index) at L=128 DETECTABLE POSITIVE  -> algorithmic venue
   otherwise                                               -> Match-Query venue
 """
-import json, statistics as st, sys
+import json, statistics as st
 from pathlib import Path
 
 RUNS = Path("mapformer/runs/algorithmic")

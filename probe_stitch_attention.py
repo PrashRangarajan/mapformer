@@ -99,7 +99,7 @@ import torch.nn.functional as F
 from mapformer.environment_stitch import StitchWorld, ACTION_DELTAS
 from mapformer.hourglass_plain import PlainFlat, _rope_cos_sin
 from mapformer.hourglass_plain import _apply_rope as _plain_rope
-from mapformer.model import MapFormerWM, _apply_rope as _wm_rope
+from mapformer.model import _apply_rope as _wm_rope
 
 _REPO = Path(__file__).resolve().parent
 

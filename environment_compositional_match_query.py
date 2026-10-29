@@ -39,7 +39,6 @@ the blank-majority rate. Each absolute cell scored at most once per query phase
 repeats, and the order-1 answer n-gram gate fires (the bug that invalidated
 hier-goal twice). Gates in validate_compositional_match_query.py.
 """
-import numpy as np
 import torch
 
 from .environment_compositional import CompositionalGridWorld

@@ -20,13 +20,11 @@ arm keeps high accuracy under shuffle, it is exploiting a non-map shortcut and
 its headline number is void.
 """
 import argparse
-import json
 import os
 from collections import Counter
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 
 from mapformer.miniworld_env import MiniWorldWorld
 from mapformer.train_miniworld import build_or_load_eval_buffer

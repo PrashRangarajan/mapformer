@@ -22,7 +22,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from mapformer.environment import GridWorld
-from mapformer.train_variant import VARIANT_MAP
 from mapformer.probe_goal_distance import build
 
 

@@ -31,7 +31,6 @@ Examples come from the task's own generator (rule 7), with the module's block
 widened only so longer strings and larger shifts fit.
 """
 import numpy as np
-import torch
 import mapformer.environment_indirect as E
 
 TH = 10000.0 ** (-np.arange(32) / 32)          # RoPE-style frequency ladder, 32 blocks

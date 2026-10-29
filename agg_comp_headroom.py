@@ -9,7 +9,6 @@ row labelling differs.
 """
 import argparse, json, os
 import numpy as np
-import torch
 
 from mapformer.eval_compositional import eval_ckpt
 

@@ -12,7 +12,6 @@ missing. The position effect is reported PER SEED, paired within seed
 (path-int - index at the same seed/encoding), with a std -- never a bare pooled
 point estimate (Standing Rule 6: three seeds is not a point estimate)."""
 import argparse
-import glob
 import json
 import os
 from collections import defaultdict

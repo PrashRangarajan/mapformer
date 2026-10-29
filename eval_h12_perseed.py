@@ -13,7 +13,6 @@ point estimate, and the variance here IS the finding.
 import argparse
 from pathlib import Path
 
-import numpy as np
 import torch
 
 from mapformer.eval_h12_budget import KW, SOURCES, score

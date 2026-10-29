@@ -56,7 +56,6 @@ let the goal token alone predict the answer -- the next shortcut in this family.
 T_explore must therefore be chosen from the measured positional entropy, not
 picked. `validate_map_query.py` reports it.
 """
-from typing import Optional
 
 import numpy as np
 import torch

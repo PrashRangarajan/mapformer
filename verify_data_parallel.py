@@ -18,7 +18,6 @@ Four checks, in the order that matters:
 """
 import argparse, time
 import numpy as np
-import torch
 
 from mapformer.environment import GridWorld
 from mapformer.data_parallel import ParallelBatchGenerator, _seed_for

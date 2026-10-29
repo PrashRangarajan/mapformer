@@ -1,6 +1,5 @@
 """Row-by-row check that `batch_fast` builds exactly what `AdditionWorld.encode` builds for the same operands."""
 import numpy as np
-import torch
 
 from mapformer.environment_addition import AdditionWorld, batch_fast, PAD
 

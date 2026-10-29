@@ -15,10 +15,8 @@ or supplementary as appropriate.
 import argparse
 import sys
 import torch
-import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
 import statistics as st
 from pathlib import Path
 

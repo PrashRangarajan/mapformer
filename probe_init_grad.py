@@ -29,7 +29,7 @@ from scipy.signal import find_peaks
 from mapformer.ckpt_guard import REPO, require_checkpoints
 from mapformer.environment_recency import RecencyWorld
 from mapformer.model import _apply_rope
-from mapformer.probe_anatomy import em_forward, origins, query_mask
+from mapformer.probe_anatomy import em_forward, origins
 
 ARMS = ["VanillaEM_P0_r4", "EMDoF_alignfree", "EMDoF_magonly"]
 NB, BS, T = 8, 16, 1024
@@ -173,7 +173,6 @@ def trained_rugged(dev):
 
 
 def summarise(init_rows, trained_rows):
-    from mapformer.stats_guard import from_diffs
     L = ["## S2  gradient at initialisation (8 batches, eval mode)\n",
          "| arm | seed | rate (slope of y_k) | t | cos(g, dJ) | pathway/content grad | rms A_P | rms A_X |",
          "|---|---|---|---|---|---|---|---|"]

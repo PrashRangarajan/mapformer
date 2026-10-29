@@ -29,7 +29,6 @@ from mapformer.evaluate import (
     plot_grid_cell_autocorrelation,
     plot_training_curves,
 )
-from mapformer.lie_groups import is_special_orthogonal
 from mapformer.prefix_scan import parallel_prefix_product, sequential_prefix_product
 
 
@@ -40,7 +39,7 @@ def run_sanity_checks():
     print("=" * 60)
 
     from mapformer.lie_groups import (
-        skew_symmetric_2d, exp_map_2d, build_block_diagonal_rotations_fast,
+        exp_map_2d,
     )
 
     theta = torch.randn(16)

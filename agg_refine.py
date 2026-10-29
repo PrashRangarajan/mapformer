@@ -2,7 +2,7 @@
 
 Verdict rules and the gate diagnostic are fixed before the runs finish.
 """
-import argparse, glob, json, os
+import argparse, json, os
 import numpy as np
 
 def accs(R, v, TQ="256"):
