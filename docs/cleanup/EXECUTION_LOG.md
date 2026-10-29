@@ -62,3 +62,57 @@ created, and the INDEX header was rewritten from a quoted heredoc before the com
 - `.run_signsep.lock.stale_20261024` (untracked, repo root) and a pre-existing `git stash` entry ("leftover deletions
   from prior cleanup") were not touched.
 - Old drivers retrain any run whose checkpoint is missing: do not relaunch the drivers of the D1 dirs.
+
+## D2 (2026-10-29, second pass): disk tiers D2a / D2b / D3, steps R1-R4
+
+Approved: delete the SAFE groups (R1, R2); extract, verify, then delete the SAFE AFTER EXTRACTION groups (R3, R4);
+guard the drivers. Not touched: the KEEP groups (`runs/code_ablate/*.final.pt`, `runs/selective`, `runs/em_fig4`,
+TinyStories valid text), `runs/code/*.final.pt`, `runs/code_decay/*.final.pt` and `/home/prashr/mm_data`. Plan and
+verdicts: `DISK_TIERS_ANALYSIS.md`; manifest: `D2_MANIFEST.md`. Nothing was running (no `python3` process,
+`nvidia-smi` empty, `lsof` clean) before or during.
+
+| step | commit | what was done | counts | checks / notes |
+|---|---|---|---|---|
+| X2 extraction | `f203593` | every non-tensor value of the 2,000 checkpoints of R1-R3 + `em_fig4` (kept) dumped to `runs/<dir>/CKPT_META.jsonl` (format and extractor `docs/cleanup/extract_ckpt_meta.py`): per-epoch `losses`, `config`, stored `results`, variant, seed, sizes, plus the checkpoint's md5 and byte size | 46 sidecars, 6.6 MB, 1,762 entries; 15 dirs of bare state dicts (238 files: `indirect*`, `jsb*`, `dyck_t3`) have nothing to dump | `--check` re-read all 1,762 entries against `torch.load`: 0 mismatches (losses bit-identical); sidecar md5 = manifest md5 on all 1,746 deleted files they cover. JSON lines, not `.json`, so no `*.json` glob in a run dir picks them up |
+| X3 readers | `f203593`, `516943d` | `ckpt_sidecar.py` (`load_ckpt_meta`: the `.pt` if present, else the sidecar); fallback added to `agg_alias.py`, `agg_visits.py`, `agg_miniworld.py`, `experiment_audit.py` (MiniWorld layout) and `analyze_papertask.py` (found in the pre-deletion reader check: it would have fallen back to 4-decimal log losses) | 5 readers | none md5-recorded or named in a pre-registration. Output byte-identical for HEAD + `.pt`, patched + `.pt`, patched + sidecar only, on 27 invocations (`agg_alias`, `agg_visits`, `agg_miniworld` x4, `experiment_audit` x13 incl. the documented `--control GateDeltaCtl` example) and again after deletion; `agg_alias` reproduces `ALIASING_CONTROLLED.md` and `agg_visits` `VISITS_TEST.md` byte for byte; `analyze_papertask` leaves the tracked `runs/paper_task_rerun/REPORT.md` unchanged. `run_mw_gatectl.sh`'s inline table still reads `.pt` (driver guarded) |
+| verification | `f203593` | `docs/cleanup/verify_d2_sidecars.py` re-derives from the sidecars alone (output `verify_d2_sidecars_out.txt`, identical before and after deletion) | -- | **rule 2**: 51 `mw_grid_sweep` runs alone give r -0.9968, acc = 1.033 - 0.549*loss, sd 0.019; adding `miniworld_oracle` RoPE_oracle and one of three other 3-run cells (MapPoPE-Flat_oracle, PoPE-Flat_allo of `miniworld_oracle` or of `miniworld_fresh`) gives n=57, r -0.9963/-0.9964, acc = 1.039 - 0.555*loss, resid sd 0.021: the documented numbers. The exact set was never recorded, so it stays ambiguous among those three. **Map extent**: all 12 per-seed final losses and final-10% slopes of `MINIWORLD_ENDPOINTS.md` (+0.305 / +0.015 endpoints) and the three rows of `ALIASING_CONTROLLED.md`'s loss table reproduced exactly. Rule 1's twin floor 0.150 (n=9) reproduced by `experiment_audit` from the sidecars |
+| X1 backup | -- | every file under `runs/` except `*.pt`, `*.pt.stale`, `*.pkl` tarred to `/home/prashr/mapformer_backups/runs_nonckpt_2026-10-29.tar.gz` | 19,209 entries (6,832 `.log`), 13,958,968 bytes, md5 `f57e41b73cbef05113dfe1ced1e1eeff` | outside the repo; the gitignored logs are the only other loss record |
+| guards | `dde0630` | refusal at the top of each driver (exit 3, message points to `DISK_TIERS_ANALYSIS.md` section 4) unless `MAPFORMER_ALLOW_DELETED_RERUN=1`; CLAUDE.md Operations rule 31 (one line) | 54 drivers | `bash -n` clean on all; refusal and override tested. List below |
+| X6 TinyStories | `f0507e7` | md5, sha256, size, source URL and download date of `TinyStoriesV2-GPT4-{train,valid}.txt` recorded in `D2_MANIFEST.md` | train md5 `f14749c06624ab6311c8e50ca80f4043`, sha256 `6418d412...0443` | source `huggingface.co/datasets/roneneldan/TinyStories` (`resolve/main/TinyStoriesV2-GPT4-train.txt`), downloaded 2026-10-09; analyses read `train.bin` / `val.bin` / `vocab.json` (kept) |
+| R1-R4 deletion | `f0507e7` (manifest, committed before deleting) | deleted from the md5 manifest, re-verified with `md5sum -c` immediately before; then the 120 dangling `runs/vocab_em_link/**` file symlinks (they pointed at `runs/vocab_em` checkpoints) and the 803 directories left empty (rmdir, bottom-up, only ancestors of deleted paths) | **1,985 files, 19,062,795,726 bytes = 17.75 GiB**: R1 652 files 5,146,615,544 B; R2 96 files 7,023,945,509 B; R3 1,236 files 4,664,481,511 B; R4 1 file 2,227,753,162 B | after: the before/after listing of `runs/` differs by exactly the 1,984 manifest files, the 120 symlinks and the 803 empty dirs (nothing added or changed); `git ls-files -d runs` empty; `find runs -xtype l` empty (`n5_phase/torus_eval_stage/p0` still resolves). `df /`: 71,829,139,456 -> 90,898,354,176 bytes free (67G -> 85G) |
+| checks | -- | from `/home/prashr`, `CUDA_VISIBLE_DEVICES=""`, before the commits and after deletion | -- | `test_guards` 13/13; the 16 `--selftest` analyses pass; `import mapformer.train_variant` and the five readers OK |
+
+Guarded drivers (54): the 44 top-level `.pt`-gated drivers of `DISK_TIERS_ANALYSIS.md` section 4 (`run_mw_grid_sweep`,
+`run_mw_grid_sweep_hier`, `run_mw_hier_ablation`, `run_mw_gatectl`, `run_mw_probe3`, `run_mw_probe3_seeds`,
+`run_mw_srope_components`, `run_miniworld`, `run_mw_missing`, `run_mw_fresh_factorial`, `run_mw_oracle`,
+`run_alias_sweep`, `run_alias_finish`, `run_alias_followup`, `run_alias_waveb`, `run_rope_converge`,
+`run_vanilla_converge`, `run_g8_converge`, `run_visits_test`, `run_flipflop`, `run_frontier`, `run_vocab_em`,
+`run_minigrid_em`, `run_minigrid_em_fix`, `run_pope_hier_allo`, `run_n5_phase`, `run_cmq_curric`,
+`run_cmq_curric_full`, `run_cmq_stab`, `run_cmq_sweep`, `run_recipe_power`, `run_papertask_rerun`,
+`run_mq_noise_2x2`, `run_mq_noise_c2`, `run_l15_loop_2x2`, `run_l15_loop_supp`, `run_l15_ablation`,
+`run_noise_refine`, `run_loop_sampled`, `run_forget`, `run_forget_control`, `run_lambda_trace`, `run_popewrap`,
+`run_mappope_r4`, `run_t3gen2`); 6 archived (`archive/code/2026-10/run_mw_nope`, `run_minigrid_allo`,
+`run_cmq_topup`, `run_cmq_curric_topup`, `run_cmq_stab_topup`, `run_t3gen`); and 3 eval drivers:
+`run_code_fullval.sh` (would rewrite the tracked `runs/{code,code_decay}/FULLVAL_512.json`),
+`run_papertask_eval.sh` (rewrites `PAPER_OOD_RERUN.json`), `run_accumulator.sh` (loads `forget`, `l15_ablation`,
+`popewrap` checkpoints; not in the analysis, found by grepping every `*.sh` for the deleted dirs).
+
+Not guarded, on purpose: `run_selective.sh` and `run_em_fig4.sh` (their dirs are KEEP, checkpoints present); the
+JSON-gated drivers, which skip every finished run (`run_t3`, `run_jsb_len`, `run_jsb_rank`, `run_t1_centered`,
+`run_cross_jsb`, `run_decay`, `run_aug`, `run_jsb`, `run_indirect`, `run_indirect_more`, `run_indirect_200k`,
+`run_code`, `run_code_decay`, `run_tinystories` (its completion check needs `.best.pt`, kept), `run_algorithmic`,
+`run_hier_parity`, `run_loop_hier`, `run_rope_canonical`, `run_sameblock`, `run_counter_batch`, archived
+`run_recency_budget`, `run_sameblock_amend`); `run_spread2.sh` (only waits on a marker);
+`docs/audits/2026-09-24/applied/run_evals_extra.sh` (an audit record, left unedited; it evaluates `noise_refine` /
+`l15_ablation` checkpoints into a caller-given directory and would now fail loudly).
+
+Kept and why: everything the user did not approve (above); `runs/em_fig4/*.pt` (KEEP; its sidecar was written anyway,
+as the analysis recommended); the run JSON, logs, markers and md5 records of every touched dir; the top-level dirs
+themselves (each holds its sidecar or JSON). Deviation from "one commit per step": the deletion step has two commits
+(manifest before deleting, as X1 requires; this log after), and the `analyze_papertask.py` fallback is a separate
+addendum commit because the need was found during the pre-deletion reader check.
+
+Lost (re-analyses that need weights, listed in `D2_MANIFEST.md`): e.g. `analyze_t1.py`, `analyze_sameblock.py`'s
+cosines, `probe_theory_numbers.py`, `eval_indirect_ood.py`, the code-depth / accumulator probes on `code/*.best.pt`,
+`eval_noise_refine.py` / `eval_loop_sweep.py` / `probe_forget.py` / `probe_accumulator.py` on these dirs; their stored
+outputs stay. CROSS Amendment 1's Bach r = 1.000 (no committed script) can no longer be re-derived.
