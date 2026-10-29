@@ -26,3 +26,4 @@ file below by its old path, look the name up here. Archived files keep their git
 | `OOD_GRID_RESULTS.md` | deleted; byte-identical copy at `archive_stale/OOD_GRID_RESULTS.md` | A1 | 2026-10-29 |
 | `R_T_DISTRIBUTION_3WAY.md` | deleted; byte-identical copy at `archive_stale/R_T_DISTRIBUTION_3WAY.md` | A1 | 2026-10-29 |
 | `ZERO_SHOT_TRANSFER_clean_brokeninit.md` | deleted; byte-identical copy at `archive_stale/ZERO_SHOT_TRANSFER_clean_brokeninit.md` | A1 | 2026-10-29 |
+| `docs/prepared/dyck_mdepth/pkg/` (373 tracked files: a 2026-09-25 copy of the package used for the Dyck matched-depth gates) | deleted; unreferenced outside itself; recoverable from git history (`git show 233eb9b:docs/prepared/dyck_mdepth/pkg/...`) | C1 | 2026-10-29 |
