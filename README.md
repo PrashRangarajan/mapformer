@@ -413,7 +413,7 @@ What we explicitly did NOT do (and acknowledge as limitations):
 - SR readout did not produce reward-conditional planning (design
   flaw with sparse MSE targets).
 - Cross-class transfer (torus + MiniGrid) was attempted; results
-  are in `MULTICLASS_RESULTS.md`.
+  are in `archive_stale/MULTICLASS_RESULTS.md`.
 - True RL on top of the cognitive map is out of scope.
 
 ## References
