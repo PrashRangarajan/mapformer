@@ -86,3 +86,6 @@ papers/_fetch.out
 
 # flock single-instance files (drivers name them .<batch>.lock, not only .run_*)
 *.lock
+
+# personal document, kept local only (2026-10-28)
+Prashant_Rangarajan_Generals_Document.pdf
