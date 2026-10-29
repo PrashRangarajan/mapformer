@@ -1,9 +1,16 @@
 ---
 name: reference-review-documents
-description: The documents (review, results paper, record, reports), the live shared report link and its republish rule, and the 40-paper corpus in papers/.
+description: The documents (current drafts 2 and 6 and their PDFs; the stale September review, results paper, record, reports), the live shared report link (v22) and its republish rule, and the paper corpus in papers/ (44 + 28).
 metadata:
   type: reference
 ---
+
+**Updated 2026-10-29 (cleanup C6).** The current write-up is **main paper draft 2** (`docs/paper/MAIN_DRAFT2.md` +
+`MAIN_APPENDIX2.md`; PDFs `docs/paper/pdf/main_paper_draft2{,_appendix,_with_appendix}.pdf`) and the **sign companion,
+draft 6** (`docs/paper/DRAFT6_workshop.md` + `APPENDIX_draft6.md`; `4_sign_workshop_paper.pdf`, `5_sign_workshop_appendix.pdf`;
+theory appendix `APPENDIX_theory_v3.md`), with the claim map `docs/paper/CLAIM_MAP_clock_map.md` and the review
+`docs/audits/2026-10-28/FULL_REVIEW.md`. Rebuild: `python3 docs/paper/tools/build_pdfs.py docs/paper/pdf`. Superseded drafts:
+`docs/paper/old/`. The table below is the September set: STALE (stops at 2026-09-30), kept for the record.
 
 | file | what it is |
 |---|---|
@@ -12,7 +19,7 @@ metadata:
 | `mapformer_math.pdf` | the working record, 38pp: everything plus every correction and retraction. |
 | `report/report.pdf`, `report/report_short.pdf` | 43pp / 10pp paper-style reports of surviving results. |
 | `report/language_summary.html` | source of the live shared report (below). |
-| `papers/` | **40 sources, all read first-hand.** `txt/<key>.txt` tracked and greppable; `pdf/` gitignored (69 MB), restored by `papers/fetch.sh`; `papers/INDEX.md` records the claim each reading checks. |
+| `papers/` | **44 sources in the main corpus, all read first-hand, plus 28 from the 2026-10-14..16 checks in `papers/new_*/`.** `txt/<key>.txt` tracked and greppable; `pdf/` and `new_*/**/*.pdf` gitignored, restored by `papers/fetch.sh` / each folder's `SOURCES.txt`; `papers/INDEX.md` records the claim each reading checks. |
 
 The review/record split was made 2026-09-08 because the review had grown to 81% of the record. All
 five were brought into line 2026-09-27 (rank separation, Dyck matched depth, loop-rank) and corrected
@@ -22,9 +29,10 @@ wrap, what/where or the leak (`docs/WHERE_THINGS_STAND.md`, "Known stale"). Buil
 
 ## The shared report
 
-**Live link:** https://claude.ai/artifact/LVfYeHhjs1KjwMpg3Pxggc ("Position Codes on Language", v10 on
-2026-09-30, anyone with the link; viewers see updates immediately; lacks 3D rank / wrap, what/where, leak). Source of truth
-`report/language_summary.html`, byte-identical to what was published.
+**Live link:** https://claude.ai/artifact/LVfYeHhjs1KjwMpg3Pxggc ("Position Codes on Language", **v22 on
+2026-10-11** per CLAUDE.md -- rank tests added; anyone with the link; viewers see updates immediately; lacks everything after
+2026-10-11). Source of truth `report/language_summary.html`. A second artifact, JmzdmkFup4V3kV3C5YndPm (navigation told in
+words), has source `report/navigation_in_words.html` (last edited 2026-10-05).
 - Edit the HTML, then publish with the Artifact tool passing `url=` that link. A publish without
   `url` creates a NEW link and the one the user shared goes stale. In a new session `action: "read"`
   the URL first (the tool refuses a publish to an artifact the session has not read).

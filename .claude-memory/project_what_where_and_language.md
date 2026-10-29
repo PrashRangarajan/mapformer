@@ -1,6 +1,6 @@
 ---
 name: project-what-where-and-language
-description: The 2026-09-28..10-03 line -- text world, context-dependent step, what/where separation, new objects, the what-to-where leak and NormStep -- results with their status, and what is ours vs prior art.
+description: [updated 2026-10-29 with TW_STATECHANGE, GAIN_PHASE, the re-score and IMAGE_TORUS] The 2026-09-28..10-03 line -- text world, context-dependent step, what/where separation, new objects, the what-to-where leak and NormStep -- results with their status, and what is ours vs prior art.
 metadata:
   type: project
 ---
@@ -25,6 +25,13 @@ Results (files are authoritative; full account `docs/SESSION_2026-09-27_to_10-03
   aside at the same cell. In language "only actions move" is the wrong target; learned steps move asides away.
 - Eval mode (dropout off) under-reports runs below ceiling by up to 0.16: the 1/(1-p) attention-dropout SCALE (x1.111
   at eval recovers them); all batches re-scored 2026-10-04: no registered verdict changes (DROPOUT_RESCORE.md).
+- UPDATE 2026-10-29 (registered since; CLAUDE.md rows are current): the dropout re-score moves the text-world path arms
+  0.969 -> 0.993 (post hoc). TW_STATECHANGE (`TW_STATECHANGE_RESULTS.md`, CORRECTED 2026-10-11): path 0.994 vs RoPE 0.516; the
+  'state bound to place' readout is location + recency among nouns, NOT state semantics -- 'the model tracks state changes'
+  is WITHDRAWN. GAIN_PHASE (`GAIN_PHASE_RESULTS.md`, CORRECTED): one defect shown (the leak, in the step map); a score change
+  does not touch it; 'two defects, two fixes' WITHDRAWN. LEAK on fresh seeds: SOLVED replicates, the +0.0107 accuracy gain
+  does not (+0.0045, p 0.46). With images (IMAGE_TORUS): an observation-driven step at token scale stops training -- keep
+  images out of the step map. TW_LANDMARK stopped (live negative); TW_AMBIG and CTXSTEP stopped.
 
 **Prior art (do not claim; `docs/lit/LIT_*.md`):** context-gated steps are Mamba/Selective-RoPE/CoPE forms; alpha=0
 residual init is ReZero/Flamingo/RWKV-7; "separation is learned" is in MapFormer's own Fig. 9; transfer to unseen iid

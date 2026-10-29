@@ -5,6 +5,12 @@ metadata:
   type: project
 ---
 
+**NOTE 2026-10-29.** The lm200 numbers below (l.13 '~0.996 lm200', l.34 'lm200 flat WINS +5pp') are July retrains on the
+lm200 configuration, not the withdrawn April-May lm200 tables (CLAUDE.md Withdrawn; `archive/legacy_level15/`), but they
+belong to the Level 1.5 line, which is a live negative: cite none of them. The hierarchy rows CLAUDE.md keeps are
+COMP_HEADROOM / HIER_RECHECK (recipe beats architecture) and ENWIK8_HIERARCHY (efficiency only). The July hierarchy
+probe tables (route attention, space+time, recursive, rooms) moved to `archive/orphan/`; AGGREGATE_* stay at the root.
+
 Two hierarchy extensions to MapFormer were built and tested (2026-07);
 both are honest negatives:
 

@@ -1,9 +1,14 @@
 ---
 name: project-clock-vs-map
-description: Cancellation chooses whether the accumulator is a map or a clock. Explains sign and rank; recency does NOT need a clock (a rewind solves it); forget-gate account untested.
+description: Cancellation chooses whether the accumulator is a map or a clock; recency does NOT need a clock (a rewind solves it); forget-gate account untested. [2026-10-29: 'explains sign and rank' predates sign = learnability (2026-10-12) and RANKCLOCK -- the current reading is in CLAUDE.md's sign row and rank block]
 metadata:
   type: project
 ---
+
+**CORRECTED 2026-10-29.** This account dates from 2026-09-24. Two things changed: (1) in the rotary slot a non-negative
+step can represent a map (angles wrap mod 2 pi), so 'monotone = clock' is a statement about what training finds, not what
+the class can hold (CLAUDE.md sign row, 2026-10-12); (2) the rank-2 obstacle on the torus is a clock component (RANKCLOCK,
+registered), but the 'clock exit' mechanism for extra rank was PARTIAL. Read the sections below as the 2026-09 account.
 
 Attention sees only the interval sum `θ_s − θ_t = ω·Σ_{t<u≤s} Δ_u`. What that
 quantity **is** depends entirely on whether increments cancel:

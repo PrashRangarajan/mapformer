@@ -5,6 +5,15 @@ metadata:
   type: project
 ---
 
+**UPDATE 2026-10-29 -- read with CLAUDE.md's rank block, which is current.** Registered since this file was last edited:
+RANKCLOCK / G-1 (the rank-2 obstacle IS the clock: drift-forbidden rank 2 8/8 vs actions-only 1/8, p 0.0014; explicit clock
+exits at rank 2 only 3/8, PARTIAL -- 'extra rank gives the clock an exit' NOT supported); RANKWD (rank 4 needs AdamW decay 0.05:
+8/8 vs 1/8 at decay 0; decay on all parameters, so not attributed to the step map; omega's norm is gauge-dependent, CORRECTED);
+RANKRECIPE (rank 2 0/24 across three recipes vs rank 4 8/8). State rank 4 as 'with decay'. Faithful Selective RoPE on the torus
+(SROPE_TORUS, the authors' module reproduced to 6e-6): 0.961, 0/8 all still descending vs MapWM 8/8; SELECTIVE_ROPE.md (below)
+was our earlier generator swap inside MapFormer, which SROPE_TORUS keeps as its SRoPEGen arm. Concurrent work (Larson 2609.17594; Sarkar et al. 2610.34945) reports the opposite direction on group composition
+(`docs/audits/2026-10-28/FULL_REVIEW.md` M1): state the rank claim as task-conditional.
+
 **3D and wrap (2026-10-01/02, `RANK_ND_RESULTS.md`, `RANK_WRAP_RESULTS.md`):** per-head rank = D is hard in 2D AND 3D
 (1/8 each); rank D+1 suffices when the torus is large (3D grid 18: 8/8) but only partly on a small wrap-heavy grid
 (3D grid 10: 4/8); every failure sits on wrap-only revisits (the code must be exactly periodic). A 100-cell 2D map is

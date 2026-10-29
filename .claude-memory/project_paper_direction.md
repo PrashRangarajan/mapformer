@@ -1,6 +1,6 @@
 ---
 name: project-paper-direction
-description: The paper framing chosen 2026-10-11..13 -- Howard's integrator cases as the rotary-position families; learnability (not representation) separates signed from non-negative rotary steps; depth cannot buy the map on the torus. Status of each claim and what a venue needs.
+description: [framing superseded by drafts 2 and 6, 2026-10-29] The paper framing chosen 2026-10-11..13 -- Howard's integrator cases as the rotary-position families; learnability (not representation) separates signed from non-negative rotary steps; depth cannot buy the map on the torus. Status of each claim and what a venue needs.
 metadata:
   type: project
 ---
@@ -14,9 +14,12 @@ and "signed steps are needed" are prior art (`docs/lit/LIT_CLOCK_MAP.md`).
 (RING_DIAL 2/8, 1/8 vs 8/8; RING_BUDGET 3x budget no help; never finds the wrap solution), torus wrap probe (cancelling
 channels Signed 0.98, Abs 0.11), ring loss-AUC companion (signed faster 8/8 at every p). The clock side (non-negative
 faster on content counting) is UNMEASURED twice (CLOCK_SPEED p 0.053, REP p 0.19): asymmetric, no double dissociation.
-**Depth cannot buy the map on the torus** (FACTORIAL, n = 4): RoPE 1L 0.72, 4L 0.86, looped 0.86 vs path 1L 1.00.
+**Depth cannot buy the map on the torus** (FACTORIAL, n = 4; replicated on fresh seeds, FACTORIAL_N8): RoPE 1L 0.72, 4L 0.86, looped 0.86 vs path 1L 1.00.
 **Natural text:** TinyStories / code phases are pure clocks (alpha ~1.0), no gain over RoPE at our scale (CoPE gains at scale).
-**Venue (assessed 2026-10-13):** workshop paper: enough now; TMLR: add torus baselines (LSTM, Mamba-like, CoPE, Selective
-RoPE), factorial n = 8, wrap existence test, one scale check (~2 GPU days); main conference: not with this material.
+**Venue (assessed 2026-10-13; CORRECTED 2026-10-29):** the gaps named then have since been run -- LSTM / GRU (RNN_TORUS),
+CoPE and CARoPE (GENERALITY), Selective RoPE (SROPE_TORUS), factorial n = 8 (FACTORIAL_N8), wrap existence (WRAP_EXISTENCE),
+plus pixels (IMAGE_TORUS) and Memory Maze; no scale check. The framing has moved on: main paper draft 2
+(`docs/paper/MAIN_DRAFT2.md`, TMLR target) and sign companion draft 6 (workshop), per `docs/paper/BIG_PICTURE_2026-10-24.md`;
+remaining work is CPU (`docs/audits/2026-10-28/FULL_REVIEW.md` 4.6). Howard's cases stay a framing, not a result.
 Claim-by-claim status: `docs/paper/CLAIM_MAP_clock_map.md`. Related: [[project-sign-axis]], [[project-clock-vs-map]],
 [[feedback-follow-on-drift]].

@@ -1,9 +1,19 @@
 ---
 name: project-sign-axis
-description: [CORRECTED 2026-10-12: a non-negative ROTARY step CAN represent a -1 action mod 2 pi -- the sign cost is learnability, not representation; see body end] A monotone phase increment cannot represent a -1 action; the cost SURVIVES a matched-length control (T=1024, -0.177, 0/8 vs 8/8, 2026-09-28). The sign axis is NOT ours.
+description: The sign of a rotary phase increment is a LEARNABILITY cost, not a representational one (a non-negative rotary step can represent -1 mod 2 pi; CORRECTED 2026-10-12). It survives matched length (T=1024, -0.177, 0/8 vs 8/8), best rates on ring and torus, and an SSM; it is the |.| and softplus increments (exp: no cost in the SSM at lr 1e-3, a cost in attention on the torus). The representational sign cost (real eigenvalues) is published; the learnability result is ours. Current statement: CLAUDE.md sign row.
 metadata:
   type: project
 ---
+
+**CORRECTED 2026-10-29 -- read this first.** CLAUDE.md's sign row is the current statement; this file is the history
+up to 2026-10-13. Where the body below says a monotone or non-negative code "cannot represent" a -1 action or push/pop, read
+"does not learn": rotary steps wrap mod 2 pi, so the constrained class represents the map (RING_DIAL audit M1). Since
+2026-10-13, all registered: MECHANISM (|.| removes the path through zero; a past-pi start learns by wrapping on the ring, not
+on the torus -- TORUS_START), GENERALITY (torus 0/8 vs 8/8; the exact non-negative solution is perturbed and re-found),
+ACCOUNTS (the '87% -> 18%' drift below counted unused channels; usage-weighted the held code stays 0.98), GAUGE (+1/+2
+UNMEASURED), ROBUST (partly unmeasured), LRSWEEP and TORUS_LRSWEEP (cost at each arm's best rate, ring and torus), SIGNROUTE
+(the cost is the |.| increment, not a non-negative readout), SIGNSEP (route vs barrier UNMEASURED), G3_SSM and its A2 block
+(cost in a diagonal complex SSM; exp no cost at lr 1e-3), EXPTORUS (exp and softplus pay in attention on the torus).
 
 **Matched-length control, 2026-09-28 (`SIGN_MATCHED_RESULTS.md`): SIGN IS CAPABILITY.** Trained AND
 tested at T=1024: Abs - Signed -0.177 (perm p 0.0002), solved 0/8 vs 8/8; signed opposition 0.06 vs

@@ -35,10 +35,13 @@ summary.**
 published.** Do NOT claim them.
 
 **What survives, and it is empirical not structural:**
-1. **The rank of the content-to-angle map.** Nobody constrains it -- Mamba-3's
-   theta is a per-channel projection. r=2 is the WORST setting; r=4 buys +0.085 at
-   8x training length (trained T=128, measured T=1024) for 384 params, 8/8 seeds;
-   at 4x (T=512) it is only +0.038. The cause is a skewed basis.
+1. **The rank of the content-to-angle map.** CORRECTED 2026-10-29 (CLAUDE.md withdrawn list and rank block): the
+   original text here ("nobody constrains it"; "r=4 buys +0.085 at 8x length"; "the cause is a skewed basis") is
+   withdrawn -- MapFormer itself ablates r; the +0.085 was out-of-distribution only (`RANK_SWEEP.md`); within r=2 skew
+   does not predict accuracy and a rank-2 solution exists and is held. What stands: at matched length (T=1024) the
+   PER-HEAD rank decides learnability on 2D/3D tori (rank 2 0-2/8, rank 3 6/8, rank 4 8/8 with weight decay 0.05),
+   the rank-2 obstacle is the clock (RANKCLOCK), and rank = D is not hard in 1D. Larson 2609.17594 and Sarkar et al.
+   2610.34945 report the opposite direction on group composition (`docs/audits/2026-10-28/FULL_REVIEW.md` M1).
 2. **The navigation regime.** All of this literature evaluates on language, recall
    or state tracking. None runs grid navigation.
 

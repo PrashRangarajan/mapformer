@@ -1,6 +1,6 @@
 ---
 name: project-loop-and-correction
-description: Looping substitutes for depth and beats the Kalman correction under noise; refining theta does nothing; Level 1.5 has no load-bearing component; PC and Kalman are duals.
+description: Looping matches three real layers at a third of the parameters (Match-Query) and helps more than the Kalman correction under noise; refining theta does nothing; Level 1.5 has no load-bearing component; PC and Kalman are duals. [CORRECTED 2026-10-29: 'beats' withdrawn -- the loop MATCHES 3 real layers (CLAUDE.md)]
 metadata:
   type: project
 ---
@@ -143,8 +143,9 @@ REAL layers at 3x params reach only 0.565 (index) / 0.641 (path-int), i.e. BELOW
 the 199K two-mechanism model; matching it by depth would need ~1.5M params on an
 optimistic linear extrapolation. **The best arm in the study is the smallest.**
 
-The loop matches or beats 3x its parameters in BOTH rows (index: +0.010 over L3,
-16/16 seeds, DETECTABLE; path-int: +0.026, unmeasured).
+The loop matches 3x its parameters in BOTH rows (index: +0.010 over L3,
+16/16 seeds; path-int: +0.026, unmeasured). [CORRECTED 2026-10-29: was "matches or beats"; CLAUDE.md withdraws
+"the loop beats three real layers" -- it matches them. On the torus a loop x4 does NOT buy the map (FACTORIAL, FACTORIAL_N8).]
 
 **No interaction between loop and path integration**: loop gain +0.070 path-int vs
 +0.056 index, difference +0.014, not detectable. LOOP_HEADROOM's +0.315 was

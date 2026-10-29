@@ -12,6 +12,13 @@ metadata:
 > What survives: MapPoPE - MapWM on Bach -0.0165 (5/5, MDE 0.0111). The clock half (path integration hurts PoPE) is
 > unmeasured everywhere; do not claim it.
 
+> **CORRECTED 2026-10-29 (CLAUDE.md MapPoPE rows are current).** After the 2026-10-11 critical review: MAPPOPE_PAIR's
+> angle-count CI is at ceiling and is NOT a precision claim; its +0.0243 score-rule gain is plausibly convergence speed
+> (+0.009 on fresh seeds in GAIN_GRAIN); GAIN_GRAIN has NO HEADROOM (MapWM 18/20), so 'nothing is lost' is all it can show;
+> 'the rank defect is the periodic code' (below) is a secondary not separated from long gaps. Mechanism since then:
+> DELTA_FREE (registered, PEAK-PINNING SUPPORTED) -- PoPE's offset pinned at 0 fixes the kernel peak; freeing it raises the
+> index arm +0.122 and leaves the path arm at ceiling.
+
 **SEPARATED 2026-10-05 (`MAPPOPE_PAIR_RESULTS.md`, registered).** Our MapPoPE differed from MapWM in the score rule AND
 the frequency count (64 per-element angles vs 32 per pair). On the paper torus (T=128, r2, n=16) the score rule carries
 the whole gain (+0.0243, p 0.012; 16/16 vs 10/16 SOLVED); the angle count adds +0.0002, CI [-0.0004, +0.0008]. It also
