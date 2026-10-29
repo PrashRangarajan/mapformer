@@ -1,0 +1,14 @@
+Downloaded 2026-10-14 for the representability / learnability literature check
+(docs/lit/LIT_REPRESENTABILITY_2026-10-14.md). Untrusted data; text extracted with pdftotext. Each directory holds
+the arXiv PDF (paper.pdf, or liu2023.pdf) and its text; the PDFs are gitignored (papers/new_*/**/*.pdf), the text is
+tracked. Written 2026-10-29 from the folder names and the title pages; the version is the arXiv stamp in the text.
+Restore a PDF with: curl -L -o papers/new_2026-10-14/<id>/paper.pdf https://arxiv.org/pdf/<id>v<version>
+
+2002.09277/   v3  Woodworth, Gunasekar, Lee, Moroshko, Savarese, Golan, Soudry, Srebro. Kernel and rich regimes in
+                  overparametrized models. https://arxiv.org/abs/2002.09277v3
+2002.10487/   v2  Amid, Warmuth. Reparameterizing mirror descent as gradient descent. https://arxiv.org/abs/2002.10487v2
+2210.10749/   v2  Liu, Ash, Goel, Krishnamurthy, Zhang. Transformers learn shortcuts to automata.
+                  https://arxiv.org/abs/2210.10749v2  (stored as liu2023.pdf / liu2023.txt)
+2303.06349/   v1  Orvieto, Smith, Gu, Fernando, Gulcehre, Pascanu, De. Resurrecting recurrent neural networks for long
+                  sequences (LRU). https://arxiv.org/abs/2303.06349v1
+2402.09963/   v4  Hahn, Rofin. Why are sensitive functions hard for transformers? https://arxiv.org/abs/2402.09963v4

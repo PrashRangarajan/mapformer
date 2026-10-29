@@ -4,6 +4,14 @@ Every source `mapformer_math.tex` cites, stored so a claim can be checked withou
 a web round-trip. **`txt/` is tracked; `pdf/` is gitignored** (69 MB) — run
 `bash papers/fetch.sh` to restore the PDFs, or `bash papers/fetch.sh <key>` for one.
 
+**Contents (counted 2026-10-29).** Main corpus: 44 papers with text in `txt/` and 42 PDFs in `pdf/` (the Whittington
+et al. 2025 PDF is stored as `pdf/09_Whittington_2025_Tale_of_Two_Algorithms.pdf`, its text as `txt/tale_two_algorithms.txt`;
+`position_coupling`, `puranik_janestreet` and `zhou_length_gen_not_robust` have text only; `pdf/survey_geom.pdf` is
+2511.08243, withdrawn by its author, with no text). Literature checks of 2026-10-14..16: 28 more papers under
+`new_2026-10-14/` (5), `new_2026-10-15/` (3) and `new_2026-10-16/` (20), not listed in the tables below; their text is
+tracked, their PDFs are gitignored, and each folder's `SOURCES.txt` gives the arXiv ids / URLs to restore them.
+They are cited by `docs/lit/LIT_REPRESENTABILITY_2026-10-14.md` and `docs/paper/review_draft5/PRIOR_ART.md`.
+
 Grep the corpus, don't re-search the web:
 
 ```bash

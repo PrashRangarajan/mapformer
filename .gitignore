@@ -80,6 +80,8 @@ report/*.toc
 
 # paper PDFs: 69 MB, restore with `bash papers/fetch.sh`
 papers/pdf/
+# PDFs of the 2026-10-14..16 literature checks (about 80 MB); text tracked, sources in each folder's SOURCES.txt
+papers/new_*/**/*.pdf
 papers/_fetch.out
 
 # driver single-instance locks (flock)
