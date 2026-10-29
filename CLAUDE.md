@@ -38,7 +38,7 @@ represent the map -- published -- but |.|, softplus and exp steps do not learn i
 |---|---|
 | live state (running, next) | `.claude-memory/project_state.md` -- read first |
 | orientation for a fresh session (thesis, what survives, what is open, what is stale) | `docs/WHERE_THINGS_STAND.md` -- read second |
-| catalogue of every results file | `RESULTS_INDEX.md` (catalogue regenerated 2026-10-03: every top-level `*.md` plus the docs-level notes, zero unclassified; hand rows cover everything through the leak batch, with post hoc / pilot / literature rows marked as such). Regenerate with `docs/tools/catalog_results_index.py` and paste its output into the catalogue section |
+| catalogue of every results file | `RESULTS_INDEX.md` (catalogue regenerated 2026-10-29: every top-level `*.md`, the archived results under `archive/` and `archive_stale/` (marked `[a]`) and the docs-level notes, zero unclassified; hand rows cover everything through the leak batch, with post hoc / pilot / literature rows marked as such). Old -> new paths of archived files: `archive/MOVED.md`. Regenerate with `docs/tools/catalog_results_index.py` and paste its output into the catalogue section |
 | prior art for the 2026-09-28..10-03 line; that week's handoff | `docs/lit/LIT_*.md` (check before claiming novelty); `docs/SESSION_2026-09-27_to_10-03.md` |
 | EM/WM and position-kernel line | `EM_WM_STATE.md`, `AUDIT_2026-09-10.md` |
 | guards | `GUARDS.md`; `python3 -m mapformer.test_guards` from `/home/prashr`; `python3 -m mapformer.experiment_audit --runs-dir D --control TWIN --control-of ARM` before reading any run dir |
