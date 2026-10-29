@@ -1,3 +1,12 @@
+"""Build the shareable PDFs of the current paper sources (WeasyPrint from markdown; figures embedded by path).
+
+    python3 docs/paper/tools/build_pdfs.py docs/paper/pdf
+
+Builds draft 2 (main text, appendix, and both in one file), the theory appendix, draft 6 and its appendix, and the
+figure notes, under the names in docs/paper/pdf/. 2026-10-29 (cleanup C3): the list used to build draft 1 and the
+draft-1 outline (now in docs/paper/old/) and had no draft-2 entry; the draft-2 calls below reproduce the committed
+main_paper_draft2*.pdf (pdftotext output identical, docs/cleanup/EXECUTION_LOG.md).
+"""
 import re, sys, os, markdown, weasyprint
 REPO = "/home/prashr/mapformer"
 CSS = """
@@ -35,10 +44,11 @@ def build(srcs, out, title):
 OUT = sys.argv[1]
 os.makedirs(OUT, exist_ok=True)
 P = "docs/paper/"
-build([P + "MAIN_DRAFT1.md"], f"{OUT}/1_main_paper.pdf", "Main paper, draft 1")
-build([P + "MAIN_APPENDIX1.md"], f"{OUT}/2_main_paper_appendix.pdf", "Main paper appendix")
+build([P + "MAIN_DRAFT2.md"], f"{OUT}/main_paper_draft2.pdf", "Main paper, draft 2")
+build([P + "MAIN_APPENDIX2.md"], f"{OUT}/main_paper_draft2_appendix.pdf", "Main paper draft 2 appendix")
+build([P + "MAIN_DRAFT2.md", P + "MAIN_APPENDIX2.md"], f"{OUT}/main_paper_draft2_with_appendix.pdf",
+      "Main paper draft 2 with appendix")
 build([P + "APPENDIX_theory_v3.md"], f"{OUT}/3_theory_appendix.pdf", "Theory appendix")
 build([P + "DRAFT6_workshop.md"], f"{OUT}/4_sign_workshop_paper.pdf", "Sign workshop paper, draft 6")
 build([P + "APPENDIX_draft6.md"], f"{OUT}/5_sign_workshop_appendix.pdf", "Sign workshop appendix")
-build([P + "OUTLINE_main_v2.md"], f"{OUT}/6_main_paper_outline.pdf", "Main paper outline v2")
 build([P + "figs/FIGS_NOTES.md"], f"{OUT}/7_figures_and_captions.pdf", "Figures and captions")
