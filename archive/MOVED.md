@@ -207,3 +207,22 @@ move); `archive/legacy_level15/` the April-August Level 1.5 / InEKF / PC / TEM /
 | `docs/paper/pdf/16_expansion_language.pdf` | `docs/paper/old/pdf/16_expansion_language.pdf` | C3 | 2026-10-29 |
 | `docs/paper/pdf/17_expansion_paper_level.pdf` | `docs/paper/old/pdf/17_expansion_paper_level.pdf` | C3 | 2026-10-29 |
 | `docs/paper/pdf/paper_sources_and_figures.zip` | `docs/paper/old/pdf/paper_sources_and_figures.zip` | C3 | 2026-10-29 |
+| `docs/paper/APPENDIX_draft5.md` | `docs/paper/old/APPENDIX_draft5.md` | C4 | 2026-10-29 |
+| `docs/paper/APPENDIX_theory.md` | `docs/paper/old/APPENDIX_theory.md` | C4 | 2026-10-29 |
+| `docs/paper/APPENDIX_theory_v2.md` | `docs/paper/old/APPENDIX_theory_v2.md` | C4 | 2026-10-29 |
+| `docs/paper/DRAFT3_changes.md` | `docs/paper/old/DRAFT3_changes.md` | C4 | 2026-10-29 |
+| `docs/paper/DRAFT3_workshop.md` | `docs/paper/old/DRAFT3_workshop.md` | C4 | 2026-10-29 |
+| `docs/paper/DRAFT4_changes.md` | `docs/paper/old/DRAFT4_changes.md` | C4 | 2026-10-29 |
+| `docs/paper/DRAFT4_workshop.md` | `docs/paper/old/DRAFT4_workshop.md` | C4 | 2026-10-29 |
+| `docs/paper/DRAFT5_changes.md` | `docs/paper/old/DRAFT5_changes.md` | C4 | 2026-10-29 |
+| `docs/paper/DRAFT5_workshop.md` | `docs/paper/old/DRAFT5_workshop.md` (stub left at the old path for a pre-registration) | C4 | 2026-10-29 |
+| `docs/paper/DRAFT_workshop.md` | `docs/paper/old/DRAFT_workshop.md` | C4 | 2026-10-29 |
+| `docs/paper/MAIN_APPENDIX1.md` | `docs/paper/old/MAIN_APPENDIX1.md` | C4 | 2026-10-29 |
+| `docs/paper/MAIN_DRAFT1.md` | `docs/paper/old/MAIN_DRAFT1.md` (stub left at the old path for a pre-registration) | C4 | 2026-10-29 |
+| `docs/paper/MAIN_DRAFT1_notes.md` | `docs/paper/old/MAIN_DRAFT1_notes.md` | C4 | 2026-10-29 |
+| `docs/paper/MOCK_REVIEW_draft3.md` | `docs/paper/old/MOCK_REVIEW_draft3.md` (stub left at the old path for a pre-registration) | C4 | 2026-10-29 |
+| `docs/paper/OUTLINE_main_v2.md` | `docs/paper/old/OUTLINE_main_v2.md` | C4 | 2026-10-29 |
+| `docs/paper/OUTLINE_overall.md` | `docs/paper/old/OUTLINE_overall.md` | C4 | 2026-10-29 |
+| `docs/paper/OUTLINE_workshop.md` | `docs/paper/old/OUTLINE_workshop.md` | C4 | 2026-10-29 |
+| `docs/paper/READ_draft4.md` | `docs/paper/old/READ_draft4.md` (stub left at the old path for a pre-registration) | C4 | 2026-10-29 |
+| `docs/paper/VENUES_2026-10-15.md` | `docs/paper/old/VENUES_2026-10-15.md` | C4 | 2026-10-29 |

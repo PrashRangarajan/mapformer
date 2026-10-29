@@ -106,13 +106,13 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
 ## Running
 - Nothing running (LRSWEEP finished 2026-10-17 05:03).
 - Draft 6 (`docs/paper/DRAFT6_workshop.md`) carries every review fix; title stands (LRSWEEP: cost at best rates). Overall two-paper outline:
-  `docs/paper/OUTLINE_overall.md`. Reproduction audits: sign line and non-sign line both clean (Match-Query not reproducible).
-- Draft 5 (`docs/paper/DRAFT5_workshop.md`, `APPENDIX_draft5.md`) has ROBUST filled (4.1, Limitations, abstract, appendix C13).
-- Draft 4 (`docs/paper/DRAFT4_workshop.md`) complete incl. Sec. 4.5 (GAUGE) and the end-to-end read (`docs/paper/READ_draft4.md`:
+  `docs/paper/old/OUTLINE_overall.md`. Reproduction audits: sign line and non-sign line both clean (Match-Query not reproducible).
+- Draft 5 (`docs/paper/old/DRAFT5_workshop.md`, `docs/paper/old/APPENDIX_draft5.md`) has ROBUST filled (4.1, Limitations, abstract, appendix C13).
+- Draft 4 (`docs/paper/old/DRAFT4_workshop.md`) complete incl. Sec. 4.5 (GAUGE) and the end-to-end read (`docs/paper/old/READ_draft4.md`:
   shareable with co-authors; not submittable: main text 4,302 words vs ~3,500, appendices A-D, F-I still plans; title and
-  contribution 3 lean on an account GAUGE did not confirm). Venues: `docs/paper/VENUES_2026-10-15.md` (ICLR 2027 workshop
+  contribution 3 lean on an account GAUGE did not confirm). Venues: `docs/paper/old/VENUES_2026-10-15.md` (ICLR 2027 workshop
   list out 29 Nov 2026, papers ~1 Feb 2027; CCN 2027 4 Feb; CPAL Spotlight 18 Jan; Cosyne abstracts 18 Oct 2026).
-- Mock review of draft 3: `docs/paper/MOCK_REVIEW_draft3.md` (6/10).
+- Mock review of draft 3: `docs/paper/old/MOCK_REVIEW_draft3.md` (6/10).
 
 ## Running / handoff (2026-10-20)
 - Nothing running (SROPE_TORUS finished 2026-10-21 07:54).
@@ -192,7 +192,7 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
 - COPE DIAGNOSIS (`docs/audits/2026-10-14/cope_diagnosis/COPE_DIAGNOSIS.md`, post hoc): one-layer gates are a table; solution =
   gate lattice (period P = 2/3, +1 move odd multiple of P/32, ~1e-3); regimes lattice 9 / off-lattice 11 / obs-dependent 20;
   eval-only gate snap lifts wrap-only 0.63 -> 0.90; barrier 11/11. Search, different obstacle from rotary.
-- Draft 2 (`docs/paper/DRAFT_workshop.md`) has both folded in.
+- Draft 2 (`docs/paper/old/DRAFT_workshop.md`) has both folded in.
 - Proposed tests (not run; each needs a prereg): AO_bal ring continuation with weight decay 0 (drift account, ~15 min GPU);
   signed with frozen move latents from the |.| start (collective-route account, ~1 GPU-h); toy with observation-retrieval
   target (toy vs transformer difference, CPU); CoPE on a non-wrapping line / sep-keys (~1.6 GPU-h each). Next: Fig. 3 (mechanism), an end-to-end read (rule 28);
@@ -203,7 +203,7 @@ New here? Read `docs/WHERE_THINGS_STAND.md` next; the narrative of 2026-10-04..0
   non-negative construction 8/8 SOLVED, 0/8 LOST vs signed control 8/8); E3 SIGNED LEARNS BETTER (observation-free,
   from scratch 0/8 vs 8/8, p 0.0002). Secondary: held model drifts off the cancelling code (87% -> 18%); wrapped code more
   fragile to 1% noise. Ill-conditioned constructions lose and re-find (descriptive). Rule 14 met for the learnability claim.
-- Outline `docs/paper/OUTLINE_workshop.md` with Figures 1-2 (`docs/paper/figs/`). Next if the user wants: a first draft
+- Outline `docs/paper/old/OUTLINE_workshop.md` with Figures 1-2 (`docs/paper/figs/`). Next if the user wants: a first draft
   (CPU only); optional factorial at n = 8 (~8 h GPU) for a stronger workshop version.
 
 ## Ready, not launched (each audited + amended; user chooses)

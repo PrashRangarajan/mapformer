@@ -64,9 +64,10 @@ paper (CPU-9); new figures (CPU-10); then writing draft 2 (`docs/paper/MAIN_DRAF
 
 ## 5. Where things are
 
-- Paper: `docs/paper/MAIN_DRAFT1.md` (+ `MAIN_APPENDIX1.md`, `APPENDIX_theory_v3.md`), outline `OUTLINE_main_v2.md`,
-  draft-2 plan `expansion/SYNTHESIS_DRAFT2_PLAN.md`, sign workshop paper `DRAFT6_workshop.md`, PDFs in `docs/paper/pdf/`
-  (rebuild with `python3 docs/paper/tools/build_pdfs.py docs/paper/pdf`), summary figure `figs/fig_summary.png`.
+- Paper (updated 2026-10-29): `docs/paper/MAIN_DRAFT2.md` (+ `MAIN_APPENDIX2.md`, `APPENDIX_theory_v3.md`), sign workshop
+  paper `DRAFT6_workshop.md` (+ `APPENDIX_draft6.md`), claim map `CLAIM_MAP_clock_map.md`; draft 1 and the outlines are in
+  `docs/paper/old/`. PDFs in `docs/paper/pdf/` (rebuild with `python3 docs/paper/tools/build_pdfs.py docs/paper/pdf`),
+  summary figure `figs/fig_summary.png`.
 - Results: `*_RESULTS.md` at the top level (a CORRECTED / AUDIT block at the top supersedes the body); catalogue
   `RESULTS_INDEX.md`; citable and withdrawn claims in `CLAUDE.md`.
 - Reviews and audits: `docs/paper/review_draft5/`, `docs/audits/<date>/`.
