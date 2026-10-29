@@ -75,7 +75,8 @@ silently report the UNFILTERED path integral. (`ap_kernel_diagnostic.py` is fine
   data supports — the real numbers are 1.4844 vs 1.4727, hierarchy WORSE. Generate
   headline numbers from the JSONs rather than typing them.
 - **Aggregator `--out` defaults to a TRACKED results file.** `agg_miniworld.py`
-  defaults to `MINIWORLD_FIXED_RESULTS.md`, so pointing it at any other `--runs-dir`
+  defaults to `MINIWORLD_FIXED_RESULTS.md` (at the repo root; the record itself was archived to
+  `archive/superseded/` on 2026-10-29), so pointing it at any other `--runs-dir`
   — including a throwaway smoke test — overwrites the canonical result in place with
   no warning. Hit while testing the fix above; caught only by `git status`. Pass an
   explicit `--out` for anything that is not the real run, and check `git status`
